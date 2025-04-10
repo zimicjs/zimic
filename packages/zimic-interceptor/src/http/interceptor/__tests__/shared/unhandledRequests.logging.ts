@@ -131,7 +131,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
               expect(handler.requests).toHaveLength(0);
 
-              await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+              await usingIgnoredConsole(['warn', 'error'], async (console) => {
                 const response = await fetch(joinURL(baseURL, '/users'), { method });
                 expect(response.status).toBe(200);
 
@@ -140,8 +140,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
                 expect(interceptedRequest.body).toBe(null);
 
-                expect(spies.warn).toHaveBeenCalledTimes(0);
-                expect(spies.error).toHaveBeenCalledTimes(0);
+                expect(console.warn).toHaveBeenCalledTimes(0);
+                expect(console.error).toHaveBeenCalledTimes(0);
 
                 await promiseIfRemote(handler.clear(), interceptor);
 
@@ -151,10 +151,10 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
                 expect(handler.requests).toHaveLength(0);
 
-                expect(spies.warn).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
-                expect(spies.error).toHaveBeenCalledTimes(0);
+                expect(console.warn).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+                expect(console.error).toHaveBeenCalledTimes(0);
 
-                const warnMessage = spies.warn.mock.calls[0].join(' ');
+                const warnMessage = console.warn.mock.calls[0].join(' ');
                 await verifyUnhandledRequestMessage(warnMessage, { request, platform, type: 'bypass' });
               });
             },
@@ -177,7 +177,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
               expect(handler.requests).toHaveLength(0);
 
-              await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+              await usingIgnoredConsole(['warn', 'error'], async (console) => {
                 const response = await fetch(joinURL(baseURL, '/users'), {
                   method,
                   headers: { 'content-type': 'application/json' },
@@ -190,8 +190,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 expectTypeOf(interceptedRequest.body).toEqualTypeOf<{ message: string }>();
                 expect(interceptedRequest.body).toEqual({ message: 'ok' });
 
-                expect(spies.warn).toHaveBeenCalledTimes(0);
-                expect(spies.error).toHaveBeenCalledTimes(0);
+                expect(console.warn).toHaveBeenCalledTimes(0);
+                expect(console.error).toHaveBeenCalledTimes(0);
 
                 await promiseIfRemote(handler.clear(), interceptor);
 
@@ -207,10 +207,10 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
                 expect(handler.requests).toHaveLength(0);
 
-                expect(spies.warn).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
-                expect(spies.error).toHaveBeenCalledTimes(0);
+                expect(console.warn).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+                expect(console.error).toHaveBeenCalledTimes(0);
 
-                const warnMessage = spies.warn.mock.calls[0].join(' ');
+                const warnMessage = console.warn.mock.calls[0].join(' ');
                 await verifyUnhandledRequestMessage(warnMessage, { request: requestClone, platform, type: 'bypass' });
               });
             },
@@ -233,7 +233,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
               expect(handler.requests).toHaveLength(0);
 
-              await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+              await usingIgnoredConsole(['warn', 'error'], async (console) => {
                 const response = await fetch(joinURL(baseURL, '/users'), {
                   method,
                   headers: { 'x-value': '1' },
@@ -245,8 +245,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
                 expect(interceptedRequest.body).toBe(null);
 
-                expect(spies.warn).toHaveBeenCalledTimes(0);
-                expect(spies.error).toHaveBeenCalledTimes(0);
+                expect(console.warn).toHaveBeenCalledTimes(0);
+                expect(console.error).toHaveBeenCalledTimes(0);
 
                 const request = new Request(joinURL(baseURL, '/users'), { method });
                 const responsePromise = fetch(request);
@@ -254,10 +254,10 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
                 expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-                expect(spies.warn).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
-                expect(spies.error).toHaveBeenCalledTimes(0);
+                expect(console.warn).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+                expect(console.error).toHaveBeenCalledTimes(0);
 
-                const warnMessage = spies.warn.mock.calls[0].join(' ');
+                const warnMessage = console.warn.mock.calls[0].join(' ');
                 await verifyUnhandledRequestMessage(warnMessage, { request, platform, type: 'bypass' });
               });
             },
@@ -278,7 +278,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
               expect(handler.requests).toHaveLength(0);
 
-              await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+              await usingIgnoredConsole(['warn', 'error'], async (console) => {
                 const response = await fetch(joinURL(baseURL, '/users'), { method });
                 expect(response.status).toBe(200);
 
@@ -287,8 +287,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
                 expect(interceptedRequest.body).toBe(null);
 
-                expect(spies.warn).toHaveBeenCalledTimes(0);
-                expect(spies.error).toHaveBeenCalledTimes(0);
+                expect(console.warn).toHaveBeenCalledTimes(0);
+                expect(console.error).toHaveBeenCalledTimes(0);
 
                 const request = new Request(joinURL(baseURL, '/users/other'), { method });
                 const responsePromise = fetch(request);
@@ -296,10 +296,10 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
                 expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-                expect(spies.warn).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
-                expect(spies.error).toHaveBeenCalledTimes(0);
+                expect(console.warn).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+                expect(console.error).toHaveBeenCalledTimes(0);
 
-                const warnMessage = spies.warn.mock.calls[0].join(' ');
+                const warnMessage = console.warn.mock.calls[0].join(' ');
                 await verifyUnhandledRequestMessage(warnMessage, { request, platform, type: 'bypass' });
               });
             },
@@ -320,7 +320,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
               expect(handler.requests).toHaveLength(0);
 
-              await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+              await usingIgnoredConsole(['warn', 'error'], async (console) => {
                 const response = await fetch(joinURL(baseURL, '/users'), { method });
                 expect(response.status).toBe(200);
 
@@ -329,8 +329,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
                 expect(interceptedRequest.body).toBe(null);
 
-                expect(spies.warn).toHaveBeenCalledTimes(0);
-                expect(spies.error).toHaveBeenCalledTimes(0);
+                expect(console.warn).toHaveBeenCalledTimes(0);
+                expect(console.error).toHaveBeenCalledTimes(0);
 
                 const searchParams = new HttpSearchParams({
                   singleValue: 'value',
@@ -344,10 +344,10 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
                 expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-                expect(spies.warn).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
-                expect(spies.error).toHaveBeenCalledTimes(0);
+                expect(console.warn).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+                expect(console.error).toHaveBeenCalledTimes(0);
 
-                const warnMessage = spies.warn.mock.calls[0].join(' ');
+                const warnMessage = console.warn.mock.calls[0].join(' ');
                 await verifyUnhandledRequestMessage(warnMessage, { request, platform, type: 'bypass' });
               });
             },
@@ -369,7 +369,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
             expect(handler.requests).toHaveLength(0);
 
-            await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+            await usingIgnoredConsole(['warn', 'error'], async (console) => {
               const response = await fetch(joinURL(baseURL, '/users'), { method });
               expect(response.status).toBe(200);
 
@@ -378,8 +378,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
               expect(interceptedRequest.body).toBe(null);
 
-              expect(spies.warn).toHaveBeenCalledTimes(0);
-              expect(spies.error).toHaveBeenCalledTimes(0);
+              expect(console.warn).toHaveBeenCalledTimes(0);
+              expect(console.error).toHaveBeenCalledTimes(0);
 
               await promiseIfRemote(handler.clear(), interceptor);
 
@@ -397,10 +397,10 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
               expect(handler.requests).toHaveLength(0);
 
-              expect(spies.warn).toHaveBeenCalledTimes(0);
-              expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+              expect(console.warn).toHaveBeenCalledTimes(0);
+              expect(console.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
 
-              const errorMessage = spies.error.mock.calls[0].join(' ');
+              const errorMessage = console.error.mock.calls[0].join(' ');
               await verifyUnhandledRequestMessage(errorMessage, { request, platform, type: 'reject' });
             });
           },
@@ -422,7 +422,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
               expect(handler.requests).toHaveLength(0);
 
-              await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+              await usingIgnoredConsole(['warn', 'error'], async (console) => {
                 const response = await fetch(joinURL(baseURL, '/users'), {
                   method,
                   headers: { 'content-type': 'application/json' },
@@ -435,8 +435,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 expectTypeOf(interceptedRequest.body).toEqualTypeOf<{ message: string }>();
                 expect(interceptedRequest.body).toEqual({ message: 'ok' });
 
-                expect(spies.warn).toHaveBeenCalledTimes(0);
-                expect(spies.error).toHaveBeenCalledTimes(0);
+                expect(console.warn).toHaveBeenCalledTimes(0);
+                expect(console.error).toHaveBeenCalledTimes(0);
 
                 await promiseIfRemote(handler.clear(), interceptor);
 
@@ -455,10 +455,10 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
                 expect(handler.requests).toHaveLength(0);
 
-                expect(spies.warn).toHaveBeenCalledTimes(0);
-                expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+                expect(console.warn).toHaveBeenCalledTimes(0);
+                expect(console.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
 
-                const errorMessage = spies.error.mock.calls[0].join(' ');
+                const errorMessage = console.error.mock.calls[0].join(' ');
                 await verifyUnhandledRequestMessage(errorMessage, { request: requestClone, platform, type: 'reject' });
               });
             },
@@ -482,7 +482,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
             expect(handler.requests).toHaveLength(0);
 
-            await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+            await usingIgnoredConsole(['warn', 'error'], async (console) => {
               const searchParams = new HttpSearchParams({ value: '1' });
 
               const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
@@ -493,8 +493,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
               expect(interceptedRequest.body).toBe(null);
 
-              expect(spies.warn).toHaveBeenCalledTimes(0);
-              expect(spies.error).toHaveBeenCalledTimes(0);
+              expect(console.warn).toHaveBeenCalledTimes(0);
+              expect(console.error).toHaveBeenCalledTimes(0);
 
               const request = new Request(joinURL(baseURL, '/users'), {
                 method,
@@ -510,10 +510,10 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
               expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-              expect(spies.warn).toHaveBeenCalledTimes(0);
-              expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+              expect(console.warn).toHaveBeenCalledTimes(0);
+              expect(console.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
 
-              const errorMessage = spies.error.mock.calls[0].join(' ');
+              const errorMessage = console.error.mock.calls[0].join(' ');
               await verifyUnhandledRequestMessage(errorMessage, { request, platform, type: 'reject' });
             });
           },
@@ -534,7 +534,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
             expect(handler.requests).toHaveLength(0);
 
-            await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+            await usingIgnoredConsole(['warn', 'error'], async (console) => {
               const response = await fetch(joinURL(baseURL, '/users'), { method });
               expect(response.status).toBe(200);
 
@@ -543,8 +543,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
               expect(interceptedRequest.body).toBe(null);
 
-              expect(spies.warn).toHaveBeenCalledTimes(0);
-              expect(spies.error).toHaveBeenCalledTimes(0);
+              expect(console.warn).toHaveBeenCalledTimes(0);
+              expect(console.error).toHaveBeenCalledTimes(0);
 
               const request = new Request(joinURL(baseURL, '/users/other'), {
                 method,
@@ -555,15 +555,15 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               if (overridesPreflightResponse) {
                 await expectPreflightResponse(responsePromise);
 
-                expect(spies.warn).toHaveBeenCalledTimes(0);
-                expect(spies.error).toHaveBeenCalledTimes(0);
+                expect(console.warn).toHaveBeenCalledTimes(0);
+                expect(console.error).toHaveBeenCalledTimes(0);
               } else {
                 await expectFetchError(responsePromise);
 
-                expect(spies.warn).toHaveBeenCalledTimes(0);
-                expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+                expect(console.warn).toHaveBeenCalledTimes(0);
+                expect(console.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
 
-                const errorMessage = spies.error.mock.calls[0].join(' ');
+                const errorMessage = console.error.mock.calls[0].join(' ');
                 await verifyUnhandledRequestMessage(errorMessage, { request, platform, type: 'reject' });
               }
 
@@ -587,7 +587,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
             expect(handler.requests).toHaveLength(0);
 
-            await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+            await usingIgnoredConsole(['warn', 'error'], async (console) => {
               const response = await fetch(joinURL(baseURL, '/users'), { method });
               expect(response.status).toBe(200);
 
@@ -596,8 +596,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
               expect(interceptedRequest.body).toBe(null);
 
-              expect(spies.warn).toHaveBeenCalledTimes(0);
-              expect(spies.error).toHaveBeenCalledTimes(0);
+              expect(console.warn).toHaveBeenCalledTimes(0);
+              expect(console.error).toHaveBeenCalledTimes(0);
 
               const searchParams = new HttpSearchParams({
                 singleValue: 'value',
@@ -614,15 +614,15 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               if (overridesPreflightResponse) {
                 await expectPreflightResponse(responsePromise);
 
-                expect(spies.warn).toHaveBeenCalledTimes(0);
-                expect(spies.error).toHaveBeenCalledTimes(0);
+                expect(console.warn).toHaveBeenCalledTimes(0);
+                expect(console.error).toHaveBeenCalledTimes(0);
               } else {
                 await expectFetchError(responsePromise);
 
-                expect(spies.warn).toHaveBeenCalledTimes(0);
-                expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+                expect(console.warn).toHaveBeenCalledTimes(0);
+                expect(console.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
 
-                const errorMessage = spies.error.mock.calls[0].join(' ');
+                const errorMessage = console.error.mock.calls[0].join(' ');
                 await verifyUnhandledRequestMessage(errorMessage, { request, platform, type: 'reject' });
               }
 
@@ -676,7 +676,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
                 expect(handler.requests).toHaveLength(0);
 
-                await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+                await usingIgnoredConsole(['warn', 'error'], async (console) => {
                   const searchParams = new HttpSearchParams({ value: '1' });
 
                   const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
@@ -684,8 +684,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
                   expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-                  expect(spies.warn).toHaveBeenCalledTimes(0);
-                  expect(spies.error).toHaveBeenCalledTimes(0);
+                  expect(console.warn).toHaveBeenCalledTimes(0);
+                  expect(console.error).toHaveBeenCalledTimes(0);
 
                   const request = new Request(joinURL(baseURL, '/users'), { method });
                   const responsePromise = fetch(request);
@@ -693,8 +693,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
                   expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-                  expect(spies.warn).toHaveBeenCalledTimes(0);
-                  expect(spies.error).toHaveBeenCalledTimes(0);
+                  expect(console.warn).toHaveBeenCalledTimes(0);
+                  expect(console.error).toHaveBeenCalledTimes(0);
                 });
               },
             );
@@ -715,7 +715,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
               expect(handler.requests).toHaveLength(0);
 
-              await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+              await usingIgnoredConsole(['warn', 'error'], async (console) => {
                 const searchParams = new HttpSearchParams({ value: '1' });
 
                 const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
@@ -723,8 +723,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
                 expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-                expect(spies.warn).toHaveBeenCalledTimes(0);
-                expect(spies.error).toHaveBeenCalledTimes(0);
+                expect(console.warn).toHaveBeenCalledTimes(0);
+                expect(console.error).toHaveBeenCalledTimes(0);
 
                 const request = new Request(joinURL(baseURL, '/users'), { method });
                 const responsePromise = fetch(request);
@@ -737,8 +737,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
                 expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-                expect(spies.warn).toHaveBeenCalledTimes(0);
-                expect(spies.error).toHaveBeenCalledTimes(0);
+                expect(console.warn).toHaveBeenCalledTimes(0);
+                expect(console.error).toHaveBeenCalledTimes(0);
               });
             },
           );
@@ -747,9 +747,9 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
     );
 
     it(`should not log unhandled ${method} requests when no interceptors exist`, async () => {
-      await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-        expect(spies.warn).toHaveBeenCalledTimes(0);
-        expect(spies.error).toHaveBeenCalledTimes(0);
+      await usingIgnoredConsole(['warn', 'error'], async (console) => {
+        expect(console.warn).toHaveBeenCalledTimes(0);
+        expect(console.error).toHaveBeenCalledTimes(0);
 
         const request = new Request(joinURL(baseURL, '/users'), { method });
         const responsePromise = fetch(request);
@@ -762,8 +762,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
           await expectFetchError(responsePromise);
         }
 
-        expect(spies.warn).toHaveBeenCalledTimes(0);
-        expect(spies.error).toHaveBeenCalledTimes(0);
+        expect(console.warn).toHaveBeenCalledTimes(0);
+        expect(console.error).toHaveBeenCalledTimes(0);
       });
     });
 
@@ -781,7 +781,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
           expect(handler.requests).toHaveLength(0);
 
-          await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+          await usingIgnoredConsole(['warn', 'error'], async (console) => {
             const request = new Request(joinURL(baseURL, '/users'), { method });
             expect(request.url.startsWith(otherBaseURL)).toBe(false);
 
@@ -797,8 +797,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
             expect(handler.requests).toHaveLength(0);
 
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(0);
+            expect(console.warn).toHaveBeenCalledTimes(0);
+            expect(console.error).toHaveBeenCalledTimes(0);
           });
         },
       );
@@ -818,7 +818,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
           expect(handler.requests).toHaveLength(0);
 
-          await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+          await usingIgnoredConsole(['warn', 'error'], async (console) => {
             const searchParams = new HttpSearchParams({ value: '1' });
 
             const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
@@ -826,8 +826,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
             expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(0);
+            expect(console.warn).toHaveBeenCalledTimes(0);
+            expect(console.error).toHaveBeenCalledTimes(0);
 
             const request = new Request(joinURL(baseURL, '/users'), {
               method,
@@ -841,14 +841,14 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               await expectFetchError(responsePromise);
             }
 
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+            expect(console.warn).toHaveBeenCalledTimes(0);
+            expect(console.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
 
-            const errorMessage = spies.error.mock.calls[0].join(' ');
+            const errorMessage = console.error.mock.calls[0].join(' ');
             await verifyUnhandledRequestMessage(errorMessage, { request, platform, type: 'reject' });
 
-            spies.warn.mockClear();
-            spies.error.mockClear();
+            console.warn.mockClear();
+            console.error.mockClear();
 
             await interceptor.stop();
 
@@ -864,8 +864,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               await expectFetchError(responsePromise, { canBeAborted: true });
             }
 
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(0);
+            expect(console.warn).toHaveBeenCalledTimes(0);
+            expect(console.error).toHaveBeenCalledTimes(0);
           });
         },
       );
@@ -892,7 +892,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
         expect(handler.requests).toHaveLength(0);
 
-        await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+        await usingIgnoredConsole(['warn', 'error'], async (console) => {
           const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
           expect(response.status).toBe(200);
 
@@ -901,8 +901,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
           expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
           expect(interceptedRequest.body).toBe(null);
 
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
+          expect(console.warn).toHaveBeenCalledTimes(0);
+          expect(console.error).toHaveBeenCalledTimes(0);
 
           const request = new Request(joinURL(baseURL, '/users/unknown'), {
             method: 'GET',
@@ -914,8 +914,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
           expect(handler.requests).toHaveLength(1);
 
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
+          expect(console.warn).toHaveBeenCalledTimes(0);
+          expect(console.error).toHaveBeenCalledTimes(0);
         });
 
         const newOnUnhandledRequest: UnhandledRequestStrategy.Remote = { action: 'reject', log: true };
@@ -924,7 +924,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
         interceptor.onUnhandledRequest = newOnUnhandledRequest;
         expect(interceptor.onUnhandledRequest).toEqual(newOnUnhandledRequest);
 
-        await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+        await usingIgnoredConsole(['warn', 'error'], async (console) => {
           const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
           expect(response.status).toBe(200);
 
@@ -933,8 +933,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
           expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
           expect(interceptedRequest.body).toBe(null);
 
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
+          expect(console.warn).toHaveBeenCalledTimes(0);
+          expect(console.error).toHaveBeenCalledTimes(0);
 
           const request = new Request(joinURL(baseURL, '/users/unknown'), {
             method: 'GET',
@@ -946,10 +946,10 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
           expect(handler.requests).toHaveLength(2);
 
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(1);
+          expect(console.warn).toHaveBeenCalledTimes(0);
+          expect(console.error).toHaveBeenCalledTimes(1);
 
-          const errorMessage = spies.error.mock.calls[0].join(' ');
+          const errorMessage = console.error.mock.calls[0].join(' ');
           await verifyUnhandledRequestMessage(errorMessage, { request, platform, type: 'reject' });
         });
       },

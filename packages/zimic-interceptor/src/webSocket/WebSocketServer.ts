@@ -1,22 +1,32 @@
-import { Server as HttpServer } from 'http';
+import { PossiblePromise } from '@zimic/utils/types';
+import { Server as HttpServer, IncomingMessage } from 'http';
 import ClientSocket from 'isomorphic-ws';
 
 import { closeServerSocket } from '@/utils/webSocket';
 
-import { WebSocket } from './types';
+import { WebSocketControlMessage } from './constants';
+import { WebSocketSchema } from './types';
 import WebSocketHandler from './WebSocketHandler';
 
 const { WebSocketServer: ServerSocket } = ClientSocket;
+
+export type WebSocketServerAuthenticate = (
+  socket: ClientSocket,
+  request: IncomingMessage,
+) => PossiblePromise<{ isValid: true } | { isValid: false; message: string }>;
 
 interface WebSocketServerOptions {
   httpServer: HttpServer;
   socketTimeout?: number;
   messageTimeout?: number;
+  authenticate?: WebSocketServerAuthenticate;
 }
 
-class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketHandler<Schema> {
+class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<Schema> {
   private webSocketServer?: InstanceType<typeof ServerSocket>;
+
   private httpServer: HttpServer;
+  private authenticate?: WebSocketServerOptions['authenticate'];
 
   constructor(options: WebSocketServerOptions) {
     super({
@@ -25,6 +35,7 @@ class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketH
     });
 
     this.httpServer = options.httpServer;
+    this.authenticate = options.authenticate;
   }
 
   get isRunning() {
@@ -42,9 +53,19 @@ class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketH
       console.error(error);
     });
 
-    webSocketServer.on('connection', async (socket) => {
+    webSocketServer.on('connection', async (socket, request) => {
+      if (this.authenticate) {
+        const result = await this.authenticate(socket, request);
+
+        if (!result.isValid) {
+          socket.close(1008, result.message);
+          return;
+        }
+      }
+
       try {
         await super.registerSocket(socket);
+        socket.send('socket:auth:valid' satisfies WebSocketControlMessage);
       } catch (error) {
         webSocketServer.emit('error', error);
       }

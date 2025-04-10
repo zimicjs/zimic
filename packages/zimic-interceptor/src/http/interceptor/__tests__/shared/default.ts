@@ -1,10 +1,6 @@
 import { afterEach, beforeAll, describe, expect, expectTypeOf, it } from 'vitest';
 
-import {
-  createInternalHttpInterceptor,
-  getSingletonWorkerByType,
-  usingHttpInterceptor,
-} from '@tests/utils/interceptors';
+import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import NotRunningHttpInterceptorError from '../../errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorTypeError from '../../errors/UnknownHttpInterceptorTypeError';
@@ -27,22 +23,19 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
   let serverURL: URL;
 
   beforeAll(() => {
-    store.clear();
-
     baseURL = getBaseURL();
     serverURL = new URL(new URL(baseURL).origin);
+
+    const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
+    expect(worker).toBe(undefined);
 
     expect(store.numberOfRunningLocalInterceptors).toBe(0);
     expect(store.numberOfRunningRemoteInterceptors(new URL(baseURL))).toBe(0);
   });
 
   afterEach(() => {
-    const worker = getSingletonWorkerByType(store, type, serverURL);
-
-    if (worker) {
-      expect(worker.isRunning).toBe(false);
-      expect(worker.interceptorsWithHandlers).toHaveLength(0);
-    }
+    const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
+    expect(worker).toBe(undefined);
 
     expect(store.numberOfRunningLocalInterceptors).toBe(0);
     expect(store.numberOfRunningRemoteInterceptors(new URL(baseURL))).toBe(0);
@@ -82,14 +75,14 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
         });
       }).toThrowError(new UnknownHttpInterceptorTypeError(unknownType));
     });
+  });
 
-    it('should initialize with the correct platform', async () => {
-      await usingHttpInterceptor<{}>(getInterceptorOptions(), (interceptor) => {
-        expect(interceptor.platform).toBe(platform);
+  it('should initialize with the correct platform', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), (interceptor) => {
+      expect(interceptor.platform).toBe(platform);
 
-        const worker = getSingletonWorkerByType(store, type, serverURL);
-        expect(worker!.platform).toBe(platform);
-      });
+      const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
+      expect(worker!.platform).toBe(platform);
     });
   });
 
@@ -142,7 +135,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
         await interceptor.start();
         expect(interceptor.isRunning).toBe(true);
 
-        const worker = getSingletonWorkerByType(store, type, serverURL);
+        const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
         expect(worker).toBeDefined();
         expect(worker!.isRunning).toBe(true);
 
@@ -164,7 +157,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
         await interceptor.start();
         expect(interceptor.isRunning).toBe(true);
 
-        const worker = getSingletonWorkerByType(store, type, serverURL);
+        const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
         expect(worker).toBeDefined();
         expect(worker!.isRunning).toBe(true);
 
@@ -203,7 +196,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
         expect(interceptor.isRunning).toBe(true);
         expect(otherInterceptor.isRunning).toBe(true);
 
-        const worker = getSingletonWorkerByType(store, type, serverURL);
+        const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
         expect(worker).toBeDefined();
         expect(worker!.isRunning).toBe(true);
       });
@@ -217,7 +210,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
       await usingHttpInterceptor<{}>(getInterceptorOptions(), async (otherInterceptor) => {
         expect(otherInterceptor.isRunning).toBe(true);
 
-        const worker = getSingletonWorkerByType(store, type, serverURL);
+        const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
         expect(worker).toBeDefined();
         expect(worker!.isRunning).toBe(true);
 

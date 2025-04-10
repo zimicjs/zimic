@@ -26,11 +26,11 @@ describe('Type generation', () => {
   it('should show a help message', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'typegen', '--help']);
 
-    await usingIgnoredConsole(['log'], async (spies) => {
+    await usingIgnoredConsole(['log'], async (console) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
 
-      expect(spies.log).toHaveBeenCalledTimes(1);
-      expect(spies.log).toHaveBeenCalledWith(helpOutput);
+      expect(console.log).toHaveBeenCalledTimes(1);
+      expect(console.log).toHaveBeenCalledWith(helpOutput);
     });
   });
 });

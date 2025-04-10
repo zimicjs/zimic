@@ -9,7 +9,9 @@ const sharedConfig: Options = {
   clean: true,
   keepNames: true,
   env: {
-    SERVER_ACCESS_CONTROL_MAX_AGE: '',
+    INTERCEPTOR_SERVER_ACCESS_CONTROL_MAX_AGE: '',
+    INTERCEPTOR_TOKEN_HASH_ITERATIONS: '1000000',
+    VITEST_POOL_ID: '',
   },
   noExternal: ['@zimic/utils'],
 };
@@ -24,7 +26,7 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
     index: 'src/index.ts',
     http: 'src/http/index.ts',
   },
-  external: ['util', 'buffer', 'crypto'],
+  external: ['fs', 'util', 'buffer', 'crypto'],
 }));
 
 const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => {

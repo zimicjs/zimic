@@ -2,12 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 import runCLI from '../cli';
 
-vi.mock('../cli', () => ({
-  default: vi.fn(),
-}));
+vi.mock('../cli', () => ({ default: vi.fn() }));
 const runCLIMock = vi.mocked(runCLI);
 
-describe('CLI (entry point)', () => {
+describe('CLI > Entry point', () => {
   it('should run the CLI after imported', async () => {
     await import('../index');
 

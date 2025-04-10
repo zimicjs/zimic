@@ -15,12 +15,15 @@ class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttp
   constructor(options: LocalHttpInterceptorOptions) {
     const baseURL = new URL(options.baseURL);
 
-    const worker = this.store.getOrCreateLocalWorker({});
-
     this.client = new HttpInterceptorClient<Schema, typeof LocalHttpRequestHandler>({
-      worker,
       store: this.store,
       baseURL,
+      createWorker() {
+        return this.store.getOrCreateLocalWorker({});
+      },
+      deleteWorker() {
+        this.store.deleteLocalWorker();
+      },
       Handler: LocalHttpRequestHandler,
       onUnhandledRequest: options.onUnhandledRequest,
       requestSaving: options.requestSaving,

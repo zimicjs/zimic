@@ -432,7 +432,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>(),
           undefined,
         ]) {
-          await usingIgnoredConsole(['error'], async (spies) => {
+          await usingIgnoredConsole(['error'], async (console) => {
             const responsePromise = fetch(joinURL(baseURL, '/users'), {
               method,
               body,
@@ -443,10 +443,10 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
             expect(handler.requests).toHaveLength(1);
 
             if (body && !body.has('tag') && platform === 'browser') {
-              expect(spies.error).toHaveBeenCalledTimes(1);
-              expect(spies.error).toHaveBeenCalledWith(expect.any(InvalidFormDataError));
+              expect(console.error).toHaveBeenCalledTimes(1);
+              expect(console.error).toHaveBeenCalledWith(expect.any(InvalidFormDataError));
             } else {
-              expect(spies.error).toHaveBeenCalledTimes(0);
+              expect(console.error).toHaveBeenCalledTimes(0);
             }
           });
         }
@@ -523,7 +523,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>(),
           undefined,
         ]) {
-          await usingIgnoredConsole(['error'], async (spies) => {
+          await usingIgnoredConsole(['error'], async (console) => {
             const responsePromise = fetch(joinURL(baseURL, '/users'), {
               method,
               body,
@@ -534,10 +534,10 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
             expect(handler.requests).toHaveLength(2);
 
             if (body && !body.has('tag') && platform === 'browser') {
-              expect(spies.error).toHaveBeenCalledTimes(1);
-              expect(spies.error).toHaveBeenCalledWith(expect.any(InvalidFormDataError));
+              expect(console.error).toHaveBeenCalledTimes(1);
+              expect(console.error).toHaveBeenCalledWith(expect.any(InvalidFormDataError));
             } else {
-              expect(spies.error).toHaveBeenCalledTimes(0);
+              expect(console.error).toHaveBeenCalledTimes(0);
             }
           });
         }

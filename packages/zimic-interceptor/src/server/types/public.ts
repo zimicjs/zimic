@@ -30,6 +30,15 @@ export interface InterceptorServer {
   logUnhandledRequests: boolean;
 
   /**
+   * The directory where the authorized interceptor authentication tokens are saved. If provided, only remote
+   * interceptors bearing a valid token will be accepted. This option is essential if you are exposing your interceptor
+   * server publicly. For local development and testing, though, `--tokens-dir` is optional.
+   *
+   * @default undefined
+   */
+  tokensDirectory?: string;
+
+  /**
    * Whether the server is running.
    *
    * @readonly

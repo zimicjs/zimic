@@ -5,7 +5,7 @@ import { hideBin } from 'yargs/helpers';
 import { version } from '@@/package.json';
 
 import { generateTypesFromOpenAPI } from '@/typegen';
-import { logWithPrefix } from '@/utils/console';
+import { logger } from '@/utils/logging';
 import { usingElapsedTime, formatElapsedTime } from '@/utils/time';
 
 async function runCLI() {
@@ -97,7 +97,7 @@ async function runCLI() {
             )}`;
 
           const hasWrittenToStdout = outputFilePath === undefined;
-          logWithPrefix(successMessage, { method: hasWrittenToStdout ? 'warn' : 'log' });
+          logger[hasWrittenToStdout ? 'warn' : 'info'](successMessage);
         },
       ),
     )

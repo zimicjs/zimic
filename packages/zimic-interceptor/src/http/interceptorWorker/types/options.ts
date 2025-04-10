@@ -5,6 +5,7 @@ export interface LocalHttpInterceptorWorkerOptions {
 export interface RemoteHttpInterceptorWorkerOptions {
   type: 'remote';
   serverURL: URL;
+  auth?: { token: string };
 }
 
 export type HttpInterceptorWorkerOptions = LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions;

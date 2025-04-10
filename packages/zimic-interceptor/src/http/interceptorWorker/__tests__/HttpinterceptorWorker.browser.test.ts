@@ -10,7 +10,7 @@ import { BrowserHttpWorker } from '../types/requests';
 import { declareDefaultHttpInterceptorWorkerTests } from './shared/default';
 import testMatrix from './shared/matrix';
 
-describe('HttpInterceptorWorker (browser)', () => {
+describe('HttpInterceptorWorker > Browser', () => {
   it('should throw an error if trying to start without a registered service worker', async () => {
     const interceptorWorker = createHttpInterceptorWorker({ type: 'local' });
 
@@ -30,13 +30,13 @@ describe('HttpInterceptorWorker (browser)', () => {
     const mswWorker = interceptorWorker.internalWorkerOrCreate as BrowserHttpWorker;
     vi.spyOn(mswWorker, 'start').mockRejectedValueOnce(unavailableMSWWorkerScriptError);
 
-    await usingIgnoredConsole(['error'], async (spies) => {
+    await usingIgnoredConsole(['error'], async (console) => {
       const interceptorStartPromise = interceptorWorker.start();
 
       const expectedError = new UnregisteredBrowserServiceWorkerError();
       await expect(interceptorStartPromise).rejects.toThrowError(expectedError);
 
-      expect(spies.error).toHaveBeenCalledTimes(0);
+      expect(console.error).toHaveBeenCalledTimes(0);
     });
 
     expect(interceptorWorker.platform).toBe<HttpInterceptorPlatform>('browser');

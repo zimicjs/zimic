@@ -2,68 +2,65 @@ import { JSONSerialized, JSONValue } from '@zimic/http';
 import { PossiblePromise } from '@zimic/utils/types';
 import type { WebSocket as ClientSocket } from 'isomorphic-ws';
 
-export namespace WebSocket {
-  export interface EventMessage<Data extends JSONValue.Loose = JSONValue> {
-    id: string;
-    channel: string;
-    data: Data;
-  }
+export interface WebSocketEventMessage<
+  Schema extends WebSocketSchema,
+  Channel extends WebSocketChannel<Schema> = WebSocketChannel<Schema>,
+> {
+  id: string;
+  channel: Channel;
+  data: Schema[Channel]['event'];
+}
 
-  export interface ReplyMessage<Data extends JSONValue.Loose = JSONValue> extends EventMessage<Data> {
-    requestId: string;
-  }
+export interface WebSocketReplyMessage<
+  Schema extends WebSocketSchema,
+  Channel extends WebSocketChannel<Schema> = WebSocketChannel<Schema>,
+> {
+  id: string;
+  requestId: string;
+  channel: Channel;
+  data: Schema[Channel]['reply'];
+}
 
-  export type Message<Data extends JSONValue.Loose = JSONValue> = EventMessage<Data> | ReplyMessage<Data>;
+export type WebSocketMessage<
+  Schema extends WebSocketSchema,
+  Channel extends WebSocketChannel<Schema> = WebSocketChannel<Schema>,
+> = WebSocketEventMessage<Schema, Channel> | WebSocketReplyMessage<Schema, Channel>;
 
-  interface ServiceSchemaDefinition {
-    [channel: string]: {
-      event?: JSONValue.Loose;
-      reply?: JSONValue.Loose;
-    };
-  }
+interface BaseWebSocketSchema {
+  [channel: string]: {
+    event?: JSONValue.Loose;
+    reply?: JSONValue.Loose;
+  };
+}
 
-  type ConvertToStrictServiceSchema<Schema extends ServiceSchemaDefinition> = {
+export type WebSocketSchema<Schema extends BaseWebSocketSchema = BaseWebSocketSchema> =
+  WebSocketSchema.ConvertToStrict<Schema>;
+
+export namespace WebSocketSchema {
+  export type ConvertToStrict<Schema extends BaseWebSocketSchema> = {
     [Channel in keyof Schema]: {
       [Key in keyof Schema[Channel]]: JSONSerialized<Schema[Channel][Key]>;
     };
   };
-
-  export type ServiceSchema<Schema extends ServiceSchemaDefinition = ServiceSchemaDefinition> =
-    ConvertToStrictServiceSchema<Schema>;
-
-  export type ServiceChannel<Schema extends ServiceSchema> = keyof Schema & string;
-
-  export type EventWithNoReplyServiceChannel<Schema extends ServiceSchema> = {
-    [Channel in ServiceChannel<Schema>]: Schema[Channel]['reply'] extends JSONValue ? never : Channel;
-  }[ServiceChannel<Schema>];
-
-  export type EventWithReplyServiceChannel<Schema extends ServiceSchema> = Exclude<
-    ServiceChannel<Schema>,
-    EventWithNoReplyServiceChannel<Schema>
-  >;
-
-  export type ServiceEventMessage<
-    Schema extends ServiceSchema,
-    Channel extends ServiceChannel<Schema> = ServiceChannel<Schema>,
-  > = EventMessage<Schema[Channel]['event']>;
-
-  export type ServiceReplyMessage<
-    Schema extends ServiceSchema,
-    Channel extends ServiceChannel<Schema> = ServiceChannel<Schema>,
-  > = ReplyMessage<Schema[Channel]['reply']>;
-
-  export type ServiceMessage<
-    Schema extends ServiceSchema,
-    Channel extends ServiceChannel<Schema> = ServiceChannel<Schema>,
-  > = ServiceEventMessage<Schema, Channel> | ServiceReplyMessage<Schema, Channel>;
-
-  export type EventMessageListener<Schema extends ServiceSchema, Channel extends ServiceChannel<Schema>> = (
-    message: ServiceEventMessage<Schema, Channel>,
-    socket: ClientSocket,
-  ) => PossiblePromise<ServiceReplyMessage<Schema, Channel>['data']>;
-
-  export type ReplyMessageListener<Schema extends ServiceSchema, Channel extends ServiceChannel<Schema>> = (
-    message: ServiceReplyMessage<Schema, Channel>,
-    socket: ClientSocket,
-  ) => PossiblePromise<void>;
 }
+
+export type WebSocketChannel<Schema extends WebSocketSchema> = keyof Schema & string;
+
+export type WebSocketChannelWithNoReply<Schema extends WebSocketSchema> = {
+  [Channel in WebSocketChannel<Schema>]: Schema[Channel]['reply'] extends JSONValue ? never : Channel;
+}[WebSocketChannel<Schema>];
+
+export type WebSocketChannelWithReply<Schema extends WebSocketSchema> = Exclude<
+  WebSocketChannel<Schema>,
+  WebSocketChannelWithNoReply<Schema>
+>;
+
+export type WebSocketEventMessageListener<Schema extends WebSocketSchema, Channel extends WebSocketChannel<Schema>> = (
+  message: WebSocketEventMessage<Schema, Channel>,
+  socket: ClientSocket,
+) => PossiblePromise<WebSocketReplyMessage<Schema, Channel>['data']>;
+
+export type WebSocketReplyMessageListener<Schema extends WebSocketSchema, Channel extends WebSocketChannel<Schema>> = (
+  message: WebSocketReplyMessage<Schema, Channel>,
+  socket: ClientSocket,
+) => PossiblePromise<void>;

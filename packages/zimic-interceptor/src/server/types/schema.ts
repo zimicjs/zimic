@@ -1,7 +1,7 @@
 import { HttpMethod } from '@zimic/http';
 
 import { SerializedHttpRequest, SerializedResponse } from '@/utils/fetch';
-import { WebSocket } from '@/webSocket/types';
+import { WebSocketSchema } from '@/webSocket/types';
 
 export interface HttpHandlerCommit {
   id: string;
@@ -9,13 +9,13 @@ export interface HttpHandlerCommit {
   method: HttpMethod;
 }
 
-export type InterceptorServerWebSocketSchema = WebSocket.ServiceSchema<{
-  'interceptors/workers/use/commit': {
+export type InterceptorServerWebSocketSchema = WebSocketSchema<{
+  'interceptors/workers/commit': {
     event: HttpHandlerCommit;
     reply: {};
   };
 
-  'interceptors/workers/use/reset': {
+  'interceptors/workers/reset': {
     event?: HttpHandlerCommit[];
     reply: {};
   };

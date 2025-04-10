@@ -1,6 +1,10 @@
 packages:
-  - 'apps/*'
-  - 'packages/*'
-  - 'examples'
-  - 'examples/*'
-  - 'docs/*'
+  - apps/*
+  - packages/*
+  - examples
+  - examples/*
+  - docs/*
+onlyBuiltDependencies:
+  - '@swc/core'
+  - esbuild
+  - msw

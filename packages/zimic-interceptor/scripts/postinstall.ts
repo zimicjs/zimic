@@ -1,5 +1,5 @@
 import { Override } from '@zimic/utils/types';
-import filesystem from 'fs/promises';
+import fs from 'fs';
 import type mswPackage from 'msw/package.json';
 import path from 'path';
 
@@ -11,7 +11,7 @@ export const MSW_PACKAGE_PATH = path.join(MSW_ROOT_DIRECTORY, 'package.json');
 export const MSW_BROWSER_DIRECTORY = path.join(MSW_ROOT_DIRECTORY, 'lib', 'browser');
 
 async function patchMSWExports() {
-  const mswPackageContentAsString = await filesystem.readFile(MSW_PACKAGE_PATH, 'utf-8');
+  const mswPackageContentAsString = await fs.promises.readFile(MSW_PACKAGE_PATH, 'utf-8');
   const mswPackageContent = JSON.parse(mswPackageContentAsString) as MSWPackage;
 
   const browserExports = mswPackageContent.exports['./browser'] as Override<
@@ -28,14 +28,14 @@ async function patchMSWExports() {
   nodeExports.browser = browserExports.browser;
 
   const patchedMSWPackageContentAsString = JSON.stringify(mswPackageContent, null, 2);
-  await filesystem.writeFile(MSW_PACKAGE_PATH, patchedMSWPackageContentAsString);
+  await fs.promises.writeFile(MSW_PACKAGE_PATH, patchedMSWPackageContentAsString);
 }
 
 // This is a temporary workaround. Once https://github.com/mswjs/msw/issues/2146 is fixed, we'll be able to remove it.
 async function patchMSWBrowserEntry() {
   for (const indexFileName of ['index.js', 'index.mjs']) {
     const mswBrowserPath = path.join(MSW_BROWSER_DIRECTORY, indexFileName);
-    const mswBrowserContent = await filesystem.readFile(mswBrowserPath, 'utf-8');
+    const mswBrowserContent = await fs.promises.readFile(mswBrowserPath, 'utf-8');
 
     const patchedMSWBrowserContent = mswBrowserContent.replace(
       `if (responseJson.type?.includes("opaque")) {
@@ -47,7 +47,7 @@ async function patchMSWBrowserEntry() {
     }`,
     );
 
-    await filesystem.writeFile(mswBrowserPath, patchedMSWBrowserContent);
+    await fs.promises.writeFile(mswBrowserPath, patchedMSWBrowserContent);
   }
 }
 

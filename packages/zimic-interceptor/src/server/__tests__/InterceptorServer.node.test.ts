@@ -166,19 +166,19 @@ describe('Interceptor server', () => {
     });
 
     it('should support changing the port after created', async () => {
-      server = createInternalInterceptorServer({ port: 3000 });
+      server = createInternalInterceptorServer({ port: 5002 });
 
       expect(server.isRunning).toBe(false);
       expect(server.hostname).toBe(DEFAULT_HOSTNAME);
-      expect(server.port).toBe(3000);
+      expect(server.port).toBe(5002);
 
       await server.start();
 
       expect(server.isRunning).toBe(true);
       expect(server.hostname).toBe(DEFAULT_HOSTNAME);
-      expect(server.port).toBe(3000);
+      expect(server.port).toBe(5002);
 
-      const newPort = 8080;
+      const newPort = 5003;
       expect(newPort).not.toBe(server.port);
 
       await server.stop();
@@ -197,19 +197,19 @@ describe('Interceptor server', () => {
     });
 
     it('should not support changing the port after created if the server is running', async () => {
-      server = createInternalInterceptorServer({ port: 3000 });
+      server = createInternalInterceptorServer({ port: 5004 });
 
       expect(server.isRunning).toBe(false);
       expect(server.hostname).toBe(DEFAULT_HOSTNAME);
-      expect(server.port).toBe(3000);
+      expect(server.port).toBe(5004);
 
       await server.start();
 
       expect(server.isRunning).toBe(true);
       expect(server.hostname).toBe(DEFAULT_HOSTNAME);
-      expect(server.port).toBe(3000);
+      expect(server.port).toBe(5004);
 
-      const newPort = 8080;
+      const newPort = 5005;
       expect(newPort).not.toBe(server.port);
 
       expect(server.isRunning).toBe(true);
@@ -218,7 +218,7 @@ describe('Interceptor server', () => {
         server!.port = newPort;
       }).toThrowError(new RunningInterceptorServerError('Did you forget to stop it before changing the port?'));
 
-      expect(server.port).toBe(3000);
+      expect(server.port).toBe(5004);
       expect(server.port).not.toBe(newPort);
     });
   });

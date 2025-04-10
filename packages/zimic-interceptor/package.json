@@ -98,7 +98,8 @@
     "msw": "2.7.3",
     "picocolors": "^1.1.1",
     "ws": "8.18.1",
-    "yargs": "17.7.2"
+    "yargs": "17.7.2",
+    "zod": "^3.24.2"
   },
   "optionalDependencies": {
     "bufferutil": "4.0.9"
