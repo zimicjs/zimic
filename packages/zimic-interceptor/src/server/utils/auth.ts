@@ -174,11 +174,10 @@ export async function readInterceptorTokenFromFile(
   return validation.data.token;
 }
 
-export async function createInterceptorToken(options: {
-  name?: string;
-  tokensDirectory: string;
-}): Promise<InterceptorToken> {
-  const { name, tokensDirectory } = options;
+export async function createInterceptorToken(
+  options: { name?: string; tokensDirectory?: string } = {},
+): Promise<InterceptorToken> {
+  const { name, tokensDirectory = DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY } = options;
 
   const tokensDirectoryExists = await pathExists(tokensDirectory);
 
@@ -226,14 +225,16 @@ export async function createInterceptorToken(options: {
   return token;
 }
 
-export async function listInterceptorTokens(options: { tokensDirectory: string }) {
-  const tokensDirectoryExists = await pathExists(options.tokensDirectory);
+export async function listInterceptorTokens(options: { tokensDirectory?: string } = {}) {
+  const { tokensDirectory = DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY } = options;
+
+  const tokensDirectoryExists = await pathExists(tokensDirectory);
 
   if (!tokensDirectoryExists) {
     return [];
   }
 
-  const files = await fs.promises.readdir(options.tokensDirectory);
+  const files = await fs.promises.readdir(tokensDirectory);
 
   const tokenReadPromises = files.map(async (file) => {
     if (!isValidInterceptorTokenId(file)) {
@@ -241,7 +242,7 @@ export async function listInterceptorTokens(options: { tokensDirectory: string }
     }
 
     const tokenId = file;
-    const token = await readInterceptorTokenFromFile(tokenId, options);
+    const token = await readInterceptorTokenFromFile(tokenId, { tokensDirectory });
     return token;
   });
 
@@ -288,14 +289,16 @@ export async function validateInterceptorToken(tokenValue: string, options: { to
   }
 }
 
-export async function removeInterceptorToken(tokenId: string, options: { tokensDirectory: string }) {
+export async function removeInterceptorToken(tokenId: string, options: { tokensDirectory?: string } = {}) {
+  const { tokensDirectory = DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY } = options;
+
   /* istanbul ignore if -- @preserve
    * At this point, we should have a valid tokenId. This is just a sanity check. */
   if (!isValidInterceptorTokenId(tokenId)) {
     throw new InvalidInterceptorTokenError(tokenId);
   }
 
-  const tokenFilePath = path.join(options.tokensDirectory, tokenId);
+  const tokenFilePath = path.join(tokensDirectory, tokenId);
 
   await fs.promises.rm(tokenFilePath, { force: true });
 }

@@ -49,7 +49,7 @@ describe('CLI > Server token list', () => {
   it('should list an empty table if no tokens exist', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'ls']);
 
-    const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const tokens = await listInterceptorTokens();
     expect(tokens).toHaveLength(0);
 
     await usingIgnoredConsole(['log'], async (console) => {
@@ -79,7 +79,7 @@ describe('CLI > Server token list', () => {
       expect(console.log).toHaveBeenCalledTimes(2);
     });
 
-    const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const tokens = await listInterceptorTokens();
     expect(tokens).toHaveLength(2);
 
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'ls']);
@@ -114,7 +114,7 @@ describe('CLI > Server token list', () => {
       expect(console.log).toHaveBeenCalledTimes(2);
     });
 
-    const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const tokens = await listInterceptorTokens();
     expect(tokens).toHaveLength(2);
 
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'ls']);
@@ -148,7 +148,7 @@ describe('CLI > Server token list', () => {
       expect(console.log).toHaveBeenCalledTimes(2);
     });
 
-    const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const tokens = await listInterceptorTokens();
     expect(tokens).toHaveLength(2);
 
     const invalidTokenFileContent = JSON.stringify({});
@@ -254,7 +254,7 @@ describe('CLI > Server token list', () => {
     it('should have `list` as a command alias', async () => {
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'list']);
 
-      const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+      const tokens = await listInterceptorTokens();
       expect(tokens).toHaveLength(0);
 
       await usingIgnoredConsole(['log'], async (console) => {

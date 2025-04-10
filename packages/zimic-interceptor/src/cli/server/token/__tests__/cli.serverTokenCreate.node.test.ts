@@ -100,7 +100,7 @@ describe('CLI > Server token create', () => {
     const tokensDirectoryStats = await fs.promises.stat(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
     expect(tokensDirectoryStats.mode & 0o777).toBe(0o700);
 
-    const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const tokens = await listInterceptorTokens();
     expect(tokens).toHaveLength(1);
 
     expect(tokens[0]).toEqual<PersistedInterceptorToken>({
@@ -208,7 +208,7 @@ describe('CLI > Server token create', () => {
         expect(console.log).toHaveBeenCalledTimes(3);
       });
 
-      const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+      const tokens = await listInterceptorTokens();
       expect(tokens).toHaveLength(3);
     });
 
@@ -266,7 +266,7 @@ describe('CLI > Server token create', () => {
         ]);
       });
 
-      const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+      const tokens = await listInterceptorTokens();
       expect(tokens).toHaveLength(1);
 
       expect(tokens[0].name).toBe(undefined);
@@ -301,7 +301,7 @@ describe('CLI > Server token create', () => {
         ]);
       });
 
-      const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+      const tokens = await listInterceptorTokens();
       expect(tokens).toHaveLength(1);
 
       expect(tokens[0].name).toBe(customTokenName);
