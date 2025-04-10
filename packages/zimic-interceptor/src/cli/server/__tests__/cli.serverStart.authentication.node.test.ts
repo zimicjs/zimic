@@ -128,9 +128,9 @@ describe('CLI > Server start > Authentication', () => {
       DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     ]);
 
-    const token = await createInterceptorToken({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const token = await createInterceptorToken();
 
-    const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const tokens = await listInterceptorTokens();
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).toBe(token.id);
 
@@ -173,10 +173,10 @@ describe('CLI > Server start > Authentication', () => {
       DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     ]);
 
-    const token = await createInterceptorToken({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
-    const otherToken = await createInterceptorToken({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const token = await createInterceptorToken();
+    const otherToken = await createInterceptorToken();
 
-    const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const tokens = await listInterceptorTokens();
     expect(tokens).toHaveLength(2);
     expect(tokens[0].id).toBe(token.id);
     expect(tokens[1].id).toBe(otherToken.id);
@@ -211,7 +211,7 @@ describe('CLI > Server start > Authentication', () => {
         await interceptor.stop();
         expect(interceptor.isRunning).toBe(false);
 
-        await removeInterceptorToken(token.id, { tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+        await removeInterceptorToken(token.id);
 
         await usingIgnoredConsole(['error'], async (console) => {
           await expect(interceptor.start()).rejects.toThrowError(UnauthorizedWebSocketConnectionError);
@@ -257,11 +257,9 @@ describe('CLI > Server start > Authentication', () => {
         DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
       ]);
 
-      const token = await createInterceptorToken({
-        tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
-      });
+      const token = await createInterceptorToken();
 
-      const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+      const tokens = await listInterceptorTokens();
       expect(tokens).toHaveLength(1);
       expect(tokens[0].id).toBe(token.id);
 
@@ -312,9 +310,9 @@ describe('CLI > Server start > Authentication', () => {
       DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     ]);
 
-    const token = await createInterceptorToken({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const token = await createInterceptorToken();
 
-    const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const tokens = await listInterceptorTokens();
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).toBe(token.id);
 
@@ -367,10 +365,10 @@ describe('CLI > Server start > Authentication', () => {
       DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     ]);
 
-    const token = await createInterceptorToken({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
-    const otherToken = await createInterceptorToken({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const token = await createInterceptorToken();
+    const otherToken = await createInterceptorToken();
 
-    const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const tokens = await listInterceptorTokens();
     expect(tokens).toHaveLength(2);
     expect(tokens[0].id).toBe(token.id);
     expect(tokens[1].id).toBe(otherToken.id);
@@ -420,9 +418,9 @@ describe('CLI > Server start > Authentication', () => {
       DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     ]);
 
-    const token = await createInterceptorToken({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const token = await createInterceptorToken();
 
-    const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const tokens = await listInterceptorTokens();
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).toBe(token.id);
 
@@ -473,9 +471,9 @@ describe('CLI > Server start > Authentication', () => {
       DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     ]);
 
-    const token = await createInterceptorToken({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const token = await createInterceptorToken();
 
-    const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const tokens = await listInterceptorTokens();
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).toBe(token.id);
 
@@ -526,9 +524,9 @@ describe('CLI > Server start > Authentication', () => {
       DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     ]);
 
-    const token = await createInterceptorToken({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const token = await createInterceptorToken();
 
-    const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const tokens = await listInterceptorTokens();
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).toBe(token.id);
 
@@ -579,9 +577,9 @@ describe('CLI > Server start > Authentication', () => {
       DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     ]);
 
-    const token = await createInterceptorToken({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const token = await createInterceptorToken();
 
-    let tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    let tokens = await listInterceptorTokens();
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).toBe(token.id);
 
@@ -613,9 +611,9 @@ describe('CLI > Server start > Authentication', () => {
       },
     );
 
-    await removeInterceptorToken(token.id, { tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    await removeInterceptorToken(token.id);
 
-    tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    tokens = await listInterceptorTokens();
     expect(tokens).toHaveLength(0);
 
     const interceptor = createHttpInterceptor<{

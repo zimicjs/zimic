@@ -63,7 +63,7 @@ describe('CLI > Server token remove', () => {
       expect(console.log).toHaveBeenCalledTimes(2);
     });
 
-    const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const tokens = await listInterceptorTokens();
     expect(tokens).toHaveLength(2);
 
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'rm', tokens[0].id]);
@@ -83,7 +83,7 @@ describe('CLI > Server token remove', () => {
       ]);
     });
 
-    const newTokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const newTokens = await listInterceptorTokens();
     expect(newTokens).toEqual([tokens[1]]);
   });
 
@@ -96,7 +96,7 @@ describe('CLI > Server token remove', () => {
       expect(console.log).toHaveBeenCalledTimes(1);
     });
 
-    const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const tokens = await listInterceptorTokens();
     expect(tokens).toHaveLength(1);
 
     const tokenId = createInterceptorTokenId();
@@ -124,7 +124,7 @@ describe('CLI > Server token remove', () => {
       expect(console.log).toHaveBeenCalledTimes(1);
     });
 
-    const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    const tokens = await listInterceptorTokens();
     expect(tokens).toHaveLength(1);
 
     const invalidTokenId = 'invalid';
@@ -196,7 +196,7 @@ describe('CLI > Server token remove', () => {
     });
 
     it('should return an error if the tokens directory was not found', async () => {
-      const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+      const tokens = await listInterceptorTokens();
       expect(tokens).toHaveLength(0);
 
       const tokenId = createInterceptorTokenId();
@@ -228,7 +228,7 @@ describe('CLI > Server token remove', () => {
         expect(console.log).toHaveBeenCalledTimes(1);
       });
 
-      const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+      const tokens = await listInterceptorTokens();
       expect(tokens).toHaveLength(1);
 
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'rm', tokens[0].id]);
@@ -248,7 +248,7 @@ describe('CLI > Server token remove', () => {
         ]);
       });
 
-      const newTokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+      const newTokens = await listInterceptorTokens();
       expect(newTokens).toHaveLength(0);
     });
 
@@ -262,7 +262,7 @@ describe('CLI > Server token remove', () => {
         expect(console.log).toHaveBeenCalledTimes(1);
       });
 
-      const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+      const tokens = await listInterceptorTokens();
       expect(tokens).toHaveLength(1);
       expect(tokens[0].name).toEqual(customTokenName);
 
@@ -283,7 +283,7 @@ describe('CLI > Server token remove', () => {
         ]);
       });
 
-      const newTokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+      const newTokens = await listInterceptorTokens();
       expect(newTokens).toHaveLength(0);
     });
   });
@@ -299,7 +299,7 @@ describe('CLI > Server token remove', () => {
         expect(console.log).toHaveBeenCalledTimes(2);
       });
 
-      const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+      const tokens = await listInterceptorTokens();
       expect(tokens).toHaveLength(2);
 
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'remove', tokens[0].id]);
@@ -319,7 +319,7 @@ describe('CLI > Server token remove', () => {
         ]);
       });
 
-      const newTokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+      const newTokens = await listInterceptorTokens();
       expect(newTokens).toEqual([tokens[1]]);
     });
   });
