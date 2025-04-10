@@ -48,11 +48,6 @@ export type { UnhandledHttpInterceptorRequest } from './interceptor/types/reques
 
 export type { InferHttpInterceptorSchema } from './interceptor/types/schema';
 
-export type {
-  LocalHttpInterceptor,
-  RemoteHttpInterceptor,
-  RemoteHttpInterceptorAuth,
-  HttpInterceptor,
-} from './interceptor/types/public';
+export type { LocalHttpInterceptor, RemoteHttpInterceptor, HttpInterceptor } from './interceptor/types/public';
 
 export { createHttpInterceptor } from './interceptor/factory';

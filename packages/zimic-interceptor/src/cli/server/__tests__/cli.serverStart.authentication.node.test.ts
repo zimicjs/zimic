@@ -1,9 +1,8 @@
 import color from 'picocolors';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { NotRunningHttpInterceptorError } from '@/http';
+import { NotRunningHttpInterceptorError, RemoteHttpInterceptorOptions } from '@/http';
 import { createHttpInterceptor } from '@/http/interceptor/factory';
-import { RemoteHttpInterceptorAuth } from '@/http/interceptor/types/public';
 import InvalidInterceptorTokenValueError from '@/server/errors/InvalidInterceptorTokenValueError';
 import {
   createInterceptorToken,
@@ -163,7 +162,7 @@ describe('CLI > Server start > Authentication', () => {
     );
   });
 
-  it('should allow an authenticated interceptor connection if using a token directory and multiple valid tokens', async () => {
+  it('should allow an authenticated interceptor connection if using a token directory and changing valid tokens', async () => {
     processArgvSpy.mockReturnValue([
       'node',
       './dist/cli.js',
@@ -200,7 +199,7 @@ describe('CLI > Server start > Authentication', () => {
         auth: { token: token.value },
       },
       async (interceptor) => {
-        expect(interceptor.auth).toEqual<RemoteHttpInterceptorAuth>({ token: token.value });
+        expect(interceptor.auth).toEqual<RemoteHttpInterceptorOptions['auth']>({ token: token.value });
         expect(interceptor.isRunning).toBe(true);
 
         await interceptor.get('/users').respond({ status: 204 });
@@ -224,7 +223,7 @@ describe('CLI > Server start > Authentication', () => {
         });
 
         interceptor.auth = { token: otherToken.value };
-        expect(interceptor.auth).toEqual<RemoteHttpInterceptorAuth>({ token: otherToken.value });
+        expect(interceptor.auth).toEqual<RemoteHttpInterceptorOptions['auth']>({ token: otherToken.value });
 
         await interceptor.start();
         expect(interceptor.isRunning).toBe(true);

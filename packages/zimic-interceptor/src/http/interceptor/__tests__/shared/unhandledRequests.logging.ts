@@ -123,10 +123,10 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             async (interceptor) => {
               expect(interceptor.onUnhandledRequest).toBe(onUnhandledRequest.bypass);
 
-              const handler = await promiseIfRemote(
-                interceptor[lowerMethod]('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
-                interceptor,
-              );
+              const handler = interceptor[lowerMethod]('/users').respond({
+                status: 200,
+                headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+              });
               expect(handler).toBeInstanceOf(Handler);
 
               expect(handler.requests).toHaveLength(0);
@@ -143,7 +143,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 expect(console.warn).toHaveBeenCalledTimes(0);
                 expect(console.error).toHaveBeenCalledTimes(0);
 
-                await promiseIfRemote(handler.clear(), interceptor);
+                handler.clear();
 
                 const request = new Request(joinURL(baseURL, '/users'), { method });
                 const responsePromise = fetch(request);
@@ -169,10 +169,10 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             async (interceptor) => {
               expect(interceptor.onUnhandledRequest).toBe(onUnhandledRequest.bypass);
 
-              const handler = await promiseIfRemote(
-                interceptor[lowerMethod]('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
-                interceptor,
-              );
+              const handler = interceptor[lowerMethod]('/users').respond({
+                status: 200,
+                headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+              });
               expect(handler).toBeInstanceOf(Handler);
 
               expect(handler.requests).toHaveLength(0);
@@ -193,7 +193,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 expect(console.warn).toHaveBeenCalledTimes(0);
                 expect(console.error).toHaveBeenCalledTimes(0);
 
-                await promiseIfRemote(handler.clear(), interceptor);
+                handler.clear();
 
                 const request = new Request(joinURL(baseURL, '/users'), {
                   method,
@@ -223,12 +223,9 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             async (interceptor) => {
               expect(interceptor.onUnhandledRequest).toBe(onUnhandledRequest.bypass);
 
-              const handler = await promiseIfRemote(
-                interceptor[lowerMethod]('/users')
-                  .with({ headers: { 'x-value': '1' } })
-                  .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
-                interceptor,
-              );
+              const handler = interceptor[lowerMethod]('/users')
+                .with({ headers: { 'x-value': '1' } })
+                .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS });
               expect(handler).toBeInstanceOf(Handler);
 
               expect(handler.requests).toHaveLength(0);
@@ -270,10 +267,10 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             async (interceptor) => {
               expect(interceptor.onUnhandledRequest).toBe(onUnhandledRequest.bypass);
 
-              const handler = await promiseIfRemote(
-                interceptor[lowerMethod]('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
-                interceptor,
-              );
+              const handler = interceptor[lowerMethod]('/users').respond({
+                status: 200,
+                headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+              });
               expect(handler).toBeInstanceOf(Handler);
 
               expect(handler.requests).toHaveLength(0);
@@ -312,10 +309,10 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             async (interceptor) => {
               expect(interceptor.onUnhandledRequest).toBe(onUnhandledRequest.bypass);
 
-              const handler = await promiseIfRemote(
-                interceptor[lowerMethod]('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
-                interceptor,
-              );
+              const handler = interceptor[lowerMethod]('/users').respond({
+                status: 200,
+                headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+              });
               expect(handler).toBeInstanceOf(Handler);
 
               expect(handler.requests).toHaveLength(0);
@@ -666,12 +663,9 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               async (interceptor) => {
                 expect(interceptor.onUnhandledRequest).toBe(onUnhandledRequest.bypass);
 
-                const handler = await promiseIfRemote(
-                  interceptor[lowerMethod]('/users')
-                    .with({ searchParams: { value: '1' } })
-                    .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
-                  interceptor,
-                );
+                const handler = interceptor[lowerMethod]('/users')
+                  .with({ searchParams: { value: '1' } })
+                  .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS });
                 expect(handler).toBeInstanceOf(Handler);
 
                 expect(handler.requests).toHaveLength(0);

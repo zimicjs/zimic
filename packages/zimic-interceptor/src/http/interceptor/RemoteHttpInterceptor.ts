@@ -6,17 +6,13 @@ import HttpInterceptorClient from './HttpInterceptorClient';
 import HttpInterceptorStore from './HttpInterceptorStore';
 import { AsyncHttpInterceptorMethodHandler } from './types/handlers';
 import { RemoteHttpInterceptorOptions, UnhandledRequestStrategy } from './types/options';
-import {
-  HttpInterceptorRequestSaving,
-  RemoteHttpInterceptor as PublicRemoteHttpInterceptor,
-  RemoteHttpInterceptorAuth,
-} from './types/public';
+import { HttpInterceptorRequestSaving, RemoteHttpInterceptor as PublicRemoteHttpInterceptor } from './types/public';
 
 class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHttpInterceptor<Schema> {
   private store = new HttpInterceptorStore();
   client: HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>;
 
-  private _auth?: RemoteHttpInterceptorAuth;
+  private _auth?: RemoteHttpInterceptorOptions['auth'];
 
   constructor(options: RemoteHttpInterceptorOptions) {
     this._auth = options.auth;
@@ -65,7 +61,7 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
     return this._auth;
   }
 
-  set auth(auth: RemoteHttpInterceptorAuth | undefined) {
+  set auth(auth: RemoteHttpInterceptorOptions['auth'] | undefined) {
     const cannotChangeAuthWhileRunningMessage =
       'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?';
 
@@ -78,7 +74,7 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
       return;
     }
 
-    this._auth = new Proxy<RemoteHttpInterceptorAuth>(auth, {
+    this._auth = new Proxy(auth, {
       set: (target, property, value) => {
         if (this.isRunning) {
           throw new RunningHttpInterceptorError(cannotChangeAuthWhileRunningMessage);

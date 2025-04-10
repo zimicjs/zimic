@@ -9,10 +9,10 @@ import { createHttpInterceptor } from '../../factory';
 import HttpInterceptorStore from '../../HttpInterceptorStore';
 import LocalHttpInterceptor from '../../LocalHttpInterceptor';
 import RemoteHttpInterceptor from '../../RemoteHttpInterceptor';
+import { RemoteHttpInterceptorOptions } from '../../types/options';
 import {
   LocalHttpInterceptor as PublicLocalHttpInterceptor,
   RemoteHttpInterceptor as PublicRemoteHttpInterceptor,
-  RemoteHttpInterceptorAuth,
 } from '../../types/public';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
@@ -246,18 +246,18 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
 
   if (type === 'remote') {
     describe('Authentication', () => {
-      it('should support changing the authentication parameters after created', () => {
+      it('should support changing the authentication options after created', () => {
         const interceptor = createHttpInterceptor<{}>({ type, baseURL });
         expect(interceptor.isRunning).toBe(false);
 
         expect(interceptor.auth).toBe(undefined);
 
-        const auth: RemoteHttpInterceptorAuth = { token: 'token' };
+        const auth: RemoteHttpInterceptorOptions['auth'] = { token: 'token' };
 
         interceptor.auth = auth;
         expect(interceptor.auth).toEqual(auth);
 
-        const otherAuth: RemoteHttpInterceptorAuth = { token: 'other-token' };
+        const otherAuth: RemoteHttpInterceptorOptions['auth'] = { token: 'other-token' };
         expect(otherAuth).not.toEqual(auth);
 
         interceptor.auth.token = otherAuth.token;
@@ -268,7 +268,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
         expect(interceptor.auth).toBe(undefined);
       });
 
-      it('should not support changing the authentication parameters while running', async () => {
+      it('should not support changing the authentication options while running', async () => {
         await usingHttpInterceptor<{}>({ type, baseURL }, async (interceptor) => {
           expect(interceptor.isRunning).toBe(true);
 
@@ -287,14 +287,14 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
           await interceptor.stop();
           expect(interceptor.isRunning).toBe(false);
 
-          const auth: RemoteHttpInterceptorAuth = { token: 'token' };
+          const auth: RemoteHttpInterceptorOptions['auth'] = { token: 'token' };
 
           interceptor.auth = auth;
           expect(interceptor.auth).toEqual(auth);
 
           await interceptor.start();
 
-          const otherAuth: RemoteHttpInterceptorAuth = { token: 'other-token' };
+          const otherAuth: RemoteHttpInterceptorOptions['auth'] = { token: 'other-token' };
           expect(otherAuth).not.toEqual(auth);
 
           expect(() => {
