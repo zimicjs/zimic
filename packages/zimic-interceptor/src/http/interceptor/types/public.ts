@@ -353,6 +353,21 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
 }
 
 /**
+ * Parameters to authenticate the interceptor when connecting to an interceptor server. This is required if the
+ * interceptor server was started with the `--tokens-dir` option.
+ *
+ * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication Interceptor server authentication}
+ */
+export interface RemoteHttpInterceptorAuth {
+  /**
+   * The authentication token to use.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication Interceptor server authentication}
+   */
+  token: string;
+}
+
+/**
  * A remote interceptor to handle HTTP requests and return mock responses. The methods, paths, status codes, parameters,
  * and responses are statically-typed based on the provided service schema.
  *
@@ -366,6 +381,14 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
 export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpInterceptor<Schema> {
   /** @readonly */
   get type(): 'remote';
+
+  /**
+   * Parameters to authenticate the interceptor when connecting to an interceptor server. This is required if the
+   * interceptor server was started with the `--tokens-dir` option.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication Interceptor server authentication}
+   */
+  auth: RemoteHttpInterceptorAuth | undefined;
 
   /**
    * The strategy to use for unhandled requests. If a request starts with the base URL of the interceptor, but no

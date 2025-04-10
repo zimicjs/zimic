@@ -7,7 +7,7 @@
  */
 class RunningHttpInterceptorError extends Error {
   constructor(additionalMessage: string) {
-    super(`The interceptor is running.${additionalMessage}`);
+    super(`The interceptor is running. ${additionalMessage}`);
     this.name = 'RunningHttpInterceptorError';
   }
 }

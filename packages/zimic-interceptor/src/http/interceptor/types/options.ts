@@ -1,6 +1,6 @@
 import { PossiblePromise } from '@zimic/utils/types';
 
-import { HttpInterceptorRequestSaving } from './public';
+import { HttpInterceptorRequestSaving, RemoteHttpInterceptorAuth } from './public';
 import { UnhandledHttpInterceptorRequest } from './requests';
 
 /**
@@ -161,19 +161,12 @@ export interface RemoteHttpInterceptorOptions extends SharedHttpInterceptorOptio
   type: 'remote';
 
   /**
-   * Options to authenticate the interceptor when connecting to an interceptor server. This is required if the
+   * Parameters to authenticate the interceptor when connecting to an interceptor server. This is required if the
    * interceptor server was started with the `--tokens-dir` option.
    *
    * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication Interceptor server authentication}
    */
-  auth?: {
-    /**
-     * The authentication token to use.
-     *
-     * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication Interceptor server authentication}
-     */
-    token: string;
-  };
+  auth?: RemoteHttpInterceptorAuth;
 
   /**
    * The strategy to use for unhandled requests. If a request starts with the base URL of the interceptor, but no

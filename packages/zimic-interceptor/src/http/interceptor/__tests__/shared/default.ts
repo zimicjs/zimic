@@ -3,6 +3,7 @@ import { afterEach, beforeAll, describe, expect, expectTypeOf, it } from 'vitest
 import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import NotRunningHttpInterceptorError from '../../errors/NotRunningHttpInterceptorError';
+import RunningHttpInterceptorError from '../../errors/RunningHttpInterceptorError';
 import UnknownHttpInterceptorTypeError from '../../errors/UnknownHttpInterceptorTypeError';
 import { createHttpInterceptor } from '../../factory';
 import HttpInterceptorStore from '../../HttpInterceptorStore';
@@ -11,6 +12,7 @@ import RemoteHttpInterceptor from '../../RemoteHttpInterceptor';
 import {
   LocalHttpInterceptor as PublicLocalHttpInterceptor,
   RemoteHttpInterceptor as PublicRemoteHttpInterceptor,
+  RemoteHttpInterceptorAuth,
 } from '../../types/public';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
@@ -42,27 +44,31 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
   });
 
   describe('Types', () => {
-    it.each(['local' as const, undefined])('should create a local interceptor (type: %s)', (type) => {
-      const interceptor = createHttpInterceptor<{}>({
-        type,
-        baseURL: 'http://localhost:3000',
+    if (type === 'local') {
+      it.each(['local' as const, undefined])('should create a local interceptor (type: %s)', (type) => {
+        const interceptor = createHttpInterceptor<{}>({
+          type,
+          baseURL,
+        });
+
+        expectTypeOf(interceptor).toEqualTypeOf<PublicLocalHttpInterceptor<{}>>();
+        expect(interceptor.type).toBe('local');
+        expect(interceptor).toBeInstanceOf(LocalHttpInterceptor);
       });
+    }
 
-      expectTypeOf(interceptor).toEqualTypeOf<PublicLocalHttpInterceptor<{}>>();
-      expect(interceptor.type).toBe('local');
-      expect(interceptor).toBeInstanceOf(LocalHttpInterceptor);
-    });
+    if (type === 'remote') {
+      it.each(['remote' as const])('should create a remote interceptor (type: %s)', (type) => {
+        const interceptor = createHttpInterceptor<{}>({
+          type,
+          baseURL,
+        });
 
-    it.each(['remote' as const])('should create a remote interceptor (type: %s)', (type) => {
-      const interceptor = createHttpInterceptor<{}>({
-        type,
-        baseURL: 'http://localhost:3000',
+        expectTypeOf(interceptor).toEqualTypeOf<PublicRemoteHttpInterceptor<{}>>();
+        expect(interceptor.type).toBe('remote');
+        expect(interceptor).toBeInstanceOf(RemoteHttpInterceptor);
       });
-
-      expectTypeOf(interceptor).toEqualTypeOf<PublicRemoteHttpInterceptor<{}>>();
-      expect(interceptor.type).toBe('remote');
-      expect(interceptor).toBeInstanceOf(RemoteHttpInterceptor);
-    });
+    }
 
     it('should throw an error if created with an unknown type', () => {
       // @ts-expect-error Forcing an unknown type.
@@ -71,7 +77,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
       expect(() => {
         createInternalHttpInterceptor({
           type: unknownType, // eslint-disable-line @typescript-eslint/no-unsafe-assignment
-          baseURL: 'http://localhost:3000',
+          baseURL,
         });
       }).toThrowError(new UnknownHttpInterceptorTypeError(unknownType));
     });
@@ -230,12 +236,78 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
   });
 
   it('should throw an error when trying to be cleared if not running', async () => {
-    await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (interceptor) => {
-      expect(interceptor.isRunning).toBe(false);
+    const interceptor = createHttpInterceptor<{}>(getInterceptorOptions());
+    expect(interceptor.isRunning).toBe(false);
 
-      await expect(async () => {
-        await interceptor.clear();
-      }).rejects.toThrowError(new NotRunningHttpInterceptorError());
-    });
+    await expect(async () => {
+      await interceptor.clear();
+    }).rejects.toThrowError(new NotRunningHttpInterceptorError());
   });
+
+  if (type === 'remote') {
+    describe('Authentication', () => {
+      it('should support changing the authentication parameters after created', () => {
+        const interceptor = createHttpInterceptor<{}>({ type, baseURL });
+        expect(interceptor.isRunning).toBe(false);
+
+        expect(interceptor.auth).toBe(undefined);
+
+        const auth: RemoteHttpInterceptorAuth = { token: 'token' };
+
+        interceptor.auth = auth;
+        expect(interceptor.auth).toEqual(auth);
+
+        const otherAuth: RemoteHttpInterceptorAuth = { token: 'other-token' };
+        expect(otherAuth).not.toEqual(auth);
+
+        interceptor.auth.token = otherAuth.token;
+        expect(interceptor.auth).toEqual(otherAuth);
+
+        interceptor.auth = undefined;
+
+        expect(interceptor.auth).toBe(undefined);
+      });
+
+      it('should not support changing the authentication parameters while running', async () => {
+        await usingHttpInterceptor<{}>({ type, baseURL }, async (interceptor) => {
+          expect(interceptor.isRunning).toBe(true);
+
+          expect(interceptor.auth).toBe(undefined);
+
+          expect(() => {
+            interceptor.auth = { token: 'token' };
+          }).toThrowError(
+            new RunningHttpInterceptorError(
+              'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',
+            ),
+          );
+
+          expect(interceptor.auth).toBe(undefined);
+
+          await interceptor.stop();
+          expect(interceptor.isRunning).toBe(false);
+
+          const auth: RemoteHttpInterceptorAuth = { token: 'token' };
+
+          interceptor.auth = auth;
+          expect(interceptor.auth).toEqual(auth);
+
+          await interceptor.start();
+
+          const otherAuth: RemoteHttpInterceptorAuth = { token: 'other-token' };
+          expect(otherAuth).not.toEqual(auth);
+
+          expect(() => {
+            interceptor.auth!.token = otherAuth.token;
+          }).toThrowError(
+            new RunningHttpInterceptorError(
+              'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',
+            ),
+          );
+
+          expect(interceptor.auth).toEqual(auth);
+        });
+      });
+    });
+  }
 }
