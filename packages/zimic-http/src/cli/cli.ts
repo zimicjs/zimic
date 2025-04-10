@@ -15,7 +15,7 @@ async function runCLI() {
     .showHelpOnFail(false)
     .strict()
 
-    .command('typegen', 'Generate types from schema sources', (yargs) =>
+    .command('typegen', 'Generate types from schema sources.', (yargs) =>
       yargs.demandCommand().command(
         'openapi <input>',
         'Generate types from an OpenAPI schema.',
