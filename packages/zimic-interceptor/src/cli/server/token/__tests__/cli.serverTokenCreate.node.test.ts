@@ -83,8 +83,8 @@ describe('CLI > Server token create', () => {
         '',
         'Store this token securely. It cannot be retrieved later.',
         '',
-        `To enable authentication in your interceptor server, use the ${color.cyan('--tokens-dir')} option as ` +
-          'shown below. Only remote interceptors bearing a valid token will be allowed to connect.',
+        `To enable authentication in your interceptor server, use the ${color.cyan('--tokens-dir')} option. Only ` +
+          'remote interceptors bearing a valid token will be allowed to connect.',
         '',
         `${color.dim('$')} zimic-interceptor server start ${color.cyan(
           '--tokens-dir',
@@ -257,8 +257,8 @@ describe('CLI > Server token create', () => {
           '',
           'Store this token securely. It cannot be retrieved later.',
           '',
-          `To enable authentication in your interceptor server, use the ${color.cyan('--tokens-dir')} option as ` +
-            'shown below. Only remote interceptors bearing a valid token will be allowed to connect.',
+          `To enable authentication in your interceptor server, use the ${color.cyan('--tokens-dir')} option. Only ` +
+            'remote interceptors bearing a valid token will be allowed to connect.',
           '',
           expect.stringMatching('zimic-interceptor server start'),
           '',
@@ -292,8 +292,8 @@ describe('CLI > Server token create', () => {
           '',
           'Store this token securely. It cannot be retrieved later.',
           '',
-          `To enable authentication in your interceptor server, use the ${color.cyan('--tokens-dir')} option as ` +
-            'shown below. Only remote interceptors bearing a valid token will be allowed to connect.',
+          `To enable authentication in your interceptor server, use the ${color.cyan('--tokens-dir')} option. Only ` +
+            'remote interceptors bearing a valid token will be allowed to connect.',
           '',
           expect.stringMatching('zimic-interceptor server start'),
           '',
