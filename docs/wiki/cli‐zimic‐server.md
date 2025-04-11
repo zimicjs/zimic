@@ -3,6 +3,11 @@
 ## Contents <!-- omit from toc -->
 
 - [`zimic-interceptor server start`](#zimic-interceptor-server-start)
+- [`zimic-interceptor server token`](#zimic-interceptor-server-token)
+  - [`zimic-interceptor server token create`](#zimic-interceptor-server-token-create)
+  - [`zimic-interceptor server token ls`](#zimic-interceptor-server-token-ls)
+  - [`zimic-interceptor server token rm`](#zimic-interceptor-server-token-rm)
+- [Authentication](#authentication)
 - [Programmatic usage](#programmatic-usage)
 
 ---
@@ -75,6 +80,11 @@ zimic-interceptor server start --port 4000 --ephemeral -- npm run test
 The command after `--` will be executed when the server is ready. The flag `--ephemeral` indicates that the server
 should automatically stop after the command finishes.
 
+> [!IMPORTANT]
+>
+> If you are exposing the server publicly, consider enabling authentication with the `--tokens-dir` option. See
+> [Authentication](#authentication) for more details.
+
 ## `zimic-interceptor server token`
 
 Manage remote interceptor authentication tokens.
@@ -115,9 +125,10 @@ Options:
                           [string] [default: ".zimic/interceptor/server/tokens"]
 ```
 
-### `zimic-interceptor server token ls`
+### `zimic-interceptor server token rm`
 
-Remove an interceptor token.
+Remove (invalidate) an interceptor token. Existing connections will not be affected, so restarting the server is
+recommended to disconnect all interceptors.
 
 ```
 zimic-interceptor server token rm <tokenId>
@@ -129,6 +140,45 @@ Options:
   -t, --tokens-dir  The directory where the interceptor tokens are saved.
                           [string] [default: ".zimic/interceptor/server/tokens"]
 ```
+
+## Authentication
+
+Interceptor servers can be configured to require interceptor authentication. This is **strongly recommended** if you are
+exposing the server **publicly**. Without authentication, the server is unprotected and any interceptor can connect to
+it and override the responses of any request.
+
+To create an interceptor authentication token, use:
+
+```bash
+zimic-interceptor server token create --name <token-name>
+```
+
+Then, start the server using the `--tokens-dir` option, which points to the directory where the tokens are saved. The
+server will only accept remote interceptors that have a valid token.
+
+```bash
+zimic-interceptor server start --port 4000 --tokens-dir .zimic/interceptor/server/tokens
+```
+
+You can list the authorized tokens with [`zimic-interceptor server token ls`](#zimic-interceptor-server-token-ls) and
+remove (invalidate) them with [`zimic-interceptor server token rm`](#zimic-interceptor-server-token-rm).
+
+After the server is running, remote interceptors can connect to it passing the token in the `auth.token` option.
+
+```ts
+import { createHttpInterceptor } from '@zimic/interceptor/http';
+
+const interceptor = createHttpInterceptor<Schema>({
+  type: 'remote',
+  baseURL: 'http://localhost:3000',
+  auth: { token: '<token>' },
+});
+
+await interceptor.start();
+```
+
+Replace `<token>` with the token you created earlier. Refer to
+[remote interceptor authentication](api‐zimic‐interceptor‐http#remote-interceptor-authentication) for more information.
 
 ## Programmatic usage
 
