@@ -150,7 +150,8 @@ async function runCLI() {
 
             .command(
               ['rm <tokenId>', 'remove <tokenId>'],
-              'Remove an interceptor token.',
+              'Remove (invalidate) an interceptor token. Existing connections will not be affected, so restarting the ' +
+                'server is recommended to disconnect all interceptors.',
               (yargs) =>
                 yargs
                   .positional('tokenId', {

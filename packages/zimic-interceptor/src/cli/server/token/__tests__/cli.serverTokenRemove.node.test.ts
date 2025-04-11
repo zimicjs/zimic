@@ -20,7 +20,8 @@ describe('CLI > Server token remove', () => {
   const serverStartHelpOutput = [
     'zimic-interceptor server token rm <tokenId>',
     '',
-    'Remove an interceptor token.',
+    'Remove (invalidate) an interceptor token. Existing connections will not be affec',
+    'ted, so restarting the server is recommended to disconnect all interceptors.',
     '',
     'Positionals:',
     '  tokenId  The identifier of the token to remove.            [string] [required]',

@@ -22,12 +22,12 @@ export async function createInterceptorServerToken({
       '',
       'Store this token securely. It cannot be retrieved later.',
       '',
-      `To enable authentication in your interceptor server, use the ${color.cyan('--tokens-dir')} option as shown ` +
-        'below. Only remote interceptors bearing a valid token will be allowed to connect.',
+      `To enable authentication in your interceptor server, use the ${color.cyan('--tokens-dir')} option. Only ` +
+        'remote interceptors bearing a valid token will be allowed to connect.',
       '',
       `${color.dim('$')} zimic-interceptor server start ${color.cyan('--tokens-dir')} ${color.magenta(tokensDirectory)}`,
       '',
-      'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication',
+      'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#authentication',
     ].join('\n'),
   );
 }

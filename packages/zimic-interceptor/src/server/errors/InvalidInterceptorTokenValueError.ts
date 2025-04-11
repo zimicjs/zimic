@@ -1,7 +1,7 @@
 /**
  * Error thrown when an interceptor token value is invalid.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication Interceptor server authentication}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#authentication Interceptor server authentication}
  */
 class InvalidInterceptorTokenValueError extends Error {
   constructor(tokenValue: string) {

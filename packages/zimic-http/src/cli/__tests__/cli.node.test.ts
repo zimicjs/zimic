@@ -13,7 +13,7 @@ describe('CLI', () => {
     'zimic-http [command]',
     '',
     'Commands:',
-    '  zimic-http typegen  Generate types from schema sources',
+    '  zimic-http typegen  Generate types from schema sources.',
     '',
     'Options:',
     '  --help     Show help                                                 [boolean]',

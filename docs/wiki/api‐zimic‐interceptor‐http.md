@@ -7,6 +7,7 @@
     - [Creating a local HTTP interceptor](#creating-a-local-http-interceptor)
     - [Creating a remote HTTP interceptor](#creating-a-remote-http-interceptor)
       - [Path discriminators in remote HTTP interceptors](#path-discriminators-in-remote-http-interceptors)
+      - [Remote interceptor authentication](#remote-interceptor-authentication)
     - [Unhandled requests](#unhandled-requests)
     - [Saving requests](#saving-requests)
   - [HTTP `interceptor.start()`](#http-interceptorstart)
@@ -134,6 +135,25 @@ const interceptor = createHttpInterceptor<{
 // Your application should use this base URL when making requests
 console.log(interceptor.baseURL);
 ```
+
+##### Remote interceptor authentication
+
+When connecting to an [interceptor server requiring authentication](cli‐zimic‐server#authentication), use the
+`auth.token` option to specify a [token](cli‐zimic‐server#zimic-interceptor-server-token-create) to authenticate the
+interceptor. This option is only available for remote interceptors.
+
+```ts
+import { createHttpInterceptor } from '@zimic/interceptor/http';
+
+const interceptor = createHttpInterceptor<Schema>({
+  type: 'remote',
+  baseURL: 'http://localhost:4000/my-service',
+  auth: { token: '<token>' },
+});
+```
+
+Replace `<token>` with the token you created. See [Interceptor server authentication](cli‐zimic‐server#authentication)
+for more details.
 
 #### Unhandled requests
 

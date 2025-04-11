@@ -164,13 +164,13 @@ export interface RemoteHttpInterceptorOptions extends SharedHttpInterceptorOptio
    * Options to authenticate the interceptor when connecting to an interceptor server. This is required if the
    * interceptor server was started with the `--tokens-dir` option.
    *
-   * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication Interceptor server authentication}
+   * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#authentication Interceptor server authentication}
    */
   auth?: {
     /**
      * The authentication token to use.
      *
-     * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication Interceptor server authentication}
+     * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#authentication Interceptor server authentication}
      */
     token: string;
   };
