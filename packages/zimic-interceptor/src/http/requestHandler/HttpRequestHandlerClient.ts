@@ -11,9 +11,9 @@ import {
 } from '@zimic/http';
 import blobContains from '@zimic/utils/data/blobContains';
 import blobEquals from '@zimic/utils/data/blobEquals';
+import jsonContains from '@zimic/utils/data/jsonContains';
+import jsonEquals from '@zimic/utils/data/jsonEquals';
 import { Default, Range } from '@zimic/utils/types';
-
-import { jsonContains, jsonEquals } from '@/utils/json';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import DisabledRequestSavingError from './errors/DisabledRequestSavingError';
