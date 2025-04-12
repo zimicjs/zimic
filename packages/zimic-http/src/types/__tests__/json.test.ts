@@ -1,6 +1,5 @@
+import { JSONValue, JSONSerialized } from '@zimic/utils/types/json';
 import { describe, expectTypeOf, it } from 'vitest';
-
-import { JSONValue, JSONSerialized } from '../json';
 
 describe('JSON types', () => {
   it('should type JSON values correctly', () => {
