@@ -43,6 +43,12 @@
       "require": "./dist/types/globals.js",
       "default": "./dist/types/globals.js"
     },
+    "./types/json": {
+      "types": "./types/json.d.ts",
+      "import": "./dist/types/json.mjs",
+      "require": "./dist/types/json.js",
+      "default": "./dist/types/json.js"
+    },
     "./data/isDefined": {
       "types": "./data/isDefined.d.ts",
       "import": "./dist/data/isDefined.mjs",
@@ -72,6 +78,18 @@
       "import": "./dist/data/fileEquals.mjs",
       "require": "./dist/data/fileEquals.js",
       "default": "./dist/data/fileEquals.js"
+    },
+    "./data/jsonContains": {
+      "types": "./data/jsonContains.d.ts",
+      "import": "./dist/data/jsonContains.mjs",
+      "require": "./dist/data/jsonContains.js",
+      "default": "./dist/data/jsonContains.js"
+    },
+    "./data/jsonEquals": {
+      "types": "./data/jsonEquals.d.ts",
+      "import": "./dist/data/jsonEquals.mjs",
+      "require": "./dist/data/jsonEquals.js",
+      "default": "./dist/data/jsonEquals.js"
     },
     "./error/expectToThrow": {
       "types": "./error/expectToThrow.d.ts",
