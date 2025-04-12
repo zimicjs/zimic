@@ -9,7 +9,6 @@ import {
   HttpRequestSearchParamsSchema,
   HttpRequestHeadersSchema,
 } from '@zimic/http';
-import blobContains from '@zimic/utils/data/blobContains';
 import blobEquals from '@zimic/utils/data/blobEquals';
 import jsonContains from '@zimic/utils/data/jsonContains';
 import jsonEquals from '@zimic/utils/data/jsonEquals';
@@ -338,9 +337,7 @@ class HttpRequestHandlerClient<
         };
       }
 
-      const matchesRestriction = restriction.exact
-        ? await blobEquals(body, restrictionBody)
-        : await blobContains(body, restrictionBody);
+      const matchesRestriction = await blobEquals(body, restrictionBody);
 
       return matchesRestriction
         ? { value: true }
