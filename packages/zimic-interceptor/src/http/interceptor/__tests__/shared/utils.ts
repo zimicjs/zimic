@@ -3,7 +3,7 @@ import { PossiblePromise } from '@zimic/utils/types';
 import { expect, expectTypeOf } from 'vitest';
 
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
-import { formatValueToLog } from '@/utils/console';
+import { formatValueToLog } from '@/utils/logging';
 
 import { HttpInterceptorOptions, HttpInterceptorPlatform, HttpInterceptorType } from '../../types/options';
 import { UnhandledHttpInterceptorRequest, UnhandledHttpInterceptorRequestMethodSchema } from '../../types/requests';

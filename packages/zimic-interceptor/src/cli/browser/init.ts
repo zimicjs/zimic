@@ -1,8 +1,8 @@
-import filesystem from 'fs/promises';
+import fs from 'fs';
 import path from 'path';
 import color from 'picocolors';
 
-import { logWithPrefix } from '@/utils/console';
+import { logger } from '@/utils/logging';
 
 import { SERVICE_WORKER_FILE_NAME } from './shared/constants';
 
@@ -15,13 +15,12 @@ interface BrowserServiceWorkerInitOptions {
 
 async function initializeBrowserServiceWorker({ publicDirectory }: BrowserServiceWorkerInitOptions) {
   const absolutePublicDirectory = path.resolve(publicDirectory);
-  await filesystem.mkdir(absolutePublicDirectory, { recursive: true });
+  await fs.promises.mkdir(absolutePublicDirectory, { recursive: true });
 
   const destinationPath = path.join(absolutePublicDirectory, SERVICE_WORKER_FILE_NAME);
-  await filesystem.copyFile(MOCK_SERVICE_WORKER_PATH, destinationPath);
+  await fs.promises.copyFile(MOCK_SERVICE_WORKER_PATH, destinationPath);
 
-  logWithPrefix(`Service worker script saved to ${color.green(destinationPath)}!`);
-  logWithPrefix('You can now use browser interceptors!');
+  logger.info(`Service worker script saved to ${color.magenta(destinationPath)}.`);
 }
 
 export default initializeBrowserServiceWorker;

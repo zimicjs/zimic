@@ -1,6 +1,8 @@
+import color from 'picocolors';
+
 import { InterceptorServer, createInterceptorServer } from '@/server';
 import { InterceptorServerOptions } from '@/server/types/options';
-import { logWithPrefix } from '@/utils/console';
+import { logger } from '@/utils/logging';
 import {
   CommandError,
   PROCESS_EXIT_CODE_BY_EXIT_EVENT,
@@ -11,10 +13,7 @@ import {
 
 interface InterceptorServerStartOptions extends InterceptorServerOptions {
   ephemeral: boolean;
-  onReady?: {
-    command: string;
-    arguments: string[];
-  };
+  onReady?: { command: string; arguments: string[] };
 }
 
 export let serverSingleton: InterceptorServer | undefined;
@@ -22,14 +21,16 @@ export let serverSingleton: InterceptorServer | undefined;
 async function startInterceptorServer({
   hostname,
   port,
-  ephemeral,
   logUnhandledRequests,
+  tokensDirectory,
+  ephemeral,
   onReady,
 }: InterceptorServerStartOptions) {
   const server = createInterceptorServer({
     hostname,
     port,
     logUnhandledRequests,
+    tokensDirectory,
   });
 
   async function handleExitEvent(exitEvent: ProcessExitEvent | undefined) {
@@ -59,7 +60,21 @@ async function startInterceptorServer({
 
   await server.start();
 
-  logWithPrefix(`${ephemeral ? 'Ephemeral s' : 'S'}erver is running on ${server.hostname}:${server.port}`);
+  logger.info(
+    `${ephemeral ? 'Ephemeral s' : 'S'}erver is running on ${color.yellow(`${server.hostname}:${server.port}`)}`,
+  );
+
+  const isDangerouslyUnprotected = !tokensDirectory && process.env.NODE_ENV === 'production';
+
+  if (isDangerouslyUnprotected) {
+    logger.warn(
+      [
+        `Attention: this interceptor server is ${color.bold(color.red('unprotected'))}. Do not expose it publicly without authentication.`,
+        '',
+        'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#authentication',
+      ].join('\n'),
+    );
+  }
 
   if (onReady) {
     try {

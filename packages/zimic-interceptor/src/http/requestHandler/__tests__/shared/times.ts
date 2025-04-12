@@ -10,7 +10,7 @@ import { HttpInterceptorType } from '@/http/interceptor/types/options';
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
 import { importFile, isGlobalFileAvailable } from '@/utils/files';
-import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
+import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import type LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
 import type RemoteHttpRequestHandler from '../../RemoteHttpRequestHandler';
@@ -40,7 +40,10 @@ export function declareTimesHttpRequestHandlerTests(
     interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL });
     interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
 
+    expect(interceptor.platform).toBe(null);
+
     await interceptor.start();
+
     expect(interceptor.platform).toBe(platform);
   });
 
@@ -350,48 +353,52 @@ export function declareTimesHttpRequestHandlerTests(
   describe('Unmatched requests', () => {
     describe('Restrictions', () => {
       it('should not include the requests unmatched due to restrictions if not saving requests', async () => {
-        const interceptor = createInternalHttpInterceptor<Schema>({
-          type,
-          baseURL,
-          requestSaving: { enabled: false },
-        });
-        const interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
-
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
-          .with((request) => typeof request.body === 'number')
-          .respond({ status: 200, body: { success: true } })
-          .times(1);
-
-        await expectTimesCheckError(
-          async () => {
-            await promiseIfRemote(handler.checkTimes(), handler);
-          },
+        await usingHttpInterceptor<Schema>(
           {
-            message: [
-              'Expected exactly 1 matching request, but got 0.',
-              '',
-              'Tip: use `requestSaving.enabled: true` in your interceptor for more details about the unmatched requests.',
-            ].join('\n'),
-            numberOfRequests: 1,
+            type,
+            baseURL,
+            requestSaving: { enabled: false },
           },
-        );
+          async (interceptor) => {
+            const interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
 
-        const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+            const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+              .with((request) => typeof request.body === 'number')
+              .respond({ status: 200, body: { success: true } })
+              .times(1);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+            await expectTimesCheckError(
+              async () => {
+                await promiseIfRemote(handler.checkTimes(), handler);
+              },
+              {
+                message: [
+                  'Expected exactly 1 matching request, but got 0.',
+                  '',
+                  'Tip: use `requestSaving.enabled: true` in your interceptor for more details about the unmatched requests.',
+                ].join('\n'),
+                numberOfRequests: 1,
+              },
+            );
 
-        await expectTimesCheckError(
-          async () => {
-            await promiseIfRemote(handler.checkTimes(), handler);
-          },
-          {
-            message: [
-              'Expected exactly 1 matching request, but got 0.',
-              '',
-              'Tip: use `requestSaving.enabled: true` in your interceptor for more details about the unmatched requests.',
-            ].join('\n'),
-            numberOfRequests: 1,
+            const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
+            const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+
+            expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+            await expectTimesCheckError(
+              async () => {
+                await promiseIfRemote(handler.checkTimes(), handler);
+              },
+              {
+                message: [
+                  'Expected exactly 1 matching request, but got 0.',
+                  '',
+                  'Tip: use `requestSaving.enabled: true` in your interceptor for more details about the unmatched requests.',
+                ].join('\n'),
+                numberOfRequests: 1,
+              },
+            );
           },
         );
       });

@@ -37,7 +37,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .respond({
@@ -58,9 +58,8 @@ describe('FetchClient > Listeners', () => {
         expect(request.headers).toBeInstanceOf(Headers);
         expectTypeOf(request.headers).toEqualTypeOf<Headers>();
 
-        // eslint-disable-next-line @typescript-eslint/unbound-method, @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expectTypeOf(request.json).toEqualTypeOf<() => Promise<any>>();
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
         expectTypeOf(request.clone).toEqualTypeOf<() => typeof request>();
 
@@ -136,7 +135,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .post(`/users/${users[0].id}`)
         .respond({
@@ -157,10 +156,8 @@ describe('FetchClient > Listeners', () => {
         expect(request.headers).toBeInstanceOf(Headers);
         expectTypeOf(request.headers).toEqualTypeOf<Headers>();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/unbound-method
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expectTypeOf(request.json).toEqualTypeOf<() => Promise<any>>();
-
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
         expectTypeOf(request.clone).toEqualTypeOf<() => typeof request>();
 
@@ -235,7 +232,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .with({
@@ -304,7 +301,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .with({
@@ -385,7 +382,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .with({
@@ -452,11 +449,7 @@ describe('FetchClient > Listeners', () => {
     }>;
 
     await usingHttpInterceptor<Schema>(
-      {
-        type: 'local',
-        baseURL,
-        onUnhandledRequest: { action: 'reject', log: false },
-      },
+      { baseURL, onUnhandledRequest: { action: 'reject', log: false } },
       async (interceptor) => {
         await interceptor
           .get('/users')
@@ -517,7 +510,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .respond({
@@ -538,10 +531,9 @@ describe('FetchClient > Listeners', () => {
         expect(response.headers).toBeInstanceOf(Headers);
         expectTypeOf(response.headers).toEqualTypeOf<Headers>();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/unbound-method
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expectTypeOf(response.json).toEqualTypeOf<() => Promise<any>>();
 
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
         expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
 
@@ -551,10 +543,9 @@ describe('FetchClient > Listeners', () => {
         expect(response.request.headers).toBeInstanceOf(Headers);
         expectTypeOf(response.request.headers).toEqualTypeOf<Headers>();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/unbound-method
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<any>>();
 
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<FormData>>();
         expectTypeOf(response.request.clone).toEqualTypeOf<() => typeof response.request>();
 
@@ -610,7 +601,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get(`/users/${users[0].id}`)
         .respond({
@@ -631,10 +622,9 @@ describe('FetchClient > Listeners', () => {
         expect(response.headers).toBeInstanceOf(Headers);
         expectTypeOf(response.headers).toEqualTypeOf<Headers>();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/unbound-method
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expectTypeOf(response.json).toEqualTypeOf<() => Promise<any>>();
 
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
         expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
 
@@ -644,10 +634,9 @@ describe('FetchClient > Listeners', () => {
         expect(response.request.headers).toBeInstanceOf(Headers);
         expectTypeOf(response.request.headers).toEqualTypeOf<Headers>();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/unbound-method
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<any>>();
 
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<FormData>>();
         expectTypeOf(response.request.clone).toEqualTypeOf<() => typeof response.request>();
 
@@ -708,7 +697,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .respond({
@@ -784,7 +773,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const accessTokens = Array.from({ length: 2 }, (_, index) => `access-token-${index + 1}`);
 
       await interceptor
@@ -886,7 +875,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .respond({

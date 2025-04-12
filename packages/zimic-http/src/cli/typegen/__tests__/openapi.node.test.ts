@@ -84,7 +84,6 @@ describe('Type generation (OpenAPI)', () => {
       GET: { response: { 200: { body: Blob } } };
     };
   }>({
-    type: 'local',
     baseURL: 'http://localhost:3000',
   });
 
@@ -146,33 +145,33 @@ describe('Type generation (OpenAPI)', () => {
   it('should show a help message', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'typegen', 'openapi', '--help']);
 
-    await usingIgnoredConsole(['log'], async (spies) => {
+    await usingIgnoredConsole(['log'], async (console) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
 
-      expect(spies.log).toHaveBeenCalledTimes(1);
-      expect(spies.log).toHaveBeenCalledWith(helpOutput);
+      expect(console.log).toHaveBeenCalledTimes(1);
+      expect(console.log).toHaveBeenCalledWith(helpOutput);
     });
   });
 
   describe.each(fixtureCaseEntries)('Schema (%s)', (fixtureName, fixtureCases: TypegenFixtureCase[]) => {
-    function verifyFilterFileWarnings(consoleSpies: { warn: MockInstance }) {
-      expect(consoleSpies.warn).toHaveBeenCalledTimes(1);
+    function verifyFilterFileWarnings(console: Console & { warn: MockInstance }) {
+      expect(console.warn).toHaveBeenCalledTimes(1);
 
-      const message = consoleSpies.warn.mock.calls[0].join(' ');
+      const message = console.warn.mock.calls[0].join(' ');
       expect(message).toMatch(/.*\[@zimic\/http\].* /);
       expect(message).toContain(
         `Warning: Filter could not be parsed and was ignored: ${color.yellow('invalid filter line')}`,
       );
     }
 
-    function verifyResponsesWarnings(spies: { log: MockInstance; warn: MockInstance }) {
+    function verifyResponsesWarnings(console: Console & { log: MockInstance; warn: MockInstance }) {
       const expectedUnknownStatusCodes = ['unknown'];
 
       const expectedNumberOfWarnings = expectedUnknownStatusCodes.length;
 
-      expect(spies.warn).toHaveBeenCalledTimes(expectedNumberOfWarnings);
+      expect(console.warn).toHaveBeenCalledTimes(expectedNumberOfWarnings);
 
-      const messages = spies.warn.mock.calls
+      const messages = console.warn.mock.calls
         .slice(0, expectedUnknownStatusCodes.length)
         .map((argument) => argument.join(' '))
         .sort();
@@ -191,16 +190,16 @@ describe('Type generation (OpenAPI)', () => {
     function verifySuccessMessage(
       fixtureCase: TypegenFixtureCase,
       outputLabel: string,
-      spies: { log: MockInstance; warn: MockInstance },
+      console: Console & { log: MockInstance; warn: MockInstance },
     ) {
       let successMessage: string | undefined;
 
       if (fixtureCase.shouldWriteToStdout) {
-        expect(spies.log).not.toHaveBeenCalled();
-        successMessage = spies.warn.mock.calls.at(-1)?.join(' ');
+        expect(console.log).not.toHaveBeenCalled();
+        successMessage = console.warn.mock.calls.at(-1)?.join(' ');
       } else {
-        expect(spies.log).toHaveBeenCalledTimes(1);
-        successMessage = spies.log.mock.calls.at(-1)?.join(' ');
+        expect(console.log).toHaveBeenCalledTimes(1);
+        successMessage = console.log.mock.calls.at(-1)?.join(' ');
       }
 
       expect(successMessage).toBeDefined();
@@ -275,24 +274,24 @@ describe('Type generation (OpenAPI)', () => {
           });
 
           try {
-            await usingIgnoredConsole(['log', 'warn'], async (spies) => {
+            await usingIgnoredConsole(['log', 'warn'], async (console) => {
               await runCLI();
 
               const hasFilterFile = fixtureCase.additionalArguments.includes('--filter-file');
 
               if (hasFilterFile) {
-                verifyFilterFileWarnings(spies);
+                verifyFilterFileWarnings(console);
               } else if (fixtureName === 'responses') {
-                verifyResponsesWarnings(spies);
+                verifyResponsesWarnings(console);
               } else {
-                expect(spies.warn).toHaveBeenCalledTimes(fixtureCase.shouldWriteToStdout ? 1 : 0);
+                expect(console.warn).toHaveBeenCalledTimes(fixtureCase.shouldWriteToStdout ? 1 : 0);
               }
 
               const successOutputLabel = fixtureCase.shouldWriteToStdout
                 ? `to ${color.yellow('stdout')}`
                 : color.green(outputFilePath);
 
-              verifySuccessMessage(fixtureCase, successOutputLabel, spies);
+              verifySuccessMessage(fixtureCase, successOutputLabel, console);
             });
 
             rawGeneratedOutputContent = await getGeneratedOutputContent(fixtureCase, outputFilePath, processWriteSpy);

@@ -4,7 +4,6 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { expect } from 'vitest';
 
 import { createHttpInterceptor } from '@/http';
-import HttpInterceptorStore from '@/http/interceptor/HttpInterceptorStore';
 import LocalHttpInterceptor from '@/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/http/interceptor/RemoteHttpInterceptor';
 import {
@@ -51,13 +50,13 @@ export async function getNodeBaseURL(type: HttpInterceptorType, server: Intercep
 
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(
   options: LocalHttpInterceptorOptions,
-): LocalHttpInterceptor<HttpSchema<Schema>>;
+): LocalHttpInterceptor<Schema>;
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(
   options: RemoteHttpInterceptorOptions,
-): RemoteHttpInterceptor<HttpSchema<Schema>>;
+): RemoteHttpInterceptor<Schema>;
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(
   options: HttpInterceptorOptions,
-): LocalHttpInterceptor<HttpSchema<Schema>> | RemoteHttpInterceptor<HttpSchema<Schema>>;
+): LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(options: HttpInterceptorOptions) {
   return createHttpInterceptor<Schema>({
     requestSaving: { enabled: true },
@@ -66,8 +65,8 @@ export function createInternalHttpInterceptor<Schema extends HttpSchema>(options
   }) satisfies HttpInterceptor<Schema> as LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
 }
 
-type UsingInterceptorCallback<Schema extends HttpSchema> = (
-  interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>,
+type UsingInterceptorCallback<Interceptor extends HttpInterceptor<never>> = (
+  interceptor: Interceptor,
 ) => PossiblePromise<void>;
 
 interface UsingInterceptorOptions {
@@ -75,21 +74,48 @@ interface UsingInterceptorOptions {
 }
 
 export async function usingHttpInterceptor<Schema extends HttpSchema>(
+  interceptorOptions: LocalHttpInterceptorOptions,
+  callback: UsingInterceptorCallback<LocalHttpInterceptor<Schema>>,
+): Promise<void>;
+export async function usingHttpInterceptor<Schema extends HttpSchema>(
+  interceptorOptions: LocalHttpInterceptorOptions,
+  options: UsingInterceptorOptions,
+  callback: UsingInterceptorCallback<LocalHttpInterceptor<Schema>>,
+): Promise<void>;
+export async function usingHttpInterceptor<Schema extends HttpSchema>(
+  interceptorOptions: RemoteHttpInterceptorOptions,
+  callback: UsingInterceptorCallback<RemoteHttpInterceptor<Schema>>,
+): Promise<void>;
+export async function usingHttpInterceptor<Schema extends HttpSchema>(
+  interceptorOptions: RemoteHttpInterceptorOptions,
+  options: UsingInterceptorOptions,
+  callback: UsingInterceptorCallback<RemoteHttpInterceptor<Schema>>,
+): Promise<void>;
+export async function usingHttpInterceptor<Schema extends HttpSchema>(
   interceptorOptions: HttpInterceptorOptions,
-  callback: UsingInterceptorCallback<HttpSchema<Schema>>,
+  callback: UsingInterceptorCallback<LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>>,
 ): Promise<void>;
 export async function usingHttpInterceptor<Schema extends HttpSchema>(
   interceptorOptions: HttpInterceptorOptions,
   options: UsingInterceptorOptions,
-  callback: UsingInterceptorCallback<HttpSchema<Schema>>,
+  callback: UsingInterceptorCallback<LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>>,
 ): Promise<void>;
 export async function usingHttpInterceptor<Schema extends HttpSchema>(
   interceptorOptions: HttpInterceptorOptions,
-  callbackOrOptions: UsingInterceptorCallback<HttpSchema<Schema>> | UsingInterceptorOptions,
-  optionalCallback?: UsingInterceptorCallback<HttpSchema<Schema>>,
+  callbackOrOptions:
+    | UsingInterceptorCallback<LocalHttpInterceptor<Schema>>
+    | UsingInterceptorCallback<RemoteHttpInterceptor<Schema>>
+    | UsingInterceptorCallback<LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>>
+    | UsingInterceptorOptions,
+  optionalCallback?:
+    | UsingInterceptorCallback<LocalHttpInterceptor<Schema>>
+    | UsingInterceptorCallback<RemoteHttpInterceptor<Schema>>
+    | UsingInterceptorCallback<LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>>,
 ): Promise<void> {
   const { start: shouldStartInterceptor = true } = typeof callbackOrOptions === 'function' ? {} : callbackOrOptions;
-  const callback = (optionalCallback ?? callbackOrOptions) as UsingInterceptorCallback<HttpSchema<Schema>>;
+  const callback = (optionalCallback ?? callbackOrOptions) as UsingInterceptorCallback<
+    LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>
+  >;
 
   const interceptor = createInternalHttpInterceptor<Schema>(interceptorOptions);
 
@@ -136,10 +162,6 @@ export async function usingHttpInterceptorWorker(
   } finally {
     await worker.stop();
   }
-}
-
-export function getSingletonWorkerByType(store: HttpInterceptorStore, type: HttpInterceptorType, serverURL: URL) {
-  return type === 'local' ? store.localWorker : store.remoteWorker(serverURL);
 }
 
 export function assessPreflightInterference(resources: {

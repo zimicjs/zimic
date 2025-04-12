@@ -26,3 +26,16 @@ export function convertBase64ToArrayBuffer(base64Value: string) {
     return Buffer.from(base64Value, 'base64');
   }
 }
+
+export const HEX_REGEX = /^[a-z0-9]+$/;
+
+export function convertHexLengthToByteLength(hexLength: number) {
+  return Math.ceil(hexLength / 2); // 1 byte = 2 hex characters
+}
+
+export const BASE64URL_REGEX = /^[a-zA-Z0-9-_]+$/;
+
+export function convertHexLengthToBase64urlLength(hexLength: number) {
+  const byteLength = convertHexLengthToByteLength(hexLength);
+  return Math.ceil((byteLength * 4) / 3); // 1 byte = 4/3 base64url characters
+}

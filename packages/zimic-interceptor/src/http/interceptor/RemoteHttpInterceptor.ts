@@ -1,6 +1,7 @@
 import { HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@zimic/http';
 
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
+import RunningHttpInterceptorError from './errors/RunningHttpInterceptorError';
 import HttpInterceptorClient from './HttpInterceptorClient';
 import HttpInterceptorStore from './HttpInterceptorStore';
 import { AsyncHttpInterceptorMethodHandler } from './types/handlers';
@@ -9,19 +10,27 @@ import { HttpInterceptorRequestSaving, RemoteHttpInterceptor as PublicRemoteHttp
 
 class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHttpInterceptor<Schema> {
   private store = new HttpInterceptorStore();
-
   client: HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>;
 
+  private _auth?: RemoteHttpInterceptorOptions['auth'];
+
   constructor(options: RemoteHttpInterceptorOptions) {
+    this._auth = options.auth;
+
     const baseURL = new URL(options.baseURL);
 
-    const serverURL = new URL(baseURL.origin);
-    const worker = this.store.getOrCreateRemoteWorker({ serverURL });
-
     this.client = new HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>({
-      worker,
       store: this.store,
       baseURL,
+      createWorker: () => {
+        return this.store.getOrCreateRemoteWorker({
+          serverURL: new URL(baseURL.origin),
+          auth: this._auth,
+        });
+      },
+      deleteWorker: () => {
+        this.store.deleteRemoteWorker(baseURL, { auth: options.auth });
+      },
       Handler: RemoteHttpRequestHandler,
       onUnhandledRequest: options.onUnhandledRequest,
       requestSaving: options.requestSaving,
@@ -46,6 +55,33 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
 
   set requestSaving(requestSaving: HttpInterceptorRequestSaving) {
     this.client.requestSaving = requestSaving;
+  }
+
+  get auth() {
+    return this._auth;
+  }
+
+  set auth(auth: RemoteHttpInterceptorOptions['auth'] | undefined) {
+    const cannotChangeAuthWhileRunningMessage =
+      'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?';
+
+    if (this.isRunning) {
+      throw new RunningHttpInterceptorError(cannotChangeAuthWhileRunningMessage);
+    }
+
+    if (!auth) {
+      this._auth = undefined;
+      return;
+    }
+
+    this._auth = new Proxy(auth, {
+      set: (target, property, value) => {
+        if (this.isRunning) {
+          throw new RunningHttpInterceptorError(cannotChangeAuthWhileRunningMessage);
+        }
+        return Reflect.set(target, property, value);
+      },
+    });
   }
 
   get onUnhandledRequest() {

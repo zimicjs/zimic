@@ -1,3 +1,4 @@
+import path from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
@@ -5,6 +6,7 @@ import { createInternalInterceptorServer } from '@tests/utils/interceptorServers
 import { DEFAULT_HOSTNAME, DEFAULT_LOG_UNHANDLED_REQUESTS } from '../constants';
 import RunningInterceptorServerError from '../errors/RunningInterceptorServerError';
 import InterceptorServer from '../InterceptorServer';
+import { DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY } from '../utils/auth';
 
 // These are integration tests for the server. Only features not easily reproducible by the CLI and the remote
 // interceptor tests are covered here. The main aspects of this class should be tested in the CLI and the remote
@@ -166,19 +168,19 @@ describe('Interceptor server', () => {
     });
 
     it('should support changing the port after created', async () => {
-      server = createInternalInterceptorServer({ port: 3000 });
+      server = createInternalInterceptorServer({ port: 5002 });
 
       expect(server.isRunning).toBe(false);
       expect(server.hostname).toBe(DEFAULT_HOSTNAME);
-      expect(server.port).toBe(3000);
+      expect(server.port).toBe(5002);
 
       await server.start();
 
       expect(server.isRunning).toBe(true);
       expect(server.hostname).toBe(DEFAULT_HOSTNAME);
-      expect(server.port).toBe(3000);
+      expect(server.port).toBe(5002);
 
-      const newPort = 8080;
+      const newPort = 5003;
       expect(newPort).not.toBe(server.port);
 
       await server.stop();
@@ -197,19 +199,19 @@ describe('Interceptor server', () => {
     });
 
     it('should not support changing the port after created if the server is running', async () => {
-      server = createInternalInterceptorServer({ port: 3000 });
+      server = createInternalInterceptorServer({ port: 5004 });
 
       expect(server.isRunning).toBe(false);
       expect(server.hostname).toBe(DEFAULT_HOSTNAME);
-      expect(server.port).toBe(3000);
+      expect(server.port).toBe(5004);
 
       await server.start();
 
       expect(server.isRunning).toBe(true);
       expect(server.hostname).toBe(DEFAULT_HOSTNAME);
-      expect(server.port).toBe(3000);
+      expect(server.port).toBe(5004);
 
-      const newPort = 8080;
+      const newPort = 5005;
       expect(newPort).not.toBe(server.port);
 
       expect(server.isRunning).toBe(true);
@@ -218,7 +220,7 @@ describe('Interceptor server', () => {
         server!.port = newPort;
       }).toThrowError(new RunningInterceptorServerError('Did you forget to stop it before changing the port?'));
 
-      expect(server.port).toBe(3000);
+      expect(server.port).toBe(5004);
       expect(server.port).not.toBe(newPort);
     });
   });
@@ -270,6 +272,56 @@ describe('Interceptor server', () => {
 
       expect(server.isRunning).toBe(true);
       expect(server.logUnhandledRequests).toBe(newLogUnhandledRequests);
+    });
+  });
+
+  describe('Tokens directory', () => {
+    it('should start correctly with a defined tokens directory', async () => {
+      server = createInternalInterceptorServer({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+
+      expect(server.isRunning).toBe(false);
+      expect(server.tokensDirectory).toBe(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
+
+      await server.start();
+
+      expect(server.isRunning).toBe(true);
+      expect(server.tokensDirectory).toBe(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
+    });
+
+    it('should start correctly with an undefined tokens directory', async () => {
+      server = createInternalInterceptorServer({ tokensDirectory: undefined });
+
+      expect(server.isRunning).toBe(false);
+      expect(server.tokensDirectory).toBe(undefined);
+
+      await server.start();
+
+      expect(server.isRunning).toBe(true);
+      expect(server.tokensDirectory).toBe(undefined);
+    });
+
+    it('should support changing the tokens directory after created', async () => {
+      server = createInternalInterceptorServer({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+
+      expect(server.isRunning).toBe(false);
+      expect(server.tokensDirectory).toBe(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
+
+      await server.start();
+
+      expect(server.isRunning).toBe(true);
+      expect(server.tokensDirectory).toBe(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
+
+      const newTokensDirectory = path.join(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY, 'other');
+      expect(newTokensDirectory).not.toBe(server.tokensDirectory);
+
+      server.tokensDirectory = newTokensDirectory;
+      expect(server.tokensDirectory).toBe(newTokensDirectory);
+
+      await server.stop();
+      await server.start();
+
+      expect(server.isRunning).toBe(true);
+      expect(server.tokensDirectory).toBe(newTokensDirectory);
     });
   });
 });

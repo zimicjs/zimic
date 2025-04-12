@@ -13,6 +13,15 @@
 `zimic-http typegen` contains commands to generate types from schema sources. This is useful to save development time,
 avoid errors and keep your types consistent with specifications, such as [OpenAPI](https://swagger.io/specification).
 
+```
+zimic-http typegen
+
+Generate types from schema sources.
+
+Commands:
+  zimic-http typegen openapi <input>  Generate types from an OpenAPI schema.
+```
+
 ## `zimic-http typegen openapi`
 
 Generate types from an [OpenAPI v3](https://swagger.io/specification) schema.
@@ -22,7 +31,7 @@ zimic-http typegen openapi <input>
 
 Positionals:
   input  The path to a local OpenAPI schema file or an URL to fetch it. Version
-         3 is supported as YAML or JSON.                   [string] [required]
+         3 is supported as YAML or JSON.                     [string] [required]
 
 Options:
   -o, --output        The path to write the generated types to. If not provided,
@@ -76,7 +85,6 @@ import { createHttpInterceptor } from '@zimic/interceptor/http';
 import { type MyServiceSchema } from './schema';
 
 const interceptor = createHttpInterceptor<MyServiceSchema>({
-  type: 'local',
   baseURL: 'http://localhost:3000',
 });
 ```

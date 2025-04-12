@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "0.16.1",
+  "version": "0.17.0-canary.6",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -76,7 +76,7 @@
   },
   "scripts": {
     "dev": "tsup --watch",
-    "cli": "node ./dist/cli.js",
+    "cli": "node --enable-source-maps ./dist/cli.js",
     "build": "tsup",
     "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
@@ -89,39 +89,40 @@
     "deps:install-playwright": "playwright install chromium",
     "deps:init-msw": "msw init ./public --no-save",
     "deps:init": "pnpm deps:install-playwright && pnpm deps:init-msw",
-    "postinstall": "node -e \"try{require('./dist/scripts/postinstall')}catch(error){console.error(error)}\""
+    "postinstall": "node --enable-source-maps -e \"try{require('./dist/scripts/postinstall')}catch(error){console.error(error)}\""
   },
   "dependencies": {
-    "@whatwg-node/server": "0.10.2",
+    "@whatwg-node/server": "0.10.3",
     "execa": "9.5.2",
     "isomorphic-ws": "5.0.0",
     "msw": "2.7.3",
     "picocolors": "^1.1.1",
     "ws": "8.18.1",
-    "yargs": "17.7.2"
+    "yargs": "17.7.2",
+    "zod": "^3.24.2"
   },
   "optionalDependencies": {
     "bufferutil": "4.0.9"
   },
   "devDependencies": {
-    "@types/node": "^22.13.11",
-    "@types/ws": "^8.18.0",
+    "@types/node": "^22.14.0",
+    "@types/ws": "^8.18.1",
     "@types/yargs": "^17.0.33",
-    "@vitest/browser": "^3.0.9",
-    "@vitest/coverage-istanbul": "^3.0.9",
+    "@vitest/browser": "^3.1.1",
+    "@vitest/coverage-istanbul": "^3.1.1",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^8.0.0",
-    "eslint": "^9.23.0",
+    "eslint": "^9.24.0",
     "playwright": "^1.51.1",
     "tsup": "^8.4.0",
-    "typescript": "^5.8.2",
-    "vitest": "^3.0.9"
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
   },
   "peerDependencies": {
-    "@zimic/http": "^0.2.0 || ^0.2.0-canary.0",
+    "@zimic/http": "^0.3.0 || ^0.3.0-canary.0",
     "typescript": ">=4.8.0"
   },
   "peerDependenciesMeta": {
