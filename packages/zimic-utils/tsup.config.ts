@@ -22,7 +22,6 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
     'data/isDefined': 'src/data/isDefined.ts',
     'data/isNonEmpty': 'src/data/isNonEmpty.ts',
     'data/blobEquals': 'src/data/blobEquals.ts',
-    'data/blobContains': 'src/data/blobContains.ts',
     'data/fileEquals': 'src/data/fileEquals.ts',
     'data/jsonContains': 'src/data/jsonContains.ts',
     'data/jsonEquals': 'src/data/jsonEquals.ts',

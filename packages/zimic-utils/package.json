@@ -61,12 +61,6 @@
       "require": "./dist/data/isNonEmpty.js",
       "default": "./dist/data/isNonEmpty.js"
     },
-    "./data/blobContains": {
-      "types": "./data/blobContains.d.ts",
-      "import": "./dist/data/blobContains.mjs",
-      "require": "./dist/data/blobContains.js",
-      "default": "./dist/data/blobContains.js"
-    },
     "./data/blobEquals": {
       "types": "./data/blobEquals.d.ts",
       "import": "./dist/data/blobEquals.mjs",
