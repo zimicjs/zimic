@@ -177,29 +177,8 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
    *   Important: both form data might be read while comparing.
    */
   async equals<OtherSchema extends Schema>(otherData: HttpFormData<OtherSchema>): Promise<boolean> {
-    for (const [otherKey, otherValue] of otherData.entries()) {
-      const values = super.getAll.call(this, otherKey);
-
-      const haveSameNumberOfValues = values.length === super.getAll.call(otherData, otherKey).length;
-      if (!haveSameNumberOfValues) {
-        return false;
-      }
-
-      let valueExists = false;
-
-      for (const value of values) {
-        if (
-          value === otherValue ||
-          (value instanceof Blob && otherValue instanceof Blob && (await fileEquals(value, otherValue)))
-        ) {
-          valueExists = true;
-          break;
-        }
-      }
-
-      if (!valueExists) {
-        return false;
-      }
+    if (!(await this.contains(otherData))) {
+      return false;
     }
 
     for (const key of this.keys()) {
@@ -224,8 +203,8 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
     for (const [otherKey, otherValue] of otherData.entries()) {
       const values = super.getAll.call(this, otherKey);
 
-      const haveCompatibleNumberOfValues = values.length >= super.getAll.call(otherData, otherKey).length;
-      if (!haveCompatibleNumberOfValues) {
+      const haveSameNumberOfValues = values.length === super.getAll.call(otherData, otherKey).length;
+      if (!haveSameNumberOfValues) {
         return false;
       }
 
@@ -234,7 +213,6 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
       for (const value of values) {
         if (
           value === otherValue ||
-          (typeof value === 'string' && typeof otherValue === 'string' && value === otherValue) ||
           (value instanceof Blob && otherValue instanceof Blob && (await fileEquals(value, otherValue)))
         ) {
           valueExists = true;
