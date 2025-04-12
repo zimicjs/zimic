@@ -1,5 +1,8 @@
 import ClientSocket, { type WebSocketServer as ServerSocket } from 'isomorphic-ws';
 
+import { WebSocketControlMessage } from '@/webSocket/constants';
+import UnauthorizedWebSocketConnectionError from '@/webSocket/errors/UnauthorizedWebSocketConnectionError';
+
 class WebSocketTimeoutError extends Error {}
 
 export class WebSocketOpenTimeoutError extends WebSocketTimeoutError {
@@ -37,9 +40,10 @@ export async function waitForOpenClientSocket(
   socket: ClientSocket,
   options: {
     timeout?: number;
+    waitForAuthentication?: boolean;
   } = {},
 ) {
-  const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options;
+  const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT, waitForAuthentication = false } = options;
 
   const isAlreadyOpen = socket.readyState === socket.OPEN;
 
@@ -48,9 +52,29 @@ export async function waitForOpenClientSocket(
   }
 
   await new Promise<void>((resolve, reject) => {
-    function handleOpenError(error: unknown) {
+    function removeAllSocketListeners() {
+      socket.removeEventListener('message', handleSocketMessage); // eslint-disable-line @typescript-eslint/no-use-before-define
       socket.removeEventListener('open', handleOpenSuccess); // eslint-disable-line @typescript-eslint/no-use-before-define
+      socket.removeEventListener('error', handleOpenError); // eslint-disable-line @typescript-eslint/no-use-before-define
+      socket.removeEventListener('close', handleClose); // eslint-disable-line @typescript-eslint/no-use-before-define
+    }
+
+    function handleOpenError(error: unknown) {
+      removeAllSocketListeners();
       reject(error);
+    }
+
+    function handleClose(event: ClientSocket.CloseEvent) {
+      const isUnauthorized = event.code === 1008;
+
+      /* istanbul ignore else -- @preserve
+       * An unauthorized close event is the only one we expect to happen here. */
+      if (isUnauthorized) {
+        const unauthorizedError = new UnauthorizedWebSocketConnectionError(event);
+        handleOpenError(unauthorizedError);
+      } else {
+        handleOpenError(event);
+      }
     }
 
     const openTimeout = setTimeout(() => {
@@ -59,13 +83,29 @@ export async function waitForOpenClientSocket(
     }, timeoutDuration);
 
     function handleOpenSuccess() {
-      socket.removeEventListener('error', handleOpenError);
+      removeAllSocketListeners();
       clearTimeout(openTimeout);
       resolve();
     }
 
-    socket.addEventListener('open', handleOpenSuccess);
+    function handleSocketMessage(message: ClientSocket.MessageEvent) {
+      const hasValidAuth = message.data === ('socket:auth:valid' satisfies WebSocketControlMessage);
+
+      /* istanbul ignore else -- @preserve
+       * We currently only support the 'socket:auth:valid' message and it is the only possible control message here. */
+      if (hasValidAuth) {
+        handleOpenSuccess();
+      }
+    }
+
+    if (waitForAuthentication) {
+      socket.addEventListener('message', handleSocketMessage);
+    } else {
+      socket.addEventListener('open', handleOpenSuccess);
+    }
+
     socket.addEventListener('error', handleOpenError);
+    socket.addEventListener('close', handleClose);
   });
 }
 
@@ -78,24 +118,30 @@ export async function closeClientSocket(socket: ClientSocket, options: { timeout
   }
 
   await new Promise<void>((resolve, reject) => {
-    function handleCloseError(error: unknown) {
-      socket.removeEventListener('close', handleCloseSuccess); // eslint-disable-line @typescript-eslint/no-use-before-define
+    function removeAllSocketListeners() {
+      socket.removeEventListener('error', handleError); // eslint-disable-line @typescript-eslint/no-use-before-define
+      socket.removeEventListener('close', handleClose); // eslint-disable-line @typescript-eslint/no-use-before-define
+    }
+
+    function handleError(error: unknown) {
+      removeAllSocketListeners();
       reject(error);
     }
 
     const closeTimeout = setTimeout(() => {
       const timeoutError = new WebSocketCloseTimeoutError(timeoutDuration);
-      handleCloseError(timeoutError);
+      handleError(timeoutError);
     }, timeoutDuration);
 
-    function handleCloseSuccess() {
-      socket.removeEventListener('error', handleCloseError);
+    function handleClose() {
+      removeAllSocketListeners();
       clearTimeout(closeTimeout);
       resolve();
     }
 
-    socket.addEventListener('error', handleCloseError);
-    socket.addEventListener('close', handleCloseSuccess);
+    socket.addEventListener('error', handleError);
+    socket.addEventListener('close', handleClose);
+
     socket.close();
   });
 }

@@ -7,6 +7,10 @@ import {
 } from '../interceptorWorker/types/options';
 import { AnyHttpInterceptorClient } from './HttpInterceptorClient';
 
+interface RemoteWorkerKeyOptions {
+  auth: RemoteHttpInterceptorWorkerOptions['auth'];
+}
+
 class HttpInterceptorStore {
   private static _localWorker?: LocalHttpInterceptorWorker;
   private static runningLocalInterceptors = new Set<AnyHttpInterceptorClient>();
@@ -20,8 +24,16 @@ class HttpInterceptorStore {
     return this.class._localWorker;
   }
 
-  remoteWorker(baseURL: URL) {
-    return this.class.remoteWorkers.get(baseURL.origin);
+  private getRemoteWorkerKey(baseURL: URL, options: RemoteWorkerKeyOptions) {
+    if (!options.auth) {
+      return baseURL.origin;
+    }
+    return `${baseURL.origin}:${options.auth.token}`;
+  }
+
+  remoteWorker(baseURL: URL, options: RemoteWorkerKeyOptions) {
+    const remoteWorkerKey = this.getRemoteWorkerKey(baseURL, options);
+    return this.class.remoteWorkers.get(remoteWorkerKey);
   }
 
   get numberOfRunningLocalInterceptors() {
@@ -70,23 +82,27 @@ class HttpInterceptorStore {
     return createdWorker;
   }
 
+  deleteLocalWorker() {
+    this.class._localWorker = undefined;
+  }
+
   getOrCreateRemoteWorker(workerOptions: Omit<RemoteHttpInterceptorWorkerOptions, 'type'>) {
-    const existingWorker = this.class.remoteWorkers.get(workerOptions.serverURL.origin);
+    const remoteWorkerKey = this.getRemoteWorkerKey(workerOptions.serverURL, { auth: workerOptions.auth });
+    const existingWorker = this.class.remoteWorkers.get(remoteWorkerKey);
+
     if (existingWorker) {
       return existingWorker;
     }
 
     const createdWorker = createHttpInterceptorWorker({ ...workerOptions, type: 'remote' });
-    this.class.remoteWorkers.set(workerOptions.serverURL.origin, createdWorker);
+    this.class.remoteWorkers.set(remoteWorkerKey, createdWorker);
 
     return createdWorker;
   }
 
-  clear() {
-    this.class._localWorker = undefined;
-    this.class.runningLocalInterceptors.clear();
-    this.class.remoteWorkers.clear();
-    this.class.runningRemoteInterceptors.clear();
+  deleteRemoteWorker(baseURL: URL, options: RemoteWorkerKeyOptions) {
+    const remoteWorkerKey = this.getRemoteWorkerKey(baseURL, options);
+    this.class.remoteWorkers.delete(remoteWorkerKey);
   }
 }
 

@@ -21,7 +21,7 @@ describe('FetchClient > Search params', () => {
     { id: '2', name: 'User 2' },
   ];
 
-  it('should support requests with search params as object', async () => {
+  it('should support requests with search params as an object', async () => {
     type RequestSearchParams = HttpSchema.SearchParams<{
       name?: string;
     }>;
@@ -35,7 +35,7 @@ describe('FetchClient > Search params', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const searchParams: RequestSearchParams = { name: 'User' };
 
       await interceptor
@@ -76,7 +76,7 @@ describe('FetchClient > Search params', () => {
     });
   });
 
-  it('should support requests with search params as instance', async () => {
+  it('should support requests with search params as an instance', async () => {
     type RequestSearchParams = HttpSchema.SearchParams<{
       name?: string;
     }>;
@@ -90,7 +90,7 @@ describe('FetchClient > Search params', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const searchParams = new HttpSearchParams<RequestSearchParams>({ name: 'User' });
 
       await interceptor
@@ -149,7 +149,7 @@ describe('FetchClient > Search params', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       expectTypeOf<RequestSearchParams>().toEqualTypeOf<{
         name: string;
         usernames: string[];
@@ -200,7 +200,7 @@ describe('FetchClient > Search params', () => {
     });
   });
 
-  it('should support requests with no search params', async () => {
+  it('should support requests with no search params and no request declaration', async () => {
     type Schema = HttpSchema<{
       '/users': {
         GET: {
@@ -209,33 +209,127 @@ describe('FetchClient > Search params', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
-      await interceptor
-        .get('/users')
-        .respond({
-          status: 200,
-          body: users,
-        })
-        .times(8);
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
+      await interceptor.get('/users').respond({ status: 200, body: users }).times(8);
 
       const fetch = createFetch<Schema>({ baseURL });
 
       const responses = [
         await fetch('/users', { method: 'GET' }),
         await fetch('/users', { method: 'GET', searchParams: undefined }),
-        // @ts-expect-error Forcing the search params to be defined
+        // @ts-expect-error Forcing some search params
         await fetch('/users', { method: 'GET', searchParams: {} }),
-        // @ts-expect-error Forcing the search params to be defined
+        // @ts-expect-error Forcing some search params
         await fetch('/users', { method: 'GET', searchParams: new HttpSearchParams() }),
       ];
 
       for (const request of [
         new fetch.Request('/users', { method: 'GET' }),
         new fetch.Request('/users', { method: 'GET', searchParams: undefined }),
-        // @ts-expect-error Forcing the search params to be defined
+        // @ts-expect-error Forcing some search params
         new fetch.Request('/users', { method: 'GET', searchParams: {} }),
-        // @ts-expect-error Forcing the search params to be defined
+        // @ts-expect-error Forcing some search params
         new fetch.Request('/users', { method: 'GET', searchParams: new HttpSearchParams() }),
+      ]) {
+        expect(request).toBeInstanceOf(Request);
+        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+
+        expect(request.url).toBe(joinURL(baseURL, '/users'));
+
+        responses.push(await fetch(request));
+      }
+
+      for (const response of responses) {
+        expectTypeOf(response.status).toEqualTypeOf<200>();
+        expectResponseStatus(response, 200);
+
+        expect(await response.json()).toEqual(users);
+      }
+    });
+  });
+
+  it('should support requests with no search params and an empty request declaration', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        GET: {
+          request: {};
+          response: { 200: { body: User[] } };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
+      await interceptor.get('/users').respond({ status: 200, body: users }).times(8);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const responses = [
+        await fetch('/users', { method: 'GET' }),
+        await fetch('/users', { method: 'GET', searchParams: undefined }),
+        // @ts-expect-error Forcing some search params
+        await fetch('/users', { method: 'GET', searchParams: {} }),
+        // @ts-expect-error Forcing some search params
+        await fetch('/users', { method: 'GET', searchParams: new HttpSearchParams() }),
+      ];
+
+      for (const request of [
+        new fetch.Request('/users', { method: 'GET' }),
+        new fetch.Request('/users', { method: 'GET', searchParams: undefined }),
+        // @ts-expect-error Forcing some search params
+        new fetch.Request('/users', { method: 'GET', searchParams: {} }),
+        // @ts-expect-error Forcing some search params
+        new fetch.Request('/users', { method: 'GET', searchParams: new HttpSearchParams() }),
+      ]) {
+        expect(request).toBeInstanceOf(Request);
+        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+
+        expect(request.url).toBe(joinURL(baseURL, '/users'));
+
+        responses.push(await fetch(request));
+      }
+
+      for (const response of responses) {
+        expectTypeOf(response.status).toEqualTypeOf<200>();
+        expectResponseStatus(response, 200);
+
+        expect(await response.json()).toEqual(users);
+      }
+    });
+  });
+
+  it('should support requests with no search params and a non-empty request declaration', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        GET: {
+          request: { headers: { language: string } };
+          response: { 200: { body: User[] } };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
+      const headers = { language: 'en' };
+
+      await interceptor.get('/users').with({ headers }).respond({ status: 200, body: users }).times(8);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const responses = [
+        await fetch('/users', { method: 'GET', headers }),
+        await fetch('/users', { method: 'GET', headers, searchParams: undefined }),
+        // @ts-expect-error Forcing some search params
+        await fetch('/users', { method: 'GET', headers, searchParams: {} }),
+        // @ts-expect-error Forcing some search params
+        await fetch('/users', { method: 'GET', headers, searchParams: new HttpSearchParams() }),
+      ];
+
+      for (const request of [
+        new fetch.Request('/users', { method: 'GET', headers }),
+        new fetch.Request('/users', { method: 'GET', headers, searchParams: undefined }),
+        // @ts-expect-error Forcing some search params
+        new fetch.Request('/users', { method: 'GET', headers, searchParams: {} }),
+        // @ts-expect-error Forcing some search params
+        new fetch.Request('/users', { method: 'GET', headers, searchParams: new HttpSearchParams() }),
       ]) {
         expect(request).toBeInstanceOf(Request);
         expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();

@@ -28,7 +28,7 @@ describe('FetchClient > Path params', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get(`/${users[0].username}`)
         .respond({
@@ -75,7 +75,7 @@ describe('FetchClient > Path params', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get(`/users/${users[0].username}/get`)
         .respond({
@@ -124,7 +124,7 @@ describe('FetchClient > Path params', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get(`/users/${users[0].username}`)
         .respond({
@@ -171,7 +171,7 @@ describe('FetchClient > Path params', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get(`/users/${users[0].username}/get/${users[1].username}`)
         .respond({
@@ -222,7 +222,7 @@ describe('FetchClient > Path params', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get(`/users/${users[0].username}/${users[1].username}`)
         .respond({
@@ -273,7 +273,7 @@ describe('FetchClient > Path params', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get(`/users/${users[0].username}/${users[1].username}/get`)
         .respond({
@@ -332,7 +332,7 @@ describe('FetchClient > Path params', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .respond({

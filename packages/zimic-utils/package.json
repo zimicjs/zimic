@@ -91,6 +91,12 @@
       "require": "./dist/import/createCachedDynamicImport.js",
       "default": "./dist/import/createCachedDynamicImport.js"
     },
+    "./logging/Logger": {
+      "types": "./logging/Logger.d.ts",
+      "import": "./dist/logging/Logger.mjs",
+      "require": "./dist/logging/Logger.js",
+      "default": "./dist/logging/Logger.js"
+    },
     "./time/waitFor": {
       "types": "./time/waitFor.d.ts",
       "import": "./dist/time/waitFor.mjs",
@@ -149,7 +155,6 @@
   },
   "scripts": {
     "dev": "tsup --watch",
-    "cli": "node ./dist/cli.js",
     "build": "tsup",
     "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
@@ -160,13 +165,13 @@
     "typegen:fixtures": "tsx ./scripts/typegen/generateFixtureTypes.js"
   },
   "devDependencies": {
-    "@types/node": "^22.13.11",
+    "@types/node": "^22.14.0",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
-    "eslint": "^9.23.0",
+    "eslint": "^9.24.0",
     "tsup": "^8.4.0",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "vitest": "^3.0.6"

@@ -5,7 +5,7 @@ import path from 'path';
 import color from 'picocolors';
 
 import { HTTP_METHODS } from '@/types/schema';
-import { logWithPrefix } from '@/utils/console';
+import { logger } from '@/utils/logging';
 
 import { TypePathFilters } from './context';
 
@@ -26,9 +26,7 @@ export function parseRawFilter(rawFilter: string): ParsedTypePathFilter | undefi
 
   const isValidFilter = !filteredMethodsOrWildcard || !filteredPath;
   if (isValidFilter) {
-    logWithPrefix(`Warning: Filter could not be parsed and was ignored: ${color.yellow(rawFilter)}`, {
-      method: 'warn',
-    });
+    logger.warn(`Warning: Filter could not be parsed and was ignored: ${color.yellow(rawFilter)}`);
     return undefined;
   }
 

@@ -36,7 +36,7 @@ describe('FetchClient > Bodies > JSON', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .with({ body: users[0] })
@@ -67,7 +67,6 @@ describe('FetchClient > Bodies > JSON', () => {
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<User>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
@@ -104,7 +103,7 @@ describe('FetchClient > Bodies > JSON', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .with({ body: 1 })
@@ -135,7 +134,6 @@ describe('FetchClient > Bodies > JSON', () => {
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<number>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
@@ -172,7 +170,7 @@ describe('FetchClient > Bodies > JSON', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .with({ body: false })
@@ -203,7 +201,6 @@ describe('FetchClient > Bodies > JSON', () => {
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<boolean>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
@@ -235,7 +232,7 @@ describe('FetchClient > Bodies > JSON', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .with({ body: null })
@@ -265,7 +262,6 @@ describe('FetchClient > Bodies > JSON', () => {
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();

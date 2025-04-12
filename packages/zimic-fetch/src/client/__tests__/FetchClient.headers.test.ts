@@ -21,7 +21,7 @@ describe('FetchClient > Headers', () => {
     { id: '2', name: 'User 2' },
   ];
 
-  it('should support requests with headers as object', async () => {
+  it('should support requests with headers as an object', async () => {
     type RequestHeaders = HttpSchema.Headers<{
       'content-type': string;
     }>;
@@ -35,7 +35,7 @@ describe('FetchClient > Headers', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const headers: RequestHeaders = {
         'content-type': 'application/json',
       };
@@ -81,7 +81,7 @@ describe('FetchClient > Headers', () => {
     });
   });
 
-  it('should support requests with headers as instance', async () => {
+  it('should support requests with headers as an instance', async () => {
     type RequestHeaders = HttpSchema.Headers<{
       'content-type': string;
     }>;
@@ -95,7 +95,7 @@ describe('FetchClient > Headers', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const headers = new HttpHeaders<RequestHeaders>({ 'content-type': 'application/json' });
 
       await interceptor
@@ -155,7 +155,7 @@ describe('FetchClient > Headers', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       expectTypeOf<RequestHeaders>().toEqualTypeOf<{
         'content-type': string;
       }>();
@@ -205,7 +205,7 @@ describe('FetchClient > Headers', () => {
     });
   });
 
-  it('should support requests with no headers', async () => {
+  it('should support requests with no headers and no request declaration', async () => {
     type Schema = HttpSchema<{
       '/users': {
         GET: {
@@ -214,32 +214,26 @@ describe('FetchClient > Headers', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
-      await interceptor
-        .get('/users')
-        .respond({
-          status: 200,
-          body: users,
-        })
-        .times(8);
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
+      await interceptor.get('/users').respond({ status: 200, body: users }).times(8);
 
       const fetch = createFetch<Schema>({ baseURL });
 
       const responses = [
         await fetch('/users', { method: 'GET' }),
         await fetch('/users', { method: 'GET', headers: undefined }),
-        // @ts-expect-error Forcing the headers to be defined
+        // @ts-expect-error Forcing some headers
         await fetch('/users', { method: 'GET', headers: {} }),
-        // @ts-expect-error Forcing the headers to be defined
+        // @ts-expect-error Forcing some headers
         await fetch('/users', { method: 'GET', headers: new HttpHeaders() }),
       ];
 
       for (const request of [
         new fetch.Request('/users', { method: 'GET' }),
         new fetch.Request('/users', { method: 'GET', headers: undefined }),
-        // @ts-expect-error Forcing the headers to be defined
+        // @ts-expect-error Forcing some headers
         new fetch.Request('/users', { method: 'GET', headers: {} }),
-        // @ts-expect-error Forcing the headers to be defined
+        // @ts-expect-error Forcing some headers
         new fetch.Request('/users', { method: 'GET', headers: new HttpHeaders() }),
       ]) {
         expect(request).toBeInstanceOf(Request);
@@ -250,7 +244,8 @@ describe('FetchClient > Headers', () => {
         expect(request.headers).toBeInstanceOf(Headers);
         expectTypeOf(request.headers).toEqualTypeOf<StrictHeaders<never>>();
 
-        responses.push(await fetch(request));
+        const response = await fetch(request);
+        responses.push(response);
       }
 
       for (const response of responses) {
@@ -262,7 +257,115 @@ describe('FetchClient > Headers', () => {
     });
   });
 
-  it('should support responses with headers as object', async () => {
+  it('should support requests with no headers and an empty request declaration', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        GET: {
+          request: {};
+          response: { 200: { body: User[] } };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
+      await interceptor.get('/users').respond({ status: 200, body: users }).times(8);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const responses = [
+        await fetch('/users', { method: 'GET' }),
+        await fetch('/users', { method: 'GET', headers: undefined }),
+        // @ts-expect-error Forcing some headers
+        await fetch('/users', { method: 'GET', headers: {} }),
+        // @ts-expect-error Forcing some headers
+        await fetch('/users', { method: 'GET', headers: new HttpHeaders() }),
+      ];
+
+      for (const request of [
+        new fetch.Request('/users', { method: 'GET' }),
+        new fetch.Request('/users', { method: 'GET', headers: undefined }),
+        // @ts-expect-error Forcing some headers
+        new fetch.Request('/users', { method: 'GET', headers: {} }),
+        // @ts-expect-error Forcing some headers
+        new fetch.Request('/users', { method: 'GET', headers: new HttpHeaders() }),
+      ]) {
+        expect(request).toBeInstanceOf(Request);
+        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+
+        expect(request.url).toBe(joinURL(baseURL, '/users'));
+
+        expect(request.headers).toBeInstanceOf(Headers);
+        expectTypeOf(request.headers).toEqualTypeOf<StrictHeaders<never>>();
+
+        const response = await fetch(request);
+        responses.push(response);
+      }
+
+      for (const response of responses) {
+        expectTypeOf(response.status).toEqualTypeOf<200>();
+        expectResponseStatus(response, 200);
+
+        expect(await response.json()).toEqual(users);
+      }
+    });
+  });
+
+  it('should support requests with no headers and a non-empty request declaration', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        GET: {
+          request: { searchParams: { query: string } };
+          response: { 200: { body: User[] } };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
+      const searchParams = { query: users[0].name };
+
+      await interceptor.get('/users').with({ searchParams }).respond({ status: 200, body: users }).times(8);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const responses = [
+        await fetch('/users', { method: 'GET', searchParams }),
+        await fetch('/users', { method: 'GET', searchParams, headers: undefined }),
+        // @ts-expect-error Forcing some headers
+        await fetch('/users', { method: 'GET', searchParams, headers: {} }),
+        // @ts-expect-error Forcing some headers
+        await fetch('/users', { method: 'GET', searchParams, headers: new HttpHeaders() }),
+      ];
+
+      for (const request of [
+        new fetch.Request('/users', { method: 'GET', searchParams }),
+        new fetch.Request('/users', { method: 'GET', searchParams, headers: undefined }),
+        // @ts-expect-error Forcing some headers
+        new fetch.Request('/users', { method: 'GET', searchParams, headers: {} }),
+        // @ts-expect-error Forcing some headers
+        new fetch.Request('/users', { method: 'GET', searchParams, headers: new HttpHeaders() }),
+      ]) {
+        expect(request).toBeInstanceOf(Request);
+        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+
+        expect(request.url).toBe(joinURL(baseURL, '/users?query=User+1'));
+
+        expect(request.headers).toBeInstanceOf(Headers);
+        expectTypeOf(request.headers).toEqualTypeOf<StrictHeaders<never>>();
+
+        const response = await fetch(request);
+        responses.push(response);
+      }
+
+      for (const response of responses) {
+        expectTypeOf(response.status).toEqualTypeOf<200>();
+        expectResponseStatus(response, 200);
+
+        expect(await response.json()).toEqual(users);
+      }
+    });
+  });
+
+  it('should support responses with headers as an object', async () => {
     type ResponseHeaders = HttpSchema.Headers<{
       'content-type': string;
     }>;
@@ -275,7 +378,7 @@ describe('FetchClient > Headers', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const headers: ResponseHeaders = {
         'content-type': 'application/json',
       };
@@ -316,7 +419,7 @@ describe('FetchClient > Headers', () => {
     });
   });
 
-  it('should support responses with headers as instance', async () => {
+  it('should support responses with headers as an instance', async () => {
     type ResponseHeaders = HttpSchema.Headers<{
       'content-type': string;
     }>;
@@ -329,7 +432,7 @@ describe('FetchClient > Headers', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const headers = new HttpHeaders<ResponseHeaders>({ 'content-type': 'application/json' });
 
       await interceptor
@@ -383,7 +486,7 @@ describe('FetchClient > Headers', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       expectTypeOf<ResponseHeaders>().toEqualTypeOf<{
         'content-type': string;
       }>();
@@ -428,7 +531,55 @@ describe('FetchClient > Headers', () => {
     });
   });
 
-  it('should support responses with no headers', async () => {
+  it('should support responses with no headers and an empty response declaration', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        GET: {
+          response: { 200: {} };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
+      await interceptor.get('/users').respond({ status: 200 }).times(4);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const responses = [
+        await fetch('/users', { method: 'GET' }),
+        await fetch('/users', { method: 'GET', headers: undefined }),
+        // @ts-expect-error Forcing some headers
+        await fetch('/users', { method: 'GET', headers: {} }),
+        // @ts-expect-error Forcing some headers
+        await fetch('/users', { method: 'GET', headers: new HttpHeaders() }),
+      ];
+
+      for (const response of responses) {
+        expectTypeOf(response.status).toEqualTypeOf<200>();
+        expectResponseStatus(response, 200);
+
+        expect(await response.text()).toBe('');
+
+        expect(response).toBeInstanceOf(Response);
+        expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
+
+        expect(response.url).toBe(joinURL(baseURL, '/users'));
+
+        expect(response.headers).toBeInstanceOf(Headers);
+        expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
+
+        expect(response.request).toBeInstanceOf(Request);
+        expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+
+        expect(response.request.url).toBe(joinURL(baseURL, '/users'));
+
+        expect(response.request.headers).toBeInstanceOf(Headers);
+        expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<never>>();
+      }
+    });
+  });
+
+  it('should support responses with no headers and and a non-empty response declaration', async () => {
     type Schema = HttpSchema<{
       '/users': {
         GET: {
@@ -437,23 +588,17 @@ describe('FetchClient > Headers', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
-      await interceptor
-        .get('/users')
-        .respond({
-          status: 200,
-          body: users,
-        })
-        .times(4);
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
+      await interceptor.get('/users').respond({ status: 200, body: users }).times(4);
 
       const fetch = createFetch<Schema>({ baseURL });
 
       const responses = [
         await fetch('/users', { method: 'GET' }),
         await fetch('/users', { method: 'GET', headers: undefined }),
-        // @ts-expect-error Forcing the headers to be defined
+        // @ts-expect-error Forcing some headers
         await fetch('/users', { method: 'GET', headers: {} }),
-        // @ts-expect-error Forcing the headers to be defined
+        // @ts-expect-error Forcing some headers
         await fetch('/users', { method: 'GET', headers: new HttpHeaders() }),
       ];
 

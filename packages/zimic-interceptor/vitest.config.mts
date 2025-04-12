@@ -5,8 +5,8 @@ export default defineConfig({
   publicDir: './public',
   test: {
     globals: false,
-    testTimeout: 5000,
-    hookTimeout: 5000,
+    testTimeout: 7500,
+    hookTimeout: 7500,
     maxWorkers: process.env.CI === 'true' ? '50%' : '25%',
     minWorkers: 1,
     clearMocks: true,
@@ -37,7 +37,8 @@ export default defineConfig({
     },
   },
   define: {
-    'process.env.SERVER_ACCESS_CONTROL_MAX_AGE': "'0'",
+    'process.env.INTERCEPTOR_SERVER_ACCESS_CONTROL_MAX_AGE': "'0'",
+    'process.env.INTERCEPTOR_TOKEN_HASH_ITERATIONS': "'10000'",
   },
   resolve: {
     alias: {

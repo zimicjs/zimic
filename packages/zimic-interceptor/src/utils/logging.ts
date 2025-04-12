@@ -1,9 +1,14 @@
 import { HttpFormData, HttpHeaders, HttpSearchParams } from '@zimic/http';
 import createCachedDynamicImport from '@zimic/utils/import/createCachedDynamicImport';
+import Logger from '@zimic/utils/logging/Logger';
 import color from 'picocolors';
 
 import { isClientSide } from './environment';
 import { isGlobalFileAvailable } from './files';
+
+export const logger = new Logger({
+  prefix: color.cyan('[@zimic/interceptor]'),
+});
 
 function stringifyJSONToLog(value: unknown): string {
   return JSON.stringify(
@@ -78,11 +83,4 @@ export async function formatValueToLog(value: unknown, options: { colors?: boole
     breakLength: Infinity,
     sorted: true,
   });
-}
-
-export function logWithPrefix(messageOrMessages: unknown, options: { method?: 'log' | 'warn' | 'error' } = {}) {
-  const { method = 'log' } = options;
-
-  const messages = Array.isArray(messageOrMessages) ? messageOrMessages : [messageOrMessages];
-  console[method](color.cyan('[@zimic/interceptor]'), ...messages);
 }

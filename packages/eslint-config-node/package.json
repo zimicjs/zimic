@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "eslint-plugin-import": "^2.31.0",
-    "@eslint/compat": "^1.2.7",
+    "@eslint/compat": "^1.2.8",
     "@zimic/eslint-config": "workspace:*"
   },
   "peerDependencies": {

@@ -8,6 +8,14 @@
 
 `zimic-interceptor browser` contains commands to manage browser mock configuration.
 
+```
+zimic-interceptor browser
+
+Commands:
+  zimic-interceptor browser init <publicDirectory>   Initialize the browser service
+                                                     worker configuration.
+```
+
 ## `zimic-interceptor browser init`
 
 Initialize the browser service worker configuration.
