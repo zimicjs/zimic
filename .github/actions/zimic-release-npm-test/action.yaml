@@ -57,7 +57,7 @@ runs:
           done
 
           sed -i -E \
-            "s;\"${{ inputs.project-name }}\": \"(latest|workspace:.*)\";\"${{ inputs.project-name }}\": \"npm:${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }}\";" \
+            "s;\"${{ inputs.project-name }}\": \"(latest|workspace:.*)\";\"${{ inputs.project-name }}\": \"${{ steps.zimic-version.outputs.value }}\";" \
             "$packageFile"
         done
 

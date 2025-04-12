@@ -5,7 +5,6 @@ import { vi } from 'vitest';
 const { WebSocketServer: ServerSocket } = ClientSocket;
 
 export function delayClientSocketOpen(delayDuration: number) {
-  // eslint-disable-next-line @typescript-eslint/unbound-method
   const originalClientSocketAddEventListener = ClientSocket.prototype.addEventListener;
 
   const delayedClientSocketAddEventListener = vi
@@ -22,7 +21,6 @@ export function delayClientSocketOpen(delayDuration: number) {
 }
 
 export function delayServerSocketConnection() {
-  // eslint-disable-next-line @typescript-eslint/unbound-method
   const originalServerSocketOn = ServerSocket.prototype.on;
 
   const delayedServerSocketOnSpy = vi.spyOn(ServerSocket.prototype, 'on').mockImplementation(function (
@@ -46,7 +44,6 @@ export function delayServerSocketConnection() {
 }
 
 export function delayClientSocketClose(delayDuration: number) {
-  // eslint-disable-next-line @typescript-eslint/unbound-method
   const originalClientSocketClose = ClientSocket.prototype.close;
 
   const delayedClientSocketClose = vi.spyOn(ClientSocket.prototype, 'close').mockImplementationOnce(function (
@@ -62,7 +59,6 @@ export function delayClientSocketClose(delayDuration: number) {
 }
 
 export function delayServerSocketClose(delayDuration: number) {
-  // eslint-disable-next-line @typescript-eslint/unbound-method
   const originalServerSocketClose = ServerSocket.prototype.close;
 
   const delayedServerSocketClose = vi.spyOn(ServerSocket.prototype, 'close').mockImplementationOnce(function (

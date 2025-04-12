@@ -30,37 +30,42 @@ type FetchRequestInitHeaders<RequestSchema extends HttpRequestSchema> =
   | RequestSchema['headers']
   | HttpHeaders<Default<RequestSchema['headers']>>;
 
-type FetchRequestInitWithHeaders<RequestSchema extends HttpRequestSchema> = [RequestSchema['headers']] extends [never]
-  ? { headers?: undefined }
-  : undefined extends RequestSchema['headers']
-    ? { headers?: FetchRequestInitHeaders<RequestSchema> }
-    : { headers: FetchRequestInitHeaders<RequestSchema> };
+type FetchRequestInitWithHeaders<RequestSchema extends HttpRequestSchema> = 'headers' extends keyof RequestSchema
+  ? [RequestSchema['headers']] extends [never]
+    ? { headers?: undefined }
+    : undefined extends RequestSchema['headers']
+      ? { headers?: FetchRequestInitHeaders<RequestSchema> }
+      : { headers: FetchRequestInitHeaders<RequestSchema> }
+  : { headers?: undefined };
 
 type FetchRequestInitSearchParams<RequestSchema extends HttpRequestSchema> =
   | RequestSchema['searchParams']
   | HttpSearchParams<Default<RequestSchema['searchParams']>>;
 
-type FetchRequestInitWithSearchParams<RequestSchema extends HttpRequestSchema> = [
-  RequestSchema['searchParams'],
-] extends [never]
-  ? { searchParams?: undefined }
-  : undefined extends RequestSchema['searchParams']
-    ? { searchParams?: FetchRequestInitSearchParams<RequestSchema> }
-    : { searchParams: FetchRequestInitSearchParams<RequestSchema> };
+type FetchRequestInitWithSearchParams<RequestSchema extends HttpRequestSchema> =
+  'searchParams' extends keyof RequestSchema
+    ? [RequestSchema['searchParams']] extends [never]
+      ? { searchParams?: undefined }
+      : undefined extends RequestSchema['searchParams']
+        ? { searchParams?: FetchRequestInitSearchParams<RequestSchema> }
+        : { searchParams: FetchRequestInitSearchParams<RequestSchema> }
+    : { searchParams?: undefined };
 
-type FetchRequestInitWithBody<RequestSchema extends HttpRequestSchema> = [RequestSchema['body']] extends [never]
-  ? { body?: null }
-  : RequestSchema['body'] extends string
-    ? undefined extends RequestSchema['body']
-      ? { body?: ReplaceBy<RequestSchema['body'], undefined, null> }
-      : { body: RequestSchema['body'] }
-    : RequestSchema['body'] extends JSONValue
+type FetchRequestInitWithBody<RequestSchema extends HttpRequestSchema> = 'body' extends keyof RequestSchema
+  ? [RequestSchema['body']] extends [never]
+    ? { body?: null }
+    : RequestSchema['body'] extends string
       ? undefined extends RequestSchema['body']
-        ? { body?: JSONStringified<ReplaceBy<RequestSchema['body'], undefined, null>> }
-        : { body: JSONStringified<RequestSchema['body']> }
-      : undefined extends RequestSchema['body']
         ? { body?: ReplaceBy<RequestSchema['body'], undefined, null> }
-        : { body: RequestSchema['body'] };
+        : { body: RequestSchema['body'] }
+      : RequestSchema['body'] extends JSONValue
+        ? undefined extends RequestSchema['body']
+          ? { body?: JSONStringified<ReplaceBy<RequestSchema['body'], undefined, null>> }
+          : { body: JSONStringified<RequestSchema['body']> }
+        : undefined extends RequestSchema['body']
+          ? { body?: ReplaceBy<RequestSchema['body'], undefined, null> }
+          : { body: RequestSchema['body'] }
+  : { body?: null };
 
 type FetchRequestInitPerPath<RequestSchema extends HttpRequestSchema> = FetchRequestInitWithHeaders<RequestSchema> &
   FetchRequestInitWithSearchParams<RequestSchema> &

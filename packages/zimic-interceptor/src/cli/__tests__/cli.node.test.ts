@@ -13,8 +13,8 @@ describe('CLI', () => {
     'zimic-interceptor [command]',
     '',
     'Commands:',
-    '  zimic-interceptor browser  Manage your browser mock configuration',
-    '  zimic-interceptor server   Manage interceptor servers',
+    '  zimic-interceptor browser  Manage your browser mock configuration.',
+    '  zimic-interceptor server   Manage interceptor servers.',
     '',
     'Options:',
     '  --help     Show help                                                 [boolean]',
@@ -28,10 +28,10 @@ describe('CLI', () => {
   it('should not throw an error if no command is provided', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js']);
 
-    await usingIgnoredConsole(['error'], async (spies) => {
+    await usingIgnoredConsole(['error'], async (console) => {
       await runCLI();
 
-      expect(spies.error).toHaveBeenCalledTimes(0);
+      expect(console.error).toHaveBeenCalledTimes(0);
     });
   });
 
@@ -40,32 +40,33 @@ describe('CLI', () => {
 
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', unknownCommand]);
 
-    await usingIgnoredConsole(['error'], async (spies) => {
+    await usingIgnoredConsole(['error'], async (console) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
 
-      expect(spies.error).toHaveBeenCalledTimes(1);
-      expect(spies.error).toHaveBeenCalledWith(`Unknown argument: ${unknownCommand}`);
+      expect(console.error).toHaveBeenCalledTimes(1);
+      expect(console.error).toHaveBeenCalledWith(`Unknown argument: ${unknownCommand}`);
     });
   });
 
   it('should show a help message', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', '--help']);
-    await usingIgnoredConsole(['log'], async (spies) => {
+
+    await usingIgnoredConsole(['log'], async (console) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
 
-      expect(spies.log).toHaveBeenCalledTimes(1);
-      expect(spies.log).toHaveBeenCalledWith(rootHelpOutput);
+      expect(console.log).toHaveBeenCalledTimes(1);
+      expect(console.log).toHaveBeenCalledWith(rootHelpOutput);
     });
   });
 
   it('should show the CLI version', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', '--version']);
 
-    await usingIgnoredConsole(['log'], async (spies) => {
+    await usingIgnoredConsole(['log'], async (console) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
 
-      expect(spies.log).toHaveBeenCalledTimes(1);
-      expect(spies.log).toHaveBeenCalledWith(version);
+      expect(console.log).toHaveBeenCalledTimes(1);
+      expect(console.log).toHaveBeenCalledWith(version);
     });
   });
 });

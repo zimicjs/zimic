@@ -16,7 +16,6 @@ import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
 import { isServerSide } from '@/utils/environment';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
-import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
 import HttpRequestHandlerClient, { AnyHttpRequestHandlerClient } from '../requestHandler/HttpRequestHandlerClient';
 import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
@@ -38,10 +37,12 @@ class HttpInterceptorClient<
   Schema extends HttpSchema,
   HandlerConstructor extends HttpRequestHandlerConstructor = HttpRequestHandlerConstructor,
 > {
-  private worker: HttpInterceptorWorker;
   private store: HttpInterceptorStore;
-
   private _baseURL!: URL;
+
+  private createWorker: () => HttpInterceptorWorker;
+  private deleteWorker: () => void;
+  private worker?: HttpInterceptorWorker;
 
   requestSaving: HttpInterceptorRequestSaving;
   private numberOfSavedRequests = 0;
@@ -67,17 +68,19 @@ class HttpInterceptorClient<
   };
 
   constructor(options: {
-    worker: HttpInterceptorWorker;
     store: HttpInterceptorStore;
     baseURL: URL;
+    createWorker: () => HttpInterceptorWorker;
+    deleteWorker: () => void;
     requestSaving?: Partial<HttpInterceptorRequestSaving>;
     onUnhandledRequest?: UnhandledRequestStrategy;
     Handler: HandlerConstructor;
   }) {
-    this.worker = options.worker;
     this.store = options.store;
-
     this.baseURL = options.baseURL;
+
+    this.createWorker = options.createWorker;
+    this.deleteWorker = options.deleteWorker;
 
     this.requestSaving = {
       enabled: options.requestSaving?.enabled ?? this.getDefaultRequestSavingEnabled(),
@@ -108,6 +111,7 @@ class HttpInterceptorClient<
 
     validateURLProtocol(newBaseURL, SUPPORTED_BASE_URL_PROTOCOLS);
     excludeURLParams(newBaseURL);
+
     this._baseURL = newBaseURL;
   }
 
@@ -118,29 +122,48 @@ class HttpInterceptorClient<
     return this.baseURL.href;
   }
 
+  private get workerOrThrow() {
+    if (!this.worker) {
+      throw new NotRunningHttpInterceptorError();
+    }
+    return this.worker;
+  }
+
   get platform() {
-    return this.worker.platform;
+    return this.worker?.platform ?? null;
   }
 
   async start() {
-    await this.worker.start();
+    try {
+      this.worker = this.createWorker();
 
-    this.worker.registerRunningInterceptor(this);
-    this.markAsRunning(true);
-  }
+      await this.worker.start();
+      this.worker.registerRunningInterceptor(this);
 
-  async stop() {
-    this.markAsRunning(false);
-    this.worker.unregisterRunningInterceptor(this);
-
-    const wasLastRunningInterceptor = this.numberOfRunningInterceptors() === 0;
-    if (wasLastRunningInterceptor) {
-      await this.worker.stop();
+      this.markAsRunning(true);
+    } catch (error) {
+      await this.stop();
+      throw error;
     }
   }
 
+  async stop() {
+    this.worker?.unregisterRunningInterceptor(this);
+
+    // The number of interceptors will be 0 if the first client could not start due to an error.
+    const isLastRunningInterceptor = this.numberOfRunningInterceptors === 0 || this.numberOfRunningInterceptors === 1;
+
+    if (isLastRunningInterceptor) {
+      await this.worker?.stop();
+      this.deleteWorker();
+    }
+
+    this.markAsRunning(false);
+    this.worker = undefined;
+  }
+
   private markAsRunning(isRunning: boolean) {
-    if (this.worker instanceof LocalHttpInterceptorWorker) {
+    if (this.workerOrThrow.type === 'local') {
       this.store.markLocalInterceptorAsRunning(this, isRunning);
     } else {
       this.store.markRemoteInterceptorAsRunning(this, isRunning, this.baseURL);
@@ -148,8 +171,12 @@ class HttpInterceptorClient<
     this.isRunning = isRunning;
   }
 
-  private numberOfRunningInterceptors() {
-    if (this.worker instanceof LocalHttpInterceptorWorker) {
+  get numberOfRunningInterceptors() {
+    if (!this.isRunning) {
+      return 0;
+    }
+
+    if (this.workerOrThrow.type === 'local') {
       return this.store.numberOfRunningLocalInterceptors;
     } else {
       return this.store.numberOfRunningRemoteInterceptors(this.baseURL);
@@ -222,7 +249,7 @@ class HttpInterceptorClient<
     const url = joinURL(this.baseURLAsString, handler.path);
     const urlRegex = createRegExpFromURL(url);
 
-    const registrationResult = this.worker.use(this, handler.method, url, async (context) => {
+    const registrationResult = this.workerOrThrow.use(this, handler.method, url, async (context) => {
       const response = await this.handleInterceptedRequest(
         urlRegex,
         handler.method,
@@ -316,11 +343,9 @@ class HttpInterceptorClient<
   }
 
   clear(options: { onCommitSuccess?: () => void; onCommitError?: () => void } = {}) {
-    if (!this.isRunning) {
-      throw new NotRunningHttpInterceptorError();
-    }
-
-    const clearResults: PossiblePromise<AnyHttpRequestHandlerClient | void>[] = [];
+    const clearResults: PossiblePromise<AnyHttpRequestHandlerClient | void>[] = [
+      this.workerOrThrow.clearInterceptorHandlers(this),
+    ];
 
     for (const method of HTTP_METHODS) {
       const newClearResults = this.clearMethodHandlers(method);
@@ -332,9 +357,6 @@ class HttpInterceptorClient<
       const handlersByPath = this.handlerClientsByMethod[method];
       handlersByPath.clear();
     }
-
-    const clearResult = this.worker.clearInterceptorHandlers(this);
-    clearResults.push(clearResult);
 
     if (options.onCommitSuccess) {
       void Promise.all(clearResults).then(options.onCommitSuccess, options.onCommitError);

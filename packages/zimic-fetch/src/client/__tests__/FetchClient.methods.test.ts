@@ -30,7 +30,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .respond({
@@ -75,7 +75,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .respond({
@@ -121,7 +121,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .respond({
@@ -185,7 +185,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const user = users[0];
 
       await interceptor
@@ -242,7 +242,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const user = users[0];
 
       await interceptor
@@ -300,7 +300,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const user = users[0];
 
       await interceptor
@@ -372,7 +372,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const user = users[0];
 
       await interceptor
@@ -430,7 +430,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const user = users[0];
 
       await interceptor
@@ -489,7 +489,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const user = users[0];
 
       await interceptor
@@ -562,7 +562,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const user = users[0];
 
       await interceptor
@@ -620,7 +620,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const user = users[0];
 
       await interceptor
@@ -679,7 +679,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const user = users[0];
 
       await interceptor
@@ -752,7 +752,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor.delete('/users').respond({ status: 204 }).times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
@@ -789,7 +789,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor.delete('/users').respond({ status: 204 }).times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
@@ -827,7 +827,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor.delete('/users').respond({ status: 204 }).times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
@@ -879,7 +879,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor.head('/users').respond({ status: 200 }).times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
@@ -917,7 +917,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor.head('/users').respond({ status: 200 }).times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
@@ -956,7 +956,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor.head('/users').respond({ status: 200 }).times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
@@ -1009,7 +1009,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor.options('/users').respond({ status: 200 }).times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
@@ -1047,7 +1047,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor.options('/users').respond({ status: 200 }).times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
@@ -1086,7 +1086,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor.options('/users').respond({ status: 200 }).times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
@@ -1147,7 +1147,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const fetch = createFetch<Schema>({ baseURL });
 
       await interceptor
@@ -1275,7 +1275,7 @@ describe('FetchClient > Methods', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const fetch = createFetch<Schema>({ baseURL });
 
       interceptor.post('/users').respond({ status: 201, body: users[0] });

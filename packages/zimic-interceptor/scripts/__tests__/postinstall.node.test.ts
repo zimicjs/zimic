@@ -1,4 +1,4 @@
-import filesystem from 'fs/promises';
+import fs from 'fs';
 import path from 'path';
 import { describe, expect, it } from 'vitest';
 
@@ -8,7 +8,7 @@ describe('Post-install script', () => {
   it('should patch msw/package.json exports', async () => {
     await postinstallPromise;
 
-    const mswPackageContentAsString = await filesystem.readFile(MSW_PACKAGE_PATH, 'utf-8');
+    const mswPackageContentAsString = await fs.promises.readFile(MSW_PACKAGE_PATH, 'utf-8');
     const mswPackageContent = JSON.parse(mswPackageContentAsString) as MSWPackage;
 
     const { exports } = mswPackageContent;
@@ -23,7 +23,7 @@ describe('Post-install script', () => {
       await postinstallPromise;
 
       const mswBrowserPath = path.join(MSW_BROWSER_DIRECTORY, indexFileName);
-      const mswBrowserContent = await filesystem.readFile(mswBrowserPath, 'utf-8');
+      const mswBrowserContent = await fs.promises.readFile(mswBrowserPath, 'utf-8');
 
       expect(mswBrowserContent).toContain('if (!request || responseJson.type?.includes("opaque")) {');
     },

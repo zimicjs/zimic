@@ -1,9 +1,12 @@
 import { HttpSchema } from '@zimic/http';
-import { describe, it } from 'vitest';
+import joinURL from '@zimic/utils/url/joinURL';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { expectResponseStatus } from '@tests/utils/requests';
 
 import createFetch from '../factory';
+import { FetchRequest } from '../types/requests';
 
 describe('FetchClient > Bodies', () => {
   const baseURL = 'http://localhost:3000';
@@ -19,14 +22,12 @@ describe('FetchClient > Bodies', () => {
           request: {
             body: { name?: string };
           };
-          response: {
-            204: {};
-          };
+          response: { 204: {} };
         };
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       interceptor.post('/users').respond({ status: 204 });
 
       const fetch = createFetch<Schema>({ baseURL });
@@ -160,5 +161,165 @@ describe('FetchClient > Bodies', () => {
     createFetch<{ '/users': { OPTIONS: { response: { 204: { body: null } } } } }>({ baseURL });
     createFetch<{ '/users': { OPTIONS: { response: { 204: { body: undefined } } } } }>({ baseURL });
     createFetch<{ '/users': { OPTIONS: { response: { 204: {} } } } }>({ baseURL });
+  });
+
+  it('should support requests with no body and no request declaration', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        POST: {
+          response: { 204: {} };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
+      await interceptor.post('/users').respond({ status: 204 }).times(8);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const responses = [
+        await fetch('/users', { method: 'POST' }),
+        await fetch('/users', { method: 'POST', body: null }),
+        await fetch('/users', { method: 'POST', body: undefined }),
+        // @ts-expect-error Forcing a body
+        await fetch('/users', { method: 'POST', body: {} }),
+      ];
+
+      for (const request of [
+        new fetch.Request('/users', { method: 'POST' }),
+        new fetch.Request('/users', { method: 'POST', body: null }),
+        new fetch.Request('/users', { method: 'POST', body: undefined }),
+        // @ts-expect-error Forcing some headers
+        new fetch.Request('/users', { method: 'POST', body: {} }),
+      ]) {
+        expect(request).toBeInstanceOf(Request);
+        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+
+        expect(request.url).toBe(joinURL(baseURL, '/users'));
+
+        expectTypeOf(request.json).toEqualTypeOf<() => Promise<null>>();
+        expectTypeOf(request.text).toEqualTypeOf<() => Promise<string>>();
+        expectTypeOf(request.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
+        expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
+
+        const response = await fetch(request);
+        responses.push(response);
+      }
+
+      for (const response of responses) {
+        expectTypeOf(response.status).toEqualTypeOf<204>();
+        expectResponseStatus(response, 204);
+
+        expect(await response.text()).toBe('');
+      }
+    });
+  });
+
+  it('should support requests with no body and an empty request declaration', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        POST: {
+          request: {};
+          response: { 204: {} };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
+      await interceptor.post('/users').respond({ status: 204 }).times(8);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const responses = [
+        await fetch('/users', { method: 'POST' }),
+        await fetch('/users', { method: 'POST', body: null }),
+        await fetch('/users', { method: 'POST', body: undefined }),
+        // @ts-expect-error Forcing a body
+        await fetch('/users', { method: 'POST', body: {} }),
+      ];
+
+      for (const request of [
+        new fetch.Request('/users', { method: 'POST' }),
+        new fetch.Request('/users', { method: 'POST', body: null }),
+        new fetch.Request('/users', { method: 'POST', body: undefined }),
+        // @ts-expect-error Forcing some headers
+        new fetch.Request('/users', { method: 'POST', body: {} }),
+      ]) {
+        expect(request).toBeInstanceOf(Request);
+        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+
+        expect(request.url).toBe(joinURL(baseURL, '/users'));
+
+        expectTypeOf(request.json).toEqualTypeOf<() => Promise<null>>();
+        expectTypeOf(request.text).toEqualTypeOf<() => Promise<string>>();
+        expectTypeOf(request.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
+        expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
+
+        const response = await fetch(request);
+        responses.push(response);
+      }
+
+      for (const response of responses) {
+        expectTypeOf(response.status).toEqualTypeOf<204>();
+        expectResponseStatus(response, 204);
+
+        expect(await response.text()).toBe('');
+      }
+    });
+  });
+
+  it('should support requests with no body and a non-empty request declaration', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        POST: {
+          request: { headers: { language: string } };
+          response: { 204: {} };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
+      const headers = { language: 'en' };
+
+      await interceptor.post('/users').with({ headers }).respond({ status: 204 }).times(8);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const responses = [
+        await fetch('/users', { method: 'POST', headers }),
+        await fetch('/users', { method: 'POST', headers, body: null }),
+        await fetch('/users', { method: 'POST', headers, body: undefined }),
+        // @ts-expect-error Forcing a body
+        await fetch('/users', { method: 'POST', headers, body: {} }),
+      ];
+
+      for (const request of [
+        new fetch.Request('/users', { method: 'POST', headers }),
+        new fetch.Request('/users', { method: 'POST', headers, body: null }),
+        new fetch.Request('/users', { method: 'POST', headers, body: undefined }),
+        // @ts-expect-error Forcing some headers
+        new fetch.Request('/users', { method: 'POST', headers, body: {} }),
+      ]) {
+        expect(request).toBeInstanceOf(Request);
+        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+
+        expect(request.url).toBe(joinURL(baseURL, '/users'));
+
+        expectTypeOf(request.json).toEqualTypeOf<() => Promise<null>>();
+        expectTypeOf(request.text).toEqualTypeOf<() => Promise<string>>();
+        expectTypeOf(request.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
+        expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
+
+        const response = await fetch(request);
+        responses.push(response);
+      }
+
+      for (const response of responses) {
+        expectTypeOf(response.status).toEqualTypeOf<204>();
+        expectResponseStatus(response, 204);
+
+        expect(await response.text()).toBe('');
+      }
+    });
   });
 });

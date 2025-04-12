@@ -26,6 +26,7 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
     'error/expectToThrow': 'src/error/expectToThrow.ts',
     'fetch/expectFetchError': 'src/fetch/expectFetchError.ts',
     'import/createCachedDynamicImport': 'src/import/createCachedDynamicImport.ts',
+    'logging/Logger': 'src/logging/Logger.ts',
     'time/waitFor': 'src/time/waitFor.ts',
     'time/waitForNot': 'src/time/waitForNot.ts',
     'time/waitForDelay': 'src/time/waitForDelay.ts',

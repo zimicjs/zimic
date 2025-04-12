@@ -6,7 +6,7 @@ import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/ty
 import { importCrypto } from '@/utils/crypto';
 import { isClientSide, isServerSide } from '@/utils/environment';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
-import { WebSocket } from '@/webSocket/types';
+import { WebSocketEventMessage } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
@@ -26,24 +26,26 @@ interface HttpHandler {
 }
 
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
-  webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
-
   private httpHandlers = new Map<HttpHandler['id'], HttpHandler>();
+
+  webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
+  private auth?: RemoteHttpInterceptorWorkerOptions['auth'];
 
   constructor(options: RemoteHttpInterceptorWorkerOptions) {
     super();
 
-    const webSocketServerURL = this.deriveWebSocketServerURL(options.serverURL);
     this.webSocketClient = new WebSocketClient({
-      url: webSocketServerURL.toString(),
+      url: this.getWebSocketServerURL(options.serverURL).toString(),
     });
+
+    this.auth = options.auth;
   }
 
   get type() {
     return 'remote' as const;
   }
 
-  private deriveWebSocketServerURL(serverURL: URL) {
+  private getWebSocketServerURL(serverURL: URL) {
     const webSocketServerURL = new URL(serverURL);
     webSocketServerURL.protocol = serverURL.protocol.replace(/^http(s)?:$/, 'ws$1:');
     return webSocketServerURL;
@@ -51,7 +53,10 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async start() {
     await super.sharedStart(async () => {
-      await this.webSocketClient.start();
+      await this.webSocketClient.start({
+        parameters: this.auth ? { token: this.auth.token } : undefined,
+        waitForAuthentication: true,
+      });
 
       this.webSocketClient.onEvent('interceptors/responses/create', this.createResponse);
       this.webSocketClient.onEvent('interceptors/responses/unhandled', this.handleUnhandledServerRequest);
@@ -62,7 +67,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private createResponse = async (
-    message: WebSocket.ServiceEventMessage<InterceptorServerWebSocketSchema, 'interceptors/responses/create'>,
+    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/responses/create'>,
   ) => {
     const { handlerId, request: serializedRequest } = message.data;
 
@@ -87,7 +92,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   };
 
   private handleUnhandledServerRequest = async (
-    message: WebSocket.ServiceEventMessage<InterceptorServerWebSocketSchema, 'interceptors/responses/unhandled'>,
+    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/responses/unhandled'>,
   ) => {
     const { request: serializedRequest } = message.data;
     const request = deserializeRequest(serializedRequest);
@@ -156,7 +161,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     this.httpHandlers.set(handler.id, handler);
 
-    await this.webSocketClient.request('interceptors/workers/use/commit', {
+    await this.webSocketClient.request('interceptors/workers/commit', {
       id: handler.id,
       url: handler.url,
       method,
@@ -171,7 +176,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     this.httpHandlers.clear();
 
     if (this.webSocketClient.isRunning) {
-      await this.webSocketClient.request('interceptors/workers/use/reset', undefined);
+      await this.webSocketClient.request('interceptors/workers/reset', undefined);
     }
   }
 
@@ -193,7 +198,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
         method: handler.method,
       }));
 
-      await this.webSocketClient.request('interceptors/workers/use/reset', groupsToRecommit);
+      await this.webSocketClient.request('interceptors/workers/reset', groupsToRecommit);
     }
   }
 

@@ -15,7 +15,73 @@ export type FetchInput<
   Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
 > = Path | URL | FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
 
-export interface FetchFunction<Schema extends HttpSchema> {
+/**
+ * A fetch instance typed with an HTTP schema, closely compatible with the
+ * {@link https://developer.mozilla.org/docs/Web/API/Fetch_API native Fetch API}. All requests and responses are typed by
+ * default with the schema, including methods, paths, status codes, parameters, and bodies.
+ *
+ * Requests sent by the fetch instance have their URL automatically prefixed with the base URL of the instance. Default
+ * options are also applied to the requests, if present in the instance.
+ *
+ * @example
+ *   import { type HttpSchema } from '@zimic/http';
+ *   import { createFetch } from '@zimic/fetch';
+ *
+ *   interface User {
+ *     id: string;
+ *     username: string;
+ *   }
+ *
+ *   type Schema = HttpSchema<{
+ *     '/users': {
+ *       GET: {
+ *         request: {
+ *           searchParams: { query?: string };
+ *         };
+ *         response: {
+ *           200: { body: User[] };
+ *           404: { body: { message: string } };
+ *           500: { body: { message: string } };
+ *         };
+ *       };
+ *     };
+ *   }>;
+ *
+ *   const fetch = createFetch<Schema>({
+ *     baseURL: 'http://localhost:3000',
+ *     headers: { 'accept-language': 'en' },
+ *   });
+ *
+ *   const response = await fetch('/users', {
+ *     method: 'GET',
+ *     searchParams: { query: 'u' },
+ *   });
+ *
+ *   if (response.status === 404) {
+ *     return null; // User not found
+ *   }
+ *
+ *   if (!response.ok) {
+ *     throw response.error;
+ *   }
+ *
+ *   const users = await response.json();
+ *   return users; // User[]
+ *
+ * @param input The resource to fetch, either a path, a URL, or a {@link FetchRequest request}. If a path is provided, it
+ *   is automatically prefixed with the base URL of the fetch instance when the request is sent. If a URL or a request
+ *   is provided, it is used as is.
+ * @param init The request options. If a path or a URL is provided as the first argument, this argument is required and
+ *   should contain at least the method of the request. If the first argument is a {@link FetchRequest request}, this
+ *   argument is optional.
+ * @returns A promise that resolves to the response to the request.
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch `fetch` API reference}
+ * @see {@link https://developer.mozilla.org/docs/Web/API/Fetch_API}
+ * @see {@link https://developer.mozilla.org/docs/Web/API/Request}
+ * @see {@link https://developer.mozilla.org/docs/Web/API/RequestInit}
+ * @see {@link https://developer.mozilla.org/docs/Web/API/Response}
+ */
+export interface Fetch<Schema extends HttpSchema> extends FetchClient<Schema> {
   <
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
@@ -35,7 +101,8 @@ export interface FetchFunction<Schema extends HttpSchema> {
   ): Promise<FetchResponse<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, false, Redirect>>;
 }
 
-export namespace FetchFunction {
+export namespace Fetch {
+  /** A loosely-typed version of {@link Fetch `fetch`}. This can be useful to make requests with fewer type constraints, */
   export type Loose = (
     input: string | URL | FetchRequest.Loose,
     init?: FetchRequestInit.Loose,
@@ -299,7 +366,7 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
    * @see {@link https://developer.mozilla.org/docs/Web/API/RequestInit}
    * @see {@link https://developer.mozilla.org/docs/Web/API/Response}
    */
-  loose: FetchFunction.Loose;
+  loose: Fetch.Loose;
 
   /**
    * A constructor for creating
@@ -520,74 +587,6 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
     path: Path,
   ) => error is FetchResponseError<Schema, Method, Path>;
 }
-
-/**
- * A fetch instance typed with an HTTP schema, closely compatible with the
- * {@link https://developer.mozilla.org/docs/Web/API/Fetch_API native Fetch API}. All requests and responses are typed by
- * default with the schema, including methods, paths, status codes, parameters, and bodies.
- *
- * Requests sent by the fetch instance have their URL automatically prefixed with the base URL of the instance. Default
- * options are also applied to the requests, if present in the instance.
- *
- * @example
- *   import { type HttpSchema } from '@zimic/http';
- *   import { createFetch } from '@zimic/fetch';
- *
- *   interface User {
- *     id: string;
- *     username: string;
- *   }
- *
- *   type Schema = HttpSchema<{
- *     '/users': {
- *       GET: {
- *         request: {
- *           searchParams: { query?: string };
- *         };
- *         response: {
- *           200: { body: User[] };
- *           404: { body: { message: string } };
- *           500: { body: { message: string } };
- *         };
- *       };
- *     };
- *   }>;
- *
- *   const fetch = createFetch<Schema>({
- *     baseURL: 'http://localhost:3000',
- *     headers: { 'accept-language': 'en' },
- *   });
- *
- *   const response = await fetch('/users', {
- *     method: 'GET',
- *     searchParams: { query: 'u' },
- *   });
- *
- *   if (response.status === 404) {
- *     return null; // User not found
- *   }
- *
- *   if (!response.ok) {
- *     throw response.error;
- *   }
- *
- *   const users = await response.json();
- *   return users; // User[]
- *
- * @param input The resource to fetch, either a path, a URL, or a {@link FetchRequest request}. If a path is provided, it
- *   is automatically prefixed with the base URL of the fetch instance when the request is sent. If a URL or a request
- *   is provided, it is used as is.
- * @param init The request options. If a path or a URL is provided as the first argument, this argument is required and
- *   should contain at least the method of the request. If the first argument is a {@link FetchRequest request}, this
- *   argument is optional.
- * @returns A promise that resolves to the response to the request.
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch `fetch` API reference}
- * @see {@link https://developer.mozilla.org/docs/Web/API/Fetch_API}
- * @see {@link https://developer.mozilla.org/docs/Web/API/Request}
- * @see {@link https://developer.mozilla.org/docs/Web/API/RequestInit}
- * @see {@link https://developer.mozilla.org/docs/Web/API/Response}
- */
-export type Fetch<Schema extends HttpSchema> = FetchFunction<Schema> & FetchClient<Schema>;
 
 /**
  * Infers the schema of a {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch fetch instance}.

@@ -1,7 +1,7 @@
 import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
 import ClientSocket from 'isomorphic-ws';
 
-import { WebSocket } from './types';
+import { WebSocketSchema } from './types';
 import WebSocketHandler from './WebSocketHandler';
 
 const SUPPORTED_WEB_SOCKET_PROTOCOLS = ['ws', 'wss'];
@@ -12,7 +12,7 @@ interface WebSocketClientOptions {
   messageTimeout?: number;
 }
 
-class WebSocketClient<Schema extends WebSocket.ServiceSchema> extends WebSocketHandler<Schema> {
+class WebSocketClient<Schema extends WebSocketSchema> extends WebSocketHandler<Schema> {
   private url: URL;
 
   private socket?: ClientSocket;
@@ -31,11 +31,17 @@ class WebSocketClient<Schema extends WebSocket.ServiceSchema> extends WebSocketH
     return this.socket !== undefined && this.socket.readyState === this.socket.OPEN;
   }
 
-  async start() {
-    this.socket = new ClientSocket(this.url);
+  async start(options: { parameters?: Record<string, string>; waitForAuthentication?: boolean } = {}) {
+    const parametersAsString = options.parameters
+      ? Object.entries(options.parameters)
+          .map(([key, value]) => `${key}=${value}`)
+          .map(encodeURIComponent)
+      : [];
+
+    this.socket = new ClientSocket(this.url, parametersAsString);
 
     try {
-      await super.registerSocket(this.socket);
+      await super.registerSocket(this.socket, options);
     } catch (error) {
       await this.stop();
       throw error;

@@ -1,6 +1,11 @@
 packages:
-  - 'apps/*'
-  - 'packages/*'
-  - 'examples'
-  - 'examples/*'
-  - 'docs/*'
+  - apps/*
+  - packages/*
+  - examples
+  - examples/*
+  - docs/*
+onlyBuiltDependencies:
+  - '@zimic/interceptor'
+  - '@swc/core'
+  - esbuild
+  - msw

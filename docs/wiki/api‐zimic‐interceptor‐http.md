@@ -7,6 +7,7 @@
     - [Creating a local HTTP interceptor](#creating-a-local-http-interceptor)
     - [Creating a remote HTTP interceptor](#creating-a-remote-http-interceptor)
       - [Path discriminators in remote HTTP interceptors](#path-discriminators-in-remote-http-interceptors)
+      - [Remote interceptor authentication](#remote-interceptor-authentication)
     - [Unhandled requests](#unhandled-requests)
     - [Saving requests](#saving-requests)
   - [HTTP `interceptor.start()`](#http-interceptorstart)
@@ -59,9 +60,9 @@ Creates an HTTP interceptor, the main interface to intercept HTTP requests and r
 
 #### Creating a local HTTP interceptor
 
-A local interceptor is configured with `type: 'local'`. The `baseURL` represents the URL should be matched by this
-interceptor. Any request starting with the `baseURL` will be intercepted if a matching [handler](#httprequesthandler)
-exists.
+A local interceptor is configured with `type: 'local'`. If the type is not specified, `local` is considered the default.
+The `baseURL` represents the URL should be matched by this interceptor. Any request starting with the `baseURL` will be
+intercepted if a matching [handler](#httprequesthandler) exists.
 
 ```ts
 import { createHttpInterceptor } from '@zimic/interceptor/http';
@@ -135,6 +136,25 @@ const interceptor = createHttpInterceptor<{
 console.log(interceptor.baseURL);
 ```
 
+##### Remote interceptor authentication
+
+When connecting to an [interceptor server requiring authentication](cli‐zimic‐server#authentication), use the
+`auth.token` option to specify a [token](cli‐zimic‐server#zimic-interceptor-server-token-create) to authenticate the
+interceptor. This option is only available for remote interceptors.
+
+```ts
+import { createHttpInterceptor } from '@zimic/interceptor/http';
+
+const interceptor = createHttpInterceptor<Schema>({
+  type: 'remote',
+  baseURL: 'http://localhost:4000/my-service',
+  auth: { token: '<token>' },
+});
+```
+
+Replace `<token>` with the token you created. See [Interceptor server authentication](cli‐zimic‐server#authentication)
+for more details.
+
 #### Unhandled requests
 
 When a request is not matched by any interceptor handlers, it is considered **unhandled** and will be logged to the
@@ -168,7 +188,6 @@ You can override the logging behavior per interceptor with `onUnhandledRequest` 
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = createHttpInterceptor<Schema>({
-  type: 'local',
   baseURL: 'http://localhost:3000',
   onUnhandledRequest: {
     action: 'bypass', // Allow unhandled requests to reach the real network
@@ -188,7 +207,6 @@ const interceptor = createHttpInterceptor<Schema>({
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = createHttpInterceptor<Schema>({
-  type: 'local',
   baseURL: 'http://localhost:3000',
   onUnhandledRequest: {
     action: 'reject', // Do not allow unhandled requests to reach the real network
@@ -208,7 +226,6 @@ const interceptor = createHttpInterceptor<Schema>({
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = createHttpInterceptor<Schema>({
-  type: 'local',
   baseURL: 'http://localhost:3000',
   onUnhandledRequest: async (request) => {
     const url = new URL(request.url);
@@ -431,10 +448,7 @@ const interceptor = createHttpInterceptor<{
       };
     };
   };
-}>({
-  type: 'local',
-  baseURL: 'http://localhost:3000',
-});
+}>({ baseURL: 'http://localhost:3000' });
 
 interceptor.get('/users/:id'); // Matches any id
 interceptor.get(`/users/${1}`); // Only matches id 1
@@ -564,10 +578,7 @@ const interceptor = createHttpInterceptor<{
       response: { 200: { body: User[] } };
     };
   };
-}>({
-  type: 'local',
-  baseURL: 'http://localhost:3000',
-});
+}>({ baseURL: 'http://localhost:3000' });
 
 type Schema = InferHttpInterceptorSchema<typeof interceptor>;
 // {

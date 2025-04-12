@@ -18,7 +18,13 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 
 import InvalidWebSocketMessage from '../errors/InvalidWebSocketMessage';
 import NotRunningWebSocketHandlerError from '../errors/NotRunningWebSocketHandlerError';
-import { WebSocket } from '../types';
+import {
+  WebSocketEventMessage,
+  WebSocketEventMessageListener,
+  WebSocketReplyMessage,
+  WebSocketReplyMessageListener,
+  WebSocketSchema,
+} from '../types';
 import WebSocketServer from '../WebSocketServer';
 import {
   delayClientSocketOpen,
@@ -33,7 +39,7 @@ describe('Web socket server', async () => {
   const httpServer = createServer();
   let port: number;
 
-  type Schema = WebSocket.ServiceSchema<{
+  type Schema = WebSocketSchema<{
     'no-reply': {
       event: { message: string };
     };
@@ -152,13 +158,13 @@ describe('Web socket server', async () => {
         expect(server.socketTimeout).toBe(socketTimeout);
         server.start();
 
-        await usingIgnoredConsole(['error'], async (spies) => {
+        await usingIgnoredConsole(['error'], async (console) => {
           rawClient = new ClientSocket(`ws://localhost:${port}`);
 
           await waitFor(() => {
-            expect(spies.error).toHaveBeenCalledTimes(1);
+            expect(console.error).toHaveBeenCalledTimes(1);
           });
-          expect(spies.error).toHaveBeenCalledWith(new WebSocketOpenTimeoutError(socketTimeout));
+          expect(console.error).toHaveBeenCalledWith(new WebSocketOpenTimeoutError(socketTimeout));
         });
       } finally {
         delayedClientSocketAddEventListener.mockRestore();
@@ -193,7 +199,7 @@ describe('Web socket server', async () => {
       rawClient = new ClientSocket(`ws://localhost:${port}`);
       await waitForOpenClientSocket(rawClient);
 
-      type EventMessage = WebSocket.ServiceEventMessage<Schema, 'no-reply'>;
+      type EventMessage = WebSocketEventMessage<Schema, 'no-reply'>;
       const eventMessages: EventMessage[] = [];
 
       rawClient.addEventListener('message', (message) => {
@@ -226,7 +232,7 @@ describe('Web socket server', async () => {
       rawClient = new ClientSocket(`ws://localhost:${port}`);
       await waitForOpenClientSocket(rawClient);
 
-      type EventMessage = WebSocket.ServiceEventMessage<Schema, 'no-reply'>;
+      type EventMessage = WebSocketEventMessage<Schema, 'no-reply'>;
 
       const eventMessage: EventMessage['data'] = { message: 'test' };
       rawClient.send(
@@ -245,7 +251,7 @@ describe('Web socket server', async () => {
       rawClient = new ClientSocket(`ws://localhost:${port}`);
       await waitForOpenClientSocket(rawClient);
 
-      type RequestMessage = WebSocket.ServiceEventMessage<Schema, 'with-reply'>;
+      type RequestMessage = WebSocketEventMessage<Schema, 'with-reply'>;
       const requestMessages: RequestMessage[] = [];
 
       rawClient.addEventListener('message', (message) => {
@@ -270,7 +276,7 @@ describe('Web socket server', async () => {
         data: requestMessage,
       });
 
-      type ReplyMessage = WebSocket.ServiceReplyMessage<Schema, 'with-reply'>;
+      type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
       const replyMessage: ReplyMessage['data'] = { response: 'answer' };
 
       rawClient.send(
@@ -308,7 +314,7 @@ describe('Web socket server', async () => {
       rawClient = new ClientSocket(`ws://localhost:${port}`);
       await waitForOpenClientSocket(rawClient);
 
-      type RequestMessage = WebSocket.ServiceEventMessage<Schema, 'with-reply'>;
+      type RequestMessage = WebSocketEventMessage<Schema, 'with-reply'>;
       const requestMessages: RequestMessage[] = [];
 
       server.onEvent('with-reply', (message) => {
@@ -316,7 +322,7 @@ describe('Web socket server', async () => {
         return { response: 'answer' };
       });
 
-      type ReplyMessage = WebSocket.ServiceReplyMessage<Schema, 'with-reply'>;
+      type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
       const replyMessages: ReplyMessage[] = [];
 
       rawClient.addEventListener('message', (message) => {
@@ -364,7 +370,7 @@ describe('Web socket server', async () => {
       server = new WebSocketServer({ httpServer });
       server.start();
 
-      type EventMessage = WebSocket.ServiceEventMessage<Schema, 'no-reply'>;
+      type EventMessage = WebSocketEventMessage<Schema, 'no-reply'>;
       const eventMessages: EventMessage[] = [];
 
       server.onEvent('no-reply', (message) => {
@@ -380,7 +386,7 @@ describe('Web socket server', async () => {
           id: crypto.randomUUID(),
           channel: 'no-reply',
           data: eventMessage,
-        } satisfies WebSocket.ServiceEventMessage<Schema, 'no-reply'>),
+        } satisfies WebSocketEventMessage<Schema, 'no-reply'>),
       );
 
       await waitFor(() => {
@@ -397,12 +403,12 @@ describe('Web socket server', async () => {
       server = new WebSocketServer({ httpServer });
       server.start();
 
-      type EventMessage = WebSocket.ServiceEventMessage<Schema, 'no-reply'>;
+      type EventMessage = WebSocketEventMessage<Schema, 'no-reply'>;
       const eventMessages: EventMessage[] = [];
 
       const eventListener = server.onEvent(
         'no-reply',
-        vi.fn<WebSocket.EventMessageListener<Schema, 'no-reply'>>(
+        vi.fn<WebSocketEventMessageListener<Schema, 'no-reply'>>(
           /* istanbul ignore next -- @preserve
            * This function is not expected to run. */
           (message) => {
@@ -422,7 +428,7 @@ describe('Web socket server', async () => {
           id: crypto.randomUUID(),
           channel: 'no-reply',
           data: eventMessage,
-        } satisfies WebSocket.ServiceEventMessage<Schema, 'no-reply'>),
+        } satisfies WebSocketEventMessage<Schema, 'no-reply'>),
       );
 
       await waitForNot(() => {
@@ -438,7 +444,7 @@ describe('Web socket server', async () => {
       rawClient = new ClientSocket(`ws://localhost:${port}`);
       await waitForOpenClientSocket(rawClient);
 
-      type RequestMessage = WebSocket.ServiceEventMessage<Schema, 'with-reply'>;
+      type RequestMessage = WebSocketEventMessage<Schema, 'with-reply'>;
       const requestMessages: RequestMessage[] = [];
 
       rawClient.addEventListener('message', (message) => {
@@ -451,7 +457,7 @@ describe('Web socket server', async () => {
         requestMessages.push(parsedMessage);
       });
 
-      type ReplyMessage = WebSocket.ServiceReplyMessage<Schema, 'with-reply'>;
+      type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
       const replyMessages: ReplyMessage[] = [];
 
       server.onReply('with-reply', (message) => {
@@ -501,7 +507,7 @@ describe('Web socket server', async () => {
       rawClient = new ClientSocket(`ws://localhost:${port}`);
       await waitForOpenClientSocket(rawClient);
 
-      type RequestMessage = WebSocket.ServiceEventMessage<Schema, 'with-reply'>;
+      type RequestMessage = WebSocketEventMessage<Schema, 'with-reply'>;
       const eventMessages: RequestMessage[] = [];
 
       rawClient.addEventListener('message', (message) => {
@@ -514,12 +520,12 @@ describe('Web socket server', async () => {
         eventMessages.push(parsedMessage);
       });
 
-      type ReplyMessage = WebSocket.ServiceReplyMessage<Schema, 'with-reply'>;
+      type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
       const replyMessages: ReplyMessage[] = [];
 
       const replyListener = server.onReply(
         'with-reply',
-        vi.fn<WebSocket.ReplyMessageListener<Schema, 'with-reply'>>(
+        vi.fn<WebSocketReplyMessageListener<Schema, 'with-reply'>>(
           /* istanbul ignore next -- @preserve
            * This function is not expected to run. */
           (message) => {
@@ -572,11 +578,11 @@ describe('Web socket server', async () => {
       server = new WebSocketServer({ httpServer });
       server.start();
 
-      await usingIgnoredConsole(['error'], (spies) => {
+      await usingIgnoredConsole(['error'], (console) => {
         const error = new Error('Test error');
         httpServer.emit('error', error);
 
-        expect(spies.error).toHaveBeenCalledWith(error);
+        expect(console.error).toHaveBeenCalledWith(error);
       });
     });
 
@@ -587,12 +593,12 @@ describe('Web socket server', async () => {
       rawClient = new ClientSocket(`ws://localhost:${port}`);
       await waitForOpenClientSocket(rawClient);
 
-      await usingIgnoredConsole(['error'], async (spies) => {
+      await usingIgnoredConsole(['error'], async (console) => {
         const invalidMessage = 'invalid-message';
         rawClient?.send(invalidMessage);
 
         await waitFor(() => {
-          expect(spies.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
+          expect(console.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
         });
       });
     });
@@ -604,12 +610,12 @@ describe('Web socket server', async () => {
       rawClient = new ClientSocket(`ws://localhost:${port}`);
       await waitForOpenClientSocket(rawClient);
 
-      await usingIgnoredConsole(['error'], async (spies) => {
+      await usingIgnoredConsole(['error'], async (console) => {
         const invalidMessage = JSON.stringify({ type: 'unknown' });
         rawClient?.send(invalidMessage);
 
         await waitFor(() => {
-          expect(spies.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
+          expect(console.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
         });
       });
     });

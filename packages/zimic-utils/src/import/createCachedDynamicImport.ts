@@ -4,9 +4,7 @@ function createCachedDynamicImport<ImportType>(
   let cachedImportResult: ImportType | undefined;
 
   return async function importModuleDynamicallyWithCache() {
-    if (cachedImportResult === undefined) {
-      cachedImportResult = await importModuleDynamically();
-    }
+    cachedImportResult ??= await importModuleDynamically();
     return cachedImportResult;
   };
 }

@@ -11,20 +11,31 @@ import {
   waitForOpenClientSocket,
 } from '@/utils/webSocket';
 
+import { WEB_SOCKET_CONTROL_MESSAGES, WebSocketControlMessage } from './constants';
 import InvalidWebSocketMessage from './errors/InvalidWebSocketMessage';
 import NotRunningWebSocketHandlerError from './errors/NotRunningWebSocketHandlerError';
-import { WebSocket } from './types';
+import {
+  WebSocketEventMessageListener,
+  WebSocketReplyMessageListener,
+  WebSocketReplyMessage,
+  WebSocketEventMessage,
+  WebSocketSchema,
+  WebSocketChannel,
+  WebSocketChannelWithReply,
+  WebSocketChannelWithNoReply,
+  WebSocketMessage,
+} from './types';
 
-abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
+abstract class WebSocketHandler<Schema extends WebSocketSchema> {
   private sockets = new Set<ClientSocket>();
 
   socketTimeout: number;
   messageTimeout: number;
 
   private channelListeners: {
-    [Channel in WebSocket.ServiceChannel<Schema>]?: {
-      event: Set<WebSocket.EventMessageListener<Schema, Channel>>;
-      reply: Set<WebSocket.ReplyMessageListener<Schema, Channel>>;
+    [Channel in WebSocketChannel<Schema>]?: {
+      event: Set<WebSocketEventMessageListener<Schema, Channel>>;
+      reply: Set<WebSocketReplyMessageListener<Schema, Channel>>;
     };
   } = {};
 
@@ -39,8 +50,11 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
 
   abstract isRunning: boolean;
 
-  protected async registerSocket(socket: ClientSocket) {
-    const openPromise = waitForOpenClientSocket(socket, { timeout: this.socketTimeout });
+  protected async registerSocket(socket: ClientSocket, options: { waitForAuthentication?: boolean } = {}) {
+    const openPromise = waitForOpenClientSocket(socket, {
+      timeout: this.socketTimeout,
+      waitForAuthentication: options.waitForAuthentication,
+    });
 
     const handleSocketMessage = async (rawMessage: ClientSocket.MessageEvent) => {
       await this.handleSocketMessage(socket, rawMessage);
@@ -58,10 +72,12 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
 
     const handleSocketClose = () => {
       socket.removeEventListener('message', handleSocketMessage);
-      socket.removeEventListener('error', handleSocketError);
       socket.removeEventListener('close', handleSocketClose);
+      socket.removeEventListener('error', handleSocketError);
+
       this.removeSocket(socket);
     };
+
     socket.addEventListener('close', handleSocketClose);
 
     this.sockets.add(socket);
@@ -69,6 +85,10 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
 
   private handleSocketMessage = async (socket: ClientSocket, rawMessage: ClientSocket.MessageEvent) => {
     try {
+      if (this.isControlMessageData(rawMessage.data)) {
+        return;
+      }
+
       const stringifiedMessageData = this.readRawMessageData(rawMessage.data);
       const parsedMessageData = this.parseMessage(stringifiedMessageData);
       await this.notifyListeners(parsedMessageData, socket);
@@ -76,6 +96,12 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
       console.error(error);
     }
   };
+
+  private isControlMessageData(messageData: ClientSocket.Data): messageData is WebSocketControlMessage {
+    return (
+      typeof messageData === 'string' && WEB_SOCKET_CONTROL_MESSAGES.includes(messageData as WebSocketControlMessage)
+    );
+  }
 
   private readRawMessageData(data: ClientSocket.Data) {
     /* istanbul ignore else -- @preserve
@@ -87,7 +113,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     }
   }
 
-  private parseMessage(stringifiedMessage: string): WebSocket.ServiceMessage<Schema> {
+  private parseMessage(stringifiedMessage: string): WebSocketMessage<Schema> {
     let parsedMessage: unknown;
 
     try {
@@ -96,7 +122,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
       throw new InvalidWebSocketMessage(stringifiedMessage);
     }
 
-    if (!this.isValidMessage(parsedMessage)) {
+    if (!this.isMessage(parsedMessage)) {
       throw new InvalidWebSocketMessage(stringifiedMessage);
     }
 
@@ -116,7 +142,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     };
   }
 
-  private isValidMessage(message: unknown): message is WebSocket.ServiceMessage<Schema> {
+  private isMessage(message: unknown): message is WebSocketMessage<Schema> {
     return (
       typeof message === 'object' &&
       message !== null &&
@@ -128,7 +154,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     );
   }
 
-  private async notifyListeners(message: WebSocket.ServiceMessage<Schema>, socket: ClientSocket) {
+  private async notifyListeners(message: WebSocketMessage<Schema>, socket: ClientSocket) {
     if (this.isReplyMessage(message)) {
       await this.notifyReplyListeners(message, socket);
     } else {
@@ -136,7 +162,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     }
   }
 
-  private async notifyReplyListeners(message: WebSocket.ServiceReplyMessage<Schema>, socket: ClientSocket) {
+  private async notifyReplyListeners(message: WebSocketReplyMessage<Schema>, socket: ClientSocket) {
     /* istanbul ignore next -- @preserve
      * Reply listeners are always present when notified in normal conditions. If they were not present, the request
      * would reach a timeout and not be responded. The empty set serves as a fallback. */
@@ -149,10 +175,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     await Promise.all(listenerPromises);
   }
 
-  private async notifyEventListeners(
-    message: WebSocket.ServiceMessage<Schema, WebSocket.ServiceChannel<Schema>>,
-    socket: ClientSocket,
-  ) {
+  private async notifyEventListeners(message: WebSocketEventMessage<Schema>, socket: ClientSocket) {
     const listeners = this.channelListeners[message.channel]?.event ?? new Set();
 
     const listenerPromises = Array.from(listeners, async (listener) => {
@@ -175,13 +198,13 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     this.sockets.delete(socket);
   }
 
-  private async createEventMessage<Channel extends WebSocket.ServiceChannel<Schema>>(
+  private async createEventMessage<Channel extends WebSocketChannel<Schema>>(
     channel: Channel,
-    eventData: WebSocket.ServiceEventMessage<Schema, Channel>['data'],
+    eventData: WebSocketEventMessage<Schema, Channel>['data'],
   ) {
     const crypto = await importCrypto();
 
-    const eventMessage: WebSocket.ServiceEventMessage<Schema, Channel> = {
+    const eventMessage: WebSocketEventMessage<Schema, Channel> = {
       id: crypto.randomUUID(),
       channel,
       data: eventData,
@@ -189,9 +212,9 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     return eventMessage;
   }
 
-  async send<Channel extends WebSocket.EventWithNoReplyServiceChannel<Schema>>(
+  async send<Channel extends WebSocketChannelWithNoReply<Schema>>(
     channel: Channel,
-    eventData: WebSocket.ServiceEventMessage<Schema, Channel>['data'],
+    eventData: WebSocketEventMessage<Schema, Channel>['data'],
     options: {
       sockets?: Collection<ClientSocket>;
     } = {},
@@ -200,9 +223,9 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     this.sendMessage(event, options.sockets);
   }
 
-  async request<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
+  async request<Channel extends WebSocketChannelWithReply<Schema>>(
     channel: Channel,
-    requestData: WebSocket.ServiceEventMessage<Schema, Channel>['data'],
+    requestData: WebSocketEventMessage<Schema, Channel>['data'],
     options: {
       sockets?: Collection<ClientSocket>;
     } = {},
@@ -214,12 +237,12 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     return response.data;
   }
 
-  async waitForReply<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
+  async waitForReply<Channel extends WebSocketChannelWithReply<Schema>>(
     channel: Channel,
-    requestId: WebSocket.ServiceEventMessage<Schema, Channel>['id'],
+    requestId: WebSocketEventMessage<Schema, Channel>['id'],
     sockets: Collection<ClientSocket> = this.sockets,
   ) {
-    return new Promise<WebSocket.ServiceReplyMessage<Schema, Channel>>((resolve, reject) => {
+    return new Promise<WebSocketReplyMessage<Schema, Channel>>((resolve, reject) => {
       const replyTimeout = setTimeout(() => {
         this.offReply(channel, replyListener); // eslint-disable-line @typescript-eslint/no-use-before-define
         this.offAbortSocketMessages(sockets, abortListener); // eslint-disable-line @typescript-eslint/no-use-before-define
@@ -250,15 +273,13 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     });
   }
 
-  private isReplyMessage<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
-    message: WebSocket.ServiceMessage<Schema, Channel>,
-  ) {
+  private isReplyMessage<Channel extends WebSocketChannel<Schema>>(message: WebSocketMessage<Schema, Channel>) {
     return 'requestId' in message;
   }
 
-  async reply<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
-    request: WebSocket.ServiceEventMessage<Schema, Channel>,
-    replyData: WebSocket.ServiceReplyMessage<Schema, Channel>['data'],
+  async reply<Channel extends WebSocketChannel<Schema>>(
+    request: WebSocketEventMessage<Schema, Channel>,
+    replyData: WebSocketReplyMessage<Schema, Channel>['data'],
     options: {
       sockets: Collection<ClientSocket>;
     },
@@ -271,13 +292,13 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     }
   }
 
-  private async createReplyMessage<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
-    request: WebSocket.ServiceEventMessage<Schema, Channel>,
-    replyData: WebSocket.ServiceReplyMessage<Schema, Channel>['data'],
+  private async createReplyMessage<Channel extends WebSocketChannel<Schema>>(
+    request: WebSocketEventMessage<Schema, Channel>,
+    replyData: WebSocketReplyMessage<Schema, Channel>['data'],
   ) {
     const crypto = await importCrypto();
 
-    const replyMessage: WebSocket.ServiceReplyMessage<Schema, Channel> = {
+    const replyMessage: WebSocketReplyMessage<Schema, Channel> = {
       id: crypto.randomUUID(),
       channel: request.channel,
       requestId: request.id,
@@ -286,8 +307,8 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     return replyMessage;
   }
 
-  private sendMessage<Channel extends WebSocket.ServiceChannel<Schema>>(
-    message: WebSocket.ServiceMessage<Schema, Channel>,
+  private sendMessage<Channel extends WebSocketChannel<Schema>>(
+    message: WebSocketMessage<Schema, Channel>,
     sockets: Collection<ClientSocket> = this.sockets,
   ) {
     if (!this.isRunning) {
@@ -301,16 +322,16 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     }
   }
 
-  onEvent<
-    Channel extends WebSocket.ServiceChannel<Schema>,
-    Listener extends WebSocket.EventMessageListener<Schema, Channel>,
-  >(channel: Channel, listener: Listener): Listener {
+  onEvent<Channel extends WebSocketChannel<Schema>, Listener extends WebSocketEventMessageListener<Schema, Channel>>(
+    channel: Channel,
+    listener: Listener,
+  ): Listener {
     const listeners = this.getOrCreateChannelListeners<Channel>(channel);
     listeners.event.add(listener);
     return listener;
   }
 
-  private getOrCreateChannelListeners<Channel extends WebSocket.ServiceChannel<Schema>>(channel: Channel) {
+  private getOrCreateChannelListeners<Channel extends WebSocketChannel<Schema>>(channel: Channel) {
     const listeners = this.channelListeners[channel] ?? {
       event: new Set(),
       reply: new Set(),
@@ -324,24 +345,24 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   }
 
   onReply<
-    Channel extends WebSocket.EventWithReplyServiceChannel<Schema>,
-    Listener extends WebSocket.ReplyMessageListener<Schema, Channel>,
+    Channel extends WebSocketChannelWithReply<Schema>,
+    Listener extends WebSocketReplyMessageListener<Schema, Channel>,
   >(channel: Channel, listener: Listener): Listener {
     const listeners = this.getOrCreateChannelListeners<Channel>(channel);
     listeners.reply.add(listener);
     return listener;
   }
 
-  offEvent<Channel extends WebSocket.ServiceChannel<Schema>>(
+  offEvent<Channel extends WebSocketChannel<Schema>>(
     channel: Channel,
-    listener: WebSocket.EventMessageListener<Schema, Channel>,
+    listener: WebSocketEventMessageListener<Schema, Channel>,
   ) {
     this.channelListeners[channel]?.event.delete(listener);
   }
 
-  offReply<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
+  offReply<Channel extends WebSocketChannelWithReply<Schema>>(
     channel: Channel,
-    listener: WebSocket.ReplyMessageListener<Schema, Channel>,
+    listener: WebSocketReplyMessageListener<Schema, Channel>,
   ) {
     this.channelListeners[channel]?.reply.delete(listener);
   }

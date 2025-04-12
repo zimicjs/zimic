@@ -208,15 +208,15 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
         });
       }
 
-      await usingIgnoredConsole(['error'], async (spies) => {
+      await usingIgnoredConsole(['error'], async (console) => {
         const interceptorStartPromise = interceptorWorker.start();
         await expect(interceptorStartPromise).rejects.toThrowError(error);
 
         if (platform === 'browser') {
-          expect(spies.error).toHaveBeenCalledTimes(0);
+          expect(console.error).toHaveBeenCalledTimes(0);
         } else {
-          expect(spies.error).toHaveBeenCalledTimes(1);
-          expect(spies.error).toHaveBeenCalledWith(error);
+          expect(console.error).toHaveBeenCalledTimes(1);
+          expect(console.error).toHaveBeenCalledWith(error);
         }
       });
 
