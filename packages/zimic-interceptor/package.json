@@ -122,7 +122,7 @@
     "vitest": "^3.1.1"
   },
   "peerDependencies": {
-    "@zimic/http": "^0.3.0 || ^0.3.0-canary.0",
+    "@zimic/http": "^0.3.0 || workspace:*",
     "typescript": ">=4.8.0"
   },
   "peerDependenciesMeta": {
