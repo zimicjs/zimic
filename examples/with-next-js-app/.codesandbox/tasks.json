@@ -9,7 +9,7 @@
     },
     "run-tests": {
       "name": "Run tests",
-      "command": "pnpm run test --ui",
+      "command": "pnpm run test",
       "runAtStart": true
     }
   }
