@@ -37,3 +37,16 @@ where the repository is found and another where it is not.
     height="36px"
   />
 </a>
+
+### Running locally
+
+1. Install the dependencies:
+
+   ```bash
+   pnpm install
+   ```
+
+2. Run the tests:
+   ```bash
+   pnpm run test
+   ```
