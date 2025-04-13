@@ -51,19 +51,17 @@ describe('CLI > Browser init', () => {
 
       await runCLI();
 
-      const absolutePublicDirectory = path.resolve(publicDirectory);
-
       expect(makeDirectorySpy).toHaveBeenCalledTimes(1);
-      expect(makeDirectorySpy).toHaveBeenCalledWith(absolutePublicDirectory, { recursive: true });
+      expect(makeDirectorySpy).toHaveBeenCalledWith(publicDirectory, { recursive: true });
 
-      const serviceWorkerDestinationPath = path.join(absolutePublicDirectory, SERVICE_WORKER_FILE_NAME);
+      const destinationPath = path.join(publicDirectory, SERVICE_WORKER_FILE_NAME);
       expect(copyFileSpy).toHaveBeenCalledTimes(1);
-      expect(copyFileSpy).toHaveBeenCalledWith(MOCK_SERVICE_WORKER_PATH, serviceWorkerDestinationPath);
+      expect(copyFileSpy).toHaveBeenCalledWith(MOCK_SERVICE_WORKER_PATH, destinationPath);
 
       expect(console.log).toHaveBeenCalledTimes(1);
       expect(console.log).toHaveBeenCalledWith(
         color.cyan('[@zimic/interceptor]'),
-        `Service worker script saved to ${color.magenta(serviceWorkerDestinationPath)}.`,
+        `Service worker script saved to ${color.magenta(destinationPath)}.`,
       );
     });
   });

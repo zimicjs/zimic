@@ -10,7 +10,7 @@
   "dependencies": {
     "@zimic/fetch": "latest",
     "@zimic/http": "latest",
-    "fastify": "^5.2.2",
+    "fastify": "^5.3.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
