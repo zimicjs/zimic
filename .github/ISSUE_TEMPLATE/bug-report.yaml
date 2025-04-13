@@ -48,7 +48,7 @@ body:
     attributes:
       label: Runtime
       description: What runtime are you using Zimic in?
-      placeholder: i.e. "Google Chrome", "Node.js", "Deno", "Bun", etc.
+      placeholder: e.g. "Google Chrome", "Node.js", "Deno", "Bun", etc.
     validations:
       required: true
 
@@ -56,14 +56,13 @@ body:
     attributes:
       label: Reproduction repository
       description: |
-        What minimal repository reproduces your issue?
+        What minimal code reproduces your issue? This can be link to a repository or a CodeSandbox/StackBlitz project.
 
-        You can clone one of [our examples](https://github.com/zimicjs/zimic/blob/canary/examples/README.md) to get
-        started. Please make sure that the repository is public, contains the minimal code to reproduce the issue, and
-        includes a `README.md` detailing how to run it.
+        Feel free to get started using one of [our examples](https://github.com/zimicjs/zimic/blob/main/examples/README.md).
+        Please make sure that the link is publicly accessible and contains the minimal code to reproduce the issue.
 
-        We will only be able to investigate issues with a reproduction. **Issues without a reproduction will be closed.**
-      placeholder: i.e. https://github.com/you/zimic-issue
+        We can only reliably investigate issues that include a reproduction.
+      placeholder: e.g. https://github.com/you/issue-name or https://codesandbox.io/s/issue-name
     validations:
       required: true
 
@@ -72,7 +71,7 @@ body:
       label: Reproduction steps
       description: |
         How can we reproduce your issue in the repository above?
-      placeholder: i.e. "npm install && npm test"
+      placeholder: e.g. "npm install && npm test"
     validations:
       required: true
 
