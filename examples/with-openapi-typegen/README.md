@@ -59,10 +59,6 @@ where the repository is found and another where it is not.
   />
 </a>
 
-After opening in CodeSandbox, click "Fork" on the top right to create your own copy of the example.
-
-![CodeSandbox Fork](./docs/images/codesandbox-fork.png)
-
 ### Running locally
 
 1. Install the dependencies:

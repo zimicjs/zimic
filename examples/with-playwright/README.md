@@ -53,17 +53,13 @@ before the application is started in development. It is used by the command `dev
 
 ### Running in CodeSandbox
 
-<a href="https://codesandbox.io/p/sandbox/github/zimicjs/zimic/tree/main/examples/with-playwright">
+<a href="https://codesandbox.io/p/sandbox/github/zimicjs/zimic/tree/docs/343-open-in-stackblitz/examples/with-playwright">
   <img
     src="https://codesandbox.io/static/img/play-codesandbox.svg"
     alt="Edit in CodeSandbox"
     height="36px"
   />
 </a>
-
-After opening in CodeSandbox, click "Fork" on the top right to create your own copy of the example.
-
-![CodeSandbox Fork](./docs/images/codesandbox-fork.png)
 
 ### Running locally
 

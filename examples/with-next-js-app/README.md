@@ -46,10 +46,6 @@ before the application is started in development. It is used by the command `dev
   />
 </a>
 
-After opening in CodeSandbox, click "Fork" on the top right to create your own copy of the example.
-
-![CodeSandbox Fork](./docs/images/codesandbox-fork.png)
-
 ### Running locally
 
 1. Install the dependencies:
