@@ -51,7 +51,7 @@ before the application is started in development. It is used by the command `dev
 
 ## Running
 
-<a href="https://codesandbox.io/p/sandbox/github/zimicjs/zimic/tree/docs/343-open-in-stackblitz/examples/with-playwright">
+<a href="https://codesandbox.io/p/sandbox/github/zimicjs/zimic/tree/main/examples/with-playwright">
   <img
     src="https://codesandbox.io/static/img/play-codesandbox.svg"
     alt="Edit in CodeSandbox"
