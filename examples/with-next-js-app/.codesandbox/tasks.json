@@ -2,11 +2,6 @@
   "$schema": "https://codesandbox.io/schemas/tasks.json",
   "setupTasks": ["pnpm install"],
   "tasks": {
-    "run-app": {
-      "name": "Run application",
-      "command": "pnpm run dev:mock",
-      "runAtStart": true
-    },
     "run-tests": {
       "name": "Run tests",
       "command": "pnpm run test",
