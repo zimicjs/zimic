@@ -56,10 +56,9 @@ where the repository is found and another where it is not.
   />
 </a>
 
-After opening in CodeSandbox, click "Fork" on the top right to create your own copy of the example. The terminal should
-open automatically once your fork is ready.
+After opening in CodeSandbox, click "Fork" on the top right to create your own copy of the example.
 
-![CodeSandbox Fork](../docs/images/codesandbox-fork.png)
+![CodeSandbox Fork](./docs/images/codesandbox-fork.png)
 
 ### Running locally
 
