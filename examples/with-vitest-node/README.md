@@ -38,8 +38,6 @@ where the repository is found and another where it is not.
   />
 </a>
 
-### Running locally
-
 1. Install the dependencies:
 
    ```bash

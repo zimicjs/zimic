@@ -4,8 +4,7 @@
   "tasks": {
     "run-tests": {
       "name": "Run tests",
-      "command": "pnpm run test",
-      "runAtStart": true
+      "command": "pnpm run test"
     }
   }
 }

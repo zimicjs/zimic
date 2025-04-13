@@ -46,8 +46,6 @@ where the repository is found and another where it is not.
 
 ## Running
 
-### Running in CodeSandbox
-
 <a href="https://codesandbox.io/p/sandbox/github/zimicjs/zimic/tree/main/examples/with-jest-jsdom">
   <img
     src="https://codesandbox.io/static/img/play-codesandbox.svg"
@@ -55,8 +53,6 @@ where the repository is found and another where it is not.
     height="36px"
   />
 </a>
-
-### Running locally
 
 1. Install the dependencies:
 

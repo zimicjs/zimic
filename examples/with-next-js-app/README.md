@@ -36,8 +36,6 @@ before the application is started in development. It is used by the command `dev
 
 ## Running
 
-### Running in CodeSandbox
-
 <a href="https://codesandbox.io/p/sandbox/github/zimicjs/zimic/tree/main/examples/with-next-js-app">
   <img
     src="https://codesandbox.io/static/img/play-codesandbox.svg"
@@ -45,8 +43,6 @@ before the application is started in development. It is used by the command `dev
     height="36px"
   />
 </a>
-
-### Running locally
 
 1. Install the dependencies:
 
