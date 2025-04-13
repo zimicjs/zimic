@@ -171,21 +171,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
    * @returns `true` if the search parameters are equal, `false` otherwise.
    */
   equals<OtherSchema extends Schema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
-    for (const [key, otherValue] of otherParams.entries()) {
-      const values = super.getAll.call(this, key);
-
-      const haveSameNumberOfValues = values.length === super.getAll.call(otherParams, key).length;
-      if (!haveSameNumberOfValues) {
-        return false;
-      }
-
-      const valueExists = values.includes(otherValue);
-      if (!valueExists) {
-        return false;
-      }
-    }
-
-    return this.size === otherParams.size;
+    return this.contains(otherParams) && this.size === otherParams.size;
   }
 
   /**
@@ -200,8 +186,8 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
     for (const [key, otherValue] of otherParams.entries()) {
       const values = super.getAll.call(this, key);
 
-      const haveCompatibleNumberOfValues = values.length >= super.getAll.call(otherParams, key).length;
-      if (!haveCompatibleNumberOfValues) {
+      const haveSameNumberOfValues = values.length === super.getAll.call(otherParams, key).length;
+      if (!haveSameNumberOfValues) {
         return false;
       }
 
