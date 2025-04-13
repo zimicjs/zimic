@@ -78,5 +78,5 @@ before the application is started in development. It is used by the command `dev
    2. In another terminal, run the tests:
 
       ```bash
-      pnpm run test --ui
+      pnpm run test
       ```
