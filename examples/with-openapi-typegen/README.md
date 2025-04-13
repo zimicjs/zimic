@@ -49,26 +49,30 @@ where the repository is found and another where it is not.
 
 ## Running
 
-1. Clone this example:
+### Running in CodeSandbox
 
-   ```bash
-   mkdir zimic
-   cd zimic
-   git init
-   git remote add origin git@github.com:zimicjs/zimic.git
-   git sparse-checkout init
-   git sparse-checkout set examples/with-openapi-typegen
-   git pull origin main
-   cd examples/with-openapi-typegen
-   ```
+<a href="https://codesandbox.io/p/sandbox/github/zimicjs/zimic/tree/main/examples/with-openapi-typegen">
+  <img
+    src="https://codesandbox.io/static/img/play-codesandbox.svg"
+    alt="Edit in CodeSandbox"
+    height="36px"
+  />
+</a>
 
-2. Install the dependencies:
+After opening in CodeSandbox, click "Fork" on the top right to create your own copy of the example. The terminal should
+open automatically once your fork is ready.
+
+![CodeSandbox Fork](../docs/images/codesandbox-fork.png)
+
+### Running locally
+
+1. Install the dependencies:
 
    ```bash
    pnpm install
    ```
 
-3. Run the tests:
+2. Run the tests:
 
    ```bash
    pnpm run test

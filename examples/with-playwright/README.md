@@ -51,29 +51,30 @@ before the application is started in development. It is used by the command `dev
 
 ## Running
 
-1. Clone this example:
+### Running in CodeSandbox
 
-   ```bash
-   mkdir zimic
-   cd zimic
-   git init
-   git remote add origin git@github.com:zimicjs/zimic.git
-   git sparse-checkout init
-   git sparse-checkout set examples/with-playwright
-   git pull origin main # or a specific branch or tag
-   cd examples/with-playwright
-   ```
+<a href="https://codesandbox.io/p/sandbox/github/zimicjs/zimic/tree/main/examples/with-playwright">
+  <img
+    src="https://codesandbox.io/static/img/play-codesandbox.svg"
+    alt="Edit in CodeSandbox"
+    height="36px"
+  />
+</a>
 
-   If you'd like to clone the example of a previous version, replace `main` with the desired branch or tag, such as
-   `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
+After opening in CodeSandbox, click "Fork" on the top right to create your own copy of the example. The terminal should
+open automatically once your fork is ready.
 
-2. Install the dependencies:
+![CodeSandbox Fork](../docs/images/codesandbox-fork.png)
+
+### Running locally
+
+1. Install the dependencies:
 
    ```bash
    pnpm install
    ```
 
-3. Run the tests:
+2. Run the tests:
 
    1. Start the application:
 
@@ -81,7 +82,7 @@ before the application is started in development. It is used by the command `dev
       pnpm run dev:mock
       ```
 
-      After started, it will be available at [http://localhost:3004](http://localhost:3004).
+      After started, the application will be available at [http://localhost:3006](http://localhost:3006).
 
    2. In another terminal, run the tests:
 

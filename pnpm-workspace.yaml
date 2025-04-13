@@ -3,6 +3,7 @@ packages:
   - packages/*
   - examples
   - examples/*
+  - '!examples/docs'
   - docs/*
 onlyBuiltDependencies:
   - '@zimic/interceptor'

@@ -30,10 +30,15 @@ where the repository is found and another where it is not.
 
 ## Running
 
-<a href="https://stackblitz.com/github/zimicjs/zimic/tree/main/examples/with-vitest-node?file=README.md">
+<a href="https://codesandbox.io/p/sandbox/github/zimicjs/zimic/tree/main/examples/with-vitest-node">
   <img
-    src="https://developer.stackblitz.com/img/open_in_stackblitz.svg"
-    alt="Open in StackBlitz"
+    src="https://codesandbox.io/static/img/play-codesandbox.svg"
+    alt="Edit in CodeSandbox"
     height="36px"
   />
 </a>
+
+After opening in CodeSandbox, click "Fork" on the top right to create your own copy of the example. The terminal should
+open automatically once your fork is ready.
+
+![CodeSandbox Fork](../docs/images/codesandbox-fork.png)
