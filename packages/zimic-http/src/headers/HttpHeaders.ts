@@ -119,26 +119,8 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
    * @returns `true` if the headers are equal, `false` otherwise.
    */
   equals<OtherSchema extends Schema>(otherHeaders: HttpHeaders<OtherSchema>): boolean {
-    for (const [key, otherValue] of otherHeaders.entries()) {
-      const value = super.get.call(this, key);
-
-      if (value === null) {
-        return false;
-      }
-
-      const valueItems = this.splitHeaderValues(value);
-      const otherValueItems = this.splitHeaderValues(otherValue);
-
-      const haveCompatibleNumberOfValues = valueItems.length === otherValueItems.length;
-      if (!haveCompatibleNumberOfValues) {
-        return false;
-      }
-
-      for (const otherValueItem of otherValueItems) {
-        if (!valueItems.includes(otherValueItem)) {
-          return false;
-        }
-      }
+    if (!this.contains(otherHeaders)) {
+      return false;
     }
 
     for (const key of this.keys()) {
@@ -170,8 +152,8 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
       const valueItems = this.splitHeaderValues(value);
       const otherValueItems = this.splitHeaderValues(otherValue);
 
-      const haveCompatibleNumberOfValues = valueItems.length >= otherValueItems.length;
-      if (!haveCompatibleNumberOfValues) {
+      const haveSameNumberOfValues = valueItems.length === otherValueItems.length;
+      if (!haveSameNumberOfValues) {
         return false;
       }
 

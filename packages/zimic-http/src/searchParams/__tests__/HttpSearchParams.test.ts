@@ -470,7 +470,7 @@ describe('HttpSearchParams', () => {
     expect(searchParams.contains(otherSearchParams)).toBe(true);
 
     searchParams.append('names', 'User3');
-    expect(searchParams.contains(otherSearchParams)).toBe(true);
+    expect(searchParams.contains(otherSearchParams)).toBe(false);
     searchParams.delete('names', 'User3');
     expect(searchParams.contains(otherSearchParams)).toBe(true);
 
@@ -479,6 +479,8 @@ describe('HttpSearchParams', () => {
     expect(searchParams.contains(otherSearchParams)).toBe(false);
 
     otherSearchParams.delete('names', 'Use');
+    expect(searchParams.contains(otherSearchParams)).toBe(false);
+    otherSearchParams.append('names', 'User2');
     expect(searchParams.contains(otherSearchParams)).toBe(true);
 
     searchParams.set('page', '2');
@@ -487,7 +489,7 @@ describe('HttpSearchParams', () => {
     expect(searchParams.contains(otherSearchParams)).toBe(true);
 
     searchParams.delete('names', 'User2');
-    expect(searchParams.contains(otherSearchParams)).toBe(true);
+    expect(searchParams.contains(otherSearchParams)).toBe(false);
     searchParams.append('names', 'User2');
     expect(searchParams.contains(otherSearchParams)).toBe(true);
 

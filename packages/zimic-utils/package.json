@@ -43,6 +43,12 @@
       "require": "./dist/types/globals.js",
       "default": "./dist/types/globals.js"
     },
+    "./types/json": {
+      "types": "./types/json.d.ts",
+      "import": "./dist/types/json.mjs",
+      "require": "./dist/types/json.js",
+      "default": "./dist/types/json.js"
+    },
     "./data/isDefined": {
       "types": "./data/isDefined.d.ts",
       "import": "./dist/data/isDefined.mjs",
@@ -55,12 +61,6 @@
       "require": "./dist/data/isNonEmpty.js",
       "default": "./dist/data/isNonEmpty.js"
     },
-    "./data/blobContains": {
-      "types": "./data/blobContains.d.ts",
-      "import": "./dist/data/blobContains.mjs",
-      "require": "./dist/data/blobContains.js",
-      "default": "./dist/data/blobContains.js"
-    },
     "./data/blobEquals": {
       "types": "./data/blobEquals.d.ts",
       "import": "./dist/data/blobEquals.mjs",
@@ -72,6 +72,18 @@
       "import": "./dist/data/fileEquals.mjs",
       "require": "./dist/data/fileEquals.js",
       "default": "./dist/data/fileEquals.js"
+    },
+    "./data/jsonContains": {
+      "types": "./data/jsonContains.d.ts",
+      "import": "./dist/data/jsonContains.mjs",
+      "require": "./dist/data/jsonContains.js",
+      "default": "./dist/data/jsonContains.js"
+    },
+    "./data/jsonEquals": {
+      "types": "./data/jsonEquals.d.ts",
+      "import": "./dist/data/jsonEquals.mjs",
+      "require": "./dist/data/jsonEquals.js",
+      "default": "./dist/data/jsonEquals.js"
     },
     "./error/expectToThrow": {
       "types": "./error/expectToThrow.d.ts",
@@ -161,19 +173,21 @@
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write",
+    "test": "dotenv -v NODE_ENV=test -- vitest",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test run",
     "types:check": "tsc --noEmit",
     "typegen:fixtures": "tsx ./scripts/typegen/generateFixtureTypes.js"
   },
   "devDependencies": {
-    "@types/node": "^22.14.0",
+    "@types/node": "^22.14.1",
+    "@vitest/browser": "^3.1.1",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
+    "dotenv-cli": "^8.0.0",
     "eslint": "^9.24.0",
     "tsup": "^8.4.0",
-    "typescript": "^5.8.3"
-  },
-  "peerDependencies": {
-    "vitest": "^3.0.6"
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
   }
 }

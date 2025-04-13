@@ -439,7 +439,7 @@ describe('HttpHeaders', () => {
     expect(headers.contains(otherHeaders)).toBe(true);
 
     headers.append('accept', 'application/xml');
-    expect(headers.contains(otherHeaders)).toBe(true);
+    expect(headers.contains(otherHeaders)).toBe(false);
     headers.set('accept', '*/*');
     expect(headers.contains(otherHeaders)).toBe(true);
 
@@ -480,7 +480,7 @@ describe('HttpHeaders', () => {
     headers.append('accept', 'application/json');
 
     otherHeaders.set('accept', 'application/json');
-    expect(headers.contains(otherHeaders)).toBe(true);
+    expect(headers.contains(otherHeaders)).toBe(false);
 
     otherHeaders.append('accept', '*/*');
     expect(headers.contains(otherHeaders)).toBe(true);

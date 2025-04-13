@@ -14,10 +14,9 @@ interface BrowserServiceWorkerInitOptions {
 }
 
 async function initializeBrowserServiceWorker({ publicDirectory }: BrowserServiceWorkerInitOptions) {
-  const absolutePublicDirectory = path.resolve(publicDirectory);
-  await fs.promises.mkdir(absolutePublicDirectory, { recursive: true });
+  await fs.promises.mkdir(publicDirectory, { recursive: true });
 
-  const destinationPath = path.join(absolutePublicDirectory, SERVICE_WORKER_FILE_NAME);
+  const destinationPath = path.join(publicDirectory, SERVICE_WORKER_FILE_NAME);
   await fs.promises.copyFile(MOCK_SERVICE_WORKER_PATH, destinationPath);
 
   logger.info(`Service worker script saved to ${color.magenta(destinationPath)}.`);
