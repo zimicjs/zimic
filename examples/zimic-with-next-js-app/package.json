@@ -1,18 +1,19 @@
 {
-  "name": "zimic-interceptor-example-with-next-js-pages",
+  "name": "zimic-example-with-next-js-app",
   "version": "0.0.0",
   "private": false,
   "scripts": {
     "dev": "dotenv -c development -- next dev --turbo",
-    "test": "dotenv -c test -- dotenv -c development -- playwright test",
+    "mock": "pnpm mock:start -- pnpm mock:load",
+    "mock:start": "zimic-interceptor server start --hostname 127.0.0.1 --port 3007 --ephemeral",
+    "mock:load": "tsx ./tests/interceptors/scripts/load.ts",
+    "test": "dotenv -c test -- dotenv -c development -- pnpm mock -- playwright test",
     "test:turbo": "dotenv -v CI=true -- pnpm run test",
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "playwright install chromium",
-    "deps:init-zimic": "zimic-interceptor browser init ./public || true",
-    "postinstall": "concurrently --names playwright,zimic 'pnpm deps:install-playwright' 'pnpm deps:init-zimic'"
+    "postinstall": "pnpm deps:install-playwright"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.73.3",
     "@zimic/fetch": "latest",
     "@zimic/http": "latest",
     "next": "^15.3.0",
@@ -26,10 +27,10 @@
     "@types/react": "^19.1.1",
     "@types/react-dom": "^19.1.2",
     "@zimic/interceptor": "latest",
-    "concurrently": "^9.1.2",
     "dotenv-cli": "^8.0.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.3",
+    "tsx": "^4.19.3",
     "typescript": "^5.8.3"
   }
 }

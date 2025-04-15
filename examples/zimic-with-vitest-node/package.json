@@ -1,5 +1,5 @@
 {
-  "name": "zimic-interceptor-example-with-vitest-jsdom",
+  "name": "zimic-example-with-vitest-node",
   "version": "0.0.0",
   "private": false,
   "scripts": {
@@ -14,7 +14,6 @@
   "devDependencies": {
     "@zimic/interceptor": "latest",
     "dotenv-cli": "^8.0.0",
-    "jsdom": "^26.1.0",
     "typescript": "^5.8.3",
     "vitest": "^3.1.1"
   }

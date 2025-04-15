@@ -7,7 +7,6 @@ import githubInterceptor, { githubMockData } from '../../tests/interceptors/gith
 import environment from '../config/environment';
 import { cn } from '../utils/styles';
 
-
 import '../styles/global.css';
 
 const SHOULD_LOAD_MOCK_DATA = environment.NODE_ENV !== 'production';
