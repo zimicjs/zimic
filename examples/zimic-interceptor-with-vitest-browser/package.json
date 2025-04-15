@@ -11,6 +11,7 @@
     "postinstall": "concurrently --names playwright,zimic 'pnpm deps:install-playwright' 'pnpm deps:init-zimic'"
   },
   "dependencies": {
+    "@zimic/fetch": "latest",
     "@zimic/http": "latest"
   },
   "devDependencies": {

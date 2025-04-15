@@ -1,4 +1,7 @@
+import { createFetch } from '@zimic/fetch';
 import type { HttpSchema } from '@zimic/http';
+
+export const GITHUB_API_BASE_URL = 'https://api.github.com';
 
 export interface GitHubRepository {
   id: number;
@@ -19,3 +22,7 @@ export type GitHubSchema = HttpSchema<{
     };
   };
 }>;
+
+export const githubFetch = createFetch<GitHubSchema>({
+  baseURL: GITHUB_API_BASE_URL,
+});

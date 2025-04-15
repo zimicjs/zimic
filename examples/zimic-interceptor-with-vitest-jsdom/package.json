@@ -8,6 +8,7 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
+    "@zimic/fetch": "latest",
     "@zimic/http": "latest"
   },
   "devDependencies": {

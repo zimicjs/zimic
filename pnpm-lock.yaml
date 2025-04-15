@@ -131,6 +131,9 @@ importers:
 
   examples/zimic-interceptor-with-jest-jsdom:
     dependencies:
+      '@zimic/fetch':
+        specifier: latest
+        version: link:../../packages/zimic-fetch
       '@zimic/http':
         specifier: latest
         version: link:../../packages/zimic-http
@@ -162,6 +165,9 @@ importers:
 
   examples/zimic-interceptor-with-jest-node:
     dependencies:
+      '@zimic/fetch':
+        specifier: latest
+        version: link:../../packages/zimic-fetch
       '@zimic/http':
         specifier: latest
         version: link:../../packages/zimic-http
@@ -401,6 +407,9 @@ importers:
 
   examples/zimic-interceptor-with-vitest-browser:
     dependencies:
+      '@zimic/fetch':
+        specifier: latest
+        version: link:../../packages/zimic-fetch
       '@zimic/http':
         specifier: latest
         version: link:../../packages/zimic-http
@@ -429,6 +438,9 @@ importers:
 
   examples/zimic-interceptor-with-vitest-jsdom:
     dependencies:
+      '@zimic/fetch':
+        specifier: latest
+        version: link:../../packages/zimic-fetch
       '@zimic/http':
         specifier: latest
         version: link:../../packages/zimic-http
@@ -451,6 +463,9 @@ importers:
 
   examples/zimic-interceptor-with-vitest-node:
     dependencies:
+      '@zimic/fetch':
+        specifier: latest
+        version: link:../../packages/zimic-fetch
       '@zimic/http':
         specifier: latest
         version: link:../../packages/zimic-http

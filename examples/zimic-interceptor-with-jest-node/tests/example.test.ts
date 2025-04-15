@@ -1,8 +1,8 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { GITHUB_API_BASE_URL } from '../src/config/github';
-import { GitHubRepository } from '../src/types/github';
+import { githubFetch, GitHubRepository } from '../src/clients/github';
 import githubInterceptor from './interceptors/github';
+import { expectResponseStatus } from './utils/expect';
 
 describe('Example tests', () => {
   const repository: GitHubRepository = {
@@ -22,10 +22,10 @@ describe('Example tests', () => {
       })
       .times(1);
 
-    const response = await fetch(`${GITHUB_API_BASE_URL}/repos/zimicjs/zimic`);
-    expect(response.status).toBe(200);
+    const response = await githubFetch('/repos/zimicjs/zimic', { method: 'GET' });
+    expectResponseStatus(response, 200);
 
-    const data = (await response.json()) as GitHubRepository;
+    const data = await response.json();
     expect(data).toEqual(repository);
   });
 
@@ -38,10 +38,10 @@ describe('Example tests', () => {
       })
       .times(1);
 
-    const response = await fetch(`${GITHUB_API_BASE_URL}/repos/unknown/unknown`);
-    expect(response.status).toBe(404);
+    const response = await githubFetch('/repos/unknown/unknown', { method: 'GET' });
+    expectResponseStatus(response, 404);
 
-    const data = (await response.json()) as { message: string };
+    const data = await response.json();
     expect(data).toEqual({ message: 'Not Found' });
   });
 });
