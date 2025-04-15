@@ -1,5 +1,5 @@
 {
-  "name": "zimic-example-with-jest-jsdom",
+  "name": "zimic-interceptor-example-with-jest-jsdom",
   "version": "0.0.0",
   "private": false,
   "scripts": {

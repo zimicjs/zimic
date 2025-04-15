@@ -1,10 +1,17 @@
 <h1>
-  Zimic + Typegen
-</h2>
+  @zimic/interceptor + OpenAPI typegen
+</h1>
 
-This example uses Zimic and the `zimic-http typegen` CLI to generate types from the GitHub API.
-[Node.js](https://nodejs.org) and [Vitest](https://vitest.dev) are used in this example, but other frameworks and
-runtimes should be similar, such as [Deno](https://deno.com), [Bun](https://bun.sh), and [Jest](https://jestjs.io).
+This example uses [@zimic/interceptor](https://www.npmjs.com/package/@zimic/interceptor) and the `zimic-http typegen`
+CLI to generate types from the GitHub API. [Node.js](https://nodejs.org) and [Vitest](https://vitest.dev) are used in
+this example, but other frameworks and runtimes should be similar, such as [Deno](https://deno.com),
+[Bun](https://bun.sh), and [Jest](https://jestjs.io).
+
+- [Application](#application)
+- [Testing](#testing)
+  - [`@zimic/interceptor`](#zimicinterceptor)
+  - [Test](#test)
+- [Running](#running)
 
 ## Application
 
@@ -34,10 +41,10 @@ pnpm typegen:github
 
 ## Testing
 
-An example test suite uses Vitest to test the application. Zimic is used to mock the GitHub API and simulate a test case
-where the repository is found and another where it is not.
+An example test suite uses Vitest to test the application. `@zimic/interceptor` is used to mock the GitHub API and
+simulate a test case where the repository is found and another where it is not.
 
-### Zimic
+### `@zimic/interceptor`
 
 - Zimic interceptor: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
 

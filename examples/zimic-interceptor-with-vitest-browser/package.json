@@ -1,5 +1,5 @@
 {
-  "name": "zimic-example-with-vitest-browser",
+  "name": "zimic-interceptor-example-with-vitest-browser",
   "version": "0.0.0",
   "private": false,
   "scripts": {

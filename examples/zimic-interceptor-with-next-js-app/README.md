@@ -1,8 +1,16 @@
 <h1>
-  Zimic + Next.js App Router
-</h2>
+  @zimic/interceptor + Next.js App Router
+</h1>
 
-This example uses Zimic with [Next.js](https://nextjs.org).
+This example uses [@zimic/interceptor](https://www.npmjs.com/package/@zimic/interceptor) with
+[Next.js](https://nextjs.org).
+
+- [Application](#application)
+- [Testing](#testing)
+  - [`@zimic/interceptor`](#zimicinterceptor)
+    - [Loading mocks](#loading-mocks)
+  - [Test](#test)
+- [Running](#running)
 
 ## Application
 
@@ -16,12 +24,12 @@ A `postinstall` script in [`package.json`](./package.json) is used to install Pl
 
 ## Testing
 
-An example test suite uses [Playwright](https://playwright.dev) to test the application. Zimic is used to mock the
-GitHub API and simulate a test case where the repository is found and another where it is not.
+An example test suite uses [Playwright](https://playwright.dev) to test the application. `@zimic/interceptor` is used to
+mock the GitHub API and simulate a test case where the repository is found and another where it is not.
 
-### Zimic
+### `@zimic/interceptor`
 
-- GitHub interceptor and mocks: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
+- GitHub HTTP interceptor and mocks: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
 
 #### Loading mocks
 

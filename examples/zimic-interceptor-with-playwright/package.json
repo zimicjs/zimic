@@ -1,13 +1,13 @@
 {
-  "name": "zimic-example-with-next-js-app",
+  "name": "zimic-interceptor-example-with-playwright",
   "version": "0.0.0",
   "private": false,
   "scripts": {
     "dev": "dotenv -c development -- pnpm dev:no-env",
     "dev:mock": "dotenv -c test -- dotenv -c development -- pnpm mock -- pnpm dev:no-env",
-    "dev:no-env": "next dev --turbo --port 3006",
+    "dev:no-env": "next dev --turbo --port 3004",
     "mock": "pnpm mock:start -- pnpm mock:load",
-    "mock:start": "zimic-interceptor server start --hostname 127.0.0.1 --port 3007 --ephemeral",
+    "mock:start": "zimic-interceptor server start --hostname 127.0.0.1 --port 3005 --ephemeral",
     "mock:load": "tsx ./tests/interceptors/scripts/load.ts",
     "test": "dotenv -c test -- dotenv -c development -- playwright test",
     "test:turbo": "dotenv -v CI=true -- pnpm run test",
@@ -16,7 +16,6 @@
     "postinstall": "pnpm deps:install-playwright"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.73.3",
     "@zimic/fetch": "latest",
     "@zimic/http": "latest",
     "clsx": "^2.1.1",

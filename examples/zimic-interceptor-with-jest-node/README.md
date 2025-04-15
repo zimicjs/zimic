@@ -1,9 +1,16 @@
 <h1>
-  Zimic + Jest + Node.js
-</h2>
+  @zimic/interceptor + Jest + Node.js
+</h1>
 
-This example uses Zimic with [Jest](https://jestjs.io) in a server-side environment. [Node.js](https://nodejs.org) is
-used in this example, but other runtimes should be similar, such as [Deno](https://deno.com) and [Bun](https://bun.sh).
+This example uses [@zimic/interceptor](https://www.npmjs.com/package/@zimic/interceptor) with [Jest](https://jestjs.io)
+in a server-side environment. [Node.js](https://nodejs.org) is used in this example, but other runtimes should be
+similar, such as [Deno](https://deno.com) and [Bun](https://bun.sh).
+
+- [Application](#application)
+- [Testing](#testing)
+  - [`@zimic/interceptor`](#zimicinterceptor)
+  - [Test](#test)
+- [Running](#running)
 
 ## Application
 
@@ -15,12 +22,12 @@ The application is a simple [Fastify](https://fastify.dev) server, fetching repo
 
 ## Testing
 
-An example test suite uses Jest to test the application. Zimic is used to mock the GitHub API and simulate a test case
-where the repository is found and another where it is not.
+An example test suite uses Jest to test the application. `@zimic/interceptor` is used to mock the GitHub API and
+simulate a test case where the repository is found and another where it is not.
 
-### Zimic
+### `@zimic/interceptor`
 
-- GitHub interceptor: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
+- GitHub HTTP interceptor: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
 
 ### Test
 

@@ -1,8 +1,16 @@
 <h1>
-  Zimic + Playwright
-</h2>
+  @zimic/interceptor + Playwright
+</h1>
 
-This example uses Zimic with [Playwright](https://playwright.dev) in end-to-end tests.
+This example uses [@zimic/interceptor](https://www.npmjs.com/package/@zimic/interceptor) with
+[Playwright](https://playwright.dev) in end-to-end tests.
+
+- [Application](#application)
+- [Testing](#testing)
+  - [`@zimic/interceptor`](#zimicinterceptor)
+    - [Loading mocks](#loading-mocks)
+  - [Test](#test)
+- [Running](#running)
 
 ## Application
 
@@ -31,12 +39,12 @@ A `postinstall` script in [`package.json`](./package.json) is used to install Pl
 
 ## Testing
 
-An example test suite uses [Playwright](https://playwright.dev) to test the application. Zimic is used to mock the
-GitHub API and simulate a test case where the repository is found and another where it is not.
+An example test suite uses [Playwright](https://playwright.dev) to test the application. `@zimic/interceptor` is used to
+mock the GitHub API and simulate a test case where the repository is found and another where it is not.
 
-### Zimic
+### `@zimic/interceptor`
 
-- GitHub interceptor and mocks: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
+- GitHub HTTP interceptor and mocks: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
 
 #### Loading mocks
 

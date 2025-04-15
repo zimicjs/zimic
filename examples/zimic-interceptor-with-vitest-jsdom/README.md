@@ -1,9 +1,16 @@
 <h1>
-  Zimic + Vitest + JSDOM
-</h2>
+  @zimic/interceptor + Vitest + JSDOM
+</h1>
 
-This example uses Zimic with [Vitest](https://vitest.dev), [JSDOM](https://github.com/jsdom/jsdom), and
+This example uses [@zimic/interceptor](https://www.npmjs.com/package/@zimic/interceptor) with
+[Vitest](https://vitest.dev), [JSDOM](https://github.com/jsdom/jsdom), and
 [Testing Library](https://testing-library.com).
+
+- [Application](#application)
+- [Testing](#testing)
+  - [`@zimic/interceptor`](#zimicinterceptor)
+  - [Test](#test)
+- [Running](#running)
 
 ## Application
 
@@ -14,12 +21,12 @@ The application is a simple HTML layout rendered by vanilla JavaScript, fetching
 
 ## Testing
 
-An example test suite uses Vitest to test the application. Zimic is used to mock the GitHub API and simulate a test case
-where the repository is found and another where it is not.
+An example test suite uses Vitest to test the application. `@zimic/interceptor` is used to mock the GitHub API and
+simulate a test case where the repository is found and another where it is not.
 
-### Zimic
+### `@zimic/interceptor`
 
-- GitHub interceptor: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
+- GitHub HTTP interceptor: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
 
 ### Test
 

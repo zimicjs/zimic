@@ -25,15 +25,15 @@
         "lint-staged",
         "tsconfig",
         "examples",
-        "example-vitest-node",
-        "example-vitest-browser",
-        "example-vitest-jsdom",
-        "example-jest-node",
-        "example-jest-jsdom",
-        "example-playwright",
-        "example-next-js-app",
-        "example-next-js-pages",
-        "example-openapi-typegen"
+        "example-interceptor-vitest-node",
+        "example-interceptor-vitest-browser",
+        "example-interceptor-vitest-jsdom",
+        "example-interceptor-jest-node",
+        "example-interceptor-jest-jsdom",
+        "example-interceptor-playwright",
+        "example-interceptor-next-js-app",
+        "example-interceptor-next-js-pages",
+        "example-interceptor-openapi-typegen"
       ]
     ],
     "scope-empty": [2, "never"]
