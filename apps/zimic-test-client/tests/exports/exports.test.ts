@@ -9,6 +9,7 @@ import {
   type FetchRequestObject,
   type FetchRequestInit,
   type FetchResponse,
+  type FetchResponsePerStatusCode,
   type FetchResponseObject,
   type JSONStringified,
   FetchResponseError,
@@ -202,6 +203,7 @@ describe('Exports', () => {
     expectTypeOf<FetchRequestConstructor<never>>().not.toBeAny();
     expectTypeOf<FetchRequestInit<never, never, never>>().not.toBeAny();
     expectTypeOf<FetchResponse<never, never, never>>().not.toBeAny();
+    expectTypeOf<FetchResponsePerStatusCode<never, never, never, never>>().not.toBeAny();
     expectTypeOf<FetchResponseObject>().not.toBeAny();
     expectTypeOf<FetchResponseError<never, never, never>>().not.toBeAny();
     expect(typeof FetchResponseError).toBe('function');

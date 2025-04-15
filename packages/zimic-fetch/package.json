@@ -13,7 +13,7 @@
     "api",
     "static"
   ],
-  "version": "0.2.1",
+  "version": "0.2.2-canary.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -70,7 +70,7 @@
     "deps:init": "playwright install chromium"
   },
   "devDependencies": {
-    "@types/node": "^22.14.0",
+    "@types/node": "^22.14.1",
     "@vitest/browser": "^3.1.1",
     "@vitest/coverage-istanbul": "^3.1.1",
     "@zimic/eslint-config-node": "workspace:*",
@@ -86,7 +86,7 @@
     "vitest": "^3.1.1"
   },
   "peerDependencies": {
-    "@zimic/http": "^0.3.0 || ^0.3.0-canary.0",
+    "@zimic/http": "^0.3.0 || workspace:*",
     "typescript": ">=4.8.0"
   }
 }

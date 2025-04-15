@@ -10,9 +10,9 @@
     ".": "./index.js"
   },
   "dependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.29.0",
-    "@typescript-eslint/parser": "^8.29.0",
-    "eslint-import-resolver-typescript": "^4.3.1",
+    "@typescript-eslint/eslint-plugin": "^8.29.1",
+    "@typescript-eslint/parser": "^8.29.1",
+    "eslint-import-resolver-typescript": "^4.3.2",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-import-helpers": "^2.0.1"
   },

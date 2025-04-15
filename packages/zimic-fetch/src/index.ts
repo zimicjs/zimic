@@ -8,6 +8,7 @@ export type {
   FetchRequestObject,
   FetchRequestInit,
   FetchResponse,
+  FetchResponsePerStatusCode,
   FetchResponseObject,
 } from './client/types/requests';
 

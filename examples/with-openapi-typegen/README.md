@@ -49,26 +49,21 @@ where the repository is found and another where it is not.
 
 ## Running
 
-1. Clone this example:
+<a href="https://codesandbox.io/p/sandbox/github/zimicjs/zimic/tree/main/examples/with-openapi-typegen">
+  <img
+    src="https://codesandbox.io/static/img/play-codesandbox.svg"
+    alt="Edit in CodeSandbox"
+    height="36px"
+  />
+</a>
 
-   ```bash
-   mkdir zimic
-   cd zimic
-   git init
-   git remote add origin git@github.com:zimicjs/zimic.git
-   git sparse-checkout init
-   git sparse-checkout set examples/with-openapi-typegen
-   git pull origin main
-   cd examples/with-openapi-typegen
-   ```
-
-2. Install the dependencies:
+1. Install the dependencies:
 
    ```bash
    pnpm install
    ```
 
-3. Run the tests:
+2. Run the tests:
 
    ```bash
    pnpm run test

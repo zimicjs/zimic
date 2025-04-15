@@ -493,7 +493,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         expect(handler.requests).toHaveLength(0);
 
-        let response = await fetch(joinURL(baseURL, '/users'), {
+        const response = await fetch(joinURL(baseURL, '/users'), {
           method,
           body: restrictedFormData,
         });
@@ -507,31 +507,20 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         extendedFormData.append('tag', tagFile);
         extendedFormData.append('tag', differentTagFile);
 
-        response = await fetch(joinURL(baseURL, '/users'), {
-          method,
-          body: extendedFormData,
-        });
-        expect(response.status).toBe(200);
-
-        expect(handler.requests).toHaveLength(2);
-
         const differentFormData = new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>();
         differentFormData.append('tag', differentTagFile);
 
         for (const body of [
+          extendedFormData,
           differentFormData,
           new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>(),
           undefined,
         ]) {
           await usingIgnoredConsole(['error'], async (console) => {
-            const responsePromise = fetch(joinURL(baseURL, '/users'), {
-              method,
-              body,
-            });
-
+            const responsePromise = fetch(joinURL(baseURL, '/users'), { method, body });
             await expectFetchError(responsePromise);
 
-            expect(handler.requests).toHaveLength(2);
+            expect(handler.requests).toHaveLength(1);
 
             if (body && !body.has('tag') && platform === 'browser') {
               expect(console.error).toHaveBeenCalledTimes(1);
@@ -905,7 +894,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         expect(handler.requests).toHaveLength(0);
 
-        let response = await fetch(joinURL(baseURL, '/users'), {
+        const response = await fetch(joinURL(baseURL, '/users'), {
           method,
           headers: { 'content-type': 'application/octet-stream' },
           body: restrictedBody,
@@ -914,29 +903,17 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         expect(handler.requests).toHaveLength(1);
 
-        response = await fetch(joinURL(baseURL, '/users'), {
-          method,
-          headers: { 'content-type': 'application/octet-stream' },
-          body: new File(['more-content'], 'file.bin', { type: 'application/octet-stream' }),
-        });
-        expect(response.status).toBe(200);
-
-        expect(handler.requests).toHaveLength(2);
-
         for (const body of [
+          new File(['more-content'], 'file.bin', { type: 'text/plain' }),
           new File(['content'], 'file.bin', { type: 'text/plain' }),
           new File(['cont'], 'file.bin', { type: 'application/octet-stream' }),
           new File([], 'file.bin', { type: 'application/octet-stream' }),
           new File([], ''),
         ]) {
-          const responsePromise = fetch(joinURL(baseURL, '/users'), {
-            method,
-            body,
-          });
-
+          const responsePromise = fetch(joinURL(baseURL, '/users'), { method, body });
           await expectFetchError(responsePromise);
 
-          expect(handler.requests).toHaveLength(2);
+          expect(handler.requests).toHaveLength(1);
         }
       });
     });

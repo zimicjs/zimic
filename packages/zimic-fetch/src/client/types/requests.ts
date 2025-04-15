@@ -245,6 +245,12 @@ export type FetchRequestObject = Pick<
   body?: string | null;
 };
 
+/**
+ * A {@link FetchResponse `FetchResponse`} instance with a specific status code.
+ *
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponse `FetchResponse` API reference}
+ * @see {@link https://developer.mozilla.org/docs/Web/API/Response}
+ */
 export interface FetchResponsePerStatusCode<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,

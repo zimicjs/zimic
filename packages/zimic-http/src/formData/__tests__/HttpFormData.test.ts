@@ -479,7 +479,7 @@ describe('HttpFormData', async () => {
     expect(await formData.contains(otherFormData)).toBe(false);
 
     formData.append('blob', blob);
-    expect(await formData.contains(otherFormData)).toBe(true);
+    expect(await formData.contains(otherFormData)).toBe(false);
 
     otherFormData.append('blob', blob);
     expect(await formData.contains(otherFormData)).toBe(true);
