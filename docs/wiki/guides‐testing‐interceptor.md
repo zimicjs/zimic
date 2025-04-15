@@ -13,8 +13,8 @@ how you are applying your mocks.
   where the test runner and the application run in separate processes. In this case, you **do need** to manage
   concurrency and racing conditions between test workers. This can be done by either:
   1. Applying your mocks to the interceptor server before your application and tests start. See
-     [Next.js App Router - Loading mocks](../../examples/zimic-interceptor-with-next-js-app/README.md#loading-mocks) and
-     [Playwright - Loading mocks](../../examples/zimic-interceptor-with-playwright/README.md#loading-mocks) as examples.
+     [Next.js App Router - Loading mocks](../../examples/zimic-with-next-js-app/README.md#loading-mocks) and
+     [Playwright - Loading mocks](../../examples/zimic-with-playwright/README.md#loading-mocks) as examples.
   2. Using a [path discriminator](api‐zimic‐interceptor‐http#path-discriminators-in-remote-http-interceptors) when
      creating interceptors in your test workers.
 

@@ -89,7 +89,7 @@ const interceptor = createHttpInterceptor<MyServiceSchema>({
 });
 ```
 
-Our [OpenAPI typegen example](../../examples/zimic-interceptor-with-openapi-typegen) demonstrates how to use
+Our [OpenAPI typegen example](../../examples/zimic-with-openapi-typegen) demonstrates how to use
 `zimic-http typegen openapi` to generate types and use them in your application and interceptors.
 
 ### `zimic-http typegen openapi` comments

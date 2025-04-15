@@ -11,6 +11,8 @@ This example uses [@zimic/interceptor](https://www.npmjs.com/package/@zimic/inte
     - [Loading mocks](#loading-mocks)
   - [Configuration](#configuration)
 - [Running](#running)
+  - [CodeSandbox](#codesandbox)
+  - [Cloning locally](#cloning-locally)
 
 ## Application
 
@@ -43,14 +45,6 @@ apply the default mocks before the application is started during tests.
 
 ## Running
 
-<a href="https://codesandbox.io/p/sandbox/github/zimicjs/zimic/tree/main/examples/with-next-js-app">
-  <img
-    src="https://codesandbox.io/static/img/play-codesandbox.svg"
-    alt="Edit in CodeSandbox"
-    height="36px"
-  />
-</a>
-
 1. Install the dependencies:
 
    ```bash
@@ -63,8 +57,6 @@ apply the default mocks before the application is started during tests.
    pnpm run test
    ```
 
-   This command automatically starts the application and runs the tests.
-
 If you want to run the application outside of the test suite, use:
 
 ```bash
@@ -72,3 +64,33 @@ pnpm run dev
 ```
 
 Then, open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### CodeSandbox
+
+<a href="https://codesandbox.io/p/sandbox/github/zimicjs/zimic/tree/main/examples/zimic-with-next-js-app">
+  <img
+    src="https://codesandbox.io/static/img/play-codesandbox.svg"
+    alt="Edit in CodeSandbox"
+    height="36px"
+  />
+</a>
+
+### Cloning locally
+
+```bash
+mkdir zimic-tmp
+cd zimic-tmp
+git init
+git remote add origin git@github.com:zimicjs/zimic.git
+git sparse-checkout init
+git sparse-checkout set examples/zimic-with-next-js-app
+git pull origin main # or a specific branch or tag
+mv examples/zimic-with-next-js-app ..
+cd ../zimic-with-next-js-app
+rm -r ../zimic-tmp
+```
+
+> [!TIP]
+>
+> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as
+> `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.

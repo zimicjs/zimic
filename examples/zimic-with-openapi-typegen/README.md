@@ -10,8 +10,10 @@ this example, but other frameworks and runtimes should be similar, such as [Deno
 - [Application](#application)
 - [Testing](#testing)
   - [`@zimic/interceptor`](#zimicinterceptor)
-  - [Test](#test)
+  - [Configuration](#configuration)
 - [Running](#running)
+  - [CodeSandbox](#codesandbox)
+  - [Cloning locally](#cloning-locally)
 
 ## Application
 
@@ -56,14 +58,6 @@ simulate a test case where the repository is found and another where it is not.
 
 ## Running
 
-<a href="https://codesandbox.io/p/sandbox/github/zimicjs/zimic/tree/main/examples/with-openapi-typegen">
-  <img
-    src="https://codesandbox.io/static/img/play-codesandbox.svg"
-    alt="Edit in CodeSandbox"
-    height="36px"
-  />
-</a>
-
 1. Install the dependencies:
 
    ```bash
@@ -75,3 +69,33 @@ simulate a test case where the repository is found and another where it is not.
    ```bash
    pnpm run test
    ```
+
+### CodeSandbox
+
+<a href="https://codesandbox.io/p/sandbox/github/zimicjs/zimic/tree/main/examples/zimic-with-openapi-typegen">
+  <img
+    src="https://codesandbox.io/static/img/play-codesandbox.svg"
+    alt="Edit in CodeSandbox"
+    height="36px"
+  />
+</a>
+
+### Cloning locally
+
+```bash
+mkdir zimic-tmp
+cd zimic-tmp
+git init
+git remote add origin git@github.com:zimicjs/zimic.git
+git sparse-checkout init
+git sparse-checkout set examples/zimic-with-openapi-typegen
+git pull origin main # or a specific branch or tag
+mv examples/zimic-with-openapi-typegen ..
+cd ../zimic-with-openapi-typegen
+rm -r ../zimic-tmp
+```
+
+> [!TIP]
+>
+> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as
+> `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.

@@ -8,8 +8,10 @@ other runtimes should be similar, such as [Deno](https://deno.com) and [Bun](htt
 
 - [Testing](#testing)
   - [`@zimic/interceptor`](#zimicinterceptor)
-  - [Test](#test)
+  - [Configuration](#configuration)
 - [Running](#running)
+  - [CodeSandbox](#codesandbox)
+  - [Cloning locally](#cloning-locally)
 
 ## Testing
 
@@ -27,14 +29,6 @@ other runtimes should be similar, such as [Deno](https://deno.com) and [Bun](htt
 
 ## Running
 
-<a href="https://codesandbox.io/p/sandbox/github/zimicjs/zimic/tree/main/examples/with-vitest-node">
-  <img
-    src="https://codesandbox.io/static/img/play-codesandbox.svg"
-    alt="Edit in CodeSandbox"
-    height="36px"
-  />
-</a>
-
 1. Install the dependencies:
 
    ```bash
@@ -42,6 +36,37 @@ other runtimes should be similar, such as [Deno](https://deno.com) and [Bun](htt
    ```
 
 2. Run the tests:
+
    ```bash
    pnpm run test
    ```
+
+### CodeSandbox
+
+<a href="https://codesandbox.io/p/sandbox/github/zimicjs/zimic/tree/main/examples/zimic-with-vitest-node">
+  <img
+    src="https://codesandbox.io/static/img/play-codesandbox.svg"
+    alt="Edit in CodeSandbox"
+    height="36px"
+  />
+</a>
+
+### Cloning locally
+
+```bash
+mkdir zimic-tmp
+cd zimic-tmp
+git init
+git remote add origin git@github.com:zimicjs/zimic.git
+git sparse-checkout init
+git sparse-checkout set examples/zimic-with-vitest-node
+git pull origin main # or a specific branch or tag
+mv examples/zimic-with-vitest-node ..
+cd ../zimic-with-vitest-node
+rm -r ../zimic-tmp
+```
+
+> [!TIP]
+>
+> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as
+> `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.

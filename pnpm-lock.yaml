@@ -129,7 +129,7 @@ importers:
         specifier: ^9.24.0
         version: 9.24.0(jiti@2.4.2)
 
-  examples/zimic-interceptor-with-jest-jsdom:
+  examples/zimic-with-jest-jsdom:
     dependencies:
       '@zimic/fetch':
         specifier: latest
@@ -163,7 +163,7 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
 
-  examples/zimic-interceptor-with-jest-node:
+  examples/zimic-with-jest-node:
     dependencies:
       '@zimic/fetch':
         specifier: latest
@@ -194,7 +194,7 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
 
-  examples/zimic-interceptor-with-next-js-app:
+  examples/zimic-with-next-js-app:
     dependencies:
       '@zimic/fetch':
         specifier: latest
@@ -246,7 +246,7 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
 
-  examples/zimic-interceptor-with-next-js-pages:
+  examples/zimic-with-next-js-pages:
     dependencies:
       '@tanstack/react-query':
         specifier: ^5.73.3
@@ -301,7 +301,7 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
 
-  examples/zimic-interceptor-with-openapi-typegen:
+  examples/zimic-with-openapi-typegen:
     dependencies:
       '@zimic/fetch':
         specifier: latest
@@ -335,7 +335,7 @@ importers:
         specifier: ^3.1.1
         version: 3.1.1(@types/debug@4.1.12)(@types/node@22.14.1)(@vitest/browser@3.1.1)(jiti@2.4.2)(jsdom@26.1.0(bufferutil@4.0.9))(lightningcss@1.29.2)(msw@2.7.4(@types/node@22.14.1)(typescript@5.8.3))(tsx@4.19.3)(yaml@2.7.1)
 
-  examples/zimic-interceptor-with-playwright:
+  examples/zimic-with-playwright:
     dependencies:
       '@zimic/fetch':
         specifier: latest
@@ -387,7 +387,7 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
 
-  examples/zimic-interceptor-with-vitest-browser:
+  examples/zimic-with-vitest-browser:
     dependencies:
       '@zimic/fetch':
         specifier: latest
@@ -418,7 +418,7 @@ importers:
         specifier: ^3.1.1
         version: 3.1.1(@types/debug@4.1.12)(@types/node@22.14.1)(@vitest/browser@3.1.1)(jiti@2.4.2)(jsdom@26.1.0(bufferutil@4.0.9))(lightningcss@1.29.2)(msw@2.7.4(@types/node@22.14.1)(typescript@5.8.3))(tsx@4.19.3)(yaml@2.7.1)
 
-  examples/zimic-interceptor-with-vitest-jsdom:
+  examples/zimic-with-vitest-jsdom:
     dependencies:
       '@zimic/fetch':
         specifier: latest
@@ -443,7 +443,7 @@ importers:
         specifier: ^3.1.1
         version: 3.1.1(@types/debug@4.1.12)(@types/node@22.14.1)(@vitest/browser@3.1.1)(jiti@2.4.2)(jsdom@26.1.0(bufferutil@4.0.9))(lightningcss@1.29.2)(msw@2.7.4(@types/node@22.14.1)(typescript@5.8.3))(tsx@4.19.3)(yaml@2.7.1)
 
-  examples/zimic-interceptor-with-vitest-node:
+  examples/zimic-with-vitest-node:
     dependencies:
       '@zimic/fetch':
         specifier: latest

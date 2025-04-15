@@ -10,8 +10,7 @@
     "skipLibCheck": true,
     "pretty": true,
     "strict": true,
-    "allowSyntheticDefaultImports": true,
-    "types": ["vitest/globals", "@testing-library/jest-dom"]
+    "allowSyntheticDefaultImports": true
   },
   "include": ["**/*.ts", "**/*.mts"],
   "exclude": ["node_modules"]

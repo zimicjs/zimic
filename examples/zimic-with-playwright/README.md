@@ -10,6 +10,8 @@ This example uses [@zimic/interceptor](https://www.npmjs.com/package/@zimic/inte
   - [`@zimic/interceptor`](#zimicinterceptor)
   - [Configuration](#configuration)
 - [Running](#running)
+  - [CodeSandbox](#codesandbox)
+  - [Cloning locally](#cloning-locally)
 
 ## Application
 
@@ -45,14 +47,6 @@ mock the GitHub API and simulate a test case where the repository is found and a
 
 ## Running
 
-<a href="https://codesandbox.io/p/sandbox/github/zimicjs/zimic/tree/main/examples/with-playwright">
-  <img
-    src="https://codesandbox.io/static/img/play-codesandbox.svg"
-    alt="Edit in CodeSandbox"
-    height="36px"
-  />
-</a>
-
 1. Install the dependencies:
 
    ```bash
@@ -65,8 +59,6 @@ mock the GitHub API and simulate a test case where the repository is found and a
    pnpm run test
    ```
 
-   This command automatically starts the application and runs the tests.
-
 If you want to run the application outside of the test suite, use:
 
 ```bash
@@ -74,3 +66,33 @@ pnpm run dev
 ```
 
 Then, open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### CodeSandbox
+
+<a href="https://codesandbox.io/p/sandbox/github/zimicjs/zimic/tree/main/examples/zimic-with-playwright">
+  <img
+    src="https://codesandbox.io/static/img/play-codesandbox.svg"
+    alt="Edit in CodeSandbox"
+    height="36px"
+  />
+</a>
+
+### Cloning locally
+
+```bash
+mkdir zimic-tmp
+cd zimic-tmp
+git init
+git remote add origin git@github.com:zimicjs/zimic.git
+git sparse-checkout init
+git sparse-checkout set examples/zimic-with-playwright
+git pull origin main # or a specific branch or tag
+mv examples/zimic-with-playwright ..
+cd ../zimic-with-playwright
+rm -r ../zimic-tmp
+```
+
+> [!TIP]
+>
+> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as
+> `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
