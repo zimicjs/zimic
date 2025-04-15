@@ -428,22 +428,10 @@ importers:
 
   examples/zimic-interceptor-with-vitest-browser:
     dependencies:
-      '@zimic/fetch':
-        specifier: latest
-        version: link:../../packages/zimic-fetch
       '@zimic/http':
         specifier: latest
         version: link:../../packages/zimic-http
     devDependencies:
-      '@testing-library/dom':
-        specifier: ^10.4.0
-        version: 10.4.0
-      '@testing-library/jest-dom':
-        specifier: ^6.6.3
-        version: 6.6.3
-      '@testing-library/user-event':
-        specifier: ^14.6.1
-        version: 14.6.1(@testing-library/dom@10.4.0)
       '@vitest/browser':
         specifier: ^3.1.1
         version: 3.1.1(bufferutil@4.0.9)(msw@2.7.4(@types/node@22.14.1)(typescript@5.8.3))(playwright@1.51.1)(vite@6.2.5(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.2)(tsx@4.19.3)(yaml@2.7.1))(vitest@3.1.1)
@@ -468,22 +456,10 @@ importers:
 
   examples/zimic-interceptor-with-vitest-jsdom:
     dependencies:
-      '@zimic/fetch':
-        specifier: latest
-        version: link:../../packages/zimic-fetch
       '@zimic/http':
         specifier: latest
         version: link:../../packages/zimic-http
     devDependencies:
-      '@testing-library/dom':
-        specifier: ^10.4.0
-        version: 10.4.0
-      '@testing-library/jest-dom':
-        specifier: ^6.6.3
-        version: 6.6.3
-      '@testing-library/user-event':
-        specifier: ^14.6.1
-        version: 14.6.1(@testing-library/dom@10.4.0)
       '@zimic/interceptor':
         specifier: latest
         version: link:../../packages/zimic-interceptor

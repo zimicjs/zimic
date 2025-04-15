@@ -3,26 +3,16 @@
 </h1>
 
 This example uses [@zimic/interceptor](https://www.npmjs.com/package/@zimic/interceptor) with
-[Vitest](https://vitest.dev), [JSDOM](https://github.com/jsdom/jsdom), and
-[Testing Library](https://testing-library.com).
+[Vitest](https://vitest.dev), and [JSDOM](https://github.com/jsdom/jsdom).
 
-- [Application](#application)
 - [Testing](#testing)
   - [`@zimic/interceptor`](#zimicinterceptor)
   - [Test](#test)
 - [Running](#running)
 
-## Application
-
-The application is a simple HTML layout rendered by vanilla JavaScript, fetching repositories from the
-[GitHub API](https://docs.github.com/en/rest).
-
-- Application: [`src/app.ts`](./src/app.ts)
-
 ## Testing
 
-An example test suite uses Vitest to test the application. `@zimic/interceptor` is used to mock the GitHub API and
-simulate a test case where the repository is found and another where it is not.
+`@zimic/interceptor` is used to mock requests made to the [GitHub API](https://docs.github.com/rest).
 
 ### `@zimic/interceptor`
 

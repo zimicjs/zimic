@@ -11,13 +11,9 @@
     "postinstall": "concurrently --names playwright,zimic 'pnpm deps:install-playwright' 'pnpm deps:init-zimic'"
   },
   "dependencies": {
-    "@zimic/fetch": "latest",
     "@zimic/http": "latest"
   },
   "devDependencies": {
-    "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/user-event": "^14.6.1",
     "@vitest/browser": "^3.1.1",
     "@zimic/interceptor": "latest",
     "concurrently": "^9.1.2",

@@ -4,24 +4,24 @@
 
 ## Vitest
 
-- [With Vitest + Node.js](./zimic-interceptor-with-vitest-node)
-- [With Vitest + Browser Mode](./zimic-interceptor-with-vitest-browser)
-- [With Vitest + JSDOM](./zimic-interceptor-with-vitest-jsdom)
+- [`@zimic/interceptor` with Vitest + Node.js](./zimic-interceptor-with-vitest-node)
+- [`@zimic/interceptor` with Vitest + Browser Mode](./zimic-interceptor-with-vitest-browser)
+- [`@zimic/interceptor` with Vitest + JSDOM](./zimic-interceptor-with-vitest-jsdom)
 
 ## Jest
 
-- [With Jest + Node.js](./zimic-interceptor-with-jest-node)
-- [With Jest + JSDOM](./zimic-interceptor-with-jest-jsdom)
+- [`@zimic/interceptor` with Jest + Node.js](./zimic-interceptor-with-jest-node)
+- [`@zimic/interceptor` with Jest + JSDOM](./zimic-interceptor-with-jest-jsdom)
 
 ## Playwright
 
-- [With Playwright](./zimic-interceptor-with-playwright)
+- [`@zimic/interceptor` with Playwright](./zimic-interceptor-with-playwright)
 
 ## Next.js
 
-- [With Next.js App Router](./zimic-interceptor-with-next-js-app)
-- [With Next.js Pages Router](./zimic-interceptor-with-next-js-pages)
+- [`@zimic/interceptor` with Next.js App Router](./zimic-interceptor-with-next-js-app)
+- [`@zimic/interceptor` with Next.js Pages Router](./zimic-interceptor-with-next-js-pages)
 
 ## Type generation
 
-- [With OpenAPI typegen](./zimic-interceptor-with-openapi-typegen)
+- [`@zimic/interceptor` with OpenAPI typegen](./zimic-interceptor-with-openapi-typegen)

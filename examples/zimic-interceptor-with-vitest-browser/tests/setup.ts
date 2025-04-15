@@ -1,5 +1,3 @@
-import '@testing-library/jest-dom';
-
 import { beforeAll, beforeEach, afterEach, afterAll } from 'vitest';
 
 import githubInterceptor from './interceptors/github';

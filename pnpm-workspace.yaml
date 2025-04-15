@@ -5,7 +5,8 @@ packages:
   - examples/*
   - docs/*
 onlyBuiltDependencies:
-  - '@zimic/interceptor'
   - '@swc/core'
+  - '@zimic/interceptor'
   - esbuild
   - msw
+  - sharp

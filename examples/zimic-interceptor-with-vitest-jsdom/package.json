@@ -8,14 +8,9 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
-    "@zimic/fetch": "latest",
     "@zimic/http": "latest"
   },
   "devDependencies": {
-    "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/user-event": "^14.6.1",
-    "@vitest/spy": "^3.1.1",
     "@zimic/interceptor": "latest",
     "dotenv-cli": "^8.0.0",
     "jsdom": "^26.1.0",
