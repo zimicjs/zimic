@@ -1,3 +1,3 @@
 module.exports = {
-  [`**/*.ts(x|)`]: ['pnpm lint --max-warnings 0'],
+  '*.{ts,tsx}': ['pnpm style:format', 'pnpm lint --max-warnings 0'],
 };
