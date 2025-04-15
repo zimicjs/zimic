@@ -8,7 +8,7 @@ This example uses [@zimic/interceptor](https://www.npmjs.com/package/@zimic/inte
 - [Application](#application)
 - [Testing](#testing)
   - [`@zimic/interceptor`](#zimicinterceptor)
-  - [Test](#test)
+  - [Configuration](#configuration)
 - [Running](#running)
 
 ## Application
@@ -18,7 +18,7 @@ The application is a simple [Next.js](https://nextjs.org) project using the
 [GitHub API](https://docs.github.com/en/rest).
 
 - Application: [`src/pages/index.page.tsx`](./src/pages/index.page.tsx)
-- GitHub fetch: [`src/services/github.ts`](./src/services/github.ts)
+- GitHub fetch: [`src/clients/github.ts`](./src/clients/github.ts)
 
 The file [`_app.page.tsx`](./src/pages/_app.page.tsx) loads the interceptors and mocks before the rest of the
 application is rendered in development.
@@ -36,9 +36,9 @@ mock the GitHub API and simulate a test case where the repository is found and a
 
 - GitHub HTTP interceptor and mocks: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
 
-### Test
+### Configuration
 
-- Test suite: [`src/__tests__/HomePage.e2e.test.ts`](./src/__tests__/HomePage.e2e.test.ts)
+- Example test suite: [`src/__tests__/HomePage.e2e.test.ts`](./src/__tests__/HomePage.e2e.test.ts)
 - Playwright configuration: [`playwright.config.ts`](./playwright.config.ts)
 
 ## Running
@@ -59,16 +59,16 @@ mock the GitHub API and simulate a test case where the repository is found and a
 
 2. Run the tests:
 
-   1. Start the application:
+   ```bash
+   pnpm run test
+   ```
 
-      ```bash
-      pnpm run dev
-      ```
+   This command automatically starts the application and runs the tests.
 
-      After started, the application will be available at [http://localhost:3008](http://localhost:3008).
+If you want to run the application outside of the test suite, use:
 
-   2. In another terminal, run the tests:
+```bash
+pnpm run dev
+```
 
-      ```bash
-      pnpm run test
-      ```
+Then, open [http://localhost:3000](http://localhost:3000) in your browser.

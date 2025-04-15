@@ -7,9 +7,9 @@ import { expectResponseStatus } from './utils/expect';
 describe('Example tests', () => {
   const repository: GitHubRepository = {
     id: 1,
-    name: 'zimic',
-    full_name: 'zimicjs/zimic',
-    html_url: 'https://github.com/zimicjs/zimic',
+    name: 'zimic-example',
+    full_name: 'zimicjs/zimic-example',
+    html_url: 'https://github.com/zimicjs/zimic-example',
     owner: { login: 'zimicjs' },
   };
 

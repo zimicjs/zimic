@@ -8,8 +8,7 @@ This example uses [@zimic/interceptor](https://www.npmjs.com/package/@zimic/inte
 - [Application](#application)
 - [Testing](#testing)
   - [`@zimic/interceptor`](#zimicinterceptor)
-    - [Loading mocks](#loading-mocks)
-  - [Test](#test)
+  - [Configuration](#configuration)
 - [Running](#running)
 
 ## Application
@@ -18,24 +17,9 @@ The tested application is a simple [Next.js](https://nextjs.org) project, fetchi
 [GitHub API](https://docs.github.com/en/rest).
 
 - Application: [`src/app/page.tsx`](./src/app/page.tsx)
-- GitHub fetch: [`src/services/github.ts`](./src/services/github.ts)
+- GitHub fetch: [`src/clients/github.ts`](./src/clients/github.ts)
 
 A `postinstall` script in [`package.json`](./package.json) is used to install Playwright's browsers.
-
-> [!NOTE]
->
-> **Preventing racing conditions**
->
-> The mocks are loaded before starting the application to prevent racing conditions in tests. This example uses a single
-> interceptor server, so we would need to reduce the number of workers to 1 if the mocks were applied inside the tests
-> or `beforeEach`/`beforeAll`/`afterEach`/`afterAll` hooks. That would make the tests significantly slower in large
-> applications, which is a trade-off to consider.
->
-> If using a single test worker is not a problem for your project, applying the mocks inside your tests or hooks is
-> perfectly possible. On the other hand, if you need parallelism, you can still simulate dynamic behavior by creating
-> all of the mocks you need beforehand in a load script like in this example. Using
-> [restrictions](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction) is a good
-> way to narrow down the scope of those mocks.
 
 ## Testing
 
@@ -46,16 +30,18 @@ mock the GitHub API and simulate a test case where the repository is found and a
 
 - GitHub HTTP interceptor and mocks: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
 
-#### Loading mocks
+### Configuration
 
-The script [`tests/interceptors/scripts/load.ts`](./tests/interceptors/scripts/load.ts) loads the interceptors and mocks
-before the application is started in development. It is used by the command `dev:mock` in
-[`package.json`](./package.json).
-
-### Test
-
-- Test suite: [`src/app/__tests__/HomePage.e2e.test.ts`](./src/app/__tests__/HomePage.e2e.test.ts)
+- Example test suite: [`tests/example.e2e.test.ts`](./tests/example.e2e.test.ts)
+- Test setup file: [`tests/setup.ts`](./tests/setup.ts)
 - Playwright configuration: [`playwright.config.ts`](./playwright.config.ts)
+
+> [!NOTE]
+>
+> In the Playwright configuration, one instance of the application is started for each test worker, whose number is
+> defined in the environment variable `PLAYWRIGHT_WORKERS` (see [.env.test](./.env.test)). Each instance uses a
+> different `GITHUB_API_BASE_URL` value, with the worker index as suffix. This allows the tests to run in parallel
+> without the interceptors interfering with each other.
 
 ## Running
 
@@ -75,16 +61,16 @@ before the application is started in development. It is used by the command `dev
 
 2. Run the tests:
 
-   1. Start the application:
+   ```bash
+   pnpm run test
+   ```
 
-      ```bash
-      pnpm run dev:mock
-      ```
+   This command automatically starts the application and runs the tests.
 
-      After started, the application will be available at [http://localhost:3004](http://localhost:3004).
+If you want to run the application outside of the test suite, use:
 
-   2. In another terminal, run the tests:
+```bash
+pnpm run dev
+```
 
-      ```bash
-      pnpm run test
-      ```
+Then, open [http://localhost:3000](http://localhost:3000) in your browser.

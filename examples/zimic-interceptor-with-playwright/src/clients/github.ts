@@ -38,11 +38,11 @@ export async function fetchGitHubRepository(ownerName: string, repositoryName: s
     cache: GITHUB_REPO_CACHE_STRATEGY,
   });
 
-  if (!response.ok) {
-    if (response.status === 404) {
-      return null;
-    }
+  if (response.status === 404) {
+    return null;
+  }
 
+  if (!response.ok) {
     throw response.error;
   }
 

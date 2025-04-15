@@ -9,7 +9,7 @@ This example uses [@zimic/interceptor](https://www.npmjs.com/package/@zimic/inte
 - [Testing](#testing)
   - [`@zimic/interceptor`](#zimicinterceptor)
     - [Loading mocks](#loading-mocks)
-  - [Test](#test)
+  - [Configuration](#configuration)
 - [Running](#running)
 
 ## Application
@@ -18,7 +18,7 @@ The application is a simple [Next.js](https://nextjs.org) project using the [App
 It fetches repositories from the [GitHub API](https://docs.github.com/en/rest).
 
 - Application: [`src/app/page.tsx`](./src/app/page.tsx)
-- GitHub fetch: [`src/services/github.ts`](./src/services/github.ts)
+- GitHub fetch: [`src/clients/github.ts`](./src/clients/github.ts)
 
 A `postinstall` script in [`package.json`](./package.json) is used to install Playwright's browsers.
 
@@ -33,13 +33,12 @@ mock the GitHub API and simulate a test case where the repository is found and a
 
 #### Loading mocks
 
-The script [`tests/interceptors/scripts/load.ts`](./tests/interceptors/scripts/load.ts) loads the interceptors and mocks
-before the application is started in development. It is used by the command `dev:mock` in
-[`package.json`](./package.json).
+The script [`tests/interceptors/scripts/load.ts`](./tests/interceptors/scripts/load.ts) start the GitHub interceptor and
+apply the default mocks before the application is started during tests.
 
-### Test
+### Configuration
 
-- Test suite: [`src/__tests__/HomePage.e2e.test.ts`](./src/__tests__/HomePage.e2e.test.ts)
+- Example test suite: [`src/__tests__/HomePage.e2e.test.ts`](./src/__tests__/HomePage.e2e.test.ts)
 - Playwright configuration: [`playwright.config.ts`](./playwright.config.ts)
 
 ## Running
@@ -60,16 +59,16 @@ before the application is started in development. It is used by the command `dev
 
 2. Run the tests:
 
-   1. Start the application:
+   ```bash
+   pnpm run test
+   ```
 
-      ```bash
-      pnpm run dev:mock
-      ```
+   This command automatically starts the application and runs the tests.
 
-      After started, the application will be available at [http://localhost:3006](http://localhost:3006).
+If you want to run the application outside of the test suite, use:
 
-   2. In another terminal, run the tests:
+```bash
+pnpm run dev
+```
 
-      ```bash
-      pnpm run test
-      ```
+Then, open [http://localhost:3000](http://localhost:3000) in your browser.

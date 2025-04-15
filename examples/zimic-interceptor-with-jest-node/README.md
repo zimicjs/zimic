@@ -19,9 +19,9 @@ similar, such as [Deno](https://deno.com) and [Bun](https://bun.sh).
 
 - GitHub HTTP interceptor: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
 
-### Test
+### Configuration
 
-- Test suite: [`tests/example.test.ts`](./tests/example.test.ts)
+- Example test suite: [`tests/example.test.ts`](./tests/example.test.ts)
 - Test setup file: [`tests/setup.ts`](./tests/setup.ts)
 - Jest configuration: [`jest.config.js`](./jest.config.js)
 

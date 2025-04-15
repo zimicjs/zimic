@@ -1,15 +1,31 @@
-import test, { expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
-import { githubFixtures } from '../../../tests/interceptors/github';
+import { GitHubRepository } from '../src/clients/github';
+import githubInterceptor from './interceptors/github';
+import { test } from './playwright';
 
 test.describe('Home page', () => {
-  const { repository } = githubFixtures;
+  const repository: GitHubRepository = {
+    id: 1,
+    name: 'zimic-example',
+    full_name: 'zimicjs/zimic-example',
+    html_url: 'https://github.com/zimicjs/zimic-example',
+    owner: { login: 'zimicjs' },
+  };
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
   });
 
   test('should render a GitHub repository, if found', async ({ page }) => {
+    await githubInterceptor
+      .get('/repos/zimicjs/zimic')
+      .respond({
+        status: 200,
+        body: repository,
+      })
+      .times(1);
+
     const ownerInput = page.getByRole('textbox', { name: 'Owner' });
     await expect(ownerInput).toBeVisible();
     await ownerInput.fill(repository.owner.login);
@@ -30,6 +46,14 @@ test.describe('Home page', () => {
   });
 
   test('should render a message if the GitHub repository is not found', async ({ page }) => {
+    await githubInterceptor
+      .get('/repos/:owner/:name')
+      .respond({
+        status: 404,
+        body: { message: 'Not Found' },
+      })
+      .times(1);
+
     const ownerInput = page.getByRole('textbox', { name: 'Owner' });
     await expect(ownerInput).toBeVisible();
     await ownerInput.fill('unknown');

@@ -1,11 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
 
+import environment from './src/config/environment';
+
 export default defineConfig({
-  testDir: './src',
-  testMatch: '**/__tests__/**/*.e2e.test.ts',
+  testDir: './tests',
+  testMatch: '**/*.e2e.test.ts',
   fullyParallel: true,
   retries: 1,
-  workers: process.env.PLAYWRIGHT_WORKERS,
+  workers: environment.PLAYWRIGHT_WORKERS,
   reporter: [['html', { outputFolder: './tests/reports' }]],
   outputDir: './tests/outputs',
   timeout: 60 * 1000,
@@ -15,7 +17,7 @@ export default defineConfig({
   },
 
   use: {
-    baseURL: 'http://localhost:3004',
+    baseURL: `http://localhost:${environment.PORT + environment.PLAYWRIGHT_WORKER_INDEX}`,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     actionTimeout: 10 * 1000,
@@ -33,12 +35,19 @@ export default defineConfig({
     },
   ],
 
-  webServer: {
-    command: 'pnpm run dev:mock',
-    port: 3004,
-    stdout: 'pipe',
-    stderr: 'pipe',
-    reuseExistingServer: true,
-    timeout: 30 * 1000,
-  },
+  webServer: Array.from({ length: environment.PLAYWRIGHT_WORKERS }, (_, workerIndex) => {
+    const port = environment.PORT + workerIndex;
+
+    return {
+      command: `pnpm run dev --port ${port}`,
+      port,
+      reuseExistingServer: false,
+      timeout: 1000 * 30,
+      stdout: 'pipe',
+      stderr: 'pipe',
+      env: {
+        GITHUB_API_BASE_URL: `${environment.GITHUB_API_BASE_URL}/${workerIndex}`,
+      },
+    };
+  }),
 });

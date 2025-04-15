@@ -26,9 +26,9 @@ ignored in the [`.gitignore`](./.gitignore) file.
 
 - GitHub HTTP interceptor: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
 
-### Test
+### Configuration
 
-- Test suite: [`tests/example.test.ts`](./tests/example.test.ts)
+- Example test suite: [`tests/example.test.ts`](./tests/example.test.ts)
 - Test setup file: [`tests/setup.ts`](./tests/setup.ts)
 - Vitest configuration: [`vitest.config.mts`](./vitest.config.mts)
 

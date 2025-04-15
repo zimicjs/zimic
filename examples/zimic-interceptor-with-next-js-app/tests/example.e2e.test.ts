@@ -1,9 +1,9 @@
 import test, { expect } from '@playwright/test';
 
-import { githubFixtures } from '../../tests/interceptors/github';
+import { githubMockData } from './interceptors/github';
 
 test.describe('Home page', () => {
-  const { repository } = githubFixtures;
+  const repository = githubMockData.repositories[0];
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/');

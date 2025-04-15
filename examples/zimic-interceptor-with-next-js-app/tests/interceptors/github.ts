@@ -8,14 +8,16 @@ const githubInterceptor = createHttpInterceptor<GitHubSchema>({
   baseURL: environment.GITHUB_API_BASE_URL,
 });
 
-export const githubFixtures = {
-  repository: {
-    id: 1,
-    name: 'example',
-    full_name: 'owner/example',
-    html_url: 'https://github.com/owner/example',
-    owner: { login: 'owner' },
-  } satisfies GitHubRepository,
+export const githubMockData = {
+  repositories: [
+    {
+      id: 1,
+      name: 'zimic-example',
+      full_name: 'zimicjs/zimic-example',
+      html_url: 'https://github.com/zimicjs/zimic-example',
+      owner: { login: 'zimicjs' },
+    },
+  ] satisfies GitHubRepository[],
 
   async apply() {
     await githubInterceptor.get('/repos/:owner/:name').respond({
@@ -23,10 +25,13 @@ export const githubFixtures = {
       body: { message: 'Not Found' },
     });
 
-    await githubInterceptor.get(`/repos/${this.repository.owner.login}/${this.repository.name}`).respond({
-      status: 200,
-      body: this.repository,
-    });
+    await Promise.all(
+      this.repositories.map(async (repository) => {
+        await githubInterceptor
+          .get(`/repos/${repository.owner.login}/${repository.name}`)
+          .respond({ status: 200, body: repository });
+      }),
+    );
   },
 };
 

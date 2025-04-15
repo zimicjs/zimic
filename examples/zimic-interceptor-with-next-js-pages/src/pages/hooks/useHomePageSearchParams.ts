@@ -10,7 +10,7 @@ function useHomePageSearchParams() {
   const router = useRouter();
   const { owner: ownerName, repo: repositoryName } = router.query as HomePageSearchParams;
 
-  const setSearchParams = useCallback(
+  const setHomePageSearchParams = useCallback(
     async (params: Partial<HomePageSearchParams>) => {
       const newURL = new URL(window.location.href);
 
@@ -30,7 +30,7 @@ function useHomePageSearchParams() {
   return {
     ownerName,
     repositoryName,
-    set: setSearchParams,
+    setHomePageSearchParams,
   };
 }
 

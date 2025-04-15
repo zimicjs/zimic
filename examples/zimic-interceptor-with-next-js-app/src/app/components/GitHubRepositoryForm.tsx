@@ -7,7 +7,7 @@ import Input from '../../components/Input';
 import useHomePageSearchParams from '../hooks/useHomePageSearchParams';
 
 function GitHubRepositoryForm() {
-  const searchParams = useHomePageSearchParams();
+  const { setHomePageSearchParams } = useHomePageSearchParams();
 
   const ownerInputRef = useRef<HTMLInputElement | null>(null);
   const repositoryInputRef = useRef<HTMLInputElement | null>(null);
@@ -15,12 +15,9 @@ function GitHubRepositoryForm() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const ownerName = ownerInputRef.current?.value.trim();
-    const repositoryName = repositoryInputRef.current?.value.trim();
-
-    searchParams.set({
-      owner: ownerName ?? '',
-      repo: repositoryName ?? '',
+    setHomePageSearchParams({
+      owner: ownerInputRef.current?.value ?? '',
+      repo: repositoryInputRef.current?.value ?? '',
     });
   }
 

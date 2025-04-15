@@ -1,5 +1,3 @@
-'use client';
-
 import { FormEvent, useRef } from 'react';
 
 import Button from '../../components/Button';
@@ -7,7 +5,7 @@ import Input from '../../components/Input';
 import useHomePageSearchParams from '../hooks/useHomePageSearchParams';
 
 function GitHubRepositoryForm() {
-  const searchParams = useHomePageSearchParams();
+  const { setHomePageSearchParams } = useHomePageSearchParams();
 
   const ownerInputRef = useRef<HTMLInputElement | null>(null);
   const repositoryInputRef = useRef<HTMLInputElement | null>(null);
@@ -18,7 +16,7 @@ function GitHubRepositoryForm() {
     const ownerName = ownerInputRef.current?.value;
     const repositoryName = repositoryInputRef.current?.value;
 
-    await searchParams.set({
+    await setHomePageSearchParams({
       owner: ownerName ?? '',
       repo: repositoryName ?? '',
     });
