@@ -6,24 +6,14 @@ This example uses [@zimic/interceptor](https://www.npmjs.com/package/@zimic/inte
 in a server-side environment. [Node.js](https://nodejs.org) is used in this example, but other runtimes should be
 similar, such as [Deno](https://deno.com) and [Bun](https://bun.sh).
 
-- [Application](#application)
 - [Testing](#testing)
   - [`@zimic/interceptor`](#zimicinterceptor)
   - [Test](#test)
 - [Running](#running)
 
-## Application
-
-The application is a simple [Fastify](https://fastify.dev) server, fetching repositories from the
-[GitHub API](https://docs.github.com/en/rest). Any other Node.js framework could be used as well, such as
-[express](https://expressjs.com) and [Nest.js](https://nestjs.com).
-
-- Server: [`src/app.ts`](./src/app.ts)
-
 ## Testing
 
-An example test suite uses Jest to test the application. `@zimic/interceptor` is used to mock the GitHub API and
-simulate a test case where the repository is found and another where it is not.
+`@zimic/interceptor` is used to mock requests made to the [GitHub API](https://docs.github.com/rest).
 
 ### `@zimic/interceptor`
 

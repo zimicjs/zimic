@@ -1,46 +1,32 @@
-import { beforeAll, describe, expect, it, afterAll } from '@jest/globals';
-import supertest from 'supertest';
+import { describe, expect, it } from '@jest/globals';
 
-import app from '../src/app';
-import { GitHubRepository } from '../src/clients/github';
+import { GITHUB_API_BASE_URL } from '../src/config/github';
+import { GitHubRepository } from '../src/types/github';
 import githubInterceptor from './interceptors/github';
 
 describe('Example tests', () => {
-  const ownerName = 'owner';
-  const repositoryName = 'example';
-
   const repository: GitHubRepository = {
     id: 1,
-    name: repositoryName,
-    full_name: `${ownerName}/${repositoryName}`,
-    html_url: `https://github.com/${ownerName}/${repositoryName}`,
-    owner: { login: ownerName },
+    name: 'zimic',
+    full_name: 'zimicjs/zimic',
+    html_url: 'https://github.com/zimicjs/zimic',
+    owner: { login: 'zimicjs' },
   };
-
-  beforeAll(async () => {
-    await app.ready();
-  });
-
-  afterAll(async () => {
-    await app.close();
-  });
 
   it('should return a GitHub repository, if found', async () => {
     githubInterceptor
-      .get(`/repos/${ownerName}/${repositoryName}`)
+      .get('/repos/zimicjs/zimic')
       .respond({
         status: 200,
         body: repository,
       })
       .times(1);
 
-    const response = await supertest(app.server).get(`/github/repositories/${ownerName}/${repositoryName}`);
+    const response = await fetch(`${GITHUB_API_BASE_URL}/repos/zimicjs/zimic`);
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({
-      id: repository.id,
-      fullName: repository.full_name,
-      homepageURL: repository.html_url,
-    });
+
+    const data = (await response.json()) as GitHubRepository;
+    expect(data).toEqual(repository);
   });
 
   it('should return a 404 status code, if the GitHub repository is not found', async () => {
@@ -52,8 +38,10 @@ describe('Example tests', () => {
       })
       .times(1);
 
-    const response = await supertest(app.server).get(`/github/repositories/${ownerName}/${repositoryName}`);
+    const response = await fetch(`${GITHUB_API_BASE_URL}/repos/unknown/unknown`);
     expect(response.status).toBe(404);
-    expect(response.body).toEqual({});
+
+    const data = (await response.json()) as { message: string };
+    expect(data).toEqual({ message: 'Not Found' });
   });
 });
