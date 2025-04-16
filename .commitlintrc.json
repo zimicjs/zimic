@@ -24,16 +24,7 @@
         "eslint-react",
         "lint-staged",
         "tsconfig",
-        "examples",
-        "example-interceptor-vitest-node",
-        "example-interceptor-vitest-browser",
-        "example-interceptor-vitest-jsdom",
-        "example-interceptor-jest-node",
-        "example-interceptor-jest-jsdom",
-        "example-interceptor-playwright",
-        "example-interceptor-next-js-app",
-        "example-interceptor-next-js-pages",
-        "example-interceptor-openapi-typegen"
+        "examples"
       ]
     ],
     "scope-empty": [2, "never"]

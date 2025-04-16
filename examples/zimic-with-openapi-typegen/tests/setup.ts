@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, afterEach, beforeEach } from 'vitest';
 
-import githubInterceptor from './interceptors/github';
+import githubInterceptor from './interceptors/github/interceptor';
 
 beforeAll(async () => {
   await githubInterceptor.start();

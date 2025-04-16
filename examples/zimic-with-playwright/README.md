@@ -1,17 +1,17 @@
 <h1>
-  @zimic/interceptor + Playwright
+  Zimic + Playwright
 </h1>
 
-This example uses [@zimic/interceptor](https://www.npmjs.com/package/@zimic/interceptor) with
-[Playwright](https://playwright.dev) in end-to-end tests.
+This example uses Zimic with [Playwright](https://playwright.dev) in end-to-end tests.
 
 - [Application](#application)
 - [Testing](#testing)
   - [`@zimic/interceptor`](#zimicinterceptor)
   - [Configuration](#configuration)
-- [Running](#running)
+- [Try it](#try-it)
   - [CodeSandbox](#codesandbox)
   - [Cloning locally](#cloning-locally)
+- [Running](#running)
 
 ## Application
 
@@ -25,8 +25,15 @@ A `postinstall` script in [`package.json`](./package.json) is used to install Pl
 
 ## Testing
 
-An example test suite uses [Playwright](https://playwright.dev) to test the application. `@zimic/interceptor` is used to
-mock the GitHub API and simulate a test case where the repository is found and another where it is not.
+`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked
+with `@zimic/interceptor`.
+
+> [!TIP]
+>
+> `@zimic/fetch` and `@zimic/interceptor` are not required to be used together. `@zimic/interceptor` is compatible with
+> any HTTP client implementation, as `@zimic/fetch` works with any HTTP interceptor library. With that in mind,
+> `@zimic/fetch` and `@zimic/interceptor` work best together, providing a seamless and type-safe experience for
+> performing HTTP requests in your application and mocking them during development and testing.
 
 ### `@zimic/interceptor`
 
@@ -45,27 +52,7 @@ mock the GitHub API and simulate a test case where the repository is found and a
 > different `GITHUB_API_BASE_URL` value, with the worker index as suffix. This allows the tests to run in parallel
 > without the interceptors interfering with each other.
 
-## Running
-
-1. Install the dependencies:
-
-   ```bash
-   pnpm install
-   ```
-
-2. Run the tests:
-
-   ```bash
-   pnpm run test
-   ```
-
-If you want to run the application outside of the test suite, use:
-
-```bash
-pnpm run dev
-```
-
-Then, open [http://localhost:3000](http://localhost:3000) in your browser.
+## Try it
 
 ### CodeSandbox
 
@@ -89,10 +76,32 @@ git sparse-checkout set examples/zimic-with-playwright
 git pull origin main # or a specific branch or tag
 mv examples/zimic-with-playwright ..
 cd ../zimic-with-playwright
-rm -r ../zimic-tmp
+rm -rf ../zimic-tmp
 ```
 
 > [!TIP]
 >
 > If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as
 > `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
+
+## Running
+
+1. Install the dependencies:
+
+   ```bash
+   pnpm install
+   ```
+
+2. Run the tests:
+
+   ```bash
+   pnpm run test
+   ```
+
+If you want to run the application outside of the test suite, use:
+
+```bash
+pnpm run dev
+```
+
+Then, open [http://localhost:3000](http://localhost:3000) in your browser.

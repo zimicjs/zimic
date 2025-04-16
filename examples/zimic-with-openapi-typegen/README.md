@@ -1,31 +1,26 @@
 <h1>
-  @zimic/interceptor + OpenAPI typegen
+  Zimic + OpenAPI typegen
 </h1>
 
-This example uses [@zimic/interceptor](https://www.npmjs.com/package/@zimic/interceptor) and the `zimic-http typegen`
-CLI to generate types from the GitHub API. [Node.js](https://nodejs.org) and [Vitest](https://vitest.dev) are used in
-this example, but other frameworks and runtimes should be similar, such as [Deno](https://deno.com),
-[Bun](https://bun.sh), and [Jest](https://jestjs.io).
+This example uses Zimic and the `zimic-http typegen` CLI to generate types from the GitHub API.
+[Node.js](https://nodejs.org) and [Vitest](https://vitest.dev) are used in this example, but other frameworks and
+runtimes should be similar, such as [Deno](https://deno.com), [Bun](https://bun.sh), and [Jest](https://jestjs.io).
 
 - [Application](#application)
 - [Testing](#testing)
   - [`@zimic/interceptor`](#zimicinterceptor)
   - [Configuration](#configuration)
-- [Running](#running)
+- [Try it](#try-it)
   - [CodeSandbox](#codesandbox)
   - [Cloning locally](#cloning-locally)
+- [Running](#running)
 
 ## Application
 
-The application is a simple [Fastify](https://fastify.dev) server, fetching repositories from the
-[GitHub API](https://docs.github.com/en/rest). Any other Node.js framework could be used as well, such as
-[express](https://expressjs.com) and [Nest.js](https://nestjs.com).
-
-- Server: [`src/app.ts`](./src/app.ts)
-
-The types of the GitHub API are generated automatically using the `zimic-http typegen` CLI, based on
-[their official spec](https://github.com/github/rest-api-description/tree/main/descriptions-next/api.github.com). A
-`typegen:github` script is declared in [`package.json`](./package.json) and can be used as follows:
+`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose types are generated
+automatically from
+[their official OpenAPI documentation](https://github.com/github/rest-api-description/tree/main/descriptions-next/api.github.com).
+A `typegen:github` script is declared in [`package.json`](./package.json) and can be used as follows:
 
 ```bash
 pnpm typegen:github
@@ -41,10 +36,19 @@ pnpm typegen:github
 >
 > Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen#zimic-typegen-openapi-filtering
 
+`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked
+with `@zimic/interceptor`.
+
+> [!TIP]
+>
+> `@zimic/fetch` and `@zimic/interceptor` are not required to be used together. `@zimic/interceptor` is compatible with
+> any HTTP client implementation, as `@zimic/fetch` works with any HTTP interceptor library. With that in mind,
+> `@zimic/fetch` and `@zimic/interceptor` work best together, providing a seamless and type-safe experience for
+> performing HTTP requests in your application and mocking them during development and testing.
+
 ## Testing
 
-An example test suite uses Vitest to test the application. `@zimic/interceptor` is used to mock the GitHub API and
-simulate a test case where the repository is found and another where it is not.
+This project uses Vitest to test the application.
 
 ### `@zimic/interceptor`
 
@@ -56,19 +60,7 @@ simulate a test case where the repository is found and another where it is not.
 - Test setup file: [`tests/setup.ts`](./tests/setup.ts)
 - Vitest configuration: [`vitest.config.mts`](./vitest.config.mts)
 
-## Running
-
-1. Install the dependencies:
-
-   ```bash
-   pnpm install
-   ```
-
-2. Run the tests:
-
-   ```bash
-   pnpm run test
-   ```
+## Try it
 
 ### CodeSandbox
 
@@ -92,10 +84,24 @@ git sparse-checkout set examples/zimic-with-openapi-typegen
 git pull origin main # or a specific branch or tag
 mv examples/zimic-with-openapi-typegen ..
 cd ../zimic-with-openapi-typegen
-rm -r ../zimic-tmp
+rm -rf ../zimic-tmp
 ```
 
 > [!TIP]
 >
 > If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as
 > `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
+
+## Running
+
+1. Install the dependencies:
+
+   ```bash
+   pnpm install
+   ```
+
+2. Run the tests:
+
+   ```bash
+   pnpm run test
+   ```

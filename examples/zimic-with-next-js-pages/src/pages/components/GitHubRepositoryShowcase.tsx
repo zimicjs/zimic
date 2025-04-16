@@ -11,7 +11,7 @@ function GitHubRepositoryShowcase({ ownerName, repositoryName }: Props) {
   const { data: repository = null, isLoading } = useQuery({
     queryKey: ['github-repository', { ownerName, repositoryName }],
     queryFn: () => fetchGitHubRepository(ownerName, repositoryName),
-    enabled: !!ownerName && !!repositoryName,
+    enabled: ownerName.length > 0 && repositoryName.length > 0,
   });
 
   if (isLoading) {

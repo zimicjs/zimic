@@ -1,18 +1,18 @@
 <h1>
-  @zimic/interceptor + Next.js App Router
+  Zimic + Next.js App Router
 </h1>
 
-This example uses [@zimic/interceptor](https://www.npmjs.com/package/@zimic/interceptor) with
-[Next.js](https://nextjs.org).
+This example uses Zimic with [Next.js](https://nextjs.org).
 
 - [Application](#application)
 - [Testing](#testing)
   - [`@zimic/interceptor`](#zimicinterceptor)
     - [Loading mocks](#loading-mocks)
   - [Configuration](#configuration)
-- [Running](#running)
+- [Try it](#try-it)
   - [CodeSandbox](#codesandbox)
   - [Cloning locally](#cloning-locally)
+- [Running](#running)
 
 ## Application
 
@@ -22,12 +22,21 @@ It fetches repositories from the [GitHub API](https://docs.github.com/en/rest).
 - Application: [`src/app/page.tsx`](./src/app/page.tsx)
 - GitHub fetch: [`src/clients/github.ts`](./src/clients/github.ts)
 
+`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked
+with `@zimic/interceptor`.
+
 A `postinstall` script in [`package.json`](./package.json) is used to install Playwright's browsers.
 
 ## Testing
 
-An example test suite uses [Playwright](https://playwright.dev) to test the application. `@zimic/interceptor` is used to
-mock the GitHub API and simulate a test case where the repository is found and another where it is not.
+This project uses [Playwright](https://playwright.dev) to test the application.
+
+> [!TIP]
+>
+> `@zimic/fetch` and `@zimic/interceptor` are not required to be used together. `@zimic/interceptor` is compatible with
+> any HTTP client implementation, as `@zimic/fetch` works with any HTTP interceptor library. With that in mind,
+> `@zimic/fetch` and `@zimic/interceptor` work best together, providing a seamless and type-safe experience for
+> performing HTTP requests in your application and mocking them during development and testing.
 
 ### `@zimic/interceptor`
 
@@ -43,27 +52,7 @@ apply the default mocks before the application is started during tests.
 - Example test suite: [`src/__tests__/HomePage.e2e.test.ts`](./src/__tests__/HomePage.e2e.test.ts)
 - Playwright configuration: [`playwright.config.ts`](./playwright.config.ts)
 
-## Running
-
-1. Install the dependencies:
-
-   ```bash
-   pnpm install
-   ```
-
-2. Run the tests:
-
-   ```bash
-   pnpm run test
-   ```
-
-If you want to run the application outside of the test suite, use:
-
-```bash
-pnpm run dev
-```
-
-Then, open [http://localhost:3000](http://localhost:3000) in your browser.
+## Try it
 
 ### CodeSandbox
 
@@ -87,10 +76,32 @@ git sparse-checkout set examples/zimic-with-next-js-app
 git pull origin main # or a specific branch or tag
 mv examples/zimic-with-next-js-app ..
 cd ../zimic-with-next-js-app
-rm -r ../zimic-tmp
+rm -rf ../zimic-tmp
 ```
 
 > [!TIP]
 >
 > If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as
 > `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
+
+## Running
+
+1. Install the dependencies:
+
+   ```bash
+   pnpm install
+   ```
+
+2. Run the tests:
+
+   ```bash
+   pnpm run test
+   ```
+
+If you want to run the application outside of the test suite, use:
+
+```bash
+pnpm run dev
+```
+
+Then, open [http://localhost:3000](http://localhost:3000) in your browser.

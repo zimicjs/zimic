@@ -1,18 +1,17 @@
 <h1>
-  @zimic/interceptor + Vitest + Browser Mode
+  Zimic + Vitest + Browser Mode
 </h1>
 
-This example uses [@zimic/interceptor](https://www.npmjs.com/package/@zimic/interceptor) with
-[Vitest](https://vitest.dev) with [Browser Mode](https://vitest.dev/guide/browser) enabled. It uses
-[Playwright](https://playwright.dev) as the browser provider for Vitest.
+This example uses Zimic with [Vitest](https://vitest.dev) with [Browser Mode](https://vitest.dev/guide/browser) enabled.
+It uses [Playwright](https://playwright.dev) as the browser provider for Vitest.
 
 - [Application](#application)
-- [Testing](#testing)
   - [`@zimic/interceptor`](#zimicinterceptor)
   - [Configuration](#configuration)
-- [Running](#running)
+- [Try it](#try-it)
   - [CodeSandbox](#codesandbox)
   - [Cloning locally](#cloning-locally)
+- [Running](#running)
 
 ## Application
 
@@ -20,9 +19,15 @@ A `postinstall` script in [`package.json`](./package.json) is used to install Pl
 Zimic's mock service worker to the `./public` directory. The mock service worker at `./public/mockServiceWorker.js` is
 ignored in the [`.gitignore`](./.gitignore) file.
 
-## Testing
+`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked
+with `@zimic/interceptor`.
 
-`@zimic/interceptor` is used to mock requests made to the [GitHub API](https://docs.github.com/rest).
+> [!TIP]
+>
+> `@zimic/fetch` and `@zimic/interceptor` are not required to be used together. `@zimic/interceptor` is compatible with
+> any HTTP client implementation, as `@zimic/fetch` works with any HTTP interceptor library. With that in mind,
+> `@zimic/fetch` and `@zimic/interceptor` work best together, providing a seamless and type-safe experience for
+> performing HTTP requests in your application and mocking them during development and testing.
 
 ### `@zimic/interceptor`
 
@@ -34,19 +39,7 @@ ignored in the [`.gitignore`](./.gitignore) file.
 - Test setup file: [`tests/setup.ts`](./tests/setup.ts)
 - Vitest configuration: [`vitest.config.mts`](./vitest.config.mts)
 
-## Running
-
-1. Install the dependencies:
-
-   ```bash
-   pnpm install
-   ```
-
-2. Run the tests:
-
-   ```bash
-   pnpm run test
-   ```
+## Try it
 
 ### CodeSandbox
 
@@ -70,10 +63,24 @@ git sparse-checkout set examples/zimic-with-vitest-browser
 git pull origin main # or a specific branch or tag
 mv examples/zimic-with-vitest-browser ..
 cd ../zimic-with-vitest-browser
-rm -r ../zimic-tmp
+rm -rf ../zimic-tmp
 ```
 
 > [!TIP]
 >
 > If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as
 > `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
+
+## Running
+
+1. Install the dependencies:
+
+   ```bash
+   pnpm install
+   ```
+
+2. Run the tests:
+
+   ```bash
+   pnpm run test
+   ```

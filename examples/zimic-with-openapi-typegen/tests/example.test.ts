@@ -1,44 +1,27 @@
-import supertest from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import app from '../src/app';
-import { GitHubRepository } from '../src/clients/github/types';
-import githubInterceptor from './interceptors/github';
+import { githubFetch } from '../src/clients/github/client';
+import githubInterceptor from './interceptors/github/interceptor';
+import { githubMockData } from './interceptors/github/mock-data';
+import { expectResponseStatus } from './utils/expect';
 
 describe('Example tests', () => {
-  const ownerName = 'owner';
-  const repositoryName = 'example';
-
-  const repository = {
-    id: 1,
-    full_name: `${ownerName}/${repositoryName}`,
-    html_url: `https://github.com/${ownerName}/${repositoryName}`,
-  } satisfies Partial<GitHubRepository> as GitHubRepository;
-
-  beforeAll(async () => {
-    await app.ready();
-  });
-
-  afterAll(async () => {
-    await app.close();
-  });
+  const repository = githubMockData.repositories[0];
 
   it('should return a GitHub repository, if found', async () => {
     githubInterceptor
-      .get(`/repos/${ownerName}/${repositoryName}`)
+      .get('/repos/zimicjs/zimic')
       .respond({
         status: 200,
         body: repository,
       })
       .times(1);
 
-    const response = await supertest(app.server).get(`/github/repositories/${ownerName}/${repositoryName}`);
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual({
-      id: repository.id,
-      fullName: repository.full_name,
-      homepageURL: repository.html_url,
-    });
+    const response = await githubFetch('/repos/zimicjs/zimic', { method: 'GET' });
+    expectResponseStatus(response, 200);
+
+    const data = await response.json();
+    expect(data).toEqual(repository);
   });
 
   it('should return a 404 status code, if the GitHub repository is not found', async () => {
@@ -50,8 +33,10 @@ describe('Example tests', () => {
       })
       .times(1);
 
-    const response = await supertest(app.server).get(`/github/repositories/${ownerName}/${repositoryName}`);
-    expect(response.status).toBe(404);
-    expect(response.body).toEqual({});
+    const response = await githubFetch('/repos/unknown/unknown', { method: 'GET' });
+    expectResponseStatus(response, 404);
+
+    const data = await response.json();
+    expect(data).toEqual({ message: 'Not Found' });
   });
 });

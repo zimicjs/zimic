@@ -1,20 +1,28 @@
 <h1>
-  @zimic/interceptor + Vitest + JSDOM
+  Zimic + Vitest + JSDOM
 </h1>
 
-This example uses [@zimic/interceptor](https://www.npmjs.com/package/@zimic/interceptor) with
-[Vitest](https://vitest.dev), and [JSDOM](https://github.com/jsdom/jsdom).
+This example uses Zimic with [Vitest](https://vitest.dev), and [JSDOM](https://github.com/jsdom/jsdom).
 
 - [Testing](#testing)
   - [`@zimic/interceptor`](#zimicinterceptor)
   - [Configuration](#configuration)
-- [Running](#running)
+- [Try it](#try-it)
   - [CodeSandbox](#codesandbox)
   - [Cloning locally](#cloning-locally)
+- [Running](#running)
 
 ## Testing
 
-`@zimic/interceptor` is used to mock requests made to the [GitHub API](https://docs.github.com/rest).
+`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked
+with `@zimic/interceptor`.
+
+> [!TIP]
+>
+> `@zimic/fetch` and `@zimic/interceptor` are not required to be used together. `@zimic/interceptor` is compatible with
+> any HTTP client implementation, as `@zimic/fetch` works with any HTTP interceptor library. With that in mind,
+> `@zimic/fetch` and `@zimic/interceptor` work best together, providing a seamless and type-safe experience for
+> performing HTTP requests in your application and mocking them during development and testing.
 
 ### `@zimic/interceptor`
 
@@ -26,19 +34,7 @@ This example uses [@zimic/interceptor](https://www.npmjs.com/package/@zimic/inte
 - Test setup file: [`tests/setup.ts`](./tests/setup.ts)
 - Vitest configuration: [`vitest.config.mts`](./vitest.config.mts)
 
-## Running
-
-1. Install the dependencies:
-
-   ```bash
-   pnpm install
-   ```
-
-2. Run the tests:
-
-   ```bash
-   pnpm run test
-   ```
+## Try it
 
 ### CodeSandbox
 
@@ -62,10 +58,24 @@ git sparse-checkout set examples/zimic-with-vitest-jsdom
 git pull origin main # or a specific branch or tag
 mv examples/zimic-with-vitest-jsdom ..
 cd ../zimic-with-vitest-jsdom
-rm -r ../zimic-tmp
+rm -rf ../zimic-tmp
 ```
 
 > [!TIP]
 >
 > If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as
 > `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
+
+## Running
+
+1. Install the dependencies:
+
+   ```bash
+   pnpm install
+   ```
+
+2. Run the tests:
+
+   ```bash
+   pnpm run test
+   ```
