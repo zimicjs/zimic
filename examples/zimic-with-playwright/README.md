@@ -98,6 +98,12 @@ rm -rf ../zimic-tmp
    pnpm run test
    ```
 
+   To open the Playwright test runner, use the `--ui` option:
+
+   ```bash
+   pnpm run test --ui
+   ```
+
 If you want to run the application outside of the test suite, use:
 
 ```bash
