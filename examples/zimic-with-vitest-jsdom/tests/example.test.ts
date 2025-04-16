@@ -15,14 +15,14 @@ describe('Example tests', () => {
 
   it('should return a GitHub repository, if found', async () => {
     githubInterceptor
-      .get('/repos/zimicjs/zimic')
+      .get('/repos/zimicjs/zimic-example')
       .respond({
         status: 200,
         body: repository,
       })
       .times(1);
 
-    const response = await githubFetch('/repos/zimicjs/zimic', { method: 'GET' });
+    const response = await githubFetch('/repos/zimicjs/zimic-example', { method: 'GET' });
     expectResponseStatus(response, 200);
 
     const data = await response.json();

@@ -3,8 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 import environment from './src/config/environment';
 
 export default defineConfig({
-  testDir: './src',
-  testMatch: '**/__tests__/**/*.e2e.test.ts',
+  testDir: './tests',
+  testMatch: '**/*.e2e.test.ts',
   fullyParallel: true,
   retries: 1,
   workers: environment.PLAYWRIGHT_WORKERS,

@@ -19,7 +19,7 @@ test.describe('Home page', () => {
 
   test('should render a GitHub repository, if found', async ({ page }) => {
     await githubInterceptor
-      .get('/repos/zimicjs/zimic')
+      .get('/repos/zimicjs/zimic-example')
       .respond({
         status: 200,
         body: repository,
