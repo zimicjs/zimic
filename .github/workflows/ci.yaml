@@ -186,12 +186,6 @@ jobs:
 
       - name: Check types
         run: |
-          filterOptionsOfPackagesUsingFastify=(
-            '--filter !zimic-example-with-jest-node'
-            '--filter !zimic-example-with-vitest-node'
-            '--filter !zimic-example-with-openapi-typegen'
-          )
-
           filterOptionsOfPackagesUsingNext=(
             '--filter !zimic-example-with-playwright'
             '--filter !zimic-example-with-next-js-app'
@@ -203,6 +197,5 @@ jobs:
             --continue \
             --concurrency 100% \
             --filter !@zimic/* \
-            $([[ '${{ matrix.typescript-version }}' =~ ^4\. ]] && echo ${filterOptionsOfPackagesUsingFastify[@]}) \
             $([[ '${{ matrix.typescript-version }}' =~ ^(4\.|5\.0) ]] && echo ${filterOptionsOfPackagesUsingNext[@]}) \
             ${{ env.TURBO_FILTERS }}
