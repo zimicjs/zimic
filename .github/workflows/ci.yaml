@@ -56,23 +56,23 @@ jobs:
       - name: Check if auto-generated types are in sync
         run: |
           cp \
-            ./examples/with-openapi-typegen/src/clients/github/typegen/generated.ts \
-            ./examples/with-openapi-typegen/src/clients/github/typegen/generated.current.ts
+            ./examples/zimic-with-openapi-typegen/src/clients/github/typegen/generated.ts \
+            ./examples/zimic-with-openapi-typegen/src/clients/github/typegen/generated.current.ts
 
-          pnpm --dir examples/with-openapi-typegen typegen:github
-          pnpm --dir examples style:format ./with-openapi-typegen/src/clients/github/typegen/generated.ts
+          pnpm --dir examples/zimic-with-openapi-typegen typegen:github
+          pnpm --dir examples style:format ./zimic-with-openapi-typegen/src/clients/github/typegen/generated.ts
 
           if ! diff -u \
-            ./examples/with-openapi-typegen/src/clients/github/typegen/generated.ts \
-            ./examples/with-openapi-typegen/src/clients/github/typegen/generated.current.ts
+            ./examples/zimic-with-openapi-typegen/src/clients/github/typegen/generated.ts \
+            ./examples/zimic-with-openapi-typegen/src/clients/github/typegen/generated.current.ts
           then
             echo \
-              "[examples/with-openapi-typegen] Generated types are out of date." \
-              "Please run 'pnpm --dir examples/with-openapi-typegen typegen:github' and commit the changes." >&2
+              "[examples/zimic-with-openapi-typegen] Generated types are out of date." \
+              "Please run 'pnpm --dir examples/zimic-with-openapi-typegen typegen:github' and commit the changes." >&2
             exit 1
           else
-            rm ./examples/with-openapi-typegen/src/clients/github/typegen/generated.current.ts
-            echo "[examples/with-openapi-typegen] Generated types are up to date."
+            rm ./examples/zimic-with-openapi-typegen/src/clients/github/typegen/generated.current.ts
+            echo "[examples/zimic-with-openapi-typegen] Generated types are up to date."
           fi
 
       - name: Lint code and check types
