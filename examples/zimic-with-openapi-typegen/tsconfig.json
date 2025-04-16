@@ -2,10 +2,10 @@
   "compilerOptions": {
     "lib": ["esnext", "webworker"],
     "target": "esnext",
-    "module": "esnext",
+    "module": "nodenext",
     "incremental": true,
     "tsBuildInfoFile": "tsconfig.tsbuildinfo",
-    "moduleResolution": "bundler",
+    "moduleResolution": "nodenext",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "pretty": true,
