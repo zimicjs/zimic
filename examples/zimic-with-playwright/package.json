@@ -4,7 +4,7 @@
   "private": false,
   "scripts": {
     "dev": "dotenv -c development -- pnpm mock -- next dev --turbo",
-    "mock": "zimic-interceptor server start --hostname 127.0.0.1 --port 4002 --ephemeral",
+    "mock": "zimic-interceptor server start --hostname 127.0.0.1 --port 4003 --ephemeral",
     "test": "dotenv -c test -- dotenv -c development -- playwright test",
     "test:turbo": "dotenv -v CI=true -- pnpm run test",
     "types:check": "tsc --noEmit",
