@@ -9,6 +9,7 @@ This example uses Zimic with [Vitest](https://vitest.dev), and [JSDOM](https://g
   - [Configuration](#configuration)
 - [Try it](#try-it)
   - [CodeSandbox](#codesandbox)
+  - [StackBlitz](#stackblitz)
   - [Cloning locally](#cloning-locally)
 - [Running](#running)
 
@@ -35,6 +36,16 @@ with `@zimic/interceptor`.
 - Vitest configuration: [`vitest.config.mts`](./vitest.config.mts)
 
 ## Try it
+
+### StackBlitz
+
+<a href="https://stackblitz.com/github/zimicjs/zimic/tree/main/examples/zimic-with-vitest-jsdom?file=README.md">
+  <img
+    src="https://developer.stackblitz.com/img/open_in_stackblitz.svg"
+    alt="Open in StackBlitz"
+    height="36px"
+  />
+</a>
 
 ### CodeSandbox
 

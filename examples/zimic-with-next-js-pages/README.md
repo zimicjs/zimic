@@ -10,6 +10,7 @@ This example uses Zimic with [Next.js](https://nextjs.org).
   - [Configuration](#configuration)
 - [Try it](#try-it)
   - [CodeSandbox](#codesandbox)
+  - [StackBlitz](#stackblitz)
   - [Cloning locally](#cloning-locally)
 - [Running](#running)
 
@@ -53,6 +54,16 @@ This project uses [Playwright](https://playwright.dev) to test the application.
 - Playwright configuration: [`playwright.config.ts`](./playwright.config.ts)
 
 ## Try it
+
+### StackBlitz
+
+<a href="https://stackblitz.com/github/zimicjs/zimic/tree/main/examples/zimic-with-next-js-pages?file=README.md">
+  <img
+    src="https://developer.stackblitz.com/img/open_in_stackblitz.svg"
+    alt="Open in StackBlitz"
+    height="36px"
+  />
+</a>
 
 ### CodeSandbox
 

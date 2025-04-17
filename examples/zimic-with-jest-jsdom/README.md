@@ -9,6 +9,7 @@ This example uses Zimic with [Jest](https://jestjs.io) and [JSDOM](https://githu
   - [Configuration](#configuration)
 - [Try it](#try-it)
   - [CodeSandbox](#codesandbox)
+  - [StackBlitz](#stackblitz)
   - [Cloning locally](#cloning-locally)
 - [Running](#running)
 
@@ -52,6 +53,16 @@ with `@zimic/interceptor`.
 > [browser condition of MSW-related imports](https://github.com/mswjs/msw/issues/1786) to prevent test runtime errors."
 
 ## Try it
+
+### StackBlitz
+
+<a href="https://stackblitz.com/github/zimicjs/zimic/tree/main/examples/zimic-with-jest-jsdom?file=README.md">
+  <img
+    src="https://developer.stackblitz.com/img/open_in_stackblitz.svg"
+    alt="Open in StackBlitz"
+    height="36px"
+  />
+</a>
 
 ### CodeSandbox
 

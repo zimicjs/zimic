@@ -10,6 +10,7 @@ used in this example, but other runtimes should be similar, such as [Deno](https
   - [Configuration](#configuration)
 - [Try it](#try-it)
   - [CodeSandbox](#codesandbox)
+  - [StackBlitz](#stackblitz)
   - [Cloning locally](#cloning-locally)
 - [Running](#running)
 
@@ -36,6 +37,16 @@ with `@zimic/interceptor`.
 - Vitest configuration: [`vitest.config.mts`](./vitest.config.mts)
 
 ## Try it
+
+### StackBlitz
+
+<a href="https://stackblitz.com/github/zimicjs/zimic/tree/main/examples/zimic-with-vitest-node?file=README.md">
+  <img
+    src="https://developer.stackblitz.com/img/open_in_stackblitz.svg"
+    alt="Open in StackBlitz"
+    height="36px"
+  />
+</a>
 
 ### CodeSandbox
 

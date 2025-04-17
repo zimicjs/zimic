@@ -12,6 +12,7 @@ runtimes should be similar, such as [Deno](https://deno.com), [Bun](https://bun.
   - [Configuration](#configuration)
 - [Try it](#try-it)
   - [CodeSandbox](#codesandbox)
+  - [StackBlitz](#stackblitz)
   - [Cloning locally](#cloning-locally)
 - [Running](#running)
 
@@ -61,6 +62,16 @@ This project uses Vitest to test the application.
 - Vitest configuration: [`vitest.config.mts`](./vitest.config.mts)
 
 ## Try it
+
+### StackBlitz
+
+<a href="https://stackblitz.com/github/zimicjs/zimic/tree/main/examples/zimic-with-openapi-typegen?file=README.md">
+  <img
+    src="https://developer.stackblitz.com/img/open_in_stackblitz.svg"
+    alt="Open in StackBlitz"
+    height="36px"
+  />
+</a>
 
 ### CodeSandbox
 
