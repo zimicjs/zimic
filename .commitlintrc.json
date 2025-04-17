@@ -24,16 +24,7 @@
         "eslint-react",
         "lint-staged",
         "tsconfig",
-        "examples",
-        "example-vitest-node",
-        "example-vitest-browser",
-        "example-vitest-jsdom",
-        "example-jest-node",
-        "example-jest-jsdom",
-        "example-playwright",
-        "example-next-js-app",
-        "example-next-js-pages",
-        "example-openapi-typegen"
+        "examples"
       ]
     ],
     "scope-empty": [2, "never"]

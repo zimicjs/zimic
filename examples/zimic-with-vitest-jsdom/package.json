@@ -1,0 +1,21 @@
+{
+  "name": "zimic-example-with-vitest-jsdom",
+  "version": "0.0.0",
+  "private": false,
+  "scripts": {
+    "test": "vitest",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test run",
+    "types:check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@zimic/fetch": "latest",
+    "@zimic/http": "latest"
+  },
+  "devDependencies": {
+    "@zimic/interceptor": "latest",
+    "dotenv-cli": "^8.0.0",
+    "jsdom": "^26.1.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
+  }
+}

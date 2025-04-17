@@ -56,23 +56,23 @@ jobs:
       - name: Check if auto-generated types are in sync
         run: |
           cp \
-            ./examples/with-openapi-typegen/src/clients/github/typegen/generated.ts \
-            ./examples/with-openapi-typegen/src/clients/github/typegen/generated.current.ts
+            ./examples/zimic-with-openapi-typegen/src/clients/github/typegen/generated.ts \
+            ./examples/zimic-with-openapi-typegen/src/clients/github/typegen/generated.current.ts
 
-          pnpm --dir examples/with-openapi-typegen typegen:github
-          pnpm --dir examples style:format ./with-openapi-typegen/src/clients/github/typegen/generated.ts
+          pnpm --dir examples/zimic-with-openapi-typegen typegen:github
+          pnpm --dir examples style:format ./zimic-with-openapi-typegen/src/clients/github/typegen/generated.ts
 
           if ! diff -u \
-            ./examples/with-openapi-typegen/src/clients/github/typegen/generated.ts \
-            ./examples/with-openapi-typegen/src/clients/github/typegen/generated.current.ts
+            ./examples/zimic-with-openapi-typegen/src/clients/github/typegen/generated.ts \
+            ./examples/zimic-with-openapi-typegen/src/clients/github/typegen/generated.current.ts
           then
             echo \
-              "[examples/with-openapi-typegen] Generated types are out of date." \
-              "Please run 'pnpm --dir examples/with-openapi-typegen typegen:github' and commit the changes." >&2
+              "[examples/zimic-with-openapi-typegen] Generated types are out of date." \
+              "Please run 'pnpm --dir examples/zimic-with-openapi-typegen typegen:github' and commit the changes." >&2
             exit 1
           else
-            rm ./examples/with-openapi-typegen/src/clients/github/typegen/generated.current.ts
-            echo "[examples/with-openapi-typegen] Generated types are up to date."
+            rm ./examples/zimic-with-openapi-typegen/src/clients/github/typegen/generated.current.ts
+            echo "[examples/zimic-with-openapi-typegen] Generated types are up to date."
           fi
 
       - name: Lint code and check types
@@ -123,7 +123,7 @@ jobs:
             --concurrency 100% \
             ${{ env.TURBO_FILTERS }}
         env:
-          PLAYWRIGHT_WORKERS: 50%
+          PLAYWRIGHT_WORKERS: 2
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -186,12 +186,6 @@ jobs:
 
       - name: Check types
         run: |
-          filterOptionsOfPackagesUsingFastify=(
-            '--filter !zimic-example-with-jest-node'
-            '--filter !zimic-example-with-vitest-node'
-            '--filter !zimic-example-with-openapi-typegen'
-          )
-
           filterOptionsOfPackagesUsingNext=(
             '--filter !zimic-example-with-playwright'
             '--filter !zimic-example-with-next-js-app'
@@ -203,6 +197,5 @@ jobs:
             --continue \
             --concurrency 100% \
             --filter !@zimic/* \
-            $([[ '${{ matrix.typescript-version }}' =~ ^4\. ]] && echo ${filterOptionsOfPackagesUsingFastify[@]}) \
             $([[ '${{ matrix.typescript-version }}' =~ ^(4\.|5\.0) ]] && echo ${filterOptionsOfPackagesUsingNext[@]}) \
             ${{ env.TURBO_FILTERS }}
