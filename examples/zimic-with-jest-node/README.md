@@ -10,6 +10,7 @@ used in this example, but other runtimes should be similar, such as [Deno](https
   - [Configuration](#configuration)
 - [Try it](#try-it)
   - [CodeSandbox](#codesandbox)
+  - [StackBlitz](#stackblitz)
   - [Cloning locally](#cloning-locally)
 - [Running](#running)
 
@@ -41,6 +42,16 @@ with `@zimic/interceptor`.
 > required by Jest because Zimic uses dynamic imports internally.
 
 ## Try it
+
+### StackBlitz
+
+<a href="https://stackblitz.com/github/zimicjs/zimic/tree/main/examples/zimic-with-jest-node?file=README.md">
+  <img
+    src="https://developer.stackblitz.com/img/open_in_stackblitz.svg"
+    alt="Open in StackBlitz"
+    height="36px"
+  />
+</a>
 
 ### CodeSandbox
 
