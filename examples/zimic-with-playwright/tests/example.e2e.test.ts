@@ -1,17 +1,11 @@
 import { expect } from '@playwright/test';
 
-import { GitHubRepository } from '../src/clients/github';
+import { createGitHubRepository } from './factories/github';
 import githubInterceptor from './interceptors/github';
 import { test } from './playwright';
 
 test.describe('Home page', () => {
-  const repository: GitHubRepository = {
-    id: 1,
-    name: 'zimic-example',
-    full_name: 'zimicjs/zimic-example',
-    html_url: 'https://github.com/zimicjs/zimic-example',
-    owner: { login: 'zimicjs' },
-  };
+  const repository = createGitHubRepository();
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/');

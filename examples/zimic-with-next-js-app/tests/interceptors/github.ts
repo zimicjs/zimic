@@ -1,7 +1,8 @@
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-import { GitHubRepository, GitHubSchema } from '../../src/clients/github';
+import { GitHubSchema } from '../../src/clients/github';
 import environment from '../../src/config/environment';
+import { createGitHubRepository } from '../factories/github';
 
 const githubInterceptor = createHttpInterceptor<GitHubSchema>({
   type: 'remote',
@@ -9,15 +10,7 @@ const githubInterceptor = createHttpInterceptor<GitHubSchema>({
 });
 
 export const githubMockData = {
-  repositories: [
-    {
-      id: 1,
-      name: 'zimic-example',
-      full_name: 'zimicjs/zimic-example',
-      html_url: 'https://github.com/zimicjs/zimic-example',
-      owner: { login: 'zimicjs' },
-    },
-  ] satisfies GitHubRepository[],
+  repositories: [createGitHubRepository()],
 
   async apply() {
     await githubInterceptor.get('/repos/:owner/:name').respond({

@@ -1,17 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { githubFetch, GitHubRepository } from '../src/clients/github';
+import { githubFetch } from '../src/clients/github';
+import { createGitHubRepository } from './factories/github';
 import githubInterceptor from './interceptors/github';
 import { expectResponseStatus } from './utils/expect';
 
 describe('Example tests', () => {
-  const repository: GitHubRepository = {
-    id: 1,
-    name: 'zimic-example',
-    full_name: 'zimicjs/zimic-example',
-    html_url: 'https://github.com/zimicjs/zimic-example',
-    owner: { login: 'zimicjs' },
-  };
+  const repository = createGitHubRepository();
 
   it('should return a GitHub repository, if found', async () => {
     githubInterceptor

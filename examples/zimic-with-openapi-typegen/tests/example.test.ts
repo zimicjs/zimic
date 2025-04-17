@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import { githubFetch } from '../src/clients/github/client';
+import { createGitHubRepository } from './factories/github';
 import githubInterceptor from './interceptors/github/interceptor';
-import { githubMockData } from './interceptors/github/mock-data';
 import { expectResponseStatus } from './utils/expect';
 
 describe('Example tests', () => {
-  const repository = githubMockData.repositories[0];
+  const repository = createGitHubRepository();
 
   it('should return a GitHub repository, if found', async () => {
     githubInterceptor
