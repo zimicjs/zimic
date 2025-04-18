@@ -93,15 +93,15 @@ structured as follows:
   - `zimic-test-client`: Test application to check Zimic installed as a dependency; important to verify the library
     exports and build artifacts;
 - `examples`: Example projects using Zimic;
-  - `with-jest-jsdom`: Example using Jest with jsdom;
-  - `with-jest-node`: Example using Jest with Node.js;
-  - `with-next-js-app`: Example using Next.js (App Router);
-  - `with-next-js-pages`: Example using Next.js (Pages Router);
-  - `with-openapi-typegen`: Example using type generation from OpenAPI files;
-  - `with-playwright`: Example using Playwright;
-  - `with-vitest-browser`: Example using Vitest with a browser environment;
-  - `with-vitest-jsdom`: Example using Vitest with jsdom;
-  - `with-vitest-node`: Example using Vitest with Node.js;
+  - `zimic-with-jest-jsdom`: Example using Jest with jsdom;
+  - `zimic-with-jest-node`: Example using Jest with Node.js;
+  - `zimic-with-next-js-app`: Example using Next.js (App Router);
+  - `zimic-with-next-js-pages`: Example using Next.js (Pages Router);
+  - `zimic-with-openapi-typegen`: Example using type generation from OpenAPI files;
+  - `zimic-with-playwright`: Example using Playwright;
+  - `zimic-with-vitest-browser`: Example using Vitest with a browser environment;
+  - `zimic-with-vitest-jsdom`: Example using Vitest with jsdom;
+  - `zimic-with-vitest-node`: Example using Vitest with Node.js;
 - `docs`
   - `wiki`: Documentation (wiki) pages for the project;
 
