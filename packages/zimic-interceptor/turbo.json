@@ -23,17 +23,17 @@
 
     "test:turbo": {
       "dependsOn": ["^build", "@zimic/http#build", "deps:init-msw"],
-      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "vitest.config.mts"]
+      "inputs": ["{src,tests,scripts}/**/*.{ts,json}", "{package,tsconfig}.json", "vitest.config.mts"]
     },
 
     "lint:turbo": {
       "dependsOn": ["^build", "@zimic/http#build"],
-      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "eslint.config.mjs"]
+      "inputs": ["{src,tests,scripts}/**/*.{ts,json}", "{package,tsconfig}.json", "eslint.config.mjs"]
     },
 
     "types:check": {
       "dependsOn": ["^build", "@zimic/http#build"],
-      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json"]
+      "inputs": ["{src,tests,scripts}/**/*.{ts,json}", "{package,tsconfig}.json"]
     }
   }
 }
