@@ -4,10 +4,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   MSW_PACKAGE_PATH,
+  MSW_CORE_DIRECTORY,
   MSW_BROWSER_DIRECTORY,
   MSWPackage,
   postinstallPromise,
-  MSW_CORE_DIRECTORY,
 } from '../postinstall';
 
 describe('Post-install script', () => {
