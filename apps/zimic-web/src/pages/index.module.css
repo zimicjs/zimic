@@ -1,0 +1,26 @@
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.workInProgressNote {
+  margin: 0;
+  padding: 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+
+  display: flex;
+  align-items: center;
+
+  * + * {
+    margin-left: 0.75rem;
+  }
+
+  img {
+    width: 3rem;
+    height: 3rem;
+  }
+}

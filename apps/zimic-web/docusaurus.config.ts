@@ -1,9 +1,11 @@
-import type * as DocusaurusPreset from '@docusaurus/preset-classic';
-import type { Config as DocusaurusConfig } from '@docusaurus/types';
+import type * as PluginContentDocs from '@docusaurus/plugin-content-docs';
+import type * as PluginContentPages from '@docusaurus/plugin-content-pages';
+import type * as PluginSitemap from '@docusaurus/plugin-sitemap';
+import type * as PluginThemeClassic from '@docusaurus/theme-classic';
+import type * as Docusaurus from '@docusaurus/types';
 import { themes as prismThemes } from 'prism-react-renderer';
-import versions from 'versions';
 
-const config: DocusaurusConfig = {
+const config: Docusaurus.Config = {
   title: 'Zimic',
   tagline: 'Next-gen, TypeScript-first HTTP integrations',
   favicon: 'img/favicon.ico',
@@ -32,156 +34,74 @@ const config: DocusaurusConfig = {
 
   staticDirectories: ['public'],
 
-  presets: [
+  webpack: {
+    jsLoader: (isServer) => ({
+      loader: require.resolve('esbuild-loader'),
+      options: {
+        loader: 'tsx',
+        jsx: 'automatic',
+        format: isServer ? 'cjs' : undefined,
+        target: isServer ? 'node22' : 'es2017',
+      },
+    }),
+  },
+
+  plugins: [
     [
-      'classic',
+      '@docusaurus/plugin-content-docs',
       {
-        docs: {
-          path: 'docs',
-          sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/zimicjs/zimic/tree/main/apps/zimic-web',
-          showLastUpdateAuthor: true,
-          showLastUpdateTime: true,
-          breadcrumbs: true,
-          onlyIncludeVersions: [...Object.values(versions.canary), ...Object.values(versions.stable)].flat(),
-          lastVersion: 'Latest',
-          versions: {
-            current: {
-              label: 'Canary 🚧',
-            },
-          },
-        },
-        theme: {
-          customCss: './src/styles/global.css',
-        },
-      } satisfies DocusaurusPreset.Options,
+        path: 'docs',
+        sidebarPath: './sidebars.ts',
+        editUrl: 'https://github.com/zimicjs/zimic/tree/main/apps/zimic-web',
+        breadcrumbs: true,
+        sidebarCollapsed: false,
+        sidebarCollapsible: true,
+      } satisfies PluginContentDocs.Options,
+    ],
+    [
+      '@docusaurus/theme-classic',
+      {
+        customCss: './src/styles/global.css',
+      } satisfies PluginThemeClassic.Options,
+    ],
+    [
+      '@docusaurus/plugin-content-pages',
+      {
+        path: 'src/pages',
+        routeBasePath: '',
+        include: ['**/*.{ts,tsx,md,mdx}'],
+        exclude: ['**/_*.{ts,tsx,md,mdx}', '**/_*/**', '**/*.test.{ts,tsx}', '**/__tests__/**'],
+        mdxPageComponent: '@theme/MDXPage',
+      } satisfies PluginContentPages.Options,
+    ],
+    [
+      '@docusaurus/plugin-sitemap',
+      {
+        lastmod: 'date',
+        changefreq: 'weekly',
+        priority: 0.5,
+        filename: 'sitemap.xml',
+      } satisfies PluginSitemap.Options,
     ],
   ],
 
   themeConfig: {
-    navbar: {
-      title: 'Zimic',
-      logo: {
-        alt: 'Zimic Logo',
-        src: 'img/logo.svg',
-        width: 32,
-        height: 32,
-      },
-      hideOnScroll: true,
-      items: [
-        {
-          type: 'docSidebar',
-          label: 'Docs',
-          sidebarId: 'zimic',
-          position: 'left',
-        },
-        {
-          type: 'docSidebar',
-          sidebarId: 'zimic-http',
-          label: '@zimic/http',
-          position: 'left',
-        },
-        {
-          type: 'docSidebar',
-          label: '@zimic/fetch',
-          sidebarId: 'zimic-fetch',
-          position: 'left',
-        },
-        {
-          type: 'docSidebar',
-          label: '@zimic/interceptor',
-          sidebarId: 'zimic-interceptor',
-          position: 'left',
-        },
-        {
-          type: 'docsVersionDropdown',
-          label: '@zimic/http',
-          docsPluginId: 'zimic-http',
-          position: 'right',
-        },
-        {
-          type: 'docsVersionDropdown',
-          label: '@zimic/fetch',
-          docsPluginId: 'zimic-fetch',
-          position: 'right',
-        },
-        {
-          type: 'docsVersionDropdown',
-          label: '@zimic/interceptor',
-          docsPluginId: 'zimic-interceptor',
-          position: 'right',
-        },
-        {
-          type: 'localeDropdown',
-          position: 'right',
-          dropdownItemsAfter: [
-            { type: 'html', value: '<hr style="margin: 0.3rem 0;">' },
-            { href: 'https://github.com/zimicjs/zimic/issues', label: 'Help Us Translate' },
-          ],
-        },
-        {
-          href: 'https://github.com/zimicjs/zimic',
-          position: 'right',
-          'aria-label': 'GitHub repository',
-        },
-      ],
-    },
-    footer: {
-      style: 'dark',
-      links: [
-        {
-          title: 'Learn',
-          items: [
-            {
-              label: 'Introduction',
-              to: 'docs/introduction',
-            },
-            {
-              label: 'Installation',
-              to: 'docs/installation',
-            },
-          ],
-        },
-        {
-          title: 'More',
-          items: [
-            {
-              label: 'Changelog',
-              href: 'https://github.com/zimicjs/zimic/releases',
-            },
-            {
-              label: 'GitHub',
-              href: 'https://github.com/zimicjs/zimic',
-            },
-            {
-              label: 'X',
-              href: 'https://x.com/zimicjs',
-            },
-          ],
-        },
-      ],
-      copyright: `© Zimic ${new Date().getFullYear()}. Built with Docusaurus.`,
-    },
-    docs: {
-      versionPersistence: 'localStorage',
-      sidebar: {
-        hideable: true,
-        autoCollapseCategories: true,
-      },
-    },
     colorMode: {
       defaultMode: 'light',
       disableSwitch: false,
       respectPrefersColorScheme: true,
     },
+
     announcementBar: {
-      id: 'github-star',
-      content: '⭐️ If you like Zimic, give it a star on <a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic">GitHub</a>!',
+      content:
+        '⭐️ If you like Zimic, give it a star on <a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic">GitHub</a>! ⭐️',
       isCloseable: true,
     },
+
     liveCodeBlock: {
       playgroundPosition: 'bottom',
     },
+
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
@@ -197,7 +117,142 @@ const config: DocusaurusConfig = {
         },
       ],
     },
-  } satisfies DocusaurusPreset.ThemeConfig,
+
+    navbar: {
+      title: 'Zimic',
+      hideOnScroll: true,
+      logo: {
+        alt: 'Zimic Logo',
+        src: 'img/logo.svg',
+        href: '/',
+        width: 32,
+        height: 32,
+      },
+      items: [
+        {
+          label: 'Docs',
+          to: 'docs',
+          position: 'left',
+        },
+        {
+          label: 'Projects',
+          type: 'dropdown',
+          position: 'left',
+          items: [
+            {
+              label: '@zimic/http',
+              type: 'docSidebar',
+              sidebarId: 'http',
+            },
+            {
+              label: '@zimic/fetch',
+              type: 'docSidebar',
+              sidebarId: 'fetch',
+            },
+            {
+              label: '@zimic/interceptor',
+              type: 'docSidebar',
+              sidebarId: 'interceptor',
+            },
+          ],
+        },
+        {
+          label: 'Examples',
+          href: 'https://github.com/zimicjs/zimic/tree/main/examples',
+          position: 'left',
+        },
+        {
+          type: 'localeDropdown',
+          position: 'right',
+          dropdownItemsAfter: [
+            { type: 'html', value: '<hr style="margin: 0.3rem 0;">' },
+            { href: 'https://github.com/zimicjs/zimic', label: 'Help Us Translate' },
+          ],
+        },
+        {
+          href: 'https://github.com/zimicjs/zimic',
+          position: 'right',
+          'aria-label': 'Zimic on GitHub',
+        },
+      ],
+    },
+
+    docs: {
+      versionPersistence: 'localStorage',
+      sidebar: {
+        hideable: true,
+        autoCollapseCategories: false,
+      },
+    },
+
+    tableOfContents: {
+      minHeadingLevel: 2,
+      maxHeadingLevel: 4,
+    },
+
+    footer: {
+      style: 'dark',
+      links: [
+        {
+          title: 'Learn',
+          items: [
+            {
+              label: 'Documentation',
+              to: 'docs',
+            },
+            {
+              label: '@zimic/http',
+              to: 'docs/http',
+            },
+            {
+              label: '@zimic/fetch',
+              to: 'docs/fetch',
+            },
+            {
+              label: '@zimic/interceptor',
+              to: 'docs/interceptor',
+            },
+            {
+              label: 'Examples',
+              href: 'https://github.com/zimicjs/zimic/tree/main/examples',
+            },
+          ],
+        },
+        {
+          title: 'More',
+          items: [
+            {
+              label: 'Changelog',
+              href: 'https://github.com/zimicjs/zimic/releases',
+            },
+            {
+              label: 'Contributing',
+              href: 'https://github.com/zimicjs/zimic/tree/main/CONTRIBUTING.md',
+            },
+            {
+              label: 'Roadmap',
+              href: 'https://github.com/orgs/zimicjs/projects/1/views/5',
+            },
+          ],
+        },
+        {
+          title: 'Community',
+          items: [
+            {
+              label: 'GitHub',
+              href: 'https://github.com/zimicjs/zimic',
+            },
+            {
+              label: 'X',
+              href: 'https://x.com/zimicjs',
+            },
+          ],
+        },
+      ],
+
+      copyright: `© Zimic ${new Date().getFullYear()}. Built with Docusaurus.`,
+    },
+  },
 };
 
 export default config;
