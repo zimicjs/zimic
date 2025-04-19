@@ -1,0 +1,48 @@
+{
+  "name": "zimic-web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "docusaurus start",
+    "build": "docusaurus build",
+    "clear": "docusaurus clear",
+    "start": "docusaurus serve",
+    "write-translations": "docusaurus write-translations",
+    "write-heading-ids": "docusaurus write-heading-ids",
+    "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
+    "lint:turbo": "pnpm lint . --max-warnings 0",
+    "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
+    "style:check": "pnpm style --check",
+    "style:format": "pnpm style --write",
+    "types:check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@docusaurus/core": "3.7.0",
+    "@docusaurus/preset-classic": "3.7.0",
+    "@mdx-js/react": "^3.0.0",
+    "prism-react-renderer": "^2.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "3.7.0",
+    "@docusaurus/types": "3.7.0",
+    "@types/react": "^19.1.1",
+    "@zimic/eslint-config-react": "workspace:*",
+    "@zimic/lint-staged-config": "workspace:*",
+    "@zimic/tsconfig": "workspace:*",
+    "typescript": "^5.8.3"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 3 chrome version",
+      "last 3 firefox version",
+      "last 5 safari version"
+    ]
+  }
+}

@@ -1,7 +1,6 @@
 {
   "extends": "@zimic/tsconfig/tsconfig.node.json",
   "compilerOptions": {
-    "target": "es6",
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "tsBuildInfoFile": "tsconfig.tsbuildinfo",
