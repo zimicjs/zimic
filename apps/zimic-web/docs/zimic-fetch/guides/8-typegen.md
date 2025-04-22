@@ -1,10 +1,10 @@
 ---
-title: Type generation | @zimic/fetch
-sidebar_label: Type generation
+title: Typegen | @zimic/fetch
+sidebar_label: Typegen
 slug: /fetch/guides/typegen
 ---
 
-# Type generation
+# Typegen
 
 :::info
 

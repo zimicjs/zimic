@@ -1,10 +1,10 @@
 ---
-title: Type generation | @zimic/http
-sidebar_label: Type generation
+title: Typegen | @zimic/http
+sidebar_label: Typegen
 slug: /http/guides/typegen
 ---
 
-# Type generation
+# Typegen
 
 :::info
 

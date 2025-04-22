@@ -10,7 +10,7 @@
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
 }
 
-[data-theme='dark'] {
+:root[data-theme='dark'] {
   --ifm-color-primary-lightest: #b6e1fb;
   --ifm-color-primary-lighter: #8acbf7;
   --ifm-color-primary-light: #5eb4f2;

@@ -1,10 +1,10 @@
 ---
-title: Type generation | @zimic/interceptor
-sidebar_label: Type generation
+title: Typegen | @zimic/interceptor
+sidebar_label: Typegen
 slug: /interceptor/guides/typegen
 ---
 
-# Type generation
+# Typegen
 
 :::info
 

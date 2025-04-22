@@ -130,7 +130,7 @@ const config: Docusaurus.Config = {
       },
       items: [
         {
-          label: 'Docs',
+          label: 'Get started',
           to: 'docs',
           position: 'left',
         },
@@ -155,11 +155,6 @@ const config: Docusaurus.Config = {
               sidebarId: 'interceptor',
             },
           ],
-        },
-        {
-          label: 'Examples',
-          href: 'https://github.com/zimicjs/zimic/tree/main/examples',
-          position: 'left',
         },
         {
           type: 'localeDropdown',
@@ -214,7 +209,7 @@ const config: Docusaurus.Config = {
             },
             {
               label: 'Examples',
-              href: 'https://github.com/zimicjs/zimic/tree/main/examples',
+              to: 'docs/examples',
             },
           ],
         },
@@ -231,7 +226,7 @@ const config: Docusaurus.Config = {
             },
             {
               label: 'Roadmap',
-              href: 'https://github.com/orgs/zimicjs/projects/1/views/5',
+              href: 'https://github.com/orgs/zimicjs/projects/1/views/4',
             },
           ],
         },
