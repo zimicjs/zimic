@@ -90,6 +90,7 @@ structured as follows:
   - `eslint-config-node`: Node.js-specific ESLint configuration;
   - `lint-staged-config`: Configuration for [lint-staged](https://github.com/lint-staged/lint-staged);
 - `apps`
+  - `zimic-web`: [zimic.dev](https://zimic.dev) documentation website built with [Docusaurus](https://docusaurus.io);
   - `zimic-test-client`: Test application to check Zimic installed as a dependency; important to verify the library
     exports and build artifacts;
 - `examples`: Example projects using Zimic;
@@ -119,12 +120,13 @@ Zimic uses the following long-lived branches:
 | Branch                 | Description                                                                                         |
 | ---------------------- | --------------------------------------------------------------------------------------------------- |
 | `canary`               | Development branch containing the latest (possibly unstable) code.                                  |
+| `main`                 | Production branch containing the latest stable code for all projects.                               |
 | `@zimic/http@0`        | Production branch containing the latest stable code for `@zimic/http` in the `v0.x.x` range.        |
 | `@zimic/fetch@0`       | Production branch containing the latest stable code for `@zimic/fetch` in the `v0.x.x` range.       |
 | `@zimic/interceptor@0` | Production branch containing the latest stable code for `@zimic/interceptor` in the `v0.x.x` range. |
 
-New pull requests should be opened against the `canary` branch. The `@zimic/*@*` branches are updated only when a new
-stable release is ready for their respective major version.
+New pull requests should be opened against the `canary` branch. The `@zimic/*@*` and `main` branches are updated only
+when a new stable release is ready for their respective major version.
 
 Each supported major version of Zimic will have its own `@zimic/*@*` branch. This will allow backporting fixes and
 security patches to older versions.
