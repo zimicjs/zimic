@@ -1,0 +1,31 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "{src,public,docs}/**/*.{ts,tsx,json,md,mdx}",
+        "{package,tsconfig}.json",
+        "docusaurus.config.ts",
+        "!*/**/tests/**/*",
+        "!*/**/__tests__/**/*",
+        "!*/**/*.test.ts"
+      ],
+      "outputs": ["build/**"]
+    },
+
+    "lint:turbo": {
+      "inputs": [
+        "{src,public,docs}/**/*.{ts,tsx}",
+        "{package,tsconfig}.json",
+        "docusaurus.config.ts",
+        "eslint.config.mjs"
+      ]
+    },
+
+    "types:check": {
+      "inputs": ["{src,public,docs}/**/*.{ts,tsx}", "{package,tsconfig}.json", "docusaurus.config.ts"]
+    }
+  }
+}

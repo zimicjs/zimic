@@ -51,7 +51,7 @@ const config: Docusaurus.Config = {
       '@docusaurus/plugin-content-docs',
       {
         path: 'docs',
-        sidebarPath: './sidebars.ts',
+        sidebarPath: './src/config/sidebars.ts',
         editUrl: 'https://github.com/zimicjs/zimic/tree/main/apps/zimic-web',
         breadcrumbs: true,
         sidebarCollapsed: false,

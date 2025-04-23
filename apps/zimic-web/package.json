@@ -5,10 +5,7 @@
   "scripts": {
     "dev": "docusaurus start --no-open",
     "build": "docusaurus build",
-    "clear": "docusaurus clear",
     "start": "docusaurus serve",
-    "write-translations": "docusaurus write-translations",
-    "write-heading-ids": "docusaurus write-heading-ids",
     "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",

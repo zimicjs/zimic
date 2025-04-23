@@ -1,4 +1,4 @@
-name: 'Release to GitHub: @zimic/interceptor'
+name: 'Release to GitHub: zimic-web'
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
       - closed
     branches:
       - canary
-      - '@zimic/interceptor@*'
+      - zimic-web@*
   workflow_dispatch:
     inputs:
       upgrade-type:
@@ -30,7 +30,7 @@ on:
           - none
 
 concurrency:
-  group: release-to-zimic-interceptor-github
+  group: release-zimic-web-to-github
   cancel-in-progress: false
 
 env:
@@ -63,7 +63,7 @@ jobs:
         id: release-settings
         uses: ./.github/actions/zimic-get-release-settings
         with:
-          project-name: '@zimic/interceptor'
+          project-name: zimic-web
           input-upgrade-type: ${{ inputs.upgrade-type }}
           input-pre-release-id: ${{ inputs.pre-release-id }}
 
@@ -96,8 +96,8 @@ jobs:
         id: bump-version
         uses: ./.github/actions/zimic-bump-version
         with:
-          project-name: '@zimic/interceptor'
-          project-directory: packages/zimic-interceptor
+          project-name: zimic-web
+          project-directory: apps/zimic-web
           upgrade-type: ${{ needs.pre-release-to-github.outputs.upgrade-type }}
           pre-release-id: ${{ needs.pre-release-to-github.outputs.pre-release-id }}
           commit-user-name: ${{ vars.RELEASE_COMMIT_USER_NAME }}
@@ -107,8 +107,8 @@ jobs:
         id: release
         uses: ./.github/actions/zimic-release-github
         with:
-          project-name: '@zimic/interceptor'
-          type: ${{ needs.pre-release-to-github.outputs.pre-release-id == 'none' && 'tag-and-release' || 'tag-only' }}
+          project-name: zimic-web
+          type: tag-only
           version: ${{ steps.bump-version.outputs.value }}
           commit: ${{ steps.bump-version.outputs.commit-sha }}
           token: ${{ secrets.GITHUB_TOKEN }}
