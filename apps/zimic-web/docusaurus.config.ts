@@ -167,6 +167,7 @@ const config: Docusaurus.Config = {
         {
           href: 'https://github.com/zimicjs/zimic',
           position: 'right',
+          className: 'header-github-link',
           'aria-label': 'Zimic on GitHub',
         },
       ],
@@ -186,15 +187,27 @@ const config: Docusaurus.Config = {
     },
 
     footer: {
-      style: 'dark',
       links: [
         {
           title: 'Learn',
           items: [
             {
-              label: 'Documentation',
+              label: 'Introduction',
               to: 'docs',
             },
+            {
+              label: 'Motivation',
+              to: 'docs',
+            },
+            {
+              label: 'Examples',
+              to: 'docs/examples',
+            },
+          ],
+        },
+        {
+          title: 'Projects',
+          items: [
             {
               label: '@zimic/http',
               to: 'docs/http',
@@ -206,10 +219,6 @@ const config: Docusaurus.Config = {
             {
               label: '@zimic/interceptor',
               to: 'docs/interceptor',
-            },
-            {
-              label: 'Examples',
-              to: 'docs/examples',
             },
           ],
         },
@@ -238,14 +247,14 @@ const config: Docusaurus.Config = {
               href: 'https://github.com/zimicjs/zimic',
             },
             {
-              label: 'X',
+              label: 'Twitter/X',
               href: 'https://x.com/zimicjs',
             },
           ],
         },
       ],
 
-      copyright: `© Zimic ${new Date().getFullYear()}. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Zimic. Built with Docusaurus.`,
     },
   },
 };
