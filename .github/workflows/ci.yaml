@@ -197,5 +197,6 @@ jobs:
             --continue \
             --concurrency 100% \
             --filter !@zimic/* \
+            --filter !zimic-web \
             $([[ '${{ matrix.typescript-version }}' =~ ^(4\.|5\.0) ]] && echo ${filterOptionsOfPackagesUsingNext[@]}) \
             ${{ env.TURBO_FILTERS }}
