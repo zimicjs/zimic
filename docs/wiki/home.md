@@ -17,7 +17,7 @@
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/zimicjs/zimic/issues">Issues</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="https://github.com/orgs/zimicjs/projects/1/views/5">Roadmap</a>
+  <a href="https://github.com/orgs/zimicjs/projects/1/views/4">Roadmap</a>
 </p>
 
 <div align="center">

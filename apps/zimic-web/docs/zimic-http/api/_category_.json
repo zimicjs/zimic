@@ -1,0 +1,9 @@
+{
+  "label": "API",
+  "position": 6,
+  "collapsed": true,
+  "link": {
+    "type": "generated-index",
+    "slug": "http/api"
+  }
+}
