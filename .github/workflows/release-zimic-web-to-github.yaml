@@ -1,0 +1,114 @@
+name: 'Release to GitHub: zimic-web'
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - canary
+      - zimic-web@*
+  workflow_dispatch:
+    inputs:
+      upgrade-type:
+        description: Upgrade type
+        type: choice
+        required: true
+        default: prerelease
+        options:
+          - prerelease
+          - stable
+          - patch
+          - minor
+          - major
+      pre-release-id:
+        description: Pre-release id
+        type: choice
+        required: true
+        default: canary
+        options:
+          - canary
+          - none
+
+concurrency:
+  group: release-zimic-web-to-github
+  cancel-in-progress: false
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_REMOTE_CACHE_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_REMOTE_CACHE_TEAM }}
+  TURBO_LOG_ORDER: stream
+
+jobs:
+  pre-release-to-github:
+    name: Pre-release to GitHub
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
+    timeout-minutes: 5
+
+    outputs:
+      upgrade-type: ${{ steps.release-settings.outputs.upgrade-type }}
+      pre-release-id: ${{ steps.release-settings.outputs.pre-release-id }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Zimic
+        uses: ./.github/actions/zimic-setup
+        with:
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+
+      - name: Get release settings
+        id: release-settings
+        uses: ./.github/actions/zimic-get-release-settings
+        with:
+          project-name: zimic-web
+          input-upgrade-type: ${{ inputs.upgrade-type }}
+          input-pre-release-id: ${{ inputs.pre-release-id }}
+
+  release-to-github:
+    name: Release to GitHub
+    runs-on: ubuntu-latest
+    if: ${{ needs.pre-release-to-github.outputs.upgrade-type != '' }}
+    needs:
+      - pre-release-to-github
+    timeout-minutes: 5
+
+    environment: GitHub
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+
+      - name: Set up Zimic
+        uses: ./.github/actions/zimic-setup
+        with:
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+
+      - name: Bump version
+        id: bump-version
+        uses: ./.github/actions/zimic-bump-version
+        with:
+          project-name: zimic-web
+          project-directory: apps/zimic-web
+          upgrade-type: ${{ needs.pre-release-to-github.outputs.upgrade-type }}
+          pre-release-id: ${{ needs.pre-release-to-github.outputs.pre-release-id }}
+          commit-user-name: ${{ vars.RELEASE_COMMIT_USER_NAME }}
+          commit-user-email: ${{ vars.RELEASE_COMMIT_USER_EMAIL }}
+
+      - name: Release to GitHub
+        id: release
+        uses: ./.github/actions/zimic-release-github
+        with:
+          project-name: zimic-web
+          type: tag-only
+          version: ${{ steps.bump-version.outputs.value }}
+          commit: ${{ steps.bump-version.outputs.commit-sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
