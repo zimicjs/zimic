@@ -47,6 +47,7 @@ const config: Docusaurus.Config = {
   },
 
   plugins: [
+    ['./src/plugins/tailwindcss.ts', {}],
     [
       '@docusaurus/plugin-content-docs',
       {
