@@ -93,8 +93,12 @@ const config: Docusaurus.Config = {
     },
 
     announcementBar: {
+      id: 'announcement-bar-github-start',
       content:
-        '⭐️ If you like Zimic, give it a star on <a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic">GitHub</a>! ⭐️',
+        '⭐️ If you like Zimic, give it a star on ' +
+        '<a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic">GitHub</a>! ⭐️',
+      textColor: 'var(--ifm-footer-background-color)',
+      backgroundColor: 'var(--ifm-color-content)',
       isCloseable: true,
     },
 
@@ -107,7 +111,7 @@ const config: Docusaurus.Config = {
       darkTheme: prismThemes.dracula,
       magicComments: [
         {
-          className: 'theme-code-block-highlighted-line',
+          className: 'code-block-highlighted-line',
           line: 'highlight-next-line',
           block: { start: 'highlight-start', end: 'highlight-end' },
         },

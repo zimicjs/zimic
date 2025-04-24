@@ -1,18 +1,22 @@
 :root {
-  --ifm-color-primary-lightest: #36badf;
-  --ifm-color-primary-lighter: #3097ec;
-  --ifm-color-primary-light: #2d85f3;
+  --ifm-color-primary-lightest: #9fbffd;
+  --ifm-color-primary-lighter: #6495fc;
+  --ifm-color-primary-light: #4783fb;
   --ifm-color-primary: #2a72fa;
-  --ifm-color-primary-dark: #4372ff;
-  --ifm-color-primary-darker: #414fd4;
-  --ifm-color-primary-darkest: #3f2ca9;
+  --ifm-color-primary-dark: #0b5cf9;
+  --ifm-color-primary-darker: #0652ef;
+  --ifm-color-primary-darkest: #0544c5;
 
-  --ifm-color-content: #011627;
-  --ifm-footer-link-color: var(--ifm-color-content);
+  --ifm-background-color: #e8f2f8;
+  --ifm-background-surface-color: var(--ifm-background-color);
+
+  --ifm-font-color-base: #060517;
+  --ifm-color-content: var(--ifm-font-color-base);
+  --ifm-footer-link-color: var(--ifm-font-color-base);
 
   --ifm-code-font-size: 95%;
 
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  --highlighted-code-background-color: rgba(0, 0, 0, 0.1);
 }
 
 .menu__list-item-collapsible:has(.menu__link:not([href])) {
@@ -62,6 +66,21 @@
   margin-bottom: 3rem;
 }
 
+.theme-code-block-highlighted-line {
+  background-color: var(--highlighted-code-background-color);
+  display: block;
+  margin: 0 calc(-1 * var(--ifm-pre-padding));
+  padding: 0 var(--ifm-pre-padding);
+}
+
+.code-block-error-line {
+  background-color: #fa383e20;
+  display: block;
+  margin: 0 calc(-1 * var(--ifm-pre-padding));
+  padding: 0 var(--ifm-pre-padding);
+  border-left: 3px solid #fa383e80;
+}
+
 @media (max-width: 996px) {
   .footer__links {
     text-align: center;
@@ -90,15 +109,17 @@
   --ifm-color-primary-dark: #3097ec;
   --ifm-color-primary-darker: #1b89e9;
   --ifm-color-primary-darkest: #167ad6;
-  --ifm-background-color: #011627;
-  --ifm-background-surface-color: #011627;
 
-  --ifm-color-content: #deeaf2;
+  --ifm-background-color: #060517;
+  --ifm-background-surface-color: var(--ifm-background-color);
 
-  --ifm-footer-link-color: var(--ifm-color-content);
+  --ifm-font-color-base: #e8f2f8;
+  --ifm-color-content: var(--ifm-font-color-base);
+
+  --ifm-footer-link-color: var(--ifm-font-color-base);
   --ifm-footer-background-color: var(--ifm-navbar-background-color);
 
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --highlighted-code-background-color: rgba(0, 0, 0, 0.3);
 
   .navbar {
     border-bottom: 1px solid var(--ifm-color-gray-800);
