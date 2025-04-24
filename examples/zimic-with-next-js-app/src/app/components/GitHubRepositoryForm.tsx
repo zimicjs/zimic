@@ -22,7 +22,7 @@ function GitHubRepositoryForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col space-y-4 w-full">
+    <form onSubmit={handleSubmit} className="flex w-full flex-col space-y-4">
       <Input ref={ownerInputRef} label="Owner" type="text" />
       <Input ref={repositoryInputRef} label="Repository" type="text" />
       <Button type="submit">Search</Button>
