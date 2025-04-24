@@ -86,6 +86,8 @@ const config: Docusaurus.Config = {
   ],
 
   themeConfig: {
+    image: 'img/social-card.png',
+
     colorMode: {
       defaultMode: 'light',
       disableSwitch: false,
