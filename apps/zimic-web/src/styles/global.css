@@ -20,7 +20,7 @@
 
   --color-white-light: #f7fbff;
   --color-white-dark: #e8f2f8;
-  --color-black: #060517;
+  --color-black: #011627;
 }
 
 :root {
@@ -31,9 +31,6 @@
   --ifm-color-primary-dark: var(--color-primary-700);
   --ifm-color-primary-darker: var(--color-primary-800);
   --ifm-color-primary-darkest: var(--color-primary-900);
-
-  --ifm-background-color: var(--color-white-light);
-  --ifm-background-surface-color: var(--ifm-background-color);
 
   --ifm-font-color-base: var(--color-black);
   --ifm-color-content: var(--ifm-font-color-base);
@@ -61,7 +58,7 @@
   --ifm-background-color: var(--color-black);
   --ifm-background-surface-color: var(--ifm-background-color);
 
-  --ifm-font-color-base: var(--color-white-dark);
+  --ifm-font-color-base: var(--color-white-light);
   --ifm-color-content: var(--ifm-font-color-base);
 
   --ifm-footer-link-color: var(--ifm-font-color-base);
