@@ -110,9 +110,9 @@ const config: Docusaurus.Config = {
     image: 'img/social-card.png',
 
     colorMode: {
-      defaultMode: 'light',
+      defaultMode: 'dark',
       disableSwitch: false,
-      respectPrefersColorScheme: true,
+      respectPrefersColorScheme: false,
     },
 
     announcementBar: {
@@ -132,6 +132,7 @@ const config: Docusaurus.Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+      defaultLanguage: 'typescript',
       magicComments: [
         {
           className: 'code-block-highlighted-line',
