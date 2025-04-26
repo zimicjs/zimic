@@ -31,7 +31,7 @@ function App({ Component, pageProps }: AppProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className={cn(inter.className, 'bg-slate-100 flex flex-col items-center justify-center min-h-screen')}>
+      <div className={cn(inter.className, 'flex min-h-screen flex-col items-center justify-center bg-slate-100')}>
         {!isLoadingMockData && <Component {...pageProps} />}
       </div>
     </QueryClientProvider>

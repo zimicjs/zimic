@@ -8,9 +8,13 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Projects',
+      label: 'Get started',
       collapsed: false,
       collapsible: true,
+      link: {
+        type: 'generated-index',
+        slug: 'get-started',
+      },
       items: [
         {
           type: 'link',
@@ -25,6 +29,33 @@ const sidebars: SidebarsConfig = {
         {
           type: 'link',
           href: '/docs/interceptor',
+          label: '@zimic/interceptor',
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'API',
+      collapsed: false,
+      collapsible: true,
+      link: {
+        type: 'generated-index',
+        slug: 'api',
+      },
+      items: [
+        {
+          type: 'link',
+          href: '/docs/http/api',
+          label: '@zimic/http',
+        },
+        {
+          type: 'link',
+          href: '/docs/fetch/api',
+          label: '@zimic/fetch',
+        },
+        {
+          type: 'link',
+          href: '/docs/interceptor/api',
           label: '@zimic/interceptor',
         },
       ],
