@@ -1,23 +1,16 @@
-import Link from '@docusaurus/Link';
-import type { WrapperProps } from '@docusaurus/types';
+import { WrapperProps } from '@docusaurus/types';
 import Content from '@theme-original/Navbar/Content';
-import type ContentType from '@theme/Navbar/Content';
-import React, { type ReactNode } from 'react';
+import ContentType from '@theme/Navbar/Content';
 
-import Button from '@/components/common/Button';
+import GetStartedLink from '@/pages/components/GetStartedLink';
 
 type Props = WrapperProps<typeof ContentType>;
 
-function ContentWrapper(props: Props): ReactNode {
+function ContentWrapper(props: Props) {
   return (
     <>
       <Content {...props} />
-
-      <Link href="/docs">
-        <Button size="sm" className="ml-4 mt-1">
-          Get started
-        </Button>
-      </Link>
+      <GetStartedLink size="sm" className="ml-4 mt-1" />
     </>
   );
 }

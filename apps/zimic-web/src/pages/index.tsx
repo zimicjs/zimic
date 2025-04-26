@@ -1,10 +1,15 @@
-import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 
-import Button from '@/components/common/Button';
+import ChecklistIcon from '@/components/icons/ChecklistIcon';
+import CogIcon from '@/components/icons/CogIcon';
+import HighVoltageIcon from '@/components/icons/HighVoltageIcon';
+import OpenPackageIcon from '@/components/icons/OpenPackageIcon';
 
+import FeatureCard from './components/FeatureCard';
+import GetStartedLink from './components/GetStartedLink';
 import GradientBackground from './components/GradientBackground';
+import HomeSection from './components/HomeSection';
 import ProjectCard from './components/ProjectCard';
 
 function HomePage() {
@@ -14,37 +19,78 @@ function HomePage() {
     <Layout description={siteConfig.tagline}>
       <GradientBackground />
 
-      <main className="mx-auto min-h-96 w-full max-w-7xl flex-1 space-y-32 px-24 py-32">
-        <div className="flex flex-col items-center space-y-12">
-          <div className="relative">
-            <div className="bg-highlight-500/20 dark:bg-highlight-500/30 -z-1 absolute -inset-4 h-[calc(100%+2rem)] w-[calc(100%+2rem)] rounded-full blur-3xl" />
+      <main className="min-h-96 w-full space-y-16 pt-24">
+        <div className="mx-auto max-w-[96rem] space-y-16 px-12">
+          <div className="flex flex-col items-center space-y-8">
+            <div className="relative">
+              <div className="bg-highlight-500/20 dark:bg-highlight-500/30 -z-1 absolute -inset-4 h-[calc(100%+2rem)] w-[calc(100%+2rem)] rounded-full blur-3xl" />
 
-            <img src="/img/logo.svg" alt={siteConfig.title} className="h-36 w-36" />
+              <img src="/img/logo.svg" alt={siteConfig.title} className="h-36 w-36" />
+            </div>
+
+            <div className="flex flex-col items-center space-y-6 text-center">
+              <h1 className="from-highlight-600 via-highlight-400 to-highlight-200 dark:from-highlight-500 dark:to-highlight-200 w-fit bg-gradient-to-br bg-clip-text text-6xl text-transparent">
+                {siteConfig.title}
+              </h1>
+
+              <span className="text-xl font-medium">{siteConfig.tagline}</span>
+            </div>
+
+            <GetStartedLink arrow />
           </div>
 
-          <div className="flex flex-col items-center space-y-6 text-center">
-            <h1 className="from-highlight-600 via-highlight-400 to-highlight-200 w-fit bg-gradient-to-br bg-clip-text text-6xl text-transparent">
-              {siteConfig.title}
-            </h1>
-            <span className="w-fit text-xl font-medium">{siteConfig.tagline}</span>
-
-            <Link href="/docs">
-              <Button>Get started</Button>
-            </Link>
-          </div>
-
-          <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-8">
-            <ProjectCard title="@zimic/http" description="Type-safe HTTP schemas and utilities" href="/docs/http" />
-            <ProjectCard title="@zimic/fetch" description="Minimal type-safe fetch client" href="/docs/fetch" />
+          <div className="mx-auto grid w-full max-w-4xl grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-6">
             <ProjectCard
-              title="@zimic/interceptor"
-              description="Type-safe HTTP request interceptor"
+              title="@zimic/http"
+              description="TypeScript-first HTTP schemas and utilities"
+              href="/docs/http"
+            />
+
+            <ProjectCard href="/docs/fetch" title="@zimic/fetch" description="Typed fetch-like API client" />
+
+            <ProjectCard
               href="/docs/interceptor"
+              title="@zimic/interceptor"
+              description="Type-safe HTTP intercepting and mocking"
             />
           </div>
         </div>
 
-        <div className="">Why choose Zimic?</div>
+        <HomeSection title="Features" className="mx-auto max-w-[96rem]">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-6">
+            <FeatureCard
+              title="Lightweight"
+              description="Minimal bundle size and few dependencies, perfect for client and server-side applications."
+              icon={<HighVoltageIcon aria-hidden="true" />}
+            />
+            <FeatureCard
+              title="TypeScript-First"
+              description="First-class TypeScript support with type generation, inference, validation, and autocompletion."
+              icon={<CogIcon aria-hidden="true" />}
+            />
+            <FeatureCard
+              title="Developer-Friendly"
+              description="Designed with developer experience in mind from the start, with intuitive APIs and comprehensive documentation."
+              icon={<OpenPackageIcon aria-hidden="true" />}
+            />
+
+            <FeatureCard
+              title="Thoroughly Tested"
+              description="Comprehensive test suite and high coverage to ensure reliability and developer confidence."
+              icon={<ChecklistIcon aria-hidden="true" />}
+            />
+          </div>
+        </HomeSection>
+
+        <HomeSection
+          title="Ready?"
+          className="border-primary-600/10 dark:border-primary-600/20 bg-primary-600/5 dark:bg-primary-600/10 mx-auto w-screen border-t"
+        >
+          <div className="-mt-8 flex flex-col items-center space-y-8">
+            <p className="text-center text-xl font-medium">Start building with Zimic today!</p>
+            <GetStartedLink arrow />
+          </div>
+        </HomeSection>
       </main>
     </Layout>
   );

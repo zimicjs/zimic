@@ -7,7 +7,7 @@ import { themes as prismThemes } from 'prism-react-renderer';
 
 const config: Docusaurus.Config = {
   title: 'Zimic',
-  tagline: 'Next-gen, TypeScript-first HTTP integrations',
+  tagline: 'Next-gen TypeScript-first HTTP integrations',
   favicon: 'img/favicon.ico',
 
   organizationName: 'zimicjs',
@@ -294,7 +294,7 @@ const config: Docusaurus.Config = {
         },
       ],
 
-      copyright: `Copyright © ${new Date().getFullYear()} Zimic. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Zimic. <br> Built with 💙 by <a target="_blank" rel="noopener noreferrer" href="https://github.com/diego-aquino">diego-aquino</a> and <a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic/graphs/contributors">contributors</a>.`,
     },
   },
 };
