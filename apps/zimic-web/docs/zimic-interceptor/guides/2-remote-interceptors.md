@@ -12,6 +12,9 @@ slug: /interceptor/guides/interceptors/remote
 
 🚧 This section is a work in progress.
 
+Please use the [old documentation](https://github.com/zimicjs/zimic/wiki) while [zimic.dev](https://zimic.dev) is not
+yet complete.
+
 :::
 
 ## Starting an interceptor server
@@ -20,6 +23,9 @@ slug: /interceptor/guides/interceptors/remote
 
 🚧 This section is a work in progress.
 
+Please use the [old documentation](https://github.com/zimicjs/zimic/wiki) while [zimic.dev](https://zimic.dev) is not
+yet complete.
+
 :::
 
 ### Interceptor server authentication
@@ -27,5 +33,8 @@ slug: /interceptor/guides/interceptors/remote
 :::info
 
 🚧 This section is a work in progress.
+
+Please use the [old documentation](https://github.com/zimicjs/zimic/wiki) while [zimic.dev](https://zimic.dev) is not
+yet complete.
 
 :::
