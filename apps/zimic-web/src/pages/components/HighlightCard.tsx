@@ -10,8 +10,8 @@ function HighlightCard({ hoverable = false, className, children, ...rest }: Prop
   return (
     <article
       className={cn(
-        'border-primary-600/10 dark:border-primary-600/20 bg-primary-600/5 dark:bg-primary-600/10 h-full w-full space-y-4 rounded-xl border-2 p-6 backdrop-blur-sm transition-colors',
-        hoverable && 'hover:bg-primary-600/15 dark:hover:bg-primary-600/25',
+        'border-primary-500/10 dark:border-primary-500/20 bg-primary-500/5 dark:bg-primary-500/15 h-full w-full space-y-4 rounded-xl border-2 p-6 backdrop-blur-sm transition-colors',
+        hoverable && 'hover:bg-primary-500/15 dark:hover:bg-primary-600/30',
         className,
       )}
       {...rest}

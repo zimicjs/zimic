@@ -2,7 +2,7 @@ import { SVGProps } from '@/types/svg';
 
 type Props = SVGProps;
 
-function LongArrowIcon({ title, ...rest }: Props) {
+function ArrowIcon({ title, ...rest }: Props) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -23,4 +23,4 @@ function LongArrowIcon({ title, ...rest }: Props) {
   );
 }
 
-export default LongArrowIcon;
+export default ArrowIcon;

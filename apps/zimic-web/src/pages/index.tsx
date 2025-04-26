@@ -29,7 +29,7 @@ function HomePage() {
             </div>
 
             <div className="flex flex-col items-center space-y-6 text-center">
-              <h1 className="from-highlight-600 via-highlight-400 to-highlight-200 dark:from-highlight-500 dark:to-highlight-200 w-fit bg-gradient-to-br bg-clip-text text-6xl text-transparent">
+              <h1 className="from-highlight-600 via-highlight-400 to-highlight-200 dark:from-highlight-500 dark:via-none dark:to-highlight-200 w-fit bg-gradient-to-br bg-clip-text text-6xl text-transparent">
                 {siteConfig.title}
               </h1>
 
@@ -41,9 +41,9 @@ function HomePage() {
 
           <div className="mx-auto grid w-full max-w-4xl grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-6">
             <ProjectCard
+              href="/docs/http"
               title="@zimic/http"
               description="TypeScript-first HTTP schemas and utilities"
-              href="/docs/http"
             />
 
             <ProjectCard href="/docs/fetch" title="@zimic/fetch" description="Typed fetch-like API client" />
@@ -83,8 +83,8 @@ function HomePage() {
         </HomeSection>
 
         <HomeSection
-          title="Ready?"
-          className="border-primary-600/10 dark:border-primary-600/20 bg-primary-600/5 dark:bg-primary-600/10 mx-auto w-screen border-t"
+          title="Ready to get started?"
+          className="border-primary-500/10 dark:border-primary-500/20 bg-primary-500/5 dark:bg-primary-500/15 elative mx-auto w-screen overflow-hidden border-t"
         >
           <div className="-mt-8 flex flex-col items-center space-y-8">
             <p className="text-center text-xl font-medium">Start building with Zimic today!</p>

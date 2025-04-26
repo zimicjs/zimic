@@ -296,7 +296,18 @@ const config: Docusaurus.Config = {
         },
       ],
 
-      copyright: `Copyright © ${new Date().getFullYear()} Zimic. <br> Built with 💙 by <a target="_blank" rel="noopener noreferrer" href="https://github.com/diego-aquino">diego-aquino</a> and <a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic/graphs/contributors">contributors</a>.`,
+      copyright: `
+        <div class="flex flex-col text-sm space-y-1">
+          <span>Copyright © ${new Date().getFullYear()} Zimic.</span>
+          <span>
+            Built with 💙 by
+            <a target="_blank" rel="noopener noreferrer" href="https://github.com/diego-aquino">diego-aquino</a>
+            and
+            <a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic/graphs/contributors">contributors</a>
+            .
+          </span>
+        </div>
+        `,
     },
   },
 };
