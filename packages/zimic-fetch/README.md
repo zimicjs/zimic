@@ -7,7 +7,7 @@
 </h1>
 
 <p align="center">
-  Next-gen, TypeScript-first fetch-like API client
+  Next-gen TypeScript-first fetch API client
 </p>
 
 <p align="center">
