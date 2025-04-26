@@ -212,8 +212,9 @@ const config: Docusaurus.Config = {
     },
 
     docs: {
+      versionPersistence: 'localStorage',
       sidebar: {
-        hideable: true,
+        hideable: false,
         autoCollapseCategories: false,
       },
     },
