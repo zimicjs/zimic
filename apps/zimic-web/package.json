@@ -30,7 +30,7 @@
     "@docusaurus/types": "3.7.0",
     "@tailwindcss/postcss": "^4.1.4",
     "@types/react": "^19.1.1",
-    "@zimic/eslint-config-react": "workspace:*",
+    "@zimic/eslint-config-docusaurus": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "esbuild-loader": "^4.3.0",
