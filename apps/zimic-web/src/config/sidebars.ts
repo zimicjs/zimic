@@ -8,9 +8,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Get started',
-      collapsed: false,
-      collapsible: true,
+      label: 'Getting started',
       link: {
         type: 'generated-index',
         slug: 'get-started',
@@ -36,8 +34,6 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'API',
-      collapsed: false,
-      collapsible: true,
       link: {
         type: 'generated-index',
         slug: 'api',

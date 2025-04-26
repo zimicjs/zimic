@@ -22,6 +22,24 @@ const config: Docusaurus.Config = {
   onBrokenMarkdownLinks: 'throw',
   onDuplicateRoutes: 'throw',
 
+  headTags: [
+    {
+      tagName: 'link',
+      attributes: { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+    },
+    {
+      tagName: 'link',
+      attributes: { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: 'anonymous' },
+    },
+    {
+      tagName: 'link',
+      attributes: {
+        rel: 'stylesheet',
+        href: 'https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap',
+      },
+    },
+  ],
+
   i18n: {
     defaultLocale: 'en',
     locales: ['en'],
@@ -47,6 +65,7 @@ const config: Docusaurus.Config = {
   },
 
   plugins: [
+    ['./src/plugins/importAliases.ts', {}],
     ['./src/plugins/tailwindcss.ts', {}],
     [
       '@docusaurus/plugin-content-docs',
@@ -70,8 +89,8 @@ const config: Docusaurus.Config = {
       {
         path: 'src/pages',
         routeBasePath: '',
-        include: ['**/*.{ts,tsx,md,mdx}'],
-        exclude: ['**/_*.{ts,tsx,md,mdx}', '**/_*/**', '**/*.test.{ts,tsx}', '**/__tests__/**'],
+        include: ['**/index.{ts,tsx,md,mdx}'],
+        exclude: [],
         mdxPageComponent: '@theme/MDXPage',
       } satisfies PluginContentPages.Options,
     ],
@@ -84,6 +103,7 @@ const config: Docusaurus.Config = {
         filename: 'sitemap.xml',
       } satisfies PluginSitemap.Options,
     ],
+    ['@docusaurus/plugin-svgr', { svgrConfig: {} }],
   ],
 
   themeConfig: {
@@ -127,7 +147,7 @@ const config: Docusaurus.Config = {
 
     navbar: {
       title: 'Zimic',
-      hideOnScroll: true,
+      hideOnScroll: false,
       logo: {
         alt: 'Zimic Logo',
         src: 'img/logo.svg',
@@ -160,7 +180,7 @@ const config: Docusaurus.Config = {
         },
         {
           label: 'Docs',
-          to: 'docs/intro',
+          to: 'docs',
           position: 'left',
         },
         {
@@ -205,6 +225,27 @@ const config: Docusaurus.Config = {
     footer: {
       links: [
         {
+          title: 'Learn',
+          items: [
+            {
+              label: 'Introduction',
+              to: 'docs',
+            },
+            {
+              label: 'Motivation',
+              to: 'docs/motivation',
+            },
+            {
+              label: 'Examples',
+              to: 'docs/examples',
+            },
+            {
+              label: 'API',
+              to: 'docs/api',
+            },
+          ],
+        },
+        {
           title: 'Projects',
           items: [
             {
@@ -218,27 +259,6 @@ const config: Docusaurus.Config = {
             {
               label: '@zimic/interceptor',
               to: 'docs/interceptor',
-            },
-          ],
-        },
-        {
-          title: 'Learn',
-          items: [
-            {
-              label: 'Introduction',
-              to: 'docs/intro',
-            },
-            {
-              label: 'Motivation',
-              to: 'docs/motivation',
-            },
-            {
-              label: 'Examples',
-              to: 'docs/examples',
-            },
-            {
-              label: 'API',
-              to: 'docs/api',
             },
           ],
         },
