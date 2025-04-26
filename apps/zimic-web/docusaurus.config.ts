@@ -96,9 +96,9 @@ const config: Docusaurus.Config = {
     },
 
     announcementBar: {
-      id: 'announcement-bar-github-start',
+      id: 'announcement-bar-github-star',
       content:
-        '⭐️ If you like Zimic, give it a star on ' +
+        '⭐️ Give Zimic a star on ' +
         '<a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic">GitHub</a>! ⭐️',
       textColor: 'var(--ifm-footer-background-color)',
       backgroundColor: 'var(--ifm-color-content)',
@@ -137,11 +137,6 @@ const config: Docusaurus.Config = {
       },
       items: [
         {
-          label: 'Get started',
-          to: 'docs',
-          position: 'left',
-        },
-        {
           label: 'Projects',
           type: 'dropdown',
           position: 'left',
@@ -164,6 +159,21 @@ const config: Docusaurus.Config = {
           ],
         },
         {
+          label: 'Docs',
+          to: 'docs/intro',
+          position: 'left',
+        },
+        {
+          label: 'Examples',
+          to: 'docs/examples',
+          position: 'left',
+        },
+        {
+          label: 'API',
+          to: 'docs/api',
+          position: 'left',
+        },
+        {
           type: 'localeDropdown',
           position: 'right',
           dropdownItemsAfter: [
@@ -181,7 +191,6 @@ const config: Docusaurus.Config = {
     },
 
     docs: {
-      versionPersistence: 'localStorage',
       sidebar: {
         hideable: true,
         autoCollapseCategories: false,
@@ -196,23 +205,6 @@ const config: Docusaurus.Config = {
     footer: {
       links: [
         {
-          title: 'Learn',
-          items: [
-            {
-              label: 'Introduction',
-              to: 'docs',
-            },
-            {
-              label: 'Motivation',
-              to: 'docs',
-            },
-            {
-              label: 'Examples',
-              to: 'docs/examples',
-            },
-          ],
-        },
-        {
           title: 'Projects',
           items: [
             {
@@ -226,6 +218,27 @@ const config: Docusaurus.Config = {
             {
               label: '@zimic/interceptor',
               to: 'docs/interceptor',
+            },
+          ],
+        },
+        {
+          title: 'Learn',
+          items: [
+            {
+              label: 'Introduction',
+              to: 'docs/intro',
+            },
+            {
+              label: 'Motivation',
+              to: 'docs/motivation',
+            },
+            {
+              label: 'Examples',
+              to: 'docs/examples',
+            },
+            {
+              label: 'API',
+              to: 'docs/api',
             },
           ],
         },
