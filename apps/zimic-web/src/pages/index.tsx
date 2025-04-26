@@ -1,6 +1,8 @@
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 
+import ZimicLogo from '@@/public/img/logo.svg';
+
 import ChecklistIcon from '@/components/icons/ChecklistIcon';
 import CogIcon from '@/components/icons/CogIcon';
 import HighVoltageIcon from '@/components/icons/HighVoltageIcon';
@@ -16,20 +18,22 @@ function HomePage() {
   const { siteConfig } = useDocusaurusContext();
 
   return (
-    <Layout description={siteConfig.tagline}>
+    <Layout description={siteConfig.tagline} wrapperClassName="overflow-x-hidden">
       <GradientBackground />
 
       <main className="min-h-96 w-full space-y-16 pt-24">
         <div className="mx-auto max-w-[96rem] space-y-16 px-12">
           <div className="flex flex-col items-center space-y-8">
             <div className="relative">
-              <div className="bg-highlight-500/20 dark:bg-highlight-500/30 -z-1 absolute -inset-4 h-[calc(100%+2rem)] w-[calc(100%+2rem)] rounded-full blur-3xl" />
+              <div className="bg-highlight-500/40 -z-1 absolute -inset-4 h-[calc(100%+2rem)] w-[calc(100%+2rem)] rounded-full blur-3xl" />
 
-              <img src="/img/logo.svg" alt={siteConfig.title} className="h-36 w-36" />
+              {/* This component is an SVG that acts as a logo. */}
+              {/* eslint-disable-next-line jsx-a11y/prefer-tag-over-role */}
+              <ZimicLogo role="img" title={siteConfig.title} className="h-36 w-36" />
             </div>
 
             <div className="flex flex-col items-center space-y-6 text-center">
-              <h1 className="from-highlight-600 via-highlight-400 to-highlight-200 dark:from-highlight-500 dark:via-none dark:to-highlight-200 w-fit bg-gradient-to-br bg-clip-text text-6xl text-transparent">
+              <h1 className="from-highlight-600 via-highlight-400 to-highlight-300 dark:from-highlight-500 dark:via-highlight-300 dark:to-highlight-300 w-fit bg-gradient-to-br bg-clip-text text-6xl text-transparent">
                 {siteConfig.title}
               </h1>
 

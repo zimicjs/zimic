@@ -8,7 +8,8 @@ function importAliasesPlugin(_context: PluginRouteContext, _options: PluginOptio
       return {
         resolve: {
           alias: {
-            '@/*': path.resolve('src/*'), // maps @something to path/to/something
+            '@/*': path.resolve('./src/*'), // maps @something to path/to/something
+            '@@/*': path.resolve('./*'), // maps @something to path/to/something
           },
         },
       };

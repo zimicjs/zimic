@@ -18,7 +18,7 @@ function ProjectCardLogo({ title }: Props) {
     <div
       role="img"
       aria-label={title}
-      className="from-highlight-200 to-highlight-500 dark:from-highlight-300 dark:to-highlight-500 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br text-xl font-bold text-white"
+      className="from-highlight-600 via-highlight-400 to-highlight-200 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br text-xl font-bold text-white"
     >
       {projectInitialLetter}
     </div>

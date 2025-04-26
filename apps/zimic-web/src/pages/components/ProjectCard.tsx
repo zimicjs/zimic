@@ -14,7 +14,7 @@ function ProjectCard({ title, description, href }: Props) {
     <Link href={href} className="no-underline">
       <HighlightCard hoverable className="flex flex-col items-center text-center">
         <ProjectCardLogo title={title} />
-        <h3 className="text-xl font-bold text-slate-900 dark:text-white">{title}</h3>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white">{title}</h2>
         <p className="mb-0 text-base text-slate-600 dark:text-slate-300">{description}</p>
       </HighlightCard>
     </Link>
