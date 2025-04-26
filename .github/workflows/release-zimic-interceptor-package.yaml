@@ -123,5 +123,6 @@ jobs:
       - name: Publish release comments
         uses: ./.github/actions/zimic-release-comments
         with:
+          type: package
           ref-name: ${{ github.ref_name }}
           project-name: '@zimic/interceptor'

@@ -2,6 +2,9 @@ name: Zimic Release Comments
 description: Zimic Release Comments
 
 inputs:
+  type:
+    description: The type of the release (package or documentation)
+    required: true
   ref-name:
     description: The Git reference name to create release comments for
     required: true
@@ -25,6 +28,8 @@ runs:
 
           const githubOwner = 'zimicjs';
           const githubRepository = 'zimic';
+
+          const type = '${{ inputs.type }}';
 
           let milestone = undefined;
 
@@ -72,8 +77,8 @@ runs:
                     body: [
                       `### Released in [${tag}](https://github.com/${githubOwner}/${githubRepository}/releases/tag/${tag}) :tada:\n`,
                       `- [**:pushpin: Release notes**](https://github.com/${githubOwner}/${githubRepository}/releases/tag/${tag})`,
-                      `- [**:package: NPM package**](https://www.npmjs.com/package/${projectName}/v/${version})`,
-                    ].join('\n'),
+                      type === 'package' && `- [**:package: NPM package**](https://www.npmjs.com/package/${projectName}/v/${version})`,
+                    ].filter(Boolean).join('\n'),
                   });
 
                   console.log(`Release comment created on #${issue.number}.`);
