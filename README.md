@@ -7,7 +7,7 @@
 </h1>
 
 <p align="center">
-  Next-gen, TypeScript-first HTTP integrations
+  Next-gen TypeScript-first HTTP integrations
 </p>
 
 <p align="center">

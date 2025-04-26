@@ -1,3 +1,3 @@
-import reactConfig from '@zimic/eslint-config-react';
+import docusaurusConfig from '@zimic/eslint-config-docusaurus';
 
-export default reactConfig;
+export default docusaurusConfig;

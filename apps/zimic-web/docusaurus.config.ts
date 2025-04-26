@@ -7,7 +7,7 @@ import { themes as prismThemes } from 'prism-react-renderer';
 
 const config: Docusaurus.Config = {
   title: 'Zimic',
-  tagline: 'Next-gen, TypeScript-first HTTP integrations',
+  tagline: 'Next-gen TypeScript-first HTTP integrations',
   favicon: 'img/favicon.ico',
 
   organizationName: 'zimicjs',
@@ -21,6 +21,24 @@ const config: Docusaurus.Config = {
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'throw',
   onDuplicateRoutes: 'throw',
+
+  headTags: [
+    {
+      tagName: 'link',
+      attributes: { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+    },
+    {
+      tagName: 'link',
+      attributes: { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: 'anonymous' },
+    },
+    {
+      tagName: 'link',
+      attributes: {
+        rel: 'stylesheet',
+        href: 'https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400..700;1,400..900&display=swap',
+      },
+    },
+  ],
 
   i18n: {
     defaultLocale: 'en',
@@ -47,6 +65,7 @@ const config: Docusaurus.Config = {
   },
 
   plugins: [
+    ['./src/plugins/importAliases.ts', {}],
     ['./src/plugins/tailwindcss.ts', {}],
     [
       '@docusaurus/plugin-content-docs',
@@ -70,8 +89,8 @@ const config: Docusaurus.Config = {
       {
         path: 'src/pages',
         routeBasePath: '',
-        include: ['**/*.{ts,tsx,md,mdx}'],
-        exclude: ['**/_*.{ts,tsx,md,mdx}', '**/_*/**', '**/*.test.{ts,tsx}', '**/__tests__/**'],
+        include: ['**/index.{ts,tsx,md,mdx}'],
+        exclude: [],
         mdxPageComponent: '@theme/MDXPage',
       } satisfies PluginContentPages.Options,
     ],
@@ -84,15 +103,16 @@ const config: Docusaurus.Config = {
         filename: 'sitemap.xml',
       } satisfies PluginSitemap.Options,
     ],
+    ['@docusaurus/plugin-svgr', { svgrConfig: {} }],
   ],
 
   themeConfig: {
     image: 'img/social-card.png',
 
     colorMode: {
-      defaultMode: 'light',
+      defaultMode: 'dark',
       disableSwitch: false,
-      respectPrefersColorScheme: true,
+      respectPrefersColorScheme: false,
     },
 
     announcementBar: {
@@ -112,6 +132,7 @@ const config: Docusaurus.Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+      defaultLanguage: 'typescript',
       magicComments: [
         {
           className: 'code-block-highlighted-line',
@@ -127,7 +148,7 @@ const config: Docusaurus.Config = {
 
     navbar: {
       title: 'Zimic',
-      hideOnScroll: true,
+      hideOnScroll: false,
       logo: {
         alt: 'Zimic Logo',
         src: 'img/logo.svg',
@@ -160,7 +181,7 @@ const config: Docusaurus.Config = {
         },
         {
           label: 'Docs',
-          to: 'docs/intro',
+          to: 'docs',
           position: 'left',
         },
         {
@@ -191,8 +212,9 @@ const config: Docusaurus.Config = {
     },
 
     docs: {
+      versionPersistence: 'localStorage',
       sidebar: {
-        hideable: true,
+        hideable: false,
         autoCollapseCategories: false,
       },
     },
@@ -204,6 +226,27 @@ const config: Docusaurus.Config = {
 
     footer: {
       links: [
+        {
+          title: 'Learn',
+          items: [
+            {
+              label: 'Introduction',
+              to: 'docs',
+            },
+            {
+              label: 'Motivation',
+              to: 'docs/motivation',
+            },
+            {
+              label: 'Examples',
+              to: 'docs/examples',
+            },
+            {
+              label: 'API',
+              to: 'docs/api',
+            },
+          ],
+        },
         {
           title: 'Projects',
           items: [
@@ -218,27 +261,6 @@ const config: Docusaurus.Config = {
             {
               label: '@zimic/interceptor',
               to: 'docs/interceptor',
-            },
-          ],
-        },
-        {
-          title: 'Learn',
-          items: [
-            {
-              label: 'Introduction',
-              to: 'docs/intro',
-            },
-            {
-              label: 'Motivation',
-              to: 'docs/motivation',
-            },
-            {
-              label: 'Examples',
-              to: 'docs/examples',
-            },
-            {
-              label: 'API',
-              to: 'docs/api',
             },
           ],
         },
@@ -274,7 +296,18 @@ const config: Docusaurus.Config = {
         },
       ],
 
-      copyright: `Copyright © ${new Date().getFullYear()} Zimic. Built with Docusaurus.`,
+      copyright: `
+        <div class="flex flex-col text-sm space-y-1">
+          <span>Copyright © ${new Date().getFullYear()} Zimic.</span>
+          <span>
+            Built with 💙 by
+            <a target="_blank" rel="noopener noreferrer" href="https://github.com/diego-aquino">diego-aquino</a>
+            and
+            <a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic/graphs/contributors">contributors</a>
+            .
+          </span>
+        </div>
+        `,
     },
   },
 };

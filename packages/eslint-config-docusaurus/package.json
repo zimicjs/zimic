@@ -1,0 +1,21 @@
+{
+  "name": "@zimic/eslint-config-docusaurus",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "*.js"
+  ],
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "@docusaurus/eslint-plugin": "^3.7.0",
+    "@eslint/compat": "^1.2.8",
+    "@zimic/eslint-config-react": "workspace:*"
+  },
+  "peerDependencies": {
+    "eslint": ">=9.0.0",
+    "typescript": ">=5.0.0"
+  }
+}

@@ -7,7 +7,7 @@
 </h1>
 
 <p align="center">
-  Next-gen, TypeScript-first HTTP intercepting and mocking
+  Next-gen TypeScript-first HTTP intercepting and mocking
 </p>
 
 <p align="center">

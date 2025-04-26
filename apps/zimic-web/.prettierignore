@@ -8,10 +8,6 @@ tsconfig.tsbuildinfo
 
 # Build
 */.docusaurus
-*/public/mockServiceWorker.js
-
-# Tests
-*/tests/coverage
 
 # Miscellaneous
 .vscode
