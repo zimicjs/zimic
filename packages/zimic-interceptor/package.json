@@ -105,21 +105,21 @@
     "bufferutil": "4.0.9"
   },
   "devDependencies": {
-    "@types/node": "^22.14.1",
+    "@types/node": "^22.15.2",
     "@types/ws": "^8.18.1",
     "@types/yargs": "^17.0.33",
-    "@vitest/browser": "^3.1.1",
-    "@vitest/coverage-istanbul": "^3.1.1",
+    "@vitest/browser": "^3.1.2",
+    "@vitest/coverage-istanbul": "^3.1.2",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^8.0.0",
-    "eslint": "^9.25.0",
+    "eslint": "^9.25.1",
     "playwright": "^1.52.0",
     "tsup": "^8.4.0",
     "typescript": "^5.8.3",
-    "vitest": "^3.1.1"
+    "vitest": "^3.1.2"
   },
   "peerDependencies": {
     "@zimic/http": "^0.3.0 || workspace:*",
