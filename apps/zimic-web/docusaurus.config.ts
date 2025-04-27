@@ -120,7 +120,7 @@ const config: Docusaurus.Config = {
       content:
         '⭐️ Give Zimic a star on ' +
         '<a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic">GitHub</a>! ⭐️',
-      textColor: 'var(--ifm-footer-background-color)',
+      textColor: 'var(--ifm-background-color)',
       backgroundColor: 'var(--ifm-color-content)',
       isCloseable: true,
     },

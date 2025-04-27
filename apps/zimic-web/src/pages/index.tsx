@@ -94,7 +94,9 @@ function HomePage() {
           className="border-primary-500/10 dark:border-primary-500/20 bg-primary-500/5 dark:bg-primary-500/15 elative mx-auto w-screen overflow-hidden border-t"
         >
           <div className="-mt-8 flex flex-col items-center space-y-8">
-            <p className="text-center text-xl font-medium">Start building with Zimic today!</p>
+            <p className="text-center text-xl font-medium text-slate-700 dark:text-slate-200">
+              Start building with Zimic today!
+            </p>
             <GetStartedLink arrow />
           </div>
         </HomeSection>
