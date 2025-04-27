@@ -3,7 +3,7 @@
   "version": "0.1.1",
   "private": true,
   "scripts": {
-    "dev": "docusaurus start --no-open",
+    "dev": "docusaurus start --host :: --no-open",
     "build": "docusaurus build",
     "start": "docusaurus serve --no-open",
     "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
