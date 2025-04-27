@@ -46,6 +46,8 @@
 
   --ifm-code-font-size: 95%;
 
+  --ifm-hover-overlay: color-mix(in oklab, var(--color-primary-600) /* #2167ed */ 5%, transparent);
+
   --highlighted-code-background-color: rgba(0, 0, 0, 0.1);
 
   --error-code-background-color: rgba(250, 56, 62, 0.2);
@@ -76,6 +78,8 @@
 
   --ifm-footer-link-color: var(--ifm-font-color-base);
   --ifm-footer-background-color: var(--ifm-navbar-background-color);
+
+  --ifm-hover-overlay: color-mix(in oklab, var(--color-primary-600) /* #2167ed */ 20%, transparent);
 
   --highlighted-code-background-color: rgba(0, 0, 0, 0.3);
 
@@ -214,8 +218,9 @@ textarea {
   @apply rounded-lg;
 }
 
+.card,
 .pagination-nav__link {
-  @apply hover:bg-primary-600/5 dark:hover:bg-primary-600/20 hover:border-primary-600/20 border-2 border-transparent transition-colors;
+  @apply hover:bg-primary-600/5 dark:hover:bg-primary-600/20 hover:border-primary-600/20 shadow-none transition-colors;
 }
 
 @media (max-width: 996px) {
