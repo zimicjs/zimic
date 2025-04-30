@@ -118,15 +118,11 @@ const config: Docusaurus.Config = {
     announcementBar: {
       id: 'announcement-bar-github-star',
       content:
-        '⭐️ Give Zimic a star on ' +
+        'If you like Zimic, give it a star on ' +
         '<a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic">GitHub</a>! ⭐️',
       textColor: 'var(--ifm-background-color)',
       backgroundColor: 'var(--ifm-color-content)',
       isCloseable: true,
-    },
-
-    liveCodeBlock: {
-      playgroundPosition: 'bottom',
     },
 
     prism: {
