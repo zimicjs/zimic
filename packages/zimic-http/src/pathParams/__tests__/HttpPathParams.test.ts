@@ -18,7 +18,7 @@ describe('HttpPathParams', () => {
 
         requiredEnum: 'value1' | 'value2';
         optionalEnum?: 'value1' | 'value2';
-        nullableString: string | null;
+        nullableNumber: number | null;
 
         stringArray: string[];
         numberArray: number[];
@@ -47,15 +47,20 @@ describe('HttpPathParams', () => {
 
         requiredEnum: 'value1' | 'value2';
         optionalEnum?: 'value1' | 'value2';
-        nullableString: string | undefined;
-      }>();
+        nullableNumber: `${number}` | 'null';
 
-      expectTypeOf<HttpPathParamsSerialized<string[]>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpPathParamsSerialized<Date>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpPathParamsSerialized<() => void>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpPathParamsSerialized<symbol>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpPathParamsSerialized<Map<never, never>>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpPathParamsSerialized<Set<never>>>().toEqualTypeOf<never>();
+        stringArray: string;
+        numberArray: string;
+        booleanArray: string;
+
+        object: string;
+
+        date: string;
+        method: string;
+        map: string;
+        set: string;
+        error: string;
+      }>();
     });
   });
 });
