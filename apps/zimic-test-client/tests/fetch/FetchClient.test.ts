@@ -150,7 +150,9 @@ describe('Fetch client', async () => {
         expectTypeOf(creationHandler.requests[0].body).toEqualTypeOf<UserCreationRequestBody>();
         expect(creationHandler.requests[0].body).toEqual(creationPayload);
 
-        expectTypeOf(creationHandler.requests[0].raw).toEqualTypeOf<HttpRequest<UserCreationRequestBody>>();
+        expectTypeOf(creationHandler.requests[0].raw).toEqualTypeOf<
+          HttpRequest<UserCreationRequestBody, { 'content-type': 'application/json' }>
+        >();
         expect(creationHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(creationHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
         expect(await creationHandler.requests[0].raw.json()).toEqual(creationPayload);
@@ -158,7 +160,9 @@ describe('Fetch client', async () => {
         expectTypeOf(creationHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>>();
         expect(creationHandler.requests[0].response.body).toEqual(createdUser);
 
-        expectTypeOf(creationHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<JSONSerialized<User>, 201>>();
+        expectTypeOf(creationHandler.requests[0].response.raw).branded.toEqualTypeOf<
+          HttpResponse<JSONSerialized<User>, { 'x-user-id': User['id']; 'content-type': 'application/json' }, 201>
+        >();
         expect(creationHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(creationHandler.requests[0].response.raw.json).toEqualTypeOf<
           () => Promise<JSONSerialized<User>>
@@ -202,7 +206,9 @@ describe('Fetch client', async () => {
         expectTypeOf(creationHandler.requests[0].body).toEqualTypeOf<UserCreationRequestBody>();
         expect(creationHandler.requests[0].body).toEqual(invalidPayload);
 
-        expectTypeOf(creationHandler.requests[0].raw).toEqualTypeOf<HttpRequest<UserCreationRequestBody>>();
+        expectTypeOf(creationHandler.requests[0].raw).toEqualTypeOf<
+          HttpRequest<UserCreationRequestBody, { 'content-type': 'application/json' }>
+        >();
         expect(creationHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(creationHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
         expect(await creationHandler.requests[0].raw.json()).toEqual(invalidPayload);
@@ -210,7 +216,9 @@ describe('Fetch client', async () => {
         expectTypeOf(creationHandler.requests[0].response.body).toEqualTypeOf<ValidationError>();
         expect(creationHandler.requests[0].response.body).toEqual(validationError);
 
-        expectTypeOf(creationHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<ValidationError, 400>>();
+        expectTypeOf(creationHandler.requests[0].response.raw).toEqualTypeOf<
+          HttpResponse<ValidationError, { 'content-type': 'application/json' }, 400>
+        >();
         expect(creationHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(creationHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<ValidationError>>();
         expect(await creationHandler.requests[0].response.raw.json()).toEqual(validationError);
@@ -251,7 +259,9 @@ describe('Fetch client', async () => {
         expectTypeOf(creationHandler.requests[0].body).toEqualTypeOf<UserCreationRequestBody>();
         expect(creationHandler.requests[0].body).toEqual(conflictingPayload);
 
-        expectTypeOf(creationHandler.requests[0].raw).toEqualTypeOf<HttpRequest<UserCreationRequestBody>>();
+        expectTypeOf(creationHandler.requests[0].raw).toEqualTypeOf<
+          HttpRequest<UserCreationRequestBody, { 'content-type': 'application/json' }>
+        >();
         expect(creationHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(creationHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
         expect(await creationHandler.requests[0].raw.json()).toEqual(creationPayload);
@@ -259,7 +269,9 @@ describe('Fetch client', async () => {
         expectTypeOf(creationHandler.requests[0].response.body).toEqualTypeOf<ConflictError>();
         expect(creationHandler.requests[0].response.body).toEqual(conflictError);
 
-        expectTypeOf(creationHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<ConflictError, 409>>();
+        expectTypeOf(creationHandler.requests[0].response.raw).toEqualTypeOf<
+          HttpResponse<ConflictError, { 'content-type': 'application/json' }, 409>
+        >();
         expect(creationHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(creationHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<ConflictError>>();
         expect(await creationHandler.requests[0].response.raw.json()).toEqual(conflictError);
@@ -332,7 +344,7 @@ describe('Fetch client', async () => {
         expectTypeOf(listHandler.requests[0].body).toEqualTypeOf<null>();
         expect(listHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
         expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
         expect(await listHandler.requests[0].raw.text()).toBe('');
@@ -340,7 +352,9 @@ describe('Fetch client', async () => {
         expectTypeOf(listHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>[]>();
         expect(listHandler.requests[0].response.body).toEqual(users.map(serializeUser));
 
-        expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<JSONSerialized<User>[], 200>>();
+        expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<
+          HttpResponse<JSONSerialized<User>[], { 'content-type': 'application/json' }, 200>
+        >();
         expect(listHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(listHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>[]>>();
         expect(await listHandler.requests[0].response.raw.json()).toEqual(users.map(serializeUser));
@@ -374,7 +388,7 @@ describe('Fetch client', async () => {
         expectTypeOf(listHandler.requests[0].body).toEqualTypeOf<null>();
         expect(listHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
         expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
         expect(await listHandler.requests[0].raw.text()).toBe('');
@@ -382,7 +396,9 @@ describe('Fetch client', async () => {
         expectTypeOf(listHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>[]>();
         expect(listHandler.requests[0].response.body).toEqual([serializeUser(user)]);
 
-        expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<JSONSerialized<User>[], 200>>();
+        expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<
+          HttpResponse<JSONSerialized<User>[], { 'content-type': 'application/json' }, 200>
+        >();
         expect(listHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(listHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>[]>>();
         expect(await listHandler.requests[0].response.raw.json()).toEqual([serializeUser(user)]);
@@ -420,7 +436,7 @@ describe('Fetch client', async () => {
         expectTypeOf(listHandler.requests[0].body).toEqualTypeOf<null>();
         expect(listHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
         expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
         expect(await listHandler.requests[0].raw.text()).toBe('');
@@ -428,7 +444,9 @@ describe('Fetch client', async () => {
         expectTypeOf(listHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>[]>();
         expect(listHandler.requests[0].response.body).toEqual(usersSortedByDescendingEmail.map(serializeUser));
 
-        expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<JSONSerialized<User>[], 200>>();
+        expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<
+          HttpResponse<JSONSerialized<User>[], { 'content-type': 'application/json' }, 200>
+        >();
         expect(listHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(listHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>[]>>();
         expect(await listHandler.requests[0].response.raw.json()).toEqual(
@@ -475,7 +493,7 @@ describe('Fetch client', async () => {
         expectTypeOf(getHandler.requests[0].body).toEqualTypeOf<null>();
         expect(getHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(getHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expectTypeOf(getHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
         expect(getHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(getHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
         expect(await getHandler.requests[0].raw.text()).toBe('');
@@ -483,7 +501,9 @@ describe('Fetch client', async () => {
         expectTypeOf(getHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>>();
         expect(getHandler.requests[0].response.body).toEqual(serializeUser(user));
 
-        expectTypeOf(getHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<JSONSerialized<User>, 200>>();
+        expectTypeOf(getHandler.requests[0].response.raw).toEqualTypeOf<
+          HttpResponse<JSONSerialized<User>, { 'content-type': 'application/json' }, 200>
+        >();
         expect(getHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(getHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>>>();
         expect(await getHandler.requests[0].response.raw.json()).toEqual(serializeUser(user));
@@ -526,7 +546,7 @@ describe('Fetch client', async () => {
         expectTypeOf(getHandler.requests[0].body).toEqualTypeOf<null>();
         expect(getHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(getHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expectTypeOf(getHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
         expect(getHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(getHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
         expect(await getHandler.requests[0].raw.text()).toBe('');
@@ -534,7 +554,9 @@ describe('Fetch client', async () => {
         expectTypeOf(getHandler.requests[0].response.body).toEqualTypeOf<NotFoundError>();
         expect(getHandler.requests[0].response.body).toEqual(notFoundError);
 
-        expectTypeOf(getHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<NotFoundError, 404>>();
+        expectTypeOf(getHandler.requests[0].response.raw).toEqualTypeOf<
+          HttpResponse<NotFoundError, { 'content-type': 'application/json' }, 404>
+        >();
         expect(getHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(getHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<NotFoundError>>();
         expect(await getHandler.requests[0].response.raw.json()).toEqual(notFoundError);
@@ -574,7 +596,7 @@ describe('Fetch client', async () => {
         expectTypeOf(deleteHandler.requests[0].body).toEqualTypeOf<null>();
         expect(deleteHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(deleteHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expectTypeOf(deleteHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
         expect(deleteHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(deleteHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
         expect(await deleteHandler.requests[0].raw.text()).toBe('');
@@ -582,7 +604,7 @@ describe('Fetch client', async () => {
         expectTypeOf(deleteHandler.requests[0].response.body).toEqualTypeOf<null>();
         expect(deleteHandler.requests[0].response.body).toBe(null);
 
-        expectTypeOf(deleteHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<null, 204>>();
+        expectTypeOf(deleteHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<null, never, 204>>();
         expect(deleteHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(deleteHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<null>>();
         expect(await deleteHandler.requests[0].response.raw.text()).toBe('');
@@ -621,7 +643,7 @@ describe('Fetch client', async () => {
         expectTypeOf(deleteHandler.requests[0].body).toEqualTypeOf<null>();
         expect(deleteHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(deleteHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expectTypeOf(deleteHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
         expect(deleteHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(deleteHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
         expect(await deleteHandler.requests[0].raw.text()).toBe('');
@@ -629,7 +651,9 @@ describe('Fetch client', async () => {
         expectTypeOf(deleteHandler.requests[0].response.body).toEqualTypeOf<NotFoundError>();
         expect(deleteHandler.requests[0].response.body).toEqual(notFoundError);
 
-        expectTypeOf(deleteHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<NotFoundError, 404>>();
+        expectTypeOf(deleteHandler.requests[0].response.raw).toEqualTypeOf<
+          HttpResponse<NotFoundError, { 'content-type': 'application/json' }, 404>
+        >();
         expect(deleteHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(deleteHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<NotFoundError>>();
         expect(await deleteHandler.requests[0].response.raw.json()).toEqual(notFoundError);
@@ -698,7 +722,7 @@ describe('Fetch client', async () => {
         expectTypeOf(listHandler.requests[0].body).toEqualTypeOf<null>();
         expect(listHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
         expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
         expect(await listHandler.requests[0].raw.text()).toBe('');
@@ -706,7 +730,9 @@ describe('Fetch client', async () => {
         expectTypeOf(listHandler.requests[0].response.body).toEqualTypeOf<Notification[]>();
         expect(listHandler.requests[0].response.body).toEqual([notification]);
 
-        expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<Notification[], 200>>();
+        expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<
+          HttpResponse<Notification[], { 'content-type': 'application/json' }, 200>
+        >();
         expect(listHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(listHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<Notification[]>>();
         expect(await listHandler.requests[0].response.raw.json()).toEqual([notification]);
