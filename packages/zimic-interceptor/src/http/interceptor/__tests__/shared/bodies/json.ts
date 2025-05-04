@@ -58,7 +58,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         };
         response: {
           200: {
-            headers?: { 'content-type'?: string };
+            headers?: { 'content-type'?: 'application/json; charset=utf-8' };
             body: UserAsType;
           };
         };
@@ -108,7 +108,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         expectTypeOf(request.response.body).toEqualTypeOf<UserAsType>();
         expect(request.response.body).toEqual(users[0]);
 
-        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<UserAsType>>();
+        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<UserAsType, { 'content-type': string }>>();
         expect(request.raw).toBeInstanceOf(Request);
         expect(request.raw.url).toBe(request.url);
         expect(request.raw.method).toBe(method);
@@ -119,7 +119,9 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         expect(await request.raw.json()).toEqual<UserAsType>(users[0]);
         expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
 
-        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<UserAsType, 200>>();
+        expectTypeOf(request.response.raw).toEqualTypeOf<
+          HttpResponse<UserAsType, { 'content-type'?: 'application/json; charset=utf-8' }, 200>
+        >();
         expect(request.response.raw).toBeInstanceOf(Response);
         expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
         expect(request.response.raw.status).toBe(200);
@@ -140,7 +142,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         };
         response: {
           200: {
-            headers?: { 'content-type'?: string };
+            headers?: { 'content-type'?: 'application/json; charset=utf-8' };
             body: UserAsInterface;
           };
         };
@@ -190,7 +192,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         expectTypeOf(request.response.body).toEqualTypeOf<UserAsInterface>();
         expect(request.response.body).toEqual(users[0]);
 
-        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<UserAsInterface>>();
+        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<UserAsInterface, { 'content-type': string }>>();
         expect(request.raw).toBeInstanceOf(Request);
         expect(request.raw.url).toBe(request.url);
         expect(request.raw.method).toBe(method);
@@ -201,7 +203,9 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         expect(await request.raw.json()).toEqual<UserAsInterface>(users[0]);
         expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
 
-        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<UserAsInterface, 200>>();
+        expectTypeOf(request.response.raw).toEqualTypeOf<
+          HttpResponse<UserAsInterface, { 'content-type'?: 'application/json; charset=utf-8' }, 200>
+        >();
         expect(request.response.raw).toBeInstanceOf(Response);
         expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
         expect(request.response.raw.status).toBe(200);
@@ -282,7 +286,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         expectTypeOf(request.response.body).toEqualTypeOf<UserAsNonJSONType>();
         expect(request.response.body).toEqual(users[0]);
 
-        expectTypeOf(request.raw).branded.toEqualTypeOf<HttpRequest<UserAsNonJSONInterface>>();
+        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<UserAsNonJSONInterface, { 'content-type': string }>>();
         expect(request.raw).toBeInstanceOf(Request);
         expect(request.raw.url).toBe(request.url);
         expect(request.raw.method).toBe(method);
@@ -293,7 +297,9 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         expect(await request.raw.json()).toEqual<JSONSerialized<UserAsNonJSONInterface>>(users[0]);
         expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
 
-        expectTypeOf(request.response.raw).branded.toEqualTypeOf<HttpResponse<UserAsNonJSONType, 200>>();
+        expectTypeOf(request.response.raw).toEqualTypeOf<
+          HttpResponse<UserAsNonJSONType, { 'content-type'?: string }, 200>
+        >();
         expect(request.response.raw).toBeInstanceOf(Response);
         expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
         expect(request.response.raw.status).toBe(200);
@@ -364,7 +370,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         expectTypeOf(request.response.body).toEqualTypeOf<number>();
         expect(request.response.body).toBe(2);
 
-        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<number>>();
+        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<number, { 'content-type': string }>>();
         expect(request.raw).toBeInstanceOf(Request);
         expect(request.raw.url).toBe(request.url);
         expect(request.raw.method).toBe(method);
@@ -375,7 +381,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         expect(await request.raw.json()).toEqual<number>(1);
         expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
 
-        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<number, 200>>();
+        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<number, { 'content-type'?: string }, 200>>();
         expect(request.response.raw).toBeInstanceOf(Response);
         expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
         expect(request.response.raw.status).toBe(200);
@@ -446,7 +452,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         expectTypeOf(request.response.body).toEqualTypeOf<boolean>();
         expect(request.response.body).toBe(false);
 
-        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<boolean>>();
+        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<boolean, { 'content-type': string }>>();
         expect(request.raw).toBeInstanceOf(Request);
         expect(request.raw.url).toBe(request.url);
         expect(request.raw.method).toBe(method);
@@ -457,7 +463,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         expect(await request.raw.json()).toEqual<boolean>(true);
         expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
 
-        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<boolean, 200>>();
+        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<boolean, { 'content-type'?: string }, 200>>();
         expect(request.response.raw).toBeInstanceOf(Response);
         expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
         expect(request.response.raw.status).toBe(200);

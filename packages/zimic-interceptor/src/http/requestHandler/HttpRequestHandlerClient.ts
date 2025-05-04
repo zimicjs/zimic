@@ -224,7 +224,8 @@ class HttpRequestHandlerClient<
   private matchesRequestHeadersRestrictions(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     restriction: HttpRequestHandlerStaticRestriction<Schema, Method, Path>,
-  ): RestrictionMatchResult<RestrictionDiff<HttpHeaders<never>>> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): RestrictionMatchResult<RestrictionDiff<HttpHeaders<any>>> {
     if (restriction.headers === undefined) {
       return { value: true };
     }
@@ -248,7 +249,8 @@ class HttpRequestHandlerClient<
   private matchesRequestSearchParamsRestrictions(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     restriction: HttpRequestHandlerStaticRestriction<Schema, Method, Path>,
-  ): RestrictionMatchResult<RestrictionDiff<HttpSearchParams<never>>> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): RestrictionMatchResult<RestrictionDiff<HttpSearchParams<any>>> {
     if (restriction.searchParams === undefined) {
       return { value: true };
     }

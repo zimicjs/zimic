@@ -82,7 +82,7 @@ export interface HttpInterceptorRequest<Path extends string, MethodSchema extend
   /** The body of the request. It is already parsed by default. */
   body: HttpRequestBodySchema<MethodSchema>;
   /** The raw request object. */
-  raw: HttpRequest<HttpRequestBodySchema<MethodSchema>>;
+  raw: HttpRequest<HttpRequestBodySchema<MethodSchema>, Default<HttpRequestHeadersSchema<MethodSchema>>>;
 }
 
 /**
@@ -98,7 +98,11 @@ export interface HttpInterceptorResponse<MethodSchema extends HttpMethodSchema, 
   /** The body of the response. It is already parsed by default. */
   body: HttpResponseBodySchema<MethodSchema, StatusCode>;
   /** The raw response object. */
-  raw: HttpResponse<HttpResponseBodySchema<MethodSchema, StatusCode>, StatusCode>;
+  raw: HttpResponse<
+    HttpResponseBodySchema<MethodSchema, StatusCode>,
+    Default<HttpResponseHeadersSchema<MethodSchema, StatusCode>>,
+    StatusCode
+  >;
 }
 
 export const HTTP_INTERCEPTOR_REQUEST_HIDDEN_PROPERTIES = Object.freeze(

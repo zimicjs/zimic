@@ -116,7 +116,9 @@ export async function declareSearchParamsBodyHttpInterceptorTests(options: Runti
         expect(request.response.body).toBeInstanceOf(HttpSearchParams);
         expect(request.response.body).toEqual(responseSearchParams);
 
-        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<HttpSearchParams<UserSearchParamsSchema>>>();
+        expectTypeOf(request.raw).toEqualTypeOf<
+          HttpRequest<HttpSearchParams<UserSearchParamsSchema>, { 'content-type': string }>
+        >();
         expect(request.raw).toBeInstanceOf(Request);
         expect(request.raw.url).toBe(request.url);
         expect(request.raw.method).toBe(method);
@@ -126,7 +128,9 @@ export async function declareSearchParamsBodyHttpInterceptorTests(options: Runti
         expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<never>>();
         expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<StrictFormData<UserSearchParamsSchema>>>();
 
-        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<HttpSearchParams<UserSearchParamsSchema>, 200>>();
+        expectTypeOf(request.response.raw).toEqualTypeOf<
+          HttpResponse<HttpSearchParams<UserSearchParamsSchema>, { 'content-type'?: string }, 200>
+        >();
         expect(request.response.raw).toBeInstanceOf(Response);
         expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
         expect(request.response.raw.status).toBe(200);
