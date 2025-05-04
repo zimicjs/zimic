@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@docusaurus/eslint-plugin": "^3.7.0",
-    "@eslint/compat": "^1.2.8",
+    "@eslint/compat": "^1.2.9",
     "@zimic/eslint-config-react": "workspace:*"
   },
   "peerDependencies": {
