@@ -1,0 +1,44 @@
+name: Release zimic-web
+description: Release zimic-web
+
+inputs:
+  vercel-repository:
+    description: Remote repository connected to Vercel to push to
+    required: true
+  vercel-branch:
+    description: Branch to push to in the remote repository connected to Vercel
+    required: true
+  vercel-ssh-key:
+    description: SSH key to access the remote repository connected to Vercel
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Push to Vercel branch
+      shell: bash
+      run: |
+        echo 'Setting up access to remote repository...'
+
+        mkdir -p ~/.ssh
+
+        cat <<EOF > ~/.ssh/zimic-vercel
+        ${{ inputs.vercel-ssh-key }}
+        EOF
+
+        chmod 600 ~/.ssh/zimic-vercel
+
+        cat <<EOF >> ~/.ssh/config
+        Host github.com-zimic-vercel
+          Hostname github.com
+          IdentityFile=~/.ssh/zimic-vercel
+        EOF
+
+        git remote add vercel git@github.com-zimic-vercel:${{ inputs.vercel-repository }}.git
+
+        echo "Pushing to Vercel branch '${{ inputs.vercel-branch }}'..."
+
+        git checkout -b '${{ inputs.vercel-branch }}'
+        git push vercel '${{ inputs.vercel-branch }}' --force --no-verify
+
+        echo 'Pushed successfully. The Vercel deployment should start shortly.'

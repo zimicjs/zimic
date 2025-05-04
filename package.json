@@ -1,13 +1,13 @@
 {
   "name": "zimic-root",
-  "description": "Next-gen, TypeScript-first HTTP integrations",
+  "description": "Next-gen TypeScript-first HTTP integrations",
   "version": "0.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git"
   },
   "private": false,
-  "packageManager": "pnpm@10.7.1",
+  "packageManager": "pnpm@10.10.0",
   "engines": {
     "node": ">=18.0.0"
   },
@@ -35,6 +35,7 @@
     "prettier": "^3.5.3",
     "prettier-plugin-jsdoc": "^1.3.2",
     "prettier-plugin-sh": "^0.17.2",
-    "turbo": "^2.5.0"
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "turbo": "^2.5.2"
   }
 }

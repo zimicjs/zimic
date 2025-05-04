@@ -54,15 +54,17 @@ body:
 
   - type: input
     attributes:
-      label: Reproduction repository
+      label: Reproduction link
       description: |
-        What minimal code reproduces your issue? This can be link to a repository or a CodeSandbox/StackBlitz project.
+        What minimal code reproduces your issue?
+
+        This can be a link to a GitHub repository or a StackBlitz/CodeSandbox project.
 
         Feel free to get started using one of [our examples](https://github.com/zimicjs/zimic/blob/main/examples/README.md).
         Please make sure that the link is publicly accessible and contains the minimal code to reproduce the issue.
 
         We can only reliably investigate issues that include a reproduction.
-      placeholder: e.g. https://github.com/you/issue-name or https://codesandbox.io/s/issue-name
+      placeholder: e.g. https://github.com/you/repo, https://stackblitz.com/edit/repo, or https://codesandbox.io/s/repo
     validations:
       required: true
 

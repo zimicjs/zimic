@@ -1,6 +1,6 @@
 {
   "name": "@zimic/fetch",
-  "description": "Next-gen, TypeScript-first fetch-like API client",
+  "description": "Next-gen TypeScript-first fetch API client",
   "keywords": [
     "zimic",
     "fetch",
@@ -13,7 +13,7 @@
     "api",
     "static"
   ],
-  "version": "0.2.2",
+  "version": "0.2.3-canary.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -70,20 +70,20 @@
     "deps:init": "playwright install chromium"
   },
   "devDependencies": {
-    "@types/node": "^22.14.1",
-    "@vitest/browser": "^3.1.1",
-    "@vitest/coverage-istanbul": "^3.1.1",
+    "@types/node": "^22.15.3",
+    "@vitest/browser": "^3.1.2",
+    "@vitest/coverage-istanbul": "^3.1.2",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^8.0.0",
-    "eslint": "^9.24.0",
-    "playwright": "^1.51.1",
+    "eslint": "^9.26.0",
+    "playwright": "^1.52.0",
     "tsup": "^8.4.0",
     "typescript": "^5.8.3",
-    "vitest": "^3.1.1"
+    "vitest": "^3.1.2"
   },
   "peerDependencies": {
     "@zimic/http": "^0.3.0 || workspace:*",

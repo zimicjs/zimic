@@ -5,7 +5,12 @@ packages:
   - examples/*
   - docs/*
 onlyBuiltDependencies:
-  - '@zimic/interceptor'
   - '@swc/core'
+  - '@zimic/interceptor'
+  - bufferutil
+  - core-js
+  - core-js-pure
   - esbuild
   - msw
+  - sharp
+  - unrs-resolver

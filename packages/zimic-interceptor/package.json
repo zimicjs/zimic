@@ -1,6 +1,6 @@
 {
   "name": "@zimic/interceptor",
-  "description": "Next-gen, TypeScript-first HTTP intercepting and mocking",
+  "description": "Next-gen TypeScript-first HTTP intercepting and mocking",
   "keywords": [
     "zimic",
     "typescript",
@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "0.17.1",
+  "version": "0.17.3-canary.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -92,34 +92,34 @@
     "postinstall": "node --enable-source-maps -e \"try{require('./dist/scripts/postinstall')}catch(error){console.error(error)}\""
   },
   "dependencies": {
-    "@whatwg-node/server": "0.10.3",
+    "@whatwg-node/server": "0.10.5",
     "execa": "9.5.2",
     "isomorphic-ws": "5.0.0",
-    "msw": "2.7.4",
+    "msw": "2.7.5",
     "picocolors": "^1.1.1",
-    "ws": "8.18.1",
+    "ws": "8.18.2",
     "yargs": "17.7.2",
-    "zod": "^3.24.2"
+    "zod": "^3.24.3"
   },
   "optionalDependencies": {
     "bufferutil": "4.0.9"
   },
   "devDependencies": {
-    "@types/node": "^22.14.1",
+    "@types/node": "^22.15.3",
     "@types/ws": "^8.18.1",
     "@types/yargs": "^17.0.33",
-    "@vitest/browser": "^3.1.1",
-    "@vitest/coverage-istanbul": "^3.1.1",
+    "@vitest/browser": "^3.1.2",
+    "@vitest/coverage-istanbul": "^3.1.2",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^8.0.0",
-    "eslint": "^9.24.0",
-    "playwright": "^1.51.1",
+    "eslint": "^9.26.0",
+    "playwright": "^1.52.0",
     "tsup": "^8.4.0",
     "typescript": "^5.8.3",
-    "vitest": "^3.1.1"
+    "vitest": "^3.1.2"
   },
   "peerDependencies": {
     "@zimic/http": "^0.3.0 || workspace:*",

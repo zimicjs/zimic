@@ -1,6 +1,6 @@
 {
   "name": "@zimic/http",
-  "description": "Next-gen, TypeScript-first HTTP utilities",
+  "description": "Next-gen TypeScript-first HTTP utilities",
   "keywords": [
     "zimic",
     "typescript",
@@ -12,7 +12,7 @@
     "api",
     "static"
   ],
-  "version": "0.3.1",
+  "version": "0.3.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -81,31 +81,31 @@
     "deps:init": "playwright install chromium"
   },
   "dependencies": {
-    "openapi-typescript": "7.6.1",
+    "openapi-typescript": "7.7.0",
     "picocolors": "^1.1.1",
     "yargs": "17.7.2"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^22.14.1",
+    "@types/node": "^22.15.3",
     "@types/yargs": "^17.0.33",
-    "@vitest/browser": "^3.1.1",
-    "@vitest/coverage-istanbul": "^3.1.1",
+    "@vitest/browser": "^3.1.2",
+    "@vitest/coverage-istanbul": "^3.1.2",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^8.0.0",
-    "eslint": "^9.24.0",
+    "eslint": "^9.26.0",
     "execa": "9.5.2",
     "js-yaml": "^4.1.0",
-    "playwright": "^1.51.1",
+    "playwright": "^1.52.0",
     "prettier": "^3.5.3",
     "tsup": "^8.4.0",
-    "tsx": "^4.19.3",
+    "tsx": "^4.19.4",
     "typescript": "^5.8.3",
-    "vitest": "^3.1.1"
+    "vitest": "^3.1.2"
   },
   "peerDependencies": {
     "typescript": ">=4.8.0"

@@ -34,7 +34,7 @@ tsconfig.tsbuildinfo
 
 # Miscellaneous
 *.log
-
+.vercel
 .vscode
 .DS_Store
 *.pem

@@ -163,6 +163,14 @@ zimic-interceptor server start --port 4000 --tokens-dir .zimic/interceptor/serve
 You can list the authorized tokens with [`zimic-interceptor server token ls`](#zimic-interceptor-server-token-ls) and
 remove (invalidate) them with [`zimic-interceptor server token rm`](#zimic-interceptor-server-token-rm).
 
+> [!IMPORTANT]
+>
+> Make sure to keep the tokens directory private. Do not commit it to version control or expose it publicly. Even though
+> the tokens are hashed in the directory, exposing it can lead to security issues.
+>
+> If you are running the server inside a container, make sure to persist the tokens directory in a volume. Otherwise,
+> the tokens will be lost when the container is removed or recreated.
+
 After the server is running, remote interceptors can connect to it passing the token in the `auth.token` option.
 
 ```ts
