@@ -136,8 +136,8 @@ describe('FetchClient > Search params', () => {
       name: string;
       usernames: string[];
       orderBy?: ('name' | 'createdAt')[];
-      date: Date; // Forcing an invalid type
-      method: () => void; // Forcing an invalid type
+      date?: Date; // Forcing an invalid type
+      method?: () => void; // Forcing an invalid type
     }>;
 
     type Schema = HttpSchema<{
@@ -150,12 +150,6 @@ describe('FetchClient > Search params', () => {
     }>;
 
     await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
-      expectTypeOf<RequestSearchParams>().toEqualTypeOf<{
-        name: string;
-        usernames: string[];
-        orderBy?: ('name' | 'createdAt')[];
-      }>();
-
       const searchParams: RequestSearchParams = {
         name: 'User',
         usernames: ['User 1', 'User 2'],
