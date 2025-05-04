@@ -91,7 +91,7 @@ type UserByIdPaths = HttpSchema<{
 
     PATCH: {
       request: {
-        headers: { authorization: string };
+        headers: { 'content-type': string };
         body: UserUpdatePayload;
       };
       response: {

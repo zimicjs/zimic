@@ -680,7 +680,7 @@ describe('FetchClient > Headers', () => {
       '/users': {
         POST: {
           request: {
-            headers: { authorization: string; accept?: string };
+            headers: { accept?: string };
             body: User;
           };
           response: { 201: { body: User } };
@@ -694,7 +694,7 @@ describe('FetchClient > Headers', () => {
       await interceptor
         .post('/users')
         .with({
-          headers: { authorization: 'Bearer token' },
+          headers: { accept: 'application/json' },
           body: user,
         })
         .respond({
@@ -707,7 +707,7 @@ describe('FetchClient > Headers', () => {
 
       const response = await fetch('/users', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', authorization: 'Bearer token' },
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
         body: JSON.stringify(user),
       });
 
@@ -732,7 +732,7 @@ describe('FetchClient > Headers', () => {
 
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).branded.toEqualTypeOf<
-        StrictHeaders<{ 'content-type': 'application/json'; authorization: string; accept?: string }>
+        StrictHeaders<{ 'content-type': 'application/json'; accept?: string }>
       >();
     });
   });

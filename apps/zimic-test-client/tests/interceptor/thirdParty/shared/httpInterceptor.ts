@@ -558,10 +558,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
       async function updateUser(userId: string, payload: UserUpdatePayload) {
         const request = new Request(`${authBaseURL}/users/${userId}`, {
           method: 'PATCH',
-          headers: {
-            'content-type': 'application/json',
-            authorization: 'Bearer token',
-          },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(payload),
         });
         return fetch(request);
@@ -571,7 +568,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         const updateHandler = await authInterceptor
           .patch(`/users/${user.id}`)
           .with({
-            headers: { 'content-type': 'application/json', authorization: 'Bearer token' },
+            headers: { 'content-type': 'application/json' },
             body: updatePayload,
           })
           .respond((request) => {
@@ -599,7 +596,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(updateHandler.requests).toHaveLength(1);
 
         expectTypeOf(updateHandler.requests[0].headers).branded.toEqualTypeOf<
-          HttpHeaders<{ 'content-type': 'application/json'; authorization: string }>
+          HttpHeaders<{ 'content-type': string }>
         >();
 
         expectTypeOf(updateHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();

@@ -574,7 +574,7 @@ describe('Fetch client', async () => {
       async function updateUser(userId: string, payload: Partial<UserCreationRequestBody>) {
         const response = await authFetch(`/users/${userId}`, {
           method: 'PATCH',
-          headers: { 'content-type': 'application/json', authorization: 'Bearer token' },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(payload),
         });
 
@@ -589,7 +589,7 @@ describe('Fetch client', async () => {
         const updateHandler = authInterceptor
           .patch(`/users/${user.id}`)
           .with({
-            headers: { 'content-type': 'application/json', authorization: 'Bearer token' },
+            headers: { 'content-type': 'application/json' },
             body: updatePayload,
           })
           .respond((request) => {
@@ -620,7 +620,7 @@ describe('Fetch client', async () => {
         expect(updateHandler.requests).toHaveLength(1);
 
         expectTypeOf(updateHandler.requests[0].headers).branded.toEqualTypeOf<
-          HttpHeaders<{ 'content-type': 'application/json'; authorization: string }>
+          HttpHeaders<{ 'content-type': string }>
         >();
 
         expectTypeOf(updateHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
