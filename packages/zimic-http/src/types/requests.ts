@@ -1,7 +1,7 @@
 import { Default, DefaultNoExclude, IfNever, ReplaceBy } from '@zimic/utils/types';
 import { JSONValue } from '@zimic/utils/types/json';
 
-import { HttpMethodSchema, HttpStatusCode } from '@/types/schema';
+import { HttpMethodSchema, HttpRequestSchema, HttpResponseSchema, HttpStatusCode } from '@/types/schema';
 
 import HttpFormData from '../formData/HttpFormData';
 import { HttpFormDataSchema } from '../formData/types';
@@ -73,8 +73,8 @@ export interface HttpRequest<
  */
 export interface HttpResponse<
   StrictBody extends HttpBody.Loose = HttpBody.Loose,
-  StatusCode extends number = number,
   StrictHeadersSchema extends HttpHeadersSchema.Loose = HttpHeadersSchema.Loose,
+  StatusCode extends number = number,
 > extends Response {
   ok: StatusCode extends HttpStatusCode.Information | HttpStatusCode.Success | HttpStatusCode.Redirection
     ? true
