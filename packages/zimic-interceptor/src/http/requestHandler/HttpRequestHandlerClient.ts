@@ -230,7 +230,7 @@ class HttpRequestHandlerClient<
     }
 
     const restrictedHeaders = new HttpHeaders(
-      restriction.headers as HttpRequestHeadersSchema<Default<Schema[Path][Method]>>,
+      restriction.headers as Default<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>,
     );
 
     const matchesRestriction = restriction.exact
@@ -254,7 +254,7 @@ class HttpRequestHandlerClient<
     }
 
     const restrictedSearchParams = new HttpSearchParams(
-      restriction.searchParams as HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>,
+      restriction.searchParams as Default<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>,
     );
 
     const matchesRestriction = restriction.exact

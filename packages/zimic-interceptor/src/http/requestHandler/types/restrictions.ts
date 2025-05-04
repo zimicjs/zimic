@@ -16,7 +16,7 @@ import { IfNever, Default, DeepPartial, PossiblePromise } from '@zimic/utils/typ
 
 import { HttpInterceptorRequest } from './requests';
 
-type PartialHttpHeadersOrSchema<Schema extends HttpHeadersSchema> = IfNever<
+type PartialHttpHeadersOrSchema<Schema extends HttpHeadersSchema.Loose> = IfNever<
   Schema,
   never,
   Partial<Schema> | HttpHeaders<Partial<Schema>> | HttpHeaders<Schema>
@@ -31,9 +31,9 @@ export type HttpRequestHandlerHeadersStaticRestriction<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
-> = PartialHttpHeadersOrSchema<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>;
+> = PartialHttpHeadersOrSchema<Default<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>>;
 
-type PartialHttpSearchParamsOrSchema<Schema extends HttpSearchParamsSchema> = IfNever<
+type PartialHttpSearchParamsOrSchema<Schema extends HttpSearchParamsSchema.Loose> = IfNever<
   Schema,
   never,
   Partial<Schema> | HttpSearchParams<Partial<Schema>> | HttpSearchParams<Schema>
@@ -48,7 +48,7 @@ export type HttpRequestHandlerSearchParamsStaticRestriction<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
-> = PartialHttpSearchParamsOrSchema<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>;
+> = PartialHttpSearchParamsOrSchema<Default<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>>;
 
 type PartialBodyOrSchema<Body extends HttpBody> =
   Body extends HttpFormData<infer Schema>
