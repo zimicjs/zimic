@@ -106,8 +106,8 @@ jobs:
       - name: Release to GitHub
         uses: ./.github/actions/zimic-release-github
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           project-name: '@zimic/fetch'
+          type: ${{ needs.pre-release-to-github.outputs.pre-release-id == 'none' && 'tag-and-release' || 'tag-only' }}
           version: ${{ steps.bump-version.outputs.value }}
           commit: ${{ steps.bump-version.outputs.commit-sha }}
-          pre-release-id: ${{ needs.pre-release-to-github.outputs.pre-release-id }}
+          token: ${{ secrets.GITHUB_TOKEN }}

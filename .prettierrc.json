@@ -9,5 +9,5 @@
   "arrowParens": "always",
   "endOfLine": "lf",
   "proseWrap": "always",
-  "plugins": ["prettier-plugin-sh", "prettier-plugin-jsdoc"]
+  "plugins": ["prettier-plugin-sh", "prettier-plugin-jsdoc", "prettier-plugin-tailwindcss"]
 }

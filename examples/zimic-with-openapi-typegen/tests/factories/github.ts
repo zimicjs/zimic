@@ -29,7 +29,7 @@ export function createGitHubRepository(partialRepository: Partial<GitHubReposito
       user_view_type: 'public',
       site_admin: false,
     },
-    description: 'Next-gen, TypeScript-first HTTP integrations',
+    description: 'Next-gen TypeScript-first HTTP integrations',
     fork: false,
     url: 'https://api.github.com/repos/zimicjs/zimic-example',
     forks_url: 'https://api.github.com/repos/zimicjs/zimic-example/forks',

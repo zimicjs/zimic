@@ -14,6 +14,7 @@
         "ci",
         "wiki",
         "release",
+        "web",
         "test-client",
         "http",
         "fetch",
@@ -22,6 +23,7 @@
         "eslint",
         "eslint-node",
         "eslint-react",
+        "eslint-docusaurus",
         "lint-staged",
         "tsconfig",
         "examples"

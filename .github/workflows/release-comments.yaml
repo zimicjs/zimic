@@ -9,6 +9,13 @@ on:
       project-name:
         description: The project name to create release comments for
         required: true
+      type:
+        description: The type of the release
+        required: true
+        type: choice
+        options:
+          - package
+          - documentation
 
 concurrency:
   group: release-comments-${{ inputs.ref-name || github.ref_name }}
@@ -31,5 +38,6 @@ jobs:
       - name: Publish release comments
         uses: ./.github/actions/zimic-release-comments
         with:
+          type: ${{ inputs.type }}
           ref-name: ${{ inputs.ref-name || github.ref_name }}
           project-name: ${{ inputs.project-name }}

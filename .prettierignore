@@ -5,6 +5,7 @@ pnpm-lock.yaml
 # Build
 /apps/*/dist
 /apps/*/build
+/apps/*/.docusaurus
 /apps/*/public/mockServiceWorker.js
 /apps/zimic-test-client/**/typegen/generated/**/*.ts
 

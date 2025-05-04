@@ -9,7 +9,7 @@ function Button({ className, children, ...rest }: Props) {
     <button
       type="button"
       className={cn(
-        'px-2 py-1.5 bg-emerald-300 rounded-sm transition-all outline-hidden focus:ring-2 focus:ring-slate-400 hover:bg-emerald-400 active:bg-emerald-300 font-medium text-slate-900',
+        'outline-hidden rounded-sm bg-emerald-300 px-2 py-1.5 font-medium text-slate-900 transition-all hover:bg-emerald-400 focus:ring-2 focus:ring-slate-400 active:bg-emerald-300',
         className,
       )}
       {...rest}

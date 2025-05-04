@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 function Layout({ children }: PropsWithChildren) {
   return (
     <html lang="en">
-      <body className={cn(inter.className, 'bg-slate-100 flex flex-col items-center justify-center min-h-screen')}>
+      <body className={cn(inter.className, 'flex min-h-screen flex-col items-center justify-center bg-slate-100')}>
         {children}
       </body>
     </html>

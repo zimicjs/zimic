@@ -2,6 +2,9 @@ name: Zimic Release GitHub
 description: Zimic Release GitHub
 
 inputs:
+  type:
+    description: If the version should be published as a tag or a GitHub release
+    required: true
   token:
     description: GitHub token
     required: true
@@ -14,16 +17,13 @@ inputs:
   commit:
     description: The commit SHA to release
     required: true
-  pre-release-id:
-    description: The pre-release ID to release
-    required: true
 
 runs:
   using: composite
   steps:
     - name: Create GitHub release
       uses: ncipollo/release-action@v1
-      if: ${{ inputs.pre-release-id == 'none' }}
+      if: ${{ inputs.type == 'tag-and-release' }}
       with:
         name: '${{ inputs.project-name }}: ${{ inputs.version }}'
         tag: '${{ inputs.project-name }}@${{ inputs.version }}'
@@ -35,7 +35,7 @@ runs:
         draft: true
 
     - name: Create GitHub tag
-      if: ${{ inputs.pre-release-id != 'none' }}
+      if: ${{ inputs.type == 'tag-only' }}
       shell: bash
       run: |
         git checkout ${{ inputs.commit }}

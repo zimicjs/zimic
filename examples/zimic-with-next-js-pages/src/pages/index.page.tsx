@@ -11,9 +11,9 @@ export default function Home() {
   const shouldFetchRepository = ownerName && repositoryName;
 
   return (
-    <main className="bg-white rounded-xl mx-auto flex flex-col items-center w-full max-w-[24rem] p-8 shadow-lg space-y-6">
+    <main className="mx-auto flex w-full max-w-[24rem] flex-col items-center space-y-6 rounded-xl bg-white p-8 shadow-lg">
       <div className="text-center">
-        <h1 className="font-bold text-2xl">Search a GitHub Repo!</h1>
+        <h1 className="text-2xl font-bold">Search a GitHub Repo!</h1>
         <h2 className="text-slate-700">Pages Router</h2>
       </div>
 

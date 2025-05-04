@@ -7,7 +7,7 @@
 </h1>
 
 <p align="center">
-  Next-gen, TypeScript-first HTTP intercepting and mocking
+  Next-gen TypeScript-first HTTP intercepting and mocking
 </p>
 
 <p align="center">
@@ -19,7 +19,7 @@
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/zimicjs/zimic/issues">Issues</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="https://github.com/orgs/zimicjs/projects/1/views/5">Roadmap</a>
+  <a href="https://github.com/orgs/zimicjs/projects/1/views/4">Roadmap</a>
 </p>
 
 <div align="center">

@@ -83,25 +83,18 @@ Zimic is a monorepo managed with [pnpm](https://pnpm.io) and [Turborepo](https:/
 structured as follows:
 
 - `packages`
-  - `zimic`: Main package containing Zimic's core features;
-  - `release`: Release scripts used to bump versions and publish packages;
+  - `zimic-http`: Implementation of the package `@zimic/http`;
+  - `zimic-fetch`: Implementation of the package `@zimic/fetch`;
+  - `zimic-interceptor`: Implementation of the package `@zimic/interceptor`;
   - `tsconfig`: Shared TypeScript configuration;
   - `eslint-config`: General ESLint configuration;
   - `eslint-config-node`: Node.js-specific ESLint configuration;
   - `lint-staged-config`: Configuration for [lint-staged](https://github.com/lint-staged/lint-staged);
 - `apps`
+  - `zimic-web`: [zimic.dev](https://zimic.dev) documentation website built with [Docusaurus](https://docusaurus.io);
   - `zimic-test-client`: Test application to check Zimic installed as a dependency; important to verify the library
     exports and build artifacts;
 - `examples`: Example projects using Zimic;
-  - `zimic-with-jest-jsdom`: Example using Jest with jsdom;
-  - `zimic-with-jest-node`: Example using Jest with Node.js;
-  - `zimic-with-next-js-app`: Example using Next.js (App Router);
-  - `zimic-with-next-js-pages`: Example using Next.js (Pages Router);
-  - `zimic-with-openapi-typegen`: Example using type generation from OpenAPI files;
-  - `zimic-with-playwright`: Example using Playwright;
-  - `zimic-with-vitest-browser`: Example using Vitest with a browser environment;
-  - `zimic-with-vitest-jsdom`: Example using Vitest with jsdom;
-  - `zimic-with-vitest-node`: Example using Vitest with Node.js;
 - `docs`
   - `wiki`: Documentation (wiki) pages for the project;
 
@@ -119,12 +112,13 @@ Zimic uses the following long-lived branches:
 | Branch                 | Description                                                                                         |
 | ---------------------- | --------------------------------------------------------------------------------------------------- |
 | `canary`               | Development branch containing the latest (possibly unstable) code.                                  |
+| `main`                 | Production branch containing the latest stable code for all projects.                               |
 | `@zimic/http@0`        | Production branch containing the latest stable code for `@zimic/http` in the `v0.x.x` range.        |
 | `@zimic/fetch@0`       | Production branch containing the latest stable code for `@zimic/fetch` in the `v0.x.x` range.       |
 | `@zimic/interceptor@0` | Production branch containing the latest stable code for `@zimic/interceptor` in the `v0.x.x` range. |
 
-New pull requests should be opened against the `canary` branch. The `@zimic/*@*` branches are updated only when a new
-stable release is ready for their respective major version.
+New pull requests should be opened against the `canary` branch. The `@zimic/*@*` and `main` branches are updated only
+when a new stable release is ready for their respective major version.
 
 Each supported major version of Zimic will have its own `@zimic/*@*` branch. This will allow backporting fixes and
 security patches to older versions.
