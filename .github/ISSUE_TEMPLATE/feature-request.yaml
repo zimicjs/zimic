@@ -43,8 +43,9 @@ body:
       options:
         - Adds a new behavior
         - Improves an existing behavior
-        - Improves a documentation section
-        - Improves an example
+        - Improves the documentation
+        - Improves the examples
+        - Other
     validations:
       required: true
 

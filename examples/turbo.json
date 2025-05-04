@@ -4,8 +4,8 @@
   "tasks": {
     "lint:turbo": {
       "inputs": [
-        "with-*/{src,tests}/**/*.{ts,json}",
-        "with-*/{package,tsconfig}.json",
+        "zimic-with-*/{src,tests}/**/*.{ts,json}",
+        "zimic-with-*/{package,tsconfig}.json",
         "{package,tsconfig}.json",
         "eslint.config.mjs"
       ]

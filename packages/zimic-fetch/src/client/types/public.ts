@@ -81,7 +81,7 @@ export type FetchInput<
  * @see {@link https://developer.mozilla.org/docs/Web/API/RequestInit}
  * @see {@link https://developer.mozilla.org/docs/Web/API/Response}
  */
-export interface Fetch<Schema extends HttpSchema> extends FetchClient<Schema> {
+export interface Fetch<Schema extends HttpSchema> extends Pick<FetchOptions<Schema>, 'onRequest' | 'onResponse'> {
   <
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
@@ -99,121 +99,7 @@ export interface Fetch<Schema extends HttpSchema> extends FetchClient<Schema> {
     input: FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
     init?: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Redirect>,
   ): Promise<FetchResponse<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, false, Redirect>>;
-}
 
-export namespace Fetch {
-  /** A loosely-typed version of {@link Fetch `fetch`}. This can be useful to make requests with fewer type constraints, */
-  export type Loose = (
-    input: string | URL | FetchRequest.Loose,
-    init?: FetchRequestInit.Loose,
-  ) => Promise<FetchResponse.Loose>;
-}
-
-/**
- * The options to create a {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch fetch instance}.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#createfetch `createFetch(options)` API reference}
- */
-export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchRequestInit.Defaults, 'method'> {
-  /**
-   * A listener function that is called for each request. It can modify the requests before they are sent.
-   *
-   * @example
-   *   import { createFetch } from '@zimic/fetch';
-   *   import { type HttpSchema } from '@zimic/http';
-   *
-   *   interface User {
-   *     id: string;
-   *     username: string;
-   *   }
-   *
-   *   type Schema = HttpSchema<{
-   *     '/users': {
-   *       GET: {
-   *         request: {
-   *           searchParams: { page?: number; limit?: number };
-   *         };
-   *         response: {
-   *           200: { body: User[] };
-   *         };
-   *       };
-   *     };
-   *   }>;
-   *
-   *   const fetch = createFetch<Schema>({
-   *     baseURL: 'http://localhost:80',
-   *
-   *     onRequest(request) {
-   *       if (this.isRequest(request, 'GET', '/users')) {
-   *         const url = new URL(request.url);
-   *         url.searchParams.append('limit', '10');
-   *
-   *         const updatedRequest = new Request(url, request);
-   *         return updatedRequest;
-   *       }
-   *
-   *       return request;
-   *     },
-   *   });
-   *
-   * @param request The original request.
-   * @returns The request to be sent. It can be the original request or a modified version of it.
-   * @this {Fetch<Schema>} The fetch instance that is sending the request.
-   */
-  onRequest?: (this: Fetch<Schema>, request: FetchRequest.Loose) => PossiblePromise<Request>;
-
-  /**
-   * A listener function that is called after each response is received. It can modify the responses before they are
-   * returned to the fetch caller.
-   *
-   * @example
-   *   import { type HttpSchema } from '@zimic/http';
-   *   import { createFetch } from '@zimic/fetch';
-   *
-   *   interface User {
-   *     id: string;
-   *     username: string;
-   *   }
-   *
-   *   type Schema = HttpSchema<{
-   *     '/users': {
-   *       GET: {
-   *         response: {
-   *           200: {
-   *             headers: { 'content-encoding'?: string };
-   *             body: User[];
-   *           };
-   *         };
-   *       };
-   *     };
-   *   }>;
-   *
-   *   const fetch = createFetch<Schema>({
-   *     baseURL: 'http://localhost:80',
-   *
-   *     onResponse(response) {
-   *       if (this.isResponse(response, 'GET', '/users')) {
-   *         console.log(response.headers.get('content-encoding'));
-   *       }
-   *       return response;
-   *     },
-   *   });
-   *
-   * @param response The original response.
-   * @returns The response to be returned.
-   * @this {Fetch<Schema>} The fetch instance that received the response.
-   */
-  onResponse?: (this: Fetch<Schema>, response: FetchResponse.Loose) => PossiblePromise<Response>;
-}
-
-/**
- * The default options for each request sent by the fetch instance.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchdefaults `fetch.defaults` API reference}
- */
-export type FetchDefaults = RequiredByKey<FetchRequestInit.Defaults, 'headers' | 'searchParams'>;
-
-export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOptions<Schema>, 'onRequest' | 'onResponse'> {
   /**
    * The default options for each request sent by the fetch instance. The available options are the same as the
    * {@link https://developer.mozilla.org/docs/Web/API/RequestInit `RequestInit`} options, plus `baseURL`.
@@ -587,6 +473,118 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
     path: Path,
   ) => error is FetchResponseError<Schema, Method, Path>;
 }
+
+export namespace Fetch {
+  /** A loosely-typed version of {@link Fetch `fetch`}. This can be useful to make requests with fewer type constraints, */
+  export type Loose = (
+    input: string | URL | FetchRequest.Loose,
+    init?: FetchRequestInit.Loose,
+  ) => Promise<FetchResponse.Loose>;
+}
+
+/**
+ * The options to create a {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch fetch instance}.
+ *
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#createfetch `createFetch(options)` API reference}
+ */
+export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchRequestInit.Defaults, 'method'> {
+  /**
+   * A listener function that is called for each request. It can modify the requests before they are sent.
+   *
+   * @example
+   *   import { createFetch } from '@zimic/fetch';
+   *   import { type HttpSchema } from '@zimic/http';
+   *
+   *   interface User {
+   *     id: string;
+   *     username: string;
+   *   }
+   *
+   *   type Schema = HttpSchema<{
+   *     '/users': {
+   *       GET: {
+   *         request: {
+   *           searchParams: { page?: number; limit?: number };
+   *         };
+   *         response: {
+   *           200: { body: User[] };
+   *         };
+   *       };
+   *     };
+   *   }>;
+   *
+   *   const fetch = createFetch<Schema>({
+   *     baseURL: 'http://localhost:80',
+   *
+   *     onRequest(request) {
+   *       if (this.isRequest(request, 'GET', '/users')) {
+   *         const url = new URL(request.url);
+   *         url.searchParams.append('limit', '10');
+   *
+   *         const updatedRequest = new Request(url, request);
+   *         return updatedRequest;
+   *       }
+   *
+   *       return request;
+   *     },
+   *   });
+   *
+   * @param request The original request.
+   * @returns The request to be sent. It can be the original request or a modified version of it.
+   * @this {Fetch<Schema>} The fetch instance that is sending the request.
+   */
+  onRequest?: (this: Fetch<Schema>, request: FetchRequest.Loose) => PossiblePromise<Request>;
+
+  /**
+   * A listener function that is called after each response is received. It can modify the responses before they are
+   * returned to the fetch caller.
+   *
+   * @example
+   *   import { type HttpSchema } from '@zimic/http';
+   *   import { createFetch } from '@zimic/fetch';
+   *
+   *   interface User {
+   *     id: string;
+   *     username: string;
+   *   }
+   *
+   *   type Schema = HttpSchema<{
+   *     '/users': {
+   *       GET: {
+   *         response: {
+   *           200: {
+   *             headers: { 'content-encoding'?: string };
+   *             body: User[];
+   *           };
+   *         };
+   *       };
+   *     };
+   *   }>;
+   *
+   *   const fetch = createFetch<Schema>({
+   *     baseURL: 'http://localhost:80',
+   *
+   *     onResponse(response) {
+   *       if (this.isResponse(response, 'GET', '/users')) {
+   *         console.log(response.headers.get('content-encoding'));
+   *       }
+   *       return response;
+   *     },
+   *   });
+   *
+   * @param response The original response.
+   * @returns The response to be returned.
+   * @this {Fetch<Schema>} The fetch instance that received the response.
+   */
+  onResponse?: (this: Fetch<Schema>, response: FetchResponse.Loose) => PossiblePromise<Response>;
+}
+
+/**
+ * The default options for each request sent by the fetch instance.
+ *
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchdefaults `fetch.defaults` API reference}
+ */
+export type FetchDefaults = RequiredByKey<FetchRequestInit.Defaults, 'headers' | 'searchParams'>;
 
 /**
  * Infers the schema of a {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch fetch instance}.

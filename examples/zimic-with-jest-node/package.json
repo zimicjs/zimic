@@ -1,0 +1,23 @@
+{
+  "name": "zimic-example-with-jest-node",
+  "version": "0.0.0",
+  "private": false,
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test",
+    "types:check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@zimic/fetch": "latest",
+    "@zimic/http": "latest"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "@swc/core": "^1.11.24",
+    "@swc/jest": "^0.2.38",
+    "@zimic/interceptor": "latest",
+    "dotenv-cli": "^8.0.0",
+    "jest": "^29.7.0",
+    "typescript": "^5.8.3"
+  }
+}

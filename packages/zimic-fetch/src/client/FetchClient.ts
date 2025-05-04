@@ -11,12 +11,10 @@ import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import joinURL from '@zimic/utils/url/joinURL';
 
 import FetchResponseError from './errors/FetchResponseError';
-import { FetchInput, FetchOptions, Fetch, FetchClient as PublicFetchClient, FetchDefaults } from './types/public';
+import { FetchInput, FetchOptions, Fetch, FetchDefaults } from './types/public';
 import { FetchRequestConstructor, FetchRequestInit, FetchRequest, FetchResponse } from './types/requests';
 
-class FetchClient<Schema extends HttpSchema>
-  implements Omit<PublicFetchClient<Schema>, 'defaults' | 'loose' | 'Request'>
-{
+class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'defaults' | 'loose' | 'Request'> {
   fetch: Fetch<Schema>;
 
   constructor({ onRequest, onResponse, ...defaults }: FetchOptions<Schema>) {

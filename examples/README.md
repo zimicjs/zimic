@@ -4,24 +4,24 @@
 
 ## Vitest
 
-- [With Vitest + Node.js](./with-vitest-node)
-- [With Vitest + Browser Mode](./with-vitest-browser)
-- [With Vitest + JSDOM](./with-vitest-jsdom)
+- [Zimic with Vitest + Node.js](./zimic-with-vitest-node)
+- [Zimic with Vitest + Browser Mode](./zimic-with-vitest-browser)
+- [Zimic with Vitest + JSDOM](./zimic-with-vitest-jsdom)
 
 ## Jest
 
-- [With Jest + Node.js](./with-jest-node)
-- [With Jest + JSDOM](./with-jest-jsdom)
+- [Zimic with Jest + Node.js](./zimic-with-jest-node)
+- [Zimic with Jest + JSDOM](./zimic-with-jest-jsdom)
 
 ## Playwright
 
-- [With Playwright](./with-playwright)
+- [Zimic with Playwright](./zimic-with-playwright)
 
 ## Next.js
 
-- [With Next.js App Router](./with-next-js-app)
-- [With Next.js Pages Router](./with-next-js-pages)
+- [Zimic with Next.js App Router](./zimic-with-next-js-app)
+- [Zimic with Next.js Pages Router](./zimic-with-next-js-pages)
 
-## Type generation
+## Typegen
 
-- [With OpenAPI typegen](./with-openapi-typegen)
+- [Zimic with OpenAPI typegen](./zimic-with-openapi-typegen)

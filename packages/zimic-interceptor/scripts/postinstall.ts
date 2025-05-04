@@ -7,7 +7,10 @@ export type MSWPackage = typeof mswPackage;
 export type MSWExports = MSWPackage['exports'];
 
 export const MSW_ROOT_DIRECTORY = path.join(require.resolve('msw'), '..', '..', '..');
+
 export const MSW_PACKAGE_PATH = path.join(MSW_ROOT_DIRECTORY, 'package.json');
+
+export const MSW_CORE_DIRECTORY = path.join(MSW_ROOT_DIRECTORY, 'lib', 'core');
 export const MSW_BROWSER_DIRECTORY = path.join(MSW_ROOT_DIRECTORY, 'lib', 'browser');
 
 async function patchMSWExports() {
@@ -31,29 +34,77 @@ async function patchMSWExports() {
   await fs.promises.writeFile(MSW_PACKAGE_PATH, patchedMSWPackageContentAsString);
 }
 
-// This is a temporary workaround. Once https://github.com/mswjs/msw/issues/2146 is fixed, we'll be able to remove it.
+// This is a temporary workaround. Once https://github.com/mswjs/msw/issues/2146 is fixed, we should remove it.
 async function patchMSWBrowserEntry() {
-  for (const indexFileName of ['index.js', 'index.mjs']) {
-    const mswBrowserPath = path.join(MSW_BROWSER_DIRECTORY, indexFileName);
-    const mswBrowserContent = await fs.promises.readFile(mswBrowserPath, 'utf-8');
+  await Promise.all(
+    ['index.js', 'index.mjs'].map(async (indexFileName) => {
+      const mswBrowserPath = path.join(MSW_BROWSER_DIRECTORY, indexFileName);
+      const mswBrowserContent = await fs.promises.readFile(mswBrowserPath, 'utf-8');
 
-    const patchedMSWBrowserContent = mswBrowserContent.replace(
-      `if (responseJson.type?.includes("opaque")) {
-      return;
-    }`,
+      const patchedMSWBrowserContent = mswBrowserContent.replace(
+        ['    if (responseJson.type?.includes("opaque")) {', '      return;', '    }'].join('\n'),
+        ['    if (!request || responseJson.type?.includes("opaque")) {', '      return;', '    }'].join('\n'),
+      );
 
-      `if (!request || responseJson.type?.includes("opaque")) {
-      return;
-    }`,
-    );
+      await fs.promises.writeFile(mswBrowserPath, patchedMSWBrowserContent);
+    }),
+  );
+}
 
-    await fs.promises.writeFile(mswBrowserPath, patchedMSWBrowserContent);
-  }
+// This is a temporary workaround. Once https://github.com/stackblitz/core/issues/3323 is fixed, we should remove it.
+async function patchMSWWebSocketBroadcastChannel() {
+  await Promise.all(
+    ['ws.js', 'ws.mjs'].map(async (webSocketFileName) => {
+      const mswWebSocketPath = path.join(MSW_CORE_DIRECTORY, webSocketFileName);
+      const mswWebSocketContent = await fs.promises.readFile(mswWebSocketPath, 'utf-8');
+
+      const patchedMSWWebSocketContent = mswWebSocketContent
+        .replace(
+          [
+            'const webSocketChannel = new BroadcastChannel("msw:websocket-client-manager");',
+            'if (isBroadcastChannelWithUnref(webSocketChannel)) {',
+            '  webSocketChannel.unref();',
+            '}',
+          ].join('\n'),
+          'let webSocketChannel;',
+        )
+        .replace(
+          [
+            '  );',
+            '  const clientManager = new import_WebSocketClientManager.WebSocketClientManager(webSocketChannel);',
+          ].join('\n'),
+          [
+            '  );',
+            '  if (!webSocketChannel) {',
+            '    webSocketChannel = new BroadcastChannel("msw:websocket-client-manager");',
+            '    if (isBroadcastChannelWithUnref(webSocketChannel)) {',
+            '      webSocketChannel.unref();',
+            '    }',
+            '  }',
+            '  const clientManager = new import_WebSocketClientManager.WebSocketClientManager(webSocketChannel);',
+          ].join('\n'),
+        )
+        .replace(
+          ['  );', '  const clientManager = new WebSocketClientManager(webSocketChannel);'].join('\n'),
+          [
+            '  );',
+            '  if (!webSocketChannel) {',
+            '    webSocketChannel = new BroadcastChannel("msw:websocket-client-manager");',
+            '    if (isBroadcastChannelWithUnref(webSocketChannel)) {',
+            '      webSocketChannel.unref();',
+            '    }',
+            '  }',
+            '  const clientManager = new WebSocketClientManager(webSocketChannel);',
+          ].join('\n'),
+        );
+
+      await fs.promises.writeFile(mswWebSocketPath, patchedMSWWebSocketContent);
+    }),
+  );
 }
 
 async function postinstall() {
-  await patchMSWExports();
-  await patchMSWBrowserEntry();
+  await Promise.all([patchMSWExports(), patchMSWBrowserEntry(), patchMSWWebSocketBroadcastChannel()]);
 }
 
 export const postinstallPromise = postinstall();
