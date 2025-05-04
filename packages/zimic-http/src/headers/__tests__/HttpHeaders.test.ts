@@ -123,6 +123,45 @@ describe('HttpHeaders', () => {
     expect(contentTypeHeader).toBe('application/json');
   });
 
+  it('should support being created with a loose schema', () => {
+    const headers = new HttpHeaders<{
+      accept?: string;
+      'x-rate-limit': number;
+      'x-rate-limit-enabled': boolean;
+    }>({
+      accept: '*/*',
+      'x-rate-limit': 100,
+      'x-rate-limit-enabled': true,
+    });
+
+    let acceptHeader = headers.get('accept');
+    expectTypeOf(acceptHeader).toEqualTypeOf<string | null>();
+    expect(acceptHeader).toBe('*/*');
+
+    headers.set('accept', 'image/png');
+    acceptHeader = headers.get('accept');
+    expectTypeOf(acceptHeader).toEqualTypeOf<string | null>();
+    expect(acceptHeader).toBe('image/png');
+
+    let rateLimitHeader = headers.get('x-rate-limit');
+    expectTypeOf(rateLimitHeader).toEqualTypeOf<`${number}`>();
+    expect(rateLimitHeader).toBe('100');
+
+    headers.set('x-rate-limit', 200);
+    rateLimitHeader = headers.get('x-rate-limit');
+    expectTypeOf(rateLimitHeader).toEqualTypeOf<`${number}`>();
+    expect(rateLimitHeader).toBe('200');
+
+    let rateLimitEffectiveHeader = headers.get('x-rate-limit-enabled');
+    expectTypeOf(rateLimitEffectiveHeader).toEqualTypeOf<`${boolean}`>();
+    expect(rateLimitEffectiveHeader).toBe('true');
+
+    headers.set('x-rate-limit-enabled', false);
+    rateLimitEffectiveHeader = headers.get('x-rate-limit-enabled');
+    expectTypeOf(rateLimitEffectiveHeader).toEqualTypeOf<`${boolean}`>();
+    expect(rateLimitEffectiveHeader).toBe('false');
+  });
+
   it('should support setting headers', () => {
     const headers = new HttpHeaders<{
       accept?: string;
