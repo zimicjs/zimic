@@ -31,10 +31,9 @@ function pickPrimitiveProperties<LooseSchema extends HttpHeadersSchema.Loose>(sc
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpheaders `HttpHeaders` API reference}
  */
-class HttpHeaders<
-  LooseSchema extends HttpHeadersSchema.Loose = HttpHeadersSchema.Loose,
-  Schema extends HttpHeadersSchema = HttpHeadersSerialized<LooseSchema>,
-> extends Headers {
+class HttpHeaders<LooseSchema extends HttpHeadersSchema.Loose = HttpHeadersSchema.Loose> extends Headers {
+  readonly _schema!: HttpHeadersSerialized<LooseSchema>;
+
   constructor(init?: HttpHeadersInit<LooseSchema>) {
     if (init instanceof Headers || Array.isArray(init) || !init) {
       super(init);
@@ -44,38 +43,40 @@ class HttpHeaders<
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/set MDN Reference} */
-  set<Name extends HttpHeadersSchemaName<Schema>>(name: Name, value: NonNullable<LooseSchema[Name]>): void {
+  set<Name extends HttpHeadersSchemaName<this['_schema']>>(name: Name, value: NonNullable<LooseSchema[Name]>): void {
     super.set(name, value);
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/append MDN Reference} */
-  append<Name extends HttpHeadersSchemaName<Schema>>(name: Name, value: NonNullable<LooseSchema[Name]>): void {
+  append<Name extends HttpHeadersSchemaName<this['_schema']>>(name: Name, value: NonNullable<LooseSchema[Name]>): void {
     super.append(name, value);
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/get MDN Reference} */
-  get<Name extends HttpHeadersSchemaName<Schema>>(name: Name): ReplaceBy<Schema[Name], undefined, null> {
-    return super.get(name) as ReplaceBy<Schema[Name], undefined, null>;
+  get<Name extends HttpHeadersSchemaName<this['_schema']>>(
+    name: Name,
+  ): ReplaceBy<this['_schema'][Name], undefined, null> {
+    return super.get(name) as never;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/has MDN Reference} */
-  getSetCookie(): NonNullable<Default<Schema['Set-Cookie'], string>>[] {
-    return super.getSetCookie() as NonNullable<Default<Schema['Set-Cookie'], string>>[];
+  getSetCookie(): NonNullable<Default<this['_schema']['Set-Cookie'], string>>[] {
+    return super.getSetCookie() as never;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/has MDN Reference} */
-  has<Name extends HttpHeadersSchemaName<Schema>>(name: Name): boolean {
+  has<Name extends HttpHeadersSchemaName<this['_schema']>>(name: Name): boolean {
     return super.has(name);
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/delete MDN Reference} */
-  delete<Name extends HttpHeadersSchemaName<Schema>>(name: Name): void {
+  delete<Name extends HttpHeadersSchemaName<this['_schema']>>(name: Name): void {
     super.delete(name);
   }
 
-  forEach<This extends HttpHeaders<Schema>>(
-    callback: <Key extends HttpHeadersSchemaName<Schema>>(
-      value: NonNullable<Schema[Key]> & string,
+  forEach<This extends HttpHeaders<this['_schema']>>(
+    callback: <Key extends HttpHeadersSchemaName<this['_schema']>>(
+      value: NonNullable<this['_schema'][Key]> & string,
       key: Key,
       parent: Headers,
     ) => void,
@@ -85,30 +86,32 @@ class HttpHeaders<
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/keys MDN Reference} */
-  keys(): HeadersIterator<HttpHeadersSchemaName<Schema>> {
-    return super.keys() as HeadersIterator<HttpHeadersSchemaName<Schema>>;
+  keys(): HeadersIterator<HttpHeadersSchemaName<this['_schema']>> {
+    return super.keys() as never;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/values MDN Reference} */
-  values(): HeadersIterator<NonNullable<Schema[HttpHeadersSchemaName<Schema>]> & string> {
-    return super.values() as HeadersIterator<NonNullable<Schema[HttpHeadersSchemaName<Schema>]> & string>;
+  values(): HeadersIterator<NonNullable<this['_schema'][HttpHeadersSchemaName<this['_schema']>]> & string> {
+    return super.values() as never;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/entries MDN Reference} */
   entries(): HeadersIterator<
-    [HttpHeadersSchemaName<Schema>, NonNullable<Schema[HttpHeadersSchemaName<Schema>]> & string]
+    [
+      HttpHeadersSchemaName<this['_schema']>,
+      NonNullable<this['_schema'][HttpHeadersSchemaName<this['_schema']>]> & string,
+    ]
   > {
-    return super.entries() as HeadersIterator<
-      [HttpHeadersSchemaName<Schema>, NonNullable<Schema[HttpHeadersSchemaName<Schema>]> & string]
-    >;
+    return super.entries() as never;
   }
 
   [Symbol.iterator](): HeadersIterator<
-    [HttpHeadersSchemaName<Schema>, NonNullable<Schema[HttpHeadersSchemaName<Schema>]> & string]
+    [
+      HttpHeadersSchemaName<this['_schema']>,
+      NonNullable<this['_schema'][HttpHeadersSchemaName<this['_schema']>]> & string,
+    ]
   > {
-    return super[Symbol.iterator]() as HeadersIterator<
-      [HttpHeadersSchemaName<Schema>, NonNullable<Schema[HttpHeadersSchemaName<Schema>]> & string]
-    >;
+    return super[Symbol.iterator]() as never;
   }
 
   /**
@@ -180,8 +183,8 @@ class HttpHeaders<
    *
    * @returns A plain object representation of these headers.
    */
-  toObject(): Schema {
-    const object = {} as Schema;
+  toObject(): this['_schema'] {
+    const object = {} as this['_schema'];
 
     for (const [key, value] of this.entries()) {
       object[key] = value;
