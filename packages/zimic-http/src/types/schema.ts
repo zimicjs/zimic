@@ -6,19 +6,6 @@ import { HttpPathParamsSchema, HttpPathParamsSerialized } from '../pathParams/ty
 import { HttpSearchParamsSchema, HttpSearchParamsSerialized } from '../searchParams/types';
 import { HttpBody } from './requests';
 
-export const HTTP_METHODS_WITH_REQUEST_BODY = Object.freeze(['POST', 'PUT', 'PATCH', 'DELETE'] as const);
-export type HttpMethodWithRequestBody = (typeof HTTP_METHODS_WITH_REQUEST_BODY)[number];
-
-export const HTTP_METHODS_WITH_RESPONSE_BODY = Object.freeze([
-  'GET',
-  'POST',
-  'PUT',
-  'PATCH',
-  'DELETE',
-  'OPTIONS',
-] as const);
-export type HttpMethodWithResponseBody = (typeof HTTP_METHODS_WITH_RESPONSE_BODY)[number];
-
 export const HTTP_METHODS = Object.freeze(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const);
 /**
  * A type representing the currently supported

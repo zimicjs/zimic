@@ -1,11 +1,4 @@
-import {
-  HttpSchema,
-  HTTP_METHODS,
-  HttpHeaders,
-  HttpSearchParams,
-  HTTP_METHODS_WITH_REQUEST_BODY,
-  HttpFormData,
-} from '@zimic/http';
+import { HttpSchema, HTTP_METHODS, HttpHeaders, HttpSearchParams, HttpFormData } from '@zimic/http';
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import joinURL from '@zimic/utils/url/joinURL';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
@@ -16,6 +9,7 @@ import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandl
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { importFile } from '@/utils/files';
+import { HTTP_METHODS_WITH_REQUEST_BODY } from '@/utils/http';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectPreflightResponse } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -251,7 +245,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
     });
   });
 
-  describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {
+  describe.each(Array.from(HTTP_METHODS_WITH_REQUEST_BODY))('Method (%s)', (method) => {
     const lowerMethod = method.toLowerCase<'POST'>();
 
     it(`should support intercepting ${method} requests having partial, exact body JSON restrictions`, async () => {
