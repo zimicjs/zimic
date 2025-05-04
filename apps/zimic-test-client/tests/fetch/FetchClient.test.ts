@@ -13,6 +13,7 @@ import {
   User,
   UserCreationRequestBody,
   UserListSearchParams,
+  UserUpdatePayload,
   ValidationError,
 } from '@tests/types/schema';
 import { importCrypto } from '@tests/utils/crypto';
@@ -560,6 +561,123 @@ describe('Fetch client', async () => {
         expect(getHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(getHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<NotFoundError>>();
         expect(await getHandler.requests[0].response.raw.json()).toEqual(notFoundError);
+      });
+    });
+
+    describe('User update', () => {
+      const updatePayload: UserUpdatePayload = {
+        name: 'Updated Name',
+        email: 'updated@email.com',
+        birthDate: new Date().toISOString(),
+      };
+
+      async function updateUser(userId: string, payload: Partial<UserCreationRequestBody>) {
+        const response = await authFetch(`/users/${userId}`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json', authorization: 'Bearer token' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw response.error;
+        }
+
+        return response;
+      }
+
+      it('should support updating users', async () => {
+        const updateHandler = authInterceptor
+          .patch(`/users/${user.id}`)
+          .with({
+            headers: { 'content-type': 'application/json', authorization: 'Bearer token' },
+            body: updatePayload,
+          })
+          .respond((request) => {
+            expect(request.headers.get('content-type')).toBe('application/json');
+
+            const updatedUser: JSONSerialized<User> = {
+              ...serializeUser(user),
+              ...request.body,
+            };
+
+            return {
+              status: 200,
+              body: updatedUser,
+            };
+          })
+          .times(1);
+
+        const response = await updateUser(user.id, updatePayload);
+        expectTypeOf(response.status).toEqualTypeOf<200>();
+        expectResponseStatus(response, 200);
+
+        const updatedUser = await response.json();
+        expect(updatedUser).toEqual<JSONSerialized<User>>({
+          ...serializeUser(user),
+          ...updatePayload,
+        });
+
+        expect(updateHandler.requests).toHaveLength(1);
+
+        expectTypeOf(updateHandler.requests[0].headers).branded.toEqualTypeOf<
+          HttpHeaders<{ 'content-type': 'application/json'; authorization: string }>
+        >();
+
+        expectTypeOf(updateHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expect(updateHandler.requests[0].searchParams.size).toBe(0);
+
+        expectTypeOf(updateHandler.requests[0].body).toEqualTypeOf<UserUpdatePayload>();
+        expect(updateHandler.requests[0].body).toEqual(updatePayload);
+      });
+
+      it('should return an error if user not found', async () => {
+        const notFoundError: NotFoundError = {
+          code: 'not_found',
+          message: 'User not found',
+        };
+
+        const updateHandler = authInterceptor
+          .patch('/users/:userId')
+          .with({ body: updatePayload })
+          .respond({ status: 404, body: notFoundError })
+          .times(1);
+
+        const error = await expectToThrow(
+          updateUser(crypto.randomUUID(), updatePayload),
+          (error): error is FetchResponseError<AuthServiceSchema, 'PATCH', '/users/:userId'> =>
+            authFetch.isResponseError(error, 'PATCH', '/users/:userId'),
+        );
+
+        expectTypeOf(error.response.status).toEqualTypeOf<400 | 404 | 500>();
+        expectResponseStatus(error.response, 404);
+
+        expect(updateHandler.requests).toHaveLength(1);
+        expect(updateHandler.requests[0].response.body).toEqual(notFoundError);
+      });
+
+      it('should return an error if payload is invalid', async () => {
+        const validationError: ValidationError = {
+          code: 'validation_error',
+          message: 'Invalid payload',
+        };
+
+        const updateHandler = authInterceptor
+          .patch('/users/:userId')
+          .with({ body: {} })
+          .respond({ status: 400, body: validationError })
+          .times(1);
+
+        const error = await expectToThrow(
+          updateUser(user.id, {}),
+          (error): error is FetchResponseError<AuthServiceSchema, 'PATCH', '/users/:userId'> =>
+            authFetch.isResponseError(error, 'PATCH', '/users/:userId'),
+        );
+
+        expectTypeOf(error.response.status).toEqualTypeOf<400 | 404 | 500>();
+        expectResponseStatus(error.response, 400);
+
+        expect(updateHandler.requests).toHaveLength(1);
+        expect(updateHandler.requests[0].response.body).toEqual(validationError);
       });
     });
 
