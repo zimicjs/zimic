@@ -93,8 +93,32 @@ export interface HttpResponse<
   clone: () => this;
 }
 
+type HttpRequestHeadersSchemaFromBody<
+  RequestSchema extends HttpRequestSchema,
+  DefaultHeadersSchema,
+> = 'body' extends keyof RequestSchema
+  ? [RequestSchema['body']] extends [never]
+    ? DefaultHeadersSchema
+    : RequestSchema['body'] extends BodyInit | undefined
+      ? DefaultHeadersSchema
+      : 'headers' extends keyof RequestSchema
+        ? [RequestSchema['headers']] extends [never]
+          ? DefaultHeadersSchema
+          : 'content-type' extends keyof Default<RequestSchema['headers']>
+            ? DefaultHeadersSchema
+            : { 'content-type': 'application/json' }
+        : { 'content-type': 'application/json' }
+  : DefaultHeadersSchema;
+
 export type HttpRequestHeadersSchema<MethodSchema extends HttpMethodSchema> =
-  'headers' extends keyof MethodSchema['request'] ? Default<MethodSchema['request']>['headers'] : never;
+  'headers' extends keyof MethodSchema['request']
+    ? [MethodSchema['request']['headers']] extends [never]
+      ? HttpRequestHeadersSchemaFromBody<Default<MethodSchema['request']>, never>
+      :
+          | (MethodSchema['request']['headers'] &
+              HttpRequestHeadersSchemaFromBody<Default<MethodSchema['request']>, {}>)
+          | (MethodSchema['request']['headers'] & undefined)
+    : HttpRequestHeadersSchemaFromBody<Default<MethodSchema['request']>, never>;
 
 export type HttpRequestSearchParamsSchema<MethodSchema extends HttpMethodSchema> =
   'searchParams' extends keyof MethodSchema['request'] ? Default<MethodSchema['request']>['searchParams'] : never;
@@ -105,12 +129,32 @@ export type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = Repla
   Blob
 >;
 
+type HttpResponseHeadersSchemaFromBody<
+  ResponseSchema extends HttpResponseSchema,
+  DefaultHeadersSchema,
+> = 'body' extends keyof ResponseSchema
+  ? [ResponseSchema['body']] extends [never]
+    ? DefaultHeadersSchema
+    : ResponseSchema['body'] extends BodyInit | undefined
+      ? DefaultHeadersSchema
+      : 'headers' extends keyof ResponseSchema
+        ? [ResponseSchema['headers']] extends [never]
+          ? DefaultHeadersSchema
+          : 'content-type' extends keyof Default<ResponseSchema['headers']>
+            ? DefaultHeadersSchema
+            : { 'content-type': 'application/json' }
+        : { 'content-type': 'application/json' }
+  : DefaultHeadersSchema;
+
 export type HttpResponseHeadersSchema<
   MethodSchema extends HttpMethodSchema,
   StatusCode extends HttpStatusCode,
 > = 'headers' extends keyof Default<MethodSchema['response']>[StatusCode]
-  ? Default<Default<MethodSchema['response']>[StatusCode]>['headers']
-  : never;
+  ? [Default<MethodSchema['response']>[StatusCode]] extends [never]
+    ? HttpResponseHeadersSchemaFromBody<Default<Default<MethodSchema['response']>[StatusCode]>, never>
+    : Default<Default<MethodSchema['response']>[StatusCode]>['headers'] &
+        HttpResponseHeadersSchemaFromBody<Default<Default<MethodSchema['response']>[StatusCode]>, {}>
+  : HttpResponseHeadersSchemaFromBody<Default<Default<MethodSchema['response']>[StatusCode]>, never>;
 
 export type HttpResponseBodySchema<
   MethodSchema extends HttpMethodSchema,
