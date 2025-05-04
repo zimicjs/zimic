@@ -178,6 +178,53 @@ describe('HttpSearchParams', () => {
     expect(page).toBe('1');
   });
 
+  it('should support being created with a loose schema', () => {
+    const searchParams = new HttpSearchParams<{
+      names?: string[];
+      page: number;
+      limit: number;
+      full: boolean;
+    }>({
+      names: ['User1', 'User2'],
+      page: 1,
+      limit: 10,
+      full: true,
+    });
+
+    expect(searchParams.size).toBe(3);
+
+    const names = searchParams.getAll('names');
+    expectTypeOf(names).toEqualTypeOf<string[]>();
+    expect(names).toEqual(['User1', 'User2']);
+
+    let page = searchParams.get('page');
+    expectTypeOf(page).toEqualTypeOf<`${number}`>();
+    expect(page).toBe('1');
+
+    searchParams.set('page', 2);
+    page = searchParams.get('page');
+    expectTypeOf(page).toEqualTypeOf<`${number}`>();
+    expect(page).toBe('2');
+
+    let limit = searchParams.get('limit');
+    expectTypeOf(limit).toEqualTypeOf<`${number}`>();
+    expect(limit).toBe('10');
+
+    searchParams.set('limit', 20);
+    limit = searchParams.get('limit');
+    expectTypeOf(limit).toEqualTypeOf<`${number}`>();
+    expect(limit).toBe('20');
+
+    let full = searchParams.get('full');
+    expectTypeOf(full).toEqualTypeOf<`${boolean}`>();
+    expect(full).toBe('true');
+
+    searchParams.set('full', false);
+    full = searchParams.get('full');
+    expectTypeOf(full).toEqualTypeOf<`${boolean}`>();
+    expect(full).toBe('false');
+  });
+
   it('should support setting params', () => {
     const searchParams = new HttpSearchParams<{
       names?: string[];

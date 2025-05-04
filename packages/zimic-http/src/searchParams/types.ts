@@ -14,7 +14,7 @@ export namespace HttpSearchParamsSchema {
 }
 
 /** A strict tuple representation of a {@link HttpSearchParamsSchema}. */
-export type HttpSearchParamsSchemaTuple<Schema extends HttpSearchParamsSchema = HttpSearchParamsSchema> = {
+export type HttpSearchParamsSchemaTuple<Schema extends HttpSearchParamsSchema.Loose = HttpSearchParamsSchema.Loose> = {
   [Key in keyof Schema & string]: [Key, ArrayItemIfArray<NonNullable<Schema[Key]>>];
 }[keyof Schema & string];
 
@@ -22,7 +22,7 @@ export type HttpSearchParamsSchemaTuple<Schema extends HttpSearchParamsSchema = 
  * An initialization value for
  * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpsearchparams `HttpSearchParams`}.
  */
-export type HttpSearchParamsInit<Schema extends HttpSearchParamsSchema = HttpSearchParamsSchema> =
+export type HttpSearchParamsInit<Schema extends HttpSearchParamsSchema.Loose = HttpSearchParamsSchema.Loose> =
   | string
   | URLSearchParams
   | Schema
