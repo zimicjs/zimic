@@ -61,3 +61,12 @@ export interface Range<Type> {
 export type ObjectKey<Type> = keyof Type & string;
 export type ObjectValue<Type> = Type[ObjectKey<Type>];
 export type ObjectEntry<Type> = [ObjectKey<Type>, ObjectValue<Type>];
+
+declare const brand: unique symbol;
+
+/**
+ * A utility type to create a branded type. This is useful for creating types that are distinct from each other even if
+ * they have the same underlying structure. It also helps the TypeScript compiler to reference the type in the generated
+ * declaration files, rather than inlining it.
+ */
+export type Branded<Type, Brand extends string> = Type & { [brand]?: Brand };

@@ -191,7 +191,7 @@ describe('HttpSearchParams', () => {
       full: true,
     });
 
-    expect(searchParams.size).toBe(3);
+    expect(searchParams.size).toBe(5);
 
     const names = searchParams.getAll('names');
     expectTypeOf(names).toEqualTypeOf<string[]>();
