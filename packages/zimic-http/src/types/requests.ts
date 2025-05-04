@@ -99,15 +99,15 @@ type HttpRequestHeadersSchemaFromBody<
 > = 'body' extends keyof RequestSchema
   ? [RequestSchema['body']] extends [never]
     ? DefaultHeadersSchema
-    : RequestSchema['body'] extends BodyInit | undefined
-      ? DefaultHeadersSchema
-      : 'headers' extends keyof RequestSchema
+    : [Extract<RequestSchema['body'], BodyInit | HttpFormData | HttpSearchParams>] extends [never]
+      ? 'headers' extends keyof RequestSchema
         ? [RequestSchema['headers']] extends [never]
           ? DefaultHeadersSchema
           : 'content-type' extends keyof Default<RequestSchema['headers']>
             ? DefaultHeadersSchema
             : { 'content-type': 'application/json' }
         : { 'content-type': 'application/json' }
+      : DefaultHeadersSchema
   : DefaultHeadersSchema;
 
 export type HttpRequestHeadersSchema<MethodSchema extends HttpMethodSchema> =
@@ -135,15 +135,15 @@ type HttpResponseHeadersSchemaFromBody<
 > = 'body' extends keyof ResponseSchema
   ? [ResponseSchema['body']] extends [never]
     ? DefaultHeadersSchema
-    : ResponseSchema['body'] extends BodyInit | undefined
-      ? DefaultHeadersSchema
-      : 'headers' extends keyof ResponseSchema
+    : [Extract<ResponseSchema['body'], BodyInit | HttpSearchParams | HttpFormData>] extends [never]
+      ? 'headers' extends keyof ResponseSchema
         ? [ResponseSchema['headers']] extends [never]
           ? DefaultHeadersSchema
           : 'content-type' extends keyof Default<ResponseSchema['headers']>
             ? DefaultHeadersSchema
             : { 'content-type': 'application/json' }
         : { 'content-type': 'application/json' }
+      : DefaultHeadersSchema
   : DefaultHeadersSchema;
 
 export type HttpResponseHeadersSchema<

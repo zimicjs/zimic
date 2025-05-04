@@ -24,9 +24,6 @@ function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema.Loose>(sc
  * An extended HTTP search params object with a strictly-typed schema. Fully compatible with the built-in
  * {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams `URLSearchParams`} class.
  *
- * **IMPORTANT**: the input of `HttpSearchParams` and all of its internal types must be declared inline or as a type
- * aliases (`type`). They cannot be interfaces.
- *
  * @example
  *   import { HttpSearchParams } from '@zimic/http';
  *
