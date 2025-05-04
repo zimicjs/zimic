@@ -888,7 +888,7 @@ type Schema = HttpSchema<{
     GET: {
       request: {
         searchParams: {
-          limit?: `${number}`;
+          limit?: number;
           orderBy?: 'createdAt:asc' | 'createdAt:desc';
         };
       };
@@ -906,7 +906,7 @@ const fetch = createFetch<Schema>({
 // The search params for this request are set to 'limit=10&orderBy=createdAt:desc'.
 const response = await fetch('/users', {
   method: 'GET',
-  searchParams: { limit: '10', orderBy: 'createdAt:desc' },
+  searchParams: { limit: 10, orderBy: 'createdAt:desc' },
 });
 ```
 
@@ -924,7 +924,7 @@ type Schema = HttpSchema<{
 // Set default search params for all requests on creation
 const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
-  searchParams: { limit: '10' },
+  searchParams: { limit: 10 },
 });
 
 // Set default search params for all requests at runtime
