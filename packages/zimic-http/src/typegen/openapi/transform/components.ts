@@ -264,16 +264,6 @@ function processPendingRequestComponentActions(component: RequestComponent, cont
   return { bodyQuestionToken };
 }
 
-function wrapRequestComponentType(type: ts.TypeNode, context: TypeTransformContext) {
-  context.typeImports.http.add('HttpSchema');
-
-  const httpSchemaRequestWrapper = ts.factory.createQualifiedName(
-    ts.factory.createIdentifier('HttpSchema'),
-    ts.factory.createIdentifier('Request'),
-  );
-  return ts.factory.createTypeReferenceNode(httpSchemaRequestWrapper, [type]);
-}
-
 function normalizeRequestComponent(component: Component, context: TypeTransformContext) {
   /* istanbul ignore if -- @preserve
    * Component group members in `requests` are always expected the be request components. */
@@ -289,7 +279,7 @@ function normalizeRequestComponent(component: Component, context: TypeTransformC
     component.modifiers,
     component.name,
     component.questionToken,
-    wrapRequestComponentType(newType, context),
+    newType,
   );
 }
 

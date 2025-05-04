@@ -92,7 +92,7 @@ We also canary releases under the tag `canary`, containing the latest features a
            headers: { authorization: string };
            searchParams: {
              query?: string;
-             limit?: `${number}`;
+             limit?: number;
            };
          };
          response: {

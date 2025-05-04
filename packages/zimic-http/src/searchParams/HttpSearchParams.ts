@@ -1,12 +1,17 @@
 import { ReplaceBy, ArrayItemIfArray } from '@zimic/utils/types';
 
-import { HttpSearchParamsSchema, HttpSearchParamsInit, HttpSearchParamsSchemaName } from './types';
+import {
+  HttpSearchParamsSchema,
+  HttpSearchParamsInit,
+  HttpSearchParamsSchemaName,
+  HttpSearchParamsSerialized,
+} from './types';
 
-function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema>(schema: Schema) {
+function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema.Loose>(schema: Schema) {
   const schemaWithPrimitiveProperties = Object.entries(schema).reduce<Record<string, string>>(
     (accumulated, [key, value]) => {
       if (value !== undefined && !Array.isArray(value)) {
-        accumulated[key] = value;
+        accumulated[key] = String(value);
       }
       return accumulated;
     },
@@ -41,8 +46,11 @@ function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema>(schema: 
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpsearchparams `HttpSearchParams` API reference}
  */
-class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsSchema> extends URLSearchParams {
-  constructor(init?: HttpSearchParamsInit<Schema>) {
+class HttpSearchParams<
+  LooseSchema extends HttpSearchParamsSchema.Loose = HttpSearchParamsSchema.Loose,
+  Schema extends HttpSearchParamsSchema = HttpSearchParamsSerialized<LooseSchema>,
+> extends URLSearchParams {
+  constructor(init?: HttpSearchParamsInit<LooseSchema>) {
     if (init instanceof URLSearchParams || Array.isArray(init) || typeof init === 'string' || !init) {
       super(init);
     } else {
@@ -51,11 +59,11 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
     }
   }
 
-  private populateInitArrayProperties(init: Schema) {
+  private populateInitArrayProperties(init: LooseSchema) {
     for (const [key, value] of Object.entries(init)) {
       if (Array.isArray(value)) {
-        for (const item of value) {
-          super.append(key, item);
+        for (const item of value as unknown[]) {
+          super.append(key, String(item));
         }
       }
     }
@@ -64,7 +72,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/set MDN Reference} */
   set<Name extends HttpSearchParamsSchemaName<Schema>>(
     name: Name,
-    value: ArrayItemIfArray<NonNullable<Schema[Name]>>,
+    value: ArrayItemIfArray<NonNullable<LooseSchema[Name]>>,
   ): void {
     super.set(name, value);
   }
@@ -72,7 +80,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/append MDN Reference} */
   append<Name extends HttpSearchParamsSchemaName<Schema>>(
     name: Name,
-    value: ArrayItemIfArray<NonNullable<Schema[Name]>>,
+    value: ArrayItemIfArray<NonNullable<LooseSchema[Name]>>,
   ): void {
     super.append(name, value);
   }
@@ -110,7 +118,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/has MDN Reference} */
   has<Name extends HttpSearchParamsSchemaName<Schema>>(
     name: Name,
-    value?: ArrayItemIfArray<NonNullable<Schema[Name]>>,
+    value?: ArrayItemIfArray<NonNullable<LooseSchema[Name]>>,
   ): boolean {
     return super.has(name, value);
   }
@@ -118,7 +126,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/delete MDN Reference} */
   delete<Name extends HttpSearchParamsSchemaName<Schema>>(
     name: Name,
-    value?: ArrayItemIfArray<NonNullable<Schema[Name]>>,
+    value?: ArrayItemIfArray<NonNullable<LooseSchema[Name]>>,
   ): void {
     super.delete(name, value);
   }
@@ -170,7 +178,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
    * @param otherParams The other search parameters to compare against.
    * @returns `true` if the search parameters are equal, `false` otherwise.
    */
-  equals<OtherSchema extends Schema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
+  equals<OtherSchema extends LooseSchema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
     return this.contains(otherParams) && this.size === otherParams.size;
   }
 
@@ -182,7 +190,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
    * @param otherParams The other search parameters to check for containment.
    * @returns `true` if these search parameters contain the other search parameters, `false` otherwise.
    */
-  contains<OtherSchema extends Schema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
+  contains<OtherSchema extends LooseSchema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
     for (const [key, otherValue] of otherParams.entries()) {
       const values = super.getAll.call(this, key);
 

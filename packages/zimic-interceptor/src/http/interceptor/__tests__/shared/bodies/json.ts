@@ -216,13 +216,13 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
 
     it(`should support intercepting ${method} requests having a JSON body declared as type or interface not strictly compatible with JSON`, async () => {
       interface UserAsNonJSONInterface extends UserAsInterface {
-        date: Date; // Forcing an invalid type
-        method: () => void; // Forcing an invalid type
+        date?: Date; // Forcing an invalid type
+        method?: () => void; // Forcing an invalid type
       }
 
       type UserAsNonJSONType = UserAsType & {
-        date: Date; // Forcing an invalid type
-        method: () => void; // Forcing an invalid type
+        date?: Date; // Forcing an invalid type
+        method?: () => void; // Forcing an invalid type
       };
 
       type MethodSchema = HttpSchema.Method<{
@@ -246,19 +246,12 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
           DELETE: MethodSchema;
         };
       }>(interceptorOptions, async (interceptor) => {
-        const requestDate = new Date().toISOString();
-        const responseDate = new Date().toISOString();
-
         const handler = await promiseIfRemote(
           interceptor[lowerMethod]('/users/:id').respond((request) => {
-            expectTypeOf(request.body).not.toEqualTypeOf<UserAsNonJSONInterface>();
-            expectTypeOf(request.body).toEqualTypeOf<JSONSerialized<UserAsNonJSONInterface>>();
-            expect(request.body).toEqual({ ...users[0], date: requestDate });
+            expectTypeOf(request.body).toEqualTypeOf<UserAsNonJSONInterface>();
+            expect(request.body).toEqual(users[0]);
 
-            return {
-              status: 200,
-              body: { ...users[0], date: responseDate },
-            };
+            return { status: 200, body: users[0] };
           }),
           interceptor,
         );
@@ -269,56 +262,46 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ ...users[0], date: requestDate }),
+          body: JSON.stringify(users[0]),
         });
         expect(response.status).toBe(200);
 
         const fetchedUser = (await response.json()) as UserAsInterface;
-        expect(fetchedUser).toEqual({ ...users[0], date: responseDate });
+        expect(fetchedUser).toEqual(users[0]);
 
         expect(handler.requests).toHaveLength(1);
         const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('application/json');
-        expectTypeOf(request.body).not.toEqualTypeOf<UserAsNonJSONInterface>();
-        expectTypeOf(request.body).toEqualTypeOf<JSONSerialized<UserAsNonJSONInterface>>();
-        expect(request.body).toEqual({ ...users[0], date: requestDate });
+        expectTypeOf(request.body).toEqualTypeOf<UserAsNonJSONInterface>();
+        expect(request.body).toEqual(users[0]);
 
         expect(request.response).toBeInstanceOf(Response);
         expect(request.response.headers.get('content-type')).toBe('application/json');
-        expectTypeOf(request.response.body).not.toEqualTypeOf<UserAsNonJSONType>();
-        expectTypeOf(request.response.body).toEqualTypeOf<JSONSerialized<UserAsNonJSONType>>();
-        expect(request.response.body).toEqual({ ...users[0], date: responseDate });
+        expectTypeOf(request.response.body).toEqualTypeOf<UserAsNonJSONType>();
+        expect(request.response.body).toEqual(users[0]);
 
-        expectTypeOf(request.raw).not.toEqualTypeOf<HttpRequest<UserAsNonJSONInterface>>();
-        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<JSONSerialized<UserAsNonJSONInterface>>>();
+        expectTypeOf(request.raw).branded.toEqualTypeOf<HttpRequest<UserAsNonJSONInterface>>();
         expect(request.raw).toBeInstanceOf(Request);
         expect(request.raw.url).toBe(request.url);
         expect(request.raw.method).toBe(method);
         expect(Object.fromEntries(request.headers)).toEqual(
           expect.objectContaining(Object.fromEntries(request.raw.headers)),
         );
-        expectTypeOf(request.raw.json).not.toEqualTypeOf<() => Promise<UserAsNonJSONInterface>>();
-        expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<UserAsNonJSONInterface>>>();
-        expect(await request.raw.json()).toEqual<JSONSerialized<UserAsNonJSONInterface>>({
-          ...users[0],
-          date: requestDate,
-        });
+        expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<UserAsNonJSONInterface>>();
+        expect(await request.raw.json()).toEqual<JSONSerialized<UserAsNonJSONInterface>>(users[0]);
         expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
 
-        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<JSONSerialized<UserAsNonJSONType>, 200>>();
+        expectTypeOf(request.response.raw).branded.toEqualTypeOf<HttpResponse<UserAsNonJSONType, 200>>();
         expect(request.response.raw).toBeInstanceOf(Response);
         expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
         expect(request.response.raw.status).toBe(200);
         expect(Object.fromEntries(response.headers)).toEqual(
           expect.objectContaining(Object.fromEntries(request.response.raw.headers)),
         );
-        expectTypeOf(request.response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<UserAsNonJSONType>>>();
-        expect(await request.response.raw.json()).toEqual<JSONSerialized<UserAsNonJSONType>>({
-          ...users[0],
-          date: responseDate,
-        });
+        expectTypeOf(request.response.raw.json).toEqualTypeOf<() => Promise<UserAsNonJSONType>>();
+        expect(await request.response.raw.json()).toEqual<JSONSerialized<UserAsNonJSONType>>(users[0]);
         expectTypeOf(request.response.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
       });
     });

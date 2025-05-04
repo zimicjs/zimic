@@ -14,35 +14,43 @@ import {
   HttpStatusCode,
   InferPathParams,
 } from '@zimic/http';
-import { Default, PartialByKey, PossiblePromise, ReplaceBy } from '@zimic/utils/types';
+import { Default, PartialByKey, PossiblePromise } from '@zimic/utils/types';
 
-export type HttpRequestHandlerResponseWithBody<ResponseSchema extends HttpResponseSchema> =
-  unknown extends ResponseSchema['body']
-    ? { body?: null }
-    : undefined extends ResponseSchema['body']
-      ? { body?: ReplaceBy<ReplaceBy<ResponseSchema['body'], undefined, null>, ArrayBuffer, Blob> }
-      : { body: ReplaceBy<ResponseSchema['body'], ArrayBuffer, Blob> };
+type HttpRequestHandlerResponseBody<
+  ResponseSchema extends HttpResponseSchema,
+  StatusCode extends HttpStatusCode,
+> = HttpResponseBodySchema<{ response: { [Code in StatusCode]: ResponseSchema } }, StatusCode>;
 
-type HttpRequestHandlerResponseHeaders<ResponseSchema extends HttpResponseSchema> = HttpHeadersInit<
+export type HttpRequestHandlerResponseWithBody<
+  ResponseSchema extends HttpResponseSchema,
+  StatusCode extends HttpStatusCode,
+> = unknown extends ResponseSchema['body']
+  ? { body?: null }
+  : undefined extends ResponseSchema['body']
+    ? { body?: HttpRequestHandlerResponseBody<ResponseSchema, StatusCode> }
+    : { body: HttpRequestHandlerResponseBody<ResponseSchema, StatusCode> };
+
+type HttpRequestHandlerResponseDeclarationHeaders<ResponseSchema extends HttpResponseSchema> = HttpHeadersInit<
   PartialByKey<Default<ResponseSchema['headers']>, 'content-type'>
 >;
 
-export type HttpRequestHandlerResponseWithHeaders<ResponseSchema extends HttpResponseSchema> =
+export type HttpRequestHandlerResponseDeclarationWithHeaders<ResponseSchema extends HttpResponseSchema> =
   undefined extends ResponseSchema['headers']
-    ? { headers?: HttpRequestHandlerResponseHeaders<ResponseSchema> }
-    : keyof ResponseSchema['headers'] extends 'content-type'
-      ? { headers?: HttpRequestHandlerResponseHeaders<ResponseSchema> }
-      : { headers: HttpRequestHandlerResponseHeaders<ResponseSchema> };
+    ? { headers?: HttpRequestHandlerResponseDeclarationHeaders<ResponseSchema> }
+    : Exclude<keyof ResponseSchema['headers'], symbol> extends 'content-type'
+      ? { headers?: HttpRequestHandlerResponseDeclarationHeaders<ResponseSchema> }
+      : { headers: HttpRequestHandlerResponseDeclarationHeaders<ResponseSchema> };
 
 /** A declaration of an HTTP response for an intercepted request. */
 export type HttpRequestHandlerResponseDeclaration<
   MethodSchema extends HttpMethodSchema = HttpMethodSchema,
   StatusCode extends HttpStatusCode = HttpStatusCode,
 > = StatusCode extends StatusCode
-  ? {
-      status: StatusCode;
-    } & HttpRequestHandlerResponseWithBody<Default<Default<MethodSchema['response']>[StatusCode]>> &
-      HttpRequestHandlerResponseWithHeaders<Default<Default<MethodSchema['response']>[StatusCode]>>
+  ? { status: StatusCode } & HttpRequestHandlerResponseWithBody<
+      Default<Default<MethodSchema['response']>[StatusCode]>,
+      StatusCode
+    > &
+      HttpRequestHandlerResponseDeclarationWithHeaders<Default<Default<MethodSchema['response']>[StatusCode]>>
   : never;
 
 /**
@@ -66,13 +74,13 @@ export type HttpRequestHandlerResponseDeclarationFactory<
 export interface HttpInterceptorRequest<Path extends string, MethodSchema extends HttpMethodSchema>
   extends Omit<HttpRequest, keyof Body | 'headers' | 'clone'> {
   /** The headers of the request. */
-  headers: HttpHeaders<HttpRequestHeadersSchema<MethodSchema>>;
+  headers: HttpHeaders<Default<HttpRequestHeadersSchema<MethodSchema>>>;
   /** The path parameters of the request. They are parsed from the path string when using dynamic paths. */
   pathParams: InferPathParams<Path>;
   /** The search parameters of the request. */
-  searchParams: HttpSearchParams<HttpRequestSearchParamsSchema<MethodSchema>>;
+  searchParams: HttpSearchParams<Default<HttpRequestSearchParamsSchema<MethodSchema>>>;
   /** The body of the request. It is already parsed by default. */
-  body: ReplaceBy<HttpRequestBodySchema<MethodSchema>, ArrayBuffer, Blob>;
+  body: HttpRequestBodySchema<MethodSchema>;
   /** The raw request object. */
   raw: HttpRequest<HttpRequestBodySchema<MethodSchema>>;
 }
@@ -84,7 +92,7 @@ export interface HttpInterceptorRequest<Path extends string, MethodSchema extend
 export interface HttpInterceptorResponse<MethodSchema extends HttpMethodSchema, StatusCode extends HttpStatusCode>
   extends Omit<HttpResponse, keyof Body | 'headers' | 'clone'> {
   /** The headers of the response. */
-  headers: HttpHeaders<HttpResponseHeadersSchema<MethodSchema, StatusCode>>;
+  headers: HttpHeaders<Default<HttpResponseHeadersSchema<MethodSchema, StatusCode>>>;
   /** The status code of the response. */
   status: StatusCode;
   /** The body of the response. It is already parsed by default. */

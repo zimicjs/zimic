@@ -62,52 +62,40 @@ describe('Schema types', () => {
 
   describe('InferPathParams', () => {
     it('should infer path param schemas from path strings', () => {
-      expectTypeOf<InferPathParams<'/users'>>().toEqualTypeOf<HttpSchema.PathParams<{}>>();
+      expectTypeOf<InferPathParams<'/users'>>().toEqualTypeOf<{}>();
 
-      expectTypeOf<InferPathParams<'/users/:userId'>>().toEqualTypeOf<
-        HttpSchema.PathParams<{
-          userId: string;
-        }>
-      >();
+      expectTypeOf<InferPathParams<'/users/:userId'>>().toEqualTypeOf<{
+        userId: string;
+      }>();
 
-      expectTypeOf<InferPathParams<'/users/:userId/:otherId'>>().toEqualTypeOf<
-        HttpSchema.PathParams<{
-          userId: string;
-          otherId: string;
-        }>
-      >();
+      expectTypeOf<InferPathParams<'/users/:userId/:otherId'>>().toEqualTypeOf<{
+        userId: string;
+        otherId: string;
+      }>();
 
-      expectTypeOf<InferPathParams<'/users/:userId/:otherId/:anotherId'>>().toEqualTypeOf<
-        HttpSchema.PathParams<{
-          userId: string;
-          otherId: string;
-          anotherId: string;
-        }>
-      >();
+      expectTypeOf<InferPathParams<'/users/:userId/:otherId/:anotherId'>>().toEqualTypeOf<{
+        userId: string;
+        otherId: string;
+        anotherId: string;
+      }>();
 
-      expectTypeOf<InferPathParams<'/users/:userId/notifications/:notificationId'>>().toEqualTypeOf<
-        HttpSchema.PathParams<{
-          userId: string;
-          notificationId: string;
-        }>
-      >();
+      expectTypeOf<InferPathParams<'/users/:userId/notifications/:notificationId'>>().toEqualTypeOf<{
+        userId: string;
+        notificationId: string;
+      }>();
     });
 
     it('should infer path param schemas from path strings validated by a service schema', () => {
-      expectTypeOf<InferPathParams<Schema, '/users'>>().toEqualTypeOf<HttpSchema.PathParams<{}>>();
+      expectTypeOf<InferPathParams<Schema, '/users'>>().toEqualTypeOf<{}>();
 
-      expectTypeOf<InferPathParams<Schema, '/users/:userId'>>().toEqualTypeOf<
-        HttpSchema.PathParams<{
-          userId: string;
-        }>
-      >();
+      expectTypeOf<InferPathParams<Schema, '/users/:userId'>>().toEqualTypeOf<{
+        userId: string;
+      }>();
 
-      expectTypeOf<InferPathParams<Schema, '/users/:userId/notifications/:notificationId'>>().toEqualTypeOf<
-        HttpSchema.PathParams<{
-          userId: string;
-          notificationId: string;
-        }>
-      >();
+      expectTypeOf<InferPathParams<Schema, '/users/:userId/notifications/:notificationId'>>().toEqualTypeOf<{
+        userId: string;
+        notificationId: string;
+      }>();
 
       // @ts-expect-error `/unknown` is not a path of the schema
       expectTypeOf<InferPathParams<Schema, '/unknown'>>();
@@ -132,16 +120,14 @@ describe('Schema types', () => {
         ]
       >;
 
-      expectTypeOf<MergedResponseByStatusCode>().toEqualTypeOf<
-        HttpSchema.ResponseByStatusCode<{
-          100: { body: { message: string; issues: string[] } };
-          101: { body: null };
-          102: { body: { message: string } };
-          103: { body: { message: string } };
-          500: { body: { message?: string } };
-          502: { headers: {} };
-        }>
-      >();
+      expectTypeOf<MergedResponseByStatusCode>().branded.toEqualTypeOf<{
+        100: { body: { message: string; issues: string[] } };
+        101: { body: null };
+        102: { body: { message: string } };
+        103: { body: { message: string } };
+        500: { body: { message?: string } };
+        502: { headers: {} };
+      }>();
     });
   });
 });

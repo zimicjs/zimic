@@ -306,7 +306,7 @@ describe('FetchClient > Listeners', () => {
         .get('/users')
         .with({
           headers: { 'accept-language': 'en' },
-          searchParams: { page: '1', limit: '10' },
+          searchParams: { page: 1, limit: 10 },
         })
         .respond({
           status: 200,
@@ -324,8 +324,8 @@ describe('FetchClient > Listeners', () => {
 
           const url = new URL(request.url);
           const searchParams = new HttpSearchParams<SearchParamsSchema>(url.search);
-          searchParams.set('page', '1');
-          searchParams.set('limit', '10');
+          searchParams.set('page', 1);
+          searchParams.set('limit', 10);
 
           const updatedRequest = new this.Request('/users', {
             method: 'GET',
@@ -387,7 +387,7 @@ describe('FetchClient > Listeners', () => {
         .get('/users')
         .with({
           headers: { 'accept-language': 'en' },
-          searchParams: { page: '1', limit: '10' },
+          searchParams: { page: 1, limit: 10 },
         })
         .respond({
           status: 200,

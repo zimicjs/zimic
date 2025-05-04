@@ -1,11 +1,11 @@
 import { Default, ReplaceBy } from '@zimic/utils/types';
 
-import { HttpHeadersSchema, HttpHeadersInit, HttpHeadersSchemaName } from './types';
+import { HttpHeadersSchema, HttpHeadersInit, HttpHeadersSchemaName, HttpHeadersSerialized } from './types';
 
-function pickPrimitiveProperties<Schema extends HttpHeadersSchema>(schema: Schema) {
+function pickPrimitiveProperties<LooseSchema extends HttpHeadersSchema.Loose>(schema: LooseSchema) {
   return Object.entries(schema).reduce<Record<string, string>>((accumulated, [key, value]) => {
     if (value !== undefined) {
-      accumulated[key] = value;
+      accumulated[key] = String(value);
     }
     return accumulated;
   }, {});
@@ -34,8 +34,11 @@ function pickPrimitiveProperties<Schema extends HttpHeadersSchema>(schema: Schem
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpheaders `HttpHeaders` API reference}
  */
-class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends Headers {
-  constructor(init?: HttpHeadersInit<Schema>) {
+class HttpHeaders<
+  LooseSchema extends HttpHeadersSchema.Loose = HttpHeadersSchema.Loose,
+  Schema extends HttpHeadersSchema = HttpHeadersSerialized<LooseSchema>,
+> extends Headers {
+  constructor(init?: HttpHeadersInit<LooseSchema>) {
     if (init instanceof Headers || Array.isArray(init) || !init) {
       super(init);
     } else {
@@ -44,12 +47,12 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/set MDN Reference} */
-  set<Name extends HttpHeadersSchemaName<Schema>>(name: Name, value: NonNullable<Schema[Name]> & string): void {
+  set<Name extends HttpHeadersSchemaName<Schema>>(name: Name, value: NonNullable<LooseSchema[Name]>): void {
     super.set(name, value);
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/append MDN Reference} */
-  append<Name extends HttpHeadersSchemaName<Schema>>(name: Name, value: NonNullable<Schema[Name]> & string): void {
+  append<Name extends HttpHeadersSchemaName<Schema>>(name: Name, value: NonNullable<LooseSchema[Name]>): void {
     super.append(name, value);
   }
 
@@ -118,7 +121,7 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
    * @param otherHeaders The other headers object to compare against.
    * @returns `true` if the headers are equal, `false` otherwise.
    */
-  equals<OtherSchema extends Schema>(otherHeaders: HttpHeaders<OtherSchema>): boolean {
+  equals<OtherSchema extends LooseSchema>(otherHeaders: HttpHeaders<OtherSchema>): boolean {
     if (!this.contains(otherHeaders)) {
       return false;
     }
@@ -141,7 +144,7 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
    * @param otherHeaders The other headers object to compare against.
    * @returns `true` if these headers contain the other headers, `false` otherwise.
    */
-  contains<OtherSchema extends Schema>(otherHeaders: HttpHeaders<OtherSchema>): boolean {
+  contains<OtherSchema extends LooseSchema>(otherHeaders: HttpHeaders<OtherSchema>): boolean {
     for (const [key, otherValue] of otherHeaders.entries()) {
       const value = super.get.call(this, key);
 

@@ -110,7 +110,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
           request: {
             searchParams: {
               query?: string;
-              limit?: `${number}`;
+              limit?: number;
             };
           };
           response: {
@@ -152,7 +152,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
     ```ts
     const response = await fetch('/users', {
       method: 'GET',
-      searchParams: { query: 'u', limit: '10' },
+      searchParams: { query: 'u', limit: 10 },
     });
 
     if (response.status === 404) {
