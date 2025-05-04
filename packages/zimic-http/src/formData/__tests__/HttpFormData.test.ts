@@ -15,6 +15,54 @@ describe('HttpFormData', async () => {
 
   const description = 'description';
 
+  it('should support being created with a loose schema', () => {
+    const formData = new HttpFormData<{
+      name: string;
+      description: string;
+      size?: number;
+      enabled: boolean | null;
+      file?: File;
+      blob: Blob[];
+    }>();
+
+    formData.set('name', 'name');
+
+    const nameField = formData.get('name');
+    expectTypeOf(nameField).toEqualTypeOf<string>();
+    expect(nameField).toEqual('name');
+
+    formData.set('description', description);
+
+    const descriptionField = formData.get('description');
+    expectTypeOf(descriptionField).toEqualTypeOf<string>();
+    expect(descriptionField).toEqual(description);
+
+    formData.set('size', 123);
+
+    const sizeField = formData.get('size');
+    expectTypeOf(sizeField).toEqualTypeOf<`${number}` | null>();
+    expect(sizeField).toEqual('123');
+
+    formData.set('enabled', true);
+
+    const enabledField = formData.get('enabled');
+    expectTypeOf(enabledField).toEqualTypeOf<`${boolean}` | null>();
+    expect(enabledField).toEqual('true');
+
+    formData.set('file', file);
+
+    const fileField = formData.get('file');
+    expectTypeOf(fileField).toEqualTypeOf<File | null>();
+    expect(fileField).toEqual(file);
+
+    formData.set('blob', blob);
+
+    const blobField = formData.getAll('blob');
+    expectTypeOf(blobField).toEqualTypeOf<File[]>();
+    expect(blobField).toEqual([new File([blob], '', { type: 'text/plain' })]);
+    expect(['blob', 'undefined']).toContain(blobField[0].name);
+  });
+
   it('should support setting form data fields fields', () => {
     const formData = new HttpFormData<{
       file?: File;

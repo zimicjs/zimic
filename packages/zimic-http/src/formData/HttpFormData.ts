@@ -1,7 +1,7 @@
 import fileEquals from '@zimic/utils/data/fileEquals';
 import { ArrayItemIfArray, ReplaceBy } from '@zimic/utils/types';
 
-import { HttpFormDataSchema, HttpFormDataSchemaName } from './types';
+import { HttpFormDataSchema, HttpFormDataSchemaName, HttpFormDataSerialized } from './types';
 
 /**
  * An extended HTTP form data object with a strictly-typed schema. Fully compatible with the built-in
@@ -29,20 +29,23 @@ import { HttpFormDataSchema, HttpFormDataSchemaName } from './types';
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpformdata `HttpFormData` API reference}
  */
-class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> extends FormData {
+class HttpFormData<
+  LooseSchema extends HttpFormDataSchema.Loose = HttpFormDataSchema.Loose,
+  Schema extends HttpFormDataSchema = HttpFormDataSerialized<LooseSchema>,
+> extends FormData {
   /** @see {@link https://developer.mozilla.org/docs/Web/API/FormData/set MDN Reference} */
   set<Name extends HttpFormDataSchemaName<Schema>>(
     name: Name,
-    value: Exclude<ArrayItemIfArray<NonNullable<Schema[Name]>>, Blob>,
+    value: Exclude<ArrayItemIfArray<NonNullable<LooseSchema[Name]>>, Blob>,
   ): void;
   set<Name extends HttpFormDataSchemaName<Schema>>(
     name: Name,
-    blob: Exclude<ArrayItemIfArray<NonNullable<Schema[Name]>>, string>,
+    blob: Exclude<ArrayItemIfArray<NonNullable<LooseSchema[Name]>>, string>,
     fileName?: string,
   ): void;
   set<Name extends HttpFormDataSchemaName<Schema>>(
     name: Name,
-    blobOrValue: ArrayItemIfArray<NonNullable<Schema[Name]>>,
+    blobOrValue: ArrayItemIfArray<NonNullable<LooseSchema[Name]>>,
     fileName?: string,
   ): void {
     if (fileName === undefined) {
@@ -55,16 +58,16 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
   /** @see {@link https://developer.mozilla.org/docs/Web/API/FormData/append MDN Reference} */
   append<Name extends HttpFormDataSchemaName<Schema>>(
     name: Name,
-    value: Exclude<ArrayItemIfArray<NonNullable<Schema[Name]>>, Blob>,
+    value: Exclude<ArrayItemIfArray<NonNullable<LooseSchema[Name]>>, Blob>,
   ): void;
   append<Name extends HttpFormDataSchemaName<Schema>>(
     name: Name,
-    blob: Exclude<ArrayItemIfArray<NonNullable<Schema[Name]>>, string>,
+    blob: Exclude<ArrayItemIfArray<NonNullable<LooseSchema[Name]>>, string>,
     fileName?: string,
   ): void;
   append<Name extends HttpFormDataSchemaName<Schema>>(
     name: Name,
-    blobOrValue: ArrayItemIfArray<NonNullable<Schema[Name]>>,
+    blobOrValue: ArrayItemIfArray<NonNullable<LooseSchema[Name]>>,
     fileName?: string,
   ): void {
     if (fileName === undefined) {
@@ -176,7 +179,7 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
    * @returns A promise that resolves with `true` if the data is equal to the other data, or `false` otherwise.
    *   Important: both form data might be read while comparing.
    */
-  async equals<OtherSchema extends Schema>(otherData: HttpFormData<OtherSchema>): Promise<boolean> {
+  async equals<OtherSchema extends LooseSchema>(otherData: HttpFormData<OtherSchema>): Promise<boolean> {
     if (!(await this.contains(otherData))) {
       return false;
     }
@@ -199,7 +202,7 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
    * @returns A promise that resolves with `true` if this data contains the other data, or `false` otherwise. Important:
    *   both form data might be read while comparing.
    */
-  async contains<OtherSchema extends Schema>(otherData: HttpFormData<OtherSchema>): Promise<boolean> {
+  async contains<OtherSchema extends LooseSchema>(otherData: HttpFormData<OtherSchema>): Promise<boolean> {
     for (const [otherKey, otherValue] of otherData.entries()) {
       const values = super.getAll.call(this, otherKey);
 
@@ -213,7 +216,7 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
       for (const value of values) {
         if (
           value === otherValue ||
-          (value instanceof Blob && otherValue instanceof Blob && (await fileEquals(value, otherValue)))
+          (value instanceof Blob && (otherValue as Blob) instanceof Blob && (await fileEquals(value, otherValue)))
         ) {
           valueExists = true;
           break;
