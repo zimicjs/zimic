@@ -121,7 +121,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'def
     const fetchResponse = response as FetchResponse<Schema, Method, Path>;
 
     Object.defineProperty(fetchResponse, 'request', {
-      value: fetchRequest satisfies FetchResponse.Loose['request'],
+      value: fetchRequest,
       writable: false,
       enumerable: true,
       configurable: false,

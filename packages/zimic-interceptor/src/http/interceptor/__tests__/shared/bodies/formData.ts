@@ -137,7 +137,9 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
         expect(interceptedResponseTagFile.type).toBe(responseTagFile.type);
         expect(await interceptedResponseTagFile.text()).toEqual(await responseTagFile.text());
 
-        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<HttpFormData<UserFormDataSchema>>>();
+        expectTypeOf(request.raw).toEqualTypeOf<
+          HttpRequest<HttpFormData<UserFormDataSchema>, { 'content-type': string }>
+        >();
         expect(request.raw).toBeInstanceOf(Request);
         expect(request.raw.url).toBe(request.url);
         expect(request.raw.method).toBe(method);
@@ -148,7 +150,9 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
         expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<StrictFormData<UserFormDataSchema>>>();
         expect(Object.fromEntries(await request.raw.formData())).toEqual(Object.fromEntries(formData));
 
-        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<HttpFormData<UserFormDataSchema>, 200>>();
+        expectTypeOf(request.response.raw).toEqualTypeOf<
+          HttpResponse<HttpFormData<UserFormDataSchema>, { 'content-type'?: string }, 200>
+        >();
         expect(request.response.raw).toBeInstanceOf(Response);
         expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
         expect(request.response.raw.status).toBe(200);

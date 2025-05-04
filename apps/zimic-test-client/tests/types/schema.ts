@@ -57,7 +57,6 @@ type UserPaths = HttpSchema<{
   '/users': {
     POST: {
       request: {
-        headers: { 'content-type': 'application/json' };
         body: UserCreationRequestBody;
       };
       response: {
@@ -78,6 +77,8 @@ type UserPaths = HttpSchema<{
   };
 }>;
 
+export type UserUpdatePayload = Partial<JSONSerialized<User>>;
+
 type UserByIdPaths = HttpSchema<{
   '/users/:userId': {
     GET: {
@@ -90,11 +91,12 @@ type UserByIdPaths = HttpSchema<{
 
     PATCH: {
       request: {
-        headers: { 'content-type': 'application/json' };
-        body: Partial<JSONSerialized<User>>;
+        headers: { 'content-type': string };
+        body: UserUpdatePayload;
       };
       response: {
         200: { body: JSONSerialized<User> };
+        400: { body: ValidationError };
         404: { body: NotFoundError };
         500: { body: InternalServerError };
       };

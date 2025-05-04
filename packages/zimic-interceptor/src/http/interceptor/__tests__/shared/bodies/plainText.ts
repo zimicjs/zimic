@@ -97,7 +97,7 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
         expectTypeOf(request.response.body).toEqualTypeOf<string>();
         expect(request.response.body).toBe('content-response');
 
-        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<string>>();
+        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<string, { 'content-type': string }>>();
         expect(request.raw).toBeInstanceOf(Request);
         expect(request.raw.url).toBe(request.url);
         expect(request.raw.method).toBe(method);
@@ -107,7 +107,7 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
         expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<never>>();
         expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
 
-        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<string, 200>>();
+        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<string, { 'content-type'?: string }, 200>>();
         expect(request.response.raw).toBeInstanceOf(Response);
         expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
         expect(request.response.raw.status).toBe(200);

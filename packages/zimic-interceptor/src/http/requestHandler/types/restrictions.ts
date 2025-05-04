@@ -138,8 +138,8 @@ export type RestrictionMatchResult<Value> = { value: true; diff?: undefined } | 
 
 export interface RestrictionDiffs {
   computed?: RestrictionDiff<boolean>;
-  headers?: RestrictionDiff<HttpHeaders<never>>;
-  searchParams?: RestrictionDiff<HttpSearchParams<never>>;
+  headers?: RestrictionDiff<HttpHeaders<any>>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  searchParams?: RestrictionDiff<HttpSearchParams<any>>; // eslint-disable-line @typescript-eslint/no-explicit-any
   body?: RestrictionDiff<unknown>;
 }
 

@@ -63,7 +63,7 @@ describe('FetchClient > Bodies > JSON', () => {
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
+      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'application/json' }>>();
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<User>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
@@ -130,7 +130,7 @@ describe('FetchClient > Bodies > JSON', () => {
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
+      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'application/json' }>>();
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<number>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
@@ -197,7 +197,7 @@ describe('FetchClient > Bodies > JSON', () => {
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
+      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'application/json' }>>();
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<boolean>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();

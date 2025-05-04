@@ -46,7 +46,7 @@ describe('HttpFormData', async () => {
     formData.set('enabled', true);
 
     const enabledField = formData.get('enabled');
-    expectTypeOf(enabledField).toEqualTypeOf<`${boolean}` | null>();
+    expectTypeOf(enabledField).toEqualTypeOf<`${boolean}` | 'null'>();
     expect(enabledField).toEqual('true');
 
     formData.set('file', file);
@@ -590,7 +590,7 @@ describe('HttpFormData', async () => {
 
         requiredEnum: 'value1' | 'value2';
         optionalEnum?: 'value1' | 'value2';
-        nullableString: string | null;
+        nullableNumber: number | null;
 
         blob: Blob;
         blobArray: Blob[];
@@ -622,7 +622,7 @@ describe('HttpFormData', async () => {
 
         requiredEnum: 'value1' | 'value2';
         optionalEnum?: 'value1' | 'value2';
-        nullableString: string | null;
+        nullableNumber: `${number}` | 'null';
 
         blob: Blob;
         blobArray: Blob[];
@@ -630,14 +630,15 @@ describe('HttpFormData', async () => {
         stringArray: string[];
         numberArray: `${number}`[];
         booleanArray: `${boolean}`[];
-      }>();
 
-      expectTypeOf<HttpFormDataSerialized<string[]>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpFormDataSerialized<Date>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpFormDataSerialized<() => void>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpFormDataSerialized<symbol>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpFormDataSerialized<Map<never, never>>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpFormDataSerialized<Set<never>>>().toEqualTypeOf<never>();
+        object: string;
+
+        date: string;
+        method: string;
+        map: string;
+        set: string;
+        error: string;
+      }>();
     });
   });
 });

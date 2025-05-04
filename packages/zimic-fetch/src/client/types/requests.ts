@@ -22,6 +22,8 @@ import {
   HttpBody,
   HttpRequestBodySchema,
   HttpRequestSearchParamsSchema,
+  HttpSearchParams,
+  HttpFormData,
 } from '@zimic/http';
 import { Default } from '@zimic/utils/types';
 
@@ -46,13 +48,13 @@ type FetchRequestInitWithSearchParams<SearchParamsSchema extends HttpSearchParam
 type FetchRequestBodySchema<RequestSchema extends HttpRequestSchema> = 'body' extends keyof RequestSchema
   ? [RequestSchema['body']] extends [never]
     ? null | undefined
-    : RequestSchema['body'] extends BodyInit
+    : [Extract<RequestSchema['body'], BodyInit | HttpSearchParams | HttpFormData>] extends [never]
       ? undefined extends RequestSchema['body']
-        ? RequestSchema['body'] | null
-        : RequestSchema['body']
-      : undefined extends RequestSchema['body']
         ? JSONStringified<Exclude<RequestSchema['body'], null | undefined>> | null | undefined
         : JSONStringified<Exclude<RequestSchema['body'], null>> | Extract<RequestSchema['body'], null>
+      : undefined extends RequestSchema['body']
+        ? RequestSchema['body'] | null
+        : RequestSchema['body']
   : null | undefined;
 
 type FetchRequestInitWithBody<BodySchema extends HttpBody> = [BodySchema] extends [never]
@@ -248,8 +250,8 @@ export interface FetchResponsePerStatusCode<
   StatusCode extends HttpStatusCode = HttpStatusCode,
 > extends HttpResponse<
     HttpResponseBodySchema<Default<Schema[Path][Method]>, StatusCode>,
-    StatusCode,
-    Default<HttpResponseHeadersSchema<Default<Schema[Path][Method]>, StatusCode>>
+    Default<HttpResponseHeadersSchema<Default<Schema[Path][Method]>, StatusCode>>,
+    StatusCode
   > {
   /** The request that originated the response. */
   request: FetchRequest<Schema, Method, Path>;

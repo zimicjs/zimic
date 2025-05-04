@@ -392,7 +392,11 @@ export function declareTypeHttpInterceptorTests(
       expectTypeOf<ResponseBody>().toEqualTypeOf<User[] | { message: string } | null>();
 
       type ResponseHeaders = (typeof _handler.requests)[number]['response']['headers'];
-      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<{ 'content-type': string }> | HttpHeaders<never>>();
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<
+        | HttpHeaders<{ 'content-type': string }>
+        | HttpHeaders<{ 'content-type': 'application/json' }>
+        | HttpHeaders<never>
+      >();
 
       type ResponseStatus = (typeof _handler.requests)[number]['response']['status'];
       expectTypeOf<ResponseStatus>().toEqualTypeOf<200 | 400 | 404>();
@@ -506,7 +510,11 @@ export function declareTypeHttpInterceptorTests(
       expectTypeOf<ResponseBody>().toEqualTypeOf<User[] | { message: string } | '2xx' | '4xx' | 'default' | null>();
 
       type ResponseHeaders = (typeof _handler.requests)[number]['response']['headers'];
-      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<{ 'content-type': string }> | HttpHeaders<never>>();
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<
+        | HttpHeaders<{ 'content-type': string }>
+        | HttpHeaders<{ 'content-type': 'application/json' }>
+        | HttpHeaders<never>
+      >();
 
       type ResponseStatus = (typeof _handler.requests)[number]['response']['status'];
       expectTypeOf<ResponseStatus>().toEqualTypeOf<200 | 201 | 204 | 400 | 401 | 404 | 500>();
@@ -580,7 +588,9 @@ export function declareTypeHttpInterceptorTests(
       });
 
       type ResponseHeaders = (typeof _listHandler.requests)[number]['response']['headers'];
-      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<
+        HttpHeaders<UserListHeaders & { 'content-type': 'application/json' }>
+      >();
     });
   });
 
@@ -612,7 +622,9 @@ export function declareTypeHttpInterceptorTests(
       });
 
       type ResponseHeaders = (typeof _listHandler.requests)[number]['response']['headers'];
-      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<
+        HttpHeaders<UserListHeaders & { 'content-type': 'application/json' }>
+      >();
     });
   });
 
@@ -620,7 +632,7 @@ export function declareTypeHttpInterceptorTests(
     // If only content type is specified, the headers should be optional. This is because the content type is
     // automatically set by the interceptor before returning a response, unless overridden.
     type UserListHeaders = HttpSchema.Headers<{
-      'content-type': string;
+      'content-type': 'application/json; charset=utf-8';
     }>;
 
     await usingHttpInterceptor<{
@@ -654,7 +666,7 @@ export function declareTypeHttpInterceptorTests(
 
       _listHandler = await interceptor.get('/users').respond({
         status: 200,
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json; charset=utf-8' },
         body: users[0],
       });
 
@@ -667,7 +679,7 @@ export function declareTypeHttpInterceptorTests(
     // If additional headers existing, beyond content type, only the `content-type` key should be optional. The
     // additional headers should be kept as defined.
     type UserListHeaders = HttpSchema.Headers<{
-      'content-type': string;
+      'content-type': 'application/json; charset=utf-8';
       accept: string;
     }>;
 
@@ -712,7 +724,7 @@ export function declareTypeHttpInterceptorTests(
 
       _listHandler = await interceptor.get('/users').respond({
         status: 200,
-        headers: { 'content-type': 'application/json', accept: '*/*' },
+        headers: { 'content-type': 'application/json; charset=utf-8', accept: '*/*' },
         body: users[0],
       });
 
@@ -725,7 +737,7 @@ export function declareTypeHttpInterceptorTests(
     // If additional headers existing, beyond content type, only the `content-type` key should be optional. The
     // additional headers should be kept as defined.
     type UserListHeaders = HttpSchema.Headers<{
-      'content-type': string;
+      'content-type': 'application/json; charset=utf-8';
       accept?: string;
     }>;
 
@@ -761,13 +773,13 @@ export function declareTypeHttpInterceptorTests(
 
       _listHandler = await interceptor.get('/users').respond({
         status: 200,
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json; charset=utf-8' },
         body: users[0],
       });
 
       _listHandler = await interceptor.get('/users').respond({
         status: 200,
-        headers: { 'content-type': 'application/json', accept: '*/*' },
+        headers: { 'content-type': 'application/json; charset=utf-8', accept: '*/*' },
         body: users[0],
       });
 
