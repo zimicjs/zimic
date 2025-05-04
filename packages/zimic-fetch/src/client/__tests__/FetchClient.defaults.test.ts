@@ -129,12 +129,16 @@ describe('FetchClient > Defaults', () => {
       expect(response).toBeInstanceOf(Response);
       expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
 
-      expect(response.url).toBe(joinURL(baseURL, '/users?limit=10'));
+      expect(response.url).toBe(
+        joinURL(baseURL, `/users?orderBy=${encodeURIComponent('name:asc')}&limit=10&full=true`),
+      );
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
-      expect(response.request.url).toBe(joinURL(baseURL, '/users?limit=10'));
+      expect(response.request.url).toBe(
+        joinURL(baseURL, `/users?orderBy=${encodeURIComponent('name:asc')}&limit=10&full=true`),
+      );
 
       expect(response.request.cache).toBe(defaults.cache);
       expect(response.request.headers.get('content-type')).toBe(defaults.headers['content-type']);
@@ -218,7 +222,7 @@ describe('FetchClient > Defaults', () => {
       fetch.defaults.cache = defaults.cache;
       fetch.defaults.credentials = defaults.credentials;
       fetch.defaults.headers['content-type'] = defaults.headers['content-type'];
-      fetch.defaults.searchParams.limit = defaults.searchParams.limit;
+      fetch.defaults.searchParams = defaults.searchParams;
       fetch.defaults.body = defaults.body;
       fetch.defaults.keepalive = defaults.keepalive;
       fetch.defaults.mode = defaults.mode;
@@ -240,12 +244,16 @@ describe('FetchClient > Defaults', () => {
       expect(response).toBeInstanceOf(Response);
       expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
 
-      expect(response.url).toBe(joinURL(baseURL, '/users?limit=10'));
+      expect(response.url).toBe(
+        joinURL(baseURL, `/users?orderBy=${encodeURIComponent('name:asc')}&limit=10&full=true`),
+      );
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
-      expect(response.request.url).toBe(joinURL(baseURL, '/users?limit=10'));
+      expect(response.request.url).toBe(
+        joinURL(baseURL, `/users?orderBy=${encodeURIComponent('name:asc')}&limit=10&full=true`),
+      );
 
       expect(response.request.cache).toBe(defaults.cache);
       expect(response.request.headers.get('content-type')).toBe(defaults.headers['content-type']);
