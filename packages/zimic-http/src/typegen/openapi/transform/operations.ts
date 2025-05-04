@@ -36,16 +36,6 @@ function isOperation(node: ts.Node): node is Operation {
   );
 }
 
-function wrapOperationType(type: ts.TypeLiteralNode, context: TypeTransformContext) {
-  context.typeImports.http.add('HttpSchema');
-
-  const httpSchemaMethodWrapper = ts.factory.createQualifiedName(
-    ts.factory.createIdentifier('HttpSchema'),
-    ts.factory.createIdentifier('Method'),
-  );
-  return ts.factory.createTypeReferenceNode(httpSchemaMethodWrapper, [type]);
-}
-
 function normalizeOperation(operation: ts.TypeElement, context: TypeTransformContext) {
   /* istanbul ignore if -- @preserve
    * Operation members are always expected to be an operation. */
@@ -60,7 +50,7 @@ function normalizeOperation(operation: ts.TypeElement, context: TypeTransformCon
     operation.modifiers,
     operation.name,
     operation.questionToken,
-    wrapOperationType(newType, context),
+    newType,
   );
 }
 
