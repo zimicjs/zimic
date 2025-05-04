@@ -72,62 +72,56 @@ export type HttpSearchParamsSchemaName<Schema extends HttpSearchParamsSchema> = 
   keyof Schema & string
 >;
 
-type PrimitiveHttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSchema[string]
-  ? Type
-  : Type extends (infer ArrayItem)[]
-    ? ArrayItem extends (infer _InternalArrayItem)[]
-      ? never
-      : PrimitiveHttpSearchParamsSerialized<ArrayItem>[]
-    : Type extends number
-      ? `${number}`
-      : Type extends boolean
-        ? `${boolean}`
-        : Type extends null
-          ? undefined
-          : never;
+type PrimitiveHttpSearchParamsSerialized<Type> = [Type] extends [never]
+  ? never
+  : Type extends number
+    ? `${number}`
+    : Type extends boolean
+      ? `${boolean}`
+      : Type extends null
+        ? 'null'
+        : Type extends symbol
+          ? never
+          : Type extends HttpSearchParamsSchema[string]
+            ? Type
+            : Type extends (infer ArrayItem)[]
+              ? ArrayItem extends (infer _InternalArrayItem)[]
+                ? string
+                : PrimitiveHttpSearchParamsSerialized<ArrayItem>[]
+              : string;
 
 /**
  * Recursively converts a schema to its
- * {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams URLSearchParams}-serialized version. Numbers and
- * booleans are converted to `${number}` and `${boolean}` respectively, null becomes undefined and not serializable
- * values are excluded, such as functions and dates.
+ * {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams URLSearchParams}-serialized version. Numbers,
+ * booleans, and null are converted to `${number}`, `${boolean}`, and 'null' respectively, and other values become
+ * strings.
  *
  * @example
  *   import { type HttpSearchParamsSerialized } from '@zimic/http';
  *
  *   type Params = HttpSearchParamsSerialized<{
- *     query: string | null;
+ *     query?: string;
+ *     order: 'asc' | 'desc' | null;
  *     page?: number;
  *     full?: boolean;
- *     date: Date;
- *     method: () => void;
  *   }>;
  *   // {
- *   //   query: string | undefined;
+ *   //   query?: string;
+ *   //   order: 'asc' | 'desc' | 'null';
  *   //   page?: `${number}`;
  *   //   full?: "false" | "true";
  *   // }
  */
-export type HttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSchema
-  ? Type
-  : Type extends (infer _ArrayItem)[]
-    ? never
-    : Type extends Date
-      ? never
-      : Type extends (...parameters: never[]) => unknown
-        ? never
-        : Type extends symbol
-          ? never
-          : Type extends Map<infer _Key, infer _Value>
-            ? never
-            : Type extends Set<infer _Value>
-              ? never
-              : Type extends object
-                ? {
-                    [Key in keyof Type as IfNever<
-                      PrimitiveHttpSearchParamsSerialized<Type[Key]>,
-                      never,
-                      Key
-                    >]: PrimitiveHttpSearchParamsSerialized<Type[Key]>;
-                  }
-                : never;
+export type HttpSearchParamsSerialized<Type> = [Type] extends [never]
+  ? never
+  : Type extends HttpSearchParamsSchema
+    ? Type
+    : Type extends object
+      ? {
+          [Key in keyof Type as IfNever<
+            PrimitiveHttpSearchParamsSerialized<Type[Key]>,
+            never,
+            Key
+          >]: PrimitiveHttpSearchParamsSerialized<Type[Key]>;
+        }
+      : never;

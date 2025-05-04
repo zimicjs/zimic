@@ -612,7 +612,7 @@ describe('HttpSearchParams', () => {
 
         requiredEnum: 'value1' | 'value2';
         optionalEnum?: 'value1' | 'value2';
-        nullableString: string | null;
+        nullableNumber: number | null;
 
         stringArray: string[];
         numberArray: number[];
@@ -641,19 +641,20 @@ describe('HttpSearchParams', () => {
 
         requiredEnum: 'value1' | 'value2';
         optionalEnum?: 'value1' | 'value2';
-        nullableString: string | undefined;
+        nullableNumber: `${number}` | 'null';
 
         stringArray: string[];
         numberArray: `${number}`[];
         booleanArray: `${boolean}`[];
-      }>();
 
-      expectTypeOf<HttpSearchParamsSerialized<string[]>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpSearchParamsSerialized<Date>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpSearchParamsSerialized<() => void>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpSearchParamsSerialized<symbol>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpSearchParamsSerialized<Map<never, never>>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpSearchParamsSerialized<Set<never>>>().toEqualTypeOf<never>();
+        object: string;
+
+        date: string;
+        method: string;
+        map: string;
+        set: string;
+        error: string;
+      }>();
     });
   });
 });
