@@ -1,5 +1,5 @@
 import { createFetch, FetchResponseError } from '@zimic/fetch';
-import { JSONSerialized, HttpHeaders, HttpSearchParams, HttpRequest, HttpResponse, HttpSchema } from '@zimic/http';
+import { JSONSerialized, HttpHeaders, HttpSearchParams, HttpRequest, HttpResponse } from '@zimic/http';
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 import expectToThrow from '@zimic/utils/error/expectToThrow';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
@@ -325,9 +325,7 @@ describe('Fetch client', async () => {
 
         expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<
-          HttpSearchParams<HttpSchema.SearchParams<UserListSearchParams>>
-        >();
+        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
         expect(listHandler.requests[0].searchParams.get('name')).toBe(null);
         expect(listHandler.requests[0].searchParams.getAll('orderBy')).toEqual([]);
 
@@ -368,9 +366,7 @@ describe('Fetch client', async () => {
 
         expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<
-          HttpSearchParams<HttpSchema.SearchParams<UserListSearchParams>>
-        >();
+        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
         expect(listHandler.requests[0].searchParams.size).toBe(1);
         expect(listHandler.requests[0].searchParams.get('name')).toBe(user.name);
         expect(listHandler.requests[0].searchParams.getAll('orderBy')).toEqual([]);
@@ -416,9 +412,7 @@ describe('Fetch client', async () => {
 
         expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<
-          HttpSearchParams<HttpSchema.SearchParams<UserListSearchParams>>
-        >();
+        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
         expect(listHandler.requests[0].searchParams.size).toBe(1);
         expect(listHandler.requests[0].searchParams.get('name')).toBe(null);
         expect(listHandler.requests[0].searchParams.getAll('orderBy')).toEqual(['email.desc']);

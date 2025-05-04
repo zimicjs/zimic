@@ -1,4 +1,4 @@
-import { JSONSerialized, HttpHeaders, HttpRequest, HttpResponse, HttpSchema, HttpSearchParams } from '@zimic/http';
+import { JSONSerialized, HttpHeaders, HttpRequest, HttpResponse, HttpSearchParams } from '@zimic/http';
 import { createHttpInterceptor, HttpInterceptorType } from '@zimic/interceptor/http';
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf, afterEach } from 'vitest';
 
@@ -306,7 +306,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
       });
 
       async function listUsers(filters: UserListSearchParams = {}) {
-        const searchParams = new HttpSearchParams<HttpSchema.SearchParams<UserListSearchParams>>(filters);
+        const searchParams = new HttpSearchParams<UserListSearchParams>(filters);
         const request = new Request(`${authBaseURL}/users?${searchParams.toString()}`, {
           method: 'GET',
         });
@@ -329,9 +329,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
 
         expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<
-          HttpSearchParams<HttpSchema.SearchParams<UserListSearchParams>>
-        >();
+        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
         expect(listHandler.requests[0].searchParams.get('name')).toBe(null);
         expect(listHandler.requests[0].searchParams.getAll('orderBy')).toEqual([]);
 
@@ -371,9 +369,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
 
         expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<
-          HttpSearchParams<HttpSchema.SearchParams<UserListSearchParams>>
-        >();
+        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
         expect(listHandler.requests[0].searchParams.size).toBe(1);
         expect(listHandler.requests[0].searchParams.get('name')).toBe(user.name);
         expect(listHandler.requests[0].searchParams.getAll('orderBy')).toEqual([]);
@@ -418,9 +414,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
 
         expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<
-          HttpSearchParams<HttpSchema.SearchParams<UserListSearchParams>>
-        >();
+        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
         expect(listHandler.requests[0].searchParams.size).toBe(1);
         expect(listHandler.requests[0].searchParams.get('name')).toBe(null);
         expect(listHandler.requests[0].searchParams.getAll('orderBy')).toEqual(['email.desc']);
