@@ -28,13 +28,28 @@ describe('FetchClient > Bodies', () => {
 
       const fetch = createFetch<Schema>({ baseURL });
 
+      // @ts-expect-error The content type was not declared
       await fetch('/users', {
         method: 'POST',
         body: JSON.stringify({ name: 'User 1' }),
       });
 
+      // @ts-expect-error The content type is incorrect
       await fetch('/users', {
         method: 'POST',
+        headers: { 'content-type': 'other' },
+        body: JSON.stringify({ name: 'User 1' }),
+      });
+
+      await fetch('/users', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'User 1' }),
+      });
+
+      await fetch('/users', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({}),
       });
 

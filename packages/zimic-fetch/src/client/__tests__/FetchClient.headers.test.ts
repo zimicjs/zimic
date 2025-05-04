@@ -1,4 +1,4 @@
-import { HttpSchema, StrictHeaders, HttpHeaders } from '@zimic/http';
+import { HttpSchema, StrictHeaders, HttpHeaders, HttpFormData, HttpSearchParams } from '@zimic/http';
 import joinURL from '@zimic/utils/url/joinURL';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
@@ -403,7 +403,7 @@ describe('FetchClient > Headers', () => {
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<ResponseHeaders>>();
+      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': string }>>();
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
@@ -455,7 +455,7 @@ describe('FetchClient > Headers', () => {
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<ResponseHeaders>>();
+      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': string }>>();
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
@@ -511,7 +511,9 @@ describe('FetchClient > Headers', () => {
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<ResponseHeaders>>();
+      expectTypeOf(response.headers).branded.toEqualTypeOf<
+        StrictHeaders<ResponseHeaders & { 'content-type': string }>
+      >();
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
@@ -606,7 +608,7 @@ describe('FetchClient > Headers', () => {
         expect(response.url).toBe(joinURL(baseURL, '/users'));
 
         expect(response.headers).toBeInstanceOf(Headers);
-        expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
+        expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'application/json' }>>();
 
         expect(response.request).toBeInstanceOf(Request);
         expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
@@ -616,6 +618,206 @@ describe('FetchClient > Headers', () => {
         expect(response.request.headers).toBeInstanceOf(Headers);
         expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<never>>();
       }
+    });
+  });
+
+  it('should infer the content type of requests with a JSON body if none is provided', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        POST: {
+          request: { body: User };
+          response: { 201: { body: User } };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
+      const user = users[0];
+
+      await interceptor
+        .post('/users')
+        .with({ body: user })
+        .respond({
+          status: 201,
+          body: user,
+        })
+        .times(1);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const response = await fetch('/users', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(user),
+      });
+
+      expectResponseStatus(response, 201);
+      expect(await response.json()).toEqual(user);
+
+      expect(response).toBeInstanceOf(Response);
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
+
+      expect(response.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request).toBeInstanceOf(Request);
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+
+      expect(response.request.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request.path).toBe('/users');
+      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
+
+      expect(response.request.method).toBe('POST');
+      expectTypeOf(response.request.method).toEqualTypeOf<'POST'>();
+
+      expect(response.request.headers).toBeInstanceOf(Headers);
+      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'application/json' }>>();
+    });
+  });
+
+  it('should not infer the content type of requests with a non-JSON body', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        POST: {
+          request: {
+            body: HttpSearchParams<{ value?: string }> | HttpFormData<{ value?: string }> | Blob | string;
+          };
+          response: { 201: { body: User } };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
+      const user = users[0];
+
+      const requestSearchParams = new HttpSearchParams({
+        value: user.name,
+      });
+
+      await interceptor
+        .post('/users')
+        .with({ body: requestSearchParams })
+        .respond({
+          status: 201,
+          body: user,
+        })
+        .times(1);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const response = await fetch('/users', {
+        method: 'POST',
+        body: requestSearchParams,
+      });
+
+      expectResponseStatus(response, 201);
+      expect(await response.json()).toEqual(user);
+
+      expect(response).toBeInstanceOf(Response);
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
+
+      expect(response.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request).toBeInstanceOf(Request);
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+
+      expect(response.request.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request.path).toBe('/users');
+      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
+
+      expect(response.request.method).toBe('POST');
+      expectTypeOf(response.request.method).toEqualTypeOf<'POST'>();
+
+      expect(response.request.headers).toBeInstanceOf(Headers);
+      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<never>>();
+    });
+  });
+
+  it('should infer the content type of responses with a JSON body if none is provided', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        POST: {
+          response: { 201: { body: User } };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
+      const user = users[0];
+
+      await interceptor
+        .post('/users')
+        .respond({
+          status: 201,
+          body: user,
+        })
+        .times(1);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const response = await fetch('/users', {
+        method: 'POST',
+      });
+
+      expectResponseStatus(response, 201);
+      expect(await response.json()).toEqual(user);
+
+      expect(response).toBeInstanceOf(Response);
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
+
+      expect(response.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.headers).toBeInstanceOf(Headers);
+      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'application/json' }>>();
+    });
+  });
+
+  it('should not infer the content type of responses with a non-JSON body', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        POST: {
+          response: {
+            201: {
+              body: HttpSearchParams<{ value?: string }> | HttpFormData<{ value?: string }> | Blob | string;
+            };
+          };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
+      const user = users[0];
+
+      const responseSearchParams = new HttpSearchParams({
+        value: user.name,
+      });
+
+      await interceptor
+        .post('/users')
+        .respond({
+          status: 201,
+          body: responseSearchParams,
+        })
+        .times(1);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const response = await fetch('/users', {
+        method: 'POST',
+      });
+
+      expectResponseStatus(response, 201);
+      const responseFormData = await response.formData();
+      expect(responseFormData.get('value')).toEqual(responseSearchParams.get('value'));
+
+      expect(response).toBeInstanceOf(Response);
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
+
+      expect(response.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.headers).toBeInstanceOf(Headers);
+      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
     });
   });
 });

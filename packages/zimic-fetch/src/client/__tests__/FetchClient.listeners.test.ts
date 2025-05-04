@@ -737,7 +737,9 @@ describe('FetchClient > Listeners', () => {
       expect(response.url).toBe('');
 
       expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<{ 'content-language'?: string }>>();
+      expectTypeOf(response.headers).branded.toEqualTypeOf<
+        StrictHeaders<{ 'content-language'?: string; 'content-type': 'application/json' }>
+      >();
       expect(response.headers.get('content-language')).toBe('en');
 
       expect(response.request).toBeInstanceOf(Request);
@@ -917,7 +919,9 @@ describe('FetchClient > Listeners', () => {
       expect(response.url).toBe('');
 
       expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<{ 'content-language'?: string }>>();
+      expectTypeOf(response.headers).branded.toEqualTypeOf<
+        StrictHeaders<{ 'content-language'?: string; 'content-type': 'application/json' }>
+      >();
       expect(response.headers.get('content-language')).toBe('en');
 
       expect(response.request).toBeInstanceOf(Request);
