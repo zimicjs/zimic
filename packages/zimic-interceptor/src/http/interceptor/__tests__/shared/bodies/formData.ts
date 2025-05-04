@@ -1,11 +1,4 @@
-import {
-  HTTP_METHODS_WITH_REQUEST_BODY,
-  HttpSchema,
-  HttpFormData,
-  HttpRequest,
-  HttpResponse,
-  StrictFormData,
-} from '@zimic/http';
+import { HttpSchema, HttpFormData, HttpRequest, HttpResponse, StrictFormData } from '@zimic/http';
 import joinURL from '@zimic/utils/url/joinURL';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
@@ -15,6 +8,7 @@ import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandl
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { importCrypto } from '@/utils/crypto';
 import { importFile } from '@/utils/files';
+import { HTTP_METHODS_WITH_REQUEST_BODY } from '@/utils/http';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -46,7 +40,7 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
     interceptorOptions = getInterceptorOptions();
   });
 
-  describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {
+  describe.each(Array.from(HTTP_METHODS_WITH_REQUEST_BODY))('Method (%s)', (method) => {
     const lowerMethod = method.toLowerCase<'POST'>();
 
     const invalidRequestFormDataString = '<invalid-request-form-data>';

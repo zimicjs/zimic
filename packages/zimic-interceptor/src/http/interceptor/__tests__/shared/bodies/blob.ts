@@ -1,4 +1,4 @@
-import { HttpRequest, HttpResponse, HTTP_METHODS_WITH_REQUEST_BODY, HttpSchema } from '@zimic/http';
+import { HttpRequest, HttpResponse, HttpSchema } from '@zimic/http';
 import joinURL from '@zimic/utils/url/joinURL';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
@@ -7,6 +7,7 @@ import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandl
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { importCrypto } from '@/utils/crypto';
 import { importFile } from '@/utils/files';
+import { HTTP_METHODS_WITH_REQUEST_BODY } from '@/utils/http';
 import { randomInt } from '@/utils/numbers';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -68,7 +69,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
     interceptorOptions = getInterceptorOptions();
   });
 
-  describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {
+  describe.each(Array.from(HTTP_METHODS_WITH_REQUEST_BODY))('Method (%s)', (method) => {
     const lowerMethod = method.toLowerCase<'POST'>();
 
     it.each([
