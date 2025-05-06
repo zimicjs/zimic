@@ -1,3 +1,9 @@
+> [!TIP]
+>
+> Zimic's documentation is now available on [zimic.dev](https://zimic.dev)! :tada:
+>
+> Check it out for the latest updates, guides, and documentation.
+
 <p align="center">
   <img src="../zimic.png" align="center" width="100px" height="100px">
 </p>
@@ -40,7 +46,7 @@
 
 ## Contents <!-- omit from toc -->
 
-- [Libraries](#libraries)
+- [Projects](#projects)
   - [`@zimic/http`](#zimichttp)
   - [`@zimic/fetch`](#zimicfetch)
   - [`@zimic/interceptor`](#zimicinterceptor)
@@ -52,13 +58,13 @@
 
 Zimic is a set of modern, lightweight, TypeScript-first, and thoroughly tested HTTP integration libraries.
 
-## Libraries
+## Projects
 
 ### `@zimic/http`
 
 > [!NOTE]
 >
-> :seedling: This library is in **beta**.
+> Status: :seedling: **Beta**
 
 [`@zimic/http`](../../packages/zimic-http) is a collection of type-safe utilities to handle HTTP requests and responses,
 including headers, search params, and form data.
@@ -82,9 +88,9 @@ including headers, search params, and form data.
 
 > [!WARNING]
 >
-> :construction: This library is **experimental**.
+> Status: :seedling: **Beta**
 
-[`@zimic/fetch`](../../packages/zimic-fetch) is a minimal (1 kB minified and gzipped), zero-dependency, and type-safe
+[`@zimic/fetch`](../../packages/zimic-fetch) is a minimal (~2 kB minified and gzipped), zero-dependency, and type-safe
 `fetch`-like API client.
 
 - :sparkles: **Type-safe `fetch`**: Create a type-safe
@@ -105,7 +111,7 @@ including headers, search params, and form data.
 
 > [!NOTE]
 >
-> :seedling: This library is in **beta**.
+> Status: :seedling: **Beta**
 
 [`@zimic/interceptor`](../../packages/zimic-interceptor) provides a flexible and type-safe way to intercept and mock
 HTTP requests.
