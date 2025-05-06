@@ -67,7 +67,11 @@ describe('FetchClient > Defaults', () => {
         POST: {
           request: {
             headers?: { 'content-type': 'application/json' };
-            searchParams?: { limit: number };
+            searchParams?: {
+              orderBy?: 'name:asc';
+              limit?: number;
+              full?: boolean;
+            };
             body?: { name: string };
           };
           response: {
@@ -82,7 +86,11 @@ describe('FetchClient > Defaults', () => {
         .post('/users')
         .with({
           headers: { 'content-type': 'application/json' },
-          searchParams: { limit: '10' },
+          searchParams: {
+            orderBy: 'name:asc',
+            limit: 10,
+            full: true,
+          },
         })
         .respond({ status: 200, body: users })
         .times(1);
@@ -92,7 +100,11 @@ describe('FetchClient > Defaults', () => {
         cache: 'no-cache',
         credentials: 'same-origin',
         headers: { 'content-type': 'application/json' },
-        searchParams: { limit: '10' },
+        searchParams: {
+          orderBy: 'name:asc',
+          limit: 10,
+          full: true,
+        },
         body: JSON.stringify({ name: 'User 1' }),
         keepalive: true,
         mode: 'cors',
@@ -117,12 +129,16 @@ describe('FetchClient > Defaults', () => {
       expect(response).toBeInstanceOf(Response);
       expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
 
-      expect(response.url).toBe(joinURL(baseURL, '/users?limit=10'));
+      expect(response.url).toBe(
+        joinURL(baseURL, `/users?orderBy=${encodeURIComponent('name:asc')}&limit=10&full=true`),
+      );
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
-      expect(response.request.url).toBe(joinURL(baseURL, '/users?limit=10'));
+      expect(response.request.url).toBe(
+        joinURL(baseURL, `/users?orderBy=${encodeURIComponent('name:asc')}&limit=10&full=true`),
+      );
 
       expect(response.request.cache).toBe(defaults.cache);
       expect(response.request.headers.get('content-type')).toBe(defaults.headers['content-type']);
@@ -143,7 +159,11 @@ describe('FetchClient > Defaults', () => {
         POST: {
           request: {
             headers?: { 'content-type': 'application/json' };
-            searchParams?: { limit: number };
+            searchParams?: {
+              orderBy?: 'name:asc';
+              limit?: number;
+              full?: boolean;
+            };
             body?: { name: string };
           };
           response: {
@@ -158,7 +178,11 @@ describe('FetchClient > Defaults', () => {
         .post('/users')
         .with({
           headers: { 'content-type': 'application/json' },
-          searchParams: { limit: '10' },
+          searchParams: {
+            orderBy: 'name:asc',
+            limit: 10,
+            full: true,
+          },
         })
         .respond({ status: 200, body: users })
         .times(1);
@@ -179,7 +203,11 @@ describe('FetchClient > Defaults', () => {
         cache: 'no-cache',
         credentials: 'same-origin',
         headers: { 'content-type': 'application/json' },
-        searchParams: { limit: '10' },
+        searchParams: {
+          orderBy: 'name:asc',
+          limit: 10,
+          full: true,
+        },
         body: JSON.stringify({ name: 'User 1' }),
         keepalive: true,
         mode: 'cors',
@@ -194,7 +222,7 @@ describe('FetchClient > Defaults', () => {
       fetch.defaults.cache = defaults.cache;
       fetch.defaults.credentials = defaults.credentials;
       fetch.defaults.headers['content-type'] = defaults.headers['content-type'];
-      fetch.defaults.searchParams.limit = defaults.searchParams.limit;
+      fetch.defaults.searchParams = defaults.searchParams;
       fetch.defaults.body = defaults.body;
       fetch.defaults.keepalive = defaults.keepalive;
       fetch.defaults.mode = defaults.mode;
@@ -216,12 +244,16 @@ describe('FetchClient > Defaults', () => {
       expect(response).toBeInstanceOf(Response);
       expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
 
-      expect(response.url).toBe(joinURL(baseURL, '/users?limit=10'));
+      expect(response.url).toBe(
+        joinURL(baseURL, `/users?orderBy=${encodeURIComponent('name:asc')}&limit=10&full=true`),
+      );
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
-      expect(response.request.url).toBe(joinURL(baseURL, '/users?limit=10'));
+      expect(response.request.url).toBe(
+        joinURL(baseURL, `/users?orderBy=${encodeURIComponent('name:asc')}&limit=10&full=true`),
+      );
 
       expect(response.request.cache).toBe(defaults.cache);
       expect(response.request.headers.get('content-type')).toBe(defaults.headers['content-type']);
@@ -375,7 +407,11 @@ describe('FetchClient > Defaults', () => {
       '/users': {
         GET: {
           request: {
-            searchParams: { page?: number; limit?: number; username: string[] };
+            searchParams: {
+              page?: number;
+              limit?: number;
+              username: string[];
+            };
           };
           response: {
             200: { body: User[] };
@@ -387,24 +423,30 @@ describe('FetchClient > Defaults', () => {
     await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
-        .with({ searchParams: { page: '1', limit: '10', username: ['my', 'other'] } })
+        .with({
+          searchParams: {
+            page: 1,
+            limit: 10,
+            username: ['my', 'other'],
+          },
+        })
         .respond({ status: 200, body: users })
         .times(1);
 
       const fetch = createFetch<Schema>({
         baseURL,
-        searchParams: { limit: '10' },
+        searchParams: { limit: 10 },
       });
 
       expect(fetch.defaults).toEqual<FetchDefaults>({
         baseURL,
         headers: {},
-        searchParams: { limit: '10' },
+        searchParams: { limit: 10 },
       });
 
       const response = await fetch('/users', {
         method: 'GET',
-        searchParams: { page: '1', username: ['my', 'other'] },
+        searchParams: { page: 1, username: ['my', 'other'] },
       });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
@@ -429,7 +471,11 @@ describe('FetchClient > Defaults', () => {
       '/users': {
         GET: {
           request: {
-            searchParams: { page?: number; limit?: number; username: string[] };
+            searchParams: {
+              page?: number;
+              limit?: number;
+              username: string[];
+            };
           };
           response: {
             200: { body: User[] };
@@ -441,24 +487,30 @@ describe('FetchClient > Defaults', () => {
     await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
-        .with({ searchParams: { page: '1', limit: '20', username: ['any', 'other'] } })
+        .with({
+          searchParams: {
+            page: 1,
+            limit: 20,
+            username: ['any', 'other'],
+          },
+        })
         .respond({ status: 200, body: users })
         .times(1);
 
       const fetch = createFetch<Schema>({
         baseURL,
-        searchParams: { limit: '10', username: ['my', 'other'] },
+        searchParams: { limit: 10, username: ['my', 'other'] },
       });
 
       expect(fetch.defaults).toEqual<FetchDefaults>({
         baseURL,
         headers: {},
-        searchParams: { limit: '10', username: ['my', 'other'] },
+        searchParams: { limit: 10, username: ['my', 'other'] },
       });
 
       const response = await fetch('/users', {
         method: 'GET',
-        searchParams: { page: '1', limit: '20', username: ['any', 'other'] },
+        searchParams: { page: 1, limit: 20, username: ['any', 'other'] },
       });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();

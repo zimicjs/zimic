@@ -224,13 +224,14 @@ class HttpRequestHandlerClient<
   private matchesRequestHeadersRestrictions(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     restriction: HttpRequestHandlerStaticRestriction<Schema, Method, Path>,
-  ): RestrictionMatchResult<RestrictionDiff<HttpHeaders<never>>> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): RestrictionMatchResult<RestrictionDiff<HttpHeaders<any>>> {
     if (restriction.headers === undefined) {
       return { value: true };
     }
 
     const restrictedHeaders = new HttpHeaders(
-      restriction.headers as HttpRequestHeadersSchema<Default<Schema[Path][Method]>>,
+      restriction.headers as Default<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>,
     );
 
     const matchesRestriction = restriction.exact
@@ -248,13 +249,14 @@ class HttpRequestHandlerClient<
   private matchesRequestSearchParamsRestrictions(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     restriction: HttpRequestHandlerStaticRestriction<Schema, Method, Path>,
-  ): RestrictionMatchResult<RestrictionDiff<HttpSearchParams<never>>> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): RestrictionMatchResult<RestrictionDiff<HttpSearchParams<any>>> {
     if (restriction.searchParams === undefined) {
       return { value: true };
     }
 
     const restrictedSearchParams = new HttpSearchParams(
-      restriction.searchParams as HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>,
+      restriction.searchParams as Default<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>,
     );
 
     const matchesRestriction = restriction.exact

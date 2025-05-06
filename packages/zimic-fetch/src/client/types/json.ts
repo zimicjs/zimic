@@ -1,4 +1,4 @@
-const value = Symbol.for('JSONStringified.value');
+declare const value: unique symbol;
 
 /**
  * Represents a value stringified by `JSON.stringify`, maintaining a reference to the original type.

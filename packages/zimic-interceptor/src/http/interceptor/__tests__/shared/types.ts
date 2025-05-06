@@ -1,12 +1,4 @@
-import {
-  HttpHeadersSerialized,
-  HttpSearchParamsSerialized,
-  HttpHeaders,
-  HttpSearchParams,
-  HttpSchema,
-  HttpStatusCode,
-  MergeHttpResponsesByStatusCode,
-} from '@zimic/http';
+import { HttpHeaders, HttpSearchParams, HttpSchema, HttpStatusCode, MergeHttpResponsesByStatusCode } from '@zimic/http';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { HttpRequestHandlerPath } from '@/http/requestHandler/types/utils';
@@ -117,8 +109,8 @@ export function declareTypeHttpInterceptorTests(
       name: string;
       usernames: string[];
       orderBy?: ('name' | 'createdAt')[];
-      date: Date; // Forcing an invalid type
-      method: () => void; // Forcing an invalid type
+      date?: Date; // Forcing an invalid type
+      method?: () => void; // Forcing an invalid type
     }
 
     await usingHttpInterceptor<
@@ -136,20 +128,13 @@ export function declareTypeHttpInterceptorTests(
       }>
     >({ type, baseURL }, async (interceptor) => {
       const _listHandler = await interceptor.get('/users').respond((request) => {
-        expectTypeOf(request.searchParams).toEqualTypeOf<
-          HttpSearchParams<HttpSearchParamsSerialized<UserListSearchParams>>
-        >();
+        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
 
-        return {
-          status: 200,
-          body: users[0],
-        };
+        return { status: 200, body: users[0] };
       });
 
       type RequestSearchParams = (typeof _listHandler.requests)[number]['searchParams'];
-      expectTypeOf<RequestSearchParams>().toEqualTypeOf<
-        HttpSearchParams<HttpSearchParamsSerialized<UserListSearchParams>>
-      >();
+      expectTypeOf<RequestSearchParams>().toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
     });
   });
 
@@ -223,8 +208,8 @@ export function declareTypeHttpInterceptorTests(
     interface UserListHeaders {
       accept: string;
       'content-language': string;
-      date: Date; // Forcing an invalid type
-      method: () => void; // Forcing an invalid type
+      date?: Date; // Forcing an invalid type
+      method?: () => void; // Forcing an invalid type
     }
 
     await usingHttpInterceptor<
@@ -242,16 +227,13 @@ export function declareTypeHttpInterceptorTests(
       }>
     >({ type, baseURL }, async (interceptor) => {
       const _listHandler = await interceptor.get('/users').respond((request) => {
-        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<HttpHeadersSerialized<UserListHeaders>>>();
+        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListHeaders>>();
 
-        return {
-          status: 200,
-          body: users[0],
-        };
+        return { status: 200, body: users[0] };
       });
 
       type RequestHeaders = (typeof _listHandler.requests)[number]['headers'];
-      expectTypeOf<RequestHeaders>().toEqualTypeOf<HttpHeaders<HttpHeadersSerialized<UserListHeaders>>>();
+      expectTypeOf<RequestHeaders>().toEqualTypeOf<HttpHeaders<UserListHeaders>>();
     });
   });
 
@@ -410,7 +392,11 @@ export function declareTypeHttpInterceptorTests(
       expectTypeOf<ResponseBody>().toEqualTypeOf<User[] | { message: string } | null>();
 
       type ResponseHeaders = (typeof _handler.requests)[number]['response']['headers'];
-      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<{ 'content-type': string }> | HttpHeaders<never>>();
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<
+        | HttpHeaders<{ 'content-type': string }>
+        | HttpHeaders<{ 'content-type': 'application/json' }>
+        | HttpHeaders<never>
+      >();
 
       type ResponseStatus = (typeof _handler.requests)[number]['response']['status'];
       expectTypeOf<ResponseStatus>().toEqualTypeOf<200 | 400 | 404>();
@@ -465,7 +451,7 @@ export function declareTypeHttpInterceptorTests(
             [
               {
                 200: { headers: { 'content-type': string }; body: User[] };
-                204: { body: '204' };
+                204: {};
                 400: { body: { message: string } };
               },
               {
@@ -524,7 +510,11 @@ export function declareTypeHttpInterceptorTests(
       expectTypeOf<ResponseBody>().toEqualTypeOf<User[] | { message: string } | '2xx' | '4xx' | 'default' | null>();
 
       type ResponseHeaders = (typeof _handler.requests)[number]['response']['headers'];
-      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<{ 'content-type': string }> | HttpHeaders<never>>();
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<
+        | HttpHeaders<{ 'content-type': string }>
+        | HttpHeaders<{ 'content-type': 'application/json' }>
+        | HttpHeaders<never>
+      >();
 
       type ResponseStatus = (typeof _handler.requests)[number]['response']['status'];
       expectTypeOf<ResponseStatus>().toEqualTypeOf<200 | 201 | 204 | 400 | 401 | 404 | 500>();
@@ -598,15 +588,17 @@ export function declareTypeHttpInterceptorTests(
       });
 
       type ResponseHeaders = (typeof _listHandler.requests)[number]['response']['headers'];
-      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<
+        HttpHeaders<UserListHeaders & { 'content-type': 'application/json' }>
+      >();
     });
   });
 
   it('should correctly type responses with headers containing invalid types', async () => {
     interface UserListHeaders {
       accept: string;
-      date: Date; // Forcing an invalid type
-      method: () => void; // Forcing an invalid type
+      date?: Date; // Forcing an invalid type
+      method?: () => void; // Forcing an invalid type
     }
 
     await usingHttpInterceptor<
@@ -630,7 +622,9 @@ export function declareTypeHttpInterceptorTests(
       });
 
       type ResponseHeaders = (typeof _listHandler.requests)[number]['response']['headers'];
-      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<HttpHeadersSerialized<UserListHeaders>>>();
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<
+        HttpHeaders<UserListHeaders & { 'content-type': 'application/json' }>
+      >();
     });
   });
 
@@ -638,7 +632,7 @@ export function declareTypeHttpInterceptorTests(
     // If only content type is specified, the headers should be optional. This is because the content type is
     // automatically set by the interceptor before returning a response, unless overridden.
     type UserListHeaders = HttpSchema.Headers<{
-      'content-type': string;
+      'content-type': 'application/json; charset=utf-8';
     }>;
 
     await usingHttpInterceptor<{
@@ -672,7 +666,7 @@ export function declareTypeHttpInterceptorTests(
 
       _listHandler = await interceptor.get('/users').respond({
         status: 200,
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json; charset=utf-8' },
         body: users[0],
       });
 
@@ -685,7 +679,7 @@ export function declareTypeHttpInterceptorTests(
     // If additional headers existing, beyond content type, only the `content-type` key should be optional. The
     // additional headers should be kept as defined.
     type UserListHeaders = HttpSchema.Headers<{
-      'content-type': string;
+      'content-type': 'application/json; charset=utf-8';
       accept: string;
     }>;
 
@@ -730,7 +724,7 @@ export function declareTypeHttpInterceptorTests(
 
       _listHandler = await interceptor.get('/users').respond({
         status: 200,
-        headers: { 'content-type': 'application/json', accept: '*/*' },
+        headers: { 'content-type': 'application/json; charset=utf-8', accept: '*/*' },
         body: users[0],
       });
 
@@ -743,7 +737,7 @@ export function declareTypeHttpInterceptorTests(
     // If additional headers existing, beyond content type, only the `content-type` key should be optional. The
     // additional headers should be kept as defined.
     type UserListHeaders = HttpSchema.Headers<{
-      'content-type': string;
+      'content-type': 'application/json; charset=utf-8';
       accept?: string;
     }>;
 
@@ -779,13 +773,13 @@ export function declareTypeHttpInterceptorTests(
 
       _listHandler = await interceptor.get('/users').respond({
         status: 200,
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json; charset=utf-8' },
         body: users[0],
       });
 
       _listHandler = await interceptor.get('/users').respond({
         status: 200,
-        headers: { 'content-type': 'application/json', accept: '*/*' },
+        headers: { 'content-type': 'application/json; charset=utf-8', accept: '*/*' },
         body: users[0],
       });
 
@@ -1039,119 +1033,6 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should not allow declaring request bodies for methods that do not support them', () => {
-    // @ts-expect-error GET methods do not support request bodies
-    createHttpInterceptor<{ '/users': { GET: { request: { body: User } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { GET: { request: { body: null } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { GET: { request: { body: undefined } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { GET: { request: {} } } }>({ type, baseURL });
-
-    // @ts-expect-error HEAD methods do not support request bodies
-    createHttpInterceptor<{ '/users': { HEAD: { request: { body: User } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { HEAD: { request: { body: null } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { HEAD: { request: { body: undefined } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { HEAD: { request: {} } } }>({ type, baseURL });
-
-    // @ts-expect-error OPTIONS methods do not support request bodies
-    createHttpInterceptor<{ '/users': { OPTIONS: { request: { body: User } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { OPTIONS: { request: { body: null } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { OPTIONS: { request: { body: undefined } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { OPTIONS: { request: {} } } }>({ type, baseURL });
-
-    createHttpInterceptor<{ '/users': { POST: { request: { body: User } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { POST: { request: { body: null } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { POST: { request: { body: undefined } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { POST: { request: {} } } }>({ type, baseURL });
-
-    createHttpInterceptor<{ '/users': { PUT: { request: { body: User } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PUT: { request: { body: null } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PUT: { request: { body: undefined } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PUT: { request: {} } } }>({ type, baseURL });
-
-    createHttpInterceptor<{ '/users': { PATCH: { request: { body: User } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PATCH: { request: { body: null } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PATCH: { request: { body: undefined } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PATCH: { request: {} } } }>({ type, baseURL });
-
-    createHttpInterceptor<{ '/users': { DELETE: { request: { body: User } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { DELETE: { request: { body: null } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { DELETE: { request: { body: undefined } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { DELETE: { request: {} } } }>({ type, baseURL });
-  });
-
-  it('should not allow declaring response bodies for methods or statuses that do not support them', () => {
-    // @ts-expect-error HEAD methods do not support request bodies
-    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: {} } } } }>({ type, baseURL });
-    // @ts-expect-error 204 responses do not support request bodies
-    createHttpInterceptor<{ '/users': { HEAD: { response: { 204: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { HEAD: { response: { 204: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { HEAD: { response: { 204: { body: undefined } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { HEAD: { response: { 204: {} } } } }>({ type, baseURL });
-
-    createHttpInterceptor<{ '/users': { GET: { response: { 200: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { GET: { response: { 200: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { GET: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { GET: { response: { 200: {} } } } }>({ type, baseURL });
-    // @ts-expect-error 204 responses do not support request bodies
-    createHttpInterceptor<{ '/users': { GET: { response: { 204: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { GET: { response: { 204: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { GET: { response: { 204: { body: undefined } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { GET: { response: { 204: {} } } } }>({ type, baseURL });
-
-    createHttpInterceptor<{ '/users': { POST: { response: { 200: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { POST: { response: { 200: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { POST: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { POST: { response: { 200: {} } } } }>({ type, baseURL });
-    // @ts-expect-error 204 responses do not support request bodies
-    createHttpInterceptor<{ '/users': { POST: { response: { 204: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { POST: { response: { 204: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { POST: { response: { 204: { body: undefined } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { POST: { response: { 204: {} } } } }>({ type, baseURL });
-
-    createHttpInterceptor<{ '/users': { PUT: { response: { 200: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PUT: { response: { 200: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PUT: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PUT: { response: { 200: {} } } } }>({ type, baseURL });
-    // @ts-expect-error 204 responses do not support request bodies
-    createHttpInterceptor<{ '/users': { PUT: { response: { 204: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PUT: { response: { 204: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PUT: { response: { 204: { body: undefined } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PUT: { response: { 204: {} } } } }>({ type, baseURL });
-
-    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: {} } } } }>({ type, baseURL });
-    // @ts-expect-error 204 responses do not support request bodies
-    createHttpInterceptor<{ '/users': { PATCH: { response: { 204: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PATCH: { response: { 204: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PATCH: { response: { 204: { body: undefined } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PATCH: { response: { 204: {} } } } }>({ type, baseURL });
-
-    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: {} } } } }>({ type, baseURL });
-    // @ts-expect-error 204 responses do not support request bodies
-    createHttpInterceptor<{ '/users': { DELETE: { response: { 204: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { DELETE: { response: { 204: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { DELETE: { response: { 204: { body: undefined } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { DELETE: { response: { 204: {} } } } }>({ type, baseURL });
-
-    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: {} } } } }>({ type, baseURL });
-    // @ts-expect-error 204 responses do not support request bodies
-    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 204: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 204: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 204: { body: undefined } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 204: {} } } } }>({ type, baseURL });
-  });
-
   it('should support declaring schemas using type composition', () => {
     const _inlineInterceptor = createHttpInterceptor<{
       '/users': {
@@ -1223,7 +1104,8 @@ export function declareTypeHttpInterceptorTests(
 
     type CompositeInterceptorSchema = InferHttpInterceptorSchema<typeof _compositeInterceptor>;
     type InlineInterceptorSchema = InferHttpInterceptorSchema<typeof _inlineInterceptor>;
-    expectTypeOf<CompositeInterceptorSchema>().toEqualTypeOf<InlineInterceptorSchema>();
+
+    expectTypeOf<CompositeInterceptorSchema>().toMatchObjectType<InlineInterceptorSchema>();
   });
 
   describe('Dynamic paths', () => {

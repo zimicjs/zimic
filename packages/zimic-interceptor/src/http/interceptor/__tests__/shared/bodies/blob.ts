@@ -1,4 +1,4 @@
-import { HttpRequest, HttpResponse, HTTP_METHODS_WITH_REQUEST_BODY, HttpSchema } from '@zimic/http';
+import { HttpRequest, HttpResponse, HttpSchema } from '@zimic/http';
 import joinURL from '@zimic/utils/url/joinURL';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
@@ -7,6 +7,7 @@ import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandl
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { importCrypto } from '@/utils/crypto';
 import { importFile } from '@/utils/files';
+import { HTTP_METHODS_WITH_REQUEST_BODY } from '@/utils/http';
 import { randomInt } from '@/utils/numbers';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -68,7 +69,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
     interceptorOptions = getInterceptorOptions();
   });
 
-  describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {
+  describe.each(Array.from(HTTP_METHODS_WITH_REQUEST_BODY))('Method (%s)', (method) => {
     const lowerMethod = method.toLowerCase<'POST'>();
 
     it.each([
@@ -150,7 +151,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
         expect(request.response.body.size).toBe(responseFile.size);
         expect(await request.response.body.text()).toEqual(await responseFile.text());
 
-        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<Blob>>();
+        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<Blob, { 'content-type': string }>>();
         expect(request.raw).toBeInstanceOf(Request);
         expect(request.raw.url).toBe(request.url);
         expect(request.raw.method).toBe(method);
@@ -160,7 +161,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
         expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<never>>();
         expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
 
-        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<Blob, 200>>();
+        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<Blob, { 'content-type'?: string }, 200>>();
         expect(request.response.raw).toBeInstanceOf(Response);
         expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
         expect(request.response.raw.status).toBe(200);
@@ -319,7 +320,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
         expect(request.response.body.size).toBe(2);
         expect(await request.response.body.arrayBuffer()).toEqual(responseBuffer);
 
-        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<Blob>>();
+        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<Blob, { 'content-type': string }>>();
         expect(request.raw).toBeInstanceOf(Request);
         expect(request.raw.url).toBe(request.url);
         expect(request.raw.method).toBe(method);
@@ -329,7 +330,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
         expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<never>>();
         expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
 
-        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<Blob, 200>>();
+        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<Blob, { 'content-type'?: string }, 200>>();
         expect(request.response.raw).toBeInstanceOf(Response);
         expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
         expect(request.response.raw.status).toBe(200);

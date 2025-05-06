@@ -1067,11 +1067,11 @@ indicating a plain text, such as `text/plain`.
 
 </details>
 
-By default, restrictions use `exact: false`, meaning that any request **containing** the declared restrictions will
-match the handler, regardless of having more properties or values. In the examples above, requests with more properties
-in the headers, search params, or body would still match the restrictions.
+By default, restrictions use `exact: false`, so requests having more properties still match the handler, as long as **at
+least** the restrictions are met. In the examples above, requests with more headers, search params, or body attributes
+would still match the restrictions.
 
-If you want to match only requests with the exact values declared, you can use `exact: true`:
+If you want to match only requests with exact values, you can use `exact: true`:
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 

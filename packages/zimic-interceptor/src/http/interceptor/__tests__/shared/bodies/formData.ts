@@ -1,11 +1,4 @@
-import {
-  HTTP_METHODS_WITH_REQUEST_BODY,
-  HttpSchema,
-  HttpFormData,
-  HttpRequest,
-  HttpResponse,
-  StrictFormData,
-} from '@zimic/http';
+import { HttpSchema, HttpFormData, HttpRequest, HttpResponse, StrictFormData } from '@zimic/http';
 import joinURL from '@zimic/utils/url/joinURL';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
@@ -15,6 +8,7 @@ import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandl
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { importCrypto } from '@/utils/crypto';
 import { importFile } from '@/utils/files';
+import { HTTP_METHODS_WITH_REQUEST_BODY } from '@/utils/http';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -46,7 +40,7 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
     interceptorOptions = getInterceptorOptions();
   });
 
-  describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {
+  describe.each(Array.from(HTTP_METHODS_WITH_REQUEST_BODY))('Method (%s)', (method) => {
     const lowerMethod = method.toLowerCase<'POST'>();
 
     const invalidRequestFormDataString = '<invalid-request-form-data>';
@@ -143,7 +137,9 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
         expect(interceptedResponseTagFile.type).toBe(responseTagFile.type);
         expect(await interceptedResponseTagFile.text()).toEqual(await responseTagFile.text());
 
-        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<HttpFormData<UserFormDataSchema>>>();
+        expectTypeOf(request.raw).toEqualTypeOf<
+          HttpRequest<HttpFormData<UserFormDataSchema>, { 'content-type': string }>
+        >();
         expect(request.raw).toBeInstanceOf(Request);
         expect(request.raw.url).toBe(request.url);
         expect(request.raw.method).toBe(method);
@@ -154,7 +150,9 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
         expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<StrictFormData<UserFormDataSchema>>>();
         expect(Object.fromEntries(await request.raw.formData())).toEqual(Object.fromEntries(formData));
 
-        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<HttpFormData<UserFormDataSchema>, 200>>();
+        expectTypeOf(request.response.raw).toEqualTypeOf<
+          HttpResponse<HttpFormData<UserFormDataSchema>, { 'content-type'?: string }, 200>
+        >();
         expect(request.response.raw).toBeInstanceOf(Response);
         expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
         expect(request.response.raw.status).toBe(200);

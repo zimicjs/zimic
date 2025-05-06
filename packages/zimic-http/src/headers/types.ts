@@ -15,12 +15,12 @@ export namespace HttpHeadersSchema {
 }
 
 /** A strict tuple representation of a {@link HttpHeadersSchema}. */
-export type HttpHeadersSchemaTuple<Schema extends HttpHeadersSchema = HttpHeadersSchema> = {
+export type HttpHeadersSchemaTuple<Schema extends HttpHeadersSchema.Loose = HttpHeadersSchema.Loose> = {
   [Key in keyof Schema & string]: [Key, NonNullable<Schema[Key]>];
 }[keyof Schema & string];
 
 /** An initialization value for {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpheaders `HttpHeaders`}. */
-export type HttpHeadersInit<Schema extends HttpHeadersSchema = HttpHeadersSchema> =
+export type HttpHeadersInit<Schema extends HttpHeadersSchema.Loose = HttpHeadersSchema.Loose> =
   | Headers
   | Schema
   | HttpHeaders<Schema>

@@ -1,4 +1,4 @@
-import { HttpRequest, HttpResponse, HTTP_METHODS_WITH_REQUEST_BODY, HttpSchema } from '@zimic/http';
+import { HttpRequest, HttpResponse, HttpSchema } from '@zimic/http';
 import joinURL from '@zimic/utils/url/joinURL';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
@@ -6,6 +6,7 @@ import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promis
 import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { importCrypto } from '@/utils/crypto';
+import { HTTP_METHODS_WITH_REQUEST_BODY } from '@/utils/http';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
@@ -36,7 +37,7 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
     interceptorOptions = getInterceptorOptions();
   });
 
-  describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {
+  describe.each(Array.from(HTTP_METHODS_WITH_REQUEST_BODY))('Method (%s)', (method) => {
     const lowerMethod = method.toLowerCase<'POST'>();
 
     it(`should support intercepting ${method} requests having a plain text body`, async () => {
@@ -96,7 +97,7 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
         expectTypeOf(request.response.body).toEqualTypeOf<string>();
         expect(request.response.body).toBe('content-response');
 
-        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<string>>();
+        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<string, { 'content-type': string }>>();
         expect(request.raw).toBeInstanceOf(Request);
         expect(request.raw.url).toBe(request.url);
         expect(request.raw.method).toBe(method);
@@ -106,7 +107,7 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
         expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<never>>();
         expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
 
-        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<string, 200>>();
+        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<string, { 'content-type'?: string }, 200>>();
         expect(request.response.raw).toBeInstanceOf(Response);
         expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
         expect(request.response.raw.status).toBe(200);

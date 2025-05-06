@@ -144,7 +144,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
      type UserListHeaders = Schema['/users']['GET']['request']['headers'];
 
      const headers = new HttpHeaders<UserListHeaders>({
-       authorization: 'Bearer token',
+       authorization: 'Bearer my-token',
      });
 
      type UserListSearchParams = Schema['/users']['GET']['request']['searchParams'];

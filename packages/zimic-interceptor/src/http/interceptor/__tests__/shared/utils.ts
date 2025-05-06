@@ -86,7 +86,7 @@ export function verifyUnhandledRequest(request: UnhandledHttpInterceptorRequest,
   expectTypeOf(request.body).toEqualTypeOf<BodySchema>();
   expect(request).toHaveProperty('body');
 
-  expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<BodySchema>>();
+  expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<BodySchema, Record<string, string>>>();
   expect(request.raw).toBeInstanceOf(Request);
   expect(request.raw.url).toBe(request.url);
   expect(request.raw.method).toBe(method);

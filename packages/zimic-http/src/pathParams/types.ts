@@ -10,21 +10,22 @@ export namespace HttpPathParamsSchema {
   export type Loose = Record<string, any>;
 }
 
-type PrimitiveHttpPathParamsSerialized<Type> = Type extends HttpPathParamsSchema[string]
-  ? Type
-  : Type extends (infer _ArrayItem)[]
-    ? never
-    : Type extends number
-      ? `${number}`
-      : Type extends boolean
-        ? `${boolean}`
-        : Type extends null
-          ? undefined
-          : never;
+type PrimitiveHttpPathParamsSerialized<Type> = [Type] extends [never]
+  ? never
+  : Type extends number
+    ? `${number}`
+    : Type extends boolean
+      ? `${boolean}`
+      : Type extends null
+        ? 'null'
+        : Type extends symbol
+          ? never
+          : Type extends HttpPathParamsSchema[string]
+            ? Type
+            : string;
 /**
- * Recursively converts a schema to its path parameters-serialized version. Numbers and booleans are converted to
- * `${number}` and `${boolean}` respectively, null becomes undefined and not serializable values are excluded, such as
- * functions and dates.
+ * Recursively converts a schema to its path parameters-serialized version. Numbers, booleans, and null are converted to
+ * `${number}`, `${boolean}`, and 'null' respectively, and other values become strings.
  *
  * @example
  *   import { type HttpPathParamsSerialized } from '@zimic/http';
@@ -33,35 +34,23 @@ type PrimitiveHttpPathParamsSerialized<Type> = Type extends HttpPathParamsSchema
  *     userId: string;
  *     notificationId: number | null;
  *     full?: boolean;
- *     from?: Date;
- *     method: () => void;
  *   }>;
  *   // {
  *   //   userId: string;
- *   //   notificationId: `${number}` | undefined;
+ *   //   notificationId: `${number}` | 'null';
  *   //   full?: "false" | "true";
  *   // }
  */
-export type HttpPathParamsSerialized<Type> = Type extends HttpPathParamsSchema
-  ? Type
-  : Type extends (infer _ArrayItem)[]
-    ? never
-    : Type extends Date
-      ? never
-      : Type extends (...parameters: never[]) => unknown
-        ? never
-        : Type extends symbol
-          ? never
-          : Type extends Map<infer _Key, infer _Value>
-            ? never
-            : Type extends Set<infer _Value>
-              ? never
-              : Type extends object
-                ? {
-                    [Key in keyof Type as IfNever<
-                      PrimitiveHttpPathParamsSerialized<Type[Key]>,
-                      never,
-                      Key
-                    >]: PrimitiveHttpPathParamsSerialized<Type[Key]>;
-                  }
-                : never;
+export type HttpPathParamsSerialized<Type> = [Type] extends [never]
+  ? never
+  : Type extends HttpPathParamsSchema
+    ? Type
+    : Type extends object
+      ? {
+          [Key in keyof Type as IfNever<
+            PrimitiveHttpPathParamsSerialized<Type[Key]>,
+            never,
+            Key
+          >]: PrimitiveHttpPathParamsSerialized<Type[Key]>;
+        }
+      : never;
