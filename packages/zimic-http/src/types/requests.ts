@@ -117,7 +117,7 @@ export type HttpRequestHeadersSchema<MethodSchema extends HttpMethodSchema> =
       :
           | (MethodSchema['request']['headers'] &
               HttpRequestHeadersSchemaFromBody<Default<MethodSchema['request']>, {}>)
-          | (MethodSchema['request']['headers'] & undefined)
+          | Extract<MethodSchema['request']['headers'], undefined>
     : HttpRequestHeadersSchemaFromBody<Default<MethodSchema['request']>, never>;
 
 export type HttpRequestSearchParamsSchema<MethodSchema extends HttpMethodSchema> =
@@ -152,8 +152,10 @@ export type HttpResponseHeadersSchema<
 > = 'headers' extends keyof Default<MethodSchema['response']>[StatusCode]
   ? [Default<MethodSchema['response']>[StatusCode]] extends [never]
     ? HttpResponseHeadersSchemaFromBody<Default<Default<MethodSchema['response']>[StatusCode]>, never>
-    : Default<Default<MethodSchema['response']>[StatusCode]>['headers'] &
-        HttpResponseHeadersSchemaFromBody<Default<Default<MethodSchema['response']>[StatusCode]>, {}>
+    :
+        | (Default<Default<MethodSchema['response']>[StatusCode]>['headers'] &
+            HttpResponseHeadersSchemaFromBody<Default<Default<MethodSchema['response']>[StatusCode]>, {}>)
+        | Extract<Default<Default<MethodSchema['response']>[StatusCode]>['headers'], undefined>
   : HttpResponseHeadersSchemaFromBody<Default<Default<MethodSchema['response']>[StatusCode]>, never>;
 
 export type HttpResponseBodySchema<
