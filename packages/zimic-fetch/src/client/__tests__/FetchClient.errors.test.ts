@@ -710,7 +710,7 @@ describe('FetchClient > Errors', () => {
 
         const response = await fetch('/users', {
           method: 'GET',
-          searchParams: { page: '1', limit: '10' },
+          searchParams: { page: 1, limit: 10 },
         });
 
         expectTypeOf(response.status).toEqualTypeOf<200 | 401 | 403>();

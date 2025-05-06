@@ -10,10 +10,7 @@ export interface TypePathFilters {
 type HttpTypeImportName =
   | 'HttpSchema'
   | 'HttpFormData'
-  | 'HttpFormDataSerialized'
   | 'HttpSearchParams'
-  | 'HttpSearchParamsSerialized'
-  | 'HttpHeadersSerialized'
   | 'HttpStatusCode'
   | 'MergeHttpResponsesByStatusCode';
 

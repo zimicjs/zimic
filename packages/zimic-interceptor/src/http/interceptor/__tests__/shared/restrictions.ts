@@ -1,11 +1,4 @@
-import {
-  HttpSchema,
-  HTTP_METHODS,
-  HttpHeaders,
-  HttpSearchParams,
-  HTTP_METHODS_WITH_REQUEST_BODY,
-  HttpFormData,
-} from '@zimic/http';
+import { HttpSchema, HTTP_METHODS, HttpHeaders, HttpSearchParams, HttpFormData } from '@zimic/http';
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import joinURL from '@zimic/utils/url/joinURL';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
@@ -16,6 +9,7 @@ import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandl
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { importFile } from '@/utils/files';
+import { HTTP_METHODS_WITH_REQUEST_BODY } from '@/utils/http';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectPreflightResponse } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -38,17 +32,17 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
     interceptorOptions = getInterceptorOptions();
   });
 
-  interface RequestHeadersSchema {
-    'content-language': string;
-    accept: string;
-    optional?: string;
-  }
+  type RequestHeadersSchema = HttpSchema.Headers<{
+    'content-language'?: string;
+    count?: number;
+    optional?: boolean;
+  }>;
 
-  interface RequestSearchParamsSchema {
+  type RequestSearchParamsSchema = HttpSchema.SearchParams<{
     tag: string;
-    other: string;
-    optional?: string;
-  }
+    page: number;
+    optional?: boolean;
+  }>;
 
   interface RequestJSONSchema {
     message: string;
@@ -56,9 +50,9 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
     optional?: string;
   }
 
-  interface RequestFormDataSchema {
+  type RequestFormDataSchema = HttpSchema.FormData<{
     tag: File;
-  }
+  }>;
 
   type MethodSchema = HttpSchema.Method<{
     request: {
@@ -94,23 +88,24 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         const handler = await promiseIfRemote(
           interceptor[lowerMethod]('/users')
             .with({
-              headers: { 'content-language': 'en' },
+              headers: { count: 1 },
             })
             .with({
-              headers: new HttpHeaders<Partial<RequestHeadersSchema>>({ 'content-language': 'en' }),
+              headers: new HttpHeaders<Partial<RequestHeadersSchema>>({ optional: false }),
             })
             .with({
-              headers: new HttpHeaders<HttpSchema.Headers<RequestHeadersSchema>>(),
+              headers: new HttpHeaders<RequestHeadersSchema>(),
             })
             .with((request) => {
-              expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<HttpSchema.Headers<RequestHeadersSchema>>>();
+              expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<RequestHeadersSchema>>();
               expect(request.headers).toBeInstanceOf(HttpHeaders);
 
-              const acceptHeader = request.headers.get('accept');
-              return acceptHeader ? acceptHeader.includes('application/json') : false;
+              const contentLanguage = request.headers.get('content-language');
+              expectTypeOf(contentLanguage).toEqualTypeOf<string | null>();
+              return contentLanguage?.includes('en') ?? false;
             })
             .respond((request) => {
-              expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<HttpSchema.Headers<RequestHeadersSchema>>>();
+              expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<RequestHeadersSchema>>();
               expect(request.headers).toBeInstanceOf(HttpHeaders);
 
               return {
@@ -124,9 +119,10 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         expect(handler.requests).toHaveLength(0);
 
-        const headers = new HttpHeaders<HttpSchema.Headers<RequestHeadersSchema>>({
+        const headers = new HttpHeaders<RequestHeadersSchema>({
           'content-language': 'en',
-          accept: 'application/json',
+          count: 1,
+          optional: false,
         });
 
         let response = await fetch(joinURL(baseURL, '/users'), { method, headers });
@@ -134,14 +130,14 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         expect(handler.requests).toHaveLength(1);
 
-        headers.append('accept', 'application/xml');
+        headers.append('content-language', 'pt');
 
         response = await fetch(joinURL(baseURL, '/users'), { method, headers });
         expect(response.status).toBe(200);
 
         expect(handler.requests).toHaveLength(2);
 
-        headers.delete('accept');
+        headers.delete('content-language');
 
         let responsePromise = fetch(joinURL(baseURL, '/users'), { method, headers });
 
@@ -153,7 +149,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         expect(handler.requests).toHaveLength(2);
 
-        headers.delete('content-language');
+        headers.delete('count');
 
         responsePromise = fetch(joinURL(baseURL, '/users'), { method, headers });
 
@@ -165,7 +161,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         expect(handler.requests).toHaveLength(2);
 
-        headers.set('accept', 'application/json');
+        headers.set('count', 1);
         headers.set('content-language', 'pt');
 
         responsePromise = fetch(joinURL(baseURL, '/users'), { method, headers });
@@ -177,6 +173,39 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         }
 
         expect(handler.requests).toHaveLength(2);
+
+        headers.set('count', 2);
+        headers.set('content-language', 'en');
+
+        responsePromise = fetch(joinURL(baseURL, '/users'), { method, headers });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise);
+        }
+
+        expect(handler.requests).toHaveLength(2);
+
+        headers.set('count', 1);
+        headers.set('optional', true);
+
+        responsePromise = fetch(joinURL(baseURL, '/users'), { method, headers });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise);
+        }
+
+        expect(handler.requests).toHaveLength(2);
+
+        headers.set('optional', false);
+
+        response = await fetch(joinURL(baseURL, '/users'), { method, headers });
+        expect(response.status).toBe(200);
+
+        expect(handler.requests).toHaveLength(3);
       });
     });
 
@@ -195,20 +224,16 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         const handler = await promiseIfRemote(
           interceptor[lowerMethod]('/users')
             .with({
-              searchParams: { tag: 'admin' },
+              searchParams: { tag: 'admin', page: 1 },
             })
             .with({
-              searchParams: new HttpSearchParams<Partial<RequestSearchParamsSchema>>({
-                tag: 'admin',
-              }),
+              searchParams: new HttpSearchParams<Partial<RequestSearchParamsSchema>>({ optional: false }),
             })
             .with({
-              searchParams: new HttpSearchParams<HttpSchema.SearchParams<RequestSearchParamsSchema>>(),
+              searchParams: new HttpSearchParams<RequestSearchParamsSchema>(),
             })
             .respond((request) => {
-              expectTypeOf(request.searchParams).toEqualTypeOf<
-                HttpSearchParams<HttpSchema.SearchParams<RequestSearchParamsSchema>>
-              >();
+              expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<RequestSearchParamsSchema>>();
               expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
               return {
@@ -222,23 +247,20 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         expect(handler.requests).toHaveLength(0);
 
-        const searchParams = new HttpSearchParams<HttpSchema.SearchParams<RequestSearchParamsSchema>>({
+        const searchParams = new HttpSearchParams<RequestSearchParamsSchema>({
           tag: 'admin',
-          other: 'value',
+          page: 1,
+          optional: false,
         });
 
-        const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-          method,
-        });
+        let response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
         expect(response.status).toBe(200);
 
         expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
         searchParams.delete('tag');
 
-        const responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-          method,
-        });
+        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
@@ -247,14 +269,47 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         }
 
         expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+        searchParams.set('tag', 'admin');
+        searchParams.set('page', 2);
+
+        responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise);
+        }
+
+        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+        searchParams.set('page', 1);
+        searchParams.set('optional', true);
+
+        responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise);
+        }
+
+        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+        searchParams.set('optional', false);
+
+        response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+        expect(response.status).toBe(200);
+
+        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 2);
       });
     });
   });
 
-  describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {
+  describe.each(Array.from(HTTP_METHODS_WITH_REQUEST_BODY))('Method (%s)', (method) => {
     const lowerMethod = method.toLowerCase<'POST'>();
 
-    it(`should support intercepting ${method} requests having partial, exact body JSON restrictions`, async () => {
+    it(`should support intercepting ${method} requests having exact body JSON restrictions`, async () => {
       type MethodSchemaWithBody = HttpSchema.Method<{
         request: { body: RequestJSONSchema };
         response: { 200: {} };
@@ -309,7 +364,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
       });
     });
 
-    it(`should support intercepting ${method} requests having partial, non-exact body JSON restrictions`, async () => {
+    it(`should support intercepting ${method} requests having non-exact body JSON restrictions`, async () => {
       type MethodSchemaWithBody = HttpSchema.Method<{
         request: { body: RequestJSONSchema };
         response: { 200: {} };
@@ -373,9 +428,9 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
       });
     });
 
-    it(`should support intercepting ${method} requests having partial, exact body form data restrictions`, async () => {
+    it(`should support intercepting ${method} requests having exact body form data restrictions`, async () => {
       type MethodSchemaWithBody = HttpSchema.Method<{
-        request: { body: HttpFormData<HttpSchema.FormData<RequestFormDataSchema>> };
+        request: { body: HttpFormData<RequestFormDataSchema> };
         response: { 200: {} };
       }>;
 
@@ -387,7 +442,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           DELETE: MethodSchemaWithBody;
         };
       }>(interceptorOptions, async (interceptor) => {
-        const restrictedFormData = new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>();
+        const restrictedFormData = new HttpFormData<RequestFormDataSchema>();
         const tagFile = new File(['content'], 'tag.txt', { type: 'text/plain' });
         restrictedFormData.append('tag', tagFile);
 
@@ -398,7 +453,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
               exact: true,
             })
             .respond((request) => {
-              expectTypeOf(request.body).toEqualTypeOf<HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>>();
+              expectTypeOf(request.body).toEqualTypeOf<HttpFormData<RequestFormDataSchema>>();
               expect(request.body).toEqual(restrictedFormData);
 
               return { status: 200 };
@@ -419,17 +474,17 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         const differentTagFile = new File(['more-content'], 'tag.txt', { type: 'text/plain' });
 
-        const extendedFormData = new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>();
+        const extendedFormData = new HttpFormData<RequestFormDataSchema>();
         extendedFormData.append('tag', tagFile);
         extendedFormData.append('tag', differentTagFile);
 
-        const differentFormData = new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>();
+        const differentFormData = new HttpFormData<RequestFormDataSchema>();
         differentFormData.append('tag', differentTagFile);
 
         for (const body of [
           extendedFormData,
           differentFormData,
-          new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>(),
+          new HttpFormData<RequestFormDataSchema>(),
           undefined,
         ]) {
           await usingIgnoredConsole(['error'], async (console) => {
@@ -453,9 +508,9 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
       });
     });
 
-    it(`should support intercepting ${method} requests having partial, non-exact body form data restrictions`, async () => {
+    it(`should support intercepting ${method} requests having non-exact body form data restrictions`, async () => {
       type MethodSchemaWithBody = HttpSchema.Method<{
-        request: { body: HttpFormData<HttpSchema.FormData<RequestFormDataSchema>> };
+        request: { body: HttpFormData<RequestFormDataSchema> };
         response: { 200: {} };
       }>;
 
@@ -467,7 +522,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           DELETE: MethodSchemaWithBody;
         };
       }>(interceptorOptions, async (interceptor) => {
-        const restrictedFormData = new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>();
+        const restrictedFormData = new HttpFormData<RequestFormDataSchema>();
         const tagFile = new File(['content'], 'tag.txt', { type: 'text/plain' });
         restrictedFormData.append('tag', tagFile);
 
@@ -482,7 +537,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
               exact: false,
             })
             .respond((request) => {
-              expectTypeOf(request.body).toEqualTypeOf<HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>>();
+              expectTypeOf(request.body).toEqualTypeOf<HttpFormData<RequestFormDataSchema>>();
               expect(request.body.has('tag')).toBe(true);
 
               return { status: 200 };
@@ -503,17 +558,17 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         const differentTagFile = new File(['other'], 'tag.txt', { type: 'text/plain' });
 
-        const extendedFormData = new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>();
+        const extendedFormData = new HttpFormData<RequestFormDataSchema>();
         extendedFormData.append('tag', tagFile);
         extendedFormData.append('tag', differentTagFile);
 
-        const differentFormData = new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>();
+        const differentFormData = new HttpFormData<RequestFormDataSchema>();
         differentFormData.append('tag', differentTagFile);
 
         for (const body of [
           extendedFormData,
           differentFormData,
-          new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>(),
+          new HttpFormData<RequestFormDataSchema>(),
           undefined,
         ]) {
           await usingIgnoredConsole(['error'], async (console) => {
@@ -533,7 +588,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
       });
     });
 
-    it(`should support intercepting ${method} requests having partial, exact body search params restrictions`, async () => {
+    it(`should support intercepting ${method} requests having exact body search params restrictions`, async () => {
       type SearchParamsSchema = HttpSchema.SearchParams<{
         tag: string;
         other?: string;
@@ -598,7 +653,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
       });
     });
 
-    it(`should support intercepting ${method} requests having partial, non-exact body search params restrictions`, async () => {
+    it(`should support intercepting ${method} requests having non-exact body search params restrictions`, async () => {
       type SearchParamsSchema = HttpSchema.SearchParams<{
         tag: string;
         other?: string;

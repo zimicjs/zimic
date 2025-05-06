@@ -21,7 +21,7 @@ import {
   HTTP_INTERCEPTOR_REQUEST_HIDDEN_PROPERTIES,
   HTTP_INTERCEPTOR_RESPONSE_HIDDEN_PROPERTIES,
 } from '../../types/requests';
-import { SharedHttpRequestHandlerTestOptions, Schema, MethodSchema } from './types';
+import { SharedHttpRequestHandlerTestOptions, Schema, MethodSchema, HeadersSchema } from './types';
 
 export function declareDefaultHttpRequestHandlerTests(
   options: SharedHttpRequestHandlerTestOptions & {
@@ -285,7 +285,7 @@ export function declareDefaultHttpRequestHandlerTests(
 
     expect(handler.requests[0]).toEqual(parsedRequest);
 
-    expectTypeOf(handler.requests[0].raw).toEqualTypeOf<HttpRequest<MethodSchema['request']['body']>>();
+    expectTypeOf(handler.requests[0].raw).toEqualTypeOf<HttpRequest<MethodSchema['request']['body'], HeadersSchema>>();
     expect(handler.requests[0].raw).toBeInstanceOf(Request);
     expect(handler.requests[0].raw.url).toBe(request.url);
     expect(handler.requests[0].raw.method).toBe('POST');
@@ -298,7 +298,10 @@ export function declareDefaultHttpRequestHandlerTests(
 
     expect(handler.requests[0].response).toEqual(parsedResponse);
 
-    expectTypeOf(handler.requests[0].response.raw).toEqualTypeOf<HttpResponse<{ success: true }, 200>>();
+    expectTypeOf(handler.requests[0].response.raw).toEqualTypeOf<
+      HttpResponse<{ success: true }, { 'content-type': 'application/json' }, 200>
+    >();
+
     expect(handler.requests[0].response.raw).toBeInstanceOf(Response);
     expectTypeOf(handler.requests[0].response.raw.status).toEqualTypeOf<200>();
     expect(handler.requests[0].response.raw.status).toBe(200);

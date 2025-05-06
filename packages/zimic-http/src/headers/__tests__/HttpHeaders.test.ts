@@ -123,6 +123,61 @@ describe('HttpHeaders', () => {
     expect(contentTypeHeader).toBe('application/json');
   });
 
+  it('should support being created with a loose schema', () => {
+    const rateLimitReset = new Date();
+
+    const headers = new HttpHeaders<{
+      accept?: string;
+      'x-rate-limit': number;
+      'x-rate-limit-enabled': boolean;
+      'x-rate-limit-reset': Date;
+    }>({
+      accept: '*/*',
+      'x-rate-limit': 100,
+      'x-rate-limit-enabled': true,
+      'x-rate-limit-reset': rateLimitReset,
+    });
+
+    let acceptHeader = headers.get('accept');
+    expectTypeOf(acceptHeader).toEqualTypeOf<string | null>();
+    expect(acceptHeader).toBe('*/*');
+
+    headers.set('accept', 'image/png');
+    acceptHeader = headers.get('accept');
+    expectTypeOf(acceptHeader).toEqualTypeOf<string | null>();
+    expect(acceptHeader).toBe('image/png');
+
+    let rateLimitHeader = headers.get('x-rate-limit');
+    expectTypeOf(rateLimitHeader).toEqualTypeOf<`${number}`>();
+    expect(rateLimitHeader).toBe('100');
+
+    headers.set('x-rate-limit', 200);
+    rateLimitHeader = headers.get('x-rate-limit');
+    expectTypeOf(rateLimitHeader).toEqualTypeOf<`${number}`>();
+    expect(rateLimitHeader).toBe('200');
+
+    let rateLimitEffectiveHeader = headers.get('x-rate-limit-enabled');
+    expectTypeOf(rateLimitEffectiveHeader).toEqualTypeOf<`${boolean}`>();
+    expect(rateLimitEffectiveHeader).toBe('true');
+
+    headers.set('x-rate-limit-enabled', false);
+    rateLimitEffectiveHeader = headers.get('x-rate-limit-enabled');
+    expectTypeOf(rateLimitEffectiveHeader).toEqualTypeOf<`${boolean}`>();
+    expect(rateLimitEffectiveHeader).toBe('false');
+
+    let rateLimitResetHeader = headers.get('x-rate-limit-reset');
+    expectTypeOf(rateLimitResetHeader).toEqualTypeOf<string>();
+    expect(rateLimitResetHeader).toBe(rateLimitReset.toString());
+
+    const otherRateLimitReset = new Date(rateLimitReset);
+    otherRateLimitReset.setDate(otherRateLimitReset.getDate() + 1);
+
+    headers.set('x-rate-limit-reset', otherRateLimitReset);
+    rateLimitResetHeader = headers.get('x-rate-limit-reset');
+    expectTypeOf(rateLimitResetHeader).toEqualTypeOf<string>();
+    expect(rateLimitResetHeader).toBe(otherRateLimitReset.toString());
+  });
+
   it('should support setting headers', () => {
     const headers = new HttpHeaders<{
       accept?: string;
@@ -545,7 +600,7 @@ describe('HttpHeaders', () => {
 
         requiredEnum: 'value1' | 'value2';
         optionalEnum?: 'value1' | 'value2';
-        nullableString: string | null;
+        nullableNumber: number | null;
 
         stringArray: string[];
         numberArray: number[];
@@ -574,15 +629,20 @@ describe('HttpHeaders', () => {
 
         requiredEnum: 'value1' | 'value2';
         optionalEnum?: 'value1' | 'value2';
-        nullableString: string | undefined;
-      }>();
+        nullableNumber: `${number}` | 'null';
 
-      expectTypeOf<HttpHeadersSerialized<string[]>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpHeadersSerialized<Date>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpHeadersSerialized<() => void>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpHeadersSerialized<symbol>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpHeadersSerialized<Map<never, never>>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpHeadersSerialized<Set<never>>>().toEqualTypeOf<never>();
+        stringArray: string;
+        numberArray: string;
+        booleanArray: string;
+
+        object: string;
+
+        date: string;
+        method: string;
+        map: string;
+        set: string;
+        error: string;
+      }>();
     });
   });
 });

@@ -65,22 +65,10 @@ function isRequestHeaders(node: ts.Node): node is RequestHeaders {
   return isRequestMember(node) && node.name.text === 'headers' && ts.isTypeLiteralNode(node.type);
 }
 
-type NormalizedRequestHeaders = Override<
-  RequestHeaders,
-  {
-    type: Override<ts.TypeReferenceNode, { typeArguments: ts.NodeArray<ts.TypeLiteralNode> }>;
-  }
->;
+type NormalizedRequestHeaders = Override<RequestHeaders, { type: ts.TypeLiteralNode }>;
 
 function isNormalizedRequestHeaders(node: ts.Node): node is NormalizedRequestHeaders {
-  return (
-    isRequestMember(node) &&
-    node.name.text === 'headers' &&
-    ts.isTypeReferenceNode(node.type) &&
-    node.type.typeArguments !== undefined &&
-    node.type.typeArguments.length === 1 &&
-    ts.isTypeLiteralNode(node.type.typeArguments[0])
-  );
+  return isRequestMember(node) && node.name.text === 'headers' && ts.isTypeLiteralNode(node.type);
 }
 
 type RequestParameters = Override<RequestMember, { type: ts.TypeLiteralNode }>;
@@ -170,23 +158,17 @@ function removeRedundantNullUnionIfNecessary(type: ts.TypeNode) {
 
 function wrapFormDataContentType(type: ts.TypeNode, context: TypeTransformContext) {
   context.typeImports.http.add('HttpFormData');
-  context.typeImports.http.add('HttpFormDataSerialized');
 
   return ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpFormData'), [
-    ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpFormDataSerialized'), [
-      renameComponentReferences(type, context),
-    ]),
+    renameComponentReferences(type, context),
   ]);
 }
 
 function wrapURLEncodedContentType(type: ts.TypeNode, context: TypeTransformContext) {
   context.typeImports.http.add('HttpSearchParams');
-  context.typeImports.http.add('HttpSearchParamsSerialized');
 
   return ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpSearchParams'), [
-    ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpSearchParamsSerialized'), [
-      renameComponentReferences(type, context),
-    ]),
+    renameComponentReferences(type, context),
   ]);
 }
 
@@ -224,18 +206,7 @@ function normalizeRequestBodyMember(
   };
 }
 
-function wrapHeadersType(type: ts.TypeLiteralNode, context: TypeTransformContext): NormalizedRequestHeaders['type'] {
-  context.typeImports.http.add('HttpHeadersSerialized');
-
-  const serializedWrapper = ts.factory.createIdentifier('HttpHeadersSerialized');
-
-  return ts.factory.createTypeReferenceNode(
-    serializedWrapper,
-    ts.factory.createNodeArray([type]) satisfies NormalizedRequestHeaders['type']['typeArguments'],
-  ) as NormalizedRequestHeaders['type'];
-}
-
-function normalizeHeaders(headers: ts.TypeLiteralNode, context: TypeTransformContext) {
+function normalizeHeaders(headers: ts.TypeLiteralNode) {
   const newHeaderMembers = headers.members.filter((header) => {
     if (ts.isIndexSignatureDeclaration(header)) {
       return false;
@@ -253,19 +224,15 @@ function normalizeHeaders(headers: ts.TypeLiteralNode, context: TypeTransformCon
     return undefined;
   }
 
-  const newHeaders = ts.factory.updateTypeLiteralNode(headers, ts.factory.createNodeArray(newHeaderMembers));
-  return wrapHeadersType(newHeaders, context);
+  return ts.factory.updateTypeLiteralNode(headers, ts.factory.createNodeArray(newHeaderMembers));
 }
 
-function normalizeRequestHeaders(
-  requestHeader: ts.TypeElement,
-  context: TypeTransformContext,
-): NormalizedRequestHeaders | undefined {
+function normalizeRequestHeaders(requestHeader: ts.TypeElement): NormalizedRequestHeaders | undefined {
   if (!isRequestHeaders(requestHeader)) {
     return undefined;
   }
 
-  const newType = normalizeHeaders(requestHeader.type, context);
+  const newType = normalizeHeaders(requestHeader.type);
 
   if (!newType) {
     return undefined;
@@ -283,20 +250,16 @@ function normalizeRequestHeaders(
 function createHeaderForUnionByContentType(
   existingHeader: NormalizedRequestHeaders | undefined,
   contentTypeName: string,
-  context: TypeTransformContext,
 ) {
-  const existingHeaderMembers = existingHeader ? existingHeader.type.typeArguments[0].members : [];
+  const existingHeaderMembers = existingHeader?.type.members ?? [];
 
   const contentTypeIdentifier = ts.factory.createIdentifier('"content-type"');
   const contentTypeValue = ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral(contentTypeName));
 
-  const newHeaderType = wrapHeadersType(
-    ts.factory.createTypeLiteralNode([
-      ts.factory.createPropertySignature(undefined, contentTypeIdentifier, undefined, contentTypeValue),
-      ...existingHeaderMembers,
-    ]),
-    context,
-  );
+  const newHeaderType = ts.factory.createTypeLiteralNode([
+    ts.factory.createPropertySignature(undefined, contentTypeIdentifier, undefined, contentTypeValue),
+    ...existingHeaderMembers,
+  ]);
 
   return ts.factory.createPropertySignature(
     existingHeader?.modifiers,
@@ -321,7 +284,7 @@ export function normalizeContentType(
     return contentType;
   }
 
-  const newHeader = contentType.members.map((member) => normalizeRequestHeaders(member, context)).find(isDefined);
+  const newHeader = contentType.members.map(normalizeRequestHeaders).find(isDefined);
 
   const newBodyMembers = contentType.members.flatMap((body) => {
     if (isContentPropertySignature(body)) {
@@ -338,7 +301,7 @@ export function normalizeContentType(
     return ts.factory.updateTypeLiteralNode(contentType, ts.factory.createNodeArray(newMembers));
   } else {
     const bodyMemberUnionTypes = newBodyMembers.map((bodyMember) => {
-      const headerMember = createHeaderForUnionByContentType(newHeader, bodyMember.contentTypeName, context);
+      const headerMember = createHeaderForUnionByContentType(newHeader, bodyMember.contentTypeName);
       return ts.factory.createTypeLiteralNode([headerMember, bodyMember.propertySignature]);
     });
 
@@ -366,29 +329,18 @@ function normalizeRequest(request: MethodMember, context: TypeTransformContext) 
   return ts.factory.updatePropertySignature(request, request.modifiers, newIdentifier, undefined, newType);
 }
 
-function wrapResponseType(type: ts.TypeNode, context: TypeTransformContext) {
-  context.typeImports.http.add('HttpSchema');
-
-  const httpSchemaResponseWrapper = ts.factory.createQualifiedName(
-    ts.factory.createIdentifier('HttpSchema'),
-    ts.factory.createIdentifier('Response'),
-  );
-  return ts.factory.createTypeReferenceNode(httpSchemaResponseWrapper, [type]);
-}
-
 function normalizeResponseType(
   responseType: ts.TypeNode,
   context: TypeTransformContext,
-  options: { isComponent: boolean; questionToken?: ts.QuestionToken },
+  options: { questionToken?: ts.QuestionToken },
 ) {
-  const { isComponent, questionToken } = options;
+  const { questionToken } = options;
 
   if (!ts.isTypeLiteralNode(responseType)) {
     return responseType;
   }
 
-  const newType = normalizeContentType(responseType, context, { bodyQuestionToken: questionToken });
-  return isComponent ? wrapResponseType(newType, context) : newType;
+  return normalizeContentType(responseType, context, { bodyQuestionToken: questionToken });
 }
 
 const NON_NUMERIC_RESPONSE_STATUS_TO_MAPPED_TYPE: Record<string, string | undefined> = {
@@ -414,7 +366,6 @@ export function normalizeResponse(
   }
 
   const newType = normalizeResponseType(response.type, context, {
-    isComponent,
     questionToken: response.questionToken,
   });
 
@@ -552,17 +503,12 @@ function normalizeRequestQueryWithParameters(requestMember: RequestMember, conte
 
   const newType = renameComponentReferences(requestMember.type, context);
 
-  context.typeImports.http.add('HttpSearchParamsSerialized');
-
-  const serializedWrapper = ts.factory.createIdentifier('HttpSearchParamsSerialized');
-  const wrappedNewType = ts.factory.createTypeReferenceNode(serializedWrapper, [newType]);
-
   return ts.factory.updatePropertySignature(
     requestMember,
     requestMember.modifiers,
     newIdentifier,
     newQuestionToken,
-    wrappedNewType,
+    newType,
   );
 }
 
@@ -572,17 +518,12 @@ function normalizeRequestHeadersWithParameters(requestMember: RequestMember, con
 
   const newType = renameComponentReferences(requestMember.type, context);
 
-  context.typeImports.http.add('HttpHeadersSerialized');
-
-  const serializedWrapper = ts.factory.createIdentifier('HttpHeadersSerialized');
-  const wrappedNewType = ts.factory.createTypeReferenceNode(serializedWrapper, [newType]);
-
   return ts.factory.updatePropertySignature(
     requestMember,
     requestMember.modifiers,
     newIdentifier,
     newQuestionToken,
-    wrappedNewType,
+    newType,
   );
 }
 
@@ -602,16 +543,10 @@ function normalizeRequestMemberWithParameters(requestMember: ts.TypeElement, con
 }
 
 function mergeRequestHeadersMember(headers: NormalizedRequestHeaders, otherHeaders: NormalizedRequestHeaders) {
-  const headersTypeLiteral = headers.type.typeArguments[0];
-  const otherHeadersTypeLiteral = otherHeaders.type.typeArguments[0];
-
-  const newType = ts.factory.updateTypeReferenceNode(
+  const newType = ts.factory.updateTypeLiteralNode(
     headers.type,
-    headers.type.typeName,
-    ts.factory.createNodeArray([
-      ts.factory.createTypeLiteralNode([...otherHeadersTypeLiteral.members, ...headersTypeLiteral.members]),
-    ]) satisfies NormalizedRequestHeaders['type']['typeArguments'],
-  ) as NormalizedRequestHeaders['type'];
+    ts.factory.createNodeArray([...otherHeaders.type.members, ...headers.type.members]),
+  );
 
   return ts.factory.updatePropertySignature(
     headers,

@@ -1,12 +1,17 @@
 import { ReplaceBy, ArrayItemIfArray } from '@zimic/utils/types';
 
-import { HttpSearchParamsSchema, HttpSearchParamsInit, HttpSearchParamsSchemaName } from './types';
+import {
+  HttpSearchParamsSchema,
+  HttpSearchParamsInit,
+  HttpSearchParamsSchemaName,
+  HttpSearchParamsSerialized,
+} from './types';
 
-function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema>(schema: Schema) {
+function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema.Loose>(schema: Schema) {
   const schemaWithPrimitiveProperties = Object.entries(schema).reduce<Record<string, string>>(
     (accumulated, [key, value]) => {
       if (value !== undefined && !Array.isArray(value)) {
-        accumulated[key] = value;
+        accumulated[key] = String(value);
       }
       return accumulated;
     },
@@ -18,9 +23,6 @@ function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema>(schema: 
 /**
  * An extended HTTP search params object with a strictly-typed schema. Fully compatible with the built-in
  * {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams `URLSearchParams`} class.
- *
- * **IMPORTANT**: the input of `HttpSearchParams` and all of its internal types must be declared inline or as a type
- * aliases (`type`). They cannot be interfaces.
  *
  * @example
  *   import { HttpSearchParams } from '@zimic/http';
@@ -41,8 +43,12 @@ function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema>(schema: 
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpsearchparams `HttpSearchParams` API reference}
  */
-class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsSchema> extends URLSearchParams {
-  constructor(init?: HttpSearchParamsInit<Schema>) {
+class HttpSearchParams<
+  LooseSchema extends HttpSearchParamsSchema.Loose = HttpSearchParamsSchema.Loose,
+> extends URLSearchParams {
+  readonly _schema!: HttpSearchParamsSerialized<LooseSchema>;
+
+  constructor(init?: HttpSearchParamsInit<LooseSchema>) {
     if (init instanceof URLSearchParams || Array.isArray(init) || typeof init === 'string' || !init) {
       super(init);
     } else {
@@ -51,28 +57,28 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
     }
   }
 
-  private populateInitArrayProperties(init: Schema) {
+  private populateInitArrayProperties(init: LooseSchema) {
     for (const [key, value] of Object.entries(init)) {
       if (Array.isArray(value)) {
-        for (const item of value) {
-          super.append(key, item);
+        for (const item of value as unknown[]) {
+          super.append(key, String(item));
         }
       }
     }
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/set MDN Reference} */
-  set<Name extends HttpSearchParamsSchemaName<Schema>>(
+  set<Name extends HttpSearchParamsSchemaName<this['_schema']>>(
     name: Name,
-    value: ArrayItemIfArray<NonNullable<Schema[Name]>>,
+    value: ArrayItemIfArray<NonNullable<LooseSchema[Name]>>,
   ): void {
     super.set(name, value);
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/append MDN Reference} */
-  append<Name extends HttpSearchParamsSchemaName<Schema>>(
+  append<Name extends HttpSearchParamsSchemaName<this['_schema']>>(
     name: Name,
-    value: ArrayItemIfArray<NonNullable<Schema[Name]>>,
+    value: ArrayItemIfArray<NonNullable<LooseSchema[Name]>>,
   ): void {
     super.append(name, value);
   }
@@ -86,10 +92,10 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
    * @returns The value associated with the key name, or `null` if the key does not exist.
    * @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/get MDN Reference}
    */
-  get<Name extends HttpSearchParamsSchemaName.NonArray<Schema>>(
+  get<Name extends HttpSearchParamsSchemaName.NonArray<this['_schema']>>(
     name: Name,
-  ): ReplaceBy<ArrayItemIfArray<Schema[Name]>, undefined, null> {
-    return super.get(name) as ReplaceBy<ArrayItemIfArray<Schema[Name]>, undefined, null>;
+  ): ReplaceBy<ArrayItemIfArray<this['_schema'][Name]>, undefined, null> {
+    return super.get(name) as never;
   }
 
   /**
@@ -101,33 +107,33 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
    * @returns An array of values associated with the key name, or an empty array if the key does not exist.
    * @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/getAll MDN Reference}
    */
-  getAll<Name extends HttpSearchParamsSchemaName.Array<Schema>>(
+  getAll<Name extends HttpSearchParamsSchemaName.Array<this['_schema']>>(
     name: Name,
-  ): ArrayItemIfArray<NonNullable<Schema[Name]>>[] {
-    return super.getAll(name) as ArrayItemIfArray<NonNullable<Schema[Name]>>[];
+  ): ArrayItemIfArray<NonNullable<this['_schema'][Name]>>[] {
+    return super.getAll(name) as never;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/has MDN Reference} */
-  has<Name extends HttpSearchParamsSchemaName<Schema>>(
+  has<Name extends HttpSearchParamsSchemaName<this['_schema']>>(
     name: Name,
-    value?: ArrayItemIfArray<NonNullable<Schema[Name]>>,
+    value?: ArrayItemIfArray<NonNullable<LooseSchema[Name]>>,
   ): boolean {
     return super.has(name, value);
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/delete MDN Reference} */
-  delete<Name extends HttpSearchParamsSchemaName<Schema>>(
+  delete<Name extends HttpSearchParamsSchemaName<this['_schema']>>(
     name: Name,
-    value?: ArrayItemIfArray<NonNullable<Schema[Name]>>,
+    value?: ArrayItemIfArray<NonNullable<LooseSchema[Name]>>,
   ): void {
     super.delete(name, value);
   }
 
-  forEach<This extends HttpSearchParams<Schema>>(
-    callback: <Key extends HttpSearchParamsSchemaName<Schema>>(
-      value: ArrayItemIfArray<NonNullable<Schema[Key]>>,
+  forEach<This extends HttpSearchParams<this['_schema']>>(
+    callback: <Key extends HttpSearchParamsSchemaName<this['_schema']>>(
+      value: ArrayItemIfArray<NonNullable<this['_schema'][Key]>>,
       key: Key,
-      parent: HttpSearchParams<Schema>,
+      parent: HttpSearchParams<this['_schema']>,
     ) => void,
     thisArg?: This,
   ): void {
@@ -135,32 +141,34 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/keys MDN Reference} */
-  keys(): URLSearchParamsIterator<HttpSearchParamsSchemaName<Schema>> {
-    return super.keys() as URLSearchParamsIterator<HttpSearchParamsSchemaName<Schema>>;
+  keys(): URLSearchParamsIterator<HttpSearchParamsSchemaName<this['_schema']>> {
+    return super.keys() as never;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/values MDN Reference} */
-  values(): URLSearchParamsIterator<ArrayItemIfArray<NonNullable<Schema[HttpSearchParamsSchemaName<Schema>]>>> {
-    return super.values() as URLSearchParamsIterator<
-      ArrayItemIfArray<NonNullable<Schema[HttpSearchParamsSchemaName<Schema>]>>
-    >;
+  values(): URLSearchParamsIterator<
+    ArrayItemIfArray<NonNullable<this['_schema'][HttpSearchParamsSchemaName<this['_schema']>]>>
+  > {
+    return super.values() as never;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/entries MDN Reference} */
   entries(): URLSearchParamsIterator<
-    [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<NonNullable<Schema[HttpSearchParamsSchemaName<Schema>]>>]
+    [
+      HttpSearchParamsSchemaName<this['_schema']>,
+      ArrayItemIfArray<NonNullable<this['_schema'][HttpSearchParamsSchemaName<this['_schema']>]>>,
+    ]
   > {
-    return super.entries() as URLSearchParamsIterator<
-      [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<NonNullable<Schema[HttpSearchParamsSchemaName<Schema>]>>]
-    >;
+    return super.entries() as never;
   }
 
   [Symbol.iterator](): URLSearchParamsIterator<
-    [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<NonNullable<Schema[HttpSearchParamsSchemaName<Schema>]>>]
+    [
+      HttpSearchParamsSchemaName<this['_schema']>,
+      ArrayItemIfArray<NonNullable<this['_schema'][HttpSearchParamsSchemaName<this['_schema']>]>>,
+    ]
   > {
-    return super[Symbol.iterator]() as URLSearchParamsIterator<
-      [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<NonNullable<Schema[HttpSearchParamsSchemaName<Schema>]>>]
-    >;
+    return super[Symbol.iterator]() as never;
   }
 
   /**
@@ -170,7 +178,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
    * @param otherParams The other search parameters to compare against.
    * @returns `true` if the search parameters are equal, `false` otherwise.
    */
-  equals<OtherSchema extends Schema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
+  equals<OtherSchema extends LooseSchema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
     return this.contains(otherParams) && this.size === otherParams.size;
   }
 
@@ -182,7 +190,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
    * @param otherParams The other search parameters to check for containment.
    * @returns `true` if these search parameters contain the other search parameters, `false` otherwise.
    */
-  contains<OtherSchema extends Schema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
+  contains<OtherSchema extends LooseSchema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
     for (const [key, otherValue] of otherParams.entries()) {
       const values = super.getAll.call(this, key);
 
@@ -219,13 +227,13 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
    * @returns A plain object representation of these search params.
    */
   toObject() {
-    const object = {} as Schema;
+    const object = {} as this['_schema'];
 
-    type SchemaValue = Schema[HttpSearchParamsSchemaName<Schema>];
+    type SchemaValue = this['_schema'][HttpSearchParamsSchemaName<this['_schema']>];
 
     for (const [key, value] of this.entries()) {
       if (key in object) {
-        const existingValue = object[key];
+        const existingValue = object[key] as SchemaValue[];
 
         if (Array.isArray<SchemaValue>(existingValue)) {
           existingValue.push(value as SchemaValue);

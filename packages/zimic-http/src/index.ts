@@ -40,8 +40,6 @@ export type {
 export type {
   HttpSchema,
   HttpMethod,
-  HttpMethodWithRequestBody,
-  HttpMethodWithResponseBody,
   HttpStatusCode,
   HttpRequestSchema,
   HttpResponseSchema,
@@ -57,4 +55,4 @@ export type {
   MergeHttpResponsesByStatusCode,
 } from './types/schema';
 
-export { HTTP_METHODS, HTTP_METHODS_WITH_REQUEST_BODY, HTTP_METHODS_WITH_RESPONSE_BODY } from './types/schema';
+export { HTTP_METHODS } from './types/schema';

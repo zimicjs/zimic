@@ -1,10 +1,4 @@
-import {
-  HTTP_METHODS_WITH_REQUEST_BODY,
-  HTTP_METHODS_WITH_RESPONSE_BODY,
-  HttpMethod,
-  HttpMethodWithRequestBody,
-  HttpMethodWithResponseBody,
-} from '@zimic/http';
+import { HttpMethod } from '@zimic/http';
 import { Server as HttpServer } from 'http';
 
 class HttpServerTimeoutError extends Error {}
@@ -98,12 +92,21 @@ export function getHttpServerPort(server: HttpServer) {
   }
 }
 
-export function methodCanHaveRequestBody(method: HttpMethod): method is HttpMethodWithRequestBody {
-  const methodsToCompare: readonly string[] = HTTP_METHODS_WITH_REQUEST_BODY;
-  return methodsToCompare.includes(method);
+export const HTTP_METHODS_WITH_REQUEST_BODY = new Set<HttpMethod>(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+export function methodCanHaveRequestBody(method: HttpMethod) {
+  return HTTP_METHODS_WITH_REQUEST_BODY.has(method);
 }
 
-export function methodCanHaveResponseBody(method: HttpMethod): method is HttpMethodWithResponseBody {
-  const methodsToCompare: readonly string[] = HTTP_METHODS_WITH_RESPONSE_BODY;
-  return methodsToCompare.includes(method);
+export const HTTP_METHODS_WITH_RESPONSE_BODY = new Set<HttpMethod>([
+  'GET',
+  'POST',
+  'PUT',
+  'PATCH',
+  'DELETE',
+  'OPTIONS',
+]);
+
+export function methodCanHaveResponseBody(method: HttpMethod) {
+  return HTTP_METHODS_WITH_RESPONSE_BODY.has(method);
 }
