@@ -51,7 +51,7 @@
 
 > [!NOTE]
 >
-> :seedling: This library is in **beta**.
+> Status: :seedling: **Beta**
 
 ## Features
 
