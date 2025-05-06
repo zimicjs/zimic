@@ -13,7 +13,7 @@
     "api",
     "static"
   ],
-  "version": "0.3.0-canary.1",
+  "version": "0.3.0-canary.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
