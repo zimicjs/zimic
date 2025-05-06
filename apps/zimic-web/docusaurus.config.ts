@@ -118,7 +118,7 @@ const config: Docusaurus.Config = {
     announcementBar: {
       id: 'announcement-bar-github-star',
       content:
-        'If you like Zimic, give it a star on ' +
+        'If you like Zimic, give us a star on ' +
         '<a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic">GitHub</a>! ⭐️',
       textColor: 'var(--ifm-background-color)',
       backgroundColor: 'var(--ifm-color-content)',
@@ -191,6 +191,11 @@ const config: Docusaurus.Config = {
           position: 'left',
         },
         {
+          label: 'CLI',
+          to: 'docs/cli',
+          position: 'left',
+        },
+        {
           type: 'localeDropdown',
           position: 'right',
           dropdownItemsAfter: [
@@ -230,8 +235,8 @@ const config: Docusaurus.Config = {
               to: 'docs',
             },
             {
-              label: 'Motivation',
-              to: 'docs/motivation',
+              label: 'Getting started',
+              to: 'docs/getting-started',
             },
             {
               label: 'Examples',
@@ -240,6 +245,10 @@ const config: Docusaurus.Config = {
             {
               label: 'API',
               to: 'docs/api',
+            },
+            {
+              label: 'CLI',
+              to: 'docs/cLI',
             },
           ],
         },
