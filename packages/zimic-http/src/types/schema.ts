@@ -1,23 +1,17 @@
-import { IfAny, UnionToIntersection, UnionHasMoreThanOneType, Prettify, NonEmptyArray } from '@zimic/utils/types';
+import {
+  IfAny,
+  UnionToIntersection,
+  UnionHasMoreThanOneType,
+  Prettify,
+  NonEmptyArray,
+  Branded,
+} from '@zimic/utils/types';
 
-import { HttpFormDataSchema, HttpFormDataSerialized } from '../formData/types';
-import { HttpHeadersSchema, HttpHeadersSerialized } from '../headers/types';
-import { HttpPathParamsSchema, HttpPathParamsSerialized } from '../pathParams/types';
-import { HttpSearchParamsSchema, HttpSearchParamsSerialized } from '../searchParams/types';
+import { HttpFormDataSchema } from '../formData/types';
+import { HttpHeadersSchema } from '../headers/types';
+import { HttpPathParamsSchema } from '../pathParams/types';
+import { HttpSearchParamsSchema } from '../searchParams/types';
 import { HttpBody } from './requests';
-
-export const HTTP_METHODS_WITH_REQUEST_BODY = Object.freeze(['POST', 'PUT', 'PATCH', 'DELETE'] as const);
-export type HttpMethodWithRequestBody = (typeof HTTP_METHODS_WITH_REQUEST_BODY)[number];
-
-export const HTTP_METHODS_WITH_RESPONSE_BODY = Object.freeze([
-  'GET',
-  'POST',
-  'PUT',
-  'PATCH',
-  'DELETE',
-  'OPTIONS',
-] as const);
-export type HttpMethodWithResponseBody = (typeof HTTP_METHODS_WITH_RESPONSE_BODY)[number];
 
 export const HTTP_METHODS = Object.freeze(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const);
 /**
@@ -37,19 +31,6 @@ export interface HttpRequestSchema {
   body?: HttpBody.Loose;
 }
 
-export namespace HttpRequestSchema {
-  /** Convert an HTTP request schema to be strictly typed. */
-  export type AsStrict<Schema> = {
-    [Key in keyof Schema]: Key extends 'headers'
-      ? HttpHeadersSerialized<Schema[Key]>
-      : Key extends 'searchParams'
-        ? HttpSearchParamsSerialized<Schema[Key]>
-        : Key extends 'body'
-          ? HttpBody.AsStrict<Schema[Key]>
-          : Schema[Key];
-  };
-}
-
 /**
  * A schema representing the structure of an HTTP response.
  *
@@ -58,16 +39,6 @@ export namespace HttpRequestSchema {
 export interface HttpResponseSchema {
   headers?: HttpHeadersSchema.Loose;
   body?: HttpBody.Loose;
-}
-
-export namespace HttpResponseSchema {
-  /** A schema representing the structure of an HTTP response with no body. */
-  export interface NoBody extends Omit<HttpResponseSchema, 'body'> {
-    body?: null;
-  }
-
-  /** Convert an HTTP response schema to be strictly typed. */
-  export type AsStrict<Schema> = HttpRequestSchema.AsStrict<Schema>;
 }
 
 /**
@@ -190,27 +161,9 @@ export namespace HttpStatusCode {
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
  */
-export type HttpResponseSchemaByStatusCode =
-  HttpResponseSchemaByStatusCode.AsStrict<HttpResponseSchemaByStatusCode.Loose>;
-
-export namespace HttpResponseSchemaByStatusCode {
-  /** A loose version of HTTP responses by status code. JSON values are not strictly typed. */
-  export type Loose = {
-    [StatusCode in HttpStatusCode]?: HttpResponseSchema;
-  };
-
-  /** Converts an HTTP response schema by status code to be strictly typed. */
-  export type AsStrict<Schema> = {
-    [StatusCode in keyof Schema]: StatusCode extends 204
-      ? HttpResponseSchema.NoBody
-      : HttpResponseSchema.AsStrict<Schema[StatusCode]>;
-  };
-
-  /** A schema representing the structure of HTTP responses by status code with no body. */
-  export type NoBody = {
-    [StatusCode in HttpStatusCode]?: HttpResponseSchema.NoBody;
-  };
-}
+export type HttpResponseSchemaByStatusCode = {
+  [StatusCode in HttpStatusCode]?: HttpResponseSchema;
+};
 
 /**
  * Extracts the status codes used in a response schema by status code.
@@ -230,50 +183,19 @@ export interface HttpMethodSchema {
   response?: HttpResponseSchemaByStatusCode;
 }
 
-export namespace HttpMethodSchema {
-  /** A schema representing the structure of an HTTP request and response for a given method, having no request body. */
-  export interface NoRequestBody extends Omit<HttpMethodSchema, 'request'> {
-    request?: Omit<HttpRequestSchema, 'body'> & { body?: null };
-  }
-
-  /**
-   * A schema representing the structure of an HTTP request and response for a given method, having no request and
-   * response bodies.
-   */
-  export interface NoBody extends Omit<NoRequestBody, 'response'> {
-    response?: HttpResponseSchemaByStatusCode.NoBody;
-  }
-
-  /** Converts an HTTP method schema to be strictly typed. */
-  export type AsStrict<Schema> = {
-    [Key in keyof Schema]: Key extends 'request'
-      ? HttpRequestSchema.AsStrict<Schema[Key]>
-      : Key extends 'response'
-        ? HttpResponseSchemaByStatusCode.AsStrict<Schema[Key]>
-        : Schema[Key];
-  };
-}
-
 /**
  * A schema representing the structure of HTTP request and response by method.
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
  */
 export interface HttpMethodsSchema {
-  GET?: HttpMethodSchema.NoRequestBody;
+  GET?: HttpMethodSchema;
   POST?: HttpMethodSchema;
   PUT?: HttpMethodSchema;
   PATCH?: HttpMethodSchema;
   DELETE?: HttpMethodSchema;
-  HEAD?: HttpMethodSchema.NoBody;
-  OPTIONS?: HttpMethodSchema.NoRequestBody;
-}
-
-export namespace HttpMethodsSchema {
-  /** Converts an HTTP methods schema to be strictly typed. */
-  export type AsStrict<Schema> = {
-    [Method in keyof Schema]: HttpMethodSchema.AsStrict<Schema[Method]>;
-  };
+  HEAD?: HttpMethodSchema;
+  OPTIONS?: HttpMethodSchema;
 }
 
 interface BaseHttpSchema {
@@ -292,7 +214,7 @@ interface BaseHttpSchema {
  *
  *   interface UserListSearchParams {
  *     name?: string;
- *     limit?: `${number}`;
+ *     limit?: number;
  *   }
  *
  *   type Schema = HttpSchema<{
@@ -315,14 +237,9 @@ interface BaseHttpSchema {
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
  */
-export type HttpSchema<Schema extends BaseHttpSchema = BaseHttpSchema> = HttpSchema.AsStrict<Schema>;
+export type HttpSchema<Schema extends BaseHttpSchema = BaseHttpSchema> = Branded<Schema, 'HttpSchema'>;
 
 export namespace HttpSchema {
-  /** Converts an HTTP service schema to be strictly typed. */
-  export type AsStrict<Schema extends BaseHttpSchema> = {
-    [Path in keyof Schema]: HttpMethodsSchema.AsStrict<Schema[Path]>;
-  };
-
   /**
    * Declares an HTTP service methods schema.
    *
@@ -341,7 +258,7 @@ export namespace HttpSchema {
    *     '/users': UserMethods;
    *   }>;
    */
-  export type Methods<Schema extends HttpMethodsSchema> = HttpMethodsSchema.AsStrict<Schema>;
+  export type Methods<Schema extends HttpMethodsSchema> = Schema;
 
   /**
    * Declares an HTTP service method schema.
@@ -361,7 +278,7 @@ export namespace HttpSchema {
    *     };
    *   }>;
    */
-  export type Method<Schema extends HttpMethodSchema> = HttpMethodSchema.AsStrict<Schema>;
+  export type Method<Schema extends HttpMethodSchema> = Schema;
 
   /**
    * Declares an HTTP service request schema.
@@ -385,7 +302,7 @@ export namespace HttpSchema {
    *     };
    *   }>;
    */
-  export type Request<Schema extends HttpRequestSchema> = HttpRequestSchema.AsStrict<Schema>;
+  export type Request<Schema extends HttpRequestSchema> = Schema;
 
   /**
    * Declares an HTTP service response schema by status code.
@@ -406,8 +323,7 @@ export namespace HttpSchema {
    *     };
    *   }>;
    */
-  export type ResponseByStatusCode<Schema extends HttpResponseSchemaByStatusCode> =
-    HttpResponseSchemaByStatusCode.AsStrict<Schema>;
+  export type ResponseByStatusCode<Schema extends HttpResponseSchemaByStatusCode> = Schema;
 
   /**
    * Declares an HTTP service response schema.
@@ -429,11 +345,10 @@ export namespace HttpSchema {
    *     };
    *   }>;
    */
-  export type Response<Schema extends HttpResponseSchema> = HttpResponseSchema.AsStrict<Schema>;
+  export type Response<Schema extends HttpResponseSchema> = Schema;
 
   /**
-   * Declares an HTTP body schema. JSON values are serialized to their strict form using
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic#jsonserialized `JSONSerialized`} if necessary.
+   * Declares an HTTP body schema.
    *
    * @example
    *   import { type HttpSchema } from '@zimic/http';
@@ -450,12 +365,10 @@ export namespace HttpSchema {
    *     };
    *   }>;
    */
-  export type Body<Schema extends HttpBody.Loose> = HttpBody.AsStrict<Schema>;
+  export type Body<Schema extends HttpBody.Loose> = Schema;
 
   /**
-   * Declares an HTTP headers schema. Headers are serialized to their strict form using
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpheadersserialized `HttpHeadersSerialized`} if
-   * necessary.
+   * Declares an HTTP headers schema.
    *
    * @example
    *   import { type HttpSchema } from '@zimic/http';
@@ -477,12 +390,10 @@ export namespace HttpSchema {
    *     };
    *   }>;
    */
-  export type Headers<Schema extends HttpHeadersSchema.Loose> = HttpHeadersSerialized<Schema>;
+  export type Headers<Schema extends HttpHeadersSchema.Loose> = Schema;
 
   /**
-   * Declares an HTTP search params schema. Search params are serialized to their strict form using
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpsearchparamsserialized `HttpSearchParamsSerialized`}
-   * if necessary.
+   * Declares an HTTP search params schema.
    *
    * @example
    *   import { type HttpSchema } from '@zimic/http';
@@ -505,11 +416,10 @@ export namespace HttpSchema {
    *     };
    *   }>;
    */
-  export type SearchParams<Schema extends HttpSearchParamsSchema.Loose> = HttpSearchParamsSerialized<Schema>;
+  export type SearchParams<Schema extends HttpSearchParamsSchema.Loose> = Schema;
 
   /**
-   * Declares an HTTP path params schema. Path params are serialized to their strict form using
-   * {@link HttpPathParamsSerialized} if necessary.
+   * Declares an HTTP path params schema.
    *
    * @example
    *   import { type HttpSchema, InferPathParams } from '@zimic/http';
@@ -531,12 +441,10 @@ export namespace HttpSchema {
    *   // Or infer from the path string
    *   type UserByIdPathParams = InferPathParams<Schema, '/users/:userId'>;
    */
-  export type PathParams<Schema extends HttpPathParamsSchema.Loose> = HttpPathParamsSerialized<Schema>;
+  export type PathParams<Schema extends HttpPathParamsSchema.Loose> = Schema;
 
   /**
-   * Declares an HTTP form data schema. Form data is serialized to their strict form using
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpformdataserialized `HttpFormDataSerialized`} if
-   * necessary.
+   * Declares an HTTP form data schema.
    *
    * @example
    *   import { HttpFormData, type HttpSchema } from '@zimic/http';
@@ -561,7 +469,7 @@ export namespace HttpSchema {
    *     };
    *   }>;
    */
-  export type FormData<Schema extends HttpFormDataSchema.Loose> = HttpFormDataSerialized<Schema>;
+  export type FormData<Schema extends HttpFormDataSchema.Loose> = Schema;
 }
 
 /**
@@ -761,25 +669,12 @@ export type InferPathParams<
 >;
 
 type OmitPastHttpStatusCodes<
-  Schema extends HttpResponseSchemaByStatusCode.Loose,
-  PastSchemas extends HttpResponseSchemaByStatusCode.Loose[],
+  Schema extends HttpResponseSchemaByStatusCode,
+  PastSchemas extends HttpResponseSchemaByStatusCode[],
 > =
-  PastSchemas extends NonEmptyArray<HttpResponseSchemaByStatusCode.Loose>
+  PastSchemas extends NonEmptyArray<HttpResponseSchemaByStatusCode>
     ? Omit<Schema, keyof UnionToIntersection<PastSchemas[number]>>
     : Schema;
-
-type RecursiveMergeHttpResponsesByStatusCode<
-  Schemas extends HttpResponseSchemaByStatusCode.Loose[],
-  PastSchemas extends HttpResponseSchemaByStatusCode.Loose[] = [],
-> = Schemas extends [
-  infer FirstSchema extends HttpResponseSchemaByStatusCode.Loose,
-  ...infer RestSchemas extends HttpResponseSchemaByStatusCode.Loose[],
-]
-  ? RestSchemas extends NonEmptyArray<HttpResponseSchemaByStatusCode.Loose>
-    ? OmitPastHttpStatusCodes<FirstSchema, PastSchemas> &
-        RecursiveMergeHttpResponsesByStatusCode<RestSchemas, [...PastSchemas, FirstSchema]>
-    : OmitPastHttpStatusCodes<FirstSchema, PastSchemas>
-  : never;
 
 /**
  * Merges multiple HTTP response schemas by status code into a single schema. When there are duplicate status codes, the
@@ -815,6 +710,14 @@ type RecursiveMergeHttpResponsesByStatusCode<
  *   }>;
  */
 export type MergeHttpResponsesByStatusCode<
-  Schemas extends HttpResponseSchemaByStatusCode.Loose[],
-  PastSchemas extends HttpResponseSchemaByStatusCode.Loose[] = [],
-> = HttpResponseSchemaByStatusCode.AsStrict<RecursiveMergeHttpResponsesByStatusCode<Schemas, PastSchemas>>;
+  Schemas extends HttpResponseSchemaByStatusCode[],
+  PastSchemas extends HttpResponseSchemaByStatusCode[] = [],
+> = Schemas extends [
+  infer FirstSchema extends HttpResponseSchemaByStatusCode,
+  ...infer RestSchemas extends HttpResponseSchemaByStatusCode[],
+]
+  ? RestSchemas extends NonEmptyArray<HttpResponseSchemaByStatusCode>
+    ? OmitPastHttpStatusCodes<FirstSchema, PastSchemas> &
+        MergeHttpResponsesByStatusCode<RestSchemas, [...PastSchemas, FirstSchema]>
+    : OmitPastHttpStatusCodes<FirstSchema, PastSchemas>
+  : never;

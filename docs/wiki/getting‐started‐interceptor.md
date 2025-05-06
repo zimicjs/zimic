@@ -170,7 +170,10 @@ use remote interceptors.
         GET: {
           request: {
             headers: { authorization: string };
-            searchParams: { query?: string; limit?: `${number}` };
+            searchParams: {
+              query?: string;
+              limit?: number;
+            };
           };
           response: {
             200: { body: User[] };

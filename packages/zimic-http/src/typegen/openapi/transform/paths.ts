@@ -41,16 +41,6 @@ function normalizePathNameWithParameters(pathName: string) {
   return pathName.replace(/{([^}]+)}/g, ':$1');
 }
 
-function wrapComponentPathType(type: ts.TypeNode, context: TypeTransformContext) {
-  context.typeImports.http.add('HttpSchema');
-
-  const httpSchemaMethodsWrapper = ts.factory.createQualifiedName(
-    ts.factory.createIdentifier('HttpSchema'),
-    ts.factory.createIdentifier('Methods'),
-  );
-  return ts.factory.createTypeReferenceNode(httpSchemaMethodsWrapper, [type]);
-}
-
 export function normalizePath(
   path: ts.TypeElement,
   context: TypeTransformContext,
@@ -83,13 +73,7 @@ export function normalizePath(
     newType = renameComponentReferences(path.type, context);
   }
 
-  return ts.factory.updatePropertySignature(
-    path,
-    path.modifiers,
-    newIdentifier,
-    path.questionToken,
-    isComponent ? wrapComponentPathType(newType, context) : newType,
-  );
+  return ts.factory.updatePropertySignature(path, path.modifiers, newIdentifier, path.questionToken, newType);
 }
 
 function wrapPathsType(type: ts.TypeLiteralNode, context: TypeTransformContext) {

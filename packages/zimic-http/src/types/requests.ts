@@ -1,7 +1,7 @@
 import { Default, DefaultNoExclude, IfNever, ReplaceBy } from '@zimic/utils/types';
-import { JSONSerialized, JSONValue } from '@zimic/utils/types/json';
+import { JSONValue } from '@zimic/utils/types/json';
 
-import { HttpMethodSchema, HttpStatusCode } from '@/types/schema';
+import { HttpMethodSchema, HttpRequestSchema, HttpResponseSchema, HttpStatusCode } from '@/types/schema';
 
 import HttpFormData from '../formData/HttpFormData';
 import { HttpFormDataSchema } from '../formData/types';
@@ -17,16 +17,13 @@ export type HttpBody = JSONValue | HttpFormData<any> | HttpSearchParams<any> | B
 export namespace HttpBody {
   /** A loose version of the HTTP body type. JSON values are not strictly typed. */
   export type Loose = ReplaceBy<HttpBody, JSONValue, JSONValue.Loose>;
-
-  /** Convert an HTTP body to be strictly typed. JSON values are serialized to their strict form. */
-  export type AsStrict<Type> = Type extends Exclude<HttpBody, JSONValue> ? Type : JSONSerialized<Type>;
 }
 
 /**
  * An HTTP headers object with a strictly-typed schema. Fully compatible with the built-in
  * {@link https://developer.mozilla.org/docs/Web/API/Headers `Headers`} class.
  */
-export type StrictHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> = Pick<
+export type StrictHeaders<Schema extends HttpHeadersSchema.Loose = HttpHeadersSchema.Loose> = Pick<
   HttpHeaders<Schema>,
   keyof Headers
 >;
@@ -35,7 +32,7 @@ export type StrictHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> 
  * An HTTP search params object with a strictly-typed schema. Fully compatible with the built-in
  * {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams `URLSearchParams`} class.
  */
-export type StrictURLSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsSchema> = Pick<
+export type StrictURLSearchParams<Schema extends HttpSearchParamsSchema.Loose = HttpSearchParamsSchema.Loose> = Pick<
   HttpSearchParams<Schema>,
   keyof URLSearchParams
 >;
@@ -44,7 +41,7 @@ export type StrictURLSearchParams<Schema extends HttpSearchParamsSchema = HttpSe
  * An HTTP form data object with a strictly-typed schema. Fully compatible with the built-in
  * {@link https://developer.mozilla.org/docs/Web/API/FormData `FormData`} class.
  */
-export type StrictFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> = Pick<
+export type StrictFormData<Schema extends HttpFormDataSchema.Loose = HttpFormDataSchema.Loose> = Pick<
   HttpFormData<Schema>,
   keyof FormData
 >;
@@ -54,8 +51,8 @@ export type StrictFormData<Schema extends HttpFormDataSchema = HttpFormDataSchem
  * {@link https://developer.mozilla.org/docs/Web/API/Request `Request`} class.
  */
 export interface HttpRequest<
-  StrictBody extends HttpBody.Loose = HttpBody,
-  StrictHeadersSchema extends HttpHeadersSchema = HttpHeadersSchema,
+  StrictBody extends HttpBody.Loose = HttpBody.Loose,
+  StrictHeadersSchema extends HttpHeadersSchema.Loose = HttpHeadersSchema.Loose,
 > extends Request {
   headers: StrictHeaders<StrictHeadersSchema>;
   text: () => Promise<StrictBody extends string ? StrictBody : string>;
@@ -75,9 +72,9 @@ export interface HttpRequest<
  * {@link https://developer.mozilla.org/docs/Web/API/Response `Response`} class.
  */
 export interface HttpResponse<
-  StrictBody extends HttpBody.Loose = HttpBody,
+  StrictBody extends HttpBody.Loose = HttpBody.Loose,
+  StrictHeadersSchema extends HttpHeadersSchema.Loose = HttpHeadersSchema.Loose,
   StatusCode extends number = number,
-  StrictHeadersSchema extends HttpHeadersSchema = HttpHeadersSchema,
 > extends Response {
   ok: StatusCode extends HttpStatusCode.Information | HttpStatusCode.Success | HttpStatusCode.Redirection
     ? true
@@ -96,13 +93,35 @@ export interface HttpResponse<
   clone: () => this;
 }
 
-export type HttpRequestHeadersSchema<MethodSchema extends HttpMethodSchema> = Default<
-  Default<MethodSchema['request']>['headers']
->;
+type HttpRequestHeadersSchemaFromBody<
+  RequestSchema extends HttpRequestSchema,
+  DefaultHeadersSchema,
+> = 'body' extends keyof RequestSchema
+  ? [RequestSchema['body']] extends [never]
+    ? DefaultHeadersSchema
+    : [Extract<RequestSchema['body'], BodyInit | HttpFormData | HttpSearchParams>] extends [never]
+      ? 'headers' extends keyof RequestSchema
+        ? [RequestSchema['headers']] extends [never]
+          ? DefaultHeadersSchema
+          : 'content-type' extends keyof Default<RequestSchema['headers']>
+            ? DefaultHeadersSchema
+            : { 'content-type': 'application/json' }
+        : { 'content-type': 'application/json' }
+      : DefaultHeadersSchema
+  : DefaultHeadersSchema;
 
-export type HttpRequestSearchParamsSchema<MethodSchema extends HttpMethodSchema> = Default<
-  Default<MethodSchema['request']>['searchParams']
->;
+export type HttpRequestHeadersSchema<MethodSchema extends HttpMethodSchema> =
+  'headers' extends keyof MethodSchema['request']
+    ? [MethodSchema['request']['headers']] extends [never]
+      ? HttpRequestHeadersSchemaFromBody<Default<MethodSchema['request']>, never>
+      :
+          | (MethodSchema['request']['headers'] &
+              HttpRequestHeadersSchemaFromBody<Default<MethodSchema['request']>, {}>)
+          | Extract<MethodSchema['request']['headers'], undefined>
+    : HttpRequestHeadersSchemaFromBody<Default<MethodSchema['request']>, never>;
+
+export type HttpRequestSearchParamsSchema<MethodSchema extends HttpMethodSchema> =
+  'searchParams' extends keyof MethodSchema['request'] ? Default<MethodSchema['request']>['searchParams'] : never;
 
 export type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = ReplaceBy<
   ReplaceBy<IfNever<DefaultNoExclude<Default<MethodSchema['request']>['body']>, null>, undefined, null>,
@@ -110,10 +129,34 @@ export type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = Repla
   Blob
 >;
 
+type HttpResponseHeadersSchemaFromBody<
+  ResponseSchema extends HttpResponseSchema,
+  DefaultHeadersSchema,
+> = 'body' extends keyof ResponseSchema
+  ? [ResponseSchema['body']] extends [never]
+    ? DefaultHeadersSchema
+    : [Extract<ResponseSchema['body'], BodyInit | HttpSearchParams | HttpFormData>] extends [never]
+      ? 'headers' extends keyof ResponseSchema
+        ? [ResponseSchema['headers']] extends [never]
+          ? DefaultHeadersSchema
+          : 'content-type' extends keyof Default<ResponseSchema['headers']>
+            ? DefaultHeadersSchema
+            : { 'content-type': 'application/json' }
+        : { 'content-type': 'application/json' }
+      : DefaultHeadersSchema
+  : DefaultHeadersSchema;
+
 export type HttpResponseHeadersSchema<
   MethodSchema extends HttpMethodSchema,
   StatusCode extends HttpStatusCode,
-> = Default<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['headers']>>;
+> = 'headers' extends keyof Default<MethodSchema['response']>[StatusCode]
+  ? [Default<MethodSchema['response']>[StatusCode]] extends [never]
+    ? HttpResponseHeadersSchemaFromBody<Default<Default<MethodSchema['response']>[StatusCode]>, never>
+    :
+        | (Default<Default<MethodSchema['response']>[StatusCode]>['headers'] &
+            HttpResponseHeadersSchemaFromBody<Default<Default<MethodSchema['response']>[StatusCode]>, {}>)
+        | Extract<Default<Default<MethodSchema['response']>[StatusCode]>['headers'], undefined>
+  : HttpResponseHeadersSchemaFromBody<Default<Default<MethodSchema['response']>[StatusCode]>, never>;
 
 export type HttpResponseBodySchema<
   MethodSchema extends HttpMethodSchema,

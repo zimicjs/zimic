@@ -87,7 +87,10 @@ We also canary releases under the tag `canary`, containing the latest features a
 
         GET: {
           request: {
-            searchParams: { query?: string; limit?: `${number}` };
+            searchParams: {
+              query?: string;
+              limit?: number;
+            };
           };
           response: {
             200: { body: User[] };
@@ -129,7 +132,7 @@ We also canary releases under the tag `canary`, containing the latest features a
     ```ts
     const response = await fetch('/users', {
       method: 'GET',
-      searchParams: { query: 'u', limit: '10' },
+      searchParams: { query: 'u', limit: 10 },
     });
 
     if (response.status === 404) {

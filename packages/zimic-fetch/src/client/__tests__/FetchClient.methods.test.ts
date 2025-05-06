@@ -747,17 +747,25 @@ describe('FetchClient > Methods', () => {
     type Schema = HttpSchema<{
       '/users': {
         DELETE: {
+          request: {
+            headers: { 'content-type': 'application/json' };
+            body: User;
+          };
           response: { 204: {} };
         };
       };
     }>;
 
     await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
-      await interceptor.delete('/users').respond({ status: 204 }).times(1);
+      await interceptor.delete('/users').with({ body: users[0] }).respond({ status: 204 }).times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
 
-      const response = await fetch('/users', { method: 'DELETE' });
+      const response = await fetch('/users', {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(users[0]),
+      });
 
       expectResponseStatus(response, 204);
       expect(await response.text()).toBe('');
@@ -777,6 +785,9 @@ describe('FetchClient > Methods', () => {
 
       expect(response.request.method).toBe('DELETE');
       expectTypeOf(response.request.method).toEqualTypeOf<'DELETE'>();
+
+      expect(response.request.headers).toBeInstanceOf(Headers);
+      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'application/json' }>>();
     });
   });
 
@@ -947,7 +958,7 @@ describe('FetchClient > Methods', () => {
     });
   });
 
-  it('should support making HEAD requests', async () => {
+  it('should support making HEAD requests with a Request instance', async () => {
     type Schema = HttpSchema<{
       '/users': {
         HEAD: {
@@ -1169,7 +1180,7 @@ describe('FetchClient > Methods', () => {
       expect(getResponse.url).toBe(joinURL(baseURL, '/users'));
 
       expect(getResponse.headers).toBeInstanceOf(Headers);
-      expectTypeOf(getResponse.headers).toEqualTypeOf<StrictHeaders<never>>();
+      expectTypeOf(getResponse.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'application/json' }>>();
 
       expectTypeOf(getResponse.json).toEqualTypeOf<() => Promise<User[]>>();
       expectTypeOf(getResponse.formData).toEqualTypeOf<() => Promise<FormData>>();
@@ -1215,7 +1226,7 @@ describe('FetchClient > Methods', () => {
       expect(patchResponse.url).toBe(joinURL(baseURL, '/users'));
 
       expect(patchResponse.headers).toBeInstanceOf(Headers);
-      expectTypeOf(patchResponse.headers).toEqualTypeOf<StrictHeaders<never>>();
+      expectTypeOf(patchResponse.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'application/json' }>>();
 
       expectTypeOf(patchResponse.json).toEqualTypeOf<() => Promise<User>>();
       expectTypeOf(patchResponse.formData).toEqualTypeOf<() => Promise<FormData>>();

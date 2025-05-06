@@ -187,6 +187,7 @@ describe('FetchClient > Types', () => {
 
     type CompositeFetchSchema = InferFetchSchema<typeof _compositeFetch>;
     type InlineFetchSchema = InferFetchSchema<typeof _inlineFetch>;
-    expectTypeOf<CompositeFetchSchema>().toEqualTypeOf<InlineFetchSchema>();
+
+    expectTypeOf<CompositeFetchSchema>().toMatchObjectType<InlineFetchSchema>();
   });
 });

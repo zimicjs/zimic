@@ -9,67 +9,65 @@ import {
   HttpStatusCode,
   HttpResponse,
   HttpRequest,
-  HttpSearchParams,
-  HttpHeaders,
   AllowAnyStringInPathParams,
   LiteralHttpSchemaPathFromNonLiteral,
-  JSONValue,
   HttpResponseBodySchema,
   HttpResponseHeadersSchema,
   HttpRequestHeadersSchema,
   HttpHeadersSchema,
   HttpSearchParamsSchema,
+  HttpHeadersInit,
+  HttpHeadersSerialized,
+  HttpSearchParamsInit,
+  HttpBody,
+  HttpRequestBodySchema,
+  HttpRequestSearchParamsSchema,
+  HttpSearchParams,
+  HttpFormData,
 } from '@zimic/http';
-import { Default, DefaultNoExclude, IfNever, ReplaceBy } from '@zimic/utils/types';
+import { Default } from '@zimic/utils/types';
 
 import FetchResponseError, { AnyFetchRequestError } from '../errors/FetchResponseError';
 import { JSONStringified } from './json';
 import { FetchInput } from './public';
 
-type FetchRequestInitHeaders<RequestSchema extends HttpRequestSchema> =
-  | RequestSchema['headers']
-  | HttpHeaders<Default<RequestSchema['headers']>>;
+type FetchRequestInitWithHeaders<HeadersSchema extends HttpHeadersSchema | undefined> = [HeadersSchema] extends [never]
+  ? { headers?: undefined }
+  : undefined extends HeadersSchema
+    ? { headers?: HttpHeadersInit<Default<HeadersSchema>> }
+    : { headers: HttpHeadersInit<Default<HeadersSchema>> };
 
-type FetchRequestInitWithHeaders<RequestSchema extends HttpRequestSchema> = 'headers' extends keyof RequestSchema
-  ? [RequestSchema['headers']] extends [never]
-    ? { headers?: undefined }
-    : undefined extends RequestSchema['headers']
-      ? { headers?: FetchRequestInitHeaders<RequestSchema> }
-      : { headers: FetchRequestInitHeaders<RequestSchema> }
-  : { headers?: undefined };
+type FetchRequestInitWithSearchParams<SearchParamsSchema extends HttpSearchParamsSchema | undefined> = [
+  SearchParamsSchema,
+] extends [never]
+  ? { searchParams?: undefined }
+  : undefined extends SearchParamsSchema
+    ? { searchParams?: HttpSearchParamsInit<Default<SearchParamsSchema>> }
+    : { searchParams: HttpSearchParamsInit<Default<SearchParamsSchema>> };
 
-type FetchRequestInitSearchParams<RequestSchema extends HttpRequestSchema> =
-  | RequestSchema['searchParams']
-  | HttpSearchParams<Default<RequestSchema['searchParams']>>;
-
-type FetchRequestInitWithSearchParams<RequestSchema extends HttpRequestSchema> =
-  'searchParams' extends keyof RequestSchema
-    ? [RequestSchema['searchParams']] extends [never]
-      ? { searchParams?: undefined }
-      : undefined extends RequestSchema['searchParams']
-        ? { searchParams?: FetchRequestInitSearchParams<RequestSchema> }
-        : { searchParams: FetchRequestInitSearchParams<RequestSchema> }
-    : { searchParams?: undefined };
-
-type FetchRequestInitWithBody<RequestSchema extends HttpRequestSchema> = 'body' extends keyof RequestSchema
+type FetchRequestBodySchema<RequestSchema extends HttpRequestSchema> = 'body' extends keyof RequestSchema
   ? [RequestSchema['body']] extends [never]
-    ? { body?: null }
-    : RequestSchema['body'] extends string
+    ? null | undefined
+    : [Extract<RequestSchema['body'], BodyInit | HttpSearchParams | HttpFormData>] extends [never]
       ? undefined extends RequestSchema['body']
-        ? { body?: ReplaceBy<RequestSchema['body'], undefined, null> }
-        : { body: RequestSchema['body'] }
-      : RequestSchema['body'] extends JSONValue
-        ? undefined extends RequestSchema['body']
-          ? { body?: JSONStringified<ReplaceBy<RequestSchema['body'], undefined, null>> }
-          : { body: JSONStringified<RequestSchema['body']> }
-        : undefined extends RequestSchema['body']
-          ? { body?: ReplaceBy<RequestSchema['body'], undefined, null> }
-          : { body: RequestSchema['body'] }
-  : { body?: null };
+        ? JSONStringified<Exclude<RequestSchema['body'], null | undefined>> | null | undefined
+        : JSONStringified<Exclude<RequestSchema['body'], null>> | Extract<RequestSchema['body'], null>
+      : undefined extends RequestSchema['body']
+        ? RequestSchema['body'] | null
+        : RequestSchema['body']
+  : null | undefined;
 
-type FetchRequestInitPerPath<RequestSchema extends HttpRequestSchema> = FetchRequestInitWithHeaders<RequestSchema> &
-  FetchRequestInitWithSearchParams<RequestSchema> &
-  FetchRequestInitWithBody<RequestSchema>;
+type FetchRequestInitWithBody<BodySchema extends HttpBody> = [BodySchema] extends [never]
+  ? { body?: BodySchema }
+  : undefined extends BodySchema
+    ? { body?: BodySchema }
+    : { body: BodySchema };
+
+type FetchRequestInitPerPath<MethodSchema extends HttpMethodSchema> = FetchRequestInitWithHeaders<
+  HttpRequestHeadersSchema<MethodSchema>
+> &
+  FetchRequestInitWithSearchParams<HttpRequestSearchParamsSchema<MethodSchema>> &
+  FetchRequestInitWithBody<FetchRequestBodySchema<Default<MethodSchema['request']>>>;
 
 /**
  * The options to create a {@link FetchRequest} instance, compatible with
@@ -89,7 +87,7 @@ export type FetchRequestInit<
   /** The base URL to prefix the path of the request. */
   baseURL?: string;
   redirect?: Redirect;
-} & (Path extends Path ? FetchRequestInitPerPath<Default<Default<Schema[Path][Method]>['request']>> : never);
+} & (Path extends Path ? FetchRequestInitPerPath<Default<Schema[Path][Method]>> : never);
 
 export namespace FetchRequestInit {
   /** The default options for each request sent by a fetch instance. */
@@ -98,9 +96,9 @@ export namespace FetchRequestInit {
     /** The HTTP method of the request. */
     method?: HttpMethod;
     /** The headers of the request. */
-    headers?: HttpHeadersSchema;
+    headers?: HttpHeadersSchema.Loose;
     /** The search parameters of the request. */
-    searchParams?: HttpSearchParamsSchema;
+    searchParams?: HttpSearchParamsSchema.Loose;
   }
 
   /** A loosely typed version of {@link FetchRequestInit `FetchRequestInit`}. */
@@ -132,12 +130,6 @@ type FetchResponseStatusCode<
 > = FilterFetchResponseStatusCodeByRedirect<
   FilterFetchResponseStatusCodeByError<AllFetchResponseStatusCode<MethodSchema>, ErrorOnly>,
   Redirect
->;
-
-type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = ReplaceBy<
-  ReplaceBy<IfNever<DefaultNoExclude<Default<MethodSchema['request']>['body']>, null>, undefined, null>,
-  ArrayBuffer,
-  Blob
 >;
 
 /**
@@ -195,7 +187,7 @@ export interface FetchRequest<
   Path extends HttpSchemaPath.Literal<Schema, Method>,
 > extends HttpRequest<
     HttpRequestBodySchema<Default<Schema[Path][Method]>>,
-    HttpRequestHeadersSchema<Default<Schema[Path][Method]>>
+    Default<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>
   > {
   /** The path of the request, excluding the base URL. */
   path: AllowAnyStringInPathParams<Path>;
@@ -236,7 +228,7 @@ export type FetchRequestObject = Pick<
   | 'referrerPolicy'
 > & {
   /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/Response/headers) */
-  headers: HttpHeadersSchema;
+  headers: HttpHeadersSerialized<HttpHeadersSchema>;
   /**
    * The body of the response, represented as a string or null if empty.
    *
@@ -258,8 +250,8 @@ export interface FetchResponsePerStatusCode<
   StatusCode extends HttpStatusCode = HttpStatusCode,
 > extends HttpResponse<
     HttpResponseBodySchema<Default<Schema[Path][Method]>, StatusCode>,
-    StatusCode,
-    HttpResponseHeadersSchema<Default<Schema[Path][Method]>, StatusCode>
+    Default<HttpResponseHeadersSchema<Default<Schema[Path][Method]>, StatusCode>>,
+    StatusCode
   > {
   /** The request that originated the response. */
   request: FetchRequest<Schema, Method, Path>;
@@ -368,7 +360,7 @@ export type FetchResponseObject = Pick<
   'url' | 'type' | 'status' | 'statusText' | 'ok' | 'redirected'
 > & {
   /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/Response/headers) */
-  headers: HttpHeadersSchema;
+  headers: HttpHeadersSerialized<HttpHeadersSchema>;
   /**
    * The body of the response, represented as a string or null if empty.
    *

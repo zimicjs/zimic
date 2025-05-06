@@ -57,11 +57,10 @@ type UserPaths = HttpSchema<{
   '/users': {
     POST: {
       request: {
-        headers: { 'content-type': 'application/json' };
         body: UserCreationRequestBody;
       };
       response: {
-        201: { headers: { 'x-user-id': User['id'] }; body: User };
+        201: { headers: { 'x-user-id': User['id'] }; body: JSONSerialized<User> };
         400: { body: ValidationError };
         409: { body: ConflictError };
         500: { body: InternalServerError };
@@ -70,7 +69,7 @@ type UserPaths = HttpSchema<{
     GET: {
       request: { searchParams: UserListSearchParams };
       response: {
-        200: { body: User[] };
+        200: { body: JSONSerialized<User>[] };
         400: { body: ValidationError };
         500: { body: InternalServerError };
       };
@@ -78,11 +77,13 @@ type UserPaths = HttpSchema<{
   };
 }>;
 
+export type UserUpdatePayload = Partial<JSONSerialized<User>>;
+
 type UserByIdPaths = HttpSchema<{
   '/users/:userId': {
     GET: {
       response: {
-        200: { body: User };
+        200: { body: JSONSerialized<User> };
         404: { body: NotFoundError };
         500: { body: InternalServerError };
       };
@@ -90,11 +91,12 @@ type UserByIdPaths = HttpSchema<{
 
     PATCH: {
       request: {
-        headers: { 'content-type': 'application/json' };
-        body: Partial<User>;
+        headers: { 'content-type': string };
+        body: UserUpdatePayload;
       };
       response: {
-        200: { body: User };
+        200: { body: JSONSerialized<User> };
+        400: { body: ValidationError };
         404: { body: NotFoundError };
         500: { body: InternalServerError };
       };
