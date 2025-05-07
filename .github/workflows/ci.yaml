@@ -83,6 +83,12 @@ jobs:
             --concurrency 100% \
             ${{ env.TURBO_FILTERS }}
 
+      - name: Build documentation and check links
+        uses: ./.github/actions/zimic-web-build
+        with:
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+
   ci-node:
     name: CI Node.js
     runs-on: ubuntu-latest
