@@ -1,7 +1,8 @@
 {
   "framework": "docusaurus-2",
-  "installCommand": "sed -i 's/\"postinstall\": \".+\"/\"postinstall\": \"echo postinstall skipped.\"/' ../../apps/*/package.json ../../examples/*/package.json && pnpm install --frozen-lockfile --filter zimic-root --filter zimic-web...",
+  "installCommand": "sed -i 's/\"postinstall\": \".+\"/\"postinstall\": \"echo postinstall skipped.\"/' ../../apps/zimic-test-client/package.json ../../examples/*/package.json && pnpm install --frozen-lockfile --filter zimic-root --filter zimic-web...",
   "buildCommand": "pnpm turbo build --filter zimic-web",
   "outputDirectory": "build",
-  "trailingSlash": false
+  "trailingSlash": false,
+  "rewrites": [{ "source": "/:path*", "destination": "/:path*.html" }]
 }
