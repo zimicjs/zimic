@@ -1,3 +1,9 @@
+> [!TIP]
+>
+> Zimic's documentation is now available on [zimic.dev](https://zimic.dev)! :tada:
+>
+> Check it out for the latest updates, guides, and documentation.
+
 # `@zimic/interceptor` - Guides: Testing
 
 There are many ways to configure `@zimic/interceptor` in a testing environment. Usually, the best approach is dependent

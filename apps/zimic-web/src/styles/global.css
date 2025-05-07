@@ -18,7 +18,7 @@
   --color-primary-800: #0e50d2;
   --color-primary-900: #0544c5;
 
-  --color-white-light: #f7fbff;
+  --color-white-light: #fafafa;
   --color-white-dark: #e8f2f8;
   --color-black: #011627;
 
@@ -38,6 +38,9 @@
   --ifm-color-primary-darker: var(--color-primary-800);
   --ifm-color-primary-darkest: var(--color-primary-900);
 
+  --ifm-background-color: var(--color-white-light);
+  --ifm-background-surface-color: var(--ifm-background-color);
+
   --ifm-font-color-base: var(--color-black);
   --ifm-color-content: var(--ifm-font-color-base);
 
@@ -46,9 +49,9 @@
 
   --ifm-code-font-size: 95%;
 
-  --ifm-hover-overlay: color-mix(in oklab, var(--color-primary-600) /* #2167ed */ 5%, transparent);
+  --ifm-hover-overlay: color-mix(in oklab, var(--color-primary-600) 5%, transparent);
 
-  --highlighted-code-background-color: rgba(0, 0, 0, 0.1);
+  --highlighted-code-background-color: color-mix(in oklab, var(--color-primary-600) 8%, transparent);
 
   --error-code-background-color: rgba(250, 56, 62, 0.2);
   --error-code-border-color: rgba(250, 56, 62, 0.5);
@@ -73,15 +76,15 @@
   --ifm-background-color: var(--color-black);
   --ifm-background-surface-color: var(--ifm-background-color);
 
-  --ifm-font-color-base: var(--color-white-dark);
+  --ifm-font-color-base: var(--color-white-light);
   --ifm-color-content: var(--ifm-font-color-base);
 
   --ifm-footer-link-color: var(--ifm-font-color-base);
   --ifm-footer-background-color: var(--ifm-navbar-background-color);
 
-  --ifm-hover-overlay: color-mix(in oklab, var(--color-primary-600) /* #2167ed */ 20%, transparent);
+  --ifm-hover-overlay: color-mix(in oklab, var(--color-primary-600) 20%, transparent);
 
-  --highlighted-code-background-color: rgba(0, 0, 0, 0.3);
+  --highlighted-code-background-color: color-mix(in oklab, var(--color-primary-400) 20%, transparent);
 
   --error-code-background-color: rgba(250, 56, 62, 0.2);
   --error-code-border-color: rgba(250, 56, 62, 0.5);
@@ -140,23 +143,35 @@ textarea {
 
 .close,
 .navbar-sidebar__close {
-  @apply flex-0 h-fit w-fit rounded-full p-2 transition-colors;
+  @apply flex-0 h-fit w-fit rounded-full p-1.5 opacity-100 transition-colors;
 
   svg {
-    @apply h-3 w-3;
+    @apply h-3 w-3 overflow-visible;
+
+    g {
+      stroke: currentColor;
+      stroke-width: 2px;
+      stroke-linecap: round;
+    }
   }
 }
 
 .close {
-  @apply mr-0.5 mt-0.5;
-}
+  @apply my-auto mr-1;
 
-.navbar-sidebar__close {
   color: var(--ifm-color-emphasis-50);
   background-color: transparent;
 
   &:hover {
-    color: var(--ifm-color-emphasis-600);
+    background-color: var(--ifm-color-emphasis-800);
+  }
+}
+
+.navbar-sidebar__close {
+  color: var(--ifm-color-content);
+  background-color: transparent;
+
+  &:hover {
     background-color: var(--ifm-color-emphasis-200);
   }
 }
@@ -197,7 +212,7 @@ textarea {
   margin-bottom: 3rem;
 }
 
-.theme-code-block-highlighted-line {
+.code-block-highlighted-line {
   background-color: var(--highlighted-code-background-color);
   display: block;
   margin: 0 calc(-1 * var(--ifm-pre-padding));
@@ -220,7 +235,15 @@ textarea {
 
 .card,
 .pagination-nav__link {
-  @apply hover:bg-primary-600/5 dark:hover:bg-primary-600/20 hover:border-primary-600/20 shadow-none transition-colors;
+  @apply hover:bg-primary-600/5 dark:hover:bg-primary-600/20 hover:border-primary-600/40 shadow-none transition-colors;
+}
+
+.theme-admonition {
+  div:nth-child(1) {
+    span {
+      text-transform: none;
+    }
+  }
 }
 
 @media (max-width: 996px) {

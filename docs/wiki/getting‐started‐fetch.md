@@ -11,7 +11,7 @@
 
 ---
 
-[`@zimic/fetch`](../../packages/zimic-fetch) is a minimal (1 kB minified and gzipped), zero-dependency, and type-safe
+[`@zimic/fetch`](../../packages/zimic-fetch) is a minimal (~2 kB minified and gzipped), zero-dependency, and type-safe
 `fetch`-like API client.
 
 ## 1. Requirements
