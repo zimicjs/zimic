@@ -24,7 +24,7 @@ runs:
     - name: Build Zimic Web
       shell: bash
       run: pnpm turbo build --filter zimic-web
-      with:
+      env:
         TURBO_TOKEN: ${{ inputs.turbo-token }}
         TURBO_TEAM: ${{ inputs.turbo-team }}
 
