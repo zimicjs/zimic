@@ -108,7 +108,7 @@ HTTP requests.
 
 - [`@zimic/interceptor` - Introduction](/docs/zimic-interceptor/1-index.md)
 - [`@zimic/interceptor` - Getting started](/docs/zimic-interceptor/2-getting-started.md)
-- [`@zimic/interceptor` - Guides](/docs/zimic-interceptor/guides)
+- [`@zimic/interceptor` - Guides](/docs/interceptor/guides)
 
 :::tip TIP: <span>`@zimic/fetch` and `@zimic/interceptor` work best together</span>
 

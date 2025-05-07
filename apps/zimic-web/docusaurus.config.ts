@@ -250,7 +250,7 @@ const config: Docusaurus.Config = {
             },
             {
               label: 'CLI',
-              to: 'docs/cLI',
+              to: 'docs/cli',
             },
           ],
         },
