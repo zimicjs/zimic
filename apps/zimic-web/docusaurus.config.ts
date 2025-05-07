@@ -129,6 +129,7 @@ const config: Docusaurus.Config = {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
       defaultLanguage: 'typescript',
+      additionalLanguages: ['bash', 'json', 'yaml', 'diff'],
       magicComments: [
         {
           className: 'code-block-highlighted-line',
@@ -137,7 +138,8 @@ const config: Docusaurus.Config = {
         },
         {
           className: 'code-block-error-line',
-          line: 'This will error',
+          line: 'error-next-line',
+          block: { start: 'error-start', end: 'error-end' },
         },
       ],
     },

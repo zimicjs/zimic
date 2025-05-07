@@ -51,7 +51,7 @@
 
   --ifm-hover-overlay: color-mix(in oklab, var(--color-primary-600) 5%, transparent);
 
-  --highlighted-code-background-color: rgba(0, 0, 0, 0.1);
+  --highlighted-code-background-color: color-mix(in oklab, var(--color-primary-600) 8%, transparent);
 
   --error-code-background-color: rgba(250, 56, 62, 0.2);
   --error-code-border-color: rgba(250, 56, 62, 0.5);
@@ -82,9 +82,9 @@
   --ifm-footer-link-color: var(--ifm-font-color-base);
   --ifm-footer-background-color: var(--ifm-navbar-background-color);
 
-  --ifm-hover-overlay: color-mix(in oklab, var(--color-primary-600) /* #2167ed */ 20%, transparent);
+  --ifm-hover-overlay: color-mix(in oklab, var(--color-primary-600) 20%, transparent);
 
-  --highlighted-code-background-color: rgba(0, 0, 0, 0.3);
+  --highlighted-code-background-color: color-mix(in oklab, var(--color-primary-400) 20%, transparent);
 
   --error-code-background-color: rgba(250, 56, 62, 0.2);
   --error-code-border-color: rgba(250, 56, 62, 0.5);
@@ -212,7 +212,7 @@ textarea {
   margin-bottom: 3rem;
 }
 
-.theme-code-block-highlighted-line {
+.code-block-highlighted-line {
   background-color: var(--highlighted-code-background-color);
   display: block;
   margin: 0 calc(-1 * var(--ifm-pre-padding));
