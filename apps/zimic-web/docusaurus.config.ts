@@ -72,7 +72,7 @@ const config: Docusaurus.Config = {
       {
         path: 'docs',
         sidebarPath: './src/config/sidebars.ts',
-        editUrl: 'https://github.com/zimicjs/zimic/tree/main/apps/zimic-web',
+        editUrl: 'https://github.com/zimicjs/zimic/tree/canary/apps/zimic-web',
         breadcrumbs: true,
         sidebarCollapsed: false,
         sidebarCollapsible: true,
