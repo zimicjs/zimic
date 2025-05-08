@@ -23,7 +23,9 @@ specific features with different browsers.
 
 #### Server side
 
-- [Node.js](https://nodejs.org) >= 18.0.0
+| Runtime                       | Version   |
+| ----------------------------- | --------- |
+| [Node.js](https://nodejs.org) | >= 18.0.0 |
 
 ### Supported languages
 
@@ -45,12 +47,12 @@ We recommend enabling `strict` in your `tsconfig.json`:
 
 #### JavaScript
 
-`@zimic/http` is fully functional on JavaScript, but all type features will be disabled. Consider using TypeScript for
-improved type safety and developer experience.
+`@zimic/http` is fully functional on JavaScript, although the type features will be disabled. Consider using TypeScript
+for improved type safety and developer experience.
 
 ## Installation
 
-`@zimic/http` is available as a library on [npm](https://www.npmjs.com/package/@zimic/http):
+`@zimic/http` is available as a library on [npm](https://www.npmjs.com/package/@zimic/http).
 
 <Tabs groupId="package-managers">
   <TabItem value="npm" label="npm">
@@ -76,7 +78,8 @@ yarn add @zimic/http
   </TabItem>
 </Tabs>
 
-We also canary releases under the tag `canary`, containing the latest features and bug fixes:
+We also have canary releases under the tag `canary`. These contain the latest code, including new features, bug fixes,
+and possibly unstable or breaking changes.
 
 <Tabs groupId="package-managers">
   <TabItem value="npm" label="npm">
@@ -104,82 +107,97 @@ yarn add @zimic/http@canary
 
 ## Your first HTTP schema
 
-1. To start using `@zimic/http`, create your first [HTTP schema](/docs/zimic-http/guides/1-http-schemas.md):
+### Declaring an HTTP schema
 
-   The schema represents the structure of your API, including the paths, methods, request and response types. If the API
-   has an OpenAPI documentation (e.g. Swagger), you can use the
-   [`zimic-http typegen`](/docs/zimic-http/guides/3-typegen.md) CLI to automatically infer the schema.
+To start using `@zimic/http`, create an [HTTP schema](/docs/zimic-http/guides/1-http-schemas.md).
 
-   ```ts title='schema.ts'
-   import { type HttpSchema } from '@zimic/http';
+The schema represents the structure of your API, including the paths, methods, request and response types.
 
-   interface User {
-     username: string;
-   }
+:::tip TIP: <span>OpenAPI Typegen</span>
 
-   interface RequestError {
-     code: string;
-     message: string;
-   }
+For APIs with an [OpenAPI documentation](https://www.openapis.org) (e.g. [Swagger](https://swagger.io)), the
+[`zimic-http typegen`](/docs/zimic-http/guides/3-typegen.md) CLI can automatically infer the schema and generate types
+from it. This is a great way to keep your schema is up to date and save time on manual type definitions.
 
-   type Schema = HttpSchema<{
-     '/users': {
-       POST: {
-         request: { body: User };
-         response: {
-           201: { body: User };
-           400: { body: RequestError };
-           409: { body: RequestError };
-         };
-       };
+:::
 
-       GET: {
-         request: {
-           headers: { authorization: string };
-           searchParams: {
-             query?: string;
-             limit?: number;
-           };
-         };
-         response: {
-           200: { body: User[] };
-           400: { body: RequestError };
-           401: { body: RequestError };
-         };
-       };
-     };
+```ts title='schema.ts'
+import { type HttpSchema } from '@zimic/http';
 
-     '/users/:userId': {
-       PATCH: {
-         request: {
-           headers: { authorization: string };
-           body: Partial<User>;
-         };
-         response: {
-           204: {};
-           400: { body: RequestError };
-         };
-       };
-     };
-   }>;
-   ```
+interface User {
+  username: string;
+}
+
+interface RequestError {
+  code: string;
+  message: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    POST: {
+      request: { body: User };
+      response: {
+        201: { body: User };
+        400: { body: RequestError };
+        409: { body: RequestError };
+      };
+    };
+
+    GET: {
+      request: {
+        headers: { authorization: string };
+        searchParams: {
+          query?: string;
+          limit?: number;
+        };
+      };
+      response: {
+        200: { body: User[] };
+        400: { body: RequestError };
+        401: { body: RequestError };
+      };
+    };
+  };
+
+  '/users/:userId': {
+    PATCH: {
+      request: {
+        headers: { authorization: string };
+        body: Partial<User>;
+      };
+      response: {
+        204: {};
+        400: { body: RequestError };
+      };
+    };
+  };
+}>;
+```
 
 ## Next steps
 
-### Explore the ecosystem
+### Guides
 
-- [`@zimic/fetch`](/docs/zimic-fetch/1-index.md) is a minimal (~2 kB minified and gzipped), zero-dependency, and
-  type-safe `fetch`-like API client. Import your HTTP schema to automatically type your requests, parameters, and
-  responses.
+Take a look at our [guides](/docs/http/guides) for more in-depth information on how to use `@zimic/http` in specific
+scenarios.
+
+### Examples
+
+Check out our [examples](/docs/zimic/2-examples/2-examples.md) to learn more about how to use `@zimic/http` with popular
+libraries and frameworks.
+
+### API reference
+
+Visit the [API reference](/docs/http/api) for more details on the resources available in `@zimic/http`.
+
+### Ecosystem
+
+`@zimic/http` is a lightweight library that really shines when used with the rest of the ecosystem:
+
+- [`@zimic/fetch`](/docs/zimic-fetch/1-index.md) is a minimal, zero-dependency, and type-safe `fetch`-like API client.
+  Import your `@zimic/http` schema to automatically type your paths, methods, requests, parameters, and responses.
 
 - [`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md) provides a flexible and type-safe way to intercept and mock
-  HTTP requests. Declare interceptors validated with your HTTP schema to create realistic mocks for development and
-  testing without needing the real API.
-
-### Try out the examples
-
-Check out our [examples](/docs/zimic/2-examples/2-examples.md) to learn more and get up to speed with `@zimic/http`.
-
-### Refer to the API reference
-
-View the [API reference](/docs/http/api) for more details on the resources available in `@zimic/http`.
+  HTTP requests. Declare realistic HTTP mocks validated with your `@zimic/http` schema, and verify that your application
+  interacts as expected, without needing to access the actual API.

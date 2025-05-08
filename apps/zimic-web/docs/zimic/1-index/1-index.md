@@ -78,7 +78,7 @@ responses, including headers, search params, and form data.
 **Learn more**:
 
 - [`@zimic/fetch` - Introduction](/docs/zimic-fetch/1-index.md)
-- [`@zimic/fetch` - Getting started](/docs/zimic-fetch/2-getting-started.md)
+- [`@zimic/fetch` - Getting started](/docs/zimic-fetch/2-getting-started.mdx)
 - [`@zimic/fetch` - Guides](/docs/fetch/guides)
 
 ### `@zimic/interceptor`

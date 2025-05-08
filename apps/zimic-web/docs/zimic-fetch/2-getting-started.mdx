@@ -1,0 +1,255 @@
+---
+title: Getting started | @zimic/fetch
+sidebar_label: Getting started
+slug: /fetch/getting-started
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Getting started
+
+This guide will help you get started with `@zimic/fetch`.
+
+## Requirements
+
+### Supported environments
+
+#### Client side
+
+`@zimic/fetch` is designed to work in any environment that supports the native `fetch` API. This includes any relatively
+modern browser. [Can I Use](https://caniuse.com/?search=fetch) is a great resource to check the compatibility of
+specific features with different browsers.
+
+#### Server side
+
+| Runtime                       | Version   |
+| ----------------------------- | --------- |
+| [Node.js](https://nodejs.org) | >= 18.0.0 |
+
+### Supported languages
+
+#### TypeScript
+
+`@zimic/fetch` requires [TypeScript](https://www.typescriptlang.org) >= 4.8.
+
+We recommend enabling `strict` in your `tsconfig.json`:
+
+```json title='tsconfig.json'
+{
+  "compilerOptions": {
+    // highlight-next-line
+    "strict": true
+  }
+}
+```
+
+#### JavaScript
+
+`@zimic/fetch` is fully functional on JavaScript, although the type features will be disabled. Consider using TypeScript
+for improved type safety and developer experience.
+
+## Installation
+
+`@zimic/fetch` is available as a library on [npm](https://www.npmjs.com/package/@zimic/fetch).
+
+<Tabs groupId="package-managers">
+  <TabItem value="npm" label="npm">
+
+```bash
+npm install @zimic/http @zimic/fetch --save
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm add @zimic/http @zimic/fetch
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```bash
+yarn add @zimic/http @zimic/fetch
+```
+
+  </TabItem>
+</Tabs>
+
+:::info
+
+Note that [`@zimic/http`](/docs/zimic-http/1-index.md) is a peer dependency of `@zimic/fetch`, so you need to install
+both packages. When upgrading `@zimic/fetch` to a new version, consider upgrading `@zimic/http` as well to ensure that
+the versions are compatible.
+
+:::
+
+We also have canary releases under the tag `canary`. These contain the latest code, including new features, bug fixes,
+and possibly unstable or breaking changes.
+
+<Tabs groupId="package-managers">
+  <TabItem value="npm" label="npm">
+
+```bash
+npm install @zimic/http@canary @zimic/fetch@canary --save
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm add @zimic/http@canary @zimic/fetch@canary
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```bash
+yarn add @zimic/http@canary @zimic/fetch@canary
+```
+
+  </TabItem>
+</Tabs>
+
+## Your first fetch instance
+
+### Declaring an HTTP schema
+
+To start using `@zimic/fetch`, declare your HTTP schema using
+[`@zimic/http`](/docs/zimic-http/guides/1-http-schemas.md):
+
+The schema represents the structure of your API, including the paths, methods, request and response types.
+
+:::tip TIP: <span>OpenAPI Typegen</span>
+
+For APIs with an [OpenAPI documentation](https://www.openapis.org) (e.g. [Swagger](https://swagger.io)), the
+[`zimic-http typegen`](/docs/zimic-http/guides/3-typegen.md) CLI can automatically infer the schema and generate types
+from it. This is a great way to keep your schema is up to date and save time on manual type definitions.
+
+:::
+
+```ts title='schema.ts'
+import { type HttpSchema } from '@zimic/http';
+
+interface User {
+  username: string;
+}
+
+interface RequestError {
+  code: string;
+  message: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    POST: {
+      request: { body: User };
+      response: {
+        201: { body: User };
+        400: { body: RequestError };
+        409: { body: RequestError };
+      };
+    };
+
+    GET: {
+      request: {
+        headers: { authorization: string };
+        searchParams: {
+          query?: string;
+          limit?: number;
+        };
+      };
+      response: {
+        200: { body: User[] };
+        400: { body: RequestError };
+        401: { body: RequestError };
+      };
+    };
+  };
+
+  '/users/:userId': {
+    PATCH: {
+      request: {
+        headers: { authorization: string };
+        body: Partial<User>;
+      };
+      response: {
+        204: {};
+        400: { body: RequestError };
+      };
+    };
+  };
+}>;
+```
+
+### Creating a fetch instance
+
+With the schema defined, you can create a [fetch instance](/docs/zimic-fetch/api/2-fetch.md).
+
+The `@zimic/fetch` package provides a `createFetch` function that takes the schema as a type parameter and returns a
+thin wrapper around the native [`fetch` API](https://developer.mozilla.org/docs/Web/API/Fetch_API). This wrapper adds
+type safety and convenience resources for making requests and handling responses.
+
+```ts
+import { createFetch } from '@zimic/fetch';
+
+const fetch = createFetch<Schema>({
+  baseURL: 'http://localhost:3000',
+});
+```
+
+Set the `baseURL` option to the base URL of your API. It will be prepended to all requests made with this instance. You
+can also set other options, such as default headers, credentials, parameters, and more. Refer to the
+[`createFetch` API reference](/docs/zimic-fetch/api/1-create-fetch.md) for more details.
+
+### Making requests
+
+You can now use the `fetch` instance to make requests to your API. All paths, methods, parameters, requests, and
+responses are typed by default based on the schema.
+
+```ts
+const response = await fetch('/users', {
+  method: 'GET',
+  searchParams: { query: 'u', limit: 10 },
+});
+
+// If the user was not found, return null
+if (response.status === 404) {
+  return null;
+}
+
+// If the request status is 4XX or 5XX), throw an error
+if (!response.ok) {
+  throw response.error;
+}
+
+// If the request was ok, the data type is inferred as User[]
+const users = await response.json();
+return users;
+```
+
+## Next steps
+
+### Guides
+
+Take a look at our [guides](/docs/fetch/guides) for more in-depth information on how to use `@zimic/fetch` in specific
+scenarios.
+
+### Examples
+
+Check out our [examples](/docs/zimic/2-examples/2-examples.md) to learn more about how to use `@zimic/fetch` with
+popular libraries and frameworks.
+
+### API reference
+
+Visit the [API reference](/docs/http/api) for more details on the resources available in `@zimic/fetch`.
+
+### Explore the ecosystem
+
+- Visit the [`@zimic/http`](/docs/zimic-http/1-index.md) documentation to learn more about extending your HTTP schema.
+
+- If you are interested in mocking your requests in development and testing, consider using
+  [`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md). Declare realistic HTTP mocks validated with the same
+  schema as your fetch client, and verify that your application interacts as expected, without needing to access the
+  actual API.
