@@ -185,10 +185,10 @@ type Schema = HttpSchema<{
 
 ### Creating a fetch instance
 
-With a schema, you can create a [fetch instance](/docs/zimic-fetch/api/2-fetch.md).
+With the schema defined, you can now create a [fetch instance](/docs/zimic-fetch/api/2-fetch.md).
 
-The `@zimic/fetch` package provides a [`createFetch`](/docs/zimic-fetch/api/1-create-fetch.md) function that takes the
-schema as a type parameter and returns a thin wrapper around the native
+`@zimic/fetch` provides a [`createFetch`](/docs/zimic-fetch/api/1-create-fetch.md) function that takes the schema as a
+type parameter and returns a thin wrapper around the native
 [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). It adds type safety for making requests and handling
 responses, all automatically typed based on the schema.
 

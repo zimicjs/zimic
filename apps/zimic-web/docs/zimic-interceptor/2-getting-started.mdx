@@ -186,12 +186,11 @@ type Schema = HttpSchema<{
 
 ### Creating an HTTP interceptor
 
-With a schema, you can create an [HTTP interceptor](/docs/zimic-interceptor/api/2-http-interceptor.md).
+With the schema defined, you can now create an [HTTP interceptor](/docs/zimic-interceptor/api/2-http-interceptor.md).
 
-The `@zimic/interceptor` package provides a
-[`createHttpInterceptor`](/docs/zimic-interceptor/api/1-create-http-interceptor.md) function that takes the schema as a
-type parameter and returns an interceptor instance. It allows you to intercept HTTP requests, validate their contents,
-and return mock responses, all automatically typed based on the schema.
+`@zimic/interceptor` provides a [`createHttpInterceptor`](/docs/zimic-interceptor/api/1-create-http-interceptor.md)
+function that takes the schema as a type parameter and returns an interceptor instance. It allows you to intercept HTTP
+requests, validate their contents, and return mock responses, all automatically typed based on the schema.
 
 ```ts
 import { createHttpInterceptor } from '@zimic/interceptor/http';
@@ -211,7 +210,7 @@ You can also set other options, such as the interceptor type and how unhandled r
 HTTP interceptors are available in two types: `local` (default) and `remote`.
 
 <Tabs groupId="zimic-http-interceptor-type">
-  <TabItem value="local" label="Local">
+  <TabItem value="local" label="Local interceptor">
 
 ```ts
 import { createHttpInterceptor } from '@zimic/interceptor/http';
@@ -225,7 +224,7 @@ const interceptor = createHttpInterceptor<Schema>({
 
   </TabItem>
 
-  <TabItem value="remote" label="Remote">
+  <TabItem value="remote" label="Remote interceptor">
 
 ```ts
 import { createHttpInterceptor } from '@zimic/interceptor/http';
@@ -233,7 +232,7 @@ import { createHttpInterceptor } from '@zimic/interceptor/http';
 const interceptor = createHttpInterceptor<Schema>({
   // highlight-next-line
   type: 'remote',
-  baseURL: 'http://localhost:4000',
+  baseURL: 'http://localhost:3000',
 });
 ```
 
@@ -256,7 +255,7 @@ your use case is best served by them.
 
 ### Managing your HTTP interceptor lifecycle
 
-#### Starting the interceptor before usage
+#### Starting the interceptor
 
 To intercept requests, an interceptor must be started with
 [`interceptor.start()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorstart). This is typically done
@@ -269,7 +268,7 @@ beforeAll(async () => {
 });
 ```
 
-:::note NOTE: <span>Local interceptor browser init</span>
+:::info INFO: <span>Local interceptors in browsers</span>
 
 If you are using a [local interceptor](/docs/zimic-interceptor/guides/1-local-interceptors.md) in a **browser**
 environment, you must first
@@ -292,13 +291,13 @@ import { createHttpInterceptor } from '@zimic/interceptor/http';
 const authInterceptor = createHttpInterceptor<AuthSchema>({
   type: 'remote',
   // highlight-next-line
-  baseURL: `http://localhost:4000/auth/${crypto.randomUUID()}`,
+  baseURL: `http://localhost:3000/auth/${crypto.randomUUID()}`,
 });
 
 cont notificationInterceptor = createHttpInterceptor<NotificationSchema>({
   type: 'remote',
   // highlight-next-line
-  baseURL: `http://localhost:4000/notification/${crypto.randomUUID()}`,
+  baseURL: `http://localhost:3000/notification/${crypto.randomUUID()}`,
 });
 ```
 
@@ -314,18 +313,19 @@ to the base URL of the interceptor.
 
 ```ts
 process.env.AUTH_SERVICE_URL = authInterceptor.baseURL;
+process.env.NOTIFICATION_SERVICE_URL = notificationInterceptor.baseURL;
 ```
 
 :::
 
-#### Clearing the interceptor between tests
+#### Clearing the interceptor
 
 When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another.
 This is done with [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorclear), which
 resets the interceptor and handlers to their initial states.
 
 <Tabs groupId="zimic-http-interceptor-type">
-  <TabItem value="local" label="Local">
+  <TabItem value="local" label="Local interceptor">
 
 ```ts
 beforeEach(() => {
@@ -336,7 +336,7 @@ beforeEach(() => {
 
   </TabItem>
 
-  <TabItem value="remote" label="Remote">
+  <TabItem value="remote" label="Remote interceptor">
 
 ```ts
 beforeEach(async () => {
@@ -356,10 +356,10 @@ how interceptors support [declarative assertions](/docs/zimic-interceptor/guides
 your tests clean and readable.
 
 <Tabs groupId="zimic-http-interceptor-type">
-  <TabItem value="local" label="Local">
+  <TabItem value="local" label="Local interceptor">
 
 ```ts
-beforeEach(() => {
+afterEach(() => {
   // highlight-next-line
   interceptor.checkTimes();
 });
@@ -367,10 +367,10 @@ beforeEach(() => {
 
   </TabItem>
 
-  <TabItem value="remote" label="Remote">
+  <TabItem value="remote" label="Remote interceptor">
 
 ```ts
-beforeEach(async () => {
+afterEach(async () => {
   // highlight-next-line
   await interceptor.checkTimes();
 });
@@ -396,7 +396,7 @@ You can now use the interceptor to handle requests and return mock responses. Al
 and responses are typed by default based on the schema.
 
 <Tabs groupId="zimic-http-interceptor-type">
-  <TabItem value="local" label="Local">
+  <TabItem value="local" label="Local interceptor">
 
 ```ts
 test('example', async () => {
@@ -422,7 +422,7 @@ test('example', async () => {
 
   </TabItem>
 
-  <TabItem value="remote" label="Remote">
+  <TabItem value="remote" label="Remote interceptor">
 
 ```ts
 test('example', async () => {
@@ -449,7 +449,7 @@ test('example', async () => {
   </TabItem>
 </Tabs>
 
-:::note NOTE: <span>Remote interceptors are asynchronous</span>
+:::info INFO: <span>Remote interceptors are asynchronous</span>
 
 Many operations in [remote interceptors](/docs/zimic-interceptor/guides/2-remote-interceptors.md) are **asynchronous**
 because they may involve communication with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is
@@ -462,7 +462,7 @@ If you need to access the requests processed by the interceptor, use
 [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrequests).
 
 <Tabs groupId="zimic-http-interceptor-type">
-  <TabItem value="local" label="Local">
+  <TabItem value="local" label="Local interceptor">
 
 ```ts
 // highlight-next-line
@@ -494,7 +494,7 @@ console.log(handler.requests[0].body); // null
 
   </TabItem>
 
-  <TabItem value="remote" label="Remote">
+  <TabItem value="remote" label="Remote interceptor">
 
 ```ts
 // highlight-next-line
