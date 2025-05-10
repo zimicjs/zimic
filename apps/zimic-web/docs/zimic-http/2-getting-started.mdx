@@ -17,9 +17,10 @@ This guide will help you get started with `@zimic/http`.
 
 #### Client side
 
-`@zimic/http` is designed to work in any environment that supports the native `fetch` API. This includes any relatively
-modern browser. [Can I Use](https://caniuse.com/?search=fetch) is a great resource to check the compatibility of
-specific features with different browsers.
+`@zimic/http` is designed to work in any environment that supports the
+[Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). This includes any relatively modern browser.
+[Can I Use](https://caniuse.com/?search=fetch) is a great resource to check the compatibility of specific features with
+different browsers.
 
 #### Server side
 
@@ -78,8 +79,8 @@ yarn add @zimic/http
   </TabItem>
 </Tabs>
 
-We also have canary releases under the tag `canary`. These contain the latest code, including new features, bug fixes,
-and possibly unstable or breaking changes.
+We also have canary releases under the tag `canary`. These have the latest code, including new features, bug fixes, and
+possibly unstable or breaking changes.
 
 <Tabs groupId="package-managers">
   <TabItem value="npm" label="npm">
@@ -116,8 +117,8 @@ The schema represents the structure of your API, including the paths, methods, r
 :::tip TIP: <span>OpenAPI Typegen</span>
 
 For APIs with an [OpenAPI documentation](https://www.openapis.org) (e.g. [Swagger](https://swagger.io)), the
-[`zimic-http typegen`](/docs/zimic-http/guides/3-typegen.md) CLI can automatically infer the schema and generate types
-from it. This is a great way to keep your schema is up to date and save time on manual type definitions.
+[`zimic-http typegen`](/docs/zimic-http/guides/3-typegen.md) CLI can automatically infer the types and generate the
+schema for you. This is a great way to keep your schema is up to date and save time on manual type definitions.
 
 :::
 
@@ -179,12 +180,11 @@ type Schema = HttpSchema<{
 
 ### Guides
 
-Take a look at our [guides](/docs/http/guides) for more in-depth information on how to use `@zimic/http` in specific
-scenarios.
+Take a look at our [guides](/docs/http/guides) for more information on how to use `@zimic/http` in common scenarios.
 
 ### Examples
 
-Check out our [examples](/docs/zimic/2-examples/2-examples.md) to learn more about how to use `@zimic/http` with popular
+Try our [examples](/docs/zimic/2-examples/2-examples.md) for more practical use cases of `@zimic/http` with popular
 libraries and frameworks.
 
 ### API reference

@@ -17,9 +17,10 @@ This guide will help you get started with `@zimic/fetch`.
 
 #### Client side
 
-`@zimic/fetch` is designed to work in any environment that supports the native `fetch` API. This includes any relatively
-modern browser. [Can I Use](https://caniuse.com/?search=fetch) is a great resource to check the compatibility of
-specific features with different browsers.
+`@zimic/fetch` is designed to work in any environment that supports the
+[Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). This includes any relatively modern browser.
+[Can I Use](https://caniuse.com/?search=fetch) is a great resource to check the compatibility of specific features with
+different browsers.
 
 #### Server side
 
@@ -85,8 +86,8 @@ the versions are compatible.
 
 :::
 
-We also have canary releases under the tag `canary`. These contain the latest code, including new features, bug fixes,
-and possibly unstable or breaking changes.
+We also have canary releases under the tag `canary`. These have the latest code, including new features, bug fixes, and
+possibly unstable or breaking changes.
 
 <Tabs groupId="package-managers">
   <TabItem value="npm" label="npm">
@@ -116,16 +117,15 @@ yarn add @zimic/http@canary @zimic/fetch@canary
 
 ### Declaring an HTTP schema
 
-To start using `@zimic/fetch`, declare your HTTP schema using
-[`@zimic/http`](/docs/zimic-http/guides/1-http-schemas.md):
+To start using `@zimic/fetch`, declare an HTTP schema using [`@zimic/http`](/docs/zimic-http/guides/1-http-schemas.md):
 
 The schema represents the structure of your API, including the paths, methods, request and response types.
 
 :::tip TIP: <span>OpenAPI Typegen</span>
 
 For APIs with an [OpenAPI documentation](https://www.openapis.org) (e.g. [Swagger](https://swagger.io)), the
-[`zimic-http typegen`](/docs/zimic-http/guides/3-typegen.md) CLI can automatically infer the schema and generate types
-from it. This is a great way to keep your schema is up to date and save time on manual type definitions.
+[`zimic-http typegen`](/docs/zimic-http/guides/3-typegen.md) CLI can automatically infer the types and generate the
+schema for you. This is a great way to keep your schema is up to date and save time on manual type definitions.
 
 :::
 
@@ -185,11 +185,12 @@ type Schema = HttpSchema<{
 
 ### Creating a fetch instance
 
-With the schema defined, you can create a [fetch instance](/docs/zimic-fetch/api/2-fetch.md).
+With a schema, you can create a [fetch instance](/docs/zimic-fetch/api/2-fetch.md).
 
-The `@zimic/fetch` package provides a `createFetch` function that takes the schema as a type parameter and returns a
-thin wrapper around the native [`fetch` API](https://developer.mozilla.org/docs/Web/API/Fetch_API). This wrapper adds
-type safety and convenience resources for making requests and handling responses.
+The `@zimic/fetch` package provides a [`createFetch`](/docs/zimic-fetch/api/1-create-fetch.md) function that takes the
+schema as a type parameter and returns a thin wrapper around the native
+[Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). It adds type safety for making requests and handling
+responses, all automatically typed based on the schema.
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -199,8 +200,9 @@ const fetch = createFetch<Schema>({
 });
 ```
 
-Set the `baseURL` option to the base URL of your API. It will be prepended to all requests made with this instance. You
-can also set other options, such as default headers, credentials, parameters, and more. Refer to the
+Set the `baseURL` option to the base URL of your API. It will be prepended to all requests made with this instance.
+
+You can also set other options, such as default headers, credentials, parameters, and more. Refer to the
 [`createFetch` API reference](/docs/zimic-fetch/api/1-create-fetch.md) for more details.
 
 ### Making requests
@@ -233,23 +235,22 @@ return users;
 
 ### Guides
 
-Take a look at our [guides](/docs/fetch/guides) for more in-depth information on how to use `@zimic/fetch` in specific
-scenarios.
+Take a look at our [guides](/docs/fetch/guides) for more information on how to use `@zimic/fetch` in common scenarios.
 
 ### Examples
 
-Check out our [examples](/docs/zimic/2-examples/2-examples.md) to learn more about how to use `@zimic/fetch` with
-popular libraries and frameworks.
+Try our [examples](/docs/zimic/2-examples/2-examples.md) for more practical use cases of `@zimic/fetch` with popular
+libraries and frameworks.
 
 ### API reference
 
-Visit the [API reference](/docs/http/api) for more details on the resources available in `@zimic/fetch`.
+Visit the [API reference](/docs/fetch/api) for more details on the resources available in `@zimic/fetch`.
 
 ### Explore the ecosystem
 
-- Visit the [`@zimic/http`](/docs/zimic-http/1-index.md) documentation to learn more about extending your HTTP schema.
+- Access the [`@zimic/http`](/docs/zimic-http/1-index.md) documentation to learn more about extending your HTTP schema.
 
-- If you are interested in mocking your requests in development and testing, consider using
+- If you are interested in mocking your requests in development and testing, check out
   [`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md). Declare realistic HTTP mocks validated with the same
   schema as your fetch client, and verify that your application interacts as expected, without needing to access the
   actual API.

@@ -13,3 +13,5 @@ slug: /interceptor/cli/browser
 Please use the [old documentation](https://github.com/zimicjs/zimic/wiki) while [zimic.dev](/) is not yet complete.
 
 :::
+
+## `zimic-interceptor browser init`

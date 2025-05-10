@@ -14,6 +14,4 @@ Please use the [old documentation](https://github.com/zimicjs/zimic/wiki) while 
 
 :::
 
-## `LocalHttpRequestHandler`
-
-## `RemoteHttpRequestHandler`
+## `handler.requests`

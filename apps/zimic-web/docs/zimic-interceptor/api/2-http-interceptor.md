@@ -14,6 +14,10 @@ Please use the [old documentation](https://github.com/zimicjs/zimic/wiki) while 
 
 :::
 
-## `LocalHttpInterceptor`
+## `interceptor.start()`
 
-## `RemoteHttpInterceptor`
+## `interceptor.clear()`
+
+## `interceptor.checkTimes()`
+
+## `interceptor.stop()`
