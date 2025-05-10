@@ -1,0 +1,552 @@
+---
+title: Getting started | @zimic/interceptor
+sidebar_label: Getting started
+slug: /interceptor/getting-started
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Getting started
+
+This guide will help you get started with `@zimic/interceptor`.
+
+## Requirements
+
+### Supported environments
+
+#### Client side
+
+`@zimic/interceptor` is designed to work in any environment that supports the
+[Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). This includes any relatively modern browser.
+[Can I Use](https://caniuse.com/?search=fetch) is a great resource to check the compatibility of specific features with
+different browsers.
+
+#### Server side
+
+| Runtime                       | Version    |
+| ----------------------------- | ---------- |
+| [Node.js](https://nodejs.org) | >= 18.13.0 |
+
+### Supported languages
+
+#### TypeScript
+
+`@zimic/interceptor` requires [TypeScript](https://www.typescriptlang.org) >= 4.8.
+
+We recommend enabling `strict` in your `tsconfig.json`:
+
+```json title='tsconfig.json'
+{
+  "compilerOptions": {
+    // highlight-next-line
+    "strict": true
+  }
+}
+```
+
+#### JavaScript
+
+`@zimic/interceptor` is fully functional on JavaScript, although the type features will be disabled. Consider using
+TypeScript for improved type safety and developer experience.
+
+## Installation
+
+`@zimic/interceptor` is available as a library on [npm](https://www.npmjs.com/package/@zimic/interceptor).
+
+<Tabs groupId="package-managers">
+  <TabItem value="npm" label="npm">
+
+```bash
+npm install @zimic/http @zimic/interceptor --save-dev
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm add @zimic/http @zimic/interceptor --dev
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```bash
+yarn add @zimic/http @zimic/interceptor --dev
+```
+
+  </TabItem>
+</Tabs>
+
+:::info
+
+Note that [`@zimic/http`](/docs/zimic-http/1-index.md) is a peer dependency of `@zimic/interceptor`, so you need to
+install both packages. When upgrading `@zimic/interceptor` to a new version, consider upgrading `@zimic/http` as well to
+ensure that the versions are compatible.
+
+:::
+
+We also have canary releases under the tag `canary`. These have the latest code, including new features, bug fixes, and
+possibly unstable or breaking changes.
+
+<Tabs groupId="package-managers">
+  <TabItem value="npm" label="npm">
+
+```bash
+npm install @zimic/http@canary @zimic/interceptor@canary --save-dev
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm add @zimic/http@canary @zimic/interceptor@canary --dev
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```bash
+yarn add @zimic/http@canary @zimic/interceptor@canary --dev
+```
+
+  </TabItem>
+</Tabs>
+
+## Your first HTTP interceptor
+
+### Declaring an HTTP schema
+
+To start using `@zimic/interceptor`, declare an HTTP schema using
+[`@zimic/http`](/docs/zimic-http/guides/1-http-schemas.md):
+
+The schema represents the structure of your API, including the paths, methods, request and response types.
+
+:::tip TIP: <span>OpenAPI Typegen</span>
+
+For APIs with an [OpenAPI documentation](https://www.openapis.org) (e.g. [Swagger](https://swagger.io)), the
+[`zimic-http typegen`](/docs/zimic-http/guides/3-typegen.md) CLI can automatically infer the types and generate the
+schema for you. This is a great way to keep your schema is up to date and save time on manual type definitions.
+
+:::
+
+```ts title='schema.ts'
+import { type HttpSchema } from '@zimic/http';
+
+interface User {
+  username: string;
+}
+
+interface RequestError {
+  code: string;
+  message: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    POST: {
+      request: { body: User };
+      response: {
+        201: { body: User };
+        400: { body: RequestError };
+        409: { body: RequestError };
+      };
+    };
+
+    GET: {
+      request: {
+        headers: { authorization: string };
+        searchParams: {
+          query?: string;
+          limit?: number;
+        };
+      };
+      response: {
+        200: { body: User[] };
+        400: { body: RequestError };
+        401: { body: RequestError };
+      };
+    };
+  };
+
+  '/users/:userId': {
+    PATCH: {
+      request: {
+        headers: { authorization: string };
+        body: Partial<User>;
+      };
+      response: {
+        204: {};
+        400: { body: RequestError };
+      };
+    };
+  };
+}>;
+```
+
+### Creating an HTTP interceptor
+
+With the schema defined, you can now create an [HTTP interceptor](/docs/zimic-interceptor/api/2-http-interceptor.md).
+
+`@zimic/interceptor` provides a [`createHttpInterceptor`](/docs/zimic-interceptor/api/1-create-http-interceptor.md)
+function that takes the schema as a type parameter and returns an interceptor instance. It allows you to intercept HTTP
+requests, validate their contents, and return mock responses, all automatically typed based on the schema.
+
+```ts
+import { createHttpInterceptor } from '@zimic/interceptor/http';
+
+const interceptor = createHttpInterceptor<Schema>({
+  baseURL: 'http://localhost:3000',
+});
+```
+
+The `baseURL` option is the base URL of your API. It will be prepended to all paths used in the interceptor.
+
+You can also set other options, such as the interceptor type and how unhandled requests should be treated. Refer to the
+[`createHttpInterceptor` API reference](/docs/zimic-interceptor/api/1-create-http-interceptor.md) for more details.
+
+:::info INFO: <span>Choosing your interceptor type</span>
+
+HTTP interceptors are available in two types: `local` (default) and `remote`.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+import { createHttpInterceptor } from '@zimic/interceptor/http';
+
+const interceptor = createHttpInterceptor<Schema>({
+  // highlight-next-line
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+import { createHttpInterceptor } from '@zimic/interceptor/http';
+
+const interceptor = createHttpInterceptor<Schema>({
+  // highlight-next-line
+  type: 'remote',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+  </TabItem>
+</Tabs>
+
+When an interceptor is `local`, Zimic uses [MSW](https://github.com/mswjs/msw) to intercept requests _in the same
+process_ as your application. This is the simplest way to start mocking requests and does not require any server setup.
+
+Interceptors with type `remote` use a dedicated [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle
+requests. This opens up more possibilities for mocking, such as handling requests from multiple applications. It is also
+more robust because it uses a regular HTTP server and does not depend on local interception algorithms.
+
+Learn more about [local interceptors](/docs/zimic-interceptor/guides/1-local-interceptors.md) and
+[remote interceptors](/docs/zimic-interceptor/guides/2-remote-interceptors.md) to see which one fits your needs. We
+recommend starting with local interceptors, as they are easier to get started with, and moving to remote interceptors if
+your use case is best served by them.
+
+:::
+
+### Managing your HTTP interceptor lifecycle
+
+#### Starting the interceptor
+
+To intercept requests, an interceptor must be started with
+[`interceptor.start()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorstart). This is typically done
+before using the interceptor, such as in a `beforeAll` hook in your test suite.
+
+```ts
+beforeAll(async () => {
+  // highlight-next-line
+  await interceptor.start();
+});
+```
+
+:::info INFO: <span>Local interceptors in browsers</span>
+
+If you are using a [local interceptor](/docs/zimic-interceptor/guides/1-local-interceptors.md) in a **browser**
+environment, you must first
+[initialize a mock service worker](/docs/zimic-interceptor/cli/2-browser.md#zimic-interceptor-browser-init) in your
+public directory before starting the interceptor.
+
+:::
+
+:::info INFO: <span>Remote interceptors and interceptor servers</span>
+
+If you are using a [remote interceptor](/docs/zimic-interceptor/guides/2-remote-interceptors.md), it's necessary to have
+a [interceptor server](/docs/zimic-interceptor/cli/1-server.md) running before starting the interceptor.
+
+The base URL of the remote interceptor should point to the server. Since multiple remote interceptors may use the same
+interceptor server, you may use a suffix path to differentiate them.
+
+```ts
+import { createHttpInterceptor } from '@zimic/interceptor/http';
+
+const authInterceptor = createHttpInterceptor<AuthSchema>({
+  type: 'remote',
+  // highlight-next-line
+  baseURL: `http://localhost:3000/auth/${crypto.randomUUID()}`,
+});
+
+cont notificationInterceptor = createHttpInterceptor<NotificationSchema>({
+  type: 'remote',
+  // highlight-next-line
+  baseURL: `http://localhost:3000/notification/${crypto.randomUUID()}`,
+});
+```
+
+In this example, two remote interceptors are created, one for a fictional authentication service and another for a
+notification service. Both interceptors use the same interceptor server, but they are differentiated by service with the
+paths `/auth` and `/notification`. Furthermore,
+[`crypto.randomUUID()`](https://developer.mozilla.org/docs/Web/API/Crypto/randomUUID) is used to generate a unique
+identifier for each interceptor, which makes sure that they don't interfere with each other.
+
+If you are using a similar setup, note that your application should use the same base URL as the interceptor when making
+requests, otherwise they may not be handled. A common strategy is to change an environment variable or similar to point
+to the base URL of the interceptor.
+
+```ts
+process.env.AUTH_SERVICE_URL = authInterceptor.baseURL;
+process.env.NOTIFICATION_SERVICE_URL = notificationInterceptor.baseURL;
+```
+
+:::
+
+#### Clearing the interceptor
+
+When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another.
+This is done with [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorclear), which
+resets the interceptor and handlers to their initial states.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+beforeEach(() => {
+  // highlight-next-line
+  interceptor.clear();
+});
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+beforeEach(async () => {
+  // highlight-next-line
+  await interceptor.clear();
+});
+```
+
+  </TabItem>
+</Tabs>
+
+### Checking the interceptor expectations
+
+After each test, you can check if your application has made all of the expected requests with
+[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes). Learn more about
+how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.md) to keep
+your tests clean and readable.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+afterEach(() => {
+  // highlight-next-line
+  interceptor.checkTimes();
+});
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+afterEach(async () => {
+  // highlight-next-line
+  await interceptor.checkTimes();
+});
+```
+
+  </TabItem>
+</Tabs>
+
+### Stopping the interceptor
+
+After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with
+[`interceptor.stop()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorstop).
+
+```ts
+afterAll(async () => {
+  await interceptor.stop();
+});
+```
+
+### Mocking requests
+
+You can now use the interceptor to handle requests and return mock responses. All paths, methods, parameters, requests,
+and responses are typed by default based on the schema.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+test('example', async () => {
+  const users: User[] = [{ username: 'me' }];
+
+  // highlight-start
+  interceptor
+    .get('/users')
+    .with({
+      headers: { authorization: 'Bearer my-token' },
+      searchParams: { query: 'u' },
+    })
+    .respond({
+      status: 200,
+      body: users,
+    })
+    .times(1);
+  // highlight-end
+
+  // Run the application and make requests...
+});
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+test('example', async () => {
+  const users: User[] = [{ username: 'me' }];
+
+  // highlight-start
+  await interceptor
+    .get('/users')
+    .with({
+      headers: { authorization: 'Bearer my-token' },
+      searchParams: { query: 'u' },
+    })
+    .respond({
+      status: 200,
+      body: users,
+    })
+    .times(1);
+  // highlight-end
+
+  // Run the application and make requests...
+});
+```
+
+  </TabItem>
+</Tabs>
+
+:::info INFO: <span>Remote interceptors are asynchronous</span>
+
+Many operations in [remote interceptors](/docs/zimic-interceptor/guides/2-remote-interceptors.md) are **asynchronous**
+because they may involve communication with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is
+different from [local interceptors](/docs/zimic-interceptor/guides/1-local-interceptors.md), which have mostly
+**synchronous** operations.
+
+:::
+
+If you need to access the requests processed by the interceptor, use
+[`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrequests).
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+// highlight-next-line
+const handler = interceptor
+  .get('/users')
+  .with({
+    headers: { authorization: 'Bearer my-token' },
+    searchParams: { query: 'u' },
+  })
+  .respond({
+    status: 200,
+    body: users,
+  })
+  .times(1);
+
+// Run the application and make requests...
+
+// highlight-start
+console.log(handler.requests); // 1
+
+console.log(handler.requests[0].headers.get('authorization')); // 'Bearer my-token'
+
+console.log(handler.requests[0].searchParams.size); // 1
+console.log(handler.requests[0].searchParams.get('username')); // 'my'
+
+console.log(handler.requests[0].body); // null
+// highlight-end
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+// highlight-next-line
+const handler = await interceptor
+  .get('/users')
+  .with({
+    headers: { authorization: 'Bearer my-token' },
+    searchParams: { query: 'u' },
+  })
+  .respond({
+    status: 200,
+    body: users,
+  })
+  .times(1);
+
+// Run the application and make requests...
+
+// highlight-start
+console.log(handler.requests); // 1
+
+console.log(handler.requests[0].headers.get('authorization')); // 'Bearer my-token'
+
+console.log(handler.requests[0].searchParams.size); // 1
+console.log(handler.requests[0].searchParams.get('username')); // 'my'
+
+console.log(handler.requests[0].body); // null
+// highlight-end
+```
+
+  </TabItem>
+</Tabs>
+
+## Next steps
+
+### Guides
+
+Take a look at our [guides](/docs/interceptor/guides) for more information on how to use `@zimic/interceptor` in common
+scenarios.
+
+### Examples
+
+Try our [examples](/docs/zimic/2-examples/2-examples.md) for more practical use cases of `@zimic/interceptor` with
+popular libraries and frameworks.
+
+### API reference
+
+Visit the [API reference](/docs/interceptor/api) for more details on the resources available in `@zimic/interceptor`.
+
+### Explore the ecosystem
+
+- Access the [`@zimic/http`](/docs/zimic-http/1-index.md) documentation to learn more about extending your HTTP schema.
+
+- If you are interested in improving the type safety and development experience of your application code, check out
+  [`@zimic/fetch`](/docs/zimic-fetch/1-index.md). Use the same schema as your interceptor to automatically type your
+  paths, methods, requests, parameters, and responses in a minimal `fetch`-like API client.
