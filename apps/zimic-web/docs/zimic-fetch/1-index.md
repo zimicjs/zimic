@@ -6,18 +6,26 @@ slug: /fetch
 
 # Introduction
 
-[`@zimic/fetch`](/docs/zimic-fetch/1-index.md) is a minimal (~2 kB minified and gzipped), zero-dependency, and type-safe
-`fetch`-like API client.
+[`@zimic/fetch`](/docs/zimic-fetch/1-index.md) is a minimal (~2 kB minified and gzipped) and type-safe `fetch`-like API
+client.
+
+:::info Status: <span>**Beta** :seedling:</span>
+
+:::
 
 ## Features
 
-- :sparkles: **Type-safe `fetch`**:
+- :sparkles: **Type-safe `fetch`**
 
   Create a type-safe [`fetch`-like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client. Use your
   [`@zimic/http` schema](/docs/zimic-http/guides/1-http-schemas.md) and have your requests and responses fully typed by
   default.
 
-- :muscle: **Developer experience**:
+- :zap: **Zero dependencies**
+
+  `@zimic/fetch` has no external dependencies, making it a lightweight and fast alternative to other HTTP clients.
+
+- :muscle: **Developer experience**
 
   `@zimic/fetch` seeks to be as compatible with the
   [native Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API) as possible, while providing an ergonomic

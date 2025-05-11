@@ -6,19 +6,26 @@ slug: /http
 
 # Introduction
 
-`@zimic/http` is a collection of type-safe utilities to handle HTTP requests and responses, including headers, search
-params, and form data.
+[`@zimic/http`](/docs/zimic-http/1-index.md) is a collection of type-safe utilities to handle HTTP requests and
+responses, including headers, search params, and form data.
+
+:::info Status: <span>**Beta** :seedling:</span>
+
+:::
 
 ## Features
 
-- :star: **HTTP schemas and typegen**:
+- :star: **HTTP schemas**
 
   Declare the structure of your HTTP endpoints as a [TypeScript schema](/docs/zimic-http/guides/1-http-schemas.md) and
-  use it to type your HTTP requests and responses. If you have an [OpenAPI v3](https://swagger.io/specification)
-  declaration, [`zimic-http typegen`](/docs/zimic-http/guides/3-typegen.md) can automatically generate the types of your
-  schema.
+  use it to type your HTTP requests and responses.
 
-- :pushpin: **Type-safe native APIs**:
+- :bulb: **Type generation**
+
+  [`zimic-http typegen`](/docs/zimic-http/guides/3-typegen.md) can automatically infer the types and generate a
+  ready-to-use HTTP schema for you.
+
+- :pushpin: **Type-safe APIs**
 
   Declare type-safe [`Headers`](/docs/zimic-http/api/2-http-headers.md),
   [`URLSearchParams`](/docs/zimic-http/api/3-http-search-params.md), and

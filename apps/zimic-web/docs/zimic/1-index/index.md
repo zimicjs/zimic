@@ -6,112 +6,120 @@ slug: /
 
 # Introduction
 
-Zimic is a collection of TypeScript-first HTTP integration libraries. It provides type-safe utilities to handle HTTP
-resources, including requests, responses, headers, search parameters, and form data. Zimic is designed to be
-lightweight, flexible, robust, and easy to use, on top of a great developer experience from the ground up. The libraries
-are built with TypeScript in mind, providing type safety, inference, validation, and autocompletion out of the box.
+Zimic is a collection of TypeScript-first HTTP integration libraries. It provides type-safe utilities to make, receive,
+and mock HTTP requests and responses. Zimic is designed to be lightweight, flexible, and easy to use, with type safety
+and inference out of the box.
 
 ## Motivation
 
-Integrating with real-world HTTP APIs is a common need in web applications, yet keeping clients and servers in sync is
-still a challenging task. Without tools to help, developers often have to rely on documentation, code inspection, and
-experimentation to manually declare and use the types of the APIs.
+Integrating with real-world HTTP APIs is common in modern web development, yet keeping clients and servers in sync is
+still a challenging task. Developers often have to rely on documentation, code inspection, and experimentation to
+manually type the code that interacts with the API.
 
-We've all seen code like this at some point:
+We have all likely seen code like this:
 
-```ts
+```ts showLineNumbers
 interface GitHubRepository {
   id: number;
   name: string;
   owner: { login: string };
 }
 
-const GITHUB_BASE_URL = 'https://api.github.com';
-
 const owner = 'zimicjs';
 const repository = 'zimic';
 
-// highlight-next-line
-const response = await fetch(`${GITHUB_BASE_URL}/repos/${owner}/${repository}`);
+const response = await fetch(`https://api.github.com/repos/${owner}/${repository}`);
 
-// highlight-next-line
 const repository = (await response.json()) as GitHubRepository;
-console.log(repository);
+console.log(repository); // { id: 721827056, name: 'zimic', owner: { ... }, ... }
 ```
 
-The main issue with this approach is that the code is assuming a specific structure for the API response, with no
-validation that it is correct.
+The main issue with this approach is that the code is assuming many things about the structure of the API, and no
+validation is checking if these assumptions are correct.
 
-- The `GitHubRepository` interface is defined manually and can be incorrect or differ from the actual API response as it
-  evolves over time.
-- The path and parameters of the request are not validated, so typos or changes in the API will lead to issues at
-  runtime without any type errors.
-- The response data is manually cast to `GitHubRepository`, which can be not only tedious, but error-prone. In fact, did
-  you catch the bug in this code? Since the response status is not checked, the data can in fact not be
-  `GitHubRepository` at all, but an error message or a different structure!
+- **Manual types**: the `GitHubRepository` interface is defined manually and can differ from the actual API response.
+- **Insufficient validation**: paths and parameters are not validated, so typos or changes in the API will cause runtime
+  issues without any type errors during development.
+- **Response casting**: the response body is manually cast to `GitHubRepository`, which can be repetitive and
+  error-prone.
 
-These issues are increased the more complex the API is, the more frequently it changes and how often the code uses it.
-The lack of type safety and little to no validation may result in the API structure becoming diluted in hundreds of
-manual types, casts, and hardcoded values scattered across the codebase. This can clearly become a big maintenance
-burden and a source of bugs, because it can be really hard to keep the types and client code in sync with the API.
+:::note I<span>n fact, did you catch the bug?</span>
 
-In light of these problems, Zimic was created to provide a type-safe and ergonomic way to work with HTTP APIs. One of
-the main concepts behind Zimic is the idea of a [centralized schema](/docs/zimic-http/guides/1-http-schemas.md) to
-define the structure of your HTTP endpoints. It can be automatically inferred from an
-[OpenAPI documentation](https://www.openapis.org), if available, and serves as the source of truth for the types of your
-API.
+We're not checking the response status, so the data may not be `GitHubRepository` at all, but an error with a totally
+different structure!
 
-With Zimic, all requests, paths, parameters, and responses are inferred and validated from the schema, so you can have
-much more confidence that your code is communicating with the API correctly, without any casts or manual `satisfies`
-checks everywhere. Because of this, migrating to a new API version can be as simple as updating the centralized schema
-and checking which parts of the codebase are reporting type errors. The schema can also be used to type and validate
-your [HTTP mocks](/docs/zimic-interceptor/1-index.md), ensuring that both your application and your tests are fully
-type-safe and in sync with the API.
+```ts showLineNumbers
+const response = await fetch(`https://api.github.com/repos/${owner}/i-dont-exist`);
+console.log(response.status); // 404
+
+const repository = (await response.json()) as GitHubRepository;
+console.log(repository); // { "message": "Not Found", "status": "404" } // Oops
+```
+
+:::
+
+These issues are aggravated the more complex the API is and the more frequently it changes. The API structure might
+become diluted in hundreds of manual types, casts, and hardcoded values scattered across the codebase. This can clearly
+become a big maintenance burden and a source of bugs, making it hard to keep the types in sync with the API.
+
+With these problems in mind, Zimic was created to provide a type-safe and ergonomic way to interact with HTTP APIs. One
+of the main concepts behind Zimic is the idea of a [centralized schema](/docs/zimic-http/guides/1-http-schemas.md) to
+define the structure of your HTTP endpoints. It serves as the source of truth for the structure of the API and can be
+[autogenerated](/docs/zimic-http/guides/3-typegen.md).
+
+With Zimic, all requests, paths, parameters, and responses are inferred from the schema and type-checked, so you can
+have confidence that your code is communicating with the API correctly, without needing manual casts and checks
+everywhere. Because of this, migrating to a new API version can be as simple as updating the centralized schema and
+checking which parts of the codebase start reporting type errors. The schema can also type and validate your
+[HTTP mocks](/docs/zimic-interceptor/1-index.md), ensuring that your application, your tests, and your network mocks are
+fully type-safe and in sync _by default_.
 
 ## Features
 
-- :zap: **Lightweight**:
-
-  Zimic is designed to have a minimal bundle size and few external dependencies, making them perfect for client and
-  server-side applications. No bloat, fast load times, and little memory and CPU footprint!
-
-- :gear: **TypeScript-first**:
+- :gear: **TypeScript-first**
 
   Zimic has first-class support for TypeScript, providing type safety, inference, validation, and autocompletion out of
   the box. "Typed by default" is one of the main design principles of Zimic.
 
-- :package: **Developer-friendly**:
+- :zap: **Lightweight**
 
-  We believe that developer experience is key to building great applications. The Zimic API and CLI is designed to be as
-  simple and intuitive as possible, and we're always looking for ways to improve and simplify it.
+  The Zimic libraries are designed with minimal bundle sizes and few external dependencies, making them perfect for
+  client and server-side applications.
 
-- :test_tube: **Thoroughly tested**:
+- :package: **Developer-friendly**
+
+  We believe that developer experience is key to building great applications. The Zimic API is strives to be as simple
+  and intuitive as possible, and we're always looking for ways to improve it.
+
+- :test_tube: **Thoroughly tested**
 
   Zimic has a comprehensive test suite and high code coverage. Testing is a key part of our development process, and we
   take robustness, reliability, predictability, security, and developer confidence very seriously.
 
 ## Projects
 
-Zimic is split into an ecosystem of packages. Some of them are designed to be used together, while others can be used
-independently.
+Zimic is split into an ecosystem of integrated packages.
 
 ### `@zimic/http`
+
+[`@zimic/http`](/docs/zimic-http/1-index.md) is a collection of type-safe utilities to handle HTTP requests and
+responses, including headers, search params, and form data.
 
 :::info Status: <span>**Beta** :seedling:</span>
 
 :::
 
-[`@zimic/http`](/docs/zimic-http/1-index.md) is a collection of type-safe utilities to handle HTTP requests and
-responses, including headers, search params, and form data.
-
-- :star: **HTTP schemas and typegen**:
+- :star: **HTTP schemas**
 
   Declare the structure of your HTTP endpoints as a [TypeScript schema](/docs/zimic-http/guides/1-http-schemas.md) and
-  use it to type your HTTP requests and responses. If you have an [OpenAPI v3](https://swagger.io/specification)
-  declaration, [`zimic-http typegen`](/docs/zimic-http/guides/3-typegen.md) can automatically generate the types of your
-  schema.
+  use it to type your HTTP requests and responses.
 
-- :pushpin: **Type-safe native APIs**:
+- :bulb: **Type generation**
+
+  [`zimic-http typegen`](/docs/zimic-http/guides/3-typegen.md) can automatically infer the types and generate a
+  ready-to-use HTTP schema for you.
+
+- :pushpin: **Type-safe APIs**
 
   Declare type-safe [`Headers`](/docs/zimic-http/api/2-http-headers.md),
   [`URLSearchParams`](/docs/zimic-http/api/3-http-search-params.md), and
@@ -125,20 +133,24 @@ responses, including headers, search params, and form data.
 
 ### `@zimic/fetch`
 
+[`@zimic/fetch`](/docs/zimic-fetch/1-index.md) is a minimal (~2 kB minified and gzipped) and type-safe `fetch`-like API
+client.
+
 :::info Status: <span>**Beta** :seedling:</span>
 
 :::
 
-[`@zimic/fetch`](/docs/zimic-fetch/1-index.md) is a minimal (~2 kB minified and gzipped), zero-dependency, and type-safe
-`fetch`-like API client.
-
-- :sparkles: **Type-safe `fetch`**:
+- :sparkles: **Type-safe `fetch`**
 
   Create a type-safe [`fetch`-like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client. Use your
   [`@zimic/http` schema](/docs/zimic-http/guides/1-http-schemas.md) and have your requests and responses fully typed by
   default.
 
-- :muscle: **Developer experience**:
+- :zap: **Zero dependencies**
+
+  `@zimic/fetch` has no external dependencies, making it a lightweight and fast alternative to other HTTP clients.
+
+- :muscle: **Developer experience**
 
   `@zimic/fetch` seeks to be as compatible with the
   [native Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API) as possible, while providing an ergonomic
@@ -155,36 +167,28 @@ responses, including headers, search params, and form data.
 
 ### `@zimic/interceptor`
 
+[`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md) provides a flexible and type-safe way to intercept and mock
+HTTP requests.
+
 :::info Status: <span>**Beta** :seedling:</span>
 
 :::
 
-[`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md) provides a flexible and type-safe way to intercept and mock
-HTTP requests.
+- :globe_with_meridians: **HTTP interceptors**
 
-- :globe_with_meridians: **HTTP interceptors**:
+  Use [local](/docs/zimic-interceptor/guides/1-local-interceptors.md) or
+  [remote](/docs/zimic-interceptor/guides/2-remote-interceptors.md) interceptors to mock external services and simulate
+  success, loading, and error states with ease. Use your
+  [`@zimic/http` schema](/docs/zimic-http/guides/1-http-schemas.md) and have your requests and responses fully typed by
+  default.
 
-  Intercept HTTP requests and return mock responses. Use [local](/docs/zimic-interceptor/guides/1-local-interceptors.md)
-  or [remote](/docs/zimic-interceptor/guides/2-remote-interceptors.md) interceptors to adapt your mocks to your
-  development and testing workflow.
-
-- :zap: **Fully typed mocks**:
-
-  Use your [`@zimic/http` schema](/docs/zimic-http/guides/1-http-schemas.md) and create type-safe mocks for your HTTP
-  requests.
-
-- :link: **Network-level interceptor**:
+- :link: **Network-level interception**
 
   `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and
   [interceptor servers](/docs/zimic-interceptor/cli/1-server.md) to handle real HTTP requests. From you application's
   point of view, the mocked responses are indistinguishable from the real ones.
 
-- :wrench: **Flexibility**:
-
-  Mock external services and reliably test how your application behaves. Simulate success, loading, and error states
-  with ease using [standard web APIs](https://developer.mozilla.org/docs/Web/API).
-
-- :bulb: **Readability**:
+- :bulb: **Readability**
 
   `@zimic/interceptor` was designed to encourage clarity and readability in your mocks. Have
   [declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.md) to verify that your application
