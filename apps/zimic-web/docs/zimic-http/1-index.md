@@ -36,4 +36,4 @@ responses, including headers, search params, and form data.
 - [`@zimic/http` - Getting started](/docs/zimic-http/2-getting-started.mdx)
 - [`@zimic/http` - Guides](/docs/http/guides)
 - [`@zimic/http` - API](/docs/http/api)
-- [`@zimic/http` - CLI](/docs/http/cLI)
+- [`@zimic/http` - CLI](/docs/http/cli)
