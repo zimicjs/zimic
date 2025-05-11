@@ -167,7 +167,7 @@ client.
 
 ### `@zimic/interceptor`
 
-[`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md) provides a flexible and type-safe way to intercept and mock
+[`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md) provides a readable and type-safe way to intercept and mock
 HTTP requests.
 
 :::info Status: <span>**Beta** :seedling:</span>
