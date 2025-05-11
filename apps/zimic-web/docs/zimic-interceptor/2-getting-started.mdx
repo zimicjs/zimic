@@ -130,7 +130,7 @@ schema for you. This is a great way to keep your schema is up to date and save t
 
 :::
 
-```ts title='schema.ts' showLineNumbers
+```ts title='schema.ts'
 import { type HttpSchema } from '@zimic/http';
 
 interface User {
@@ -192,7 +192,7 @@ With the schema defined, you can now create an [HTTP interceptor](/docs/zimic-in
 function that takes the schema as a type parameter and returns an interceptor instance. It allows you to intercept HTTP
 requests, validate their contents, and return mock responses, all automatically typed based on the schema.
 
-```ts showLineNumbers
+```ts
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = createHttpInterceptor<Schema>({
@@ -212,7 +212,7 @@ HTTP interceptors are available in two types: `local` (default) and `remote`.
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
 
-```ts showLineNumbers
+```ts
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = createHttpInterceptor<Schema>({
@@ -226,7 +226,7 @@ const interceptor = createHttpInterceptor<Schema>({
 
   <TabItem value="remote" label="Remote interceptor">
 
-```ts showLineNumbers
+```ts
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = createHttpInterceptor<Schema>({
@@ -261,9 +261,8 @@ To intercept requests, an interceptor must be started with
 [`interceptor.start()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorstart). This is typically done
 before using the interceptor, such as in a `beforeAll` hook in your test suite.
 
-```ts showLineNumbers
+```ts
 beforeAll(async () => {
-  // highlight-next-line
   await interceptor.start();
 });
 ```
@@ -285,7 +284,7 @@ a [interceptor server](/docs/zimic-interceptor/cli/1-server.md) running before s
 The base URL of the remote interceptor should point to the server. Since multiple remote interceptors may use the same
 interceptor server, you may use a suffix path to differentiate them.
 
-```ts showLineNumbers
+```ts
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 
 const authInterceptor = createHttpInterceptor<AuthSchema>({
@@ -311,7 +310,7 @@ If you are using a similar setup, note that your application should use the same
 requests, otherwise they may not be handled. A common strategy is to change an environment variable or similar to point
 to the base URL of the interceptor.
 
-```ts showLineNumbers
+```ts
 process.env.AUTH_SERVICE_URL = authInterceptor.baseURL;
 process.env.NOTIFICATION_SERVICE_URL = notificationInterceptor.baseURL;
 ```
@@ -327,9 +326,8 @@ resets the interceptor and handlers to their initial states.
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
 
-```ts showLineNumbers
+```ts
 beforeEach(() => {
-  // highlight-next-line
   interceptor.clear();
 });
 ```
@@ -338,9 +336,8 @@ beforeEach(() => {
 
   <TabItem value="remote" label="Remote interceptor">
 
-```ts showLineNumbers
+```ts
 beforeEach(async () => {
-  // highlight-next-line
   await interceptor.clear();
 });
 ```
@@ -358,9 +355,8 @@ your tests clean and readable.
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
 
-```ts showLineNumbers
+```ts
 afterEach(() => {
-  // highlight-next-line
   interceptor.checkTimes();
 });
 ```
@@ -369,9 +365,8 @@ afterEach(() => {
 
   <TabItem value="remote" label="Remote interceptor">
 
-```ts showLineNumbers
+```ts
 afterEach(async () => {
-  // highlight-next-line
   await interceptor.checkTimes();
 });
 ```
@@ -384,7 +379,7 @@ afterEach(async () => {
 After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with
 [`interceptor.stop()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorstop).
 
-```ts showLineNumbers
+```ts
 afterAll(async () => {
   await interceptor.stop();
 });
@@ -398,11 +393,10 @@ and responses are typed by default based on the schema.
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
 
-```ts showLineNumbers
+```ts
 test('example', async () => {
   const users: User[] = [{ username: 'me' }];
 
-  // highlight-start
   interceptor
     .get('/users')
     .with({
@@ -414,7 +408,6 @@ test('example', async () => {
       body: users,
     })
     .times(1);
-  // highlight-end
 
   // Run the application and make requests...
 });
@@ -424,11 +417,10 @@ test('example', async () => {
 
   <TabItem value="remote" label="Remote interceptor">
 
-```ts showLineNumbers
+```ts
 test('example', async () => {
   const users: User[] = [{ username: 'me' }];
 
-  // highlight-start
   await interceptor
     .get('/users')
     .with({
@@ -440,7 +432,6 @@ test('example', async () => {
       body: users,
     })
     .times(1);
-  // highlight-end
 
   // Run the application and make requests...
 });
@@ -464,7 +455,7 @@ If you need to access the requests processed by the interceptor, use
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
 
-```ts showLineNumbers
+```ts
 // highlight-next-line
 const handler = interceptor
   .get('/users')
@@ -480,7 +471,6 @@ const handler = interceptor
 
 // Run the application and make requests...
 
-// highlight-start
 console.log(handler.requests); // 1
 
 console.log(handler.requests[0].headers.get('authorization')); // 'Bearer my-token'
@@ -489,14 +479,13 @@ console.log(handler.requests[0].searchParams.size); // 1
 console.log(handler.requests[0].searchParams.get('username')); // 'my'
 
 console.log(handler.requests[0].body); // null
-// highlight-end
 ```
 
   </TabItem>
 
   <TabItem value="remote" label="Remote interceptor">
 
-```ts showLineNumbers
+```ts
 // highlight-next-line
 const handler = await interceptor
   .get('/users')
@@ -512,7 +501,6 @@ const handler = await interceptor
 
 // Run the application and make requests...
 
-// highlight-start
 console.log(handler.requests); // 1
 
 console.log(handler.requests[0].headers.get('authorization')); // 'Bearer my-token'
@@ -521,7 +509,6 @@ console.log(handler.requests[0].searchParams.size); // 1
 console.log(handler.requests[0].searchParams.get('username')); // 'my'
 
 console.log(handler.requests[0].body); // null
-// highlight-end
 ```
 
   </TabItem>

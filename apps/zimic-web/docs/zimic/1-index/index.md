@@ -18,7 +18,7 @@ manually type the code that interacts with the API.
 
 We have all likely seen code like this:
 
-```ts showLineNumbers
+```ts
 interface GitHubRepository {
   id: number;
   name: string;
@@ -48,7 +48,7 @@ validation is checking if these assumptions are correct.
 We're not checking the response status, so the data may not be `GitHubRepository` at all, but an error with a totally
 different structure!
 
-```ts showLineNumbers
+```ts
 const response = await fetch(`https://api.github.com/repos/${owner}/i-dont-exist`);
 console.log(response.status); // 404
 

@@ -129,7 +129,7 @@ schema for you. This is a great way to keep your schema is up to date and save t
 
 :::
 
-```ts title='schema.ts' showLineNumbers
+```ts title='schema.ts'
 import { type HttpSchema } from '@zimic/http';
 
 interface User {
@@ -192,7 +192,7 @@ type parameter and returns a thin wrapper around the native
 [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). It adds type safety for making requests and handling
 responses, all automatically typed based on the schema.
 
-```ts showLineNumbers
+```ts
 import { createFetch } from '@zimic/fetch';
 
 const fetch = createFetch<Schema>({
@@ -210,7 +210,7 @@ You can also set other options, such as default headers, credentials, parameters
 You can now use the `fetch` instance to make requests to your API. All paths, methods, parameters, requests, and
 responses are typed by default based on the schema.
 
-```ts showLineNumbers
+```ts
 const response = await fetch('/users', {
   method: 'GET',
   searchParams: { query: 'u', limit: 10 },
