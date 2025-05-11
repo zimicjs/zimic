@@ -66,14 +66,14 @@ function HomePage() {
         <HomeSection title="Features" className="mx-auto max-w-[96rem]">
           <div className="grid grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-6">
             <FeatureCard
-              title="Lightweight"
-              description="Minimal bundle size and few dependencies, perfect for client and server-side applications."
-              icon={<HighVoltageIcon aria-hidden="true" />}
-            />
-            <FeatureCard
               title="TypeScript-First"
               description="First-class TypeScript support with type generation, inference, validation, and autocompletion."
               icon={<CogIcon aria-hidden="true" />}
+            />
+            <FeatureCard
+              title="Lightweight"
+              description="Minimal bundle size and few dependencies, perfect for client and server-side applications."
+              icon={<HighVoltageIcon aria-hidden="true" />}
             />
             <FeatureCard
               title="Developer-Friendly"

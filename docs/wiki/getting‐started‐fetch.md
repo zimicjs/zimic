@@ -158,7 +158,7 @@ We also canary releases under the tag `canary`, containing the latest features a
 - Check out [`@zimic/interceptor`](../../packages/zimic-interceptor) if you'd like to intercept and mock HTTP requests
   during development or in your tests:
 
-  - [`@zimic/interceptor`](../../packages/zimic-interceptor) provides a flexible and type-safe way to intercept and mock
+  - [`@zimic/interceptor`](../../packages/zimic-interceptor) provides a readable and type-safe way to intercept and mock
     HTTP requests. Use your HTTP schema to type your interceptors and create realistic mocks in development and testing.
 
 - Take a look at our [examples](../../examples/README.md).

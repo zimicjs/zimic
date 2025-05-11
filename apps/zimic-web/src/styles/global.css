@@ -214,14 +214,12 @@ textarea {
 
 .code-block-highlighted-line {
   background-color: var(--highlighted-code-background-color);
-  display: block;
   margin: 0 calc(-1 * var(--ifm-pre-padding));
   padding: 0 var(--ifm-pre-padding);
 }
 
 .code-block-error-line {
   background-color: var(--error-code-background-color);
-  display: block;
   margin: 0 calc(-1 * var(--ifm-pre-padding));
   padding: 0 var(--ifm-pre-padding);
   border-left: 3px solid var(--error-code-border-color);

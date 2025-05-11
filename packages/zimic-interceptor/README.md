@@ -47,7 +47,7 @@
 
 ---
 
-`@zimic/interceptor` provides a flexible and type-safe way to intercept and mock HTTP requests.
+`@zimic/interceptor` provides a readable and type-safe way to intercept and mock HTTP requests.
 
 > [!NOTE]
 >
@@ -67,8 +67,7 @@
   application's point of view, the mocked responses are indistinguishable from the real ones.
 - :wrench: **Flexibility**: Mock external services and reliably test how your application behaves. Simulate success,
   loading, and error states with ease using [standard web APIs](https://developer.mozilla.org/docs/Web/API).
-- :bulb: **Simplicity**: `@zimic/interceptor` was designed to encourage clarity, simplicity, and robustness in your
-  mocks.
+- :bulb: **Readability**: `@zimic/interceptor` was designed to encourage clarity and readability in your mocks.
 
 ## Getting started
 

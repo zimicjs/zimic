@@ -263,7 +263,6 @@ before using the interceptor, such as in a `beforeAll` hook in your test suite.
 
 ```ts
 beforeAll(async () => {
-  // highlight-next-line
   await interceptor.start();
 });
 ```
@@ -329,7 +328,6 @@ resets the interceptor and handlers to their initial states.
 
 ```ts
 beforeEach(() => {
-  // highlight-next-line
   interceptor.clear();
 });
 ```
@@ -340,7 +338,6 @@ beforeEach(() => {
 
 ```ts
 beforeEach(async () => {
-  // highlight-next-line
   await interceptor.clear();
 });
 ```
@@ -360,7 +357,6 @@ your tests clean and readable.
 
 ```ts
 afterEach(() => {
-  // highlight-next-line
   interceptor.checkTimes();
 });
 ```
@@ -371,7 +367,6 @@ afterEach(() => {
 
 ```ts
 afterEach(async () => {
-  // highlight-next-line
   await interceptor.checkTimes();
 });
 ```
@@ -402,7 +397,6 @@ and responses are typed by default based on the schema.
 test('example', async () => {
   const users: User[] = [{ username: 'me' }];
 
-  // highlight-start
   interceptor
     .get('/users')
     .with({
@@ -414,7 +408,6 @@ test('example', async () => {
       body: users,
     })
     .times(1);
-  // highlight-end
 
   // Run the application and make requests...
 });
@@ -428,7 +421,6 @@ test('example', async () => {
 test('example', async () => {
   const users: User[] = [{ username: 'me' }];
 
-  // highlight-start
   await interceptor
     .get('/users')
     .with({
@@ -440,7 +432,6 @@ test('example', async () => {
       body: users,
     })
     .times(1);
-  // highlight-end
 
   // Run the application and make requests...
 });
@@ -480,7 +471,6 @@ const handler = interceptor
 
 // Run the application and make requests...
 
-// highlight-start
 console.log(handler.requests); // 1
 
 console.log(handler.requests[0].headers.get('authorization')); // 'Bearer my-token'
@@ -489,7 +479,6 @@ console.log(handler.requests[0].searchParams.size); // 1
 console.log(handler.requests[0].searchParams.get('username')); // 'my'
 
 console.log(handler.requests[0].body); // null
-// highlight-end
 ```
 
   </TabItem>
@@ -512,7 +501,6 @@ const handler = await interceptor
 
 // Run the application and make requests...
 
-// highlight-start
 console.log(handler.requests); // 1
 
 console.log(handler.requests[0].headers.get('authorization')); // 'Bearer my-token'
@@ -521,7 +509,6 @@ console.log(handler.requests[0].searchParams.size); // 1
 console.log(handler.requests[0].searchParams.get('username')); // 'my'
 
 console.log(handler.requests[0].body); // null
-// highlight-end
 ```
 
   </TabItem>
@@ -536,8 +523,8 @@ scenarios.
 
 ### Examples
 
-Try our [examples](/docs/zimic/2-examples/2-examples.md) for more practical use cases of `@zimic/interceptor` with
-popular libraries and frameworks.
+Try our [examples](/docs/zimic/2-examples/index.md) for more practical use cases of `@zimic/interceptor` with popular
+libraries and frameworks.
 
 ### API reference
 

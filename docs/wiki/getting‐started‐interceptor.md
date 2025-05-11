@@ -25,7 +25,7 @@
 
 ---
 
-[`@zimic/interceptor`](../../packages/zimic-interceptor) provides a flexible and type-safe way to intercept and mock
+[`@zimic/interceptor`](../../packages/zimic-interceptor) provides a readable and type-safe way to intercept and mock
 HTTP requests.
 
 ## 1. Requirements
