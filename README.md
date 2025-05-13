@@ -40,7 +40,7 @@
 
 ## Contents <!-- omit from toc -->
 
-- [Libraries](#libraries)
+- [Projects](#projects)
   - [`@zimic/http`](#zimichttp)
   - [`@zimic/fetch`](#zimicfetch)
   - [`@zimic/interceptor`](#zimicinterceptor)
@@ -50,15 +50,15 @@
 
 ---
 
-Zimic is a set of modern, lightweight, TypeScript-first, and thoroughly tested HTTP integration libraries.
+Zimic is a collection of TypeScript-first HTTP integration libraries.
 
-## Libraries
+## Projects
 
 ### `@zimic/http`
 
 > [!NOTE]
 >
-> :seedling: This library is in **beta**.
+> Status: :seedling: **Beta**
 
 [`@zimic/http`](./packages/zimic-http) is a collection of type-safe utilities to handle HTTP requests and responses,
 including headers, search params, and form data.
@@ -85,9 +85,9 @@ including headers, search params, and form data.
 
 > [!WARNING]
 >
-> :construction: This library is **experimental**.
+> Status: :seedling: **Beta**
 
-[`@zimic/fetch`](./packages/zimic-fetch) is a minimal (1 kB minified and gzipped), zero-dependency, and type-safe
+[`@zimic/fetch`](./packages/zimic-fetch) is a minimal (~2 kB minified and gzipped), zero-dependency, and type-safe
 `fetch`-like API client.
 
 - :sparkles: **Type-safe `fetch`**: Create a type-safe
@@ -110,9 +110,9 @@ including headers, search params, and form data.
 
 > [!NOTE]
 >
-> :seedling: This library is in **beta**.
+> Status: :seedling: **Beta**
 
-[`@zimic/interceptor`](./packages/zimic-interceptor) provides a flexible and type-safe way to intercept and mock HTTP
+[`@zimic/interceptor`](./packages/zimic-interceptor) provides a readable and type-safe way to intercept and mock HTTP
 requests.
 
 - :globe_with_meridians: **HTTP interceptors**: Intercept HTTP requests and return mock responses. Use
@@ -127,8 +127,7 @@ requests.
   application's point of view, the mocked responses are indistinguishable from the real ones.
 - :wrench: **Flexibility**: Mock external services and reliably test how your application behaves. Simulate success,
   loading, and error states with ease using [standard web APIs](https://developer.mozilla.org/docs/Web/API).
-- :bulb: **Simplicity**: `@zimic/interceptor` was designed to encourage clarity, simplicity, and robustness in your
-  mocks.
+- :bulb: **Readability**: `@zimic/interceptor` was designed to encourage clarity and readability in your mocks.
 
 > [!TIP]
 >
