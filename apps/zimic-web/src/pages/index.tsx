@@ -66,14 +66,14 @@ function HomePage() {
         <HomeSection title="Features" className="mx-auto max-w-[96rem]">
           <div className="grid grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-6">
             <FeatureCard
-              title="Lightweight"
-              description="Minimal bundle size and few dependencies, perfect for client and server-side applications."
-              icon={<HighVoltageIcon aria-hidden="true" />}
-            />
-            <FeatureCard
               title="TypeScript-First"
               description="First-class TypeScript support with type generation, inference, validation, and autocompletion."
               icon={<CogIcon aria-hidden="true" />}
+            />
+            <FeatureCard
+              title="Lightweight"
+              description="Minimal bundle size and few dependencies, perfect for client and server-side applications."
+              icon={<HighVoltageIcon aria-hidden="true" />}
             />
             <FeatureCard
               title="Developer-Friendly"
@@ -94,7 +94,9 @@ function HomePage() {
           className="border-primary-500/10 dark:border-primary-500/20 bg-primary-500/5 dark:bg-primary-500/15 elative mx-auto w-screen overflow-hidden border-t"
         >
           <div className="-mt-8 flex flex-col items-center space-y-8">
-            <p className="text-center text-xl font-medium">Start building with Zimic today!</p>
+            <p className="text-center text-xl font-medium text-slate-700 dark:text-slate-200">
+              Start building with Zimic today!
+            </p>
             <GetStartedLink arrow />
           </div>
         </HomeSection>

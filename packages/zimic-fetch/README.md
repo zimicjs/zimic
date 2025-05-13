@@ -47,11 +47,11 @@
 
 ---
 
-`@zimic/fetch` is a minimal (1 kB minified and gzipped), zero-dependency, and type-safe `fetch`-like API client.
+`@zimic/fetch` is a minimal (~2 kB minified and gzipped), zero-dependency, and type-safe `fetch`-like API client.
 
 > [!WARNING]
 >
-> :construction: This library is **experimental**.
+> Status: :seedling: **Beta**
 
 ## Features
 

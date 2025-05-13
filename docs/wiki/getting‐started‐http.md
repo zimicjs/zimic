@@ -1,3 +1,9 @@
+> [!TIP]
+>
+> Zimic's documentation is now available on [zimic.dev](https://zimic.dev/docs/http/getting-started)! :tada:
+>
+> Check it out for the latest updates, guides, and documentation.
+
 # `@zimic/http` - Getting started <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
@@ -125,9 +131,9 @@ We also canary releases under the tag `canary`, containing the latest features a
 
 - Check out [`@zimic/fetch`](../../packages/zimic-fetch) and [`@zimic/interceptor`](../../packages/zimic-interceptor):
 
-  - [`@zimic/fetch`](../../packages/zimic-fetch) is a minimal (1 kB minified and gzipped), zero-dependency, and
+  - [`@zimic/fetch`](../../packages/zimic-fetch) is a minimal (~2 kB minified and gzipped), zero-dependency, and
     type-safe `fetch`-like API client. Use your HTTP schema to automatically type your requests and responses.
-  - [`@zimic/interceptor`](../../packages/zimic-interceptor) provides a flexible and type-safe way to intercept and mock
+  - [`@zimic/interceptor`](../../packages/zimic-interceptor) provides a readable and type-safe way to intercept and mock
     HTTP requests. Use your HTTP schema to type your interceptors and create realistic mocks in development and testing.
 
 - Take a look at our [examples](../../examples/README.md).

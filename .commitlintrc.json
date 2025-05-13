@@ -23,7 +23,6 @@
         "eslint",
         "eslint-node",
         "eslint-react",
-        "eslint-docusaurus",
         "lint-staged",
         "tsconfig",
         "examples"

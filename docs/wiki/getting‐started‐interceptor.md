@@ -1,3 +1,9 @@
+> [!TIP]
+>
+> Zimic's documentation is now available on [zimic.dev](https://zimic.dev/docs/fetch/getting-started)! :tada:
+>
+> Check it out for the latest updates, guides, and documentation.
+
 # `@zimic/interceptor` - Getting started <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
@@ -19,7 +25,7 @@
 
 ---
 
-[`@zimic/interceptor`](../../packages/zimic-interceptor) provides a flexible and type-safe way to intercept and mock
+[`@zimic/interceptor`](../../packages/zimic-interceptor) provides a readable and type-safe way to intercept and mock
 HTTP requests.
 
 ## 1. Requirements

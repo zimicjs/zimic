@@ -72,7 +72,7 @@ const config: Docusaurus.Config = {
       {
         path: 'docs',
         sidebarPath: './src/config/sidebars.ts',
-        editUrl: 'https://github.com/zimicjs/zimic/tree/main/apps/zimic-web',
+        editUrl: 'https://github.com/zimicjs/zimic/tree/canary/apps/zimic-web',
         breadcrumbs: true,
         sidebarCollapsed: false,
         sidebarCollapsible: true,
@@ -118,21 +118,18 @@ const config: Docusaurus.Config = {
     announcementBar: {
       id: 'announcement-bar-github-star',
       content:
-        '⭐️ Give Zimic a star on ' +
+        'If you like Zimic, give us a star on ' +
         '<a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic">GitHub</a>! ⭐️',
-      textColor: 'var(--ifm-footer-background-color)',
+      textColor: 'var(--ifm-background-color)',
       backgroundColor: 'var(--ifm-color-content)',
       isCloseable: true,
-    },
-
-    liveCodeBlock: {
-      playgroundPosition: 'bottom',
     },
 
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
       defaultLanguage: 'typescript',
+      additionalLanguages: ['bash', 'json', 'yaml', 'diff'],
       magicComments: [
         {
           className: 'code-block-highlighted-line',
@@ -141,7 +138,8 @@ const config: Docusaurus.Config = {
         },
         {
           className: 'code-block-error-line',
-          line: 'This will error',
+          line: 'error-next-line',
+          block: { start: 'error-start', end: 'error-end' },
         },
       ],
     },
@@ -195,6 +193,11 @@ const config: Docusaurus.Config = {
           position: 'left',
         },
         {
+          label: 'CLI',
+          to: 'docs/cli',
+          position: 'left',
+        },
+        {
           type: 'localeDropdown',
           position: 'right',
           dropdownItemsAfter: [
@@ -214,7 +217,7 @@ const config: Docusaurus.Config = {
     docs: {
       versionPersistence: 'localStorage',
       sidebar: {
-        hideable: false,
+        hideable: true,
         autoCollapseCategories: false,
       },
     },
@@ -234,8 +237,8 @@ const config: Docusaurus.Config = {
               to: 'docs',
             },
             {
-              label: 'Motivation',
-              to: 'docs/motivation',
+              label: 'Getting started',
+              to: 'docs/getting-started',
             },
             {
               label: 'Examples',
@@ -244,6 +247,10 @@ const config: Docusaurus.Config = {
             {
               label: 'API',
               to: 'docs/api',
+            },
+            {
+              label: 'CLI',
+              to: 'docs/cli',
             },
           ],
         },
