@@ -187,7 +187,7 @@ jobs:
           pnpm update \
             typescript@${{ matrix.typescript-version }} \
             --recursive \
-            --filter '!@zimic/*'
+            --filter '!@zimic/*' \
             --filter !zimic-web
 
       - name: Check types
