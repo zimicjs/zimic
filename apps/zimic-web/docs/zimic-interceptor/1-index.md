@@ -6,8 +6,8 @@ slug: /interceptor
 
 # Introduction
 
-[`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md) provides a readable and type-safe way to intercept and mock
-HTTP requests.
+`@zimic/interceptor` is a type-safe HTTP interceptor library for handling and mocking HTTP requests in development and
+testing.
 
 :::info Status: <span>**Beta** :seedling:</span>
 
@@ -17,11 +17,10 @@ HTTP requests.
 
 - :globe_with_meridians: **HTTP interceptors**
 
-  Use [local](/docs/zimic-interceptor/guides/1-local-interceptors.md) or
-  [remote](/docs/zimic-interceptor/guides/2-remote-interceptors.md) interceptors to mock external services and simulate
-  success, loading, and error states with ease. Use your
-  [`@zimic/http` schema](/docs/zimic-http/guides/1-http-schemas.md) and have your requests and responses fully typed by
-  default.
+  Use your [`@zimic/http` schema](/docs/zimic-http/guides/1-http-schemas.md) to declare
+  [local](/docs/zimic-interceptor/guides/1-local-interceptors.md) and
+  [remote](/docs/zimic-interceptor/guides/2-remote-interceptors.md) HTTP interceptors. Mock external services and
+  simulate success, loading, and error states with ease and type safety.
 
 - :link: **Network-level interception**
 
@@ -31,9 +30,9 @@ HTTP requests.
 
 - :bulb: **Readability**
 
-  `@zimic/interceptor` was designed to encourage clarity and readability in your mocks. Have
+  `@zimic/interceptor` was designed to encourage clarity and readability in your mocks. Use
   [declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.md) to verify that your application
-  is making the expected requests.
+  is making the expected requests and test with confidence.
 
 **Learn more**:
 
