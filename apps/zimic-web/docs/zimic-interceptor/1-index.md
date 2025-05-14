@@ -30,9 +30,9 @@ testing.
 
 - :bulb: **Readability**
 
-  `@zimic/interceptor` was designed to encourage clarity and readability in your mocks. Use
-  [declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.md) to verify that your application
-  is making the expected requests and test with confidence.
+  `@zimic/interceptor` was designed to encourage clarity and readability. Declare intuitive mocks, test with confidence,
+  and verify that your application is making the expected requests with
+  [declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.md).
 
 **Learn more**:
 
