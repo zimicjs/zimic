@@ -6,8 +6,8 @@ slug: /http
 
 # Introduction
 
-[`@zimic/http`](/docs/zimic-http/1-index.md) is a collection of type-safe utilities to handle HTTP requests and
-responses, including headers, search params, and form data.
+`@zimic/http` is a collection of type-safe utilities to handle HTTP requests and responses, including headers, search
+params, and form data.
 
 :::info Status: <span>**Beta** :seedling:</span>
 
@@ -17,17 +17,17 @@ responses, including headers, search params, and form data.
 
 - :star: **HTTP schemas**
 
-  Declare the structure of your HTTP endpoints as a [TypeScript schema](/docs/zimic-http/guides/1-http-schemas.md) and
-  use it to type your HTTP requests and responses.
+  Declare the structure of your endpoints in an [HTTP schema](/docs/zimic-http/guides/1-http-schemas.md) and use it to
+  type your HTTP requests and responses.
 
 - :bulb: **Type generation**
 
-  [`zimic-http typegen`](/docs/zimic-http/guides/3-typegen.md) can automatically infer the types and generate a
-  ready-to-use HTTP schema for you.
+  Infer the types from [OpenAPI](https://www.openapis.org/) documentations and generate ready-to-use HTTP schemas in
+  instants with our [typegen CLI](/docs/zimic-http/guides/3-typegen.md).
 
 - :pushpin: **Type-safe APIs**
 
-  Declare type-safe [`Headers`](/docs/zimic-http/api/2-http-headers.md),
+  Declare typed [`Headers`](/docs/zimic-http/api/2-http-headers.md),
   [`URLSearchParams`](/docs/zimic-http/api/3-http-search-params.md), and
   [`FormData`](/docs/zimic-http/api/4-http-form-data.md) objects, fully compatible with their native counterparts.
 
