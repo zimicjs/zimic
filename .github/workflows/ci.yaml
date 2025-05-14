@@ -188,14 +188,14 @@ jobs:
             typescript@${{ matrix.typescript-version }} \
             --recursive \
             --filter '!@zimic/*' \
-            --filter !zimic-web
+            --filter '!zimic-web'
 
       - name: Check types
         run: |
           filterOptionsOfPackagesUsingNext=(
-            '--filter !zimic-example-with-playwright'
-            '--filter !zimic-example-with-next-js-app'
-            '--filter !zimic-example-with-next-js-pages'
+            "--filter '!zimic-example-with-playwright'"
+            "--filter '!zimic-example-with-next-js-app'"
+            "--filter '!zimic-example-with-next-js-pages'"
           )
 
           pnpm turbo \
@@ -203,6 +203,6 @@ jobs:
             --continue \
             --concurrency 100% \
             --filter '!@zimic/*' \
-            --filter !zimic-web \
+            --filter '!zimic-web' \
             $([[ '${{ matrix.typescript-version }}' =~ ^(4\.|5\.0) ]] && echo ${filterOptionsOfPackagesUsingNext[@]}) \
             ${{ env.TURBO_FILTERS }}
