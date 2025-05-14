@@ -184,11 +184,14 @@ jobs:
 
       - name: Set TypeScript version
         run: |
+          # Update typescript on all packages
           pnpm update \
             typescript@${{ matrix.typescript-version }} \
-            --recursive \
-            --filter '!@zimic/*' \
-            --filter '!zimic-web'
+            --recursive
+
+          # Revert the updates on excluded packages
+          git stash push --include-untracked apps/zimic-web packages/*
+          pnpm install
 
       - name: Check types
         run: |
