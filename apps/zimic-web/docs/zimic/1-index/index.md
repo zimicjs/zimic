@@ -43,8 +43,9 @@ API, with little validation to check if these assumptions are correct:
 - **Response casting**: the response body is manually cast to `GitHubRepository`, which can be repetitive, error-prone,
   and difficult to maintain.
 
-In fact, did you spot the bug in this example? We're not checking the response status, so the data type may not be
-`GitHubRepository` at all. It could be an error with a totally different structure!
+In fact, did you spot the bug in this example? Because of the casting with `as`, the code assumes that the response data
+will always be of type `GitHubRepository`, regardless of the status code. However, that is not the case. If the request
+fails, the data can contain an error with a totally different structure!
 
 ```ts
 const url = 'https://api.github.com/repos/zimicjs/i-dont-exist';
