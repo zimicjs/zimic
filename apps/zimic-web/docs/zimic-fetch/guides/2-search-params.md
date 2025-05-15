@@ -44,9 +44,9 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-Then, use the [`searchParams`](/docs/zimic-fetch/api/2-fetch.md#searchparams) option when making a fetch request. The
-search params are typed and validated according to your schema, providing type safety and autocompletion, and are
-automatically encoded in the URL of the request.
+Then, set the search params in your fetch request using the
+[`searchParams`](/docs/zimic-fetch/api/2-fetch.md#searchparams) option. The search params are automatically encoded in
+the URL and sent with the request.
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -73,10 +73,9 @@ const response = await fetch('/users', {
 Search params in `@zimic/fetch` are set using the `searchParams` option. This differs from the native
 [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API), which defines the params directly in the URL.
 
-The motivation behind this design choice is to make declaring search params more intuitive and type-safe. The
-`searchParams` option accepts either a plain object or an
-[`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md) instance, which are readable and typed by default
-based on the schema.
+The motivation behind this is to make declaring search params more intuitive and type-safe. `searchParams` accepts a
+plain object or an [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md) instance, which are typed and
+validated based on your schema. This allows readable and type-safe search params, including autocompletion in your IDE.
 
 If written in the native Fetch API, the above example would look like this:
 
