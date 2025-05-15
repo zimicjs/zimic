@@ -81,7 +81,7 @@ const config: Docusaurus.Config = {
     [
       '@docusaurus/theme-classic',
       {
-        customCss: './src/styles/global.css',
+        customCss: './src/styles/custom.css',
       } satisfies PluginThemeClassic.Options,
     ],
     [

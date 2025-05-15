@@ -175,6 +175,10 @@ export interface GitHubComponents {
       master_branch?: string;
       starred_at?: string;
       anonymous_access_enabled?: boolean;
+      code_search_index_status?: {
+        lexical_search_ok?: boolean;
+        lexical_commit_sha?: string;
+      };
     };
     'security-and-analysis': {
       advanced_security?: {
@@ -301,6 +305,10 @@ export interface GitHubComponents {
       master_branch?: string;
       starred_at?: string;
       anonymous_access_enabled?: boolean;
+      code_search_index_status?: {
+        lexical_search_ok?: boolean;
+        lexical_commit_sha?: string;
+      };
     } | null;
     'code-of-conduct-simple': {
       url: string;

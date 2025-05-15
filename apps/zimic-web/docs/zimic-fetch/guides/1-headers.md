@@ -12,7 +12,7 @@ authentication tokens, or caching directives.
 
 ## Using request headers
 
-To send headers in your requests, first declare their types in your [schema](/docs/zimic-http/guides/1-http-schemas.md).
+To send headers in your requests, declare their types in your [schema](/docs/zimic-http/guides/1-http-schemas.md).
 
 ```ts title='schema.ts'
 import { type HttpSchema } from '@zimic/http';
@@ -41,9 +41,12 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-Then, set the headers in your fetch request using the [`headers`](/docs/zimic-fetch/api/2-fetch.md#headers) option.
+Then, set the headers in your fetch request using the [`headers`](/docs/zimic-fetch/api/2-fetch.md#headers) option. They
+are typed and validated according to your schema, providing type safety and autocompletion.
 
 ```ts
+import { createFetch } from '@zimic/fetch';
+
 const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 });
@@ -61,10 +64,13 @@ const response = await fetch('/users', {
 
 ### Setting default request headers
 
-A fetch instance can have [defaults](/docs/zimic-fetch/api/1-create-fetch.md#setting-defaults) that are applied to all
-requests. These include headers:
+A [fetch instance](/docs/zimic-fetch/api/2-fetch.md) can have
+[defaults](/docs/zimic-fetch/api/1-create-fetch.md#setting-defaults) that are applied to all requests. These include
+headers:
 
 ```ts
+import { createFetch } from '@zimic/fetch';
+
 const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
   // highlight-next-line
@@ -72,20 +78,20 @@ const fetch = createFetch<Schema>({
 });
 ```
 
-You can also set headers at runtime, after the fetch instance is created. This is useful for setting headers that are
-dynamic, such as authentication tokens.
+You can also set headers after the fetch instance is created. This is useful for setting headers that are dynamic, such
+as authentication tokens.
 
 ```ts
-const { accessToken } = await authenticate();
-
-// highlight-next-line
+fetch.defaults.headers['accept-language'] = 'en';
 fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
 ```
 
 [`fetch.onRequest`](/docs/zimic-fetch/api/2-fetch.md#onrequest) can also be used to set headers. Use this listener if
-you need to apply logic to the headers, such as filtering them based on the request URL or method.
+you need to apply logic to the headers, such as reading them from local storage or limiting them to specific requests.
 
 ```ts
+import { createFetch } from '@zimic/fetch';
+
 const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 
@@ -136,6 +142,8 @@ When a response is received, the headers are available at
 [`response.headers`](/docs/zimic-fetch/api/4-fetch-response.md#headers).
 
 ```ts
+import { createFetch } from '@zimic/fetch';
+
 const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 });
