@@ -184,11 +184,14 @@ jobs:
 
       - name: Set TypeScript version
         run: |
+          # Update typescript on all packages
           pnpm update \
             typescript@${{ matrix.typescript-version }} \
-            --recursive \
-            --filter '!@zimic/*' \
-            --filter !zimic-web
+            --recursive
+
+          # Revert the updates on excluded packages
+          git stash push --include-untracked apps/zimic-web packages/*
+          pnpm install --no-frozen-lockfile
 
       - name: Check types
         run: |
@@ -202,7 +205,7 @@ jobs:
             types:check \
             --continue \
             --concurrency 100% \
-            --filter '!@zimic/*' \
+            --filter !@zimic/* \
             --filter !zimic-web \
             $([[ '${{ matrix.typescript-version }}' =~ ^(4\.|5\.0) ]] && echo ${filterOptionsOfPackagesUsingNext[@]}) \
             ${{ env.TURBO_FILTERS }}
