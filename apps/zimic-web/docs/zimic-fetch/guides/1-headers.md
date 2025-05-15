@@ -76,9 +76,7 @@ You can also set headers at runtime, after the fetch instance is created. This i
 dynamic, such as authentication tokens.
 
 ```ts
-const { accessToken } = await authenticate();
-
-// highlight-next-line
+fetch.defaults.headers['accept-language'] = 'en';
 fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
 ```
 
