@@ -191,7 +191,7 @@ jobs:
 
           # Revert the updates on excluded packages
           git stash push --include-untracked apps/zimic-web packages/*
-          pnpm install
+          pnpm install --no-frozen-lockfile
 
       - name: Check types
         run: |
