@@ -127,7 +127,7 @@ const config: Docusaurus.Config = {
 
     prism: {
       theme: prismThemes.github,
-      darkTheme: prismThemes.dracula,
+      darkTheme: prismThemes.nightOwl,
       defaultLanguage: 'typescript',
       additionalLanguages: ['bash', 'json', 'yaml', 'diff'],
       magicComments: [
