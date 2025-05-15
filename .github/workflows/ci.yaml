@@ -164,9 +164,6 @@ jobs:
           - '5.7'
           - '5.8'
 
-    env:
-      TYPESCRIPT_VERSION: ${{ matrix.typescript-version }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

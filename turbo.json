@@ -19,13 +19,11 @@
     },
 
     "lint:turbo": {
-      "env": ["TYPESCRIPT_VERSION"],
       "dependsOn": ["^build"],
       "outputs": [".eslintcache"]
     },
 
     "types:check": {
-      "env": ["TYPESCRIPT_VERSION"],
       "dependsOn": ["^build"],
       "outputs": ["tsconfig.tsbuildinfo"]
     }
