@@ -6,10 +6,52 @@ slug: /fetch/guides/path-params
 
 # Using path params
 
-:::info
+Path parameters are a way to include dynamic values in the URL path of a request. They are typically used to identify a
+resource being accessed or modified. For example, in the URL `/users/:userId`, `:userId` represents a path parameter
+that can be replaced with a specific user identifier when making a request.
 
-🚧 This section is a work in progress.
+## Using request path params
 
-Please use the [current documentation](https://github.com/zimicjs/zimic/wiki) while [zimic.dev](/) is not yet complete.
+Path params are automatically inferred from the path of an endpoint in your
+[schema](/docs/zimic-http/guides/1-http-schemas.md). To define a path param, prefix it with a colon (`:`) in the path
+string.
 
-:::
+```ts title='schema.ts'
+import { type HttpSchema } from '@zimic/http';
+
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  // highlight-next-line
+  '/users/:userId': {
+    PATCH: {
+      request: {
+        body: Partial<User>;
+      };
+      response: {
+        200: { body: User };
+      };
+    };
+  };
+}>;
+```
+
+Then, set the path params in your fetch request directly in the URL.
+
+```ts
+import { createFetch } from '@zimic/fetch';
+
+const fetch = createFetch<Schema>({
+  baseURL: 'http://localhost:3000',
+});
+
+// highlight-next-line
+const response = await fetch(`/users/${user.id}`, {
+  method: 'PATCH',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ username: 'new-username' }),
+});
+```
