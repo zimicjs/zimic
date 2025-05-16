@@ -45,7 +45,7 @@ function HomePage() {
           <GetStartedLink arrow />
         </div>
 
-        <div className="mx-auto grid w-full max-w-4xl grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-6">
+        <div className="mx-auto grid w-full max-w-4xl grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-6 px-12">
           <ProjectCard
             href="/docs/http"
             title="@zimic/http"
