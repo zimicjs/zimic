@@ -6,8 +6,8 @@ slug: /fetch/guides/search-params
 
 # Using search params (query)
 
-[URL search params](https://developer.mozilla.org/docs/Web/API/URLSearchParams), also known as query parameters, are a
-way to provide additional information to a request. They are encoded in the query string of a URL in key-value pairs.
+[URL search parameters](https://developer.mozilla.org/docs/Web/API/URLSearchParams), also known as query parameters, are
+a way to provide additional information to a request. They are encoded in the query string of a URL in key-value pairs.
 Search params are typically used in [GET requests](https://developer.mozilla.org/docs/Web/HTTP/Reference/Methods/GET) to
 filter, sort, or paginate data.
 
