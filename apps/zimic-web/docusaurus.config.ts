@@ -76,6 +76,7 @@ const config: Docusaurus.Config = {
         breadcrumbs: true,
         sidebarCollapsed: false,
         sidebarCollapsible: true,
+        showLastUpdateTime: true,
       } satisfies PluginContentDocs.Options,
     ],
     [
