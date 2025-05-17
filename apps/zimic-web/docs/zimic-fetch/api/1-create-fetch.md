@@ -14,7 +14,7 @@ Please use the [current documentation](https://github.com/zimicjs/zimic/wiki) wh
 
 :::
 
-## Setting defaults
+## Defaults
 
 :::info
 
