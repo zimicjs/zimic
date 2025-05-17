@@ -94,8 +94,8 @@ const response = await fetch(url, { method: 'GET' });
 ### Setting default request search params
 
 A [fetch instance](/docs/zimic-fetch/api/2-fetch.md) can have
-[defaults](/docs/zimic-fetch/api/1-create-fetch.md#setting-defaults) that are applied to all requests. These include
-search params:
+[defaults](/docs/zimic-fetch/api/1-create-fetch.md#defaults) that are applied to all requests. These include search
+params:
 
 ```ts
 import { createFetch } from '@zimic/fetch';

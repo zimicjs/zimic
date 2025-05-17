@@ -35,6 +35,7 @@
   - [Using headers](#using-headers)
   - [Using search params (query)](#using-search-params-query)
   - [Using bodies](#using-bodies)
+  - [Handling authentication](#handling-authentication)
   - [Handling errors](#handling-errors)
     - [Handling errors: Logging](#handling-errors-logging)
 
@@ -793,6 +794,10 @@ See https://zimic.dev/docs/fetch/guides/search-params.
 ### Using bodies
 
 See https://zimic.dev/docs/fetch/guides/bodies.
+
+### Handling authentication
+
+See https://zimic.dev/docs/fetch/guides/authentication.
 
 ### Handling errors
 
