@@ -8,7 +8,7 @@ slug: /fetch/guides/headers
 
 [HTTP headers](https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers) are key-value pairs that contain
 additional information about a request or a response. They are commonly used to pass metadata, such as a content type,
-[authentication tokens](/docs/zimic-fetch/guides/5-authentication.mdx), or caching directives.
+[authentication tokens](/docs/zimic-fetch/guides/5-authentication.md), or caching directives.
 
 ## Using request headers
 
@@ -78,7 +78,7 @@ const fetch = createFetch<Schema>({
 ```
 
 You can also set headers after the fetch instance is created. This is useful for setting headers that are dynamic, such
-as [authentication tokens](/docs/zimic-fetch/guides/5-authentication.mdx).
+as [authentication tokens](/docs/zimic-fetch/guides/5-authentication.md).
 
 ```ts
 fetch.defaults.headers['accept-language'] = 'en';

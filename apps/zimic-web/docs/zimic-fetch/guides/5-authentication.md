@@ -4,9 +4,6 @@ sidebar_label: Authentication
 slug: /fetch/guides/authentication
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
 # Authentication
 
 [Authentication](https://developer.mozilla.org/docs/Web/HTTP/Guides/Authentication) is a process of verifying the

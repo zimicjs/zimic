@@ -21,3 +21,11 @@ Please use the [current documentation](https://github.com/zimicjs/zimic/wiki) wh
 🚧 This section is a work in progress.
 
 :::
+
+## `toObject`
+
+:::info
+
+🚧 This section is a work in progress.
+
+:::
