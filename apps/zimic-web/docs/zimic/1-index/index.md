@@ -202,8 +202,8 @@ A type-safe HTTP interceptor library for handling and mocking HTTP requests in d
 
 `@zimic/fetch` and `@zimic/interceptor` are designed to work together, providing a seamless and type-safe experience for
 making and mocking HTTP requests. With that in mind, it's perfectly possible to use `@zimic/interceptor` with any HTTP
-client implementation, such as [axios](https://www.npmjs.com/package/axios). Similarly, `@zimic/fetch` can be used with
-any interceptor library, like [msw](https://www.npmjs.com/package/msw).
+client implementation, or `@zimic/fetch` with any HTTP mocking library. See our
+[`@zimic/fetch` testing guide](/docs/zimic-fetch/guides/7-testing.md#zimicinterceptor) for more information.
 
 :::
 
