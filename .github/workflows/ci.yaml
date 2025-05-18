@@ -185,7 +185,8 @@ jobs:
             typescript@${{ matrix.typescript-version }} \
             --recursive \
             --filter !@zimic/* \
-            --filter !zimic-web
+            --filter !zimic-web \
+            ${{ env.TURBO_FILTERS }}
 
       - name: Check types
         run: |
