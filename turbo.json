@@ -19,7 +19,7 @@
     },
 
     "lint:turbo": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["types:check"],
       "outputs": [".eslintcache"]
     },
 
