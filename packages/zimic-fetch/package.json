@@ -88,5 +88,10 @@
   "peerDependencies": {
     "@zimic/http": "^0.4.0 || workspace:*",
     "typescript": ">=5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
   }
 }
