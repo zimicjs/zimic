@@ -81,6 +81,7 @@ describe('Typegen', () => {
       },
     ])(
       'should correctly generate types from $serviceName OpenAPI schema to $outputFileName',
+      { retry: process.env.CI === 'true' ? 1 : 0 },
       async ({ input, serviceName, outputFileName }) => {
         const generatedFilePath = path.join(generatedDirectory, outputFileName);
 

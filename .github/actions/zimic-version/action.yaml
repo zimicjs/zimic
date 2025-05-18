@@ -1,5 +1,5 @@
 name: Get Zimic Version
-description: Get Zimic Version
+description: Get the current version of a Zimic project.
 
 inputs:
   project-name:

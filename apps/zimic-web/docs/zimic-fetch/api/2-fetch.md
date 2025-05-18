@@ -14,6 +14,22 @@ Please use the [current documentation](https://github.com/zimicjs/zimic/wiki) wh
 
 :::
 
+## `headers`
+
+:::info
+
+🚧 This section is a work in progress.
+
+:::
+
+## `searchParams`
+
+:::info
+
+🚧 This section is a work in progress.
+
+:::
+
 ## `onRequest`
 
 :::info
@@ -23,6 +39,22 @@ Please use the [current documentation](https://github.com/zimicjs/zimic/wiki) wh
 :::
 
 ## `onResponse`
+
+:::info
+
+🚧 This section is a work in progress.
+
+:::
+
+## `defaults`
+
+:::info
+
+🚧 This section is a work in progress.
+
+:::
+
+## `loose`
 
 :::info
 

@@ -22,45 +22,43 @@ function HomePage() {
       <GradientBackground />
 
       <main className="min-h-96 w-full space-y-16 pt-24">
-        <div className="mx-auto max-w-[96rem] space-y-16 px-12">
-          <div className="flex flex-col items-center space-y-8">
-            <div className="relative">
-              <div
-                className="bg-highlight-500/30 -z-1 absolute -inset-4 h-[calc(100%+2rem)] w-[calc(100%+2rem)] rounded-full"
-                style={{ filter: 'blur(4rem)' }}
-              />
-
-              {/* This component is an SVG that acts as a logo. */}
-              {/* eslint-disable-next-line jsx-a11y/prefer-tag-over-role */}
-              <ZimicLogo role="img" title={siteConfig.title} className="h-36 w-36" />
-            </div>
-
-            <div className="flex flex-col items-center space-y-6 text-center">
-              <h1 className="from-highlight-600 via-highlight-400 to-highlight-300 dark:from-highlight-500 dark:via-highlight-300 dark:to-highlight-300 w-fit bg-gradient-to-br bg-clip-text text-6xl text-transparent">
-                {siteConfig.title}
-              </h1>
-
-              <span className="text-xl font-medium">{siteConfig.tagline}</span>
-            </div>
-
-            <GetStartedLink arrow />
-          </div>
-
-          <div className="mx-auto grid w-full max-w-4xl grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-6">
-            <ProjectCard
-              href="/docs/http"
-              title="@zimic/http"
-              description="TypeScript-first HTTP schemas and utilities"
+        <div className="flex flex-col items-center space-y-8 px-12">
+          <div className="relative">
+            <div
+              className="bg-highlight-500/30 -z-1 absolute -inset-4 h-[calc(100%+2rem)] w-[calc(100%+2rem)] rounded-full"
+              style={{ filter: 'blur(4rem)' }}
             />
 
-            <ProjectCard href="/docs/fetch" title="@zimic/fetch" description="Typed fetch-like API client" />
-
-            <ProjectCard
-              href="/docs/interceptor"
-              title="@zimic/interceptor"
-              description="Type-safe HTTP intercepting and mocking"
-            />
+            {/* This component is an SVG that acts as a logo. */}
+            {/* eslint-disable-next-line jsx-a11y/prefer-tag-over-role */}
+            <ZimicLogo role="img" title={siteConfig.title} className="h-40 w-40" />
           </div>
+
+          <div className="flex flex-col items-center space-y-6 text-center">
+            <h1 className="from-highlight-600 via-highlight-400 to-highlight-300 dark:from-highlight-500 dark:via-highlight-300 dark:to-highlight-300 w-fit bg-gradient-to-br bg-clip-text text-7xl text-transparent">
+              {siteConfig.title}
+            </h1>
+
+            <span className="text-2xl font-medium">{siteConfig.tagline}</span>
+          </div>
+
+          <GetStartedLink arrow />
+        </div>
+
+        <div className="mx-auto grid w-full max-w-4xl grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-6 px-12">
+          <ProjectCard
+            href="/docs/http"
+            title="@zimic/http"
+            description="TypeScript-first HTTP schemas and utilities"
+          />
+
+          <ProjectCard href="/docs/fetch" title="@zimic/fetch" description="Typed fetch-like API client" />
+
+          <ProjectCard
+            href="/docs/interceptor"
+            title="@zimic/interceptor"
+            description="Type-safe HTTP intercepting and mocking"
+          />
         </div>
 
         <HomeSection title="Features" className="mx-auto max-w-[96rem]">
@@ -90,7 +88,7 @@ function HomePage() {
         </HomeSection>
 
         <HomeSection
-          title="Ready to get started?"
+          title="Level up your TypeScript experience"
           className="border-primary-500/10 dark:border-primary-500/20 bg-primary-500/5 dark:bg-primary-500/15 elative mx-auto w-screen overflow-hidden border-t"
         >
           <div className="-mt-8 flex flex-col items-center space-y-8">

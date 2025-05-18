@@ -1,5 +1,5 @@
 name: Check Zimic Formatting Style
-description: Check Zimic Formatting Style
+description: Check the formatting style of Zimic projects.
 
 runs:
   using: composite
