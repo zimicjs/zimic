@@ -152,8 +152,6 @@ jobs:
       fail-fast: false
       matrix:
         typescript-version:
-          - '4.8'
-          - '4.9'
           - '5.0'
           - '5.1'
           - '5.2'
@@ -190,10 +188,9 @@ jobs:
 
       - name: Check types
         run: |
-          filterOptionsOfPackagesUsingNext=(
+          filterOptionsOfPackagesUsingServerComponents=(
             '--filter !zimic-example-with-playwright'
             '--filter !zimic-example-with-next-js-app'
-            '--filter !zimic-example-with-next-js-pages'
           )
 
           pnpm turbo \
@@ -202,5 +199,5 @@ jobs:
             --concurrency 100% \
             --filter !@zimic/* \
             --filter !zimic-web \
-            $([[ '${{ matrix.typescript-version }}' =~ ^(4\.|5\.0) ]] && echo ${filterOptionsOfPackagesUsingNext[@]}) \
+            $([[ '${{ matrix.typescript-version }}' =~ ^(5\.0) ]] && echo ${filterOptionsOfPackagesUsingServerComponents[@]}) \
             ${{ env.TURBO_FILTERS }}
