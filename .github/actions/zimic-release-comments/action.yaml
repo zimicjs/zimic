@@ -1,5 +1,5 @@
 name: Zimic Release Comments
-description: Zimic Release Comments
+description: Comment on related issues and pull requests after a Zimic release and close the milestone.
 
 inputs:
   type:

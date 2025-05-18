@@ -1,5 +1,5 @@
 name: Release zimic-web
-description: Release zimic-web
+description: Release zimic-web to Vercel.
 
 inputs:
   vercel-repository:
