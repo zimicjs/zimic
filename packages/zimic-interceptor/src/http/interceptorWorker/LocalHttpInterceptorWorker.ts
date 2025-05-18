@@ -1,7 +1,7 @@
 import { HttpRequest, HttpResponse, HttpMethod, HttpSchema } from '@zimic/http';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import validateURLPathParams from '@zimic/utils/url/validateURLPathParams';
-import { HttpHandler as MSWHttpHandler, SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
+import { SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
 import * as mswBrowser from 'msw/browser';
 import * as mswNode from 'msw/node';
 
@@ -13,17 +13,17 @@ import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHt
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
+import { BrowserMSWWorker, MSWHandler, MSWHttpResponseFactory, MSWWorker, NodeMSWWorker } from './types/msw';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
-import { BrowserHttpWorker, HttpResponseFactory, HttpWorker, NodeHttpWorker } from './types/requests';
 
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
-  private internalWorker?: HttpWorker;
+  private internalWorker?: MSWWorker;
 
-  private defaultHttpHandler: MSWHttpHandler;
+  private defaultHttpHandler: MSWHandler;
 
   private httpHandlerGroups: {
     interceptor: HttpInterceptorClient<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
-    httpHandler: MSWHttpHandler;
+    httpHandler: MSWHandler;
   }[] = [];
 
   constructor(_options: LocalHttpInterceptorWorkerOptions) {
@@ -84,7 +84,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     });
   }
 
-  private async startInBrowser(internalWorker: BrowserHttpWorker, sharedOptions: MSWWorkerSharedOptions) {
+  private async startInBrowser(internalWorker: BrowserMSWWorker, sharedOptions: MSWWorkerSharedOptions) {
     try {
       await internalWorker.start({ ...sharedOptions, quiet: true });
     } catch (error) {
@@ -99,7 +99,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     throw error;
   }
 
-  private startInNode(internalWorker: NodeHttpWorker, sharedOptions: MSWWorkerSharedOptions) {
+  private startInNode(internalWorker: NodeMSWWorker, sharedOptions: MSWWorkerSharedOptions) {
     internalWorker.listen(sharedOptions);
   }
 
@@ -119,15 +119,15 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     });
   }
 
-  private stopInBrowser(internalWorker: BrowserHttpWorker) {
+  private stopInBrowser(internalWorker: BrowserMSWWorker) {
     internalWorker.stop();
   }
 
-  private stopInNode(internalWorker: NodeHttpWorker) {
+  private stopInNode(internalWorker: NodeMSWWorker) {
     internalWorker.close();
   }
 
-  private isInternalBrowserWorker(worker: HttpWorker) {
+  private isInternalBrowserWorker(worker: MSWWorker) {
     return 'start' in worker && 'stop' in worker;
   }
 
@@ -143,7 +143,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
     rawURL: string | URL,
-    createResponse: HttpResponseFactory,
+    createResponse: MSWHttpResponseFactory,
   ) {
     const lowercaseMethod = method.toLowerCase<typeof method>();
 

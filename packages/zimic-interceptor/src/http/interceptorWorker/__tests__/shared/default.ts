@@ -8,8 +8,8 @@ import { createHttpInterceptorWorker } from '../../factory';
 import HttpInterceptorWorker from '../../HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '../../LocalHttpInterceptorWorker';
 import RemoteHttpInterceptorWorker from '../../RemoteHttpInterceptorWorker';
+import { BrowserMSWWorker, NodeMSWWorker } from '../../types/msw';
 import { LocalHttpInterceptorWorkerOptions, RemoteHttpInterceptorWorkerOptions } from '../../types/options';
-import { BrowserHttpWorker, NodeHttpWorker } from '../../types/requests';
 import { SharedHttpInterceptorWorkerTestOptions } from './types';
 
 export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInterceptorWorkerTestOptions) {
@@ -199,10 +199,10 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
       const error = new Error('Unknown error');
 
       if (platform === 'browser') {
-        const internalBrowserWorker = interceptorWorker.internalWorkerOrCreate as BrowserHttpWorker;
+        const internalBrowserWorker = interceptorWorker.internalWorkerOrCreate as BrowserMSWWorker;
         vi.spyOn(internalBrowserWorker, 'start').mockRejectedValueOnce(error);
       } else {
-        const internalNodeWorker = interceptorWorker.internalWorkerOrCreate as NodeHttpWorker;
+        const internalNodeWorker = interceptorWorker.internalWorkerOrCreate as NodeMSWWorker;
         vi.spyOn(internalNodeWorker, 'listen').mockImplementationOnce(() => {
           throw error;
         });
