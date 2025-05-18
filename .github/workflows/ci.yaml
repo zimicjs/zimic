@@ -194,7 +194,11 @@ jobs:
       - name: Set TypeScript version
         if: ${{ steps.should-check-types.outputs.value == 'true' }}
         run: |
-          pnpm update typescript@${{ matrix.typescript-version }} --recursive
+          pnpm update \
+            typescript@${{ matrix.typescript-version }} \
+            --recursive \
+            --filter !@zimic/* \
+            --filter !zimic-web
 
       - name: Check types
         if: ${{ steps.should-check-types.outputs.value == 'true' }}
