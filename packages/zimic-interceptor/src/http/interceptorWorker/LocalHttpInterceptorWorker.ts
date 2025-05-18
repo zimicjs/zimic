@@ -2,11 +2,7 @@ import { HttpRequest, HttpResponse, HttpMethod, HttpSchema } from '@zimic/http';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import validateURLPathParams from '@zimic/utils/url/validateURLPathParams';
 import { SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
-// MSW types are incorrect after 2.8. ESLint is flagging the import as duplicate, but it is not, so let's ignore it.
-// eslint-disable-next-line import/no-duplicates
 import * as mswBrowser from 'msw/browser';
-// MSW types are incorrect after 2.8. ESLint is flagging the import as duplicate, but it is not, so let's ignore it.
-// eslint-disable-next-line import/no-duplicates
 import * as mswNode from 'msw/node';
 
 import { removeArrayIndex } from '@/utils/arrays';
@@ -61,8 +57,6 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     }
     /* istanbul ignore else -- @preserve */
     if (isClientSide() && 'setupWorker' in mswBrowser) {
-      // @ts-expect-error MSW types are incorrect, which causing the `setupWorker` arguments to be typed as a different
-      // HTTP handler. Once MSW fixes this issue, we can remove ignore comment.
       return mswBrowser.setupWorker(this.defaultHttpHandler);
     }
     /* istanbul ignore next -- @preserve
@@ -184,8 +178,6 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       return response;
     });
 
-    // @ts-expect-error MSW types are incorrect, which causing the `use` arguments to be typed as `never`.
-    // Once MSW fixes this issue, we can remove ignore comment.
     this.internalWorkerOrThrow.use(httpHandler);
 
     this.httpHandlerGroups.push({ interceptor, httpHandler });
@@ -216,8 +208,6 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     this.internalWorkerOrThrow.resetHandlers();
 
     for (const { httpHandler } of this.httpHandlerGroups) {
-      // @ts-expect-error MSW types are incorrect, which causing the `use` arguments to be typed as `never`.
-      // Once MSW fixes this issue, we can remove ignore comment.
       this.internalWorkerOrThrow.use(httpHandler);
     }
   }
