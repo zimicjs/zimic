@@ -1,5 +1,5 @@
-name: Zimic Release Documentation
-description: Zimic Release Documentation
+name: Zimic Release Wiki
+description: Release the Zimic documentation to the GitHub Wiki.
 
 inputs:
   ref-name:

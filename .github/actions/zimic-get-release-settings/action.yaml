@@ -1,5 +1,5 @@
 name: Zimic Get Release Settings
-description: Zimic Get Release Settings
+description: Get the release settings for a Zimic project.
 
 inputs:
   project-name:

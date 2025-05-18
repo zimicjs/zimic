@@ -84,7 +84,7 @@ jobs:
             ${{ env.TURBO_FILTERS }}
 
       - name: Build documentation and check links
-        uses: ./.github/actions/zimic-web-build
+        uses: ./.github/actions/zimic-build-web
         with:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
@@ -164,9 +164,6 @@ jobs:
           - '5.7'
           - '5.8'
 
-    env:
-      TYPESCRIPT_VERSION: ${{ matrix.typescript-version }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -188,6 +185,7 @@ jobs:
             typescript@${{ matrix.typescript-version }} \
             --recursive \
             --filter !@zimic/* \
+            --filter !zimic-web \
             ${{ env.TURBO_FILTERS }}
 
       - name: Check types

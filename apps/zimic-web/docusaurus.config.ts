@@ -76,12 +76,13 @@ const config: Docusaurus.Config = {
         breadcrumbs: true,
         sidebarCollapsed: false,
         sidebarCollapsible: true,
+        showLastUpdateTime: true,
       } satisfies PluginContentDocs.Options,
     ],
     [
       '@docusaurus/theme-classic',
       {
-        customCss: './src/styles/global.css',
+        customCss: './src/styles/custom.css',
       } satisfies PluginThemeClassic.Options,
     ],
     [
@@ -127,7 +128,7 @@ const config: Docusaurus.Config = {
 
     prism: {
       theme: prismThemes.github,
-      darkTheme: prismThemes.dracula,
+      darkTheme: prismThemes.nightOwl,
       defaultLanguage: 'typescript',
       additionalLanguages: ['bash', 'json', 'yaml', 'diff'],
       magicComments: [

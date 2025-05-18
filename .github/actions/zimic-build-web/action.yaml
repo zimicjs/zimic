@@ -1,5 +1,5 @@
-name: Zimic Web Build
-description: Zimic Web Build
+name: Zimic Build Web
+description: Build zimic-web
 
 inputs:
   turbo-token:

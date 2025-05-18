@@ -1,5 +1,5 @@
 name: Zimic Release GitHub
-description: Zimic Release GitHub
+description: Release a Zimic project on GitHub.
 
 inputs:
   type:

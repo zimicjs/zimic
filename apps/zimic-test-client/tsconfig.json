@@ -1,8 +1,26 @@
 {
-  "extends": "@zimic/tsconfig/tsconfig.node.json",
+  // Our base config is not compatible with TypeScript <5.0 due to `"moduleResolution": "bundler"`.
+  // "extends": "@zimic/tsconfig/tsconfig.node.json",
   "compilerOptions": {
+    "target": "es6",
+    "composite": false,
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "inlineSources": false,
+    "isolatedModules": true,
     "module": "nodenext",
     "moduleResolution": "nodenext",
+    "resolveJsonModule": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "preserveWatchOutput": true,
+    "incremental": true,
+    "skipLibCheck": true,
+    "pretty": true,
+    "strict": true,
+    "lib": ["esnext", "webworker"],
     "tsBuildInfoFile": "tsconfig.tsbuildinfo",
     "baseUrl": ".",
     "paths": {

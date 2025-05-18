@@ -1,5 +1,5 @@
 name: Bump Zimic Version
-description: Bump Zimic Version
+description: Bump the version of a Zimic project.
 
 inputs:
   project-name:

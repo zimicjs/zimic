@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "0.18.1-canary.0",
+  "version": "0.18.2-canary.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -92,10 +92,10 @@
     "postinstall": "node --enable-source-maps -e \"try{require('./dist/scripts/postinstall')}catch(error){console.error(error)}\""
   },
   "dependencies": {
-    "@whatwg-node/server": "0.10.6",
+    "@whatwg-node/server": "0.10.8",
     "execa": "9.5.3",
     "isomorphic-ws": "5.0.0",
-    "msw": "2.7.6",
+    "msw": "2.8.3",
     "picocolors": "^1.1.1",
     "ws": "8.18.2",
     "yargs": "17.7.2",
@@ -115,7 +115,7 @@
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^8.0.0",
-    "eslint": "^9.26.0",
+    "eslint": "^9.27.0",
     "playwright": "^1.52.0",
     "tsup": "^8.4.0",
     "typescript": "^5.8.3",

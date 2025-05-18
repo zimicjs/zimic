@@ -14,15 +14,15 @@ import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHt
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import { HttpInterceptorPlatform } from '../interceptor/types/options';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
+import { MSWHttpResponseFactory, MSWHttpResponseFactoryContext } from './types/msw';
 import { RemoteHttpInterceptorWorkerOptions } from './types/options';
-import { HttpResponseFactory, HttpResponseFactoryContext } from './types/requests';
 
 interface HttpHandler {
   id: string;
   url: { base: string; full: string };
   method: HttpMethod;
   interceptor: AnyHttpInterceptorClient;
-  createResponse: (context: HttpResponseFactoryContext) => Promise<HttpResponse | null>;
+  createResponse: (context: MSWHttpResponseFactoryContext) => Promise<HttpResponse | null>;
 }
 
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
@@ -133,7 +133,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
     rawURL: string | URL,
-    createResponse: HttpResponseFactory,
+    createResponse: MSWHttpResponseFactory,
   ) {
     if (!this.isRunning) {
       throw new NotRunningHttpInterceptorError();

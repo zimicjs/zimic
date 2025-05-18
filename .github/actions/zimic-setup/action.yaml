@@ -1,5 +1,5 @@
-name: Set Up Zimic
-description: Set Up Zimic
+name: Zimic Setup
+description: Configure the Zimic project after checking out the code.
 
 inputs:
   node-version:
