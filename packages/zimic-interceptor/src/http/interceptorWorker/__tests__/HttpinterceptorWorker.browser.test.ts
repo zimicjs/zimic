@@ -6,7 +6,7 @@ import { getBrowserBaseURL } from '@tests/utils/interceptors';
 import { HttpInterceptorPlatform } from '../../interceptor/types/options';
 import UnregisteredBrowserServiceWorkerError from '../errors/UnregisteredBrowserServiceWorkerError';
 import { createHttpInterceptorWorker } from '../factory';
-import { BrowserHttpWorker } from '../types/requests';
+import { BrowserMSWWorker } from '../types/msw';
 import { declareDefaultHttpInterceptorWorkerTests } from './shared/default';
 import testMatrix from './shared/matrix';
 
@@ -27,7 +27,7 @@ describe('HttpInterceptorWorker > Browser', () => {
       ].join('\n'),
     );
 
-    const mswWorker = interceptorWorker.internalWorkerOrCreate as BrowserHttpWorker;
+    const mswWorker = interceptorWorker.internalWorkerOrCreate as BrowserMSWWorker;
     vi.spyOn(mswWorker, 'start').mockRejectedValueOnce(unavailableMSWWorkerScriptError);
 
     await usingIgnoredConsole(['error'], async (console) => {

@@ -35,8 +35,8 @@ import {
 import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from './constants';
 import InvalidFormDataError from './errors/InvalidFormDataError';
 import InvalidJSONError from './errors/InvalidJSONError';
+import { MSWHttpResponseFactory } from './types/msw';
 import { HttpInterceptorWorkerType } from './types/options';
-import { HttpResponseFactory } from './types/requests';
 
 abstract class HttpInterceptorWorker {
   abstract get type(): HttpInterceptorWorkerType;
@@ -102,7 +102,7 @@ abstract class HttpInterceptorWorker {
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
     url: string,
-    createResponse: HttpResponseFactory,
+    createResponse: MSWHttpResponseFactory,
   ): PossiblePromise<void>;
 
   protected async logUnhandledRequestIfNecessary(

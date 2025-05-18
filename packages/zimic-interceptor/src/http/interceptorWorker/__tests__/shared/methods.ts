@@ -18,8 +18,8 @@ import {
 } from '@tests/utils/interceptors';
 
 import HttpInterceptorWorker from '../../HttpInterceptorWorker';
+import { MSWHttpResponseFactoryContext } from '../../types/msw';
 import { LocalHttpInterceptorWorkerOptions, RemoteHttpInterceptorWorkerOptions } from '../../types/options';
-import { HttpResponseFactoryContext } from '../../types/requests';
 import { promiseIfRemote } from '../utils/promises';
 import { SharedHttpInterceptorWorkerTestOptions } from './types';
 
@@ -74,7 +74,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
       }
     }
 
-    function requestHandler(_context: HttpResponseFactoryContext): PossiblePromise<HttpResponse | null> {
+    function requestHandler(_context: MSWHttpResponseFactoryContext): PossiblePromise<HttpResponse | null> {
       const response = Response.json(responseBody, {
         status: responseStatus,
         headers: defaultHeaders,
