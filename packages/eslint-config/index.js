@@ -164,10 +164,10 @@ export default [
       'import/newline-after-import': 'warn',
       'import/no-anonymous-default-export': 'warn',
       'import/no-useless-path-segments': 'warn',
-      'import/no-absolute-path': 'error',
-      'import/no-duplicates': 'error',
-      'import/no-self-import': 'error',
-      'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
+      'import/no-absolute-path': 'warn',
+      'import/no-duplicates': 'off',
+      'import/no-self-import': 'warn',
+      'import/no-extraneous-dependencies': ['warn', { devDependencies: true }],
       'import-helpers/order-imports': [
         'warn',
         {

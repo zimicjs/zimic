@@ -1,5 +1,5 @@
 name: Zimic Release NPM
-description: Zimic Release NPM
+description: Release a Zimic project on NPM.
 
 inputs:
   ref-name:

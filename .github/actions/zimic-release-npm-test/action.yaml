@@ -1,5 +1,5 @@
 name: Zimic Release NPM Test
-description: Zimic Release NPM Test
+description: Test a released Zimic project on NPM.
 
 inputs:
   ref-name:

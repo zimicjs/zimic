@@ -48,7 +48,7 @@ jobs:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
           install: '"./{apps,packages}/*..." "zimic-example*..."'
-          build: '"./{apps,packages}/*^..." "zimic-example*^..."'
+          build: '"./packages/*"'
 
       - name: Check formatting style
         uses: ./.github/actions/zimic-style-check
@@ -83,6 +83,12 @@ jobs:
             --concurrency 100% \
             ${{ env.TURBO_FILTERS }}
 
+      - name: Build documentation and check links
+        uses: ./.github/actions/zimic-build-web
+        with:
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+
   ci-node:
     name: CI Node.js
     runs-on: ubuntu-latest
@@ -113,7 +119,7 @@ jobs:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
           install: '"./{apps,packages}/*..." "zimic-example*..."'
-          build: '"./{apps,packages}/*^..." "zimic-example*^..."'
+          build: '"./packages/*"'
 
       - name: Run tests
         run: |
@@ -158,9 +164,6 @@ jobs:
           - '5.7'
           - '5.8'
 
-    env:
-      TYPESCRIPT_VERSION: ${{ matrix.typescript-version }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -174,7 +177,7 @@ jobs:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
           install: '"./{apps,packages}/*..." "zimic-example*..."'
-          build: '"./{apps,packages}/*^..." "zimic-example*^..."'
+          build: '"./packages/*"'
 
       - name: Set TypeScript version
         run: |
@@ -182,6 +185,7 @@ jobs:
             typescript@${{ matrix.typescript-version }} \
             --recursive \
             --filter !@zimic/* \
+            --filter !zimic-web \
             ${{ env.TURBO_FILTERS }}
 
       - name: Check types

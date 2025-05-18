@@ -41,11 +41,36 @@ jobs:
           validate-ref-name: ${{ github.ref_name }}
 
       - name: Release zimic-web
-        uses: ./.github/actions/zimic-web-release
+        uses: ./.github/actions/zimic-release-web
         with:
           vercel-repository: ${{ secrets.ZIMIC_WEB_VERCEL_REPOSITORY }}
           vercel-ssh-key: ${{ secrets.ZIMIC_WEB_VERCEL_SSH_KEY }}
           vercel-branch: ${{ steps.zimic-version.outputs.label }}
+
+  release-to-wiki:
+    name: Release to GitHub Wiki
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    environment: Wiki
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: zimic
+
+      - name: Release wiki
+        uses: ./zimic/.github/actions/zimic-release-wiki
+        with:
+          ref-name: ${{ github.ref_name }}
+          project-name: zimic-web
+          wiki-token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+          commit-user-name: ${{ vars.RELEASE_COMMIT_USER_NAME }}
+          commit-user-email: ${{ vars.RELEASE_COMMIT_USER_EMAIL }}
 
   publish-release-comments:
     name: Publish release comments

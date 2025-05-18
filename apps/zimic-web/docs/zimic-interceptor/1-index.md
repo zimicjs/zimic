@@ -6,10 +6,37 @@ slug: /interceptor
 
 # Introduction
 
-:::info
+`@zimic/interceptor` is a type-safe HTTP interceptor library for handling and mocking HTTP requests in development and
+testing.
 
-🚧 This section is a work in progress.
-
-Please use the [old documentation](https://github.com/zimicjs/zimic/wiki) while [zimic.dev](/) is not yet complete.
+:::info Status: <span>**Beta** :seedling:</span>
 
 :::
+
+## Features
+
+- :globe_with_meridians: **HTTP interceptors**
+
+  Use your [`@zimic/http` schema](/docs/zimic-http/guides/1-http-schemas.md) to declare
+  [local](/docs/zimic-interceptor/guides/1-local-interceptors.md) and
+  [remote](/docs/zimic-interceptor/guides/2-remote-interceptors.md) HTTP interceptors. Mock external services and
+  simulate success, loading, and error states with ease and type safety.
+
+- :link: **Network-level interception**
+
+  `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and
+  [interceptor servers](/docs/zimic-interceptor/cli/1-server.md) to handle real HTTP requests. From you application's
+  point of view, the mocked responses are indistinguishable from the real ones.
+
+- :bulb: **Readability**
+
+  `@zimic/interceptor` was designed to encourage clarity and readability. Declare intuitive mocks, test with confidence,
+  and verify that your application is making the expected requests with
+  [declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.md).
+
+**Learn more**:
+
+- [`@zimic/interceptor` - Getting started](/docs/zimic-interceptor/2-getting-started.mdx)
+- [`@zimic/interceptor` - Guides](/docs/interceptor/guides)
+- [`@zimic/interceptor` - API](/docs/interceptor/api)
+- [`@zimic/interceptor` - CLI](/docs/interceptor/cli)
