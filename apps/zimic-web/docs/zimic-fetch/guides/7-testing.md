@@ -18,7 +18,7 @@ expected in a real environment.
 This strategy has some advantages, such as:
 
 - **Realistic environment**: tests use an actual server, ensuring that your code works with the real data and responses.
-  They can help catching issues that may not be apparent in a mock environment, such as network errors, server bugs, API
+  They can help catch issues that may not be apparent in a mock environment, such as network errors, server bugs, API
   performance issues, and configuration problems.
 - **Early regression detection**: if the API changes and affects your code, the tests may serve as a safety net to catch
   issues early in the development process.
