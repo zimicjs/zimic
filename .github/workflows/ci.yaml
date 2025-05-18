@@ -194,14 +194,7 @@ jobs:
       - name: Set TypeScript version
         if: ${{ steps.should-check-types.outputs.value == 'true' }}
         run: |
-          # Update typescript on all packages
-          pnpm update \
-            typescript@${{ matrix.typescript-version }} \
-            --recursive
-
-          # Revert the updates on excluded packages
-          git stash push --include-untracked apps/zimic-web packages/*
-          pnpm install --no-frozen-lockfile
+          pnpm update typescript@${{ matrix.typescript-version }} --recursive
 
       - name: Check types
         if: ${{ steps.should-check-types.outputs.value == 'true' }}
