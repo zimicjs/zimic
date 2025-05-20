@@ -14,10 +14,9 @@ to define the structure of an API in readable TypeScript types. [`@zimic/fetch`]
 [`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md) use these schemas to provide type-safe APIs for sending,
 receiving, and mocking requests.
 
-`@zimic/http` has typegen support, so you can use the [CLI](/docs/zimic-http/cli/1-typegen.md) to infer types from
-[OpenAPI](https://www.openapis.org) documentations. The result is a ready-to-use schema that can be used directly by
-[`@zimic/fetch`](/docs/zimic-fetch/1-index.md), [`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md), and your
-application code.
+`@zimic/http` has typegen support for [OpenAPI](https://www.openapis.org) documentations. The result is a ready-to-use
+schema that can be used directly by [`@zimic/fetch`](/docs/zimic-fetch/1-index.md),
+[`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md), and your application code.
 
 ## OpenAPI
 
@@ -111,7 +110,7 @@ export interface MyServiceOperations {
 
 Then, you can use these types in your code, your
 [`@zimic/fetch` clients](/docs/zimic-fetch/guides/8-typegen.mdx#using-a-generated-schema) and
-[`@zimic/interceptor` interceptors](/docs/zimic-interceptor/guides/10-typegen.mdx#using-a-generated-schema).
+[`@zimic/interceptor` interceptors](/docs/zimic-interceptor/guides/11-typegen.mdx#using-a-generated-schema).
 
 ## Examples
 
