@@ -100,7 +100,7 @@ mocks are fully typed _by default_ and in sync with the API.
   Zimic has a comprehensive test suite and high code coverage. Testing is a main part of our development process, and we
   take reliability and developer confidence very seriously.
 
-## Projects
+## Ecosystem
 
 Zimic is split into an ecosystem of integrated packages.
 
