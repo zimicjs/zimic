@@ -66,7 +66,7 @@ If you decide to use mocked requests, here are some mocking libraries to get you
 ### `@zimic/interceptor`
 
 [@zimic/interceptor](/docs/zimic-interceptor/1-index.md) is part of the
-[Zimic ecosystem](/docs/zimic/1-index/index.md#projects) and our recommended way to mock requests.
+[Zimic ecosystem](/docs/zimic/1-index/index.md#ecosystem) and our recommended way to mock requests.
 
 With `@zimic/interceptor`, you inherit the same benefits as with `@zimic/fetch`, where all requests and responses are
 typed with a [centralized schema](/docs/zimic-http/guides/1-http-schemas.md) describing the structure of the endpoints.

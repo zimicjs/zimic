@@ -1,0 +1,85 @@
+---
+title: Typegen | @zimic/interceptor
+sidebar_label: Typegen
+slug: /interceptor/guides/typegen
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Typegen
+
+`@zimic/interceptor` uses [`@zimic/http`](/docs/zimic-http/1-index.md), which can infer types from
+[OpenAPI](https://www.openapis.org) documentations and generate ready-to-use
+[schemas](/docs/zimic-http/guides/1-http-schemas.md) to type your `@zimic/interceptor` interceptors.
+
+## OpenAPI
+
+To generate a schema from an local OpenAPI document, use the [`@zimic/http` CLI](/docs/zimic-http/cli/1-typegen.md):
+
+<Tabs groupId="openapi-typegen-format">
+  <TabItem value="json" label="JSON">
+
+```bash
+zimic-http typegen openapi ./schema.json \
+  --output ./schema.ts \
+  --service-name MyService
+```
+
+  </TabItem>
+  <TabItem value="yaml" label="YAML">
+
+```bash
+zimic-http typegen openapi ./schema.yaml \
+  --output ./schema.ts \
+  --service-name MyService
+```
+
+  </TabItem>
+</Tabs>
+
+You can also fetch a remote OpenAPI documentation using a URL:
+
+<Tabs groupId="openapi-typegen-format">
+  <TabItem value="json" label="JSON">
+
+```bash
+zimic-http typegen openapi https://example.com/api/openapi.json \
+  --output ./schema.ts \
+  --service-name MyService
+```
+
+  </TabItem>
+  <TabItem value="yaml" label="YAML">
+
+```bash
+zimic-http typegen openapi https://example.com/api/openapi.yaml \
+  --output ./schema.ts \
+  --service-name MyService
+```
+
+  </TabItem>
+</Tabs>
+
+## Using a generated schema
+
+The typegen output file will contain your HTTP schema, including the generated types for each endpoint. You can then use
+this schema in your `@zimic/interceptor` interceptor.
+
+```ts
+import { createHttpInterceptor } from '@zimic/interceptor/http';
+
+// highlight-next-line
+import { MyServiceSchema } from './schema';
+
+// highlight-next-line
+const interceptor = createHttpInterceptor<MyServiceSchema>({
+  baseURL: 'http://localhost:3000',
+});
+```
+
+And that's it! You now have a typed interceptor to mock responses in development and testing. Whenever the OpenAPI
+documentation changes, you can regenerate the schema to update your types and keep your interceptor up to date.
+
+Our [OpenAPI typegen example](https://github.com/zimicjs/zimic/tree/main/examples/zimic-with-openapi-typegen#readme)
+demonstrates how to use the type generation in practice.
