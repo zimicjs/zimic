@@ -120,7 +120,7 @@ data.
 
 - :bulb: **Type generation**
 
-  Infer the types from [OpenAPI](https://www.openapis.org/) documentations and generate ready-to-use HTTP schemas in
+  Infer types from [OpenAPI](https://www.openapis.org/) documentations and generate ready-to-use HTTP schemas in
   instants with our [typegen CLI](/docs/zimic-http/guides/3-typegen.md).
 
 - :pushpin: **Type-safe APIs**
