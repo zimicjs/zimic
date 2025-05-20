@@ -1,0 +1,89 @@
+---
+title: Typegen | @zimic/fetch
+sidebar_label: Typegen
+slug: /fetch/guides/typegen
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Typegen
+
+`@zimic/fetch` uses [`@zimic/http`](/docs/zimic-http/1-index.md), which can infer types from
+[OpenAPI](https://www.openapis.org) documentations and generate ready-to-use
+[HTTP schemas](/docs/zimic-http/guides/1-http-schemas.md) to type your requests and responses.
+
+## OpenAPI
+
+To generate an schema from an local OpenAPI document, use the [`@zimic/http` CLI](/docs/zimic-http/cli/1-typegen.md).
+
+<Tabs groupId="openapi-typegen-format">
+  <TabItem value="json" label="JSON">
+
+```bash
+zimic-http typegen openapi ./schema.json \
+  --output ./schema.ts \
+  --service-name MyService
+```
+
+  </TabItem>
+  <TabItem value="yaml" label="YAML">
+
+```bash
+zimic-http typegen openapi ./schema.yaml \
+  --output ./schema.ts \
+  --service-name MyService
+```
+
+  </TabItem>
+</Tabs>
+
+You can also fetch the OpenAPI documentation from a remote URL:
+
+<Tabs groupId="openapi-typegen-format">
+  <TabItem value="json" label="JSON">
+
+```bash
+zimic-http typegen openapi https://example.com/api/openapi.json \
+  --output ./schema.ts \
+  --service-name MyService
+```
+
+  </TabItem>
+  <TabItem value="yaml" label="YAML">
+
+```bash
+zimic-http typegen openapi https://example.com/api/openapi.yaml \
+  --output ./schema.ts \
+  --service-name MyService
+```
+
+  </TabItem>
+</Tabs>
+
+## Using a generated schema
+
+The typegen output file will contain your HTTP schema, named based on the `--service-name` option and including the
+generated types for each endpoint. You can then use this schema to type your `@zimic/fetch` clients.
+
+```ts
+import { createFetch } from '@zimic/fetch';
+
+import { MyServiceSchema } from './schema';
+
+// highlight-next-line
+const fetch = createFetch<MyServiceSchema>({
+  baseURL: 'http://localhost:3000',
+});
+```
+
+And that's it! You now have a typed fetch client that can be used to make requests to the API. Whenever the OpenAPI
+documentation changes, you can regenerate the schema to update your types.
+
+Check out the [`@zimic/http` typegen documentation](/docs/zimic-http/cli/1-typegen.md) for more details on the available
+options and use cases.
+
+## Examples
+
+Our [OpenAPI typegen example](https://github.com/zimicjs/zimic/tree/main/examples/zimic-with-openapi-typegen#readme)
+shows how the type generation can be used in practice.
