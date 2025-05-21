@@ -6,7 +6,7 @@ slug: /fetch/guides/testing
 
 # Testing
 
-Testing is an important part of any software development process. When using `@zimic/fetch`, there are two general
+Testing is an important part of most software development processes. When using `@zimic/fetch`, there are two general
 strategies to test your code.
 
 ## Real requests

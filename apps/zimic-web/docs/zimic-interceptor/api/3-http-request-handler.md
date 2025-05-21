@@ -14,6 +14,54 @@ Please use the [current documentation](https://github.com/zimicjs/zimic/wiki) wh
 
 :::
 
+## `handler.with()`
+
+:::info
+
+🚧 This section is a work in progress.
+
+:::
+
+### Static restrictions
+
+:::info
+
+🚧 This section is a work in progress.
+
+:::
+
+### Computed restrictions
+
+:::info
+
+🚧 This section is a work in progress.
+
+:::
+
+## `handler.respond()`
+
+:::info
+
+🚧 This section is a work in progress.
+
+:::
+
+### Static responses
+
+:::info
+
+🚧 This section is a work in progress.
+
+:::
+
+### Computed responses
+
+:::info
+
+🚧 This section is a work in progress.
+
+:::
+
 ## `handler.requests`
 
 :::info
