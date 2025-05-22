@@ -15,7 +15,7 @@ additional information about a request or a response. They are commonly used to 
 To send headers in your requests, declare their types in your [schema](/docs/zimic-http/guides/1-schemas.md).
 
 ```ts title='schema.ts'
-import { type HttpSchema } from '@zimic/http';
+import { HttpSchema } from '@zimic/http';
 
 interface User {
   id: string;
@@ -111,7 +111,7 @@ Similarly to request headers, you can declare the types of response headers in y
 [schema](/docs/zimic-http/guides/1-schemas.md).
 
 ```ts title='schema.ts'
-import { type HttpSchema } from '@zimic/http';
+import { HttpSchema } from '@zimic/http';
 
 interface User {
   id: string;

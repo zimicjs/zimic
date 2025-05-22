@@ -21,7 +21,7 @@ JSON bodies are one of the most common ways to send data in requests. To use a J
 in your [schema](/docs/zimic-http/guides/1-schemas.md).
 
 ```ts title='schema.ts'
-import { type HttpSchema } from '@zimic/http';
+import { HttpSchema } from '@zimic/http';
 
 interface User {
   id: string;
@@ -103,7 +103,7 @@ To send a `FormData` body, declare its type in your [schema](/docs/zimic-http/gu
 [`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md) to indicate that the body is a `FormData` type.
 
 ```ts
-import { HttpFormData, type HttpSchema } from '@zimic/http';
+import { HttpFormData, HttpSchema } from '@zimic/http';
 
 interface AvatarFormDataSchema {
   image: File;
@@ -173,7 +173,7 @@ Binary bodies are used to send raw binary data in requests. To send a binary bod
 [schema](/docs/zimic-http/guides/1-schemas.md).
 
 ```ts title='schema.ts'
-import { type HttpSchema } from '@zimic/http';
+import { HttpSchema } from '@zimic/http';
 
 interface Video {
   id: string;
@@ -270,7 +270,7 @@ property.
 To receive a JSON response body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md).
 
 ```ts title='schema.ts'
-import { type HttpSchema } from '@zimic/http';
+import { HttpSchema } from '@zimic/http';
 
 interface User {
   id: string;
@@ -315,7 +315,7 @@ To receive a `FormData` response body, declare its type in your [schema](/docs/z
 [`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md) to indicate that the body is a `FormData` type.
 
 ```ts title='schema.ts'
-import { HttpFormData, type HttpSchema } from '@zimic/http';
+import { HttpFormData, HttpSchema } from '@zimic/http';
 
 interface AvatarFormDataSchema {
   image: File;
@@ -356,7 +356,7 @@ const formData = await response.formData();
 To receive a binary response body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md).
 
 ```ts title='schema.ts'
-import { type HttpSchema } from '@zimic/http';
+import { HttpSchema } from '@zimic/http';
 
 interface Video {
   id: string;

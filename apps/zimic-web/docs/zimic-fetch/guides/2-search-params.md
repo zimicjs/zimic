@@ -16,7 +16,7 @@ filter, sort, or paginate data.
 To send search params in your requests, declare their types in your [schema](/docs/zimic-http/guides/1-schemas.md).
 
 ```ts title='schema.ts'
-import { type HttpSchema } from '@zimic/http';
+import { HttpSchema } from '@zimic/http';
 
 interface User {
   id: string;

@@ -81,7 +81,7 @@ and retry the request with the new credentials.
 As an example, consider the following [schema](/docs/zimic-http/guides/1-schemas.md):
 
 ```ts title='schema.ts'
-import { type HttpSchema } from '@zimic/http';
+import { HttpSchema } from '@zimic/http';
 
 interface User {
   id: string;

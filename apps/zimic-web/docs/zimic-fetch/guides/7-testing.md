@@ -79,7 +79,7 @@ API evolves, updating the schema automatically flags any affected mocks with typ
 tests need to be updated.
 
 ```ts
-import { type HttpSchema } from '@zimic/http';
+import { HttpSchema } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 

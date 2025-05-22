@@ -25,7 +25,7 @@ unavailable services. You can also use it to [log errors](#logging-response-erro
 As an example, consider the following schema:
 
 ```ts
-import { type HttpSchema } from '@zimic/http';
+import { HttpSchema } from '@zimic/http';
 
 interface User {
   id: string;
