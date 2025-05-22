@@ -6,8 +6,8 @@ slug: /fetch/guides/errors
 
 # Handling errors
 
-`@zimic/fetch` fully types the requests and responses based on your [schema](/docs/zimic-http/guides/1-http-schemas.md).
-If a response fails with a status code in the `4XX` or `5XX` ranges, the
+`@zimic/fetch` fully types the requests and responses based on your [schema](/docs/zimic-http/guides/1-schemas.md). If a
+response fails with a status code in the `4XX` or `5XX` ranges, the
 [`response.ok`](https://developer.mozilla.org/docs/Web/API/Response/ok) property will be `false`. In this case,
 `response.error` will contain a `FetchResponseError` representing the failure.
 

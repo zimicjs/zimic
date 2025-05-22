@@ -13,13 +13,12 @@ data, such as JSON, XML, and binary data such as images and files.
 
 ## Using request bodies
 
-Request bodies are declared in your [schema](/docs/zimic-http/guides/1-http-schemas.md) using the `request.body`
-property.
+Request bodies are declared in your [schema](/docs/zimic-http/guides/1-schemas.md) using the `request.body` property.
 
 ### JSON request body
 
 JSON bodies are one of the most common ways to send data in requests. To use a JSON body in a request, declare its type
-in your [schema](/docs/zimic-http/guides/1-http-schemas.md).
+in your [schema](/docs/zimic-http/guides/1-schemas.md).
 
 ```ts title='schema.ts'
 import { type HttpSchema } from '@zimic/http';
@@ -100,7 +99,7 @@ follows behavior of the [Fetch API](https://developer.mozilla.org/docs/Web/API/F
 [`FormData`](https://developer.mozilla.org/docs/Web/API/`FormData`) is a special type of body to construct a set of
 key-value pairs with variable types of data. A common use case is to upload files to a server.
 
-To send a `FormData` body, declare its type in your [schema](/docs/zimic-http/guides/1-http-schemas.md). Use the
+To send a `FormData` body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md). Use the
 [`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md) to indicate that the body is a `FormData` type.
 
 ```ts
@@ -171,7 +170,7 @@ const response = await fetch(`/users/${userId}/avatar`, {
 ### Binary request body
 
 Binary bodies are used to send raw binary data in requests. To send a binary body, declare its type in your
-[schema](/docs/zimic-http/guides/1-http-schemas.md).
+[schema](/docs/zimic-http/guides/1-schemas.md).
 
 ```ts title='schema.ts'
 import { type HttpSchema } from '@zimic/http';
@@ -263,12 +262,12 @@ const response = await fetch('/upload/mp4', {
 
 ## Using response bodies
 
-Response bodies are declared in your [schema](/docs/zimic-http/guides/1-http-schemas.md) using the
-`response.<status>.body` property.
+Response bodies are declared in your [schema](/docs/zimic-http/guides/1-schemas.md) using the `response.<status>.body`
+property.
 
 ### JSON response body
 
-To receive a JSON response body, declare its type in your [schema](/docs/zimic-http/guides/1-http-schemas.md).
+To receive a JSON response body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md).
 
 ```ts title='schema.ts'
 import { type HttpSchema } from '@zimic/http';
@@ -312,8 +311,8 @@ const user = await response.json();
 
 ### `FormData` response body
 
-To receive a `FormData` response body, declare its type in your [schema](/docs/zimic-http/guides/1-http-schemas.md). Use
-the [`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md) to indicate that the body is a `FormData` type.
+To receive a `FormData` response body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md). Use the
+[`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md) to indicate that the body is a `FormData` type.
 
 ```ts title='schema.ts'
 import { HttpFormData, type HttpSchema } from '@zimic/http';
@@ -354,7 +353,7 @@ const formData = await response.formData();
 
 ### Binary response body
 
-To receive a binary response body, declare its type in your [schema](/docs/zimic-http/guides/1-http-schemas.md).
+To receive a binary response body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md).
 
 ```ts title='schema.ts'
 import { type HttpSchema } from '@zimic/http';

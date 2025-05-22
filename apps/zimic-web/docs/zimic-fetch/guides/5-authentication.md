@@ -78,7 +78,7 @@ If a request fails due to authentication, you can handle the error in the
 [`onResponse`](/docs/zimic-fetch/api/2-fetch.md#onresponse) listener. A common use case is to refresh the access token
 and retry the request with the new credentials.
 
-As an example, consider the following [schema](/docs/zimic-http/guides/1-http-schemas.md):
+As an example, consider the following [schema](/docs/zimic-http/guides/1-schemas.md):
 
 ```ts title='schema.ts'
 import { type HttpSchema } from '@zimic/http';

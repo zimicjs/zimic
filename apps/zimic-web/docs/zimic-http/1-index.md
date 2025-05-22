@@ -17,8 +17,8 @@ params, and form data.
 
 - :star: **HTTP schemas**
 
-  Declare the structure of your endpoints in an [HTTP schema](/docs/zimic-http/guides/1-http-schemas.md) and use it to
-  type your HTTP requests and responses.
+  Declare the structure of your endpoints in an [HTTP schema](/docs/zimic-http/guides/1-schemas.md) and use it to type
+  your HTTP requests and responses.
 
 - :bulb: **Type generation**
 
