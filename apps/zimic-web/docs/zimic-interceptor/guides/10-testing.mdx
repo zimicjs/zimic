@@ -35,8 +35,8 @@ interceptor between tests with
 After each test, you can check that all expected requests were made with
 [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes). This method will
 throw an error if the number of requests or their parameters do not match the expectations you set with
-[`interceptor.with()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorwith) and
-[`interceptor.times()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptortimes).
+[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith) and
+[`handler.times()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlertimes).
 
 After all tests are done, stop the interceptor with
 [`interceptor.stop()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorstop).

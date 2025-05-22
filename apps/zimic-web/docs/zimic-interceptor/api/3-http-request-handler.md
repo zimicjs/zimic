@@ -62,6 +62,14 @@ Please use the [current documentation](https://github.com/zimicjs/zimic/wiki) wh
 
 :::
 
+## `handler.times()`
+
+:::info
+
+🚧 This section is a work in progress.
+
+:::
+
 ## `handler.requests`
 
 :::info
