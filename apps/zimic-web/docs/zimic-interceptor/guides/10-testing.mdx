@@ -32,6 +32,12 @@ When an interceptor is running, you can declare mocks with
 interceptor between tests with
 [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorclear).
 
+After each test, you can check that all expected requests were made with
+[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes). This method will
+throw an error if the number of requests or their parameters do not match the expectations you set with
+[`interceptor.with()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorwith) and
+[`interceptor.times()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptortimes).
+
 After all tests are done, stop the interceptor with
 [`interceptor.stop()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorstop).
 
@@ -100,6 +106,19 @@ afterAll(async () => {
 
   </TabItem>
 </Tabs>
+
+:::info INFO: <span>Remote interceptors are asynchronous</span>
+
+Note that [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorclear) and
+[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes) are awaited in the
+remote interceptor example, whereas this is not necessary for local interceptors.
+
+This is because many operations in [remote interceptors](/docs/zimic-interceptor/guides/2-remote-interceptors.md) are
+asynchronous because they may involve communication with an
+[interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is different from
+[local interceptors](/docs/zimic-interceptor/guides/1-local-interceptors.md), which have mostly synchronous operations.
+
+:::
 
 For more information on the available interceptor methods, check the
 [`HttpInterceptor` API reference](/docs/zimic-interceptor/api/2-http-interceptor.md).
