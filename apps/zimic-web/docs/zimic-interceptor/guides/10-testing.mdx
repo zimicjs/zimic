@@ -1,0 +1,167 @@
+---
+title: Testing | @zimic/interceptor
+sidebar_label: Testing
+slug: /interceptor/guides/testing
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Testing
+
+`@zimic/interceptor` is designed with testing in mind and provides utilities to give you confidence in your tests. Using
+[declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.md), you can write your expectations in
+a readable way that makes it clear how many requests the application should make, what parameters they should have, and
+what responses they will receive. If you need more specific assertions, the requests processed by the interceptor are
+available in [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrequests).
+
+## Configuration
+
+Configuring `@zimic/interceptor` in a testing environment usually depends on your
+[method of intercepting requests](/docs/zimic-interceptor/2-getting-started.mdx#creating-an-http-interceptor) and how
+you are applying your mocks.
+
+### Interceptor lifecycle
+
+`@zimic/interceptor` interceptors need to be started before they can intercept requests. You can start an interceptor by
+calling [`interceptor.start()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorstart).
+
+When an interceptor is running, you can declare mocks with
+[`interceptor.<method>()`](/docs/zimic-interceptor/api/2-http-interceptor.md#declaring-request-handlers), where
+`<method>` is an HTTP method. To make sure that your tests do not affect each other, it's a good practice to clear the
+interceptor between tests with
+[`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorclear).
+
+After each test, you can check that all expected requests were made with
+[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes). This method will
+throw an error if the number of requests or their parameters do not match the expectations you set with
+[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith) and
+[`handler.times()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlertimes).
+
+After all tests are done, stop the interceptor with
+[`interceptor.stop()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorstop).
+
+A common way to manage this lifecycle is to have a test setup file with hooks such as `beforeAll`, `beforeEach`,
+`afterEach`, and `afterAll`. The specific implementation may vary depending on your test framework.
+
+As an example, this is a simple setup using [Jest](https://jestjs.io) or [Vitest](https://vitest.dev):
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts title='tests/setup.ts'
+beforeAll(async () => {
+  // Start intercepting requests
+  // highlight-next-line
+  await interceptor.start();
+});
+
+beforeEach(() => {
+  // Clear interceptors so that no tests affect each other
+  // highlight-next-line
+  interceptor.clear();
+});
+
+afterEach(() => {
+  // Check that all expected requests were made
+  // highlight-next-line
+  interceptor.checkTimes();
+});
+
+afterAll(async () => {
+  // Stop intercepting requests
+  // highlight-next-line
+  await interceptor.stop();
+});
+```
+
+  </TabItem>
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts title='tests/setup.ts'
+beforeAll(async () => {
+  // Start intercepting requests
+  // highlight-next-line
+  await interceptor.start();
+});
+
+beforeEach(() => {
+  // Clear interceptors so that no tests affect each other
+  // highlight-next-line
+  await interceptor.clear();
+});
+
+afterEach(() => {
+  // Check that all expected requests were made
+  // highlight-next-line
+  await interceptor.checkTimes();
+});
+
+afterAll(async () => {
+  // Stop intercepting requests
+  // highlight-next-line
+  await interceptor.stop();
+});
+```
+
+  </TabItem>
+</Tabs>
+
+:::info INFO: <span>Remote interceptors are asynchronous</span>
+
+Note that [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorclear) and
+[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes) are awaited in the
+remote interceptor example, whereas this is not necessary for local interceptors.
+
+This is because many operations in [remote interceptors](/docs/zimic-interceptor/guides/2-remote-interceptors.md) are
+asynchronous because they may involve communication with an
+[interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is different from
+[local interceptors](/docs/zimic-interceptor/guides/1-local-interceptors.md), which have mostly synchronous operations.
+
+:::
+
+For more information on the available interceptor methods, check the
+[`HttpInterceptor` API reference](/docs/zimic-interceptor/api/2-http-interceptor.md).
+
+### Managing concurrency
+
+Running tests in parallel may cause your interceptors to start interfering with each other and result in flaky tests.
+How to avoid this depends on the type of interceptor you are using.
+
+#### Local interceptors
+
+With [local interceptors](/docs/zimic-interceptor/guides/1-local-interceptors.md), racing conditions between test
+workers are unlikely, because each interceptor affects only the thread it was created in (hence, the name _local_).
+
+However, running more than one test at the same time in the same thread **can** lead to concurrency problems.
+`@zimic/interceptor` does not currently support this, so we recommend avoiding concurrent features like
+[`test.concurrent`](https://vitest.dev/api/#test-concurrent).
+
+Instead, consider splitting your tests into smaller files. By doing this, your test framework can run them in parallel
+in separate threads, each with their own interceptors and without racing conditions.
+
+#### Remote interceptors
+
+[Remote interceptors](/docs/zimic-interceptor/guides/2-remote-interceptors.md) use an
+[interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle requests. They are especially useful when your
+application and your test runner run in _separate_ processes, such as in end-to-end tests. If you are sharing the same
+interceptor server between multiple parallel test workers, you may run into racing conditions. In this case, some
+solutions include:
+
+1. **Using a [path discriminator](/docs/zimic-interceptor/api/2-http-interceptor.md#path-discriminators)**:
+
+   This is a way to make sure that each test worker uses a different path in the interceptor server, usually a worker
+   index or identifier. In this strategy, each worker can declare its own mocks without risk of interfering with the
+   others. Make sure that the application also uses the same path discriminator when making requests, so that they are
+   handled by the correct interceptor. See this in practice in our
+   [Playwright example](https://github.com/zimicjs/zimic/tree/main/examples/zimic-with-playwright#readme).
+
+2. **Applying default mocks before your tests start**:
+
+   In this approach, you can start your interceptor server and run a script that populates a set of default mocks. When
+   your tests start, the mocks will already be loaded and no racing conditions will occur. This is demonstrated in our
+   [Next.js App Router example](https://github.com/zimicjs/zimic/tree/main/examples/zimic-with-next-js-app#readme). It's
+   important that individual tests do not create new mocks that may override the default ones and affect others.
+   Instead, declare the default mocks in such a way that they can be reused by all tests, such as with
+   [computed restrictions](/docs/zimic-interceptor/api/3-http-request-handler.md#computed-restrictions) and
+   [computed responses](/docs/zimic-interceptor/api/3-http-request-handler.md#computed-responses).
