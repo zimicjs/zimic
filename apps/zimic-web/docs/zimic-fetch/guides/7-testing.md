@@ -69,9 +69,9 @@ If you decide to use mocked requests, here are some mocking libraries to get you
 [Zimic ecosystem](/docs/zimic/1-index/index.md#ecosystem) and our recommended way to mock requests.
 
 With `@zimic/interceptor`, you inherit the same benefits as with `@zimic/fetch`, where all requests and responses are
-typed with a [centralized schema](/docs/zimic-http/guides/1-http-schemas.md) describing the structure of the endpoints.
-This directly reduces the drawbacks of mocking we mentioned earlier, keeping your tests realistic and up to date with
-the API with type safety and developer experience.
+typed with a [centralized schema](/docs/zimic-http/guides/1-schemas.md) describing the structure of the endpoints. This
+directly reduces the drawbacks of mocking we mentioned earlier, keeping your tests realistic and up to date with the API
+with type safety and developer experience.
 
 When creating your [interceptors](/docs/zimic-interceptor/2-getting-started.mdx#your-first-http-interceptor), you can
 import the same schema you used in `@zimic/fetch`. Then, `@zimic/interceptor` will type your mocks by default. As the
@@ -79,7 +79,7 @@ API evolves, updating the schema automatically flags any affected mocks with typ
 tests need to be updated.
 
 ```ts
-import { type HttpSchema } from '@zimic/http';
+import { HttpSchema } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 
