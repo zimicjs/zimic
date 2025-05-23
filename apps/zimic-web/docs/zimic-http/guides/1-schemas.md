@@ -14,7 +14,7 @@ automatically type your requests and responses with [`@zimic/fetch`](/docs/zimic
 :::tip TIP: <span>OpenAPI Typegen</span>
 
 For APIs with an [OpenAPI documentation](https://www.openapis.org) (e.g. [Swagger](https://swagger.io)), the
-[`zimic-http typegen` CLI](/docs/zimic-http/guides/3-typegen.mdx) can automatically infer the types and generate the
+[`zimic-http typegen` CLI](/docs/zimic-http/guides/2-typegen.mdx) can automatically infer the types and generate the
 schema for you. This is a great way to keep your schema is up to date and save time on manual type definitions.
 
 :::
@@ -92,9 +92,8 @@ three endpoints have successful and error responses, detailed with their respect
 
 ## Declaring paths
 
-At the root of the schema, you declare the paths of the API as keys.
-[Path parameters](/docs/zimic-http/guides/2-inferring-paths.md) are automatically inferred from the path and have `:` as
-prefix, followed by the name of the parameter.
+At the root of the schema, you declare the paths of the API as keys. Path parameters are automatically inferred from the
+path and have `:` as prefix, followed by the name of the parameter.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
