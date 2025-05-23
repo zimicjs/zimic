@@ -4,6 +4,9 @@ sidebar_label: Using headers
 slug: /interceptor/guides/headers
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 # Using headers
 
 [HTTP headers](https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers) are key-value pairs that contain
@@ -29,6 +32,7 @@ type Schema = HttpSchema<{
         // highlight-start
         headers: {
           authorization: string;
+          'accept-language'?: string;
         };
         // highlight-end
       };
@@ -46,6 +50,9 @@ Then, the headers of intercepted requests will be available in the `headers` pro
 [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrequests). The headers are typed and
 validated according to your schema, providing type safety and autocompletion.
 
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
 ```ts
 const handler = interceptor
   .get('/users')
@@ -53,12 +60,15 @@ const handler = interceptor
     // highlight-start
     headers: {
       authorization: 'Bearer my-token',
+      'accept-language': 'en',
     },
     // highlight-end
   })
   .respond((request) => {
-    // highlight-next-line
+    // highlight-start
     console.log(request.headers.get('authorization'));
+    console.log(request.headers.get('accept-language'));
+    // highlight-end
 
     return {
       status: 200,
@@ -70,9 +80,51 @@ const handler = interceptor
 // Run the application and make requests...
 
 console.log(handler.requests); // 1
-// highlight-next-line
+// highlight-start
 console.log(handler.requests[0].headers.get('authorization'));
+console.log(handler.requests[0].headers.get('accept-language'));
+// highlight-end
 ```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+const handler = await interceptor
+  .get('/users')
+  .with({
+    // highlight-start
+    headers: {
+      authorization: 'Bearer my-token',
+      'accept-language': 'en',
+    },
+    // highlight-end
+  })
+  .respond((request) => {
+    // highlight-start
+    console.log(request.headers.get('authorization'));
+    console.log(request.headers.get('accept-language'));
+    // highlight-end
+
+    return {
+      status: 200,
+      body: users,
+    };
+  })
+  .times(1);
+
+// Run the application and make requests...
+
+console.log(handler.requests); // 1
+// highlight-start
+console.log(handler.requests[0].headers.get('authorization'));
+console.log(handler.requests[0].headers.get('accept-language'));
+// highlight-end
+```
+
+  </TabItem>
+</Tabs>
 
 ## Using response headers
 
@@ -94,6 +146,7 @@ type Schema = HttpSchema<{
         200: {
           // highlight-start
           headers: {
+            'content-type': 'application/json';
             'content-language'?: string;
           };
           // highlight-end
@@ -109,6 +162,9 @@ When sending a response to an intercepted request, you can set the headers in th
 [`handler.respond`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrespond) method with the `headers`
 property.
 
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
 ```ts
 interceptor
   .get('/users')
@@ -116,6 +172,7 @@ interceptor
     status: 200,
     // highlight-start
     headers: {
+      'content-type': 'application/json',
       'content-language': 'en',
     },
     // highlight-end
@@ -123,3 +180,26 @@ interceptor
   })
   .times(1);
 ```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .get('/users')
+  .respond({
+    status: 200,
+    // highlight-start
+    headers: {
+      'content-type': 'application/json',
+      'content-language': 'en',
+    },
+    // highlight-end
+    body: users,
+  })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
