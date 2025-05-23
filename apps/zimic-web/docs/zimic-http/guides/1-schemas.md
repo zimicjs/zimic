@@ -171,7 +171,7 @@ type MyServiceSchema = HttpSchema<{
 
 #### Declaring requests with JSON body
 
-To declare a request with a JSON body, simply use the type in the `body` property.
+To declare a JSON body, use the type directly.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
@@ -194,7 +194,7 @@ type MyServiceSchema = HttpSchema<{
 
 #### Declaring requests with `FormData` body
 
-To declare a request with `FormData`, use [`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md).
+Use [`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md) to declare a request with `FormData` body.
 
 ```ts
 import { HttpSchema, HttpFormData } from '@zimic/http';
@@ -221,7 +221,7 @@ type MyServiceSchema = HttpSchema<{
 [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob),
 [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), and
 [`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) are frequently used types for binary data.
-Use one of these types in the `body` property to declare a request with a binary body.
+Use one of these types to declare a binary body.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
@@ -240,7 +240,7 @@ type MyServiceSchema = HttpSchema<{
 
 #### Declaring requests with plain-text body
 
-Plain-text bodies are declared as a string.
+Plain-text bodies can be declared as a string.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
@@ -259,7 +259,7 @@ type MyServiceSchema = HttpSchema<{
 
 #### Declaring requests with URL-encoded body
 
-Bodies with URL-encoded data are declared with [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md).
+Bodies with URL-encoded data can be declared with [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md).
 
 ```ts
 import { HttpSchema, HttpSearchParams } from '@zimic/http';
@@ -288,7 +288,7 @@ are used as keys.
 
 #### Declaring responses with JSON body
 
-To declare a response with a JSON body, use the type directly in the `body` property.
+To declare a response with a JSON body, use the type directly.
 
 ```ts
 interface User {
@@ -344,8 +344,8 @@ type MyServiceSchema = HttpSchema<{
 
 To define a response with binary data, use [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob),
 [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), or
-[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) in the `body` property, similarly to
-requests.
+[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream), similar to how you would declare a
+request with binary data.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
@@ -363,6 +363,8 @@ type MyServiceSchema = HttpSchema<{
 ```
 
 #### Declaring responses with plain-text body
+
+Plain-text bodies can be declared as a string.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
@@ -383,8 +385,7 @@ type MyServiceSchema = HttpSchema<{
 
 #### Declaring responses with URL-encoded body
 
-To declare a response with URL-encoded data, use [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md)
-wrapping the structure of the params.
+Use [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md) to declare a response with URL-encoded data.
 
 ```ts
 import { HttpSchema, HttpSearchParams } from '@zimic/http';
@@ -412,11 +413,13 @@ type MyServiceSchema = HttpSchema<{
 Sometimes, endpoints can return a range of status codes, such as `5XX`, meaning any status greater than or equal to 500.
 In these cases, you can use the `HttpStatusCode` type, which contains all standard HTTP status codes:
 
-- `HttpStatusCode.Information`: [`1XX`](https://developer.mozilla.org/docs/Web/HTTP/Status#information_responses)
-- `HttpStatusCode.Success`: [`2XX`](https://developer.mozilla.org/docs/Web/HTTP/Status#successful_responses)
-- `HttpStatusCode.Redirection`: [`3XX`](https://developer.mozilla.org/docs/Web/HTTP/Status#redirection_messages)
-- `HttpStatusCode.ClientError`: [`4XX`](https://developer.mozilla.org/docs/Web/HTTP/Status#client_error_responses)
-- `HttpStatusCode.ServerError`: [`5XX`](https://developer.mozilla.org/docs/Web/HTTP/Status#server_error_responses)
+| Type                         | Range                                                                              |
+| ---------------------------- | ---------------------------------------------------------------------------------- |
+| `HttpStatusCode.Information` | [`1XX`](https://developer.mozilla.org/docs/Web/HTTP/Status#information_responses)  |
+| `HttpStatusCode.Success`     | [`2XX`](https://developer.mozilla.org/docs/Web/HTTP/Status#successful_responses)   |
+| `HttpStatusCode.Redirection` | [`3XX`](https://developer.mozilla.org/docs/Web/HTTP/Status#redirection_messages)   |
+| `HttpStatusCode.ClientError` | [`4XX`](https://developer.mozilla.org/docs/Web/HTTP/Status#client_error_responses) |
+| `HttpStatusCode.ServerError` | [`5XX`](https://developer.mozilla.org/docs/Web/HTTP/Status#server_error_responses) |
 
 ```ts
 import type { HttpSchema, HttpStatusCode } from '@/index';
