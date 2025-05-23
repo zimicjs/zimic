@@ -23,7 +23,7 @@ params, and form data.
 - :bulb: **Type generation**
 
   Infer the types from [OpenAPI](https://www.openapis.org/) documentation and generate ready-to-use HTTP schemas with
-  our [typegen CLI](/docs/zimic-http/guides/3-typegen.mdx).
+  our [typegen CLI](/docs/zimic-http/guides/2-typegen.mdx).
 
 - :pushpin: **Type-safe APIs**
 

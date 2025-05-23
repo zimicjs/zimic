@@ -107,7 +107,7 @@ const fetch = createFetch<Schema>({
 
 ## Using response headers
 
-Similarly to request headers, you can declare the types of response headers in your
+Similarly to requests, you can declare the types of response headers in your
 [schema](/docs/zimic-http/guides/1-schemas.md).
 
 ```ts title='schema.ts'
