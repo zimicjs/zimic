@@ -1,0 +1,143 @@
+---
+title: Using search params (query) | @zimic/interceptor
+sidebar_label: Using search params (query)
+slug: /interceptor/guides/search-params
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Using search params (query)
+
+[URL search parameters](https://developer.mozilla.org/docs/Web/API/URLSearchParams), also known as query parameters, are
+a way to provide additional information to a request. They are encoded in the query string of a URL in key-value pairs.
+Search params are typically used in [GET requests](https://developer.mozilla.org/docs/Web/HTTP/Reference/Methods/GET) to
+filter, sort, or paginate data.
+
+## Using request search params
+
+To use search params in your intercepted requests, declare their types in your
+[schema](/docs/zimic-http/guides/1-schemas.md).
+
+```ts title='schema.ts'
+import { HttpSchema } from '@zimic/http';
+
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    GET: {
+      request: {
+        // highlight-start
+        searchParams: {
+          q?: string;
+          page?: number;
+          size?: number;
+          orderBy?: 'createdAt:asc' | 'createdAt:desc';
+        };
+        // highlight-end
+      };
+      response: {
+        200: { body: User[] };
+      };
+    };
+  };
+}>;
+```
+
+Then, the search params of intercepted requests will be available in the `searchParams` property, such as in
+[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith),
+[computed responses](/docs/zimic-interceptor/api/3-http-request-handler.md#computed-responses), and
+[`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrequests). The search params are typed
+and validated according to your schema, providing type safety and autocompletion.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+const handler = interceptor
+  .get('/users')
+  .with({
+    // highlight-start
+    searchParams: {
+      q: 'user',
+      page: 1,
+      size: 10,
+      orderBy: 'createdAt:asc',
+    },
+    // highlight-end
+  })
+  .respond((request) => {
+    // highlight-start
+    console.log(request.searchParams.get('q'));
+    console.log(request.searchParams.get('page'));
+    console.log(request.searchParams.get('size'));
+    console.log(request.searchParams.get('orderBy'));
+    // highlight-end
+
+    return {
+      status: 200,
+      body: users,
+    };
+  })
+  .times(1);
+
+// Run the application and make requests...
+
+console.log(handler.requests); // 1
+// highlight-start
+console.log(handler.requests[0].searchParams.get('q'));
+console.log(handler.requests[0].searchParams.get('page'));
+console.log(handler.requests[0].searchParams.get('size'));
+console.log(handler.requests[0].searchParams.get('orderBy'));
+// highlight-end
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+const handler = await interceptor
+  .get('/users')
+  .with({
+    // highlight-start
+    searchParams: {
+      q: 'user',
+      page: 1,
+      size: 10,
+      orderBy: 'createdAt:asc',
+    },
+    // highlight-end
+  })
+  .respond((request) => {
+    // highlight-start
+    console.log(request.searchParams.get('q'));
+    console.log(request.searchParams.get('page'));
+    console.log(request.searchParams.get('size'));
+    console.log(request.searchParams.get('orderBy'));
+    // highlight-end
+
+    return {
+      status: 200,
+      body: users,
+    };
+  })
+  .times(1);
+
+// Run the application and make requests...
+
+console.log(handler.requests); // 1
+// highlight-start
+console.log(handler.requests[0].searchParams.get('q'));
+console.log(handler.requests[0].searchParams.get('page'));
+console.log(handler.requests[0].searchParams.get('size'));
+console.log(handler.requests[0].searchParams.get('orderBy'));
+// highlight-end
+```
+
+  </TabItem>
+</Tabs>
