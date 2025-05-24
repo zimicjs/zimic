@@ -34,7 +34,7 @@ type Schema = HttpSchema<{
         body: Partial<User>;
       };
       response: {
-        200: { body: User };
+        204: {};
       };
     };
   };
@@ -56,17 +56,12 @@ the endpoint and types all resources as usual.
 const handler = interceptor
   // highlight-next-line
   .patch(`/users/${user.id}`)
-  .with({
-    body: { username: 'new-username' },
-  })
+  .with({ body: { username: 'new-username' } })
   .respond((request) => {
     // highlight-next-line
     console.log(request.pathParams.userId);
 
-    return {
-      status: 200,
-      body: users,
-    };
+    return { status: 204 };
   })
   .times(1);
 
@@ -85,17 +80,12 @@ console.log(handler.requests[0].pathParams.userId);
 const handler = await interceptor
   // highlight-next-line
   .patch(`/users/${user.id}`)
-  .with({
-    body: { username: 'new-username' },
-  })
+  .with({ body: { username: 'new-username' } })
   .respond((request) => {
     // highlight-next-line
     console.log(request.pathParams.userId);
 
-    return {
-      status: 200,
-      body: users,
-    };
+    return { status: 204 };
   })
   .times(1);
 
@@ -109,25 +99,20 @@ console.log(handler.requests[0].pathParams.userId);
   </TabItem>
 </Tabs>
 
-:::tip TIP: <span>Matching multiple path params</span>
+### Matching multiple path params
 
-To match more than one or any value in a path param, declare it with a colon (`:`) in the path string, such as
-`/users/:userId`. [`interceptor.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith) is useful in
-case you want to validate the parameter or limit it specific values.
+To match any value in a path param, declare it with a colon (`:`) in the path string, such as `/users/:userId`.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
 
 ```ts
 const handler = interceptor
-  // highlight-start
+  // Match any user id
+  // highlight-next-line
   .patch('/users/:userId')
-  .with((request) => /^\d+$/.test(request.pathParams.userId))
-  // highlight-end
-  .with({
-    body: { username: 'new-username' },
-  })
-  .respond({ status: 200, body: users })
+  .with({ body: { username: 'new-username' } })
+  .respond({ status: 204 })
   .times(1);
 ```
 
@@ -137,16 +122,50 @@ const handler = interceptor
 
 ```ts
 const handler = await interceptor
-  // highlight-start
+  // Match any user id
+  // highlight-next-line
   .patch('/users/:userId')
-  .with((request) => /^\d+$/.test(request.pathParams.userId))
-  // highlight-end
   .with({ body: { username: 'new-username' } })
-  .respond({ status: 200, body: users })
+  .respond({ status: 204 })
   .times(1);
 ```
 
   </TabItem>
 </Tabs>
 
-:::
+[`interceptor.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith) is useful in case you want to
+validate the parameter or limit it specific values.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+const handler = interceptor
+  // Match any numeric user id
+  // highlight-start
+  .patch('/users/:userId')
+  .with((request) => /^\d+$/.test(request.pathParams.userId))
+  // highlight-end
+  .with({ body: { username: 'new-username' } })
+  .respond({ status: 204 })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+const handler = await interceptor
+  // Match any numeric user id
+  // highlight-start
+  .patch('/users/:userId')
+  .with((request) => /^\d+$/.test(request.pathParams.userId))
+  // highlight-end
+  .with({ body: { username: 'new-username' } })
+  .respond({ status: 204 })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
