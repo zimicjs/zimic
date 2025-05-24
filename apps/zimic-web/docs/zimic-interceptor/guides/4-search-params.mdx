@@ -48,7 +48,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-Then, the search params of intercepted requests will be available in the `searchParams` property, such as in
+Then, the request search params will be available in the `searchParams` property, such as in
 [`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith),
 [computed responses](/docs/zimic-interceptor/api/3-http-request-handler.md#computed-responses), and
 [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrequests). The search params are typed

@@ -44,7 +44,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-Then, the headers of intercepted requests will be available in the `headers` property, such as in
+Then, the request headers will be available in the `headers` property, such as in
 [`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith),
 [computed responses](/docs/zimic-interceptor/api/3-http-request-handler.md#computed-responses), and
 [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrequests). The headers are typed and

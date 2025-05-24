@@ -1,0 +1,152 @@
+---
+title: Using path params | @zimic/interceptor
+sidebar_label: Using path params
+slug: /interceptor/guides/path-params
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Using path params
+
+Path parameters are a way to include dynamic values in the URL path of a request. They are typically used to identify a
+resource being accessed or modified. For example, in the URL `/users/:userId`, `:userId` represents a path parameter
+that can be replaced with a specific user identifier when making a request.
+
+## Using request path params
+
+Path params are automatically inferred from the paths in your [schema](/docs/zimic-http/guides/1-schemas.md). To define
+a path param, prefix it with a colon (`:`) in the path string.
+
+```ts title='schema.ts'
+import { HttpSchema } from '@zimic/http';
+
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  // highlight-next-line
+  '/users/:userId': {
+    PATCH: {
+      request: {
+        body: Partial<User>;
+      };
+      response: {
+        200: { body: User };
+      };
+    };
+  };
+}>;
+```
+
+Then, the path params of the requests will be available in the `pathParams` property, such as in
+[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith),
+[computed responses](/docs/zimic-interceptor/api/3-http-request-handler.md#computed-responses), and
+[`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrequests).
+
+You can use path params directly in the path string using template literals. `@zimic/interceptor` automatically infers
+the endpoint and types all resources as usual.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+const handler = interceptor
+  // highlight-next-line
+  .patch(`/users/${user.id}`)
+  .with({
+    body: { username: 'new-username' },
+  })
+  .respond((request) => {
+    // highlight-next-line
+    console.log(request.pathParams.userId);
+
+    return {
+      status: 200,
+      body: users,
+    };
+  })
+  .times(1);
+
+// Run the application and make requests...
+
+console.log(handler.requests); // 1
+// highlight-next-line
+console.log(handler.requests[0].pathParams.userId);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+const handler = await interceptor
+  // highlight-next-line
+  .patch(`/users/${user.id}`)
+  .with({
+    body: { username: 'new-username' },
+  })
+  .respond((request) => {
+    // highlight-next-line
+    console.log(request.pathParams.userId);
+
+    return {
+      status: 200,
+      body: users,
+    };
+  })
+  .times(1);
+
+// Run the application and make requests...
+
+console.log(handler.requests); // 1
+// highlight-next-line
+console.log(handler.requests[0].pathParams.userId);
+```
+
+  </TabItem>
+</Tabs>
+
+:::tip TIP: <span>Matching multiple path params</span>
+
+To match more than one or any value in a path param, declare it with a colon (`:`) in the path string, such as
+`/users/:userId`. [`interceptor.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith) is useful in
+case you want to validate the parameter or limit it specific values.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+const handler = interceptor
+  // highlight-start
+  .patch('/users/:userId')
+  .with((request) => /^\d+$/.test(request.pathParams.userId))
+  // highlight-end
+  .with({
+    body: { username: 'new-username' },
+  })
+  .respond({ status: 200, body: users })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+const handler = await interceptor
+  // highlight-start
+  .patch('/users/:userId')
+  .with((request) => /^\d+$/.test(request.pathParams.userId))
+  // highlight-end
+  .with({ body: { username: 'new-username' } })
+  .respond({ status: 200, body: users })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+:::
