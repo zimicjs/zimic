@@ -32,7 +32,7 @@ different browsers.
 
 #### TypeScript
 
-`@zimic/interceptor` requires [TypeScript](https://www.typescriptlang.org) >= 4.8.
+`@zimic/interceptor` requires [TypeScript](https://www.typescriptlang.org) >= 5.0.
 
 We recommend enabling `strict` in your `tsconfig.json`:
 
@@ -117,21 +117,20 @@ yarn add @zimic/http@canary @zimic/interceptor@canary --dev
 
 ### Declaring an HTTP schema
 
-To start using `@zimic/interceptor`, declare an HTTP schema using
-[`@zimic/http`](/docs/zimic-http/guides/1-http-schemas.md):
+To start using `@zimic/interceptor`, declare an HTTP schema using [`@zimic/http`](/docs/zimic-http/guides/1-schemas.md):
 
 The schema represents the structure of your API, including the paths, methods, request and response types.
 
 :::tip TIP: <span>OpenAPI Typegen</span>
 
 For APIs with an [OpenAPI documentation](https://www.openapis.org) (e.g. [Swagger](https://swagger.io)), the
-[`zimic-http typegen`](/docs/zimic-http/guides/3-typegen.md) CLI can automatically infer the types and generate the
+[`zimic-http typegen` CLI](/docs/zimic-http/guides/2-typegen.mdx) can automatically infer the types and generate the
 schema for you. This is a great way to keep your schema is up to date and save time on manual type definitions.
 
 :::
 
 ```ts title='schema.ts'
-import { type HttpSchema } from '@zimic/http';
+import { HttpSchema } from '@zimic/http';
 
 interface User {
   username: string;

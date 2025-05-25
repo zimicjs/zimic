@@ -37,6 +37,7 @@
   - [Using bodies](#using-bodies)
   - [Handling authentication](#handling-authentication)
   - [Handling errors](#handling-errors)
+  - [Testing](#testing)
 
 ---
 
@@ -801,3 +802,7 @@ See https://zimic.dev/docs/fetch/guides/authentication.
 ### Handling errors
 
 See https://zimic.dev/docs/fetch/guides/errors.
+
+### Testing
+
+See https://zimic.dev/docs/fetch/guides/testing.

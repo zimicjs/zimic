@@ -157,7 +157,12 @@ const config: Docusaurus.Config = {
       },
       items: [
         {
-          label: 'Projects',
+          label: 'Docs',
+          to: 'docs',
+          position: 'left',
+        },
+        {
+          label: 'Ecosystem',
           type: 'dropdown',
           position: 'left',
           items: [
@@ -177,11 +182,6 @@ const config: Docusaurus.Config = {
               sidebarId: 'interceptor',
             },
           ],
-        },
-        {
-          label: 'Docs',
-          to: 'docs',
-          position: 'left',
         },
         {
           label: 'Examples',
@@ -256,7 +256,7 @@ const config: Docusaurus.Config = {
           ],
         },
         {
-          title: 'Projects',
+          title: 'Ecosystem',
           items: [
             {
               label: '@zimic/http',

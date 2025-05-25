@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@types/superagent": "^8.1.9",
-    "@vitest/browser": "^3.1.2",
+    "@vitest/browser": "^3.1.4",
     "@vitest/coverage-istanbul": "^3.1.2",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/fetch": "workspace:*",

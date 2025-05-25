@@ -13,11 +13,10 @@ that can be replaced with a specific user identifier when making a request.
 ## Using request path params
 
 Path params are automatically inferred from the path of an endpoint in your
-[schema](/docs/zimic-http/guides/1-http-schemas.md). To define a path param, prefix it with a colon (`:`) in the path
-string.
+[schema](/docs/zimic-http/guides/1-schemas.md). To define a path param, prefix it with a colon (`:`) in the path string.
 
 ```ts title='schema.ts'
-import { type HttpSchema } from '@zimic/http';
+import { HttpSchema } from '@zimic/http';
 
 interface User {
   id: string;

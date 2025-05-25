@@ -1,0 +1,118 @@
+---
+title: Typegen | @zimic/http
+sidebar_label: Typegen
+slug: /http/guides/typegen
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Typegen
+
+An [HTTP schema](/docs/zimic-http/guides/1-schemas.md) is one of the main aspects of `@zimic/http`. It allows you to
+define the structure of an API in readable TypeScript types. [`@zimic/fetch`](/docs/zimic-fetch/1-index.md) and
+[`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md) use these schemas to provide type-safe APIs for sending,
+receiving, and mocking requests.
+
+`@zimic/http` has typegen support for [OpenAPI](https://www.openapis.org) documentation. The result is a ready-to-use
+schema that can be used directly by [`@zimic/fetch`](/docs/zimic-fetch/1-index.md),
+[`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md), and your application code.
+
+## OpenAPI
+
+[OpenAPI](https://www.openapis.org) is a specification for defining APIs in a human and machine-readable format. It
+allows you to describe the structure of your API, including endpoints, request and response types, authentication
+methods, and more.
+
+To generate a schema from a local OpenAPI document, use the [`@zimic/http` CLI](/docs/zimic-http/cli/1-typegen.md).
+
+<Tabs groupId="openapi-typegen-format">
+  <TabItem value="json" label="JSON">
+
+```bash
+zimic-http typegen openapi ./schema.json \
+  --output ./schema.ts \
+  --service-name MyService
+```
+
+  </TabItem>
+  <TabItem value="yaml" label="YAML">
+
+```bash
+zimic-http typegen openapi ./schema.yaml \
+  --output ./schema.ts \
+  --service-name MyService
+```
+
+  </TabItem>
+</Tabs>
+
+You can also fetch the OpenAPI documentation from a remote URL:
+
+<Tabs groupId="openapi-typegen-format">
+  <TabItem value="json" label="JSON">
+
+```bash
+zimic-http typegen openapi https://example.com/api/openapi.json \
+  --output ./schema.ts \
+  --service-name MyService
+```
+
+  </TabItem>
+  <TabItem value="yaml" label="YAML">
+
+```bash
+zimic-http typegen openapi https://example.com/api/openapi.yaml \
+  --output ./schema.ts \
+  --service-name MyService
+```
+
+  </TabItem>
+</Tabs>
+
+The output file will contain your HTTP schema, named based on the `--service-name` option and including the generated
+types for each endpoint.
+
+```ts title="schema.ts"
+import type { HttpSchema } from '@/index';
+
+export type MyServiceSchema = HttpSchema<{
+  users: {
+    GET: {
+      request: {
+        searchParams: { search?: string };
+      };
+      response: {
+        200: {
+          headers: { 'content-type': 'application/json' };
+          body: MyServiceComponents['schemas']['Users'];
+        };
+      };
+    };
+    // ...
+  };
+  // ...
+}>;
+
+export interface MyServiceComponents {
+  schemas: {
+    User: { id: number; name: string };
+    Users: MyServiceComponents['schemas']['User'][];
+    // ...
+  };
+  // ...
+}
+
+export interface MyServiceOperations {
+  // ...
+}
+```
+
+Then, you can use these types in your code, your
+[`@zimic/fetch` clients](/docs/zimic-fetch/guides/8-typegen.mdx#using-a-generated-schema) and
+[`@zimic/interceptor` interceptors](/docs/zimic-interceptor/guides/11-typegen.mdx#using-a-generated-schema).
+
+## Examples
+
+Our [OpenAPI typegen example](https://github.com/zimicjs/zimic/tree/main/examples/zimic-with-openapi-typegen#readme)
+shows how the type generation can be used in practice.
