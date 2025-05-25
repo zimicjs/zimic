@@ -17,13 +17,13 @@ params, and form data.
 
 - :star: **HTTP schemas**
 
-  Declare the structure of your endpoints in an [HTTP schema](/docs/zimic-http/guides/1-http-schemas.md) and use it to
-  type your HTTP requests and responses.
+  Declare the structure of your endpoints in an [HTTP schema](/docs/zimic-http/guides/1-schemas.md) and use it to type
+  your HTTP requests and responses.
 
 - :bulb: **Type generation**
 
-  Infer the types from [OpenAPI](https://www.openapis.org/) documentations and generate ready-to-use HTTP schemas in
-  instants with our [typegen CLI](/docs/zimic-http/guides/3-typegen.md).
+  Infer the types from [OpenAPI](https://www.openapis.org/) documentation and generate ready-to-use HTTP schemas with
+  our [typegen CLI](/docs/zimic-http/guides/2-typegen.mdx).
 
 - :pushpin: **Type-safe APIs**
 

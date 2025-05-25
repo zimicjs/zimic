@@ -13,10 +13,10 @@ filter, sort, or paginate data.
 
 ## Using request search params
 
-To send search params in your requests, declare their types in your [schema](/docs/zimic-http/guides/1-http-schemas.md).
+To send search params in your requests, declare their types in your [schema](/docs/zimic-http/guides/1-schemas.md).
 
 ```ts title='schema.ts'
-import { type HttpSchema } from '@zimic/http';
+import { HttpSchema } from '@zimic/http';
 
 interface User {
   id: string;
@@ -68,7 +68,7 @@ const response = await fetch('/users', {
 });
 ```
 
-:::note NOTE: <span>Differences compared to the native Fetch API</span>
+:::info INFO: <span>Differences compared to the native Fetch API</span>
 
 Search params in `@zimic/fetch` are set using the `searchParams` option. This differs from the native
 [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API), which defines the params directly in the URL.

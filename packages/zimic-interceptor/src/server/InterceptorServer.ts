@@ -287,7 +287,7 @@ class InterceptorServer implements PublicInterceptorServer {
 
       if (response) {
         this.setDefaultAccessControlHeaders(response, ['access-control-allow-origin', 'access-control-expose-headers']);
-        await sendNodeResponse(response, nodeResponse, nodeRequest);
+        await sendNodeResponse(response, nodeResponse, nodeRequest, true);
         return;
       }
 
@@ -296,7 +296,7 @@ class InterceptorServer implements PublicInterceptorServer {
       if (isUnhandledPreflightResponse) {
         const defaultPreflightResponse = new Response(null, { status: DEFAULT_PREFLIGHT_STATUS_CODE });
         this.setDefaultAccessControlHeaders(defaultPreflightResponse);
-        await sendNodeResponse(defaultPreflightResponse, nodeResponse, nodeRequest);
+        await sendNodeResponse(defaultPreflightResponse, nodeResponse, nodeRequest, true);
       }
 
       const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse && !matchedSomeInterceptor;
