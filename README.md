@@ -54,8 +54,8 @@ Zimic is a collection of TypeScript-first HTTP integration libraries.
 
 - 📦 **Developer friendly**
 
-  We believe that developer experience is key to building great applications. The Zimic API is strives to be as simple
-  and intuitive as possible, and we're always looking for ways to improve it.
+  We believe that developer experience is key to building great applications. The Zimic API strives to be as simple and
+  intuitive as possible, and we're always looking for ways to improve it.
 
 - 🧪 **Thoroughly tested**
 

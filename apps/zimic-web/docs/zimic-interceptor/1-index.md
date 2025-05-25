@@ -25,7 +25,7 @@ testing.
 - :link: **Network-level interception**
 
   `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and
-  [interceptor servers](/docs/zimic-interceptor/cli/1-server.md) to handle real HTTP requests. From you application's
+  [interceptor servers](/docs/zimic-interceptor/cli/1-server.md) to handle real HTTP requests. From your application's
   point of view, the mocked responses are indistinguishable from the real ones.
 
 - :bulb: **Readability**

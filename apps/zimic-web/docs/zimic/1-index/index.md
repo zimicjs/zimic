@@ -92,8 +92,8 @@ mocks are fully typed _by default_ and in sync with the API.
 
 - 📦 **Developer friendly**
 
-  We believe that developer experience is key to building great applications. The Zimic API is strives to be as simple
-  and intuitive as possible, and we're always looking for ways to improve it.
+  We believe that developer experience is key to building great applications. The Zimic API strives to be as simple and
+  intuitive as possible, and we're always looking for ways to improve it.
 
 - 🧪 **Thoroughly tested**
 
@@ -183,7 +183,7 @@ A type-safe HTTP interceptor library for handling and mocking HTTP requests in d
 - :link: **Network-level interception**
 
   `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and
-  [interceptor servers](/docs/zimic-interceptor/cli/1-server.md) to handle real HTTP requests. From you application's
+  [interceptor servers](/docs/zimic-interceptor/cli/1-server.md) to handle real HTTP requests. From your application's
   point of view, the mocked responses are indistinguishable from the real ones.
 
 - :bulb: **Readability**
