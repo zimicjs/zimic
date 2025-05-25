@@ -38,117 +38,133 @@
 
 ---
 
-## Contents <!-- omit from toc -->
-
-- [Projects](#projects)
-  - [`@zimic/http`](#zimichttp)
-  - [`@zimic/fetch`](#zimicfetch)
-  - [`@zimic/interceptor`](#zimicinterceptor)
-- [Examples](#examples)
-- [Changelog](#changelog)
-- [Contributing](#contributing)
-
----
-
 Zimic is a collection of TypeScript-first HTTP integration libraries.
 
-## Projects
+## Features
+
+- ⚙️ **TypeScript-first**
+
+  Zimic has **first-class TypeScript support**, providing type safety, inference, validation, and autocompletion out of
+  the box. "Typed by default" is one of the core principles of Zimic.
+
+- ⚡ **Lightweight**
+
+  The Zimic libraries are designed with minimal bundle sizes and few external dependencies in mind, making them perfect
+  for both client and server-side applications.
+
+- 📦 **Developer friendly**
+
+  We believe that developer experience is key to building great applications. The Zimic API is strives to be as simple
+  and intuitive as possible, and we're always looking for ways to improve it.
+
+- 🧪 **Thoroughly tested**
+
+  Zimic has a comprehensive test suite and high code coverage. Testing is a main part of our development process, and we
+  take reliability and developer confidence very seriously.
+
+## Ecosystem
+
+Zimic is split into an ecosystem of integrated packages.
 
 ### `@zimic/http`
 
-> [!NOTE]
->
-> Status: :seedling: **Beta**
+A collection of type-safe utilities to handle HTTP requests and responses, including headers, search params, and form
+data.
 
-[`@zimic/http`](./packages/zimic-http) is a collection of type-safe utilities to handle HTTP requests and responses,
-including headers, search params, and form data.
+Status: :seedling: **Beta**
 
-- :star: **HTTP schemas and typegen**: Declare the structure of your HTTP endpoints as a TypeScript
-  [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas) and use it to type your HTTP requests and
-  responses. If you have an [OpenAPI v3](https://swagger.io/specification) declaration,
-  [`zimic-http typegen`](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen) can automatically generate the types
-  of your schema.
-- :pushpin: **Type-safe native APIs**: Declare type-safe
-  [`Headers`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpheaders),
-  [`URLSearchParams`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpsearchparams), and
-  [`FormData`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpformdata) objects, fully compatible with their
-  native counterparts.
+- :star: **HTTP schemas**
+
+  Declare the structure of your endpoints in an [HTTP schema](https://zimic.dev/docs/http/guides/schemas) and use it to
+  type your HTTP requests and responses.
+
+- :bulb: **Type generation**
+
+  Infer types from [OpenAPI](https://www.openapis.org) documentation and generate ready-to-use HTTP schemas with our
+  [typegen CLI](https://zimic.dev/docs/http/guides/typegen).
+
+- :pushpin: **Type-safe APIs**
+
+  Declare typed [`Headers`](https://zimic.dev/docs/http/api/http-headers),
+  [`URLSearchParams`](https://zimic.dev/docs/http/api/http-search-params), and
+  [`FormData`](https://zimic.dev/docs/http/api/http-form-data) objects, fully compatible with their native counterparts.
 
 **Learn more**:
 
-- [`@zimic/http` - Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started‐http)
-- [`@zimic/http` - API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http)
-- `@zimic/http` - CLI reference
-  - [`zimic-http typegen`](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen)
+- [`@zimic/http` - Introduction](https://zimic.dev/docs/http)
+- [`@zimic/http` - Getting started](https://zimic.dev/docs/http/getting-started)
+- [`@zimic/http` - Guides](https://zimic.dev/docs/http/guides)
 
 ### `@zimic/fetch`
 
-> [!WARNING]
->
-> Status: :seedling: **Beta**
+A minimal (~2 kB minified and gzipped) and type-safe `fetch`-like API client.
 
-[`@zimic/fetch`](./packages/zimic-fetch) is a minimal (~2 kB minified and gzipped), zero-dependency, and type-safe
-`fetch`-like API client.
+Status: :seedling: **Beta**
 
-- :sparkles: **Type-safe `fetch`**: Create a type-safe
-  [`fetch`-like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client. Use your
-  [`@zimic/http` schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas) and have your requests and
-  responses fully typed by default.
-- :muscle: **Developer experience**: `@zimic/fetch` seeks to be as compatible with the
-  [native Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API) as possible, while providing an ergonomic
-  interface to improve type safety. Define default options to apply to your requests, such as a base URL, headers,
-  search parameters, and more. Inspect and modify requests and responses using
-  [`onRequest`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchonrequest) and
-  [`onResponse`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchonresponse) listeners.
+- :zap: **Type-safe `fetch`**
+
+  Use your [`@zimic/http` schema](https://zimic.dev/docs/http/guides/schemas) to create a type-safe
+  [`fetch`-like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client and have your requests and responses
+  fully typed by default.
+
+- :sparkles: **Zero dependencies**
+
+  `@zimic/fetch` has no external dependencies, making it a lightweight and fast alternative to other HTTP clients.
+
+- :muscle: **Developer experience**
+
+  Define default options to apply to your requests, such as a base URL, headers, search parameters, and more. Inspect
+  and modify requests and responses using [`onRequest`](https://zimic.dev/docs/fetch/api/fetch#onrequest) and
+  [`onResponse`](https://zimic.dev/docs/fetch/api/fetch#onresponse) listeners.
 
 **Learn more**:
 
-- [`@zimic/fetch` - Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started‐fetch)
-- [`@zimic/fetch` - API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch)
+- [`@zimic/fetch` - Introduction](https://zimic.dev/docs/fetch)
+- [`@zimic/fetch` - Getting started](https://zimic.dev/docs/fetch/getting-started)
+- [`@zimic/fetch` - Guides](https://zimic.dev/docs/fetch/guides)
 
 ### `@zimic/interceptor`
 
-> [!NOTE]
->
-> Status: :seedling: **Beta**
+A type-safe HTTP interceptor library for handling and mocking HTTP requests in development and testing.
 
-[`@zimic/interceptor`](./packages/zimic-interceptor) provides a readable and type-safe way to intercept and mock HTTP
-requests.
+Status: :seedling: **Beta**
 
-- :globe_with_meridians: **HTTP interceptors**: Intercept HTTP requests and return mock responses. Use
-  [local](https://github.com/zimicjs/zimic/wiki/getting‐started#local-http-interceptors) or
-  [remote](https://github.com/zimicjs/zimic/wiki/getting‐started#remote-http-interceptors) interceptors to adapt your
-  mocks to your development and testing workflow.
-- :zap: **Fully typed mocks**: Use your
-  [`@zimic/http` schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas) and create type-safe mocks for
-  your HTTP requests.
-- :link: **Network-level interceptor**: `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and
-  [interceptor servers](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server) to handle real HTTP requests. From you
+- :globe_with_meridians: **HTTP interceptors**
+
+  Use your [`@zimic/http` schema](https://zimic.dev/docs/http/guides/schemas) to declare
+  [local](https://zimic.dev/docs/interceptor/guides/interceptors/local) and
+  [remote](https://zimic.dev/docs/interceptor/guides/interceptors/remote) HTTP interceptors. Mock external services and
+  simulate success, loading, and error states with ease and type safety.
+
+- :link: **Network-level interception**
+
+  `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and
+  [interceptor servers](https://zimic.dev/docs/interceptor/cli/server) to handle real HTTP requests. From you
   application's point of view, the mocked responses are indistinguishable from the real ones.
-- :wrench: **Flexibility**: Mock external services and reliably test how your application behaves. Simulate success,
-  loading, and error states with ease using [standard web APIs](https://developer.mozilla.org/docs/Web/API).
-- :bulb: **Readability**: `@zimic/interceptor` was designed to encourage clarity and readability in your mocks.
 
-> [!TIP]
->
-> `@zimic/fetch` and `@zimic/interceptor` are not required to be used together. `@zimic/interceptor` is compatible with
-> any HTTP client implementation, as `@zimic/fetch` works with any HTTP interceptor library. With that in mind,
-> `@zimic/fetch` and `@zimic/interceptor` work best together, providing a seamless and type-safe experience for
-> performing HTTP requests in your application and mocking them during development and testing.
+- :bulb: **Readability**
+
+  `@zimic/interceptor` was designed to encourage clarity and readability in your mocks. Use
+  [declarative assertions](https://zimic.dev/docs/interceptor/guides/declarative-assertions) to verify that your
+  application is making the expected requests and test with confidence.
 
 **Learn more**:
 
-- [`@zimic/interceptor` - Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started‐interceptor)
-- [`@zimic/interceptor` - API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http)
-- `@zimic/interceptor` - CLI reference
-  - [Browser](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐browser)
-  - [Server](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server)
-- `@zimic/interceptor` - Guides
-  - [Testing](https://github.com/zimicjs/zimic/wiki/guides‐testing‐interceptor)
+- [`@zimic/interceptor` - Introduction](https://zimic.dev/docs/interceptor)
+- [`@zimic/interceptor` - Getting started](https://zimic.dev/docs/interceptor/getting-started)
+- [`@zimic/interceptor` - Guides](https://zimic.dev/docs/interceptor/guides)
+
+> [!TIP] `@zimic/fetch` and `@zimic/interceptor` work best together
+>
+> `@zimic/fetch` and `@zimic/interceptor` are designed to work together, providing a seamless and type-safe experience
+> for making and mocking HTTP requests. With that in mind, it's perfectly possible to use `@zimic/interceptor` with any
+> HTTP client implementation, or `@zimic/fetch` with any HTTP mocking library. See our
+> [`@zimic/fetch` testing guide](https://zimic.dev/docs/fetch/guides/testing#zimicinterceptor) for more information.
 
 ## Examples
 
-Visit our [examples](./examples/README.md) to see how to use Zimic with popular frameworks, libraries, and use cases.
+Visit our [examples](https://zimic.dev/docs/examples) to see how to use Zimic with popular frameworks, libraries, and
+use cases.
 
 ## Changelog
 

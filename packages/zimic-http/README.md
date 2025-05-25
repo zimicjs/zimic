@@ -15,7 +15,7 @@
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/zimicjs/zimic/wiki">Docs</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="#examples">Examples</a>
+  <a href="https://zimic.dev/docs/examples">Examples</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/zimicjs/zimic/issues">Issues</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
@@ -36,184 +36,32 @@
 
 ---
 
-- [Features](#features)
-- [Getting started](#getting-started)
-  - [Installation](#installation)
-- [Basic usage](#basic-usage)
-- [Documentation](#documentation)
-- [Examples](#examples)
-- [Changelog](#changelog)
-- [Contributing](#contributing)
-
----
-
 `@zimic/http` is a collection of type-safe utilities to handle HTTP requests and responses, including headers, search
 params, and form data.
 
-> [!NOTE]
->
-> Status: :seedling: **Beta**
+Status: :seedling: **Beta**
 
 ## Features
 
-- :star: **HTTP schemas and typegen**: Declare the structure of your HTTP endpoints as a TypeScript
-  [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas) and use it to type your HTTP requests and
-  responses. If you have an [OpenAPI v3](https://swagger.io/specification) declaration,
-  [`zimic-http typegen`](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen) can automatically generate the types
-  of your schema.
-- :pushpin: **Type-safe native APIs**: Declare type-safe
-  [`Headers`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpheaders),
-  [`URLSearchParams`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpsearchparams), and
-  [`FormData`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpformdata) objects, fully compatible with their
-  native counterparts.
+- :star: **HTTP schemas**
 
-## Getting started
+  Declare the structure of your endpoints in an [HTTP schema](https://zimic.dev/docs/http/guides/schemas) and use it to
+  type your HTTP requests and responses.
 
-Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting‐started‐http).
+- :bulb: **Type generation**
 
-### Installation
+  Infer the types from [OpenAPI](https://www.openapis.org/) documentation and generate ready-to-use HTTP schemas with
+  our [typegen CLI](https://zimic.dev/docs/http/guides/typegen).
 
-| Manager | Command                          |
-| :-----: | -------------------------------- |
-|   npm   | `npm install @zimic/http --save` |
-|  yarn   | `yarn add @zimic/http`           |
-|  pnpm   | `pnpm add @zimic/http`           |
+- :pushpin: **Type-safe APIs**
 
-## Basic usage
+  Declare typed [`Headers`](https://zimic.dev/docs/http/api/http-headers),
+  [`URLSearchParams`](https://zimic.dev/docs/http/api/http-search-params), and
+  [`FormData`](https://zimic.dev/docs/http/api/http-form-data) objects, fully compatible with their native counterparts.
 
-1. Declare your [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas):
+**Learn more**:
 
-   ```ts
-   import { type HttpSchema } from '@zimic/http';
-
-   interface User {
-     username: string;
-   }
-
-   interface RequestError {
-     code: string;
-     message: string;
-   }
-
-   type Schema = HttpSchema<{
-     '/users': {
-       POST: {
-         request: { body: User };
-         response: {
-           201: { body: User };
-           400: { body: RequestError };
-           409: { body: RequestError };
-         };
-       };
-
-       GET: {
-         request: {
-           headers: { authorization: string };
-           searchParams: { query?: string; limit?: `${number}` };
-         };
-         response: {
-           200: { body: User[] };
-           400: { body: RequestError };
-           401: { body: RequestError };
-         };
-       };
-     };
-
-     '/users/:userId': {
-       PATCH: {
-         request: {
-           headers: { authorization: string };
-           body: Partial<User>;
-         };
-         response: {
-           204: {};
-           400: { body: RequestError };
-         };
-       };
-     };
-   }>;
-   ```
-
-2. Use the types in your code!
-
-   - **Example 1**: Reference the types in your code:
-
-     ```ts
-     import { HttpHeaders, HttpSearchParams, HttpFormData } from '@zimic/http';
-
-     type UserListHeaders = Schema['/users']['GET']['request']['headers'];
-
-     const headers = new HttpHeaders<UserListHeaders>({
-       authorization: 'Bearer my-token',
-     });
-
-     type UserListSearchParams = Schema['/users']['GET']['request']['searchParams'];
-
-     const searchParams = new HttpSearchParams<UserListSearchParams>({
-       query: 'u',
-       limit: '10',
-     });
-
-     type UserCreateBody = Schema['/users']['POST']['request']['body'];
-
-     const formData = new HttpFormData<UserCreateBody>();
-     formData.append('username', 'user');
-     ```
-
-   - **Example 2**: Using [`@zimic/fetch`](../zimic-fetch):
-
-     ```ts
-     import { createFetch } from '@zimic/fetch';
-
-     const fetch = createFetch<Schema>({
-       baseURL: 'http://localhost:3000',
-     });
-
-     const response = await fetch('/users', {
-       method: 'POST',
-       body: { username: 'user' },
-     });
-
-     if (!response.ok) {
-       throw response.error;
-     }
-
-     console.log(await response.json()); // { username: 'user' }
-     ```
-
-   - **Example 3**: Using [`@zimic/interceptor`](../zimic-interceptor):
-
-     ```ts
-     import { createHttpInterceptor } from '@zimic/interceptor/http';
-
-     const interceptor = createHttpInterceptor<Schema>({
-       baseURL: 'http://localhost:3000',
-     });
-
-     await interceptor.start();
-
-     interceptor.post('/users').respond({
-       status: 201,
-       body: { username: body.username },
-     });
-     ```
-
-## Documentation
-
-- [Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started‐http)
-- [API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http)
-- CLI reference
-  - [`zimic-http typegen`](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen)
-
-## Examples
-
-Visit our [examples](../../examples/README.md) to see how to use Zimic with popular frameworks, libraries, and use
-cases.
-
-## Changelog
-
-The changelog is available on our [GitHub Releases](https://github.com/zimicjs/zimic/releases) page.
-
-## Contributing
-
-Interested in contributing to Zimic? Check out our [contributing guide](../../CONTRIBUTING.md) to get started!
+- [`@zimic/http` - Getting started](https://zimic.dev/docs/http/getting-started)
+- [`@zimic/http` - Guides](https://zimic.dev/docs/http/guides)
+- [`@zimic/http` - API](https://zimic.dev/docs/http/api)
+- [`@zimic/http` - CLI](https://zimic.dev/docs/http/cli)
