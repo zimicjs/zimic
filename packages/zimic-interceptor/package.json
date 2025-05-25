@@ -92,10 +92,10 @@
     "postinstall": "node --enable-source-maps -e \"try{require('./dist/scripts/postinstall')}catch(error){console.error(error)}\""
   },
   "dependencies": {
-    "@whatwg-node/server": "0.10.8",
+    "@whatwg-node/server": "0.10.10",
     "execa": "9.5.3",
     "isomorphic-ws": "5.0.0",
-    "msw": "2.8.3",
+    "msw": "2.8.4",
     "picocolors": "^1.1.1",
     "ws": "8.18.2",
     "yargs": "17.7.2",
@@ -108,7 +108,7 @@
     "@types/node": "^22.15.3",
     "@types/ws": "^8.18.1",
     "@types/yargs": "^17.0.33",
-    "@vitest/browser": "^3.1.2",
+    "@vitest/browser": "^3.1.4",
     "@vitest/coverage-istanbul": "^3.1.2",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
