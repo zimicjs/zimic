@@ -15,7 +15,7 @@
     "@zimic/http": "latest"
   },
   "devDependencies": {
-    "@vitest/browser": "^3.1.2",
+    "@vitest/browser": "^3.1.4",
     "@zimic/interceptor": "latest",
     "concurrently": "^9.1.2",
     "dotenv-cli": "^8.0.0",

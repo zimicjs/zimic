@@ -71,7 +71,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.3",
-    "@vitest/browser": "^3.1.2",
+    "@vitest/browser": "^3.1.4",
     "@vitest/coverage-istanbul": "^3.1.2",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/interceptor": "workspace:*",
