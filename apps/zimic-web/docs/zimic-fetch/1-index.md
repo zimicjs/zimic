@@ -16,7 +16,7 @@ slug: /fetch
 
 - :zap: **Type-safe `fetch`**
 
-  Use your [`@zimic/http` schema](/docs/zimic-http/guides/1-http-schemas.md) to create a type-safe
+  Use your [`@zimic/http` schema](/docs/zimic-http/guides/1-schemas.md) to create a type-safe
   [`fetch`-like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client and have your requests and responses
   fully typed by default.
 

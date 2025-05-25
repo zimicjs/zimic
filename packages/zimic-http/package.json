@@ -12,7 +12,7 @@
     "api",
     "static"
   ],
-  "version": "0.4.2",
+  "version": "0.5.0-canary.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -89,7 +89,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.15.3",
     "@types/yargs": "^17.0.33",
-    "@vitest/browser": "^3.1.2",
+    "@vitest/browser": "^3.1.4",
     "@vitest/coverage-istanbul": "^3.1.2",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/interceptor": "workspace:*",
@@ -108,6 +108,11 @@
     "vitest": "^3.1.2"
   },
   "peerDependencies": {
-    "typescript": ">=4.8.0"
+    "typescript": ">=5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
   }
 }

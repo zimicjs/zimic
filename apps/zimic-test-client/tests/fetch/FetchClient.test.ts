@@ -54,7 +54,7 @@ describe('Fetch client', async () => {
 
   afterEach(() => {
     for (const interceptor of interceptors) {
-      interceptor.clear();
+      interceptor.checkTimes();
     }
   });
 
@@ -413,7 +413,10 @@ describe('Fetch client', async () => {
         const listHandler = authInterceptor
           .get('/users')
           .with({ searchParams: { orderBy: ['email.desc'] } })
-          .respond({ status: 200, body: usersSortedByDescendingEmail.map(serializeUser) })
+          .respond({
+            status: 200,
+            body: usersSortedByDescendingEmail.map(serializeUser),
+          })
           .times(1);
 
         const response = await listUsers({

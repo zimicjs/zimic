@@ -3,6 +3,6 @@
   "version": "0.0.0",
   "private": false,
   "peerDependencies": {
-    "typescript": ">=4.8.0"
+    "typescript": ">=5.0.0"
   }
 }
