@@ -154,11 +154,11 @@ Status: :seedling: **Beta**
 - [`@zimic/interceptor` - Getting started](https://zimic.dev/docs/interceptor/getting-started)
 - [`@zimic/interceptor` - Guides](https://zimic.dev/docs/interceptor/guides)
 
-> [!TIP] `@zimic/fetch` and `@zimic/interceptor` work best together
+> [!TIP]
 >
-> `@zimic/fetch` and `@zimic/interceptor` are designed to work together, providing a seamless and type-safe experience
-> for making and mocking HTTP requests. With that in mind, it's perfectly possible to use `@zimic/interceptor` with any
-> HTTP client implementation, or `@zimic/fetch` with any HTTP mocking library. See our
+> `@zimic/fetch` and `@zimic/interceptor` work best together, providing a seamless and type-safe experience for making
+> and mocking HTTP requests. With that in mind, it's perfectly possible to use `@zimic/interceptor` with any HTTP client
+> implementation, or `@zimic/fetch` with any HTTP mocking library. See our
 > [`@zimic/fetch` testing guide](https://zimic.dev/docs/fetch/guides/testing#zimicinterceptor) for more information.
 
 ## Examples
