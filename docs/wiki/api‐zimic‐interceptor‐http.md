@@ -335,9 +335,7 @@ interceptors.
 ### HTTP `interceptor.stop()`
 
 Stops the interceptor, preventing it from intercepting HTTP requests. Stopped interceptors are automatically cleared,
-exactly as if
-[`interceptor.clear()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear) had been
-called.
+exactly as if [`interceptor.clear()`](#http-interceptorclear) had been called.
 
 ```ts
 await interceptor.stop();

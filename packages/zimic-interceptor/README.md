@@ -13,7 +13,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/@zimic/interceptor">npm</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="https://github.com/zimicjs/zimic/wiki">Docs</a>
+  <a href="https://zimic.dev">Docs</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://zimic.dev/docs/examples">Examples</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>

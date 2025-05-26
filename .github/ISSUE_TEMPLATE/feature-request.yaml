@@ -32,7 +32,7 @@ body:
           required: true
         - label:
             I confirm that my proposal is not yet available in the latest version of Zimic (see the
-            [documentation](https://github.com/zimicjs/zimic/wiki) and the
+            [documentation](https://zimic.dev) and the
             [releases](https://github.com/zimicjs/zimic/discussions/categories/announcements?discussions_q=is%3Aopen+category%3AAnnouncements+label%3Arelease))
           required: true
 
