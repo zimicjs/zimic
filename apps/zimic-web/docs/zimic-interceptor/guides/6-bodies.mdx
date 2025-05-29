@@ -14,6 +14,23 @@ and receive data in a response. Request bodies are commonly used to include a pa
 process, whereas response bodies may contain the result returned by the server. A body can contain various types of
 data, such as JSON, XML, and binary data such as images and files.
 
+`@zimic/interceptor` automatically parses request and response bodies based on their `content-type` header.
+
+| `content-type`                      | Parsed to                                                          |
+| ----------------------------------- | ------------------------------------------------------------------ |
+| `application/json`                  | `JSON`                                                             |
+| `application/xml`                   | `String`                                                           |
+| `application/x-www-form-urlencoded` | [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md) |
+| `application/*` (others)            | `Blob`                                                             |
+| `multipart/form-data`               | [`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md)         |
+| `multipart/*` (others)              | `Blob`                                                             |
+| `text/*`                            | `String`                                                           |
+| `image/*`                           | `Blob`                                                             |
+| `audio/*`                           | `Blob`                                                             |
+| `font/*`                            | `Blob`                                                             |
+| `video/*`                           | `Blob`                                                             |
+| `*/*` (others)                      | `JSON` if possible, otherwise `String`                             |
+
 ## Using request bodies
 
 Request bodies can be declared in your [schema](/docs/zimic-http/guides/1-schemas.md) using the `request.body` property.
@@ -21,11 +38,6 @@ Then, they will be available in the `body` property, such as in
 [`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith),
 [computed responses](/docs/zimic-interceptor/api/3-http-request-handler.md#computed-responses), and
 [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrequests).
-
-For bodies to be correctly parsed by `@zimic/interceptor`, make sure that their `content-type` header is set
-accordingly, such as `application/json` for JSON bodies, `multipart/form-data` for form data bodies,
-`application/octet-stream`, `image/png`, `video/mp4`, and so on for binary bodies, and
-`application/x-www-form-urlencoded` for URL-encoded bodies.
 
 ### JSON request body
 
@@ -67,7 +79,6 @@ interceptor
   })
   .respond({
     status: 201,
-    // highlight-next-line
     body: user,
   })
   .times(1);
@@ -94,6 +105,32 @@ await interceptor
   </TabItem>
 </Tabs>
 
+:::tip TIP: <span>`content-type` header inference</span>
+
+`@zimic/http` automatically infers the type of the `content-type` header as `application/json` if the request body is a
+JSON type. You can override this behavior by explicitly setting a different type in your schema.
+
+```ts title='schema.ts'
+type Schema = HttpSchema<{
+  '/users': {
+    POST: {
+      request: {
+        headers: {
+          // highlight-next-line
+          'content-type': 'application/json; charset=utf-8';
+        };
+        body: { username: string };
+      };
+      response: {
+        201: { body: User };
+      };
+    };
+  };
+}>;
+```
+
+:::
+
 ### `FormData` request body
 
 [`FormData`](https://developer.mozilla.org/docs/Web/API/`FormData`) is a special type of body to construct a set of
@@ -114,7 +151,7 @@ type Schema = HttpSchema<{
     PUT: {
       request: {
         // highlight-start
-        headers: { 'content-type'?: 'multipart/form-data' };
+        headers?: { 'content-type'?: 'multipart/form-data' };
         body: HttpFormData<AvatarFormDataSchema>;
         // highlight-end
       };
@@ -206,7 +243,7 @@ type Schema = HttpSchema<{
     POST: {
       request: {
         // highlight-start
-        headers: { 'content-type': 'video/mp4' };
+        headers?: { 'content-type'?: string };
         body: Blob;
         // highlight-end
       };
@@ -223,7 +260,6 @@ type Schema = HttpSchema<{
 
 ```ts
 import fs from 'fs';
-import { HttpFormData } from '@zimic/http';
 
 // Getting a file from the file system
 const videoBuffer = await fs.promises.readFile('video.mp4');
@@ -248,7 +284,6 @@ interceptor
 
 ```ts
 import fs from 'fs';
-import { HttpFormData } from '@zimic/http';
 
 // Getting a file from the file system
 const videoBuffer = await fs.promises.readFile('video.mp4');
@@ -299,6 +334,7 @@ type MyServiceSchema = HttpSchema<{
 interceptor
   .post('/context')
   .with({
+    // highlight-next-line
     body: 'text',
   })
   .respond({
@@ -315,6 +351,7 @@ interceptor
 await interceptor
   .post('/context')
   .with({
+    // highlight-next-line
     body: 'text',
   })
   .respond({
@@ -341,7 +378,10 @@ type MyServiceSchema = HttpSchema<{
   '/users': {
     POST: {
       request: {
+        // highlight-start
+        headers?: { 'content-type'?: 'application/x-www-form-urlencoded' };
         body: HttpSearchParams<UserCreationSearchParams>;
+        // highlight-end
       };
     };
   };
@@ -422,7 +462,10 @@ type Schema = HttpSchema<{
   '/users': {
     GET: {
       response: {
-        200: { body: User[] };
+        200: {
+          // highlight-next-line
+          body: User[];
+        };
       };
     };
   };
@@ -478,8 +521,10 @@ type Schema = HttpSchema<{
     GET: {
       response: {
         200: {
-          // highlight-next-line
+          // highlight-start
+          headers?: { 'content-type'?: 'multipart/form-data' };
           body: HttpFormData<AvatarFormDataSchema>;
+          // highlight-end
         };
       };
     };
@@ -548,8 +593,10 @@ type Schema = HttpSchema<{
     GET: {
       response: {
         200: {
-          // highlight-next-line
+          // highlight-start
+          headers?: { 'content-type'?: string };
           body: Blob;
+          // highlight-end
         };
       };
     };
@@ -614,7 +661,10 @@ type MyServiceSchema = HttpSchema<{
   '/content': {
     GET: {
       response: {
-        200: { body: string };
+        200: {
+          // highlight-next-line
+          body: string;
+        };
       };
     };
   };
@@ -669,8 +719,10 @@ type MyServiceSchema = HttpSchema<{
     GET: {
       response: {
         200: {
-          // highlight-next-line
+          // highlight-start
+          headers?: { 'content-type'?: 'application/x-www-form-urlencoded' };
           body: HttpSearchParams<UserCreationSearchParams>;
+          // highlight-end
         };
       };
     };

@@ -59,7 +59,7 @@ const fetch = createFetch<Schema>({
 const response = await fetch('/users', {
   method: 'POST',
   // highlight-start
-  headers: { 'content-type': 'application/json' },
+  headers?: { 'content-type'?: 'application/json' },
   body: JSON.stringify({ username: 'me' }),
   // highlight-end
 });
@@ -114,7 +114,7 @@ type Schema = HttpSchema<{
     PUT: {
       request: {
         // highlight-start
-        headers: { 'content-type'?: 'multipart/form-data' };
+        headers?: { 'content-type'?: 'multipart/form-data' };
         body: HttpFormData<AvatarFormDataSchema>;
         // highlight-end
       };
@@ -142,29 +142,26 @@ const fetch = createFetch<Schema>({
 const imageInput = document.querySelector<HTMLInputElement>('input[type="file"]');
 const imageFile = imageInput!.files![0];
 
-// highlight-start
 const formData = new HttpFormData<AvatarFormDataSchema>();
 formData.append('image', imageFile);
-// highlight-end
 
 const response = await fetch(`/users/${userId}/avatar`, {
   method: 'PUT',
   // highlight-start
-  headers: { 'content-type': 'multipart/form-data' },
+  headers?: { 'content-type'?: 'multipart/form-data' },
   body: formData,
   // highlight-end
 });
 ```
 
 Depending on your runtime, the `content-type` header may be set automatically when using a `FormData` body. In that
-case, you don't need to set it manually.
+case, you don't need to set it manually and the `content-type` header can be marked as optional in your schema.
 
 ```ts
 const response = await fetch(`/users/${userId}/avatar`, {
   method: 'PUT',
-  // highlight-start
+  // highlight-next-line
   body: formData,
-  // highlight-end
 });
 ```
 
@@ -188,7 +185,7 @@ type Schema = HttpSchema<{
     POST: {
       request: {
         // highlight-start
-        headers: { 'content-type': 'video/mp4' };
+        headers?: { 'content-type'?: string };
         body: Blob;
         // highlight-end
       };
@@ -220,7 +217,7 @@ const videoFile = new File([videoBuffer], 'video.mp4');
 const response = await fetch('/upload', {
   method: 'POST',
   // highlight-start
-  headers: { 'content-type': 'video/mp4' },
+  headers?: { 'content-type'?: 'video/mp4' },
   body: videoFile,
   // highlight-end
 });
@@ -235,9 +232,10 @@ type Schema = HttpSchema<{
   '/upload': {
     POST: {
       request: {
-        headers: { 'content-type': 'video/mp4' };
-        // highlight-next-line
+        // highlight-start
+        headers?: { 'content-type'?: string };
         body: ReadableStream;
+        // highlight-end
       };
     };
     response: {
@@ -255,8 +253,10 @@ const videoStream = fs.createReadStream('video.mp4');
 
 const response = await fetch('/upload', {
   method: 'POST',
-  headers: { 'content-type': 'video/mp4' },
+  // highlight-start
+  headers?: { 'content-type'?: 'video/mp4' },
   body: Readable.toWeb(videoStream) as ReadableStream,
+  // highlight-end
 });
 ```
 
@@ -282,11 +282,12 @@ type MyServiceSchema = HttpSchema<{
 }>;
 ```
 
-After that, you can send a plain-text body as a string in your fetch request.
+After that, send a plain-text body as a string in your fetch request.
 
 ```ts
 const response = await fetch('/content', {
   method: 'POST',
+  // highlight-next-line
   body: 'text',
 });
 ```
@@ -306,29 +307,30 @@ type MyServiceSchema = HttpSchema<{
   '/users': {
     POST: {
       request: {
+        // highlight-start
+        headers?: { 'content-type'?: 'application/x-www-form-urlencoded' };
         body: HttpSearchParams<UserCreationSearchParams>;
+        // highlight-end
       };
     };
   };
 }>;
 ```
 
-Then, you can use the `body` option to send the data in your fetch request. The `HttpSearchParams` type will be
-automatically serialized to a URL-encoded string, and the `content-type` header will be set to
-`application/x-www-form-urlencoded`.
+Then, use the `body` option to send the data in your fetch request. The `HttpSearchParams` type will be automatically
+serialized to a URL-encoded string, and the `content-type` header will be set to `application/x-www-form-urlencoded`.
 
 ```ts
+import { HttpSearchParams } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 
 const fetch = createFetch<MyServiceSchema>({
   baseURL: 'http://localhost:3000',
 });
 
-// highlight-start
 const searchParams = new HttpSearchParams<UserCreationSearchParams>({
   username: 'me',
 });
-// highlight-end
 
 const response = await fetch('/users', {
   method: 'POST',
@@ -402,8 +404,12 @@ type Schema = HttpSchema<{
   '/users/:userId/avatar': {
     GET: {
       response: {
-        // highlight-next-line
-        200: { body: HttpFormData<AvatarFormDataSchema> };
+        200: {
+          // highlight-start
+          headers?: { 'content-type'?: 'multipart/form-data' };
+          body: HttpFormData<AvatarFormDataSchema>;
+          // highlight-end
+        };
       };
     };
   };
@@ -444,8 +450,12 @@ type Schema = HttpSchema<{
   '/videos/:videoId': {
     GET: {
       response: {
-        // highlight-next-line
-        200: { body: Blob };
+        200: {
+          // highlight-start
+          headers?: { 'content-type'?: string };
+          body: Blob;
+          // highlight-end
+        };
       };
     };
   };
@@ -503,8 +513,10 @@ type Schema = HttpSchema<{
   '/content': {
     GET: {
       response: {
-        // highlight-next-line
-        200: { body: string };
+        200: {
+          // highlight-next-line
+          body: string;
+        };
       };
     };
   };
@@ -541,8 +553,12 @@ type MyServiceSchema = HttpSchema<{
   '/users': {
     GET: {
       response: {
-        // highlight-next-line
-        200: { body: HttpSearchParams<{ username: string }> };
+        200: {
+          // highlight-start
+          headers?: { 'content-type'?: 'application/x-www-form-urlencoded' };
+          body: HttpSearchParams<{ username: string }>;
+          // highlight-end
+        };
       };
     };
   };
