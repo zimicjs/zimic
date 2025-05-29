@@ -59,7 +59,7 @@ const fetch = createFetch<Schema>({
 const response = await fetch('/users', {
   method: 'POST',
   // highlight-start
-  headers?: { 'content-type'?: 'application/json' },
+  headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ username: 'me' }),
   // highlight-end
 });
@@ -148,14 +148,14 @@ formData.append('image', imageFile);
 const response = await fetch(`/users/${userId}/avatar`, {
   method: 'PUT',
   // highlight-start
-  headers?: { 'content-type'?: 'multipart/form-data' },
+  headers: { 'content-type': 'multipart/form-data' },
   body: formData,
   // highlight-end
 });
 ```
 
 Depending on your runtime, the `content-type` header may be set automatically when using a `FormData` body. In that
-case, you don't need to set it manually and the `content-type` header can be marked as optional in your schema.
+case, you don't need to set it manually.
 
 ```ts
 const response = await fetch(`/users/${userId}/avatar`, {
