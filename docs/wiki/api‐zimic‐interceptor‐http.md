@@ -335,9 +335,7 @@ interceptors.
 ### HTTP `interceptor.stop()`
 
 Stops the interceptor, preventing it from intercepting HTTP requests. Stopped interceptors are automatically cleared,
-exactly as if
-[`interceptor.clear()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear) had been
-called.
+exactly as if [`interceptor.clear()`](#http-interceptorclear) had been called.
 
 ```ts
 await interceptor.stop();
@@ -437,64 +435,7 @@ const listHandler = await interceptor.get('/users').respond({
 
 #### Path parameters
 
-Paths with parameters are supported, such as `/users/:id`. Even when using a computed path (e.g. `/users/1`), the
-original path is automatically inferred, guaranteeing type safety.
-
-```ts
-import { createHttpInterceptor } from '@zimic/interceptor/http';
-
-const interceptor = createHttpInterceptor<{
-  '/users/:id': {
-    PUT: {
-      request: {
-        body: { username: string };
-      };
-      response: {
-        204: {};
-      };
-    };
-  };
-}>({ baseURL: 'http://localhost:3000' });
-
-interceptor.get('/users/:id'); // Matches any id
-interceptor.get(`/users/${1}`); // Only matches id 1
-```
-
-`request.pathParams` contains the parsed path parameters of a request and have their type automatically inferred from
-the path string. For example, the path `/users/:userId` will result in a `request.pathParams` of type
-`{ userId: string }`.
-
-<table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
-
-```ts
-const updateHandler = interceptor.put('/users/:id').respond((request) => {
-  console.log(request.pathParams); // { id: '1' }
-
-  return {
-    status: 200,
-    body: { username: 'me' },
-  };
-});
-
-await fetch('http://localhost:3000/users/1', { method: 'PUT' });
-```
-
-</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
-
-```ts
-const updateHandler = await interceptor.put('/users/:id').respond((request) => {
-  console.log(request.pathParams); // { id: '1' }
-
-  return {
-    status: 200,
-    body: { username: 'me' },
-  };
-});
-
-await fetch('http://localhost:3000/users/1', { method: 'PUT' });
-```
-
-</details></td></tr></table>
+See https://zimic.dev/docs/interceptor/guides/path-params.
 
 ### HTTP `interceptor.checkTimes()`
 

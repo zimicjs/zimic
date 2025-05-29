@@ -226,7 +226,7 @@ Use one of these types to declare a binary body.
 import { HttpSchema } from '@zimic/http';
 
 type MyServiceSchema = HttpSchema<{
-  '/users': {
+  '/upload': {
     POST: {
       request: {
         // highlight-next-line
@@ -245,7 +245,7 @@ Plain-text bodies can be declared as a string.
 import { HttpSchema } from '@zimic/http';
 
 type MyServiceSchema = HttpSchema<{
-  '/users': {
+  '/content': {
     POST: {
       request: {
         // highlight-next-line
@@ -263,7 +263,7 @@ Bodies with URL-encoded data can be declared with [`HttpSearchParams`](/docs/zim
 ```ts
 import { HttpSchema, HttpSearchParams } from '@zimic/http';
 
-interface UserListSearchParams {
+interface UserCreationSearchParams {
   query?: string;
 }
 
@@ -271,7 +271,7 @@ type MyServiceSchema = HttpSchema<{
   '/users': {
     POST: {
       request: {
-        body: HttpSearchParams<UserListSearchParams>;
+        body: HttpSearchParams<UserCreationSearchParams>;
       };
     };
   };
@@ -350,7 +350,7 @@ request with binary data.
 import { HttpSchema } from '@zimic/http';
 
 type MyServiceSchema = HttpSchema<{
-  '/users': {
+  '/upload': {
     POST: {
       response: {
         // highlight-next-line
@@ -369,7 +369,7 @@ Plain-text bodies can be declared as a string.
 import { HttpSchema } from '@zimic/http';
 
 type MyServiceSchema = HttpSchema<{
-  '/users': {
+  '/content': {
     POST: {
       response: {
         200: {
@@ -389,7 +389,7 @@ Use [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md) to declar
 ```ts
 import { HttpSchema, HttpSearchParams } from '@zimic/http';
 
-interface UserListSearchParams {
+interface UserCreationSearchParams {
   query?: string;
 }
 
@@ -399,7 +399,7 @@ type MyServiceSchema = HttpSchema<{
       response: {
         200: {
           // highlight-next-line
-          body: HttpSearchParams<UserListSearchParams>;
+          body: HttpSearchParams<UserCreationSearchParams>;
         };
       };
     };

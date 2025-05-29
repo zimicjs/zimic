@@ -114,7 +114,7 @@ type Schema = HttpSchema<{
     PUT: {
       request: {
         // highlight-start
-        headers: { 'content-type'?: 'multipart/form-data' };
+        headers?: { 'content-type'?: 'multipart/form-data' };
         body: HttpFormData<AvatarFormDataSchema>;
         // highlight-end
       };
@@ -131,6 +131,7 @@ After that, create an `HttpFormData` instance and add the data using
 [`append`](https://developer.mozilla.org/docs/Web/API/FormData/append).
 
 ```ts
+import { HttpFormData } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 
 const fetch = createFetch<Schema>({
@@ -141,10 +142,8 @@ const fetch = createFetch<Schema>({
 const imageInput = document.querySelector<HTMLInputElement>('input[type="file"]');
 const imageFile = imageInput!.files![0];
 
-// highlight-start
 const formData = new HttpFormData<AvatarFormDataSchema>();
 formData.append('image', imageFile);
-// highlight-end
 
 const response = await fetch(`/users/${userId}/avatar`, {
   method: 'PUT',
@@ -161,16 +160,17 @@ case, you don't need to set it manually.
 ```ts
 const response = await fetch(`/users/${userId}/avatar`, {
   method: 'PUT',
-  // highlight-start
+  // highlight-next-line
   body: formData,
-  // highlight-end
 });
 ```
 
 ### Binary request body
 
 Binary bodies are used to send raw binary data in requests. To send a binary body, declare its type in your
-[schema](/docs/zimic-http/guides/1-schemas.md).
+[schema](/docs/zimic-http/guides/1-schemas.md). [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob),
+[`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), and
+[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) are frequently used types for binary data.
 
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
@@ -181,11 +181,11 @@ interface Video {
 }
 
 type Schema = HttpSchema<{
-  '/upload/mp4': {
+  '/upload': {
     POST: {
       request: {
         // highlight-start
-        headers: { 'content-type': 'video/mp4' };
+        headers?: { 'content-type'?: string };
         body: Blob;
         // highlight-end
       };
@@ -197,30 +197,27 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-[`Blob`](https://developer.mozilla.org/docs/Web/API/Blob),
-[`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), and
-[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) are frequently used types for binary data.
-
 Then, use the `body` option to send the data in your fetch request. Make sure to set the `content-type` header, such as
 `video/mp4`, `image/png`, or `application/octet-stream` for generic binary data. Learn more about
 [MIME types](https://developer.mozilla.org/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types) to use in your
 requests.
 
 ```ts
-import { createFetch } from '@zimic/fetch';
 import fs from 'fs';
+import { createFetch } from '@zimic/fetch';
 
 const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 });
 
+// Getting a file from the file system
 const videoBuffer = await fs.promises.readFile('video.mp4');
 const videoFile = new File([videoBuffer], 'video.mp4');
 
-const response = await fetch('/upload/mp4', {
+const response = await fetch('/upload', {
   method: 'POST',
   // highlight-start
-  headers: { 'content-type': 'video/mp4' },
+  headers?: { 'content-type'?: 'video/mp4' },
   body: videoFile,
   // highlight-end
 });
@@ -232,12 +229,13 @@ for large files or when you want to send data in chunks.
 
 ```ts
 type Schema = HttpSchema<{
-  '/upload/mp4': {
+  '/upload': {
     POST: {
       request: {
-        headers: { 'content-type': 'video/mp4' };
-        // highlight-next-line
+        // highlight-start
+        headers?: { 'content-type'?: string };
         body: ReadableStream;
+        // highlight-end
       };
     };
     response: {
@@ -253,10 +251,91 @@ import { Readable } from 'stream';
 
 const videoStream = fs.createReadStream('video.mp4');
 
-const response = await fetch('/upload/mp4', {
+const response = await fetch('/upload', {
   method: 'POST',
-  headers: { 'content-type': 'video/mp4' },
+  // highlight-start
+  headers?: { 'content-type'?: 'video/mp4' },
   body: Readable.toWeb(videoStream) as ReadableStream,
+  // highlight-end
+});
+```
+
+### Plain-text request body
+
+Plain-text bodies can be declared as a string.
+
+```ts
+import { HttpSchema } from '@zimic/http';
+
+type MyServiceSchema = HttpSchema<{
+  '/content': {
+    POST: {
+      request: {
+        // highlight-next-line
+        body: string;
+      };
+      response: {
+        201: {};
+      };
+    };
+  };
+}>;
+```
+
+After that, send a plain-text body as a string in your fetch request.
+
+```ts
+const response = await fetch('/content', {
+  method: 'POST',
+  // highlight-next-line
+  body: 'text',
+});
+```
+
+### URL-encoded request body
+
+Bodies with URL-encoded data can be declared with [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md).
+
+```ts
+import { HttpSchema, HttpSearchParams } from '@zimic/http';
+
+interface UserCreationSearchParams {
+  username: string;
+}
+
+type MyServiceSchema = HttpSchema<{
+  '/users': {
+    POST: {
+      request: {
+        // highlight-start
+        headers?: { 'content-type'?: 'application/x-www-form-urlencoded' };
+        body: HttpSearchParams<UserCreationSearchParams>;
+        // highlight-end
+      };
+    };
+  };
+}>;
+```
+
+Then, use the `body` option to send the data in your fetch request. The `HttpSearchParams` type will be automatically
+serialized to a URL-encoded string, and the `content-type` header will be set to `application/x-www-form-urlencoded`.
+
+```ts
+import { HttpSearchParams } from '@zimic/http';
+import { createFetch } from '@zimic/fetch';
+
+const fetch = createFetch<MyServiceSchema>({
+  baseURL: 'http://localhost:3000',
+});
+
+const searchParams = new HttpSearchParams<UserCreationSearchParams>({
+  username: 'me',
+});
+
+const response = await fetch('/users', {
+  method: 'POST',
+  // highlight-next-line
+  body: searchParams,
 });
 ```
 
@@ -325,8 +404,12 @@ type Schema = HttpSchema<{
   '/users/:userId/avatar': {
     GET: {
       response: {
-        // highlight-next-line
-        200: { body: HttpFormData<AvatarFormDataSchema> };
+        200: {
+          // highlight-start
+          headers?: { 'content-type'?: 'multipart/form-data' };
+          body: HttpFormData<AvatarFormDataSchema>;
+          // highlight-end
+        };
       };
     };
   };
@@ -367,8 +450,12 @@ type Schema = HttpSchema<{
   '/videos/:videoId': {
     GET: {
       response: {
-        // highlight-next-line
-        200: { body: Blob };
+        200: {
+          // highlight-start
+          headers?: { 'content-type'?: string };
+          body: Blob;
+          // highlight-end
+        };
       };
     };
   };
@@ -414,4 +501,84 @@ const outputStream = fs.createWriteStream('video.mp4');
 // Stream the response body to a file
 await stream.promises.pipeline(videoStream, outputStream);
 // highlight-end
+```
+
+### Plain-text response body
+
+To receive a plain-text response body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md).
+
+```ts title='schema.ts'
+import { HttpSchema } from '@zimic/http';
+type Schema = HttpSchema<{
+  '/content': {
+    GET: {
+      response: {
+        200: {
+          // highlight-next-line
+          body: string;
+        };
+      };
+    };
+  };
+}>;
+```
+
+Then, use [`response.text()`](https://developer.mozilla.org/docs/Web/API/Response/text) to parse the response body as
+plain text.
+
+```ts
+import { createFetch } from '@zimic/fetch';
+
+const fetch = createFetch<Schema>({
+  baseURL: 'http://localhost:3000',
+});
+
+const response = await fetch('/content', {
+  method: 'GET',
+});
+
+// highlight-next-line
+const content = await response.text();
+```
+
+### URL-encoded response body
+
+To receive a URL-encoded response body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md). Use the
+[`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md) to indicate that the body is a URL-encoded type.
+
+```ts title='schema.ts'
+import { HttpSchema, HttpSearchParams } from '@zimic/http';
+
+type MyServiceSchema = HttpSchema<{
+  '/users': {
+    GET: {
+      response: {
+        200: {
+          // highlight-start
+          headers?: { 'content-type'?: 'application/x-www-form-urlencoded' };
+          body: HttpSearchParams<{ username: string }>;
+          // highlight-end
+        };
+      };
+    };
+  };
+}>;
+```
+
+Then, use [`response.formData()`](https://developer.mozilla.org/docs/Web/API/Response/formData) to parse the response
+body as URL-encoded data. The result is automatically typed according to your schema.
+
+```ts
+import { createFetch } from '@zimic/fetch';
+
+const fetch = createFetch<MyServiceSchema>({
+  baseURL: 'http://localhost:3000',
+});
+
+const response = await fetch('/users', {
+  method: 'GET',
+});
+
+// highlight-next-line
+const searchParams = await response.formData();
 ```

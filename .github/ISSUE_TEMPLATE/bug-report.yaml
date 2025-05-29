@@ -31,9 +31,7 @@ body:
       options:
         - label: I confirm that none of the [open issues](https://github.com/zimicjs/zimic/issues) match my problem
           required: true
-        - label:
-            I confirm that the [documentation](https://github.com/zimicjs/zimic/wiki) does not cover a solution to
-            problem
+        - label: I confirm that the [documentation](https://zimic.dev) does not cover a solution to problem
           required: true
 
   - type: textarea
