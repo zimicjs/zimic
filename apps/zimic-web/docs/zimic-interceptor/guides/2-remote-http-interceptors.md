@@ -1,7 +1,7 @@
 ---
 title: Using remote interceptors | @zimic/interceptor
 sidebar_label: Using remote interceptors
-slug: /interceptor/guides/interceptors/remote
+slug: /interceptor/guides/http/interceptors/remote
 ---
 
 # Using remote interceptors

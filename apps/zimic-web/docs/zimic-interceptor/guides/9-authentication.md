@@ -1,7 +1,7 @@
 ---
 title: Authentication | @zimic/interceptor
 sidebar_label: Authentication
-slug: /interceptor/guides/authentication
+slug: /interceptor/guides/http/authentication
 ---
 
 # Authentication
