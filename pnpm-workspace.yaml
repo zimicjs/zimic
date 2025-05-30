@@ -6,6 +6,7 @@ packages:
   - docs/*
 onlyBuiltDependencies:
   - '@swc/core'
+  - '@tailwindcss/oxide'
   - '@zimic/interceptor'
   - bufferutil
   - core-js
