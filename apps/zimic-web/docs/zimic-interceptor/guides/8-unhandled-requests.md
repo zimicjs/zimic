@@ -10,7 +10,7 @@ When a request is not matched by any interceptor, it is considered **unhandled**
 console by default.
 
 In a [local interceptor](/docs/zimic-interceptor/guides/1-local-http-interceptors.md), unhandled requests can be either
-**bypassed** or **rejected**. Bypassed requests reach the real network, whereas rejected requests fail with an network
+**bypassed** or **rejected**. Bypassed requests reach the real network, whereas rejected requests fail with a network
 error. The default behavior in local interceptors is to **reject** unhandled requests.
 
 [Remote interceptors](/docs/zimic-interceptor/guides/2-remote-http-interceptors.md), on the other hand, always
@@ -29,8 +29,8 @@ request URL. If such interceptor is found, its strategy is used, or the default 
 multiple interceptors match the request URL, the **last** one started with `await interceptor.start()` will be used,
 regardless of existing other interceptors with a more specific base URL.
 
-If no running interceptor matches the request, it will be **rejected** with a network error. If it was targeted to an
-interceptor server, the logging behavior is configured with the
+If no running interceptor matches the request, it will be **rejected** with a network error. If the request was targeted
+to an interceptor server, the logging behavior is configured with the
 [`--log-unhandled-requests`](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-start) option in the
 interceptor server.
 
