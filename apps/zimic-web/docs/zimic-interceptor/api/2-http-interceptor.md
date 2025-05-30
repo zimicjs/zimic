@@ -14,6 +14,14 @@ Please use the [current documentation](https://github.com/zimicjs/zimic/wiki) wh
 
 :::
 
+## `interceptor.baseURL`
+
+:::info
+
+🚧 This section is a work in progress.
+
+:::
+
 ## `interceptor.start()`
 
 :::info
