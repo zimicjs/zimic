@@ -1,7 +1,7 @@
 ---
 title: Using local interceptors | @zimic/interceptor
 sidebar_label: Using local interceptors
-slug: /interceptor/guides/http/interceptors/local
+slug: /interceptor/guides/http/local-interceptors
 ---
 
 # Using local interceptors
@@ -16,24 +16,24 @@ your application. This is the simplest way to start mocking requests and does no
 
 ## When to use local HTTP interceptors
 
-- **Development**:
+- **Development**
 
   Local interceptors are useful if you want to quickly mock requests for a single application in development, especially
   when the backend is not yet ready or when you want to test different scenarios without relying on a real server. In
   this case, interceptors allow you to set up mock responses and test your client-side code without depending on a
   backend service.
 
-- **Testing**:
+- **Testing**
 
-  If you run your application in the _same_ process as your tests, local interceptors are a great way to mock requests
-  and verify how you application handles success and error responses. This is common when using unit and integration
-  test runners such as [Jest](https://jestjs.io) and [Vitest](https://vitest.dev). Often, interceptors simplify the
+  If you run your application in the same process as your tests, local interceptors are a great way to mock requests and
+  verify how you application handles success and error responses. This is common when using unit and integration test
+  runners such as [Jest](https://jestjs.io) and [Vitest](https://vitest.dev). Often, interceptors simplify the
   configuration of your test suites, because they allow you to easily simulate specific scenarios without needing to
   first set up a separate server, manage authentication, apply seed data, or handle other complexities o a real service.
 
 ## Creating a local HTTP interceptor
 
-To start using a local interceptor, declare an HTTP schema using [`@zimic/http`](/docs/zimic-http/guides/1-schemas.md).
+To start using an HTTP interceptor, declare an HTTP schema using [`@zimic/http`](/docs/zimic-http/guides/1-schemas.md).
 The schema represents the structure of your API, including the paths, methods, request and response types.
 
 ```ts title='schema.ts'
@@ -63,15 +63,15 @@ type Schema = HttpSchema<{
 
 With the schema defined, you can now create your interceptor with
 [`createHttpInterceptor`](/docs/zimic-interceptor/api/1-create-http-interceptor.md). It takes the schema as a type
-parameter and returns an interceptor instance. The `baseURL` option is the base URL of your API and defines the scope of
-the interceptor.
+parameter and returns an interceptor instance. The `baseURL` option represents the scope of the interceptor and points
+to the URL that your application will use to make requests.
 
 ```ts
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = createHttpInterceptor<Schema>({
   // highlight-next-line
-  type: 'local',
+  type: 'local', // optional
   baseURL: 'http://localhost:3000',
 });
 ```
@@ -79,9 +79,9 @@ const interceptor = createHttpInterceptor<Schema>({
 You can also set other options, such as the interceptor type and how unhandled requests should be treated. Refer to the
 [`createHttpInterceptor` API reference](/docs/zimic-interceptor/api/1-create-http-interceptor.md) for more details.
 
-### HTTP interceptor lifecycle
+## HTTP interceptor lifecycle
 
-#### Starting the interceptor
+### Starting an interceptor
 
 To intercept requests, an interceptor must be started with
 [`interceptor.start()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorstart). This is usually done in a
@@ -103,7 +103,7 @@ public directory before starting the interceptor.
 
 :::
 
-#### Clearing the interceptor
+### Clearing an interceptor
 
 When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another.
 This is done with [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorclear), which
@@ -116,7 +116,7 @@ beforeEach(() => {
 });
 ```
 
-### Checking the interceptor expectations
+### Checking expectations
 
 After each test, you can check if your application has made all of the expected requests with
 [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes). Learn more about
@@ -130,7 +130,7 @@ afterEach(() => {
 });
 ```
 
-### Stopping the interceptor
+### Stopping an interceptor
 
 After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with
 [`interceptor.stop()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorstop).
@@ -171,8 +171,10 @@ test('example', async () => {
 
 :::info INFO: <span>Local interceptors are synchronous</span>
 
-Many operations in local interceptors are **synchronous** because they do not involve communication with external
-servers.
+Many operations in local interceptors are **synchronous** because they do not involve communication with an external
+server. This is different from [remote interceptors](/docs/zimic-interceptor/guides/2-remote-http-interceptors.md),
+which communicate with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle requests and return
+responses.
 
 :::
 

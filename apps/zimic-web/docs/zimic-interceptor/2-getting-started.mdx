@@ -189,7 +189,7 @@ With the schema defined, you can now create an [HTTP interceptor](/docs/zimic-in
 `@zimic/interceptor` provides a [`createHttpInterceptor`](/docs/zimic-interceptor/api/1-create-http-interceptor.md)
 function that takes the schema as a type parameter and returns an interceptor instance. It allows you to intercept HTTP
 requests, validate their contents, and return mock responses, all automatically typed based on the schema. The `baseURL`
-option is the base URL of your API and defines the scope of the interceptor.
+option represents the scope of the interceptor and points to the URL that your application will use to make requests.
 
 ```ts
 import { createHttpInterceptor } from '@zimic/interceptor/http';
@@ -250,9 +250,9 @@ your use case is best served by them.
 
 :::
 
-### HTTP interceptor lifecycle
+## HTTP interceptor lifecycle
 
-#### Starting the interceptor
+### Starting an interceptor
 
 To intercept requests, an interceptor must be started with
 [`interceptor.start()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorstart). This is usually done in a
@@ -276,50 +276,18 @@ public directory before starting the interceptor.
 
 :::info INFO: <span>Remote interceptors and interceptor servers</span>
 
-If you are using a [remote interceptor](/docs/zimic-interceptor/guides/2-remote-http-interceptors.md), it's necessary to
-have a [interceptor server](/docs/zimic-interceptor/cli/1-server.md) running before starting the interceptor.
-
-The base URL of the remote interceptor should point to the server. Since multiple remote interceptors may use the same
-interceptor server, you may use a suffix path to differentiate them.
-
-```ts
-import { createHttpInterceptor } from '@zimic/interceptor/http';
-
-const authInterceptor = createHttpInterceptor<AuthSchema>({
-  type: 'remote',
-  // highlight-next-line
-  baseURL: `http://localhost:3000/auth/${crypto.randomUUID()}`,
-});
-
-cont notificationInterceptor = createHttpInterceptor<NotificationSchema>({
-  type: 'remote',
-  // highlight-next-line
-  baseURL: `http://localhost:3000/notification/${crypto.randomUUID()}`,
-});
-```
-
-In this example, two remote interceptors are created, one for a fictional authentication service and another for a
-notification service. Both interceptors use the same interceptor server, but they are differentiated by service with the
-paths `/auth` and `/notification`. Furthermore,
-[`crypto.randomUUID()`](https://developer.mozilla.org/docs/Web/API/Crypto/randomUUID) is used to generate a unique
-identifier for each interceptor, which makes sure that they don't interfere with each other.
-
-If you are using a similar setup, note that your application should use the same base URL as the interceptor when making
-requests, otherwise they may not be handled. A common strategy is to change an environment variable or similar to point
-to the base URL of the interceptor.
-
-```ts
-process.env.AUTH_SERVICE_URL = authInterceptor.baseURL;
-process.env.NOTIFICATION_SERVICE_URL = notificationInterceptor.baseURL;
-```
+If you are using a [remote interceptor](/docs/zimic-interceptor/guides/2-remote-http-interceptors.md), the `baseURL`
+should point to a running [interceptor server](/docs/zimic-interceptor/cli/1-server.md), which is configured by the
+interceptor to handle requests. Learn more about
+[starting remote HTTP interceptors](/docs/zimic-interceptor/guides/2-remote-http-interceptors.md#starting-an-interceptor).
 
 :::
 
-#### Clearing the interceptor
+### Clearing an interceptor
 
 When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another.
-This is done with [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorclear), which
-resets the interceptor and handlers to their initial states.
+This is performed with [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorclear),
+which resets the interceptor and handlers to their initial states.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -345,7 +313,7 @@ beforeEach(async () => {
   </TabItem>
 </Tabs>
 
-### Checking the interceptor expectations
+### Checking expectations
 
 After each test, you can check if your application has made all of the expected requests with
 [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes). Learn more about
@@ -376,7 +344,7 @@ afterEach(async () => {
   </TabItem>
 </Tabs>
 
-### Stopping the interceptor
+### Stopping an interceptor
 
 After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with
 [`interceptor.stop()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorstop).
@@ -387,7 +355,7 @@ afterAll(async () => {
 });
 ```
 
-### Mocking requests
+## Mocking requests
 
 You can now use the interceptor to handle requests and return mock responses. All paths, methods, parameters, requests,
 and responses are typed by default based on the schema.
