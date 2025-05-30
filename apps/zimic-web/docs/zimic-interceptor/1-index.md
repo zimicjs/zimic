@@ -18,8 +18,8 @@ testing.
 - :globe_with_meridians: **HTTP interceptors**
 
   Use your [`@zimic/http` schema](/docs/zimic-http/guides/1-schemas.md) to declare
-  [local](/docs/zimic-interceptor/guides/1-local-interceptors.md) and
-  [remote](/docs/zimic-interceptor/guides/2-remote-interceptors.md) HTTP interceptors. Mock external services and
+  [local](/docs/zimic-interceptor/guides/1-local-http-interceptors.md) and
+  [remote](/docs/zimic-interceptor/guides/2-remote-http-interceptors.md) HTTP interceptors. Mock external services and
   simulate success, loading, and error states with ease and type safety.
 
 - :link: **Network-level interception**

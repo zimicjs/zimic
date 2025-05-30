@@ -1,7 +1,7 @@
 ---
 title: Unhandled requests | @zimic/interceptor
 sidebar_label: Unhandled requests
-slug: /interceptor/guides/unhandled-requests
+slug: /interceptor/guides/http/unhandled-requests
 ---
 
 # Unhandled requests

@@ -1,7 +1,7 @@
 ---
 title: Declarative assertions | @zimic/interceptor
 sidebar_label: Declarative assertions
-slug: /interceptor/guides/declarative-assertions
+slug: /interceptor/guides/http/declarative-assertions
 ---
 
 # Declarative assertions
