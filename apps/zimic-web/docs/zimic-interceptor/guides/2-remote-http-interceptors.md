@@ -190,7 +190,7 @@ beforeEach(async () => {
 
 After each test, you can check if your application has made all of the expected requests with
 [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes). Learn more about
-how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.md) to keep
+how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.mdx) to keep
 your tests clean and readable.
 
 ```ts
