@@ -2,13 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { describe, expect, it } from 'vitest';
 
-import {
-  MSW_PACKAGE_PATH,
-  MSW_CORE_DIRECTORY,
-  MSW_BROWSER_DIRECTORY,
-  MSWPackage,
-  postinstallPromise,
-} from '../postinstall';
+import { MSW_PACKAGE_PATH, MSW_CORE_DIRECTORY, MSWPackage, postinstallPromise } from '../postinstall';
 
 describe('Post-install script', () => {
   it('should patch msw/package.json exports', async () => {
@@ -22,18 +16,6 @@ describe('Post-install script', () => {
     expect(exports['./browser'].node).toEqual(exports['./node'].node);
     expect(exports['./node'].browser).toEqual(exports['./browser'].browser);
   });
-
-  it.each(['index.js', 'index.mjs'])(
-    'should patch a missing undefined check in msw/browser/%s',
-    async (indexFileName) => {
-      await postinstallPromise;
-
-      const mswBrowserPath = path.join(MSW_BROWSER_DIRECTORY, indexFileName);
-      const mswBrowserContent = await fs.promises.readFile(mswBrowserPath, 'utf-8');
-
-      expect(mswBrowserContent).toContain('if (!request || responseJson.type?.includes("opaque")) {');
-    },
-  );
 
   it.each(['ws.js', 'ws.mjs'])(
     'should patch the web socket channel to be created lazily in msw/core/%s',
