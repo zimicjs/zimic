@@ -189,7 +189,7 @@ A type-safe HTTP interceptor library for handling and mocking HTTP requests in d
 - :bulb: **Readability**
 
   `@zimic/interceptor` was designed to encourage clarity and readability in your mocks. Use
-  [declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.md) to verify that your application
+  [declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.mdx) to verify that your application
   is making the expected requests and test with confidence.
 
 **Learn more**:

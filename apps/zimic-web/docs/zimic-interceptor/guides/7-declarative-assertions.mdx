@@ -1,0 +1,423 @@
+---
+title: Declarative assertions | @zimic/interceptor
+sidebar_label: Declarative assertions
+slug: /interceptor/guides/http/declarative-assertions
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Declarative assertions
+
+`@zimic/interceptor` provides a way to declaratively check if your application is making the expected HTTP requests,
+using [restriction](#restrictions) and [number of request](#number-of-requests) assertions. They make it possible to
+have robust tests with declarative conditions verifying your application, without having to write complex logic to
+manually check all requests.
+
+## Restrictions
+
+Restrictions can be declared using [`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith)
+and specify conditions expected for the intercepted requests. These include
+[headers](/docs/zimic-interceptor/guides/3-headers.mdx),
+[search params](/docs/zimic-interceptor/guides/4-search-params.mdx), and
+[bodies](/docs/zimic-interceptor/guides/6-bodies.mdx). A handler can have multiple restrictions, and all of them must be
+met for the request to be matched and receive the mock response.
+
+Restrictions are available in two forms: static and computed.
+
+### Static restrictions
+
+Static restrictions are defined by passing an object to the
+[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith) method. The object can contain the
+properties `headers`, `searchParams`, and `body`, which are used to check the intercepted requests.
+
+#### Static header restrictions
+
+To create static restrictions for headers, first define the request headers in your
+[schema](/docs/zimic-interceptor/guides/3-headers.mdx#using-request-headers). Then, use the `header` property with the
+headers that the request must contain.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .get('/users')
+  .with({
+    // highlight-next-line
+    headers: { authorization: `Bearer ${token}` },
+  })
+  .respond({
+    status: 200,
+    body: users,
+  });
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .get('/users')
+  .with({
+    // highlight-next-line
+    headers: { authorization: `Bearer ${token}` },
+  })
+  .respond({
+    status: 200,
+    body: users,
+  });
+```
+
+  </TabItem>
+</Tabs>
+
+### Static search param restrictions
+
+As with headers, declare the request search params in your
+[schema](/docs/zimic-interceptor/guides/4-search-params.mdx#using-request-search-params). Then, use the `searchParams`
+property with the search params that the request must contain.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .get('/users')
+  .with({
+    // highlight-next-line
+    searchParams: { query: 'u' },
+  })
+  .respond({
+    status: 200,
+    body: users,
+  });
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .get('/users')
+  .with({
+    // highlight-next-line
+    searchParams: { query: 'u' },
+  })
+  .respond({
+    status: 200,
+    body: users,
+  });
+```
+
+  </TabItem>
+</Tabs>
+
+### Static body restrictions
+
+Similarly, body restrictions can be declared with the `body` property with the body that the request must contain.
+Before creating a body restriction, make sure to declare the request body in your
+[schema](/docs/zimic-interceptor/guides/6-bodies.mdx#using-request-bodies). For more details on using body types, such
+as JSON, text, and form data, visit our [bodies guide](/docs/zimic-interceptor/guides/6-bodies.mdx).
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .post('/users')
+  .with({
+    // highlight-next-line
+    body: { username: 'me' },
+  })
+  .respond({
+    status: 200,
+    body: user,
+  });
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .post('/users')
+  .with({
+    // highlight-next-line
+    body: { username: 'me' },
+  })
+  .respond({
+    status: 200,
+    body: user,
+  });
+```
+
+  </TabItem>
+</Tabs>
+
+### Computed restrictions
+
+Computed restrictions support more complex or dynamic conditions. They are defined by passing a function to the
+[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith) method. The function receives the
+intercepted request as an argument and returns a boolean value indicating whether the request matches the restriction.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .post('/users')
+  .with((request) => {
+    // Expect the request to have an 'accept' header that starts with 'application'
+    // highlight-start
+    const accept = request.headers.get('accept');
+    return accept !== null && accept.startsWith('application');
+    // highlight-end
+  })
+  .respond({
+    status: 201,
+    body: user,
+  });
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .post('/users')
+  .with((request) => {
+    // Expect the request to have an 'accept' header that starts with 'application'
+    // highlight-start
+    const accept = request.headers.get('accept');
+    return accept !== null && accept.startsWith('application');
+    // highlight-end
+  })
+  .respond({
+    status: 201,
+    body: user,
+  });
+```
+
+  </TabItem>
+</Tabs>
+
+:::tip TIP: <span>Combining restrictions</span>
+
+A restriction acts as a self-contained condition and can be combined in a single handler. Each restriction can also have
+multiple properties at once.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .post('/users')
+  .with({
+    // highlight-start
+    headers: { accept: 'application/json' },
+    searchParams: { query: 'u' },
+    // highlight-end
+  })
+  .with((request) => {
+    // highlight-next-line
+    return request.body.username.length > 0;
+  })
+  .respond({
+    status: 201,
+    body: user,
+  });
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .post('/users')
+  .with({
+    // highlight-start
+    headers: { accept: 'application/json' },
+    searchParams: { query: 'u' },
+    // highlight-end
+  })
+  .with((request) => {
+    // highlight-next-line
+    return request.body.username.length > 0;
+  })
+  .respond({
+    status: 201,
+    body: user,
+  });
+```
+
+  </TabItem>
+</Tabs>
+
+:::
+
+### Exact matching
+
+By default, restrictions are partial (`exact: false`), so requests having additional properties still match the handler
+as long as **at least** the restrictions are met. If you want to enforce exact matching, use `exact: true` in the
+[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith) method.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .get('/users')
+  .with({
+    // highlight-next-line
+    headers: { authorization: `Bearer ${token}` },
+    exact: true, // If other headers are present, the request will not match
+  })
+  .respond({
+    status: 200,
+    body: users,
+  });
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .get('/users')
+  .with({
+    // highlight-next-line
+    headers: { authorization: `Bearer ${token}` },
+    exact: true, // If other headers are present, the request will not match
+  })
+  .respond({
+    status: 200,
+    body: users,
+  });
+```
+
+  </TabItem>
+</Tabs>
+
+## Number of requests
+
+Another form of checking the behavior of your application is to assert the number of requests it makes. To achieve this,
+use [`handler.times()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlertimes), which takes a number or a
+range of numbers as an argument and specifies how many requests the handler should match. If the application makes more
+requests than expected, they may be handled by the next handler in the chain or unhandled. To learn more about how
+`@zimic/interceptor` matches requests and how unhandled requests are processed, check our
+[unhandled requests guide](/docs/zimic-interceptor/guides/8-unhandled-requests.md).
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .get('/users')
+  .respond({
+    status: 200,
+    body: users,
+  })
+  // highlight-next-line
+  .times(1); // Expect exactly one request
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .get('/users')
+  .respond({
+    status: 200,
+    body: users,
+  })
+  // highlight-next-line
+  .times(1); // Expect exactly one request
+```
+
+  </TabItem>
+</Tabs>
+
+[`handler.times()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlertimes) on its own only restricts how
+many requests the handler should match. To really validate the number of requests, use
+[`handler.checkTimes()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerchecktimes) or
+[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes) at a point when
+your application should have made the requests, such as after a specific action or at the end of a test.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+const handler = interceptor
+  .get('/users')
+  .respond({
+    status: 200,
+    body: users,
+  })
+  .times(1);
+
+// Run application...
+
+// Check that exactly one request was made
+handler.checkTimes();
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+const handler = await interceptor
+  .get('/users')
+  .respond({
+    status: 200,
+    body: users,
+  })
+  .times(1);
+
+// Run application...
+
+// Check that exactly one request was made
+await handler.checkTimes();
+```
+
+  </TabItem>
+</Tabs>
+
+A common strategy is to call
+[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes) in an `afterEach`
+test hook. This way, you can declare how many requests you expect in each handler and have them validated automatically
+without needing to call
+[`handler.checkTimes()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerchecktimes) in each test.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+afterEach(() => {
+  //  highlight-next-line
+  interceptor.checkTimes();
+});
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+afterEach(async () => {
+  //  highlight-next-line
+  await interceptor.checkTimes();
+});
+```
+
+  </TabItem>
+</Tabs>

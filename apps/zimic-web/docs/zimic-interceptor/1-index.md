@@ -32,7 +32,7 @@ testing.
 
   `@zimic/interceptor` was designed to encourage clarity and readability. Declare intuitive mocks, test with confidence,
   and verify that your application is making the expected requests with
-  [declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.md).
+  [declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.mdx).
 
 **Learn more**:
 
