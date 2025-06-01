@@ -10,10 +10,11 @@ import TabItem from '@theme/TabItem';
 # Testing
 
 `@zimic/interceptor` is designed with testing in mind and provides utilities to give you confidence in your tests. Using
-[declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.mdx), you can write your expectations
-in a readable way that makes it clear how many requests the application should make, what parameters they should have,
-and what responses they will receive. If you need more specific assertions, the requests processed by the interceptor
-are available in [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrequests).
+[declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx), you can write your
+expectations in a readable way that makes it clear how many requests the application should make, what parameters they
+should have, and what responses they will receive. If you need more specific assertions, the requests processed by the
+interceptor are available in
+[`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrequests).
 
 ## Configuration
 
@@ -113,10 +114,10 @@ Note that [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor
 [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes) are awaited in the
 remote interceptor example, whereas this is not necessary for local interceptors.
 
-This is because many operations in [remote interceptors](/docs/zimic-interceptor/guides/2-remote-http-interceptors.md)
-are asynchronous because they may involve communication with an
-[interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is different from
-[local interceptors](/docs/zimic-interceptor/guides/1-local-http-interceptors.md), which have mostly synchronous
+This is because many operations in
+[remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md) are asynchronous because they
+may involve communication with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is different from
+[local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md), which have mostly synchronous
 operations.
 
 :::
@@ -131,8 +132,8 @@ How to avoid this depends on the type of interceptor you are using.
 
 #### Local interceptors
 
-With [local interceptors](/docs/zimic-interceptor/guides/1-local-http-interceptors.md), racing conditions between test
-workers are unlikely, because each interceptor affects only the thread it was created in (hence, the name _local_).
+With [local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md), racing conditions between
+test workers are unlikely, because each interceptor affects only the thread it was created in (hence, the name _local_).
 
 However, running more than one test at the same time in the same thread **can** lead to concurrency problems.
 `@zimic/interceptor` does not currently support this, so we recommend avoiding concurrent features like
@@ -143,7 +144,7 @@ in separate threads, each with their own interceptors and without racing conditi
 
 #### Remote interceptors
 
-[Remote interceptors](/docs/zimic-interceptor/guides/2-remote-http-interceptors.md) use an
+[Remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md) use an
 [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle requests. They are especially useful when your
 application and your test runner run in _separate_ processes, such as in end-to-end tests. If you are sharing the same
 interceptor server between multiple parallel test workers, you may run into racing conditions. In this case, some

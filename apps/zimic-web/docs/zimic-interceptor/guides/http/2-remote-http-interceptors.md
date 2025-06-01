@@ -13,7 +13,7 @@ over the responses.
 In `@zimic/interceptor`, HTTP interceptors are available in two types: `local` (default) and `remote`. Interceptors with
 type `remote` use a dedicated [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle requests. This
 opens up more possibilities for mocking than
-[local interceptors](/docs/zimic-interceptor/guides/1-local-http-interceptors.md), such as handling requests from
+[local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md), such as handling requests from
 multiple applications. It is also more robust because it uses a regular HTTP server and does not depend on local
 interception algorithms.
 
@@ -190,8 +190,8 @@ beforeEach(async () => {
 
 After each test, you can check if your application has made all of the expected requests with
 [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes). Learn more about
-how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.mdx) to keep
-your tests clean and readable.
+how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) to
+keep your tests clean and readable.
 
 ```ts
 afterEach(async () => {
@@ -242,8 +242,8 @@ test('example', async () => {
 :::info INFO: <span>Remote interceptors are asynchronous</span>
 
 Many operations in remote interceptors are **asynchronous** because they may involve communication with an interceptor
-server. This is different from [local interceptors](/docs/zimic-interceptor/guides/1-local-http-interceptors.md), which
-have mostly **synchronous** operations.
+server. This is different from [local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md),
+which have mostly **synchronous** operations.
 
 If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy rule is
 [`@typescript-eslint/no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises). It checks promises

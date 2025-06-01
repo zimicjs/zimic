@@ -9,11 +9,11 @@ slug: /interceptor/guides/http/unhandled-requests
 When a request is not matched by any interceptor, it is considered **unhandled** and will be rejected and logged to the
 console by default.
 
-In a [local interceptor](/docs/zimic-interceptor/guides/1-local-http-interceptors.md), unhandled requests can be either
-**bypassed** or **rejected**. Bypassed requests reach the real network, whereas rejected requests fail with a network
-error. The default behavior in local interceptors is to **reject** unhandled requests.
+In a [local interceptor](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md), unhandled requests can be
+either **bypassed** or **rejected**. Bypassed requests reach the real network, whereas rejected requests fail with a
+network error. The default behavior in local interceptors is to **reject** unhandled requests.
 
-[Remote interceptors](/docs/zimic-interceptor/guides/2-remote-http-interceptors.md), on the other hand, always
+[Remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md), on the other hand, always
 **reject** unhandled requests. This is because the unhandled requests have already reached the
 [interceptor server](/docs/zimic-interceptor/cli/1-server.md), so there would be no way of bypassing them at this point.
 
