@@ -78,7 +78,7 @@
     "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
     "typegen:fixtures": "tsx ./scripts/typegen/generateFixtureTypes.ts",
-    "deps:init": "playwright install chromium"
+    "deps:prepare": "playwright install chromium"
   },
   "dependencies": {
     "openapi-typescript": "7.8.0",
@@ -98,7 +98,7 @@
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^8.0.0",
     "eslint": "^9.27.0",
-    "execa": "9.5.3",
+    "execa": "9.6.0",
     "js-yaml": "^4.1.0",
     "playwright": "^1.52.0",
     "prettier": "^3.5.3",

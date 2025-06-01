@@ -67,7 +67,7 @@
     "test": "dotenv -v NODE_ENV=test -- vitest",
     "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
-    "deps:init": "playwright install chromium"
+    "deps:prepare": "playwright install chromium"
   },
   "devDependencies": {
     "@types/node": "^22.15.3",

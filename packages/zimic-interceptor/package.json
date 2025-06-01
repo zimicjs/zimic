@@ -88,14 +88,14 @@
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "playwright install chromium",
     "deps:init-msw": "msw init ./public --no-save",
-    "deps:init": "pnpm deps:install-playwright && pnpm deps:init-msw",
+    "deps:prepare": "pnpm deps:install-playwright && pnpm deps:init-msw",
     "postinstall": "node --enable-source-maps -e \"try{require('./dist/scripts/postinstall')}catch(error){console.error(error)}\""
   },
   "dependencies": {
     "@whatwg-node/server": "0.10.10",
-    "execa": "9.5.3",
+    "execa": "9.6.0",
     "isomorphic-ws": "5.0.0",
-    "msw": "2.8.4",
+    "msw": "2.8.7",
     "picocolors": "^1.1.1",
     "ws": "8.18.2",
     "yargs": "17.7.2",
