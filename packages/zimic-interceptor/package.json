@@ -88,7 +88,7 @@
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "playwright install chromium",
     "deps:init-msw": "msw init ./public --no-save",
-    "deps:init": "pnpm deps:install-playwright && pnpm deps:init-msw",
+    "deps:prepare": "pnpm deps:install-playwright && pnpm deps:init-msw",
     "postinstall": "node --enable-source-maps -e \"try{require('./dist/scripts/postinstall')}catch(error){console.error(error)}\""
   },
   "dependencies": {
