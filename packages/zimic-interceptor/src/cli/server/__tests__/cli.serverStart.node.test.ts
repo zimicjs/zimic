@@ -47,23 +47,23 @@ describe('CLI > Server start', async () => {
     '  -h, --hostname                The hostname to start the server on.',
     '                                                 [string] [default: "localhost"]',
     '  -p, --port                    The port to start the server on.        [number]',
-    '  -e, --ephemeral               Whether the server should stop automatically',
-    '                                after the on-ready command finishes. If no',
-    '                                on-ready command is provided and ephemeral is',
-    '                                true, the server will stop immediately after',
-    '                                starting.             [boolean] [default: false]',
-    '  -l, --log-unhandled-requests  Whether to log a warning when no interceptors',
-    '                                were found for the base URL of a request. If an',
-    '                                interceptor was matched, the logging behavior',
-    '                                for that base URL is configured in the',
-    '                                interceptor itself.                    [boolean]',
-    '  -t, --tokens-dir              The directory where the authorized interceptor',
-    '                                authentication tokens are saved. If provided,',
-    '                                only remote interceptors bearing a valid token',
-    '                                will be accepted. This option is essential if',
-    '                                you are exposing your interceptor server',
-    '                                publicly. For local development and testing,',
-    '                                though, `--tokens-dir` is optional.     [string]',
+    '  -e, --ephemeral               Whether the server should stop automatically aft',
+    '                                er the on-ready command finishes. If no on-ready',
+    '                                 command is provided and ephemeral is true, the',
+    '                                server will stop immediately after starting.',
+    '                                                      [boolean] [default: false]',
+    '  -l, --log-unhandled-requests  Whether to log a warning when no interceptors we',
+    '                                re found for the base URL of a request. If an in',
+    '                                terceptor was matched, the logging behavior for',
+    '                                that base URL is configured in the interceptor i',
+    '                                tself.                                 [boolean]',
+    '  -t, --tokens-dir              The directory where the authorized interceptor a',
+    '                                uthentication tokens are saved. If provided, onl',
+    '                                y remote interceptors bearing a valid token will',
+    '                                 be accepted. This option is essential if you ar',
+    '                                e exposing your interceptor server publicly. For',
+    '                                 local development and testing, though, `--token',
+    '                                s-dir` is optional.                     [string]',
   ].join('\n');
 
   function watchExitEventListeners(exitEvent: (typeof PROCESS_EXIT_EVENTS)[number]) {
@@ -98,7 +98,7 @@ describe('CLI > Server start', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--help']);
 
     await usingIgnoredConsole(['log'], async (console) => {
-      await runCLI();
+      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
 
       expect(console.log).toHaveBeenCalledTimes(1);
       expect(console.log).toHaveBeenCalledWith(serverStartHelpOutput);
