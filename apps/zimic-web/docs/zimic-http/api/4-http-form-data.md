@@ -38,9 +38,9 @@ formData.set(name, value, fileName);
 
 **Arguments**:
 
-1. `name`: the name of the form data field to set.
-2. `value`: the value to set for the form data field.
-3. `fileName` (optional): the name of the file to set when the second parameter is `Blob` or `File`.
+1. **`name`**: the name of the form data field to set.
+2. **`value`**: the value to set for the form data field.
+3. **`fileName`** (optional): the name of the file to set when the second parameter is `Blob` or `File`.
 
 **Related**:
 
@@ -57,9 +57,9 @@ formData.append(name, value, fileName);
 
 **Arguments**:
 
-1. `name`: the name of the form data field to append to.
-2. `value`: the value to append for the form data field.
-3. `fileName` (optional): the name of the file to append when the second parameter is `Blob` or `File`.
+1. **`name`**: the name of the form data field to append to.
+2. **`value`**: the value to append for the form data field.
+3. **`fileName`** (optional): the name of the file to append when the second parameter is `Blob` or `File`.
 
 **Related**:
 
@@ -76,7 +76,7 @@ formData.get(name);
 
 **Arguments**:
 
-1. `name`: the name of the form data field to retrieve.
+1. **`name`**: the name of the form data field to retrieve.
 
 **Returns**: the value of the form data field, or `null` if it does not exist.
 
@@ -95,7 +95,7 @@ formData.getAll(name);
 
 **Arguments**:
 
-1. `name`: the name of the form data field to retrieve.
+1. **`name`**: the name of the form data field to retrieve.
 
 **Returns**: an array of values for the form data field, or an empty array if it does not exist.
 
@@ -113,7 +113,7 @@ formData.has(name);
 
 **Arguments**:
 
-1. `name`: the name of the form data field to check.
+1. **`name`**: the name of the form data field to check.
 
 **Returns**: `true` if the form data field exists, `false` otherwise.
 
@@ -131,7 +131,7 @@ formData.delete(name);
 
 **Arguments**:
 
-1. `name`: the name of the form data field to delete.
+1. **`name`**: the name of the form data field to delete.
 
 **Related**:
 
@@ -148,11 +148,11 @@ formData.forEach(callback, thisArg);
 
 **Arguments**:
 
-1. `callback`: a function that will be called for each form data field. It receives the following arguments:
-   - `value`: the value of the form data field.
-   - `name`: the name of the form data field.
-   - `formData`: the `HttpFormData` instance itself.
-2. `thisArg` (optional): a value to use as `this` when executing `callback`.
+1. **`callback`**: a function that will be called for each form data field. It receives the following arguments:
+   1. **`value`**: the value of the form data field.
+   2. **`name`**: the name of the form data field.
+   3. **`formData`**: the `HttpFormData` instance itself.
+2. **`thisArg`** (optional): a value to use as `this` when executing `callback`.
 
 **Related**:
 
@@ -205,7 +205,7 @@ formData.equals(otherFormData);
 
 **Arguments**:
 
-1. `otherFormData`: another `HttpFormData` instance to compare with.
+1. **`otherFormData`**: another `HttpFormData` instance to compare with.
 
 **Returns**: `true` if the two form data objects are equal, `false` otherwise.
 
@@ -219,7 +219,7 @@ formData.contains(otherFormData);
 
 **Arguments**:
 
-1. `otherFormData`: another `HttpFormData` instance to check against.
+1. **`otherFormData`**: another `HttpFormData` instance to check against.
 
 **Returns**: `true` if the current form data contains all keys and values of the other form data, `false` otherwise.
 

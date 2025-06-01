@@ -6,18 +6,52 @@ slug: /http/api/typegen
 
 # Typegen
 
-:::info
+`@zimic/http/typegen` exports resources to generate types programmatically. We recommend using the
+[`zimic-http typegen` CLI](/docs/zimic-http/cli/1-typegen.md), but this is still a valid alternative for more advanced
+use cases.
 
-🚧 This section is a work in progress.
+## `generateTypesFromOpenAPI()`
 
-Please use the [current documentation](https://github.com/zimicjs/zimic/wiki) while [zimic.dev](/) is not yet complete.
+Generate types from an [OpenAPI](https://swagger.io/specification) schema.
 
-:::
+```ts
+await generateTypesFromOpenAPI(options);
+```
 
-## OpenAPI
+**Arguments**:
 
-:::info
+1. **`options`**:
+   1. **`input`**: the path to a local OpenAPI schema file or an URL to fetch it. Version 3 is supported as YAML or
+      JSON.
+   2. **`output`** (optional): the path to write the generated types to. If not provided, the types will be written to
+      stdout.
+   3. **`serviceName`**: the name of the service to use in the generated types.
+   4. **`includeComments`** (optional): whether to include comments in the generated types. Defaults to `true`.
+   5. **`prune`** (optional): whether to remove unused operations and components from the generated types. This is
+      useful for reducing the size of the output file. Defaults to `true`.
+   6. **`filters`** (optional): one or more expressions to filter the types to generate. Filters must follow the format
+      `<method> <path>`, where `<method>` is an HTTP method or `*`, and `<path>` is a literal path or a glob. Filters
+      are case-sensitive regarding paths. For example, `GET /users`, `* /users`, `GET /users/*`, and `GET /users/**/*`
+      are valid filters. Negative filters can be created by prefixing the expression with `!`. For example,
+      `!GET /users` will exclude paths matching `GET /users`. If more than one positive filter is provided, they will be
+      combined with OR, while negative filters will be combined with AND.
+   7. **`filterFile`** (optional): a path to a file containing filter expressions. One expression is expected per line
+      and the format is the same as used in a `--filter` option. Comments are prefixed with `#`. A filter file can be
+      used alongside additional `--filter` expressions.
 
-🚧 This section is a work in progress.
+```ts
+import { generateTypesFromOpenAPI } from '@zimic/http/typegen';
 
-:::
+await generateTypesFromOpenAPI({
+  input: './schema.yaml',
+  output: './schema.ts',
+  serviceName: 'MyService',
+  filters: ['* /users**'],
+  includeComments: true,
+  prune: true,
+});
+```
+
+## CLI usage
+
+See the [`zimic-http typegen` CLI reference](/docs/zimic-http/cli/1-typegen.md).

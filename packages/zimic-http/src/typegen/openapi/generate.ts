@@ -69,68 +69,18 @@ function normalizeRawNodes(rawNodes: ts.Node[], context: TypeTransformContext, o
   return normalizedNodes;
 }
 
-/**
- * The options to use when generating types from an OpenAPI schema.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐typegen#generatetypesfromopenapioptions `generateTypesFromOpenAPI(options)` API reference}
- */
+/** @see {@link https://zimic.dev/docs/http/api/typegen#generatetypesfromopenapi  `generateTypesFromOpenAPI()` API reference} */
 export interface OpenAPITypegenOptions {
-  /**
-   * The path to a local OpenAPI schema file or an URL to fetch it. Version 3 is supported as YAML or JSON.
-   *
-   * @example
-   *   './schema.yaml';
-   *   'https://example.com/openapi/schema.yaml';
-   */
   input: string;
-  /**
-   * The path to write the generated types to. If not provided, the types will be written to stdout.
-   *
-   * @example
-   *   './schema.ts';
-   */
   output?: string;
-  /**
-   * The name of the service to use in the generated types.
-   *
-   * @example
-   *   'MyService';
-   */
   serviceName: string;
-  /** Whether to include comments in the generated types. */
   includeComments: boolean;
-  /**
-   * Whether to remove unused operations and components from the generated types. This is useful for reducing the size
-   * of the output file.
-   */
   prune: boolean;
-  /**
-   * One or more expressions to filter the types to generate. Filters must follow the format `<method> <path>`, where
-   * `<method>` is an HTTP method or `*`, and `<path>` is a literal path or a glob. Filters are case-sensitive regarding
-   * paths. Negative filters can be created by prefixing the expression with `!`. If more than one positive filter is
-   * provided, they will be combined with OR, while negative filters will be combined with AND.
-   *
-   * @example
-   *   ['GET /users', '* /users', 'GET,POST /users/*', 'DELETE /users/**\\/*', '!GET /notifications'];
-   */
   filters?: string[];
-  /**
-   * A path to a file containing filter expressions. One expression is expected per line and the format is the same as
-   * used in a `--filter` option. Comments are prefixed with `#`. A filter file can be used alongside additional
-   * `--filter` expressions.
-   *
-   * @example
-   *   './filters.txt';
-   */
   filterFile?: string;
 }
 
-/**
- * Generates TypeScript types from an OpenAPI schema.
- *
- * @param options The options to use when generating the types.
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐typegen#generatetypesfromopenapioptions `generateTypesFromOpenAPI(options)` API reference}
- */
+/** @see {@link https://zimic.dev/docs/http/api/typegen#generatetypesfromopenapi  `generateTypesFromOpenAPI()` API reference} */
 async function generateTypesFromOpenAPI({
   input: inputFilePathOrURL,
   output: outputFilePath,

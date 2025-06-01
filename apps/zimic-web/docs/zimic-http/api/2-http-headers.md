@@ -34,8 +34,8 @@ headers.set(name, value);
 
 **Arguments**:
 
-1. `name`: the name of the header to set.
-2. `value`: the value to set for the header.
+1. **`name`**: the name of the header to set.
+2. **`value`**: the value to set for the header.
 
 **Related**:
 
@@ -51,8 +51,8 @@ headers.append(name, value);
 
 **Arguments**:
 
-1. `name`: the name of the header to append to.
-2. `value`: the value to append for the header.
+1. **`name`**: the name of the header to append to.
+2. **`value`**: the value to append for the header.
 
 **Related**:
 
@@ -68,7 +68,7 @@ headers.get(name);
 
 **Arguments**:
 
-1. `name`: the name of the header to retrieve.
+1. **`name`**: the name of the header to retrieve.
 
 **Returns**: the value of the header, or `null` if the header is not present.
 
@@ -101,7 +101,7 @@ headers.has(name);
 
 **Arguments**:
 
-1. `name`: the name of the header to check.
+1. **`name`**: the name of the header to check.
 
 **Returns**: `true` if the header exists, `false` otherwise.
 
@@ -119,7 +119,7 @@ headers.delete(name);
 
 **Arguments**:
 
-1. `name`: the name of the header to delete.
+1. **`name`**: the name of the header to delete.
 
 **Related**:
 
@@ -136,11 +136,11 @@ headers.forEach(callback, thisArg);
 
 **Arguments**:
 
-1. `callback`: function to execute for each element. It receives the following arguments:
-   1. `value`: the value of the header.
-   2. `name`: the name of the header.
-   3. `headers`: the `HttpHeaders` object itself.
-2. `thisArg` (optional): Value to use as `this` when executing `callback`.
+1. **`callback`**: function to execute for each element. It receives the following arguments:
+   1. **`value`**: the value of the header.
+   2. **`name`**: the name of the header.
+   3. **`headers`**: the `HttpHeaders` object itself.
+2. **`thisArg`** (optional): Value to use as `this` when executing `callback`.
 
 **Related**:
 
@@ -193,7 +193,7 @@ headers.equals(otherHeaders);
 
 **Arguments**:
 
-1. `otherHeaders`: the `HttpHeaders` instance to compare against.
+1. **`otherHeaders`**: the `HttpHeaders` instance to compare against.
 
 **Returns**: `true` if the headers are equal, `false` otherwise.
 
@@ -209,7 +209,7 @@ headers.contains(otherHeaders);
 
 **Arguments**:
 
-1. `otherHeaders`: the `HttpHeaders` instance to check against.
+1. **`otherHeaders`**: the `HttpHeaders` instance to check against.
 
 **Returns**: `true` if all headers from `otherHeaders` are present in the current headers, `false` otherwise.
 

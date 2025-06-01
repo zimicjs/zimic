@@ -37,8 +37,8 @@ searchParams.set(name, value);
 
 **Arguments**:
 
-1. `name`: the name of the search parameter to set.
-2. `value`: the value to set for the search parameter.
+1. **`name`**: the name of the search parameter to set.
+2. **`value`**: the value to set for the search parameter.
 
 **Related**:
 
@@ -54,8 +54,8 @@ searchParams.append(name, value);
 
 **Arguments**:
 
-1. `name`: the name of the search parameter to append to.
-2. `value`: the value to append for the search parameter.
+1. **`name`**: the name of the search parameter to append to.
+2. **`value`**: the value to append for the search parameter.
 
 **Related**:
 
@@ -72,7 +72,7 @@ searchParams.get(name);
 
 **Arguments**:
 
-1. `name`: the name of the search parameter to retrieve.
+1. **`name`**: the name of the search parameter to retrieve.
 
 **Returns**: the value of the search parameter, or `null` if it does not exist.
 
@@ -91,7 +91,7 @@ searchParams.getAll(name);
 
 **Arguments**:
 
-1. `name`: the name of the search parameter to retrieve.
+1. **`name`**: the name of the search parameter to retrieve.
 
 **Returns**: an array of values for the search parameter, or an empty array if it does not exist.
 
@@ -110,8 +110,8 @@ searchParams.has(name, value);
 
 **Arguments**:
 
-1. `name`: the name of the search parameter to check.
-2. `value` (optional): the value of the search parameter to check.
+1. **`name`**: the name of the search parameter to check.
+2. **`value`** (optional): the value of the search parameter to check.
 
 **Returns**: `true` if the search parameter exists, `false` otherwise.
 
@@ -130,9 +130,9 @@ searchParams.delete(name, value);
 
 **Arguments**:
 
-1. `name`: the name of the search parameter to delete.
-2. `value` (optional): the value of the search parameter to delete. If not provided, all parameters with the given name
-   will be deleted.
+1. **`name`**: the name of the search parameter to delete.
+2. **`value`** (optional): the value of the search parameter to delete. If not provided, all parameters with the given
+   name will be deleted.
 
 **Related**:
 
@@ -149,11 +149,11 @@ searchParams.forEach(callback, thisArg);
 
 **Arguments**:
 
-1. `callback`: a function that will be called for each search parameter. It receives the following arguments:
-   - `value`: the value of the search parameter.
-   - `name`: the name of the search parameter.
-   - `searchParams`: the `HttpSearchParams` instance itself.
-2. `thisArg` (optional): a value to use as `this` when executing `callback`.
+1. **`callback`**: a function that will be called for each search parameter. It receives the following arguments:
+   1. **`value`**: the value of the search parameter.
+   2. **`name`**: the name of the search parameter.
+   3. **`searchParams`**: the `HttpSearchParams` instance itself.
+2. **`thisArg`** (optional): a value to use as `this` when executing `callback`.
 
 **Related**:
 
@@ -206,7 +206,7 @@ searchParams.equals(otherSearchParams);
 
 **Arguments**:
 
-1. `otherSearchParams`: another `HttpSearchParams` instance to compare with.
+1. **`otherSearchParams`**: another `HttpSearchParams` instance to compare with.
 
 **Returns**: `true` if the two search parameters are equal, `false` otherwise.
 
@@ -220,7 +220,7 @@ searchParams.contains(otherSearchParams);
 
 **Arguments**:
 
-1. `otherSearchParams`: another `HttpSearchParams` instance to check against.
+1. **`otherSearchParams`**: another `HttpSearchParams` instance to check against.
 
 **Returns**: `true` if the current search parameters contain all keys and values of the other search parameters, `false`
 otherwise.
