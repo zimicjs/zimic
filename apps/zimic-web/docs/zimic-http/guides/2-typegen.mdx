@@ -74,7 +74,7 @@ The output file will contain your HTTP schema, named based on the `--service-nam
 types for each endpoint.
 
 ```ts title="schema.ts"
-import type { HttpSchema } from '@/index';
+import { HttpSchema } from '@zimic/http';
 
 export type MyServiceSchema = HttpSchema<{
   users: {
