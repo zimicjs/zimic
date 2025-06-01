@@ -96,8 +96,8 @@ beforeAll(async () => {
 
 :::info INFO: <span>Local interceptors in browsers</span>
 
-If you are using a [local interceptor](/docs/zimic-interceptor/guides/1-local-http-interceptors.md) in a **browser**
-environment, you must first
+If you are using a [local interceptor](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) in a
+**browser** environment, you must first
 [initialize a mock service worker](/docs/zimic-interceptor/cli/2-browser.md#zimic-interceptor-browser-init) in your
 public directory before starting the interceptor.
 
@@ -120,8 +120,8 @@ beforeEach(() => {
 
 After each test, you can check if your application has made all of the expected requests with
 [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes). Learn more about
-how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.mdx) to keep
-your tests clean and readable.
+how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) to
+keep your tests clean and readable.
 
 ```ts
 afterEach(() => {
@@ -172,7 +172,7 @@ test('example', async () => {
 :::info INFO: <span>Local interceptors are synchronous</span>
 
 Many operations in local interceptors are **synchronous** because they do not involve communication with an external
-server. This is different from [remote interceptors](/docs/zimic-interceptor/guides/2-remote-http-interceptors.md),
+server. This is different from [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md),
 which communicate with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle requests and return
 responses.
 

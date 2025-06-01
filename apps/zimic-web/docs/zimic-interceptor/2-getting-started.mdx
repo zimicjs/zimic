@@ -243,10 +243,10 @@ Interceptors with type `remote` use a dedicated [interceptor server](/docs/zimic
 requests. This opens up more possibilities for mocking, such as handling requests from multiple applications. It is also
 more robust because it uses a regular HTTP server and does not depend on local interception algorithms.
 
-Learn more about [local interceptors](/docs/zimic-interceptor/guides/1-local-http-interceptors.md) and
-[remote interceptors](/docs/zimic-interceptor/guides/2-remote-http-interceptors.md) to see which one fits your needs. We
-recommend starting with local interceptors, as they are easier to get started with, and moving to remote interceptors if
-your use case is best served by them.
+Learn more about [local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) and
+[remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md) to see which one fits your
+needs. We recommend starting with local interceptors, as they are easier to get started with, and moving to remote
+interceptors if your use case is best served by them.
 
 :::
 
@@ -267,8 +267,8 @@ beforeAll(async () => {
 
 :::info INFO: <span>Local interceptors in browsers</span>
 
-If you are using a [local interceptor](/docs/zimic-interceptor/guides/1-local-http-interceptors.md) in a **browser**
-environment, you must first
+If you are using a [local interceptor](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) in a
+**browser** environment, you must first
 [initialize a mock service worker](/docs/zimic-interceptor/cli/2-browser.md#zimic-interceptor-browser-init) in your
 public directory before starting the interceptor.
 
@@ -276,10 +276,10 @@ public directory before starting the interceptor.
 
 :::info INFO: <span>Remote interceptors and interceptor servers</span>
 
-If you are using a [remote interceptor](/docs/zimic-interceptor/guides/2-remote-http-interceptors.md), the `baseURL`
-should point to a running [interceptor server](/docs/zimic-interceptor/cli/1-server.md), which is configured by the
-interceptor to handle requests. Learn more about
-[starting remote HTTP interceptors](/docs/zimic-interceptor/guides/2-remote-http-interceptors.md#starting-an-interceptor).
+If you are using a [remote interceptor](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md), the
+`baseURL` should point to a running [interceptor server](/docs/zimic-interceptor/cli/1-server.md), which is configured
+by the interceptor to handle requests. Learn more about
+[starting remote HTTP interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#starting-an-interceptor).
 
 :::
 
@@ -317,8 +317,8 @@ beforeEach(async () => {
 
 After each test, you can check if your application has made all of the expected requests with
 [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes). Learn more about
-how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.mdx) to keep
-your tests clean and readable.
+how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) to
+keep your tests clean and readable.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -416,11 +416,11 @@ test('example', async () => {
 
 :::info INFO: <span>Remote interceptors are asynchronous</span>
 
-Many operations in [remote interceptors](/docs/zimic-interceptor/guides/2-remote-http-interceptors.md) are
+Many operations in [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md) are
 **asynchronous** because they may involve communication with an
 [interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is different from
-[local interceptors](/docs/zimic-interceptor/guides/1-local-http-interceptors.md), which have mostly **synchronous**
-operations.
+[local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md), which have mostly
+**synchronous** operations.
 
 :::
 

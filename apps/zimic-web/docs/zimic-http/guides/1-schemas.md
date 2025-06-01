@@ -421,7 +421,7 @@ In these cases, you can use the `HttpStatusCode` type, which contains all standa
 | `HttpStatusCode.ServerError` | [`5XX`](https://developer.mozilla.org/docs/Web/HTTP/Status#server_error_responses) |
 
 ```ts
-import type { HttpSchema, HttpStatusCode } from '@/index';
+import { HttpSchema, HttpStatusCode } from '@zimic/http';
 
 interface User {
   name: string;
