@@ -31,34 +31,46 @@ console.log(page); // '1'
 
 Sets a search parameter value. If the value already exists, it will be replaced.
 
-**Parameters**:
+```ts
+searchParams.set(name, value);
+```
+
+**Arguments**:
 
 1. `name`: the name of the search parameter to set.
 2. `value`: the value to set for the search parameter.
 
 **Related**:
 
-- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/set).
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/set)
 
 ## `searchParams.append()`
 
 Appends a value to a search parameter, or adds the search parameter if it does not exist.
 
-**Parameters**:
+```ts
+searchParams.append(name, value);
+```
+
+**Arguments**:
 
 1. `name`: the name of the search parameter to append to.
 2. `value`: the value to append for the search parameter.
 
 **Related**:
 
-- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/append).
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/append)
 
 ## `searchParams.get()`
 
 Retrieves the value of a given search parameter. If the value of the key is an array in the schema, use
 [`searchParams.getAll()`](#searchparamsgetall) instead.
 
-**Parameters**:
+```ts
+searchParams.get(name);
+```
+
+**Arguments**:
 
 1. `name`: the name of the search parameter to retrieve.
 
@@ -66,14 +78,18 @@ Retrieves the value of a given search parameter. If the value of the key is an a
 
 **Related**:
 
-- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/get).
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/get)
 
 ## `searchParams.getAll()`
 
 Retrieves all values of a given search parameter. If the value of the key is not an array in the schema, use
 [`searchParams.get()`](#searchparamsget) instead.
 
-**Parameters**:
+```ts
+searchParams.getAll(name);
+```
+
+**Arguments**:
 
 1. `name`: the name of the search parameter to retrieve.
 
@@ -81,13 +97,18 @@ Retrieves all values of a given search parameter. If the value of the key is not
 
 **Related**:
 
-- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/getAll).
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/getAll)
 
 ## `searchParams.has()`
 
 Checks if a search parameter with the given name exists.
 
-**Parameters**:
+```ts
+searchParams.has(name);
+searchParams.has(name, value);
+```
+
+**Arguments**:
 
 1. `name`: the name of the search parameter to check.
 2. `value` (optional): the value of the search parameter to check.
@@ -96,13 +117,18 @@ Checks if a search parameter with the given name exists.
 
 **Related**:
 
-- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/has).
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/has)
 
 ## `searchParams.delete()`
 
 Deletes a search parameter with the given name.
 
-**Parameters**:
+```ts
+searchParams.delete(name);
+searchParams.delete(name, value);
+```
+
+**Arguments**:
 
 1. `name`: the name of the search parameter to delete.
 2. `value` (optional): the value of the search parameter to delete. If not provided, all parameters with the given name
@@ -110,13 +136,18 @@ Deletes a search parameter with the given name.
 
 **Related**:
 
-- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/delete).
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/delete)
 
 ## `searchParams.forEach()`
 
 Executes a function for each search parameter (`name`, `value`) pair.
 
-**Parameters**:
+```ts
+searchParams.forEach(callback);
+searchParams.forEach(callback, thisArg);
+```
+
+**Arguments**:
 
 1. `callback`: a function that will be called for each search parameter. It receives the following arguments:
    - `value`: the value of the search parameter.
@@ -124,36 +155,56 @@ Executes a function for each search parameter (`name`, `value`) pair.
    - `searchParams`: the `HttpSearchParams` instance itself.
 2. `thisArg` (optional): a value to use as `this` when executing `callback`.
 
+**Related**:
+
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/forEach)
+
 ## `searchParams.keys()`
+
+```ts
+searchParams.keys();
+```
 
 **Returns**: an iterator over all search parameter names.
 
 **Related**:
 
-- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/keys).
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/keys)
 
 ## `searchParams.values()`
+
+```ts
+searchParams.values();
+```
 
 **Returns**: an iterator over all search parameter values.
 
 **Related**:
 
-- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/values).
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/values)
 
 ## `searchParams.entries()`
+
+```ts
+searchParams.entries();
+```
 
 **Returns**: an iterator over all search parameter (`name`, `value`) pairs.
 
 **Related**:
 
-- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/entries).
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/entries)
 
 ## `searchParams.equals()`
 
 Compares an `HttpSearchParams` instance with another to check if they are equal. Equality is defined as having the same
 keys and values, regardless of the order of the keys.
 
-**Parameters**:
+```ts
+searchParams.equals(otherSearchParams);
+```
+
+**Arguments**:
 
 1. `otherSearchParams`: another `HttpSearchParams` instance to compare with.
 
@@ -163,7 +214,11 @@ keys and values, regardless of the order of the keys.
 
 Checks if an `HttpSearchParams` instance contains all keys and values of another `HttpSearchParams` instance.
 
-**Parameters**:
+```ts
+searchParams.contains(otherSearchParams);
+```
+
+**Arguments**:
 
 1. `otherSearchParams`: another `HttpSearchParams` instance to check against.
 
@@ -174,6 +229,10 @@ otherwise.
 
 Converts the `HttpSearchParams` instance to a plain object. This method is useful for serialization and debugging
 purposes.
+
+```ts
+searchParams.toObject();
+```
 
 **Returns**: a plain object representation of the search parameters. If a key has multiple values, the object will
 contain an array of values for that key. If the key has only one value, the object will contain its value directly,

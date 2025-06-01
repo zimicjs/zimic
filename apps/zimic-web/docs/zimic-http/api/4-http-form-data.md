@@ -31,7 +31,12 @@ console.log(description); // 'My file'
 
 Sets a form data value. If the value already exists, it will be replaced.
 
-**Parameters**:
+```ts
+formData.set(name, value);
+formData.set(name, value, fileName);
+```
+
+**Arguments**:
 
 1. `name`: the name of the form data field to set.
 2. `value`: the value to set for the form data field.
@@ -39,13 +44,18 @@ Sets a form data value. If the value already exists, it will be replaced.
 
 **Related**:
 
-- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/set).
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/set)
 
 ## `formData.append()`
 
 Appends a value to a form data field, or adds the field if it does not exist.
 
-**Parameters**:
+```ts
+formData.append(name, value);
+formData.append(name, value, fileName);
+```
+
+**Arguments**:
 
 1. `name`: the name of the form data field to append to.
 2. `value`: the value to append for the form data field.
@@ -53,14 +63,18 @@ Appends a value to a form data field, or adds the field if it does not exist.
 
 **Related**:
 
-- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/append).
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/append)
 
 ## `formData.get()`
 
 Retrieves the value of a given form data field. If the value of the key is an array in the schema, use
 [`formData.getAll()`](#formdatagetall) instead.
 
-**Parameters**:
+```ts
+formData.get(name);
+```
+
+**Arguments**:
 
 1. `name`: the name of the form data field to retrieve.
 
@@ -68,14 +82,18 @@ Retrieves the value of a given form data field. If the value of the key is an ar
 
 **Related**:
 
-- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/get).
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/get)
 
 ## `formData.getAll()`
 
 Retrieves all values of a given form data field. If the value of the key is not an array in the schema, use
 [`formData.get()`](#formdataget) instead.
 
-**Parameters**:
+```ts
+formData.getAll(name);
+```
+
+**Arguments**:
 
 1. `name`: the name of the form data field to retrieve.
 
@@ -83,81 +101,109 @@ Retrieves all values of a given form data field. If the value of the key is not 
 
 **Related**:
 
-- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/getAll).
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/getAll)
 
 ## `formData.has()`
 
 Checks if a form data field with the given name exists.
 
-**Parameters**:
+```ts
+formData.has(name);
+```
+
+**Arguments**:
 
 1. `name`: the name of the form data field to check.
-2. `value` (optional): the value of the form data field to check.
 
 **Returns**: `true` if the form data field exists, `false` otherwise.
 
 **Related**:
 
-- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/has).
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/has)
 
 ## `formData.delete()`
 
 Deletes a form data field with the given name.
 
-**Parameters**:
+```ts
+formData.delete(name);
+```
+
+**Arguments**:
 
 1. `name`: the name of the form data field to delete.
-2. `value` (optional): the value of the form data field to delete. If not provided, all fields with the given name will
-   be deleted.
 
 **Related**:
 
-- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/delete).
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/delete)
 
 ## `formData.forEach()`
 
 Executes a function for each form data (`name`, `value`) pair.
 
-**Parameters**:
+```ts
+formData.forEach(callback);
+formData.forEach(callback, thisArg);
+```
+
+**Arguments**:
 
 1. `callback`: a function that will be called for each form data field. It receives the following arguments:
-
-- `value`: the value of the form data field.
-- `name`: the name of the form data field.
-- `formData`: the `HttpFormData` instance itself.
-
+   - `value`: the value of the form data field.
+   - `name`: the name of the form data field.
+   - `formData`: the `HttpFormData` instance itself.
 2. `thisArg` (optional): a value to use as `this` when executing `callback`.
 
+**Related**:
+
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/forEach)
+
 ## `formData.keys()`
+
+```ts
+formData.keys();
+```
 
 **Returns**: an iterator over all form data field names.
 
 **Related**:
 
-- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/keys).
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/keys)
 
 ## `formData.values()`
+
+```ts
+formData.values();
+```
 
 **Returns**: an iterator over all form data field values.
 
 **Related**:
 
-- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/values).
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/values)
 
 ## `formData.entries()`
+
+```ts
+formData.entries();
+```
 
 **Returns**: an iterator over all form data (`name`, `value`) pairs.
 
 **Related**:
 
-- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/entries).
+- [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/entries)
 
 ## `formData.equals()`
 
 Compares an `HttpFormData` instance with another to check if they are equal. Equality is defined as having the same keys
 and values, regardless of the order of the keys.
 
-**Parameters**:
+```ts
+formData.equals(otherFormData);
+```
+
+**Arguments**:
 
 1. `otherFormData`: another `HttpFormData` instance to compare with.
 
@@ -167,7 +213,11 @@ and values, regardless of the order of the keys.
 
 Checks if an `HttpFormData` instance contains all keys and values of another `HttpFormData` instance.
 
-**Parameters**:
+```ts
+formData.contains(otherFormData);
+```
+
+**Arguments**:
 
 1. `otherFormData`: another `HttpFormData` instance to check against.
 
@@ -176,6 +226,10 @@ Checks if an `HttpFormData` instance contains all keys and values of another `Ht
 ## `formData.toObject()`
 
 Converts the `HttpFormData` instance to a plain object. This method is useful for serialization and debugging purposes.
+
+```ts
+formData.toObject();
+```
 
 **Returns**: a plain object representation of the form data. If a key has multiple values, the object will contain an
 array of values for that key. If the key has only one value, the object will contain its value directly, without an
