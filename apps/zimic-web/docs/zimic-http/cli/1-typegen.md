@@ -104,9 +104,8 @@ zimic-http typegen openapi ./schema.yaml \
 
 ### OpenAPI filtering
 
-You can also filter a subset of paths to generate types for. Combined with
-[pruning](#zimic-http-typegen-openapi-pruning), this is useful to reduce the size of the output file and only generate
-the types you need.
+You can also filter a subset of paths to generate types for. Combined with [pruning](#openapi-pruning), this is useful
+to reduce the size of the output file and only generate the types you need.
 
 ```bash
 zimic-http typegen openapi ./schema.yaml \

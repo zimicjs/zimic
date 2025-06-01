@@ -120,6 +120,41 @@ type Schema = HttpSchema<{
 }>;
 ```
 
+## `MergeHttpResponsesByStatusCode`
+
+Merges multiple HTTP response schemas by status code into a single schema. When there are duplicate status codes, the
+first declaration takes precedence.
+
+```ts
+import { HttpSchema, HttpStatusCode, MergeHttpResponsesByStatusCode } from '@zimic/http';
+
+// Overriding the 400 status code with a more specific schema
+// and using a generic schema for all other client errors.
+type MergedResponseByStatusCode = MergeHttpResponsesByStatusCode<
+  [
+    {
+      400: { body: { message: string; issues: string[] } };
+    },
+    {
+      [StatusCode in HttpStatusCode.ClientError]: { body: { message: string } };
+    },
+  ]
+>;
+// {
+//   400: { body: { message: string; issues: string[] } };
+//   401: { body: { message: string}; };
+//   402: { body: { message: string}; };
+//   403: { body: { message: string}; };
+//   ...
+// }
+
+type Schema = HttpSchema<{
+  '/users': {
+    GET: { response: MergedResponseByStatusCode };
+  };
+}>;
+```
+
 ## `HttpSchema.Response`
 
 Declares a response schema in an HTTP service.
@@ -261,7 +296,110 @@ type Schema = HttpSchema<{
 type UserByIdPathParams = HttpSchema.PathParams<{
   userId: string;
 }>;
+```
 
-// Or infer the params from the path string
-type UserByIdPathParams = InferPathParams<Schema, '/users/:userId'>;
+## `HttpSchemaPath`
+
+Extracts the [literal](#httpschemapathliteral) and [non-literal](#httpschemapathnonliteral) paths from an HTTP service
+schema. Optionally receives a second argument with one or more methods to filter the paths with. Only the methods
+defined in the schema are allowed.
+
+```ts
+import { HttpSchema, HttpSchemaPath } from '@zimic/http';
+
+type Schema = HttpSchema<{
+  '/users': {
+    GET: {
+      response: { 200: { body: User[] } };
+    };
+  };
+  '/users/:userId': {
+    DELETE: {
+      response: { 200: { body: User } };
+    };
+  };
+}>;
+
+type Path = HttpSchemaPath<Schema>;
+// "/users" | "/users/:userId" | "/users/${string}"
+
+type GetPath = HttpSchemaPath<Schema, 'GET'>;
+// "/users"
+```
+
+### `HttpSchemaPath.Literal`
+
+Extracts the literal paths from an HTTP service schema. Optionally receives a second argument with one or more methods
+to filter the paths with. Only the methods defined in the schema are allowed.
+
+```ts
+import { HttpSchema, LiteralHttpSchemaPath } from '@zimic/http';
+
+type Schema = HttpSchema<{
+  '/users': {
+    GET: {
+      response: { 200: { body: User[] } };
+    };
+  };
+  '/users/:userId': {
+    DELETE: {
+      response: { 200: { body: User } };
+    };
+  };
+}>;
+
+type LiteralPath = LiteralHttpSchemaPath<Schema>;
+// "/users" | "/users/:userId"
+
+type LiteralGetPath = LiteralHttpSchemaPath<Schema, 'GET'>;
+// "/users"
+```
+
+### `HttpSchemaPath.NonLiteral`
+
+Extracts the non-literal paths from an HTTP service schema. Optionally receives a second argument with one or more
+methods to filter the paths with. Only the methods defined in the schema are allowed.
+
+```ts
+import { HttpSchema, NonLiteralHttpSchemaPath } from '@zimic/http';
+
+type Schema = HttpSchema<{
+  '/users': {
+    GET: {
+      response: { 200: { body: User[] } };
+    };
+  };
+  '/users/:userId': {
+    DELETE: {
+      response: { 200: { body: User } };
+    };
+  };
+}>;
+
+type NonLiteralPath = NonLiteralHttpSchemaPath<Schema>;
+// "/users" | "/users/${string}"
+
+type NonLiteralGetPath = NonLiteralHttpSchemaPath<Schema, 'GET'>;
+// "/users"
+```
+
+## `InferPathParams`
+
+Infers the path parameters schema from a path string. If the first argument is a schema (recommended), the second
+argument is checked to be a valid path in that schema.
+
+```ts
+import { HttpSchema, InferPathParams } from '@zimic/http';
+
+type Schema = HttpSchema<{
+  '/users/:userId': {
+    GET: {
+      response: { 200: { body: User } };
+    };
+  };
+}>;
+
+// Using a schema to validate the path (recommended):
+type PathParams = InferPathParams<Schema, '/users/:userId'>;
+// { userId: string }
 ```
