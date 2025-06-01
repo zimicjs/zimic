@@ -19,7 +19,7 @@ export default defineWorkspace([
     extends: 'vitest.config.mts',
     test: {
       name: 'browser',
-      retry: process.env.CI === 'true' ? 1 : 0,
+      retry: 1,
       environment: undefined,
       include: ['./{src,tests,scripts}/**/*.test.ts', './{src,tests,scripts}/**/*.browser.test.ts'],
       exclude: ['**/*.node.test.ts'],
