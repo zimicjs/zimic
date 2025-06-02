@@ -280,7 +280,7 @@ console.log(handler.requests[0].searchParams.get('username')); // 'my'
 console.log(handler.requests[0].body); // null
 ```
 
-### Interceptor server authentication
+## Interceptor server authentication
 
 Interceptor servers can be configured to require interceptor authentication. This is **strongly recommended** if you are
 exposing the server **publicly**. Without authentication, the server is unprotected and any interceptor can connect to

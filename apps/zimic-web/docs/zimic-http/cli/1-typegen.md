@@ -18,6 +18,11 @@ Commands:
   zimic-http typegen openapi <input>  Generate types from an OpenAPI schema.
 ```
 
+**Related**:
+
+- [Guides - Typegen](/docs/zimic-http/guides/2-typegen.mdx)
+- [Programmatic usage](/docs/zimic-http/api/5-typegen.md)
+
 ## `zimic-http typegen openapi`
 
 Generate types from an [OpenAPI](https://swagger.io/specification) schema.
@@ -139,7 +144,3 @@ zimic-http typegen openapi ./schema.yaml \
   --service-name MyService \
   --filter-file ./filters.txt
 ```
-
-## Programmatic usage
-
-See the [`@zimic/http/typegen` API reference](/docs/zimic-http/api/5-typegen.md).
