@@ -10,6 +10,11 @@ slug: /http/api/typegen
 [`zimic-http typegen` CLI](/docs/zimic-http/cli/1-typegen.md), but this is still a valid alternative for more advanced
 use cases.
 
+**Related**:
+
+- [Guides - Typegen](/docs/zimic-http/guides/2-typegen.mdx)
+- [CLI - `zimic-http typegen`](/docs/zimic-http/cli/1-typegen.md)
+
 ## `generateTypesFromOpenAPI()`
 
 Generate types from an [OpenAPI](https://swagger.io/specification) schema.
@@ -51,7 +56,3 @@ await generateTypesFromOpenAPI({
   prune: true,
 });
 ```
-
-## CLI usage
-
-See the [`zimic-http typegen` CLI reference](/docs/zimic-http/cli/1-typegen.md).
