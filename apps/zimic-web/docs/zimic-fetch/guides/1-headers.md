@@ -156,3 +156,71 @@ console.log(response.headers.get('content-type')); // application/json
 console.log(response.headers.get('content-encoding')); // string | null
 // highlight-end
 ```
+
+## Using cookies
+
+Cookies can store data on the client side and are often used for authentication, session management, and tracking user
+preferences.
+
+Since cookies are a type of header, you can use them in the same way as other headers, declaring them in your
+[schema](/docs/zimic-http/guides/1-schemas.md) and accessing them in requests and responses.
+
+```ts title='schema.ts'
+import { HttpSchema } from '@zimic/http';
+
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    GET: {
+      request: {
+        // highlight-next-line
+        headers: { cookie?: string };
+      };
+      response: {
+        200: {
+          // highlight-next-line
+          headers: { 'set-cookie'?: string };
+          body: User[];
+        };
+      };
+    };
+  };
+}>;
+```
+
+```ts
+import { createFetch } from '@zimic/fetch';
+
+const fetch = createFetch<Schema>({
+  baseURL: 'http://localhost:3000',
+});
+
+const response = await fetch('/users', {
+  method: 'GET',
+  // highlight-next-line
+  headers: { cookie: 'sessionId=1e9f65ab; theme=dark' },
+});
+
+// highlight-next-line
+console.log(response.headers.get('set-cookie'));
+```
+
+:::info INFO: <span>Cookies in browsers</span>
+
+Cookies are automatically sent by a browser, so you don't need to manually set them when making requests. For more
+information about cookies, see the [MDN documentation](https://developer.mozilla.org/docs/Web/HTTP/Guides/Cookies).
+
+:::
+
+:::warning WARNING: `HttpOnly` cookies
+
+Cookies marked with the
+[`HttpOnly` flag](https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/Set-Cookie#httponly) are not accessible
+via client-side JavaScript. Even though they may be in your schema and included in the requests, you won't be able to
+access them in your browser code, only in the server.
+
+:::
