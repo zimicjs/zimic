@@ -13,7 +13,7 @@ use cases.
 **Related**:
 
 - [Guides - Typegen](/docs/zimic-http/guides/2-typegen.mdx)
-- [CLI - `zimic-http typegen`](/docs/zimic-http/cli/1-typegen.md)
+- [CLI usage](/docs/zimic-http/cli/1-typegen.md)
 
 ## `generateTypesFromOpenAPI()`
 

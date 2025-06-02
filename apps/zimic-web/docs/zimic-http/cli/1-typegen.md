@@ -21,7 +21,7 @@ Commands:
 **Related**:
 
 - [Guides - Typegen](/docs/zimic-http/guides/2-typegen.mdx)
-- [API - `@zimic/http/typegen`](/docs/zimic-http/api/5-typegen.md)
+- [Programmatic usage](/docs/zimic-http/api/5-typegen.md)
 
 ## `zimic-http typegen openapi`
 
