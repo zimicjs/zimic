@@ -221,6 +221,6 @@ information about cookies, see the [MDN documentation](https://developer.mozilla
 Cookies marked with the
 [`HttpOnly` flag](https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/Set-Cookie#httponly) are not accessible
 via client-side JavaScript. Even though they may be in your schema and included in the requests, you won't be able to
-access them in your browser code, only in the server.
+access them in your browser code, only on the server.
 
 :::
