@@ -76,7 +76,7 @@ types for each endpoint.
 ```ts title="schema.ts"
 import { HttpSchema } from '@zimic/http';
 
-export type MyServiceSchema = HttpSchema<{
+export type Schema = HttpSchema<{
   users: {
     GET: {
       request: {

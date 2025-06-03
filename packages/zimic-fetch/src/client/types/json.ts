@@ -5,7 +5,7 @@ declare const value: unique symbol;
  *
  * This type is used to validate that the expected stringified body is passed to `fetch`.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#using-a-json-body}
+ * @see {@link https://zimic.dev/docs/fetch/guides/bodies#json-request-body Using a JSON request body}
  */
 export type JSONStringified<Value> = string & { [value]: Value };
 

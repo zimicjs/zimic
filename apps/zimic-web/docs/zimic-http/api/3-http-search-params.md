@@ -32,19 +32,23 @@ console.log(page); // '1'
 Creates a new `HttpSearchParams` instance, optionally initialized with a plain object or another search params instance.
 
 ```ts
+new HttpSearchParams<Schema>();
 new HttpSearchParams<Schema>(init);
 ```
 
 **Arguments**:
 
-1. **`init`** (optional): a URL search params string, a plain object, another search params instance, or an array of
-   tuples with (name, value) pairs to initialize the search params with. If not provided, the created search params will
-   be empty.
+1.  **init**: `HttpSearchParamsInit | undefined`
+
+    A URL search params string, a plain object, another search params instance, or an array of tuples with (name, value)
+    pairs to initialize the search params with. If not provided, the created search params will be empty.
 
 **Type arguments**:
 
-1. **`Schema`**: an object type whose keys are the search param names and values are the expected types of those params.
-   This schema is used to enforce type safety when using the search params instance.
+1. **Schema**: `HttpSearchParamsSchema.Loose`
+
+   An object type whose keys are the search param names and values are the expected types of those params. This schema
+   is used to enforce type safety when using the search params instance.
 
 ## `searchParams.set()`
 
@@ -56,8 +60,13 @@ searchParams.set(name, value);
 
 **Arguments**:
 
-1. **`name`**: the name of the search parameter to set.
-2. **`value`**: the value to set for the search parameter.
+1. **name**: `string`
+
+   The name of the search parameter to set.
+
+2. **value**: `string`
+
+   The value to set for the search parameter.
 
 **Related**:
 
@@ -73,8 +82,13 @@ searchParams.append(name, value);
 
 **Arguments**:
 
-1. **`name`**: the name of the search parameter to append to.
-2. **`value`**: the value to append for the search parameter.
+1. **name**: `string`
+
+   The name of the search parameter to append to.
+
+2. **value**: `string`
+
+   The value to append for the search parameter.
 
 **Related**:
 
@@ -91,9 +105,13 @@ searchParams.get(name);
 
 **Arguments**:
 
-1. **`name`**: the name of the search parameter to retrieve.
+1. **name**: `string`
 
-**Returns**: the value of the search parameter, or `null` if it does not exist.
+   The name of the search parameter to retrieve.
+
+**Returns**: `string | null`
+
+The value of the search parameter, or `null` if it does not exist.
 
 **Related**:
 
@@ -110,9 +128,13 @@ searchParams.getAll(name);
 
 **Arguments**:
 
-1. **`name`**: the name of the search parameter to retrieve.
+1. **name**: `string`
 
-**Returns**: an array of values for the search parameter, or an empty array if it does not exist.
+   The name of the search parameter to retrieve.
+
+**Returns**: `string[]`
+
+An array of values for the search parameter, or an empty array if it does not exist.
 
 **Related**:
 
@@ -129,10 +151,17 @@ searchParams.has(name, value);
 
 **Arguments**:
 
-1. **`name`**: the name of the search parameter to check.
-2. **`value`** (optional): the value of the search parameter to check.
+1. **name**: `string`
 
-**Returns**: `true` if the search parameter exists, `false` otherwise.
+   The name of the search parameter to check.
+
+2. **value**: `string | undefined`
+
+   The value of the search parameter to check.
+
+**Returns**: `boolean`
+
+`true` if the search parameter exists, `false` otherwise.
 
 **Related**:
 
@@ -149,9 +178,13 @@ searchParams.delete(name, value);
 
 **Arguments**:
 
-1. **`name`**: the name of the search parameter to delete.
-2. **`value`** (optional): the value of the search parameter to delete. If not provided, all parameters with the given
-   name will be deleted.
+1. **name**: `string`
+
+   The name of the search parameter to delete.
+
+2. **value**: `string | undefined`
+
+   The value of the search parameter to delete. If not provided, all parameters with the given name will be deleted.
 
 **Related**:
 
@@ -168,11 +201,13 @@ searchParams.forEach(callback, thisArg);
 
 **Arguments**:
 
-1. **`callback`**: a function that will be called for each search parameter. It receives the following arguments:
-   1. **`value`**: the value of the search parameter.
-   2. **`name`**: the name of the search parameter.
-   3. **`searchParams`**: the `HttpSearchParams` instance itself.
-2. **`thisArg`** (optional): a value to use as `this` when executing `callback`.
+1. **callback**: `(value: string, name: string, searchParams: HttpSearchParams) => void`
+
+   A function that will be called for each search parameter.
+
+1. **thisArg**: `HttpSearchParams | undefined`
+
+   An optional value to use as `this` when executing the callback function.
 
 **Related**:
 
@@ -184,7 +219,9 @@ searchParams.forEach(callback, thisArg);
 searchParams.keys();
 ```
 
-**Returns**: an iterator over all search parameter names.
+**Returns**: `Iterator<string>`
+
+An iterator over all search parameter names.
 
 **Related**:
 
@@ -196,7 +233,9 @@ searchParams.keys();
 searchParams.values();
 ```
 
-**Returns**: an iterator over all search parameter values.
+**Returns**: `Iterator<string>`
+
+An iterator over all search parameter values.
 
 **Related**:
 
@@ -208,7 +247,9 @@ searchParams.values();
 searchParams.entries();
 ```
 
-**Returns**: an iterator over all search parameter (`name`, `value`) pairs.
+**Returns**: `Iterator<[string, string]>`
+
+An iterator over all search parameter (`name`, `value`) pairs.
 
 **Related**:
 
@@ -225,9 +266,13 @@ searchParams.equals(otherSearchParams);
 
 **Arguments**:
 
-1. **`otherSearchParams`**: another `HttpSearchParams` instance to compare with.
+1. **otherSearchParams**: `HttpSearchParams`
 
-**Returns**: `true` if the two search parameters are equal, `false` otherwise.
+   Another `HttpSearchParams` instance to compare with.
+
+**Returns**: `boolean`
+
+`true` if the two search parameters are equal, `false` otherwise.
 
 ## `searchParams.contains()`
 
@@ -239,10 +284,13 @@ searchParams.contains(otherSearchParams);
 
 **Arguments**:
 
-1. **`otherSearchParams`**: another `HttpSearchParams` instance to check against.
+1. **otherSearchParams**: `HttpSearchParams`
 
-**Returns**: `true` if the current search parameters contain all keys and values of the other search parameters, `false`
-otherwise.
+   Another `HttpSearchParams` instance to check against.
+
+**Returns**: `boolean`
+
+`true` if the current search parameters contain all keys and values of the other search parameters, `false` otherwise.
 
 ## `searchParams.toObject()`
 
@@ -253,9 +301,11 @@ purposes.
 searchParams.toObject();
 ```
 
-**Returns**: a plain object representation of the search parameters. If a key has multiple values, the object will
-contain an array of values for that key. If the key has only one value, the object will contain its value directly,
-without an array, regardless of how the value was initialized when creating the search params object.
+**Returns**: `Record<string, string | string[]>`
+
+A plain object representation of the search parameters. If a key has multiple values, the object will contain an array
+of values for that key. If the key has only one value, the object will contain its value directly, without an array,
+regardless of how the value was initialized when creating the search params object.
 
 ```ts
 const searchParams = new HttpSearchParams({

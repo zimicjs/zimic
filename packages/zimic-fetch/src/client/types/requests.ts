@@ -73,7 +73,7 @@ type FetchRequestInitPerPath<MethodSchema extends HttpMethodSchema> = FetchReque
  * The options to create a {@link FetchRequest} instance, compatible with
  * {@link https://developer.mozilla.org/docs/Web/API/RequestInit `RequestInit`}.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch `fetch` API reference}
+ * @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference}
  * @see {@link https://developer.mozilla.org/docs/Web/API/RequestInit `RequestInit`}
  */
 export type FetchRequestInit<
@@ -178,7 +178,7 @@ type FetchResponseStatusCode<
  *   console.log(request); // FetchRequest<Schema, 'POST', '/users'>
  *   console.log(request.path); // '/users'
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchrequest `FetchRequest` API reference}
+ * @see {@link https://zimic.dev/docs/fetch/api/fetch-request `FetchRequest` API reference}
  * @see {@link https://developer.mozilla.org/docs/Web/API/Request}
  */
 export interface FetchRequest<
@@ -240,7 +240,7 @@ export type FetchRequestObject = Pick<
 /**
  * A {@link FetchResponse `FetchResponse`} instance with a specific status code.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponse `FetchResponse` API reference}
+ * @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference}
  * @see {@link https://developer.mozilla.org/docs/Web/API/Response}
  */
 export interface FetchResponsePerStatusCode<
@@ -315,7 +315,7 @@ export interface FetchResponsePerStatusCode<
  *     return user;
  *   }
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponse `FetchResponse` API reference}
+ * @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference}
  * @see {@link https://developer.mozilla.org/docs/Web/API/Response}
  */
 export type FetchResponse<
@@ -397,7 +397,7 @@ export type FetchResponseObject = Pick<
  *   should contain at least the method of the request. If the first argument is a {@link FetchRequest request}, this
  *   argument is optional.
  * @returns A promise that resolves to the response to the request.
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponse `FetchResponse` API reference}
+ * @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference}
  * @see {@link https://developer.mozilla.org/docs/Web/API/Request}
  */
 export type FetchRequestConstructor<Schema extends HttpSchema> = new <

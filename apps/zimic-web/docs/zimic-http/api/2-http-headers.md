@@ -29,18 +29,23 @@ console.log(contentType); // 'application/json'
 Creates a new `HttpHeaders` instance, optionally initialized with a plain object or another headers instance.
 
 ```ts
+new HttpHeaders<Schema>();
 new HttpHeaders<Schema>(init);
 ```
 
 **Arguments**:
 
-1. **`init`** (optional): a plain object, another headers instance, or an array of tuples with (name, value) pairs to
-   initialize the headers with. If not provided, the created headers will be empty.
+1. **init**: `HttpHeadersInit | undefined`
+
+   A plain object, another headers instance, or an array of tuples with (name, value) pairs to initialize the headers
+   with. If not provided, the created headers will be empty.
 
 **Type arguments**:
 
-1. **`Schema`**: an object type whose keys are the header names and values are the expected types of those headers. This
-   schema is used to enforce type safety when using the headers instance.
+1. **Schema**: `HttpHeadersSchema.Loose`
+
+   An object type whose keys are the header names and values are the expected types of those headers. This schema is
+   used to enforce type safety when using the headers instance.
 
 ## `headers.set()`
 
@@ -52,8 +57,13 @@ headers.set(name, value);
 
 **Arguments**:
 
-1. **`name`**: the name of the header to set.
-2. **`value`**: the value to set for the header.
+1. **name**: `string`
+
+   The name of the header to set.
+
+2. **value**: `string`
+
+   The value to set for the header.
 
 **Related**:
 
@@ -69,8 +79,13 @@ headers.append(name, value);
 
 **Arguments**:
 
-1. **`name`**: the name of the header to append to.
-2. **`value`**: the value to append for the header.
+1. **name**: `string`
+
+   The name of the header to append to.
+
+2. **value**: `string`
+
+   The value to append for the header.
 
 **Related**:
 
@@ -86,9 +101,13 @@ headers.get(name);
 
 **Arguments**:
 
-1. **`name`**: the name of the header to retrieve.
+1. **name**: `string`
 
-**Returns**: the value of the header, or `null` if the header is not present.
+   The name of the header to retrieve.
+
+**Returns**:
+
+The value of the header, or `null` if the header is not present.
 
 **Related**:
 
@@ -102,8 +121,9 @@ Retrieves the value of the `Set-Cookie` header.
 headers.getSetCookie();
 ```
 
-**Returns**: an array of strings representing the values of the `Set-Cookie` header, or an empty array if the header is
-not present.
+**Returns**: `string[]`
+
+An array of strings representing the values of the `Set-Cookie` header, or an empty array if the header is not present.
 
 **Related**:
 
@@ -119,9 +139,13 @@ headers.has(name);
 
 **Arguments**:
 
-1. **`name`**: the name of the header to check.
+1. **name**: `string`
 
-**Returns**: `true` if the header exists, `false` otherwise.
+   The name of the header to check.
+
+**Returns**: `boolean`
+
+`true` if the header exists, `false` otherwise.
 
 **Related**:
 
@@ -137,7 +161,9 @@ headers.delete(name);
 
 **Arguments**:
 
-1. **`name`**: the name of the header to delete.
+1. **name**: `string`
+
+   The name of the header to delete.
 
 **Related**:
 
@@ -154,11 +180,13 @@ headers.forEach(callback, thisArg);
 
 **Arguments**:
 
-1. **`callback`**: function to execute for each element. It receives the following arguments:
-   1. **`value`**: the value of the header.
-   2. **`name`**: the name of the header.
-   3. **`headers`**: the `HttpHeaders` object itself.
-2. **`thisArg`** (optional): Value to use as `this` when executing `callback`.
+1. **callback**: `(value: string, name: string, headers: HttpHeaders) => void`
+
+   Function to execute for each element.
+
+2. **thisArg**: `HttpHeaders | undefined`
+
+   Value to use as `this` when executing `callback`.
 
 **Related**:
 
@@ -170,7 +198,9 @@ headers.forEach(callback, thisArg);
 headers.keys();
 ```
 
-**Returns**: an iterator over all header names.
+**Returns**: `Iterator<string>`
+
+An iterator over all header names.
 
 **Related**:
 
@@ -182,7 +212,9 @@ headers.keys();
 headers.values();
 ```
 
-**Returns**: an iterator over all header values.
+**Returns**: `Iterator<string>`
+
+An iterator over all header values.
 
 **Related**:
 
@@ -194,7 +226,9 @@ headers.values();
 headers.entries();
 ```
 
-**Returns**: an iterator over all header (name, value) pairs.
+**Returns**: `Iterator<[string, string]>`
+
+An iterator over all header (name, value) pairs.
 
 **Related**:
 
@@ -211,9 +245,13 @@ headers.equals(otherHeaders);
 
 **Arguments**:
 
-1. **`otherHeaders`**: the `HttpHeaders` instance to compare against.
+1. **otherHeaders**: `HttpHeaders`
 
-**Returns**: `true` if the headers are equal, `false` otherwise.
+   The `HttpHeaders` instance to compare against.
+
+**Returns**: `boolean`
+
+`true` if the headers are equal, `false` otherwise.
 
 ## `headers.contains()`
 
@@ -227,9 +265,13 @@ headers.contains(otherHeaders);
 
 **Arguments**:
 
-1. **`otherHeaders`**: the `HttpHeaders` instance to check against.
+1. **otherHeaders**: `HttpHeaders`
 
-**Returns**: `true` if all headers from `otherHeaders` are present in the current headers, `false` otherwise.
+   The `HttpHeaders` instance to check against.
+
+**Returns**: `boolean`
+
+`true` if all headers from `otherHeaders` are present in the current headers, `false` otherwise.
 
 ## `headers.toObject()`
 
@@ -239,7 +281,9 @@ Converts an `HttpHeaders` instance to a plain object. This method is useful for 
 headers.toObject();
 ```
 
-**Returns**: a plain object representation of the headers.
+**Returns**: `Record<string, string>`
+
+A plain object representation of the headers.
 
 ```ts
 const headers = new HttpHeaders({
