@@ -181,7 +181,7 @@ describe('Web socket client', async () => {
         expect(eventMessages).toHaveLength(1);
       });
       expect(eventMessages[0]).toEqual<EventMessage>({
-        id: expect.any(String) as string,
+        id: expect.any(String),
         channel: 'no-reply',
         data: eventMessage,
       });
@@ -238,7 +238,7 @@ describe('Web socket client', async () => {
         expect(requestMessages).toHaveLength(1);
       });
       expect(requestMessages[0]).toEqual<RequestMessage>({
-        id: expect.any(String) as string,
+        id: expect.any(String),
         channel: 'with-reply',
         data: requestMessage,
       });
@@ -317,7 +317,7 @@ describe('Web socket client', async () => {
         expect(requestMessages).toHaveLength(1);
       });
       expect(requestMessages[0]).toEqual<RequestMessage>({
-        id: expect.any(String) as string,
+        id: expect.any(String),
         channel: 'with-reply',
         data: requestMessage,
       });
@@ -326,7 +326,7 @@ describe('Web socket client', async () => {
         expect(replyMessages).toHaveLength(1);
       });
       expect(replyMessages[0]).toEqual<ReplyMessage>({
-        id: expect.any(String) as string,
+        id: expect.any(String),
         channel: 'with-reply',
         requestId: requestMessages[0].id,
         data: { response: 'answer' },
@@ -365,7 +365,7 @@ describe('Web socket client', async () => {
         expect(eventMessages).toHaveLength(1);
       });
       expect(eventMessages[0]).toEqual<EventMessage>({
-        id: expect.any(String) as string,
+        id: expect.any(String),
         channel: 'no-reply',
         data: eventMessage,
       });
@@ -456,7 +456,7 @@ describe('Web socket client', async () => {
         expect(requestMessages).toHaveLength(1);
       });
       expect(requestMessages[0]).toEqual<RequestMessage>({
-        id: expect.any(String) as string,
+        id: expect.any(String),
         channel: 'with-reply',
         data: requestMessage,
       });
@@ -528,7 +528,7 @@ describe('Web socket client', async () => {
         expect(requestMessages).toHaveLength(1);
       });
       expect(requestMessages[0]).toEqual<RequestMessage>({
-        id: expect.any(String) as string,
+        id: expect.any(String),
         channel: 'with-reply',
         data: requestMessage,
       });

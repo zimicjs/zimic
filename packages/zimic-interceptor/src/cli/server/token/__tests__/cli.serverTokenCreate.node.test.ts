@@ -109,7 +109,7 @@ describe('CLI > Server token create', () => {
         hash: expect.stringMatching(HEX_REGEX) as string,
         salt: expect.stringMatching(HEX_REGEX) as string,
       },
-      createdAt: expect.any(Date) as Date,
+      createdAt: expect.any(Date),
     });
 
     expect(tokens[0].id).toHaveLength(INTERCEPTOR_TOKEN_ID_HEX_LENGTH);
