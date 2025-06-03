@@ -44,9 +44,8 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-Then, set the search params in your fetch request using the
-[`searchParams`](/docs/zimic-fetch/api/2-fetch.md#searchparams) option. The search params are automatically encoded in
-the URL and sent with the request.
+Then, set the search params in your fetch request using the [`searchParams`](/docs/zimic-fetch/api/1-create-fetch.md)
+option. The search params are automatically encoded in the URL and sent with the request.
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -93,9 +92,8 @@ const response = await fetch(url, { method: 'GET' });
 
 ### Setting default request search params
 
-A [fetch instance](/docs/zimic-fetch/api/2-fetch.md) can have
-[defaults](/docs/zimic-fetch/api/1-create-fetch.md#defaults) that are applied to all requests. These include search
-params:
+A [fetch instance](/docs/zimic-fetch/api/2-fetch.md) can have [defaults](/docs/zimic-fetch/api/2-fetch.md#fetchdefaults)
+that are applied to all requests. These include search params:
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -113,9 +111,9 @@ You can also set search params after the fetch instance is created.
 fetch.defaults.searchParams.orderBy = 'createdAt:desc';
 ```
 
-[`fetch.onRequest`](/docs/zimic-fetch/api/2-fetch.md#onrequest) can also be used to set search params. Use this listener
-if you need to apply logic to the search params, such as limiting them to certain requests or reading them from local
-storage.
+[`fetch.onRequest`](/docs/zimic-fetch/api/2-fetch.md#fetchonrequest) can also be used to set search params. Use this
+listener if you need to apply logic to the search params, such as limiting them to certain requests or reading them from
+local storage.
 
 ```ts
 import { createFetch } from '@zimic/fetch';

@@ -69,14 +69,21 @@ function normalizeRawNodes(rawNodes: ts.Node[], context: TypeTransformContext, o
   return normalizedNodes;
 }
 
-/** @see {@link https://zimic.dev/docs/http/api/typegen#generatetypesfromopenapi  `generateTypesFromOpenAPI()` API reference} */
+/** @see {@link https://zimic.dev/docs/http/api/typegen#generatetypesfromopenapi `generateTypesFromOpenAPI()` API reference} */
 export interface OpenAPITypegenOptions {
+  /** @see {@link https://zimic.dev/docs/http/api/typegen#generatetypesfromopenapi `generateTypesFromOpenAPI()` API reference} */
   input: string;
+  /** @see {@link https://zimic.dev/docs/http/api/typegen#generatetypesfromopenapi `generateTypesFromOpenAPI()` API reference} */
   output?: string;
+  /** @see {@link https://zimic.dev/docs/http/api/typegen#generatetypesfromopenapi `generateTypesFromOpenAPI()` API reference} */
   serviceName: string;
+  /** @see {@link https://zimic.dev/docs/http/api/typegen#generatetypesfromopenapi `generateTypesFromOpenAPI()` API reference} */
   includeComments: boolean;
+  /** @see {@link https://zimic.dev/docs/http/api/typegen#generatetypesfromopenapi `generateTypesFromOpenAPI()` API reference} */
   prune: boolean;
+  /** @see {@link https://zimic.dev/docs/http/api/typegen#generatetypesfromopenapi `generateTypesFromOpenAPI()` API reference} */
   filters?: string[];
+  /** @see {@link https://zimic.dev/docs/http/api/typegen#generatetypesfromopenapi `generateTypesFromOpenAPI()` API reference} */
   filterFile?: string;
 }
 

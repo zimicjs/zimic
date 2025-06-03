@@ -71,8 +71,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.3",
-    "@vitest/browser": "^3.1.4",
-    "@vitest/coverage-istanbul": "^3.1.2",
+    "@vitest/browser": "^3.2.1",
+    "@vitest/coverage-istanbul": "^3.2.1",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
@@ -83,7 +83,7 @@
     "playwright": "^1.52.0",
     "tsup": "^8.4.0",
     "typescript": "^5.8.3",
-    "vitest": "^3.1.2"
+    "vitest": "^3.2.1"
   },
   "peerDependencies": {
     "@zimic/http": "^0.5.0 || workspace:*",

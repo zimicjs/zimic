@@ -27,6 +27,21 @@ const description = formData.get('description');
 console.log(description); // 'My file'
 ```
 
+## `constructor()`
+
+Creates a new `HttpFormData` instance.
+
+```ts
+new HttpFormData<Schema>();
+```
+
+**Type arguments**:
+
+1. **Schema**: `HttpFormDataSchema.Loose`
+
+   An object type whose keys are the form data fields and values are the expected types of those fields. This schema is
+   used to enforce type safety when using the form data instance.
+
 ## `formData.set()`
 
 Sets a form data value. If the value already exists, it will be replaced.
@@ -38,9 +53,17 @@ formData.set(name, value, fileName);
 
 **Arguments**:
 
-1. **`name`**: the name of the form data field to set.
-2. **`value`**: the value to set for the form data field.
-3. **`fileName`** (optional): the name of the file to set when the second parameter is `Blob` or `File`.
+1. **name**: `string`
+
+   The name of the form data field to set.
+
+2. **value**: `string | File`
+
+   The value to set for the form data field.
+
+3. **fileName**: `string | undefined`
+
+   The name of the file to set when the second parameter is `Blob` or `File`.
 
 **Related**:
 
@@ -57,9 +80,17 @@ formData.append(name, value, fileName);
 
 **Arguments**:
 
-1. **`name`**: the name of the form data field to append to.
-2. **`value`**: the value to append for the form data field.
-3. **`fileName`** (optional): the name of the file to append when the second parameter is `Blob` or `File`.
+1. **name**: `string`
+
+   The name of the form data field to append to.
+
+2. **value**: `string | File`
+
+   The value to append for the form data field.
+
+3. **fileName**: `string | undefined`
+
+   The name of the file to append when the second parameter is `Blob` or `File`.
 
 **Related**:
 
@@ -76,9 +107,13 @@ formData.get(name);
 
 **Arguments**:
 
-1. **`name`**: the name of the form data field to retrieve.
+1. **name**: `string`
 
-**Returns**: the value of the form data field, or `null` if it does not exist.
+   The name of the form data field to retrieve.
+
+**Returns**: `string | File | null`
+
+The value of the form data field, or `null` if it does not exist.
 
 **Related**:
 
@@ -95,9 +130,13 @@ formData.getAll(name);
 
 **Arguments**:
 
-1. **`name`**: the name of the form data field to retrieve.
+1. **name**: `string`
 
-**Returns**: an array of values for the form data field, or an empty array if it does not exist.
+   The name of the form data field to retrieve.
+
+**Returns**: `(string | File)[]`
+
+An array of values for the form data field, or an empty array if it does not exist.
 
 **Related**:
 
@@ -113,9 +152,13 @@ formData.has(name);
 
 **Arguments**:
 
-1. **`name`**: the name of the form data field to check.
+1. **name**: `string`
 
-**Returns**: `true` if the form data field exists, `false` otherwise.
+   The name of the form data field to check.
+
+**Returns**: `boolean`
+
+`true` if the form data field exists, `false` otherwise.
 
 **Related**:
 
@@ -131,7 +174,9 @@ formData.delete(name);
 
 **Arguments**:
 
-1. **`name`**: the name of the form data field to delete.
+1. **name**: `string`
+
+   The name of the form data field to delete.
 
 **Related**:
 
@@ -148,11 +193,13 @@ formData.forEach(callback, thisArg);
 
 **Arguments**:
 
-1. **`callback`**: a function that will be called for each form data field. It receives the following arguments:
-   1. **`value`**: the value of the form data field.
-   2. **`name`**: the name of the form data field.
-   3. **`formData`**: the `HttpFormData` instance itself.
-2. **`thisArg`** (optional): a value to use as `this` when executing `callback`.
+1. **callback**: `(value: string | File, name: string, formData: HttpFormData) => void`
+
+   A function that will be called for each form data field.
+
+1. **thisArg**: `HttpFormData | undefined`
+
+   A value to use as `this` when executing `callback`.
 
 **Related**:
 
@@ -164,7 +211,9 @@ formData.forEach(callback, thisArg);
 formData.keys();
 ```
 
-**Returns**: an iterator over all form data field names.
+**Returns**: `Iterator<string>`
+
+An iterator over all form data field names.
 
 **Related**:
 
@@ -176,7 +225,9 @@ formData.keys();
 formData.values();
 ```
 
-**Returns**: an iterator over all form data field values.
+**Returns**: `Iterator<string | File>`
+
+An iterator over all form data field values.
 
 **Related**:
 
@@ -188,7 +239,9 @@ formData.values();
 formData.entries();
 ```
 
-**Returns**: an iterator over all form data (`name`, `value`) pairs.
+**Returns**: `Iterator<[string, string | File]>`
+
+An iterator over all form data (`name`, `value`) pairs.
 
 **Related**:
 
@@ -205,9 +258,13 @@ formData.equals(otherFormData);
 
 **Arguments**:
 
-1. **`otherFormData`**: another `HttpFormData` instance to compare with.
+1. **otherFormData**: `HttpFormData`
 
-**Returns**: `true` if the two form data objects are equal, `false` otherwise.
+   Another `HttpFormData` instance to compare with.
+
+**Returns**: `boolean`
+
+`true` if the two form data objects are equal, `false` otherwise.
 
 ## `formData.contains()`
 
@@ -219,9 +276,13 @@ formData.contains(otherFormData);
 
 **Arguments**:
 
-1. **`otherFormData`**: another `HttpFormData` instance to check against.
+1. **otherFormData**: `HttpFormData`
 
-**Returns**: `true` if the current form data contains all keys and values of the other form data, `false` otherwise.
+   Another `HttpFormData` instance to check against.
+
+**Returns**: `boolean`
+
+`true` if the current form data contains all keys and values of the other form data, `false` otherwise.
 
 ## `formData.toObject()`
 
@@ -231,9 +292,11 @@ Converts the `HttpFormData` instance to a plain object. This method is useful fo
 formData.toObject();
 ```
 
-**Returns**: a plain object representation of the form data. If a key has multiple values, the object will contain an
-array of values for that key. If the key has only one value, the object will contain its value directly, without an
-array, regardless of how the value was initialized when creating the form data object.
+**Returns**: `Record<string, string | File | (string | File)[]>`
+
+A plain object representation of the form data. If a key has multiple values, the object will contain an array of values
+for that key. If the key has only one value, the object will contain its value directly, without an array, regardless of
+how the value was initialized when creating the form data object.
 
 ```ts
 const formData = new HttpFormData<{
