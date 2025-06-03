@@ -27,6 +27,25 @@ const page = searchParams.get('page');
 console.log(page); // '1'
 ```
 
+## `constructor()`
+
+Creates a new `HttpSearchParams` instance, optionally initialized with a plain object or another search params instance.
+
+```ts
+new HttpSearchParams<Schema>(init);
+```
+
+**Arguments**:
+
+1. **`init`** (optional): a URL search params string, a plain object, another search params instance, or an array of
+   tuples with (name, value) pairs to initialize the search params with. If not provided, the created search params will
+   be empty.
+
+**Type arguments**:
+
+1. **`Schema`**: an object type whose keys are the search param names and values are the expected types of those params.
+   This schema is used to enforce type safety when using the search params instance.
+
 ## `searchParams.set()`
 
 Sets a search parameter value. If the value already exists, it will be replaced.

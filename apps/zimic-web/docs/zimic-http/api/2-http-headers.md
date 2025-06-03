@@ -24,6 +24,24 @@ const contentType = headers.get('content-type');
 console.log(contentType); // 'application/json'
 ```
 
+## `constructor()`
+
+Creates a new `HttpHeaders` instance, optionally initialized with a plain object or another headers instance.
+
+```ts
+new HttpHeaders<Schema>(init);
+```
+
+**Arguments**:
+
+1. **`init`** (optional): a plain object, another headers instance, or an array of tuples with (name, value) pairs to
+   initialize the headers with. If not provided, the created headers will be empty.
+
+**Type arguments**:
+
+1. **`Schema`**: an object type whose keys are the header names and values are the expected types of those headers. This
+   schema is used to enforce type safety when using the headers instance.
+
 ## `headers.set()`
 
 Sets a header value. If the value already exists, it will be replaced.

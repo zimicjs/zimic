@@ -27,6 +27,19 @@ const description = formData.get('description');
 console.log(description); // 'My file'
 ```
 
+## `constructor()`
+
+Creates a new `HttpFormData` instance.
+
+```ts
+new HttpFormData<Schema>();
+```
+
+**Type arguments**:
+
+1. **`Schema`**: an object type whose keys are the form data fields and values are the expected types of those fields.
+   This schema is used to enforce type safety when using the form data instance.
+
 ## `formData.set()`
 
 Sets a form data value. If the value already exists, it will be replaced.
