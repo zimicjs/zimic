@@ -312,7 +312,7 @@ use `fetch.loose`.
 ## `fetch.Request`
 
 A constructor for creating a [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md) instance, which inherits from
-the native [Request](https://developer.mozilla.org/docs/Web/API/Request).
+the native [Request](https://developer.mozilla.org/docs/Web/API/Request) and receives the same arguments as `fetch`.
 
 See [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md) for more information.
 
