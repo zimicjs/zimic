@@ -76,7 +76,7 @@ if (!response.ok) {
 
 ## `error.toObject()`
 
-Converts this error into a plain object. This method is useful for serialization, debugging, and logging purposes.
+Converts the error into a plain object. This method is useful for serialization, debugging, and logging purposes.
 
 ```ts
 error.toObject();
@@ -87,8 +87,7 @@ error.toObject(options);
 
 1. `options`: `FetchResponseErrorObjectOptions`
 
-   The options for converting this error into a plain object. By default, the body of the request and response will not
-   be included.
+   The options for converting the error. By default, the body of the request and response will not be included.
 
    - `includeRequestBody`: `boolean | undefined` (default `false`)
 

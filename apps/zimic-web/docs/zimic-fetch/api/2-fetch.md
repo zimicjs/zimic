@@ -269,8 +269,8 @@ fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
 
 ## `fetch.loose`
 
-A loosely-typed version of [`fetch`](#fetch). This can be useful to make requests with fewer type constraints, such as
-in [`onRequest`](#fetchonrequest) and [`onResponse`](#fetchonrequest) listeners.
+A loosely-typed version of `fetch`. This can be useful to make requests with fewer type constraints, such as in
+[`onRequest`](#fetchonrequest) and [`onResponse`](#fetchonrequest) listeners.
 
 ```ts
 fetch(input);

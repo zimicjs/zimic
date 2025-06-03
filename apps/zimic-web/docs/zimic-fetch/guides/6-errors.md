@@ -16,9 +16,9 @@ response fails with a status code in the `4XX` or `5XX` ranges, the
 To handle errors, check the `response.status` or the `response.ok` properties to determine if the request was successful
 or not. Alternatively, you can throw the `response.error` to handle it upper in the call stack.
 
-The [`onResponse`](/docs/zimic-fetch/api/2-fetch.md#onresponse) listener can be a good strategy if you want to handle
-errors transparently. The listener can automatically retry the request without bubbling the error up to the caller. This
-is useful for recoverable errors, such as
+The [`onResponse`](/docs/zimic-fetch/api/2-fetch.md#fetchonresponse) listener can be a good strategy if you want to
+handle errors transparently. The listener can automatically retry the request without bubbling the error up to the
+caller. This is useful for recoverable errors, such as
 [expired tokens](/docs/zimic-fetch/guides/5-authentication.md#handling-errors), network errors, or temporarily
 unavailable services. You can also use it to [log errors](#logging-response-errors).
 
@@ -125,8 +125,8 @@ if (!response.ok) {
 
 ## Logging response errors
 
-[`fetchResponseError.toObject()`](/docs/zimic-fetch/api/4-fetch-response.md#toobject) is useful get a plain object
-representation of the error. This makes the error easier to log and inspect.
+[`fetchResponseError.toObject()`](/docs/zimic-fetch/api/5-fetch-response-error.md#errortoobject) is useful get a plain
+object representation of the error. This makes the error easier to log and inspect.
 
 ```ts
 import { FetchResponseError } from '@zimic/fetch';

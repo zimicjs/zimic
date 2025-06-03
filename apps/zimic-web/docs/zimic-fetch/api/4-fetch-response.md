@@ -83,5 +83,4 @@ if (response.status === 404) {
 
 **Related**:
 
-- [`fetch.Response`](/docs/zimic-fetch/api/2-fetch.md#fetchresponse)
 - [`Response` - MDN reference](https://developer.mozilla.org/docs/Web/API/Response)
