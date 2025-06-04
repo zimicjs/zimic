@@ -100,9 +100,65 @@ const users = await response.json();
 return users; // User[]
 ```
 
+## `fetch.defaults`
+
+The default options for each request sent by the fetch instance. They inherit from the native
+[`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) interface, with the following additional
+properties:
+
+- **baseURL**: `string | undefined`
+
+  The base URL for the fetch instance, which will be prepended to all request URLs.
+
+- **searchParams**: `HttpSearchParamsSchema.Loose | undefined`
+
+  The default search parameters to be sent with each request.
+
+```ts
+import { HttpSchema } from '@zimic/http';
+import { createFetch } from '@zimic/fetch';
+
+interface Post {
+  id: string;
+  title: string;
+}
+
+type Schema = HttpSchema<{
+  '/posts': {
+    POST: {
+      request: {
+        headers: { authorization?: string };
+        body: { title: string };
+      };
+      response: {
+        201: { body: Post };
+      };
+    };
+  };
+}>;
+
+const fetch = createFetch<Schema>({
+  baseURL: 'http://localhost:3000',
+  headers: { 'accept-language': 'en' },
+});
+
+//  highlight-next-line
+fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
+```
+
+**Related**:
+
+- [Guides - Authentication](/docs/zimic-fetch/guides/5-authentication.md#handling-errors)
+
 ## `fetch.onRequest`
 
 A listener function that is called before sending each request.
+
+```ts
+fetch.onRequest = (request) => {
+  // ...
+};
+```
 
 **Arguments**:
 
@@ -165,6 +221,12 @@ fetch.onRequest = (request) => {
 
 A listener function that is called after receiving each response.
 
+```ts
+fetch.onResponse = (response) => {
+  // ...
+};
+```
+
 **Arguments**:
 
 1. **response**: `FetchResponse.Loose`
@@ -217,64 +279,14 @@ fetch.onResponse = (response) => {
 - [Guides - Authentication](/docs/zimic-fetch/guides/5-authentication.md#handling-errors)
 - [Guides - Handling errors](/docs/zimic-fetch/guides/6-errors.md)
 
-## `fetch.defaults`
-
-The default options for each request sent by the fetch instance. They inherit from the native
-[`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) interface, with the following additional
-properties:
-
-- **baseURL**: `string | undefined`
-
-  The base URL for the fetch instance, which will be prepended to all request URLs.
-
-- **searchParams**: `HttpSearchParamsSchema.Loose | undefined`
-
-  The default search parameters to be sent with each request.
-
-```ts
-import { HttpSchema } from '@zimic/http';
-import { createFetch } from '@zimic/fetch';
-
-interface Post {
-  id: string;
-  title: string;
-}
-
-type Schema = HttpSchema<{
-  '/posts': {
-    POST: {
-      request: {
-        headers: { authorization?: string };
-        body: { title: string };
-      };
-      response: {
-        201: { body: Post };
-      };
-    };
-  };
-}>;
-
-const fetch = createFetch<Schema>({
-  baseURL: 'http://localhost:3000',
-  headers: { 'accept-language': 'en' },
-});
-
-//  highlight-next-line
-fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
-```
-
-**Related**:
-
-- [Guides - Authentication](/docs/zimic-fetch/guides/5-authentication.md#handling-errors)
-
 ## `fetch.loose`
 
 A loosely-typed version of `fetch`. This can be useful to make requests with fewer type constraints, such as in
 [`onRequest`](#fetchonrequest) and [`onResponse`](#fetchonrequest) listeners.
 
 ```ts
-fetch(input);
-fetch(input, init);
+fetch.loose(input);
+fetch.loose(input, init);
 ```
 
 **Arguments**:
@@ -322,6 +334,10 @@ A type guard that checks if a request is a [`FetchRequest`](/docs/zimic-fetch/ap
 the fetch instance, and has a specific method and path. This is useful to narrow down the type of a request before using
 it.
 
+```ts
+fetch.isRequest(request, method, path);
+```
+
 **Arguments**:
 
 1. **request**: `unknown`
@@ -367,11 +383,13 @@ const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 });
 
+// highlight-start
 const request = new fetch.Request('/users', {
   method: 'POST',
   headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ username: 'me' }),
 });
+// highlight-end
 
 if (fetch.isRequest(request, 'POST', '/users')) {
   // request is a FetchRequest<Schema, 'POST', '/users'>
@@ -442,6 +460,7 @@ const response = await fetch('/users', {
   searchParams: { query: 'u' },
 });
 
+//  highlight-next-line
 if (fetch.isResponse(response, 'GET', '/users')) {
   // response is a FetchResponse<Schema, 'GET', '/users'>
 
@@ -516,6 +535,7 @@ try {
     throw response.error; // FetchResponseError<Schema, 'GET', '/users'>
   }
 } catch (error) {
+  //  highlight-next-line
   if (fetch.isResponseError(error, 'GET', '/users')) {
     // error is a FetchResponseError<Schema, 'GET', '/users'>
 

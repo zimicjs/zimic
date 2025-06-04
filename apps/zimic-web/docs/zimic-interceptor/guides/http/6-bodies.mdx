@@ -312,7 +312,7 @@ Plain-text bodies can be declared as a string.
 ```ts
 import { HttpSchema } from '@zimic/http';
 
-type MyServiceSchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/content': {
     POST: {
       request: {
@@ -374,7 +374,7 @@ interface UserCreationSearchParams {
   username: string;
 }
 
-type MyServiceSchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/users': {
     POST: {
       request: {
@@ -657,7 +657,7 @@ Plain-text response bodies can be declared as a string.
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
 
-type MyServiceSchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/content': {
     GET: {
       response: {
@@ -714,7 +714,7 @@ interface UserCreationSearchParams {
   username: string;
 }
 
-type MyServiceSchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/users': {
     GET: {
       response: {

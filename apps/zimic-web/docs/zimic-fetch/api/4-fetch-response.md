@@ -13,6 +13,16 @@ On top of the properties available in native responses, `FetchResponse` instance
 request, accessible via the `request` property. If the response has a failure status code (4XX or 5XX), an error is
 available in the `error` property.
 
+```ts
+type FetchResponse<
+  Schema,
+  Method,
+  Path,
+  ErrorOnly = false,
+  Redirect = RequestRedirect
+>;
+```
+
 **Type arguments**:
 
 1. **Schema**: `HttpSchema`
@@ -61,26 +71,46 @@ const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 });
 
+//  highlight-start
 const response = await fetch(`/users/${userId}`, {
   method: 'GET',
 });
+//  highlight-end
 
 console.log(response); // FetchResponse<Schema, 'GET', '/users'>
-console.log(response.path); // '/users'
-
-if (response.status === 404) {
-  console.log(response.error); // FetchResponseError<Schema, 'GET', '/users/:userId'>
-
-  const errorBody = await response.json(); // { message: string }
-  console.error(errorBody.message);
-
-  return null;
-} else {
-  const user = await response.json(); // User
-  return user;
-}
 ```
 
 **Related**:
 
 - [`Response` - MDN reference](https://developer.mozilla.org/docs/Web/API/Response)
+
+## `response.request`
+
+The [request](/docs/zimic-fetch/api/3-fetch-request.md) that originated the response.
+
+```ts
+const response = await fetch('/users', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ username: 'me' }),
+});
+
+console.log(response.request); // FetchRequest<Schema, 'POST', '/users'>
+```
+
+## `response.error`
+
+The [error](/docs/zimic-fetch/api/5-fetch-response-error.md) associated with the response, if the response has a failure
+status code (4XX or 5XX). If the response is successful, `response.error` is `null`.
+
+```ts
+const response = await fetch('/users', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ username: 'me' }),
+});
+
+if (response.status === 404) {
+  console.error(response.error); // FetchResponseError<Schema, 'POST', '/users'>
+}
+```
