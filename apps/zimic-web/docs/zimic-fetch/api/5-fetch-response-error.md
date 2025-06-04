@@ -69,7 +69,7 @@ const response = await fetch(`/users/${userId}`, {
 });
 
 if (!response.ok) {
-  console.log(response.status); // 404
+  //   highlight-next-line
   console.log(response.error); // FetchResponseError<Schema, 'GET', '/users'>
 }
 ```
@@ -113,6 +113,7 @@ const response = await fetch(`/users/${userId}`, {
 });
 
 if (!response.ok) {
+  //   highlight-next-line
   const plainError = response.error.toObject();
   console.log(JSON.stringify(plainError));
   // {"name":"FetchResponseError","message":"...","request":{...},"response":{...}}

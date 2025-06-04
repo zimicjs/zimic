@@ -72,10 +72,10 @@ export namespace Fetch {
 
 /** @see {@link https://zimic.dev/docs/fetch/api/create-fetch `createFetch` API reference} */
 export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchRequestInit.Defaults, 'method'> {
-  /** @see {@link https://zimic.dev/docs/fetch/api/createfetch#onrequest `createFetch.onRequest`} API reference */
+  /** @see {@link https://zimic.dev/docs/fetch/api/create-fetch#onrequest `createFetch.onRequest`} API reference */
   onRequest?: (this: Fetch<Schema>, request: FetchRequest.Loose) => PossiblePromise<Request>;
 
-  /** @see {@link https://zimic.dev/docs/fetch/api/createfetch#onresponse `createFetch.onResponse`} API reference */
+  /** @see {@link https://zimic.dev/docs/fetch/api/create-fetch#onresponse `createFetch.onResponse`} API reference */
   onResponse?: (this: Fetch<Schema>, response: FetchResponse.Loose) => PossiblePromise<Response>;
 }
 

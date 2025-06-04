@@ -11,6 +11,10 @@ native [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). All re
 default with a [schema](/docs/zimic-http/guides/1-schemas.md), including methods, paths, status codes, arguments, and
 bodies.
 
+```ts
+createFetch<Schema>(options);
+```
+
 **Arguments**:
 
 1. **options**: `FetchOptions`
@@ -45,7 +49,7 @@ bodies.
 
 A [fetch instance](/docs/zimic-fetch/api/2-fetch.md) typed with the provided schema.
 
-```ts title='schema.ts'
+```ts
 import { HttpSchema } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 
@@ -64,14 +68,15 @@ const fetch = createFetch<Schema>({
 
 - [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API)
 
-## Listeners
-
-### `onRequest`
+## `onRequest`
 
 `createFetch` accepts an `onRequest` listener, which is a function that is called before sending each request.
 
 ```ts
-onRequest(this: Fetch<Schema>, request: FetchRequest.Loose): Promise<Request> | Request;
+onRequest(
+  this: Fetch<Schema>,
+  request: FetchRequest.Loose
+): Promise<Request> | Request;
 ```
 
 **Arguments**:
@@ -129,12 +134,15 @@ const fetch = createFetch<Schema>({
 
 - [`fetch.onRequest` API reference](/docs/zimic-fetch/api/2-fetch.md#fetchonrequest)
 
-### `onResponse`
+## `onResponse`
 
 `createFetch` accepts an `onResponse` listener, which is a function that is called after receiving each response.
 
 ```ts
-onResponse(this: Fetch<Schema>, response: FetchResponse.Loose): Promise<Response> | Response;
+onResponse(
+  this: Fetch<Schema>,
+  response: FetchResponse.Loose
+): Promise<Response> | Response;
 ```
 
 **Arguments**:

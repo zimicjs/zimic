@@ -267,7 +267,7 @@ Plain-text bodies can be declared as a string.
 ```ts
 import { HttpSchema } from '@zimic/http';
 
-type MyServiceSchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/content': {
     POST: {
       request: {
@@ -303,7 +303,7 @@ interface UserCreationSearchParams {
   username: string;
 }
 
-type MyServiceSchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/users': {
     POST: {
       request: {
@@ -324,7 +324,7 @@ serialized to a URL-encoded string, and the `content-type` header will be set to
 import { HttpSearchParams } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 
-const fetch = createFetch<MyServiceSchema>({
+const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 });
 
@@ -549,7 +549,7 @@ To receive a URL-encoded response body, declare its type in your [schema](/docs/
 ```ts title='schema.ts'
 import { HttpSchema, HttpSearchParams } from '@zimic/http';
 
-type MyServiceSchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/users': {
     GET: {
       response: {
@@ -571,7 +571,7 @@ body as URL-encoded data. The result is automatically typed according to your sc
 ```ts
 import { createFetch } from '@zimic/fetch';
 
-const fetch = createFetch<MyServiceSchema>({
+const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 });
 
