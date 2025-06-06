@@ -11,7 +11,6 @@ export const MSW_ROOT_DIRECTORY = path.join(require.resolve('msw'), '..', '..', 
 export const MSW_PACKAGE_PATH = path.join(MSW_ROOT_DIRECTORY, 'package.json');
 
 export const MSW_CORE_DIRECTORY = path.join(MSW_ROOT_DIRECTORY, 'lib', 'core');
-export const MSW_BROWSER_DIRECTORY = path.join(MSW_ROOT_DIRECTORY, 'lib', 'browser');
 
 async function patchMSWExports() {
   const mswPackageContentAsString = await fs.promises.readFile(MSW_PACKAGE_PATH, 'utf-8');
@@ -32,23 +31,6 @@ async function patchMSWExports() {
 
   const patchedMSWPackageContentAsString = JSON.stringify(mswPackageContent, null, 2);
   await fs.promises.writeFile(MSW_PACKAGE_PATH, patchedMSWPackageContentAsString);
-}
-
-// This is a temporary workaround. Once https://github.com/mswjs/msw/issues/2146 is fixed, we should remove it.
-async function patchMSWBrowserEntry() {
-  await Promise.all(
-    ['index.js', 'index.mjs'].map(async (indexFileName) => {
-      const mswBrowserPath = path.join(MSW_BROWSER_DIRECTORY, indexFileName);
-      const mswBrowserContent = await fs.promises.readFile(mswBrowserPath, 'utf-8');
-
-      const patchedMSWBrowserContent = mswBrowserContent.replace(
-        ['    if (responseJson.type?.includes("opaque")) {', '      return;', '    }'].join('\n'),
-        ['    if (!request || responseJson.type?.includes("opaque")) {', '      return;', '    }'].join('\n'),
-      );
-
-      await fs.promises.writeFile(mswBrowserPath, patchedMSWBrowserContent);
-    }),
-  );
 }
 
 // This is a temporary workaround. Once https://github.com/stackblitz/core/issues/3323 is fixed, we should remove it.
@@ -104,7 +86,7 @@ async function patchMSWWebSocketBroadcastChannel() {
 }
 
 async function postinstall() {
-  await Promise.all([patchMSWExports(), patchMSWBrowserEntry(), patchMSWWebSocketBroadcastChannel()]);
+  await Promise.all([patchMSWExports(), patchMSWWebSocketBroadcastChannel()]);
 }
 
 export const postinstallPromise = postinstall();
