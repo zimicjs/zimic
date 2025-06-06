@@ -139,19 +139,7 @@ class HttpHeaders<LooseSchema extends HttpHeadersSchema.Loose = HttpHeadersSchem
     return true;
   }
 
-  /**
-   * Converts these headers into a plain object. This method is useful for serialization and debugging purposes.
-   *
-   * @example
-   *   const headers = new HttpHeaders({
-   *     accept: 'application/json',
-   *     'content-type': 'application/json',
-   *   });
-   *   const object = headers.toObject();
-   *   console.log(object); // { accept: 'application/json', 'content-type': 'application/json' }
-   *
-   * @returns A plain object representation of these headers.
-   */
+  /** @see {@link https://zimic.dev/docs/http/api/http-headers#headerstoobject `headers.toObject()` API reference} */
   toObject(): this['_schema'] {
     const object = {} as this['_schema'];
 
