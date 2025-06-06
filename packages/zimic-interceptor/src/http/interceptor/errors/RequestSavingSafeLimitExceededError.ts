@@ -1,7 +1,7 @@
 /**
  * Error thrown when the safe limit of saved intercepted requests is exceeded.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests Saving intercepted requests}
+ * @see {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor#saving-requests Saving intercepted requests}
  */
 class RequestSavingSafeLimitExceededError extends TypeError {
   constructor(numberOfSavedRequests: number, safeLimit: number) {
@@ -13,7 +13,7 @@ class RequestSavingSafeLimitExceededError extends TypeError {
         'requests in memory can lead to performance issues.\n\n' +
         'If you do not need to save requests, consider setting `requestSaving.enabled: false` in your ' +
         'interceptor.\n\n' +
-        'Learn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests',
+        'Learn more: https://zimic.dev/docs/interceptor/api/create-http-interceptor#saving-requests',
     );
     this.name = 'RequestSavingSafeLimitExceededError';
   }

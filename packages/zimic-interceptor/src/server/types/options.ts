@@ -1,8 +1,7 @@
 /**
- * The options to create an
- * {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server interceptor server}.
+ * The options to create an {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server `zimic-interceptor server` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/cli/server `zimic-interceptor server` API reference}
  */
 export interface InterceptorServerOptions {
   /**

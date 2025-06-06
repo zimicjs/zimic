@@ -25,7 +25,7 @@ type PartialHttpHeadersOrSchema<Schema extends HttpHeadersSchema.Loose> = IfNeve
 /**
  * A static headers restriction to match intercepted requests.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference}
  */
 export type HttpRequestHandlerHeadersStaticRestriction<
   Schema extends HttpSchema,
@@ -42,7 +42,7 @@ type PartialHttpSearchParamsOrSchema<Schema extends HttpSearchParamsSchema.Loose
 /**
  * A static search params restriction to match intercepted requests.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference}
  */
 export type HttpRequestHandlerSearchParamsStaticRestriction<
   Schema extends HttpSchema,
@@ -62,7 +62,7 @@ type PartialBodyOrSchema<Body extends HttpBody> =
 /**
  * A static body restriction to match intercepted requests.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference}
  */
 export type HttpRequestHandlerBodyStaticRestriction<
   Schema extends HttpSchema,
@@ -73,7 +73,7 @@ export type HttpRequestHandlerBodyStaticRestriction<
 /**
  * A static restriction to match intercepted requests.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference}
  */
 export interface HttpRequestHandlerStaticRestriction<
   Schema extends HttpSchema,
@@ -108,7 +108,7 @@ export interface HttpRequestHandlerStaticRestriction<
 /**
  * A computed restriction to match intercepted requests.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference}
  */
 export type HttpRequestHandlerComputedRestriction<
   Schema extends HttpSchema,
@@ -119,7 +119,7 @@ export type HttpRequestHandlerComputedRestriction<
 /**
  * A restriction to match intercepted requests.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference}
  */
 export type HttpRequestHandlerRestriction<
   Schema extends HttpSchema,

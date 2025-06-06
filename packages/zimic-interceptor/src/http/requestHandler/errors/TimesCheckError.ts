@@ -113,7 +113,7 @@ function createMessageDiffs({ requestSaving, unmatchedRequestGroups }: TimesChec
 }
 
 function createMessageFooter() {
-  return 'Learn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes';
+  return 'Learn more: https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes';
 }
 
 function createMessage(options: TimesCheckErrorOptions) {
