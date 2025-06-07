@@ -485,7 +485,7 @@ abstract class HttpInterceptorWorker {
       formattedSearchParams,
       '\n    Body:',
       formattedBody,
-      '\n\nLearn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests',
+      '\n\nLearn more: https://zimic.dev/docs/interceptor/guides/http/unhandled-requests',
     );
   }
 }

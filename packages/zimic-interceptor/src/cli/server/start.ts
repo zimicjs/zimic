@@ -71,7 +71,7 @@ async function startInterceptorServer({
       [
         `Attention: this interceptor server is ${color.bold(color.red('unprotected'))}. Do not expose it publicly without authentication.`,
         '',
-        'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#authentication',
+        'Learn more: https://zimic.dev/docs/interceptor/guides/http/remote-interceptors#interceptor-server-authentication',
       ].join('\n'),
     );
   }

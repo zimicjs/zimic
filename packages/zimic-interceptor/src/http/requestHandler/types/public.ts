@@ -19,10 +19,10 @@ import { HttpRequestHandlerRestriction } from './restrictions';
  * An HTTP request handler to declare responses for intercepted requests.
  *
  * When multiple handlers of the same interceptor match the same method and path, the _last_ handler created with
- * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)`}
+ * {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptormethodpath `interceptor.<method>(path)`}
  * will be used.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler `HttpRequestHandler` API reference}
  */
 export interface HttpRequestHandler<
   Schema extends HttpSchema,
@@ -33,7 +33,7 @@ export interface HttpRequestHandler<
    * The method that matches this handler.
    *
    * @readonly
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlermethod `handler.method` API reference}
+   * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlermethod `handler.method` API reference}
    */
   get method(): Method;
 
@@ -42,7 +42,7 @@ export interface HttpRequestHandler<
    * requests.
    *
    * @readonly
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerpath `handler.path` API reference}
+   * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerpath `handler.path` API reference}
    */
   get path(): Path;
 }
@@ -61,10 +61,10 @@ export interface InternalHttpRequestHandler<
  * operations are synchronous and are executed in the same process where it was created.
  *
  * When multiple handlers of the same interceptor match the same method and path, the _last_ handler created with
- * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)`}
+ * {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptormethodpath `interceptor.<method>(path)`}
  * will be used.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler `HttpRequestHandler` API reference}
  */
 export interface LocalHttpRequestHandler<
   Schema extends HttpSchema,
@@ -89,7 +89,7 @@ export interface LocalHttpRequestHandler<
    *
    * @param restriction The restriction to match intercepted requests.
    * @returns The same handler, now considering the specified restriction.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
+   * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference}
    */
   with: (restriction: HttpRequestHandlerRestriction<Schema, Method, Path>) => this;
 
@@ -102,7 +102,7 @@ export interface LocalHttpRequestHandler<
    * @param declaration The response declaration or a factory to create it.
    * @returns The same handler, now including type information about the response declaration based on the specified
    *   status code.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()` API reference}
+   * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference}
    */
   respond: <NewStatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
@@ -121,57 +121,55 @@ export interface LocalHttpRequestHandler<
    * returning its response. In this case, Zimic will try other handlers until one eligible is found, otherwise the
    * request will be either bypassed or rejected. Learn more about how Zimic decides which handler to use for an
    * intercepted request in the
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}.
+   * {@link https://zimic.dev/docs/interceptor/api/http-interceptor#declaring-request-handlers Declaring request handlers}.
    *
    * **Important**: To make sure that all expected requests were made, use
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorchecktimes `interceptor.checkTimes()`}
-   * or {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()`}.
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorchecktimes `interceptor.checkTimes()`}
-   * is generally preferred, as it checks all handlers created by the interceptor with a single call.
+   * {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptorchecktimes `interceptor.checkTimes()`} or
+   * {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes `handler.times()`}.
+   * {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptorchecktimes `interceptor.checkTimes()`} is
+   * generally preferred, as it checks all handlers created by the interceptor with a single call.
    *
    * @param numberOfRequests The number of times the handler should match intercepted requests.
    * @param minNumberOfRequests The minimum number of times the handler should match intercepted requests.
    * @param maxNumberOfRequests The maximum number of times the handler should match intercepted requests.
    * @returns The same handler, now considering the specified number of times.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()` API reference}
+   * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes `handler.times()` API reference}
    */
   times: ((numberOfRequests: number) => this) & ((minNumberOfRequests: number, maxNumberOfRequests: number) => this);
 
   /**
    * Checks if the handler has matched the expected number of requests declared with
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()`}.
+   * {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes `handler.times()`}.
    *
    * If the handler has matched fewer or more requests than expected, this method will throw a `TimesCheckError` error
    * pointing to the
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()` API reference}
+   * {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes `handler.times()` API reference}
    * that was not satisfied.
    *
-   * When
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests
-   * `requestSaving.enabled`} is
-   * `true` in your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the
-   * expected and received data. This is useful for debugging requests that did not match a handler with
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}.
+   * When {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `requestSaving.enabled`} is `true` in
+   * your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the expected and
+   * received data. This is useful for debugging requests that did not match a handler with
+   * {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction restrictions}.
    *
    * @throws {TimesCheckError} If the handler has matched less or more requests than the expected number of requests.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerchecktimes `handler.checkTimes()` API reference}
+   * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerchecktimes `handler.checkTimes()` API reference}
    */
   checkTimes: () => void;
 
   /**
    * Clears any response declared with
-   * [`handler.respond(declaration)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerresponddeclaration),
+   * [`handler.respond(declaration)`](https://zimic.dev/docs/interceptor/api/http-request-handler#handlerresponddeclaration),
    * restrictions declared with
-   * [`handler.with(restriction)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction),
+   * [`handler.with(restriction)`](https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction),
    * and intercepted requests, making the handler stop matching requests. The next handler, created before this one,
    * that matches the same method and path will be used if present. If not, the requests of the method and path will not
    * be intercepted.
    *
    * To make the handler match requests again, register a new response with
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()`}.
+   * {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()`}.
    *
    * @returns The same handler, now cleared of any declared responses, restrictions, and intercepted requests.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerclear `handler.clear()` API reference}
+   * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerclear `handler.clear()` API reference}
    */
   clear: () => this;
 
@@ -180,25 +178,21 @@ export interface LocalHttpRequestHandler<
    * useful for testing that the correct requests were made by your application.
    *
    * **Important**: This method can only be used if
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests
-   * `requestSaving.enabled`} is
-   * `true` in the interceptor. See
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests Saving intercepted requests}
-   * for more information.
+   * {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `requestSaving.enabled`} is `true` in the
+   * interceptor.
    *
    * @throws {DisabledRequestSavingError} If the interceptor has `requestSaving.enabled: false`.
    * @readonly
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests` API reference}
+   * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrequests `handler.requests` API reference}
    */
   get requests(): readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[];
 }
 
 /**
  * A synced remote HTTP request handler. When a remote handler is synced, it is guaranteed that all of the mocking
- * operations were committed to the connected
- * {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server interceptor server}.
+ * operations were committed to the connected {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler `HttpRequestHandler` API reference}
  */
 export interface SyncedRemoteHttpRequestHandler<
   Schema extends HttpSchema,
@@ -223,7 +217,7 @@ export interface SyncedRemoteHttpRequestHandler<
    *
    * @param restriction The restriction to match intercepted requests.
    * @returns The same handler, now considering the specified restriction.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
+   * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference}
    */
   with: (
     restriction: HttpRequestHandlerRestriction<Schema, Method, Path>,
@@ -238,7 +232,7 @@ export interface SyncedRemoteHttpRequestHandler<
    * @param declaration The response declaration or a factory to create it.
    * @returns The same handler, now including type information about the response declaration based on the specified
    *   status code.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()` API reference}
+   * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference}
    */
   respond: <NewStatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
@@ -257,20 +251,19 @@ export interface SyncedRemoteHttpRequestHandler<
    * returning its response. In this case, Zimic will try other handlers until one eligible is found, otherwise the
    * request will be either bypassed or rejected. Learn more about how Zimic decides which handler to use for an
    * intercepted request in the
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}.
+   * {@link https://zimic.dev/docs/interceptor/api/http-interceptor#declaring-request-handlers Declaring request handlers}.
    *
    * **Important**: To make sure that all expected requests were made, use
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorchecktimes `interceptor.checkTimes()`}
-   * or
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerchecktimes `handler.checkTimes()`}.
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorchecktimes `interceptor.checkTimes()`}
-   * is generally preferred, as it checks all handlers created by the interceptor with a single call.
+   * {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptorchecktimes `interceptor.checkTimes()`} or
+   * {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerchecktimes `handler.checkTimes()`}.
+   * {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptorchecktimes `interceptor.checkTimes()`} is
+   * generally preferred, as it checks all handlers created by the interceptor with a single call.
    *
    * @param numberOfRequests The number of times the handler should match intercepted requests.
    * @param minNumberOfRequests The minimum number of times the handler should match intercepted requests.
    * @param maxNumberOfRequests The maximum number of times the handler should match intercepted requests.
    * @returns The same handler, now considering the specified number of times.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()` API reference}
+   * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes `handler.times()` API reference}
    */
   times: ((numberOfRequests: number) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>) &
     ((
@@ -280,39 +273,37 @@ export interface SyncedRemoteHttpRequestHandler<
 
   /**
    * Checks if the handler has matched the expected number of requests declared with
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()`}.
+   * {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes `handler.times()`}.
    *
    * If the handler has matched fewer or more requests than expected, this method will throw a `TimesCheckError` error
    * pointing to the
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()` API reference}
+   * {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes `handler.times()` API reference}
    * that was not satisfied.
    *
-   * When
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests
-   * `requestSaving.enabled`} is
-   * true in your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the
-   * expected and received data. This is useful for debugging requests that did not match a handler with
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}.
+   * When {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `requestSaving.enabled`} is true in your
+   * interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the expected and
+   * received data. This is useful for debugging requests that did not match a handler with
+   * {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction restrictions}.
    *
    * @throws {TimesCheckError} If the handler has matched less or more requests than the expected number of requests.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerchecktimes `handler.checkTimes()` API reference}
+   * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerchecktimes `handler.checkTimes()` API reference}
    */
   checkTimes: () => Promise<void>;
 
   /**
    * Clears any response declared with
-   * [`handler.respond(declaration)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerresponddeclaration),
+   * [`handler.respond(declaration)`](https://zimic.dev/docs/interceptor/api/http-request-handler#handlerresponddeclaration),
    * restrictions declared with
-   * [`handler.with(restriction)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction),
+   * [`handler.with(restriction)`](https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction),
    * and intercepted requests, making the handler stop matching requests. The next handler, created before this one,
    * that matches the same method and path will be used if present. If not, the requests of the method and path will not
    * be intercepted.
    *
    * To make the handler match requests again, register a new response with
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()`}.
+   * {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()`}.
    *
    * @returns The same handler, now cleared of any declared responses, restrictions, and intercepted requests.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerclear `handler.clear()` API reference}
+   * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerclear `handler.clear()` API reference}
    */
   clear: () => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
 
@@ -321,28 +312,24 @@ export interface SyncedRemoteHttpRequestHandler<
    * useful for testing that the correct requests were made by your application.
    *
    * **Important**: This method can only be used if
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests
-   * `requestSaving.enabled`} is
-   * `true` in the interceptor. See
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests Saving intercepted requests}
-   * for more information.
+   * {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `requestSaving.enabled`} is `true` in the
+   * interceptor.
    *
    * @throws {DisabledRequestSavingError} If the interceptor has `requestSaving.enabled: false`.
    * @readonly
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests` API reference}
+   * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrequests `handler.requests` API reference}
    */
   get requests(): readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[];
 }
 
 /**
  * A pending remote HTTP request handler. When a remote handler is pending, it is not guaranteed that all of the mocking
- * operations were committed to the connected
- * {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server interceptor server}.
+ * operations were committed to the connected {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
  *
  * To commit a remote interceptor, you can `await` it or use the methods {@link then handler.then()},
  * {@link catch handler.catch()}, and {@link finally handler.finally()}.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler `HttpRequestHandler` API reference}
  */
 export interface PendingRemoteHttpRequestHandler<
   Schema extends HttpSchema,
@@ -352,7 +339,7 @@ export interface PendingRemoteHttpRequestHandler<
 > extends SyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode> {
   /**
    * Waits for the remote handler to be synced with the connected
-   * {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server interceptor server}.
+   * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
    */
   then: <FulfilledResult = SyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>, RejectedResult = never>(
     onFulfilled?:
@@ -365,7 +352,7 @@ export interface PendingRemoteHttpRequestHandler<
 
   /**
    * Waits for the remote handler to be synced with the connected
-   * {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server interceptor server}.
+   * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
    */
   catch: <RejectedResult = never>(
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
@@ -373,7 +360,7 @@ export interface PendingRemoteHttpRequestHandler<
 
   /**
    * Waits for the remote handler to be synced with the connected
-   * {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server interceptor server}.
+   * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
    */
   finally: (
     onFinally?: (() => void) | null,
@@ -383,13 +370,13 @@ export interface PendingRemoteHttpRequestHandler<
 /**
  * A remote HTTP request handler to declare responses for intercepted requests. In a remote handler, the mocking
  * operations are asynchronous and include remote calls to the connected
- * {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server interceptor server}.
+ * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
  *
  * When multiple handlers of the same interceptor match the same method and path, the _last_ handler created with
- * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)`}
+ * {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptormethodpath `interceptor.<method>(path)`}
  * will be used.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler `HttpRequestHandler` API reference}
  */
 export type RemoteHttpRequestHandler<
   Schema extends HttpSchema,

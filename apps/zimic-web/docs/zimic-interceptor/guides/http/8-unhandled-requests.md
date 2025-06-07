@@ -18,7 +18,7 @@ network error. The default behavior in local interceptors is to **reject** unhan
 [interceptor server](/docs/zimic-interceptor/cli/1-server.md), so there would be no way of bypassing them at this point.
 
 You can override the logging and bypassing behavior per interceptor with `onUnhandledRequest` in
-[`createHttpInterceptor()`](/docs/zimic-interceptor/api/1-create-http-interceptor.md), or by setting
+[`createHttpInterceptor()`](/docs/zimic-interceptor/api/1-create-http-interceptor.mdx), or by setting
 `interceptor.onUnhandledRequest`. `onUnhandledRequest` also accepts a function to dynamically determine which strategy
 to use for each unhandled request.
 
