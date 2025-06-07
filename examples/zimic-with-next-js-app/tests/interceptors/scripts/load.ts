@@ -2,9 +2,9 @@ import { spawn, SpawnOptions } from 'child_process';
 
 import githubInterceptor, { githubMockData } from '../github';
 
-function runCommand(command: string, commandArguments: string[], options: SpawnOptions) {
+function runCommand(commandEntry: string, commandArguments: string[], options: SpawnOptions) {
   return new Promise<void>((resolve, reject) => {
-    const commandProcess = spawn(command, commandArguments, options);
+    const commandProcess = spawn(commandEntry, commandArguments, options);
 
     commandProcess.once('error', (error) => {
       reject(error);
@@ -14,7 +14,7 @@ function runCommand(command: string, commandArguments: string[], options: SpawnO
       if (code === 0) {
         resolve();
       } else {
-        reject(new Error(`Command '${command}' exited with code ${code}`));
+        reject(new Error(`Command '${commandEntry}' exited with code ${code}`));
       }
     });
   });
