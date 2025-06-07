@@ -10,6 +10,42 @@ export default defineConfig({
     maxWorkers: process.env.CI === 'true' ? '50%' : '25%',
     minWorkers: 1,
     clearMocks: true,
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'node',
+          environment: 'node',
+          include: ['./{src,tests,scripts}/**/*.test.ts', './{src,tests,scripts}/**/*.node.test.ts'],
+          exclude: ['**/*.browser.test.ts'],
+          globalSetup: './tests/setup/global/node.ts',
+        },
+        define: {
+          'process.env.GLOBAL_FALLBACK_SERVER_PORT': "'3002'",
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'browser',
+          retry: 1,
+          environment: undefined,
+          include: ['./{src,tests,scripts}/**/*.test.ts', './{src,tests,scripts}/**/*.browser.test.ts'],
+          exclude: ['**/*.node.test.ts'],
+          globalSetup: './tests/setup/global/browser.ts',
+          browser: {
+            instances: [{ browser: 'chromium' }],
+            provider: 'playwright',
+            enabled: true,
+            headless: true,
+            screenshotFailures: false,
+          },
+        },
+        define: {
+          'process.env.GLOBAL_FALLBACK_SERVER_PORT': "'3003'",
+        },
+      },
+    ],
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'html'],
