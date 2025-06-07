@@ -91,6 +91,12 @@ console.log(request); // FetchRequest<Schema, 'POST', '/users'>
 The path of the request, excluding the base URL.
 
 ```ts
+request.path;
+```
+
+**Type**: `string`
+
+```ts
 const request = new fetch.Request('/users', {
   method: 'POST',
   headers: { 'content-type': 'application/json' },
@@ -104,6 +110,12 @@ console.log(request.path); // '/users'
 ## `request.method`
 
 The HTTP method of the request.
+
+```ts
+request.method;
+```
+
+**Type**: `HttpMethod`
 
 ```ts
 const request = new fetch.Request('/users', {

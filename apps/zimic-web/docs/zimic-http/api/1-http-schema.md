@@ -39,6 +39,10 @@ type Schema = HttpSchema<{
 
 Declares the method schemas of a path in an HTTP service.
 
+```ts
+type HttpSchema.Methods<MethodsSchema>
+```
+
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
 
@@ -59,6 +63,10 @@ type Schema = HttpSchema<{
 
 Declares a method schema in an HTTP service.
 
+```ts
+type HttpSchema.Method<MethodSchema>
+```
+
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
 
@@ -78,6 +86,10 @@ type Schema = HttpSchema<{
 ## `HttpSchema.Request`
 
 Declares a request schema in an HTTP service.
+
+```ts
+type HttpSchema.Request<RequestSchema>
+```
 
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
@@ -103,6 +115,10 @@ type Schema = HttpSchema<{
 
 Declares the response schemas of an HTTP method by status code.
 
+```ts
+type HttpSchema.ResponseByStatusCode<ResponseByStatusCodeSchema>
+```
+
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
 
@@ -124,6 +140,10 @@ type Schema = HttpSchema<{
 
 Merges multiple HTTP response schemas by status code into a single schema. When there are duplicate status codes, the
 first declaration takes precedence.
+
+```ts
+type MergeHttpResponsesByStatusCode<ResponseSchemas>
+```
 
 ```ts
 import { HttpSchema, HttpStatusCode, MergeHttpResponsesByStatusCode } from '@zimic/http';
@@ -159,6 +179,10 @@ type Schema = HttpSchema<{
 
 Declares a response schema in an HTTP service.
 
+```ts
+type HttpSchema.Response<ResponseSchema>
+```
+
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
 
@@ -181,6 +205,10 @@ type Schema = HttpSchema<{
 
 Declares a body schema in an HTTP service.
 
+```ts
+type HttpSchema.Body<BodySchema>
+```
+
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
 
@@ -200,6 +228,10 @@ type Schema = HttpSchema<{
 ## `HttpSchema.Headers`
 
 Declares a headers schema in an HTTP service.
+
+```ts
+type HttpSchema.Headers<HeadersSchema>
+```
 
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
@@ -226,6 +258,10 @@ type Schema = HttpSchema<{
 
 Declares a search params schema in an HTTP service.
 
+```ts
+type HttpSchema.SearchParams<SearchParamsSchema>
+```
+
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
 
@@ -251,6 +287,10 @@ type Schema = HttpSchema<{
 ## `HttpSchema.FormData`
 
 Declares a form data schema in an HTTP service.
+
+```ts
+type HttpSchema.FormData<FormDataSchema>
+```
 
 ```ts title='schema.ts'
 import { HttpSchema, HttpFormData } from '@zimic/http';
@@ -280,6 +320,10 @@ type Schema = HttpSchema<{
 
 Declares a path params schema in an HTTP service.
 
+```ts
+type HttpSchema.PathParams<PathParamsSchema>
+```
+
 ```ts title='schema.ts'
 import { HttpSchema, InferPathParams } from '@zimic/http';
 
@@ -303,6 +347,11 @@ type UserByIdPathParams = HttpSchema.PathParams<{
 Extracts the [literal](#httpschemapathliteral) and [non-literal](#httpschemapathnonliteral) paths from an HTTP service
 schema. Optionally receives a second argument with one or more methods to filter the paths with. Only the methods
 defined in the schema are allowed.
+
+```ts
+type HttpSchemaPath<Schema>
+type HttpSchemaPath<Schema, Method>
+```
 
 ```ts
 import { HttpSchema, HttpSchemaPath } from '@zimic/http';
@@ -333,6 +382,11 @@ Extracts the literal paths from an HTTP service schema. Optionally receives a se
 to filter the paths with. Only the methods defined in the schema are allowed.
 
 ```ts
+type HttpSchemaPath.Literal<Schema>
+type HttpSchemaPath.Literal<Schema, Method>
+```
+
+```ts
 import { HttpSchema, LiteralHttpSchemaPath } from '@zimic/http';
 
 type Schema = HttpSchema<{
@@ -359,6 +413,11 @@ type LiteralGetPath = LiteralHttpSchemaPath<Schema, 'GET'>;
 
 Extracts the non-literal paths from an HTTP service schema. Optionally receives a second argument with one or more
 methods to filter the paths with. Only the methods defined in the schema are allowed.
+
+```ts
+type HttpSchemaPath.NonLiteral<Schema>
+type HttpSchemaPath.NonLiteral<Schema, Method>
+```
 
 ```ts
 import { HttpSchema, NonLiteralHttpSchemaPath } from '@zimic/http';
@@ -389,6 +448,11 @@ Infers the path parameters schema from a path string. If the first argument is a
 argument is checked to be a valid path in that schema.
 
 ```ts
+type InferPathParams<Path>
+type InferPathParams<Schema, Path>
+```
+
+```ts
 import { HttpSchema, InferPathParams } from '@zimic/http';
 
 type Schema = HttpSchema<{
@@ -398,6 +462,9 @@ type Schema = HttpSchema<{
     };
   };
 }>;
+
+type PathParams = InferPathParams<'/users/:userId'>;
+// { userId: string }
 
 // Using a schema to validate the path (recommended):
 type PathParams = InferPathParams<Schema, '/users/:userId'>;
