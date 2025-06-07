@@ -36,6 +36,15 @@ export interface HttpInterceptor<_Schema extends HttpSchema> {
   requestSaving: HttpInterceptorRequestSaving;
 
   /**
+   * The strategy to use for unhandled requests. If a request starts with the base URL of the interceptor, but no
+   * matching handler exists, this strategy will be used. If a function is provided, it will be called with the
+   * unhandled request.
+   *
+   * @see {@link https://zimic.dev/docs/interceptor/guides/http/unhandled-requests Unhandled requests}
+   */
+  onUnhandledRequest?: UnhandledRequestStrategy;
+
+  /**
    * The platform the interceptor is running on.
    *
    * @readonly
@@ -123,13 +132,6 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
   /** @readonly */
   get type(): 'local';
 
-  /**
-   * The strategy to use for unhandled requests. If a request starts with the base URL of the interceptor, but no
-   * matching handler exists, this strategy will be used. If a function is provided, it will be called with the
-   * unhandled request.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/guides/http/unhandled-requests Unhandled requests}
-   */
   onUnhandledRequest?: UnhandledRequestStrategy.Local;
 
   /**
@@ -320,13 +322,6 @@ export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpIn
    */
   auth?: RemoteHttpInterceptorOptions['auth'];
 
-  /**
-   * The strategy to use for unhandled requests. If a request starts with the base URL of the interceptor, but no
-   * matching handler exists, this strategy will be used. If a function is provided, it will be called with the
-   * unhandled request.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/guides/http/unhandled-requests Unhandled requests}
-   */
   onUnhandledRequest?: UnhandledRequestStrategy.Remote;
 
   /**
