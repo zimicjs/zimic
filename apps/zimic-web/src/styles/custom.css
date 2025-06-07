@@ -105,8 +105,7 @@ textarea {
 }
 
 .markdown p code {
-  display: inline-block;
-  margin-top: 0.1rem;
+  vertical-align: text-top;
 }
 
 .menu__list-item-collapsible:has(.menu__link:not([href])) {
