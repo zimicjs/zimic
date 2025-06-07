@@ -6,6 +6,11 @@ slug: /interceptor/api/http-interceptor
 
 # `HttpInterceptor`
 
+HTTP interceptors provide the main API to handle HTTP requests and return mock responses. The methods, paths, status
+codes, parameters, and responses are statically-typed based on the service schema.
+
+Each interceptor represents a service and can be used to mock its paths and methods.
+
 :::info
 
 🚧 This section is a work in progress.

@@ -186,7 +186,7 @@ type Schema = HttpSchema<{
 
 With the schema defined, you can now create an [HTTP interceptor](/docs/zimic-interceptor/api/2-http-interceptor.md).
 
-`@zimic/interceptor` provides a [`createHttpInterceptor`](/docs/zimic-interceptor/api/1-create-http-interceptor.md)
+`@zimic/interceptor` provides a [`createHttpInterceptor`](/docs/zimic-interceptor/api/1-create-http-interceptor.mdx)
 function that takes the schema as a type parameter and returns an interceptor instance. It allows you to intercept HTTP
 requests, validate their contents, and return mock responses, all automatically typed based on the schema. The `baseURL`
 option represents the scope of the interceptor and points to the URL that your application will use to make requests.
@@ -200,7 +200,7 @@ const interceptor = createHttpInterceptor<Schema>({
 ```
 
 You can also set other options, such as the interceptor type and how unhandled requests should be treated. Refer to the
-[`createHttpInterceptor` API reference](/docs/zimic-interceptor/api/1-create-http-interceptor.md) for more details.
+[`createHttpInterceptor` API reference](/docs/zimic-interceptor/api/1-create-http-interceptor.mdx) for more details.
 
 :::info INFO: <span>Choosing your interceptor type</span>
 

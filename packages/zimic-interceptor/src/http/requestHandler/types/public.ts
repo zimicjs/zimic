@@ -146,10 +146,9 @@ export interface LocalHttpRequestHandler<
    * {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes `handler.times()` API reference}
    * that was not satisfied.
    *
-   * When {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor#saving-requests
-   * `requestSaving.enabled`}
-   * is `true` in your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the
-   * expected and received data. This is useful for debugging requests that did not match a handler with
+   * When {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `requestSaving.enabled`} is `true` in
+   * your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the expected and
+   * received data. This is useful for debugging requests that did not match a handler with
    * {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction restrictions}.
    *
    * @throws {TimesCheckError} If the handler has matched less or more requests than the expected number of requests.
@@ -179,11 +178,8 @@ export interface LocalHttpRequestHandler<
    * useful for testing that the correct requests were made by your application.
    *
    * **Important**: This method can only be used if
-   * {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor#saving-requests
-   * `requestSaving.enabled`} is
-   * `true` in the interceptor. See
-   * {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor#saving-requests Saving intercepted requests}
-   * for more information.
+   * {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `requestSaving.enabled`} is `true` in the
+   * interceptor.
    *
    * @throws {DisabledRequestSavingError} If the interceptor has `requestSaving.enabled: false`.
    * @readonly
@@ -284,10 +280,9 @@ export interface SyncedRemoteHttpRequestHandler<
    * {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes `handler.times()` API reference}
    * that was not satisfied.
    *
-   * When {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor#saving-requests
-   * `requestSaving.enabled`}
-   * is true in your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the
-   * expected and received data. This is useful for debugging requests that did not match a handler with
+   * When {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `requestSaving.enabled`} is true in your
+   * interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the expected and
+   * received data. This is useful for debugging requests that did not match a handler with
    * {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction restrictions}.
    *
    * @throws {TimesCheckError} If the handler has matched less or more requests than the expected number of requests.
@@ -317,11 +312,8 @@ export interface SyncedRemoteHttpRequestHandler<
    * useful for testing that the correct requests were made by your application.
    *
    * **Important**: This method can only be used if
-   * {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor#saving-requests
-   * `requestSaving.enabled`} is
-   * `true` in the interceptor. See
-   * {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor#saving-requests Saving intercepted requests}
-   * for more information.
+   * {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `requestSaving.enabled`} is `true` in the
+   * interceptor.
    *
    * @throws {DisabledRequestSavingError} If the interceptor has `requestSaving.enabled: false`.
    * @readonly

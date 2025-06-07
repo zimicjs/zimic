@@ -17,15 +17,7 @@ function isRemoteHttpInterceptorOptions(options: HttpInterceptorOptions): option
   return options.type === 'remote';
 }
 
-/**
- * Creates an HTTP interceptor.
- *
- * @param options The options for the interceptor.
- * @returns The created HTTP interceptor.
- * @throws {InvalidURLError} If the base URL is invalid.
- * @throws {UnsupportedURLProtocolError} If the base URL protocol is not either `http` or `https`.
- * @see {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `createHttpInterceptor()` API reference}
- */
+/** @see {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `createHttpInterceptor()` API reference} */
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: LocalHttpInterceptorOptions,
 ): PublicLocalHttpInterceptor<Schema>;
