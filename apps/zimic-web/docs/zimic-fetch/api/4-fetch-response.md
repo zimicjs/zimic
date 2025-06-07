@@ -88,10 +88,6 @@ console.log(response); // FetchResponse<Schema, 'GET', '/users'>
 
 The [request](/docs/zimic-fetch/api/3-fetch-request.md) that originated the response.
 
-```ts
-response.request;
-```
-
 **Type**: `FetchRequest<Schema, Method, Path>`
 
 ```ts
@@ -108,10 +104,6 @@ console.log(response.request); // FetchRequest<Schema, 'POST', '/users'>
 
 The [error](/docs/zimic-fetch/api/5-fetch-response-error.md) associated with the response, if the response has a failure
 status code (4XX or 5XX). If the response is successful, `response.error` is `null`.
-
-```ts
-response.error;
-```
 
 **Type**: `FetchResponseError<Schema, Method, Path> | null`
 

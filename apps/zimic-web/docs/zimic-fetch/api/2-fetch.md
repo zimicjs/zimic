@@ -104,10 +104,6 @@ return users; // User[]
 
 The default options for each request sent by the fetch instance.
 
-```ts
-fetch.defaults;
-```
-
 **Type**: `FetchDefaults`
 
 `fetch.defaults` inherits from the native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit)
@@ -160,10 +156,6 @@ fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
 ## `fetch.onRequest`
 
 A listener function that is called before sending each request.
-
-```ts
-fetch.onRequest;
-```
 
 **Type**: `(request: FetchRequest.Loose) => Promise<Request> | Request`
 
@@ -227,10 +219,6 @@ fetch.onRequest = (request) => {
 ## `fetch.onResponse`
 
 A listener function that is called after receiving each response.
-
-```ts
-fetch.onResponse;
-```
 
 **Type**: `(response: FetchResponse.Loose) => Promise<Response> | Response`
 
