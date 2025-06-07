@@ -5,6 +5,8 @@ import { HttpRequestHandlerPath } from '@/http/requestHandler/types/utils';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { createHttpInterceptor } from '../../factory';
+import { UnhandledRequestStrategy } from '../../types/options';
+import { HttpInterceptor } from '../../types/public';
 import { InferHttpInterceptorSchema } from '../../types/schema';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
@@ -23,29 +25,6 @@ export function declareTypeHttpInterceptorTests(
 
   beforeEach(() => {
     baseURL = getBaseURL();
-  });
-
-  it('should correctly type local interceptors (type: )', async () => {
-    await usingHttpInterceptor<{
-      '/users': {
-        POST: {
-          request: { body: User };
-          response: { 201: { body: User } };
-        };
-      };
-    }>({ type, baseURL }, async (interceptor) => {
-      const _creationHandler = await interceptor.post('/users').respond((request) => {
-        expectTypeOf(request.body).toEqualTypeOf<User>();
-
-        return {
-          status: 201,
-          body: users[0],
-        };
-      });
-
-      type RequestBody = (typeof _creationHandler.requests)[number]['body'];
-      expectTypeOf<RequestBody>().toEqualTypeOf<User>();
-    });
   });
 
   it('should correctly type requests', async () => {
@@ -1495,6 +1474,19 @@ export function declareTypeHttpInterceptorTests(
         type FailedSpecificResponseBody = (typeof _failedSpecificListHandler.requests)[number]['response']['body'];
         expectTypeOf<FailedSpecificResponseBody>().toEqualTypeOf<{ message: string }>();
       });
+    });
+  });
+
+  describe('Unhandled requests', () => {
+    it('should correctly type the unhandled request strategy', () => {
+      const interceptor: HttpInterceptor<{}> = createHttpInterceptor<{}>({ type, baseURL });
+      expectTypeOf(interceptor.onUnhandledRequest).toEqualTypeOf<UnhandledRequestStrategy | undefined>();
+
+      const localInterceptor = createHttpInterceptor<{}>({ type: 'local', baseURL });
+      expectTypeOf(localInterceptor.onUnhandledRequest).toEqualTypeOf<UnhandledRequestStrategy.Local | undefined>();
+
+      const remoteInterceptor = createHttpInterceptor<{}>({ type: 'remote', baseURL });
+      expectTypeOf(remoteInterceptor.onUnhandledRequest).toEqualTypeOf<UnhandledRequestStrategy.Remote | undefined>();
     });
   });
 }
