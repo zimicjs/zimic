@@ -1478,18 +1478,15 @@ export function declareTypeHttpInterceptorTests(
   });
 
   describe('Unhandled requests', () => {
-    it('should correctly type the unhandled request strategy', async () => {
-      await usingHttpInterceptor<{}>({ type, baseURL }, (interceptor: HttpInterceptor<{}>) => {
-        expectTypeOf(interceptor.onUnhandledRequest).toEqualTypeOf<UnhandledRequestStrategy | undefined>();
-      });
+    it('should correctly type the unhandled request strategy', () => {
+      const interceptor: HttpInterceptor<{}> = createHttpInterceptor<{}>({ type, baseURL });
+      expectTypeOf(interceptor.onUnhandledRequest).toEqualTypeOf<UnhandledRequestStrategy | undefined>();
 
-      await usingHttpInterceptor<{}>({ type: 'local', baseURL }, (interceptor) => {
-        expectTypeOf(interceptor.onUnhandledRequest).toEqualTypeOf<UnhandledRequestStrategy.Local | undefined>();
-      });
+      const localInterceptor = createHttpInterceptor<{}>({ type: 'local', baseURL });
+      expectTypeOf(localInterceptor.onUnhandledRequest).toEqualTypeOf<UnhandledRequestStrategy.Local | undefined>();
 
-      await usingHttpInterceptor<{}>({ type: 'remote', baseURL }, (interceptor) => {
-        expectTypeOf(interceptor.onUnhandledRequest).toEqualTypeOf<UnhandledRequestStrategy.Remote | undefined>();
-      });
+      const remoteInterceptor = createHttpInterceptor<{}>({ type: 'remote', baseURL });
+      expectTypeOf(remoteInterceptor.onUnhandledRequest).toEqualTypeOf<UnhandledRequestStrategy.Remote | undefined>();
     });
   });
 }
