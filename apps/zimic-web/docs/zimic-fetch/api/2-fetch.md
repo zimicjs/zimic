@@ -102,9 +102,12 @@ return users; // User[]
 
 ## `fetch.defaults`
 
-The default options for each request sent by the fetch instance. They inherit from the native
-[`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) interface, with the following additional
-properties:
+The default options for each request sent by the fetch instance.
+
+**Type**: `FetchDefaults`
+
+`fetch.defaults` inherits from the native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit)
+interface, with the following additional properties:
 
 - **baseURL**: `string | undefined`
 
@@ -154,11 +157,7 @@ fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
 
 A listener function that is called before sending each request.
 
-```ts
-fetch.onRequest = (request) => {
-  // ...
-};
-```
+**Type**: `(request: FetchRequest.Loose) => Promise<Request> | Request`
 
 **Arguments**:
 
@@ -221,11 +220,7 @@ fetch.onRequest = (request) => {
 
 A listener function that is called after receiving each response.
 
-```ts
-fetch.onResponse = (response) => {
-  // ...
-};
-```
+**Type**: `(response: FetchResponse.Loose) => Promise<Response> | Response`
 
 **Arguments**:
 
@@ -326,7 +321,43 @@ use `fetch.loose`.
 A constructor for creating a [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md) instance, which inherits from
 the native [Request](https://developer.mozilla.org/docs/Web/API/Request) and receives the same arguments as `fetch`.
 
-See [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md) for more information.
+```ts
+new fetch.Request(input);
+new fetch.Request(input, init);
+```
+
+**Arguments**:
+
+1. **input**: `string | URL | FetchRequest`
+
+   The resource to fetch, either a path, a URL, or another [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md)
+   request. If a path is provided, it is automatically prefixed with the base URL of the fetch instance when the request
+   is sent. If a URL or a request is provided, it is used as is.
+
+2. **init**: `FetchRequestInit | undefined`
+
+   The options to use for the request. If a path or a URL is provided as the first argument, this argument is required
+   and should contain at least the method of the request. If the first argument is a
+   [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md), this argument is optional. The options inherit from the
+   native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) interface, with the following
+   additional properties:
+
+   - **method**: `string`
+
+     The HTTP method to use for the request.
+
+   - **baseURL**: `string | undefined`
+
+     The base URL for the request. If provided, it will have preference over the default base URL of the fetch instance.
+
+   - **searchParams**: `HttpSearchParamsSchema.Loose | undefined`
+
+     The search parameters to be sent with the request. If provided, it will have preference over the default search
+     parameters of the fetch instance.
+
+**Related**:
+
+- [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md)
 
 ## `fetch.isRequest`
 

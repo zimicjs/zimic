@@ -41,10 +41,10 @@ interceptor server.
 If you expected a request to be handled, but it was not, make sure that:
 
 1. The interceptor is running before the request is made (see
-   [`interceptor.start()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorstart));
-2. The [base URL](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorbaseurl) of the interceptor is a prefix
+   [`interceptor.start()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorstart));
+2. The [base URL](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorbaseurl) of the interceptor is a prefix
    of the request URL;
-3. The [path and method](/docs/zimic-interceptor/api/2-http-interceptor.md#declaring-request-handlers) of the handler
+3. The [path and method](/docs/zimic-interceptor/api/2-http-interceptor.mdx#declaring-request-handlers) of the handler
    are correct;
 4. The [restrictions](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith) of the handler, if present,
    correctly match the request;

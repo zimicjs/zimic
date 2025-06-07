@@ -349,7 +349,7 @@ await interceptor
 [`handler.times()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlertimes) on its own only restricts how
 many requests the handler should match. To really validate the number of requests, use
 [`handler.checkTimes()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerchecktimes) or
-[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes) at a point when
+[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes) at a point when
 your application should have made the requests, such as after a specific action or at the end of a test.
 
 <Tabs groupId="zimic-http-interceptor-type">
@@ -393,7 +393,7 @@ await handler.checkTimes();
 </Tabs>
 
 A common strategy is to call
-[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes) in an `afterEach`
+[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes) in an `afterEach`
 test hook. This way, you can declare how many requests you expect in each handler and have them validated automatically
 without needing to call
 [`handler.checkTimes()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerchecktimes) in each test.

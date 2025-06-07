@@ -84,7 +84,7 @@ You can also set other options, such as the interceptor type and how unhandled r
 ### Starting an interceptor
 
 To intercept requests, an interceptor must be started with
-[`interceptor.start()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorstart). This is usually done in a
+[`interceptor.start()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorstart). This is usually done in a
 `beforeAll` hook in your test suite.
 
 ```ts
@@ -106,7 +106,7 @@ public directory before starting the interceptor.
 ### Clearing an interceptor
 
 When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another.
-This is done with [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorclear), which
+This is done with [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorclear), which
 resets the interceptor and handlers to their initial states.
 
 ```ts
@@ -119,7 +119,7 @@ beforeEach(() => {
 ### Checking expectations
 
 After each test, you can check if your application has made all of the expected requests with
-[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes). Learn more about
+[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes). Learn more about
 how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) to
 keep your tests clean and readable.
 
@@ -133,7 +133,7 @@ afterEach(() => {
 ### Stopping an interceptor
 
 After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with
-[`interceptor.stop()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorstop).
+[`interceptor.stop()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorstop).
 
 ```ts
 afterAll(async () => {

@@ -20,7 +20,7 @@ createHttpInterceptor<Schema>(options);
 
 1. **options**: `HttpInterceptorOptions`
 
-   The options to create an [HTTP interceptor](/docs/zimic-interceptor/api/2-http-interceptor.md).
+   The options to create an [HTTP interceptor](/docs/zimic-interceptor/api/2-http-interceptor.mdx).
 
    - **type**: `'local' | 'remote' | undefined` (default: `'local'`)
 
@@ -46,7 +46,7 @@ createHttpInterceptor<Schema>(options);
        [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrequests).
 
        If you are using
-       [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes) or
+       [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes) or
        [`handler.checkTimes()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerchecktimes) during tests,
        consider enabling this option to get more detailed information in `TimesCheckError` errors.
 
@@ -54,7 +54,7 @@ createHttpInterceptor<Schema>(options);
 
        If request saving is enabled, make sure to regularly clear the interceptor to avoid requests accumulating in
        memory. A common practice is to call
-       [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorclear) after each test.
+       [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorclear) after each test.
 
        :::
 
@@ -62,7 +62,7 @@ createHttpInterceptor<Schema>(options);
 
        The safe number of requests to save in memory before logging warnings in the console. If `requestSaving.enabled`
        is `true` and the interceptor is not regularly cleared with
-       [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorclear), the requests may
+       [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorclear), the requests may
        accumulate in memory and cause performance issues. This option does not limit the number of requests saved in
        memory, only when to log warnings.
 
@@ -81,7 +81,7 @@ createHttpInterceptor<Schema>(options);
        support `reject`, since unhandled requests that reach an
        [interceptor server](/docs/zimic-interceptor/cli/1-server.md) cannot be bypassed.
 
-       - **log**: `boolean` (default: `true`)
+     - **log**: `boolean` (default: `true`)
 
        Whether to log unhandled requests to the console.
 
@@ -105,7 +105,7 @@ createHttpInterceptor<Schema>(options);
 
 **Returns**: `HttpInterceptor<Schema>`
 
-An [HTTP interceptor](/docs/zimic-interceptor/api/2-http-interceptor.md) typed with the provided schema.
+An [HTTP interceptor](/docs/zimic-interceptor/api/2-http-interceptor.mdx) typed with the provided schema.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
