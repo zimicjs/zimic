@@ -326,8 +326,6 @@ new fetch.Request(input);
 new fetch.Request(input, init);
 ```
 
-**Type**: `new (input: string | URL | FetchRequest, init?: FetchRequestInit) => FetchRequest`
-
 **Arguments**:
 
 1. **input**: `string | URL | FetchRequest`
