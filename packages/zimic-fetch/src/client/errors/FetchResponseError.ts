@@ -2,24 +2,11 @@ import { HttpHeaders, HttpHeadersSchema, HttpSchema, HttpSchemaMethod, HttpSchem
 
 import { FetchRequest, FetchRequestObject, FetchResponse, FetchResponseObject } from '../types/requests';
 
-/**
- * Options for converting a {@link FetchResponseError `FetchResponseError`} into a plain object.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponseerrortoobject `FetchResponseError#toObject` API reference}
- */
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `fetchResponseError.toObject()` API reference} */
 export interface FetchResponseErrorObjectOptions {
-  /**
-   * Whether to include the body of the request in the plain object.
-   *
-   * @default false
-   */
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `fetchResponseError.toObject()` API reference} */
   includeRequestBody?: boolean;
-
-  /**
-   * Whether to include the body of the response in the plain object.
-   *
-   * @default false
-   */
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `fetchResponseError.toObject()` API reference} */
   includeResponseBody?: boolean;
 }
 
@@ -43,7 +30,7 @@ export namespace FetchResponseErrorObjectOptions {
  * A plain object representation of a {@link FetchResponseError `FetchResponseError`}, compatible with JSON. It is useful
  * for serialization, debugging, and logging purposes.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponseerrortoobject `FetchResponseError#toObject` API reference}
+ * @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `fetchResponseError.toObject()` API reference}
  */
 export interface FetchResponseErrorObject {
   name: string;
@@ -52,51 +39,7 @@ export interface FetchResponseErrorObject {
   response: FetchResponseObject;
 }
 
-/**
- * An error representing a response with a failure status code (4XX or 5XX).
- *
- * @example
- *   import { type HttpSchema } from '@zimic/http';
- *   import { createFetch } from '@zimic/fetch';
- *
- *   interface User {
- *     id: string;
- *     username: string;
- *   }
- *
- *   type Schema = HttpSchema<{
- *     '/users/:userId': {
- *       GET: {
- *         response: {
- *           200: { body: User };
- *           404: { body: { message: string } };
- *         };
- *       };
- *     };
- *   }>;
- *
- *   const fetch = createFetch<Schema>({
- *     baseURL: 'http://localhost:3000',
- *   });
- *
- *   const response = await fetch(`/users/${userId}`, {
- *     method: 'GET',
- *   });
- *
- *   if (!response.ok) {
- *     console.log(response.status); // 404
- *
- *     console.log(response.error); // FetchResponseError<Schema, 'GET', '/users'>
- *     console.log(response.error.request); // FetchRequest<Schema, 'GET', '/users'>
- *     console.log(response.error.response); // FetchResponse<Schema, 'GET', '/users'>
- *
- *     const plainError = response.error.toObject();
- *     console.log(JSON.stringify(plainError));
- *     // {"name":"FetchResponseError","message":"...","request":{...},"response":{...}}
- *   }
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponseerror `FetchResponseError` API reference}
- */
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error `FetchResponseError` API reference} */
 class FetchResponseError<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
@@ -110,31 +53,7 @@ class FetchResponseError<
     this.name = 'FetchResponseError';
   }
 
-  /**
-   * Converts this error into a plain object. This method is useful for serialization, debugging, and logging purposes.
-   *
-   * @example
-   *   const fetch = createFetch<Schema>({
-   *     baseURL: 'http://localhost:3000',
-   *   });
-   *
-   *   const response = await fetch(`/users/${userId}`, {
-   *     method: 'GET',
-   *   });
-   *
-   *   if (!response.ok) {
-   *     const plainError = response.error.toObject();
-   *     console.log(JSON.stringify(plainError));
-   *     // {"name":"FetchResponseError","message":"...","request":{...},"response":{...}}
-   *   }
-   *
-   * @param options Options for converting this error into a plain object. By default, the body of the request and
-   *   response will not be included.
-   * @returns A plain object representing this error. If `options.includeRequestBody` or `options.includeResponseBody`
-   *   is `true`, the body of the request and response will be included, respectively, and the return is a `Promise`.
-   *   Otherwise, the return is the plain object itself without the bodies.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponseerrortoobject `FetchResponseError#toObject` API reference}
-   */
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `fetchResponseError.toObject()` API reference} */
   toObject(options: FetchResponseErrorObjectOptions.WithBody): Promise<FetchResponseErrorObject>;
   toObject(options: FetchResponseErrorObjectOptions.WithoutBody): FetchResponseErrorObject;
   toObject(options?: FetchResponseErrorObjectOptions): Promise<FetchResponseErrorObject> | FetchResponseErrorObject;

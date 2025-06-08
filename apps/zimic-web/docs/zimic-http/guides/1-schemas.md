@@ -42,7 +42,7 @@ interface UserListSearchParams {
 
 // Declaring the schema
 // highlight-next-line
-type MyServiceSchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/users': {
     POST: {
       request: {
@@ -98,7 +98,7 @@ path and have `:` as prefix, followed by the name of the parameter.
 ```ts
 import { HttpSchema } from '@zimic/http';
 
-type MyServiceSchema = HttpSchema<{
+type Schema = HttpSchema<{
   // highlight-next-line
   '/users': {
     // ...
@@ -122,7 +122,7 @@ names are case-sensitive and must be in uppercase.
 ```ts
 import { HttpSchema } from '@zimic/http';
 
-type MyServiceSchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/users': {
     // highlight-next-line
     GET: {
@@ -154,7 +154,7 @@ interface UserListSearchParams {
   query?: string;
 }
 
-type MyServiceSchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/users': {
     GET: {
       request: {
@@ -179,7 +179,7 @@ interface UserCreationBody {
   username: string;
 }
 
-type MyServiceSchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/users': {
     POST: {
       request: {
@@ -203,7 +203,7 @@ interface FileUploadData {
   description?: string;
 }
 
-type MyServiceSchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/files': {
     POST: {
       request: {
@@ -225,8 +225,8 @@ Use one of these types to declare a binary body.
 ```ts
 import { HttpSchema } from '@zimic/http';
 
-type MyServiceSchema = HttpSchema<{
-  '/users': {
+type Schema = HttpSchema<{
+  '/upload': {
     POST: {
       request: {
         // highlight-next-line
@@ -244,8 +244,8 @@ Plain-text bodies can be declared as a string.
 ```ts
 import { HttpSchema } from '@zimic/http';
 
-type MyServiceSchema = HttpSchema<{
-  '/users': {
+type Schema = HttpSchema<{
+  '/content': {
     POST: {
       request: {
         // highlight-next-line
@@ -263,15 +263,15 @@ Bodies with URL-encoded data can be declared with [`HttpSearchParams`](/docs/zim
 ```ts
 import { HttpSchema, HttpSearchParams } from '@zimic/http';
 
-interface UserListSearchParams {
+interface UserCreationSearchParams {
   query?: string;
 }
 
-type MyServiceSchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/users': {
     POST: {
       request: {
-        body: HttpSearchParams<UserListSearchParams>;
+        body: HttpSearchParams<UserCreationSearchParams>;
       };
     };
   };
@@ -295,7 +295,7 @@ interface User {
   username: string;
 }
 
-type MyServiceSchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/users/:id': {
     GET: {
       response: {
@@ -325,7 +325,7 @@ interface FileUploadData {
   description?: string;
 }
 
-type MyServiceSchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/files': {
     POST: {
       response: {
@@ -349,8 +349,8 @@ request with binary data.
 ```ts
 import { HttpSchema } from '@zimic/http';
 
-type MyServiceSchema = HttpSchema<{
-  '/users': {
+type Schema = HttpSchema<{
+  '/upload': {
     POST: {
       response: {
         // highlight-next-line
@@ -368,8 +368,8 @@ Plain-text bodies can be declared as a string.
 ```ts
 import { HttpSchema } from '@zimic/http';
 
-type MyServiceSchema = HttpSchema<{
-  '/users': {
+type Schema = HttpSchema<{
+  '/content': {
     POST: {
       response: {
         200: {
@@ -389,17 +389,17 @@ Use [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md) to declar
 ```ts
 import { HttpSchema, HttpSearchParams } from '@zimic/http';
 
-interface UserListSearchParams {
+interface UserCreationSearchParams {
   query?: string;
 }
 
-type MyServiceSchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/users': {
     POST: {
       response: {
         200: {
           // highlight-next-line
-          body: HttpSearchParams<UserListSearchParams>;
+          body: HttpSearchParams<UserCreationSearchParams>;
         };
       };
     };
@@ -421,14 +421,14 @@ In these cases, you can use the `HttpStatusCode` type, which contains all standa
 | `HttpStatusCode.ServerError` | [`5XX`](https://developer.mozilla.org/docs/Web/HTTP/Status#server_error_responses) |
 
 ```ts
-import type { HttpSchema, HttpStatusCode } from '@/index';
+import { HttpSchema, HttpStatusCode } from '@zimic/http';
 
 interface User {
   name: string;
   username: string;
 }
 
-export type MyServiceSchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/users': {
     GET: {
       // highlight-start

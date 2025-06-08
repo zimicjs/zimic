@@ -41,7 +41,7 @@ export type HttpRequestHandlerResponseDeclarationWithHeaders<ResponseSchema exte
       ? { headers?: HttpRequestHandlerResponseDeclarationHeaders<ResponseSchema> }
       : { headers: HttpRequestHandlerResponseDeclarationHeaders<ResponseSchema> };
 
-/** A declaration of an HTTP response for an intercepted request. */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
 export type HttpRequestHandlerResponseDeclaration<
   MethodSchema extends HttpMethodSchema = HttpMethodSchema,
   StatusCode extends HttpStatusCode = HttpStatusCode,
@@ -53,12 +53,7 @@ export type HttpRequestHandlerResponseDeclaration<
       HttpRequestHandlerResponseDeclarationWithHeaders<Default<Default<MethodSchema['response']>[StatusCode]>>
   : never;
 
-/**
- * A factory to create {@link HttpRequestHandlerResponseDeclaration} objects.
- *
- * @param request The intercepted request.
- * @returns The response declaration.
- */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
 export type HttpRequestHandlerResponseDeclarationFactory<
   Path extends string,
   MethodSchema extends HttpMethodSchema,
@@ -67,10 +62,7 @@ export type HttpRequestHandlerResponseDeclarationFactory<
   request: Omit<HttpInterceptorRequest<Path, MethodSchema>, 'response'>,
 ) => PossiblePromise<HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>>;
 
-/**
- * A strict representation of an intercepted HTTP request. The body, search params and path params are already parsed by
- * default.
- */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrequests `handler.requests` API reference} */
 export interface HttpInterceptorRequest<Path extends string, MethodSchema extends HttpMethodSchema>
   extends Omit<HttpRequest, keyof Body | 'headers' | 'clone'> {
   /** The headers of the request. */
@@ -85,10 +77,7 @@ export interface HttpInterceptorRequest<Path extends string, MethodSchema extend
   raw: HttpRequest<HttpRequestBodySchema<MethodSchema>, Default<HttpRequestHeadersSchema<MethodSchema>>>;
 }
 
-/**
- * A strict representation of an intercepted HTTP response. The body, search params and path params are already parsed
- * by default.
- */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrequests `handler.requests` API reference} */
 export interface HttpInterceptorResponse<MethodSchema extends HttpMethodSchema, StatusCode extends HttpStatusCode>
   extends Omit<HttpResponse, keyof Body | 'headers' | 'clone'> {
   /** The headers of the response. */
@@ -123,10 +112,7 @@ export const HTTP_INTERCEPTOR_RESPONSE_HIDDEN_PROPERTIES = Object.freeze(
   ),
 );
 
-/**
- * A strict representation of an intercepted HTTP request, along with its response. The body, search params and path
- * params are already parsed by default.
- */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrequests `handler.requests` API reference} */
 export interface InterceptedHttpInterceptorRequest<
   Path extends string,
   MethodSchema extends HttpMethodSchema,

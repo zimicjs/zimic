@@ -27,8 +27,8 @@ slug: /fetch
 - :muscle: **Developer experience**
 
   Define default options to apply to your requests, such as a base URL, headers, search parameters, and more. Inspect
-  and modify requests and responses using [`onRequest`](/docs/zimic-fetch/api/2-fetch.md#onrequest) and
-  [`onResponse`](/docs/zimic-fetch/api/2-fetch.md#onresponse) listeners.
+  and modify requests and responses using [`onRequest`](/docs/zimic-fetch/api/2-fetch.md#fetchonrequest) and
+  [`onResponse`](/docs/zimic-fetch/api/2-fetch.md#fetchonresponse) listeners.
 
 **Learn more**:
 

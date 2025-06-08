@@ -18,10 +18,7 @@ export type HttpSearchParamsSchemaTuple<Schema extends HttpSearchParamsSchema.Lo
   [Key in keyof Schema & string]: [Key, ArrayItemIfArray<NonNullable<Schema[Key]>>];
 }[keyof Schema & string];
 
-/**
- * An initialization value for
- * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpsearchparams `HttpSearchParams`}.
- */
+/** An initialization value for {@link https://zimic.dev/docs/http/api/http-search-params `HttpSearchParams`}. */
 export type HttpSearchParamsInit<Schema extends HttpSearchParamsSchema.Loose = HttpSearchParamsSchema.Loose> =
   | string
   | URLSearchParams

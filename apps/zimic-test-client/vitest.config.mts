@@ -11,6 +11,33 @@ export default defineConfig({
     minWorkers: 1,
     maxWorkers: process.env.CI === 'true' ? '50%' : '25%',
     clearMocks: true,
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'node',
+          environment: 'node',
+          include: ['./{src,tests}/**/*.test.ts', './{src,tests}/**/*.node.test.ts'],
+          exclude: ['**/*.browser.test.ts'],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'browser',
+          environment: undefined,
+          include: ['./{src,tests}/**/*.test.ts', './{src,tests}/**/*.browser.test.ts'],
+          exclude: ['**/*.node.test.ts'],
+          browser: {
+            instances: [{ browser: 'chromium' }],
+            provider: 'playwright',
+            enabled: true,
+            headless: true,
+            screenshotFailures: false,
+          },
+        },
+      },
+    ],
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'html'],

@@ -41,7 +41,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-Then, set the headers in your fetch request using the [`headers`](/docs/zimic-fetch/api/2-fetch.md#headers) option. They
+Then, set the headers in your fetch request using the [`headers`](/docs/zimic-fetch/api/1-create-fetch.md) option. They
 are typed and validated according to your schema, providing type safety and autocompletion.
 
 ```ts
@@ -64,8 +64,8 @@ const response = await fetch('/users', {
 
 ### Using default request headers
 
-A [fetch instance](/docs/zimic-fetch/api/2-fetch.md) can have
-[defaults](/docs/zimic-fetch/api/1-create-fetch.md#defaults) that are applied to all requests. These include headers:
+A [fetch instance](/docs/zimic-fetch/api/2-fetch.md) can have [defaults](/docs/zimic-fetch/api/2-fetch.md#fetchdefaults)
+that are applied to all requests. These include headers:
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -85,8 +85,9 @@ fetch.defaults.headers['accept-language'] = 'en';
 fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
 ```
 
-[`fetch.onRequest`](/docs/zimic-fetch/api/2-fetch.md#onrequest) can also be used to set headers. Use this listener if
-you need to apply logic to the headers, such as reading them from local storage or limiting them to specific requests.
+[`fetch.onRequest`](/docs/zimic-fetch/api/2-fetch.md#fetchonrequest) can also be used to set headers. Use this listener
+if you need to apply logic to the headers, such as reading them from local storage or limiting them to specific
+requests.
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -138,7 +139,7 @@ type Schema = HttpSchema<{
 ```
 
 When a response is received, the headers are available at
-[`response.headers`](/docs/zimic-fetch/api/4-fetch-response.md#headers).
+[`response.headers`](/docs/zimic-fetch/api/4-fetch-response.md).
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -156,3 +157,71 @@ console.log(response.headers.get('content-type')); // application/json
 console.log(response.headers.get('content-encoding')); // string | null
 // highlight-end
 ```
+
+## Using cookies
+
+Cookies can store data on the client side and are often used for authentication, session management, and tracking user
+preferences.
+
+Since cookies are a type of header, you can use them in the same way as other headers, declaring them in your
+[schema](/docs/zimic-http/guides/1-schemas.md) and accessing them in requests and responses.
+
+```ts title='schema.ts'
+import { HttpSchema } from '@zimic/http';
+
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    GET: {
+      request: {
+        // highlight-next-line
+        headers: { cookie?: string };
+      };
+      response: {
+        200: {
+          // highlight-next-line
+          headers: { 'set-cookie'?: string };
+          body: User[];
+        };
+      };
+    };
+  };
+}>;
+```
+
+```ts
+import { createFetch } from '@zimic/fetch';
+
+const fetch = createFetch<Schema>({
+  baseURL: 'http://localhost:3000',
+});
+
+const response = await fetch('/users', {
+  method: 'GET',
+  // highlight-next-line
+  headers: { cookie: 'sessionId=1e9f65ab; theme=dark' },
+});
+
+// highlight-next-line
+console.log(response.headers.get('set-cookie'));
+```
+
+:::info INFO: <span>Cookies in browsers</span>
+
+Cookies are automatically sent by a browser, so you don't need to manually set them when making requests. For more
+information about cookies, see the [MDN documentation](https://developer.mozilla.org/docs/Web/HTTP/Guides/Cookies).
+
+:::
+
+:::warning WARNING: `HttpOnly` cookies
+
+Cookies marked with the
+[`HttpOnly` flag](https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/Set-Cookie#httponly) are not accessible
+via client-side JavaScript. Even though they may be in your schema and included in the requests, you won't be able to
+access them in your browser code, only on the server.
+
+:::

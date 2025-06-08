@@ -90,7 +90,7 @@ describe('CLI > Server token create', () => {
           '--tokens-dir',
         )} ${color.magenta(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY)}`,
         '',
-        'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#authentication',
+        'Learn more: https://zimic.dev/docs/interceptor/guides/http/remote-interceptors#interceptor-server-authentication',
       ]);
     });
 
@@ -109,7 +109,7 @@ describe('CLI > Server token create', () => {
         hash: expect.stringMatching(HEX_REGEX) as string,
         salt: expect.stringMatching(HEX_REGEX) as string,
       },
-      createdAt: expect.any(Date) as Date,
+      createdAt: expect.any(Date),
     });
 
     expect(tokens[0].id).toHaveLength(INTERCEPTOR_TOKEN_ID_HEX_LENGTH);
@@ -262,7 +262,7 @@ describe('CLI > Server token create', () => {
           '',
           expect.stringMatching('zimic-interceptor server start'),
           '',
-          'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#authentication',
+          'Learn more: https://zimic.dev/docs/interceptor/guides/http/remote-interceptors#interceptor-server-authentication',
         ]);
       });
 
@@ -297,7 +297,7 @@ describe('CLI > Server token create', () => {
           '',
           expect.stringMatching('zimic-interceptor server start'),
           '',
-          'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#authentication',
+          'Learn more: https://zimic.dev/docs/interceptor/guides/http/remote-interceptors#interceptor-server-authentication',
         ]);
       });
 
