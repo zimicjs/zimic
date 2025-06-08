@@ -1,4 +1,8 @@
-title: InterceptorServer | @zimic/interceptor sidebar_label: InterceptorServer slug: /interceptor/api/interceptor-server
+---
+title: InterceptorServer | @zimic/interceptor
+sidebar_label: InterceptorServer
+slug: /interceptor/api/interceptor-server
+---
 
 # `InterceptorServer`
 
