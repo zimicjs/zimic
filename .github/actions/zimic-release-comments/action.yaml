@@ -24,10 +24,10 @@ runs:
 
           const projectName = '${{ inputs.project-name }}';
           const tag = '${{ inputs.ref-name }}';
-          const version = tag.replace(/^@[^@]+@|^v/, '');
+          const version = tag.replace(/^@?[^@]*@|^v/, '');
 
           const isStable = !version.includes('-');
-          const isCanary = version.includes('-canary');
+          const isCanary = version.includes('-canary.');
 
           const githubOwner = 'zimicjs';
           const githubRepository = 'zimic';
