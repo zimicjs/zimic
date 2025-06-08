@@ -92,8 +92,8 @@ mocks are fully typed _by default_ and in sync with the API.
 
 - 📦 **Developer friendly**
 
-  We believe that developer experience is key to building great applications. The Zimic API is strives to be as simple
-  and intuitive as possible, and we're always looking for ways to improve it.
+  We believe that developer experience is key to building great applications. The Zimic API strives to be as simple and
+  intuitive as possible, and we're always looking for ways to improve it.
 
 - 🧪 **Thoroughly tested**
 
@@ -156,8 +156,8 @@ A minimal (~2 kB minified and gzipped) and type-safe `fetch`-like API client.
 - :muscle: **Developer experience**
 
   Define default options to apply to your requests, such as a base URL, headers, search parameters, and more. Inspect
-  and modify requests and responses using [`onRequest`](/docs/zimic-fetch/api/2-fetch.md#onrequest) and
-  [`onResponse`](/docs/zimic-fetch/api/2-fetch.md#onresponse) listeners.
+  and modify requests and responses using [`onRequest`](/docs/zimic-fetch/api/2-fetch.md#fetchonrequest) and
+  [`onResponse`](/docs/zimic-fetch/api/2-fetch.md#fetchonresponse) listeners.
 
 **Learn more**:
 
@@ -176,21 +176,21 @@ A type-safe HTTP interceptor library for handling and mocking HTTP requests in d
 - :globe_with_meridians: **HTTP interceptors**
 
   Use your [`@zimic/http` schema](/docs/zimic-http/guides/1-schemas.md) to declare
-  [local](/docs/zimic-interceptor/guides/1-local-interceptors.md) and
-  [remote](/docs/zimic-interceptor/guides/2-remote-interceptors.md) HTTP interceptors. Mock external services and
-  simulate success, loading, and error states with ease and type safety.
+  [local](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) and
+  [remote](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md) HTTP interceptors. Mock external services
+  and simulate success, loading, and error states with ease and type safety.
 
 - :link: **Network-level interception**
 
   `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and
-  [interceptor servers](/docs/zimic-interceptor/cli/1-server.md) to handle real HTTP requests. From you application's
+  [interceptor servers](/docs/zimic-interceptor/cli/1-server.md) to handle real HTTP requests. From your application's
   point of view, the mocked responses are indistinguishable from the real ones.
 
 - :bulb: **Readability**
 
   `@zimic/interceptor` was designed to encourage clarity and readability in your mocks. Use
-  [declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.md) to verify that your application
-  is making the expected requests and test with confidence.
+  [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) to verify that your
+  application is making the expected requests and test with confidence.
 
 **Learn more**:
 

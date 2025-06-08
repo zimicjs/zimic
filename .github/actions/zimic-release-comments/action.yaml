@@ -24,7 +24,10 @@ runs:
 
           const projectName = '${{ inputs.project-name }}';
           const tag = '${{ inputs.ref-name }}';
-          const version = tag.replace(/^@[^@]+@|^v/, '');
+          const version = tag.replace(/^@?[^@]*@|^v/, '');
+
+          const isStable = !version.includes('-');
+          const isCanary = version.includes('-canary.');
 
           const githubOwner = 'zimicjs';
           const githubRepository = 'zimic';
@@ -75,9 +78,11 @@ runs:
                     repo: githubRepository,
                     issue_number: issue.number,
                     body: [
-                      `### Released in [${tag}](https://github.com/${githubOwner}/${githubRepository}/releases/tag/${tag}) :tada:\n`,
-                      `- [**:pushpin: Release notes**](https://github.com/${githubOwner}/${githubRepository}/releases/tag/${tag})`,
-                      type === 'package' && `- [**:package: NPM package**](https://www.npmjs.com/package/${projectName}/v/${version})`,
+                      type === 'package' && `### Released in [${tag}](https://github.com/${githubOwner}/${githubRepository}/releases/tag/${tag}) :tada:\n`,
+                      type === 'documentation' && isStable && '### Released to [**zimic.dev**](https://zimic.dev) :tada:\n',
+                      type === 'documentation' && isCanary && '### Released to [**canary.zimic.dev**](https://canary.zimic.dev) :tada:\n',
+                      `- :pushpin: [**Release notes**](https://github.com/${githubOwner}/${githubRepository}/releases/tag/${tag})`,
+                      type === 'package' && `- :package: [**NPM package**](https://www.npmjs.com/package/${projectName}/v/${version})`,
                     ].filter(Boolean).join('\n'),
                   });
 

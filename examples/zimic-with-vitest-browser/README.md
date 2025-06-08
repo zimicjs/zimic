@@ -9,8 +9,8 @@ It uses [Playwright](https://playwright.dev) as the browser provider for Vitest.
   - [`@zimic/interceptor`](#zimicinterceptor)
   - [Configuration](#configuration)
 - [Try it](#try-it)
-  - [CodeSandbox](#codesandbox)
   - [StackBlitz](#stackblitz)
+  - [CodeSandbox](#codesandbox)
   - [Cloning locally](#cloning-locally)
 - [Running](#running)
 

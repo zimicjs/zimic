@@ -1,9 +1,9 @@
+# `@zimic/interceptor` - Guides: Testing
+
 > [!TIP]
 >
 > Zimic's documentation is now available on [zimic.dev](https://zimic.dev)! :tada:
->
-> Check it out for the latest updates, guides, and documentation.
 
-# `@zimic/interceptor` - Guides: Testing
+**See**:
 
-See https://zimic.dev/docs/interceptor/guides/testing.
+- [`@zimic/interceptor` testing guide](https://zimic.dev/docs/interceptor/guides/testing)

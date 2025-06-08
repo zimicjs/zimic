@@ -10,8 +10,8 @@ This example uses Zimic with [Next.js](https://nextjs.org).
     - [Loading mocks](#loading-mocks)
   - [Configuration](#configuration)
 - [Try it](#try-it)
-  - [CodeSandbox](#codesandbox)
   - [StackBlitz](#stackblitz)
+  - [CodeSandbox](#codesandbox)
   - [Cloning locally](#cloning-locally)
 - [Running](#running)
 

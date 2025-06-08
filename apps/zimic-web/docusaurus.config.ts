@@ -35,7 +35,7 @@ const config: Docusaurus.Config = {
       tagName: 'link',
       attributes: {
         rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400..700;1,400..900&display=swap',
+        href: 'https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400..700;1,400..700&display=block',
       },
     },
   ],
@@ -129,7 +129,7 @@ const config: Docusaurus.Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.nightOwl,
-      defaultLanguage: 'typescript',
+      defaultLanguage: 'text',
       additionalLanguages: ['bash', 'json', 'yaml', 'diff'],
       magicComments: [
         {

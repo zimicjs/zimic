@@ -153,7 +153,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
 
         const createdUser = (await response.json()) as User;
         expect(createdUser).toEqual<JSONSerialized<User>>({
-          id: expect.any(String) as string,
+          id: expect.any(String),
           name: creationPayload.name,
           email: creationPayload.email,
           birthDate: creationPayload.birthDate,

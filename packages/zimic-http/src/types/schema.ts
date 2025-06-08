@@ -23,7 +23,7 @@ export type HttpMethod = (typeof HTTP_METHODS)[number];
 /**
  * A schema representing the structure of an HTTP request.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
+ * @see {@link https://zimic.dev/docs/http/api/http-schema `HttpSchema` API reference}
  */
 export interface HttpRequestSchema {
   headers?: HttpHeadersSchema.Loose;
@@ -34,7 +34,7 @@ export interface HttpRequestSchema {
 /**
  * A schema representing the structure of an HTTP response.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
+ * @see {@link https://zimic.dev/docs/http/api/http-schema `HttpSchema` API reference}
  */
 export interface HttpResponseSchema {
   headers?: HttpHeadersSchema.Loose;
@@ -159,7 +159,7 @@ export namespace HttpStatusCode {
 /**
  * A schema representing the structure of HTTP responses by status code.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
+ * @see {@link https://zimic.dev/docs/http/api/http-schema `HttpSchema` API reference}
  */
 export type HttpResponseSchemaByStatusCode = {
   [StatusCode in HttpStatusCode]?: HttpResponseSchema;
@@ -168,7 +168,7 @@ export type HttpResponseSchemaByStatusCode = {
 /**
  * Extracts the status codes used in a response schema by status code.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
+ * @see {@link https://zimic.dev/docs/http/api/http-schema `HttpSchema` API reference}
  */
 export type HttpResponseSchemaStatusCode<ResponseSchemaByStatusCode extends HttpResponseSchemaByStatusCode> =
   keyof ResponseSchemaByStatusCode & HttpStatusCode;
@@ -176,7 +176,7 @@ export type HttpResponseSchemaStatusCode<ResponseSchemaByStatusCode extends Http
 /**
  * A schema representing the structure of an HTTP request and response for a given method.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
+ * @see {@link https://zimic.dev/docs/http/api/http-schema `HttpSchema` API reference}
  */
 export interface HttpMethodSchema {
   request?: HttpRequestSchema;
@@ -186,7 +186,7 @@ export interface HttpMethodSchema {
 /**
  * A schema representing the structure of HTTP request and response by method.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
+ * @see {@link https://zimic.dev/docs/http/api/http-schema `HttpSchema` API reference}
  */
 export interface HttpMethodsSchema {
   GET?: HttpMethodSchema;
@@ -202,280 +202,45 @@ interface BaseHttpSchema {
   [path: string]: HttpMethodsSchema;
 }
 
-/**
- * Declares an HTTP service schema.
- *
- * @example
- *   import { type HttpSchema } from '@zimic/http';
- *
- *   interface UserListHeaders {
- *     accept: string;
- *   }
- *
- *   interface UserListSearchParams {
- *     name?: string;
- *     limit?: number;
- *   }
- *
- *   type Schema = HttpSchema<{
- *     '/users': {
- *       GET: {
- *         request: {
- *           headers: UserListHeaders;
- *           searchParams: UserListSearchParams;
- *         };
- *         response: {
- *           200: {
- *             // Inline headers declaration
- *             headers: { 'content-type': string };
- *             body: User[];
- *           };
- *         };
- *       };
- *     };
- *   }>;
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
- */
+/** @see {@link https://zimic.dev/docs/http/api/http-schema `HttpSchema` API reference} */
 export type HttpSchema<Schema extends BaseHttpSchema = BaseHttpSchema> = Branded<Schema, 'HttpSchema'>;
 
 export namespace HttpSchema {
-  /**
-   * Declares an HTTP service methods schema.
-   *
-   * @example
-   *   import { type HttpSchema } from '@zimic/http';
-   *
-   *   type UserMethods = HttpSchema.Methods<{
-   *     GET: {
-   *       response: {
-   *         200: { body: User[] };
-   *       };
-   *     };
-   *   }>;
-   *
-   *   type Schema = HttpSchema<{
-   *     '/users': UserMethods;
-   *   }>;
-   */
+  /** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemamethods `HttpSchema.Methods` API reference} */
   export type Methods<Schema extends HttpMethodsSchema> = Schema;
 
-  /**
-   * Declares an HTTP service method schema.
-   *
-   * @example
-   *   import { type HttpSchema } from '@zimic/http';
-   *
-   *   type UserListMethod = HttpSchema.Method<{
-   *     response: {
-   *       200: { body: User[] };
-   *     };
-   *   }>;
-   *
-   *   type Schema = HttpSchema<{
-   *     '/users': {
-   *       GET: UserListMethod;
-   *     };
-   *   }>;
-   */
+  /** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemamethod `HttpSchema.Method` API reference} */
   export type Method<Schema extends HttpMethodSchema> = Schema;
 
-  /**
-   * Declares an HTTP service request schema.
-   *
-   * @example
-   *   import { type HttpSchema } from '@zimic/http';
-   *
-   *   type UserCreationRequest = HttpSchema.Request<{
-   *     headers: { 'content-type': 'application/json' };
-   *     body: User;
-   *   }>;
-   *
-   *   type Schema = HttpSchema<{
-   *     '/users': {
-   *       POST: {
-   *         request: UserCreationRequest;
-   *         response: {
-   *           201: { body: User };
-   *         };
-   *       };
-   *     };
-   *   }>;
-   */
+  /** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemarequest `HttpSchema.Request` API reference} */
   export type Request<Schema extends HttpRequestSchema> = Schema;
 
-  /**
-   * Declares an HTTP service response schema by status code.
-   *
-   * @example
-   *   import { type HttpSchema } from '@zimic/http';
-   *
-   *   type UserListResponseByStatusCode = HttpSchema.ResponseByStatusCode<{
-   *     200: { body: User[] };
-   *     400: { body: { message: string } };
-   *   }>;
-   *
-   *   type Schema = HttpSchema<{
-   *     '/users': {
-   *       GET: {
-   *         response: UserListResponseByStatusCode;
-   *       };
-   *     };
-   *   }>;
-   */
+  /** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemaresponsebystatuscode `HttpSchema.ResponseByStatusCode` API reference} */
   export type ResponseByStatusCode<Schema extends HttpResponseSchemaByStatusCode> = Schema;
 
-  /**
-   * Declares an HTTP service response schema.
-   *
-   * @example
-   *   import { type HttpSchema } from '@zimic/http';
-   *
-   *   type UserListSuccessResponse = HttpSchema.Response<{
-   *     body: User[];
-   *   }>;
-   *
-   *   type Schema = HttpSchema<{
-   *     '/users': {
-   *       GET: {
-   *         response: {
-   *           200: UserListSuccessResponse;
-   *         };
-   *       };
-   *     };
-   *   }>;
-   */
+  /** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemaresponse  `HttpSchema.Response` API reference} */
   export type Response<Schema extends HttpResponseSchema> = Schema;
 
-  /**
-   * Declares an HTTP body schema.
-   *
-   * @example
-   *   import { type HttpSchema } from '@zimic/http';
-   *
-   *   type UserListSuccessResponseBody = HttpSchema.Body<User[]>;
-   *
-   *   type Schema = HttpSchema<{
-   *     '/users': {
-   *       GET: {
-   *         response: {
-   *           200: { body: UserListSuccessResponseBody };
-   *         };
-   *       };
-   *     };
-   *   }>;
-   */
+  /** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemabody `HttpSchema.Body` API reference} */
   export type Body<Schema extends HttpBody.Loose> = Schema;
 
-  /**
-   * Declares an HTTP headers schema.
-   *
-   * @example
-   *   import { type HttpSchema } from '@zimic/http';
-   *
-   *   type UserListHeaders = HttpSchema.Headers<{
-   *     accept: 'application/json';
-   *   }>;
-   *
-   *   type Schema = HttpSchema<{
-   *     '/users': {
-   *       GET: {
-   *         request: {
-   *           headers: UserListHeaders;
-   *         };
-   *         response: {
-   *           200: { body: User[] };
-   *         };
-   *       };
-   *     };
-   *   }>;
-   */
+  /** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemaheaders `HttpSchema.Headers` API reference} */
   export type Headers<Schema extends HttpHeadersSchema.Loose> = Schema;
 
-  /**
-   * Declares an HTTP search params schema.
-   *
-   * @example
-   *   import { type HttpSchema } from '@zimic/http';
-   *
-   *   type UserListSearchParams = HttpSchema.SearchParams<{
-   *     limit: `${number}`;
-   *     offset: `${number}`;
-   *   }>;
-   *
-   *   type Schema = HttpSchema<{
-   *     '/users': {
-   *       GET: {
-   *         request: {
-   *           searchParams: UserListSearchParams;
-   *         };
-   *         response: {
-   *           200: { body: User[] };
-   *         };
-   *       };
-   *     };
-   *   }>;
-   */
+  /** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemasearchparams `HttpSchema.SearchParams` API reference} */
   export type SearchParams<Schema extends HttpSearchParamsSchema.Loose> = Schema;
 
-  /**
-   * Declares an HTTP path params schema.
-   *
-   * @example
-   *   import { type HttpSchema, InferPathParams } from '@zimic/http';
-   *
-   *   type Schema = HttpSchema<{
-   *     '/users/:userId': {
-   *       GET: {
-   *         response: {
-   *           200: { body: User };
-   *         };
-   *       };
-   *     };
-   *   }>;
-   *
-   *   type UserByIdPathParams = HttpSchema.PathParams<{
-   *     userId: string;
-   *   }>;
-   *
-   *   // Or infer from the path string
-   *   type UserByIdPathParams = InferPathParams<Schema, '/users/:userId'>;
-   */
+  /** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemapathparams `HttpSchema.PathParams` API reference} */
   export type PathParams<Schema extends HttpPathParamsSchema.Loose> = Schema;
 
-  /**
-   * Declares an HTTP form data schema.
-   *
-   * @example
-   *   import { HttpFormData, type HttpSchema } from '@zimic/http';
-   *
-   *   type UserCreationFormData = HttpFormData<
-   *     HttpSchema.FormData<{
-   *       name: string;
-   *       email: string;
-   *     }>
-   *   >;
-   *
-   *   type Schema = HttpSchema<{
-   *     '/users': {
-   *       POST: {
-   *         request: {
-   *           body: UserCreationFormData;
-   *         };
-   *         response: {
-   *           201: { body: User };
-   *         };
-   *       };
-   *     };
-   *   }>;
-   */
+  /** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemaformdata `HttpSchema.FormData` API reference} */
   export type FormData<Schema extends HttpFormDataSchema.Loose> = Schema;
 }
 
 /**
  * Extracts the methods from an HTTP service schema.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
+ * @see {@link https://zimic.dev/docs/http/api/http-schema `HttpSchema` API reference}
  */
 export type HttpSchemaMethod<Schema extends HttpSchema> = IfAny<
   Schema,
@@ -489,100 +254,19 @@ export type AllowAnyStringInPathParams<Path extends string> = Path extends `${in
     ? `${Prefix}${string}`
     : Path;
 
-/**
- * Extracts the paths from an HTTP service schema. Optionally receives a second argument with one or more methods to
- * filter the paths with. Only the methods defined in the schema are allowed.
- *
- * @example
- *   import { type HttpSchema, type HttpSchemaPath } from '@zimic/http';
- *
- *   type Schema = HttpSchema<{
- *     '/users': {
- *       GET: {
- *         response: { 200: { body: User[] } };
- *       };
- *     };
- *     '/users/:userId': {
- *       DELETE: {
- *         response: { 200: { body: User } };
- *       };
- *     };
- *   }>;
- *
- *   type Path = HttpSchemaPath<Schema>;
- *   // "/users" | "/users/:userId" | "/users/${string}"
- *
- *   type GetPath = HttpSchemaPath<Schema, 'GET'>;
- *   // "/users"
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
- */
+/** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemapath `HttpSchemaPath` API reference} */
 export namespace HttpSchemaPath {
   type LooseLiteral<Schema extends HttpSchema, Method extends HttpMethod = HttpMethod> = {
     [Path in keyof Schema & string]: Method extends keyof Schema[Path] ? Path : never;
   }[keyof Schema & string];
 
-  /**
-   * Extracts the literal paths from an HTTP service schema. Optionally receives a second argument with one or more
-   * methods to filter the paths with. Only the methods defined in the schema are allowed.
-   *
-   * @example
-   *   import { type HttpSchema, type HttpSchemaPath } from '@zimic/http';
-   *
-   *   type Schema = HttpSchema<{
-   *     '/users': {
-   *       GET: {
-   *         response: { 200: { body: User[] } };
-   *       };
-   *     };
-   *     '/users/:userId': {
-   *       DELETE: {
-   *         response: { 200: { body: User } };
-   *       };
-   *     };
-   *   }>;
-   *
-   *   type LiteralPath = HttpSchemaPath.Literal<Schema>;
-   *   // "/users" | "/users/:userId"
-   *
-   *   type LiteralGetPath = HttpSchemaPath.Literal<Schema, 'GET'>;
-   *   // "/users"
-   *
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
-   */
+  /** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemapathliteral `HttpSchemaPath.Literal` API reference} */
   export type Literal<
     Schema extends HttpSchema,
     Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
   > = LooseLiteral<Schema, Method>;
 
-  /**
-   * Extracts the non-literal paths from an HTTP service schema. Optionally receives a second argument with one or more
-   * methods to filter the paths with. Only the methods defined in the schema are allowed.
-   *
-   * @example
-   *   import { type HttpSchema, type HttpSchemaPath } from '@zimic/http';
-   *
-   *   type Schema = HttpSchema<{
-   *     '/users': {
-   *       GET: {
-   *         response: { 200: { body: User[] } };
-   *       };
-   *     };
-   *     '/users/:userId': {
-   *       DELETE: {
-   *         response: { 200: { body: User } };
-   *       };
-   *     };
-   *   }>;
-   *
-   *   type NonLiteralPath = HttpSchemaPath.NonLiteral<Schema>;
-   *   // "/users" | "/users/${string}"
-   *
-   *   type NonLiteralGetPath = HttpSchemaPath.NonLiteral<Schema, 'GET'>;
-   *   // "/users"
-   *
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
-   */
+  /** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemapathnonliteral `HttpSchemaPath.NonLiteral` API reference} */
   export type NonLiteral<
     Schema extends HttpSchema,
     Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
@@ -631,34 +315,7 @@ type RecursiveInferPathParams<Path extends string> = Path extends `${infer _Pref
     ? { [Name in ParamName]: string }
     : {};
 
-/**
- * Infers the path parameters schema from a path string, optionally validating it against an {@link HttpSchema}.
- *
- * If the first argument is a {@link HttpSchema} (recommended), the second argument is checked to be a valid path in that
- * schema.
- *
- * @example
- *   import { HttpSchema, InferPathParams } from '@zimic/http';
- *
- *   type Schema = HttpSchema<{
- *     '/users/:userId': {
- *       GET: {
- *         response: { 200: { body: User } };
- *       };
- *     };
- *   }>;
- *
- *   // Using a schema to validate the path (recommended):
- *   type PathParams = InferPathParams<Schema, '/users/:userId'>;
- *   // { userId: string }
- *
- * @example
- *   import { InferPathParams } from '@zimic/http';
- *
- *   // Without using a schema to validate the path (works as `PathParamsSchemaFromPath`):
- *   type PathParams = InferPathParams<'/users/:userId'>;
- *   // { userId: string }
- */
+/** @see {@link https://zimic.dev/docs/http/api/http-schema#inferpathparams `InferPathParams` API reference} */
 export type InferPathParams<
   PathOrSchema extends string | HttpSchema,
   OptionalPath extends PathOrSchema extends HttpSchema ? HttpSchemaPath.Literal<PathOrSchema> : never = never,
@@ -676,39 +333,7 @@ type OmitPastHttpStatusCodes<
     ? Omit<Schema, keyof UnionToIntersection<PastSchemas[number]>>
     : Schema;
 
-/**
- * Merges multiple HTTP response schemas by status code into a single schema. When there are duplicate status codes, the
- * first declaration takes precedence.
- *
- * @example
- *   import { type HttpSchema, type HttpStatusCode, MergeHttpResponsesByStatusCode } from '@zimic/http';
- *
- *   // Overriding the 400 status code with a more specific schema
- *   // and using a generic schema for all other client errors.
- *   type MergedResponseByStatusCode = MergeHttpResponsesByStatusCode<
- *     [
- *       {
- *         400: { body: { message: string; issues: string[] } };
- *       },
- *       {
- *         [StatusCode in HttpStatusCode.ClientError]: { body: { message: string } };
- *       },
- *     ]
- *   >;
- *   // {
- *   //   400: { body: { message: string; issues: string[] } };
- *   //   401: { body: { message: string}; };
- *   //   402: { body: { message: string}; };
- *   //   403: { body: { message: string}; };
- *   //   ...
- *   // }
- *
- *   type Schema = HttpSchema<{
- *     '/users': {
- *       GET: { response: MergedResponseByStatusCode };
- *     };
- *   }>;
- */
+/** @see {@link https://zimic.dev/docs/http/api/http-schema#mergehttpresponsesbystatuscode `MergeHttpResponsesByStatusCode` API reference} */
 export type MergeHttpResponsesByStatusCode<
   Schemas extends HttpResponseSchemaByStatusCode[],
   PastSchemas extends HttpResponseSchemaByStatusCode[] = [],

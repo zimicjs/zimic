@@ -69,11 +69,11 @@ export class CommandError extends Error {
   }
 }
 
-export async function runCommand(command: string, commandArguments: string[]) {
+export async function runCommand(commandEntry: string, commandArguments: string[]) {
   const { execa: $, ExecaError } = await importExeca();
 
   try {
-    await $(command, commandArguments, { stdio: 'inherit' });
+    await $(commandEntry, commandArguments, { stdio: 'inherit' });
   } catch (error) {
     /* istanbul ignore if -- @preserve
      * This is a safeguard if the error is not an ExecaError. It is not expected to run. */
@@ -81,8 +81,8 @@ export async function runCommand(command: string, commandArguments: string[]) {
       throw error;
     }
 
-    const commandError = new CommandError(command, {
-      command: [command, ...commandArguments],
+    const commandError = new CommandError(commandEntry, {
+      command: [commandEntry, ...commandArguments],
       exitCode: error.exitCode,
       signal: error.signal,
       originalMessage: error.originalMessage,

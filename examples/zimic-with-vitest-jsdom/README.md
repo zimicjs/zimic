@@ -8,8 +8,8 @@ This example uses Zimic with [Vitest](https://vitest.dev), and [JSDOM](https://g
   - [`@zimic/interceptor`](#zimicinterceptor)
   - [Configuration](#configuration)
 - [Try it](#try-it)
-  - [CodeSandbox](#codesandbox)
   - [StackBlitz](#stackblitz)
+  - [CodeSandbox](#codesandbox)
   - [Cloning locally](#cloning-locally)
 - [Running](#running)
 

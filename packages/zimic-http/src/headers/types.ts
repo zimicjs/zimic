@@ -19,7 +19,7 @@ export type HttpHeadersSchemaTuple<Schema extends HttpHeadersSchema.Loose = Http
   [Key in keyof Schema & string]: [Key, NonNullable<Schema[Key]>];
 }[keyof Schema & string];
 
-/** An initialization value for {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpheaders `HttpHeaders`}. */
+/** An initialization value for {@link https://zimic.dev/docs/http/api/http-headers `HttpHeaders`}. */
 export type HttpHeadersInit<Schema extends HttpHeadersSchema.Loose = HttpHeadersSchema.Loose> =
   | Headers
   | Schema
