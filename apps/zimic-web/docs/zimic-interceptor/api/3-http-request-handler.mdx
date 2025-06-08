@@ -34,10 +34,10 @@ await handler.times(1);
 
 // You can await the handler once:
 const handler = await interceptor
-  .patch('/users/:userId');
-  .with((request) => /^\d+$/.test(request.pathParams.userId));
-  .with({ body: { username: 'new-username' } });
-  .respond({ status: 204 });
+  .patch('/users/:userId')
+  .with((request) => /^\d+$/.test(request.pathParams.userId))
+  .with({ body: { username: 'new-username' } })
+  .respond({ status: 204 })
   .times(1);
 ```
 
@@ -218,7 +218,7 @@ handler will consider an inclusive range, matching at least the minimum (first a
 argument) number of requests.
 
 Once the handler receives more requests than the maximum number declared, it will stop matching requests and returning
-its response. In this case, Zimic will try other handlers until one eligible is found, otherwise the request will be
+its response. In this case, Zimic will try other handlers until one eligible is found; otherwise the request will be
 either bypassed or rejected.
 
 <Tabs groupId="zimic-http-interceptor-type">
@@ -235,7 +235,7 @@ handler.times(minNumberOfRequests, maxNumberOfRequests);
 
 ```ts
 await handler.times(numberOfRequests);
-await handler.times(minNumberRequests, maxNumberRequests);
+await handler.times(minNumberOfRequests, maxNumberOfRequests);
 ```
 
   </TabItem>
@@ -308,7 +308,7 @@ await handler.checkTimes();
   </TabItem>
 </Tabs>
 
-## `interceptor.clear()`
+## `handler.clear()`
 
 Clears any response declared with [`handler.respond()`](#handlerrespond), restrictions declared with
 [`handler.with()`](#handlerwith), and intercepted requests, making the handler stop matching requests. The next handler,
