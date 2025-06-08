@@ -20,29 +20,7 @@ function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema.Loose>(sc
   return schemaWithPrimitiveProperties;
 }
 
-/**
- * An extended HTTP search params object with a strictly-typed schema. Fully compatible with the built-in
- * {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams `URLSearchParams`} class.
- *
- * @example
- *   import { HttpSearchParams } from '@zimic/http';
- *
- *   const searchParams = new HttpSearchParams<{
- *     names?: string[];
- *     page?: `${number}`;
- *   }>({
- *     names: ['user 1', 'user 2'],
- *     page: '1',
- *   });
- *
- *   const names = searchParams.getAll('names');
- *   console.log(names); // ['user 1', 'user 2']
- *
- *   const page = searchParams.get('page');
- *   console.log(page); // '1'
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpsearchparams `HttpSearchParams` API reference}
- */
+/** @see {@link https://zimic.dev/docs/http/api/http-search-params `HttpSearchParams` API reference} */
 class HttpSearchParams<
   LooseSchema extends HttpSearchParamsSchema.Loose = HttpSearchParamsSchema.Loose,
 > extends URLSearchParams {
@@ -67,7 +45,7 @@ class HttpSearchParams<
     }
   }
 
-  /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/set MDN Reference} */
+  /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamsset `searchParams.set()` API reference} */
   set<Name extends HttpSearchParamsSchemaName<this['_schema']>>(
     name: Name,
     value: ArrayItemIfArray<NonNullable<LooseSchema[Name]>>,
@@ -75,7 +53,7 @@ class HttpSearchParams<
     super.set(name, value);
   }
 
-  /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/append MDN Reference} */
+  /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamsappend `searchParams.append()` API reference} */
   append<Name extends HttpSearchParamsSchemaName<this['_schema']>>(
     name: Name,
     value: ArrayItemIfArray<NonNullable<LooseSchema[Name]>>,
@@ -83,37 +61,21 @@ class HttpSearchParams<
     super.append(name, value);
   }
 
-  /**
-   * Get the value of the entry associated to a key name.
-   *
-   * If the key might have multiple values, use {@link HttpSearchParams#getAll} instead.
-   *
-   * @param name The name of the key to get the value of.
-   * @returns The value associated with the key name, or `null` if the key does not exist.
-   * @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/get MDN Reference}
-   */
+  /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamsget `searchParams.get()` API reference} */
   get<Name extends HttpSearchParamsSchemaName.NonArray<this['_schema']>>(
     name: Name,
   ): ReplaceBy<ArrayItemIfArray<this['_schema'][Name]>, undefined, null> {
     return super.get(name) as never;
   }
 
-  /**
-   * Get all the values of the entry associated with a key name.
-   *
-   * If the key has at most one value, use {@link HttpSearchParams#get} instead.
-   *
-   * @param name The name of the key to get the values of.
-   * @returns An array of values associated with the key name, or an empty array if the key does not exist.
-   * @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/getAll MDN Reference}
-   */
+  /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamsgetall `searchParams.getAll()` API reference} */
   getAll<Name extends HttpSearchParamsSchemaName.Array<this['_schema']>>(
     name: Name,
   ): ArrayItemIfArray<NonNullable<this['_schema'][Name]>>[] {
     return super.getAll(name) as never;
   }
 
-  /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/has MDN Reference} */
+  /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamshas `searchParams.has()` API reference} */
   has<Name extends HttpSearchParamsSchemaName<this['_schema']>>(
     name: Name,
     value?: ArrayItemIfArray<NonNullable<LooseSchema[Name]>>,
@@ -121,7 +83,7 @@ class HttpSearchParams<
     return super.has(name, value);
   }
 
-  /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/delete MDN Reference} */
+  /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamsdelete `searchParams.delete()` API reference} */
   delete<Name extends HttpSearchParamsSchemaName<this['_schema']>>(
     name: Name,
     value?: ArrayItemIfArray<NonNullable<LooseSchema[Name]>>,
@@ -129,30 +91,31 @@ class HttpSearchParams<
     super.delete(name, value);
   }
 
+  /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamsforEach `searchParams.forEach()` API reference} */
   forEach<This extends HttpSearchParams<this['_schema']>>(
     callback: <Key extends HttpSearchParamsSchemaName<this['_schema']>>(
       value: ArrayItemIfArray<NonNullable<this['_schema'][Key]>>,
       key: Key,
-      parent: HttpSearchParams<this['_schema']>,
+      searchParams: HttpSearchParams<this['_schema']>,
     ) => void,
     thisArg?: This,
   ): void {
     super.forEach(callback as (value: string, key: string, parent: URLSearchParams) => void, thisArg);
   }
 
-  /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/keys MDN Reference} */
+  /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamskeys `searchParams.keys()` API reference} */
   keys(): URLSearchParamsIterator<HttpSearchParamsSchemaName<this['_schema']>> {
     return super.keys() as never;
   }
 
-  /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/values MDN Reference} */
+  /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamsvalues `searchParams.values()` API reference} */
   values(): URLSearchParamsIterator<
     ArrayItemIfArray<NonNullable<this['_schema'][HttpSearchParamsSchemaName<this['_schema']>]>>
   > {
     return super.values() as never;
   }
 
-  /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/entries MDN Reference} */
+  /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamsentries `searchParams.entries()` API reference} */
   entries(): URLSearchParamsIterator<
     [
       HttpSearchParamsSchemaName<this['_schema']>,
@@ -171,25 +134,12 @@ class HttpSearchParams<
     return super[Symbol.iterator]() as never;
   }
 
-  /**
-   * Checks if these search params are equal to another set of search parameters. Equality is defined as having the same
-   * keys and values, regardless of the order of the keys.
-   *
-   * @param otherParams The other search parameters to compare against.
-   * @returns `true` if the search parameters are equal, `false` otherwise.
-   */
+  /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamsequals `searchParams.equals()` API reference} */
   equals<OtherSchema extends LooseSchema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
     return this.contains(otherParams) && this.size === otherParams.size;
   }
 
-  /**
-   * Checks if these search params contain another set of search parameters. This method is less strict than
-   * {@link HttpSearchParams#equals} and only requires that all keys and values in the other search parameters are
-   * present in these search parameters.
-   *
-   * @param otherParams The other search parameters to check for containment.
-   * @returns `true` if these search parameters contain the other search parameters, `false` otherwise.
-   */
+  /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamscontains `searchParams.contains()` API reference} */
   contains<OtherSchema extends LooseSchema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
     for (const [key, otherValue] of otherParams.entries()) {
       const values = super.getAll.call(this, key);
@@ -208,24 +158,7 @@ class HttpSearchParams<
     return true;
   }
 
-  /**
-   * Converts these search params into a plain object. This method is useful for serialization and debugging purposes.
-   *
-   * **NOTE**: If a key has multiple values, the object will contain an array of values for that key. If the key has
-   * only one value, the object will contain its value directly, without an array, regardless of how the value was
-   * initialized when creating the search params object.
-   *
-   * @example
-   *   const searchParams = new HttpSearchParams({
-   *     names: ['user 1', 'user 2'],
-   *     name: ['user 3'],
-   *     page: '1',
-   *   });
-   *   const object = searchParams.toObject();
-   *   console.log(object); // { names: ['user 1', 'user 2'], name: 'user 3', page: '1' }
-   *
-   * @returns A plain object representation of these search params.
-   */
+  /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamstoobject `searchParams.toObject()` API reference} */
   toObject() {
     const object = {} as this['_schema'];
 

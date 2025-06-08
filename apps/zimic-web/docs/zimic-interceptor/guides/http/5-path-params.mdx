@@ -1,7 +1,7 @@
 ---
 title: Using path params | @zimic/interceptor
 sidebar_label: Using path params
-slug: /interceptor/guides/path-params
+slug: /interceptor/guides/http/path-params
 ---
 
 import Tabs from '@theme/Tabs';
@@ -42,9 +42,9 @@ type Schema = HttpSchema<{
 ```
 
 Then, the path params of the requests will be available in the `pathParams` property, such as in
-[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith),
-[computed responses](/docs/zimic-interceptor/api/3-http-request-handler.md#computed-responses), and
-[`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrequests).
+[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith),
+[computed responses](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrespond), and
+[`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrequests).
 
 You can use path params directly in the path string using template literals. `@zimic/interceptor` automatically infers
 the endpoint and types all resources as usual.
@@ -133,7 +133,7 @@ const handler = await interceptor
   </TabItem>
 </Tabs>
 
-[`interceptor.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith) is useful in case you want to
+[`interceptor.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith) is useful in case you want to
 validate the parameter or limit it specific values.
 
 <Tabs groupId="zimic-http-interceptor-type">

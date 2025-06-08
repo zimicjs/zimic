@@ -69,13 +69,7 @@ type FetchRequestInitPerPath<MethodSchema extends HttpMethodSchema> = FetchReque
   FetchRequestInitWithSearchParams<HttpRequestSearchParamsSchema<MethodSchema>> &
   FetchRequestInitWithBody<FetchRequestBodySchema<Default<MethodSchema['request']>>>;
 
-/**
- * The options to create a {@link FetchRequest} instance, compatible with
- * {@link https://developer.mozilla.org/docs/Web/API/RequestInit `RequestInit`}.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch `fetch` API reference}
- * @see {@link https://developer.mozilla.org/docs/Web/API/RequestInit `RequestInit`}
- */
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference} */
 export type FetchRequestInit<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
@@ -132,55 +126,7 @@ type FetchResponseStatusCode<
   Redirect
 >;
 
-/**
- * A request instance typed with an HTTP schema, closely compatible with the
- * {@link https://developer.mozilla.org/docs/Web/API/Request native Request class}.
- *
- * On top of the properties available in native {@link https://developer.mozilla.org/docs/Web/API/Request `Request`}
- * instances, fetch requests have their URL automatically prefixed with the base URL of their fetch instance. Default
- * options are also applied, if present in the fetch instance.
- *
- * The path of the request is extracted from the URL, excluding the base URL, and is available in the `path` property.
- *
- * @example
- *   import { type HttpSchema } from '@zimic/http';
- *   import { createFetch } from '@zimic/fetch';
- *
- *   interface User {
- *     id: string;
- *     username: string;
- *   }
- *
- *   type Schema = HttpSchema<{
- *     '/users': {
- *       POST: {
- *         request: {
- *           headers: { 'content-type': 'application/json' };
- *           body: { username: string };
- *         };
- *         response: {
- *           201: { body: User };
- *         };
- *       };
- *     };
- *   }>;
- *
- *   const fetch = createFetch<Schema>({
- *     baseURL: 'http://localhost:3000',
- *   });
- *
- *   const request = new fetch.Request('/users', {
- *     method: 'POST',
- *     headers: { 'content-type': 'application/json' },
- *     body: JSON.stringify({ username: 'me' }),
- *   });
- *
- *   console.log(request); // FetchRequest<Schema, 'POST', '/users'>
- *   console.log(request.path); // '/users'
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchrequest `FetchRequest` API reference}
- * @see {@link https://developer.mozilla.org/docs/Web/API/Request}
- */
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch-request `FetchRequest` API reference} */
 export interface FetchRequest<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
@@ -237,12 +183,7 @@ export type FetchRequestObject = Pick<
   body?: string | null;
 };
 
-/**
- * A {@link FetchResponse `FetchResponse`} instance with a specific status code.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponse `FetchResponse` API reference}
- * @see {@link https://developer.mozilla.org/docs/Web/API/Response}
- */
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference} */
 export interface FetchResponsePerStatusCode<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
@@ -267,57 +208,7 @@ export interface FetchResponsePerStatusCode<
     : null;
 }
 
-/**
- * A response instance typed with an HTTP schema, closely compatible with the
- * {@link https://developer.mozilla.org/docs/Web/API/Response native Response class}.
- *
- * On top of the properties available in native Response instances, fetch responses have a reference to the request that
- * originated them, available in the `request` property.
- *
- * If the response has a failure status code (4XX or 5XX), an error is available in the `error` property.
- *
- * @example
- *   import { type HttpSchema } from '@zimic/http';
- *   import { createFetch } from '@zimic/fetch';
- *
- *   interface User {
- *     id: string;
- *     username: string;
- *   }
- *
- *   type Schema = HttpSchema<{
- *     '/users/:userId': {
- *       GET: {
- *         response: {
- *           200: { body: User };
- *           404: { body: { message: string } };
- *         };
- *       };
- *     };
- *   }>;
- *
- *   const fetch = createFetch<Schema>({
- *     baseURL: 'http://localhost:3000',
- *   });
- *
- *   const response = await fetch(`/users/${userId}`, {
- *     method: 'GET',
- *   });
- *
- *   console.log(response); // FetchResponse<Schema, 'GET', '/users'>
- *
- *   if (response.status === 404) {
- *     const errorBody = await response.json(); // { message: string }
- *     console.error(errorBody.message);
- *     return null;
- *   } else {
- *     const user = await response.json(); // User
- *     return user;
- *   }
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponse `FetchResponse` API reference}
- * @see {@link https://developer.mozilla.org/docs/Web/API/Response}
- */
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference} */
 export type FetchResponse<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
@@ -369,37 +260,7 @@ export type FetchResponseObject = Pick<
   body?: string | null;
 };
 
-/**
- * A constructor for {@link FetchRequest} instances, typed with an HTTP schema and compatible with the
- * {@link https://developer.mozilla.org/docs/Web/API/Request Request class constructor}.
- *
- * @example
- *   import { type HttpSchema } from '@zimic/http';
- *   import { createFetch } from '@zimic/fetch';
- *
- *   type Schema = HttpSchema<{
- *     // ...
- *   }>;
- *
- *   const fetch = createFetch<Schema>({
- *     baseURL: 'http://localhost:3000',
- *   });
- *
- *   const request = new fetch.Request('POST', '/users', {
- *     body: JSON.stringify({ username: 'me' }),
- *   });
- *   console.log(request); // FetchRequest<Schema, 'POST', '/users'>
- *
- * @param input The resource to fetch, either a path, a URL, or a {@link FetchRequest request}. If a path is provided, it
- *   is automatically prefixed with the base URL of the fetch instance when the request is sent. If a URL or a request
- *   is provided, it is used as is.
- * @param init The request options. If a path or a URL is provided as the first argument, this argument is required and
- *   should contain at least the method of the request. If the first argument is a {@link FetchRequest request}, this
- *   argument is optional.
- * @returns A promise that resolves to the response to the request.
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponse `FetchResponse` API reference}
- * @see {@link https://developer.mozilla.org/docs/Web/API/Request}
- */
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchrequest `fetch.Request` API reference} */
 export type FetchRequestConstructor<Schema extends HttpSchema> = new <
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath.NonLiteral<Schema, Method>,

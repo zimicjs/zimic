@@ -1,7 +1,7 @@
 ---
 title: Testing | @zimic/interceptor
 sidebar_label: Testing
-slug: /interceptor/guides/testing
+slug: /interceptor/guides/http/testing
 ---
 
 import Tabs from '@theme/Tabs';
@@ -10,10 +10,11 @@ import TabItem from '@theme/TabItem';
 # Testing
 
 `@zimic/interceptor` is designed with testing in mind and provides utilities to give you confidence in your tests. Using
-[declarative assertions](/docs/zimic-interceptor/guides/7-declarative-assertions.md), you can write your expectations in
-a readable way that makes it clear how many requests the application should make, what parameters they should have, and
-what responses they will receive. If you need more specific assertions, the requests processed by the interceptor are
-available in [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrequests).
+[declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx), you can write your
+expectations in a readable way that makes it clear how many requests the application should make, what parameters they
+should have, and what responses they will receive. If you need more specific assertions, the requests processed by the
+interceptor are available in
+[`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrequests).
 
 ## Configuration
 
@@ -24,22 +25,22 @@ you are applying your mocks.
 ### Interceptor lifecycle
 
 `@zimic/interceptor` interceptors need to be started before they can intercept requests. You can start an interceptor by
-calling [`interceptor.start()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorstart).
+calling [`interceptor.start()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorstart).
 
 When an interceptor is running, you can declare mocks with
-[`interceptor.<method>()`](/docs/zimic-interceptor/api/2-http-interceptor.md#declaring-request-handlers), where
+[`interceptor.<method>()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#declaring-request-handlers), where
 `<method>` is an HTTP method. To make sure that your tests do not affect each other, it's a good practice to clear the
 interceptor between tests with
-[`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorclear).
+[`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorclear).
 
 After each test, you can check that all expected requests were made with
-[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes). This method will
+[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes). This method will
 throw an error if the number of requests or their parameters do not match the expectations you set with
-[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith) and
-[`handler.times()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlertimes).
+[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith) and
+[`handler.times()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlertimes).
 
 After all tests are done, stop the interceptor with
-[`interceptor.stop()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorstop).
+[`interceptor.stop()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorstop).
 
 A common way to manage this lifecycle is to have a test setup file with hooks such as `beforeAll`, `beforeEach`,
 `afterEach`, and `afterAll`. The specific implementation may vary depending on your test framework.
@@ -109,19 +110,20 @@ afterAll(async () => {
 
 :::info INFO: <span>Remote interceptors are asynchronous</span>
 
-Note that [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorclear) and
-[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.md#interceptorchecktimes) are awaited in the
-remote interceptor example, whereas this is not necessary for local interceptors.
+Note that [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorclear) and
+[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes) are awaited in
+the remote interceptor example, whereas this is not necessary for local interceptors.
 
-This is because many operations in [remote interceptors](/docs/zimic-interceptor/guides/2-remote-interceptors.md) are
-asynchronous because they may involve communication with an
-[interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is different from
-[local interceptors](/docs/zimic-interceptor/guides/1-local-interceptors.md), which have mostly synchronous operations.
+This is because many operations in
+[remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md) are asynchronous because they
+may involve communication with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is different from
+[local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md), which have mostly synchronous
+operations.
 
 :::
 
 For more information on the available interceptor methods, check the
-[`HttpInterceptor` API reference](/docs/zimic-interceptor/api/2-http-interceptor.md).
+[`HttpInterceptor` API reference](/docs/zimic-interceptor/api/2-http-interceptor.mdx).
 
 ### Managing concurrency
 
@@ -130,8 +132,8 @@ How to avoid this depends on the type of interceptor you are using.
 
 #### Local interceptors
 
-With [local interceptors](/docs/zimic-interceptor/guides/1-local-interceptors.md), racing conditions between test
-workers are unlikely, because each interceptor affects only the thread it was created in (hence, the name _local_).
+With [local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md), racing conditions between
+test workers are unlikely, because each interceptor affects only the thread it was created in (hence, the name _local_).
 
 However, running more than one test at the same time in the same thread **can** lead to concurrency problems.
 `@zimic/interceptor` does not currently support this, so we recommend avoiding concurrent features like
@@ -142,13 +144,14 @@ in separate threads, each with their own interceptors and without racing conditi
 
 #### Remote interceptors
 
-[Remote interceptors](/docs/zimic-interceptor/guides/2-remote-interceptors.md) use an
+[Remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md) use an
 [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle requests. They are especially useful when your
 application and your test runner run in _separate_ processes, such as in end-to-end tests. If you are sharing the same
 interceptor server between multiple parallel test workers, you may run into racing conditions. In this case, some
 solutions include:
 
-1. **Using a [path discriminator](/docs/zimic-interceptor/api/2-http-interceptor.md#path-discriminators)**:
+1. **Using a
+   [path discriminator](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#path-discriminators)**:
 
    This is a way to make sure that each test worker uses a different path in the interceptor server, usually a worker
    index or identifier. In this strategy, each worker can declare its own mocks without risk of interfering with the
@@ -163,5 +166,5 @@ solutions include:
    [Next.js App Router example](https://github.com/zimicjs/zimic/tree/main/examples/zimic-with-next-js-app#readme). It's
    important that individual tests do not create new mocks that may override the default ones and affect others.
    Instead, declare the default mocks in such a way that they can be reused by all tests, such as with
-   [computed restrictions](/docs/zimic-interceptor/api/3-http-request-handler.md#computed-restrictions) and
-   [computed responses](/docs/zimic-interceptor/api/3-http-request-handler.md#computed-responses).
+   [computed restrictions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#computed-restrictions) and
+   [computed responses](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrespond).

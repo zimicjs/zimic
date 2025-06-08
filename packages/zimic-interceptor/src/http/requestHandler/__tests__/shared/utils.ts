@@ -40,7 +40,7 @@ export async function expectTimesCheckError(
   const expectedMessage = [
     message,
     '',
-    'Learn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes',
+    'Learn more: https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes',
   ].join('\n');
 
   expect(timesCheckError!.message).toEqual(expectedMessage);

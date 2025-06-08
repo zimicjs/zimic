@@ -1,13 +1,9 @@
+# `zimic` - CLI reference
+
 > [!TIP]
 >
 > Zimic's documentation is now available on [zimic.dev](https://zimic.dev)! :tada:
->
-> Check it out for the latest updates, guides, and documentation.
 
-# `zimic` - CLI reference
+**See**:
 
-- `@zimic/http`
-  - [`zimic-http typegen`](cli‐zimic‐typegen)
-- `@zimic/interceptor`
-  - [`zimic-interceptor browser`](cli‐zimic‐browser)
-  - [`zimic-interceptor server`](cli‐zimic‐server)
+- [Zimic CLI reference](https://zimic.dev/docs/cli)

@@ -1,0 +1,520 @@
+---
+title: HttpInterceptor | @zimic/interceptor
+sidebar_label: HttpInterceptor
+slug: /interceptor/api/http-interceptor
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# `HttpInterceptor`
+
+HTTP interceptors provide the main API to handle HTTP requests and return mock responses. The methods, paths, status
+codes, parameters, and responses are statically typed based on the service schema.
+
+## `interceptor.baseURL`
+
+The base URL used by the interceptor.
+
+**Type**: `string`
+
+## `interceptor.requestSaving`
+
+Configures if the intercepted requests are saved and how they are handled.
+
+**Type**: `HttpInterceptorRequestSaving`
+
+- **enabled**: `boolean | undefined` (default: `process.env.NODE_ENV === 'test'`)
+
+  Whether [request handlers](/docs/zimic-interceptor/api/3-http-request-handler.mdx) should save their intercepted
+  requests in memory and make them accessible through
+  [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrequests).
+
+  If you are using
+  [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes) or
+  [`handler.checkTimes()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerchecktimes) during tests,
+  consider enabling this option to get more detailed information in `TimesCheckError` errors.
+
+  :::info INFO: <span>Clearing the interceptor when saving requests</span>
+
+  If request saving is enabled, make sure to regularly clear the interceptor to avoid requests accumulating in memory. A
+  common practice is to call
+  [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorclear) after each test.
+
+  :::
+
+- **safeLimit**: `number | undefined` (default: `1000`)
+
+  The safe number of requests to save in memory before logging warnings in the console. If `requestSaving.enabled` is
+  `true` and the interceptor is not regularly cleared with
+  [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorclear), the requests may
+  accumulate in memory and cause performance issues. This option does not limit the number of requests saved in memory,
+  only when to log warnings.
+
+**Related**:
+
+- [Testing](/docs/zimic-interceptor/guides/http/9-testing.mdx)
+
+## `interceptor.onUnhandledRequest`
+
+The strategy to use for [unhandled requests](/docs/zimic-interceptor/guides/http/8-unhandled-requests.md). If a request
+starts with the base URL of the interceptor, but no matching handler exists, this strategy will be used. If a function
+is provided, it will be called with the unhandled request
+
+**Type**: `UnhandledRequestStrategy | undefined`
+
+- **action**: `'bypass' | 'reject'`
+
+  The action to take when an unhandled request is intercepted. When set to `'bypass'`, the request will be allowed to
+  pass through and reach the real network. When set to `'reject'`, the request will be rejected with a network error.
+  [Local interceptor](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) can use `bypass` or `reject`,
+  while [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md) only support `reject`,
+  since unhandled requests that reach an [interceptor server](/docs/zimic-interceptor/cli/1-server.md) cannot be
+  bypassed.
+
+- **log**: `boolean` (default: `true`)
+
+  Whether to log unhandled requests to the console.
+
+**Related**:
+
+- [Unhandled requests](/docs/zimic-interceptor/guides/http/8-unhandled-requests.md)
+
+## `interceptor.auth`
+
+The options to authenticate a remote interceptor when connecting to an
+[interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is required if the interceptor server was started
+with the [`--tokens-dir` option](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-start).
+
+**Type**: `HttpInterceptorAuthOptions | undefined`
+
+- **token**: `string`
+
+  The authentication token to use.
+
+**Related**:
+
+- [Interceptor server authentication](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#interceptor-server-authentication)
+
+## `interceptor.platform`
+
+The platform the interceptor is running on. `null` if the interceptor is not running.
+
+**Type**: `HttpInterceptorPlatform | null` (readonly)
+
+## `interceptor.isRunning`
+
+Whether the interceptor is currently running and ready to use.
+
+**Type**: `boolean` (readonly)
+
+## `interceptor.start()`
+
+Starts the interceptor, allowing it to intercept HTTP requests.
+
+```ts
+await interceptor.start();
+```
+
+**Returns**: `Promise<void>`
+
+:::info INFO: <span>Local interceptors in browsers</span>
+
+If you are using a [local interceptor](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) in a
+**browser** environment, you must first
+[initialize a mock service worker](/docs/zimic-interceptor/cli/2-browser.md#zimic-interceptor-browser-init) in your
+public directory before starting the interceptor.
+
+:::
+
+:::info INFO: <span>Remote interceptors and interceptor servers</span>
+
+If you are using a [remote interceptor](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md), the
+`baseURL` should point to a running [interceptor server](/docs/zimic-interceptor/cli/1-server.md), which is configured
+by the interceptor to handle requests. Learn more about
+[starting remote HTTP interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#starting-an-interceptor).
+
+:::
+
+## `interceptor.stop()`
+
+Stops the interceptor, preventing it from intercepting HTTP requests. Stopped interceptors are automatically cleared,
+exactly as if [`interceptor.clear()`](#interceptorclear) had been called.
+
+```ts
+await interceptor.stop();
+```
+
+**Returns**: `Promise<void>`
+
+## Declaring request handlers
+
+After a request is intercepted, Zimic tries to find a handler that matches it, considering the base URL of the
+interceptor, and the method, path, [restrictions](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith),
+and [limits on the number of requests](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlertimes) of the
+handler.
+
+The handlers are checked from the **last** one created to the first one, so new handlers have preference over older
+ones. This allows you to declare generic and specific handlers based on their order of creation. For example, a generic
+handler for `GET /users` can return an empty list, while a specific handler in a test case can return a list with some
+users. In this case, the specific handler will be considered first as long as it is created **after** the generic one.
+
+**Related**:
+
+- [Using local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md)
+- [Using remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md)
+
+### `interceptor.get()`
+
+Creates a GET [`HttpRequestHandler`](/docs/zimic-interceptor/api/3-http-request-handler.mdx) for a path declared in the
+interceptor schema.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor.get(path);
+```
+
+**Arguments**:
+
+- **path**: `string`
+
+  The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the
+  original path as a type parameter to get type-inference and type-validation.
+
+**Returns**: `LocalHttpRequestHandler<Schema, 'GET', Path>`
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+interceptor.get(path);
+```
+
+**Arguments**:
+
+- **path**: `string`
+
+  The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the
+  original path as a type parameter to get type-inference and type-validation.
+
+**Returns**: `RemoteHttpRequestHandler<Schema, 'GET', Path>`
+
+  </TabItem>
+</Tabs>
+
+### `interceptor.post()`
+
+Creates a POST [`HttpRequestHandler`](/docs/zimic-interceptor/api/3-http-request-handler.mdx) for a path declared in the
+interceptor schema.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor.post(path);
+```
+
+**Arguments**:
+
+- **path**: `string`
+
+  The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the
+  original path as a type parameter to get type-inference and type-validation.
+
+**Returns**: `LocalHttpRequestHandler<Schema, 'POST', Path>`
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+interceptor.post(path);
+```
+
+**Arguments**:
+
+- **path**: `string`
+
+  The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the
+  original path as a type parameter to get type-inference and type-validation.
+
+**Returns**: `RemoteHttpRequestHandler<Schema, 'POST', Path>`
+
+  </TabItem>
+</Tabs>
+
+### `interceptor.put()`
+
+Creates a PUT [`HttpRequestHandler`](/docs/zimic-interceptor/api/3-http-request-handler.mdx) for a path declared in the
+interceptor schema.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor.put(path);
+```
+
+**Arguments**:
+
+- **path**: `string`
+
+  The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the
+  original path as a type parameter to get type-inference and type-validation.
+
+**Returns**: `LocalHttpRequestHandler<Schema, 'PUT', Path>`
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+interceptor.put(path);
+```
+
+**Arguments**:
+
+- **path**: `string`
+
+  The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the
+  original path as a type parameter to get type-inference and type-validation.
+
+**Returns**: `RemoteHttpRequestHandler<Schema, 'PUT', Path>`
+
+  </TabItem>
+</Tabs>
+
+### `interceptor.patch()`
+
+Creates a PATCH [`HttpRequestHandler`](/docs/zimic-interceptor/api/3-http-request-handler.mdx) for a path declared in
+the interceptor schema.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor.patch(path);
+```
+
+**Arguments**:
+
+- **path**: `string`
+
+  The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the
+  original path as a type parameter to get type-inference and type-validation.
+
+**Returns**: `LocalHttpRequestHandler<Schema, 'PATCH', Path>`
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+interceptor.patch(path);
+```
+
+**Arguments**:
+
+- **path**: `string`
+
+  The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the
+  original path as a type parameter to get type-inference and type-validation.
+
+**Returns**: `RemoteHttpRequestHandler<Schema, 'PATCH', Path>`
+
+  </TabItem>
+</Tabs>
+
+### `interceptor.delete()`
+
+Creates a DELETE [`HttpRequestHandler`](/docs/zimic-interceptor/api/3-http-request-handler.mdx) for a path declared in
+the interceptor schema.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor.delete(path);
+```
+
+**Arguments**:
+
+- **path**: `string`
+
+  The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the
+  original path as a type parameter to get type-inference and type-validation.
+
+**Returns**: `LocalHttpRequestHandler<Schema, 'DELETE', Path>`
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+interceptor.delete(path);
+```
+
+**Arguments**:
+
+- **path**: `string`
+
+  The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the
+  original path as a type parameter to get type-inference and type-validation.
+
+**Returns**: `RemoteHttpRequestHandler<Schema, 'DELETE', Path>`
+
+  </TabItem>
+</Tabs>
+
+### `interceptor.head()`
+
+Creates a HEAD [`HttpRequestHandler`](/docs/zimic-interceptor/api/3-http-request-handler.mdx) for a path declared in the
+interceptor schema.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor.head(path);
+```
+
+**Arguments**:
+
+- **path**: `string`
+
+  The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the
+  original path as a type parameter to get type-inference and type-validation.
+
+**Returns**: `LocalHttpRequestHandler<Schema, 'HEAD', Path>`
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+interceptor.head(path);
+```
+
+**Arguments**:
+
+- **path**: `string`
+
+  The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the
+  original path as a type parameter to get type-inference and type-validation.
+
+**Returns**: `RemoteHttpRequestHandler<Schema, 'HEAD', Path>`
+
+  </TabItem>
+</Tabs>
+
+### `interceptor.options()`
+
+Creates a OPTIONS [`HttpRequestHandler`](/docs/zimic-interceptor/api/3-http-request-handler.mdx) for a path declared in
+the interceptor schema.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor.options(path);
+```
+
+**Arguments**:
+
+- **path**: `string`
+
+  The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the
+  original path as a type parameter to get type-inference and type-validation.
+
+**Returns**: `LocalHttpRequestHandler<Schema, 'OPTIONS', Path>`
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+interceptor.options(path);
+```
+
+**Arguments**:
+
+- **path**: `string`
+
+  The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the
+  original path as a type parameter to get type-inference and type-validation.
+
+**Returns**: `RemoteHttpRequestHandler<Schema, 'OPTIONS', Path>`
+
+  </TabItem>
+</Tabs>
+
+## `interceptor.checkTimes()`
+
+Checks if all handlers created by this interceptor have matched the number of requests declared with
+[`handler.times()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlertimes).
+
+If some handler has matched fewer or more requests than expected, this method will throw a `TimesCheckError` error,
+including a stack trace to the [`handler.times()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlertimes)
+that was not satisfied.
+
+This is useful in an `afterEach` hook (or equivalent) to make sure that all expected requests were made at the end of
+each test.
+
+When [`requestSaving.enabled`](#interceptorrequestsaving) is `true` in your interceptor, the `TimesCheckError` errors
+will also list each unmatched request with diff of the expected and received data. This is useful for debugging requests
+that did not match a handler with [restrictions](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith).
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor.checkTimes();
+```
+
+**Returns**: `void`
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor.checkTimes();
+```
+
+**Returns**: `Promise<void>`
+
+  </TabItem>
+</Tabs>
+
+## `interceptor.clear()`
+
+Clears the interceptor and all of its [`HttpRequestHandler`](/docs/zimic-interceptor/api/3-http-request-handler.mdx)
+instances, including their registered responses and intercepted requests.
+
+After calling this method, the interceptor will no longer intercept any requests until new mock responses are
+registered. This is useful to reset the interceptor mocks between tests.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor.clear();
+```
+
+**Returns**: `void`
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor.clear();
+```
+
+**Returns**: `Promise<void>`
+
+  </TabItem>
+</Tabs>

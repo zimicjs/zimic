@@ -22,11 +22,7 @@ type PartialHttpHeadersOrSchema<Schema extends HttpHeadersSchema.Loose> = IfNeve
   Partial<Schema> | HttpHeaders<Partial<Schema>> | HttpHeaders<Schema>
 >;
 
-/**
- * A static headers restriction to match intercepted requests.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
- */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
 export type HttpRequestHandlerHeadersStaticRestriction<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
@@ -39,11 +35,7 @@ type PartialHttpSearchParamsOrSchema<Schema extends HttpSearchParamsSchema.Loose
   Partial<Schema> | HttpSearchParams<Partial<Schema>> | HttpSearchParams<Schema>
 >;
 
-/**
- * A static search params restriction to match intercepted requests.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
- */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
 export type HttpRequestHandlerSearchParamsStaticRestriction<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
@@ -59,68 +51,40 @@ type PartialBodyOrSchema<Body extends HttpBody> =
         ? Body
         : DeepPartial<Body>;
 
-/**
- * A static body restriction to match intercepted requests.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
- */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
 export type HttpRequestHandlerBodyStaticRestriction<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
 > = PartialBodyOrSchema<HttpRequestBodySchema<Default<Schema[Path][Method]>>>;
 
-/**
- * A static restriction to match intercepted requests.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
- */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
 export interface HttpRequestHandlerStaticRestriction<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
 > {
-  /**
-   * A set of headers that the intercepted request must contain to match the handler. If exact is `true`, the request
-   * must contain exactly these headers and no others.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
   headers?: HttpRequestHandlerHeadersStaticRestriction<Schema, Method, Path>;
 
-  /**
-   * A set of search params that the intercepted request must contain to match the handler. If exact is `true`, the
-   * request must contain exactly these search params and no others.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
   searchParams?: HttpRequestHandlerSearchParamsStaticRestriction<Schema, Method, Path>;
 
-  /**
-   * The body that the intercepted request must contain to match the handler. If exact is `true`, the request must
-   * contain exactly this body and no other.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
   body?: HttpRequestHandlerBodyStaticRestriction<Schema, Method, Path>;
 
-  /**
-   * If `true`, the request must contain **exactly** the headers, search params, and body declared in this restriction.
-   * Otherwise, the request must contain **at least** them.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
   exact?: boolean;
 }
 
-/**
- * A computed restriction to match intercepted requests.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
- */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
 export type HttpRequestHandlerComputedRestriction<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
 > = (request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) => PossiblePromise<boolean>;
 
-/**
- * A restriction to match intercepted requests.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
- */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
 export type HttpRequestHandlerRestriction<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
