@@ -4,4 +4,7 @@
 >
 > Zimic's documentation is now available on [zimic.dev](https://zimic.dev)! :tada:
 
-See https://zimic.dev/docs/fetch/api and https://zimic.dev/docs/fetch/guildes.
+**See**:
+
+- [`@zimic/fetch` API reference](https://zimic.dev/docs/fetch/api)
+- [`@zimic/fetch` guides](https://zimic.dev/docs/fetch/guides)

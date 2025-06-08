@@ -179,7 +179,7 @@ responses.
 :::
 
 If you need to access the requests processed by the interceptor, use
-[`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrequests).
+[`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrequests).
 
 ```ts
 // highlight-next-line

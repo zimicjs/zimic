@@ -6,8 +6,7 @@ slug: /interceptor/api/interceptor-server
 
 # `InterceptorServer`
 
-An [interceptor server](/docs/zimic-interceptor/api/5-interceptor-server.md) can be used to handle requests and return
-mock responses in combination with
+An interceptor server can be used to handle requests and return mock responses in combination with
 [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md), which declare the responses
 the server should return for a given request. Interceptor servers and remote interceptors communicate with
 [remote-procedure calls](https://en.wikipedia.org/wiki/Remote_procedure_call) (RPC) over

@@ -4,4 +4,6 @@
 >
 > Zimic's documentation is now available on [zimic.dev](https://zimic.dev)! :tada:
 
-See https://zimic.dev/docs/interceptor/guides/testing.
+**See**:
+
+- [`@zimic/interceptor` testing guide](https://zimic.dev/docs/interceptor/guides/testing)

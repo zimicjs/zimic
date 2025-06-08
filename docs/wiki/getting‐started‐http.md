@@ -4,4 +4,6 @@
 >
 > Zimic's documentation is now available on [zimic.dev](https://zimic.dev/docs/http/getting-started)! :tada:
 
-See https://zimic.dev/docs/http/getting-started.
+**See**:
+
+- [Getting started with `@zimic/http`](https://zimic.dev/docs/http/getting-started)

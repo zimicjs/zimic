@@ -45,9 +45,9 @@ type Schema = HttpSchema<{
 ```
 
 Then, the request headers will be available in the `headers` property, such as in
-[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith),
-[computed responses](/docs/zimic-interceptor/api/3-http-request-handler.md#computed-responses), and
-[`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrequests). The headers are typed and
+[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith),
+[computed responses](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrespond), and
+[`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrequests). The headers are typed and
 validated according to your schema, providing type safety and autocompletion.
 
 <Tabs groupId="zimic-http-interceptor-type">
@@ -159,7 +159,7 @@ type Schema = HttpSchema<{
 ```
 
 When sending a response to an intercepted request, you can set the headers in the
-[`handler.respond`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrespond) method with the `headers`
+[`handler.respond`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrespond) method with the `headers`
 property.
 
 <Tabs groupId="zimic-http-interceptor-type">

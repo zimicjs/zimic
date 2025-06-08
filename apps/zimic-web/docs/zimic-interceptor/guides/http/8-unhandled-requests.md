@@ -46,7 +46,7 @@ If you expected a request to be handled, but it was not, make sure that:
    of the request URL;
 3. The [path and method](/docs/zimic-interceptor/api/2-http-interceptor.mdx#declaring-request-handlers) of the handler
    are correct;
-4. The [restrictions](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith) of the handler, if present,
+4. The [restrictions](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith) of the handler, if present,
    correctly match the request;
 5. No errors occurred while creating the response.
 

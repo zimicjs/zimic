@@ -4,4 +4,6 @@
 >
 > Zimic's documentation is now available on [zimic.dev](https://zimic.dev)! :tada:
 
-See https://zimic.dev/docs/cli.
+**See**:
+
+- [Zimic CLI reference](https://zimic.dev/docs/cli)
