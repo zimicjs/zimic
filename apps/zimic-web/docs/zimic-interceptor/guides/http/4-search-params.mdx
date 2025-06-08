@@ -49,10 +49,10 @@ type Schema = HttpSchema<{
 ```
 
 Then, the request search params will be available in the `searchParams` property, such as in
-[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith),
-[computed responses](/docs/zimic-interceptor/api/3-http-request-handler.md#computed-responses), and
-[`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrequests). The search params are typed
-and validated according to your schema, providing type safety and autocompletion.
+[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith),
+[computed responses](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrespond), and
+[`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrequests). The search params are
+typed and validated according to your schema, providing type safety and autocompletion.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">

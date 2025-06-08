@@ -1,11 +1,9 @@
+# Getting started
+
 > [!TIP]
 >
 > Zimic's documentation is now available on [zimic.dev](https://zimic.dev/docs/getting-started)! :tada:
->
-> Check it out for the latest updates, guides, and documentation.
 
-# Getting started
+**See**:
 
-- [`@zimic/http`](getting‐started‐http)
-- [`@zimic/fetch`](getting‐started‐fetch)
-- [`@zimic/interceptor`](getting‐started‐interceptor)
+- [Getting started with Zimic](https://zimic.dev/docs/getting-started)

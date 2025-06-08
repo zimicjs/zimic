@@ -16,9 +16,9 @@ manually check all requests.
 
 ## Restrictions
 
-Restrictions can be declared using [`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith)
-and specify conditions expected for the intercepted requests. These include
-[headers](/docs/zimic-interceptor/guides/http/3-headers.mdx),
+Restrictions can be declared using
+[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith) and specify conditions expected
+for the intercepted requests. These include [headers](/docs/zimic-interceptor/guides/http/3-headers.mdx),
 [search params](/docs/zimic-interceptor/guides/http/4-search-params.mdx), and
 [bodies](/docs/zimic-interceptor/guides/http/6-bodies.mdx). A handler can have multiple restrictions, and all of them
 must be met for the request to be matched and receive the mock response.
@@ -28,8 +28,8 @@ Restrictions are available in two forms: static and computed.
 ### Static restrictions
 
 Static restrictions are defined by passing an object to the
-[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith) method. The object can contain the
-properties `headers`, `searchParams`, and `body`, which are used to check the intercepted requests.
+[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith) method. The object can contain
+the properties `headers`, `searchParams`, and `body`, which are used to check the intercepted requests.
 
 #### Static header restrictions
 
@@ -161,7 +161,7 @@ await interceptor
 ### Computed restrictions
 
 Computed restrictions support more complex or dynamic conditions. They are defined by passing a function to the
-[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith) method. The function receives the
+[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith) method. The function receives the
 intercepted request as an argument and returns a boolean value indicating whether the request matches the restriction.
 
 <Tabs groupId="zimic-http-interceptor-type">
@@ -265,7 +265,7 @@ await interceptor
 
 By default, restrictions are partial (`exact: false`), so requests having additional properties still match the handler
 as long as **at least** the restrictions are met. If you want to enforce exact matching, use `exact: true` in the
-[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerwith) method.
+[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith) method.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -308,7 +308,7 @@ await interceptor
 ## Number of requests
 
 Another form of checking the behavior of your application is to assert the number of requests it makes. To achieve this,
-use [`handler.times()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlertimes), which takes a number or a
+use [`handler.times()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlertimes), which takes a number or a
 range of numbers as an argument and specifies how many requests the handler should match. If the application makes more
 requests than expected, they may be handled by the next handler in the chain or unhandled. To learn more about how
 `@zimic/interceptor` matches requests and how unhandled requests are processed, check our
@@ -346,9 +346,9 @@ await interceptor
   </TabItem>
 </Tabs>
 
-[`handler.times()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlertimes) on its own only restricts how
+[`handler.times()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlertimes) on its own only restricts how
 many requests the handler should match. To really validate the number of requests, use
-[`handler.checkTimes()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerchecktimes) or
+[`handler.checkTimes()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerchecktimes) or
 [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes) at a point when
 your application should have made the requests, such as after a specific action or at the end of a test.
 
@@ -396,7 +396,7 @@ A common strategy is to call
 [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes) in an `afterEach`
 test hook. This way, you can declare how many requests you expect in each handler and have them validated automatically
 without needing to call
-[`handler.checkTimes()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerchecktimes) in each test.
+[`handler.checkTimes()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerchecktimes) in each test.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">

@@ -30,7 +30,7 @@ createHttpInterceptor<Schema>(options);
    - **baseURL**: `string`
 
      Represents the URL that should be matched by the interceptor. Any request starting with this base URL will be
-     intercepted if a matching [handler](/docs/zimic-interceptor/api/3-http-request-handler.md) exists. For
+     intercepted if a matching [handler](/docs/zimic-interceptor/api/3-http-request-handler.mdx) exists. For
      [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md), this base URL should
      point to an [interceptor server](/docs/zimic-interceptor/cli/1-server.md), optionally including
      [path discriminators](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#path-discriminators).
@@ -41,13 +41,13 @@ createHttpInterceptor<Schema>(options);
 
      - **enabled**: `boolean | undefined` (default: `process.env.NODE_ENV === 'test'`)
 
-       Whether [request handlers](/docs/zimic-interceptor/api/3-http-request-handler.md) should save their intercepted
+       Whether [request handlers](/docs/zimic-interceptor/api/3-http-request-handler.mdx) should save their intercepted
        requests in memory and make them accessible through
-       [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerrequests).
+       [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrequests).
 
        If you are using
        [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes) or
-       [`handler.checkTimes()`](/docs/zimic-interceptor/api/3-http-request-handler.md#handlerchecktimes) during tests,
+       [`handler.checkTimes()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerchecktimes) during tests,
        consider enabling this option to get more detailed information in `TimesCheckError` errors.
 
        :::info INFO: <span>Clearing the interceptor when saving requests</span>

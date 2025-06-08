@@ -1,9 +1,16 @@
-title: InterceptorServer | @zimic/interceptor sidebar_label: InterceptorServer slug: /interceptor/api/interceptor-server
+---
+title: InterceptorServer | @zimic/interceptor
+sidebar_label: InterceptorServer
+slug: /interceptor/api/interceptor-server
+---
 
 # `InterceptorServer`
 
-A server to intercept and handle requests. It is used in combination with
-[remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md).
+An interceptor server can be used to handle requests and return mock responses in combination with
+[remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md), which declare the responses
+the server should return for a given request. Interceptor servers and remote interceptors communicate with
+[remote-procedure calls](https://en.wikipedia.org/wiki/Remote_procedure_call) (RPC) over
+[WebSocket](https://developer.mozilla.org/docs/Web/API/WebSockets_API).
 
 **Related**:
 
