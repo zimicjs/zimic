@@ -35,7 +35,7 @@ pnpm typegen:github
 > Typegen filters are useful to select only a subset of the available endpoints. The GitHub's API is large and we only
 > need to generate the types used by this project.
 >
-> Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen#zimic-typegen-openapi-filtering
+> Learn more: https://zimic.dev/docs/http/cli/typegen#openapi-filtering
 
 `@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked
 with `@zimic/interceptor`.
