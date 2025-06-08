@@ -9,8 +9,8 @@ This example uses Zimic with [Playwright](https://playwright.dev) in end-to-end 
   - [`@zimic/interceptor`](#zimicinterceptor)
   - [Configuration](#configuration)
 - [Try it](#try-it)
-  - [CodeSandbox](#codesandbox)
   - [StackBlitz](#stackblitz)
+  - [CodeSandbox](#codesandbox)
   - [Cloning locally](#cloning-locally)
 - [Running](#running)
 

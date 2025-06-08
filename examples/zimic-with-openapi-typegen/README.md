@@ -11,8 +11,8 @@ runtimes should be similar, such as [Deno](https://deno.com), [Bun](https://bun.
   - [`@zimic/interceptor`](#zimicinterceptor)
   - [Configuration](#configuration)
 - [Try it](#try-it)
-  - [CodeSandbox](#codesandbox)
   - [StackBlitz](#stackblitz)
+  - [CodeSandbox](#codesandbox)
   - [Cloning locally](#cloning-locally)
 - [Running](#running)
 
