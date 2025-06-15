@@ -92,6 +92,13 @@
   --error-code-background-color: #3f1f2d;
   --error-code-border-color: #9c2d37;
 
+  --docsearch-searchbox-background: var(--ifm-background-color);
+  --docsearch-searchbox-focus-background: var(--ifm-color-black);
+
+  --docsearch-hit-color: var(--ifm-font-color-base);
+  --docsearch-hit-active-color: var(--color-white-light);
+  --docsearch-muted-color: color-mix(in oklab, var(--color-white-light) 70%, transparent);
+
   .navbar {
     border-bottom: 1px solid var(--ifm-color-gray-800);
   }
@@ -280,6 +287,48 @@ textarea {
   div:nth-child(1) {
     span {
       text-transform: none;
+    }
+  }
+}
+
+.DocSearch-Button {
+  @apply dark:bg-primary-600/30 dark:hover:bg-primary-600/50 dark:focus-visible:ring-primary-300 dark:active:bg-primary-600/30 focus-visible:ring-primary-300 dark:hover:border-primary-500 dark:border-primary-600/70 dark:active:border-primary-600 dark:text-white-light border-white-dark bg-white-dark active:border-white-dark active:bg-white-dark cursor-pointer rounded-lg border-2 py-1.5 pl-3 pr-4 text-center font-semibold text-slate-500 outline-none transition-all hover:border-slate-200 hover:bg-slate-200 hover:ring-0 focus-visible:ring-2;
+
+  .DocSearch-Button-Container {
+    @apply flex space-x-2;
+  }
+
+  .DocSearch-Search-Icon {
+    @apply h-4.5 w-4.5 text-current;
+  }
+
+  .DocSearch-Button-Keys {
+    @apply hidden;
+  }
+
+  .DocSearch-Button-Placeholder {
+    @apply p-0;
+  }
+}
+
+.DocSearch-Form {
+  @apply h-12 rounded-lg;
+
+  .DocSearch-MagnifierLabel {
+    @apply h-5 w-5;
+  }
+
+  .DocSearch-Input {
+    @apply text-base;
+  }
+}
+
+.DocSearch-Hit {
+  &[aria-selected='true'] a {
+    background-color: color-mix(in oklab, var(--color-primary-500) 70%, transparent);
+
+    * {
+      background-color: transparent;
     }
   }
 }
