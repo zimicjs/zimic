@@ -130,7 +130,7 @@ describe('Fetch client', async () => {
 
         const createdUser = await response.json();
         expect(createdUser).toEqual<JSONSerialized<User>>({
-          id: expect.any(String),
+          id: expect.any(String) as string,
           name: creationPayload.name,
           email: creationPayload.email,
           birthDate: creationPayload.birthDate,

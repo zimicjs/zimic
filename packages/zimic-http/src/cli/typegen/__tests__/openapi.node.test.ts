@@ -215,7 +215,7 @@ describe('Type generation (OpenAPI)', () => {
     ) {
       if (fixtureCase.shouldWriteToStdout) {
         expect(processWriteSpy).toHaveBeenCalledTimes(1);
-        expect(processWriteSpy).toHaveBeenCalledWith(expect.any(String), 'utf-8', expect.any(Function));
+        expect(processWriteSpy).toHaveBeenCalledWith(expect.any(String) as string, 'utf-8', expect.any(Function));
         return processWriteSpy.mock.calls[0][0].toString();
       } else {
         expect(processWriteSpy).toHaveBeenCalledTimes(0);
