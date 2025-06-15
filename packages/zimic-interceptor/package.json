@@ -95,7 +95,7 @@
     "@whatwg-node/server": "0.10.10",
     "execa": "9.6.0",
     "isomorphic-ws": "5.0.0",
-    "msw": "2.10.1",
+    "msw": "2.10.2",
     "picocolors": "^1.1.1",
     "ws": "8.18.2",
     "yargs": "17.7.2",
