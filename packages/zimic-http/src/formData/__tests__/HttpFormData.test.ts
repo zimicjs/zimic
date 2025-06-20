@@ -15,7 +15,7 @@ describe('HttpFormData', async () => {
 
   const description = 'description';
 
-  it('should support being created with a loose schema', () => {
+  it('should support being created with a loose schema', async () => {
     const formData = new HttpFormData<{
       name: string;
       description: string;
@@ -57,13 +57,17 @@ describe('HttpFormData', async () => {
 
     formData.set('blob', blob);
 
-    const blobField = formData.getAll('blob');
-    expectTypeOf(blobField).toEqualTypeOf<File[]>();
-    expect(blobField).toEqual([new File([blob], '', { type: 'text/plain' })]);
-    expect(['blob', 'undefined']).toContain(blobField[0].name);
+    const blobFields = formData.getAll('blob');
+    expectTypeOf(blobFields).toEqualTypeOf<File[]>();
+
+    expect(blobFields).toHaveLength(1);
+    expect(blobFields[0].name).toEqual(expect.any(String));
+    expect(blobFields[0].type).toEqual(blob.type);
+    expect(blobFields[0].size).toEqual(blob.size);
+    expect(await blobFields[0].arrayBuffer()).toEqual(await blob.arrayBuffer());
   });
 
-  it('should support setting form data fields fields', () => {
+  it('should support setting form data fields fields', async () => {
     const formData = new HttpFormData<{
       file?: File;
       blob: Blob[];
@@ -79,17 +83,21 @@ describe('HttpFormData', async () => {
 
     formData.set('blob', blob);
 
-    let blobField = formData.getAll('blob');
-    expectTypeOf(blobField).toEqualTypeOf<File[]>();
-    expect(blobField).toEqual([new File([blob], '', { type: 'text/plain' })]);
-    expect(['blob', 'undefined']).toContain(blobField[0].name);
+    let blobFields = formData.getAll('blob');
+    expectTypeOf(blobFields).toEqualTypeOf<File[]>();
+
+    expect(blobFields).toHaveLength(1);
+    expect(blobFields[0].name).toEqual(expect.any(String));
+    expect(blobFields[0].type).toEqual(blob.type);
+    expect(blobFields[0].size).toEqual(blob.size);
+    expect(await blobFields[0].arrayBuffer()).toEqual(await blob.arrayBuffer());
 
     formData.set('blob', blob, blobName);
 
-    blobField = formData.getAll('blob');
-    expectTypeOf(blobField).toEqualTypeOf<File[]>();
-    expect(blobField).toEqual([new File([blob], 'blob.txt', { type: 'text/plain' })]);
-    expect(blobField[0].name).toBe(blobName);
+    blobFields = formData.getAll('blob');
+    expectTypeOf(blobFields).toEqualTypeOf<File[]>();
+    expect(blobFields).toEqual([new File([blob], 'blob.txt', { type: 'text/plain' })]);
+    expect(blobFields[0].name).toBe(blobName);
 
     formData.set('description', description);
 
@@ -105,7 +113,7 @@ describe('HttpFormData', async () => {
     expect(otherDescriptionField).toEqual(otherDescription);
   });
 
-  it('should support appending form data fields', () => {
+  it('should support appending form data fields', async () => {
     const formData = new HttpFormData<{
       file?: File;
       blob: Blob[];
@@ -121,21 +129,30 @@ describe('HttpFormData', async () => {
 
     formData.append('blob', blob);
 
-    let blobField = formData.getAll('blob');
-    expectTypeOf(blobField).toEqualTypeOf<File[]>();
-    expect(blobField).toEqual([new File([blob], '', { type: 'text/plain' })]);
-    expect(['blob', 'undefined']).toContain(blobField[0].name);
+    let blobFields = formData.getAll('blob');
+    expectTypeOf(blobFields).toEqualTypeOf<File[]>();
+
+    expect(blobFields).toHaveLength(1);
+    expect(blobFields[0].name).toEqual(expect.any(String));
+    expect(blobFields[0].type).toEqual(blob.type);
+    expect(blobFields[0].size).toEqual(blob.size);
+    expect(await blobFields[0].arrayBuffer()).toEqual(await blob.arrayBuffer());
 
     formData.append('blob', blob, blobName);
 
-    blobField = formData.getAll('blob');
-    expectTypeOf(blobField).toEqualTypeOf<File[]>();
-    expect(blobField).toEqual([
-      new File([blob], '', { type: 'text/plain' }),
-      new File([blob], 'blob.txt', { type: 'text/plain' }),
-    ]);
-    expect(['blob', 'undefined']).toContain(blobField[0].name);
-    expect(blobField[1].name).toBe(blobName);
+    blobFields = formData.getAll('blob');
+    expectTypeOf(blobFields).toEqualTypeOf<File[]>();
+    expect(blobFields).toHaveLength(2);
+
+    expect(blobFields[0].name).toEqual(expect.any(String));
+    expect(blobFields[0].type).toEqual(blob.type);
+    expect(blobFields[0].size).toEqual(blob.size);
+    expect(await blobFields[0].arrayBuffer()).toEqual(await blob.arrayBuffer());
+
+    expect(blobFields[1].name).toBe(blobName);
+    expect(blobFields[1].type).toEqual(blob.type);
+    expect(blobFields[1].size).toEqual(blob.size);
+    expect(await blobFields[1].arrayBuffer()).toEqual(await blob.arrayBuffer());
 
     formData.append('description', description);
 
@@ -144,7 +161,7 @@ describe('HttpFormData', async () => {
     expect(descriptionField).toEqual(description);
   });
 
-  it('should support getting form data fields', () => {
+  it('should support getting form data fields', async () => {
     const formData = new HttpFormData<{
       file?: File;
       blob: Blob[];
@@ -166,10 +183,14 @@ describe('HttpFormData', async () => {
     // @ts-expect-error `get` not allow accessing array fields
     formData.get('blob');
 
-    const blobField = formData.getAll('blob');
-    expectTypeOf(blobField).toEqualTypeOf<File[]>();
-    expect(blobField).toEqual([new File([blob], '', { type: 'text/plain' })]);
-    expect(['blob', 'undefined']).toContain(blobField[0].name);
+    const blobFields = formData.getAll('blob');
+    expectTypeOf(blobFields).toEqualTypeOf<File[]>();
+    expect(blobFields).toHaveLength(1);
+
+    expect(blobFields[0].name).toEqual(expect.any(String));
+    expect(blobFields[0].type).toEqual(blob.type);
+    expect(blobFields[0].size).toEqual(blob.size);
+    expect(await blobFields[0].arrayBuffer()).toEqual(await blob.arrayBuffer());
 
     formData.set('description', description);
 
@@ -256,7 +277,7 @@ describe('HttpFormData', async () => {
     expect(formData.has('description')).toBe(false);
   });
 
-  it('should support iterating over form data fields', () => {
+  it('should support iterating over form data fields', async () => {
     const formData = new HttpFormData<{
       file?: File;
       blob: Blob[];
@@ -271,18 +292,31 @@ describe('HttpFormData', async () => {
     const fields = Array.from(formData);
     expectTypeOf(fields).toEqualTypeOf<['file' | 'blob' | 'description', File | string][]>();
 
+    const blobFields = formData.getAll('blob');
+    expect(blobFields).toHaveLength(2);
+
+    expect(blobFields[0].name).toEqual(expect.any(String));
+    expect(blobFields[0].type).toEqual(blob.type);
+    expect(blobFields[0].size).toEqual(blob.size);
+    expect(await blobFields[0].arrayBuffer()).toEqual(await blob.arrayBuffer());
+
+    expect(blobFields[1].name).toBe(blobName);
+    expect(blobFields[1].type).toEqual(blob.type);
+    expect(blobFields[1].size).toEqual(blob.size);
+    expect(await blobFields[1].arrayBuffer()).toEqual(await blob.arrayBuffer());
+
     expect(fields).toHaveLength(4);
     expect(fields).toEqual(
       expect.arrayContaining([
         ['file', file],
-        ['blob', new File([blob], '', { type: 'text/plain' })],
-        ['blob', new File([blob], 'blob.txt', { type: 'text/plain' })],
+        ['blob', blobFields[0]],
+        ['blob', blobFields[1]],
         ['description', description],
       ]),
     );
   });
 
-  it('should support iterating over formData using `forEach`', () => {
+  it('should support iterating over formData using `forEach`', async () => {
     const formData = new HttpFormData<{
       file?: File;
       blob: Blob[];
@@ -299,12 +333,25 @@ describe('HttpFormData', async () => {
       fields.push([key, value]);
     });
 
+    const blobFields = formData.getAll('blob');
+    expect(blobFields).toHaveLength(2);
+
+    expect(blobFields[0].name).toEqual(expect.any(String));
+    expect(blobFields[0].type).toEqual(blob.type);
+    expect(blobFields[0].size).toEqual(blob.size);
+    expect(await blobFields[0].arrayBuffer()).toEqual(await blob.arrayBuffer());
+
+    expect(blobFields[1].name).toBe(blobName);
+    expect(blobFields[1].type).toEqual(blob.type);
+    expect(blobFields[1].size).toEqual(blob.size);
+    expect(await blobFields[1].arrayBuffer()).toEqual(await blob.arrayBuffer());
+
     expect(fields).toHaveLength(4);
     expect(fields).toEqual(
       expect.arrayContaining([
         ['file', file],
-        ['blob', new File([blob], '', { type: 'text/plain' })],
-        ['blob', new File([blob], 'blob.txt', { type: 'text/plain' })],
+        ['blob', blobFields[0]],
+        ['blob', blobFields[1]],
         ['description', description],
       ]),
     );
@@ -329,7 +376,7 @@ describe('HttpFormData', async () => {
     expect(keys).toEqual(expect.arrayContaining(['file', 'blob', 'blob', 'description']));
   });
 
-  it('should support getting values', () => {
+  it('should support getting values', async () => {
     const formData = new HttpFormData<{
       file?: File;
       blob: Blob[];
@@ -340,22 +387,28 @@ describe('HttpFormData', async () => {
     formData.append('blob', blob);
     formData.append('blob', blob, blobName);
     formData.set('description', description);
+
+    const blobFields = formData.getAll('blob');
+    expect(blobFields).toHaveLength(2);
+
+    expect(blobFields[0].name).toEqual(expect.any(String));
+    expect(blobFields[0].type).toEqual(blob.type);
+    expect(blobFields[0].size).toEqual(blob.size);
+    expect(await blobFields[0].arrayBuffer()).toEqual(await blob.arrayBuffer());
+
+    expect(blobFields[1].name).toBe(blobName);
+    expect(blobFields[1].type).toEqual(blob.type);
+    expect(blobFields[1].size).toEqual(blob.size);
+    expect(await blobFields[1].arrayBuffer()).toEqual(await blob.arrayBuffer());
 
     const values = Array.from(formData.values());
     expectTypeOf(values).toEqualTypeOf<(File | string)[]>();
 
     expect(values).toHaveLength(4);
-    expect(values).toEqual(
-      expect.arrayContaining([
-        file,
-        new File([blob], '', { type: 'text/plain' }),
-        new File([blob], 'blob.txt', { type: 'text/plain' }),
-        description,
-      ]),
-    );
+    expect(values).toEqual(expect.arrayContaining([file, blobFields[0], blobFields[1], description]));
   });
 
-  it('should support getting entries', () => {
+  it('should support getting entries', async () => {
     const formData = new HttpFormData<{
       file?: File;
       blob: Blob[];
@@ -366,6 +419,19 @@ describe('HttpFormData', async () => {
     formData.append('blob', blob);
     formData.append('blob', blob, blobName);
     formData.set('description', description);
+
+    const blobFields = formData.getAll('blob');
+    expect(blobFields).toHaveLength(2);
+
+    expect(blobFields[0].name).toEqual(expect.any(String));
+    expect(blobFields[0].type).toEqual(blob.type);
+    expect(blobFields[0].size).toEqual(blob.size);
+    expect(await blobFields[0].arrayBuffer()).toEqual(await blob.arrayBuffer());
+
+    expect(blobFields[1].name).toBe(blobName);
+    expect(blobFields[1].type).toEqual(blob.type);
+    expect(blobFields[1].size).toEqual(blob.size);
+    expect(await blobFields[1].arrayBuffer()).toEqual(await blob.arrayBuffer());
 
     const entries = Array.from(formData.entries());
     expectTypeOf(entries).toEqualTypeOf<['file' | 'blob' | 'description', File | string][]>();
@@ -374,8 +440,8 @@ describe('HttpFormData', async () => {
     expect(entries).toEqual(
       expect.arrayContaining([
         ['file', file],
-        ['blob', new File([blob], '', { type: 'text/plain' })],
-        ['blob', new File([blob], 'blob.txt', { type: 'text/plain' })],
+        ['blob', blobFields[0]],
+        ['blob', blobFields[1]],
         ['description', description],
       ]),
     );
