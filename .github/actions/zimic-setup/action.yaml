@@ -49,12 +49,18 @@ runs:
 
     - name: Restore pnpm cache
       id: pnpm-cache
-      uses: actions/cache@v4
+      uses: actions/cache/restore@v4
       with:
         path: ${{ steps.pnpm-store.outputs.path }}
         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
         restore-keys: |
           ${{ runner.os }}-pnpm-store-
+
+    - name: Restore turbo cache
+      uses: actions/cache/restore@v4
+      with:
+        path: .turbo
+        key: ${{ runner.os }}-turbo
 
     - name: Install dependencies
       id: install-dependencies
@@ -103,7 +109,7 @@ runs:
         TURBO_TEAM: ${{ inputs.turbo-team }}
         TURBO_LOG_ORDER: stream
 
-    - name: Save dependency cache
+    - name: Save pnpm cache
       uses: actions/cache/save@v4
       if: ${{ steps.pnpm-cache.outputs.cache-hit != 'true' }}
       with:
