@@ -452,9 +452,14 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
               body: restrictedFormData,
               exact: true,
             })
-            .respond((request) => {
+            .respond(async (request) => {
               expectTypeOf(request.body).toEqualTypeOf<HttpFormData<RequestFormDataSchema>>();
-              expect(request.body).toEqual(restrictedFormData);
+
+              const receivedTagFile = request.body.get('tag');
+              expect(receivedTagFile.name).toBe(tagFile.name);
+              expect(receivedTagFile.type).toBe(tagFile.type);
+              expect(receivedTagFile.size).toBe(tagFile.size);
+              expect(await receivedTagFile.arrayBuffer()).toEqual(await tagFile.arrayBuffer());
 
               return { status: 200 };
             }),
