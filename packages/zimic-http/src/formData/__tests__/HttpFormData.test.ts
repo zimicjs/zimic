@@ -96,8 +96,11 @@ describe('HttpFormData', async () => {
 
     blobFields = formData.getAll('blob');
     expectTypeOf(blobFields).toEqualTypeOf<File[]>();
-    expect(blobFields).toEqual([new File([blob], 'blob.txt', { type: 'text/plain' })]);
+    expect(blobFields).toHaveLength(1);
     expect(blobFields[0].name).toBe(blobName);
+    expect(blobFields[0].type).toEqual(blob.type);
+    expect(blobFields[0].size).toEqual(blob.size);
+    expect(await blobFields[0].arrayBuffer()).toEqual(await blob.arrayBuffer());
 
     formData.set('description', description);
 

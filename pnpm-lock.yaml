@@ -178,8 +178,6 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
 
-  docs/wiki: {}
-
   examples:
     dependencies:
       '@zimic/fetch':
