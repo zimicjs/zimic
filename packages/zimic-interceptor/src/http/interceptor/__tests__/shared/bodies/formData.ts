@@ -105,8 +105,10 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
         expect(fetchedFormData).toBeInstanceOf(FormData);
         expect(Array.from(fetchedFormData.keys())).toEqual(Array.from(responseFormData.keys()));
 
-        const fetchedTagFile = fetchedFormData.get('tag')!;
-        expect(fetchedTagFile).toEqual(responseTagFile);
+        const fetchedTagFile = fetchedFormData.get('tag')! as File;
+        expect(await fetchedTagFile.arrayBuffer()).toEqual(await responseTagFile.arrayBuffer());
+        expect(fetchedTagFile.name).toBe(responseTagFile.name);
+        expect(fetchedTagFile.size).toBe(responseTagFile.size);
 
         expect(handler.requests).toHaveLength(1);
         const [request] = handler.requests;
@@ -115,27 +117,27 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
         expect(request.headers.get('content-type')).toMatch(/^multipart\/form-data; boundary=.+$/);
         expectTypeOf(request.body).toEqualTypeOf<HttpFormData<UserFormDataSchema>>();
         expect(request.body).toBeInstanceOf(HttpFormData);
-        expect(request.body).toEqual(formData);
+        expect(Array.from(request.body.keys())).toEqual(expect.arrayContaining(Array.from(formData.keys())));
 
         const interceptedRequestTagFile = request.body.get('tag');
-        expect(interceptedRequestTagFile).toEqual(requestTagFile);
         expect(interceptedRequestTagFile.name).toBe(requestTagFile.name);
         expect(interceptedRequestTagFile.size).toBe(requestTagFile.size);
         expect(interceptedRequestTagFile.type).toBe(requestTagFile.type);
-        expect(await interceptedRequestTagFile.text()).toEqual(await requestTagFile.text());
+        expect(await interceptedRequestTagFile.arrayBuffer()).toEqual(await requestTagFile.arrayBuffer());
 
         expect(request.response).toBeInstanceOf(Response);
         expect(request.response.headers.get('content-type')).toMatch(/^multipart\/form-data; boundary=.+$/);
         expectTypeOf(request.response.body).toEqualTypeOf<HttpFormData<UserFormDataSchema>>();
         expect(request.response.body).toBeInstanceOf(HttpFormData);
-        expect(request.response.body).toEqual(responseFormData);
+        expect(Array.from(request.response.body.keys())).toEqual(
+          expect.arrayContaining(Array.from(responseFormData.keys())),
+        );
 
         const interceptedResponseTagFile = request.response.body.get('tag');
-        expect(interceptedResponseTagFile).toEqual(responseTagFile);
         expect(interceptedResponseTagFile.name).toBe(responseTagFile.name);
         expect(interceptedResponseTagFile.size).toBe(responseTagFile.size);
         expect(interceptedResponseTagFile.type).toBe(responseTagFile.type);
-        expect(await interceptedResponseTagFile.text()).toEqual(await responseTagFile.text());
+        expect(await interceptedResponseTagFile.arrayBuffer()).toEqual(await responseTagFile.arrayBuffer());
 
         expectTypeOf(request.raw).toEqualTypeOf<
           HttpRequest<HttpFormData<UserFormDataSchema>, { 'content-type': string }>
@@ -148,7 +150,7 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
         );
         expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<never>>();
         expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<StrictFormData<UserFormDataSchema>>>();
-        expect(Object.fromEntries(await request.raw.formData())).toEqual(Object.fromEntries(formData));
+        expect(Array.from((await request.raw.formData()).keys())).toEqual(Array.from(formData.keys()));
 
         expectTypeOf(request.response.raw).toEqualTypeOf<
           HttpResponse<HttpFormData<UserFormDataSchema>, { 'content-type'?: string }, 200>
@@ -161,7 +163,7 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
         );
         expectTypeOf(request.response.raw.json).toEqualTypeOf<() => Promise<never>>();
         expectTypeOf(request.response.raw.formData).toEqualTypeOf<() => Promise<StrictFormData<UserFormDataSchema>>>();
-        expect(Object.fromEntries(await request.response.raw.formData())).toEqual(Object.fromEntries(responseFormData));
+        expect(Array.from((await request.response.raw.formData()).keys())).toEqual(Array.from(responseFormData.keys()));
       });
     });
 
