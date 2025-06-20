@@ -30,7 +30,7 @@
     "provenance": true
   },
   "engines": {
-    "node": ">=18.13.0"
+    "node": ">=20.0.0"
   },
   "license": "MIT",
   "files": [
