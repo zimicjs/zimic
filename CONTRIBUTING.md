@@ -95,8 +95,6 @@ structured as follows:
   - `zimic-test-client`: Test application to check Zimic installed as a dependency; important to verify the library
     exports and build artifacts;
 - `examples`: Example projects using Zimic;
-- `docs`
-  - `wiki`: Documentation (wiki) pages for the project;
 
 ## Implementing changes
 
