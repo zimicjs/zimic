@@ -12,12 +12,12 @@
     "@zimic/http": "latest"
   },
   "devDependencies": {
-    "@jest/globals": "^30.0.0",
-    "@swc/core": "^1.11.24",
+    "@jest/globals": "^30.0.2",
+    "@swc/core": "^1.12.4",
     "@swc/jest": "^0.2.38",
     "@zimic/interceptor": "latest",
     "dotenv-cli": "^8.0.0",
-    "jest": "^30.0.0",
+    "jest": "^30.0.2",
     "typescript": "^5.8.3"
   }
 }
