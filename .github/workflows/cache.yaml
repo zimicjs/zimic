@@ -20,7 +20,7 @@ env:
 jobs:
   cache-canary:
     name: Cache canary
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
     timeout-minutes: 10
 
@@ -38,3 +38,10 @@ jobs:
 
       - name: Check formatting style and save prettier cache
         uses: ./.github/actions/zimic-style-check
+
+      - name: Save turbo cache
+        if: ${{ always() }}
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo

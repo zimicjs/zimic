@@ -37,8 +37,9 @@ describe('CLI > Server token create', () => {
     '      --help        Show help                                          [boolean]',
     '      --version     Show version number                                [boolean]',
     '  -n, --name        The name of the token to create.                    [string]',
-    '  -t, --tokens-dir  The directory where the created interceptor token will be sa',
-    `                    ved. [string] [default: "${DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY}"]`,
+    '  -t, --tokens-dir  The directory where the created interceptor token will be',
+    '                    saved.',
+    `                         [string] [default: "${DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY}"]`,
   ].join('\n');
 
   beforeEach(async () => {
@@ -109,7 +110,7 @@ describe('CLI > Server token create', () => {
         hash: expect.stringMatching(HEX_REGEX) as string,
         salt: expect.stringMatching(HEX_REGEX) as string,
       },
-      createdAt: expect.any(Date),
+      createdAt: expect.any(Date) as Date,
     });
 
     expect(tokens[0].id).toHaveLength(INTERCEPTOR_TOKEN_ID_HEX_LENGTH);

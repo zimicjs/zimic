@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "0.19.1-canary.8",
+  "version": "0.20.0-canary.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -30,7 +30,7 @@
     "provenance": true
   },
   "engines": {
-    "node": ">=18.13.0"
+    "node": ">=20.0.0"
   },
   "license": "MIT",
   "files": [
@@ -95,31 +95,31 @@
     "@whatwg-node/server": "0.10.10",
     "execa": "9.6.0",
     "isomorphic-ws": "5.0.0",
-    "msw": "2.10.1",
+    "msw": "2.10.2",
     "picocolors": "^1.1.1",
     "ws": "8.18.2",
-    "yargs": "17.7.2",
-    "zod": "^3.25.46"
+    "yargs": "18.0.0",
+    "zod": "^3.25.67"
   },
   "optionalDependencies": {
     "bufferutil": "4.0.9"
   },
   "devDependencies": {
-    "@types/node": "^22.15.3",
+    "@types/node": "^24.0.3",
     "@types/ws": "^8.18.1",
     "@types/yargs": "^17.0.33",
-    "@vitest/browser": "^3.2.2",
-    "@vitest/coverage-istanbul": "^3.2.1",
+    "@vitest/browser": "^3.2.4",
+    "@vitest/coverage-istanbul": "^3.2.4",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^8.0.0",
     "eslint": "^9.27.0",
-    "playwright": "^1.52.0",
+    "playwright": "^1.53.1",
     "tsup": "^8.4.0",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.1"
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
     "@zimic/http": "^0.5.0 || workspace:*",

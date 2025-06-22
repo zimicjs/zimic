@@ -64,6 +64,8 @@ const config: Docusaurus.Config = {
     }),
   },
 
+  themes: ['@docusaurus/theme-search-algolia'],
+
   plugins: [
     ['./src/plugins/importAliases.ts', {}],
     ['./src/plugins/tailwindcss.ts', {}],
@@ -143,6 +145,16 @@ const config: Docusaurus.Config = {
           block: { start: 'error-start', end: 'error-end' },
         },
       ],
+    },
+
+    algolia: {
+      appId: 'OZK76E9ED8',
+      apiKey: 'f1cad248a458bf95d1b45999b18353e4',
+      indexName: 'zimic',
+      contextualSearch: true,
+      searchParameters: {},
+      searchPagePath: 'search',
+      insights: false,
     },
 
     navbar: {
