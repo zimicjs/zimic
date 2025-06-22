@@ -612,7 +612,7 @@ importers:
     dependencies:
       '@zimic/http':
         specifier: ^0.5.0 || workspace:*
-        version: 0.5.1(typescript@5.8.3)
+        version: link:../zimic-http
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -737,7 +737,7 @@ importers:
         version: 0.10.10
       '@zimic/http':
         specifier: ^0.5.0 || workspace:*
-        version: 0.5.1(typescript@5.8.3)
+        version: link:../zimic-http
       execa:
         specifier: 9.6.0
         version: 9.6.0
