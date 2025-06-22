@@ -3,9 +3,9 @@
   "version": "0.2.7",
   "private": true,
   "scripts": {
-    "dev": "docusaurus start --host :: --no-open",
-    "build": "docusaurus build",
-    "start": "docusaurus serve --no-open",
+    "dev": "concurrently --names docs,api 'docusaurus start --host :: --no-open' 'dotenv -c development -- tsup --onSuccess \"node dist/index.js | pino-pretty\" --watch'",
+    "build": "concurrently --names docs,api 'docusaurus build' 'tsup'",
+    "start": "concurrently --names docs,api 'docusaurus serve --no-open' 'dotenv -c production -- node dist/index.js'",
     "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
@@ -21,10 +21,15 @@
     "@docusaurus/plugin-svgr": "^3.7.0",
     "@docusaurus/theme-classic": "^3.7.0",
     "@docusaurus/theme-search-algolia": "^3.8.1",
+    "@fastify/cors": "^11.0.1",
     "@mdx-js/react": "^3.0.0",
+    "@octokit/core": "^7.0.2",
+    "concurrently": "^9.1.2",
+    "fastify": "^5.4.0",
     "prism-react-renderer": "^2.3.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "zod": "^3.25.67"
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "3.8.1",
@@ -34,10 +39,13 @@
     "@zimic/eslint-config-react": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
+    "dotenv-cli": "^8.0.0",
     "esbuild-loader": "^4.3.0",
     "eslint": "^9.27.0",
+    "pino-pretty": "^13.0.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.5",
+    "tsup": "^8.5.0",
     "typescript": "^5.8.3"
   }
 }

@@ -4,5 +4,11 @@
   "buildCommand": "pnpm turbo build --filter zimic-web",
   "outputDirectory": "build",
   "trailingSlash": false,
-  "rewrites": [{ "source": "/:path*", "destination": "/:path*.html" }]
+  "functions": {
+    "api/index.js": { "memory": 512, "maxDuration": 10 }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/:path*", "destination": "/:path*.html" }
+  ]
 }
