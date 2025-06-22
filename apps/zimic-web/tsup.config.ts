@@ -15,4 +15,7 @@ export default defineConfig({
     index: path.join('src', 'api', 'index.ts'),
     serverless: path.join('src', 'api', 'serverless.ts'),
   },
+  esbuildOptions(options) {
+    options.jsx = 'automatic';
+  },
 });

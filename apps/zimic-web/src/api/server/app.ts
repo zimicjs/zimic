@@ -1,24 +1,22 @@
 import cors from '@fastify/cors';
-import fastify, { FastifyInstance } from 'fastify';
+import fastify from 'fastify';
 
 import { environment } from '@/config/environment';
 
-import listSponsorsController from '../modules/sponsors/list';
+import listSponsorsController from '../modules/sponsors/get';
+import getSponsorsSvgController from '../modules/sponsors/svg/get';
 import { handleServerError } from './errors';
 
 const app = fastify({
   logger: environment.NODE_ENV !== 'test',
-  disableRequestLogging: environment.NODE_ENV !== 'development',
+  disableRequestLogging: environment.NODE_ENV === 'development',
   pluginTimeout: 0,
 });
 
-function controller(app: FastifyInstance) {
-  app.register(listSponsorsController);
-}
-
 app
   .register(cors, { origin: environment.API_CORS_ORIGIN })
-  .register(controller, { prefix: '/api' })
+  .register(listSponsorsController)
+  .register(getSponsorsSvgController)
   .setErrorHandler(handleServerError);
 
 export default app;

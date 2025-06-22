@@ -5,6 +5,8 @@ import type * as PluginThemeClassic from '@docusaurus/theme-classic';
 import type * as Docusaurus from '@docusaurus/types';
 import { themes as prismThemes } from 'prism-react-renderer';
 
+import { environment } from './src/config/environment';
+
 const config: Docusaurus.Config = {
   title: 'Zimic',
   tagline: 'Next-gen TypeScript-first HTTP integrations',
@@ -48,6 +50,8 @@ const config: Docusaurus.Config = {
   customFields: {
     description:
       'Zimic is a set of modern, lightweight, TypeScript-first, and thoroughly tested HTTP integration libraries.',
+
+    API_URL: environment.API_URL,
   },
 
   staticDirectories: ['public'],
