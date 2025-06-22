@@ -93,3 +93,10 @@ runs:
         TURBO_TOKEN: ${{ inputs.turbo-token }}
         TURBO_TEAM: ${{ inputs.turbo-team }}
         TURBO_LOG_ORDER: stream
+
+    - name: Save turbo cache
+      if: ${{ always() }}
+      uses: actions/cache/save@v4
+      with:
+        path: .turbo
+        key: ${{ runner.os }}-turbo
