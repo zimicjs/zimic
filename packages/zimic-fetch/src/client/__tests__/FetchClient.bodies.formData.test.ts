@@ -39,7 +39,8 @@ describe('FetchClient > Bodies > Form data', () => {
 
       const responseFormData = new HttpFormData<FormDataSchema>();
       responseFormData.append('title', 'response');
-      responseFormData.append('file', new File(['response'], 'response.txt', { type: 'text/plain' }));
+      const responseFile = new File(['response'], 'response.txt', { type: 'text/plain' });
+      responseFormData.append('file', responseFile);
 
       await interceptor
         .post('/users')
@@ -62,7 +63,12 @@ describe('FetchClient > Bodies > Form data', () => {
       expect(Array.from(receivedResponseFormData.entries())).toHaveLength(2);
 
       expect(receivedResponseFormData.get('title')).toBe(responseFormData.get('title'));
-      expect(receivedResponseFormData.get('file')).toEqual(responseFormData.get('file'));
+
+      const receivedResponseFile = receivedResponseFormData.get('file');
+      expect(receivedResponseFile.name).toBe(responseFile.name);
+      expect(receivedResponseFile.type).toBe(responseFile.type);
+      expect(receivedResponseFile.size).toBe(responseFile.size);
+      expect(await receivedResponseFile.arrayBuffer()).toEqual(await responseFile.arrayBuffer());
 
       expect(response).toBeInstanceOf(Response);
       expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();

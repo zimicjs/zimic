@@ -17,8 +17,8 @@
   },
   "devDependencies": {
     "@types/superagent": "^8.1.9",
-    "@vitest/browser": "^3.2.2",
-    "@vitest/coverage-istanbul": "^3.2.1",
+    "@vitest/browser": "^3.2.4",
+    "@vitest/coverage-istanbul": "^3.2.4",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/fetch": "workspace:*",
     "@zimic/http": "workspace:*",
@@ -32,9 +32,9 @@
     "eslint": "^9.27.0",
     "execa": "^9.6.0",
     "node-fetch": "^3.3.2",
-    "playwright": "^1.52.0",
+    "playwright": "^1.53.1",
     "superagent": "^10.2.0",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.1"
+    "vitest": "^3.2.4"
   }
 }

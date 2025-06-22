@@ -89,6 +89,13 @@ jobs:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
 
+      - name: Save turbo cache
+        if: ${{ always() }}
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo
+
   ci-node:
     name: CI Node.js
     runs-on: ubuntu-24.04-arm
@@ -98,9 +105,9 @@ jobs:
       fail-fast: false
       matrix:
         node-version:
-          - 18
           - 20
           - 22
+          - 24
 
     env:
       NODE_VERSION: ${{ matrix.node-version }}
@@ -142,6 +149,13 @@ jobs:
             ./examples/*/tests/reports
             ./examples/*/tests/outputs
           retention-days: 7
+
+      - name: Save turbo cache
+        if: ${{ always() }}
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo
 
   ci-typescript:
     name: CI TypeScript
@@ -215,3 +229,10 @@ jobs:
             --filter !zimic-web \
             $([[ '${{ matrix.typescript-version }}' =~ ^(5\.0) ]] && echo ${filterOptionsOfPackagesUsingServerComponents[@]}) \
             ${{ env.TURBO_FILTERS }}
+
+      - name: Save turbo cache
+        if: ${{ always() }}
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo

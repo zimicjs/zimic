@@ -18,7 +18,7 @@
     "provenance": true
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "license": "MIT",
   "files": [
@@ -179,8 +179,8 @@
     "typegen:fixtures": "tsx ./scripts/typegen/generateFixtureTypes.js"
   },
   "devDependencies": {
-    "@types/node": "^22.15.3",
-    "@vitest/browser": "^3.2.2",
+    "@types/node": "^24.0.3",
+    "@vitest/browser": "^3.2.4",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
@@ -188,6 +188,6 @@
     "eslint": "^9.27.0",
     "tsup": "^8.4.0",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.1"
+    "vitest": "^3.2.4"
   }
 }

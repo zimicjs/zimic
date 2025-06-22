@@ -12,7 +12,6 @@
       [
         "root",
         "ci",
-        "wiki",
         "release",
         "web",
         "test-client",

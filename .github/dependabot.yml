@@ -17,11 +17,6 @@ updates:
       npm:
         patterns:
           - '*'
-    ignore:
-      # Yargs 18 supports only Node.js 20 and above. We can't upgrade yet because Zimic still supports Node.js 18.
-      - dependency-name: yargs
-        update-types:
-          - version-update:semver-major
   - package-ecosystem: github-actions
     directory: /
     schedule:

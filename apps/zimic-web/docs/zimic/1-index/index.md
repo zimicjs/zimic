@@ -7,8 +7,8 @@ slug: /
 # Introduction
 
 Zimic is a collection of TypeScript-first HTTP integration libraries. It provides type-safe utilities to make, receive,
-and mock HTTP requests and responses. Zimic is designed to be lightweight and easy to use, with type inference and
-validation built-in.
+and mock HTTP requests and responses. Zimic is designed to be lightweight and easy to use, with built-in type inference
+and validation.
 
 ## Motivation
 
