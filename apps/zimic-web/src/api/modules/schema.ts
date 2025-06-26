@@ -33,7 +33,7 @@ export type ServerSchema = HttpSchema<{
       response: {
         200: {
           headers: { 'content-type': 'image/svg'; 'cache-control'?: string };
-          body: Blob;
+          body: string;
         };
         400: { body: ValidationErrorResponseBody };
         500: { body: ErrorResponseBody };

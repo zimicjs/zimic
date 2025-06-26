@@ -16,8 +16,7 @@ function getSponsorsSvgController(app: FastifyInstance) {
     const githubSponsorships = await github.listAllOrganizationSponsorships('zimicjs');
     const tiers = groupSponsorsByTier(githubSponsorships);
 
-    const svgAsString = renderToStaticMarkup(<Sponsors tiers={tiers} />);
-    const svg = new Blob([svgAsString], { type: 'image/svg' });
+    const svg = renderToStaticMarkup(<Sponsors tiers={tiers} />);
 
     return reply
       .status(200 satisfies keyof Endpoint['response'])
