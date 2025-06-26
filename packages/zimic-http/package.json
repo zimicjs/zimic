@@ -22,6 +22,10 @@
     "name": "Diego Aquino",
     "url": "https://github.com/diego-aquino"
   },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/zimicjs"
+  },
   "private": false,
   "publishConfig": {
     "access": "public",
