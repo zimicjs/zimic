@@ -3,7 +3,6 @@ import Layout from '@theme/Layout';
 
 import ZimicLogo from '@@/public/img/logo.svg';
 
-import { SponsorshipTier } from '@/api/modules/schema';
 import ChecklistIcon from '@/components/icons/ChecklistIcon';
 import CogIcon from '@/components/icons/CogIcon';
 import HighVoltageIcon from '@/components/icons/HighVoltageIcon';
@@ -14,12 +13,9 @@ import GetStartedLink from './components/GetStartedLink';
 import GradientBackground from './components/GradientBackground';
 import HomeSection from './components/HomeSection';
 import ProjectCard from './components/ProjectCard';
-import Sponsors from './components/Sponsors';
 
 function HomePage() {
   const { siteConfig } = useDocusaurusContext();
-  console.log(siteConfig.customFields?.API_URL);
-  const tiers: SponsorshipTier[] = [];
 
   return (
     <Layout description={siteConfig.tagline} wrapperClassName="overflow-x-hidden">
@@ -102,8 +98,6 @@ function HomePage() {
             <GetStartedLink arrow />
           </div>
         </HomeSection>
-
-        <Sponsors tiers={tiers} />
       </main>
     </Layout>
   );
