@@ -11,7 +11,8 @@
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write",
-    "types:check": "tsc --noEmit"
+    "types:check": "tsc --noEmit",
+    "generate:sponsors": "dotenv -c development -- sponsorkit"
   },
   "dependencies": {
     "@docusaurus/core": "3.8.1",
@@ -22,6 +23,10 @@
     "@docusaurus/theme-classic": "^3.7.0",
     "@docusaurus/theme-search-algolia": "^3.8.1",
     "@mdx-js/react": "^3.0.0",
+    "@tanstack/react-query": "^5.81.2",
+    "@zimic/http": "workspace:*",
+    "@zimic/fetch": "workspace:*",
+    "dompurify": "^3.2.6",
     "prism-react-renderer": "^2.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -34,9 +39,11 @@
     "@zimic/eslint-config-react": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
+    "dotenv-cli": "^8.0.0",
     "esbuild-loader": "^4.3.0",
     "eslint": "^9.27.0",
     "postcss": "^8.5.6",
+    "sponsorkit": "^16.5.0",
     "tailwindcss": "^4.1.5",
     "typescript": "^5.8.3"
   }

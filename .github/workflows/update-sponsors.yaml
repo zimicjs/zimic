@@ -1,0 +1,73 @@
+name: Update Sponsors
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: update-sponsors
+  cancel-in-progress: true
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_REMOTE_CACHE_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_REMOTE_CACHE_TEAM }}
+  TURBO_LOG_ORDER: stream
+
+jobs:
+  update-sponsors:
+    name: Update sponsors
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 10
+
+    environment: GitHub
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Zimic
+        uses: ./.github/actions/zimic-setup
+        with:
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+          install: '"./apps/zimic-web..."'
+
+      - name: Fetch latest sponsors and sync resources
+        working-directory: ./apps/zimic-web
+        run: pnpm generate:sponsors
+        env:
+          SPONSORKIT_GITHUB_TOKEN: ${{ secrets.SPONSORKIT_GITHUB_TOKEN }}
+
+      - name: Commit changes
+        run: |
+          echo 'Committing changes...'
+
+          git config user.name '${{ vars.RELEASE_COMMIT_USER_NAME }}'
+          git config user.email '${{ vars.RELEASE_COMMIT_USER_EMAIL }}'
+
+          git add --all
+
+          if ! git commit -m 'chore(web): update sponsors'; then
+            echo 'Sponsors are up to date. No changes to commit.'
+            exit 0
+          fi
+
+          echo 'Pushing changes...'
+
+          numberOfPushRetries=0
+          maxNumberOfPushRetries=5
+
+          git config pull.rebase true
+
+          until git push -u origin HEAD --no-verify; do
+            if [[ $numberOfPushRetries -gt $maxNumberOfPushRetries ]]; then
+              echo "Push failed after $maxNumberOfPushRetries retries. Aborting."
+              exit 1
+            fi
+
+            numberOfPushRetries=$((numberOfPushRetries + 1))
+
+            echo 'Push rejected. Retrying...'
+            git pull
+          done

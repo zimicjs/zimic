@@ -166,6 +166,12 @@ Status: :seedling: **Beta**
 Visit our [examples](https://zimic.dev/docs/examples) to see how to use Zimic with popular frameworks, libraries, and
 use cases.
 
+## Sponsors
+
+If you like Zimic and want to support the project, consider [becoming a sponsor](https://github.com/sponsors/zimicjs)!
+
+[![Zimic Sponsors](./apps/zimic-web/public/images/sponsors.svg)](https://zimic.dev#sponsors)
+
 ## Changelog
 
 The changelog is available on our [GitHub Releases](https://github.com/zimicjs/zimic/releases) page.
