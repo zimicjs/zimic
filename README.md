@@ -161,6 +161,12 @@ Status: :seedling: **Beta**
 > implementation, or `@zimic/fetch` with any HTTP mocking library. See our
 > [`@zimic/fetch` testing guide](https://zimic.dev/docs/fetch/guides/testing#zimicinterceptor) for more information.
 
+## Sponsors
+
+If you like Zimic and want to support the project, consider [becoming a sponsor](https://github.com/sponsors/zimicjs)!
+
+[![Zimic Sponsors](./apps/zimic-web/public/images/sponsors.svg)](https://zimic.dev#sponsors)
+
 ## Examples
 
 Visit our [examples](https://zimic.dev/docs/examples) to see how to use Zimic with popular frameworks, libraries, and

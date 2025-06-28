@@ -4,11 +4,13 @@ import { cn } from '@/utils/styles';
 
 interface Props extends ComponentProps<'section'> {
   title: string;
+  titleId?: string;
   description?: string;
 }
 
-function HomeSection({ title, description, className, children, ...rest }: Props) {
-  const titleId = useId();
+function HomeSection({ title, titleId: customTitleId, description, className, children, ...rest }: Props) {
+  const defaultTitleId = useId();
+  const titleId = customTitleId ?? defaultTitleId;
 
   return (
     <section aria-labelledby={titleId} className={cn('mx-auto px-12 py-16', className)} {...rest}>

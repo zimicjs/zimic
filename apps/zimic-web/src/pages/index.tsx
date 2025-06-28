@@ -66,6 +66,7 @@ function HomePage() {
 
         <HomeSection
           title="Features"
+          titleId="features"
           description="Zimic is a collection of type-safe HTTP integration libraries."
           className="mx-auto max-w-[96rem]"
         >
@@ -96,6 +97,7 @@ function HomePage() {
 
         <HomeSection
           title="Level up your TypeScript experience"
+          titleId="get-started"
           description="Start building with Zimic today!"
           className="border-primary-500/10 dark:border-primary-500/20 bg-primary-500/5 dark:bg-primary-500/15 elative mx-auto w-screen overflow-hidden border-t"
         >
@@ -104,6 +106,7 @@ function HomePage() {
 
         <HomeSection
           title="Sponsors"
+          titleId="sponsors"
           description="Zimic is open source and backed by amazing people."
           className="mx-auto -mt-16 max-w-[96rem] space-y-12"
         >
