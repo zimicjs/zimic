@@ -211,14 +211,6 @@ const config: Docusaurus.Config = {
           position: 'left',
         },
         {
-          type: 'localeDropdown',
-          position: 'right',
-          dropdownItemsAfter: [
-            { type: 'html', value: '<hr style="margin: 0.3rem 0;">' },
-            { href: 'https://github.com/zimicjs/zimic', label: 'Help Us Translate' },
-          ],
-        },
-        {
           href: 'https://github.com/zimicjs/zimic',
           position: 'right',
           className: 'header-github-link',
