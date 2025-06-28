@@ -124,9 +124,9 @@ export type HttpRequestSearchParamsSchema<MethodSchema extends HttpMethodSchema>
   'searchParams' extends keyof MethodSchema['request'] ? Default<MethodSchema['request']>['searchParams'] : never;
 
 export type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = ReplaceBy<
-  ReplaceBy<IfNever<DefaultNoExclude<Default<MethodSchema['request']>['body']>, null>, undefined, null>,
-  ArrayBuffer,
-  Blob
+  IfNever<DefaultNoExclude<Default<MethodSchema['request']>['body']>, null>,
+  undefined,
+  null
 >;
 
 type HttpResponseHeadersSchemaFromBody<
