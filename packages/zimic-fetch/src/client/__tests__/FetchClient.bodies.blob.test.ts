@@ -186,10 +186,12 @@ describe('FetchClient > Bodies > Blob', () => {
 
       await interceptor
         .post('/users')
-        .with({ body: new Blob([requestArrayBuffer], { type: 'application/octet-stream' }) })
+        .with({
+          body: requestArrayBuffer,
+        })
         .respond({
           status: 201,
-          body: new Blob([responseBuffer], { type: 'application/octet-stream' }),
+          body: responseBuffer,
         })
         .times(1);
 
