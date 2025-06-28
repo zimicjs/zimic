@@ -33,10 +33,7 @@ export default defineConfig({
   formats: ['svg'],
   cacheFile: path.join(__dirname, 'node_modules', '.cache', 'sponsorkit', 'cache.json'),
 
-  renders: [
-    { name: 'sponsors', width: 800 },
-    { name: 'sponsors.wide', width: 1200 },
-  ],
+  renders: [{ name: 'sponsors', width: 800 }],
 
   svgInlineCSS: styles,
 
