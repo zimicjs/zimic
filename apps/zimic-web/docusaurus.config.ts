@@ -8,7 +8,7 @@ import { themes as prismThemes } from 'prism-react-renderer';
 const config: Docusaurus.Config = {
   title: 'Zimic',
   tagline: 'Next-gen TypeScript-first HTTP integrations',
-  favicon: 'img/favicon.ico',
+  favicon: 'images/favicon.ico',
 
   organizationName: 'zimicjs',
   projectName: 'zimic',
@@ -110,7 +110,7 @@ const config: Docusaurus.Config = {
   ],
 
   themeConfig: {
-    image: 'img/social-card.png',
+    image: 'images/social-card.png',
 
     colorMode: {
       defaultMode: 'dark',
@@ -162,7 +162,7 @@ const config: Docusaurus.Config = {
       hideOnScroll: false,
       logo: {
         alt: 'Zimic Logo',
-        src: 'img/logo.svg',
+        src: 'images/logo.svg',
         href: '/',
         width: 32,
         height: 32,

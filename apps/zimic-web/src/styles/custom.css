@@ -192,7 +192,7 @@ textarea {
   height: 24px;
   display: flex;
   background-color: var(--ifm-navbar-link-color);
-  mask-image: url('/img/github.svg');
+  mask-image: url('/images/github.svg');
   transition: background-color var(--ifm-transition-fast) var(--ifm-transition-timing-default);
 }
 
