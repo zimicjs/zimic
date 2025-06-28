@@ -1,5 +1,28 @@
 import { isClientSide } from './environment';
 
+export async function convertReadableStreamToBlob(stream: ReadableStream, options?: BlobPropertyBag): Promise<Blob> {
+  const chunks: Uint8Array[] = [];
+  const reader = stream.getReader() as ReadableStreamDefaultReader<Uint8Array>;
+
+  while (true) {
+    const readResult = await reader.read();
+
+    if (readResult.value) {
+      chunks.push(readResult.value);
+    }
+
+    if (readResult.done) {
+      break;
+    }
+  }
+
+  return new Blob(chunks, options);
+}
+
+export function convertArrayBufferToBlob(buffer: ArrayBuffer, options?: BlobPropertyBag): Blob {
+  return new Blob([buffer], options);
+}
+
 export function convertArrayBufferToBase64(buffer: ArrayBuffer) {
   if (isClientSide()) {
     const bufferBytes = new Uint8Array(buffer);
