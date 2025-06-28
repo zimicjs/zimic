@@ -12,7 +12,7 @@ import { HttpSearchParamsSchema } from '../searchParams/types';
 
 /** The body type for HTTP requests and responses. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type HttpBody = JSONValue | HttpFormData<any> | HttpSearchParams<any> | Blob | ArrayBuffer;
+export type HttpBody = JSONValue | HttpFormData<any> | HttpSearchParams<any> | Blob | ArrayBuffer | ReadableStream;
 
 export namespace HttpBody {
   /** A loose version of the HTTP body type. JSON values are not strictly typed. */
