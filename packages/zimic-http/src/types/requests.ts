@@ -162,11 +162,7 @@ export type HttpResponseBodySchema<
   MethodSchema extends HttpMethodSchema,
   StatusCode extends HttpStatusCode,
 > = ReplaceBy<
-  ReplaceBy<
-    IfNever<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['body']>, null>,
-    undefined,
-    null
-  >,
-  ArrayBuffer,
-  Blob
+  IfNever<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['body']>, null>,
+  undefined,
+  null
 >;
