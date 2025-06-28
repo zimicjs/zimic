@@ -23,6 +23,10 @@
     "@docusaurus/theme-classic": "^3.7.0",
     "@docusaurus/theme-search-algolia": "^3.8.1",
     "@mdx-js/react": "^3.0.0",
+    "@tanstack/react-query": "^5.81.2",
+    "@zimic/http": "workspace:*",
+    "@zimic/fetch": "workspace:*",
+    "dompurify": "^3.2.6",
     "prism-react-renderer": "^2.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

@@ -6,13 +6,15 @@ const styles = `
     font-family: 'Noto Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Noto Sans',
       sans-serif, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
       'Segoe UI Symbol';
-    font-weight: 300;
     font-size: 14px;
-    fill: #fafafa;
+    fill: currentColor;
   }
 
   .sponsorkit-link {
+    font-weight: 400;
+    color: currentColor;
     cursor: pointer;
+    text-decoration: none !important;
   }
 
   .sponsorkit-tier-title {

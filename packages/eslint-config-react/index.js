@@ -86,7 +86,7 @@ export default [
       'jsx-a11y/media-has-caption': 'warn',
       'jsx-a11y/no-aria-hidden-on-focusable': 'warn',
       'jsx-a11y/no-noninteractive-tabindex': 'warn',
-      'jsx-a11y/prefer-tag-over-role': 'warn',
+      'jsx-a11y/prefer-tag-over-role': 'off',
     },
   },
 ];

@@ -2,6 +2,7 @@ import type * as PluginContentDocs from '@docusaurus/plugin-content-docs';
 import type * as PluginContentPages from '@docusaurus/plugin-content-pages';
 import type * as PluginSitemap from '@docusaurus/plugin-sitemap';
 import type * as PluginThemeClassic from '@docusaurus/theme-classic';
+import { ThemeConfigAlgolia } from '@docusaurus/theme-search-algolia';
 import type * as Docusaurus from '@docusaurus/types';
 import { themes as prismThemes } from 'prism-react-renderer';
 
@@ -155,7 +156,7 @@ const config: Docusaurus.Config = {
       searchParameters: {},
       searchPagePath: 'search',
       insights: false,
-    },
+    } satisfies ThemeConfigAlgolia,
 
     navbar: {
       title: 'Zimic',

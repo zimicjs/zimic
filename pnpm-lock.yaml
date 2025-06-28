@@ -131,6 +131,18 @@ importers:
       '@mdx-js/react':
         specifier: ^3.0.0
         version: 3.1.0(@types/react@19.1.8)(react@19.1.0)
+      '@tanstack/react-query':
+        specifier: ^5.81.2
+        version: 5.81.2(react@19.1.0)
+      '@zimic/fetch':
+        specifier: workspace:*
+        version: link:../../packages/zimic-fetch
+      '@zimic/http':
+        specifier: workspace:*
+        version: link:../../packages/zimic-http
+      dompurify:
+        specifier: ^3.2.6
+        version: 3.2.6
       prism-react-renderer:
         specifier: ^2.3.0
         version: 2.4.1(react@19.1.0)
@@ -618,7 +630,7 @@ importers:
     dependencies:
       '@zimic/http':
         specifier: ^0.6.0 || workspace:*
-        version: link:../zimic-http
+        version: 0.6.0(typescript@5.8.3)
     devDependencies:
       '@types/node':
         specifier: ^24.0.4
@@ -743,7 +755,7 @@ importers:
         version: 0.10.10
       '@zimic/http':
         specifier: ^0.6.0 || workspace:*
-        version: link:../zimic-http
+        version: 0.6.0(typescript@5.8.3)
       execa:
         specifier: 9.6.0
         version: 9.6.0
@@ -4155,6 +4167,9 @@ packages:
   '@types/tough-cookie@4.0.5':
     resolution: {integrity: sha512-/Ad8+nIOV7Rl++6f1BdKxFSMgmoqEoYbHRpPcx3JEfv8VRsQe9Z4mCXeJBzxs7mbHY/XOZZuXlRNfhpVPbs6ZA==}
 
+  '@types/trusted-types@2.0.7':
+    resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
+
   '@types/unist@2.0.11':
     resolution: {integrity: sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==}
 
@@ -5566,6 +5581,9 @@ packages:
   domhandler@5.0.3:
     resolution: {integrity: sha512-cgwlv/1iFQiFnU96XXgROh8xTeetsnJiDsTc7TYCLFd9+/WNkIqPTxiM/8pSd8VIrhXGTf1Ny1q1hquVqDJB5w==}
     engines: {node: '>= 4'}
+
+  dompurify@3.2.6:
+    resolution: {integrity: sha512-/2GogDQlohXPZe6D6NOgQvXLPSYBqIWMnZ8zzOhn09REE4eyAzb+Hed3jhoM9OkuaJ8P6ZGTTVWQKAi8ieIzfQ==}
 
   domutils@2.8.0:
     resolution: {integrity: sha512-w96Cjofp72M5IIhpjgobBimYEfoPjx1Vx0BSX9P30WBdZW2WIKU0T1Bd0kz2eNZ9ikjKgHbEyKx8BB6H1L3h3A==}
@@ -14470,6 +14488,9 @@ snapshots:
 
   '@types/tough-cookie@4.0.5': {}
 
+  '@types/trusted-types@2.0.7':
+    optional: true
+
   '@types/unist@2.0.11': {}
 
   '@types/unist@3.0.3': {}
@@ -16048,6 +16069,10 @@ snapshots:
   domhandler@5.0.3:
     dependencies:
       domelementtype: 2.3.0
+
+  dompurify@3.2.6:
+    optionalDependencies:
+      '@types/trusted-types': 2.0.7
 
   domutils@2.8.0:
     dependencies:
