@@ -274,7 +274,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
             return {
               status: 200,
               headers: { 'content-type': 'application/octet-stream' },
-              body: new Blob([responseBuffer]),
+              body: responseBuffer,
             };
           }),
           interceptor,
