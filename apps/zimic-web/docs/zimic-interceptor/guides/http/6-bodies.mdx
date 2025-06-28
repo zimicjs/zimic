@@ -14,9 +14,11 @@ and receive data in a response. Request bodies are commonly used to include a pa
 process, whereas response bodies may contain the result returned by the server. A body can contain various types of
 data, such as JSON, XML, and binary data such as images and files.
 
-`@zimic/interceptor` automatically parses request and response bodies based on their `content-type` header.
+## Default body parsing
 
-| `content-type`                      | Default parsed type                                                |
+`@zimic/interceptor` automatically parses request and response bodies based on their `content-type` header:
+
+| `content-type`                      | Parsed as                                                          |
 | ----------------------------------- | ------------------------------------------------------------------ |
 | `application/json`                  | `JSON`                                                             |
 | `application/xml`                   | `String`                                                           |
@@ -29,7 +31,7 @@ data, such as JSON, XML, and binary data such as images and files.
 | `audio/*`                           | `Blob`                                                             |
 | `font/*`                            | `Blob`                                                             |
 | `video/*`                           | `Blob`                                                             |
-| `*/*` (others)                      | `JSON` if possible, otherwise `String`                             |
+| `*/*` (others)                      | `JSON` if possible, otherwise `Blob`                               |
 
 ## Using request bodies
 

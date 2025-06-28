@@ -400,7 +400,7 @@ abstract class HttpInterceptorWorker {
       try {
         return await this.parseRawBodyAsJSON<Body>(resource);
       } catch {
-        return await this.parseRawBodyAsText<Body>(resourceClone);
+        return await this.parseRawBodyAsBlob<Body>(resourceClone);
       }
     } catch (error) {
       console.error(error);
