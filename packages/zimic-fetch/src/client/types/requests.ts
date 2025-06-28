@@ -81,6 +81,7 @@ export type FetchRequestInit<
   /** The base URL to prefix the path of the request. */
   baseURL?: string;
   redirect?: Redirect;
+  duplex?: 'half';
 } & (Path extends Path ? FetchRequestInitPerPath<Default<Schema[Path][Method]>> : never);
 
 export namespace FetchRequestInit {
