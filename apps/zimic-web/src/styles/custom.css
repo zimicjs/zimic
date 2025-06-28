@@ -295,7 +295,7 @@ textarea {
   @apply dark:bg-primary-600/30 dark:hover:bg-primary-600/50 dark:focus-visible:ring-primary-300 dark:active:bg-primary-600/30 focus-visible:ring-primary-300 dark:hover:border-primary-500 dark:border-primary-600/70 dark:active:border-primary-600 dark:text-white-light border-white-dark bg-white-dark active:border-white-dark active:bg-white-dark cursor-pointer rounded-lg border-2 py-1.5 pl-3 pr-4 text-center font-semibold text-slate-500 outline-none transition-all hover:border-slate-200 hover:bg-slate-200 hover:ring-0 focus-visible:ring-2;
 
   .DocSearch-Button-Container {
-    @apply flex space-x-2;
+    @apply flex gap-x-2;
   }
 
   .DocSearch-Search-Icon {
