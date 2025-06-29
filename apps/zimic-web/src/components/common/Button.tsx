@@ -5,6 +5,7 @@ import { cn } from '@/utils/styles';
 
 interface BaseProps {
   size?: 'sm' | 'md';
+  leftIcon?: ReactNode;
   rightIcon?: ReactNode;
 }
 
@@ -18,7 +19,11 @@ export interface ButtonProps extends BaseProps, ComponentProps<'button'> {
 
 export type Props = LinkProps | ButtonProps;
 
-function Button({ size = 'md', rightIcon, className: customClassName, children, ...props }: Props) {
+function Button({ size = 'md', leftIcon, rightIcon, className: customClassName, children, ...props }: Props) {
+  const renderedLeftIcon = Boolean(leftIcon) && (
+    <span className="mr-2 inline-flex h-5 w-5 items-center justify-center">{leftIcon}</span>
+  );
+
   const renderedRightIcon = Boolean(rightIcon) && (
     <span className="ml-2 inline-flex h-5 w-5 items-center justify-center">{rightIcon}</span>
   );
@@ -36,8 +41,8 @@ function Button({ size = 'md', rightIcon, className: customClassName, children, 
 
     return (
       <DocusaurusLink className={className} {...rest}>
+        {renderedLeftIcon}
         {children}
-
         {renderedRightIcon}
       </DocusaurusLink>
     );
@@ -48,6 +53,7 @@ function Button({ size = 'md', rightIcon, className: customClassName, children, 
 
   return (
     <button type="button" className={className} {...rest}>
+      {renderedLeftIcon}
       {children}
       {renderedRightIcon}
     </button>
