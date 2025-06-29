@@ -96,7 +96,7 @@ follows behavior of the [Fetch API](https://developer.mozilla.org/docs/Web/API/F
 
 ### `FormData` request body
 
-[`FormData`](https://developer.mozilla.org/docs/Web/API/`FormData`) is a special type of body to construct a set of
+[`FormData`](https://developer.mozilla.org/docs/Web/API/FormData) is a special type of body to construct a set of
 key-value pairs with variable types of data. A common use case is to upload files to a server.
 
 To send a `FormData` body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md). Use the
