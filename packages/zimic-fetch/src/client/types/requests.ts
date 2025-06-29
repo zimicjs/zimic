@@ -80,7 +80,10 @@ export type FetchRequestInit<
   method: Method;
   /** The base URL to prefix the path of the request. */
   baseURL?: string;
+  /** The redirect mode of the request. */
   redirect?: Redirect;
+  /** The duplex mode of the request. */
+  duplex?: 'half';
 } & (Path extends Path ? FetchRequestInitPerPath<Default<Schema[Path][Method]>> : never);
 
 export namespace FetchRequestInit {
@@ -93,6 +96,8 @@ export namespace FetchRequestInit {
     headers?: HttpHeadersSchema.Loose;
     /** The search parameters of the request. */
     searchParams?: HttpSearchParamsSchema.Loose;
+    /** The duplex mode of the request. */
+    duplex?: 'half';
   }
 
   /** A loosely typed version of {@link FetchRequestInit `FetchRequestInit`}. */

@@ -3,10 +3,10 @@ import { afterAll, beforeAll, describe } from 'vitest';
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
-import { declareBlobBodyHttpInterceptorTests } from './shared/bodies/blob';
+import { declareBinaryBodyHttpInterceptorTests } from './shared/bodies/binary';
 import testMatrix from './shared/matrix';
 
-describe.each(testMatrix)('HttpInterceptor (node, $type) > Blob', async ({ type }) => {
+describe.each(testMatrix)('HttpInterceptor (node, $type) > Binary', async ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   let baseURL: string;
@@ -24,7 +24,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Blob', async ({ type 
     }
   });
 
-  await declareBlobBodyHttpInterceptorTests({
+  await declareBinaryBodyHttpInterceptorTests({
     platform: 'node',
     type,
     getBaseURL: () => baseURL,

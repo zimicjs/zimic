@@ -212,7 +212,8 @@ abstract class HttpInterceptorWorker {
       declaration.body instanceof FormData ||
       declaration.body instanceof URLSearchParams ||
       declaration.body instanceof Blob ||
-      declaration.body instanceof ArrayBuffer
+      declaration.body instanceof ArrayBuffer ||
+      declaration.body instanceof ReadableStream
     ) {
       return new Response(declaration.body ?? null, { headers, status }) as HttpResponse;
     }
@@ -399,7 +400,7 @@ abstract class HttpInterceptorWorker {
       try {
         return await this.parseRawBodyAsJSON<Body>(resource);
       } catch {
-        return await this.parseRawBodyAsText<Body>(resourceClone);
+        return await this.parseRawBodyAsBlob<Body>(resourceClone);
       }
     } catch (error) {
       console.error(error);
