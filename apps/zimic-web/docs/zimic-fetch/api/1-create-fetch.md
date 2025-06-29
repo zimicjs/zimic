@@ -39,6 +39,11 @@ createFetch<Schema>(options);
 
      A listener that is called after each response is received. See [`onResponse`](#onresponse) for more details.
 
+   - **duplex**: `'half' | undefined`
+
+     The duplex mode for the fetch instance. If set to `'half'`, request bodies will be streamed. See
+     [Request streaming](/docs/zimic-fetch/guides/4-bodies.md#request-streaming) for more details.
+
 **Type arguments**:
 
 1. **Schema**: `HttpSchema`
