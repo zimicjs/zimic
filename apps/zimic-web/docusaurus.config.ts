@@ -2,13 +2,14 @@ import type * as PluginContentDocs from '@docusaurus/plugin-content-docs';
 import type * as PluginContentPages from '@docusaurus/plugin-content-pages';
 import type * as PluginSitemap from '@docusaurus/plugin-sitemap';
 import type * as PluginThemeClassic from '@docusaurus/theme-classic';
+import { ThemeConfigAlgolia } from '@docusaurus/theme-search-algolia';
 import type * as Docusaurus from '@docusaurus/types';
 import { themes as prismThemes } from 'prism-react-renderer';
 
 const config: Docusaurus.Config = {
   title: 'Zimic',
   tagline: 'Next-gen TypeScript-first HTTP integrations',
-  favicon: 'img/favicon.ico',
+  favicon: 'images/favicon.ico',
 
   organizationName: 'zimicjs',
   projectName: 'zimic',
@@ -110,7 +111,7 @@ const config: Docusaurus.Config = {
   ],
 
   themeConfig: {
-    image: 'img/social-card.png',
+    image: 'images/social-card.png',
 
     colorMode: {
       defaultMode: 'dark',
@@ -155,14 +156,14 @@ const config: Docusaurus.Config = {
       searchParameters: {},
       searchPagePath: 'search',
       insights: false,
-    },
+    } satisfies ThemeConfigAlgolia,
 
     navbar: {
       title: 'Zimic',
       hideOnScroll: false,
       logo: {
         alt: 'Zimic Logo',
-        src: 'img/logo.svg',
+        src: 'images/logo.svg',
         href: '/',
         width: 32,
         height: 32,
@@ -209,14 +210,6 @@ const config: Docusaurus.Config = {
           label: 'CLI',
           to: 'docs/cli',
           position: 'left',
-        },
-        {
-          type: 'localeDropdown',
-          position: 'right',
-          dropdownItemsAfter: [
-            { type: 'html', value: '<hr style="margin: 0.3rem 0;">' },
-            { href: 'https://github.com/zimicjs/zimic', label: 'Help Us Translate' },
-          ],
         },
         {
           href: 'https://github.com/zimicjs/zimic',

@@ -13,8 +13,6 @@ function ProjectCardLogo({ title }: Props) {
   }, [title]);
 
   return (
-    // This component is not a real image, but it acts as one.
-    // eslint-disable-next-line jsx-a11y/prefer-tag-over-role
     <div
       role="img"
       aria-label={title}
