@@ -23,6 +23,8 @@
     "types:check": "turbo types:check --continue --concurrency 50%",
     "pre:commit": "lint-staged",
     "pre:push": "concurrently --names style,lint 'pnpm style:check' 'turbo types:check lint:turbo --filter ...[${PARENT_REF:-origin/canary}...HEAD] --concurrency 50% --continue'",
+    "pnpm:devPreinstall": "node scripts/preinstall.mjs",
+    "postinstall": "node scripts/preinstall.mjs",
     "prepare": "husky"
   },
   "devDependencies": {
