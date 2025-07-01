@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "0.20.2-canary.2",
+  "version": "0.21.0-canary.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -126,7 +126,7 @@
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "@zimic/http": "^0.6.0 || workspace:*",
+    "@zimic/http": "^0.7.0 || workspace:*",
     "typescript": ">=5.0.0"
   },
   "peerDependenciesMeta": {

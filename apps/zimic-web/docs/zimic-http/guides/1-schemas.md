@@ -219,8 +219,8 @@ type Schema = HttpSchema<{
 
 [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob),
 [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), and
-[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) are frequently used types for binary data.
-Use one of these types to declare a binary body.
+[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) are common types for binary data. Use one
+of these types to declare a binary body.
 
 ```ts
 import { HttpSchema } from '@zimic/http';

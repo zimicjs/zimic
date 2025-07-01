@@ -113,6 +113,7 @@ describe('FetchClient > Defaults', () => {
         referrer: 'about:client',
         referrerPolicy: 'origin',
         signal: new AbortController().signal,
+        duplex: 'half',
       } satisfies FetchOptions<Schema>;
 
       const fetch = createFetch<Schema>(defaults);
@@ -216,6 +217,7 @@ describe('FetchClient > Defaults', () => {
         referrer: 'about:client',
         referrerPolicy: 'origin',
         signal: new AbortController().signal,
+        duplex: 'half',
       } satisfies FetchOptions<Schema>;
 
       fetch.defaults.baseURL = defaults.baseURL;
@@ -231,6 +233,7 @@ describe('FetchClient > Defaults', () => {
       fetch.defaults.referrer = defaults.referrer;
       fetch.defaults.referrerPolicy = defaults.referrerPolicy;
       fetch.defaults.signal = defaults.signal;
+      fetch.defaults.duplex = defaults.duplex;
 
       expect(fetch.defaults).toEqual<FetchDefaults>(defaults);
 

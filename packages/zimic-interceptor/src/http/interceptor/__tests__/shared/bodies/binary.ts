@@ -1,4 +1,4 @@
-import { HttpRequest, HttpResponse, HttpSchema } from '@zimic/http';
+import { HttpSchema } from '@zimic/http';
 import joinURL from '@zimic/utils/url/joinURL';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
@@ -43,7 +43,7 @@ async function createRandomFile(
   }
 }
 
-export async function declareBlobBodyHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+export async function declareBinaryBodyHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { getBaseURL, getInterceptorOptions } = options;
 
   const crypto = await importCrypto();
@@ -80,7 +80,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
       'application/pdf',
       'application/octet-stream',
       'multipart/mixed',
-    ] as const)(`should support intercepting ${method} requests having a binary body: %s`, async (contentType) => {
+    ] as const)(`should support binary file bodies in intercepted ${method} requests: %s`, async (contentType) => {
       type MethodSchema = HttpSchema.Method<{
         request: {
           headers: { 'content-type': string };
@@ -124,8 +124,8 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
           headers: { 'content-type': contentType },
           body: requestFile,
         });
-        expect(response.status).toBe(200);
 
+        expect(response.status).toBe(200);
         const fetchedFile = await response.blob();
         expect(fetchedFile).toBeInstanceOf(Blob);
         expect(fetchedFile.type).toBe(responseFile.type);
@@ -151,25 +151,246 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
         expect(request.response.body.size).toBe(responseFile.size);
         expect(await request.response.body.text()).toEqual(await responseFile.text());
 
-        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<Blob, { 'content-type': string }>>();
-        expect(request.raw).toBeInstanceOf(Request);
-        expect(request.raw.url).toBe(request.url);
-        expect(request.raw.method).toBe(method);
         expect(Object.fromEntries(request.headers)).toEqual(
           expect.objectContaining(Object.fromEntries(request.raw.headers)),
         );
         expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<never>>();
         expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+        expectTypeOf(request.raw.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
+        expectTypeOf(request.raw.blob).toEqualTypeOf<() => Promise<Blob>>();
+        expect(await request.raw.blob()).toEqual(request.body);
+        expectTypeOf(request.raw.text).toEqualTypeOf<() => Promise<string>>();
 
-        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<Blob, { 'content-type'?: string }, 200>>();
-        expect(request.response.raw).toBeInstanceOf(Response);
-        expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
-        expect(request.response.raw.status).toBe(200);
         expect(Object.fromEntries(response.headers)).toEqual(
           expect.objectContaining(Object.fromEntries(request.response.raw.headers)),
         );
         expectTypeOf(request.response.raw.json).toEqualTypeOf<() => Promise<never>>();
         expectTypeOf(request.response.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+        expectTypeOf(request.response.raw.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
+        expectTypeOf(request.response.raw.blob).toEqualTypeOf<() => Promise<Blob>>();
+        expect(await request.response.raw.blob()).toEqual(request.response.body);
+        expectTypeOf(request.response.raw.text).toEqualTypeOf<() => Promise<string>>();
+      });
+    });
+
+    it(`should support binary array buffer bodies in intercepted ${method} requests`, async () => {
+      type MethodSchema = HttpSchema.Method<{
+        request: {
+          headers: { 'content-type': string };
+          body: ArrayBuffer;
+        };
+        response: {
+          200: {
+            headers?: { 'content-type'?: string };
+            body: ArrayBuffer;
+          };
+        };
+      }>;
+
+      await usingHttpInterceptor<{
+        '/users/:id': {
+          POST: MethodSchema;
+          PUT: MethodSchema;
+          PATCH: MethodSchema;
+          DELETE: MethodSchema;
+        };
+      }>(interceptorOptions, async (interceptor) => {
+        const requestArrayBuffer = new ArrayBuffer(2);
+        const requestView = new Uint8Array(requestArrayBuffer);
+        requestView[0] = 0xff;
+        requestView[1] = 0x00;
+
+        const responseBuffer = new ArrayBuffer(2);
+        const responseView = new Uint8Array(responseBuffer);
+        responseView[0] = 0x00;
+        responseView[1] = 0xff;
+
+        const handler = await promiseIfRemote(
+          interceptor[lowerMethod]('/users/:id')
+            .with({
+              body: requestArrayBuffer,
+            })
+            .respond((request) => {
+              expectTypeOf(request.body).toEqualTypeOf<Blob>();
+              expect(request.body).toBeInstanceOf(Blob);
+
+              return {
+                status: 200,
+                headers: { 'content-type': 'application/octet-stream' },
+                body: responseBuffer,
+              };
+            }),
+          interceptor,
+        );
+        expect(handler).toBeInstanceOf(Handler);
+
+        expect(handler.requests).toHaveLength(0);
+
+        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+          method,
+          headers: { 'content-type': 'application/octet-stream' },
+          body: requestArrayBuffer,
+          ...{ duplex: 'half' },
+        });
+
+        expect(response.status).toBe(200);
+        expect(await response.arrayBuffer()).toEqual(responseBuffer);
+
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
+
+        expect(request).toBeInstanceOf(Request);
+        expect(request.headers.get('content-type')).toBe('application/octet-stream');
+        expectTypeOf(request.body).toEqualTypeOf<Blob>();
+        expect(request.body).toBeInstanceOf(Blob);
+        expect(request.body.type).toBe('application/octet-stream');
+        expect(request.body.size).toBe(requestArrayBuffer.byteLength);
+        expect(await request.body.arrayBuffer()).toEqual(requestArrayBuffer);
+
+        expect(request.response).toBeInstanceOf(Response);
+        expect(request.response.headers.get('content-type')).toBe('application/octet-stream');
+        expectTypeOf(request.response.body).toEqualTypeOf<Blob>();
+        expect(request.response.body).toBeInstanceOf(Blob);
+        expect(request.response.body.type).toBe('application/octet-stream');
+        expect(request.response.body.size).toBe(responseBuffer.byteLength);
+        expect(await request.response.body.arrayBuffer()).toEqual(responseBuffer);
+
+        expect(Object.fromEntries(request.headers)).toEqual(
+          expect.objectContaining(Object.fromEntries(request.raw.headers)),
+        );
+        expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<never>>();
+        expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+        expectTypeOf(request.raw.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
+        expectTypeOf(request.raw.blob).toEqualTypeOf<() => Promise<Blob>>();
+        expect(await request.raw.blob()).toEqual(request.body);
+        expectTypeOf(request.raw.text).toEqualTypeOf<() => Promise<string>>();
+
+        expect(Object.fromEntries(response.headers)).toEqual(
+          expect.objectContaining(Object.fromEntries(request.response.raw.headers)),
+        );
+        expectTypeOf(request.response.raw.json).toEqualTypeOf<() => Promise<never>>();
+        expectTypeOf(request.response.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+        expectTypeOf(request.response.raw.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
+        expectTypeOf(request.response.raw.blob).toEqualTypeOf<() => Promise<Blob>>();
+        expect(await request.response.raw.blob()).toEqual(request.response.body);
+        expectTypeOf(request.response.raw.text).toEqualTypeOf<() => Promise<string>>();
+      });
+    });
+
+    it(`should support binary stream bodies in intercepted ${method} requests`, async () => {
+      type MethodSchema = HttpSchema.Method<{
+        request: {
+          headers: { 'content-type': string };
+          body: ReadableStream;
+        };
+        response: {
+          200: {
+            headers?: { 'content-type'?: string };
+            body: ReadableStream;
+          };
+        };
+      }>;
+
+      await usingHttpInterceptor<{
+        '/users/:id': {
+          POST: MethodSchema;
+          PUT: MethodSchema;
+          PATCH: MethodSchema;
+          DELETE: MethodSchema;
+        };
+      }>(interceptorOptions, async (interceptor) => {
+        function startRequestStream(controller: ReadableStreamDefaultController<Uint8Array>) {
+          controller.enqueue(new Uint8Array(['a'.charCodeAt(0)]));
+          controller.enqueue(new Uint8Array(['b'.charCodeAt(0)]));
+          controller.enqueue(new Uint8Array(['c'.charCodeAt(0)]));
+          controller.close();
+        }
+
+        const requestStream = new ReadableStream<Uint8Array>({ start: startRequestStream });
+        const restrictedRequestStream = new ReadableStream<Uint8Array>({ start: startRequestStream });
+
+        function startResponseStream(controller: ReadableStreamDefaultController<Uint8Array>) {
+          controller.enqueue(new Uint8Array(['d'.charCodeAt(0)]));
+          controller.enqueue(new Uint8Array(['e'.charCodeAt(0)]));
+          controller.enqueue(new Uint8Array(['f'.charCodeAt(0)]));
+          controller.close();
+        }
+
+        const responseStream = new ReadableStream<Uint8Array>({ start: startResponseStream });
+
+        const handler = await promiseIfRemote(
+          interceptor[lowerMethod]('/users/:id')
+            .with({
+              body: restrictedRequestStream,
+            })
+            .respond((request) => {
+              expectTypeOf(request.body).toEqualTypeOf<Blob>();
+              expect(request.body).toBeInstanceOf(Blob);
+
+              return {
+                status: 200,
+                headers: { 'content-type': 'application/octet-stream' },
+                body: responseStream,
+              };
+            }),
+          interceptor,
+        );
+        expect(handler).toBeInstanceOf(Handler);
+
+        expect(handler.requests).toHaveLength(0);
+
+        // HTTP streaming is only supported in HTTP >=2 on browsers. Since the interceptor server uses HTTP/1.1,
+        // streaming won't work in browsers with remote interceptors.
+        const isStreamingSupported = options.type !== 'remote' || options.platform !== 'browser';
+
+        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+          method,
+          headers: { 'content-type': 'application/octet-stream' },
+          body: isStreamingSupported ? requestStream : new Blob(['abc'], { type: 'application/octet-stream' }),
+          ...{ duplex: 'half' },
+        });
+
+        expect(response.status).toBe(200);
+        expect(await response.text()).toBe('def');
+
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
+
+        expect(request).toBeInstanceOf(Request);
+        expect(request.headers.get('content-type')).toBe('application/octet-stream');
+        expectTypeOf(request.body).toEqualTypeOf<Blob>();
+        expect(request.body).toBeInstanceOf(Blob);
+        expect(request.body.type).toBe('application/octet-stream');
+        expect(request.body.size).toBe(3);
+        expect(await request.body.text()).toEqual('abc');
+
+        expect(request.response).toBeInstanceOf(Response);
+        expect(request.response.headers.get('content-type')).toBe('application/octet-stream');
+        expectTypeOf(request.response.body).toEqualTypeOf<Blob>();
+        expect(request.response.body).toBeInstanceOf(Blob);
+        expect(request.response.body.type).toBe('application/octet-stream');
+        expect(request.response.body.size).toBe(3);
+        expect(await request.response.body.text()).toEqual('def');
+
+        expect(Object.fromEntries(request.headers)).toEqual(
+          expect.objectContaining(Object.fromEntries(request.raw.headers)),
+        );
+        expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<never>>();
+        expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+        expectTypeOf(request.raw.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
+        expectTypeOf(request.raw.blob).toEqualTypeOf<() => Promise<Blob>>();
+        expect(await request.raw.blob()).toEqual(request.body);
+        expectTypeOf(request.raw.text).toEqualTypeOf<() => Promise<string>>();
+
+        expect(Object.fromEntries(response.headers)).toEqual(
+          expect.objectContaining(Object.fromEntries(request.response.raw.headers)),
+        );
+        expectTypeOf(request.response.raw.json).toEqualTypeOf<() => Promise<never>>();
+        expectTypeOf(request.response.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+        expectTypeOf(request.response.raw.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
+        expectTypeOf(request.response.raw.blob).toEqualTypeOf<() => Promise<Blob>>();
+        expect(await request.response.raw.blob()).toEqual(request.response.body);
+        expectTypeOf(request.response.raw.text).toEqualTypeOf<() => Promise<string>>();
       });
     });
 
@@ -216,8 +437,8 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
           method,
           headers: { 'content-type': 'application/octet-stream' },
         });
-        expect(response.status).toBe(200);
 
+        expect(response.status).toBe(200);
         const fetchedFile = await response.blob();
         expect(fetchedFile).toBeInstanceOf(Blob);
         expect(fetchedFile.size).toBe(0);
@@ -274,7 +495,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
             return {
               status: 200,
               headers: { 'content-type': 'application/octet-stream' },
-              body: new Blob([responseBuffer]),
+              body: responseBuffer,
             };
           }),
           interceptor,
@@ -293,8 +514,8 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
           headers: { 'content-type': 'application/octet-stream' },
           body: requestBuffer,
         });
-        expect(response.status).toBe(200);
 
+        expect(response.status).toBe(200);
         const fetchedFile = await response.blob();
         expect(fetchedFile).toBeInstanceOf(Blob);
         expect(fetchedFile.type).toBe('application/octet-stream');
@@ -320,20 +541,12 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
         expect(request.response.body.size).toBe(2);
         expect(await request.response.body.arrayBuffer()).toEqual(responseBuffer);
 
-        expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<Blob, { 'content-type': string }>>();
-        expect(request.raw).toBeInstanceOf(Request);
-        expect(request.raw.url).toBe(request.url);
-        expect(request.raw.method).toBe(method);
         expect(Object.fromEntries(request.headers)).toEqual(
           expect.objectContaining(Object.fromEntries(request.raw.headers)),
         );
         expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<never>>();
         expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
 
-        expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<Blob, { 'content-type'?: string }, 200>>();
-        expect(request.response.raw).toBeInstanceOf(Response);
-        expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
-        expect(request.response.raw.status).toBe(200);
         expect(Object.fromEntries(response.headers)).toEqual(
           expect.objectContaining(Object.fromEntries(request.response.raw.headers)),
         );
