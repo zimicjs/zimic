@@ -49,7 +49,11 @@ type PartialBodyOrSchema<Body extends HttpBody> =
       ? HttpSearchParams<Partial<Schema>> | HttpSearchParams<Schema>
       : Body extends Blob
         ? Body
-        : DeepPartial<Body>;
+        : Body extends ArrayBuffer
+          ? Body
+          : Body extends ReadableStream
+            ? Body
+            : DeepPartial<Body>;
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
 export type HttpRequestHandlerBodyStaticRestriction<

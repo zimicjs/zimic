@@ -170,7 +170,7 @@ const response = await fetch(`/users/${userId}/avatar`, {
 Binary bodies are used to send raw binary data in requests. To send a binary body, declare its type in your
 [schema](/docs/zimic-http/guides/1-schemas.md). [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob),
 [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), and
-[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) are frequently used types for binary data.
+[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) are common types for binary data.
 
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
@@ -217,17 +217,26 @@ const videoFile = new File([videoBuffer], 'video.mp4');
 const response = await fetch('/upload', {
   method: 'POST',
   // highlight-start
-  headers?: { 'content-type'?: 'video/mp4' },
+  headers: { 'content-type': 'video/mp4' },
   body: videoFile,
   // highlight-end
 });
 ```
 
-If you want to stream the request body, use
-[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) to create a stream of data. This is useful
-for large files or when you want to send data in chunks.
+#### Request streaming
 
-```ts
+When working with large files or chunked data, you can use
+[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) and `duplex: 'half'` to stream the request
+body. This allows you to send data in smaller parts, which can be more efficient and reduce memory usage.
+
+```ts title='schema.ts'
+import { HttpSchema } from '@zimic/http';
+
+interface Video {
+  id: string;
+  url: string;
+}
+
 type Schema = HttpSchema<{
   '/upload': {
     POST: {
@@ -248,14 +257,22 @@ type Schema = HttpSchema<{
 ```ts
 import fs from 'fs';
 import { Readable } from 'stream';
+import { createFetch } from '@zimic/fetch';
 
-const videoStream = fs.createReadStream('video.mp4');
+const fetch = createFetch<Schema>({
+  baseURL: 'http://localhost:3000',
+});
+
+// Streaming a file from the file system
+const fileStream = fs.createReadStream('video.mp4');
+const requestStream = Readable.toWeb(fileStream);
 
 const response = await fetch('/upload', {
   method: 'POST',
   // highlight-start
-  headers?: { 'content-type'?: 'video/mp4' },
-  body: Readable.toWeb(videoStream) as ReadableStream,
+  headers: { 'content-type': 'video/mp4' },
+  body: requestStream,
+  duplex: 'half',
   // highlight-end
 });
 ```
@@ -481,9 +498,30 @@ const response = await fetch(`/videos/${video.id}`, {
 const videoBlob = await response.blob();
 ```
 
-If you need streaming, you can use [`response.body`](https://developer.mozilla.org/docs/Web/API/Response/body) to get a
-[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream). This is useful for large files, when you
-want to process the data in chunks, or when you want to pipe the data to another stream, such as a local file.
+#### Response streaming
+
+Similarly to [request streaming](#request-streaming), you can stream the response body using
+[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream). This allows you to receive large files or
+chunked data in smaller parts, which can reduce memory usage and improve performance.
+
+```ts title='schema.ts'
+import { HttpSchema } from '@zimic/http';
+
+type Schema = HttpSchema<{
+  '/videos/:videoId': {
+    GET: {
+      response: {
+        200: {
+          // highlight-start
+          headers?: { 'content-type'?: string };
+          body: ReadableStream;
+          // highlight-end
+        };
+      };
+    };
+  };
+}>;
+```
 
 ```ts
 import fs from 'fs';
@@ -495,11 +533,11 @@ const response = await fetch(`/videos/${video.id}`, {
 });
 
 // highlight-start
-const videoStream = Readable.fromWeb(response.body as NodeReadableStream);
-const outputStream = fs.createWriteStream('video.mp4');
+const responseStream = Readable.fromWeb(response.body as NodeReadableStream);
+const fileStream = fs.createWriteStream('video.mp4');
 
-// Stream the response body to a file
-await stream.promises.pipeline(videoStream, outputStream);
+// Stream the response body to a local file
+await stream.promises.pipeline(responseStream, fileStream);
 // highlight-end
 ```
 

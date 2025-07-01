@@ -14,6 +14,8 @@ import jsonContains from '@zimic/utils/data/jsonContains';
 import jsonEquals from '@zimic/utils/data/jsonEquals';
 import { Default, Range } from '@zimic/utils/types';
 
+import { convertArrayBufferToBlob, convertReadableStreamToBlob } from '@/utils/data';
+
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import DisabledRequestSavingError from './errors/DisabledRequestSavingError';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
@@ -331,7 +333,11 @@ class HttpRequestHandlerClient<
           };
     }
 
-    if (restrictionBody instanceof Blob) {
+    if (
+      restrictionBody instanceof Blob ||
+      restrictionBody instanceof ArrayBuffer ||
+      restrictionBody instanceof ReadableStream
+    ) {
       if (!(body instanceof Blob)) {
         return {
           value: false,
@@ -339,7 +345,17 @@ class HttpRequestHandlerClient<
         };
       }
 
-      const matchesRestriction = await blobEquals(body, restrictionBody);
+      let restrictionBodyAsBlob: Blob;
+
+      if (restrictionBody instanceof ArrayBuffer) {
+        restrictionBodyAsBlob = convertArrayBufferToBlob(restrictionBody, { type: body.type });
+      } else if (restrictionBody instanceof ReadableStream) {
+        restrictionBodyAsBlob = await convertReadableStreamToBlob(restrictionBody, { type: body.type });
+      } else {
+        restrictionBodyAsBlob = restrictionBody;
+      }
+
+      const matchesRestriction = await blobEquals(body, restrictionBodyAsBlob);
 
       return matchesRestriction
         ? { value: true }

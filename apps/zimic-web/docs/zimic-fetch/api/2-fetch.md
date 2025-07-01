@@ -47,6 +47,11 @@ fetch(input, init);
      The search parameters to be sent with the request. If provided, it will have preference over the default search
      parameters of the fetch instance.
 
+   - **duplex**: `'half' | undefined`
+
+     The duplex mode for the request. If set to `'half'`, the request body will be streamed. See
+     [Request streaming](/docs/zimic-fetch/guides/4-bodies.md#request-streaming) for more details.
+
 **Returns**: `Promise<FetchResponse>`
 
 A promise that resolves to a [`FetchResponse`](/docs/zimic-fetch/api/4-fetch-response.md), which is typed with the
@@ -116,6 +121,11 @@ interface, with the following additional properties:
 - **searchParams**: `HttpSearchParamsSchema.Loose | undefined`
 
   The default search parameters to be sent with each request.
+
+- **duplex**: `'half' | undefined`
+
+  The duplex mode for the fetch instance. If set to `'half'`, the request body will be streamed. See
+  [Request streaming](/docs/zimic-fetch/guides/4-bodies.md#request-streaming) for more details.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
@@ -313,6 +323,11 @@ fetch.loose(input, init);
      The search parameters to be sent with the request. If provided, it will have preference over the default search
      parameters of the fetch instance.
 
+   - **duplex**: `'half' | undefined`
+
+     The duplex mode for the request. If set to `'half'`, the request body will be streamed. See
+     [Request streaming](/docs/zimic-fetch/guides/4-bodies.md#request-streaming) for more details.
+
 See our [authentication guide](/docs/zimic-fetch/guides/5-authentication.md#handling-errors) for an example of how to
 use `fetch.loose`.
 
@@ -354,6 +369,11 @@ new fetch.Request(input, init);
 
      The search parameters to be sent with the request. If provided, it will have preference over the default search
      parameters of the fetch instance.
+
+   - **duplex**: `'half' | undefined`
+
+     The duplex mode for the request. If set to `'half'`, the request body will be streamed. See
+     [Request streaming](/docs/zimic-fetch/guides/4-bodies.md#request-streaming) for more details.
 
 **Related**:
 

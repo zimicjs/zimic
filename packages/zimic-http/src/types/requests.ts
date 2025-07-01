@@ -12,7 +12,7 @@ import { HttpSearchParamsSchema } from '../searchParams/types';
 
 /** The body type for HTTP requests and responses. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type HttpBody = JSONValue | HttpFormData<any> | HttpSearchParams<any> | Blob | ArrayBuffer;
+export type HttpBody = JSONValue | HttpFormData<any> | HttpSearchParams<any> | Blob | ArrayBuffer | ReadableStream;
 
 export namespace HttpBody {
   /** A loose version of the HTTP body type. JSON values are not strictly typed. */
@@ -124,9 +124,9 @@ export type HttpRequestSearchParamsSchema<MethodSchema extends HttpMethodSchema>
   'searchParams' extends keyof MethodSchema['request'] ? Default<MethodSchema['request']>['searchParams'] : never;
 
 export type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = ReplaceBy<
-  ReplaceBy<IfNever<DefaultNoExclude<Default<MethodSchema['request']>['body']>, null>, undefined, null>,
-  ArrayBuffer,
-  Blob
+  IfNever<DefaultNoExclude<Default<MethodSchema['request']>['body']>, null>,
+  undefined,
+  null
 >;
 
 type HttpResponseHeadersSchemaFromBody<
@@ -162,11 +162,7 @@ export type HttpResponseBodySchema<
   MethodSchema extends HttpMethodSchema,
   StatusCode extends HttpStatusCode,
 > = ReplaceBy<
-  ReplaceBy<
-    IfNever<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['body']>, null>,
-    undefined,
-    null
-  >,
-  ArrayBuffer,
-  Blob
+  IfNever<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['body']>, null>,
+  undefined,
+  null
 >;

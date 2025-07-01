@@ -14,9 +14,11 @@ and receive data in a response. Request bodies are commonly used to include a pa
 process, whereas response bodies may contain the result returned by the server. A body can contain various types of
 data, such as JSON, XML, and binary data such as images and files.
 
-`@zimic/interceptor` automatically parses request and response bodies based on their `content-type` header.
+## Default body parsing
 
-| `content-type`                      | Default parsed type                                                |
+`@zimic/interceptor` automatically parses request and response bodies based on their `content-type` header:
+
+| `content-type`                      | Parsed as                                                          |
 | ----------------------------------- | ------------------------------------------------------------------ |
 | `application/json`                  | `JSON`                                                             |
 | `application/xml`                   | `String`                                                           |
@@ -29,7 +31,7 @@ data, such as JSON, XML, and binary data such as images and files.
 | `audio/*`                           | `Blob`                                                             |
 | `font/*`                            | `Blob`                                                             |
 | `video/*`                           | `Blob`                                                             |
-| `*/*` (others)                      | `JSON` if possible, otherwise `String`                             |
+| `*/*` (others)                      | `JSON` if possible, otherwise `Blob`                               |
 
 ## Using request bodies
 
@@ -228,7 +230,7 @@ await interceptor
 Binary bodies are used to send raw binary data in requests. To send a binary body, declare its type in your
 [schema](/docs/zimic-http/guides/1-schemas.md). [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob),
 [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), and
-[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) are frequently used types for binary data.
+[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) are common types for binary data.
 
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
@@ -294,6 +296,88 @@ await interceptor
   .with({
     // highlight-next-line
     body: videoFile,
+  })
+  .respond({
+    status: 201,
+    body: video,
+  })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+#### Request streaming
+
+When working with large files or chunked data, you can use
+[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) to handle streamed request bodies.
+
+```ts title='schema.ts'
+import { HttpSchema } from '@zimic/http';
+
+interface Video {
+  id: string;
+  url: string;
+}
+
+type Schema = HttpSchema<{
+  '/upload': {
+    POST: {
+      request: {
+        // highlight-start
+        headers?: { 'content-type'?: string };
+        body: ReadableStream;
+        // highlight-end
+      };
+    };
+    response: {
+      201: { body: Video };
+    };
+  };
+}>;
+```
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+import fs from 'fs';
+import { Readable } from 'stream';
+
+// Streaming a file from the file system
+const fileStream = fs.createReadStream('video.mp4');
+const requestStream = Readable.toWeb(fileStream);
+
+interceptor
+  .post('/upload')
+  .with({
+    // highlight-next-line
+    body: requestStream,
+  })
+  .respond({
+    status: 201,
+    body: video,
+  })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+import fs from 'fs';
+import { Readable } from 'stream';
+
+// Streaming a file from the file system
+const fileStream = fs.createReadStream('video.mp4');
+const requestStream = Readable.toWeb(fileStream);
+
+await interceptor
+  .post('/upload')
+  .with({
+    // highlight-next-line
+    body: requestStream,
   })
   .respond({
     status: 201,
@@ -643,6 +727,78 @@ await interceptor
     status: 200,
     // highlight-next-line
     body: videoFile,
+  })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+#### Response streaming
+
+Similarly to [request streaming](#request-streaming), you can stream response bodies using
+[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream).
+
+```ts title='schema.ts'
+import { HttpSchema } from '@zimic/http';
+
+type Schema = HttpSchema<{
+  '/videos/:videoId': {
+    GET: {
+      response: {
+        200: {
+          // highlight-start
+          headers?: { 'content-type'?: string };
+          body: ReadableStream;
+          // highlight-end
+        };
+      };
+    };
+  };
+}>;
+```
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+import fs from 'fs';
+import stream, { Readable } from 'stream';
+import { HttpFormData } from '@zimic/http';
+
+// Streaming a file from the file system
+const fileStream = fs.createReadStream('video.mp4');
+const responseStream = Readable.toWeb(fileStream);
+
+interceptor
+  .get(`/videos/${video.id}`)
+  .respond({
+    status: 200,
+    // highlight-next-line
+    body: responseStream,
+  })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+import fs from 'fs';
+import stream, { Readable } from 'stream';
+import { HttpFormData } from '@zimic/http';
+
+// Streaming a file from the file system
+const fileStream = fs.createReadStream('video.mp4');
+const responseStream = Readable.toWeb(fileStream);
+
+await interceptor
+  .get(`/videos/${video.id}`)
+  .respond({
+    status: 200,
+    // highlight-next-line
+    body: responseStream,
   })
   .times(1);
 ```

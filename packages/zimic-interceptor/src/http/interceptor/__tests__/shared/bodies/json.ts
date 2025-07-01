@@ -544,12 +544,12 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
       type MethodSchema = HttpSchema.Method<{
         request: {
           headers: { 'content-type': string };
-          body: string;
+          body: Blob;
         };
         response: {
           200: {
             headers: { 'content-type': string };
-            body: string;
+            body: Blob;
           };
         };
       }>;
@@ -563,14 +563,16 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         };
       }>(interceptorOptions, async (interceptor) => {
         const handler = await promiseIfRemote(
-          interceptor[lowerMethod]('/users/:id').respond((request) => {
-            expectTypeOf(request.body).toEqualTypeOf<string>();
-            expect(request.body).toBe(invalidRequestJSONString);
+          interceptor[lowerMethod]('/users/:id').respond(async (request) => {
+            expectTypeOf(request.body).toEqualTypeOf<Blob>();
+            expect(request.body).toBeInstanceOf(Blob);
+            expect(request.body.size).toBe(invalidRequestJSONString.length);
+            expect(await request.body.text()).toBe(invalidRequestJSONString);
 
             return {
               status: 200,
               headers: { 'content-type': '' },
-              body: invalidResponseJSONString,
+              body: new Blob([invalidResponseJSONString]),
             };
           }),
           interceptor,
@@ -594,13 +596,17 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('');
-        expectTypeOf(request.body).toEqualTypeOf<string>();
-        expect(request.body).toBe(invalidRequestJSONString);
+        expectTypeOf(request.body).toEqualTypeOf<Blob>();
+        expect(request.body).toBeInstanceOf(Blob);
+        expect(request.body.size).toBe(invalidRequestJSONString.length);
+        expect(await request.body.text()).toBe(invalidRequestJSONString);
 
         expect(request.response).toBeInstanceOf(Response);
         expect(request.response.headers.get('content-type')).toBe('');
-        expectTypeOf(request.response.body).toEqualTypeOf<string>();
-        expect(request.response.body).toBe(invalidResponseJSONString);
+        expectTypeOf(request.response.body).toEqualTypeOf<Blob>();
+        expect(request.response.body).toBeInstanceOf(Blob);
+        expect(request.response.body.size).toBe(invalidResponseJSONString.length);
+        expect(await request.response.body.text()).toBe(invalidResponseJSONString);
       });
     });
 
@@ -672,12 +678,12 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
       type MethodSchema = HttpSchema.Method<{
         request: {
           headers: { 'content-type': string };
-          body: string;
+          body: Blob;
         };
         response: {
           200: {
             headers: { 'content-type': string };
-            body: string;
+            body: Blob;
           };
         };
       }>;
@@ -691,14 +697,16 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         };
       }>(interceptorOptions, async (interceptor) => {
         const handler = await promiseIfRemote(
-          interceptor[lowerMethod]('/users/:id').respond((request) => {
-            expectTypeOf(request.body).toEqualTypeOf<string>();
-            expect(request.body).toBe(invalidRequestJSONString);
+          interceptor[lowerMethod]('/users/:id').respond(async (request) => {
+            expectTypeOf(request.body).toEqualTypeOf<Blob>();
+            expect(request.body).toBeInstanceOf(Blob);
+            expect(request.body.size).toBe(invalidRequestJSONString.length);
+            expect(await request.body.text()).toBe(invalidRequestJSONString);
 
             return {
               status: 200,
               headers: { 'content-type': 'unknown' },
-              body: invalidResponseJSONString,
+              body: new Blob([invalidResponseJSONString]),
             };
           }),
           interceptor,
@@ -722,13 +730,17 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('unknown');
-        expectTypeOf(request.body).toEqualTypeOf<string>();
-        expect(request.body).toBe(invalidRequestJSONString);
+        expectTypeOf(request.body).toEqualTypeOf<Blob>();
+        expect(request.body).toBeInstanceOf(Blob);
+        expect(request.body.size).toBe(invalidRequestJSONString.length);
+        expect(await request.body.text()).toBe(invalidRequestJSONString);
 
         expect(request.response).toBeInstanceOf(Response);
         expect(request.response.headers.get('content-type')).toBe('unknown');
-        expectTypeOf(request.response.body).toEqualTypeOf<string>();
-        expect(request.response.body).toBe(invalidResponseJSONString);
+        expectTypeOf(request.response.body).toEqualTypeOf<Blob>();
+        expect(request.response.body).toBeInstanceOf(Blob);
+        expect(request.response.body.size).toBe(invalidResponseJSONString.length);
+        expect(await request.response.body.text()).toBe(invalidResponseJSONString);
       });
     });
 

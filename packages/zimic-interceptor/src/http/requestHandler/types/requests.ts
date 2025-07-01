@@ -14,7 +14,7 @@ import {
   HttpStatusCode,
   InferPathParams,
 } from '@zimic/http';
-import { Default, PartialByKey, PossiblePromise } from '@zimic/utils/types';
+import { Default, PartialByKey, PossiblePromise, ReplaceBy } from '@zimic/utils/types';
 
 type HttpRequestHandlerResponseBody<
   ResponseSchema extends HttpResponseSchema,
@@ -65,14 +65,35 @@ export type HttpRequestHandlerResponseDeclarationFactory<
 /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrequests `handler.requests` API reference} */
 export interface HttpInterceptorRequest<Path extends string, MethodSchema extends HttpMethodSchema>
   extends Omit<HttpRequest, keyof Body | 'headers' | 'clone'> {
-  /** The headers of the request. */
+  /**
+   * The headers of the request.
+   *
+   * @see {@link https://zimic.dev/docs/interceptor/guides/http/headers#using-request-headers Using request headers}
+   */
   headers: HttpHeaders<Default<HttpRequestHeadersSchema<MethodSchema>>>;
-  /** The path parameters of the request. They are parsed from the path string when using dynamic paths. */
+
+  /**
+   * The path parameters of the request. They are parsed from the path string when using dynamic paths.
+   *
+   * @see {@link https://zimic.dev/docs/interceptor/guides/http/path-params#using-request-path-params Using request path parameters}
+   */
   pathParams: InferPathParams<Path>;
-  /** The search parameters of the request. */
+
+  /**
+   * The search parameters of the request.
+   *
+   * @see {@link https://zimic.dev/docs/interceptor/guides/http/search-params#using-request-search-params Using request search parameters}
+   */
   searchParams: HttpSearchParams<Default<HttpRequestSearchParamsSchema<MethodSchema>>>;
-  /** The body of the request. It is already parsed by default. */
-  body: HttpRequestBodySchema<MethodSchema>;
+
+  /**
+   * The body of the request. It is already parsed by default as detailed in
+   * {@link https://zimic.dev/docs/interceptor/guides/http/bodies#default-body-parsing Default body parsing}.
+   *
+   * @see {@link https://zimic.dev/docs/interceptor/guides/http/bodies#using-request-bodies Using request bodies}
+   */
+  body: ReplaceBy<HttpRequestBodySchema<MethodSchema>, ArrayBuffer | ReadableStream, Blob>;
+
   /** The raw request object. */
   raw: HttpRequest<HttpRequestBodySchema<MethodSchema>, Default<HttpRequestHeadersSchema<MethodSchema>>>;
 }
@@ -80,12 +101,24 @@ export interface HttpInterceptorRequest<Path extends string, MethodSchema extend
 /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrequests `handler.requests` API reference} */
 export interface HttpInterceptorResponse<MethodSchema extends HttpMethodSchema, StatusCode extends HttpStatusCode>
   extends Omit<HttpResponse, keyof Body | 'headers' | 'clone'> {
-  /** The headers of the response. */
+  /**
+   * The headers of the response.
+   *
+   * @see {@link https://zimic.dev/docs/interceptor/guides/http/headers#using-response-headers Using response headers}
+   */
   headers: HttpHeaders<Default<HttpResponseHeadersSchema<MethodSchema, StatusCode>>>;
+
   /** The status code of the response. */
   status: StatusCode;
-  /** The body of the response. It is already parsed by default. */
-  body: HttpResponseBodySchema<MethodSchema, StatusCode>;
+
+  /**
+   * The body of the response. It is already parsed by default as detailed in
+   * {@link https://zimic.dev/docs/interceptor/guides/http/bodies#default-body-parsing Default body parsing}.
+   *
+   * @see {@link https://zimic.dev/docs/interceptor/guides/http/bodies#using-response-bodies Using response bodies}
+   */
+  body: ReplaceBy<HttpResponseBodySchema<MethodSchema, StatusCode>, ArrayBuffer | ReadableStream, Blob>;
+
   /** The raw response object. */
   raw: HttpResponse<
     HttpResponseBodySchema<MethodSchema, StatusCode>,
