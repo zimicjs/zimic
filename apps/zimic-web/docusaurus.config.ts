@@ -170,11 +170,6 @@ const config: Docusaurus.Config = {
       },
       items: [
         {
-          label: 'Docs',
-          to: 'docs',
-          position: 'left',
-        },
-        {
           label: 'Ecosystem',
           type: 'dropdown',
           position: 'left',
@@ -195,6 +190,11 @@ const config: Docusaurus.Config = {
               sidebarId: 'interceptor',
             },
           ],
+        },
+        {
+          label: 'Docs',
+          to: 'docs',
+          position: 'left',
         },
         {
           label: 'Examples',
