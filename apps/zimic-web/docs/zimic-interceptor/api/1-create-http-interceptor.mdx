@@ -21,7 +21,6 @@ createHttpInterceptor<Schema>(options);
 1. **options**: `HttpInterceptorOptions`
 
    The options to create an [HTTP interceptor](/docs/zimic-interceptor/api/2-http-interceptor.mdx).
-
    - **type**: `'local' | 'remote' | undefined` (default: `'local'`)
 
      The type of the HTTP interceptor, either [local](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md)
@@ -38,7 +37,6 @@ createHttpInterceptor<Schema>(options);
    - **requestSaving**: `Partial<HttpInterceptorRequestSaving> | undefined`
 
      Configures if the intercepted requests are saved and how they are handled.
-
      - **enabled**: `boolean | undefined` (default: `process.env.NODE_ENV === 'test'`)
 
        Whether [request handlers](/docs/zimic-interceptor/api/3-http-request-handler.mdx) should save their intercepted
@@ -71,7 +69,6 @@ createHttpInterceptor<Schema>(options);
      The strategy to use for [unhandled requests](/docs/zimic-interceptor/guides/http/8-unhandled-requests.md). If a
      request starts with the base URL of the interceptor, but no matching handler exists, this strategy will be used. If
      a function is provided, it will be called with the unhandled request.
-
      - **action**: `'bypass' | 'reject'`
 
        The action to take when an unhandled request is intercepted. When set to `'bypass'`, the request will be allowed
@@ -92,7 +89,6 @@ createHttpInterceptor<Schema>(options);
      when connecting to an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is required if the
      interceptor server was started with the
      [`--tokens-dir` option](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-start).
-
      - **token**: `string`
 
        The authentication token to use.
