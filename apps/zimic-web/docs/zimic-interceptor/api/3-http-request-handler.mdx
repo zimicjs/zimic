@@ -97,7 +97,6 @@ await handler.with((request) => matchesRequest);
    The restriction to match intercepted requests. It can be
    [static](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#static-restrictions), defined as an object
    with the following properties:
-
    - **headers**: `HttpRequestHandlerHeadersStaticRestriction<Schema, Method, Path> | undefined`
 
      A set of headers that the intercepted request must contain to match the handler. If exact is `true`, the request
@@ -123,7 +122,6 @@ await handler.with((request) => matchesRequest);
    function to dynamically decide how to check the request:
 
    **Arguments**:
-
    1. **request**: `HttpInterceptorRequest<Path, MethodSchema>`
 
       The intercepted request to check against the restriction.
@@ -177,7 +175,6 @@ await handler.respond((request) => declaration);
    `HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode> | HttpRequestHandlerResponseDeclarationFactory<MethodSchema, StatusCode>`
 
    The response declaration or a factory to create it. It can be a static object:
-
    - **status**: `HttpStatusCode`
 
      The status code for the response.
@@ -193,7 +190,6 @@ await handler.respond((request) => declaration);
    A declaration can also be a function to dynamically decide how to respond to the request:
 
    **Arguments**:
-
    1. **request**: `HttpInterceptorRequest<Path, MethodSchema>`
 
       The intercepted request to respond to.

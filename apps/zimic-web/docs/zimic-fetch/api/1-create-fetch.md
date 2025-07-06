@@ -22,7 +22,6 @@ createFetch<Schema>(options);
    The options to create a [fetch instance](/docs/zimic-fetch/api/2-fetch.md) and use as defaults. They inherit from the
    native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) interface, with the following
    additional properties:
-
    - **baseURL**: `string`
 
      The base URL for the fetch instance, which will be prepended to all request URLs.
