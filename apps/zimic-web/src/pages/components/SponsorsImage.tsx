@@ -7,6 +7,10 @@ function SponsorsImage() {
 
   const hasEmptySponsors = !sponsorsImage || sponsorsImage.includes('viewBox="0 0 800 40"');
 
+  if (!isLoadingSponsorsImage && !isErrorSponsorsImage && hasEmptySponsors) {
+    return null;
+  }
+
   return (
     <div className="flex w-full justify-center text-slate-600 dark:text-slate-300">
       {isLoadingSponsorsImage && <LoadingIcon role="img" title="Loading sponsors..." className="h-6 w-6" />}
