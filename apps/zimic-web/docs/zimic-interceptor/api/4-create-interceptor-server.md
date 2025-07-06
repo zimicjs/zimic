@@ -20,7 +20,6 @@ createInterceptorServer(options);
 1. **options**: `InterceptorServerOptions`
 
    The options to create an [interceptor server](/docs/zimic-interceptor/cli/1-server.md).
-
    - **hostname**: `string | undefined` (default: `'localhost'`)
 
      The hostname to start the server on.

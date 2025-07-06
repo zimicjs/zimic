@@ -88,7 +88,6 @@ error.toObject(options);
 1. `options`: `FetchResponseErrorObjectOptions`
 
    The options for converting the error. By default, the body of the request and response will not be included.
-
    - `includeRequestBody`: `boolean | undefined` (default `false`)
 
      Whether to include the body of the request in the plain object.
