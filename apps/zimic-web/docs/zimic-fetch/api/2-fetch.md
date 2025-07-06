@@ -32,7 +32,6 @@ fetch(input, init);
    [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md), this argument is optional. The options inherit from the
    native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) interface, with the following
    additional properties:
-
    - **method**: `string`
 
      The HTTP method to use for the request. Differently from the native Fetch API, this is required to ensure that
@@ -309,7 +308,6 @@ fetch.loose(input, init);
    [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md), this argument is optional. The options inherit from the
    native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) interface, with the following
    additional properties:
-
    - **method**: `string | undefined`
 
      The HTTP method to use for the request.
@@ -356,7 +354,6 @@ new fetch.Request(input, init);
    [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md), this argument is optional. The options inherit from the
    native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) interface, with the following
    additional properties:
-
    - **method**: `string`
 
      The HTTP method to use for the request.
