@@ -4,7 +4,7 @@ import os from 'os';
 import path from 'path';
 import color from 'picocolors';
 import util from 'util';
-import { z } from 'zod';
+import * as z from 'zod';
 
 import {
   BASE64URL_REGEX,
@@ -103,10 +103,7 @@ const interceptorTokenFileContentSchema = z.object({
       hash: z.string().length(INTERCEPTOR_TOKEN_HASH_HEX_LENGTH).regex(HEX_REGEX),
       salt: z.string().length(INTERCEPTOR_TOKEN_SALT_HEX_LENGTH).regex(HEX_REGEX),
     }),
-    createdAt: z
-      .string()
-      .datetime()
-      .transform((value) => new Date(value)),
+    createdAt: z.iso.datetime().transform((value) => new Date(value)),
   }),
 });
 
