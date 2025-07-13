@@ -7,7 +7,7 @@
     "url": "https://github.com/zimicjs/zimic.git"
   },
   "private": false,
-  "packageManager": "pnpm@10.12.1",
+  "packageManager": "pnpm@10.13.1",
   "engines": {
     "node": ">=20.0.0"
   },
@@ -37,7 +37,7 @@
     "prettier": "3.6.2",
     "prettier-plugin-jsdoc": "1.3.3",
     "prettier-plugin-sh": "0.18.0",
-    "prettier-plugin-tailwindcss": "0.6.13",
+    "prettier-plugin-tailwindcss": "0.6.14",
     "turbo": "^2.5.2"
   }
 }
