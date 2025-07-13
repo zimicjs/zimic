@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ZodIssue } from 'zod';
+import * as z from 'zod';
 
 import runCLI from '@/cli/cli';
 import InvalidInterceptorTokenFileError from '@/server/errors/InvalidInterceptorTokenFileError';
@@ -175,20 +175,20 @@ describe('CLI > Server token list', () => {
 
       expect(console.error).toHaveBeenCalledTimes(1);
 
-      const validationIssues: ZodIssue[] = [
+      const validationIssues: z.core.$ZodIssue[] = [
         {
-          code: 'invalid_literal',
-          expected: 1,
-          received: undefined,
+          code: 'invalid_value',
+          values: [1],
+          input: undefined,
           path: ['version'],
-          message: 'Invalid literal value, expected 1',
+          message: 'Invalid input: expected 1',
         },
         {
-          code: 'invalid_type',
           expected: 'object',
-          received: 'undefined',
+          code: 'invalid_type',
+          input: undefined,
           path: ['token'],
-          message: 'Required',
+          message: 'Invalid input: expected object, received undefined',
         },
       ];
       const validationErrorMessage = JSON.stringify(validationIssues, null, 2);

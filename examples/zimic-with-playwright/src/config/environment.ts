@@ -1,10 +1,10 @@
-import { z } from 'zod';
+import * as z from 'zod';
 
 const environmentSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production'] as const),
   PORT: z.coerce.number().int().positive().default(3008),
 
-  GITHUB_API_BASE_URL: z.string().url().or(z.literal('')).default(''),
+  GITHUB_API_BASE_URL: z.url().or(z.literal('')).default(''),
 
   PLAYWRIGHT_WORKERS: z.coerce.number().default(1),
   PLAYWRIGHT_WORKER_INDEX: z.coerce.number().int().nonnegative().default(0),
