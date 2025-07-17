@@ -6,6 +6,33 @@ import { ThemeConfigAlgolia } from '@docusaurus/theme-search-algolia';
 import type * as Docusaurus from '@docusaurus/types';
 import { themes as prismThemes } from 'prism-react-renderer';
 
+const announcementBars = {
+  'github-star': {
+    id: 'announcement-bar-github-star',
+    content: `
+      If you like Zimic, give us a star on
+      <a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic">
+        GitHub
+      </a>! ⭐️
+    `,
+    textColor: 'var(--ifm-background-color)',
+    backgroundColor: 'var(--ifm-color-content)',
+    isCloseable: true,
+  },
+  '1.0-rc': {
+    id: 'announcement-bar-1.0-rc',
+    content: `
+      🎉
+      <a target="_blank" rel="noopener noreferrer" href="https://github.com/orgs/zimicjs/discussions/categories/announcements">
+        Zimic 1.0 release candidate
+      </a> is here! 🎉
+    `,
+    textColor: 'var(--ifm-background-color)',
+    backgroundColor: 'var(--ifm-color-content)',
+    isCloseable: true,
+  },
+};
+
 const config: Docusaurus.Config = {
   title: 'Zimic',
   tagline: 'Next-gen TypeScript-first HTTP integrations',
@@ -119,15 +146,7 @@ const config: Docusaurus.Config = {
       respectPrefersColorScheme: false,
     },
 
-    announcementBar: {
-      id: 'announcement-bar-github-star',
-      content:
-        'If you like Zimic, give us a star on ' +
-        '<a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic">GitHub</a>! ⭐️',
-      textColor: 'var(--ifm-background-color)',
-      backgroundColor: 'var(--ifm-color-content)',
-      isCloseable: true,
-    },
+    announcementBar: announcementBars['github-star'],
 
     prism: {
       theme: prismThemes.github,
