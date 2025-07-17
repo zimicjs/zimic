@@ -6,6 +6,7 @@ on:
       - closed
     branches:
       - canary
+      - rc
       - zimic-web@*
   workflow_dispatch:
     inputs:
@@ -27,6 +28,7 @@ on:
         default: canary
         options:
           - canary
+          - rc
           - none
 
 concurrency:
