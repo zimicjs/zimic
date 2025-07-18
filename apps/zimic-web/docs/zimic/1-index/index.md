@@ -167,7 +167,7 @@ A minimal (~2 kB minified and gzipped) and type-safe `fetch`-like API client.
 
 ### `@zimic/interceptor`
 
-A type-safe HTTP interceptor library for handling and mocking HTTP requests in development and testing.
+A type-safe interceptor library for handling and mocking HTTP requests in development and testing.
 
 :::info Status: <span>**Beta** :seedling:</span>
 

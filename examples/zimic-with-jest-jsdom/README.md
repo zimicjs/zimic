@@ -18,13 +18,6 @@ This example uses Zimic with [Jest](https://jestjs.io) and [JSDOM](https://githu
 `@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked
 with `@zimic/interceptor`.
 
-> [!TIP]
->
-> `@zimic/fetch` and `@zimic/interceptor` are not required to be used together. `@zimic/interceptor` is compatible with
-> any HTTP client implementation, as `@zimic/fetch` works with any HTTP interceptor library. With that in mind,
-> `@zimic/fetch` and `@zimic/interceptor` work best together, providing a seamless and type-safe experience for
-> performing HTTP requests in your application and mocking them during development and testing.
-
 ### `@zimic/interceptor`
 
 - GitHub HTTP interceptor: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
