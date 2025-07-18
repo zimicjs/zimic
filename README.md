@@ -125,7 +125,7 @@ Status: :seedling: **Beta**
 
 ### `@zimic/interceptor`
 
-A type-safe HTTP interceptor library for handling and mocking HTTP requests in development and testing.
+A type-safe interceptor library for handling and mocking HTTP requests in development and testing.
 
 Status: :seedling: **Beta**
 

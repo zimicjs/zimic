@@ -117,8 +117,7 @@ Zimic uses the following long-lived branches:
 | `@zimic/interceptor@0` | Production branch containing the latest stable code for `@zimic/interceptor` in the `v0.x.x` range. |
 
 New pull requests should be opened against the `canary` branch. The `@zimic/*@*` and `main` branches are updated only
-when a new stable release is ready for their respective major version. The `rc` branch is used to prepare the next major
-version of Zimic and is updated with the latest changes from `canary` when a new release candidate is ready.
+when a new stable release is ready for their respective major version.
 
 Each supported major version of Zimic will have its own `@zimic/*@*` branch. This will allow backporting fixes and
 security patches to older versions.

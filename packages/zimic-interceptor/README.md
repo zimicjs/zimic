@@ -36,7 +36,7 @@
 
 ---
 
-`@zimic/interceptor` is a type-safe HTTP interceptor library for handling and mocking HTTP requests in development and
+`@zimic/interceptor` is a type-safe interceptor library for handling and mocking HTTP requests in development and
 testing.
 
 Status: :seedling: **Beta**

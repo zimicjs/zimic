@@ -6,7 +6,7 @@ slug: /interceptor
 
 # Introduction
 
-`@zimic/interceptor` is a type-safe HTTP interceptor library for handling and mocking HTTP requests in development and
+`@zimic/interceptor` is a type-safe interceptor library for handling and mocking HTTP requests in development and
 testing.
 
 :::info Status: <span>**Beta** :seedling:</span>
