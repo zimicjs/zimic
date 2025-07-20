@@ -9,7 +9,7 @@ slug: /http
 `@zimic/http` is a collection of type-safe utilities to handle HTTP requests and responses, including headers, search
 params, and form data.
 
-:::info Status: <span>**Beta** :seedling:</span>
+:::info Status: <span>:bulb: **Release Candidate**</span>
 
 :::
 

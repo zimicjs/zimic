@@ -109,7 +109,7 @@ Zimic is split into an ecosystem of integrated packages.
 A collection of type-safe utilities to handle HTTP requests and responses, including headers, search params, and form
 data.
 
-:::info Status: <span>**Beta** :seedling:</span>
+:::info Status: <span>:bulb: **Release Candidate**</span>
 
 :::
 
@@ -139,7 +139,7 @@ data.
 
 A minimal (~2 kB minified and gzipped) and type-safe `fetch`-like API client.
 
-:::info Status: <span>**Beta** :seedling:</span>
+:::info Status: <span>:bulb: **Release Candidate**</span>
 
 :::
 
@@ -169,7 +169,7 @@ A minimal (~2 kB minified and gzipped) and type-safe `fetch`-like API client.
 
 A type-safe interceptor library for handling and mocking HTTP requests in development and testing.
 
-:::info Status: <span>**Beta** :seedling:</span>
+:::info Status: <span>:bulb: **Release Candidate**</span>
 
 :::
 
