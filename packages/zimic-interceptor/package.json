@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "0.21.2",
+  "version": "0.21.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -109,7 +109,7 @@
     "bufferutil": "4.0.9"
   },
   "devDependencies": {
-    "@types/node": "^24.0.13",
+    "@types/node": "^24.0.15",
     "@types/ws": "^8.18.1",
     "@types/yargs": "^17.0.33",
     "@vitest/browser": "^3.2.4",

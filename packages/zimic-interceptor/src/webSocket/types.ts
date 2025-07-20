@@ -2,23 +2,24 @@ import { JSONSerialized, JSONValue } from '@zimic/http';
 import { PossiblePromise } from '@zimic/utils/types';
 import type { WebSocket as ClientSocket } from 'isomorphic-ws';
 
+export interface WebSocketChannelData<Channel extends string> {
+  id: string;
+  channel: Channel;
+}
+
 export interface WebSocketEventMessage<
   Schema extends WebSocketSchema,
   Channel extends WebSocketChannel<Schema> = WebSocketChannel<Schema>,
-> {
-  id: string;
-  channel: Channel;
+> extends WebSocketChannelData<Channel> {
   data: Schema[Channel]['event'];
 }
 
 export interface WebSocketReplyMessage<
   Schema extends WebSocketSchema,
   Channel extends WebSocketChannel<Schema> = WebSocketChannel<Schema>,
-> {
-  id: string;
-  requestId: string;
-  channel: Channel;
+> extends WebSocketChannelData<Channel> {
   data: Schema[Channel]['reply'];
+  requestId: string;
 }
 
 export type WebSocketMessage<

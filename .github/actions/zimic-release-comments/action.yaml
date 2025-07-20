@@ -28,6 +28,7 @@ runs:
 
           const isStable = !version.includes('-');
           const isCanary = version.includes('-canary.');
+          const isReleaseCandidate = version.includes('-rc.');
 
           const githubOwner = 'zimicjs';
           const githubRepository = 'zimic';
@@ -81,6 +82,7 @@ runs:
                       type === 'package' && `### Released in [${tag}](https://github.com/${githubOwner}/${githubRepository}/releases/tag/${tag}) :tada:\n`,
                       type === 'documentation' && isStable && '### Released to [**zimic.dev**](https://zimic.dev) :tada:\n',
                       type === 'documentation' && isCanary && '### Released to [**canary.zimic.dev**](https://canary.zimic.dev) :tada:\n',
+                      type === 'documentation' && isReleaseCandidate && '### Released to [**rc.zimic.dev**](https://rc.zimic.dev) :tada:\n',
                       `- :pushpin: [**Release notes**](https://github.com/${githubOwner}/${githubRepository}/releases/tag/${tag})`,
                       type === 'package' && `- :package: [**NPM package**](https://www.npmjs.com/package/${projectName}/v/${version})`,
                     ].filter(Boolean).join('\n'),

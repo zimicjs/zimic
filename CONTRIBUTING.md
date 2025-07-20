@@ -110,6 +110,7 @@ Zimic uses the following long-lived branches:
 | Branch                 | Description                                                                                         |
 | ---------------------- | --------------------------------------------------------------------------------------------------- |
 | `canary`               | Development branch containing the latest (possibly unstable) code.                                  |
+| `rc`                   | Release candidate branch containing the latest code that is ready for a new stable release.         |
 | `main`                 | Production branch containing the latest stable code for all projects.                               |
 | `@zimic/http@0`        | Production branch containing the latest stable code for `@zimic/http` in the `v0.x.x` range.        |
 | `@zimic/fetch@0`       | Production branch containing the latest stable code for `@zimic/fetch` in the `v0.x.x` range.       |
