@@ -65,8 +65,8 @@ function HomePage() {
         </div>
 
         <HomeSection
-          title="Features"
-          titleId="features"
+          title="Highlights"
+          titleId="highlights"
           description="Zimic is a collection of type-safe HTTP integration libraries."
           className="mx-auto max-w-[96rem]"
         >
@@ -74,19 +74,18 @@ function HomePage() {
             <FeatureCard
               title="TypeScript-First"
               description="First-class TypeScript support with type generation, inference, validation, and autocompletion."
-              icon={<CogIcon aria-hidden="true" />}
+              icon={<HighVoltageIcon aria-hidden="true" />}
             />
             <FeatureCard
               title="Lightweight"
               description="Minimal bundle size and few dependencies, perfect for client and server-side applications."
-              icon={<HighVoltageIcon aria-hidden="true" />}
+              icon={<CogIcon aria-hidden="true" />}
             />
             <FeatureCard
               title="Developer-Friendly"
               description="Designed with developer experience in mind from the start, with intuitive APIs and comprehensive documentation."
               icon={<OpenPackageIcon aria-hidden="true" />}
             />
-
             <FeatureCard
               title="Thoroughly Tested"
               description="Comprehensive test suite and high coverage to ensure reliability and developer confidence."
