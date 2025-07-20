@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "1.0.0-rc.0",
+  "version": "1.0.0-rc.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -126,7 +126,7 @@
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "@zimic/http": "^0.7.0 || workspace:*",
+    "@zimic/http": "^0.7.0 || ^1.0.0-rc || workspace:*",
     "typescript": ">=5.0.0"
   },
   "peerDependenciesMeta": {
