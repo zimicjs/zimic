@@ -22,14 +22,11 @@ const announcementBars = {
   '1.0-rc': {
     id: 'announcement-bar-1.0-rc',
     content: `
-      🎉
-      <a target="_blank" rel="noopener noreferrer" href="https://github.com/orgs/zimicjs/discussions/categories/announcements">
-        Zimic 1.0 release candidate
-      </a> is here! 🎉
+      🎉 <a target="_blank" rel="noopener noreferrer" href="https://github.com/orgs/zimicjs/discussions/categories/announcements">Zimic 1.0 Release Candidate</a> is here! 🎉
     `,
     textColor: 'var(--ifm-background-color)',
     backgroundColor: 'var(--ifm-color-content)',
-    isCloseable: true,
+    isCloseable: false,
   },
 };
 
@@ -242,7 +239,7 @@ const config: Docusaurus.Config = {
     docs: {
       versionPersistence: 'localStorage',
       sidebar: {
-        hideable: true,
+        hideable: false,
         autoCollapseCategories: false,
       },
     },
@@ -329,11 +326,12 @@ const config: Docusaurus.Config = {
       ],
 
       copyright: `
-        <div class="flex flex-col text-sm space-y-1">
-          <span>Copyright © ${new Date().getFullYear()} Zimic.</span>
+        <div class="text-sm">
+          <span>Zimic © ${new Date().getFullYear()}</span>
+          •
           <span>
             Built with 💙 by
-            <a target="_blank" rel="noopener noreferrer" href="https://github.com/diego-aquino">diego-aquino</a>
+            <a target="_blank" rel="noopener noreferrer" href="https://github.com/diego-aquino">@diego-aquino</a>
             and
             <a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic/graphs/contributors">contributors</a>.
           </span>
