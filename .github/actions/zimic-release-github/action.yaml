@@ -42,4 +42,4 @@ runs:
 
         tag=${{ inputs.project-name }}@${{ inputs.version }}
         git tag "$tag"
-        git push origin "$tag"
+        git push origin "$tag" --no-verify
