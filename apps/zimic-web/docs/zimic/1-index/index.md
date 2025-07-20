@@ -78,14 +78,14 @@ and refactoring which parts of the codebase start reporting type errors. The sch
 [network mocks](/docs/zimic-interceptor/1-index.md) during testing, ensuring that your application, your tests, and your
 mocks are fully typed _by default_ and in sync with the API.
 
-## Features
+## Highlights
 
-- ⚙️ **TypeScript-first**
+- :zap: **TypeScript-first**
 
   Zimic has **first-class TypeScript support**, providing type safety, inference, validation, and autocompletion out of
   the box. "Typed by default" is one of the core principles of Zimic.
 
-- ⚡ **Lightweight**
+- ⚙️ **Lightweight**
 
   The Zimic libraries are designed with minimal bundle sizes and few external dependencies in mind, making them perfect
   for both client and server-side applications.
@@ -102,12 +102,9 @@ mocks are fully typed _by default_ and in sync with the API.
 
 ## Ecosystem
 
-Zimic is split into an ecosystem of integrated packages.
-
 ### `@zimic/http`
 
-A collection of type-safe utilities to handle HTTP requests and responses, including headers, search params, and form
-data.
+Type-safe utilities to handle HTTP requests and responses, including headers, search params, and form data.
 
 :::info Status: <span>:bulb: **Release Candidate**</span>
 

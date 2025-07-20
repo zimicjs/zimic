@@ -64,12 +64,9 @@ Zimic is a collection of TypeScript-first HTTP integration libraries.
 
 ## Ecosystem
 
-Zimic is split into an ecosystem of integrated packages.
-
 ### `@zimic/http`
 
-A collection of type-safe utilities to handle HTTP requests and responses, including headers, search params, and form
-data.
+Type-safe utilities to handle HTTP requests and responses, including headers, search params, and form data.
 
 Status: :bulb: **Release Candidate**
 
