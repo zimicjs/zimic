@@ -335,8 +335,7 @@ const config: Docusaurus.Config = {
             Built with 💙 by
             <a target="_blank" rel="noopener noreferrer" href="https://github.com/diego-aquino">diego-aquino</a>
             and
-            <a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic/graphs/contributors">contributors</a>
-            .
+            <a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic/graphs/contributors">contributors</a>.
           </span>
         </div>
         `,
