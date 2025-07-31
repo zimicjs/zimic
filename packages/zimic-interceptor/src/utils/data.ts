@@ -1,17 +1,20 @@
 import { isClientSide } from './environment';
 
-export async function convertReadableStreamToBlob(stream: ReadableStream, options?: BlobPropertyBag): Promise<Blob> {
-  const chunks: Uint8Array[] = [];
-  const reader = stream.getReader() as ReadableStreamDefaultReader<Uint8Array>;
+export async function convertReadableStreamToBlob(
+  stream: ReadableStream<Uint8Array<ArrayBuffer>>,
+  options?: BlobPropertyBag,
+): Promise<Blob> {
+  const chunks: Uint8Array<ArrayBuffer>[] = [];
+  const reader = stream.getReader();
 
   while (true) {
-    const readResult = await reader.read();
+    const result = await reader.read();
 
-    if (readResult.value) {
-      chunks.push(readResult.value);
+    if (result.value) {
+      chunks.push(result.value);
     }
 
-    if (readResult.done) {
+    if (result.done) {
       break;
     }
   }

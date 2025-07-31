@@ -13,8 +13,8 @@
   },
   "devDependencies": {
     "@zimic/interceptor": "latest",
-    "dotenv-cli": "^8.0.0",
-    "typescript": "^5.8.3",
+    "dotenv-cli": "^9.0.0",
+    "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   }
 }
