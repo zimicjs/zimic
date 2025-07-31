@@ -187,7 +187,7 @@
     "dotenv-cli": "^9.0.0",
     "eslint": "^9.32.0",
     "tsup": "^8.4.0",
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   }
 }
