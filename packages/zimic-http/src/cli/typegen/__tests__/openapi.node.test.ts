@@ -1,7 +1,6 @@
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 import isDefined from '@zimic/utils/data/isDefined';
 import joinURL from '@zimic/utils/url/joinURL';
-import { Blob } from 'buffer';
 import filesystem from 'fs/promises';
 import path from 'path';
 import color from 'picocolors';
@@ -240,13 +239,13 @@ describe('Type generation (OpenAPI)', () => {
               ? joinURL(schemaInterceptor.baseURL, 'spec', fixtureName)
               : inputFilePath;
 
-            const bufferedInputFileContent = await filesystem.readFile(inputFilePath);
+            const inputFileBuffer = (await filesystem.readFile(inputFilePath)) as Buffer<ArrayBuffer>;
 
             schemaInterceptor
               .get(`/spec/${fixtureName}`)
               .respond({
                 status: 200,
-                body: new Blob([bufferedInputFileContent], { type: `application/${fileType}` }),
+                body: new Blob([inputFileBuffer], { type: `application/${fileType}` }),
               })
               .times(fixtureCase.shouldUseURLAsInput ? 1 : 0);
 
