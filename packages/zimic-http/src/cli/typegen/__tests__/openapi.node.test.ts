@@ -1,6 +1,7 @@
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 import isDefined from '@zimic/utils/data/isDefined';
 import joinURL from '@zimic/utils/url/joinURL';
+import { Blob } from 'buffer';
 import filesystem from 'fs/promises';
 import path from 'path';
 import color from 'picocolors';

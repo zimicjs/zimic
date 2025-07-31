@@ -1,26 +1,41 @@
 import { isClientSide } from './environment';
 
-export async function convertReadableStreamToBlob(stream: ReadableStream, options?: BlobPropertyBag): Promise<Blob> {
+export function convertArrayBufferToBlob(buffer: ArrayBuffer, options?: BlobPropertyBag): Blob {
+  return new Blob([buffer], options);
+}
+
+export async function convertReadableStreamToBlob(
+  stream: ReadableStream<Uint8Array>,
+  options?: BlobPropertyBag,
+): Promise<Blob> {
   const chunks: Uint8Array[] = [];
-  const reader = stream.getReader() as ReadableStreamDefaultReader<Uint8Array>;
+  let streamByteLength = 0;
+
+  const reader = stream.getReader();
 
   while (true) {
-    const readResult = await reader.read();
+    const result = await reader.read();
 
-    if (readResult.value) {
-      chunks.push(readResult.value);
+    if (result.value) {
+      chunks.push(result.value);
+      streamByteLength += result.value.byteLength;
     }
 
-    if (readResult.done) {
+    if (result.done) {
       break;
     }
   }
 
-  return new Blob(chunks, options);
-}
+  const buffer = new ArrayBuffer(streamByteLength);
+  const bufferView = new Uint8Array(buffer);
+  let bufferOffset = 0;
 
-export function convertArrayBufferToBlob(buffer: ArrayBuffer, options?: BlobPropertyBag): Blob {
-  return new Blob([buffer], options);
+  for (const chunk of chunks) {
+    bufferView.set(chunk, bufferOffset);
+    bufferOffset += chunk.byteLength;
+  }
+
+  return convertArrayBufferToBlob(buffer, options);
 }
 
 export function convertArrayBufferToBase64(buffer: ArrayBuffer) {
