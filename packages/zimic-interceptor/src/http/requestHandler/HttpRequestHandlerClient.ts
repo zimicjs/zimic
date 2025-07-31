@@ -350,7 +350,10 @@ class HttpRequestHandlerClient<
       if (restrictionBody instanceof ArrayBuffer) {
         restrictionBodyAsBlob = convertArrayBufferToBlob(restrictionBody, { type: body.type });
       } else if (restrictionBody instanceof ReadableStream) {
-        restrictionBodyAsBlob = await convertReadableStreamToBlob(restrictionBody, { type: body.type });
+        restrictionBodyAsBlob = await convertReadableStreamToBlob(
+          restrictionBody as ReadableStream<Uint8Array<ArrayBuffer>>,
+          { type: body.type },
+        );
       } else {
         restrictionBodyAsBlob = restrictionBody;
       }
