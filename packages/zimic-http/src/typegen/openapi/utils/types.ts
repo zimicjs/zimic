@@ -39,7 +39,11 @@ export function createImportDeclaration(
 ) {
   return ts.factory.createImportDeclaration(
     undefined,
-    ts.factory.createImportClause(options.typeOnly, undefined, ts.factory.createNamedImports(importSpecifiers)),
+    ts.factory.createImportClause(
+      options.typeOnly ? ts.SyntaxKind.TypeKeyword : undefined,
+      undefined,
+      ts.factory.createNamedImports(importSpecifiers),
+    ),
     ts.factory.createStringLiteral(moduleName),
   );
 }
