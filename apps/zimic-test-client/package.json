@@ -28,11 +28,11 @@
     "@zimic/utils": "workspace:*",
     "axios": "^1.11.0",
     "concurrently": "^9.2.0",
-    "dotenv-cli": "^9.0.0",
+    "dotenv-cli": "^10.0.0",
     "eslint": "^9.32.0",
     "execa": "^9.6.0",
     "node-fetch": "^3.3.2",
-    "playwright": "^1.54.1",
+    "playwright": "^1.54.2",
     "superagent": "^10.2.3",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"

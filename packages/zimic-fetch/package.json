@@ -13,7 +13,7 @@
     "api",
     "static"
   ],
-  "version": "0.6.4",
+  "version": "0.6.5-canary.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -82,9 +82,9 @@
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
-    "dotenv-cli": "^9.0.0",
+    "dotenv-cli": "^10.0.0",
     "eslint": "^9.32.0",
-    "playwright": "^1.54.1",
+    "playwright": "^1.54.2",
     "tsup": "^8.4.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
