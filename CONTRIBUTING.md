@@ -16,6 +16,10 @@ environment and making contributions to the project.
 - [Architecture](#architecture)
 - [Implementing changes](#implementing-changes)
   - [Branches](#branches)
+    - [General branches](#general-branches)
+    - [`@zimic/http` branches](#zimichttp-branches)
+    - [`@zimic/fetch` branches](#zimicfetch-branches)
+    - [`@zimic/interceptor` branches](#zimicinterceptor-branches)
     - [Creating a branch](#creating-a-branch)
   - [Commits](#commits)
     - [Creating commits](#creating-commits)
@@ -107,14 +111,34 @@ suggestions.
 
 Zimic uses the following long-lived branches:
 
-| Branch                 | Description                                                                                         |
-| ---------------------- | --------------------------------------------------------------------------------------------------- |
-| `canary`               | Development branch containing the latest (possibly unstable) code.                                  |
-| `rc`                   | Release candidate branch containing the latest code that is ready for a new stable release.         |
-| `main`                 | Production branch containing the latest stable code for all projects.                               |
-| `@zimic/http@0`        | Production branch containing the latest stable code for `@zimic/http` in the `v0.x.x` range.        |
-| `@zimic/fetch@0`       | Production branch containing the latest stable code for `@zimic/fetch` in the `v0.x.x` range.       |
-| `@zimic/interceptor@0` | Production branch containing the latest stable code for `@zimic/interceptor` in the `v0.x.x` range. |
+#### General branches
+
+| Branch   | Description                                                                                 |
+| -------- | ------------------------------------------------------------------------------------------- |
+| `canary` | Development branch containing the latest (possibly unstable) code.                          |
+| `rc`     | Release candidate branch containing the latest code that is ready for a new stable release. |
+| `main`   | Production branch containing the latest stable code for all projects.                       |
+
+#### `@zimic/http` branches
+
+| Branch          | Description                                                                                         |
+| --------------- | --------------------------------------------------------------------------------------------------- |
+| `@zimic/http@0` | Production branch containing the latest stable code for `@zimic/http` in the `0.x.x` version range. |
+| `@zimic/http@1` | Production branch containing the latest stable code for `@zimic/http` in the `1.x.x` version range. |
+
+#### `@zimic/fetch` branches
+
+| Branch           | Description                                                                                          |
+| ---------------- | ---------------------------------------------------------------------------------------------------- |
+| `@zimic/fetch@0` | Production branch containing the latest stable code for `@zimic/fetch` in the `0.x.x` version range. |
+| `@zimic/fetch@1` | Production branch containing the latest stable code for `@zimic/fetch` in the `1.x.x` version range. |
+
+#### `@zimic/interceptor` branches
+
+| Branch                 | Description                                                                                                |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `@zimic/interceptor@0` | Production branch containing the latest stable code for `@zimic/interceptor` in the `0.x.x` version range. |
+| `@zimic/interceptor@1` | Production branch containing the latest stable code for `@zimic/interceptor` in the `1.x.x` version range. |
 
 New pull requests should be opened against the `canary` branch. The `@zimic/*@*` and `main` branches are updated only
 when a new stable release is ready for their respective major version.
