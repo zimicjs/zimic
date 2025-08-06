@@ -35,7 +35,7 @@ const announcementBars = {
     `,
     textColor: 'var(--ifm-background-color)',
     backgroundColor: 'var(--ifm-color-content)',
-    isCloseable: false,
+    isCloseable: true,
   },
 };
 

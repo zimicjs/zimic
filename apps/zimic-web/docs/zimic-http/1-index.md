@@ -11,7 +11,7 @@ params, and form data.
 
 :::
 
-## Features
+## Highlights
 
 - :star: **HTTP schemas**
 

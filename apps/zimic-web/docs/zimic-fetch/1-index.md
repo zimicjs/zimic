@@ -10,7 +10,7 @@ slug: /fetch
 
 :::
 
-## Features
+## Highlights
 
 - :zap: **Type-safe `fetch`**
 

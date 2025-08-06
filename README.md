@@ -40,7 +40,7 @@
 
 Zimic is a collection of TypeScript-first HTTP integration libraries.
 
-## Features
+## Highlights
 
 - ⚙️ **TypeScript-first**
 

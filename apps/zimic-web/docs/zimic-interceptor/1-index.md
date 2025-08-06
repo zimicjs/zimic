@@ -11,7 +11,7 @@ testing.
 
 :::
 
-## Features
+## Highlights
 
 - :globe_with_meridians: **HTTP interceptors**
 
