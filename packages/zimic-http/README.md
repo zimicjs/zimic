@@ -39,9 +39,7 @@
 `@zimic/http` is a collection of type-safe utilities to handle HTTP requests and responses, including headers, search
 params, and form data.
 
-Status: :bulb: **Release Candidate**
-
-## Features
+## Highlights
 
 - :star: **HTTP schemas**
 
