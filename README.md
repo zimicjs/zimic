@@ -40,7 +40,7 @@
 
 Zimic is a collection of TypeScript-first HTTP integration libraries.
 
-## Features
+## Highlights
 
 - ⚙️ **TypeScript-first**
 
@@ -68,8 +68,6 @@ Zimic is a collection of TypeScript-first HTTP integration libraries.
 
 Type-safe utilities to handle HTTP requests and responses, including headers, search params, and form data.
 
-Status: :bulb: **Release Candidate**
-
 - :star: **HTTP schemas**
 
   Declare the structure of your endpoints in an [HTTP schema](https://zimic.dev/docs/http/guides/schemas) and use it to
@@ -96,8 +94,6 @@ Status: :bulb: **Release Candidate**
 
 A minimal (~2 kB minified and gzipped) and type-safe `fetch`-like API client.
 
-Status: :bulb: **Release Candidate**
-
 - :zap: **Type-safe `fetch`**
 
   Use your [`@zimic/http` schema](https://zimic.dev/docs/http/guides/schemas) to create a type-safe
@@ -123,8 +119,6 @@ Status: :bulb: **Release Candidate**
 ### `@zimic/interceptor`
 
 A type-safe interceptor library for handling and mocking HTTP requests in development and testing.
-
-Status: :bulb: **Release Candidate**
 
 - :globe_with_meridians: **HTTP interceptors**
 

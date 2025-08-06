@@ -106,8 +106,6 @@ mocks are fully typed _by default_ and in sync with the API.
 
 Type-safe utilities to handle HTTP requests and responses, including headers, search params, and form data.
 
-:::info Status: <span>:bulb: **Release Candidate**</span>
-
 :::
 
 - :star: **HTTP schemas**
@@ -136,8 +134,6 @@ Type-safe utilities to handle HTTP requests and responses, including headers, se
 
 A minimal (~2 kB minified and gzipped) and type-safe `fetch`-like API client.
 
-:::info Status: <span>:bulb: **Release Candidate**</span>
-
 :::
 
 - :zap: **Type-safe `fetch`**
@@ -165,8 +161,6 @@ A minimal (~2 kB minified and gzipped) and type-safe `fetch`-like API client.
 ### `@zimic/interceptor`
 
 A type-safe interceptor library for handling and mocking HTTP requests in development and testing.
-
-:::info Status: <span>:bulb: **Release Candidate**</span>
 
 :::
 
