@@ -1,0 +1,110 @@
+name: Zimic Get Release Settings
+description: Get the release settings for a Zimic project.
+
+inputs:
+  project-name:
+    description: Project name
+    required: true
+  input-upgrade-type:
+    description: Upgrade type from the workflow inputs
+    required: false
+  input-pre-release-id:
+    description: Pre-release id from the workflow inputs
+    required: false
+outputs:
+  upgrade-type:
+    description: Bumped version
+    value: ${{ steps.release-settings.outputs.upgrade-type }}
+  pre-release-id:
+    description: Bumped version
+    value: ${{ steps.release-settings.outputs.pre-release-id }}
+
+runs:
+  using: composite
+  steps:
+    - name: Get release settings
+      id: release-settings
+      uses: actions/github-script@v7
+      with:
+        script: |
+          function setOutputs(outputs) {
+            console.log('Outputs:', outputs);
+
+            for (const [key, value] of Object.entries(outputs)) {
+              core.setOutput(key, value);
+            }
+          }
+
+          const eventName = '${{ github.event_name }}';
+          const wasManuallyTriggered = eventName === 'workflow_dispatch'
+
+          if (wasManuallyTriggered) {
+            console.log('This workflow was triggered manually.');
+
+            setOutputs({
+              'upgrade-type': '${{ inputs.input-upgrade-type }}',
+              'pre-release-id': '${{ inputs.input-pre-release-id }}',
+            })
+            return
+          }
+
+          const isMergedPullRequest =
+            eventName === 'pull_request' &&
+            '${{ github.event.pull_request.merged }}' === 'true';
+
+          if (!isMergedPullRequest) {
+            console.warn('This is not a merged pull request.');
+
+            setOutputs({
+              'upgrade-type': '',
+              'pre-release-id': '',
+            })
+            return
+          }
+
+          console.log('This is a merged pull request. ');
+          console.log(`Fetching labels for ${context.repo.owner}/${context.repo.repo}#${context.issue.number}...`);
+
+          const { data: labels } = await github.rest.issues.listLabelsOnIssue({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+
+          console.log('Labels found:', labels);
+
+          const expectedProjectName = '${{ inputs.project-name }}';
+
+          for (const label of labels) {
+            const labelMatch = /^(?<projectName>[^:]+):(?<upgradeType>[^-]+)(?:-(?<preReleaseId>.+))?$/.exec(label.name);
+
+            if (!labelMatch) {
+              console.warn(`Label '${label.name}' does not match the expected pattern. Skipping...`);
+              continue
+            }
+
+            const { projectName, upgradeType, preReleaseId = 'none' } = labelMatch.groups;
+
+            if (projectName !== expectedProjectName) {
+              console.warn(
+                `Label '${label.name}' does not match the expected project name '${expectedProjectName}'. Skipping...`
+              );
+              continue
+            }
+
+            console.log(`Matching label found: '${label.name}'.`);
+
+            setOutputs({
+              'upgrade-type': upgradeType,
+              'pre-release-id': preReleaseId,
+            })
+            return
+          }
+
+          console.warn('No matching labels found.');
+
+          setOutputs({
+            'upgrade-type': '',
+            'pre-release-id': '',
+          })
+          return

@@ -1,0 +1,36 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: sunday
+      time: '00:00'
+      timezone: America/Sao_Paulo
+    labels:
+      - dependencies
+    commit-message:
+      prefix: chore(root)
+    target-branch: canary
+    groups:
+      npm:
+        patterns:
+          - '*'
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: sunday
+      time: '00:00'
+      timezone: America/Sao_Paulo
+    labels:
+      - dependencies
+    commit-message:
+      prefix: chore(root)
+    target-branch: canary
+    groups:
+      github-actions:
+        patterns:
+          - '*'

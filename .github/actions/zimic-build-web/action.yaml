@@ -1,0 +1,36 @@
+name: Zimic Build Web
+description: Build zimic-web
+
+inputs:
+  turbo-token:
+    description: Turbo remote cache token
+    required: false
+  turbo-team:
+    description: Turbo remote cache team
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Restore Docusaurus Webpack cache
+      id: docusaurus-webpack-cache
+      uses: actions/cache@v4
+      with:
+        path: apps/zimic-web/node_modules/.cache/webpack
+        key: ${{ runner.os }}-docusaurus-webpack-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-docusaurus-webpack
+
+    - name: Build Zimic Web
+      shell: bash
+      run: pnpm turbo build --filter zimic-web
+      env:
+        TURBO_TOKEN: ${{ inputs.turbo-token }}
+        TURBO_TEAM: ${{ inputs.turbo-team }}
+
+    - name: Save Docusaurus Webpack cache
+      if: ${{ steps.docusaurus-webpack-cache.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v4
+      with:
+        path: apps/zimic-web/node_modules/.cache/webpack
+        key: ${{ runner.os }}-docusaurus-webpack-${{ github.sha }}

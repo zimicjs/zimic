@@ -1,0 +1,72 @@
+name: 'Release website: zimic-web'
+
+on:
+  push:
+    tags:
+      - 'zimic-web@*'
+
+concurrency:
+  group: release-zimic-web-website
+  cancel-in-progress: false
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_REMOTE_CACHE_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_REMOTE_CACHE_TEAM }}
+  TURBO_LOG_ORDER: stream
+
+jobs:
+  release-to-vercel:
+    name: Release to Vercel
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 4
+
+    environment: Vercel
+
+    outputs:
+      version-value: ${{ steps.zimic-version.outputs.value }}
+      version-label: ${{ steps.zimic-version.outputs.label }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get release version
+        id: zimic-version
+        uses: ./.github/actions/zimic-version
+        with:
+          project-name: zimic-web
+          project-directory: apps/zimic-web
+          validate-ref-name: ${{ github.ref_name }}
+
+      - name: Release zimic-web
+        uses: ./.github/actions/zimic-release-web
+        with:
+          vercel-repository: ${{ secrets.ZIMIC_WEB_VERCEL_REPOSITORY }}
+          vercel-ssh-key: ${{ secrets.ZIMIC_WEB_VERCEL_SSH_KEY }}
+          vercel-branch: ${{ steps.zimic-version.outputs.label }}
+
+  publish-release-comments:
+    name: Publish release comments
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    if: ${{ needs.release-to-vercel.outputs.version-label == 'latest' }}
+
+    needs:
+      - release-to-vercel
+
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Publish release comments
+        uses: ./.github/actions/zimic-release-comments
+        with:
+          type: documentation
+          ref-name: ${{ github.ref_name }}
+          project-name: zimic-web

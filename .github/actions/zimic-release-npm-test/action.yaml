@@ -1,0 +1,102 @@
+name: Zimic Release NPM Test
+description: Test a released Zimic project on NPM.
+
+inputs:
+  ref-name:
+    description: The Git reference name to release
+    required: true
+  project-name:
+    description: The project name to release
+    required: true
+  project-directory:
+    description: The project directory to release
+    required: true
+  turbo-token:
+    description: Turbo remote cache token
+    required: false
+  turbo-team:
+    description: Turbo remote cache team
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Get Zimic release version
+      id: zimic-version
+      uses: ./.github/actions/zimic-version
+      with:
+        project-name: ${{ inputs.project-name }}
+        project-directory: ${{ inputs.project-directory }}
+        validate-ref-name: ${{ inputs.ref_name }}
+
+    - name: Set up Zimic
+      uses: ./.github/actions/zimic-setup
+      id: zimic-setup
+      with:
+        install: '"zimic-test-client..." "zimic-example*..."'
+        build: '"zimic-test-client^..." "zimic-example*^..."'
+        turbo-token: ${{ inputs.turbo-token }}
+        turbo-team: ${{ inputs.turbo-team }}
+
+    - name: Change package versions for testing
+      shell: bash
+      run: |
+        sed -i \
+          's/link-workspace-packages = true/link-workspace-packages = false/' \
+          .npmrc
+
+        echo "Using ${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} for testing..."
+
+        internalPackageNames=(@zimic/http @zimic/fetch @zimic/interceptor)
+
+        for packageFile in {apps,examples,packages}/*/package.json examples/package.json; do
+          for packageName in "${internalPackageNames[@]}"; do
+            sed -i -E \
+              "s;\"$packageName\": \"(latest|workspace:.*|\^.+|>=.+)\";\"$packageName\": \"workspace:*\";" \
+              "$packageFile"
+          done
+
+          sed -i -E \
+            "s;\"${{ inputs.project-name }}\": \"(latest|workspace:.*)\";\"${{ inputs.project-name }}\": \"${{ steps.zimic-version.outputs.value }}\";" \
+            "$packageFile"
+        done
+
+    - name: Wait for released package to be available on NPM
+      shell: bash
+      run: |
+        timeout 60s bash -c '
+          until pnpm view ${{ inputs.project-name }} versions --json | grep --quiet "${{ steps.zimic-version.outputs.value }}"; do
+            echo "${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} is not yet available on NPM..."
+            sleep 5
+            echo "Checking again..."
+          done
+        '
+
+        echo "${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} is now available on NPM!"
+
+    - name: Test released package
+      shell: bash
+      run: |
+        timeout 90s bash -c '
+          until pnpm install --no-frozen-lockfile ${{ steps.zimic-setup.outputs.install-filters }}; do
+            sleep 5
+            echo "Retrying..."
+          done
+        '
+
+        pnpm turbo \
+          types:check lint:turbo test:turbo \
+          --continue \
+          --concurrency 100% \
+          --filter zimic-test-client --filter zimic-example*
+      env:
+        TURBO_TOKEN: ${{ inputs.turbo-token }}
+        TURBO_TEAM: ${{ inputs.turbo-team }}
+        TURBO_LOG_ORDER: stream
+
+    - name: Save turbo cache
+      if: ${{ always() }}
+      uses: actions/cache/save@v4
+      with:
+        path: .turbo
+        key: ${{ runner.os }}-turbo

@@ -1,0 +1,117 @@
+name: Zimic Setup
+description: Configure the Zimic project after checking out the code.
+
+inputs:
+  node-version:
+    description: Node.js version to use
+    required: false
+    default: lts/*
+  node-registry-url:
+    description: Node.js registry URL to use (provide only if the action is going to push a release)
+    required: false
+  turbo-token:
+    description: Turbo remote cache token
+    required: false
+  turbo-team:
+    description: Turbo remote cache team
+    required: false
+  install:
+    description: Filter to install the dependencies of a specific app or package
+    required: false
+  build:
+    description: Filter to build the dependencies of a specific app or package
+    required: false
+
+outputs:
+  install-filters:
+    description: Filter flags of the packages included in the install step
+    value: ${{ steps.install-dependencies.outputs.install-filters }}
+  build-filters:
+    description: Filter flags of the packages included in the build step
+    value: ${{ steps.build-dependencies.outputs.build-filters }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        registry-url: ${{ inputs.node-registry-url }}
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+
+    - name: Get pnpm store directory
+      id: pnpm-store
+      shell: bash
+      run: echo "path=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+    - name: Restore pnpm cache
+      id: pnpm-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ steps.pnpm-store.outputs.path }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+
+    - name: Restore turbo cache
+      uses: actions/cache/restore@v4
+      with:
+        path: .turbo
+        key: ${{ runner.os }}-turbo
+
+    - name: Install dependencies
+      id: install-dependencies
+      shell: bash
+      run: |
+        function composeFilterOptions() {
+          filterEntries=${*}
+          filterOptions=()
+
+          for filterEntry in ${filterEntries[@]}; do
+            filterOptions+=("--filter $filterEntry")
+          done
+
+          echo "${filterOptions[@]}"
+        }
+
+        if [[ '${{ inputs.install }}' == '' ]]; then
+          installFilters=''
+          fullInstallFilters='--filter zimic-root'
+        else
+          installFilters="$(composeFilterOptions ${{ inputs.install }})"
+          fullInstallFilters="--filter zimic-root $installFilters"
+        fi
+
+        echo "install-filters=$installFilters" >> $GITHUB_OUTPUT
+
+        pnpm install --prefer-offline --frozen-lockfile $fullInstallFilters
+
+        if [[ '${{ inputs.build }}' == '' ]]; then
+          buildFilters=''
+        else
+          buildFilters="$(composeFilterOptions ${{ inputs.build }})"
+        fi
+
+        echo "build-filters=$buildFilters" >> $GITHUB_OUTPUT
+
+        if [[ "$buildFilters" != '' ]]; then
+          pnpm turbo build $buildFilters
+
+          # apply the build outputs of the internal packages
+          pnpm install --offline $fullInstallFilters
+        fi
+      env:
+        NODE_VERSION: ${{ inputs.node-version }}
+        TURBO_TOKEN: ${{ inputs.turbo-token }}
+        TURBO_TEAM: ${{ inputs.turbo-team }}
+        TURBO_LOG_ORDER: stream
+
+    - name: Save pnpm cache
+      uses: actions/cache/save@v4
+      if: ${{ steps.pnpm-cache.outputs.cache-hit != 'true' }}
+      with:
+        path: ${{ steps.pnpm-store.outputs.path }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}

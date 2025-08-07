@@ -1,0 +1,50 @@
+{
+  "name": "zimic-web",
+  "version": "0.3.12",
+  "private": true,
+  "scripts": {
+    "dev": "docusaurus start --host :: --no-open",
+    "build": "docusaurus build",
+    "start": "docusaurus serve --no-open",
+    "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
+    "lint:turbo": "pnpm lint . --max-warnings 0",
+    "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
+    "style:check": "pnpm style --check",
+    "style:format": "pnpm style --write",
+    "types:check": "tsc --noEmit",
+    "generate:sponsors": "dotenv -c development -- sponsorkit"
+  },
+  "dependencies": {
+    "@docusaurus/core": "3.8.1",
+    "@docusaurus/plugin-content-docs": "^3.7.0",
+    "@docusaurus/plugin-content-pages": "^3.7.0",
+    "@docusaurus/plugin-sitemap": "^3.7.0",
+    "@docusaurus/plugin-svgr": "^3.7.0",
+    "@docusaurus/theme-classic": "^3.7.0",
+    "@docusaurus/theme-search-algolia": "^3.8.1",
+    "@mdx-js/react": "^3.0.0",
+    "@tanstack/react-query": "^5.84.1",
+    "@zimic/fetch": "workspace:*",
+    "@zimic/http": "workspace:*",
+    "dompurify": "^3.2.6",
+    "prism-react-renderer": "^2.3.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "3.8.1",
+    "@docusaurus/types": "3.8.1",
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/react": "^19.1.9",
+    "@zimic/eslint-config-react": "workspace:*",
+    "@zimic/lint-staged-config": "workspace:*",
+    "@zimic/tsconfig": "workspace:*",
+    "dotenv-cli": "^10.0.0",
+    "esbuild-loader": "^4.3.0",
+    "eslint": "^9.32.0",
+    "postcss": "^8.5.6",
+    "sponsorkit": "^16.5.0",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.9.2"
+  }
+}

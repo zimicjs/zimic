@@ -1,0 +1,239 @@
+name: CI
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  CI: true
+
+  TURBO_TOKEN:
+    ${{ !(github.event_name == 'pull_request' && (startsWith(github.event.pull_request.base.ref, 'v') ||
+    startsWith(github.event.pull_request.base.ref, '@zimic/'))) && secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
+  TURBO_TEAM:
+    ${{ !(github.event_name == 'pull_request' && (startsWith(github.event.pull_request.base.ref, 'v') ||
+    startsWith(github.event.pull_request.base.ref, '@zimic/'))) && secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
+
+  TURBO_LOG_ORDER: stream
+  TURBO_FILTERS:
+    ${{ github.event_name == 'pull_request' && (startsWith(github.event.pull_request.base.ref, 'v') ||
+    startsWith(github.event.pull_request.base.ref, '@zimic/')) && '--filter "./{apps,packages}/*" --filter
+    "zimic-example*"' || '--filter "...[HEAD^1]"' }}
+
+jobs:
+  ci-general:
+    name: CI General
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Zimic
+        id: zimic-setup
+        uses: ./.github/actions/zimic-setup
+        with:
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+          install: '"./{apps,packages}/*..." "zimic-example*..."'
+          build: '"./packages/*"'
+
+      - name: Check formatting style
+        uses: ./.github/actions/zimic-style-check
+
+      - name: Check if auto-generated types are in sync
+        run: |
+          cp \
+            ./examples/zimic-with-openapi-typegen/src/clients/github/typegen/generated.ts \
+            ./examples/zimic-with-openapi-typegen/src/clients/github/typegen/generated.current.ts
+
+          pnpm --dir examples/zimic-with-openapi-typegen typegen:github
+          pnpm --dir examples style:format ./zimic-with-openapi-typegen/src/clients/github/typegen/generated.ts
+
+          if ! diff -u \
+            ./examples/zimic-with-openapi-typegen/src/clients/github/typegen/generated.ts \
+            ./examples/zimic-with-openapi-typegen/src/clients/github/typegen/generated.current.ts
+          then
+            echo \
+              "[examples/zimic-with-openapi-typegen] Generated types are out of date." \
+              "Please run 'pnpm --dir examples/zimic-with-openapi-typegen typegen:github' and commit the changes." >&2
+            exit 1
+          else
+            rm ./examples/zimic-with-openapi-typegen/src/clients/github/typegen/generated.current.ts
+            echo "[examples/zimic-with-openapi-typegen] Generated types are up to date."
+          fi
+
+      - name: Lint code and check types
+        run: |
+          pnpm turbo \
+            types:check lint:turbo \
+            --continue \
+            --concurrency 100% \
+            ${{ env.TURBO_FILTERS }}
+
+      - name: Build documentation and check links
+        uses: ./.github/actions/zimic-build-web
+        with:
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+
+      - name: Save turbo cache
+        if: ${{ always() }}
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo
+
+  ci-node:
+    name: CI Node.js
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version:
+          - 20
+          - 22
+          - 24
+
+    env:
+      NODE_VERSION: ${{ matrix.node-version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Zimic
+        id: zimic-setup
+        uses: ./.github/actions/zimic-setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+          install: '"./{apps,packages}/*..." "zimic-example*..."'
+          build: '"./packages/*"'
+
+      - name: Run tests
+        run: |
+          pnpm turbo \
+            test:turbo \
+            --continue \
+            --concurrency 100% \
+            ${{ env.TURBO_FILTERS }}
+        env:
+          PLAYWRIGHT_WORKERS: 2
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: test-results-node-${{ matrix.node-version }}
+          path: |
+            ./apps/*/tests/coverage
+            ./packages/*/tests/coverage
+            ./examples/*/tests/reports
+            ./examples/*/tests/outputs
+          retention-days: 7
+
+      - name: Save turbo cache
+        if: ${{ always() }}
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo
+
+  ci-typescript:
+    name: CI TypeScript
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        typescript-version:
+          - '5.0'
+          - '5.1'
+          - '5.2'
+          - '5.3'
+          - '5.4'
+          - '5.5'
+          - '5.6'
+          - '5.7'
+          - '5.8'
+          - '5.9'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Zimic
+        id: zimic-setup
+        uses: ./.github/actions/zimic-setup
+        with:
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+          install: '"./{apps,packages}/*..." "zimic-example*..."'
+          build: '"./packages/*"'
+
+      - name: Check if types need to be checked
+        id: should-check-types
+        run: |
+          # Check types if some change in a @zimic/* package may have affected them
+          shouldCheckTypes=$(
+            pnpm turbo build types:check --dry=json --filter '...@zimic/*[HEAD^1]' \
+            | jq '.tasks[] | select(. | .command != "<NONEXISTENT>") | .taskId' --raw-output \
+            | grep -q . && echo "true" || echo "false"
+          )
+
+          echo "value=${shouldCheckTypes}" >> $GITHUB_OUTPUT
+
+      - name: Set TypeScript version
+        if: ${{ steps.should-check-types.outputs.value == 'true' }}
+        run: |
+          pnpm update \
+            typescript@${{ matrix.typescript-version }} \
+            --recursive \
+            --filter !@zimic/* \
+            --filter !zimic-web \
+            ${{ env.TURBO_FILTERS }}
+
+      - name: Check types
+        if: ${{ steps.should-check-types.outputs.value == 'true' }}
+        run: |
+          filterOptionsOfPackagesUsingServerComponents=(
+            '--filter !zimic-example-with-playwright'
+            '--filter !zimic-example-with-next-js-app'
+          )
+
+          pnpm turbo \
+            types:check \
+            --continue \
+            --concurrency 100% \
+            --filter !@zimic/* \
+            --filter !zimic-web \
+            $([[ '${{ matrix.typescript-version }}' =~ ^(5\.0) ]] && echo ${filterOptionsOfPackagesUsingServerComponents[@]}) \
+            ${{ env.TURBO_FILTERS }}
+
+      - name: Save turbo cache
+        if: ${{ always() }}
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo

@@ -1,0 +1,188 @@
+openapi: 3.1.0
+
+info:
+  title: Simple Schema
+  version: 1.0.0
+  license:
+    name: MIT
+servers:
+  - url: http://localhost:3000
+    description: Local
+tags:
+  - name: users
+
+security:
+  - bearerAuth: []
+
+paths:
+  /users:
+    post:
+      summary: Create user
+      operationId: users/create
+      tags:
+        - users
+      parameters:
+        - name: authorization
+          in: header
+          description: The authorization token
+          required: true
+          schema:
+            type: string
+        - name: utm_source
+          in: query
+          description: The UTM source
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        description: The user to create
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                name:
+                  type: string
+                  description: The user's name
+                  example: John
+                email:
+                  type: string
+                  description: The user's email
+                  example: john@email.com
+                password:
+                  type: string
+                  description: The user's password
+                  example: '123456'
+      responses:
+        '200':
+          description: The user was created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              examples:
+                default:
+                  $ref: '#/components/examples/User'
+        '400':
+          description: Error
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    description: The error message
+              examples:
+                default:
+                  value:
+                    message: Email is already in use
+
+    get:
+      summary: List users
+      operationId: users/list
+      tags:
+        - users
+      parameters:
+        - name: authorization
+          in: header
+          description: The authorization token
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: How many items to return
+          required: true
+          schema:
+            type: integer
+            format: int32
+            maximum: 100
+        - name: utm_source
+          in: query
+          description: The UTM source
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                description: List of users
+                items:
+                  $ref: '#/components/schemas/User'
+              examples:
+                default:
+                  value:
+                    - $ref: '#/components/examples/User'
+        '400':
+          description: Error
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+              examples:
+                default:
+                  value:
+                    message: Invalid limit
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: The authorization token
+
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: The user's id
+          example: be8253f9-124b-4c32-b046-c25b6fd0af0c
+        name:
+          type: string
+          description: The user's name
+          example: John
+        email:
+          type: string
+          description: The user's email
+          example: john@email.com
+        createdAt:
+          type: string
+          description: The user's creation date
+          example: '2024-01-01T00:00:00.000Z'
+        updatedAt:
+          type: string
+          description: The user's last update date
+          example: '2024-01-01T00:00:00.000Z'
+
+  examples:
+    User:
+      value:
+        id: be8253f9-124b-4c32-b046-c25b6fd0af0c
+        name: John
+        email: john@email.com
+        createdAt: '2024-01-01T00:00:00.000Z'
+        updatedAt: '2024-01-01T00:00:00.000Z'

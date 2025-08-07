@@ -1,0 +1,18 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test:turbo": {
+      "passThroughEnv": ["PLAYWRIGHT_WORKERS"],
+      "inputs": [
+        "{src,tests}/**/*.{ts,tsx,json}",
+        "{package,tsconfig}.json",
+        "{playwright,tailwind,postcss,next}.config.{ts,mts,js}"
+      ]
+    },
+
+    "types:check": {
+      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json"]
+    }
+  }
+}

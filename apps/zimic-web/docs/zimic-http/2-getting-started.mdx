@@ -1,0 +1,202 @@
+---
+title: Getting started | @zimic/http
+sidebar_label: Getting started
+slug: /http/getting-started
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Getting started
+
+This guide will help you get started with `@zimic/http`.
+
+## Requirements
+
+### Supported environments
+
+#### Client side
+
+`@zimic/http` is designed to work in any environment that supports the
+[Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). This includes any relatively modern browser.
+[Can I Use](https://caniuse.com/?search=fetch) is a great resource to check the compatibility of specific features with
+different browsers.
+
+#### Server side
+
+| Runtime                       | Version   |
+| ----------------------------- | --------- |
+| [Node.js](https://nodejs.org) | >= 20.0.0 |
+
+### Supported languages
+
+#### TypeScript
+
+`@zimic/http` requires [TypeScript](https://www.typescriptlang.org) >= 5.0.
+
+We recommend enabling `strict` in your `tsconfig.json`:
+
+```json title='tsconfig.json'
+{
+  "compilerOptions": {
+    // highlight-next-line
+    "strict": true
+  }
+}
+```
+
+#### JavaScript
+
+`@zimic/http` is fully functional on JavaScript, although the type features will be disabled. Consider using TypeScript
+for improved type safety and developer experience.
+
+## Installation
+
+`@zimic/http` is available as a library on [npm](https://www.npmjs.com/package/@zimic/http).
+
+<Tabs groupId="package-managers">
+  <TabItem value="npm" label="npm">
+
+```bash
+npm install @zimic/http --save
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm add @zimic/http
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```bash
+yarn add @zimic/http
+```
+
+  </TabItem>
+</Tabs>
+
+We also have canary releases under the tag `canary`. These have the latest code, including new features, bug fixes, and
+possibly unstable or breaking changes.
+
+<Tabs groupId="package-managers">
+  <TabItem value="npm" label="npm">
+
+```bash
+npm install @zimic/http@canary --save
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm add @zimic/http@canary
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```bash
+yarn add @zimic/http@canary
+```
+
+  </TabItem>
+</Tabs>
+
+## Your first HTTP schema
+
+### Declaring an HTTP schema
+
+To start using `@zimic/http`, create an [HTTP schema](/docs/zimic-http/guides/1-schemas.md).
+
+The schema represents the structure of your API, including the paths, methods, request and response types.
+
+:::tip TIP: <span>OpenAPI Typegen</span>
+
+For APIs with an [OpenAPI documentation](https://www.openapis.org) (e.g. [Swagger](https://swagger.io)), the
+[`zimic-http typegen` CLI](/docs/zimic-http/guides/2-typegen.mdx) can automatically infer the types and generate the
+schema for you. This is a great way to keep your schema is up to date and save time on manual type definitions.
+
+:::
+
+```ts title='schema.ts'
+import { HttpSchema } from '@zimic/http';
+
+interface User {
+  username: string;
+}
+
+interface RequestError {
+  code: string;
+  message: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    POST: {
+      request: { body: User };
+      response: {
+        201: { body: User };
+        400: { body: RequestError };
+        409: { body: RequestError };
+      };
+    };
+
+    GET: {
+      request: {
+        headers: { authorization: string };
+        searchParams: {
+          query?: string;
+          limit?: number;
+        };
+      };
+      response: {
+        200: { body: User[] };
+        400: { body: RequestError };
+        401: { body: RequestError };
+      };
+    };
+  };
+
+  '/users/:userId': {
+    PATCH: {
+      request: {
+        headers: { authorization: string };
+        body: Partial<User>;
+      };
+      response: {
+        204: {};
+        400: { body: RequestError };
+      };
+    };
+  };
+}>;
+```
+
+## Next steps
+
+### Guides
+
+Take a look at our [guides](/docs/http/guides) for more information on how to use `@zimic/http` in common scenarios.
+
+### Examples
+
+Try our [examples](/docs/zimic/2-examples/index.md) for more practical use cases of `@zimic/http` with popular libraries
+and frameworks.
+
+### API reference
+
+Visit the [API reference](/docs/http/api) for more details on the resources available in `@zimic/http`.
+
+### Ecosystem
+
+`@zimic/http` is a lightweight library that really shines when used with the rest of the ecosystem:
+
+- [`@zimic/fetch`](/docs/zimic-fetch/1-index.md) is a minimal, zero-dependency, and type-safe `fetch`-like API client.
+  Import your `@zimic/http` schema to automatically type your paths, methods, requests, parameters, and responses.
+
+- [`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md) provides a readable and type-safe way to intercept and mock
+  HTTP requests. Declare realistic HTTP mocks validated with your `@zimic/http` schema, and verify that your application
+  interacts as expected, without needing to access the actual API.

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test:turbo": {
+      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "jest.config.js"]
+    },
+
+    "types:check": {
+      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json"]
+    }
+  }
+}

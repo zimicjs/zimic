@@ -1,0 +1,43 @@
+name: Release Comments
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref-name:
+        description: The Git reference name to create release comments for
+        required: false
+      project-name:
+        description: The project name to create release comments for
+        required: true
+      type:
+        description: The type of the release
+        required: true
+        type: choice
+        options:
+          - package
+          - documentation
+
+concurrency:
+  group: release-comments-${{ inputs.ref-name || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish-release-comments:
+    name: Publish release comments
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Publish release comments
+        uses: ./.github/actions/zimic-release-comments
+        with:
+          type: ${{ inputs.type }}
+          ref-name: ${{ inputs.ref-name || github.ref_name }}
+          project-name: ${{ inputs.project-name }}

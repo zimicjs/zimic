@@ -1,0 +1,92 @@
+name: 🐛 Bug report
+description: Something is not working as expected.
+labels:
+  - bug
+  - needs triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report a bug in Zimic!
+
+        Please fill in the information below to help us investigate your issue.
+        Feel free to provide as much detail as possible.
+
+  - type: dropdown
+    attributes:
+      label: Scope
+      description: What part of Zimic is this issue related to?
+      options:
+        - General
+        - '@zimic/http'
+        - '@zimic/fetch'
+        - '@zimic/interceptor'
+    validations:
+      required: true
+
+  - type: checkboxes
+    attributes:
+      label: Prerequisites
+      description: First, let's make sure that your issue is not already reported or solved.
+      options:
+        - label: I confirm that none of the [open issues](https://github.com/zimicjs/zimic/issues) match my problem
+          required: true
+        - label: I confirm that the [documentation](https://zimic.dev) does not cover a solution to problem
+          required: true
+
+  - type: textarea
+    attributes:
+      label: System information
+      description: Output of `npx envinfo --system --npmPackages '@zimic/*' --binaries --browsers `
+      placeholder: 'System: ...'
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Runtime
+      description: What runtime are you using Zimic in?
+      placeholder: e.g. "Google Chrome", "Node.js", "Deno", "Bun", etc.
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Reproduction link
+      description: |
+        What minimal code reproduces your issue?
+
+        This can be a link to a GitHub repository or a StackBlitz/CodeSandbox project.
+
+        Feel free to get started using one of [our examples](https://github.com/zimicjs/zimic/blob/main/examples/README.md).
+        Please make sure that the link is publicly accessible and contains the minimal code to reproduce the issue.
+
+        We can only reliably investigate issues that include a reproduction.
+      placeholder: e.g. https://github.com/you/repo, https://stackblitz.com/edit/repo, or https://codesandbox.io/s/repo
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Reproduction steps
+      description: |
+        How can we reproduce your issue in the repository above?
+      placeholder: e.g. "npm install && npm test"
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Current behavior
+      description: |
+        What is the current behavior you are experiencing? (errors, warnings, unexpected behavior, etc.)
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Expected behavior
+      description: |
+        What is the behavior you expected to see?
+    validations:
+      required: true

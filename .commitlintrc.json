@@ -1,0 +1,32 @@
+{
+  "extends": ["@commitlint/config-conventional"],
+  "rules": {
+    "type-enum": [
+      2,
+      "always",
+      ["build", "chore", "docs", "feat", "fix", "perf", "refactor", "revert", "style", "test"]
+    ],
+    "scope-enum": [
+      2,
+      "always",
+      [
+        "root",
+        "ci",
+        "release",
+        "web",
+        "test-client",
+        "http",
+        "fetch",
+        "interceptor",
+        "utils",
+        "eslint",
+        "eslint-node",
+        "eslint-react",
+        "lint-staged",
+        "tsconfig",
+        "examples"
+      ]
+    ],
+    "scope-empty": [2, "never"]
+  }
+}

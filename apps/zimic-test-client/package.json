@@ -1,0 +1,40 @@
+{
+  "name": "zimic-test-client",
+  "version": "0.0.0",
+  "private": false,
+  "scripts": {
+    "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
+    "lint:turbo": "pnpm lint . --max-warnings 0",
+    "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
+    "style:check": "pnpm style --check",
+    "style:format": "pnpm style --write",
+    "test": "dotenv -v NODE_ENV=test -- zimic-interceptor server start --port 4000 --ephemeral -- vitest",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
+    "types:check": "tsc --noEmit",
+    "deps:install-playwright": "playwright install chromium",
+    "deps:init-zimic": "zimic-interceptor browser init ./public || true",
+    "postinstall": "concurrently --names playwright,zimic 'pnpm deps:install-playwright' 'pnpm deps:init-zimic'"
+  },
+  "devDependencies": {
+    "@types/superagent": "^8.1.9",
+    "@vitest/browser": "^3.2.4",
+    "@vitest/coverage-istanbul": "^3.2.4",
+    "@zimic/eslint-config-node": "workspace:*",
+    "@zimic/fetch": "workspace:*",
+    "@zimic/http": "workspace:*",
+    "@zimic/interceptor": "workspace:*",
+    "@zimic/lint-staged-config": "workspace:*",
+    "@zimic/tsconfig": "workspace:*",
+    "@zimic/utils": "workspace:*",
+    "axios": "^1.11.0",
+    "concurrently": "^9.2.0",
+    "dotenv-cli": "^10.0.0",
+    "eslint": "^9.32.0",
+    "execa": "^9.6.0",
+    "node-fetch": "^3.3.2",
+    "playwright": "^1.54.2",
+    "superagent": "^10.2.3",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
