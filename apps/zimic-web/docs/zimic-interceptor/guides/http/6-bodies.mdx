@@ -1,0 +1,931 @@
+---
+title: Using bodies | @zimic/interceptor
+sidebar_label: Using bodies
+slug: /interceptor/guides/http/bodies
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Using bodies
+
+[Bodies](https://developer.mozilla.org/docs/Web/HTTP/Guides/Messages#request_body) are used to send data in a request
+and receive data in a response. Request bodies are commonly used to include a payload of data that the server will
+process, whereas response bodies may contain the result returned by the server. A body can contain various types of
+data, such as JSON, XML, and binary data such as images and files.
+
+## Default body parsing
+
+`@zimic/interceptor` automatically parses request and response bodies based on their `content-type` header:
+
+| `content-type`                      | Parsed as                                                          |
+| ----------------------------------- | ------------------------------------------------------------------ |
+| `application/json`                  | `JSON`                                                             |
+| `application/xml`                   | `String`                                                           |
+| `application/x-www-form-urlencoded` | [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md) |
+| `application/*` (others)            | `Blob`                                                             |
+| `multipart/form-data`               | [`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md)         |
+| `multipart/*` (others)              | `Blob`                                                             |
+| `text/*`                            | `String`                                                           |
+| `image/*`                           | `Blob`                                                             |
+| `audio/*`                           | `Blob`                                                             |
+| `font/*`                            | `Blob`                                                             |
+| `video/*`                           | `Blob`                                                             |
+| `*/*` (others)                      | `JSON` if possible, otherwise `Blob`                               |
+
+## Using request bodies
+
+Request bodies can be declared in your [schema](/docs/zimic-http/guides/1-schemas.md) using the `request.body` property.
+Then, they will be available in the `body` property, such as in
+[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith),
+[computed responses](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrespond), and
+[`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrequests).
+
+### JSON request body
+
+JSON bodies are one of the most common ways to send data in requests. To use a JSON body in a request, declare its type
+in your [schema](/docs/zimic-http/guides/1-schemas.md).
+
+```ts title='schema.ts'
+import { HttpSchema } from '@zimic/http';
+
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    POST: {
+      request: {
+        // highlight-next-line
+        body: { username: string };
+      };
+      response: {
+        201: { body: User };
+      };
+    };
+  };
+}>;
+```
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .post('/users')
+  .with({
+    // highlight-next-line
+    body: { username: 'me' },
+  })
+  .respond({
+    status: 201,
+    body: user,
+  })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .post('/users')
+  .with({
+    // highlight-next-line
+    body: { username: 'me' },
+  })
+  .respond({
+    status: 201,
+    body: user,
+  })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+:::tip TIP: <span>`content-type` header inference</span>
+
+`@zimic/http` automatically infers the type of the `content-type` header as `application/json` if the request body is a
+JSON type. You can override this behavior by explicitly setting a different type in your schema.
+
+```ts title='schema.ts'
+type Schema = HttpSchema<{
+  '/users': {
+    POST: {
+      request: {
+        headers: {
+          // highlight-next-line
+          'content-type': 'application/json; charset=utf-8';
+        };
+        body: { username: string };
+      };
+      response: {
+        201: { body: User };
+      };
+    };
+  };
+}>;
+```
+
+:::
+
+### `FormData` request body
+
+[`FormData`](https://developer.mozilla.org/docs/Web/API/FormData) is a special type of body to construct a set of
+key-value pairs with variable types of data. A common use case is to upload files to a server.
+
+To send a `FormData` body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md). Use the
+[`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md) to indicate that the body is a `FormData` type.
+
+```ts
+import { HttpFormData, HttpSchema } from '@zimic/http';
+
+interface AvatarFormDataSchema {
+  image: File;
+}
+
+type Schema = HttpSchema<{
+  '/users/:userId/avatar': {
+    PUT: {
+      request: {
+        // highlight-start
+        headers?: { 'content-type'?: 'multipart/form-data' };
+        body: HttpFormData<AvatarFormDataSchema>;
+        // highlight-end
+      };
+      response: {
+        200: { body: { url: string } };
+      };
+    };
+  };
+}>;
+```
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+import { HttpFormData } from '@zimic/http';
+
+// Getting an uploaded file from an input element
+const imageInput = document.querySelector<HTMLInputElement>('input[type="file"]');
+const imageFile = imageInput!.files![0];
+
+// highlight-start
+const formData = new HttpFormData<AvatarFormDataSchema>();
+formData.append('image', imageFile);
+// highlight-end
+
+interceptor
+  .post('/users')
+  .with({
+    // highlight-next-line
+    body: formData,
+  })
+  .respond({
+    status: 201,
+    body: { url: `https://example.com/${user.id}/avatar.png` },
+  })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+import { HttpFormData } from '@zimic/http';
+
+// Getting an uploaded file from an input element
+const imageInput = document.querySelector<HTMLInputElement>('input[type="file"]');
+const imageFile = imageInput!.files![0];
+
+// highlight-start
+const formData = new HttpFormData<AvatarFormDataSchema>();
+formData.append('image', imageFile);
+// highlight-end
+
+await interceptor
+  .post('/users')
+  .with({
+    // highlight-next-line
+    body: formData,
+  })
+  .respond({
+    status: 201,
+    body: { url: `https://example.com/${user.id}/avatar.png` },
+  })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+### Binary request body
+
+Binary bodies are used to send raw binary data in requests. To send a binary body, declare its type in your
+[schema](/docs/zimic-http/guides/1-schemas.md). [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob),
+[`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), and
+[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) are common types for binary data.
+
+```ts title='schema.ts'
+import { HttpSchema } from '@zimic/http';
+
+interface Video {
+  id: string;
+  url: string;
+}
+
+type Schema = HttpSchema<{
+  '/upload': {
+    POST: {
+      request: {
+        // highlight-start
+        headers?: { 'content-type'?: string };
+        body: Blob;
+        // highlight-end
+      };
+    };
+    response: {
+      201: { body: Video };
+    };
+  };
+}>;
+```
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+import fs from 'fs';
+
+// Getting a file from the file system
+const videoBuffer = await fs.promises.readFile('video.mp4');
+const videoFile = new File([videoBuffer], 'video.mp4');
+
+interceptor
+  .post('/upload')
+  .with({
+    // highlight-next-line
+    body: videoFile,
+  })
+  .respond({
+    status: 201,
+    body: video,
+  })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+import fs from 'fs';
+
+// Getting a file from the file system
+const videoBuffer = await fs.promises.readFile('video.mp4');
+const videoFile = new File([videoBuffer], 'video.mp4');
+
+await interceptor
+  .post('/upload')
+  .with({
+    // highlight-next-line
+    body: videoFile,
+  })
+  .respond({
+    status: 201,
+    body: video,
+  })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+#### Request streaming
+
+When working with large files or chunked data, you can use
+[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) to handle streamed request bodies.
+
+```ts title='schema.ts'
+import { HttpSchema } from '@zimic/http';
+
+interface Video {
+  id: string;
+  url: string;
+}
+
+type Schema = HttpSchema<{
+  '/upload': {
+    POST: {
+      request: {
+        // highlight-start
+        headers?: { 'content-type'?: string };
+        body: ReadableStream;
+        // highlight-end
+      };
+    };
+    response: {
+      201: { body: Video };
+    };
+  };
+}>;
+```
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+import fs from 'fs';
+import { Readable } from 'stream';
+
+// Streaming a file from the file system
+const fileStream = fs.createReadStream('video.mp4');
+const requestStream = Readable.toWeb(fileStream);
+
+interceptor
+  .post('/upload')
+  .with({
+    // highlight-next-line
+    body: requestStream,
+  })
+  .respond({
+    status: 201,
+    body: video,
+  })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+import fs from 'fs';
+import { Readable } from 'stream';
+
+// Streaming a file from the file system
+const fileStream = fs.createReadStream('video.mp4');
+const requestStream = Readable.toWeb(fileStream);
+
+await interceptor
+  .post('/upload')
+  .with({
+    // highlight-next-line
+    body: requestStream,
+  })
+  .respond({
+    status: 201,
+    body: video,
+  })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+### Plain-text request body
+
+Plain-text bodies can be declared as a string.
+
+```ts
+import { HttpSchema } from '@zimic/http';
+
+type Schema = HttpSchema<{
+  '/content': {
+    POST: {
+      request: {
+        // highlight-next-line
+        body: string;
+      };
+      response: {
+        201: {};
+      };
+    };
+  };
+}>;
+```
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .post('/context')
+  .with({
+    // highlight-next-line
+    body: 'text',
+  })
+  .respond({
+    status: 201,
+  })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .post('/context')
+  .with({
+    // highlight-next-line
+    body: 'text',
+  })
+  .respond({
+    status: 201,
+  })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+### URL-encoded request body
+
+Bodies with URL-encoded data can be declared with [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md).
+
+```ts
+import { HttpSchema, HttpSearchParams } from '@zimic/http';
+
+interface UserCreationSearchParams {
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    POST: {
+      request: {
+        // highlight-start
+        headers?: { 'content-type'?: 'application/x-www-form-urlencoded' };
+        body: HttpSearchParams<UserCreationSearchParams>;
+        // highlight-end
+      };
+    };
+  };
+}>;
+```
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+import { HttpSearchParams } from '@zimic/http';
+
+const searchParams = new HttpSearchParams<UserCreationSearchParams>({
+  username: 'me',
+});
+
+interceptor
+  .post('/users')
+  .with({
+    // highlight-next-line
+    body: searchParams,
+  })
+  .respond({
+    status: 201,
+    body: user,
+  })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+import { HttpSearchParams } from '@zimic/http';
+
+const searchParams = new HttpSearchParams<UserCreationSearchParams>({
+  username: 'me',
+});
+
+await interceptor
+  .post('/users')
+  .with({
+    // highlight-next-line
+    body: searchParams,
+  })
+  .respond({
+    status: 201,
+    body: user,
+  })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+## Using response bodies
+
+Response bodies are declared in your [schema](/docs/zimic-http/guides/1-schemas.md) using the `response.<status>.body`
+property.
+
+Then, they will be available in the `body` property, such as in
+[`handler.respond()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrespond).
+
+### JSON response body
+
+To use a JSON response body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md).
+
+```ts title='schema.ts'
+import { HttpSchema } from '@zimic/http';
+
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    GET: {
+      response: {
+        200: {
+          // highlight-next-line
+          body: User[];
+        };
+      };
+    };
+  };
+}>;
+```
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .get('/users')
+  .respond({
+    status: 200,
+    // highlight-next-line
+    body: users,
+  })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .get('/users')
+  .respond({
+    status: 200,
+    // highlight-next-line
+    body: users,
+  })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+### `FormData` response body
+
+To use a `FormData` response body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md) using the
+[`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md).
+
+```ts title='schema.ts'
+import { HttpFormData, HttpSchema } from '@zimic/http';
+
+interface AvatarFormDataSchema {
+  image: File;
+}
+
+type Schema = HttpSchema<{
+  '/users/:userId/avatar': {
+    GET: {
+      response: {
+        200: {
+          // highlight-start
+          headers?: { 'content-type'?: 'multipart/form-data' };
+          body: HttpFormData<AvatarFormDataSchema>;
+          // highlight-end
+        };
+      };
+    };
+  };
+}>;
+```
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+import { HttpFormData } from '@zimic/http';
+
+const formData = new HttpFormData<AvatarFormDataSchema>();
+formData.append('image', new File([''], 'avatar.png'));
+
+interceptor
+  .get(`/users/${user.id}/avatar`)
+  .respond({
+    status: 200,
+    // highlight-next-line
+    body: formData,
+  })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+import { HttpFormData } from '@zimic/http';
+
+const formData = new HttpFormData<AvatarFormDataSchema>();
+formData.append('image', new File([''], 'avatar.png'));
+
+await interceptor
+  .get(`/users/${user.id}/avatar`)
+  .respond({
+    status: 200,
+    // highlight-next-line
+    body: formData,
+  })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+### Binary response body
+
+Binary response bodies can be declared with types such as [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob),
+[`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), and
+[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream).
+
+```ts title='schema.ts'
+import { HttpSchema } from '@zimic/http';
+
+interface Video {
+  id: string;
+  url: string;
+}
+
+type Schema = HttpSchema<{
+  '/videos/:videoId': {
+    GET: {
+      response: {
+        200: {
+          // highlight-start
+          headers?: { 'content-type'?: string };
+          body: Blob;
+          // highlight-end
+        };
+      };
+    };
+  };
+}>;
+```
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+import fs from 'fs';
+import { HttpFormData } from '@zimic/http';
+
+// Getting a file from the file system
+const videoBuffer = await fs.promises.readFile('video.mp4');
+const videoFile = new Blob([videoBuffer], { type: 'video/mp4' });
+
+interceptor
+  .get(`/videos/${video.id}`)
+  .respond({
+    status: 200,
+    // highlight-next-line
+    body: videoFile,
+  })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+import fs from 'fs';
+import { HttpFormData } from '@zimic/http';
+
+// Getting a file from the file system
+const videoBuffer = await fs.promises.readFile('video.mp4');
+const videoFile = new Blob([videoBuffer], { type: 'video/mp4' });
+
+await interceptor
+  .get(`/videos/${video.id}`)
+  .respond({
+    status: 200,
+    // highlight-next-line
+    body: videoFile,
+  })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+#### Response streaming
+
+Similarly to [request streaming](#request-streaming), you can stream response bodies using
+[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream).
+
+```ts title='schema.ts'
+import { HttpSchema } from '@zimic/http';
+
+type Schema = HttpSchema<{
+  '/videos/:videoId': {
+    GET: {
+      response: {
+        200: {
+          // highlight-start
+          headers?: { 'content-type'?: string };
+          body: ReadableStream;
+          // highlight-end
+        };
+      };
+    };
+  };
+}>;
+```
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+import fs from 'fs';
+import stream, { Readable } from 'stream';
+import { HttpFormData } from '@zimic/http';
+
+// Streaming a file from the file system
+const fileStream = fs.createReadStream('video.mp4');
+const responseStream = Readable.toWeb(fileStream);
+
+interceptor
+  .get(`/videos/${video.id}`)
+  .respond({
+    status: 200,
+    // highlight-next-line
+    body: responseStream,
+  })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+import fs from 'fs';
+import stream, { Readable } from 'stream';
+import { HttpFormData } from '@zimic/http';
+
+// Streaming a file from the file system
+const fileStream = fs.createReadStream('video.mp4');
+const responseStream = Readable.toWeb(fileStream);
+
+await interceptor
+  .get(`/videos/${video.id}`)
+  .respond({
+    status: 200,
+    // highlight-next-line
+    body: responseStream,
+  })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+### Plain-text response body
+
+Plain-text response bodies can be declared as a string.
+
+```ts title='schema.ts'
+import { HttpSchema } from '@zimic/http';
+
+type Schema = HttpSchema<{
+  '/content': {
+    GET: {
+      response: {
+        200: {
+          // highlight-next-line
+          body: string;
+        };
+      };
+    };
+  };
+}>;
+```
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .get('/content')
+  .respond({
+    status: 200,
+    // highlight-next-line
+    body: 'text',
+  })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .get('/content')
+  .respond({
+    status: 200,
+    // highlight-next-line
+    body: 'text',
+  })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+### URL-encoded response body
+
+URL-encoded response bodies can be declared with [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md).
+
+```ts title='schema.ts'
+import { HttpSchema, HttpSearchParams } from '@zimic/http';
+
+interface UserCreationSearchParams {
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    GET: {
+      response: {
+        200: {
+          // highlight-start
+          headers?: { 'content-type'?: 'application/x-www-form-urlencoded' };
+          body: HttpSearchParams<UserCreationSearchParams>;
+          // highlight-end
+        };
+      };
+    };
+  };
+}>;
+```
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+import { HttpSearchParams } from '@zimic/http';
+
+const searchParams = new HttpSearchParams<UserCreationSearchParams>({
+  username: 'me',
+});
+
+interceptor
+  .get('/users')
+  .respond({
+    status: 200,
+    // highlight-next-line
+    body: searchParams,
+  })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+import { HttpSearchParams } from '@zimic/http';
+
+const searchParams = new HttpSearchParams<UserCreationSearchParams>({
+  username: 'me',
+});
+
+await interceptor
+  .get('/users')
+  .respond({
+    status: 200,
+    // highlight-next-line
+    body: searchParams,
+  })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>

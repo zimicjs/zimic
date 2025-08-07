@@ -1,0 +1,42 @@
+openapi: 3.1.0
+
+info:
+  title: Webhooks
+  version: 1.0.0
+
+webhooks:
+  user-created:
+    post:
+      summary: This event occurs when a user is created.
+      description: A user account was created.
+      operationId: user/created
+      parameters:
+        - name: x-hook-id
+          in: header
+          schema:
+            type: string
+          example: 20ed6fc9-4284-47c7-925d-8ae1f61439cd
+        - name: x-hook-event
+          in: header
+          schema:
+            type: string
+          example: user:created
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: Success
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string

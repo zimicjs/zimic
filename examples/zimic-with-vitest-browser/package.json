@@ -1,0 +1,26 @@
+{
+  "name": "zimic-example-with-vitest-browser",
+  "version": "0.0.0",
+  "private": false,
+  "scripts": {
+    "test": "vitest",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test run",
+    "types:check": "tsc --noEmit",
+    "deps:install-playwright": "playwright install chromium",
+    "deps:init-zimic": "zimic-interceptor browser init ./public || true",
+    "postinstall": "concurrently --names playwright,zimic 'pnpm deps:install-playwright' 'pnpm deps:init-zimic'"
+  },
+  "dependencies": {
+    "@zimic/fetch": "latest",
+    "@zimic/http": "latest"
+  },
+  "devDependencies": {
+    "@vitest/browser": "^3.2.4",
+    "@zimic/interceptor": "latest",
+    "concurrently": "^9.2.0",
+    "dotenv-cli": "^10.0.0",
+    "playwright": "^1.54.2",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

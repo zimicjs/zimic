@@ -1,0 +1,14 @@
+# Dependencies
+node_modules
+
+# Cache
+.turbo
+.eslintcache
+tsconfig.tsbuildinfo
+
+# Build
+*/.docusaurus
+
+# Miscellaneous
+.vscode
+local/

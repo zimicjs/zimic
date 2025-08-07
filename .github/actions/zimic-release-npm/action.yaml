@@ -1,0 +1,61 @@
+name: Zimic Release NPM
+description: Release a Zimic project on NPM.
+
+inputs:
+  ref-name:
+    description: The Git reference name to release
+    required: true
+  project-name:
+    description: The project name to release
+    required: true
+  project-directory:
+    description: The project directory to release
+    required: true
+  npm-token:
+    description: The NPM token to release
+    required: true
+
+outputs:
+  version-value:
+    description: The version of the released package
+    value: ${{ steps.zimic-version.outputs.value }}
+  version-label:
+    description: The label of the released package version
+    value: ${{ steps.zimic-version.outputs.label }}
+
+runs:
+  using: composite
+  steps:
+    - name: Get ${{ inputs.project-name }} release version
+      id: zimic-version
+      uses: ./.github/actions/zimic-version
+      with:
+        project-name: ${{ inputs.project-name }}
+        project-directory: ${{ inputs.project-directory }}
+        validate-ref-name: ${{ inputs.ref_name }}
+
+    - name: Set up ${{ inputs.project-name }}
+      uses: ./.github/actions/zimic-setup
+      with:
+        node-registry-url: https://registry.npmjs.org
+        install: '"${{ inputs.project-name }}..." "./packages/*"'
+        build: '${{ inputs.project-name }}^...'
+
+    - name: Build ${{ inputs.project-name }}
+      shell: bash
+      run: pnpm turbo build --filter ${{ inputs.project-name }}
+
+    - name: Release to NPM
+      shell: bash
+      working-directory: ${{ inputs.project-directory }}
+      run: pnpm publish --no-git-checks --tag ${{ steps.zimic-version.outputs.label }}
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
+        NPM_CONFIG_PROVENANCE: true
+
+    - name: Save turbo cache
+      if: ${{ always() }}
+      uses: actions/cache/save@v4
+      with:
+        path: .turbo
+        key: ${{ runner.os }}-turbo

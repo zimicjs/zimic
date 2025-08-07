@@ -1,0 +1,14 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "lint:turbo": {
+      "inputs": [
+        "zimic-with-*/{src,tests}/**/*.{ts,json}",
+        "zimic-with-*/{package,tsconfig}.json",
+        "{package,tsconfig}.json",
+        "eslint.config.mjs"
+      ]
+    }
+  }
+}
