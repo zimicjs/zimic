@@ -1,0 +1,174 @@
+openapi: 3.1.0
+
+info:
+  title: Headers
+  version: 1.0.0
+
+paths:
+  /users-with-literal-component-headers:
+    get:
+      parameters:
+        - name: content-type
+          in: header
+          description: The content type
+          schema:
+            $ref: '#/components/headers/literal-content-type'
+        - name: x-rate-limit-remaining
+          in: header
+          description: The number of requests remaining
+          schema:
+            $ref: '#/components/headers/literal-x-rate-limit-remaining'
+        - name: x-rate-limit-reached
+          in: header
+          description: Whether the rate limit has been reached
+          schema:
+            $ref: '#/components/headers/literal-x-rate-limit-reached'
+      responses:
+        '200':
+          description: Success
+          headers:
+            content-type:
+              $ref: '#/components/headers/literal-content-type'
+            x-rate-limit-remaining:
+              $ref: '#/components/headers/literal-x-rate-limit-remaining'
+            x-rate-limit-reached:
+              $ref: '#/components/headers/literal-x-rate-limit-reached'
+
+  /users-with-reference-component-headers:
+    get:
+      parameters:
+        - name: content-type
+          in: header
+          description: The content type
+          schema:
+            $ref: '#/components/headers/reference-content-type'
+        - name: x-rate-limit-remaining
+          in: header
+          description: The number of requests remaining
+          schema:
+            $ref: '#/components/headers/reference-x-rate-limit-remaining'
+        - name: x-rate-limit-reached
+          in: header
+          description: Whether the rate limit has been reached
+          schema:
+            $ref: '#/components/headers/reference-x-rate-limit-reached'
+      responses:
+        '200':
+          description: Success
+          headers:
+            content-type:
+              $ref: '#/components/headers/reference-content-type'
+            x-rate-limit-remaining:
+              $ref: '#/components/headers/reference-x-rate-limit-remaining'
+            x-rate-limit-reached:
+              $ref: '#/components/headers/reference-x-rate-limit-reached'
+
+  /users-with-literal-headers:
+    get:
+      parameters:
+        - name: content-type
+          in: header
+          description: The content type
+          schema:
+            type: string
+            nullable: true
+        - name: x-rate-limit-remaining
+          in: header
+          description: The number of requests remaining
+          schema:
+            type: integer
+        - name: x-rate-limit-reached
+          in: header
+          description: Whether the rate limit has been reached
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Success
+          headers:
+            content-type:
+              description: The content type
+              schema:
+                type: string
+                nullable: true
+            x-rate-limit-remaining:
+              description: The number of requests remaining
+              schema:
+                type: integer
+            x-rate-limit-reached:
+              description: Whether the rate limit has been reached
+              schema:
+                type: boolean
+
+  /users-with-reference-headers:
+    get:
+      parameters:
+        - name: content-type
+          in: header
+          description: The content type
+          schema:
+            $ref: '#/components/schemas/content-type'
+        - name: x-rate-limit-remaining
+          in: header
+          description: The number of requests remaining
+          schema:
+            $ref: '#/components/schemas/x-rate-limit-remaining'
+        - name: x-rate-limit-reached
+          in: header
+          description: Whether the rate limit has been reached
+          schema:
+            $ref: '#/components/schemas/x-rate-limit-reached'
+      responses:
+        '200':
+          description: Success
+          headers:
+            content-type:
+              description: The content type
+              schema:
+                type: string
+                nullable: true
+            x-rate-limit-remaining:
+              description: The number of requests remaining
+              schema:
+                type: integer
+            x-rate-limit-reached:
+              description: Whether the rate limit has been reached
+              schema:
+                type: boolean
+
+components:
+  schemas:
+    content-type:
+      type: string
+      description: The content type
+    x-rate-limit-remaining:
+      type: integer
+      description: The number of requests remaining
+    x-rate-limit-reached:
+      type: boolean
+      description: Whether the rate limit has been reached
+
+  headers:
+    literal-content-type:
+      schema:
+        type: string
+        description: The content type
+        nullable: true
+    literal-x-rate-limit-remaining:
+      schema:
+        type: integer
+        description: The number of requests remaining
+    literal-x-rate-limit-reached:
+      schema:
+        type: boolean
+        description: Whether the rate limit has been reached
+
+    reference-content-type:
+      schema:
+        $ref: '#/components/schemas/content-type'
+    reference-x-rate-limit-remaining:
+      schema:
+        $ref: '#/components/schemas/x-rate-limit-remaining'
+    reference-x-rate-limit-reached:
+      schema:
+        $ref: '#/components/schemas/x-rate-limit-reached'

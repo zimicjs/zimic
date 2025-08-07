@@ -1,0 +1,90 @@
+name: Bump Zimic Version
+description: Bump the version of a Zimic project.
+
+inputs:
+  project-name:
+    description: Project name
+    required: true
+  project-directory:
+    description: Project directory
+    required: true
+  upgrade-type:
+    description: Upgrade type
+    required: true
+  pre-release-id:
+    description: Pre-release id
+    required: false
+  commit-user-name:
+    description: Commit user name
+    required: true
+  commit-user-email:
+    description: Commit user email
+    required: true
+
+outputs:
+  value:
+    description: Bumped version
+    value: ${{ steps.bump-version.outputs.value }}
+  commit-sha:
+    description: Release commit SHA
+    value: ${{ steps.bump-version.outputs.commit-sha }}
+
+runs:
+  using: composite
+  steps:
+    - name: Bump version
+      id: bump-version
+      shell: bash
+      working-directory: ${{ inputs.project-directory }}
+      run: |
+        projectName=${{ inputs.project-name }}
+        upgradeType=${{ inputs.upgrade-type }}
+        preReleaseId=${{ inputs.pre-release-id }}
+
+        echo 'Bumping version...'
+
+        currentVersion=$(pnpm version --json | jq ".\"$projectName\"" -r)
+        stableCurrentVersion=$(echo "$currentVersion" | sed 's/-.*//')
+
+        bumpedVersion=$(
+          if [[ "$upgradeType" == 'stable' ]]; then
+            pnpm version "$stableCurrentVersion" --no-git-tag-version
+          elif [[ "$preReleaseId" == 'none' ]]; then
+            pnpm version "$upgradeType" --no-git-tag-version
+          else
+            pnpm version "pre${upgradeType#*pre}" --preid "$preReleaseId" --no-git-tag-version
+          fi
+        )
+
+        bumpedVersion=${bumpedVersion#*v}
+
+        echo "Project '$projectName' is now at $bumpedVersion"
+        echo 'Committing changes...'
+
+        git config user.name '${{ inputs.commit-user-name }}'
+        git config user.email '${{ inputs.commit-user-email }}'
+
+        git add --all
+        git commit -m "chore(release): $projectName@$bumpedVersion"
+
+        echo 'Pushing changes...'
+
+        numberOfPushRetries=0
+        maxNumberOfPushRetries=5
+
+        git config pull.rebase true
+
+        until git push -u origin HEAD --no-verify; do
+          if [[ $numberOfPushRetries -gt $maxNumberOfPushRetries ]]; then
+            echo "Push failed after $maxNumberOfPushRetries retries. Aborting."
+            exit 1
+          fi
+
+          numberOfPushRetries=$((numberOfPushRetries + 1))
+
+          echo 'Push rejected. Retrying...'
+          git pull
+        done
+
+        echo "value=$bumpedVersion" >> $GITHUB_OUTPUT
+        echo "commit-sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT

@@ -1,0 +1,41 @@
+# Dependencies
+node_modules
+pnpm-lock.yaml
+
+# Build
+/apps/*/dist
+/apps/*/build
+/apps/*/.docusaurus
+/apps/*/public/mockServiceWorker.js
+/apps/zimic-test-client/**/typegen/generated/**/*.ts
+
+/packages/*/dist
+/packages/*/build
+**/fixtures/**/generated/*
+
+/examples/*/.next
+
+**/public/mockServiceWorker.js
+
+# Tests
+/apps/*/tests/coverage
+/packages/*/tests/coverage
+/examples/*/tests/coverage
+/examples/*/tests/outputs
+/examples/*/tests/reports
+
+# Configuration
+.husky
+
+# Cache
+.turbo
+.cache
+.eslintcache
+tsconfig.tsbuildinfo
+
+# Logs
+*.log
+
+# Miscellaneous
+.vscode
+local/

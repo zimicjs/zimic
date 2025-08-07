@@ -1,0 +1,96 @@
+name: 'Release Package: @zimic/fetch'
+
+on:
+  release:
+    types:
+      - published
+  push:
+    tags:
+      - '@zimic/fetch@*-*'
+
+concurrency:
+  group: release-zimic-fetch-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_REMOTE_CACHE_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_REMOTE_CACHE_TEAM }}
+  TURBO_LOG_ORDER: stream
+
+jobs:
+  release-to-npm:
+    name: Release to NPM
+    runs-on: ubuntu-24.04-arm
+    if: ${{ startsWith(github.ref_name, '@zimic/fetch@') }}
+    timeout-minutes: 7
+
+    environment: NPM
+
+    permissions:
+      contents: read
+      id-token: write
+
+    outputs:
+      version-value: ${{ steps.release.outputs.version-value }}
+      version-label: ${{ steps.release.outputs.version-label }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Release to NPM
+        id: release
+        uses: ./.github/actions/zimic-release-npm
+        with:
+          ref-name: ${{ github.ref_name }}
+          project-name: '@zimic/fetch'
+          project-directory: packages/zimic-fetch
+          npm-token: ${{ secrets.ZIMIC_NPM_RELEASE_TOKEN }}
+
+  test-npm-release:
+    name: Test NPM release
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+
+    needs:
+      - release-to-npm
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: canary
+
+      - name: Test NPM release
+        uses: ./.github/actions/zimic-release-npm-test
+        with:
+          ref-name: ${{ github.ref_name }}
+          project-name: '@zimic/fetch'
+          project-directory: packages/zimic-fetch
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+
+  publish-release-comments:
+    name: Publish release comments
+    runs-on: ubuntu-24.04-arm
+    if: ${{ needs.release-to-npm.outputs.version-label == 'latest' }}
+    timeout-minutes: 15
+
+    needs:
+      - release-to-npm
+      - test-npm-release
+
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Publish release comments
+        uses: ./.github/actions/zimic-release-comments
+        with:
+          type: package
+          ref-name: ${{ github.ref_name }}
+          project-name: '@zimic/fetch'

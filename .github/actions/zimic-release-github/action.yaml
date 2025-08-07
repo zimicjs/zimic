@@ -1,0 +1,45 @@
+name: Zimic Release GitHub
+description: Release a Zimic project on GitHub.
+
+inputs:
+  type:
+    description: If the version should be published as a tag or a GitHub release
+    required: true
+  token:
+    description: GitHub token
+    required: true
+  project-name:
+    description: The project name to release
+    required: true
+  version:
+    description: The version value to release
+    required: true
+  commit:
+    description: The commit SHA to release
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Create GitHub release
+      uses: ncipollo/release-action@v1
+      if: ${{ inputs.type == 'tag-and-release' }}
+      with:
+        name: '${{ inputs.project-name }}: ${{ inputs.version }}'
+        tag: '${{ inputs.project-name }}@${{ inputs.version }}'
+        commit: ${{ inputs.commit }}
+        token: ${{ inputs.token }}
+        makeLatest: true
+        prerelease: false
+        generateReleaseNotes: true
+        draft: true
+
+    - name: Create GitHub tag
+      if: ${{ inputs.type == 'tag-only' }}
+      shell: bash
+      run: |
+        git checkout ${{ inputs.commit }}
+
+        tag=${{ inputs.project-name }}@${{ inputs.version }}
+        git tag "$tag"
+        git push origin "$tag" --no-verify
