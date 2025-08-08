@@ -126,7 +126,7 @@
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "@zimic/http": "^0.7.0 || ^1.0.0-rc || workspace:*",
+    "@zimic/http": "^1.0.0 || workspace:*",
     "typescript": ">=5.0.0"
   },
   "peerDependenciesMeta": {
