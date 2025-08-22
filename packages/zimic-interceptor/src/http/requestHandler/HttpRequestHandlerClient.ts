@@ -161,10 +161,6 @@ class HttpRequestHandlerClient<
   async matchesRequest(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): Promise<boolean> {
     const hasDeclaredResponse = this.createResponseDeclaration !== undefined;
 
-    if (!hasDeclaredResponse) {
-      return false;
-    }
-
     const restrictionsMatch = await this.matchesRequestRestrictions(request);
 
     if (restrictionsMatch.value) {
@@ -178,6 +174,10 @@ class HttpRequestHandlerClient<
       if (shouldSaveUnmatchedGroup) {
         this.unmatchedRequestGroups.push({ request, diff: restrictionsMatch.diff });
       }
+    }
+
+    if (!hasDeclaredResponse) {
+      return false;
     }
 
     const isWithinLimits = this.numberOfMatchedRequests <= this.limits.numberOfRequests.max;
