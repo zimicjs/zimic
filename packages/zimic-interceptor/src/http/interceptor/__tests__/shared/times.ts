@@ -80,7 +80,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
               message: `Expected exactly ${
                 numberOfRequestsIncludingPreflight
               } request${numberOfRequestsIncludingPreflight === 1 ? '' : 's'}, but got 0.`,
-              numberOfRequests: numberOfRequestsIncludingPreflight,
+              expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
             },
           );
 
@@ -139,7 +139,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
             },
             {
               message: `Expected exactly ${numberOfRequestsIncludingPreflight * 2} requests, but got 0.`,
-              numberOfRequests: numberOfRequestsIncludingPreflight * 2,
+              expectedNumberOfRequests: numberOfRequestsIncludingPreflight * 2,
             },
           );
 
@@ -156,7 +156,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
               message: `Expected exactly ${
                 numberOfRequestsIncludingPreflight * 2
               } requests, but got ${numberOfRequestsIncludingPreflight}.`,
-              numberOfRequests: numberOfRequestsIncludingPreflight * 2,
+              expectedNumberOfRequests: numberOfRequestsIncludingPreflight * 2,
             },
           );
 
@@ -182,7 +182,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
               message: `Expected exactly ${
                 numberOfRequestsIncludingPreflight * 4
               } requests, but got ${numberOfRequestsIncludingPreflight * 3}.`,
-              numberOfRequests: numberOfRequestsIncludingPreflight * 4,
+              expectedNumberOfRequests: numberOfRequestsIncludingPreflight * 4,
             },
           );
         });
@@ -218,7 +218,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
               message: `Expected exactly ${
                 numberOfRequestsIncludingPreflight
               } request${numberOfRequestsIncludingPreflight === 1 ? '' : 's'}, but got 0.`,
-              numberOfRequests: numberOfRequestsIncludingPreflight,
+              expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
             },
           );
 
@@ -252,7 +252,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
               } request${numberOfRequestsIncludingPreflight === 1 ? '' : 's'}, but got ${
                 numberOfRequestsIncludingPreflight * 2
               }.`,
-              numberOfRequests: numberOfRequestsIncludingPreflight,
+              expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
             },
           );
 
@@ -276,7 +276,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
               } request${numberOfRequestsIncludingPreflight === 1 ? '' : 's'}, but got ${
                 numberOfRequestsIncludingPreflight * 3
               }.`,
-              numberOfRequests: numberOfRequestsIncludingPreflight,
+              expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
             },
           );
         });
@@ -361,8 +361,11 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
               message: `Expected at least ${
                 numberOfRequestsIncludingPreflight * 2
               } and at most ${numberOfRequestsIncludingPreflight * 3} requests, but got 0.`,
-              minNumberOfRequests: numberOfRequestsIncludingPreflight * 2,
-              maxNumberOfRequests: numberOfRequestsIncludingPreflight * 3,
+
+              expectedNumberOfRequests: {
+                min: numberOfRequestsIncludingPreflight * 2,
+                max: numberOfRequestsIncludingPreflight * 3,
+              },
             },
           );
 
@@ -381,8 +384,11 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
               } and at most ${numberOfRequestsIncludingPreflight * 3} requests, but got ${
                 numberOfRequestsIncludingPreflight
               }.`,
-              minNumberOfRequests: numberOfRequestsIncludingPreflight * 2,
-              maxNumberOfRequests: numberOfRequestsIncludingPreflight * 3,
+
+              expectedNumberOfRequests: {
+                min: numberOfRequestsIncludingPreflight * 2,
+                max: numberOfRequestsIncludingPreflight * 3,
+              },
             },
           );
 
@@ -486,8 +492,11 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
               } and at most ${numberOfRequestsIncludingPreflight * 3} requests, but got ${
                 numberOfRequestsIncludingPreflight * 4
               }.`,
-              minNumberOfRequests: numberOfRequestsIncludingPreflight * 2,
-              maxNumberOfRequests: numberOfRequestsIncludingPreflight * 3,
+
+              expectedNumberOfRequests: {
+                min: numberOfRequestsIncludingPreflight * 2,
+                max: numberOfRequestsIncludingPreflight * 3,
+              },
             },
           );
         });
@@ -521,8 +530,11 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
               message: `Expected exactly ${numberOfRequestsIncludingPreflight} request${
                 numberOfRequestsIncludingPreflight === 1 ? '' : 's'
               }, but got 0.`,
-              minNumberOfRequests: numberOfRequestsIncludingPreflight,
-              maxNumberOfRequests: numberOfRequestsIncludingPreflight,
+
+              expectedNumberOfRequests: {
+                min: numberOfRequestsIncludingPreflight,
+                max: numberOfRequestsIncludingPreflight,
+              },
             },
           );
 
@@ -554,8 +566,11 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
               message: `Expected exactly ${numberOfRequestsIncludingPreflight} request${
                 numberOfRequestsIncludingPreflight === 1 ? '' : 's'
               }, but got ${numberOfRequestsIncludingPreflight * 2}.`,
-              minNumberOfRequests: numberOfRequestsIncludingPreflight,
-              maxNumberOfRequests: numberOfRequestsIncludingPreflight,
+
+              expectedNumberOfRequests: {
+                min: numberOfRequestsIncludingPreflight,
+                max: numberOfRequestsIncludingPreflight,
+              },
             },
           );
         });
@@ -590,7 +605,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
             async () => {
               await promiseIfRemote(interceptor.checkTimes(), interceptor);
             },
-            { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
+            { message: 'Expected exactly 1 matching request, but got 0.', expectedNumberOfRequests: 1 },
           );
 
           const responsePromise = fetch(joinURL(baseURL, '/users'), {
@@ -633,13 +648,13 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
             },
             {
               message: contentLines.join('\n'),
-              numberOfRequests: 1,
+              expectedNumberOfRequests: 1,
             },
           );
         });
       });
 
-      it('should not consider requests unmatched due to missing response declarations in time checks', async () => {
+      it('should consider requests unmatched due to missing response declarations in time checks', async () => {
         await usingHttpInterceptor<{
           '/users': {
             GET: MethodSchema;
@@ -651,7 +666,10 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
             OPTIONS: MethodSchema;
           };
         }>(interceptorOptions, async (interceptor) => {
-          const handler = await promiseIfRemote(interceptor[lowerMethod]('/users').times(1), interceptor);
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users').times(numberOfRequestsIncludingPreflight),
+            interceptor,
+          );
           expect(handler).toBeInstanceOf(Handler);
 
           expect(handler.requests).toHaveLength(0);
@@ -660,10 +678,27 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
             async () => {
               await promiseIfRemote(interceptor.checkTimes(), interceptor);
             },
-            { message: 'Expected exactly 1 request, but got 0.', numberOfRequests: 1 },
+            {
+              message: `Expected exactly ${numberOfRequestsIncludingPreflight} request${
+                numberOfRequestsIncludingPreflight === 1 ? '' : 's'
+              }, but got 0.`,
+              expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
+            },
           );
 
-          const responsePromise = fetch(joinURL(baseURL, '/users'), { method });
+          let responsePromise = fetch(joinURL(baseURL, '/users'), { method });
+
+          if (overridesPreflightResponse) {
+            await expectPreflightResponse(responsePromise);
+          } else {
+            await expectFetchError(responsePromise);
+          }
+
+          expect(handler.requests).toHaveLength(0);
+
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+          responsePromise = fetch(joinURL(baseURL, '/users'), { method });
 
           if (overridesPreflightResponse) {
             await expectPreflightResponse(responsePromise);
@@ -677,7 +712,13 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
             async () => {
               await promiseIfRemote(interceptor.checkTimes(), interceptor);
             },
-            { message: 'Expected exactly 1 request, but got 0.', numberOfRequests: 1 },
+            {
+              message: `Expected exactly ${numberOfRequestsIncludingPreflight} request${
+                numberOfRequestsIncludingPreflight === 1 ? '' : 's'
+              }, but got ${numberOfRequestsIncludingPreflight * 2}.`,
+
+              expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
+            },
           );
         });
       });
@@ -709,7 +750,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
             async () => {
               await promiseIfRemote(interceptor.checkTimes(), interceptor);
             },
-            { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
+            { message: 'Expected exactly 1 matching request, but got 0.', expectedNumberOfRequests: 1 },
           );
 
           const responsePromise = fetch(joinURL(baseURL, '/users/other'), { method });
@@ -726,7 +767,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
             async () => {
               await promiseIfRemote(interceptor.checkTimes(), interceptor);
             },
-            { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
+            { message: 'Expected exactly 1 matching request, but got 0.', expectedNumberOfRequests: 1 },
           );
         });
       });
