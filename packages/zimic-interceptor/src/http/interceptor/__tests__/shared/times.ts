@@ -518,7 +518,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
     });
 
     describe('Unmatched requests', () => {
-      it('should not consider requests unmatched due to restrictions in time checks', async () => {
+      it('should not consider requests unmatched due to restrictions in times checks', async () => {
         await usingHttpInterceptor<{
           '/users': {
             GET: MethodSchema;
@@ -587,7 +587,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
         });
       });
 
-      it('should consider requests unmatched due to missing response declarations in time checks', async () => {
+      it('should consider requests unmatched due to missing response declarations in times checks', async () => {
         await usingHttpInterceptor<{
           '/users': {
             GET: MethodSchema;
@@ -646,7 +646,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
         });
       });
 
-      it('should consider requests with restrictions unmatched due to missing response declarations in time checks', async () => {
+      it('should consider requests with restrictions unmatched due to missing response declarations in times checks', async () => {
         await usingHttpInterceptor<{
           '/users': {
             GET: MethodSchema;
@@ -747,7 +747,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
         });
       });
 
-      it('should consider requests unmatched due to missing response declarations when no requests are expected in time checks', async () => {
+      it('should consider requests unmatched due to missing response declarations when no requests are expected in times checks', async () => {
         await usingHttpInterceptor<{
           '/users': {
             GET: MethodSchema;
@@ -783,7 +783,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
         });
       });
 
-      it('should not consider requests unmatched due to unmocked path in time checks', async () => {
+      it('should not consider requests unmatched due to unmocked path in times checks', async () => {
         await usingHttpInterceptor<{
           '/users': {
             GET: MethodSchema;

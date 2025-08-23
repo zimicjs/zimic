@@ -881,7 +881,7 @@ export function declareTimesHttpRequestHandlerTests(
         });
       });
 
-      it('should consider requests with restrictions unmatched due to missing a response declaration in times check errors', async () => {
+      it('should consider requests with restrictions unmatched due to missing a response declaration in times checks', async () => {
         const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
           .with({ searchParams: { value: '1' } })
           .times(1);
@@ -942,7 +942,7 @@ export function declareTimesHttpRequestHandlerTests(
       });
     });
 
-    it('should consider requests unmatched due to missing a response declaration when no requests are expected in times check errors', async () => {
+    it('should consider requests unmatched due to missing a response declaration when no requests are expected in times checks', async () => {
       const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').times(0);
 
       await promiseIfRemote(handler.checkTimes(), handler);
