@@ -1,10 +1,11 @@
+import { PossiblePromise } from '@zimic/utils/types';
 import { expect } from 'vitest';
 
 import TimesCheckError from '../../errors/TimesCheckError';
 import TimesDeclarationPointer from '../../errors/TimesDeclarationPointer';
 
 export async function expectTimesCheckError(
-  callback: () => Promise<void> | void,
+  callback: () => PossiblePromise<void>,
   options: {
     message: string;
     expectedNumberOfRequests: number | { min: number; max: number };
