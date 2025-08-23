@@ -1,4 +1,4 @@
-import { HTTP_METHODS, HttpSchema } from '@zimic/http';
+import { HTTP_METHODS, HttpSchema, HttpSearchParams } from '@zimic/http';
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import joinURL from '@zimic/utils/url/joinURL';
 import color from 'picocolors';
@@ -72,17 +72,12 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
           expect(handler.requests).toHaveLength(0);
 
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            {
-              message: `Expected exactly ${
-                numberOfRequestsIncludingPreflight
-              } request${numberOfRequestsIncludingPreflight === 1 ? '' : 's'}, but got 0.`,
-              expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
-            },
-          );
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: `Expected exactly ${
+              numberOfRequestsIncludingPreflight
+            } request${numberOfRequestsIncludingPreflight === 1 ? '' : 's'}, but got 0.`,
+            expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
+          });
 
           let response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
@@ -133,32 +128,22 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
           expect(handler.requests).toHaveLength(0);
 
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            {
-              message: `Expected exactly ${numberOfRequestsIncludingPreflight * 2} requests, but got 0.`,
-              expectedNumberOfRequests: numberOfRequestsIncludingPreflight * 2,
-            },
-          );
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: `Expected exactly ${numberOfRequestsIncludingPreflight * 2} requests, but got 0.`,
+            expectedNumberOfRequests: numberOfRequestsIncludingPreflight * 2,
+          });
 
           let response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
 
           expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            {
-              message: `Expected exactly ${
-                numberOfRequestsIncludingPreflight * 2
-              } requests, but got ${numberOfRequestsIncludingPreflight}.`,
-              expectedNumberOfRequests: numberOfRequestsIncludingPreflight * 2,
-            },
-          );
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: `Expected exactly ${
+              numberOfRequestsIncludingPreflight * 2
+            } requests, but got ${numberOfRequestsIncludingPreflight}.`,
+            expectedNumberOfRequests: numberOfRequestsIncludingPreflight * 2,
+          });
 
           response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
@@ -174,17 +159,12 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
           expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
 
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            {
-              message: `Expected exactly ${
-                numberOfRequestsIncludingPreflight * 4
-              } requests, but got ${numberOfRequestsIncludingPreflight * 3}.`,
-              expectedNumberOfRequests: numberOfRequestsIncludingPreflight * 4,
-            },
-          );
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: `Expected exactly ${
+              numberOfRequestsIncludingPreflight * 4
+            } requests, but got ${numberOfRequestsIncludingPreflight * 3}.`,
+            expectedNumberOfRequests: numberOfRequestsIncludingPreflight * 4,
+          });
         });
       });
 
@@ -210,17 +190,12 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
           expect(handler.requests).toHaveLength(0);
 
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            {
-              message: `Expected exactly ${
-                numberOfRequestsIncludingPreflight
-              } request${numberOfRequestsIncludingPreflight === 1 ? '' : 's'}, but got 0.`,
-              expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
-            },
-          );
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: `Expected exactly ${
+              numberOfRequestsIncludingPreflight
+            } request${numberOfRequestsIncludingPreflight === 1 ? '' : 's'}, but got 0.`,
+            expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
+          });
 
           const response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
@@ -242,19 +217,14 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
           expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            {
-              message: `Expected exactly ${
-                numberOfRequestsIncludingPreflight
-              } request${numberOfRequestsIncludingPreflight === 1 ? '' : 's'}, but got ${
-                numberOfRequestsIncludingPreflight * 2
-              }.`,
-              expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
-            },
-          );
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: `Expected exactly ${
+              numberOfRequestsIncludingPreflight
+            } request${numberOfRequestsIncludingPreflight === 1 ? '' : 's'}, but got ${
+              numberOfRequestsIncludingPreflight * 2
+            }.`,
+            expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
+          });
 
           responsePromise = fetch(joinURL(baseURL, '/users'), { method });
 
@@ -266,19 +236,14 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
           expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            {
-              message: `Expected exactly ${
-                numberOfRequestsIncludingPreflight
-              } request${numberOfRequestsIncludingPreflight === 1 ? '' : 's'}, but got ${
-                numberOfRequestsIncludingPreflight * 3
-              }.`,
-              expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
-            },
-          );
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: `Expected exactly ${
+              numberOfRequestsIncludingPreflight
+            } request${numberOfRequestsIncludingPreflight === 1 ? '' : 's'}, but got ${
+              numberOfRequestsIncludingPreflight * 3
+            }.`,
+            expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
+          });
         });
       });
     });
@@ -353,44 +318,34 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
           expect(handler.requests).toHaveLength(0);
 
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            {
-              message: `Expected at least ${
-                numberOfRequestsIncludingPreflight * 2
-              } and at most ${numberOfRequestsIncludingPreflight * 3} requests, but got 0.`,
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: `Expected at least ${
+              numberOfRequestsIncludingPreflight * 2
+            } and at most ${numberOfRequestsIncludingPreflight * 3} requests, but got 0.`,
 
-              expectedNumberOfRequests: {
-                min: numberOfRequestsIncludingPreflight * 2,
-                max: numberOfRequestsIncludingPreflight * 3,
-              },
+            expectedNumberOfRequests: {
+              min: numberOfRequestsIncludingPreflight * 2,
+              max: numberOfRequestsIncludingPreflight * 3,
             },
-          );
+          });
 
           let response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
 
           expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            {
-              message: `Expected at least ${
-                numberOfRequestsIncludingPreflight * 2
-              } and at most ${numberOfRequestsIncludingPreflight * 3} requests, but got ${
-                numberOfRequestsIncludingPreflight
-              }.`,
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: `Expected at least ${
+              numberOfRequestsIncludingPreflight * 2
+            } and at most ${numberOfRequestsIncludingPreflight * 3} requests, but got ${
+              numberOfRequestsIncludingPreflight
+            }.`,
 
-              expectedNumberOfRequests: {
-                min: numberOfRequestsIncludingPreflight * 2,
-                max: numberOfRequestsIncludingPreflight * 3,
-              },
+            expectedNumberOfRequests: {
+              min: numberOfRequestsIncludingPreflight * 2,
+              max: numberOfRequestsIncludingPreflight * 3,
             },
-          );
+          });
 
           response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
@@ -482,23 +437,18 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
           expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
 
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            {
-              message: `Expected at least ${
-                numberOfRequestsIncludingPreflight * 2
-              } and at most ${numberOfRequestsIncludingPreflight * 3} requests, but got ${
-                numberOfRequestsIncludingPreflight * 4
-              }.`,
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: `Expected at least ${
+              numberOfRequestsIncludingPreflight * 2
+            } and at most ${numberOfRequestsIncludingPreflight * 3} requests, but got ${
+              numberOfRequestsIncludingPreflight * 4
+            }.`,
 
-              expectedNumberOfRequests: {
-                min: numberOfRequestsIncludingPreflight * 2,
-                max: numberOfRequestsIncludingPreflight * 3,
-              },
+            expectedNumberOfRequests: {
+              min: numberOfRequestsIncludingPreflight * 2,
+              max: numberOfRequestsIncludingPreflight * 3,
             },
-          );
+          });
         });
       });
 
@@ -522,21 +472,16 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           );
           expect(handler).toBeInstanceOf(Handler);
 
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            {
-              message: `Expected exactly ${numberOfRequestsIncludingPreflight} request${
-                numberOfRequestsIncludingPreflight === 1 ? '' : 's'
-              }, but got 0.`,
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: `Expected exactly ${numberOfRequestsIncludingPreflight} request${
+              numberOfRequestsIncludingPreflight === 1 ? '' : 's'
+            }, but got 0.`,
 
-              expectedNumberOfRequests: {
-                min: numberOfRequestsIncludingPreflight,
-                max: numberOfRequestsIncludingPreflight,
-              },
+            expectedNumberOfRequests: {
+              min: numberOfRequestsIncludingPreflight,
+              max: numberOfRequestsIncludingPreflight,
             },
-          );
+          });
 
           const response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
@@ -558,21 +503,16 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
           expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            {
-              message: `Expected exactly ${numberOfRequestsIncludingPreflight} request${
-                numberOfRequestsIncludingPreflight === 1 ? '' : 's'
-              }, but got ${numberOfRequestsIncludingPreflight * 2}.`,
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: `Expected exactly ${numberOfRequestsIncludingPreflight} request${
+              numberOfRequestsIncludingPreflight === 1 ? '' : 's'
+            }, but got ${numberOfRequestsIncludingPreflight * 2}.`,
 
-              expectedNumberOfRequests: {
-                min: numberOfRequestsIncludingPreflight,
-                max: numberOfRequestsIncludingPreflight,
-              },
+            expectedNumberOfRequests: {
+              min: numberOfRequestsIncludingPreflight,
+              max: numberOfRequestsIncludingPreflight,
             },
-          );
+          });
         });
       });
     });
@@ -601,12 +541,10 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
           expect(handler.requests).toHaveLength(0);
 
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            { message: 'Expected exactly 1 matching request, but got 0.', expectedNumberOfRequests: 1 },
-          );
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected exactly 1 matching request, but got 0.',
+            expectedNumberOfRequests: 1,
+          });
 
           const responsePromise = fetch(joinURL(baseURL, '/users'), {
             method,
@@ -642,15 +580,10 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
             );
           }
 
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            {
-              message: contentLines.join('\n'),
-              expectedNumberOfRequests: 1,
-            },
-          );
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: contentLines.join('\n'),
+            expectedNumberOfRequests: 1,
+          });
         });
       });
 
@@ -674,17 +607,12 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
           expect(handler.requests).toHaveLength(0);
 
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            {
-              message: `Expected exactly ${numberOfRequestsIncludingPreflight} request${
-                numberOfRequestsIncludingPreflight === 1 ? '' : 's'
-              }, but got 0.`,
-              expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
-            },
-          );
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: `Expected exactly ${numberOfRequestsIncludingPreflight} request${
+              numberOfRequestsIncludingPreflight === 1 ? '' : 's'
+            }, but got 0.`,
+            expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
+          });
 
           let responsePromise = fetch(joinURL(baseURL, '/users'), { method });
 
@@ -708,18 +636,150 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
           expect(handler.requests).toHaveLength(0);
 
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            {
-              message: `Expected exactly ${numberOfRequestsIncludingPreflight} request${
-                numberOfRequestsIncludingPreflight === 1 ? '' : 's'
-              }, but got ${numberOfRequestsIncludingPreflight * 2}.`,
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: `Expected exactly ${numberOfRequestsIncludingPreflight} request${
+              numberOfRequestsIncludingPreflight === 1 ? '' : 's'
+            }, but got ${numberOfRequestsIncludingPreflight * 2}.`,
 
-              expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
-            },
+            expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
+          });
+        });
+      });
+
+      it('should consider requests with restrictions unmatched due to missing response declarations in time checks', async () => {
+        await usingHttpInterceptor<{
+          '/users': {
+            GET: MethodSchema;
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
+            HEAD: MethodSchema;
+            OPTIONS: MethodSchema;
+          };
+        }>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users')
+              .with({ searchParams: { value: '1' } })
+              .times(numberOfRequestsIncludingPreflight),
+            interceptor,
           );
+          expect(handler).toBeInstanceOf(Handler);
+
+          expect(handler.requests).toHaveLength(0);
+
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: `Expected exactly ${numberOfRequestsIncludingPreflight} matching request${
+              numberOfRequestsIncludingPreflight === 1 ? '' : 's'
+            }, but got 0.`,
+            expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
+          });
+
+          let responsePromise = fetch(joinURL(baseURL, '/users'), { method });
+
+          if (overridesPreflightResponse) {
+            await expectPreflightResponse(responsePromise);
+          } else {
+            await expectFetchError(responsePromise);
+          }
+
+          expect(handler.requests).toHaveLength(0);
+
+          const contentLines = [
+            `Expected exactly ${numberOfRequestsIncludingPreflight} matching request${
+              numberOfRequestsIncludingPreflight === 1 ? '' : 's'
+            }, but got 0.`,
+            '',
+            'Requests evaluated by this handler:',
+            '',
+            `  ${color.green('- Expected')}`,
+            `  ${color.red('+ Received')}`,
+          ];
+
+          for (let requestIndex = 0; requestIndex < numberOfRequestsIncludingPreflight; requestIndex++) {
+            const requestNumber = requestIndex + 1;
+
+            contentLines.push(
+              '',
+              `${requestNumber}: ${method} ${joinURL(baseURL, '/users')}`,
+              '     Search params:',
+              `       ${color.green('- { "value": "1" }')}`,
+              `       ${color.red('+ {}')}`,
+            );
+          }
+
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: contentLines.join('\n'),
+            expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
+          });
+
+          const searchParams = new HttpSearchParams({ value: '1' });
+          responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+
+          if (overridesPreflightResponse) {
+            await expectPreflightResponse(responsePromise);
+          } else {
+            await expectFetchError(responsePromise);
+          }
+
+          expect(handler.requests).toHaveLength(0);
+
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+          responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+
+          if (overridesPreflightResponse) {
+            await expectPreflightResponse(responsePromise);
+          } else {
+            await expectFetchError(responsePromise);
+          }
+
+          expect(handler.requests).toHaveLength(0);
+
+          contentLines[0] = `Expected exactly ${numberOfRequestsIncludingPreflight} matching request${
+            numberOfRequestsIncludingPreflight === 1 ? '' : 's'
+          }, but got ${numberOfRequestsIncludingPreflight * 2}.`;
+
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: contentLines.join('\n'),
+            expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
+          });
+        });
+      });
+
+      it('should consider requests unmatched due to missing response declarations when no requests are expected in time checks', async () => {
+        await usingHttpInterceptor<{
+          '/users': {
+            GET: MethodSchema;
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
+            HEAD: MethodSchema;
+            OPTIONS: MethodSchema;
+          };
+        }>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(interceptor[lowerMethod]('/users').times(0), interceptor);
+          expect(handler).toBeInstanceOf(Handler);
+
+          expect(handler.requests).toHaveLength(0);
+
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+          const responsePromise = fetch(joinURL(baseURL, '/users'), { method });
+
+          if (overridesPreflightResponse) {
+            await expectPreflightResponse(responsePromise);
+          } else {
+            await expectFetchError(responsePromise);
+          }
+
+          expect(handler.requests).toHaveLength(0);
+
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: `Expected exactly 0 requests, but got ${numberOfRequestsIncludingPreflight}.`,
+            expectedNumberOfRequests: 0,
+          });
         });
       });
 
@@ -746,12 +806,10 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
           expect(handler.requests).toHaveLength(0);
 
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            { message: 'Expected exactly 1 matching request, but got 0.', expectedNumberOfRequests: 1 },
-          );
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected exactly 1 matching request, but got 0.',
+            expectedNumberOfRequests: 1,
+          });
 
           const responsePromise = fetch(joinURL(baseURL, '/users/other'), { method });
 
@@ -763,12 +821,10 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
           expect(handler.requests).toHaveLength(0);
 
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            { message: 'Expected exactly 1 matching request, but got 0.', expectedNumberOfRequests: 1 },
-          );
+          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected exactly 1 matching request, but got 0.',
+            expectedNumberOfRequests: 1,
+          });
         });
       });
     });
