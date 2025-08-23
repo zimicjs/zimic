@@ -102,7 +102,7 @@ export interface RestrictionDiff<Value> {
   received: Value;
 }
 
-export type RestrictionMatchResult<Value> = { value: true; diff?: undefined } | { value: false; diff: Value };
+export type RestrictionMatchResult<Value> = { success: true; diff?: undefined } | { success: false; diff: Value };
 
 export interface RestrictionDiffs {
   computed?: RestrictionDiff<boolean>;
