@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "1.0.1",
+  "version": "1.0.2-canary.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -99,7 +99,7 @@
     "@whatwg-node/server": "0.10.12",
     "execa": "9.6.0",
     "isomorphic-ws": "5.0.0",
-    "msw": "2.10.4",
+    "msw": "2.10.5",
     "picocolors": "^1.1.1",
     "ws": "8.18.3",
     "yargs": "18.0.0",
@@ -109,7 +109,7 @@
     "bufferutil": "4.0.9"
   },
   "devDependencies": {
-    "@types/node": "^24.2.1",
+    "@types/node": "^24.3.0",
     "@types/ws": "^8.18.1",
     "@types/yargs": "^17.0.33",
     "@vitest/browser": "^3.2.4",
