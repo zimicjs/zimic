@@ -12,7 +12,7 @@
     "api",
     "static"
   ],
-  "version": "1.0.0",
+  "version": "1.0.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -85,13 +85,13 @@
     "deps:prepare": "playwright install chromium"
   },
   "dependencies": {
-    "openapi-typescript": "7.8.0",
+    "openapi-typescript": "7.9.1",
     "picocolors": "^1.1.1",
     "yargs": "18.0.0"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^24.1.0",
+    "@types/node": "^24.3.0",
     "@types/yargs": "^17.0.33",
     "@vitest/browser": "^3.2.4",
     "@vitest/coverage-istanbul": "^3.2.4",
@@ -101,13 +101,13 @@
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^10.0.0",
-    "eslint": "^9.32.0",
+    "eslint": "^9.33.0",
     "execa": "9.6.0",
     "js-yaml": "^4.1.0",
     "playwright": "^1.54.2",
     "prettier": "^3.6.2",
     "tsup": "^8.4.0",
-    "tsx": "^4.19.4",
+    "tsx": "^4.20.4",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },

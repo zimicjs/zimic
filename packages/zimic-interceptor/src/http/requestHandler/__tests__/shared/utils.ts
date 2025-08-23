@@ -7,15 +7,8 @@ export async function expectTimesCheckError(
   callback: () => Promise<void> | void,
   options: {
     message: string;
-  } & (
-    | {
-        numberOfRequests: number;
-      }
-    | {
-        minNumberOfRequests: number;
-        maxNumberOfRequests?: number;
-      }
-  ),
+    expectedNumberOfRequests: number | { min: number; max: number };
+  },
 ) {
   const { message } = options;
 
@@ -48,13 +41,11 @@ export async function expectTimesCheckError(
   const timesDeclarationPointer = timesCheckError!.cause! as TimesDeclarationPointer;
   expect(timesDeclarationPointer).toBeInstanceOf(TimesDeclarationPointer);
 
-  if ('numberOfRequests' in options) {
-    expect(timesDeclarationPointer.name).toBe(`handler.times(${options.numberOfRequests})`);
-  } else if (options.maxNumberOfRequests === undefined) {
-    expect(timesDeclarationPointer.name).toBe(`handler.times(${options.minNumberOfRequests})`);
+  if (typeof options.expectedNumberOfRequests === 'number') {
+    expect(timesDeclarationPointer.name).toBe(`handler.times(${options.expectedNumberOfRequests})`);
   } else {
     expect(timesDeclarationPointer.name).toBe(
-      `handler.times(${options.minNumberOfRequests}, ${options.maxNumberOfRequests})`,
+      `handler.times(${options.expectedNumberOfRequests.min}, ${options.expectedNumberOfRequests.max})`,
     );
   }
 
