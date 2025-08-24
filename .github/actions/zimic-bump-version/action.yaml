@@ -74,7 +74,7 @@ runs:
 
         git config pull.rebase true
 
-        until git push -u origin HEAD --no-verify; do
+        until git push --set-upstream origin HEAD --no-verify; do
           if [[ $numberOfPushRetries -gt $maxNumberOfPushRetries ]]; then
             echo "Push failed after $maxNumberOfPushRetries retries. Aborting."
             exit 1
@@ -82,9 +82,47 @@ runs:
 
           numberOfPushRetries=$((numberOfPushRetries + 1))
 
-          echo 'Push rejected. Retrying...'
+          echo 'Push failed. Retrying...'
+
           git pull
         done
 
         echo "value=$bumpedVersion" >> $GITHUB_OUTPUT
         echo "commit-sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+        if [[ "$upgradeType" == 'stable' || "$preReleaseId" == 'none' ]]; then
+          currentBranch=$(git branch --show-current)
+
+          for branch in main canary; do
+            if [[ "$branch" == "$currentBranch" ]]; then
+              continue
+            fi
+
+            echo "Syncing branch '$branch'..."
+
+            git checkout $branch
+
+            while true; do
+              git merge - --no-ff --no-edit
+
+              if git push --set-upstream origin $branch --no-verify; then
+                echo "Branch '$branch' synced successfully."
+                break
+              fi
+
+              if [[ $numberOfPushRetries -gt $maxNumberOfPushRetries ]]; then
+                echo "Push failed after $maxNumberOfPushRetries retries. Aborting."
+                exit 1
+              fi
+
+              numberOfPushRetries=$((numberOfPushRetries + 1))
+
+              echo 'Push failed. Retrying...'
+
+              git reset --hard origin/$branch
+              git pull
+            done
+
+            git checkout -
+          done
+        fi

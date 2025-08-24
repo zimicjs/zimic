@@ -19,7 +19,7 @@
     "@zimic/interceptor": "latest",
     "concurrently": "^9.2.0",
     "dotenv-cli": "^10.0.0",
-    "playwright": "^1.54.2",
+    "playwright": "^1.55.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   }
