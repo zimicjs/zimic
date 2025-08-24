@@ -103,7 +103,7 @@
     "picocolors": "^1.1.1",
     "ws": "8.18.3",
     "yargs": "18.0.0",
-    "zod": "^4.0.17"
+    "zod": "^4.1.0"
   },
   "optionalDependencies": {
     "bufferutil": "4.0.9"
@@ -119,8 +119,8 @@
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^10.0.0",
-    "eslint": "^9.33.0",
-    "playwright": "^1.54.2",
+    "eslint": "^9.34.0",
+    "playwright": "^1.55.0",
     "tsup": "^8.4.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
