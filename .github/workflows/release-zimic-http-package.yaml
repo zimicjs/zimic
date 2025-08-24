@@ -78,7 +78,6 @@ jobs:
 
     needs:
       - release-to-npm
-      - test-npm-release
 
     permissions:
       issues: write
