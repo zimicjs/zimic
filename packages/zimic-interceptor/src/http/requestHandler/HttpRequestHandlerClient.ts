@@ -163,7 +163,7 @@ class HttpRequestHandlerClient<
 
     const restrictionsMatch = await this.matchesRequestRestrictions(request);
 
-    if (restrictionsMatch.value) {
+    if (restrictionsMatch.success) {
       this.numberOfMatchedRequests++;
     } else {
       const shouldSaveUnmatchedGroup =
@@ -181,7 +181,7 @@ class HttpRequestHandlerClient<
     }
 
     const isWithinLimits = this.numberOfMatchedRequests <= this.limits.numberOfRequests.max;
-    return restrictionsMatch.value && isWithinLimits;
+    return restrictionsMatch.success && isWithinLimits;
   }
 
   private async matchesRequestRestrictions(
@@ -193,7 +193,7 @@ class HttpRequestHandlerClient<
 
         if (!matchesComputedRestriction) {
           return {
-            value: false,
+            success: false,
             diff: { computed: { expected: true, received: false } },
           };
         }
@@ -206,11 +206,13 @@ class HttpRequestHandlerClient<
       const matchesBodyRestrictions = await this.matchesRequestBodyRestrictions(request, restriction);
 
       const matchesRestriction =
-        matchesHeadersRestrictions.value && matchesSearchParamsRestrictions.value && matchesBodyRestrictions.value;
+        matchesHeadersRestrictions.success &&
+        matchesSearchParamsRestrictions.success &&
+        matchesBodyRestrictions.success;
 
       if (!matchesRestriction) {
         return {
-          value: false,
+          success: false,
           diff: {
             headers: matchesHeadersRestrictions.diff,
             searchParams: matchesSearchParamsRestrictions.diff,
@@ -220,7 +222,7 @@ class HttpRequestHandlerClient<
       }
     }
 
-    return { value: true };
+    return { success: true };
   }
 
   private matchesRequestHeadersRestrictions(
@@ -229,7 +231,7 @@ class HttpRequestHandlerClient<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): RestrictionMatchResult<RestrictionDiff<HttpHeaders<any>>> {
     if (restriction.headers === undefined) {
-      return { value: true };
+      return { success: true };
     }
 
     const restrictedHeaders = new HttpHeaders(
@@ -241,9 +243,9 @@ class HttpRequestHandlerClient<
       : request.headers.contains(restrictedHeaders);
 
     return matchesRestriction
-      ? { value: true }
+      ? { success: true }
       : {
-          value: false,
+          success: false,
           diff: { expected: restrictedHeaders, received: request.headers },
         };
   }
@@ -254,7 +256,7 @@ class HttpRequestHandlerClient<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): RestrictionMatchResult<RestrictionDiff<HttpSearchParams<any>>> {
     if (restriction.searchParams === undefined) {
-      return { value: true };
+      return { success: true };
     }
 
     const restrictedSearchParams = new HttpSearchParams(
@@ -266,9 +268,9 @@ class HttpRequestHandlerClient<
       : request.searchParams.contains(restrictedSearchParams);
 
     return matchesRestriction
-      ? { value: true }
+      ? { success: true }
       : {
-          value: false,
+          success: false,
           diff: { expected: restrictedSearchParams, received: request.searchParams },
         };
   }
@@ -278,7 +280,7 @@ class HttpRequestHandlerClient<
     restriction: HttpRequestHandlerStaticRestriction<Schema, Method, Path>,
   ): Promise<RestrictionMatchResult<RestrictionDiff<unknown>>> {
     if (restriction.body === undefined) {
-      return { value: true };
+      return { success: true };
     }
 
     const body = request.body as unknown;
@@ -288,9 +290,9 @@ class HttpRequestHandlerClient<
       const matchesRestriction = restriction.exact ? body === restrictionBody : body.includes(restrictionBody);
 
       return matchesRestriction
-        ? { value: true }
+        ? { success: true }
         : {
-            value: false,
+            success: false,
             diff: { expected: restrictionBody, received: body },
           };
     }
@@ -298,7 +300,7 @@ class HttpRequestHandlerClient<
     if (restrictionBody instanceof HttpFormData) {
       if (!(body instanceof HttpFormData)) {
         return {
-          value: false,
+          success: false,
           diff: { expected: restrictionBody, received: body },
         };
       }
@@ -308,9 +310,9 @@ class HttpRequestHandlerClient<
         : await body.contains(restrictionBody);
 
       return matchesRestriction
-        ? { value: true }
+        ? { success: true }
         : {
-            value: false,
+            success: false,
             diff: { expected: restrictionBody, received: body },
           };
     }
@@ -318,7 +320,7 @@ class HttpRequestHandlerClient<
     if (restrictionBody instanceof HttpSearchParams) {
       if (!(body instanceof HttpSearchParams)) {
         return {
-          value: false,
+          success: false,
           diff: { expected: restrictionBody, received: body },
         };
       }
@@ -326,9 +328,9 @@ class HttpRequestHandlerClient<
       const matchesRestriction = restriction.exact ? body.equals(restrictionBody) : body.contains(restrictionBody);
 
       return matchesRestriction
-        ? { value: true }
+        ? { success: true }
         : {
-            value: false,
+            success: false,
             diff: { expected: restrictionBody, received: body },
           };
     }
@@ -340,7 +342,7 @@ class HttpRequestHandlerClient<
     ) {
       if (!(body instanceof Blob)) {
         return {
-          value: false,
+          success: false,
           diff: { expected: restrictionBody, received: body },
         };
       }
@@ -361,9 +363,9 @@ class HttpRequestHandlerClient<
       const matchesRestriction = await blobEquals(body, restrictionBodyAsBlob);
 
       return matchesRestriction
-        ? { value: true }
+        ? { success: true }
         : {
-            value: false,
+            success: false,
             diff: { expected: restrictionBody, received: body },
           };
     }
@@ -373,9 +375,9 @@ class HttpRequestHandlerClient<
       : jsonContains(request.body, restriction.body);
 
     return matchesRestriction
-      ? { value: true }
+      ? { success: true }
       : {
-          value: false,
+          success: false,
           diff: { expected: restrictionBody, received: body },
         };
   }
