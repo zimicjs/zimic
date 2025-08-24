@@ -1,6 +1,6 @@
 {
   "name": "zimic-web",
-  "version": "0.3.15",
+  "version": "0.3.16",
   "private": true,
   "scripts": {
     "dev": "docusaurus start --host :: --no-open",
