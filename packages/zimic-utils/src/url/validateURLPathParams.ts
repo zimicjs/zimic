@@ -1,4 +1,4 @@
-import { URL_PATH_PARAM_REGEX } from './createRegExpFromURL';
+import { getPathParamRegExp } from './createPathRegExp';
 
 export class DuplicatedPathParamError extends Error {
   constructor(url: URL, paramName: string) {
@@ -11,9 +11,7 @@ export class DuplicatedPathParamError extends Error {
 }
 
 function validateURLPathParams(url: URL) {
-  URL_PATH_PARAM_REGEX.lastIndex = 0;
-
-  const matches = url.toString().matchAll(URL_PATH_PARAM_REGEX);
+  const matches = url.toString().matchAll(getPathParamRegExp());
 
   const uniqueParamNames = new Set<string>();
 

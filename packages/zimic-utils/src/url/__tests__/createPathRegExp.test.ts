@@ -1,0 +1,645 @@
+import { describe, expect, it } from 'vitest';
+
+import createPathRegExp from '../createPathRegExp';
+
+describe('createPathRegExp', () => {
+  type PathTestCase =
+    | {
+        path: string;
+        input: string;
+        matches: false;
+      }
+    | {
+        path: string;
+        input: string;
+        matches: true;
+        params?: Record<string, string>;
+      };
+
+  it.each<PathTestCase>([
+    // Empty paths
+    { path: '', input: '', matches: true },
+    { path: '', input: '/', matches: true },
+    { path: '', input: 'other', matches: false },
+    { path: '', input: '/other', matches: false },
+
+    // Root paths
+    { path: '/', input: '', matches: true },
+    { path: '/', input: '/', matches: true },
+    { path: '/', input: 'other', matches: false },
+    { path: '/', input: '/other', matches: false },
+
+    // Paths not starting or ending with a slash
+    { path: 'path', input: 'path', matches: true },
+    { path: 'path', input: '/path', matches: true },
+    { path: 'path', input: 'other', matches: false },
+    { path: 'path', input: '/other', matches: false },
+
+    // Paths starting with a slash
+    { path: '/path', input: 'path', matches: true },
+    { path: '/path', input: '/path', matches: true },
+    { path: '/path', input: 'other', matches: false },
+    { path: '/path', input: '/other', matches: false },
+
+    // Paths ending with a slash
+    { path: 'path/', input: 'path', matches: true },
+    { path: 'path/', input: '/path', matches: true },
+    { path: 'path/', input: 'other', matches: false },
+    { path: 'path/', input: '/other', matches: false },
+
+    // Paths starting and ending with a slash
+    { path: '/path/', input: 'path', matches: true },
+    { path: '/path/', input: '/path', matches: true },
+    { path: '/path/', input: 'other', matches: false },
+    { path: '/path/', input: '/other', matches: false },
+
+    // Path with one param not starting or ending with a slash
+    { path: ':p1', input: '', matches: false },
+    { path: ':p1', input: '/', matches: false },
+    { path: ':p1', input: 'v1', matches: true, params: { p1: 'v1' } },
+    { path: ':p1', input: 'v1/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1', input: '/v1', matches: true, params: { p1: 'v1' } },
+    { path: ':p1', input: '/v1/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1', input: 'v1/other', matches: false },
+    { path: ':p1', input: '/v1/other', matches: false },
+
+    // Path with one param starting with a slash
+    { path: '/:p1', input: '', matches: false },
+    { path: '/:p1', input: '/', matches: false },
+    { path: '/:p1', input: 'v1', matches: true, params: { p1: 'v1' } },
+    { path: '/:p1', input: 'v1/', matches: true, params: { p1: 'v1' } },
+    { path: '/:p1', input: '/v1', matches: true, params: { p1: 'v1' } },
+    { path: '/:p1', input: '/v1/', matches: true, params: { p1: 'v1' } },
+    { path: '/:p1', input: 'v1/other', matches: false },
+    { path: '/:p1', input: '/v1/other', matches: false },
+
+    // Path with one param ending with a slash
+    { path: ':p1/', input: '', matches: false },
+    { path: ':p1/', input: '/', matches: false },
+    { path: ':p1/', input: 'v1', matches: true, params: { p1: 'v1' } },
+    { path: ':p1/', input: 'v1/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1/', input: '/v1', matches: true, params: { p1: 'v1' } },
+    { path: ':p1/', input: '/v1/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1/', input: 'v1/other', matches: false },
+    { path: ':p1/', input: '/v1/other', matches: false },
+
+    // Path with one param starting and ending with a slash
+    { path: '/:p1/', input: '', matches: false },
+    { path: '/:p1/', input: '/', matches: false },
+    { path: '/:p1/', input: 'v1', matches: true, params: { p1: 'v1' } },
+    { path: '/:p1/', input: 'v1/', matches: true, params: { p1: 'v1' } },
+    { path: '/:p1/', input: '/v1', matches: true, params: { p1: 'v1' } },
+    { path: '/:p1/', input: '/v1/', matches: true, params: { p1: 'v1' } },
+    { path: '/:p1/', input: 'v1/other', matches: false },
+    { path: '/:p1/', input: '/v1/other', matches: false },
+
+    // Paths with one static segment and one param
+    { path: '/path/:p1', input: '/path', matches: false },
+    { path: '/path/:p1', input: '/other', matches: false },
+    { path: '/path/:p1', input: '/path/v1', matches: true, params: { p1: 'v1' } },
+    { path: '/path/:p1', input: '/path/v1/other', matches: false },
+
+    // Paths with multiple static segment and one param
+    { path: '/path/other/:p1', input: '/path/other', matches: false },
+    { path: '/path/other/:p1', input: '/path/other/v1', matches: true, params: { p1: 'v1' } },
+    { path: '/path/other/:p1', input: '/path/other/v1/other', matches: false },
+
+    // Paths with one static segment, one param and another static segment
+    { path: '/path/:p1/other', input: '/path/other', matches: false },
+    { path: '/path/:p1/other', input: '/path/v1/other', matches: true, params: { p1: 'v1' } },
+    { path: '/path/:p1/other', input: '/path/v1/other/other', matches: false },
+
+    // Paths with one param and one static segment
+    { path: '/:p1/path', input: '/path', matches: false },
+    { path: '/:p1/path', input: '/v1/path', matches: true, params: { p1: 'v1' } },
+    { path: '/:p1/path', input: '/v1/path/other', matches: false },
+
+    // Paths with multiple params separated by slashes
+    { path: ':p1/:p2', input: 'v1', matches: false },
+    { path: ':p1/:p2', input: 'v1/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1/:p2', input: 'v1/v2/other', matches: false },
+    { path: ':p1/:p2', input: '/v1/v2/other', matches: false },
+
+    // Paths with multiple params separated by non-slash characters
+    { path: ':p1-:p2', input: 'v1', matches: false },
+    { path: ':p1-:p2', input: 'v1-', matches: false },
+    { path: ':p1-:p2', input: 'v1-v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1-:p2', input: 'v1-v2/other', matches: false },
+    { path: ':p1-:p2', input: '/v1-v2/other', matches: false },
+
+    // Paths with multiple params separated by no characters
+    { path: ':p1:p2', input: 'v1', matches: true, params: { p1: 'v', p2: '1' } },
+    { path: ':p1:p2', input: 'v1v2', matches: true, params: { p1: 'v1v', p2: '2' } },
+    { path: ':p1:p2', input: 'v1-v2', matches: true, params: { p1: 'v1-v', p2: '2' } },
+    { path: ':p1:p2', input: 'v1-v2/other', matches: false },
+    { path: ':p1:p2', input: '/v1-v2/other', matches: false },
+
+    // Paths with multiple params separated by segments
+    { path: ':p1/other/:p2', input: 'v1/other', matches: false },
+    { path: ':p1/other/:p2', input: 'v1/other/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1/other/:p2', input: 'v1/other/v2/other', matches: false },
+    { path: ':p1/other/:p2', input: '/v1/other/v2/other', matches: false },
+
+    // Paths with one optional param
+    { path: ':p1?', input: '', matches: true, params: {} },
+    { path: ':p1?', input: '/', matches: true, params: {} },
+    { path: ':p1', input: 'v1', matches: true, params: { p1: 'v1' } },
+    { path: ':p1?', input: 'v1/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1?', input: '/v1', matches: true, params: { p1: 'v1' } },
+    { path: ':p1?', input: '/v1/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1?', input: 'v1/other', matches: false },
+    { path: ':p1?', input: 'other/v1', matches: false },
+
+    // Paths with multiple optional params separated by slashes
+    { path: ':p1?/:p2?', input: '', matches: true, params: {} },
+    { path: ':p1?/:p2?', input: '/', matches: true, params: {} },
+    { path: ':p1?/:p2?', input: 'v1', matches: true, params: { p1: 'v1' } },
+    { path: ':p1?/:p2?', input: 'v1/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1?/:p2?', input: 'v1/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1?/:p2?', input: 'v1/v2/', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1?/:p2?', input: '/v1/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1?/:p2?', input: '/v1/v2/', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1?/:p2?', input: 'v1/v2/other', matches: false },
+    { path: ':p1?/:p2?', input: 'other/v1/v2', matches: false },
+
+    // Paths with multiple optional params separated by non-slash characters
+    { path: ':p1?-:p2?', input: '', matches: false },
+    { path: ':p1?-:p2?', input: '-', matches: true, params: {} },
+    { path: ':p1?-:p2?', input: 'v1', matches: false },
+    { path: ':p1?-:p2?', input: 'v1-', matches: true, params: { p1: 'v1' } },
+    { path: ':p1?-:p2?', input: '/v1-', matches: true, params: { p1: 'v1' } },
+    { path: ':p1?-:p2?', input: 'v1-/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1?-:p2?', input: '/v1-/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1?-:p2?', input: '-v2', matches: true, params: { p2: 'v2' } },
+    { path: ':p1?-:p2?', input: '/-v2', matches: true, params: { p2: 'v2' } },
+    { path: ':p1?-:p2?', input: '-v2/', matches: true, params: { p2: 'v2' } },
+    { path: ':p1?-:p2?', input: '/-v2/', matches: true, params: { p2: 'v2' } },
+    { path: ':p1?-:p2?', input: 'v1-v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1?-:p2?', input: '/v1-v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1?-:p2?', input: 'v1-v2/', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1?-:p2?', input: '/v1-v2/', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1?-:p2?', input: 'v1-v2/other', matches: false },
+    { path: ':p1?-:p2?', input: 'other/v1-v2', matches: false },
+
+    // // Paths with multiple optional params separated by no characters
+    { path: ':p1?:p2?', input: '', matches: true, params: {} },
+    { path: ':p1?:p2?', input: '-', matches: true, params: { p1: '-' } },
+    { path: ':p1?:p2?', input: 'v1', matches: true, params: { p1: 'v1' } },
+    { path: ':p1?:p2?', input: 'v1-', matches: true, params: { p1: 'v1-' } },
+    { path: ':p1?:p2?', input: '/v1-', matches: true, params: { p1: 'v1-' } },
+    { path: ':p1?:p2?', input: '/v1-/', matches: true, params: { p1: 'v1-' } },
+    { path: ':p1?:p2?', input: '-v2', matches: true, params: { p1: '-v2' } },
+    { path: ':p1?:p2?', input: '/-v2', matches: true, params: { p1: '-v2' } },
+    { path: ':p1?:p2?', input: '-v2/', matches: true, params: { p1: '-v2' } },
+    { path: ':p1?:p2?', input: '/-v2/', matches: true, params: { p1: '-v2' } },
+    { path: ':p1?:p2?', input: 'v1-v2', matches: true, params: { p1: 'v1-v2' } },
+    { path: ':p1?:p2?', input: '/v1-v2', matches: true, params: { p1: 'v1-v2' } },
+    { path: ':p1?:p2?', input: 'v1-v2/', matches: true, params: { p1: 'v1-v2' } },
+    { path: ':p1?:p2?', input: '/v1-v2/', matches: true, params: { p1: 'v1-v2' } },
+    { path: ':p1?:p2?', input: 'v1-v2/other', matches: false },
+    { path: ':p1?:p2?', input: 'other/v1-v2', matches: false },
+
+    // // Paths with multiple optional params separated by segments
+    { path: ':p1?/other/:p2?', input: '', matches: false },
+    { path: ':p1?/other/:p2?', input: 'other', matches: true, params: {} },
+    { path: ':p1?/other/:p2?', input: 'other/', matches: true, params: {} },
+    { path: ':p1?/other/:p2?', input: '/other', matches: true, params: {} },
+    { path: ':p1?/other/:p2?', input: '/other/', matches: true, params: {} },
+    { path: ':p1?/other/:p2?', input: 'v1', matches: false },
+    { path: ':p1?/other/:p2?', input: 'v1/other/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1?/other/:p2?', input: '/v1/other/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1?/other/:p2?', input: 'v1/other/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1?/other/:p2?', input: '/v1/other/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1?/other/:p2?', input: '/other/v2', matches: true, params: { p2: 'v2' } },
+    { path: ':p1?/other/:p2?', input: '/other/v2', matches: true, params: { p2: 'v2' } },
+    { path: ':p1?/other/:p2?', input: '/other/v2/', matches: true, params: { p2: 'v2' } },
+    { path: ':p1?/other/:p2?', input: '/other/v2/', matches: true, params: { p2: 'v2' } },
+    { path: ':p1?/other/:p2?', input: 'v1/other/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1?/other/:p2?', input: '/v1/other/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1?/other/:p2?', input: 'v1/other/v2/', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1?/other/:p2?', input: '/v1/other/v2/', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1?/other/:p2?', input: 'v1/other/v2/other', matches: false },
+    { path: ':p1?/other/:p2?', input: 'other/v1-v2', matches: true, params: { p2: 'v1-v2' } },
+
+    // Paths with one required and one optional param
+    { path: ':p1/other/:p2?', input: '', matches: false },
+    { path: ':p1/other/:p2?', input: 'other', matches: false },
+    { path: ':p1/other/:p2?', input: 'other/', matches: false },
+    { path: ':p1/other/:p2?', input: '/other', matches: false },
+    { path: ':p1/other/:p2?', input: '/other/', matches: false },
+    { path: ':p1/other/:p2?', input: 'v1', matches: false },
+    { path: ':p1/other/:p2?', input: 'v1/other/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1/other/:p2?', input: '/v1/other/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1/other/:p2?', input: 'v1/other/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1/other/:p2?', input: '/v1/other/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1/other/:p2?', input: '/other/v2', matches: false },
+    { path: ':p1/other/:p2?', input: '/other/v2', matches: false },
+    { path: ':p1/other/:p2?', input: '/other/v2/', matches: false },
+    { path: ':p1/other/:p2?', input: '/other/v2/', matches: false },
+    { path: ':p1/other/:p2?', input: 'v1/other/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1/other/:p2?', input: '/v1/other/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1/other/:p2?', input: 'v1/other/v2/', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1/other/:p2?', input: '/v1/other/v2/', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1/other/:p2?', input: 'v1/other/v2/other', matches: false },
+    { path: ':p1/other/:p2?', input: 'other/v1-v2', matches: false },
+
+    // Paths with one optional and one required param
+    { path: ':p1?/other/:p2', input: '', matches: false },
+    { path: ':p1?/other/:p2', input: 'other', matches: false },
+    { path: ':p1?/other/:p2', input: 'other/', matches: false },
+    { path: ':p1?/other/:p2', input: '/other', matches: false },
+    { path: ':p1?/other/:p2', input: '/other/', matches: false },
+    { path: ':p1?/other/:p2', input: 'v1', matches: false },
+    { path: ':p1?/other/:p2', input: 'v1/other/', matches: false },
+    { path: ':p1?/other/:p2', input: '/v1/other/', matches: false },
+    { path: ':p1?/other/:p2', input: 'v1/other/', matches: false },
+    { path: ':p1?/other/:p2', input: '/v1/other/', matches: false },
+    { path: ':p1?/other/:p2', input: '/other/v2', matches: true, params: { p2: 'v2' } },
+    { path: ':p1?/other/:p2', input: '/other/v2', matches: true, params: { p2: 'v2' } },
+    { path: ':p1?/other/:p2', input: '/other/v2/', matches: true, params: { p2: 'v2' } },
+    { path: ':p1?/other/:p2', input: '/other/v2/', matches: true, params: { p2: 'v2' } },
+    { path: ':p1?/other/:p2', input: 'v1/other/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1?/other/:p2', input: '/v1/other/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1?/other/:p2', input: 'v1/other/v2/', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1?/other/:p2', input: '/v1/other/v2/', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1?/other/:p2', input: 'v1/other/v2/other', matches: false },
+    { path: ':p1?/other/:p2', input: 'other/v1-v2', matches: true, params: { p2: 'v1-v2' } },
+
+    // Path with one param with wildcard
+    { path: ':p1*', input: '', matches: false },
+    { path: ':p1*', input: '/', matches: true, params: { p1: '/' } },
+    { path: ':p1*', input: 'v1', matches: true, params: { p1: 'v1' } },
+    { path: ':p1*', input: 'v1/', matches: true, params: { p1: 'v1/' } },
+    { path: ':p1*', input: '/v1', matches: true, params: { p1: 'v1' } },
+    { path: ':p1*', input: '/v1/', matches: true, params: { p1: 'v1/' } },
+    { path: ':p1*', input: 'v1/other', matches: true, params: { p1: 'v1/other' } },
+    { path: ':p1*', input: '/v1/other', matches: true, params: { p1: 'v1/other' } },
+    { path: ':p1*', input: 'v1/other/', matches: true, params: { p1: 'v1/other/' } },
+    { path: ':p1*', input: '/v1/other/', matches: true, params: { p1: 'v1/other/' } },
+    { path: ':p1*', input: 'other/v1', matches: true, params: { p1: 'other/v1' } },
+    { path: ':p1*', input: '/other/v1', matches: true, params: { p1: 'other/v1' } },
+    { path: ':p1*', input: 'other/v1/', matches: true, params: { p1: 'other/v1/' } },
+    { path: ':p1*', input: '/other/v1/', matches: true, params: { p1: 'other/v1/' } },
+    { path: ':p1*', input: 'other/v1/other', matches: true, params: { p1: 'other/v1/other' } },
+    { path: ':p1*', input: '/other/v1/other', matches: true, params: { p1: 'other/v1/other' } },
+    { path: ':p1*', input: 'other/v1/other/', matches: true, params: { p1: 'other/v1/other/' } },
+    { path: ':p1*', input: '/other/v1/other/', matches: true, params: { p1: 'other/v1/other/' } },
+
+    // Path with multiple params with wildcard separated by slashes
+    { path: ':p1*/:p2*', input: '', matches: false },
+    { path: ':p1*/:p2*', input: '/', matches: false },
+    { path: ':p1*/:p2*', input: 'v1', matches: false },
+    { path: ':p1*/:p2*', input: 'v1/', matches: false },
+    { path: ':p1*/:p2*', input: 'v1/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1*/:p2*', input: 'v1/v2/', matches: true, params: { p1: 'v1', p2: 'v2/' } },
+    { path: ':p1*/:p2*', input: '/v1/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1*/:p2*', input: '/v1/v2/', matches: true, params: { p1: 'v1', p2: 'v2/' } },
+    { path: ':p1*/:p2*', input: 'v1/v2/other', matches: true, params: { p1: 'v1/v2', p2: 'other' } },
+    { path: ':p1*/:p2*', input: 'other/v1/v2', matches: true, params: { p1: 'other/v1', p2: 'v2' } },
+    { path: ':p1*/:p2*', input: 'other/v1/other', matches: true, params: { p1: 'other/v1', p2: 'other' } },
+    { path: ':p1*/:p2*', input: '/other/v1/other', matches: true, params: { p1: 'other/v1', p2: 'other' } },
+    { path: ':p1*/:p2*', input: 'other/v1/other/', matches: true, params: { p1: 'other/v1', p2: 'other/' } },
+    { path: ':p1*/:p2*', input: '/other/v1/other/', matches: true, params: { p1: 'other/v1', p2: 'other/' } },
+
+    // Path with multiple params with wildcard separated by non-slash characters
+    { path: ':p1*-:p2*', input: '', matches: false },
+    { path: ':p1*-:p2*', input: '/', matches: false },
+    { path: ':p1*-:p2*', input: 'v1', matches: false },
+    { path: ':p1*-:p2*', input: 'v1-', matches: false },
+    { path: ':p1*-:p2*', input: 'v1-v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1*-:p2*', input: 'v1-v2/', matches: true, params: { p1: 'v1', p2: 'v2/' } },
+    { path: ':p1*-:p2*', input: '/v1-v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1*-:p2*', input: '/v1-v2/', matches: true, params: { p1: 'v1', p2: 'v2/' } },
+    { path: ':p1*-:p2*', input: 'v1-v2/other', matches: true, params: { p1: 'v1', p2: 'v2/other' } },
+    { path: ':p1*-:p2*', input: 'other/v1-v2', matches: true, params: { p1: 'other/v1', p2: 'v2' } },
+    { path: ':p1*-:p2*', input: 'other/v1-other', matches: true, params: { p1: 'other/v1', p2: 'other' } },
+    { path: ':p1*-:p2*', input: '/other/v1-other', matches: true, params: { p1: 'other/v1', p2: 'other' } },
+    { path: ':p1*-:p2*', input: 'other/v1-other/', matches: true, params: { p1: 'other/v1', p2: 'other/' } },
+    { path: ':p1*-:p2*', input: '/other/v1-other/', matches: true, params: { p1: 'other/v1', p2: 'other/' } },
+
+    // Path with multiple params with wildcard separated by no characters
+    { path: ':p1*:p2*', input: '', matches: false },
+    { path: ':p1*:p2*', input: '/', matches: false },
+    { path: ':p1*:p2*', input: 'v1', matches: true, params: { p1: 'v', p2: '1' } },
+    { path: ':p1*:p2*', input: 'v1/', matches: true, params: { p1: 'v1', p2: '/' } },
+    { path: ':p1*:p2*', input: 'v1/v2', matches: true, params: { p1: 'v1/v', p2: '2' } },
+    { path: ':p1*:p2*', input: 'v1/v2/', matches: true, params: { p1: 'v1/v2', p2: '/' } },
+    { path: ':p1*:p2*', input: '/v1/v2', matches: true, params: { p1: 'v1/v', p2: '2' } },
+    { path: ':p1*:p2*', input: '/v1/v2/', matches: true, params: { p1: 'v1/v2', p2: '/' } },
+    { path: ':p1*:p2*', input: 'v1/v2/other', matches: true, params: { p1: 'v1/v2/othe', p2: 'r' } },
+    { path: ':p1*:p2*', input: 'other/v1/v2', matches: true, params: { p1: 'other/v1/v', p2: '2' } },
+    { path: ':p1*:p2*', input: 'other/v1/other', matches: true, params: { p1: 'other/v1/othe', p2: 'r' } },
+    { path: ':p1*:p2*', input: '/other/v1/other', matches: true, params: { p1: 'other/v1/othe', p2: 'r' } },
+    { path: ':p1*:p2*', input: 'other/v1/other/', matches: true, params: { p1: 'other/v1/other', p2: '/' } },
+    { path: ':p1*:p2*', input: '/other/v1/other/', matches: true, params: { p1: 'other/v1/other', p2: '/' } },
+
+    // Paths with one optional wildcard param
+    { path: ':p1*?', input: '', matches: true, params: {} },
+    { path: ':p1*?', input: '/', matches: true, params: {} },
+    { path: ':p1', input: 'v1', matches: true, params: { p1: 'v1' } },
+    { path: ':p1*?', input: 'v1/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1*?', input: '/v1', matches: true, params: { p1: 'v1' } },
+    { path: ':p1*?', input: '/v1/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1*?', input: 'v1/other', matches: true, params: { p1: 'v1/other' } },
+    { path: ':p1*?', input: 'other/v1', matches: true, params: { p1: 'other/v1' } },
+
+    // Paths with multiple optional wildcard params separated by slashes
+    { path: ':p1*?/:p2*?', input: '', matches: true, params: {} },
+    { path: ':p1*?/:p2*?', input: '/', matches: true, params: {} },
+    { path: ':p1*?/:p2*?', input: 'v1', matches: true, params: { p1: 'v', p2: '1' } },
+    { path: ':p1*?/:p2*?', input: 'v1/', matches: true, params: { p1: 'v', p2: '1' } },
+    { path: ':p1*?/:p2*?', input: 'v1/v2', matches: true, params: { p1: 'v', p2: '1/v2' } },
+    { path: ':p1*?/:p2*?', input: 'v1/v2/', matches: true, params: { p1: 'v', p2: '1/v2' } },
+    { path: ':p1*?/:p2*?', input: '/v1/v2', matches: true, params: { p1: 'v', p2: '1/v2' } },
+    { path: ':p1*?/:p2*?', input: '/v1/v2/', matches: true, params: { p1: 'v', p2: '1/v2' } },
+    { path: ':p1*?/:p2*?', input: 'v1/v2/other', matches: true, params: { p1: 'v', p2: '1/v2/other' } },
+    { path: ':p1*?/:p2*?', input: 'other/v1/v2', matches: true, params: { p1: 'o', p2: 'ther/v1/v2' } },
+
+    // Paths with multiple optional wildcard params separated by non-slash characters
+    { path: ':p1*?-:p2*?', input: '', matches: false },
+    { path: ':p1*?-:p2*?', input: '-', matches: true, params: {} },
+    { path: ':p1*?-:p2*?', input: 'v1', matches: false },
+    { path: ':p1*?-:p2*?', input: 'v1-', matches: true, params: { p1: 'v1' } },
+    { path: ':p1*?-:p2*?', input: '/v1-', matches: true, params: { p1: 'v1' } },
+    { path: ':p1*?-:p2*?', input: 'v1-/', matches: true, params: { p1: 'v1', p2: '/' } },
+    { path: ':p1*?-:p2*?', input: '/v1-/', matches: true, params: { p1: 'v1', p2: '/' } },
+    { path: ':p1*?-:p2*?', input: '-v2', matches: true, params: { p2: 'v2' } },
+    { path: ':p1*?-:p2*?', input: '/-v2', matches: true, params: { p2: 'v2' } },
+    { path: ':p1*?-:p2*?', input: '-v2/', matches: true, params: { p2: 'v2' } },
+    { path: ':p1*?-:p2*?', input: '/-v2/', matches: true, params: { p2: 'v2' } },
+    { path: ':p1*?-:p2*?', input: 'v1-v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1*?-:p2*?', input: '/v1-v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1*?-:p2*?', input: 'v1-v2/', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1*?-:p2*?', input: '/v1-v2/', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1*?-:p2*?', input: 'v1-v2/other', matches: true, params: { p1: 'v1', p2: 'v2/other' } },
+    { path: ':p1*?-:p2*?', input: 'other/v1-v2', matches: true, params: { p1: 'other/v1', p2: 'v2' } },
+
+    // // Paths with multiple optional wildcard params separated by no characters
+    { path: ':p1*?:p2*?', input: '', matches: true, params: {} },
+    { path: ':p1*?:p2*?', input: '-', matches: true, params: { p1: '-' } },
+    { path: ':p1*?:p2*?', input: 'v1', matches: true, params: { p1: 'v', p2: '1' } },
+    { path: ':p1*?:p2*?', input: 'v1-', matches: true, params: { p1: 'v', p2: '1-' } },
+    { path: ':p1*?:p2*?', input: '/v1-', matches: true, params: { p1: 'v', p2: '1-' } },
+    { path: ':p1*?:p2*?', input: '/v1-/', matches: true, params: { p1: 'v', p2: '1-' } },
+    { path: ':p1*?:p2*?', input: '-v2', matches: true, params: { p1: '-', p2: 'v2' } },
+    { path: ':p1*?:p2*?', input: '/-v2', matches: true, params: { p1: '-', p2: 'v2' } },
+    { path: ':p1*?:p2*?', input: '-v2/', matches: true, params: { p1: '-', p2: 'v2' } },
+    { path: ':p1*?:p2*?', input: '/-v2/', matches: true, params: { p1: '-', p2: 'v2' } },
+    { path: ':p1*?:p2*?', input: 'v1-v2', matches: true, params: { p1: 'v', p2: '1-v2' } },
+    { path: ':p1*?:p2*?', input: '/v1-v2', matches: true, params: { p1: 'v', p2: '1-v2' } },
+    { path: ':p1*?:p2*?', input: 'v1-v2/', matches: true, params: { p1: 'v', p2: '1-v2' } },
+    { path: ':p1*?:p2*?', input: '/v1-v2/', matches: true, params: { p1: 'v', p2: '1-v2' } },
+    { path: ':p1*?:p2*?', input: 'v1-v2/other', matches: true, params: { p1: 'v', p2: '1-v2/other' } },
+    { path: ':p1*?:p2*?', input: 'other/v1-v2', matches: true, params: { p1: 'o', p2: 'ther/v1-v2' } },
+
+    // // Paths with multiple optional wildcard params separated by segments
+    { path: ':p1*?/other/:p2*?', input: '', matches: false },
+    { path: ':p1*?/other/:p2*?', input: 'other', matches: true, params: {} },
+    { path: ':p1*?/other/:p2*?', input: 'other/', matches: true, params: { p2: '/' } },
+    { path: ':p1*?/other/:p2*?', input: '/other', matches: true, params: {} },
+    { path: ':p1*?/other/:p2*?', input: '/other/', matches: true, params: { p2: '/' } },
+    { path: ':p1*?/other/:p2*?', input: 'v1', matches: false },
+    { path: ':p1*?/other/:p2*?', input: 'v1/other/', matches: true, params: { p1: 'v1', p2: '/' } },
+    { path: ':p1*?/other/:p2*?', input: '/v1/other/', matches: true, params: { p1: 'v1', p2: '/' } },
+    { path: ':p1*?/other/:p2*?', input: 'v1/other/', matches: true, params: { p1: 'v1', p2: '/' } },
+    { path: ':p1*?/other/:p2*?', input: '/v1/other/', matches: true, params: { p1: 'v1', p2: '/' } },
+    { path: ':p1*?/other/:p2*?', input: '/other/v2', matches: true, params: { p2: 'v2' } },
+    { path: ':p1*?/other/:p2*?', input: '/other/v2', matches: true, params: { p2: 'v2' } },
+    { path: ':p1*?/other/:p2*?', input: '/other/v2/', matches: true, params: { p2: 'v2' } },
+    { path: ':p1*?/other/:p2*?', input: '/other/v2/', matches: true, params: { p2: 'v2' } },
+    { path: ':p1*?/other/:p2*?', input: 'v1/other/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1*?/other/:p2*?', input: '/v1/other/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1*?/other/:p2*?', input: 'v1/other/v2/', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1*?/other/:p2*?', input: '/v1/other/v2/', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1*?/other/:p2*?', input: 'v1/other/v2/other', matches: true, params: { p1: 'v1', p2: 'v2/other' } },
+    { path: ':p1*?/other/:p2*?', input: 'other/v1-v2', matches: true, params: { p2: 'v1-v2' } },
+
+    // Paths with one required and one optional wildcard param
+    { path: ':p1/other/:p2*?', input: '', matches: false },
+    { path: ':p1/other/:p2*?', input: 'other', matches: false },
+    { path: ':p1/other/:p2*?', input: 'other/', matches: false },
+    { path: ':p1/other/:p2*?', input: '/other', matches: false },
+    { path: ':p1/other/:p2*?', input: '/other/', matches: false },
+    { path: ':p1/other/:p2*?', input: 'v1', matches: false },
+    { path: ':p1/other/:p2*?', input: 'v1/other/', matches: true, params: { p1: 'v1', p2: '/' } },
+    { path: ':p1/other/:p2*?', input: '/v1/other/', matches: true, params: { p1: 'v1', p2: '/' } },
+    { path: ':p1/other/:p2*?', input: 'v1/other/', matches: true, params: { p1: 'v1', p2: '/' } },
+    { path: ':p1/other/:p2*?', input: '/v1/other/', matches: true, params: { p1: 'v1', p2: '/' } },
+    { path: ':p1/other/:p2*?', input: '/other/v2', matches: false },
+    { path: ':p1/other/:p2*?', input: '/other/v2', matches: false },
+    { path: ':p1/other/:p2*?', input: '/other/v2/', matches: false },
+    { path: ':p1/other/:p2*?', input: '/other/v2/', matches: false },
+    { path: ':p1/other/:p2*?', input: 'v1/other/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1/other/:p2*?', input: '/v1/other/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1/other/:p2*?', input: 'v1/other/v2/', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1/other/:p2*?', input: '/v1/other/v2/', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1/other/:p2*?', input: 'v1/other/v2/other', matches: true, params: { p1: 'v1', p2: 'v2/other' } },
+    { path: ':p1/other/:p2*?', input: 'other/v1-v2', matches: false },
+
+    // Paths with one optional and one required wildcard param
+    { path: ':p1?/other/:p2*', input: '', matches: false },
+    { path: ':p1?/other/:p2*', input: 'other', matches: false },
+    { path: ':p1?/other/:p2*', input: 'other/', matches: false },
+    { path: ':p1?/other/:p2*', input: '/other', matches: false },
+    { path: ':p1?/other/:p2*', input: '/other/', matches: false },
+    { path: ':p1?/other/:p2*', input: 'v1', matches: false },
+    { path: ':p1?/other/:p2*', input: 'v1/other/', matches: false },
+    { path: ':p1?/other/:p2*', input: '/v1/other/', matches: false },
+    { path: ':p1?/other/:p2*', input: 'v1/other/', matches: false },
+    { path: ':p1?/other/:p2*', input: '/v1/other/', matches: false },
+    { path: ':p1?/other/:p2*', input: '/other/v2', matches: true, params: { p2: 'v2' } },
+    { path: ':p1?/other/:p2*', input: '/other/v2', matches: true, params: { p2: 'v2' } },
+    { path: ':p1?/other/:p2*', input: '/other/v2/', matches: true, params: { p2: 'v2/' } },
+    { path: ':p1?/other/:p2*', input: '/other/v2/', matches: true, params: { p2: 'v2/' } },
+    { path: ':p1?/other/:p2*', input: 'v1/other/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1?/other/:p2*', input: '/v1/other/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
+    { path: ':p1?/other/:p2*', input: 'v1/other/v2/', matches: true, params: { p1: 'v1', p2: 'v2/' } },
+    { path: ':p1?/other/:p2*', input: '/v1/other/v2/', matches: true, params: { p1: 'v1', p2: 'v2/' } },
+    { path: ':p1?/other/:p2*', input: 'v1/other/v2/other', matches: true, params: { p1: 'v1', p2: 'v2/other' } },
+    { path: ':p1?/other/:p2*', input: 'other/v1-v2', matches: true, params: { p2: 'v1-v2' } },
+
+    // Paths with wildcards
+    { path: '*', input: '', matches: true },
+    { path: '*', input: '/', matches: true },
+    { path: '*', input: 'v1', matches: true },
+    { path: '*', input: '/v1', matches: true },
+    { path: '*', input: 'v1/', matches: true },
+    { path: '*', input: '/v1/', matches: true },
+    { path: '*', input: 'v1/other', matches: false },
+    { path: '*', input: '/v1/other', matches: false },
+    { path: '*', input: 'v1/other/', matches: false },
+    { path: '*', input: '/v1/other/', matches: false },
+    { path: '*', input: 'other/v1/other', matches: false },
+
+    // Paths with wildcards starting with a slash
+    { path: '/*', input: '', matches: true },
+    { path: '/*', input: '/', matches: true },
+    { path: '/*', input: 'v1', matches: true },
+    { path: '/*', input: '/v1', matches: true },
+    { path: '/*', input: 'v1/', matches: true },
+    { path: '/*', input: '/v1/', matches: true },
+    { path: '/*', input: 'v1/other', matches: false },
+    { path: '/*', input: '/v1/other', matches: false },
+    { path: '/*', input: 'v1/other/', matches: false },
+    { path: '/*', input: '/v1/other/', matches: false },
+    { path: '/*', input: 'other/v1/other', matches: false },
+
+    // Paths with wildcards ending with a slash
+    { path: '*/', input: '', matches: true },
+    { path: '*/', input: '/', matches: true },
+    { path: '*/', input: 'v1', matches: true },
+    { path: '*/', input: '/v1', matches: true },
+    { path: '*/', input: 'v1/', matches: true },
+    { path: '*/', input: '/v1/', matches: true },
+    { path: '*/', input: 'v1/other', matches: false },
+    { path: '*/', input: '/v1/other', matches: false },
+    { path: '*/', input: 'v1/other/', matches: false },
+    { path: '*/', input: '/v1/other/', matches: false },
+    { path: '*/', input: 'other/v1/other', matches: false },
+
+    // Paths with wildcards starting and ending with a slash
+    { path: '/*/', input: '', matches: true },
+    { path: '/*/', input: '/', matches: true },
+    { path: '/*/', input: 'v1', matches: true },
+    { path: '/*/', input: '/v1', matches: true },
+    { path: '/*/', input: 'v1/', matches: true },
+    { path: '/*/', input: '/v1/', matches: true },
+    { path: '/*/', input: 'v1/other', matches: false },
+    { path: '/*/', input: '/v1/other', matches: false },
+    { path: '/*/', input: 'v1/other/', matches: false },
+    { path: '/*/', input: '/v1/other/', matches: false },
+    { path: '/*/', input: 'other/v1/other', matches: false },
+
+    // Paths with one static segment and a wildcard
+    { path: '/path/*', input: '', matches: false },
+    { path: '/path/*', input: '/', matches: false },
+    { path: '/path/*', input: 'path', matches: false },
+    { path: '/path/*', input: '/path', matches: false },
+    { path: '/path/*', input: 'path/', matches: true },
+    { path: '/path/*', input: '/path/', matches: true },
+    { path: '/path/*', input: 'path/other', matches: true },
+    { path: '/path/*', input: 'path/other/other', matches: false },
+    { path: '/path/*', input: 'other/path/other', matches: false },
+
+    // Paths with multiple static segments and a wildcard
+    { path: '/path/*/other', input: '', matches: false },
+    { path: '/path/*/other', input: '/', matches: false },
+    { path: '/path/*/other', input: 'path', matches: false },
+    { path: '/path/*/other', input: '/path', matches: false },
+    { path: '/path/*/other', input: 'path/', matches: false },
+    { path: '/path/*/other', input: '/path/', matches: false },
+    { path: '/path/*/other', input: 'path/other', matches: false },
+    { path: '/path/*/other', input: 'path/other/other', matches: true },
+    { path: '/path/*/other', input: 'other/path/other', matches: false },
+
+    // Paths with multiple static segments and wildcards
+    { path: '/path/*/other/*', input: '', matches: false },
+    { path: '/path/*/other/*', input: '/', matches: false },
+    { path: '/path/*/other/*', input: 'path', matches: false },
+    { path: '/path/*/other/*', input: '/path', matches: false },
+    { path: '/path/*/other/*', input: 'path/', matches: false },
+    { path: '/path/*/other/*', input: '/path/', matches: false },
+    { path: '/path/*/other/*', input: 'path/other', matches: false },
+    { path: '/path/*/other/*', input: 'path/other/other', matches: false },
+    { path: '/path/*/other/*', input: 'other/path/other', matches: false },
+    { path: '/path/*/other/*', input: 'path/other/other/other', matches: true },
+    { path: '/path/*/other/*', input: 'path/other/other/other/other', matches: false },
+
+    // Paths with catch-all wildcards
+    { path: '**', input: '', matches: true },
+    { path: '**', input: '/', matches: true },
+    { path: '**', input: 'v1', matches: true },
+    { path: '**', input: '/v1', matches: true },
+    { path: '**', input: 'v1/', matches: true },
+    { path: '**', input: '/v1/', matches: true },
+    { path: '**', input: 'v1/other', matches: true },
+    { path: '**', input: '/v1/other', matches: true },
+    { path: '**', input: 'v1/other/', matches: true },
+    { path: '**', input: '/v1/other/', matches: true },
+    { path: '**', input: 'other/v1/other', matches: true },
+
+    // Paths with catch-all wildcards starting with a slash
+    { path: '/**', input: '', matches: true },
+    { path: '/**', input: '/', matches: true },
+    { path: '/**', input: 'v1', matches: true },
+    { path: '/**', input: '/v1', matches: true },
+    { path: '/**', input: 'v1/', matches: true },
+    { path: '/**', input: '/v1/', matches: true },
+    { path: '/**', input: 'v1/other', matches: true },
+    { path: '/**', input: '/v1/other', matches: true },
+    { path: '/**', input: 'v1/other/', matches: true },
+    { path: '/**', input: '/v1/other/', matches: true },
+    { path: '/**', input: 'other/v1/other', matches: true },
+
+    // Paths with catch-all wildcards ending with a slash
+    { path: '**/', input: '', matches: true },
+    { path: '**/', input: '/', matches: true },
+    { path: '**/', input: 'v1', matches: true },
+    { path: '**/', input: '/v1', matches: true },
+    { path: '**/', input: 'v1/', matches: true },
+    { path: '**/', input: '/v1/', matches: true },
+    { path: '**/', input: 'v1/other', matches: true },
+    { path: '**/', input: '/v1/other', matches: true },
+    { path: '**/', input: 'v1/other/', matches: true },
+    { path: '**/', input: '/v1/other/', matches: true },
+    { path: '**/', input: 'other/v1/other', matches: true },
+
+    // Paths with catch-all wildcards starting and ending with a slash
+    { path: '/**/', input: '', matches: true },
+    { path: '/**/', input: '/', matches: true },
+    { path: '/**/', input: 'v1', matches: true },
+    { path: '/**/', input: '/v1', matches: true },
+    { path: '/**/', input: 'v1/', matches: true },
+    { path: '/**/', input: '/v1/', matches: true },
+    { path: '/**/', input: 'v1/other', matches: true },
+    { path: '/**/', input: '/v1/other', matches: true },
+    { path: '/**/', input: 'v1/other/', matches: true },
+    { path: '/**/', input: '/v1/other/', matches: true },
+    { path: '/**/', input: 'other/v1/other', matches: true },
+
+    // Paths with one static segment and a catch-all wildcard
+    { path: '/path/**', input: '', matches: false },
+    { path: '/path/**', input: '/', matches: false },
+    { path: '/path/**', input: 'path', matches: false },
+    { path: '/path/**', input: '/path', matches: false },
+    { path: '/path/**', input: 'path/', matches: true },
+    { path: '/path/**', input: '/path/', matches: true },
+    { path: '/path/**', input: 'path/other', matches: true },
+    { path: '/path/**', input: 'path/other/other', matches: true },
+    { path: '/path/**', input: 'other/path/other', matches: false },
+
+    // Paths with multiple static segments and a catch-all wildcard
+    { path: '/path/**/other', input: '', matches: false },
+    { path: '/path/**/other', input: '/', matches: false },
+    { path: '/path/**/other', input: 'path', matches: false },
+    { path: '/path/**/other', input: '/path', matches: false },
+    { path: '/path/**/other', input: 'path/', matches: false },
+    { path: '/path/**/other', input: '/path/', matches: false },
+    { path: '/path/**/other', input: 'path/other', matches: false },
+    { path: '/path/**/other', input: 'path/other/other', matches: true },
+    { path: '/path/**/other', input: 'other/path/other', matches: false },
+
+    // Paths with multiple static segments and catch-all wildcards
+    { path: '/path/**/other/**', input: '', matches: false },
+    { path: '/path/**/other/**', input: '/', matches: false },
+    { path: '/path/**/other/**', input: 'path', matches: false },
+    { path: '/path/**/other/**', input: '/path', matches: false },
+    { path: '/path/**/other/**', input: 'path/', matches: false },
+    { path: '/path/**/other/**', input: '/path/', matches: false },
+    { path: '/path/**/other/**', input: 'path/other', matches: false },
+    { path: '/path/**/other/**', input: 'path/other/other', matches: false },
+    { path: '/path/**/other/**', input: 'other/path/other', matches: false },
+    { path: '/path/**/other/**', input: 'path/other/other/other', matches: true },
+    { path: '/path/**/other/**', input: 'path/other/other/other/other', matches: true },
+  ])('should create a correct regular expression from a path pattern (path: $path, input: $input)', (testCase) => {
+    const expression = createPathRegExp(testCase.path);
+    const result = expression.exec(testCase.input);
+
+    if (testCase.matches) {
+      expect(result).not.toBe(null);
+      expect(result!.groups).toEqual(testCase.params);
+    } else {
+      expect(result).toBe(null);
+    }
+  });
+});
