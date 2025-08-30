@@ -140,6 +140,19 @@ describe('createPathRegExp', () => {
     { path: ':p1/other/:p2', input: 'v1/other/v2/other', matches: false },
     { path: ':p1/other/:p2', input: '/v1/other/v2/other', matches: false },
 
+    // Paths with escaped colons
+    { path: '\\:p1', input: '', matches: false },
+    { path: '\\:p1', input: '/', matches: false },
+    { path: '\\:p1', input: 'v1', matches: false },
+    { path: '\\:p1', input: 'v1/other', matches: false },
+    { path: '\\:p1', input: ':p1', matches: true },
+    { path: '\\:p1', input: '\\:p1', matches: false },
+    { path: '\\:p1', input: ':p1/other', matches: false },
+    { path: '\\:p1/other', input: ':p1/other', matches: true },
+    { path: '\\:p1/other/:p2', input: ':p1/other/v2', matches: true, params: { p2: 'v2' } },
+    { path: '\\:p1/other/\\:p2', input: ':p1/other/v2', matches: false },
+    { path: '\\:p1/other/\\:p2', input: ':p1/other/:p2', matches: true },
+
     // Paths with one optional param
     { path: ':p1?', input: '', matches: true, params: {} },
     { path: ':p1?', input: '/', matches: true, params: {} },
