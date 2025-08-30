@@ -1,5 +1,5 @@
 import isNonEmpty from '@zimic/utils/data/isNonEmpty';
-import createRegExpFromWildcardPath from '@zimic/utils/url/createRegExpFromWildcardPath';
+import createPathRegExp from '@zimic/utils/url/createPathRegExp';
 import filesystem from 'fs/promises';
 import path from 'path';
 import color from 'picocolors';
@@ -34,7 +34,7 @@ export function parseRawFilter(rawFilter: string): ParsedTypePathFilter | undefi
   const isNegativeMatch = filterModifier === '!';
 
   return {
-    expression: createRegExpFromWildcardPath(filteredPath, { prefix: methodFilterGroup }),
+    expression: createPathRegExp(`${methodFilterGroup}${filteredPath}`),
     isNegativeMatch,
   };
 }
