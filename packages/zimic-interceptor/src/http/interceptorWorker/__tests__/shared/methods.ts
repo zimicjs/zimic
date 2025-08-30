@@ -2,7 +2,7 @@ import { HttpResponse, HttpHeaders, HTTP_METHODS } from '@zimic/http';
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import waitForDelay from '@zimic/utils/time/waitForDelay';
 import { PossiblePromise } from '@zimic/utils/types';
-import createRegExpFromURL from '@zimic/utils/url/createRegExpFromURL';
+import createPathRegExp from '@zimic/utils/url/createPathRegExp';
 import joinURL from '@zimic/utils/url/joinURL';
 import { DuplicatedPathParamError } from '@zimic/utils/url/validateURLPathParams';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -296,7 +296,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         expect(handlerContext.request).toBeInstanceOf(Request);
         expect(handlerContext.request.method).toBe(method);
 
-        const urlRegex = createRegExpFromURL(url);
+        const urlRegex = createPathRegExp(url);
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest(handlerContext.request, { urlRegex });
         expect(parsedRequest.pathParams).toEqual(path.params);
 

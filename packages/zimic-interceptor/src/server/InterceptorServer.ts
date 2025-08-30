@@ -1,6 +1,6 @@
 import { normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
 import { HttpRequest, HttpMethod } from '@zimic/http';
-import createRegExpFromURL from '@zimic/utils/url/createRegExpFromURL';
+import createPathRegExp from '@zimic/utils/url/createPathRegExp';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
@@ -228,7 +228,7 @@ class InterceptorServer implements PublicInterceptorServer {
       id,
       url: {
         base: url.base,
-        fullRegex: createRegExpFromURL(fullURL.toString()),
+        fullRegex: createPathRegExp(fullURL.toString()),
       },
       socket,
     });

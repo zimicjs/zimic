@@ -8,7 +8,7 @@ import {
   HttpSchema,
 } from '@zimic/http';
 import { Default, PossiblePromise } from '@zimic/utils/types';
-import createRegExpFromURL from '@zimic/utils/url/createRegExpFromURL';
+import createPathRegExp from '@zimic/utils/url/createPathRegExp';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import joinURL from '@zimic/utils/url/joinURL';
 import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
@@ -247,7 +247,7 @@ class HttpInterceptorClient<
     this.handlerClientsByMethod[handler.method].set(handler.path, handlerClients);
 
     const url = joinURL(this.baseURLAsString, handler.path);
-    const urlRegex = createRegExpFromURL(url);
+    const urlRegex = createPathRegExp(url);
 
     const registrationResult = this.workerOrThrow.use(this, handler.method, url, async (context) => {
       const response = await this.handleInterceptedRequest(
