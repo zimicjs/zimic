@@ -6,7 +6,7 @@ import {
   HttpSchema,
   HttpHeaders,
 } from '@zimic/http';
-import createRegexFromURL from '@zimic/utils/url/createRegExpFromURL';
+import createRegexFromURL from '@zimic/utils/url/createPathRegExp';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import joinURL from '@zimic/utils/url/joinURL';
 
