@@ -1,17 +1,17 @@
-export function getOptionalWildcardPathParamRegExp() {
-  return /(\/)?(\\)?:([$_\p{ID_Start}][$\p{ID_Continue}]+)\*\?(\/)?/gu;
+export function getPathParamRegExp() {
+  return /(\\)?:([$_\p{ID_Start}][$\p{ID_Continue}]+)/gu;
 }
 
-export function getWildcardPathParamRegExp() {
-  return /(\\)?:([$_\p{ID_Start}][$\p{ID_Continue}]+)\*/gu;
+function getRepeatingPathParamRegExp() {
+  return /(\\)?:([$_\p{ID_Start}][$\p{ID_Continue}]+)\\+/gu;
 }
 
-export function getOptionalPathParamRegExp() {
+function getOptionalPathParamRegExp() {
   return /(\/)?(\\)?:([$_\p{ID_Start}][$\p{ID_Continue}]+)\?(\/)?/gu;
 }
 
-export function getPathParamRegExp() {
-  return /(\\)?:([$_\p{ID_Start}][$\p{ID_Continue}]+)/gu;
+function getOptionalRepeatingPathParamRegExp() {
+  return /(\/)?(\\)?:([$_\p{ID_Start}][$\p{ID_Continue}]+)\*(\/)?/gu;
 }
 
 function createPathRegExp(path: string) {
@@ -20,7 +20,7 @@ function createPathRegExp(path: string) {
     .replace(/([.()+$])/g, '\\$1')
     .replace(/%5C:/g, '\\:') // Decode escaped colons
     .replace(
-      getOptionalWildcardPathParamRegExp(),
+      getOptionalRepeatingPathParamRegExp(),
       (_match, prefix: string, escape: string, paramName: string, suffix: string) => {
         if (escape) {
           return `:${paramName}`;
@@ -43,7 +43,7 @@ function createPathRegExp(path: string) {
         }
       },
     )
-    .replace(getWildcardPathParamRegExp(), (_match, escape: string, paramName: string) => {
+    .replace(getRepeatingPathParamRegExp(), (_match, escape: string, paramName: string) => {
       return escape ? `:${paramName}` : `(?<${paramName}>.+)`;
     })
     .replace(
