@@ -1,26 +1,46 @@
-export function getPathParamRegExp() {
+function getLeadingOrTrailingSlashPattern() {
+  return /^\/+|\/+$/g;
+}
+
+function getExtraPatternsToEscape() {
+  return /([.(){}+$])/g;
+}
+
+function getURIEncodedBackSlashColorPattern() {
+  return /%5C:/g;
+}
+
+export function getPathParamPattern() {
   return /(\\)?:([$_\p{ID_Start}][$\p{ID_Continue}]+)/gu;
 }
 
-function getRepeatingPathParamRegExp() {
+function getRepeatingPathParamPattern() {
   return /(\\)?:([$_\p{ID_Start}][$\p{ID_Continue}]+)\\+/gu;
 }
 
-function getOptionalPathParamRegExp() {
+function getOptionalPathParamPattern() {
   return /(\/)?(\\)?:([$_\p{ID_Start}][$\p{ID_Continue}]+)\?(\/)?/gu;
 }
 
-function getOptionalRepeatingPathParamRegExp() {
+function getOptionalRepeatingPathParamPattern() {
   return /(\/)?(\\)?:([$_\p{ID_Start}][$\p{ID_Continue}]+)\*(\/)?/gu;
+}
+
+function getSingleWildcardPattern() {
+  return /(^|[^*])\*([^*]|$)/g;
+}
+
+function getDoubleWildcardPattern() {
+  return /\*{2,}/g;
 }
 
 function createPathRegExp(path: string) {
   const replacedURL = encodeURI(path)
-    .replace(/^\/+|\/+$/g, '')
-    .replace(/([.()+$])/g, '\\$1')
-    .replace(/%5C:/g, '\\:') // Decode escaped colons
+    .replace(getLeadingOrTrailingSlashPattern(), '')
+    .replace(getExtraPatternsToEscape(), '\\$1')
+    .replace(getURIEncodedBackSlashColorPattern(), '\\:')
     .replace(
-      getOptionalRepeatingPathParamRegExp(),
+      getOptionalRepeatingPathParamPattern(),
       (_match, prefix: string, escape: string, paramName: string, suffix: string) => {
         if (escape) {
           return `:${paramName}`;
@@ -43,11 +63,11 @@ function createPathRegExp(path: string) {
         }
       },
     )
-    .replace(getRepeatingPathParamRegExp(), (_match, escape: string, paramName: string) => {
+    .replace(getRepeatingPathParamPattern(), (_match, escape: string, paramName: string) => {
       return escape ? `:${paramName}` : `(?<${paramName}>.+)`;
     })
     .replace(
-      getOptionalPathParamRegExp(),
+      getOptionalPathParamPattern(),
       (_match, prefix: string, escape: string, paramName: string, suffix: string) => {
         if (escape) {
           return `:${paramName}`;
@@ -70,11 +90,11 @@ function createPathRegExp(path: string) {
         }
       },
     )
-    .replace(getPathParamRegExp(), (_match, escape: string, paramName: string) => {
+    .replace(getPathParamPattern(), (_match, escape: string, paramName: string) => {
       return escape ? `:${paramName}` : `(?<${paramName}>[^/\\:]+)`;
     })
-    .replace(/(^|[^.\]*])\*([^*]|$)/g, '$1[^/]*$2')
-    .replace(/\*{2,}/g, '.*');
+    .replace(getSingleWildcardPattern(), '$1[^/]*$2')
+    .replace(getDoubleWildcardPattern(), '.*');
 
   return new RegExp(`^/?${replacedURL}/?$`);
 }
