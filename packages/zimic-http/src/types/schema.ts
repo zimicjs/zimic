@@ -309,11 +309,35 @@ export type LiteralHttpSchemaPathFromNonLiteral<
   LiteralPath extends LiteralPath ? RecursiveInferHttpSchemaPath<Schema, Method, NonLiteralPath, LiteralPath> : never
 >;
 
-type RecursiveInferPathParams<Path extends string> = Path extends `${infer _Prefix}:${infer ParamName}/${infer Suffix}`
-  ? { [Name in ParamName]: string } & RecursiveInferPathParams<Suffix>
-  : Path extends `${infer _Prefix}:${infer ParamName}`
-    ? { [Name in ParamName]: string }
-    : {};
+type PathParamWithoutTrailingWildcard<Path extends string> = Path extends `${infer Prefix}*` ? Prefix : Path;
+
+type ExtractParamName<ParamName extends string> = ParamName extends `${infer Prefix}:${infer Suffix}`
+  ? ExtractParamName<Prefix> | Suffix
+  : ParamName extends `${infer Prefix}/${infer _Suffix}`
+    ? ExtractParamName<Prefix>
+    : ParamName;
+
+type RecursiveInferPathParams<Path extends string> = Path extends `${infer _Prefix}:${infer ParamName}?:${infer Suffix}`
+  ? {
+      [Name in PathParamWithoutTrailingWildcard<ExtractParamName<ParamName>>]?: string;
+    } & RecursiveInferPathParams<`:${Suffix}`>
+  : Path extends `${infer _Prefix}:${infer ParamName}?/${infer Suffix}`
+    ? {
+        [Name in PathParamWithoutTrailingWildcard<ExtractParamName<ParamName>>]?: string;
+      } & RecursiveInferPathParams<Suffix>
+    : Path extends `${infer _Prefix}:${infer ParamName}:${infer Suffix}`
+      ? {
+          [Name in PathParamWithoutTrailingWildcard<ExtractParamName<ParamName>>]: string;
+        } & RecursiveInferPathParams<`:${Suffix}`>
+      : Path extends `${infer _Prefix}:${infer ParamName}/${infer Suffix}`
+        ? {
+            [Name in PathParamWithoutTrailingWildcard<ExtractParamName<ParamName>>]: string;
+          } & RecursiveInferPathParams<Suffix>
+        : Path extends `${infer _Prefix}:${infer ParamName}?`
+          ? { [Name in PathParamWithoutTrailingWildcard<ExtractParamName<ParamName>>]?: string }
+          : Path extends `${infer _Prefix}:${infer ParamName}`
+            ? { [Name in PathParamWithoutTrailingWildcard<ExtractParamName<ParamName>>]: string }
+            : {};
 
 /** @see {@link https://zimic.dev/docs/http/api/http-schema#inferpathparams `InferPathParams` API reference} */
 export type InferPathParams<
