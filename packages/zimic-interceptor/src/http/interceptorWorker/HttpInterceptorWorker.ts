@@ -240,7 +240,7 @@ abstract class HttpInterceptorWorker {
     type HeadersSchema = Default<Default<MethodSchema['request']>['headers']>;
     const headers = new HttpHeaders<HeadersSchema>(rawRequest.headers);
 
-    const pathParams = options ? this.parseRawPathParams<Path>(rawRequest, options) : {};
+    const pathParams = this.parseRawPathParams<Path>(rawRequest, options);
 
     const parsedURL = new URL(rawRequest.url);
     type SearchParamsSchema = Default<Default<MethodSchema['request']>['searchParams']>;
@@ -362,14 +362,13 @@ abstract class HttpInterceptorWorker {
 
   static parseRawPathParams<Path extends string>(
     request: Request,
-    options: { baseURL?: string; pathPattern?: RegExp },
+    options?: { baseURL: string; pathPattern: RegExp },
   ): InferPathParams<Path> {
-    if (!options.baseURL || !options.pathPattern) {
+    if (!options) {
       return {} as InferPathParams<Path>;
     }
 
     const match = options.pathPattern.exec(request.url.replace(options.baseURL, ''));
-
     return { ...match?.groups } as InferPathParams<Path>;
   }
 

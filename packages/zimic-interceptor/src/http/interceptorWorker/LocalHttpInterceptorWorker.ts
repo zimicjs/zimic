@@ -23,7 +23,7 @@ interface HttpHandler {
   pathPattern: RegExp;
   method: HttpMethod;
   interceptor: AnyHttpInterceptorClient;
-  createResponse: (context: HttpResponseFactoryContext) => Promise<Response | null>;
+  createResponse: (context: HttpResponseFactoryContext) => Promise<Response>;
 }
 
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
@@ -172,7 +172,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
     const handler: HttpHandler = {
       baseURL: interceptor.baseURLAsString,
-      pathPattern: createPathRegExp(path.toString()),
+      pathPattern: createPathRegExp(path),
       method,
       interceptor,
       createResponse: async (context) => {
@@ -229,10 +229,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       }
 
       const response = await handler.createResponse({ request });
-
-      if (response) {
-        return response;
-      }
+      return response;
     }
 
     return this.bypassOrRejectUnhandledRequest(request);
