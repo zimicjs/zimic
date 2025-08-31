@@ -158,8 +158,8 @@ describe('createPathRegExp', () => {
     { path: '\\:p1/other/\\:p2', input: ':p1/other/:p2', matches: true },
 
     // Paths with one optional param
-    { path: ':p1?', input: '', matches: true, params: {} },
-    { path: ':p1?', input: '/', matches: true, params: {} },
+    { path: ':p1?', input: '', matches: true },
+    { path: ':p1?', input: '/', matches: true },
     { path: ':p1', input: 'v1', matches: true, params: { p1: 'v1' } },
     { path: ':p1?', input: 'v1/', matches: true, params: { p1: 'v1' } },
     { path: ':p1?', input: '/v1', matches: true, params: { p1: 'v1' } },
@@ -168,8 +168,8 @@ describe('createPathRegExp', () => {
     { path: ':p1?', input: 'other/v1', matches: false },
 
     // Paths with multiple optional params separated by slashes
-    { path: ':p1?/:p2?', input: '', matches: true, params: {} },
-    { path: ':p1?/:p2?', input: '/', matches: true, params: {} },
+    { path: ':p1?/:p2?', input: '', matches: true },
+    { path: ':p1?/:p2?', input: '/', matches: true },
     { path: ':p1?/:p2?', input: 'v1', matches: true, params: { p1: 'v', p2: '1' } },
     { path: ':p1?/:p2?', input: 'v1/', matches: true, params: { p1: 'v', p2: '1' } },
     { path: ':p1?/:p2?', input: 'v1/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
@@ -181,7 +181,7 @@ describe('createPathRegExp', () => {
 
     // Paths with multiple optional params separated by non-slash characters
     { path: ':p1?-:p2?', input: '', matches: false },
-    { path: ':p1?-:p2?', input: '-', matches: true, params: {} },
+    { path: ':p1?-:p2?', input: '-', matches: true },
     { path: ':p1?-:p2?', input: 'v1', matches: false },
     { path: ':p1?-:p2?', input: 'v1-', matches: true, params: { p1: 'v1' } },
     { path: ':p1?-:p2?', input: '/v1-', matches: true, params: { p1: 'v1' } },
@@ -199,7 +199,7 @@ describe('createPathRegExp', () => {
     { path: ':p1?-:p2?', input: 'other/v1-v2', matches: false },
 
     // // Paths with multiple optional params separated by no characters
-    { path: ':p1?:p2?', input: '', matches: true, params: {} },
+    { path: ':p1?:p2?', input: '', matches: true },
     { path: ':p1?:p2?', input: '-', matches: true, params: { p1: '-' } },
     { path: ':p1?:p2?', input: 'v1', matches: true, params: { p1: 'v', p2: '1' } },
     { path: ':p1?:p2?', input: 'v1-', matches: true, params: { p1: 'v', p2: '1-' } },
@@ -218,10 +218,10 @@ describe('createPathRegExp', () => {
 
     // // Paths with multiple optional params separated by segments
     { path: ':p1?/other/:p2?', input: '', matches: false },
-    { path: ':p1?/other/:p2?', input: 'other', matches: true, params: {} },
-    { path: ':p1?/other/:p2?', input: 'other/', matches: true, params: {} },
-    { path: ':p1?/other/:p2?', input: '/other', matches: true, params: {} },
-    { path: ':p1?/other/:p2?', input: '/other/', matches: true, params: {} },
+    { path: ':p1?/other/:p2?', input: 'other', matches: true },
+    { path: ':p1?/other/:p2?', input: 'other/', matches: true },
+    { path: ':p1?/other/:p2?', input: '/other', matches: true },
+    { path: ':p1?/other/:p2?', input: '/other/', matches: true },
     { path: ':p1?/other/:p2?', input: 'v1', matches: false },
     { path: ':p1?/other/:p2?', input: 'v1/other/', matches: true, params: { p1: 'v1' } },
     { path: ':p1?/other/:p2?', input: '/v1/other/', matches: true, params: { p1: 'v1' } },
@@ -351,8 +351,8 @@ describe('createPathRegExp', () => {
     { path: ':p1+:p2+', input: '/other/v1/other/', matches: true, params: { p1: 'other/v1/other', p2: '/' } },
 
     // Paths with one optional repeating param
-    { path: ':p1*', input: '', matches: true, params: {} },
-    { path: ':p1*', input: '/', matches: true, params: {} },
+    { path: ':p1*', input: '', matches: true },
+    { path: ':p1*', input: '/', matches: true },
     { path: ':p1', input: 'v1', matches: true, params: { p1: 'v1' } },
     { path: ':p1*', input: 'v1/', matches: true, params: { p1: 'v1' } },
     { path: ':p1*', input: '/v1', matches: true, params: { p1: 'v1' } },
@@ -361,8 +361,8 @@ describe('createPathRegExp', () => {
     { path: ':p1*', input: 'other/v1', matches: true, params: { p1: 'other/v1' } },
 
     // Paths with multiple optional repeating params separated by slashes
-    { path: ':p1*/:p2*', input: '', matches: true, params: {} },
-    { path: ':p1*/:p2*', input: '/', matches: true, params: {} },
+    { path: ':p1*/:p2*', input: '', matches: true },
+    { path: ':p1*/:p2*', input: '/', matches: true },
     { path: ':p1*/:p2*', input: 'v1', matches: true, params: { p1: 'v', p2: '1' } },
     { path: ':p1*/:p2*', input: 'v1/', matches: true, params: { p1: 'v', p2: '1' } },
     { path: ':p1*/:p2*', input: 'v1/v2', matches: true, params: { p1: 'v', p2: '1/v2' } },
@@ -374,7 +374,7 @@ describe('createPathRegExp', () => {
 
     // Paths with multiple optional repeating params separated by non-slash characters
     { path: ':p1*-:p2*', input: '', matches: false },
-    { path: ':p1*-:p2*', input: '-', matches: true, params: {} },
+    { path: ':p1*-:p2*', input: '-', matches: true },
     { path: ':p1*-:p2*', input: 'v1', matches: false },
     { path: ':p1*-:p2*', input: 'v1-', matches: true, params: { p1: 'v1' } },
     { path: ':p1*-:p2*', input: '/v1-', matches: true, params: { p1: 'v1' } },
@@ -392,7 +392,7 @@ describe('createPathRegExp', () => {
     { path: ':p1*-:p2*', input: 'other/v1-v2', matches: true, params: { p1: 'other/v1', p2: 'v2' } },
 
     // // Paths with multiple optional repeating params separated by no characters
-    { path: ':p1*:p2*', input: '', matches: true, params: {} },
+    { path: ':p1*:p2*', input: '', matches: true },
     { path: ':p1*:p2*', input: '-', matches: true, params: { p1: '-' } },
     { path: ':p1*:p2*', input: 'v1', matches: true, params: { p1: 'v', p2: '1' } },
     { path: ':p1*:p2*', input: 'v1-', matches: true, params: { p1: 'v', p2: '1-' } },
@@ -411,9 +411,9 @@ describe('createPathRegExp', () => {
 
     // // Paths with multiple optional repeating params separated by segments
     { path: ':p1*/other/:p2*', input: '', matches: false },
-    { path: ':p1*/other/:p2*', input: 'other', matches: true, params: {} },
+    { path: ':p1*/other/:p2*', input: 'other', matches: true },
     { path: ':p1*/other/:p2*', input: 'other/', matches: true, params: { p2: '/' } },
-    { path: ':p1*/other/:p2*', input: '/other', matches: true, params: {} },
+    { path: ':p1*/other/:p2*', input: '/other', matches: true },
     { path: ':p1*/other/:p2*', input: '/other/', matches: true, params: { p2: '/' } },
     { path: ':p1*/other/:p2*', input: 'v1', matches: false },
     { path: ':p1*/other/:p2*', input: 'v1/other/', matches: true, params: { p1: 'v1', p2: '/' } },

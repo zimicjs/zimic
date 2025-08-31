@@ -1,4 +1,5 @@
 import { HttpRequest, HttpResponse, HttpMethod, HttpSchema } from '@zimic/http';
+import createPathRegExp from '@zimic/utils/url/createPathRegExp';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import validateURLPathParams from '@zimic/utils/url/validateURLPathParams';
 import { SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
@@ -10,28 +11,44 @@ import { isClientSide, isServerSide } from '@/utils/environment';
 
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
-import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
+import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
+import { HttpResponseFactoryContext } from './types/http';
 import { BrowserMSWWorker, MSWHandler, MSWHttpResponseFactory, MSWWorker, NodeMSWWorker } from './types/msw';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
+
+interface HttpHandler {
+  baseURL: string;
+  pathPattern: RegExp;
+  method: HttpMethod;
+  interceptor: AnyHttpInterceptorClient;
+  createResponse: (context: HttpResponseFactoryContext) => Promise<Response | null>;
+}
 
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   private internalWorker?: MSWWorker;
 
-  private defaultHttpHandler: MSWHandler;
+  private defaultMSWHttpHandler: MSWHandler;
 
-  private httpHandlerGroups: {
-    interceptor: HttpInterceptorClient<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
-    httpHandler: MSWHandler;
-  }[] = [];
+  private httpHandlersByMethod: {
+    [Method in HttpMethod]: HttpHandler[];
+  } = {
+    GET: [],
+    POST: [],
+    PATCH: [],
+    PUT: [],
+    DELETE: [],
+    HEAD: [],
+    OPTIONS: [],
+  };
 
   constructor(_options: LocalHttpInterceptorWorkerOptions) {
     super();
 
-    this.defaultHttpHandler = http.all('*', async (context) => {
-      const request = context.request satisfies Request as HttpRequest;
-      return this.bypassOrRejectUnhandledRequest(request);
+    this.defaultMSWHttpHandler = http.all('*', async (context) => {
+      const response = await this.createResponseForRequest(context.request satisfies Request as HttpRequest);
+      return response;
     });
   }
 
@@ -53,11 +70,11 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   private createInternalWorker() {
     if (isServerSide() && 'setupServer' in mswNode) {
-      return mswNode.setupServer(this.defaultHttpHandler);
+      return mswNode.setupServer(this.defaultMSWHttpHandler);
     }
     /* istanbul ignore else -- @preserve */
     if (isClientSide() && 'setupWorker' in mswBrowser) {
-      return mswBrowser.setupWorker(this.defaultHttpHandler);
+      return mswBrowser.setupWorker(this.defaultMSWHttpHandler);
     }
     /* istanbul ignore next -- @preserve
      * Ignoring because checking unknown platforms is not configured in our test setup. */
@@ -142,45 +159,83 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   use<Schema extends HttpSchema>(
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
-    rawURL: string | URL,
+    path: string,
     createResponse: MSWHttpResponseFactory,
   ) {
-    const lowercaseMethod = method.toLowerCase<typeof method>();
+    if (!this.isRunning) {
+      throw new NotRunningHttpInterceptorError();
+    }
 
-    const url = new URL(rawURL);
-    excludeURLParams(url);
-    validateURLPathParams(url);
+    validateURLPathParams(path);
 
-    const httpHandler = http[lowercaseMethod](url.toString(), async (context) => {
-      const request = context.request as HttpRequest;
-      const requestClone = request.clone();
+    const methodHandlers = this.httpHandlersByMethod[method];
 
-      let response: HttpResponse | null = null;
+    const handler: HttpHandler = {
+      baseURL: interceptor.baseURLAsString,
+      pathPattern: createPathRegExp(path.toString()),
+      method,
+      interceptor,
+      createResponse: async (context) => {
+        const request = context.request as HttpRequest;
+        const requestClone = request.clone();
 
-      try {
-        response = await createResponse({ ...context, request });
-      } catch (error) {
-        console.error(error);
+        let response: HttpResponse | null = null;
+
+        try {
+          response = await createResponse({ ...context, request });
+        } catch (error) {
+          console.error(error);
+        }
+
+        if (!response) {
+          return this.bypassOrRejectUnhandledRequest(requestClone);
+        }
+
+        if (context.request.method === 'HEAD') {
+          return new Response(null, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+          });
+        }
+
+        return response;
+      },
+    };
+
+    methodHandlers.push(handler);
+  }
+
+  private async createResponseForRequest(request: HttpRequest) {
+    const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
+
+    const requestURL = excludeURLParams(new URL(request.url));
+    const requestURLAsString = requestURL.href === `${requestURL.origin}/` ? requestURL.origin : requestURL.href;
+
+    for (let handlerIndex = methodHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
+      const handler = methodHandlers[handlerIndex];
+
+      const matchesBaseURL = requestURLAsString.startsWith(handler.baseURL);
+
+      if (!matchesBaseURL) {
+        continue;
       }
 
-      if (!response) {
-        return this.bypassOrRejectUnhandledRequest(requestClone);
+      const requestPath = requestURLAsString.replace(handler.baseURL, '');
+      const matchesPath = handler.pathPattern.test(requestPath);
+
+      if (!matchesPath) {
+        continue;
       }
 
-      if (context.request.method === 'HEAD') {
-        return new Response(null, {
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers,
-        });
+      const response = await handler.createResponse({ request });
+
+      if (response) {
+        return response;
       }
+    }
 
-      return response;
-    });
-
-    this.internalWorkerOrThrow.use(httpHandler);
-
-    this.httpHandlerGroups.push({ interceptor, httpHandler });
+    return this.bypassOrRejectUnhandledRequest(request);
   }
 
   private async bypassOrRejectUnhandledRequest(request: HttpRequest) {
@@ -198,22 +253,33 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   clearHandlers() {
     this.internalWorkerOrThrow.resetHandlers();
-    this.httpHandlerGroups = [];
+
+    for (const handlers of Object.values(this.httpHandlersByMethod)) {
+      handlers.length = 0;
+    }
   }
 
   clearInterceptorHandlers<Schema extends HttpSchema>(interceptor: HttpInterceptorClient<Schema>) {
-    const groupToRemoveIndex = this.httpHandlerGroups.findIndex((group) => group.interceptor === interceptor);
-    removeArrayIndex(this.httpHandlerGroups, groupToRemoveIndex);
+    if (!this.isRunning) {
+      throw new NotRunningHttpInterceptorError();
+    }
 
-    this.internalWorkerOrThrow.resetHandlers();
-
-    for (const { httpHandler } of this.httpHandlerGroups) {
-      this.internalWorkerOrThrow.use(httpHandler);
+    for (const handlers of Object.values(this.httpHandlersByMethod)) {
+      const groupToRemoveIndex = handlers.findIndex((group) => group.interceptor === interceptor);
+      removeArrayIndex(handlers, groupToRemoveIndex);
     }
   }
 
   get interceptorsWithHandlers() {
-    return this.httpHandlerGroups.map((group) => group.interceptor);
+    const interceptors = new Set<AnyHttpInterceptorClient>();
+
+    for (const handlers of Object.values(this.httpHandlersByMethod)) {
+      for (const handler of handlers) {
+        interceptors.add(handler.interceptor);
+      }
+    }
+
+    return Array.from(interceptors);
   }
 }
 

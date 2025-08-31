@@ -11,23 +11,23 @@ function getURIEncodedBackSlashColorPattern() {
 }
 
 export function getPathParamPattern() {
-  return /(\\)?:([$_\p{ID_Start}][$\p{ID_Continue}]+)/gu;
+  return /(?<escape>\\)?:(?<identifier>[$_\p{ID_Start}][$\p{ID_Continue}]+)/gu;
 }
 
 function getRepeatingPathParamPattern() {
-  return /(\\)?:([$_\p{ID_Start}][$\p{ID_Continue}]+)\\+/gu;
+  return /(?<escape>\\)?:(?<identifier>[$_\p{ID_Start}][$\p{ID_Continue}]+)\\+/gu;
 }
 
 function getOptionalPathParamPattern() {
-  return /(\/)?(\\)?:([$_\p{ID_Start}][$\p{ID_Continue}]+)\?(\/)?/gu;
+  return /(?<leadingSlash>\/)?(?<escape>\\)?:(?<identifier>[$_\p{ID_Start}][$\p{ID_Continue}]+)\?(?<trailingSlash>\/)?/gu;
 }
 
 function getOptionalRepeatingPathParamPattern() {
-  return /(\/)?(\\)?:([$_\p{ID_Start}][$\p{ID_Continue}]+)\*(\/)?/gu;
+  return /(?<leadingSlash>\/)?(?<escape>\\)?:(?<identifier>[$_\p{ID_Start}][$\p{ID_Continue}]+)\*(?<trailingSlash>\/)?/gu;
 }
 
 function getSingleWildcardPattern() {
-  return /(^|[^*])\*([^*]|$)/g;
+  return /(?<wildcardPrefix>^|[^*])\*(?<wildcardSuffix>[^*]|$)/g;
 }
 
 function getDoubleWildcardPattern() {
@@ -35,7 +35,7 @@ function getDoubleWildcardPattern() {
 }
 
 function getTripleWildcardPattern() {
-  return /\*\*\/\*([^*]|$)/g;
+  return /\*\*\/\*(?<wildcardSuffix>[^*]|$)/g;
 }
 
 function createPathRegExp(path: string) {
@@ -45,57 +45,69 @@ function createPathRegExp(path: string) {
     .replace(getURIEncodedBackSlashColorPattern(), '\\:')
     .replace(
       getOptionalRepeatingPathParamPattern(),
-      (_match, prefix: string, escape: string, paramName: string, suffix: string) => {
+      (
+        _match,
+        leadingSlash: string | undefined,
+        escape: string | undefined,
+        identifier: string,
+        trailingSlash: string | undefined,
+      ) => {
         if (escape) {
-          return `:${paramName}`;
+          return `:${identifier}`;
         }
 
-        const hasNoSegmentBeforePrefix = prefix === '/';
-        const prefixExpression = hasNoSegmentBeforePrefix ? '/?' : prefix;
+        const hasNoSegmentBeforePrefix = leadingSlash === '/';
+        const prefixExpression = hasNoSegmentBeforePrefix ? '/?' : leadingSlash;
 
-        const hasNoSegmentAfterSuffix = suffix === '/';
-        const suffixExpression = hasNoSegmentAfterSuffix ? '/?' : suffix;
+        const hasNoSegmentAfterSuffix = trailingSlash === '/';
+        const suffixExpression = hasNoSegmentAfterSuffix ? '/?' : trailingSlash;
 
         if (prefixExpression && suffixExpression) {
-          return `(?:${prefixExpression === '/' ? '/?' : prefixExpression}(?<${paramName}>.+?)${suffixExpression})?`;
+          return `(?:${prefixExpression === '/' ? '/?' : prefixExpression}(?<${identifier}>.+?)${suffixExpression})?`;
         } else if (prefixExpression) {
-          return `(?:${prefixExpression}(?<${paramName}>.+?))?`;
+          return `(?:${prefixExpression}(?<${identifier}>.+?))?`;
         } else if (suffixExpression) {
-          return `(?:(?<${paramName}>.+?)${suffixExpression})?`;
+          return `(?:(?<${identifier}>.+?)${suffixExpression})?`;
         } else {
-          return `(?<${paramName}>.+?)?`;
+          return `(?<${identifier}>.+?)?`;
         }
       },
     )
-    .replace(getRepeatingPathParamPattern(), (_match, escape: string, paramName: string) => {
-      return escape ? `:${paramName}` : `(?<${paramName}>.+)`;
+    .replace(getRepeatingPathParamPattern(), (_match, escape: string | undefined, identifier: string) => {
+      return escape ? `:${identifier}` : `(?<${identifier}>.+)`;
     })
     .replace(
       getOptionalPathParamPattern(),
-      (_match, prefix: string, escape: string, paramName: string, suffix: string) => {
+      (
+        _match,
+        leadingSlash: string | undefined,
+        escape: string | undefined,
+        identifier: string,
+        trailingSlash: string | undefined,
+      ) => {
         if (escape) {
-          return `:${paramName}`;
+          return `:${identifier}`;
         }
 
-        const hasNoSegmentBeforePrefix = prefix === '/';
-        const prefixExpression = hasNoSegmentBeforePrefix ? '/?' : prefix;
+        const hasNoSegmentBeforePrefix = leadingSlash === '/';
+        const prefixExpression = hasNoSegmentBeforePrefix ? '/?' : leadingSlash;
 
-        const hasNoSegmentAfterSuffix = suffix === '/';
-        const suffixExpression = hasNoSegmentAfterSuffix ? '/?' : suffix;
+        const hasNoSegmentAfterSuffix = trailingSlash === '/';
+        const suffixExpression = hasNoSegmentAfterSuffix ? '/?' : trailingSlash;
 
         if (prefixExpression && suffixExpression) {
-          return `(?:${prefixExpression === '/' ? '/?' : prefixExpression}(?<${paramName}>[^\\/]+?)${suffixExpression})?`;
+          return `(?:${prefixExpression === '/' ? '/?' : prefixExpression}(?<${identifier}>[^\\/]+?)${suffixExpression})?`;
         } else if (prefixExpression) {
-          return `(?:${prefixExpression}(?<${paramName}>[^\\/]+?))?`;
+          return `(?:${prefixExpression}(?<${identifier}>[^\\/]+?))?`;
         } else if (suffixExpression) {
-          return `(?:(?<${paramName}>[^\\/]+?)${suffixExpression})?`;
+          return `(?:(?<${identifier}>[^\\/]+?)${suffixExpression})?`;
         } else {
-          return `(?<${paramName}>[^\\/]+?)?`;
+          return `(?<${identifier}>[^\\/]+?)?`;
         }
       },
     )
-    .replace(getPathParamPattern(), (_match, escape: string, paramName: string) => {
-      return escape ? `:${paramName}` : `(?<${paramName}>[^\\/]+?)`;
+    .replace(getPathParamPattern(), (_match, escape: string | undefined, identifier: string) => {
+      return escape ? `:${identifier}` : `(?<${identifier}>[^\\/]+?)`;
     })
     .replace(getTripleWildcardPattern(), '**')
     .replace(getSingleWildcardPattern(), '$1[^/]*$2')
