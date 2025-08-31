@@ -248,11 +248,105 @@ export type HttpSchemaMethod<Schema extends HttpSchema> = IfAny<
   keyof UnionToIntersection<Schema[keyof Schema]> & HttpMethod
 >;
 
-export type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Prefix}:${string}/${infer Suffix}`
-  ? `${Prefix}${string}/${AllowAnyStringInPathParams<Suffix>}`
-  : Path extends `${infer Prefix}:${string}`
-    ? `${Prefix}${string}`
-    : Path;
+type RequiredPathParamModifier = '+';
+type OptionalPathParamModifier = '?' | '*';
+
+type IgnorePathParamIfEscaped<ParamName extends string, Prefix extends string> = Prefix extends `${string}\\`
+  ? never
+  : ParamName;
+
+type RecursiveInferPathParams<Path extends string> =
+  Path extends `${infer Prefix}:${infer ParamName}${OptionalPathParamModifier}/${infer Suffix}`
+    ? { [Name in IgnorePathParamIfEscaped<ParamName, Prefix>]?: string } & RecursiveInferPathParams<Suffix>
+    : Path extends `${infer Prefix}:${infer ParamName}${RequiredPathParamModifier}/${infer Suffix}`
+      ? { [Name in IgnorePathParamIfEscaped<ParamName, Prefix>]: string } & RecursiveInferPathParams<Suffix>
+      : Path extends `${infer Prefix}:${infer ParamName}/${infer Suffix}`
+        ? { [Name in IgnorePathParamIfEscaped<ParamName, Prefix>]: string } & RecursiveInferPathParams<Suffix>
+        : Path extends `${infer Prefix}:${infer ParamName}${OptionalPathParamModifier}\\:${infer Suffix}`
+          ? {
+              [Name in IgnorePathParamIfEscaped<ParamName, Prefix>]?: string;
+            } & RecursiveInferPathParams<`\\:${Suffix}`>
+          : Path extends `${infer Prefix}:${infer ParamName}${RequiredPathParamModifier}\\:${infer Suffix}`
+            ? {
+                [Name in IgnorePathParamIfEscaped<ParamName, Prefix>]: string;
+              } & RecursiveInferPathParams<`\\:${Suffix}`>
+            : Path extends `${infer Prefix}:${infer ParamName}\\:${infer Suffix}`
+              ? {
+                  [Name in IgnorePathParamIfEscaped<ParamName, Prefix>]: string;
+                } & RecursiveInferPathParams<`\\:${Suffix}`>
+              : Path extends `${infer Prefix}:${infer ParamName}${OptionalPathParamModifier}:${infer Suffix}`
+                ? {
+                    [Name in IgnorePathParamIfEscaped<ParamName, Prefix>]?: string;
+                  } & RecursiveInferPathParams<`:${Suffix}`>
+                : Path extends `${infer Prefix}:${infer ParamName}${RequiredPathParamModifier}:${infer Suffix}`
+                  ? {
+                      [Name in IgnorePathParamIfEscaped<ParamName, Prefix>]: string;
+                    } & RecursiveInferPathParams<`:${Suffix}`>
+                  : Path extends `${infer Prefix}:${infer ParamName}:${infer Suffix}`
+                    ? {
+                        [Name in IgnorePathParamIfEscaped<ParamName, Prefix>]: string;
+                      } & RecursiveInferPathParams<`:${Suffix}`>
+                    : Path extends `${infer Prefix}:${infer ParamName}${OptionalPathParamModifier}`
+                      ? { [Name in IgnorePathParamIfEscaped<ParamName, Prefix>]?: string }
+                      : Path extends `${infer Prefix}:${infer ParamName}${RequiredPathParamModifier}`
+                        ? { [Name in IgnorePathParamIfEscaped<ParamName, Prefix>]: string }
+                        : Path extends `${infer Prefix}:${infer ParamName}`
+                          ? { [Name in IgnorePathParamIfEscaped<ParamName, Prefix>]: string }
+                          : {};
+
+/** @see {@link https://zimic.dev/docs/http/api/http-schema#inferpathparams `InferPathParams` API reference} */
+export type InferPathParams<
+  PathOrSchema extends string | HttpSchema,
+  OptionalPath extends PathOrSchema extends HttpSchema ? HttpSchemaPath.Literal<PathOrSchema> : never = never,
+> = Prettify<
+  RecursiveInferPathParams<
+    PathOrSchema extends HttpSchema ? OptionalPath : PathOrSchema extends string ? PathOrSchema : never
+  >
+>;
+
+type IgnorePathParamStringIfEscaped<ParamName extends string, Prefix extends string> = Prefix extends `${string}\\`
+  ? `:${ParamName}`
+  : string;
+
+type RemoveTrailingSlash<Path extends string> = Path extends `${infer Prefix}/` ? Prefix : Path;
+
+export type AllowAnyStringInPathParams<Path extends string> =
+  Path extends `${infer Prefix}:${infer ParamName}${OptionalPathParamModifier}/${infer Suffix}`
+    ?
+        | `${AllowAnyStringInPathParams<Prefix>}${IgnorePathParamStringIfEscaped<ParamName, Prefix>}/${AllowAnyStringInPathParams<Suffix>}`
+        | `${AllowAnyStringInPathParams<Prefix>}/${AllowAnyStringInPathParams<Suffix>}`
+    : Path extends `${infer Prefix}:${infer ParamName}${RequiredPathParamModifier}/${infer Suffix}`
+      ? `${AllowAnyStringInPathParams<Prefix>}${IgnorePathParamStringIfEscaped<ParamName, Prefix>}/${AllowAnyStringInPathParams<Suffix>}`
+      : Path extends `${infer Prefix}:${infer ParamName}/${infer Suffix}`
+        ? `${AllowAnyStringInPathParams<Prefix>}${IgnorePathParamStringIfEscaped<ParamName, Prefix>}/${AllowAnyStringInPathParams<Suffix>}`
+        : Path extends `${infer Prefix}:${infer ParamName}${OptionalPathParamModifier}\\:${infer Suffix}`
+          ?
+              | `${AllowAnyStringInPathParams<Prefix>}${IgnorePathParamStringIfEscaped<ParamName, Prefix>}${AllowAnyStringInPathParams<`\\:${Suffix}`>}`
+              | `${AllowAnyStringInPathParams<Prefix>}${AllowAnyStringInPathParams<`\\:${Suffix}`>}`
+          : Path extends `${infer Prefix}:${infer ParamName}${RequiredPathParamModifier}\\:${infer Suffix}`
+            ? `${AllowAnyStringInPathParams<Prefix>}${IgnorePathParamStringIfEscaped<ParamName, Prefix>}${AllowAnyStringInPathParams<`\\:${Suffix}`>}`
+            : Path extends `${infer Prefix}:${infer ParamName}\\:${infer Suffix}`
+              ? `${AllowAnyStringInPathParams<Prefix>}${IgnorePathParamStringIfEscaped<ParamName, Prefix>}${AllowAnyStringInPathParams<`\\:${Suffix}`>}`
+              : Path extends `${infer Prefix}:${infer ParamName}${OptionalPathParamModifier}:${infer Suffix}`
+                ?
+                    | `${AllowAnyStringInPathParams<Prefix>}${IgnorePathParamStringIfEscaped<ParamName, Prefix>}${AllowAnyStringInPathParams<`:${Suffix}`>}`
+                    | `${AllowAnyStringInPathParams<Prefix>}${AllowAnyStringInPathParams<`:${Suffix}`>}`
+                : Path extends `${infer Prefix}:${infer ParamName}${RequiredPathParamModifier}:${infer Suffix}`
+                  ? `${AllowAnyStringInPathParams<Prefix>}${IgnorePathParamStringIfEscaped<ParamName, Prefix>}${AllowAnyStringInPathParams<`:${Suffix}`>}`
+                  : Path extends `${infer Prefix}:${infer ParamName}:${infer Suffix}`
+                    ? `${AllowAnyStringInPathParams<Prefix>}${IgnorePathParamStringIfEscaped<ParamName, Prefix>}${AllowAnyStringInPathParams<`:${Suffix}`>}`
+                    : Path extends `${infer Prefix}:${infer ParamName}${OptionalPathParamModifier}`
+                      ?
+                          | `${AllowAnyStringInPathParams<Prefix>}${IgnorePathParamStringIfEscaped<ParamName, Prefix>}`
+                          | RemoveTrailingSlash<AllowAnyStringInPathParams<Prefix>>
+                          | AllowAnyStringInPathParams<Prefix>
+                      : Path extends `${infer Prefix}:${infer ParamName}${RequiredPathParamModifier}`
+                        ? `${AllowAnyStringInPathParams<Prefix>}${IgnorePathParamStringIfEscaped<ParamName, Prefix>}`
+                        : Path extends `${infer Prefix}:${infer ParamName}`
+                          ? `${AllowAnyStringInPathParams<Prefix>}${IgnorePathParamStringIfEscaped<ParamName, Prefix>}`
+                          : Path extends `${infer Suffix}\\`
+                            ? Suffix
+                            : Path;
 
 /** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemapath `HttpSchemaPath` API reference} */
 export namespace HttpSchemaPath {
@@ -307,46 +401,6 @@ export type LiteralHttpSchemaPathFromNonLiteral<
   LiteralPath extends HttpSchemaPath.Literal<Schema, Method> = HttpSchemaPath.Literal<Schema, Method>,
 > = PreferMostStaticLiteralPath<
   LiteralPath extends LiteralPath ? RecursiveInferHttpSchemaPath<Schema, Method, NonLiteralPath, LiteralPath> : never
->;
-
-type PathParamWithoutTrailingWildcard<Path extends string> = Path extends `${infer Prefix}*` ? Prefix : Path;
-
-type ExtractParamName<ParamName extends string> = ParamName extends `${infer Prefix}:${infer Suffix}`
-  ? ExtractParamName<Prefix> | Suffix
-  : ParamName extends `${infer Prefix}/${infer _Suffix}`
-    ? ExtractParamName<Prefix>
-    : ParamName;
-
-type RecursiveInferPathParams<Path extends string> = Path extends `${infer _Prefix}:${infer ParamName}?:${infer Suffix}`
-  ? {
-      [Name in PathParamWithoutTrailingWildcard<ExtractParamName<ParamName>>]?: string;
-    } & RecursiveInferPathParams<`:${Suffix}`>
-  : Path extends `${infer _Prefix}:${infer ParamName}?/${infer Suffix}`
-    ? {
-        [Name in PathParamWithoutTrailingWildcard<ExtractParamName<ParamName>>]?: string;
-      } & RecursiveInferPathParams<Suffix>
-    : Path extends `${infer _Prefix}:${infer ParamName}:${infer Suffix}`
-      ? {
-          [Name in PathParamWithoutTrailingWildcard<ExtractParamName<ParamName>>]: string;
-        } & RecursiveInferPathParams<`:${Suffix}`>
-      : Path extends `${infer _Prefix}:${infer ParamName}/${infer Suffix}`
-        ? {
-            [Name in PathParamWithoutTrailingWildcard<ExtractParamName<ParamName>>]: string;
-          } & RecursiveInferPathParams<Suffix>
-        : Path extends `${infer _Prefix}:${infer ParamName}?`
-          ? { [Name in PathParamWithoutTrailingWildcard<ExtractParamName<ParamName>>]?: string }
-          : Path extends `${infer _Prefix}:${infer ParamName}`
-            ? { [Name in PathParamWithoutTrailingWildcard<ExtractParamName<ParamName>>]: string }
-            : {};
-
-/** @see {@link https://zimic.dev/docs/http/api/http-schema#inferpathparams `InferPathParams` API reference} */
-export type InferPathParams<
-  PathOrSchema extends string | HttpSchema,
-  OptionalPath extends PathOrSchema extends HttpSchema ? HttpSchemaPath.Literal<PathOrSchema> : never = never,
-> = Prettify<
-  RecursiveInferPathParams<
-    PathOrSchema extends HttpSchema ? OptionalPath : PathOrSchema extends string ? PathOrSchema : never
-  >
 >;
 
 type OmitPastHttpStatusCodes<
