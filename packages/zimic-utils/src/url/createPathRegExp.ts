@@ -31,7 +31,11 @@ function getSingleWildcardPattern() {
 }
 
 function getDoubleWildcardPattern() {
-  return /\*{2,}/g;
+  return /\*\*/g;
+}
+
+function getTripleWildcardPattern() {
+  return /\*\*\/\*([^*]|$)/g;
 }
 
 function createPathRegExp(path: string) {
@@ -80,19 +84,20 @@ function createPathRegExp(path: string) {
         const suffixExpression = hasNoSegmentAfterSuffix ? '/?' : suffix;
 
         if (prefixExpression && suffixExpression) {
-          return `(?:${prefixExpression === '/' ? '/?' : prefixExpression}(?<${paramName}>[^/\\:]+)${suffixExpression})?`;
+          return `(?:${prefixExpression === '/' ? '/?' : prefixExpression}(?<${paramName}>[^\\/]+?)${suffixExpression})?`;
         } else if (prefixExpression) {
-          return `(?:${prefixExpression}(?<${paramName}>[^/\\:]+))?`;
+          return `(?:${prefixExpression}(?<${paramName}>[^\\/]+?))?`;
         } else if (suffixExpression) {
-          return `(?:(?<${paramName}>[^/\\:]+)${suffixExpression})?`;
+          return `(?:(?<${paramName}>[^\\/]+?)${suffixExpression})?`;
         } else {
-          return `(?<${paramName}>[^/\\:]+)?`;
+          return `(?<${paramName}>[^\\/]+?)?`;
         }
       },
     )
     .replace(getPathParamPattern(), (_match, escape: string, paramName: string) => {
-      return escape ? `:${paramName}` : `(?<${paramName}>[^/\\:]+)`;
+      return escape ? `:${paramName}` : `(?<${paramName}>[^\\/]+?)`;
     })
+    .replace(getTripleWildcardPattern(), '**')
     .replace(getSingleWildcardPattern(), '$1[^/]*$2')
     .replace(getDoubleWildcardPattern(), '.*');
 

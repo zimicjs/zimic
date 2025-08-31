@@ -53,13 +53,17 @@ describe('createPathRegExp', () => {
     { path: '/path/', input: 'other', matches: false },
     { path: '/path/', input: '/other', matches: false },
 
-    // Path with one param not starting or ending with a slash
+    // Path with one param
     { path: ':p1', input: '', matches: false },
     { path: ':p1', input: '/', matches: false },
     { path: ':p1', input: 'v1', matches: true, params: { p1: 'v1' } },
     { path: ':p1', input: 'v1/', matches: true, params: { p1: 'v1' } },
     { path: ':p1', input: '/v1', matches: true, params: { p1: 'v1' } },
     { path: ':p1', input: '/v1/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1', input: ':p1', matches: true, params: { p1: ':p1' } },
+    { path: ':p1', input: ':p1/', matches: true, params: { p1: ':p1' } },
+    { path: ':p1', input: '/:p1', matches: true, params: { p1: ':p1' } },
+    { path: ':p1', input: '/:p1/', matches: true, params: { p1: ':p1' } },
     { path: ':p1', input: 'v1/other', matches: false },
     { path: ':p1', input: '/v1/other', matches: false },
 
@@ -129,8 +133,8 @@ describe('createPathRegExp', () => {
 
     // Paths with multiple params separated by no characters
     { path: ':p1:p2', input: 'v1', matches: true, params: { p1: 'v', p2: '1' } },
-    { path: ':p1:p2', input: 'v1v2', matches: true, params: { p1: 'v1v', p2: '2' } },
-    { path: ':p1:p2', input: 'v1-v2', matches: true, params: { p1: 'v1-v', p2: '2' } },
+    { path: ':p1:p2', input: 'v1v2', matches: true, params: { p1: 'v', p2: '1v2' } },
+    { path: ':p1:p2', input: 'v1-v2', matches: true, params: { p1: 'v', p2: '1-v2' } },
     { path: ':p1:p2', input: 'v1-v2/other', matches: false },
     { path: ':p1:p2', input: '/v1-v2/other', matches: false },
 
@@ -166,8 +170,8 @@ describe('createPathRegExp', () => {
     // Paths with multiple optional params separated by slashes
     { path: ':p1?/:p2?', input: '', matches: true, params: {} },
     { path: ':p1?/:p2?', input: '/', matches: true, params: {} },
-    { path: ':p1?/:p2?', input: 'v1', matches: true, params: { p1: 'v1' } },
-    { path: ':p1?/:p2?', input: 'v1/', matches: true, params: { p1: 'v1' } },
+    { path: ':p1?/:p2?', input: 'v1', matches: true, params: { p1: 'v', p2: '1' } },
+    { path: ':p1?/:p2?', input: 'v1/', matches: true, params: { p1: 'v', p2: '1' } },
     { path: ':p1?/:p2?', input: 'v1/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
     { path: ':p1?/:p2?', input: 'v1/v2/', matches: true, params: { p1: 'v1', p2: 'v2' } },
     { path: ':p1?/:p2?', input: '/v1/v2', matches: true, params: { p1: 'v1', p2: 'v2' } },
@@ -197,18 +201,18 @@ describe('createPathRegExp', () => {
     // // Paths with multiple optional params separated by no characters
     { path: ':p1?:p2?', input: '', matches: true, params: {} },
     { path: ':p1?:p2?', input: '-', matches: true, params: { p1: '-' } },
-    { path: ':p1?:p2?', input: 'v1', matches: true, params: { p1: 'v1' } },
-    { path: ':p1?:p2?', input: 'v1-', matches: true, params: { p1: 'v1-' } },
-    { path: ':p1?:p2?', input: '/v1-', matches: true, params: { p1: 'v1-' } },
-    { path: ':p1?:p2?', input: '/v1-/', matches: true, params: { p1: 'v1-' } },
-    { path: ':p1?:p2?', input: '-v2', matches: true, params: { p1: '-v2' } },
-    { path: ':p1?:p2?', input: '/-v2', matches: true, params: { p1: '-v2' } },
-    { path: ':p1?:p2?', input: '-v2/', matches: true, params: { p1: '-v2' } },
-    { path: ':p1?:p2?', input: '/-v2/', matches: true, params: { p1: '-v2' } },
-    { path: ':p1?:p2?', input: 'v1-v2', matches: true, params: { p1: 'v1-v2' } },
-    { path: ':p1?:p2?', input: '/v1-v2', matches: true, params: { p1: 'v1-v2' } },
-    { path: ':p1?:p2?', input: 'v1-v2/', matches: true, params: { p1: 'v1-v2' } },
-    { path: ':p1?:p2?', input: '/v1-v2/', matches: true, params: { p1: 'v1-v2' } },
+    { path: ':p1?:p2?', input: 'v1', matches: true, params: { p1: 'v', p2: '1' } },
+    { path: ':p1?:p2?', input: 'v1-', matches: true, params: { p1: 'v', p2: '1-' } },
+    { path: ':p1?:p2?', input: '/v1-', matches: true, params: { p1: 'v', p2: '1-' } },
+    { path: ':p1?:p2?', input: '/v1-/', matches: true, params: { p1: 'v', p2: '1-' } },
+    { path: ':p1?:p2?', input: '-v2', matches: true, params: { p1: '-', p2: 'v2' } },
+    { path: ':p1?:p2?', input: '/-v2', matches: true, params: { p1: '-', p2: 'v2' } },
+    { path: ':p1?:p2?', input: '-v2/', matches: true, params: { p1: '-', p2: 'v2' } },
+    { path: ':p1?:p2?', input: '/-v2/', matches: true, params: { p1: '-', p2: 'v2' } },
+    { path: ':p1?:p2?', input: 'v1-v2', matches: true, params: { p1: 'v', p2: '1-v2' } },
+    { path: ':p1?:p2?', input: '/v1-v2', matches: true, params: { p1: 'v', p2: '1-v2' } },
+    { path: ':p1?:p2?', input: 'v1-v2/', matches: true, params: { p1: 'v', p2: '1-v2' } },
+    { path: ':p1?:p2?', input: '/v1-v2/', matches: true, params: { p1: 'v', p2: '1-v2' } },
     { path: ':p1?:p2?', input: 'v1-v2/other', matches: false },
     { path: ':p1?:p2?', input: 'other/v1-v2', matches: false },
 
@@ -678,6 +682,19 @@ describe('createPathRegExp', () => {
     { path: '/**/', input: 'v1/other/', matches: true },
     { path: '/**/', input: '/v1/other/', matches: true },
     { path: '/**/', input: 'other/v1/other', matches: true },
+
+    // Paths with catch-all wildcards following by a segment wildcard
+    { path: '**/*', input: '', matches: true },
+    { path: '**/*', input: '/', matches: true },
+    { path: '**/*', input: 'v1', matches: true },
+    { path: '**/*', input: '/v1', matches: true },
+    { path: '**/*', input: 'v1/', matches: true },
+    { path: '**/*', input: '/v1/', matches: true },
+    { path: '**/*', input: 'v1/other', matches: true },
+    { path: '**/*', input: '/v1/other', matches: true },
+    { path: '**/*', input: 'v1/other/', matches: true },
+    { path: '**/*', input: '/v1/other/', matches: true },
+    { path: '**/*', input: 'other/v1/other', matches: true },
 
     // Paths with one static segment and a catch-all wildcard
     { path: '/path/**', input: '', matches: false },

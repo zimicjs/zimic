@@ -7,7 +7,7 @@ import color from 'picocolors';
 import { HTTP_METHODS } from '@/types/schema';
 import { logger } from '@/utils/logging';
 
-import { TypePathFilters } from './context';
+import { TypePathFilter, TypePathFilters } from './context';
 
 const HTTP_METHOD_OPTIONS = HTTP_METHODS.join('|');
 const MODIFIER_GROUP = '(?<modifier>!?)';
@@ -15,12 +15,7 @@ const METHOD_FILTER_GROUP = `(?<method>(?:\\*|(?:${HTTP_METHOD_OPTIONS})(?:,\\s*
 const PATH_FILTER_GROUP = '(?<path>.+)';
 const FILTER_REGEX = new RegExp(`^${MODIFIER_GROUP}\\s*${METHOD_FILTER_GROUP}\\s+${PATH_FILTER_GROUP}$`, 'i');
 
-interface ParsedTypePathFilter {
-  expression: RegExp;
-  isNegativeMatch: boolean;
-}
-
-export function parseRawFilter(rawFilter: string): ParsedTypePathFilter | undefined {
+export function parseRawFilter(rawFilter: string): TypePathFilter | undefined {
   const filterMatch = rawFilter.match(FILTER_REGEX);
   const { modifier: filterModifier, method: filteredMethodsOrWildcard, path: filteredPath } = filterMatch?.groups ?? {};
 
@@ -30,23 +25,21 @@ export function parseRawFilter(rawFilter: string): ParsedTypePathFilter | undefi
     return undefined;
   }
 
-  const methodFilterGroup = `(?:${filteredMethodsOrWildcard.toUpperCase().replace(/,/g, '|').replace(/\*/g, '.*')}) `;
-  const isNegativeMatch = filterModifier === '!';
-
   return {
-    expression: createPathRegExp(`${methodFilterGroup}${filteredPath}`),
-    isNegativeMatch,
+    methodPattern: new RegExp(`(?:${filteredMethodsOrWildcard.toUpperCase().replace(/,/g, '|').replace(/\*/g, '.*')})`),
+    pathPattern: createPathRegExp(filteredPath),
+    isNegativeMatch: filterModifier === '!',
   };
 }
 
-export function groupParsedFiltersByMatch(parsedFilters: (ParsedTypePathFilter | undefined)[]) {
+export function groupParsedFiltersByMatch(parsedFilters: (TypePathFilter | undefined)[]) {
   return parsedFilters.reduce<TypePathFilters>(
     (groupedFilters, filter) => {
       if (filter) {
         if (filter.isNegativeMatch) {
-          groupedFilters.negative.push(filter.expression);
+          groupedFilters.negative.push(filter);
         } else {
-          groupedFilters.positive.push(filter.expression);
+          groupedFilters.positive.push(filter);
         }
       }
 
