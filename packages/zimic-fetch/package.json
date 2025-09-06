@@ -14,6 +14,7 @@
     "static"
   ],
   "version": "1.0.4-canary.0",
+  "homepage": "https://zimic.dev/docs/fetch",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",

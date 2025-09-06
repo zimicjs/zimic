@@ -15,6 +15,7 @@
     "static"
   ],
   "version": "1.1.0-canary.0",
+  "homepage": "https://zimic.dev/docs/interceptor",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
