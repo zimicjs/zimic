@@ -1,5 +1,5 @@
 import { HttpMethod, HttpSchema } from '@zimic/http';
-import validateURLPathParams from '@zimic/utils/url/validateURLPathParams';
+import validatePathParams from '@zimic/utils/url/validatePathParams';
 
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/types/schema';
 import { importCrypto } from '@/utils/crypto';
@@ -140,7 +140,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       throw new NotRunningHttpInterceptorError();
     }
 
-    validateURLPathParams(path);
+    validatePathParams(path);
 
     const crypto = await importCrypto();
 
@@ -148,7 +148,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       id: crypto.randomUUID(),
       baseURL: interceptor.baseURLAsString,
       method,
-      path: path.toString(),
+      path,
       interceptor,
       async createResponse(context) {
         const response = await createResponse(context);

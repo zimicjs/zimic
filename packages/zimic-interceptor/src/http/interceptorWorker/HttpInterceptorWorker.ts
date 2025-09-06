@@ -364,11 +364,7 @@ abstract class HttpInterceptorWorker {
     request: Request,
     options?: { baseURL: string; pathPattern: RegExp },
   ): InferPathParams<Path> {
-    if (!options) {
-      return {} as InferPathParams<Path>;
-    }
-
-    const match = options.pathPattern.exec(request.url.replace(options.baseURL, ''));
+    const match = options?.pathPattern.exec(request.url.replace(options.baseURL, ''));
     return { ...match?.groups } as InferPathParams<Path>;
   }
 

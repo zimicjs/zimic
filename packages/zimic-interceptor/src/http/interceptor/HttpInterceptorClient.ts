@@ -8,7 +8,7 @@ import {
   HttpSchema,
 } from '@zimic/http';
 import { Default, PossiblePromise } from '@zimic/utils/types';
-import createPathRegExp from '@zimic/utils/url/createPathRegExp';
+import createParametrizedPathPattern from '@zimic/utils/url/createParametrizedPathPattern';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
 
@@ -245,14 +245,14 @@ class HttpInterceptorClient<
 
     this.handlerClientsByMethod[handler.method].set(handler.path, handlerClients);
 
-    const pathPattern = createPathRegExp(handler.path);
+    const pathPattern = createParametrizedPathPattern(handler.path);
 
     const registrationResult = this.workerOrThrow.use(this, handler.method, handler.path, async (context) => {
       const response = await this.handleInterceptedRequest(
         handler.method,
         handler.path,
-        context as HttpInterceptorRequestContext<Schema, Method, Path>,
         pathPattern,
+        context as HttpInterceptorRequestContext<Schema, Method, Path>,
       );
       return response;
     });
@@ -266,7 +266,7 @@ class HttpInterceptorClient<
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
-  >(method: Method, path: Path, { request }: Context, pathPattern: RegExp): Promise<HttpResponse | null> {
+  >(method: Method, path: Path, pathPattern: RegExp, { request }: Context): Promise<HttpResponse | null> {
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Path, Default<Schema[Path][Method]>>(request, {
       baseURL: this.baseURLAsString,
       pathPattern,

@@ -1,6 +1,6 @@
 import { normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
 import { HttpRequest, HttpMethod } from '@zimic/http';
-import createPathRegExp from '@zimic/utils/url/createPathRegExp';
+import createParametrizedPathPattern from '@zimic/utils/url/createParametrizedPathPattern';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
@@ -222,7 +222,7 @@ class InterceptorServer implements PublicInterceptorServer {
     handlerGroups.push({
       id,
       baseURL,
-      pathPattern: createPathRegExp(path),
+      pathPattern: createParametrizedPathPattern(path),
       socket,
     });
   }
@@ -407,10 +407,7 @@ class InterceptorServer implements PublicInterceptorServer {
   private findHttpHandlerByRequestBaseURL(request: HttpRequest) {
     const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
 
-    const handler = methodHandlers.findLast((handler) => {
-      return request.url.startsWith(handler.baseURL);
-    });
-
+    const handler = methodHandlers.findLast((handler) => request.url.startsWith(handler.baseURL));
     return handler;
   }
 }

@@ -1,7 +1,7 @@
 import { HttpRequest, HttpResponse, HttpMethod, HttpSchema } from '@zimic/http';
-import createPathRegExp from '@zimic/utils/url/createPathRegExp';
+import createParametrizedPathPattern from '@zimic/utils/url/createParametrizedPathPattern';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
-import validateURLPathParams from '@zimic/utils/url/validateURLPathParams';
+import validatePathParams from '@zimic/utils/url/validatePathParams';
 import { SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
 import * as mswBrowser from 'msw/browser';
 import * as mswNode from 'msw/node';
@@ -15,21 +15,19 @@ import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/
 import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { HttpResponseFactoryContext } from './types/http';
-import { BrowserMSWWorker, MSWHandler, MSWHttpResponseFactory, MSWWorker, NodeMSWWorker } from './types/msw';
+import { BrowserMSWWorker, MSWHttpResponseFactory, MSWWorker, NodeMSWWorker } from './types/msw';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
 
 interface HttpHandler {
   baseURL: string;
-  pathPattern: RegExp;
   method: HttpMethod;
+  pathPattern: RegExp;
   interceptor: AnyHttpInterceptorClient;
   createResponse: (context: HttpResponseFactoryContext) => Promise<Response>;
 }
 
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   private internalWorker?: MSWWorker;
-
-  private defaultMSWHttpHandler: MSWHandler;
 
   private httpHandlersByMethod: {
     [Method in HttpMethod]: HttpHandler[];
@@ -45,11 +43,6 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   constructor(_options: LocalHttpInterceptorWorkerOptions) {
     super();
-
-    this.defaultMSWHttpHandler = http.all('*', async (context) => {
-      const response = await this.createResponseForRequest(context.request satisfies Request as HttpRequest);
-      return response;
-    });
   }
 
   get type() {
@@ -69,13 +62,21 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private createInternalWorker() {
+    const mswHttpHandler = http.all('*', async (context) => {
+      const request = context.request satisfies Request as HttpRequest;
+      const response = await this.createResponseForRequest(request);
+      return response;
+    });
+
     if (isServerSide() && 'setupServer' in mswNode) {
-      return mswNode.setupServer(this.defaultMSWHttpHandler);
+      return mswNode.setupServer(mswHttpHandler);
     }
+
     /* istanbul ignore else -- @preserve */
     if (isClientSide() && 'setupWorker' in mswBrowser) {
-      return mswBrowser.setupWorker(this.defaultMSWHttpHandler);
+      return mswBrowser.setupWorker(mswHttpHandler);
     }
+
     /* istanbul ignore next -- @preserve
      * Ignoring because checking unknown platforms is not configured in our test setup. */
     throw new UnknownHttpInterceptorPlatformError();
@@ -166,14 +167,14 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       throw new NotRunningHttpInterceptorError();
     }
 
-    validateURLPathParams(path);
+    validatePathParams(path);
 
     const methodHandlers = this.httpHandlersByMethod[method];
 
     const handler: HttpHandler = {
       baseURL: interceptor.baseURLAsString,
-      pathPattern: createPathRegExp(path),
       method,
+      pathPattern: createParametrizedPathPattern(path),
       interceptor,
       createResponse: async (context) => {
         const request = context.request as HttpRequest;
@@ -261,9 +262,9 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       throw new NotRunningHttpInterceptorError();
     }
 
-    for (const handlers of Object.values(this.httpHandlersByMethod)) {
-      const groupToRemoveIndex = handlers.findIndex((group) => group.interceptor === interceptor);
-      removeArrayIndex(handlers, groupToRemoveIndex);
+    for (const methodHandlers of Object.values(this.httpHandlersByMethod)) {
+      const groupToRemoveIndex = methodHandlers.findIndex((group) => group.interceptor === interceptor);
+      removeArrayIndex(methodHandlers, groupToRemoveIndex);
     }
   }
 
