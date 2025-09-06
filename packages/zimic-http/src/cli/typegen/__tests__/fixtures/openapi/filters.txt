@@ -4,7 +4,7 @@ POST /*
 * /users/**/*
 !PATCH /users/:userId
 
-DELETE /notifications # This is a comment too
+GET, DELETE /notifications # This is a comment too
 #Also a comment
 
 invalid filter line

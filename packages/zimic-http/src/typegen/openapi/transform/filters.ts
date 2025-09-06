@@ -26,7 +26,12 @@ export function parseRawFilter(rawFilter: string): TypePathFilter | undefined {
   }
 
   return {
-    methodPattern: new RegExp(`(?:${filteredMethodsOrWildcard.toUpperCase().replace(/,/g, '|').replace(/\*/g, '.*')})`),
+    methodPattern: new RegExp(
+      `(?:${filteredMethodsOrWildcard
+        .toUpperCase()
+        .replace(/\s*,\s*/g, '|')
+        .replace(/\*/g, '.*')})`,
+    ),
     pathPattern: createWildcardPathPattern(filteredPath),
     isNegativeMatch: filterModifier === '!',
   };

@@ -104,6 +104,16 @@ paths:
                 $ref: '#/components/schemas/Users'
 
   /notifications:
+    post:
+      operationId: createNotification
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+
     get:
       operationId: getNotifications
       parameters:
