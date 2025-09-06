@@ -69,10 +69,10 @@ cd zimic
 
 ### 3. Install dependencies
 
-Install the project dependencies using [pnpm](https://pnpm.io).
+Install the project dependencies using [pnpm](https://pnpm.io) and build our internal packages:
 
 ```bash
-pnpm install
+pnpm run setup
 ```
 
 > [!NOTE]
