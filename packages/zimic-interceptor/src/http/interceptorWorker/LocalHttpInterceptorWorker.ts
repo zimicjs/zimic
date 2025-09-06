@@ -215,7 +215,6 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
     for (let handlerIndex = methodHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
       const handler = methodHandlers[handlerIndex];
-
       const matchesBaseURL = requestURLAsString.startsWith(handler.baseURL);
 
       if (!matchesBaseURL) {
