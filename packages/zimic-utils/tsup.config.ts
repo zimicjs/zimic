@@ -32,10 +32,11 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
     'time/waitFor': 'src/time/waitFor.ts',
     'time/waitForNot': 'src/time/waitForNot.ts',
     'time/waitForDelay': 'src/time/waitForDelay.ts',
-    'url/createPathRegExp': 'src/url/createPathRegExp.ts',
+    'url/createParametrizedPathPattern': 'src/url/createParametrizedPathPattern.ts',
+    'url/createWildcardPathPattern': 'src/url/createWildcardPathPattern.ts',
     'url/excludeURLParams': 'src/url/excludeURLParams.ts',
     'url/joinURL': 'src/url/joinURL.ts',
-    'url/validateURLPathParams': 'src/url/validateURLPathParams.ts',
+    'url/validatePathParams': 'src/url/validatePathParams.ts',
     'url/validateURLProtocol': 'src/url/validateURLProtocol.ts',
   },
 }));

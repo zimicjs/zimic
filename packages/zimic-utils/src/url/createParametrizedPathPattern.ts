@@ -1,48 +1,38 @@
-function getLeadingOrTrailingSlashPattern() {
+export function getLeadingOrTrailingSlashPattern() {
   return /^\/+|\/+$/g;
 }
 
-function getExtraPatternsToEscape() {
+export function getExtraPatternsToEscape() {
   return /([.(){}+$])/g;
 }
 
-function getURIEncodedBackSlashColorPattern() {
+export function getURIEncodedBackSlashPattern() {
   return /%5C:/g;
 }
 
+// Path params names must match the JavaScript identifier pattern.
+// See // https://developer.mozilla.org/docs/Web/JavaScript/Reference/Lexical_grammar#identifiers.
 export function getPathParamPattern() {
   return /(?<escape>\\)?:(?<identifier>[$_\p{ID_Start}][$\p{ID_Continue}]+)/gu;
 }
 
-function getRepeatingPathParamPattern() {
+export function getRepeatingPathParamPattern() {
   return /(?<escape>\\)?:(?<identifier>[$_\p{ID_Start}][$\p{ID_Continue}]+)\\+/gu;
 }
 
-function getOptionalPathParamPattern() {
+export function getOptionalPathParamPattern() {
   return /(?<leadingSlash>\/)?(?<escape>\\)?:(?<identifier>[$_\p{ID_Start}][$\p{ID_Continue}]+)\?(?<trailingSlash>\/)?/gu;
 }
 
-function getOptionalRepeatingPathParamPattern() {
+export function getOptionalRepeatingPathParamPattern() {
   return /(?<leadingSlash>\/)?(?<escape>\\)?:(?<identifier>[$_\p{ID_Start}][$\p{ID_Continue}]+)\*(?<trailingSlash>\/)?/gu;
 }
 
-function getSingleWildcardPattern() {
-  return /(?<wildcardPrefix>^|[^*])\*(?<wildcardSuffix>[^*]|$)/g;
-}
-
-function getDoubleWildcardPattern() {
-  return /\*\*/g;
-}
-
-function getTripleWildcardPattern() {
-  return /\*\*\/\*(?<wildcardSuffix>[^*]|$)/g;
-}
-
-function createPathRegExp(path: string) {
+function createParametrizedPathPattern(path: string) {
   const replacedURL = encodeURI(path)
     .replace(getLeadingOrTrailingSlashPattern(), '')
     .replace(getExtraPatternsToEscape(), '\\$1')
-    .replace(getURIEncodedBackSlashColorPattern(), '\\:')
+    .replace(getURIEncodedBackSlashPattern(), '\\:')
     .replace(
       getOptionalRepeatingPathParamPattern(),
       (
@@ -56,14 +46,14 @@ function createPathRegExp(path: string) {
           return `:${identifier}`;
         }
 
-        const hasNoSegmentBeforePrefix = leadingSlash === '/';
-        const prefixExpression = hasNoSegmentBeforePrefix ? '/?' : leadingSlash;
+        const hasSegmentBeforePrefix = leadingSlash === '/';
+        const prefixExpression = hasSegmentBeforePrefix ? '/?' : leadingSlash;
 
-        const hasNoSegmentAfterSuffix = trailingSlash === '/';
-        const suffixExpression = hasNoSegmentAfterSuffix ? '/?' : trailingSlash;
+        const hasSegmentAfterSuffix = trailingSlash === '/';
+        const suffixExpression = hasSegmentAfterSuffix ? '/?' : trailingSlash;
 
         if (prefixExpression && suffixExpression) {
-          return `(?:${prefixExpression === '/' ? '/?' : prefixExpression}(?<${identifier}>.+?)${suffixExpression})?`;
+          return `(?:${prefixExpression}(?<${identifier}>.+?)?${suffixExpression})?`;
         } else if (prefixExpression) {
           return `(?:${prefixExpression}(?<${identifier}>.+?))?`;
         } else if (suffixExpression) {
@@ -96,7 +86,7 @@ function createPathRegExp(path: string) {
         const suffixExpression = hasNoSegmentAfterSuffix ? '/?' : trailingSlash;
 
         if (prefixExpression && suffixExpression) {
-          return `(?:${prefixExpression === '/' ? '/?' : prefixExpression}(?<${identifier}>[^\\/]+?)${suffixExpression})?`;
+          return `(?:${prefixExpression}(?<${identifier}>[^\\/]+?)?${suffixExpression})`;
         } else if (prefixExpression) {
           return `(?:${prefixExpression}(?<${identifier}>[^\\/]+?))?`;
         } else if (suffixExpression) {
@@ -108,12 +98,9 @@ function createPathRegExp(path: string) {
     )
     .replace(getPathParamPattern(), (_match, escape: string | undefined, identifier: string) => {
       return escape ? `:${identifier}` : `(?<${identifier}>[^\\/]+?)`;
-    })
-    .replace(getTripleWildcardPattern(), '**')
-    .replace(getSingleWildcardPattern(), '$1[^/]*$2')
-    .replace(getDoubleWildcardPattern(), '.*');
+    });
 
   return new RegExp(`^/?${replacedURL}/?$`);
 }
 
-export default createPathRegExp;
+export default createParametrizedPathPattern;

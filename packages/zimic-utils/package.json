@@ -127,11 +127,17 @@
       "require": "./dist/time/waitForDelay.js",
       "default": "./dist/time/waitForDelay.js"
     },
-    "./url/createPathRegExp": {
-      "types": "./url/createPathRegExp.d.ts",
-      "import": "./dist/url/createPathRegExp.mjs",
-      "require": "./dist/url/createPathRegExp.js",
-      "default": "./dist/url/createPathRegExp.js"
+    "./url/createParametrizedPathPattern": {
+      "types": "./url/createParametrizedPathPattern.d.ts",
+      "import": "./dist/url/createParametrizedPathPattern.mjs",
+      "require": "./dist/url/createParametrizedPathPattern.js",
+      "default": "./dist/url/createParametrizedPathPattern.js"
+    },
+    "./url/createWildcardPathPattern": {
+      "types": "./url/createWildcardPathPattern.d.ts",
+      "import": "./dist/url/createWildcardPathPattern.mjs",
+      "require": "./dist/url/createWildcardPathPattern.js",
+      "default": "./dist/url/createWildcardPathPattern.js"
     },
     "./url/excludeURLParams": {
       "types": "./url/excludeURLParams.d.ts",
@@ -145,11 +151,11 @@
       "require": "./dist/url/joinURL.js",
       "default": "./dist/url/joinURL.js"
     },
-    "./url/validateURLPathParams": {
-      "types": "./url/validateURLPathParams.d.ts",
-      "import": "./dist/url/validateURLPathParams.mjs",
-      "require": "./dist/url/validateURLPathParams.js",
-      "default": "./dist/url/validateURLPathParams.js"
+    "./url/validatePathParams": {
+      "types": "./url/validatePathParams.d.ts",
+      "import": "./dist/url/validatePathParams.mjs",
+      "require": "./dist/url/validatePathParams.js",
+      "default": "./dist/url/validatePathParams.js"
     },
     "./url/validateURLProtocol": {
       "types": "./url/validateURLProtocol.d.ts",

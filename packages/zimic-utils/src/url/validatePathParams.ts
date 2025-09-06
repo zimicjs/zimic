@@ -1,4 +1,4 @@
-import { getPathParamPattern } from './createPathRegExp';
+import { getPathParamPattern } from './createParametrizedPathPattern';
 
 export class DuplicatedPathParamError extends Error {
   constructor(path: string, paramName: string) {
@@ -11,12 +11,12 @@ export class DuplicatedPathParamError extends Error {
 }
 
 function validatePathParams(path: string) {
-  const matches = path.toString().matchAll(getPathParamPattern());
+  const pathParamMatches = path.toString().matchAll(getPathParamPattern());
 
   const uniqueParamNames = new Set<string>();
 
-  for (const match of matches) {
-    const paramName = match.groups?.identifier;
+  for (const paramMatch of pathParamMatches) {
+    const paramName = paramMatch.groups?.identifier;
 
     if (!paramName) {
       continue;
