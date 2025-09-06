@@ -1,5 +1,5 @@
 import isNonEmpty from '@zimic/utils/data/isNonEmpty';
-import createPathRegExp from '@zimic/utils/url/createPathRegExp';
+import createWildcardPathPattern from '@zimic/utils/url/createWildcardPathPattern';
 import filesystem from 'fs/promises';
 import path from 'path';
 import color from 'picocolors';
@@ -27,7 +27,7 @@ export function parseRawFilter(rawFilter: string): TypePathFilter | undefined {
 
   return {
     methodPattern: new RegExp(`(?:${filteredMethodsOrWildcard.toUpperCase().replace(/,/g, '|').replace(/\*/g, '.*')})`),
-    pathPattern: createPathRegExp(filteredPath),
+    pathPattern: createWildcardPathPattern(filteredPath),
     isNegativeMatch: filterModifier === '!',
   };
 }
