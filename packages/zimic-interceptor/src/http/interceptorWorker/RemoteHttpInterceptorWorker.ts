@@ -1,6 +1,5 @@
-import { HttpResponse, HttpMethod, HttpSchema } from '@zimic/http';
-import excludeURLParams from '@zimic/utils/url/excludeURLParams';
-import validateURLPathParams from '@zimic/utils/url/validateURLPathParams';
+import { HttpMethod, HttpSchema } from '@zimic/http';
+import validatePathParams from '@zimic/utils/url/validatePathParams';
 
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/types/schema';
 import { importCrypto } from '@/utils/crypto';
@@ -14,15 +13,17 @@ import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHt
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import { HttpInterceptorPlatform } from '../interceptor/types/options';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
-import { MSWHttpResponseFactory, MSWHttpResponseFactoryContext } from './types/msw';
+import { HttpResponseFactoryContext } from './types/http';
+import { MSWHttpResponseFactory } from './types/msw';
 import { RemoteHttpInterceptorWorkerOptions } from './types/options';
 
 interface HttpHandler {
   id: string;
-  url: { base: string; full: string };
+  baseURL: string;
   method: HttpMethod;
+  path: string;
   interceptor: AnyHttpInterceptorClient;
-  createResponse: (context: MSWHttpResponseFactoryContext) => Promise<HttpResponse | null>;
+  createResponse: (context: HttpResponseFactoryContext) => Promise<Response | null>;
 }
 
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
@@ -132,26 +133,22 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   async use<Schema extends HttpSchema>(
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
-    rawURL: string | URL,
+    path: string,
     createResponse: MSWHttpResponseFactory,
   ) {
     if (!this.isRunning) {
       throw new NotRunningHttpInterceptorError();
     }
 
-    const crypto = await importCrypto();
+    validatePathParams(path);
 
-    const url = new URL(rawURL);
-    excludeURLParams(url);
-    validateURLPathParams(url);
+    const crypto = await importCrypto();
 
     const handler: HttpHandler = {
       id: crypto.randomUUID(),
-      url: {
-        base: interceptor.baseURLAsString,
-        full: url.toString(),
-      },
+      baseURL: interceptor.baseURLAsString,
       method,
+      path,
       interceptor,
       async createResponse(context) {
         const response = await createResponse(context);
@@ -163,8 +160,9 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     await this.webSocketClient.request('interceptors/workers/commit', {
       id: handler.id,
-      url: handler.url,
-      method,
+      baseURL: handler.baseURL,
+      method: handler.method,
+      path: handler.path,
     });
   }
 
@@ -194,8 +192,9 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     if (this.webSocketClient.isRunning) {
       const groupsToRecommit = Array.from<HttpHandler, HttpHandlerCommit>(this.httpHandlers.values(), (handler) => ({
         id: handler.id,
-        url: handler.url,
+        baseURL: handler.baseURL,
         method: handler.method,
+        path: handler.path,
       }));
 
       await this.webSocketClient.request('interceptors/workers/reset', groupsToRecommit);

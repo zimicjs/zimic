@@ -61,6 +61,16 @@ export interface MyServiceOperations {
       };
     };
   };
+  createNotification: {
+    response: {
+      200: {
+        headers: {
+          'content-type': 'application/json';
+        };
+        body: MyServiceComponents['schemas']['Notification'];
+      };
+    };
+  };
   deleteNotifications: {
     request: {
       headers: {

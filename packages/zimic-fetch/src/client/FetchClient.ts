@@ -6,7 +6,7 @@ import {
   HttpSchema,
   HttpHeaders,
 } from '@zimic/http';
-import createRegexFromURL from '@zimic/utils/url/createRegExpFromURL';
+import createParametrizedPathPattern from '@zimic/utils/url/createParametrizedPathPattern';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import joinURL from '@zimic/utils/url/joinURL';
 
@@ -238,7 +238,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'def
       request.method === method &&
       'path' in request &&
       typeof request.path === 'string' &&
-      createRegexFromURL(path).test(request.path)
+      createParametrizedPathPattern(path).test(request.path)
     );
   }
 
