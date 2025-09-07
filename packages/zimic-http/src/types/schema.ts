@@ -253,11 +253,13 @@ type OptionalPathParamModifier = '?' | '*';
 
 type ConvertPathParamToRecord<PathParam extends string> = PathParam extends `${infer PathParamWithoutSlash}/`
   ? ConvertPathParamToRecord<PathParamWithoutSlash>
-  : PathParam extends `${infer PathParamWithoutModifier}${OptionalPathParamModifier}`
-    ? { [Name in PathParamWithoutModifier]?: string }
-    : PathParam extends `${infer PathParamWithoutModifier}${RepeatingPathParamModifier}`
-      ? { [Name in PathParamWithoutModifier]: string }
-      : { [Name in PathParam]: string };
+  : PathParam extends `${infer PathParamWithoutSlash}\\:`
+    ? ConvertPathParamToRecord<PathParamWithoutSlash>
+    : PathParam extends `${infer PathParamWithoutModifier}${OptionalPathParamModifier}`
+      ? { [Name in PathParamWithoutModifier]?: string }
+      : PathParam extends `${infer PathParamWithoutModifier}${RepeatingPathParamModifier}`
+        ? { [Name in PathParamWithoutModifier]: string }
+        : { [Name in PathParam]: string };
 
 type RecursiveInferPathParams<Path extends string> = Path extends `${infer Prefix}:${infer PathParamWithRemainingPath}`
   ? PathParamWithRemainingPath extends `${infer PathParam}/${infer RemainingPath}`
@@ -287,23 +289,33 @@ export type InferPathParams<
   >
 >;
 
+type WithoutEscapedColons<Path extends string> = Path extends `${infer Prefix}\\:${infer Suffix}`
+  ? WithoutEscapedColons<`${Prefix}:${Suffix}`>
+  : Path;
+
+type ConvertPathParamToString<PathParam extends string> = PathParam extends `${infer PathParamWithoutSlash}/`
+  ? `${ConvertPathParamToString<PathParamWithoutSlash>}/`
+  : PathParam extends `${infer PathParamWithoutSlash}\\:`
+    ? `${ConvertPathParamToString<PathParamWithoutSlash>}:`
+    : string;
+
 export type AllowAnyStringInPathParams<Path extends string> =
   Path extends `${infer Prefix}:${infer PathParamWithRemainingPath}`
     ? PathParamWithRemainingPath extends `${infer PathParam}/${infer RemainingPath}`
-      ? Prefix extends `${string}\\`
-        ? `${Prefix}:${PathParam}/${AllowAnyStringInPathParams<RemainingPath>}`
-        : `${Prefix}${string}/${AllowAnyStringInPathParams<RemainingPath>}`
+      ? Prefix extends `${infer PrefixPrefix}\\`
+        ? `${PrefixPrefix}:${AllowAnyStringInPathParams<PathParamWithRemainingPath>}`
+        : `${Prefix}${ConvertPathParamToString<PathParam>}/${AllowAnyStringInPathParams<RemainingPath>}`
       : PathParamWithRemainingPath extends `${infer PathParam}\\:${infer RemainingPath}`
-        ? Prefix extends `${string}\\`
-          ? `${Prefix}:${PathParam}\\:${AllowAnyStringInPathParams<`\\:${RemainingPath}`>}`
-          : `${Prefix}${string}\\:${AllowAnyStringInPathParams<`\\:${RemainingPath}`>}`
+        ? Prefix extends `${infer PrefixPrefix}\\`
+          ? `${PrefixPrefix}:${AllowAnyStringInPathParams<PathParamWithRemainingPath>}`
+          : `${Prefix}${ConvertPathParamToString<PathParam>}:${AllowAnyStringInPathParams<RemainingPath>}`
         : PathParamWithRemainingPath extends `${infer PathParam}:${infer RemainingPath}`
-          ? Prefix extends `${string}\\`
-            ? `${Prefix}:${PathParam}:${AllowAnyStringInPathParams<`:${RemainingPath}`>}`
-            : `${Prefix}${string}:${AllowAnyStringInPathParams<`:${RemainingPath}`>}`
-          : Prefix extends `${string}\\`
-            ? `${Prefix}:${PathParamWithRemainingPath}`
-            : `${Prefix}${string}`
+          ? Prefix extends `${infer PrefixPrefix}\\`
+            ? `${PrefixPrefix}:${AllowAnyStringInPathParams<PathParamWithRemainingPath>}`
+            : `${Prefix}${ConvertPathParamToString<PathParam>}${AllowAnyStringInPathParams<`:${RemainingPath}`>}`
+          : Prefix extends `${infer PrefixPrefix}\\`
+            ? `${PrefixPrefix}:${PathParamWithRemainingPath}`
+            : `${Prefix}${ConvertPathParamToString<PathParamWithRemainingPath>}`
     : Path;
 
 /** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemapath `HttpSchemaPath` API reference} */
@@ -316,13 +328,13 @@ export namespace HttpSchemaPath {
   export type Literal<
     Schema extends HttpSchema,
     Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
-  > = LooseLiteral<Schema, Method>;
+  > = WithoutEscapedColons<LooseLiteral<Schema, Method>>;
 
   /** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemapathnonliteral `HttpSchemaPath.NonLiteral` API reference} */
   export type NonLiteral<
     Schema extends HttpSchema,
     Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
-  > = AllowAnyStringInPathParams<Literal<Schema, Method>>;
+  > = AllowAnyStringInPathParams<LooseLiteral<Schema, Method>>;
 }
 
 export type HttpSchemaPath<

@@ -76,11 +76,11 @@ function createParametrizedPathPattern(path: string) {
           return `:${identifier}`;
         }
 
-        const hasNoSegmentBeforePrefix = leadingSlash === '/';
-        const prefixExpression = hasNoSegmentBeforePrefix ? '/?' : leadingSlash;
+        const hasSegmentBeforePrefix = leadingSlash === '/';
+        const prefixExpression = hasSegmentBeforePrefix ? '/?' : leadingSlash;
 
-        const hasNoSegmentAfterSuffix = trailingSlash === '/';
-        const suffixExpression = hasNoSegmentAfterSuffix ? '/?' : trailingSlash;
+        const hasSegmentAfterSuffix = trailingSlash === '/';
+        const suffixExpression = hasSegmentAfterSuffix ? '/?' : trailingSlash;
 
         if (prefixExpression && suffixExpression) {
           return `(?:${prefixExpression}(?<${identifier}>[^\\/]+?)?${suffixExpression})`;
