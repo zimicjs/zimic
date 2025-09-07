@@ -328,13 +328,13 @@ export namespace HttpSchemaPath {
   export type Literal<
     Schema extends HttpSchema,
     Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
-  > = WithoutEscapedColons<LooseLiteral<Schema, Method>>;
+  > = LooseLiteral<Schema, Method>;
 
   /** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemapathnonliteral `HttpSchemaPath.NonLiteral` API reference} */
   export type NonLiteral<
     Schema extends HttpSchema,
     Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
-  > = AllowAnyStringInPathParams<LooseLiteral<Schema, Method>>;
+  > = WithoutEscapedColons<AllowAnyStringInPathParams<LooseLiteral<Schema, Method>>>;
 }
 
 export type HttpSchemaPath<
