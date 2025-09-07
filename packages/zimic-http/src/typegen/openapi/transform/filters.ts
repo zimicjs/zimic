@@ -20,18 +20,14 @@ export function parseRawFilter(rawFilter: string): TypePathFilter | undefined {
   const { modifier: filterModifier, method: filteredMethodsOrWildcard, path: filteredPath } = filterMatch?.groups ?? {};
 
   const isValidFilter = !filteredMethodsOrWildcard || !filteredPath;
+
   if (isValidFilter) {
     logger.warn(`Warning: Filter could not be parsed and was ignored: ${color.yellow(rawFilter)}`);
     return undefined;
   }
 
   return {
-    methodPattern: new RegExp(
-      `(?:${filteredMethodsOrWildcard
-        .toUpperCase()
-        .replace(/\s*,\s*/g, '|')
-        .replace(/\*/g, '.*')})`,
-    ),
+    methodPattern: new RegExp(`(?:${filteredMethodsOrWildcard.toUpperCase().replace(/,/g, '|').replace(/\*/g, '.*')})`),
     pathPattern: createWildcardPathPattern(filteredPath),
     isNegativeMatch: filterModifier === '!',
   };
