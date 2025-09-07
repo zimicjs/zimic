@@ -3,7 +3,7 @@ export function getExtraPatternsToEscape() {
 }
 
 export function getURIEncodedBackSlashPattern() {
-  return /%5C:/g;
+  return /%5C/g;
 }
 
 // Path params names must match the JavaScript identifier pattern.
@@ -29,7 +29,7 @@ function createParametrizedPathPattern(path: string) {
     .replace(/^\/+/g, '')
     .replace(/\/+$/g, '')
     .replace(getExtraPatternsToEscape(), '\\$1')
-    .replace(getURIEncodedBackSlashPattern(), '\\:')
+    .replace(getURIEncodedBackSlashPattern(), '\\')
     .replace(
       getOptionalRepeatingPathParamPattern(),
       (

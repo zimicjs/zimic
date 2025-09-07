@@ -335,9 +335,89 @@ describe('createPathRegExp', () => {
     { path: '/path/**/other/**', input: 'other/path/other', matches: false },
     { path: '/path/**/other/**', input: 'path/other/other/other', matches: true },
     { path: '/path/**/other/**', input: 'path/other/other/other/other', matches: true },
+
+    // Paths with escaped wildcards
+    { path: '\\*', input: '*', matches: true },
+    { path: '\\*', input: '', matches: false },
+
+    { path: '/\\*', input: '/*', matches: true },
+    { path: '/\\*', input: '', matches: false },
+
+    { path: '\\*/', input: '*/', matches: true },
+    { path: '\\*/', input: '', matches: false },
+
+    { path: '/\\*/', input: '/*/', matches: true },
+    { path: '/\\*/', input: '', matches: false },
+
+    { path: '/path/\\*', input: '/path/*', matches: true },
+    { path: '/path/\\*', input: '/path/other', matches: false },
+
+    { path: '/path\\*', input: '/path*', matches: true },
+    { path: '/path\\*', input: '/path-other', matches: false },
+
+    { path: '/\\*path\\*', input: '/*path*', matches: true },
+    { path: '/\\*path\\*', input: '/other-path-other', matches: false },
+
+    { path: '/\\*path', input: '/*path', matches: true },
+    { path: '/\\*path', input: '/other-path', matches: false },
+
+    { path: '/path/\\*/other', input: '/path/*/other', matches: true },
+    { path: '/path/\\*/other', input: '/path/other/other', matches: false },
+
+    { path: '/path/\\*/other/\\*', input: '/path/*/other/*', matches: true },
+    { path: '/path/\\*/other/\\*', input: '/path/other/other/other', matches: false },
+
+    { path: '\\**', input: '**', matches: true },
+    { path: '\\**', input: '', matches: false },
+    { path: '\\**', input: 'path', matches: false },
+    { path: '\\**', input: 'path/other', matches: false },
+
+    { path: '/\\**', input: '/**', matches: true },
+    { path: '/\\**', input: '', matches: false },
+    { path: '/\\**', input: 'path', matches: false },
+    { path: '/\\**', input: 'path/other', matches: false },
+
+    { path: '\\**/', input: '**/', matches: true },
+    { path: '\\**/', input: '', matches: false },
+    { path: '\\**/', input: 'path', matches: false },
+    { path: '\\**/', input: 'path/other', matches: false },
+
+    { path: '/\\**/', input: '/**/', matches: true },
+    { path: '/\\**/', input: '', matches: false },
+    { path: '/\\**/', input: 'path', matches: false },
+    { path: '/\\**/', input: 'path/other', matches: false },
+
+    { path: '\\**/\\*', input: '**/*', matches: true },
+    { path: '\\**/\\*', input: '', matches: false },
+    { path: '\\**/\\*', input: 'path', matches: false },
+    { path: '\\**/\\*', input: 'path/other', matches: false },
+
+    { path: '/path/\\**', input: '/path/**', matches: true },
+    { path: '/path/\\**', input: '/path', matches: false },
+    { path: '/path/\\**', input: '/path/other', matches: false },
+
+    { path: '/path\\**', input: '/path**', matches: true },
+    { path: '/path\\**', input: '/path-other', matches: false },
+    { path: '/path\\**', input: '/path/other', matches: false },
+
+    { path: '/\\**path\\**', input: '/**path**', matches: true },
+    { path: '/\\**path\\**', input: '/other-path-other', matches: false },
+    { path: '/\\**path\\**', input: '/other/path/other', matches: false },
+
+    { path: '/\\**path', input: '/**path', matches: true },
+    { path: '/\\**path', input: '/other-path', matches: false },
+    { path: '/\\**path', input: '/other/path', matches: false },
+
+    { path: '/path/\\**/other', input: '/path/**/other', matches: true },
+    { path: '/path/\\**/other', input: '/path/other/other', matches: false },
+    { path: '/path/\\**/other', input: '/path/other/other/other', matches: false },
+
+    { path: '/path/\\**/other/\\**', input: '/path/**/other/**', matches: true },
+    { path: '/path/\\**/other/\\**', input: '', matches: false },
+    { path: '/path/\\**/other/\\**', input: '/path/other/other/other/other', matches: false },
+    { path: '/path/\\**/other/\\**', input: '/path/other/other/other/other/other', matches: false },
   ])('should create a correct regular expression from a path pattern (path: $path, input: $input)', (testCase) => {
     const expression = createWildcardPathPattern(testCase.path);
-
     const result = expression.exec(testCase.input);
 
     if (testCase.matches) {

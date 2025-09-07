@@ -1,15 +1,15 @@
 import { getExtraPatternsToEscape, getURIEncodedBackSlashPattern } from './createParametrizedPathPattern';
 
 function getSingleWildcardPattern() {
-  return /(?<wildcardPrefix>^|[^*])\*(?<wildcardSuffix>[^*]|$)/g;
+  return /(?<wildcardPrefix>^|[^*])(?<escape>\\)?\*(?<wildcardSuffix>[^*]|$)/g;
 }
 
 function getDoubleWildcardPattern() {
-  return /\*\*/g;
+  return /(?<escape>\\)?\*\*/g;
 }
 
 function getTripleWildcardPattern() {
-  return /\*\*\/\*(?<wildcardSuffix>[^*]|$)/g;
+  return /(?<escape>\\)?\*\*\/\*(?<wildcardSuffix>[^*]|$)/g;
 }
 
 function createWildcardPathPattern(path: string) {
@@ -17,10 +17,19 @@ function createWildcardPathPattern(path: string) {
     .replace(/^\/+/g, '')
     .replace(/\/+$/g, '')
     .replace(getExtraPatternsToEscape(), '\\$1')
-    .replace(getURIEncodedBackSlashPattern(), '\\:')
-    .replace(getTripleWildcardPattern(), '**')
-    .replace(getSingleWildcardPattern(), '$1[^/]*$2')
-    .replace(getDoubleWildcardPattern(), '.*');
+    .replace(getURIEncodedBackSlashPattern(), '\\')
+    .replace(getTripleWildcardPattern(), (_match, escape: string | undefined, wildcardSuffix: string) => {
+      return escape === '\\' ? `\\*\\*/\\*${wildcardSuffix}` : `**${wildcardSuffix}`;
+    })
+    .replace(
+      getSingleWildcardPattern(),
+      (_match, wildcardPrefix: string, escape: string | undefined, wildcardSuffix: string) => {
+        return escape === '\\' ? `${wildcardPrefix}\\*${wildcardSuffix}` : `${wildcardPrefix}[^/]*${wildcardSuffix}`;
+      },
+    )
+    .replace(getDoubleWildcardPattern(), (_match, escape: string | undefined) => {
+      return escape === '\\' ? '\\*\\*' : '.*';
+    });
 
   return new RegExp(`^/?${replacedURL}/?$`);
 }

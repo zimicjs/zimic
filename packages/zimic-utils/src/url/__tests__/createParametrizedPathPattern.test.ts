@@ -475,7 +475,6 @@ describe('createPathRegExp', () => {
     { path: ':p1?/other/:p2+', input: 'other/v1-v2', matches: true, params: { p2: 'v1-v2' } },
   ])('should create a correct regular expression from a path pattern (path: $path, input: $input)', (testCase) => {
     const expression = createParametrizedPathPattern(testCase.path);
-
     const result = expression.exec(testCase.input);
 
     if (testCase.matches) {
