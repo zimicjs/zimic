@@ -1,6 +1,13 @@
 import { describe, expectTypeOf, it } from 'vitest';
 
-import { HttpSchema, HttpSchemaPath, HttpStatusCode, InferPathParams, MergeHttpResponsesByStatusCode } from '../schema';
+import {
+  HttpSchema,
+  HttpSchemaPath,
+  HttpStatusCode,
+  InferPathParams,
+  LiteralHttpSchemaPathFromNonLiteral,
+  MergeHttpResponsesByStatusCode,
+} from '../schema';
 
 describe('Schema types', () => {
   interface User {
@@ -81,9 +88,9 @@ describe('Schema types', () => {
         | '/users/:userId'
         | '/users/:userId/notifications/:notificationId'
         | '/drives/:driveId:filePath*'
-        | '/drives/:driveId:/:filePath+'
-        | '/drives/:driveId/:root'
-        | '/drives/:driveId/:root/:children:filePath+'
+        | '/drives/:driveId\\:/:filePath+'
+        | '/drives/:driveId/\\:root'
+        | '/drives/:driveId/\\:root/\\:children:filePath+'
       >();
 
       expectTypeOf<HttpSchemaPath.Literal<Schema, 'DELETE'>>().toEqualTypeOf<'/users/:userId'>();
@@ -101,6 +108,52 @@ describe('Schema types', () => {
       >();
 
       expectTypeOf<HttpSchemaPath.NonLiteral<Schema, 'DELETE'>>().toEqualTypeOf<`/users/${string}`>();
+    });
+
+    it('should support literal path inference from literal and non-literal path', () => {
+      expectTypeOf<LiteralHttpSchemaPathFromNonLiteral<Schema, 'POST', '/users'>>().toEqualTypeOf<'/users'>();
+
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'DELETE', '/users/:userId'>
+      >().toEqualTypeOf<'/users/:userId'>();
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'DELETE', `/users/${string}`>
+      >().toEqualTypeOf<'/users/:userId'>();
+
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'PATCH', '/users/:userId/notifications/:notificationId'>
+      >().toEqualTypeOf<'/users/:userId/notifications/:notificationId'>();
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'PATCH', `/users/${string}/notifications/${string}`>
+      >().toEqualTypeOf<'/users/:userId/notifications/:notificationId'>();
+
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'GET', '/drives/:driveId:filePath*'>
+      >().toEqualTypeOf<'/drives/:driveId:filePath*'>();
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'GET', `/drives/${string}${string}`>
+      >().toEqualTypeOf<'/drives/:driveId:filePath*'>();
+
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'GET', '/drives/:driveId:/:filePath+'>
+      >().toEqualTypeOf<'/drives/:driveId\\:/:filePath+'>();
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'GET', `/drives/${string}:/${string}`>
+      >().toEqualTypeOf<'/drives/:driveId\\:/:filePath+'>();
+
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'GET', '/drives/:driveId/:root'>
+      >().toEqualTypeOf<'/drives/:driveId/\\:root'>();
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'GET', `/drives/${string}/:root`>
+      >().toEqualTypeOf<'/drives/:driveId/\\:root'>();
+
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'GET', '/drives/:driveId/:root/:children:filePath+'>
+      >().toEqualTypeOf<'/drives/:driveId/\\:root/\\:children:filePath+'>();
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'GET', `/drives/${string}/:root/:children${string}`>
+      >().toEqualTypeOf<'/drives/:driveId/\\:root/\\:children:filePath+'>();
     });
   });
 
