@@ -29,7 +29,25 @@ describe('Schema types', () => {
       };
     };
 
-    '/files\\:/:filePath+': {
+    '/drives/:driveId:filePath*': {
+      GET: {
+        response: { 200: { body: Blob } };
+      };
+    };
+
+    '/drives/:driveId\\:/:filePath+': {
+      GET: {
+        response: { 200: { body: Blob } };
+      };
+    };
+
+    '/drives/:driveId/\\:root': {
+      GET: {
+        response: { 200: { body: Blob } };
+      };
+    };
+
+    '/drives/:driveId/\\:root/\\:children:filePath+': {
       GET: {
         response: { 200: { body: Blob } };
       };
@@ -44,8 +62,14 @@ describe('Schema types', () => {
         | `/users/${string}`
         | '/users/:userId/notifications/:notificationId'
         | `/users/${string}/notifications/${string}`
-        | '/files\\:/:filePath+'
-        | `/files\\:/${string}`
+        | '/drives/:driveId:filePath*'
+        | `/drives/${string}${string}`
+        | '/drives/:driveId:/:filePath+'
+        | `/drives/${string}:/${string}`
+        | '/drives/:driveId/:root'
+        | `/drives/${string}/:root`
+        | '/drives/:driveId/:root/:children:filePath+'
+        | `/drives/${string}/:root/:children${string}`
       >();
 
       expectTypeOf<HttpSchemaPath<Schema, 'DELETE'>>().toEqualTypeOf<'/users/:userId' | `/users/${string}`>();
@@ -53,7 +77,13 @@ describe('Schema types', () => {
 
     it('should extract the literal paths from a service schema', () => {
       expectTypeOf<HttpSchemaPath.Literal<Schema>>().toEqualTypeOf<
-        '/users' | '/users/:userId' | '/users/:userId/notifications/:notificationId' | '/files\\:/:filePath+'
+        | '/users'
+        | '/users/:userId'
+        | '/users/:userId/notifications/:notificationId'
+        | '/drives/:driveId:filePath*'
+        | '/drives/:driveId:/:filePath+'
+        | '/drives/:driveId/:root'
+        | '/drives/:driveId/:root/:children:filePath+'
       >();
 
       expectTypeOf<HttpSchemaPath.Literal<Schema, 'DELETE'>>().toEqualTypeOf<'/users/:userId'>();
@@ -61,7 +91,13 @@ describe('Schema types', () => {
 
     it('should extract the non-literal paths from a service schema', () => {
       expectTypeOf<HttpSchemaPath.NonLiteral<Schema>>().toEqualTypeOf<
-        '/users' | `/users/${string}` | `/users/${string}/notifications/${string}` | `/files\\:/${string}`
+        | '/users'
+        | `/users/${string}`
+        | `/users/${string}/notifications/${string}`
+        | `/drives/${string}${string}`
+        | `/drives/${string}:/${string}`
+        | `/drives/${string}/:root`
+        | `/drives/${string}/:root/:children${string}`
       >();
 
       expectTypeOf<HttpSchemaPath.NonLiteral<Schema, 'DELETE'>>().toEqualTypeOf<`/users/${string}`>();
@@ -179,6 +215,15 @@ describe('Schema types', () => {
         anotherId: string;
         otherId2: string;
         other: string;
+      }>();
+
+      expectTypeOf<InferPathParams<'/drives/:driveId:filePath*'>>().toEqualTypeOf<{
+        driveId: string;
+        filePath?: string;
+      }>();
+      expectTypeOf<InferPathParams<'/drives/:driveId\\:/:filePath+'>>().toEqualTypeOf<{
+        driveId: string;
+        filePath: string;
       }>();
     });
 
