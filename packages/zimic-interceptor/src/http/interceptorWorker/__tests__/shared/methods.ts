@@ -2,9 +2,6 @@ import { HttpResponse, HttpHeaders, HTTP_METHODS } from '@zimic/http';
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import waitForDelay from '@zimic/utils/time/waitForDelay';
 import { PossiblePromise } from '@zimic/utils/types';
-import createRegExpFromURL from '@zimic/utils/url/createRegExpFromURL';
-import joinURL from '@zimic/utils/url/joinURL';
-import { DuplicatedPathParamError } from '@zimic/utils/url/validateURLPathParams';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import NotRunningHttpInterceptorError from '@/http/interceptor/errors/NotRunningHttpInterceptorError';
@@ -17,17 +14,13 @@ import {
   usingHttpInterceptorWorker,
 } from '@tests/utils/interceptors';
 
-import HttpInterceptorWorker from '../../HttpInterceptorWorker';
-import { MSWHttpResponseFactoryContext } from '../../types/msw';
+import { HttpResponseFactoryContext } from '../../types/http';
 import { LocalHttpInterceptorWorkerOptions, RemoteHttpInterceptorWorkerOptions } from '../../types/options';
 import { promiseIfRemote } from '../utils/promises';
 import { SharedHttpInterceptorWorkerTestOptions } from './types';
 
 export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInterceptorWorkerTestOptions) {
   const { platform, defaultWorkerOptions, startServer, getBaseURL, stopServer } = options;
-
-  const responseStatus = 200;
-  const responseBody = { success: true };
 
   let baseURL: string;
   let workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions;
@@ -74,7 +67,10 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
       }
     }
 
-    function requestHandler(_context: MSWHttpResponseFactoryContext): PossiblePromise<HttpResponse | null> {
+    const responseStatus = 200;
+    const responseBody = { success: true };
+
+    function requestHandler(_context: HttpResponseFactoryContext): PossiblePromise<HttpResponse | null> {
       const response = Response.json(responseBody, {
         status: responseStatus,
         headers: defaultHeaders,
@@ -97,7 +93,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         const interceptor = createDefaultHttpInterceptor();
 
-        await promiseIfRemote(worker.use(interceptor.client, method, baseURL, spiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client, method, '', spiedRequestHandler), worker);
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
@@ -114,416 +110,12 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
       });
     });
 
-    const param1 = 'abc';
-    const param2 = '2';
-    const param3 = '3';
-
-    it.each([
-      {
-        use: ':param',
-        fetch: param1,
-        params: { param: param1 },
-      },
-      {
-        use: ':param',
-        fetch: param2,
-        params: { param: param2 },
-      },
-      {
-        use: param1,
-        fetch: param1,
-        params: {},
-      },
-
-      {
-        use: ':param',
-        fetch: `/${param1}`,
-        params: { param: param1 },
-      },
-      {
-        use: ':param',
-        fetch: `/${param2}`,
-        params: { param: param2 },
-      },
-      {
-        use: param1,
-        fetch: `/${param1}`,
-        params: {},
-      },
-
-      {
-        use: '/:param',
-        fetch: `/${param1}`,
-        params: { param: param1 },
-      },
-      {
-        use: '/:param',
-        fetch: `/${param2}`,
-        params: { param: param2 },
-      },
-      {
-        use: `/${param1}`,
-        fetch: `/${param1}`,
-        params: {},
-      },
-
-      {
-        use: '/:param',
-        fetch: param1,
-        params: { param: param1 },
-      },
-      {
-        use: '/:param',
-        fetch: param2,
-        params: { param: param2 },
-      },
-      {
-        use: `/${param1}`,
-        fetch: param1,
-        params: {},
-      },
-
-      {
-        use: '/other/path/:param',
-        fetch: `/other/path/${param1}`,
-        params: { param: param1 },
-      },
-      {
-        use: '/other/path/:param',
-        fetch: `/other/path/${param2}`,
-        params: { param: param2 },
-      },
-      {
-        use: `/other/path/${param1}`,
-        fetch: `/other/path/${param1}`,
-        params: {},
-      },
-
-      {
-        use: '/other/:param/path',
-        fetch: `/other/${param1}/path`,
-        params: { param: param1 },
-      },
-      {
-        use: '/other/:param/path',
-        fetch: `/other/${param2}/path`,
-        params: { param: param2 },
-      },
-      {
-        use: `/other/${param1}/path`,
-        fetch: `/other/${param1}/path`,
-        params: {},
-      },
-
-      {
-        use: '/other/:param/path/:other',
-        fetch: `/other/${param1}/path/${param2}`,
-        params: { param: param1, other: param2 },
-      },
-      {
-        use: '/other/:param/path/:other',
-        fetch: `/other/${param2}/path/${param1}`,
-        params: { param: param2, other: param1 },
-      },
-      {
-        use: `/other/${param1}/path/${param2}`,
-        fetch: `/other/${param1}/path/${param2}`,
-        params: {},
-      },
-
-      {
-        use: '/:param/:other',
-        fetch: `/${param1}/${param2}`,
-        params: { param: param1, other: param2 },
-      },
-      {
-        use: '/:param/:other',
-        fetch: `/${param2}/${param1}`,
-        params: { param: param2, other: param1 },
-      },
-      {
-        use: `/${param1}/${param2}`,
-        fetch: `/${param1}/${param2}`,
-        params: {},
-      },
-
-      {
-        use: '/:param/:other/:another',
-        fetch: `/${param1}/${param2}/${param3}`,
-        params: { param: param1, other: param2, another: param3 },
-      },
-      {
-        use: '/:param/:other/:another',
-        fetch: `/${param2}/${param3}/${param1}`,
-        params: { param: param2, other: param3, another: param1 },
-      },
-      {
-        use: `/${param1}/${param2}/${param3}`,
-        fetch: `/${param1}/${param2}/${param3}`,
-        params: {},
-      },
-
-      {
-        use: '/:param/path/:other/:another/path',
-        fetch: `/${param1}/path/${param2}/${param3}/path`,
-        params: { param: param1, other: param2, another: param3 },
-      },
-      {
-        use: '/:param/path/:other/:another/path',
-        fetch: `/${param3}/path/${param2}/${param1}/path`,
-        params: { param: param3, other: param2, another: param1 },
-      },
-      {
-        use: `/${param1}/path/${param2}/${param3}/path`,
-        fetch: `/${param1}/path/${param2}/${param3}/path`,
-        params: {},
-      },
-    ])(`should intercept ${method} requests with matching dynamic paths (use $use; fetch $fetch)`, async (path) => {
-      const url = joinURL(baseURL, path.use);
-
-      await usingHttpInterceptorWorker(workerOptions, async (worker) => {
-        const interceptor = createDefaultHttpInterceptor();
-        await promiseIfRemote(worker.use(interceptor.client, method, url, spiedRequestHandler), worker);
-
-        expect(spiedRequestHandler).not.toHaveBeenCalled();
-
-        const urlExpectedToSucceed = joinURL(baseURL, path.fetch);
-        const response = await fetch(urlExpectedToSucceed, { method });
-
-        expect(spiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
-
-        const [handlerContext] = spiedRequestHandler.mock.calls[numberOfRequestsIncludingPreflight - 1];
-        expect(handlerContext.request).toBeInstanceOf(Request);
-        expect(handlerContext.request.method).toBe(method);
-
-        const urlRegex = createRegExpFromURL(url);
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest(handlerContext.request, { urlRegex });
-        expect(parsedRequest.pathParams).toEqual(path.params);
-
-        expect(response.status).toBe(200);
-        await expectMatchedBodyIfNotHead(response);
-      });
-    });
-
-    it.each([
-      {
-        use: '/:param',
-        fetch: `/${param1}/other`,
-      },
-      {
-        use: '/:param',
-        fetch: `/other/${param1}`,
-      },
-      {
-        use: `/${param1}`,
-        fetch: `/${param2}`,
-      },
-      {
-        use: `/${param1}`,
-        fetch: `/${param1}/other`,
-      },
-      {
-        use: `/${param1}`,
-        fetch: `/other/${param1}`,
-      },
-
-      {
-        use: '/other/path/:param',
-        fetch: `/other/path/${param1}/another`,
-      },
-      {
-        use: '/other/path/:param',
-        fetch: `/other/${param1}/path`,
-      },
-      {
-        use: `/other/path/${param1}`,
-        fetch: `/other/path/${param2}`,
-      },
-      {
-        use: `/other/path/${param1}`,
-        fetch: `/other/path/${param1}/another`,
-      },
-      {
-        use: `/other/path/${param1}`,
-        fetch: `/other/${param1}/path`,
-      },
-
-      {
-        use: '/other/:param/path',
-        fetch: `/other/${param1}/path/another`,
-      },
-      {
-        use: '/other/:param/path',
-        fetch: `/other/path/${param1}`,
-      },
-      {
-        use: `/other/${param1}/path`,
-        fetch: `/other/${param2}/path`,
-      },
-      {
-        use: `/other/${param1}/path`,
-        fetch: `/other/${param1}/path/another`,
-      },
-      {
-        use: `/other/${param1}/path`,
-        fetch: `/other/path/${param1}`,
-      },
-
-      {
-        use: '/other/:param/path/:other',
-        fetch: `/other/${param1}/path/${param2}/another`,
-      },
-      {
-        use: '/other/:param/path/:other',
-        fetch: `/other/${param1}/path`,
-      },
-      {
-        use: `/other/${param1}/path/${param2}`,
-        fetch: `/other/${param2}/path/${param1}`,
-      },
-      {
-        use: `/other/${param1}/path/${param2}`,
-        fetch: `/other/${param1}/path/${param2}/another`,
-      },
-      {
-        use: `/other/${param1}/path/${param2}`,
-        fetch: `/other/${param1}/path`,
-      },
-
-      {
-        use: '/:param/:other',
-        fetch: `/${param1}`,
-      },
-      {
-        use: '/:param/:other',
-        fetch: `/other/${param1}/${param2}/another`,
-      },
-      {
-        use: `/${param1}/${param2}`,
-        fetch: `/${param2}/${param1}`,
-      },
-      {
-        use: `/${param1}/${param2}`,
-        fetch: `/${param1}`,
-      },
-      {
-        use: `/${param1}/${param2}`,
-        fetch: `/other/${param1}/${param2}/another`,
-      },
-
-      {
-        use: '/:param/:other/:another',
-        fetch: `/${param1}/${param2}`,
-      },
-      {
-        use: '/:param/:other/:another',
-        fetch: `/${param1}/${param3}/other/another`,
-      },
-      {
-        use: `/${param1}/${param2}/${param3}`,
-        fetch: `/${param3}/${param2}/${param1}`,
-      },
-      {
-        use: `/${param1}/${param2}/${param3}`,
-        fetch: `/${param1}/${param2}`,
-      },
-      {
-        use: `/${param1}/${param2}/${param3}`,
-        fetch: `/${param1}/${param3}/other/another`,
-      },
-
-      {
-        use: '/:param/path/:other/:another/path',
-        fetch: `/${param1}/path/${param2}/path`,
-      },
-      {
-        use: '/:param/path/:other/:another/path',
-        fetch: '/path',
-      },
-      {
-        use: `/${param1}/path/${param2}/${param3}/path`,
-        fetch: `/${param3}/path/${param1}/${param2}/path`,
-      },
-      {
-        use: `/${param1}/path/${param2}/${param3}/path`,
-        fetch: `/${param1}/path/${param2}/path`,
-      },
-      {
-        use: `/${param1}/path/${param2}/${param3}/path`,
-        fetch: '/path',
-      },
-    ])(
-      `should not intercept ${method} requests with non-matching dynamic paths (use $use; fetch $fetch)`,
-      async (path) => {
-        const url = joinURL(baseURL, path.use);
-
-        await usingHttpInterceptorWorker(workerOptions, async (worker) => {
-          const interceptor = createDefaultHttpInterceptor();
-          await promiseIfRemote(worker.use(interceptor.client, method, url, spiedRequestHandler), worker);
-
-          expect(spiedRequestHandler).not.toHaveBeenCalled();
-
-          const urlExpectedToFail = joinURL(baseURL, path.fetch);
-
-          const responsePromise = fetch(urlExpectedToFail, { method });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else if (defaultWorkerOptions.type === 'local') {
-            await expectBypassedResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          expect(spiedRequestHandler).not.toHaveBeenCalled();
-        });
-      },
-    );
-
-    it.each([
-      { use: '/:param/:param', fetch: '/1/1', duplicatedParameter: 'param' },
-      { use: '/:param/:param/:param', fetch: '/1/1/1', duplicatedParameter: 'param' },
-      { use: '/:param/:other/:param', fetch: '/1/1/1', duplicatedParameter: 'param' },
-      { use: '/:param/:other/:param/:other', fetch: '/1/1/1/1', duplicatedParameter: 'param' },
-      { use: '/some/:other/path/:other', fetch: '/some/1/path/1', duplicatedParameter: 'other' },
-      { use: '/some/path/:other/:other', fetch: '/some/path/1/1', duplicatedParameter: 'other' },
-    ])(
-      `should throw an error if trying to use a ${method} url with duplicate dynamic path params (use $use)`,
-      async (paths) => {
-        const url = joinURL(baseURL, paths.use);
-
-        await usingHttpInterceptorWorker(workerOptions, async (worker) => {
-          const interceptor = createDefaultHttpInterceptor();
-
-          await expect(async () => {
-            await worker.use(interceptor.client, method, url, spiedRequestHandler);
-          }).rejects.toThrowError(new DuplicatedPathParamError(new URL(url), paths.duplicatedParameter));
-
-          expect(spiedRequestHandler).not.toHaveBeenCalled();
-
-          const urlExpectedToFail = joinURL(baseURL, paths.fetch);
-
-          const responsePromise = fetch(urlExpectedToFail, { method });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else if (defaultWorkerOptions.type === 'local') {
-            await expectBypassedResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          expect(spiedRequestHandler).not.toHaveBeenCalled();
-        });
-      },
-    );
-
     it(`should not intercept ${method} requests that resulted in no mocked response`, async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         const interceptor = createDefaultHttpInterceptor();
         const emptySpiedRequestHandler = vi.fn(requestHandler).mockImplementation(() => null);
 
-        await promiseIfRemote(worker.use(interceptor.client, method, baseURL, emptySpiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client, method, '', emptySpiedRequestHandler), worker);
 
         expect(emptySpiedRequestHandler).not.toHaveBeenCalled();
 
@@ -565,7 +157,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
           return requestHandler(context);
         });
 
-        await promiseIfRemote(worker.use(interceptor.client, method, baseURL, delayedSpiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client, method, '', delayedSpiedRequestHandler), worker);
 
         expect(delayedSpiedRequestHandler).not.toHaveBeenCalled();
 
@@ -592,7 +184,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
       await usingHttpInterceptorWorker(workerOptions, { start: false }, async (worker) => {
         const interceptor = createDefaultHttpInterceptor();
         await expect(async () => {
-          await worker.use(interceptor.client, method, baseURL, spiedRequestHandler);
+          await worker.use(interceptor.client, method, '', spiedRequestHandler);
         }).rejects.toThrowError(Error);
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
@@ -617,7 +209,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     it(`should not intercept ${method} requests after stopped`, async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         const interceptor = createDefaultHttpInterceptor();
-        await promiseIfRemote(worker.use(interceptor.client, method, baseURL, spiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client, method, '', spiedRequestHandler), worker);
 
         await worker.stop();
 
@@ -641,7 +233,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     it(`should clear all ${method} handlers after stopped`, async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         const interceptor = createDefaultHttpInterceptor();
-        await promiseIfRemote(worker.use(interceptor.client, method, baseURL, spiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client, method, '', spiedRequestHandler), worker);
 
         await worker.stop();
         await worker.start();
@@ -666,7 +258,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     it(`should not intercept ${method} requests having no handler after cleared`, async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         const interceptor = createDefaultHttpInterceptor();
-        await promiseIfRemote(worker.use(interceptor.client, method, baseURL, spiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client, method, '', spiedRequestHandler), worker);
 
         await promiseIfRemote(worker.clearHandlers(), worker);
 
@@ -682,7 +274,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-        await promiseIfRemote(worker.use(interceptor.client, method, baseURL, spiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client, method, '', spiedRequestHandler), worker);
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
@@ -711,7 +303,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         });
 
         const interceptor = createDefaultHttpInterceptor();
-        await promiseIfRemote(worker.use(interceptor.client, method, baseURL, okSpiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client, method, '', okSpiedRequestHandler), worker);
 
         let interceptorsWithHandlers = worker.interceptorsWithHandlers;
 
@@ -729,10 +321,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         expect(okHandlerContext.request.method).toBe(method);
 
         const otherInterceptor = createDefaultHttpInterceptor();
-        await promiseIfRemote(
-          worker.use(otherInterceptor.client, method, baseURL, noContentSpiedRequestHandler),
-          worker,
-        );
+        await promiseIfRemote(worker.use(otherInterceptor.client, method, '', noContentSpiedRequestHandler), worker);
 
         interceptorsWithHandlers = worker.interceptorsWithHandlers;
         expect(interceptorsWithHandlers).toHaveLength(2);
@@ -791,22 +380,8 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         const interceptor = createDefaultHttpInterceptor();
 
         await expect(async () => {
-          await worker.use(interceptor.client, method, baseURL, spiedRequestHandler);
+          await worker.use(interceptor.client, method, '', spiedRequestHandler);
         }).rejects.toThrowError(NotRunningHttpInterceptorError);
-      });
-    });
-
-    it(`should throw an error if trying to use ${method} with an invalid url`, () => {
-      const invalidURL = 'invalid';
-
-      return usingHttpInterceptorWorker(workerOptions, async (worker) => {
-        const interceptor = createDefaultHttpInterceptor();
-
-        await expect(async () => {
-          await worker.use(interceptor.client, method, invalidURL, spiedRequestHandler);
-        }).rejects.toThrowError(/Invalid URL/);
-
-        expect(spiedRequestHandler).not.toHaveBeenCalled();
       });
     });
   });

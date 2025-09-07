@@ -1,6 +1,13 @@
 import { describe, expectTypeOf, it } from 'vitest';
 
-import { HttpSchema, HttpSchemaPath, HttpStatusCode, InferPathParams, MergeHttpResponsesByStatusCode } from '../schema';
+import {
+  HttpSchema,
+  HttpSchemaPath,
+  HttpStatusCode,
+  InferPathParams,
+  LiteralHttpSchemaPathFromNonLiteral,
+  MergeHttpResponsesByStatusCode,
+} from '../schema';
 
 describe('Schema types', () => {
   interface User {
@@ -17,7 +24,7 @@ describe('Schema types', () => {
     };
 
     '/users/:userId': {
-      GET: {
+      DELETE: {
         response: { 200: { body: User } };
       };
     };
@@ -26,6 +33,30 @@ describe('Schema types', () => {
       PATCH: {
         request: { body: { read: boolean } };
         response: { 204: {} };
+      };
+    };
+
+    '/drives/:driveId:filePath*': {
+      GET: {
+        response: { 200: { body: Blob } };
+      };
+    };
+
+    '/drives/:driveId\\:/:filePath+': {
+      GET: {
+        response: { 200: { body: Blob } };
+      };
+    };
+
+    '/drives/:driveId/\\:root': {
+      GET: {
+        response: { 200: { body: Blob } };
+      };
+    };
+
+    '/drives/:driveId/\\:root/\\:children:filePath+': {
+      GET: {
+        response: { 200: { body: Blob } };
       };
     };
   }>;
@@ -38,25 +69,91 @@ describe('Schema types', () => {
         | `/users/${string}`
         | '/users/:userId/notifications/:notificationId'
         | `/users/${string}/notifications/${string}`
+        | '/drives/:driveId:filePath*'
+        | `/drives/${string}${string}`
+        | '/drives/:driveId:/:filePath+'
+        | `/drives/${string}:/${string}`
+        | '/drives/:driveId/:root'
+        | `/drives/${string}/:root`
+        | '/drives/:driveId/:root/:children:filePath+'
+        | `/drives/${string}/:root/:children${string}`
       >();
 
-      expectTypeOf<HttpSchemaPath<Schema, 'GET'>>().toEqualTypeOf<'/users/:userId' | `/users/${string}`>();
+      expectTypeOf<HttpSchemaPath<Schema, 'DELETE'>>().toEqualTypeOf<'/users/:userId' | `/users/${string}`>();
     });
 
     it('should extract the literal paths from a service schema', () => {
       expectTypeOf<HttpSchemaPath.Literal<Schema>>().toEqualTypeOf<
-        '/users' | '/users/:userId' | '/users/:userId/notifications/:notificationId'
+        | '/users'
+        | '/users/:userId'
+        | '/users/:userId/notifications/:notificationId'
+        | '/drives/:driveId:filePath*'
+        | '/drives/:driveId\\:/:filePath+'
+        | '/drives/:driveId/\\:root'
+        | '/drives/:driveId/\\:root/\\:children:filePath+'
       >();
 
-      expectTypeOf<HttpSchemaPath.Literal<Schema, 'GET'>>().toEqualTypeOf<'/users/:userId'>();
+      expectTypeOf<HttpSchemaPath.Literal<Schema, 'DELETE'>>().toEqualTypeOf<'/users/:userId'>();
     });
 
     it('should extract the non-literal paths from a service schema', () => {
       expectTypeOf<HttpSchemaPath.NonLiteral<Schema>>().toEqualTypeOf<
-        '/users' | `/users/${string}` | `/users/${string}/notifications/${string}`
+        | '/users'
+        | `/users/${string}`
+        | `/users/${string}/notifications/${string}`
+        | `/drives/${string}${string}`
+        | `/drives/${string}:/${string}`
+        | `/drives/${string}/:root`
+        | `/drives/${string}/:root/:children${string}`
       >();
 
-      expectTypeOf<HttpSchemaPath.NonLiteral<Schema, 'GET'>>().toEqualTypeOf<`/users/${string}`>();
+      expectTypeOf<HttpSchemaPath.NonLiteral<Schema, 'DELETE'>>().toEqualTypeOf<`/users/${string}`>();
+    });
+
+    it('should support literal path inference from literal and non-literal path', () => {
+      expectTypeOf<LiteralHttpSchemaPathFromNonLiteral<Schema, 'POST', '/users'>>().toEqualTypeOf<'/users'>();
+
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'DELETE', '/users/:userId'>
+      >().toEqualTypeOf<'/users/:userId'>();
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'DELETE', `/users/${string}`>
+      >().toEqualTypeOf<'/users/:userId'>();
+
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'PATCH', '/users/:userId/notifications/:notificationId'>
+      >().toEqualTypeOf<'/users/:userId/notifications/:notificationId'>();
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'PATCH', `/users/${string}/notifications/${string}`>
+      >().toEqualTypeOf<'/users/:userId/notifications/:notificationId'>();
+
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'GET', '/drives/:driveId:filePath*'>
+      >().toEqualTypeOf<'/drives/:driveId:filePath*'>();
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'GET', `/drives/${string}${string}`>
+      >().toEqualTypeOf<'/drives/:driveId:filePath*'>();
+
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'GET', '/drives/:driveId:/:filePath+'>
+      >().toEqualTypeOf<'/drives/:driveId\\:/:filePath+'>();
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'GET', `/drives/${string}:/${string}`>
+      >().toEqualTypeOf<'/drives/:driveId\\:/:filePath+'>();
+
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'GET', '/drives/:driveId/:root'>
+      >().toEqualTypeOf<'/drives/:driveId/\\:root'>();
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'GET', `/drives/${string}/:root`>
+      >().toEqualTypeOf<'/drives/:driveId/\\:root'>();
+
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'GET', '/drives/:driveId/:root/:children:filePath+'>
+      >().toEqualTypeOf<'/drives/:driveId/\\:root/\\:children:filePath+'>();
+      expectTypeOf<
+        LiteralHttpSchemaPathFromNonLiteral<Schema, 'GET', `/drives/${string}/:root/:children${string}`>
+      >().toEqualTypeOf<'/drives/:driveId/\\:root/\\:children:filePath+'>();
     });
   });
 
@@ -64,13 +161,55 @@ describe('Schema types', () => {
     it('should infer path param schemas from path strings', () => {
       expectTypeOf<InferPathParams<'/users'>>().toEqualTypeOf<{}>();
 
-      expectTypeOf<InferPathParams<'/users/:userId'>>().toEqualTypeOf<{
-        userId: string;
-      }>();
+      expectTypeOf<InferPathParams<'/users/:userId'>>().toEqualTypeOf<{ userId: string }>();
+      expectTypeOf<InferPathParams<'/users/:userId?'>>().toEqualTypeOf<{ userId?: string }>();
+      expectTypeOf<InferPathParams<'/users/:userId+'>>().toEqualTypeOf<{ userId: string }>();
+      expectTypeOf<InferPathParams<'/users/:userId*'>>().toEqualTypeOf<{ userId?: string }>();
 
       expectTypeOf<InferPathParams<'/users/:userId/:otherId'>>().toEqualTypeOf<{
         userId: string;
         otherId: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId?/:otherId'>>().toEqualTypeOf<{
+        userId?: string;
+        otherId: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId/:otherId?'>>().toEqualTypeOf<{
+        userId: string;
+        otherId?: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId?/:otherId?'>>().toEqualTypeOf<{
+        userId?: string;
+        otherId?: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId+/:otherId'>>().toEqualTypeOf<{
+        userId: string;
+        otherId: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId/:otherId+'>>().toEqualTypeOf<{
+        userId: string;
+        otherId: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId+/:otherId+'>>().toEqualTypeOf<{
+        userId: string;
+        otherId: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId*/:otherId'>>().toEqualTypeOf<{
+        userId?: string;
+        otherId: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId/:otherId*'>>().toEqualTypeOf<{
+        userId: string;
+        otherId?: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId*/:otherId*'>>().toEqualTypeOf<{
+        userId?: string;
+        otherId?: string;
+      }>();
+
+      expectTypeOf<InferPathParams<'/users/:userId/notifications/:notificationId'>>().toEqualTypeOf<{
+        userId: string;
+        notificationId: string;
       }>();
 
       expectTypeOf<InferPathParams<'/users/:userId/:otherId/:anotherId'>>().toEqualTypeOf<{
@@ -78,10 +217,113 @@ describe('Schema types', () => {
         otherId: string;
         anotherId: string;
       }>();
-
-      expectTypeOf<InferPathParams<'/users/:userId/notifications/:notificationId'>>().toEqualTypeOf<{
+      expectTypeOf<InferPathParams<'/users/:userId?/:otherId/:anotherId'>>().toEqualTypeOf<{
+        userId?: string;
+        otherId: string;
+        anotherId: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId/:otherId?/:anotherId'>>().toEqualTypeOf<{
         userId: string;
-        notificationId: string;
+        otherId?: string;
+        anotherId: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId/:otherId/:anotherId?'>>().toEqualTypeOf<{
+        userId: string;
+        otherId: string;
+        anotherId?: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId+/:otherId/:anotherId'>>().toEqualTypeOf<{
+        userId: string;
+        otherId: string;
+        anotherId: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId/:otherId+/:anotherId'>>().toEqualTypeOf<{
+        userId: string;
+        otherId: string;
+        anotherId: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId/:otherId/:anotherId+'>>().toEqualTypeOf<{
+        userId: string;
+        otherId: string;
+        anotherId: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId*/:otherId/:anotherId'>>().toEqualTypeOf<{
+        userId?: string;
+        otherId: string;
+        anotherId: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId/:otherId*/:anotherId'>>().toEqualTypeOf<{
+        userId: string;
+        otherId?: string;
+        anotherId: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId/:otherId/:anotherId*'>>().toEqualTypeOf<{
+        userId: string;
+        otherId: string;
+        anotherId?: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId?/:otherId*/:anotherId+/:otherId2/path/:other'>>().toEqualTypeOf<{
+        userId?: string;
+        otherId?: string;
+        anotherId: string;
+        otherId2: string;
+        other: string;
+      }>();
+
+      expectTypeOf<InferPathParams<'/drives/:driveId:filePath*'>>().toEqualTypeOf<{
+        driveId: string;
+        filePath?: string;
+      }>();
+      expectTypeOf<InferPathParams<'/drives/:driveId\\:/:filePath+'>>().toEqualTypeOf<{
+        driveId: string;
+        filePath: string;
+      }>();
+    });
+
+    it('should not infer escaped path param schemas from path strings', () => {
+      expectTypeOf<InferPathParams<'/users/\\:userId'>>().toEqualTypeOf<{}>();
+      expectTypeOf<InferPathParams<'/users/\\:userId?'>>().toEqualTypeOf<{}>();
+      expectTypeOf<InferPathParams<'/users/\\:userId+'>>().toEqualTypeOf<{}>();
+      expectTypeOf<InferPathParams<'/users/\\:userId*'>>().toEqualTypeOf<{}>();
+
+      expectTypeOf<InferPathParams<'/users/\\:userId/:otherId'>>().toEqualTypeOf<{ otherId: string }>();
+      expectTypeOf<InferPathParams<'/users/\\:userId?/:otherId'>>().toEqualTypeOf<{ otherId: string }>();
+      expectTypeOf<InferPathParams<'/users/\\:userId+/:otherId'>>().toEqualTypeOf<{ otherId: string }>();
+      expectTypeOf<InferPathParams<'/users/\\:userId*/:otherId'>>().toEqualTypeOf<{ otherId: string }>();
+
+      expectTypeOf<InferPathParams<'/users/:userId/\\:otherId'>>().toEqualTypeOf<{ userId: string }>();
+      expectTypeOf<InferPathParams<'/users/:userId?/\\:otherId'>>().toEqualTypeOf<{ userId?: string }>();
+      expectTypeOf<InferPathParams<'/users/:userId+/\\:otherId'>>().toEqualTypeOf<{ userId: string }>();
+      expectTypeOf<InferPathParams<'/users/:userId*/\\:otherId'>>().toEqualTypeOf<{ userId?: string }>();
+
+      expectTypeOf<InferPathParams<'/users/:userId/notifications/\\:notificationId'>>().toEqualTypeOf<{
+        userId: string;
+      }>();
+
+      expectTypeOf<InferPathParams<'/users/\\:userId/:otherId/:anotherId'>>().toEqualTypeOf<{
+        otherId: string;
+        anotherId: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId?/\\:otherId/:anotherId'>>().toEqualTypeOf<{
+        userId?: string;
+        anotherId: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/:userId/:otherId+/\\:anotherId'>>().toEqualTypeOf<{
+        userId: string;
+        otherId: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/\\:userId*/\\:otherId+/:anotherId'>>().toEqualTypeOf<{
+        anotherId: string;
+      }>();
+      expectTypeOf<InferPathParams<'/users/\\:userId*/:otherId?/\\:anotherId'>>().toEqualTypeOf<{
+        otherId?: string;
+      }>();
+
+      expectTypeOf<
+        InferPathParams<'/users/\\:userId?/:otherId*/\\:anotherId+/:otherId2/path/\\:other'>
+      >().toEqualTypeOf<{
+        otherId?: string;
+        otherId2: string;
       }>();
     });
 

@@ -60,6 +60,7 @@ export type MyServiceSchema = HttpSchema<{
     };
   };
   '/notifications': {
+    POST: MyServiceOperations['createNotification'];
     DELETE: MyServiceOperations['deleteNotifications'];
   };
   '/uploads': {
@@ -101,6 +102,10 @@ export interface MyServiceComponents {
       name: string;
     };
     Users: MyServiceComponents['schemas']['User'][];
+    Notification: {
+      id: number;
+      message: string;
+    };
   };
   responses: {
     error: {
@@ -129,6 +134,16 @@ export interface MyServiceComponents {
 }
 
 export interface MyServiceOperations {
+  createNotification: {
+    response: {
+      200: {
+        headers: {
+          'content-type': 'application/json';
+        };
+        body: MyServiceComponents['schemas']['Notification'];
+      };
+    };
+  };
   deleteNotifications: {
     request: {
       headers: {
