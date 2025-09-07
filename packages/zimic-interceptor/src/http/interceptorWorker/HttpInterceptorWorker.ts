@@ -101,7 +101,7 @@ abstract class HttpInterceptorWorker {
   abstract use<Schema extends HttpSchema>(
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
-    url: string,
+    path: string,
     createResponse: MSWHttpResponseFactory,
   ): PossiblePromise<void>;
 
@@ -229,7 +229,7 @@ abstract class HttpInterceptorWorker {
 
   static async parseRawRequest<Path extends string, MethodSchema extends HttpMethodSchema>(
     originalRawRequest: Request,
-    options: { urlRegex?: RegExp } = {},
+    options?: { baseURL: string; pathPattern: RegExp },
   ): Promise<HttpInterceptorRequest<Path, MethodSchema>> {
     const rawRequest = originalRawRequest.clone();
     const rawRequestClone = rawRequest.clone();
@@ -240,7 +240,7 @@ abstract class HttpInterceptorWorker {
     type HeadersSchema = Default<Default<MethodSchema['request']>['headers']>;
     const headers = new HttpHeaders<HeadersSchema>(rawRequest.headers);
 
-    const pathParams = options.urlRegex ? this.parseRawPathParams<Path>(options.urlRegex, rawRequest) : {};
+    const pathParams = this.parseRawPathParams<Path>(rawRequest, options);
 
     const parsedURL = new URL(rawRequest.url);
     type SearchParamsSchema = Default<Default<MethodSchema['request']>['searchParams']>;
@@ -360,10 +360,12 @@ abstract class HttpInterceptorWorker {
     return HTTP_INTERCEPTOR_RESPONSE_HIDDEN_PROPERTIES.has(property as never);
   }
 
-  static parseRawPathParams<Path extends string>(matchedURLRegex: RegExp, request: Request): InferPathParams<Path> {
-    const match = request.url.match(matchedURLRegex);
-    const pathParams = { ...match?.groups };
-    return pathParams as InferPathParams<Path>;
+  static parseRawPathParams<Path extends string>(
+    request: Request,
+    options?: { baseURL: string; pathPattern: RegExp },
+  ): InferPathParams<Path> {
+    const match = options?.pathPattern.exec(request.url.replace(options.baseURL, ''));
+    return { ...match?.groups } as InferPathParams<Path>;
   }
 
   static async parseRawBody<Body extends HttpBody>(resource: Request | Response) {

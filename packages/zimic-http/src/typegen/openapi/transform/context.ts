@@ -2,9 +2,15 @@ import { convertToPascalCase } from '@/utils/strings';
 
 import { parseRawFilter, groupParsedFiltersByMatch } from './filters';
 
+export interface TypePathFilter {
+  methodPattern: RegExp;
+  pathPattern: RegExp;
+  isNegativeMatch: boolean;
+}
+
 export interface TypePathFilters {
-  positive: RegExp[];
-  negative: RegExp[];
+  positive: TypePathFilter[];
+  negative: TypePathFilter[];
 }
 
 type HttpTypeImportName =

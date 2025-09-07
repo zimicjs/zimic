@@ -13,6 +13,7 @@
   },
   "license": "MIT",
   "scripts": {
+    "setup": "pnpm install && pnpm build --filter './packages/*'",
     "dev": "turbo dev --parallel --continue",
     "build": "turbo build --concurrency 50%",
     "lint": "turbo lint:turbo --continue --concurrency 50%",

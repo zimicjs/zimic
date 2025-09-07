@@ -8,9 +8,8 @@ import {
   HttpSchema,
 } from '@zimic/http';
 import { Default, PossiblePromise } from '@zimic/utils/types';
-import createRegExpFromURL from '@zimic/utils/url/createRegExpFromURL';
+import createParametrizedPathPattern from '@zimic/utils/url/createParametrizedPathPattern';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
-import joinURL from '@zimic/utils/url/joinURL';
 import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
 
 import { isServerSide } from '@/utils/environment';
@@ -246,14 +245,13 @@ class HttpInterceptorClient<
 
     this.handlerClientsByMethod[handler.method].set(handler.path, handlerClients);
 
-    const url = joinURL(this.baseURLAsString, handler.path);
-    const urlRegex = createRegExpFromURL(url);
+    const pathPattern = createParametrizedPathPattern(handler.path);
 
-    const registrationResult = this.workerOrThrow.use(this, handler.method, url, async (context) => {
+    const registrationResult = this.workerOrThrow.use(this, handler.method, handler.path, async (context) => {
       const response = await this.handleInterceptedRequest(
-        urlRegex,
         handler.method,
         handler.path,
+        pathPattern,
         context as HttpInterceptorRequestContext<Schema, Method, Path>,
       );
       return response;
@@ -268,9 +266,10 @@ class HttpInterceptorClient<
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
-  >(matchedURLRegex: RegExp, method: Method, path: Path, { request }: Context): Promise<HttpResponse | null> {
+  >(method: Method, path: Path, pathPattern: RegExp, { request }: Context): Promise<HttpResponse | null> {
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Path, Default<Schema[Path][Method]>>(request, {
-      urlRegex: matchedURLRegex,
+      baseURL: this.baseURLAsString,
+      pathPattern,
     });
 
     const matchedHandler = await this.findMatchedHandler(method, path, parsedRequest);

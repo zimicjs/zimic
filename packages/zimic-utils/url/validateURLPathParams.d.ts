@@ -1,4 +1,4 @@
-import validateURLPathParams from '../dist/url/validateURLPathParams';
+import validatePathParams from '../dist/url/validatePathParams';
 
-export * from '../dist/url/validateURLPathParams';
-export default validateURLPathParams;
+export * from '../dist/url/validatePathParams';
+export default validatePathParams;
