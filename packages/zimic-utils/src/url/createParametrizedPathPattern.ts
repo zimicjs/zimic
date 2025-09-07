@@ -1,7 +1,3 @@
-export function getLeadingOrTrailingSlashPattern() {
-  return /^\/+|\/+$/g;
-}
-
 export function getExtraPatternsToEscape() {
   return /([.(){}+$])/g;
 }
@@ -30,7 +26,8 @@ export function getOptionalRepeatingPathParamPattern() {
 
 function createParametrizedPathPattern(path: string) {
   const replacedURL = encodeURI(path)
-    .replace(getLeadingOrTrailingSlashPattern(), '')
+    .replace(/^\/+/g, '')
+    .replace(/\/+$/g, '')
     .replace(getExtraPatternsToEscape(), '\\$1')
     .replace(getURIEncodedBackSlashPattern(), '\\:')
     .replace(

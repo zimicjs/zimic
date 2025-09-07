@@ -1,8 +1,4 @@
-import {
-  getLeadingOrTrailingSlashPattern,
-  getExtraPatternsToEscape,
-  getURIEncodedBackSlashPattern,
-} from './createParametrizedPathPattern';
+import { getExtraPatternsToEscape, getURIEncodedBackSlashPattern } from './createParametrizedPathPattern';
 
 function getSingleWildcardPattern() {
   return /(?<wildcardPrefix>^|[^*])\*(?<wildcardSuffix>[^*]|$)/g;
@@ -18,7 +14,8 @@ function getTripleWildcardPattern() {
 
 function createWildcardPathPattern(path: string) {
   const replacedURL = encodeURI(path)
-    .replace(getLeadingOrTrailingSlashPattern(), '')
+    .replace(/^\/+/g, '')
+    .replace(/\/+$/g, '')
     .replace(getExtraPatternsToEscape(), '\\$1')
     .replace(getURIEncodedBackSlashPattern(), '\\:')
     .replace(getTripleWildcardPattern(), '**')
