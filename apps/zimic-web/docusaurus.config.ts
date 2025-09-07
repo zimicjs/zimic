@@ -152,7 +152,7 @@ const config: Docusaurus.Config = {
       respectPrefersColorScheme: false,
     },
 
-    announcementBar: announcementBars['1.0'],
+    announcementBar: announcementBars['github-star'],
 
     prism: {
       theme: prismThemes.github,
