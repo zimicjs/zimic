@@ -57,14 +57,20 @@ async function runCLI() {
             .option('filter', {
               type: 'string',
               array: true,
-              description:
-                'One or more expressions to filter the types to generate. Filters must follow the format ' +
-                '`<method> <path>`, where `<method>` is an HTTP method or `*`, and `<path>` is a literal path or a ' +
-                'glob. Filters are case-sensitive regarding paths. For example, `GET /users`, `* /users`, ' +
-                '`GET /users/*`, and `GET /users/**/*` are valid filters. Negative filters can be created by ' +
-                'prefixing the expression with `!`. For example, `!GET /users` will exclude paths matching ' +
-                '`GET /users`. If more than one positive filter is provided, they will be combined with OR, while ' +
-                'negative filters will be combined with AND.',
+              description: [
+                'One or more expressions to filter the types to generate. Filters must follow the format `<method> ' +
+                  '<path>`, where:',
+                '- `<method>`: one HTTP method, a list of HTTP methods separated by commas, or `*` to match any HTTP ' +
+                  'method;',
+                '- `<path>`: a literal path or a glob. `*` matches zero or more characters in a segment (except `/`), ' +
+                  'while `**` matches zero or more characters across segments (may include `/`). For example, ' +
+                  '`GET /users` matches a single method and path, while `* /users` matches any method to the `/users` ' +
+                  'path; `GET /users*` matches any `GET` request whose path starts with `/users`, and `GET /users/**/*` ' +
+                  'matches any `GET` request to any sub-path of `/users`.',
+
+                'Negative filters can be created by prefixing the expression with `!`. For example, `!GET /users` will ' +
+                  'exclude paths matching `GET /users`.',
+              ].join('\n'),
               alias: 'f',
             })
             .option('filter-file', {
