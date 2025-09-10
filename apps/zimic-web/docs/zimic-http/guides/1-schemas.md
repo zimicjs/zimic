@@ -94,12 +94,15 @@ three endpoints have successful and error responses, detailed with their respect
 
 At the root of the schema, you declare the paths of the API as keys.
 
-Path parameters start with a colon (`:`) followed by an identifier, such as `:id`. By default, path parameters are
-required and match a single segment. You can make a path parameter optional by suffixing it with a question mark (`?`),
-as in `:id?`. You can also make a repeating path parameter, which matches one or more segments, by suffixing it with a
-plus sign (`+`), such as `:id+`, or zero or more segments by suffixing it with an asterisk (`*`), like `:id*`.
+Path parameters start with a colon (`:`) followed by an identifier, such as `:id`. You can make a path parameter
+optional by suffixing it with a question mark (`?`), as in `:id?`.
 
-All path parameters are typed as strings, even if they match multiple segments.
+By default, path parameters match a single segment. By using a plus sign (`+`) as suffix, such as `:id+`, you can create
+**repeating path parameters**, which accept one or more segments. If the parameter is repeating and optional, matching
+zero or more segments, suffix it with an asterisk (`*`), like `:id*`.
+
+All path parameters are typed as strings, even if they match multiple segments. Optional parameters can also be
+`undefined`.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
@@ -128,7 +131,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-If you need to escape a colon in the path, you can use two backslashes before the `:` (`\\:`).
+If you need to escape a colon in the path, use two backslashes before the `:` (`\\:`).
 
 ```ts
 import { HttpSchema } from '@zimic/http';

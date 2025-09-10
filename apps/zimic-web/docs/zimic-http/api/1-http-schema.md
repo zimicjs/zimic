@@ -461,15 +461,15 @@ type PathParams = InferPathParams<'/users/:userId'>;
 // { userId: string }
 
 // Path with an optional single-segment parameter
-type OptionalPathParams = InferPathParams<'/users/:userId?/posts'>;
+type PathParams = InferPathParams<'/users/:userId?/posts'>;
 // { userId?: string }
 
 // Path with a required repeating segment parameter
-type RepeatingPathParams = InferPathParams<'/drive/:driveId/:filePath+'>;
+type PathParams = InferPathParams<'/drive/:driveId/:filePath+'>;
 // { driveId: string; filePath: string; }
 
 // Path with an optional multi-segment parameter
-type RepeatingOptionalPathParams = InferPathParams<'/drive/:driveId/root:filePath*'>;
+type PathParams = InferPathParams<'/drive/:driveId/root:filePath*'>;
 // { driveId: string; filePath?: string; }
 ```
 
