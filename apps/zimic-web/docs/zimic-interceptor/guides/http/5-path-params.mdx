@@ -16,7 +16,9 @@ that can be replaced with a specific user identifier when making a request.
 ## Using request path params
 
 Path params are automatically inferred from the paths in your [schema](/docs/zimic-http/guides/1-schemas.md). To define
-a path param, prefix it with a colon (`:`) in the path string.
+a path param, prefix it with a colon (`:`) in the path string. See
+[Declaring paths](/docs/zimic-http/guides/1-schemas.md#declaring-paths) for more details on how to declare required,
+optional, and repeating path params.
 
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
@@ -53,23 +55,11 @@ the endpoint and types all resources as usual.
   <TabItem value="local" label="Local interceptor">
 
 ```ts
-const handler = interceptor
+interceptor
   // highlight-next-line
   .patch(`/users/${user.id}`)
-  .with({ body: { username: 'new-username' } })
-  .respond((request) => {
-    // highlight-next-line
-    console.log(request.pathParams.userId);
-
-    return { status: 204 };
-  })
+  .respond({ status: 204 })
   .times(1);
-
-// Run the application and make requests...
-
-console.log(handler.requests); // 1
-// highlight-next-line
-console.log(handler.requests[0].pathParams.userId);
 ```
 
   </TabItem>
@@ -77,31 +67,22 @@ console.log(handler.requests[0].pathParams.userId);
   <TabItem value="remote" label="Remote interceptor">
 
 ```ts
-const handler = await interceptor
+await interceptor
   // highlight-next-line
   .patch(`/users/${user.id}`)
-  .with({ body: { username: 'new-username' } })
-  .respond((request) => {
-    // highlight-next-line
-    console.log(request.pathParams.userId);
-
-    return { status: 204 };
-  })
+  .respond({ status: 204 })
   .times(1);
-
-// Run the application and make requests...
-
-console.log(handler.requests); // 1
-// highlight-next-line
-console.log(handler.requests[0].pathParams.userId);
 ```
 
   </TabItem>
 </Tabs>
 
-### Matching multiple path params
+### Matching any value in a path param
 
-To match any value in a path param, declare it with a colon (`:`) in the path string, such as `/users/:userId`.
+To match any value in a path param, use it as declared in the schema. This is useful when you want to intercept requests
+using dynamic values. By default, path params match a single segment. See
+[Declaring paths](/docs/zimic-http/guides/1-schemas.md#declaring-paths) for more details on how to declare repeating
+path params, which match multiple segments.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -111,8 +92,12 @@ const handler = interceptor
   // Match any user id
   // highlight-next-line
   .patch('/users/:userId')
-  .with({ body: { username: 'new-username' } })
-  .respond({ status: 204 })
+  .respond((request) => {
+    // highlight-next-line
+    console.log(request.pathParams.userId);
+
+    return { status: 204 };
+  })
   .times(1);
 ```
 
@@ -125,15 +110,19 @@ const handler = await interceptor
   // Match any user id
   // highlight-next-line
   .patch('/users/:userId')
-  .with({ body: { username: 'new-username' } })
-  .respond({ status: 204 })
+  .respond((request) => {
+    // highlight-next-line
+    console.log(request.pathParams.userId);
+
+    return { status: 204 };
+  })
   .times(1);
 ```
 
   </TabItem>
 </Tabs>
 
-[`interceptor.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith) is useful in case you want to
+Use [`interceptor.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith) in case you want to
 validate the parameter or limit it specific values.
 
 <Tabs groupId="zimic-http-interceptor-type">
@@ -146,9 +135,19 @@ const handler = interceptor
   .patch('/users/:userId')
   .with((request) => /^\d+$/.test(request.pathParams.userId))
   // highlight-end
-  .with({ body: { username: 'new-username' } })
-  .respond({ status: 204 })
+  .respond((request) => {
+    // highlight-next-line
+    console.log(request.pathParams.userId);
+
+    return { status: 204 };
+  })
   .times(1);
+
+// Run the application and make requests...
+
+console.log(handler.requests); // 1
+// highlight-next-line
+console.log(handler.requests[0].pathParams.userId);
 ```
 
   </TabItem>
@@ -162,9 +161,19 @@ const handler = await interceptor
   .patch('/users/:userId')
   .with((request) => /^\d+$/.test(request.pathParams.userId))
   // highlight-end
-  .with({ body: { username: 'new-username' } })
-  .respond({ status: 204 })
+  .respond((request) => {
+    // highlight-next-line
+    console.log(request.pathParams.userId);
+
+    return { status: 204 };
+  })
   .times(1);
+
+// Run the application and make requests...
+
+console.log(handler.requests); // 1
+// highlight-next-line
+console.log(handler.requests[0].pathParams.userId);
 ```
 
   </TabItem>

@@ -92,8 +92,14 @@ three endpoints have successful and error responses, detailed with their respect
 
 ## Declaring paths
 
-At the root of the schema, you declare the paths of the API as keys. Path parameters are automatically inferred from the
-path and have `:` as prefix, followed by the name of the parameter.
+At the root of the schema, you declare the paths of the API as keys.
+
+Path parameters start with a colon (`:`) followed by an identifier, such as `:id`. By default, path parameters are
+required and match a single segment. You can make a path parameter optional by suffixing it with a question mark (`?`),
+as in `:id?`. You can also make a repeating path parameter, which matches one or more segments, by suffixing it with a
+plus sign (`+`), such as `:id+`, or zero or more segments by suffixing it with an asterisk (`*`), like `:id*`.
+
+All path parameters are typed as strings, even if they match multiple segments.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
@@ -104,15 +110,46 @@ type Schema = HttpSchema<{
     // ...
   };
   // highlight-next-line
-  '/users/:id': {
+  '/users/:userId': {
     // ...
   };
   // highlight-next-line
   '/posts': {
     // ...
   };
+  // highlight-next-line
+  '/drive/:driveId/root/:filePath+': {
+    // ...
+  };
+  // highlight-next-line
+  '/drive/:driveId/children:filePath*': {
+    // ...
+  };
 }>;
 ```
+
+If you need to escape a colon in the path, you can use two backslashes before the `:` (`\\:`).
+
+```ts
+import { HttpSchema } from '@zimic/http';
+
+type Schema = HttpSchema<{
+  // Only `:driveId` is a path parameter
+  // highlight-next-line
+  '/drive/:driveId\\:/root': {
+    // ...
+  };
+}>;
+```
+
+::: tip TIP: <span>Escaped colons in requests</span>
+
+In the actual requests, do not include the backslashes. They are only used to escape the colon in the type definition.
+If you are using [`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md), you may need to include the backslashes
+when
+[matching any value in a path param](/docs/zimic-interceptor/guides/http/5-path-params.mdx#matching-any-value-in-a-path-param).
+
+:::
 
 ## Declaring methods
 
