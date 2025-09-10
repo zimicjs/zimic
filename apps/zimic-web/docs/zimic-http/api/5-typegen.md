@@ -49,7 +49,8 @@ await generateTypesFromOpenAPI(options);
 
    6. **filters**: `string[] | undefined`
 
-      One or more expressions to filter the types to generate. Filters must follow the format `<method> <path>`, where:
+      One or more expressions filtering which endpoints to include. Filters must follow the format `<method> <path>`,
+      where:
       - `<method>`: one HTTP method, a list of HTTP methods separated by commas, or `*` to match any HTTP method;
       - `<path>`: a literal path or a glob. `*` matches zero or more characters in a segment (except `/`), while `**`
         matches zero or more characters across segments (may include `/`). For example, `GET /users` matches a single

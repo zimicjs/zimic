@@ -58,7 +58,7 @@ async function runCLI() {
               type: 'string',
               array: true,
               description: [
-                'One or more expressions to filter the types to generate. Filters must follow the format `<method> ' +
+                'One or more expressions filtering which endpoints to include. Filters must follow the format `<method> ' +
                   '<path>`, where:',
                 '- `<method>`: one HTTP method, a list of HTTP methods separated by commas, or `*` to match any HTTP ' +
                   'method;',

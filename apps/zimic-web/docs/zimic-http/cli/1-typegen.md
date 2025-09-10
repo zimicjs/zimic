@@ -44,8 +44,9 @@ Options:
   -p, --prune         Whether to remove unused operations and components from
                       the generated types. This is useful for reducing the size
                       of the output file.              [boolean] [default: true]
-  -f, --filter        One or more expressions to filter the types to generate.
-                      Filters must follow the format `<method> <path>`, where:
+  -f, --filter        One or more expressions filtering which endpoints to
+                      include. Filters must follow the format `<method> <path>`,
+                      where:
                       - `<method>`: one HTTP method, a list of HTTP methods
                       separated by commas, or `*` to match any HTTP method;
                       - `<path>`: a literal path or a glob. `*` matches zero or
