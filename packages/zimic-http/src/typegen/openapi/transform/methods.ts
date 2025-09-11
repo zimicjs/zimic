@@ -712,17 +712,23 @@ export function normalizeMethod(method: ts.TypeElement, context: TypeTransformCo
     return undefined;
   }
 
-  const pathMethodCompareString = `${methodName} ${options.pathName}`;
-
   const matchesPositiveFilters =
     context.filters.paths.positive.length === 0 ||
-    context.filters.paths.positive.some((filter) => filter.test(pathMethodCompareString));
+    context.filters.paths.positive.some(
+      (filter) => filter.methodPattern.test(methodName) && filter.pathPattern.test(options.pathName),
+    );
+
+  if (!matchesPositiveFilters) {
+    return undefined;
+  }
 
   const matchesNegativeFilters =
     context.filters.paths.negative.length > 0 &&
-    context.filters.paths.negative.some((filter) => filter.test(pathMethodCompareString));
+    context.filters.paths.negative.some(
+      (filter) => filter.methodPattern.test(methodName) && filter.pathPattern.test(options.pathName),
+    );
 
-  if (!matchesPositiveFilters || matchesNegativeFilters) {
+  if (matchesNegativeFilters) {
     return undefined;
   }
 

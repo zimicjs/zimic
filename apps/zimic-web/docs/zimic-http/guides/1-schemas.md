@@ -92,8 +92,17 @@ three endpoints have successful and error responses, detailed with their respect
 
 ## Declaring paths
 
-At the root of the schema, you declare the paths of the API as keys. Path parameters are automatically inferred from the
-path and have `:` as prefix, followed by the name of the parameter.
+At the root of the schema, you declare the paths of the API as keys.
+
+Path parameters start with a colon (`:`) followed by an identifier, such as `:id`. You can make a path parameter
+optional by suffixing it with a question mark (`?`), as in `:id?`.
+
+By default, path parameters match a single segment, not including slashes (`/`). By using a plus sign (`+`) as suffix,
+such as `:id+`, you can create repeating path parameters, which accept one or more segments. If the parameter is
+repeating and optional, matching zero or more segments, suffix it with an asterisk (`*`) instead of `+`, like `:id*`.
+
+All path parameters are typed as strings, even if they match multiple segments. Optional parameters can also be
+`undefined`.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
@@ -104,15 +113,43 @@ type Schema = HttpSchema<{
     // ...
   };
   // highlight-next-line
-  '/users/:id': {
+  '/users/:userId': {
     // ...
   };
   // highlight-next-line
   '/posts': {
     // ...
   };
+  // highlight-next-line
+  '/drive/:driveId/root/:filePath+': {
+    // ...
+  };
+  // highlight-next-line
+  '/drive/:driveId/children:filePath*': {
+    // ...
+  };
 }>;
 ```
+
+If you need to escape a colon in the path, use two backslashes before the `:` (`\\:`).
+
+```ts
+import { HttpSchema } from '@zimic/http';
+
+type Schema = HttpSchema<{
+  // Only `:driveId` is a path parameter
+  // highlight-next-line
+  '/drive/:driveId\\:/root': {
+    // ...
+  };
+}>;
+```
+
+:::tip TIP: <span>Escaped colons in requests</span>
+
+In actual requests, do not include the backslashes. They are only used to escape the colon in the type definition.
+
+:::
 
 ## Declaring methods
 

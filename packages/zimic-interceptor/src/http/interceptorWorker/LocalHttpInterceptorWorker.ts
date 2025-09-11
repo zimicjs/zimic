@@ -1,6 +1,7 @@
 import { HttpRequest, HttpResponse, HttpMethod, HttpSchema } from '@zimic/http';
+import createParametrizedPathPattern from '@zimic/utils/url/createParametrizedPathPattern';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
-import validateURLPathParams from '@zimic/utils/url/validateURLPathParams';
+import validatePathParams from '@zimic/utils/url/validatePathParams';
 import { SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
 import * as mswBrowser from 'msw/browser';
 import * as mswNode from 'msw/node';
@@ -10,29 +11,38 @@ import { isClientSide, isServerSide } from '@/utils/environment';
 
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
-import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
+import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
-import { BrowserMSWWorker, MSWHandler, MSWHttpResponseFactory, MSWWorker, NodeMSWWorker } from './types/msw';
+import { HttpResponseFactoryContext } from './types/http';
+import { BrowserMSWWorker, MSWHttpResponseFactory, MSWWorker, NodeMSWWorker } from './types/msw';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
+
+interface HttpHandler {
+  baseURL: string;
+  method: HttpMethod;
+  pathPattern: RegExp;
+  interceptor: AnyHttpInterceptorClient;
+  createResponse: (context: HttpResponseFactoryContext) => Promise<Response>;
+}
 
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   private internalWorker?: MSWWorker;
 
-  private defaultHttpHandler: MSWHandler;
-
-  private httpHandlerGroups: {
-    interceptor: HttpInterceptorClient<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
-    httpHandler: MSWHandler;
-  }[] = [];
+  private httpHandlersByMethod: {
+    [Method in HttpMethod]: HttpHandler[];
+  } = {
+    GET: [],
+    POST: [],
+    PATCH: [],
+    PUT: [],
+    DELETE: [],
+    HEAD: [],
+    OPTIONS: [],
+  };
 
   constructor(_options: LocalHttpInterceptorWorkerOptions) {
     super();
-
-    this.defaultHttpHandler = http.all('*', async (context) => {
-      const request = context.request satisfies Request as HttpRequest;
-      return this.bypassOrRejectUnhandledRequest(request);
-    });
   }
 
   get type() {
@@ -52,13 +62,21 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private createInternalWorker() {
+    const mswHttpHandler = http.all('*', async (context) => {
+      const request = context.request satisfies Request as HttpRequest;
+      const response = await this.createResponseForRequest(request);
+      return response;
+    });
+
     if (isServerSide() && 'setupServer' in mswNode) {
-      return mswNode.setupServer(this.defaultHttpHandler);
+      return mswNode.setupServer(mswHttpHandler);
     }
+
     /* istanbul ignore else -- @preserve */
     if (isClientSide() && 'setupWorker' in mswBrowser) {
-      return mswBrowser.setupWorker(this.defaultHttpHandler);
+      return mswBrowser.setupWorker(mswHttpHandler);
     }
+
     /* istanbul ignore next -- @preserve
      * Ignoring because checking unknown platforms is not configured in our test setup. */
     throw new UnknownHttpInterceptorPlatformError();
@@ -142,45 +160,79 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   use<Schema extends HttpSchema>(
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
-    rawURL: string | URL,
+    path: string,
     createResponse: MSWHttpResponseFactory,
   ) {
-    const lowercaseMethod = method.toLowerCase<typeof method>();
+    if (!this.isRunning) {
+      throw new NotRunningHttpInterceptorError();
+    }
 
-    const url = new URL(rawURL);
-    excludeURLParams(url);
-    validateURLPathParams(url);
+    validatePathParams(path);
 
-    const httpHandler = http[lowercaseMethod](url.toString(), async (context) => {
-      const request = context.request as HttpRequest;
-      const requestClone = request.clone();
+    const methodHandlers = this.httpHandlersByMethod[method];
 
-      let response: HttpResponse | null = null;
+    const handler: HttpHandler = {
+      baseURL: interceptor.baseURLAsString,
+      method,
+      pathPattern: createParametrizedPathPattern(path),
+      interceptor,
+      createResponse: async (context) => {
+        const request = context.request as HttpRequest;
+        const requestClone = request.clone();
 
-      try {
-        response = await createResponse({ ...context, request });
-      } catch (error) {
-        console.error(error);
+        let response: HttpResponse | null = null;
+
+        try {
+          response = await createResponse({ ...context, request });
+        } catch (error) {
+          console.error(error);
+        }
+
+        if (!response) {
+          return this.bypassOrRejectUnhandledRequest(requestClone);
+        }
+
+        if (context.request.method === 'HEAD') {
+          return new Response(null, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+          });
+        }
+
+        return response;
+      },
+    };
+
+    methodHandlers.push(handler);
+  }
+
+  private async createResponseForRequest(request: HttpRequest) {
+    const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
+
+    const requestURL = excludeURLParams(new URL(request.url));
+    const requestURLAsString = requestURL.href === `${requestURL.origin}/` ? requestURL.origin : requestURL.href;
+
+    for (let handlerIndex = methodHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
+      const handler = methodHandlers[handlerIndex];
+      const matchesBaseURL = requestURLAsString.startsWith(handler.baseURL);
+
+      if (!matchesBaseURL) {
+        continue;
       }
 
-      if (!response) {
-        return this.bypassOrRejectUnhandledRequest(requestClone);
+      const requestPath = requestURLAsString.replace(handler.baseURL, '');
+      const matchesPath = handler.pathPattern.test(requestPath);
+
+      if (!matchesPath) {
+        continue;
       }
 
-      if (context.request.method === 'HEAD') {
-        return new Response(null, {
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers,
-        });
-      }
-
+      const response = await handler.createResponse({ request });
       return response;
-    });
+    }
 
-    this.internalWorkerOrThrow.use(httpHandler);
-
-    this.httpHandlerGroups.push({ interceptor, httpHandler });
+    return this.bypassOrRejectUnhandledRequest(request);
   }
 
   private async bypassOrRejectUnhandledRequest(request: HttpRequest) {
@@ -198,22 +250,33 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   clearHandlers() {
     this.internalWorkerOrThrow.resetHandlers();
-    this.httpHandlerGroups = [];
+
+    for (const handlers of Object.values(this.httpHandlersByMethod)) {
+      handlers.length = 0;
+    }
   }
 
   clearInterceptorHandlers<Schema extends HttpSchema>(interceptor: HttpInterceptorClient<Schema>) {
-    const groupToRemoveIndex = this.httpHandlerGroups.findIndex((group) => group.interceptor === interceptor);
-    removeArrayIndex(this.httpHandlerGroups, groupToRemoveIndex);
+    if (!this.isRunning) {
+      throw new NotRunningHttpInterceptorError();
+    }
 
-    this.internalWorkerOrThrow.resetHandlers();
-
-    for (const { httpHandler } of this.httpHandlerGroups) {
-      this.internalWorkerOrThrow.use(httpHandler);
+    for (const methodHandlers of Object.values(this.httpHandlersByMethod)) {
+      const groupToRemoveIndex = methodHandlers.findIndex((group) => group.interceptor === interceptor);
+      removeArrayIndex(methodHandlers, groupToRemoveIndex);
     }
   }
 
   get interceptorsWithHandlers() {
-    return this.httpHandlerGroups.map((group) => group.interceptor);
+    const interceptors = new Set<AnyHttpInterceptorClient>();
+
+    for (const handlers of Object.values(this.httpHandlersByMethod)) {
+      for (const handler of handlers) {
+        interceptors.add(handler.interceptor);
+      }
+    }
+
+    return Array.from(interceptors);
   }
 }
 

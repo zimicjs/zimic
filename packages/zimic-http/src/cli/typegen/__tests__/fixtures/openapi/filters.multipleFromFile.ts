@@ -60,6 +60,8 @@ export type MyServiceSchema = HttpSchema<{
     };
   };
   '/notifications': {
+    GET: MyServiceOperations['getNotifications'];
+    POST: MyServiceOperations['createNotification'];
     DELETE: MyServiceOperations['deleteNotifications'];
   };
   '/uploads': {
@@ -101,6 +103,11 @@ export interface MyServiceComponents {
       name: string;
     };
     Users: MyServiceComponents['schemas']['User'][];
+    Notification: {
+      id: number;
+      message: string;
+    };
+    Notifications: MyServiceComponents['schemas']['Notification'][];
   };
   responses: {
     error: {
@@ -113,6 +120,7 @@ export interface MyServiceComponents {
     };
   };
   parameters: {
+    from: string;
     authorization: string;
   };
   requests: {
@@ -129,6 +137,31 @@ export interface MyServiceComponents {
 }
 
 export interface MyServiceOperations {
+  getNotifications: {
+    request: {
+      searchParams: {
+        from?: MyServiceComponents['parameters']['from'];
+      };
+    };
+    response: {
+      200: {
+        headers: {
+          'content-type': 'application/json';
+        };
+        body: MyServiceComponents['schemas']['Notifications'];
+      };
+    };
+  };
+  createNotification: {
+    response: {
+      200: {
+        headers: {
+          'content-type': 'application/json';
+        };
+        body: MyServiceComponents['schemas']['Notification'];
+      };
+    };
+  };
   deleteNotifications: {
     request: {
       headers: {

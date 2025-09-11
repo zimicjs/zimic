@@ -1,6 +1,6 @@
 import { normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
 import { HttpRequest, HttpMethod } from '@zimic/http';
-import createRegExpFromURL from '@zimic/utils/url/createRegExpFromURL';
+import createParametrizedPathPattern from '@zimic/utils/url/createParametrizedPathPattern';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
@@ -29,10 +29,8 @@ import { getFetchAPI } from './utils/fetch';
 
 interface HttpHandler {
   id: string;
-  url: {
-    base: string;
-    fullRegex: RegExp;
-  };
+  baseURL: string;
+  pathPattern: RegExp;
   socket: Socket;
 }
 
@@ -45,7 +43,7 @@ class InterceptorServer implements PublicInterceptorServer {
   logUnhandledRequests: boolean;
   tokensDirectory?: string;
 
-  private httpHandlerGroups: {
+  private httpHandlersByMethod: {
     [Method in HttpMethod]: HttpHandler[];
   } = {
     GET: [],
@@ -218,18 +216,13 @@ class InterceptorServer implements PublicInterceptorServer {
     return {};
   };
 
-  private registerHttpHandler({ id, url, method }: HttpHandlerCommit, socket: Socket) {
-    const handlerGroups = this.httpHandlerGroups[method];
-
-    const fullURL = new URL(url.full);
-    excludeURLParams(fullURL);
+  private registerHttpHandler({ id, baseURL, method, path }: HttpHandlerCommit, socket: Socket) {
+    const handlerGroups = this.httpHandlersByMethod[method];
 
     handlerGroups.push({
       id,
-      url: {
-        base: url.base,
-        fullRegex: createRegExpFromURL(fullURL.toString()),
-      },
+      baseURL,
+      pathPattern: createParametrizedPathPattern(path),
       socket,
     });
   }
@@ -248,7 +241,7 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private removeHttpHandlersBySocket(socket: Socket) {
-    for (const handlerGroups of Object.values(this.httpHandlerGroups)) {
+    for (const handlerGroups of Object.values(this.httpHandlersByMethod)) {
       const socketIndex = handlerGroups.findIndex((handlerGroup) => handlerGroup.socket === socket);
       removeArrayIndex(handlerGroups, socketIndex);
     }
@@ -319,17 +312,25 @@ class InterceptorServer implements PublicInterceptorServer {
   };
 
   private async createResponseForRequest(request: SerializedHttpRequest) {
-    const methodHandlers = this.httpHandlerGroups[request.method as HttpMethod];
+    const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
 
-    const requestURL = excludeURLParams(new URL(request.url)).toString();
+    const requestURL = excludeURLParams(new URL(request.url));
+    const requestURLAsString = requestURL.href === `${requestURL.origin}/` ? requestURL.origin : requestURL.href;
 
     let matchedSomeInterceptor = false;
 
-    for (let index = methodHandlers.length - 1; index >= 0; index--) {
-      const handler = methodHandlers[index];
+    for (let handlerIndex = methodHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
+      const handler = methodHandlers[handlerIndex];
+      const matchesBaseURL = requestURLAsString.startsWith(handler.baseURL);
 
-      const matchesHandlerURL = handler.url.fullRegex.test(requestURL);
-      if (!matchesHandlerURL) {
+      if (!matchesBaseURL) {
+        continue;
+      }
+
+      const requestPath = requestURLAsString.replace(handler.baseURL, '');
+      const matchesPath = handler.pathPattern.test(requestPath);
+
+      if (!matchesPath) {
         continue;
       }
 
@@ -403,12 +404,9 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private findHttpHandlerByRequestBaseURL(request: HttpRequest) {
-    const methodHandlers = this.httpHandlerGroups[request.method as HttpMethod];
+    const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
 
-    const handler = methodHandlers.findLast((handler) => {
-      return request.url.startsWith(handler.url.base);
-    });
-
+    const handler = methodHandlers.findLast((handler) => request.url.startsWith(handler.baseURL));
     return handler;
   }
 }
