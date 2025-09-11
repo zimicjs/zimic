@@ -125,7 +125,7 @@ describe('Type generation (OpenAPI)', () => {
     '                      the generated types. This is useful for reducing the size',
     '                      of the output file.              [boolean] [default: true]',
     '  -f, --filter        One or more expressions filtering which endpoints to',
-    '                      include. Filters must follow the format `<method> <path>`',
+    '                      include. Filters must follow the format `<method> <path>`,',
     '                      where:',
     '                      - `<method>`: one HTTP method, a list of HTTP methods',
     '                      separated by commas, or `*` to match any HTTP method;',
