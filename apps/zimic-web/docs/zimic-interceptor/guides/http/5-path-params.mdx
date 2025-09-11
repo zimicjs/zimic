@@ -16,7 +16,9 @@ that can be replaced with a specific user identifier when making a request.
 ## Using request path params
 
 Path params are automatically inferred from the paths in your [schema](/docs/zimic-http/guides/1-schemas.md). To define
-a path param, prefix it with a colon (`:`) in the path string.
+a path param, prefix it with a colon (`:`) in the path string. See
+[Declaring paths](/docs/zimic-http/guides/1-schemas.md#declaring-paths) for more details on how to declare required,
+optional, and repeating path params.
 
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
@@ -53,10 +55,45 @@ the endpoint and types all resources as usual.
   <TabItem value="local" label="Local interceptor">
 
 ```ts
-const handler = interceptor
+interceptor
   // highlight-next-line
   .patch(`/users/${user.id}`)
-  .with({ body: { username: 'new-username' } })
+  .respond({ status: 204 })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  // highlight-next-line
+  .patch(`/users/${user.id}`)
+  .respond({ status: 204 })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+### Matching any value in a path param
+
+Using a path param in an interceptor as declared in the schema, with a colon (`:`), allows you to match any value in
+such parameter. This is useful when you want to create a generic handler supporting dynamic values.
+
+By default, path params match a single segment. See
+[Declaring paths](/docs/zimic-http/guides/1-schemas.md#declaring-paths) for more details on how to declare repeating
+path params, which accept multiple segments.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+const handler = interceptor
+  // Match any user id
+  // highlight-next-line
+  .patch('/users/:userId')
   .respond((request) => {
     // highlight-next-line
     console.log(request.pathParams.userId);
@@ -78,9 +115,9 @@ console.log(handler.requests[0].pathParams.userId);
 
 ```ts
 const handler = await interceptor
+  // Match any user id
   // highlight-next-line
-  .patch(`/users/${user.id}`)
-  .with({ body: { username: 'new-username' } })
+  .patch('/users/:userId')
   .respond((request) => {
     // highlight-next-line
     console.log(request.pathParams.userId);
@@ -99,19 +136,19 @@ console.log(handler.requests[0].pathParams.userId);
   </TabItem>
 </Tabs>
 
-### Matching multiple path params
-
-To match any value in a path param, declare it with a colon (`:`) in the path string, such as `/users/:userId`.
+Use [`interceptor.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith) in case you need
+validation or to limit a parameter to specific values.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
 
 ```ts
-const handler = interceptor
-  // Match any user id
-  // highlight-next-line
+interceptor
+  // Match any numeric user id
+  // highlight-start
   .patch('/users/:userId')
-  .with({ body: { username: 'new-username' } })
+  .with((request) => /^\d+$/.test(request.pathParams.userId))
+  // highlight-end
   .respond({ status: 204 })
   .times(1);
 ```
@@ -121,48 +158,12 @@ const handler = interceptor
   <TabItem value="remote" label="Remote interceptor">
 
 ```ts
-const handler = await interceptor
-  // Match any user id
-  // highlight-next-line
-  .patch('/users/:userId')
-  .with({ body: { username: 'new-username' } })
-  .respond({ status: 204 })
-  .times(1);
-```
-
-  </TabItem>
-</Tabs>
-
-[`interceptor.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith) is useful in case you want to
-validate the parameter or limit it specific values.
-
-<Tabs groupId="zimic-http-interceptor-type">
-  <TabItem value="local" label="Local interceptor">
-
-```ts
-const handler = interceptor
+await interceptor
   // Match any numeric user id
   // highlight-start
   .patch('/users/:userId')
   .with((request) => /^\d+$/.test(request.pathParams.userId))
   // highlight-end
-  .with({ body: { username: 'new-username' } })
-  .respond({ status: 204 })
-  .times(1);
-```
-
-  </TabItem>
-
-  <TabItem value="remote" label="Remote interceptor">
-
-```ts
-const handler = await interceptor
-  // Match any numeric user id
-  // highlight-start
-  .patch('/users/:userId')
-  .with((request) => /^\d+$/.test(request.pathParams.userId))
-  // highlight-end
-  .with({ body: { username: 'new-username' } })
   .respond({ status: 204 })
   .times(1);
 ```

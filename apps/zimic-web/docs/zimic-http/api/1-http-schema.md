@@ -444,12 +444,33 @@ type NonLiteralGetPath = NonLiteralHttpSchemaPath<Schema, 'GET'>;
 
 ## `InferPathParams`
 
-Infers the path parameters schema from a path string. If the first argument is a schema (recommended), the second
-argument is checked to be a valid path in that schema.
+Infers the path parameters schema from a path string. If the first argument is a schema, the second argument should be a
+valid path in that schema. See [Declaring paths](/docs/zimic-http/guides/1-schemas.md#declaring-paths) for more details
+on how to declare required, optional, and repeating path params.
 
 ```ts
 type InferPathParams<Path>
 type InferPathParams<Schema, Path>
+```
+
+```ts
+// Inferring path parameters from standalone path strings:
+
+// Path with a required single-segment parameter
+type PathParams = InferPathParams<'/users/:userId'>;
+// { userId: string }
+
+// Path with an optional single-segment parameter
+type PathParams = InferPathParams<'/users/:userId?/posts'>;
+// { userId?: string }
+
+// Path with a required repeating segment parameter
+type PathParams = InferPathParams<'/drive/:driveId/:filePath+'>;
+// { driveId: string; filePath: string; }
+
+// Path with an optional multi-segment parameter
+type PathParams = InferPathParams<'/drive/:driveId/root:filePath*'>;
+// { driveId: string; filePath?: string; }
 ```
 
 ```ts
@@ -463,10 +484,7 @@ type Schema = HttpSchema<{
   };
 }>;
 
-type PathParams = InferPathParams<'/users/:userId'>;
-// { userId: string }
-
-// Using a schema to validate the path (recommended):
+// Using a schema to validate the path:
 type PathParams = InferPathParams<Schema, '/users/:userId'>;
 // { userId: string }
 ```
