@@ -77,12 +77,13 @@ await interceptor
   </TabItem>
 </Tabs>
 
-### Matching any value in a path param
+### Matching any value
 
-Using a path param in an interceptor as declared in the schema, with a colon (`:`), allows you to match any value in
-such parameter. This is useful when you want to create a generic handler supporting dynamic values.
+Interceptors accept path params in the path string, declared with a colon (`:`) as in the schema. This allows you to
+match any value for that parameter. If you need to escape a colon in the path, use two backslashes before the `:`
+(`\\:`).
 
-By default, path params match a single segment. See
+By default, path params match a single segment, not including slashes (`/`). See
 [Declaring paths](/docs/zimic-http/guides/1-schemas.md#declaring-paths) for more details on how to declare repeating
 path params, which accept multiple segments.
 

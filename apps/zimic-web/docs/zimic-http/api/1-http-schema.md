@@ -444,7 +444,7 @@ type NonLiteralGetPath = NonLiteralHttpSchemaPath<Schema, 'GET'>;
 
 ## `InferPathParams`
 
-Infers the path parameters schema from a path string. If the first argument is a schema, the second argument should be a
+Infers the path params schema from a path string. If the first argument is a schema, the second argument should be a
 valid path in that schema. See [Declaring paths](/docs/zimic-http/guides/1-schemas.md#declaring-paths) for more details
 on how to declare required, optional, and repeating path params.
 
