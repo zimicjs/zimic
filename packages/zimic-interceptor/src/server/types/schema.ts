@@ -5,8 +5,9 @@ import { WebSocketSchema } from '@/webSocket/types';
 
 export interface HttpHandlerCommit {
   id: string;
-  url: { base: string; full: string };
+  baseURL: string;
   method: HttpMethod;
+  path: string;
 }
 
 export type InterceptorServerWebSocketSchema = WebSocketSchema<{

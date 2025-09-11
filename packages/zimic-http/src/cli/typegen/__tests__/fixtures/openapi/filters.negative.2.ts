@@ -6,6 +6,7 @@ import type { HttpFormData, HttpSchema, HttpSearchParams } from '@/index';
 export type MyServiceSchema = HttpSchema<{
   '/notifications': {
     GET: MyServiceOperations['getNotifications'];
+    POST: MyServiceOperations['createNotification'];
     DELETE: MyServiceOperations['deleteNotifications'];
   };
   '/uploads': {
@@ -88,6 +89,16 @@ export interface MyServiceOperations {
           'content-type': 'application/json';
         };
         body: MyServiceComponents['schemas']['Notifications'];
+      };
+    };
+  };
+  createNotification: {
+    response: {
+      200: {
+        headers: {
+          'content-type': 'application/json';
+        };
+        body: MyServiceComponents['schemas']['Notification'];
       };
     };
   };

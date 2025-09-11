@@ -1,14 +1,15 @@
 import { HttpBody, HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@zimic/http';
 import { Default } from '@zimic/utils/types';
 
-import { MSWHttpResponseFactoryContext } from '../../interceptorWorker/types/msw';
+import { HttpResponseFactoryContext } from '@/http/interceptorWorker/types/http';
+
 import { HttpInterceptorRequest } from '../../requestHandler/types/requests';
 
 export type HttpInterceptorRequestContext<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
-> = MSWHttpResponseFactoryContext<Default<Default<Schema[Path][Method]>['request']>['body']>;
+> = HttpResponseFactoryContext<Default<Default<Schema[Path][Method]>['request']>['body']>;
 
 export type UnhandledHttpInterceptorRequestPath = string;
 

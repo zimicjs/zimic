@@ -8,8 +8,6 @@ slug: /fetch
 
 `@zimic/fetch` is a minimal (~2 kB minified and gzipped) and type-safe `fetch`-like API client.
 
-:::
-
 ## Highlights
 
 - :zap: **Type-safe `fetch`**
