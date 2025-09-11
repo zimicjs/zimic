@@ -97,9 +97,9 @@ At the root of the schema, you declare the paths of the API as keys.
 Path parameters start with a colon (`:`) followed by an identifier, such as `:id`. You can make a path parameter
 optional by suffixing it with a question mark (`?`), as in `:id?`.
 
-By default, path parameters match a single segment. By using a plus sign (`+`) as suffix, such as `:id+`, you can create
-**repeating path parameters**, which accept one or more segments. If the parameter is repeating and optional, matching
-zero or more segments, suffix it with an asterisk (`*`), like `:id*`.
+By default, path parameters match a single segment, not including slashes (`/`). By using a plus sign (`+`) as suffix,
+such as `:id+`, you can create repeating path parameters, which accept one or more segments. If the parameter is
+repeating and optional, matching zero or more segments, suffix it with an asterisk (`*`) instead of `+`, like `:id*`.
 
 All path parameters are typed as strings, even if they match multiple segments. Optional parameters can also be
 `undefined`.
@@ -145,12 +145,9 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-::: tip TIP: <span>Escaped colons in requests</span>
+:::tip TIP: <span>Escaped colons in requests</span>
 
-In the actual requests, do not include the backslashes. They are only used to escape the colon in the type definition.
-If you are using [`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md), you may need to include the backslashes
-when
-[matching any value in a path param](/docs/zimic-interceptor/guides/http/5-path-params.mdx#matching-any-value-in-a-path-param).
+In actual requests, do not include the backslashes. They are only used to escape the colon in the type definition.
 
 :::
 

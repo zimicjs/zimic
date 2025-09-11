@@ -12,8 +12,8 @@ that can be replaced with a specific user identifier when making a request.
 
 ## Using request path params
 
-Path params are automatically inferred from the path of an endpoint in your
-[schema](/docs/zimic-http/guides/1-schemas.md). See
+Path params are automatically inferred from the paths in your [schema](/docs/zimic-http/guides/1-schemas.md). To define
+a path param, prefix it with a colon (`:`) in the path string. See
 [Declaring paths](/docs/zimic-http/guides/1-schemas.md#declaring-paths) for more details on how to declare required,
 optional, and repeating path params.
 
