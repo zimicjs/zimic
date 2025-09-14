@@ -11,9 +11,7 @@ const announcementBars = {
     id: 'announcement-bar-github-star',
     content: `
       If you like Zimic, give us a star on
-      <a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic">
-        GitHub
-      </a>! ⭐️
+      <a target="_blank" rel="noopener noreferrer" href="https://github.com/zimicjs/zimic">GitHub</a>! ⭐️
     `,
     textColor: 'var(--ifm-background-color)',
     backgroundColor: 'var(--ifm-color-content)',
@@ -152,7 +150,7 @@ const config: Docusaurus.Config = {
       respectPrefersColorScheme: false,
     },
 
-    announcementBar: announcementBars['1.0'],
+    announcementBar: announcementBars['github-star'],
 
     prism: {
       theme: prismThemes.github,
