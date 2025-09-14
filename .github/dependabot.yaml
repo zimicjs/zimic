@@ -23,6 +23,12 @@ updates:
         update-types:
           - version-update:semver-major
           - version-update:semver-minor
+      # Blocked by https://github.com/mswjs/msw/issues/2585.
+      - dependency-name: msw
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+          - version-update:semver-patch
 
   - package-ecosystem: github-actions
     directory: /
