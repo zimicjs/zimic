@@ -17,6 +17,12 @@ updates:
       npm:
         patterns:
           - '*'
+    ignore:
+      # Blocked in https://github.com/zimicjs/zimic/pull/995 due to compatibility problems with MSW.
+      - dependency-name: axios
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
 
   - package-ecosystem: github-actions
     directory: /
