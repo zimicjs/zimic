@@ -27,6 +27,9 @@ interface HttpHandler {
 }
 
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
+  // Re-creating MSW workers may cause issues, so we should keep a single worker instance, even if all interceptor
+  // workers are stopped. See https://github.com/mswjs/msw/issues/2585.
+  private static globalInternalWorker?: MSWWorker;
   private internalWorker?: MSWWorker;
 
   private httpHandlersByMethod: {
@@ -45,6 +48,10 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     super();
   }
 
+  get class() {
+    return LocalHttpInterceptorWorker;
+  }
+
   get type() {
     return 'local' as const;
   }
@@ -57,11 +64,14 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   get internalWorkerOrCreate() {
-    this.internalWorker ??= this.createInternalWorker();
+    this.class.globalInternalWorker ??= this.createInternalWorker();
+    this.internalWorker ??= this.class.globalInternalWorker;
     return this.internalWorker;
   }
 
   private createInternalWorker() {
+    console.log('created');
+
     const mswHttpHandler = http.all('*', async (context) => {
       const request = context.request satisfies Request as HttpRequest;
       const response = await this.createResponseForRequest(request);
@@ -100,6 +110,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
       this.isRunning = true;
     });
+
+    console.log('running');
   }
 
   private async startInBrowser(internalWorker: BrowserMSWWorker, sharedOptions: MSWWorkerSharedOptions) {
@@ -125,16 +137,19 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     await super.sharedStop(() => {
       const internalWorker = this.internalWorkerOrCreate;
 
+      this.clearHandlers();
+
       if (this.isInternalBrowserWorker(internalWorker)) {
         this.stopInBrowser(internalWorker);
       } else {
         this.stopInNode(internalWorker);
       }
-      this.clearHandlers();
 
       this.internalWorker = undefined;
       this.isRunning = false;
     });
+
+    console.log('stopped');
   }
 
   private stopInBrowser(internalWorker: BrowserMSWWorker) {
