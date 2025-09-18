@@ -18,11 +18,6 @@ updates:
         patterns:
           - '*'
     ignore:
-      # Blocked in https://github.com/zimicjs/zimic/pull/995 due to compatibility problems with MSW.
-      - dependency-name: axios
-        update-types:
-          - version-update:semver-major
-          - version-update:semver-minor
       # Blocked by https://github.com/mswjs/msw/issues/2585.
       - dependency-name: msw
         update-types:
