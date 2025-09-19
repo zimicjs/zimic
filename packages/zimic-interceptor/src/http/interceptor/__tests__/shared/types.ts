@@ -293,14 +293,8 @@ export function declareTypeHttpInterceptorTests(
       };
     }>({ type, baseURL }, async (interceptor) => {
       const successfulHandlers = await Promise.all([
-        interceptor.get('/users').respond({
-          status: 200,
-          body: users,
-        }),
-        interceptor.get('/users').respond(() => ({
-          status: 200,
-          body: users,
-        })),
+        Promise.resolve(interceptor.get('/users').respond({ status: 200, body: users })),
+        Promise.resolve(interceptor.get('/users').respond(() => ({ status: 200, body: users }))),
       ]);
 
       for (const _handler of successfulHandlers) {
