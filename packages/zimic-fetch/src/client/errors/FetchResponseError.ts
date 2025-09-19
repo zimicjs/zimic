@@ -57,45 +57,48 @@ class FetchResponseError<
   toObject(options: FetchResponseErrorObjectOptions.WithBody): Promise<FetchResponseErrorObject>;
   toObject(options: FetchResponseErrorObjectOptions.WithoutBody): FetchResponseErrorObject;
   toObject(options?: FetchResponseErrorObjectOptions): Promise<FetchResponseErrorObject> | FetchResponseErrorObject;
-  toObject(options?: FetchResponseErrorObjectOptions): Promise<FetchResponseErrorObject> | FetchResponseErrorObject {
-    const includeRequestBody = options?.includeRequestBody ?? false;
-    const includeResponseBody = options?.includeResponseBody ?? false;
-
+  toObject({ includeRequestBody = false, includeResponseBody = false }: FetchResponseErrorObjectOptions = {}):
+    | Promise<FetchResponseErrorObject>
+    | FetchResponseErrorObject {
     const partialObject = {
       name: this.name,
       message: this.message,
     } satisfies Partial<FetchResponseErrorObject>;
 
     if (!includeRequestBody && !includeResponseBody) {
-      const request = this.convertRequestToObject({ includeBody: false });
-      const response = this.convertResponseToObject({ includeBody: false });
-      return { ...partialObject, request, response };
+      return {
+        ...partialObject,
+        request: this.requestToObject({ includeBody: false }),
+        response: this.responseToObject({ includeBody: false }),
+      };
     }
 
     return Promise.all([
-      this.convertRequestToObject({ includeBody: includeRequestBody }),
-      this.convertResponseToObject({ includeBody: includeResponseBody }),
+      Promise.resolve(this.requestToObject({ includeBody: includeRequestBody })),
+      Promise.resolve(this.responseToObject({ includeBody: includeResponseBody })),
     ]).then(([request, response]) => ({ ...partialObject, request, response }));
   }
 
-  private convertRequestToObject(options: { includeBody: true }): Promise<FetchRequestObject>;
-  private convertRequestToObject(options: { includeBody: false }): FetchRequestObject;
-  private convertRequestToObject(options: { includeBody: boolean }): Promise<FetchRequestObject> | FetchRequestObject;
-  private convertRequestToObject(options: { includeBody: boolean }): Promise<FetchRequestObject> | FetchRequestObject {
+  private requestToObject(options: { includeBody: true }): Promise<FetchRequestObject>;
+  private requestToObject(options: { includeBody: false }): FetchRequestObject;
+  private requestToObject(options: { includeBody: boolean }): Promise<FetchRequestObject> | FetchRequestObject;
+  private requestToObject(options: { includeBody: boolean }): Promise<FetchRequestObject> | FetchRequestObject {
+    const request = this.request;
+
     const requestObject: FetchRequestObject = {
-      url: this.request.url,
-      path: this.request.path,
-      method: this.request.method,
-      headers: HttpHeaders.prototype.toObject.call(this.request.headers) as HttpHeadersSchema,
-      cache: this.request.cache,
-      destination: this.request.destination,
-      credentials: this.request.credentials,
-      integrity: this.request.integrity,
-      keepalive: this.request.keepalive,
-      mode: this.request.mode,
-      redirect: this.request.redirect,
-      referrer: this.request.referrer,
-      referrerPolicy: this.request.referrerPolicy,
+      url: request.url,
+      path: request.path,
+      method: request.method,
+      headers: this.headersToObject(request.headers),
+      cache: request.cache,
+      destination: request.destination,
+      credentials: request.credentials,
+      integrity: request.integrity,
+      keepalive: request.keepalive,
+      mode: request.mode,
+      redirect: request.redirect,
+      referrer: request.referrer,
+      referrerPolicy: request.referrerPolicy,
     };
 
     if (!options.includeBody) {
@@ -103,7 +106,7 @@ class FetchResponseError<
     }
 
     // Optimize type checking by narrowing the type of the body
-    const bodyAsTextPromise = this.request.text() as Promise<string>;
+    const bodyAsTextPromise = request.text() as Promise<string>;
 
     return bodyAsTextPromise.then((bodyAsText) => {
       requestObject.body = bodyAsText.length > 0 ? bodyAsText : null;
@@ -111,22 +114,20 @@ class FetchResponseError<
     });
   }
 
-  private convertResponseToObject(options: { includeBody: true }): Promise<FetchResponseObject>;
-  private convertResponseToObject(options: { includeBody: false }): FetchResponseObject;
-  private convertResponseToObject(options: {
-    includeBody: boolean;
-  }): Promise<FetchResponseObject> | FetchResponseObject;
-  private convertResponseToObject(options: {
-    includeBody: boolean;
-  }): Promise<FetchResponseObject> | FetchResponseObject {
+  private responseToObject(options: { includeBody: true }): Promise<FetchResponseObject>;
+  private responseToObject(options: { includeBody: false }): FetchResponseObject;
+  private responseToObject(options: { includeBody: boolean }): Promise<FetchResponseObject> | FetchResponseObject;
+  private responseToObject(options: { includeBody: boolean }): Promise<FetchResponseObject> | FetchResponseObject {
+    const response = this.response;
+
     const responseObject: FetchResponseObject = {
-      url: this.response.url,
-      type: this.response.type,
-      status: this.response.status,
-      statusText: this.response.statusText,
-      ok: this.response.ok,
-      headers: HttpHeaders.prototype.toObject.call(this.response.headers) as HttpHeadersSchema,
-      redirected: this.response.redirected,
+      url: response.url,
+      type: response.type,
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      headers: this.headersToObject(response.headers),
+      redirected: response.redirected,
     };
 
     if (!options.includeBody) {
@@ -134,12 +135,16 @@ class FetchResponseError<
     }
 
     // Optimize type checking by narrowing the type of the body
-    const bodyAsTextPromise = this.response.text() as Promise<string>;
+    const bodyAsTextPromise = response.text() as Promise<string>;
 
     return bodyAsTextPromise.then((bodyAsText) => {
       responseObject.body = bodyAsText.length > 0 ? bodyAsText : null;
       return responseObject;
     });
+  }
+
+  private headersToObject(headers: typeof this.request.headers | typeof this.response.headers): HttpHeadersSchema {
+    return HttpHeaders.prototype.toObject.call(headers) as HttpHeadersSchema;
   }
 }
 
