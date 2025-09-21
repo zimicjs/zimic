@@ -1,4 +1,5 @@
 import { HttpHeaders, HttpHeadersSchema, HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@zimic/http';
+import { PossiblePromise } from '@zimic/utils/types';
 
 import { FetchRequest, FetchRequestObject, FetchResponse, FetchResponseObject } from '../types/requests';
 
@@ -39,6 +40,17 @@ export interface FetchResponseErrorObject {
   response: FetchResponseObject;
 }
 
+export class BodyUsedWarning extends TypeError {
+  constructor(type: 'request' | 'response') {
+    super(
+      `Could not include the ${type} body because it is already used. ` +
+        `If you access the body before calling \`error.toObject()\`, consider reading it from a cloned ${type}.\n\n` +
+        'Learn more: https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject',
+    );
+    this.name = 'BodyUsedWarning';
+  }
+}
+
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error `FetchResponseError` API reference} */
 class FetchResponseError<
   Schema extends HttpSchema,
@@ -55,11 +67,12 @@ class FetchResponseError<
 
   /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `fetchResponseError.toObject()` API reference} */
   toObject(options: FetchResponseErrorObjectOptions.WithBody): Promise<FetchResponseErrorObject>;
-  toObject(options: FetchResponseErrorObjectOptions.WithoutBody): FetchResponseErrorObject;
-  toObject(options?: FetchResponseErrorObjectOptions): Promise<FetchResponseErrorObject> | FetchResponseErrorObject;
-  toObject({ includeRequestBody = false, includeResponseBody = false }: FetchResponseErrorObjectOptions = {}):
-    | Promise<FetchResponseErrorObject>
-    | FetchResponseErrorObject {
+  toObject(options?: FetchResponseErrorObjectOptions.WithoutBody): FetchResponseErrorObject;
+  toObject(options?: FetchResponseErrorObjectOptions): PossiblePromise<FetchResponseErrorObject>;
+  toObject({
+    includeRequestBody = false,
+    includeResponseBody = false,
+  }: FetchResponseErrorObjectOptions = {}): PossiblePromise<FetchResponseErrorObject> {
     const partialObject = {
       name: this.name,
       message: this.message,
@@ -81,15 +94,15 @@ class FetchResponseError<
 
   private requestToObject(options: { includeBody: true }): Promise<FetchRequestObject>;
   private requestToObject(options: { includeBody: false }): FetchRequestObject;
-  private requestToObject(options: { includeBody: boolean }): Promise<FetchRequestObject> | FetchRequestObject;
-  private requestToObject(options: { includeBody: boolean }): Promise<FetchRequestObject> | FetchRequestObject {
+  private requestToObject(options: { includeBody: boolean }): PossiblePromise<FetchRequestObject>;
+  private requestToObject(options: { includeBody: boolean }): PossiblePromise<FetchRequestObject> {
     const request = this.request;
 
     const requestObject: FetchRequestObject = {
       url: request.url,
       path: request.path,
       method: request.method,
-      headers: this.headersToObject(request.headers),
+      headers: this.convertHeadersToObject(request),
       cache: request.cache,
       destination: request.destination,
       credentials: request.credentials,
@@ -105,19 +118,13 @@ class FetchResponseError<
       return requestObject;
     }
 
-    // Optimize type checking by narrowing the type of the body
-    const bodyAsTextPromise = request.text() as Promise<string>;
-
-    return bodyAsTextPromise.then((bodyAsText) => {
-      requestObject.body = bodyAsText.length > 0 ? bodyAsText : null;
-      return requestObject;
-    });
+    return this.withIncludedBodyIfAvailable('request', requestObject);
   }
 
   private responseToObject(options: { includeBody: true }): Promise<FetchResponseObject>;
   private responseToObject(options: { includeBody: false }): FetchResponseObject;
-  private responseToObject(options: { includeBody: boolean }): Promise<FetchResponseObject> | FetchResponseObject;
-  private responseToObject(options: { includeBody: boolean }): Promise<FetchResponseObject> | FetchResponseObject {
+  private responseToObject(options: { includeBody: boolean }): PossiblePromise<FetchResponseObject>;
+  private responseToObject(options: { includeBody: boolean }): PossiblePromise<FetchResponseObject> {
     const response = this.response;
 
     const responseObject: FetchResponseObject = {
@@ -126,7 +133,7 @@ class FetchResponseError<
       status: response.status,
       statusText: response.statusText,
       ok: response.ok,
-      headers: this.headersToObject(response.headers),
+      headers: this.convertHeadersToObject(response),
       redirected: response.redirected,
     };
 
@@ -134,17 +141,40 @@ class FetchResponseError<
       return responseObject;
     }
 
-    // Optimize type checking by narrowing the type of the body
-    const bodyAsTextPromise = response.text() as Promise<string>;
-
-    return bodyAsTextPromise.then((bodyAsText) => {
-      responseObject.body = bodyAsText.length > 0 ? bodyAsText : null;
-      return responseObject;
-    });
+    return this.withIncludedBodyIfAvailable('response', responseObject);
   }
 
-  private headersToObject(headers: typeof this.request.headers | typeof this.response.headers): HttpHeadersSchema {
-    return HttpHeaders.prototype.toObject.call(headers) as HttpHeadersSchema;
+  private convertHeadersToObject(
+    resource: FetchRequest<Schema, Method, Path> | FetchResponse<Schema, Method, Path, true, 'manual'>,
+  ): HttpHeadersSchema {
+    return HttpHeaders.prototype.toObject.call(resource.headers) as HttpHeadersSchema;
+  }
+
+  private withIncludedBodyIfAvailable(
+    resourceType: 'request',
+    resourceObject: FetchRequestObject,
+  ): PossiblePromise<FetchRequestObject>;
+  private withIncludedBodyIfAvailable(
+    resourceType: 'response',
+    resourceObject: FetchResponseObject,
+  ): PossiblePromise<FetchResponseObject>;
+  private withIncludedBodyIfAvailable(
+    resourceType: 'request' | 'response',
+    resourceObject: FetchRequestObject | FetchResponseObject,
+  ): PossiblePromise<FetchRequestObject | FetchResponseObject> {
+    const resource = this[resourceType];
+
+    if (resource.bodyUsed) {
+      const error = new BodyUsedWarning(resourceType);
+      console.warn(error);
+
+      return resourceObject;
+    }
+
+    return resource.text().then((body: string) => {
+      resourceObject.body = body.length > 0 ? body : null;
+      return resourceObject;
+    });
   }
 }
 
