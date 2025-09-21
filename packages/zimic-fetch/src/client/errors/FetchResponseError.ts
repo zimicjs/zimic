@@ -55,11 +55,12 @@ class FetchResponseError<
 
   /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `fetchResponseError.toObject()` API reference} */
   toObject(options: FetchResponseErrorObjectOptions.WithBody): Promise<FetchResponseErrorObject>;
-  toObject(options: FetchResponseErrorObjectOptions.WithoutBody): FetchResponseErrorObject;
-  toObject(options?: FetchResponseErrorObjectOptions): Promise<FetchResponseErrorObject> | FetchResponseErrorObject;
-  toObject({ includeRequestBody = false, includeResponseBody = false }: FetchResponseErrorObjectOptions = {}):
-    | Promise<FetchResponseErrorObject>
-    | FetchResponseErrorObject {
+  toObject(options?: FetchResponseErrorObjectOptions.WithoutBody): FetchResponseErrorObject;
+  toObject(options?: FetchResponseErrorObjectOptions): PossiblePromise<FetchResponseErrorObject>;
+  toObject({
+    includeRequestBody = false,
+    includeResponseBody = false,
+  }: FetchResponseErrorObjectOptions = {}): PossiblePromise<FetchResponseErrorObject> {
     const partialObject = {
       name: this.name,
       message: this.message,
