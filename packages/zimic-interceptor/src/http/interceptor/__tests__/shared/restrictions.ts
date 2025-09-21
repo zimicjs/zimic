@@ -1,10 +1,16 @@
-import { HttpSchema, HTTP_METHODS, HttpHeaders, HttpSearchParams, HttpFormData } from '@zimic/http';
+import {
+  HttpSchema,
+  HTTP_METHODS,
+  HttpHeaders,
+  HttpSearchParams,
+  HttpFormData,
+  InvalidFormDataError,
+} from '@zimic/http';
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import joinURL from '@zimic/utils/url/joinURL';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import InvalidFormDataError from '@/http/interceptorWorker/errors/InvalidFormDataError';
 import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';

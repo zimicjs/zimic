@@ -1,11 +1,14 @@
+import {
+  InvalidFormDataError as HttpInvalidFormDataError,
+  InvalidJSONError as HttpInvalidJSONError,
+} from '@zimic/http';
+
 export { default as RunningHttpInterceptorError } from './interceptor/errors/RunningHttpInterceptorError';
 export { default as NotRunningHttpInterceptorError } from './interceptor/errors/NotRunningHttpInterceptorError';
 export { default as UnknownHttpInterceptorPlatformError } from './interceptor/errors/UnknownHttpInterceptorPlatformError';
 export { default as UnknownHttpInterceptorTypeError } from './interceptor/errors/UnknownHttpInterceptorTypeError';
 export { default as RequestSavingSafeLimitExceededError } from './interceptor/errors/RequestSavingSafeLimitExceededError';
 
-export { default as InvalidFormDataError } from './interceptorWorker/errors/InvalidFormDataError';
-export { default as InvalidJSONError } from './interceptorWorker/errors/InvalidJSONError';
 export { default as UnregisteredBrowserServiceWorkerError } from './interceptorWorker/errors/UnregisteredBrowserServiceWorkerError';
 
 export { default as DisabledRequestSavingError } from './requestHandler/errors/DisabledRequestSavingError';
@@ -51,3 +54,23 @@ export type { InferHttpInterceptorSchema } from './interceptor/types/schema';
 export type { LocalHttpInterceptor, RemoteHttpInterceptor, HttpInterceptor } from './interceptor/types/public';
 
 export { createHttpInterceptor } from './interceptor/factory';
+
+/**
+ * Error thrown when a value is not valid {@link https://developer.mozilla.org/docs/Web/API/FormData FormData}. HTTP
+ * interceptors might throw this error when trying to parse the body of a request or response with the header
+ * `'content-type': 'multipart/form-data'`, if the content cannot be parsed to form data.
+ *
+ * @deprecated This type has been moved to {@link https://zimic.dev/docs/http `@zimic/http`}. Please import
+ *   {@link HttpInvalidFormDataError InvalidFormDataError} from `@zimic/http` instead.
+ */
+export class InvalidFormDataError extends HttpInvalidFormDataError {}
+
+/**
+ * Error thrown when a value is not valid JSON. HTTP interceptors might throw this error when trying to parse the body
+ * of a request or response with the header `'content-type': 'application/json'`, if the content cannot be parsed to
+ * JSON.
+ *
+ * @deprecated This type has been moved to {@link https://zimic.dev/docs/http `@zimic/http`}. Please import
+ *   {@link HttpInvalidJSONError InvalidJSONError} from `@zimic/http` instead.
+ */
+export declare class InvalidJSONError extends HttpInvalidJSONError {}
