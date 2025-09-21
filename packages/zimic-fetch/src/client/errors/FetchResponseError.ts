@@ -40,6 +40,17 @@ export interface FetchResponseErrorObject {
   response: FetchResponseObject;
 }
 
+export class BodyUsedWarning extends TypeError {
+  constructor(type: 'request' | 'response') {
+    super(
+      `Could not include the ${type} body because it is already used. ` +
+        `If you access the body before calling \`error.toObject()\`, consider reading it from a cloned ${type}.\n\n` +
+        'Learn more: https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject',
+    );
+    this.name = 'BodyUsedWarning';
+  }
+}
+
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error `FetchResponseError` API reference} */
 class FetchResponseError<
   Schema extends HttpSchema,
@@ -107,13 +118,7 @@ class FetchResponseError<
       return requestObject;
     }
 
-    // Optimize type checking by narrowing the type of the body
-    const bodyAsTextPromise = request.text() as Promise<string>;
-
-    return bodyAsTextPromise.then((bodyAsText) => {
-      requestObject.body = bodyAsText.length > 0 ? bodyAsText : null;
-      return requestObject;
-    });
+    return this.withIncludeBodyIfAvailable(request, requestObject);
   }
 
   private responseToObject(options: { includeBody: true }): Promise<FetchResponseObject>;
@@ -136,17 +141,38 @@ class FetchResponseError<
       return responseObject;
     }
 
-    // Optimize type checking by narrowing the type of the body
-    const bodyAsTextPromise = response.text() as Promise<string>;
-
-    return bodyAsTextPromise.then((bodyAsText) => {
-      responseObject.body = bodyAsText.length > 0 ? bodyAsText : null;
-      return responseObject;
-    });
+    return this.withIncludeBodyIfAvailable(response, responseObject);
   }
 
-  private convertHeadersToObject(resource: typeof this.request | typeof this.response): HttpHeadersSchema {
-    return HttpHeaders.prototype.toObject.call(resource) as HttpHeadersSchema;
+  private convertHeadersToObject(
+    resource: FetchRequest<Schema, Method, Path> | FetchResponse<Schema, Method, Path, true, 'manual'>,
+  ): HttpHeadersSchema {
+    return HttpHeaders.prototype.toObject.call(resource.headers) as HttpHeadersSchema;
+  }
+
+  private withIncludeBodyIfAvailable(
+    resource: FetchRequest<Schema, Method, Path>,
+    resourceObject: FetchRequestObject,
+  ): PossiblePromise<FetchRequestObject>;
+  private withIncludeBodyIfAvailable(
+    resource: FetchResponse<Schema, Method, Path, true, 'manual'>,
+    resourceObject: FetchResponseObject,
+  ): PossiblePromise<FetchResponseObject>;
+  private withIncludeBodyIfAvailable(
+    resource: FetchRequest<Schema, Method, Path> | FetchResponse<Schema, Method, Path, true, 'manual'>,
+    resourceObject: FetchRequestObject | FetchResponseObject,
+  ): PossiblePromise<FetchRequestObject | FetchResponseObject> {
+    if (resource.bodyUsed) {
+      const error = new BodyUsedWarning(resource instanceof Request ? 'request' : 'response');
+      console.warn(error);
+
+      return resourceObject;
+    }
+
+    return resource.text().then((body: string) => {
+      resourceObject.body = body.length > 0 ? body : null;
+      return resourceObject;
+    });
   }
 }
 
