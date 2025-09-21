@@ -1,4 +1,5 @@
 import { HttpHeaders, HttpHeadersSchema, HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@zimic/http';
+import { PossiblePromise } from '@zimic/utils/types';
 
 import { FetchRequest, FetchRequestObject, FetchResponse, FetchResponseObject } from '../types/requests';
 
@@ -82,15 +83,15 @@ class FetchResponseError<
 
   private requestToObject(options: { includeBody: true }): Promise<FetchRequestObject>;
   private requestToObject(options: { includeBody: false }): FetchRequestObject;
-  private requestToObject(options: { includeBody: boolean }): Promise<FetchRequestObject> | FetchRequestObject;
-  private requestToObject(options: { includeBody: boolean }): Promise<FetchRequestObject> | FetchRequestObject {
+  private requestToObject(options: { includeBody: boolean }): PossiblePromise<FetchRequestObject>;
+  private requestToObject(options: { includeBody: boolean }): PossiblePromise<FetchRequestObject> {
     const request = this.request;
 
     const requestObject: FetchRequestObject = {
       url: request.url,
       path: request.path,
       method: request.method,
-      headers: this.headersToObject(request.headers),
+      headers: this.convertHeadersToObject(request),
       cache: request.cache,
       destination: request.destination,
       credentials: request.credentials,
@@ -117,8 +118,8 @@ class FetchResponseError<
 
   private responseToObject(options: { includeBody: true }): Promise<FetchResponseObject>;
   private responseToObject(options: { includeBody: false }): FetchResponseObject;
-  private responseToObject(options: { includeBody: boolean }): Promise<FetchResponseObject> | FetchResponseObject;
-  private responseToObject(options: { includeBody: boolean }): Promise<FetchResponseObject> | FetchResponseObject {
+  private responseToObject(options: { includeBody: boolean }): PossiblePromise<FetchResponseObject>;
+  private responseToObject(options: { includeBody: boolean }): PossiblePromise<FetchResponseObject> {
     const response = this.response;
 
     const responseObject: FetchResponseObject = {
@@ -127,7 +128,7 @@ class FetchResponseError<
       status: response.status,
       statusText: response.statusText,
       ok: response.ok,
-      headers: this.headersToObject(response.headers),
+      headers: this.convertHeadersToObject(response),
       redirected: response.redirected,
     };
 
@@ -144,8 +145,8 @@ class FetchResponseError<
     });
   }
 
-  private headersToObject(headers: typeof this.request.headers | typeof this.response.headers): HttpHeadersSchema {
-    return HttpHeaders.prototype.toObject.call(headers) as HttpHeadersSchema;
+  private convertHeadersToObject(resource: typeof this.request | typeof this.response): HttpHeadersSchema {
+    return HttpHeaders.prototype.toObject.call(resource) as HttpHeadersSchema;
   }
 }
 
