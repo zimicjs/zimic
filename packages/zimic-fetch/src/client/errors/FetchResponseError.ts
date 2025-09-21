@@ -118,7 +118,7 @@ class FetchResponseError<
       return requestObject;
     }
 
-    return this.withIncludeBodyIfAvailable(request, requestObject);
+    return this.withIncludedBodyIfAvailable('request', requestObject);
   }
 
   private responseToObject(options: { includeBody: true }): Promise<FetchResponseObject>;
@@ -141,7 +141,7 @@ class FetchResponseError<
       return responseObject;
     }
 
-    return this.withIncludeBodyIfAvailable(response, responseObject);
+    return this.withIncludedBodyIfAvailable('response', responseObject);
   }
 
   private convertHeadersToObject(
@@ -150,20 +150,22 @@ class FetchResponseError<
     return HttpHeaders.prototype.toObject.call(resource.headers) as HttpHeadersSchema;
   }
 
-  private withIncludeBodyIfAvailable(
-    resource: FetchRequest<Schema, Method, Path>,
+  private withIncludedBodyIfAvailable(
+    resourceType: 'request',
     resourceObject: FetchRequestObject,
   ): PossiblePromise<FetchRequestObject>;
-  private withIncludeBodyIfAvailable(
-    resource: FetchResponse<Schema, Method, Path, true, 'manual'>,
+  private withIncludedBodyIfAvailable(
+    resourceType: 'response',
     resourceObject: FetchResponseObject,
   ): PossiblePromise<FetchResponseObject>;
-  private withIncludeBodyIfAvailable(
-    resource: FetchRequest<Schema, Method, Path> | FetchResponse<Schema, Method, Path, true, 'manual'>,
+  private withIncludedBodyIfAvailable(
+    resourceType: 'request' | 'response',
     resourceObject: FetchRequestObject | FetchResponseObject,
   ): PossiblePromise<FetchRequestObject | FetchResponseObject> {
+    const resource = this[resourceType];
+
     if (resource.bodyUsed) {
-      const error = new BodyUsedWarning(resource instanceof Request ? 'request' : 'response');
+      const error = new BodyUsedWarning(resourceType);
       console.warn(error);
 
       return resourceObject;
