@@ -40,17 +40,6 @@ export interface FetchResponseErrorObject {
   response: FetchResponseObject;
 }
 
-export class BodyUsedWarning extends TypeError {
-  constructor(type: 'request' | 'response') {
-    super(
-      `Could not include the ${type} body because it is already used. ` +
-        `If you access the body before calling \`error.toObject()\`, consider reading it from a cloned ${type}.\n\n` +
-        'Learn more: https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject',
-    );
-    this.name = 'BodyUsedWarning';
-  }
-}
-
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error `FetchResponseError` API reference} */
 class FetchResponseError<
   Schema extends HttpSchema,
@@ -165,9 +154,11 @@ class FetchResponseError<
     const resource = this[resourceType];
 
     if (resource.bodyUsed) {
-      const error = new BodyUsedWarning(resourceType);
-      console.warn(error);
-
+      console.warn(
+        `[@zimic/fetch] Could not include the ${resourceType} body because it is already used. ` +
+          'If you access the body before calling `error.toObject()`, consider reading it from a cloned ' +
+          `${resourceType}.\n\nLearn more: https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject`,
+      );
       return resourceObject;
     }
 

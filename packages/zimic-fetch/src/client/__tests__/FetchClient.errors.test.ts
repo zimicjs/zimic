@@ -8,7 +8,6 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import FetchResponseError, {
-  BodyUsedWarning,
   FetchResponseErrorObject,
   FetchResponseErrorObjectOptions,
 } from '../errors/FetchResponseError';
@@ -744,8 +743,18 @@ describe('FetchClient > Errors', () => {
           });
 
           expect(console.warn).toHaveBeenCalledTimes(2);
-          expect(console.warn).toHaveBeenCalledWith(new BodyUsedWarning('request'));
-          expect(console.warn).toHaveBeenCalledWith(new BodyUsedWarning('response'));
+
+          expect(console.warn).toHaveBeenCalledWith(
+            '[@zimic/fetch] Could not include the request body because it is already used. If you access the body ' +
+              'before calling `error.toObject()`, consider reading it from a cloned request.\n\n' +
+              'Learn more: https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject',
+          );
+
+          expect(console.warn).toHaveBeenCalledWith(
+            '[@zimic/fetch] Could not include the response body because it is already used. If you access the body ' +
+              'before calling `error.toObject()`, consider reading it from a cloned response.\n\n' +
+              'Learn more: https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject',
+          );
 
           return errorObject;
         });
