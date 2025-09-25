@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "1.1.1-canary.1",
+  "version": "1.1.2-canary.2",
   "homepage": "https://zimic.dev/docs/interceptor",
   "repository": {
     "type": "git",
@@ -104,13 +104,13 @@
     "picocolors": "^1.1.1",
     "ws": "8.18.3",
     "yargs": "18.0.0",
-    "zod": "^4.1.8"
+    "zod": "^4.1.11"
   },
   "optionalDependencies": {
     "bufferutil": "4.0.9"
   },
   "devDependencies": {
-    "@types/node": "^24.4.0",
+    "@types/node": "^24.5.2",
     "@types/ws": "^8.18.1",
     "@types/yargs": "^17.0.33",
     "@vitest/browser": "^3.2.4",
@@ -120,7 +120,7 @@
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^10.0.0",
-    "eslint": "^9.35.0",
+    "eslint": "^9.36.0",
     "playwright": "^1.55.0",
     "tsup": "^8.4.0",
     "typescript": "^5.9.2",

@@ -9,7 +9,7 @@ const sharedConfig: Options = {
   treeshake: true,
   minify: false,
   clean: true,
-  keepNames: true,
+  keepNames: false,
   noExternal: ['@zimic/utils'],
   env: {
     TYPEGEN_HTTP_IMPORT_MODULE: isDevelopment ? '@/index' : '@zimic/http',

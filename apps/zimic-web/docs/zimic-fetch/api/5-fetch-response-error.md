@@ -69,7 +69,7 @@ const response = await fetch(`/users/${userId}`, {
 });
 
 if (!response.ok) {
-  //   highlight-next-line
+  // highlight-next-line
   console.log(response.error); // FetchResponseError<Schema, 'GET', '/users'>
 }
 ```
@@ -112,9 +112,71 @@ const response = await fetch(`/users/${userId}`, {
 });
 
 if (!response.ok) {
-  //   highlight-next-line
-  const plainError = response.error.toObject();
-  console.log(JSON.stringify(plainError));
-  // {"name":"FetchResponseError","message":"...","request":{...},"response":{...}}
+  // highlight-next-line
+  const errorObject = response.error.toObject();
+  console.log(errorObject);
+  // { name: 'FetchResponseError', message: '...', request: { ... }, response:{ ... } }
+
+  // highlight-next-line
+  const errorObjectWithBodies = await response.error.toObject({
+    includeRequestBody: true,
+    includeResponseBody: true,
+  });
+  console.log(errorObjectWithBodies);
+  // { name: 'FetchResponseError', message: '...', request: { ... }, response:{ ... } }
 }
 ```
+
+:::tip NOTE: <span>Already used bodies</span>
+
+If the body of the request or response has already been used (e.g., read with
+[`response.json()`](https://developer.mozilla.org/docs/Web/API/Response/json)), it will not be included in the plain
+object, even if `options.includeRequestBody` or `options.includeResponseBody` is `true`. This will be flagged with a
+warning in the console.
+
+If you access a body before calling `error.toObject()`, consider reading it from a cloned request or response with
+[`request.clone()`](https://developer.mozilla.org/docs/Web/API/Request/clone) or
+[`response.clone()`](https://developer.mozilla.org/docs/Web/API/Response/clone), respectively.
+
+```ts
+const request = new fetch.Request(`/users/${userId}`, {
+  method: 'POST',
+  body: JSON.stringify({ ... }),
+});
+
+// Reading the body from a cloned request:
+// highlight-next-line
+const requestBody = await request.clone().json();
+console.log(requestBody);
+
+const response = await fetch(request);
+
+// Reading the body from a cloned response:
+// highlight-next-line
+const responseBody = await response.clone().json();
+console.log(responseBody);
+
+if (!response.ok) {
+  const errorObject = await response.error.toObject({
+    includeRequestBody: true,
+    includeResponseBody: true,
+  });
+  console.log(errorObject);
+}
+```
+
+Alternatively, you can disable the warning by including each body conditionally based on
+[`request.bodyUsed`](https://developer.mozilla.org/docs/Web/API/Request/bodyUsed) and
+[`response.bodyUsed`](https://developer.mozilla.org/docs/Web/API/Response/bodyUsed).
+
+```ts
+// Include the bodies only if available:
+const errorObject = await response.error.toObject({
+  // highlight-start
+  includeRequestBody: !response.error.request.bodyUsed,
+  includeResponseBody: !response.error.response.bodyUsed,
+  // highlight-end
+});
+```
+
+:::

@@ -179,13 +179,13 @@
     "typegen:fixtures": "tsx ./scripts/typegen/generateFixtureTypes.js"
   },
   "devDependencies": {
-    "@types/node": "^24.4.0",
+    "@types/node": "^24.5.2",
     "@vitest/browser": "^3.2.4",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^10.0.0",
-    "eslint": "^9.35.0",
+    "eslint": "^9.36.0",
     "tsup": "^8.4.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
