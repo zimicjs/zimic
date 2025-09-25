@@ -80,13 +80,13 @@ runs:
 
             const matches = text.matchAll(
               new RegExp(
-                `(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved|part|part of)\\b[\\s:]*(?:https:\\/\\/github\\.com\\/${githubOwner}\\/${githubRepository}\\/issues\\/(?<issueNumber>\\d+)|#(?<issueNumber>\\d+))`,
+                `(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved|part|part of)\\b\\s*:?\\s*(?:https:\\/\\/github\\.com\\/${githubOwner}\\/${githubRepository}\\/issues\\/(?<issueNumberFromURL>\\d+)|#(?<issueNumberFromMention>\\d+))`,
                 'gi',
               ),
             );
 
             for (const match of matches) {
-              const issueNumber = Number(match.groups.issueNumber);
+              const issueNumber = Number(match.groups.issueNumberFromURL || match.groups.issueNumberFromMention);
               issueNumbers.add(issueNumber);
             }
 
@@ -128,7 +128,7 @@ runs:
               const issues = await github.rest.issues.listForRepo({
                 owner: githubOwner,
                 repo: githubRepository,
-                milestone: milestone.number.toString(),
+                milestone: milestone.number,
                 state: 'all',
                 page,
                 per_page: PER_PAGE,
