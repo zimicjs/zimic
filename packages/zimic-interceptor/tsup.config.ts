@@ -7,7 +7,7 @@ const sharedConfig: Options = {
   treeshake: true,
   minify: false,
   clean: true,
-  keepNames: true,
+  keepNames: false,
   env: {
     INTERCEPTOR_SERVER_ACCESS_CONTROL_MAX_AGE: '',
     INTERCEPTOR_TOKEN_HASH_ITERATIONS: '1000000',

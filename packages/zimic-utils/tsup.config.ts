@@ -7,7 +7,7 @@ const sharedConfig: Options = {
   treeshake: true,
   minify: false,
   clean: true,
-  keepNames: true,
+  keepNames: false,
 };
 
 const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({

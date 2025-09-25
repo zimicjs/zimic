@@ -13,7 +13,7 @@
     "api",
     "static"
   ],
-  "version": "1.0.5",
+  "version": "1.0.6",
   "homepage": "https://zimic.dev/docs/fetch",
   "repository": {
     "type": "git",
@@ -84,7 +84,7 @@
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^10.0.0",
-    "eslint": "^9.35.0",
+    "eslint": "^9.36.0",
     "playwright": "^1.55.0",
     "tsup": "^8.4.0",
     "typescript": "^5.9.2",
