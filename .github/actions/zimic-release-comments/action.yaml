@@ -78,9 +78,28 @@ runs:
               return issueNumbers;
             }
 
+            const closingKeywordPattern = [
+              'close',
+              'closes',
+              'closed',
+              'fix',
+              'fixes',
+              'fixed',
+              'resolve',
+              'resolves',
+              'resolved',
+              'part',
+              'part of',
+            ].join('|');
+
+            const issueURLOrMentionPattern = [
+              `https:\\/\\/github\\.com\\/${githubOwner}\\/${githubRepository}\\/issues\\/(?<issueNumberFromURL>\\d+)`,
+              '#(?<issueNumberFromMention>\\d+)',
+            ].join('|');
+
             const matches = text.matchAll(
               new RegExp(
-                `(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved|part|part of)\\b\\s*:?\\s*(?:https:\\/\\/github\\.com\\/${githubOwner}\\/${githubRepository}\\/issues\\/(?<issueNumberFromURL>\\d+)|#(?<issueNumberFromMention>\\d+))`,
+                `(?:${closingKeywordPattern})\\b\\s*:?\\s*(?:${issueURLOrMentionPattern})`,
                 'gi',
               ),
             );
@@ -179,7 +198,7 @@ runs:
                 issueNumbersToCommentOn.add(issueNumber);
               }
             } catch (error) {
-              console.warn(`Could not fetch pull request #${pullRequestNumber} to scan closing keywords.`);
+              console.warn(`Could not fetch pull request #${pullRequestNumber} to scan closing keywords.`, error);
             }
           }
 
