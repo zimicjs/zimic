@@ -71,14 +71,14 @@ runs:
             return pullRequestNumbers;
           }
 
-          function extractClosingIssueNumbersFromText(text) {
+          function extractLinkedIssueNumbersFromText(text) {
             const issueNumbers = new Set();
 
             if (!text) {
               return issueNumbers;
             }
 
-            const closingKeywordPattern = [
+            const linkKeywordPatterns = [
               'close',
               'closes',
               'closed',
@@ -90,22 +90,27 @@ runs:
               'resolved',
               'part',
               'part of',
-            ].join('|');
+            ];
 
-            const issueURLOrMentionPattern = [
+            const issueNumberPatterns = [
               `https:\\/\\/github\\.com\\/${githubOwner}\\/${githubRepository}\\/issues\\/(?<issueNumberFromURL>\\d+)`,
-              '#(?<issueNumberFromMention>\\d+)',
-            ].join('|');
+              `${githubOwner}\\/${githubRepository}#(?<issueNumberFromPath>\\d+)`,
+              '#(?<issueNumberFromHash>\\d+)',
+            ];
 
             const matches = text.matchAll(
               new RegExp(
-                `(?:${closingKeywordPattern})\\b\\s*:?\\s*(?:${issueURLOrMentionPattern})`,
+                `(?:${linkKeywordPatterns.join('|')})\\b[\\s\\n]*:?[\\s\\n]*(?:${issueNumberPatterns.join('|')})`,
                 'gi',
               ),
             );
 
             for (const match of matches) {
-              const issueNumber = Number(match.groups.issueNumberFromURL || match.groups.issueNumberFromMention);
+              const issueNumber = Number(
+                match.groups.issueNumberFromURL ||
+                  match.groups.issueNumberFromPath ||
+                  match.groups.issueNumberFromHash,
+              );
               issueNumbers.add(issueNumber);
             }
 
@@ -194,7 +199,7 @@ runs:
 
               const pullRequestDescription = pullRequest.data.body ?? '';
 
-              for (const issueNumber of extractClosingIssueNumbersFromText(pullRequestDescription)) {
+              for (const issueNumber of extractLinkedIssueNumbersFromText(pullRequestDescription)) {
                 issueNumbersToCommentOn.add(issueNumber);
               }
             } catch (error) {
