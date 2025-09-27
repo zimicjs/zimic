@@ -1,4 +1,4 @@
-import { createPathEscapeRegex, createURIEncodedBackSlashRegex } from './createRegexFromPath';
+import { preparePathForRegex } from './createRegexFromPath';
 
 function getSingleWildcardPathRegex() {
   return /(?<wildcardPrefix>^|[^*])(?<escape>\\)?\*(?<wildcardSuffix>[^*]|$)/g;
@@ -13,11 +13,7 @@ function getTripleWildcardPathRegex() {
 }
 
 function createWildcardRegexFromPath(path: string) {
-  const replacedURL = path
-    .replace(/^\/+/g, '')
-    .replace(/\/+$/g, '')
-    .replace(createPathEscapeRegex(), '\\$1')
-    .replace(createURIEncodedBackSlashRegex(), '\\')
+  const pathRegexContent = preparePathForRegex(path)
     .replace(getTripleWildcardPathRegex(), (_match, escape: string | undefined, wildcardSuffix: string) => {
       return escape === '\\' ? `\\*\\*/\\*${wildcardSuffix}` : `**${wildcardSuffix}`;
     })
@@ -31,7 +27,7 @@ function createWildcardRegexFromPath(path: string) {
       return escape === '\\' ? '\\*\\*' : '.*';
     });
 
-  return new RegExp(`^/?${replacedURL}/?$`);
+  return new RegExp(`^/?${pathRegexContent}/?$`);
 }
 
 export default createWildcardRegexFromPath;

@@ -1,9 +1,15 @@
-export function createPathEscapeRegex() {
+export function createPathCharactersToEscapeRegex() {
   return /([.(){}+$])/g;
 }
 
-export function createURIEncodedBackSlashRegex() {
-  return /%5C/g;
+export function preparePathForRegex(path: string) {
+  // We encode the path using the URL API because, differently from encodeURI and encodeURIComponent, URL does not
+  // re-encode already encoded characters. Since URL requires a full URL, we use a data scheme and strip it later.
+  const pathURLPrefix = `data:${path.startsWith('/') ? '' : '/'}`;
+  const pathAsURL = new URL(`${pathURLPrefix}${path}`);
+  const encodedPath = pathAsURL.href.replace(pathURLPrefix, '');
+
+  return encodedPath.replace(/^\/+/g, '').replace(/\/+$/g, '').replace(createPathCharactersToEscapeRegex(), '\\$1');
 }
 
 // Path params names must match the JavaScript identifier pattern.
@@ -25,11 +31,7 @@ export function createOptionalRepeatingPathParamRegex() {
 }
 
 function createRegexFromPath(path: string) {
-  const replacedURL = path
-    .replace(/^\/+/g, '')
-    .replace(/\/+$/g, '')
-    .replace(createPathEscapeRegex(), '\\$1')
-    .replace(createURIEncodedBackSlashRegex(), '\\')
+  const pathRegexContent = preparePathForRegex(path)
     .replace(
       createOptionalRepeatingPathParamRegex(),
       (
@@ -97,7 +99,7 @@ function createRegexFromPath(path: string) {
       return escape ? `:${identifier}` : `(?<${identifier}>[^\\/]+?)`;
     });
 
-  return new RegExp(`^/?${replacedURL}/?$`);
+  return new RegExp(`^/?${pathRegexContent}/?$`);
 }
 
 export default createRegexFromPath;
