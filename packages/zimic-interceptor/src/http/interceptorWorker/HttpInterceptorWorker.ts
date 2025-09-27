@@ -364,8 +364,16 @@ abstract class HttpInterceptorWorker {
     request: Request,
     options?: { baseURL: string; pathPattern: RegExp },
   ): InferPathParams<Path> {
-    const match = options?.pathPattern.exec(request.url.replace(options.baseURL, ''));
-    return { ...match?.groups } as InferPathParams<Path>;
+    const requestPath = request.url.replace(options?.baseURL ?? '', '');
+    const paramsMatch = options?.pathPattern.exec(requestPath);
+
+    const params: Record<string, string | undefined> = {};
+
+    for (const [paramName, paramValue] of Object.entries(paramsMatch?.groups ?? {})) {
+      params[paramName] = typeof paramValue === 'string' ? decodeURIComponent(paramValue) : undefined;
+    }
+
+    return params as InferPathParams<Path>;
   }
 
   static async parseRawBody<Body extends HttpBody>(resource: Request | Response) {

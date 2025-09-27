@@ -180,7 +180,9 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
       const handler = await promiseIfRemote(
         interceptor.get('/users/:userId?').respond((request) => {
           expectTypeOf(request.pathParams).toEqualTypeOf<PathParams>();
-          expect(request.pathParams).toEqual(expect.toBeOneOf([{ userId: users[0].id }, { userId: undefined }]));
+          expect(request.pathParams).toEqual(
+            expect.toBeOneOf<PathParams>([{ userId: users[0].id }, { userId: undefined }]),
+          );
 
           return { status: 204 };
         }),
@@ -251,7 +253,9 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
       const handler = await promiseIfRemote(
         interceptor.get('/files/:filePath*').respond((request) => {
           expectTypeOf(request.pathParams).toEqualTypeOf<PathParams>();
-          expect(request.pathParams).toEqual(expect.toBeOneOf([{ filePath: 'path/to/file' }, { filePath: undefined }]));
+          expect(request.pathParams).toEqual(
+            expect.toBeOneOf<PathParams>([{ filePath: 'path/to/file' }, { filePath: undefined }]),
+          );
 
           return { status: 204 };
         }),
@@ -329,7 +333,7 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
         interceptor.get('/users/:userId?/posts/:postId?').respond((request) => {
           expectTypeOf(request.pathParams).toEqualTypeOf<PathParams>();
           expect(request.pathParams).toEqual(
-            expect.toBeOneOf([{ userId: users[0].id, postId }, { userId: users[0].id }, { postId }, {}]),
+            expect.toBeOneOf<PathParams>([{ userId: users[0].id, postId }, { userId: users[0].id }, { postId }, {}]),
           );
 
           return { status: 204 };
@@ -422,7 +426,12 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
         interceptor.get('/level1/:path1*/level2/:path2*').respond((request) => {
           expectTypeOf(request.pathParams).toEqualTypeOf<PathParams>();
           expect(request.pathParams).toEqual(
-            expect.toBeOneOf([{ path1: 'path/other', path2: 'path' }, { path1: 'path/other' }, { path2: 'path' }, {}]),
+            expect.toBeOneOf<PathParams>([
+              { path1: 'path/other', path2: 'path' },
+              { path1: 'path/other' },
+              { path2: 'path' },
+              {},
+            ]),
           );
 
           return { status: 204 };
@@ -487,7 +496,7 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
         interceptor.get('/files/:filePath*/users/:userId?/posts/:postId').respond((request) => {
           expectTypeOf(request.pathParams).toEqualTypeOf<PathParams>();
           expect(request.pathParams).toEqual(
-            expect.toBeOneOf([
+            expect.toBeOneOf<PathParams>([
               { filePath, userId: users[0].id, postId },
               { filePath, postId },
               { userId: users[0].id, postId },
@@ -539,6 +548,45 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
       request = handler.requests[3];
       expectTypeOf(request.pathParams).toEqualTypeOf<PathParams>();
       expect(request.pathParams).toEqual({ postId });
+    });
+  });
+
+  it('should correctly intercept requests with URI-encoded path params', async () => {
+    interface PathParams {
+      filePath: string;
+    }
+
+    await usingHttpInterceptor<{
+      '/files/:filePath': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      const decodedFilePath = 'path/to/file';
+      const encodedFilePath = encodeURIComponent(decodedFilePath);
+
+      expect(encodedFilePath).not.toBe(decodedFilePath);
+
+      const handler = await promiseIfRemote(
+        interceptor.get('/files/:filePath').respond((request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<PathParams>();
+          expect(request.pathParams).toEqual<PathParams>({ filePath: decodedFilePath });
+
+          return { status: 204 };
+        }),
+        interceptor,
+      );
+
+      expect(handler.requests).toHaveLength(0);
+
+      const response = await fetch(joinURL(baseURL, `/files/${encodedFilePath}`), { method: 'GET' });
+      expect(response.status).toBe(204);
+
+      expect(handler.requests).toHaveLength(1);
+
+      const request = handler.requests[0];
+      expectTypeOf(request.pathParams).toEqualTypeOf<PathParams>();
+      expect(request.pathParams).toEqual({ filePath: decodedFilePath });
+
+      const unmatchedResponsePromise = fetch(joinURL(baseURL, `/files/${decodedFilePath}`), { method: 'GET' });
+      await expectFetchError(unmatchedResponsePromise);
     });
   });
 }
