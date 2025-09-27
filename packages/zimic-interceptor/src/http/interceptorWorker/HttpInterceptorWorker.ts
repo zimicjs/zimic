@@ -229,7 +229,7 @@ abstract class HttpInterceptorWorker {
 
   static async parseRawRequest<Path extends string, MethodSchema extends HttpMethodSchema>(
     originalRawRequest: Request,
-    options?: { baseURL: string; pathPattern: RegExp },
+    options?: { baseURL: string; pathRegex: RegExp },
   ): Promise<HttpInterceptorRequest<Path, MethodSchema>> {
     const rawRequest = originalRawRequest.clone();
     const rawRequestClone = rawRequest.clone();
@@ -362,10 +362,10 @@ abstract class HttpInterceptorWorker {
 
   static parseRawPathParams<Path extends string>(
     request: Request,
-    options?: { baseURL: string; pathPattern: RegExp },
+    options?: { baseURL: string; pathRegex: RegExp },
   ): InferPathParams<Path> {
     const requestPath = request.url.replace(options?.baseURL ?? '', '');
-    const paramsMatch = options?.pathPattern.exec(requestPath);
+    const paramsMatch = options?.pathRegex.exec(requestPath);
 
     const params: Record<string, string | undefined> = {};
 
