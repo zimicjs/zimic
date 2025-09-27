@@ -127,17 +127,17 @@
       "require": "./dist/time/waitForDelay.js",
       "default": "./dist/time/waitForDelay.js"
     },
-    "./url/createParametrizedPathPattern": {
-      "types": "./url/createParametrizedPathPattern.d.ts",
-      "import": "./dist/url/createParametrizedPathPattern.mjs",
-      "require": "./dist/url/createParametrizedPathPattern.js",
-      "default": "./dist/url/createParametrizedPathPattern.js"
+    "./url/createRegexFromPath": {
+      "types": "./url/createRegexFromPath.d.ts",
+      "import": "./dist/url/createRegexFromPath.mjs",
+      "require": "./dist/url/createRegexFromPath.js",
+      "default": "./dist/url/createRegexFromPath.js"
     },
-    "./url/createWildcardPathPattern": {
-      "types": "./url/createWildcardPathPattern.d.ts",
-      "import": "./dist/url/createWildcardPathPattern.mjs",
-      "require": "./dist/url/createWildcardPathPattern.js",
-      "default": "./dist/url/createWildcardPathPattern.js"
+    "./url/createWildcardRegexFromPath": {
+      "types": "./url/createWildcardRegexFromPath.d.ts",
+      "import": "./dist/url/createWildcardRegexFromPath.mjs",
+      "require": "./dist/url/createWildcardRegexFromPath.js",
+      "default": "./dist/url/createWildcardRegexFromPath.js"
     },
     "./url/excludeURLParams": {
       "types": "./url/excludeURLParams.d.ts",

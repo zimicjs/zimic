@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import createWildcardPathPattern from '../createWildcardPathPattern';
+import createWildcardRegexFromPath from '../createWildcardRegexFromPath';
 
 describe('createPathRegExp', () => {
   type PathTestCase =
@@ -417,7 +417,7 @@ describe('createPathRegExp', () => {
     { path: '/path/\\**/other/\\**', input: '/path/other/other/other/other', matches: false },
     { path: '/path/\\**/other/\\**', input: '/path/other/other/other/other/other', matches: false },
   ])('should create a correct regular expression from a path pattern (path: $path, input: $input)', (testCase) => {
-    const expression = createWildcardPathPattern(testCase.path);
+    const expression = createWildcardRegexFromPath(testCase.path);
     const result = expression.exec(testCase.input);
 
     if (testCase.matches) {

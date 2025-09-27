@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import createParametrizedPathPattern from '../createParametrizedPathPattern';
+import createRegexFromPath from '../createRegexFromPath';
 
 describe('createPathRegExp', () => {
   type PathTestCase =
@@ -493,8 +493,79 @@ describe('createPathRegExp', () => {
     { path: ':p1?/other/:p2+', input: '/v1/other/v2/', matches: true, params: { p1: 'v1', p2: 'v2/' } },
     { path: ':p1?/other/:p2+', input: 'v1/other/v2/other', matches: true, params: { p1: 'v1', p2: 'v2/other' } },
     { path: ':p1?/other/:p2+', input: 'other/v1-v2', matches: true, params: { p2: 'v1-v2' } },
+
+    // Paths with URI-encoded params (space)
+    {
+      path: 'path/:p1',
+      input: `path/${encodeURIComponent('v 1')}`,
+      matches: true,
+      params: { p1: encodeURIComponent('v 1') },
+    },
+    {
+      path: `path/${encodeURIComponent('v 1')}`,
+      input: `path/${encodeURIComponent('v 1')}`,
+      matches: true,
+      params: {},
+    },
+    {
+      path: 'path/v 1',
+      input: `path/${encodeURIComponent('v 1')}`,
+      matches: false,
+    },
+    {
+      path: `path/${encodeURIComponent('v 1')}`,
+      input: 'path/v 1',
+      matches: false,
+    },
+
+    // Paths with URI-encoded params (slash)
+    {
+      path: 'path/:p1',
+      input: `path/${encodeURIComponent('v/1')}`,
+      matches: true,
+      params: { p1: encodeURIComponent('v/1') },
+    },
+    {
+      path: `path/${encodeURIComponent('v/1')}`,
+      input: `path/${encodeURIComponent('v/1')}`,
+      matches: true,
+      params: {},
+    },
+    {
+      path: 'path/v/1',
+      input: `path/${encodeURIComponent('v/1')}`,
+      matches: false,
+    },
+    {
+      path: `path/${encodeURIComponent('v/1')}`,
+      input: 'path/v/1',
+      matches: false,
+    },
+    // Paths with URI-encoded params (full URI-encoded input)
+    {
+      path: 'path/:p1/:p2',
+      input: encodeURI('path/v 1/v 2'),
+      matches: true,
+      params: { p1: encodeURIComponent('v 1'), p2: encodeURIComponent('v 2') },
+    },
+    {
+      path: encodeURI('path/v 1/v 2'),
+      input: encodeURI('path/v 1/v 2'),
+      matches: true,
+      params: {},
+    },
+    {
+      path: 'path/v 1/v 2',
+      input: encodeURI('path/v 1/v 2'),
+      matches: false,
+    },
+    {
+      path: encodeURI('path/v 1/v 2'),
+      input: 'path/v 1/v 2',
+      matches: false,
+    },
   ])('should create a correct regular expression from a path pattern (path: $path, input: $input)', (testCase) => {
-    const expression = createParametrizedPathPattern(testCase.path);
+    const expression = createRegexFromPath(testCase.path);
     const result = expression.exec(testCase.input);
 
     if (testCase.matches) {
