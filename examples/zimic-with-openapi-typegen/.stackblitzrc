@@ -1,4 +1,5 @@
 {
+  "startCommand": "pnpm install && (cd node_modules/@zimic/interceptor && pnpm postinstall && cd ../../msw && pnpm postinstall)",
   "installDependencies": false,
-  "startCommand": "pnpm install && (cd node_modules/@zimic/interceptor && pnpm postinstall && cd ../../msw && pnpm postinstall)"
+  "compileTrigger": "save"
 }

@@ -229,7 +229,7 @@ abstract class HttpInterceptorWorker {
 
   static async parseRawRequest<Path extends string, MethodSchema extends HttpMethodSchema>(
     originalRawRequest: Request,
-    options?: { baseURL: string; pathPattern: RegExp },
+    options?: { baseURL: string; pathRegex: RegExp },
   ): Promise<HttpInterceptorRequest<Path, MethodSchema>> {
     const rawRequest = originalRawRequest.clone();
     const rawRequestClone = rawRequest.clone();
@@ -362,10 +362,18 @@ abstract class HttpInterceptorWorker {
 
   static parseRawPathParams<Path extends string>(
     request: Request,
-    options?: { baseURL: string; pathPattern: RegExp },
+    options?: { baseURL: string; pathRegex: RegExp },
   ): InferPathParams<Path> {
-    const match = options?.pathPattern.exec(request.url.replace(options.baseURL, ''));
-    return { ...match?.groups } as InferPathParams<Path>;
+    const requestPath = request.url.replace(options?.baseURL ?? '', '');
+    const paramsMatch = options?.pathRegex.exec(requestPath);
+
+    const params: Record<string, string | undefined> = {};
+
+    for (const [paramName, paramValue] of Object.entries(paramsMatch?.groups ?? {})) {
+      params[paramName] = typeof paramValue === 'string' ? decodeURIComponent(paramValue) : undefined;
+    }
+
+    return params as InferPathParams<Path>;
   }
 
   static async parseRawBody<Body extends HttpBody>(resource: Request | Response) {

@@ -51,8 +51,17 @@ const config: Docusaurus.Config = {
 
   onBrokenAnchors: 'throw',
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'throw',
   onDuplicateRoutes: 'throw',
+
+  markdown: {
+    hooks: {
+      onBrokenMarkdownImages: 'throw',
+      onBrokenMarkdownLinks: 'throw',
+    },
+    anchors: {
+      maintainCase: false,
+    },
+  },
 
   headTags: [
     {

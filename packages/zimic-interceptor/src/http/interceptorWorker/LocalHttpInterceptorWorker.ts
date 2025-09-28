@@ -1,5 +1,5 @@
 import { HttpRequest, HttpResponse, HttpMethod, HttpSchema } from '@zimic/http';
-import createParametrizedPathPattern from '@zimic/utils/url/createParametrizedPathPattern';
+import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import validatePathParams from '@zimic/utils/url/validatePathParams';
 import { SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
@@ -21,7 +21,7 @@ import { LocalHttpInterceptorWorkerOptions } from './types/options';
 interface HttpHandler {
   baseURL: string;
   method: HttpMethod;
-  pathPattern: RegExp;
+  pathRegex: RegExp;
   interceptor: AnyHttpInterceptorClient;
   createResponse: (context: HttpResponseFactoryContext) => Promise<Response>;
 }
@@ -174,7 +174,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     const handler: HttpHandler = {
       baseURL: interceptor.baseURLAsString,
       method,
-      pathPattern: createParametrizedPathPattern(path),
+      pathRegex: createRegexFromPath(path),
       interceptor,
       createResponse: async (context) => {
         const request = context.request as HttpRequest;
@@ -222,7 +222,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       }
 
       const requestPath = requestURLAsString.replace(handler.baseURL, '');
-      const matchesPath = handler.pathPattern.test(requestPath);
+      const matchesPath = handler.pathRegex.test(requestPath);
 
       if (!matchesPath) {
         continue;

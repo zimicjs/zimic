@@ -1,7 +1,7 @@
 import { HttpResponse } from '@zimic/http';
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import { PossiblePromise } from '@zimic/utils/types';
-import createParametrizedPathPattern from '@zimic/utils/url/createParametrizedPathPattern';
+import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
 import joinURL from '@zimic/utils/url/joinURL';
 import { DuplicatedPathParamError } from '@zimic/utils/url/validatePathParams';
 import { afterAll, beforeAll, expect, it, vi } from 'vitest';
@@ -536,7 +536,7 @@ export function declarePathParamsHttpInterceptorWorkerTests(options: SharedHttpI
 
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest(handlerContext.request, {
           baseURL,
-          pathPattern: createParametrizedPathPattern(testCase.path),
+          pathRegex: createRegexFromPath(testCase.path),
         });
         expect(parsedRequest.pathParams).toEqual(testCase.params ?? {});
 

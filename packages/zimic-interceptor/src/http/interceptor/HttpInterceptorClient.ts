@@ -8,7 +8,7 @@ import {
   HttpSchema,
 } from '@zimic/http';
 import { Default, PossiblePromise } from '@zimic/utils/types';
-import createParametrizedPathPattern from '@zimic/utils/url/createParametrizedPathPattern';
+import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
 
@@ -245,13 +245,13 @@ class HttpInterceptorClient<
 
     this.handlerClientsByMethod[handler.method].set(handler.path, handlerClients);
 
-    const pathPattern = createParametrizedPathPattern(handler.path);
+    const pathRegex = createRegexFromPath(handler.path);
 
     const registrationResult = this.workerOrThrow.use(this, handler.method, handler.path, async (context) => {
       const response = await this.handleInterceptedRequest(
         handler.method,
         handler.path,
-        pathPattern,
+        pathRegex,
         context as HttpInterceptorRequestContext<Schema, Method, Path>,
       );
       return response;
@@ -266,10 +266,10 @@ class HttpInterceptorClient<
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
-  >(method: Method, path: Path, pathPattern: RegExp, { request }: Context): Promise<HttpResponse | null> {
+  >(method: Method, path: Path, pathRegex: RegExp, { request }: Context): Promise<HttpResponse | null> {
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Path, Default<Schema[Path][Method]>>(request, {
       baseURL: this.baseURLAsString,
-      pathPattern,
+      pathRegex,
     });
 
     const matchedHandler = await this.findMatchedHandler(method, path, parsedRequest);
@@ -342,15 +342,15 @@ class HttpInterceptorClient<
   }
 
   clear(options: { onCommitSuccess?: () => void; onCommitError?: () => void } = {}) {
-    const clearResults: PossiblePromise<AnyHttpRequestHandlerClient | void>[] = [
-      this.workerOrThrow.clearInterceptorHandlers(this),
+    const clearResults: Promise<AnyHttpRequestHandlerClient | void>[] = [
+      Promise.resolve(this.workerOrThrow.clearInterceptorHandlers(this)),
     ];
 
     for (const method of HTTP_METHODS) {
       const newClearResults = this.clearMethodHandlers(method);
 
       for (const result of newClearResults) {
-        clearResults.push(result);
+        clearResults.push(Promise.resolve(result));
       }
 
       const handlersByPath = this.handlerClientsByMethod[method];

@@ -11,32 +11,40 @@ async function blobEquals(blob: Blob, otherBlob: Blob) {
 
   try {
     while (true) {
-      await Promise.all([
-        buffer.length === 0 &&
+      const bufferReadPromises: Promise<void>[] = [];
+
+      if (buffer.length === 0) {
+        bufferReadPromises.push(
           reader.read().then((result) => {
             if (!result.done) {
               buffer = result.value;
             }
           }),
+        );
+      }
 
-        otherBuffer.length === 0 &&
+      if (otherBuffer.length === 0) {
+        bufferReadPromises.push(
           otherReader.read().then((result) => {
             if (!result.done) {
               otherBuffer = result.value;
             }
           }),
-      ]);
+        );
+      }
 
-      const streamsEndedTogether = buffer.length === 0 && otherBuffer.length === 0;
+      await Promise.all(bufferReadPromises);
 
-      if (streamsEndedTogether) {
+      const haveStreamsEndedTogether = buffer.length === 0 && otherBuffer.length === 0;
+
+      if (haveStreamsEndedTogether) {
         return true;
       }
 
-      const oneStreamEndedBeforeTheOther =
+      const hasOneStreamEndedBeforeTheOther =
         (buffer.length === 0 && otherBuffer.length > 0) || (buffer.length > 0 && otherBuffer.length === 0);
 
-      if (oneStreamEndedBeforeTheOther) {
+      if (hasOneStreamEndedBeforeTheOther) {
         return false;
       }
 
