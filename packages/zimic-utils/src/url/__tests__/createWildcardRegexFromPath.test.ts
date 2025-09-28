@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import createWildcardPathPattern from '../createWildcardPathPattern';
+import createWildcardRegexFromPath from '../createWildcardRegexFromPath';
 
 describe('createPathRegExp', () => {
-  type PathTestCase =
-    | { path: string; input: string; matches: false }
-    | { path: string; input: string; matches: true; params?: Record<string, string> };
+  interface PathTestCase {
+    path: string;
+    input: string;
+    matches: boolean;
+  }
 
   it.each<PathTestCase>([
     // Paths with wildcards
@@ -416,15 +418,61 @@ describe('createPathRegExp', () => {
     { path: '/path/\\**/other/\\**', input: '', matches: false },
     { path: '/path/\\**/other/\\**', input: '/path/other/other/other/other', matches: false },
     { path: '/path/\\**/other/\\**', input: '/path/other/other/other/other/other', matches: false },
-  ])('should create a correct regular expression from a path pattern (path: $path, input: $input)', (testCase) => {
-    const expression = createWildcardPathPattern(testCase.path);
-    const result = expression.exec(testCase.input);
+
+    // Paths with URI-encoded params (spaces in the path are automated encoded, but not in the input)
+    { path: '**/v 1', input: 'path/v%201', matches: true },
+    { path: '/**/v 1', input: 'path/v%201', matches: true },
+    { path: '**/v 1', input: '/path/v%201', matches: true },
+    { path: '/**/v 1', input: '/path/v%201', matches: true },
+
+    { path: '**/v%201', input: 'path/v 1', matches: false },
+    { path: '/**/v%201', input: 'path/v 1', matches: false },
+    { path: '**/v%201', input: '/path/v 1', matches: false },
+    { path: '/**/v%201', input: '/path/v 1', matches: false },
+
+    { path: '**/v%201', input: 'path/v%201', matches: true },
+    { path: '/**/v%201', input: 'path/v%201', matches: true },
+    { path: '**/v%201', input: '/path/v%201', matches: true },
+    { path: '/**/v%201', input: '/path/v%201', matches: true },
+
+    // Paths with URI-encoded params (slashes are never automatically encoded)
+    { path: '**/v/1', input: 'path/v%2F1', matches: false },
+    { path: '/**/v/1', input: 'path/v%2F1', matches: false },
+    { path: '**/v/1', input: '/path/v%2F1', matches: false },
+    { path: '/**/v/1', input: '/path/v%2F1', matches: false },
+
+    { path: '**/v%2F1', input: 'path/v 1', matches: false },
+    { path: '/**/v%2F1', input: 'path/v 1', matches: false },
+    { path: '**/v%2F1', input: '/path/v 1', matches: false },
+    { path: '/**/v%2F1', input: '/path/v 1', matches: false },
+
+    { path: '**/v%2F1', input: 'path/v%2F1', matches: true },
+    { path: '/**/v%2F1', input: 'path/v%2F1', matches: true },
+    { path: '**/v%2F1', input: '/path/v%2F1', matches: true },
+    { path: '/**/v%2F1', input: '/path/v%2F1', matches: true },
+
+    // Paths with URI-encoded params (mixed)
+    { path: '**/v/1/v/2', input: 'path/v%201/v%2F2', matches: false },
+    { path: '/**/v/1/v/2', input: 'path/v%201/v%2F2', matches: false },
+    { path: '**/v/1/v/2', input: '/path/v%201/v%2F2', matches: false },
+    { path: '/**/v/1/v/2', input: '/path/v%201/v%2F2', matches: false },
+
+    { path: '**/v%201/v%2F2', input: 'path/v 1/v/2', matches: false },
+    { path: '/**/v%201/v%2F2', input: 'path/v 1/v/2', matches: false },
+    { path: '**/v%201/v%2F2', input: '/path/v 1/v/2', matches: false },
+    { path: '/**/v%201/v%2F2', input: '/path/v 1/v/2', matches: false },
+
+    { path: '**/v%201/v%2F2', input: 'path/v%201/v%2F2', matches: true },
+    { path: '/**/v%201/v%2F2', input: 'path/v%201/v%2F2', matches: true },
+    { path: '**/v%201/v%2F2', input: '/path/v%201/v%2F2', matches: true },
+    { path: '/**/v%201/v%2F2', input: '/path/v%201/v%2F2', matches: true },
+  ])('should create a correct regular expression from a path regex (path: $path, input: $input)', (testCase) => {
+    const match = createWildcardRegexFromPath(testCase.path).exec(testCase.input);
 
     if (testCase.matches) {
-      expect(result).not.toBe(null);
-      expect(result!.groups ?? {}).toEqual(testCase.params ?? {});
+      expect(match).not.toBe(null);
     } else {
-      expect(result).toBe(null);
+      expect(match).toBe(null);
     }
   });
 });

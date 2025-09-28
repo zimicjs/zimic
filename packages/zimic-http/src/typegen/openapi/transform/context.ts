@@ -3,8 +3,8 @@ import { convertToPascalCase } from '@/utils/strings';
 import { parseRawFilter, groupParsedFiltersByMatch } from './filters';
 
 export interface TypePathFilter {
-  methodPattern: RegExp;
-  pathPattern: RegExp;
+  methodRegex: RegExp;
+  pathRegex: RegExp;
   isNegativeMatch: boolean;
 }
 

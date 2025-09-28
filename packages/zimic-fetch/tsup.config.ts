@@ -7,7 +7,7 @@ const sharedConfig: Options = {
   treeshake: true,
   minify: false,
   clean: true,
-  keepNames: true,
+  keepNames: false,
   noExternal: ['@zimic/utils'],
 };
 

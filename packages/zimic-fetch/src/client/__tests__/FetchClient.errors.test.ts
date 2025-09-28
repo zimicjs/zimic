@@ -1,8 +1,10 @@
 import { HttpSchema } from '@zimic/http';
+import { PossiblePromise } from '@zimic/utils/types';
 import joinURL from '@zimic/utils/url/joinURL';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { isClientSide } from '@/utils/environment';
+import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import FetchResponseError, {
@@ -548,7 +550,7 @@ describe('FetchClient > Errors', () => {
           expectTypeOf(error).toEqualTypeOf<FetchResponseError<Schema, 'POST', '/users'>>();
 
           const toObjectResult = error.toObject({ includeRequestBody, includeResponseBody });
-          expectTypeOf(toObjectResult).toEqualTypeOf<Promise<FetchResponseErrorObject> | FetchResponseErrorObject>();
+          expectTypeOf(toObjectResult).toEqualTypeOf<PossiblePromise<FetchResponseErrorObject>>();
 
           const errorObject = await toObjectResult;
           expect(errorObject).toEqual<FetchResponseErrorObject>({
@@ -681,6 +683,115 @@ describe('FetchClient > Errors', () => {
       });
     });
 
+    it('should show a warning if trying to include bodies already used in plain objects', async () => {
+      type Schema = HttpSchema<{
+        '/users': {
+          POST: {
+            request: {
+              headers: { 'content-type': 'application/json' };
+              body: User;
+            };
+            response: {
+              201: { body: User };
+              409: { body: { code: 409; message: string } };
+            };
+          };
+        };
+      }>;
+
+      await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
+        await interceptor
+          .post('/users')
+          .with({ body: users[0] })
+          .respond({
+            status: 409,
+            body: { code: 409, message: 'Conflict' },
+          })
+          .times(1);
+
+        const fetch = createFetch<Schema>({ baseURL });
+
+        const response = await fetch('/users', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(users[0]),
+        });
+
+        expectTypeOf(response.status).toEqualTypeOf<201 | 409>();
+        expect(response.status).toBe(409);
+
+        expect(response.request.bodyUsed).toBe(false);
+        expect(await response.request.json()).toEqual(users[0]);
+        expect(response.request.bodyUsed).toBe(true);
+
+        expect(response.bodyUsed).toBe(false);
+        expect(await response.json()).toEqual({ code: 409, message: 'Conflict' });
+        expect(response.bodyUsed).toBe(true);
+
+        expect(response.ok).toBe(false);
+
+        /* istanbul ignore if -- @preserve
+         * response.ok is false. This if is necessary to narrow the response to a failed type. */
+        if (response.ok) {
+          throw new Error('Expected a failed response.');
+        }
+
+        const errorObject = await usingIgnoredConsole(['warn'], async (console) => {
+          const errorObject = await response.error.toObject({
+            includeRequestBody: true,
+            includeResponseBody: true,
+          });
+
+          expect(console.warn).toHaveBeenCalledTimes(2);
+
+          expect(console.warn).toHaveBeenCalledWith(
+            '[@zimic/fetch] Could not include the request body because it is already used. If you access the body ' +
+              'before calling `error.toObject()`, consider reading it from a cloned request.\n\n' +
+              'Learn more: https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject',
+          );
+
+          expect(console.warn).toHaveBeenCalledWith(
+            '[@zimic/fetch] Could not include the response body because it is already used. If you access the body ' +
+              'before calling `error.toObject()`, consider reading it from a cloned response.\n\n' +
+              'Learn more: https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject',
+          );
+
+          return errorObject;
+        });
+
+        expect(errorObject).toEqual<FetchResponseErrorObject>({
+          message: `POST ${joinURL(baseURL, '/users')} failed with status 409: `,
+          name: 'FetchResponseError',
+          request: {
+            url: joinURL(baseURL, '/users'),
+            path: '/users',
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: undefined,
+            cache: 'default',
+            destination: '',
+            credentials: 'same-origin',
+            integrity: '',
+            keepalive: false,
+            mode: 'cors',
+            redirect: 'follow',
+            referrer: 'about:client',
+            referrerPolicy: '',
+          },
+          response: {
+            url: joinURL(baseURL, '/users'),
+            type: isClientSide() ? 'basic' : 'default',
+            status: 409,
+            statusText: '',
+            ok: false,
+            headers: { 'content-type': 'application/json' },
+            body: undefined,
+            redirected: false,
+          },
+        });
+      });
+    });
+
     it('should correctly convert response errors to plain objects including search params', async () => {
       type Schema = HttpSchema<{
         '/users': {
@@ -746,7 +857,10 @@ describe('FetchClient > Errors', () => {
 
         expectTypeOf(error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
 
-        expect(error.toObject()).toEqual<FetchResponseErrorObject>({
+        const errorObject = error.toObject();
+        expectTypeOf(errorObject).toEqualTypeOf<FetchResponseErrorObject>();
+
+        expect(errorObject).toEqual<FetchResponseErrorObject>({
           message: `GET ${joinURL(baseURL, '/users?page=1&limit=10')} failed with status 401: `,
           name: 'FetchResponseError',
           request: {

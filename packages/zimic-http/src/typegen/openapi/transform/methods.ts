@@ -715,7 +715,7 @@ export function normalizeMethod(method: ts.TypeElement, context: TypeTransformCo
   const matchesPositiveFilters =
     context.filters.paths.positive.length === 0 ||
     context.filters.paths.positive.some(
-      (filter) => filter.methodPattern.test(methodName) && filter.pathPattern.test(options.pathName),
+      (filter) => filter.methodRegex.test(methodName) && filter.pathRegex.test(options.pathName),
     );
 
   if (!matchesPositiveFilters) {
@@ -725,7 +725,7 @@ export function normalizeMethod(method: ts.TypeElement, context: TypeTransformCo
   const matchesNegativeFilters =
     context.filters.paths.negative.length > 0 &&
     context.filters.paths.negative.some(
-      (filter) => filter.methodPattern.test(methodName) && filter.pathPattern.test(options.pathName),
+      (filter) => filter.methodRegex.test(methodName) && filter.pathRegex.test(options.pathName),
     );
 
   if (matchesNegativeFilters) {

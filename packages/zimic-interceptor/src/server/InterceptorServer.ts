@@ -1,6 +1,6 @@
 import { normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
 import { HttpRequest, HttpMethod } from '@zimic/http';
-import createParametrizedPathPattern from '@zimic/utils/url/createParametrizedPathPattern';
+import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
@@ -30,7 +30,7 @@ import { getFetchAPI } from './utils/fetch';
 interface HttpHandler {
   id: string;
   baseURL: string;
-  pathPattern: RegExp;
+  pathRegex: RegExp;
   socket: Socket;
 }
 
@@ -222,7 +222,7 @@ class InterceptorServer implements PublicInterceptorServer {
     handlerGroups.push({
       id,
       baseURL,
-      pathPattern: createParametrizedPathPattern(path),
+      pathRegex: createRegexFromPath(path),
       socket,
     });
   }
@@ -328,7 +328,7 @@ class InterceptorServer implements PublicInterceptorServer {
       }
 
       const requestPath = requestURLAsString.replace(handler.baseURL, '');
-      const matchesPath = handler.pathPattern.test(requestPath);
+      const matchesPath = handler.pathRegex.test(requestPath);
 
       if (!matchesPath) {
         continue;
