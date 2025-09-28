@@ -121,7 +121,7 @@
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^10.0.0",
     "eslint": "^9.36.0",
-    "playwright": "^1.55.0",
+    "playwright": "^1.55.1",
     "tsup": "^8.4.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
