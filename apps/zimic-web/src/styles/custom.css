@@ -57,13 +57,23 @@
   --error-code-background-color: #f7ecef;
   --error-code-border-color: #f8a6aa;
 
+  --docsearch-searchbox-background: var(--ifm-background-color);
+  --docsearch-searchbox-focus-background: var(--ifm-background-surface-color);
+
+  --docsearch-hit-color: var(--ifm-font-color-base);
+  --docsearch-hit-highlight-color: color-mix(in oklab, var(--color-primary-600) 10%, transparent);
+  --docsearch-muted-color: color-mix(in oklab, var(--color-white-light) 70%, transparent);
+  --docsearch-text-color: var(--ifm-font-color-base);
+  --docsearch-highlight-color: var(--ifm-font-color-base);
+  --docsearch-secondary-text-color: color-mix(in oklab, var(--ifm-color-content) 80%, transparent);
+
   --ifm-font-family-base:
     'Noto Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Noto Sans', sans-serif,
     BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
     'Segoe UI Symbol';
 
   font-family: var(--ifm-font-family-base);
-  font-size: 0.96rem;
+  font-size: 1rem;
 }
 
 :root[data-theme='dark'] {
@@ -96,8 +106,11 @@
   --docsearch-searchbox-focus-background: var(--ifm-color-black);
 
   --docsearch-hit-color: var(--ifm-font-color-base);
-  --docsearch-hit-active-color: var(--color-white-light);
+  --docsearch-hit-highlight-color: color-mix(in oklab, var(--color-primary-500) 70%, transparent);
   --docsearch-muted-color: color-mix(in oklab, var(--color-white-light) 70%, transparent);
+  --docsearch-text-color: var(--ifm-font-color-base);
+  --docsearch-highlight-color: var(--ifm-font-color-base);
+  --docsearch-secondary-text-color: color-mix(in oklab, var(--ifm-color-content) 80%, transparent);
 
   .navbar {
     border-bottom: 1px solid var(--ifm-color-gray-800);
@@ -292,14 +305,14 @@ textarea {
 }
 
 .DocSearch-Button {
-  @apply dark:bg-primary-600/30 dark:hover:bg-primary-600/50 dark:focus-visible:ring-primary-300 dark:active:bg-primary-600/30 focus-visible:ring-primary-300 dark:hover:border-primary-500 dark:border-primary-600/70 dark:active:border-primary-600 dark:text-white-light border-white-dark bg-white-dark active:border-white-dark active:bg-white-dark cursor-pointer rounded-lg border-2 py-1.5 pl-3 pr-4 text-center font-semibold text-slate-500 outline-none transition-all hover:border-slate-200 hover:bg-slate-200 hover:ring-0 focus-visible:ring-2;
+  @apply dark:bg-primary-600/30 dark:hover:bg-primary-600/50 dark:focus-visible:ring-primary-300 dark:active:bg-primary-600/30 focus-visible:ring-primary-300 dark:hover:border-primary-500 dark:border-primary-600/70 dark:active:border-primary-600 dark:text-white-light border-white-dark bg-white-dark active:border-white-dark active:bg-white-dark h-fit cursor-pointer rounded-lg border-2 py-1.5 pl-3 pr-4 text-center font-semibold text-slate-500 outline-none transition-all hover:border-slate-200 hover:bg-slate-200 hover:ring-0 focus-visible:ring-2;
 
   .DocSearch-Button-Container {
     @apply flex gap-x-2;
   }
 
   .DocSearch-Search-Icon {
-    @apply h-4.5 w-4.5 text-current;
+    @apply h-5 w-5 text-current;
   }
 
   .DocSearch-Button-Keys {
@@ -307,29 +320,47 @@ textarea {
   }
 
   .DocSearch-Button-Placeholder {
-    @apply p-0;
+    @apply p-0 text-current;
   }
 }
 
-.DocSearch-Form {
-  @apply h-12 rounded-lg;
+.DocSearch-Modal {
+  .DocSearch-Form {
+    @apply border-primary-300 focus-within:border-primary-400 m-2 h-fit rounded-lg border-2 px-2 py-0 transition-colors;
 
-  .DocSearch-MagnifierLabel {
-    @apply h-5 w-5;
-  }
-
-  .DocSearch-Input {
-    @apply text-base;
-  }
-}
-
-.DocSearch-Hit {
-  &[aria-selected='true'] a {
-    background-color: color-mix(in oklab, var(--color-primary-500) 70%, transparent);
-
-    * {
-      background-color: transparent;
+    .DocSearch-Search-Icon {
+      @apply transition-colors;
+      color: var(--docsearch-text-color);
     }
+
+    .DocSearch-MagnifierLabel {
+      @apply p-2;
+
+      svg {
+        @apply h-5 w-5 shrink-0;
+      }
+    }
+
+    .DocSearch-Input {
+      @apply flex-1 text-base;
+    }
+
+    .DocSearch-Actions {
+      @apply w-fit;
+
+      .DocSearch-Clear,
+      .DocSearch-Divider {
+        display: none;
+      }
+
+      button {
+        @apply h-fit p-2;
+      }
+    }
+  }
+
+  .DocSearch-Hit-icon {
+    color: var(--docsearch-text-color);
   }
 }
 
