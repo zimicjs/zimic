@@ -35,7 +35,7 @@
     "@docusaurus/module-type-aliases": "3.9.1",
     "@docusaurus/types": "3.9.1",
     "@tailwindcss/postcss": "^4.1.13",
-    "@types/react": "^19.1.14",
+    "@types/react": "^19.1.15",
     "@zimic/eslint-config-react": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
