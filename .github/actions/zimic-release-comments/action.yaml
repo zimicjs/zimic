@@ -22,6 +22,7 @@ runs:
           const DELAY_BETWEEN_COMMENTS = 1000;
           const PER_PAGE = 100;
 
+          const releaseType = '${{ inputs.type }}';
           const projectName = '${{ inputs.project-name }}';
           const tag = '${{ inputs.ref-name }}';
           const version = tag.replace(/^@?[^@]*@|^v/, '');
@@ -33,7 +34,88 @@ runs:
           const githubOwner = 'zimicjs';
           const githubRepository = 'zimic';
 
-          const type = '${{ inputs.type }}';
+          const commentBody = [
+            releaseType === 'package' && `### Released in [${tag}](https://github.com/${githubOwner}/${githubRepository}/releases/tag/${tag}) :tada:\n`,
+            releaseType === 'documentation' && isStable && '### Released to [**zimic.dev**](https://zimic.dev) :tada:\n',
+            releaseType === 'documentation' && isCanary && '### Released to [**canary.zimic.dev**](https://canary.zimic.dev) :tada:\n',
+            releaseType === 'documentation' && isReleaseCandidate && '### Released to [**rc.zimic.dev**](https://rc.zimic.dev) :tada:\n',
+            `- :pushpin: [**Release notes**](https://github.com/${githubOwner}/${githubRepository}/releases/tag/${tag})`,
+            releaseType === 'package' && `- :package: [**NPM package**](https://www.npmjs.com/package/${projectName}/v/${version})`,
+          ]
+            .filter(Boolean)
+            .join('\n');
+
+          function waitForDelay(milliseconds) {
+            return new Promise((resolve) => setTimeout(resolve, milliseconds));
+          }
+
+          function extractPullRequestNumbersFromText(text) {
+            const pullRequestNumbers = new Set();
+
+            if (!text) {
+              return pullRequestNumbers;
+            }
+
+            const matches = text.matchAll(
+              new RegExp(
+                `https:\\/\\/github\\.com\\/${githubOwner}\\/${githubRepository}\\/pull\\/(?<pullRequestNumber>\\d+)`,
+                'gi',
+              ),
+            );
+
+            for (const match of matches) {
+              const pullRequestNumber = Number(match.groups.pullRequestNumber);
+              pullRequestNumbers.add(pullRequestNumber);
+            }
+
+            return pullRequestNumbers;
+          }
+
+          function extractLinkedIssueNumbersFromText(text) {
+            const issueNumbers = new Set();
+
+            if (!text) {
+              return issueNumbers;
+            }
+
+            const linkKeywordPatterns = [
+              'close',
+              'closes',
+              'closed',
+              'fix',
+              'fixes',
+              'fixed',
+              'resolve',
+              'resolves',
+              'resolved',
+              'part',
+              'part of',
+            ];
+
+            const issueNumberPatterns = [
+              `https:\\/\\/github\\.com\\/${githubOwner}\\/${githubRepository}\\/issues\\/(?<issueNumberFromURL>\\d+)`,
+              `${githubOwner}\\/${githubRepository}#(?<issueNumberFromPath>\\d+)`,
+              '#(?<issueNumberFromHash>\\d+)',
+            ];
+
+            const matches = text.matchAll(
+              new RegExp(
+                `(?:${linkKeywordPatterns.join('|')})\\b[\\s\\n]*:?[\\s\\n]*(?:${issueNumberPatterns.join('|')})`,
+                'gi',
+              ),
+            );
+
+            for (const match of matches) {
+              const issueNumber = Number(
+                match.groups.issueNumberFromURL ||
+                  match.groups.issueNumberFromPath ||
+                  match.groups.issueNumberFromHash,
+              );
+              issueNumbers.add(issueNumber);
+            }
+
+            return issueNumbers;
+          }
 
           let milestone = undefined;
 
@@ -57,7 +139,13 @@ runs:
 
           if (milestone) {
             console.log(`Milestone ${tag} found.`);
+          } else {
+            console.warn(`Milestone ${tag} not found.`);
+          }
 
+          const issueNumbersToCommentOn = new Set();
+
+          if (milestone) {
             for (let page = 1; ; page++) {
               console.log(`Fetching issues and pull requests with milestone ${tag}... (page ${page})`);
 
@@ -71,39 +159,80 @@ runs:
               });
 
               for (const issue of issues.data) {
-                console.log(`Creating release comment on #${issue.number}...`);
-
-                try {
-                  await github.rest.issues.createComment({
-                    owner: githubOwner,
-                    repo: githubRepository,
-                    issue_number: issue.number,
-                    body: [
-                      type === 'package' && `### Released in [${tag}](https://github.com/${githubOwner}/${githubRepository}/releases/tag/${tag}) :tada:\n`,
-                      type === 'documentation' && isStable && '### Released to [**zimic.dev**](https://zimic.dev) :tada:\n',
-                      type === 'documentation' && isCanary && '### Released to [**canary.zimic.dev**](https://canary.zimic.dev) :tada:\n',
-                      type === 'documentation' && isReleaseCandidate && '### Released to [**rc.zimic.dev**](https://rc.zimic.dev) :tada:\n',
-                      `- :pushpin: [**Release notes**](https://github.com/${githubOwner}/${githubRepository}/releases/tag/${tag})`,
-                      type === 'package' && `- :package: [**NPM package**](https://www.npmjs.com/package/${projectName}/v/${version})`,
-                    ].filter(Boolean).join('\n'),
-                  });
-
-                  console.log(`Release comment created on #${issue.number}.`);
-
-                  await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_COMMENTS));
-                } catch (error) {
-                  console.error(`Could not create release comment on #${issue.number}.`);
-                  console.error(error);
-
-                  await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_COMMENTS * 5));
-                }
+                issueNumbersToCommentOn.add(issue.number);
               }
 
               if (issues.data.length < PER_PAGE) {
                 break;
               }
             }
+          }
 
+          const pullRequestNumbersMentionedInRelease = new Set();
+
+          try {
+            const release = await github.rest.repos.getReleaseByTag({
+              owner: githubOwner,
+              repo: githubRepository,
+              tag,
+            });
+
+            const releaseDescription = release.data.body ?? '';
+
+            for (const pullRequestNumber of extractPullRequestNumbersFromText(releaseDescription)) {
+              pullRequestNumbersMentionedInRelease.add(pullRequestNumber);
+              issueNumbersToCommentOn.add(pullRequestNumber);
+            }
+          } catch (error) {
+            console.warn(`Release ${tag} not accessible. Skipping pull request extraction from release body.`, error);
+          }
+
+          for (const pullRequestNumber of pullRequestNumbersMentionedInRelease) {
+            try {
+              console.log(`Fetching pull request #${pullRequestNumber} to scan for closed issues...`);
+
+              const pullRequest = await github.rest.pulls.get({
+                owner: githubOwner,
+                repo: githubRepository,
+                pull_number: pullRequestNumber,
+              });
+
+              const pullRequestDescription = pullRequest.data.body ?? '';
+
+              for (const issueNumber of extractLinkedIssueNumbersFromText(pullRequestDescription)) {
+                issueNumbersToCommentOn.add(issueNumber);
+              }
+            } catch (error) {
+              console.warn(`Could not fetch pull request #${pullRequestNumber} to scan closing keywords.`, error);
+            }
+          }
+
+          if (issueNumbersToCommentOn.size === 0) {
+            console.log('No issues or pull requests found to comment on.');
+          } else {
+            console.log(`Creating release comments on ${issueNumbersToCommentOn.size} item(s)...`);
+          }
+
+          for (const issueNumber of issueNumbersToCommentOn) {
+            console.log(`Creating release comment on #${issueNumber}...`);
+
+            try {
+              await github.rest.issues.createComment({
+                owner: githubOwner,
+                repo: githubRepository,
+                issue_number: issueNumber,
+                body: commentBody,
+              });
+
+              console.log(`Release comment created on #${issueNumber}.`);
+            } catch (error) {
+              console.error(`Could not create release comment on #${issueNumber}.`, error);
+            }
+
+            await waitForDelay(DELAY_BETWEEN_COMMENTS);
+          }
+
+          if (milestone) {
             console.log(`Closing milestone ${tag}...`);
 
             await github.rest.issues.updateMilestone({
@@ -112,8 +241,6 @@ runs:
               milestone_number: milestone.number,
               state: 'closed',
             });
-
-            console.log('All done!');
-          } else {
-            console.warn(`Milestone ${tag} not found.`);
           }
+
+          console.log('All done!');

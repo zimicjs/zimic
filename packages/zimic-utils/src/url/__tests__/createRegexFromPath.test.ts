@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import createParametrizedPathPattern from '../createParametrizedPathPattern';
+import createRegexFromPath from '../createRegexFromPath';
 
 describe('createPathRegExp', () => {
   type PathTestCase =
@@ -493,15 +493,84 @@ describe('createPathRegExp', () => {
     { path: ':p1?/other/:p2+', input: '/v1/other/v2/', matches: true, params: { p1: 'v1', p2: 'v2/' } },
     { path: ':p1?/other/:p2+', input: 'v1/other/v2/other', matches: true, params: { p1: 'v1', p2: 'v2/other' } },
     { path: ':p1?/other/:p2+', input: 'other/v1-v2', matches: true, params: { p2: 'v1-v2' } },
-  ])('should create a correct regular expression from a path pattern (path: $path, input: $input)', (testCase) => {
-    const expression = createParametrizedPathPattern(testCase.path);
-    const result = expression.exec(testCase.input);
+
+    // Paths with URI-encoded params (spaces in the path are automated encoded, but not in the input)
+    { path: 'path/:p1', input: 'path/v%201', matches: true, params: { p1: 'v 1' } },
+    { path: '/path/:p1', input: 'path/v%201', matches: true, params: { p1: 'v 1' } },
+    { path: 'path/:p1', input: '/path/v%201', matches: true, params: { p1: 'v 1' } },
+    { path: '/path/:p1', input: '/path/v%201', matches: true, params: { p1: 'v 1' } },
+
+    { path: 'path/v 1', input: 'path/v%201', matches: true, params: {} },
+    { path: '/path/v 1', input: 'path/v%201', matches: true, params: {} },
+    { path: 'path/v 1', input: '/path/v%201', matches: true, params: {} },
+    { path: '/path/v 1', input: '/path/v%201', matches: true, params: {} },
+
+    { path: 'path/v%201', input: 'path/v 1', matches: false },
+    { path: '/path/v%201', input: 'path/v 1', matches: false },
+    { path: 'path/v%201', input: '/path/v 1', matches: false },
+    { path: '/path/v%201', input: '/path/v 1', matches: false },
+
+    { path: 'path/v%201', input: 'path/v%201', matches: true, params: {} },
+    { path: '/path/v%201', input: 'path/v%201', matches: true, params: {} },
+    { path: 'path/v%201', input: '/path/v%201', matches: true, params: {} },
+    { path: '/path/v%201', input: '/path/v%201', matches: true, params: {} },
+
+    // Paths with URI-encoded params (slashes are never automatically encoded)
+    { path: 'path/:p1', input: 'path/v%2F1', matches: true, params: { p1: 'v/1' } },
+    { path: '/path/:p1', input: 'path/v%2F1', matches: true, params: { p1: 'v/1' } },
+    { path: 'path/:p1', input: '/path/v%2F1', matches: true, params: { p1: 'v/1' } },
+    { path: '/path/:p1', input: '/path/v%2F1', matches: true, params: { p1: 'v/1' } },
+
+    { path: 'path/v/1', input: 'path/v%2F1', matches: false },
+    { path: '/path/v/1', input: 'path/v%2F1', matches: false },
+    { path: 'path/v/1', input: '/path/v%2F1', matches: false },
+    { path: '/path/v/1', input: '/path/v%2F1', matches: false },
+
+    { path: 'path/v%2F1', input: 'path/v 1', matches: false },
+    { path: '/path/v%2F1', input: 'path/v 1', matches: false },
+    { path: 'path/v%2F1', input: '/path/v 1', matches: false },
+    { path: '/path/v%2F1', input: '/path/v 1', matches: false },
+
+    { path: 'path/v%2F1', input: 'path/v%2F1', matches: true, params: {} },
+    { path: '/path/v%2F1', input: 'path/v%2F1', matches: true, params: {} },
+    { path: 'path/v%2F1', input: '/path/v%2F1', matches: true, params: {} },
+    { path: '/path/v%2F1', input: '/path/v%2F1', matches: true, params: {} },
+
+    // Paths with URI-encoded params (mixed)
+    { path: 'path/:p1/:p2', input: 'path/v%201/v%2F2', matches: true, params: { p1: 'v 1', p2: 'v/2' } },
+    { path: '/path/:p1/:p2', input: 'path/v%201/v%2F2', matches: true, params: { p1: 'v 1', p2: 'v/2' } },
+    { path: 'path/:p1/:p2', input: '/path/v%201/v%2F2', matches: true, params: { p1: 'v 1', p2: 'v/2' } },
+    { path: '/path/:p1/:p2', input: '/path/v%201/v%2F2', matches: true, params: { p1: 'v 1', p2: 'v/2' } },
+
+    { path: 'path/v/1/v/2', input: 'path/v%201/v%2F2', matches: false },
+    { path: '/path/v/1/v/2', input: 'path/v%201/v%2F2', matches: false },
+    { path: 'path/v/1/v/2', input: '/path/v%201/v%2F2', matches: false },
+    { path: '/path/v/1/v/2', input: '/path/v%201/v%2F2', matches: false },
+
+    { path: 'path/v%201/v%2F2', input: 'path/v 1/v/2', matches: false },
+    { path: '/path/v%201/v%2F2', input: 'path/v 1/v/2', matches: false },
+    { path: 'path/v%201/v%2F2', input: '/path/v 1/v/2', matches: false },
+    { path: '/path/v%201/v%2F2', input: '/path/v 1/v/2', matches: false },
+
+    { path: 'path/v%201/v%2F2', input: 'path/v%201/v%2F2', matches: true, params: {} },
+    { path: '/path/v%201/v%2F2', input: 'path/v%201/v%2F2', matches: true, params: {} },
+    { path: 'path/v%201/v%2F2', input: '/path/v%201/v%2F2', matches: true, params: {} },
+    { path: '/path/v%201/v%2F2', input: '/path/v%201/v%2F2', matches: true, params: {} },
+  ])('should create a correct regular expression from a path regex (path: $path, input: $input)', (testCase) => {
+    const match = createRegexFromPath(testCase.path).exec(testCase.input);
 
     if (testCase.matches) {
-      expect(result).not.toBe(null);
-      expect(result!.groups ?? {}).toEqual(testCase.params ?? {});
+      expect(match).not.toBe(null);
+
+      const params: Record<string, string | undefined> = {};
+
+      for (const [paramName, paramValue] of Object.entries(match?.groups ?? {})) {
+        params[paramName] = typeof paramValue === 'string' ? decodeURIComponent(paramValue) : undefined;
+      }
+
+      expect(params).toEqual(testCase.params ?? {});
     } else {
-      expect(result).toBe(null);
+      expect(match).toBe(null);
     }
   });
 });
