@@ -106,8 +106,6 @@ mocks are fully typed _by default_ and in sync with the API.
 
 Type-safe utilities to handle HTTP requests and responses, including headers, search params, and form data.
 
-:::
-
 - :star: **HTTP schemas**
 
   Declare the structure of your endpoints in an [HTTP schema](/docs/zimic-http/guides/1-schemas.md) and use it to type
@@ -132,9 +130,7 @@ Type-safe utilities to handle HTTP requests and responses, including headers, se
 
 ### `@zimic/fetch`
 
-A minimal (~2 kB minified and gzipped) and type-safe `fetch`-like API client.
-
-:::
+A minimal (~2 kB minified gzipped) and type-safe `fetch`-like API client.
 
 - :zap: **Type-safe `fetch`**
 
@@ -161,8 +157,6 @@ A minimal (~2 kB minified and gzipped) and type-safe `fetch`-like API client.
 ### `@zimic/interceptor`
 
 A type-safe interceptor library for handling and mocking HTTP requests in development and testing.
-
-:::
 
 - :globe_with_meridians: **HTTP interceptors**
 

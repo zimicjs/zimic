@@ -188,6 +188,7 @@ const config: Docusaurus.Config = {
       searchParameters: {},
       searchPagePath: 'search',
       insights: false,
+      placeholder: 'Search zimic.dev...',
     } satisfies ThemeConfigAlgolia,
 
     navbar: {
