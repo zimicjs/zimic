@@ -120,19 +120,24 @@ runs:
           let milestone = undefined;
 
           for (let page = 1; milestone === undefined; page++) {
-            console.log(`Fetching milestone ${tag}... (page ${page})`);
+            try {
+              console.log(`Fetching milestone ${tag}... (page ${page})`);
 
-            const milestones = await github.rest.issues.listMilestones({
-              owner: githubOwner,
-              repo: githubRepository,
-              state: 'open',
-              page,
-              per_page: PER_PAGE,
-            });
+              const milestones = await github.rest.issues.listMilestones({
+                owner: githubOwner,
+                repo: githubRepository,
+                state: 'open',
+                page,
+                per_page: PER_PAGE,
+              });
 
-            milestone = milestones.data.find((milestone) => milestone.title === tag);
+              milestone = milestones.data.find((milestone) => milestone.title === tag);
 
-            if (milestones.data.length < PER_PAGE) {
+              if (milestones.data.length < PER_PAGE) {
+                break;
+              }
+            } catch (error) {
+              console.error(`Could not fetch milestone ${tag}.`, error);
               break;
             }
           }
@@ -159,6 +164,7 @@ runs:
               });
 
               for (const issue of issues.data) {
+                console.log(`Found issue or pull request #${issue.number} with milestone ${tag}.`);
                 issueNumbersToCommentOn.add(issue.number);
               }
 
@@ -171,25 +177,30 @@ runs:
           const pullRequestNumbersMentionedInRelease = new Set();
 
           try {
+            console.log(`Fetching release ${tag}...`);
+
             const release = await github.rest.repos.getReleaseByTag({
               owner: githubOwner,
               repo: githubRepository,
               tag,
             });
 
+            console.log(`Fetched release ${tag}.`);
+
             const releaseDescription = release.data.body ?? '';
 
             for (const pullRequestNumber of extractPullRequestNumbersFromText(releaseDescription)) {
+              console.log(`Found pull request #${pullRequestNumber} mentioned in release ${tag}.`);
               pullRequestNumbersMentionedInRelease.add(pullRequestNumber);
               issueNumbersToCommentOn.add(pullRequestNumber);
             }
           } catch (error) {
-            console.warn(`Release ${tag} not accessible. Skipping pull request extraction from release body.`, error);
+            console.error(`Release ${tag} not accessible.`, error);
           }
 
           for (const pullRequestNumber of pullRequestNumbersMentionedInRelease) {
             try {
-              console.log(`Fetching pull request #${pullRequestNumber} to scan for closed issues...`);
+              console.log(`Fetching pull request #${pullRequestNumber}...`);
 
               const pullRequest = await github.rest.pulls.get({
                 owner: githubOwner,
@@ -197,24 +208,31 @@ runs:
                 pull_number: pullRequestNumber,
               });
 
+              console.log(`Fetched pull request #${pullRequestNumber}.`);
+
               const pullRequestDescription = pullRequest.data.body ?? '';
 
               for (const issueNumber of extractLinkedIssueNumbersFromText(pullRequestDescription)) {
+                console.log(`Found linked issue #${issueNumber} in pull request #${pullRequestNumber}.`);
                 issueNumbersToCommentOn.add(issueNumber);
               }
             } catch (error) {
-              console.warn(`Could not fetch pull request #${pullRequestNumber} to scan closing keywords.`, error);
+              console.error(`Could not fetch pull request #${pullRequestNumber}.`, error);
             }
           }
 
           if (issueNumbersToCommentOn.size === 0) {
             console.log('No issues or pull requests found to comment on.');
           } else {
-            console.log(`Creating release comments on ${issueNumbersToCommentOn.size} item(s)...`);
+            console.log(
+              `Creating release comments on ${issueNumbersToCommentOn.size} item${
+                issueNumbersToCommentOn.size === 1 ? '' : 's'
+              }...`
+            );
           }
 
           for (const issueNumber of issueNumbersToCommentOn) {
-            console.log(`Creating release comment on #${issueNumber}...`);
+            console.log(`Commenting on #${issueNumber}...`);
 
             try {
               await github.rest.issues.createComment({
@@ -224,9 +242,9 @@ runs:
                 body: commentBody,
               });
 
-              console.log(`Release comment created on #${issueNumber}.`);
+              console.log(`Commented on #${issueNumber}.`);
             } catch (error) {
-              console.error(`Could not create release comment on #${issueNumber}.`, error);
+              console.error(`Could not comment on #${issueNumber}.`, error);
             }
 
             await waitForDelay(DELAY_BETWEEN_COMMENTS);
@@ -241,6 +259,6 @@ runs:
               milestone_number: milestone.number,
               state: 'closed',
             });
-          }
 
-          console.log('All done!');
+            console.log(`Milestone ${tag} closed.`);
+          }

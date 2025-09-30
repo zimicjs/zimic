@@ -92,7 +92,7 @@ Type-safe utilities to handle HTTP requests and responses, including headers, se
 
 ### `@zimic/fetch`
 
-A minimal (~2 kB minified and gzipped) and type-safe `fetch`-like API client.
+A minimal (~2 kB minified gzipped) and type-safe `fetch`-like API client.
 
 - :zap: **Type-safe `fetch`**
 

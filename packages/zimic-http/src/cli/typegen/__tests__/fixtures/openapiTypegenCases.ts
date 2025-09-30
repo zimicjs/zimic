@@ -2,6 +2,8 @@ import path from 'path';
 
 import { TypegenFixtureCase } from './types';
 
+const filtersDirectory = path.join('src', 'cli', 'typegen', '__tests__', 'fixtures', 'openapi');
+
 const openapiTypegenFixtureCases = {
   get all() {
     return Object.keys(this)
@@ -12,117 +14,122 @@ const openapiTypegenFixtureCases = {
 
   simple: [
     {
-      inputFileName: 'simple.yaml',
-      expectedOutputFileName: 'simple.ts',
-      additionalArguments: ['--no-comments'],
+      input: 'simple.yaml',
+      expectedOutput: 'simple.ts',
+      extraArguments: ['--no-comments'],
     },
     {
-      inputFileName: 'simple.yaml',
-      expectedOutputFileName: 'simple.comments.ts',
-      additionalArguments: [],
+      input: 'simple.yaml',
+      expectedOutput: 'simple.comments.ts',
+      extraArguments: [],
     },
     {
-      inputFileName: 'simple.yaml',
-      expectedOutputFileName: 'simple.ts',
-      additionalArguments: ['--no-comments'],
-      shouldWriteToStdout: true,
+      input: 'simple.yaml',
+      extraArguments: ['--no-comments'],
+      stdout: true,
     },
     {
-      inputFileName: 'simple.yaml',
-      expectedOutputFileName: 'simple.ts',
-      additionalArguments: ['--no-comments'],
-      shouldUseURLAsInput: true,
+      input: 'simple.yaml',
+      expectedOutput: 'simple.ts',
+      extraArguments: ['--no-comments'],
+      url: true,
+    },
+    {
+      input: 'simple.yaml',
+      expectedOutput: 'simple.ts',
+      extraArguments: ['--no-comments'],
+      outputDirectoryExists: false,
     },
   ],
 
   pathParams: [
     {
-      inputFileName: 'pathParams.yaml',
-      expectedOutputFileName: 'pathParams.ts',
-      additionalArguments: ['--no-comments'],
+      input: 'pathParams.yaml',
+      expectedOutput: 'pathParams.ts',
+      extraArguments: ['--no-comments'],
     },
     {
-      inputFileName: 'pathParams.yaml',
-      expectedOutputFileName: 'pathParams.comments.ts',
-      additionalArguments: [],
+      input: 'pathParams.yaml',
+      expectedOutput: 'pathParams.comments.ts',
+      extraArguments: [],
     },
   ],
 
   searchParams: [
     {
-      inputFileName: 'searchParams.yaml',
-      expectedOutputFileName: 'searchParams.ts',
-      additionalArguments: ['--no-comments'],
+      input: 'searchParams.yaml',
+      expectedOutput: 'searchParams.ts',
+      extraArguments: ['--no-comments'],
     },
     {
-      inputFileName: 'searchParams.yaml',
-      expectedOutputFileName: 'searchParams.comments.ts',
-      additionalArguments: [],
+      input: 'searchParams.yaml',
+      expectedOutput: 'searchParams.comments.ts',
+      extraArguments: [],
     },
   ],
 
   headers: [
     {
-      inputFileName: 'headers.yaml',
-      expectedOutputFileName: 'headers.ts',
-      additionalArguments: ['--no-comments'],
+      input: 'headers.yaml',
+      expectedOutput: 'headers.ts',
+      extraArguments: ['--no-comments'],
     },
     {
-      inputFileName: 'headers.yaml',
-      expectedOutputFileName: 'headers.comments.ts',
-      additionalArguments: [],
+      input: 'headers.yaml',
+      expectedOutput: 'headers.comments.ts',
+      extraArguments: [],
     },
   ],
 
   requestBodies: [
     {
-      inputFileName: 'requestBodies.yaml',
-      expectedOutputFileName: 'requestBodies.ts',
-      additionalArguments: ['--no-comments'],
+      input: 'requestBodies.yaml',
+      expectedOutput: 'requestBodies.ts',
+      extraArguments: ['--no-comments'],
     },
     {
-      inputFileName: 'requestBodies.yaml',
-      expectedOutputFileName: 'requestBodies.comments.ts',
-      additionalArguments: [],
+      input: 'requestBodies.yaml',
+      expectedOutput: 'requestBodies.comments.ts',
+      extraArguments: [],
     },
   ],
 
   responses: [
     {
-      inputFileName: 'responses.yaml',
-      expectedOutputFileName: 'responses.ts',
-      additionalArguments: ['--no-comments'],
+      input: 'responses.yaml',
+      expectedOutput: 'responses.ts',
+      extraArguments: ['--no-comments'],
     },
     {
-      inputFileName: 'responses.yaml',
-      expectedOutputFileName: 'responses.comments.ts',
-      additionalArguments: [],
+      input: 'responses.yaml',
+      expectedOutput: 'responses.comments.ts',
+      extraArguments: [],
     },
   ],
 
   formData: [
     {
-      inputFileName: 'formData.yaml',
-      expectedOutputFileName: 'formData.ts',
-      additionalArguments: ['--no-comments'],
+      input: 'formData.yaml',
+      expectedOutput: 'formData.ts',
+      extraArguments: ['--no-comments'],
     },
     {
-      inputFileName: 'formData.yaml',
-      expectedOutputFileName: 'formData.comments.ts',
-      additionalArguments: [],
+      input: 'formData.yaml',
+      expectedOutput: 'formData.comments.ts',
+      extraArguments: [],
     },
   ],
 
   binary: [
     {
-      inputFileName: 'binary.yaml',
-      expectedOutputFileName: 'binary.ts',
-      additionalArguments: ['--no-comments'],
+      input: 'binary.yaml',
+      expectedOutput: 'binary.ts',
+      extraArguments: ['--no-comments'],
     },
     {
-      inputFileName: 'binary.yaml',
-      expectedOutputFileName: 'binary.comments.ts',
-      additionalArguments: [],
+      input: 'binary.yaml',
+      expectedOutput: 'binary.comments.ts',
+      extraArguments: [],
     },
   ],
 
@@ -130,144 +137,144 @@ const openapiTypegenFixtureCases = {
   // See https://github.com/openapi-ts/openapi-typescript/issues/1725
   pathItems: [
     {
-      inputFileName: 'pathItems.yaml',
-      expectedOutputFileName: 'pathItems.ts',
-      additionalArguments: ['--no-comments', '--no-prune'],
+      input: 'pathItems.yaml',
+      expectedOutput: 'pathItems.ts',
+      extraArguments: ['--no-comments', '--no-prune'],
     },
     {
-      inputFileName: 'pathItems.yaml',
-      expectedOutputFileName: 'pathItems.comments.ts',
-      additionalArguments: ['--no-prune'],
+      input: 'pathItems.yaml',
+      expectedOutput: 'pathItems.comments.ts',
+      extraArguments: ['--no-prune'],
     },
   ],
 
   combinations: [
     {
-      inputFileName: 'combinations.yaml',
-      expectedOutputFileName: 'combinations.ts',
-      additionalArguments: ['--no-comments'],
+      input: 'combinations.yaml',
+      expectedOutput: 'combinations.ts',
+      extraArguments: ['--no-comments'],
     },
     {
-      inputFileName: 'combinations.yaml',
-      expectedOutputFileName: 'combinations.comments.ts',
-      additionalArguments: [],
+      input: 'combinations.yaml',
+      expectedOutput: 'combinations.comments.ts',
+      extraArguments: [],
     },
   ],
 
   examples: [
     {
-      inputFileName: 'examples.yaml',
-      expectedOutputFileName: 'examples.ts',
-      additionalArguments: ['--no-comments'],
+      input: 'examples.yaml',
+      expectedOutput: 'examples.ts',
+      extraArguments: ['--no-comments'],
     },
     {
-      inputFileName: 'examples.yaml',
-      expectedOutputFileName: 'examples.comments.ts',
-      additionalArguments: [],
+      input: 'examples.yaml',
+      expectedOutput: 'examples.comments.ts',
+      extraArguments: [],
     },
   ],
 
   security: [
     {
-      inputFileName: 'security.yaml',
-      expectedOutputFileName: 'security.ts',
-      additionalArguments: ['--no-comments'],
+      input: 'security.yaml',
+      expectedOutput: 'security.ts',
+      extraArguments: ['--no-comments'],
     },
     {
-      inputFileName: 'security.yaml',
-      expectedOutputFileName: 'security.comments.ts',
-      additionalArguments: [],
+      input: 'security.yaml',
+      expectedOutput: 'security.comments.ts',
+      extraArguments: [],
     },
   ],
 
   webhooks: [
     {
-      inputFileName: 'webhooks.yaml',
-      expectedOutputFileName: 'webhooks.ts',
-      additionalArguments: ['--no-comments'],
+      input: 'webhooks.yaml',
+      expectedOutput: 'webhooks.ts',
+      extraArguments: ['--no-comments'],
     },
     {
-      inputFileName: 'webhooks.yaml',
-      expectedOutputFileName: 'webhooks.comments.ts',
-      additionalArguments: [],
+      input: 'webhooks.yaml',
+      expectedOutput: 'webhooks.comments.ts',
+      extraArguments: [],
     },
   ],
 
   filters: [
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.ts',
-      additionalArguments: ['--no-comments'],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.ts',
+      extraArguments: ['--no-comments'],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.comments.ts',
-      additionalArguments: [],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.comments.ts',
+      extraArguments: [],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.oneMethod.ts',
-      additionalArguments: ['--no-comments', '--filter', 'GET /users'],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.oneMethod.ts',
+      extraArguments: ['--no-comments', '--filter', 'GET /users'],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.multipleMethods.ts',
-      additionalArguments: ['--no-comments', '--filter', 'GET,PUT /users/:userId'],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.multipleMethods.ts',
+      extraArguments: ['--no-comments', '--filter', 'GET,PUT /users/:userId'],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.wildcardMethod.ts',
-      additionalArguments: ['--no-comments', '--filter', '* /users/:userId'],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.wildcardMethod.ts',
+      extraArguments: ['--no-comments', '--filter', '* /users/:userId'],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.pathWildcard.1.ts',
-      additionalArguments: ['--no-comments', '--filter', 'GET *'],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.pathWildcard.1.ts',
+      extraArguments: ['--no-comments', '--filter', 'GET *'],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.pathWildcard.2.ts',
-      additionalArguments: ['--no-comments', '--filter', 'GET **'],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.pathWildcard.2.ts',
+      extraArguments: ['--no-comments', '--filter', 'GET **'],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.pathWildcard.3.ts',
-      additionalArguments: ['--no-comments', '--filter', 'GET /users**'],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.pathWildcard.3.ts',
+      extraArguments: ['--no-comments', '--filter', 'GET /users**'],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.pathWildcard.4.ts',
-      additionalArguments: ['--no-comments', '--filter', 'GET /users/**'],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.pathWildcard.4.ts',
+      extraArguments: ['--no-comments', '--filter', 'GET /users/**'],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.pathWildcard.5.ts',
-      additionalArguments: ['--no-comments', '--filter', 'GET /users/**/*'],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.pathWildcard.5.ts',
+      extraArguments: ['--no-comments', '--filter', 'GET /users/**/*'],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.negative.1.ts',
-      additionalArguments: ['--no-comments', '--filter', '!GET /users'],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.negative.1.ts',
+      extraArguments: ['--no-comments', '--filter', '!GET /users'],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.negative.2.ts',
-      additionalArguments: ['--no-comments', '--filter', '!* /users**'],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.negative.2.ts',
+      extraArguments: ['--no-comments', '--filter', '!* /users**'],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.negative.3.ts',
-      additionalArguments: ['--no-comments', '--filter', '!GET /users/**/*'],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.negative.3.ts',
+      extraArguments: ['--no-comments', '--filter', '!GET /users/**/*'],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.empty.ts',
-      additionalArguments: ['--no-comments', '--filter', '!* **'],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.empty.ts',
+      extraArguments: ['--no-comments', '--filter', '!* **'],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.multiple.ts',
-      additionalArguments: [
+      input: 'filters.yaml',
+      expectedOutput: 'filters.multiple.ts',
+      extraArguments: [
         '--no-comments',
         '--filter',
         'POST /*',
@@ -280,30 +287,30 @@ const openapiTypegenFixtureCases = {
       ],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.multipleFromFile.ts',
-      additionalArguments: ['--no-comments', '--filter-file', path.join(__dirname, 'openapi', 'filters.txt')],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.multipleFromFile.ts',
+      extraArguments: ['--no-comments', '--filter-file', path.join(filtersDirectory, 'filters.txt')],
     },
 
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.oneMethod.notPruned.ts',
-      additionalArguments: ['--no-comments', '--no-prune', '--filter', 'GET /users'],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.oneMethod.notPruned.ts',
+      extraArguments: ['--no-comments', '--no-prune', '--filter', 'GET /users'],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.wildcardMethod.notPruned.ts',
-      additionalArguments: ['--no-comments', '--no-prune', '--filter', '* /users/:userId'],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.wildcardMethod.notPruned.ts',
+      extraArguments: ['--no-comments', '--no-prune', '--filter', '* /users/:userId'],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.empty.notPruned.ts',
-      additionalArguments: ['--no-comments', '--no-prune', '--filter', '!* **'],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.empty.notPruned.ts',
+      extraArguments: ['--no-comments', '--no-prune', '--filter', '!* **'],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.multiple.notPruned.ts',
-      additionalArguments: [
+      input: 'filters.yaml',
+      expectedOutput: 'filters.multiple.notPruned.ts',
+      extraArguments: [
         '--no-comments',
         '--no-prune',
         '--filter',
@@ -317,27 +324,26 @@ const openapiTypegenFixtureCases = {
       ],
     },
     {
-      inputFileName: 'filters.yaml',
-      expectedOutputFileName: 'filters.multipleFromFile.notPruned.ts',
-      additionalArguments: [
-        '--no-comments',
-        '--no-prune',
-        '--filter-file',
-        path.join(__dirname, 'openapi', 'filters.txt'),
-      ],
+      input: 'filters.yaml',
+      expectedOutput: 'filters.multipleFromFile.notPruned.ts',
+      extraArguments: ['--no-comments', '--no-prune', '--filter-file', path.join(filtersDirectory, 'filters.txt')],
+    },
+    {
+      input: 'filters.yaml',
+      extraArguments: ['--filter-file', path.join(filtersDirectory, 'unknown.txt')],
     },
   ],
 
   empty: [
     {
-      inputFileName: 'empty.yaml',
-      expectedOutputFileName: 'empty.ts',
-      additionalArguments: ['--no-comments'],
+      input: 'empty.yaml',
+      expectedOutput: 'empty.ts',
+      extraArguments: ['--no-comments'],
     },
     {
-      inputFileName: 'empty.yaml',
-      expectedOutputFileName: 'empty.comments.ts',
-      additionalArguments: [],
+      input: 'empty.yaml',
+      expectedOutput: 'empty.comments.ts',
+      extraArguments: [],
     },
   ],
 } satisfies Record<string, TypegenFixtureCase[]>;
