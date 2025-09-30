@@ -1,5 +1,6 @@
 import createCachedDynamicImport from '@zimic/utils/import/createCachedDynamicImport';
 import fs from 'fs';
+import path from 'path';
 
 export const importFile = createCachedDynamicImport(
   /* istanbul ignore next -- @preserve
@@ -7,6 +8,11 @@ export const importFile = createCachedDynamicImport(
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   async () => globalThis.File ?? (await import('buffer')).File,
 );
+
+export function replaceFileExtension(filePath: string, newExtension: string) {
+  const parsedFilePath = path.parse(filePath);
+  return path.join(parsedFilePath.dir, `${parsedFilePath.name}.${newExtension}`);
+}
 
 export async function pathExists(path: string) {
   try {

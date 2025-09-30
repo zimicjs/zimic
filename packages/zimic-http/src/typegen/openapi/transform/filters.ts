@@ -52,7 +52,7 @@ export function groupParsedFiltersByMatch(parsedFilters: (TypePathFilter | undef
 
 export async function readPathFiltersFromFile(filePath: string) {
   await ensurePathExists(filePath, {
-    errorMessage: `Could not read filter file at ${color.yellow(filePath)}`,
+    errorMessage: `Could not read filter file: ${color.yellow(filePath)}`,
   });
 
   const fileContent = await fs.promises.readFile(filePath, 'utf-8');

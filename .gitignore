@@ -19,7 +19,9 @@ node_modules
 /examples/*/tests/outputs
 /examples/*/tests/reports
 /examples/*/next-env.d.ts
+
 **/fixtures/**/generated/*
+packages/zimic-http/**/fixtures/openapi/*.json
 
 # Environment variables
 .env*.local

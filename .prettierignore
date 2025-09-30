@@ -11,7 +11,6 @@ pnpm-lock.yaml
 
 /packages/*/dist
 /packages/*/build
-**/fixtures/**/generated/*
 
 /examples/*/.next
 
@@ -23,6 +22,9 @@ pnpm-lock.yaml
 /examples/*/tests/coverage
 /examples/*/tests/outputs
 /examples/*/tests/reports
+
+**/fixtures/**/generated/*
+packages/zimic-http/**/fixtures/openapi/*.json
 
 # Configuration
 .husky

@@ -9,7 +9,6 @@ tsconfig.tsbuildinfo
 # Build
 /dist
 /public/mockServiceWorker.js
-**/fixtures/**/generated/*
 
 # Tests
 /tests/coverage
