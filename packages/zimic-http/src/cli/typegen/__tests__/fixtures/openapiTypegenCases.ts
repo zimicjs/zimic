@@ -23,7 +23,6 @@ const openapiTypegenFixtureCases = {
     },
     {
       inputFileName: 'simple.yaml',
-      expectedOutputFileName: 'simple.ts',
       additionalArguments: ['--no-comments'],
       shouldWriteToStdout: true,
     },
@@ -325,6 +324,10 @@ const openapiTypegenFixtureCases = {
         '--filter-file',
         path.join(__dirname, 'openapi', 'filters.txt'),
       ],
+    },
+    {
+      inputFileName: 'filters.yaml',
+      additionalArguments: ['--filter-file', path.join(__dirname, 'openapi', 'unknown.txt')],
     },
   ],
 

@@ -1,13 +1,14 @@
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 import isDefined from '@zimic/utils/data/isDefined';
 import joinURL from '@zimic/utils/url/joinURL';
-import filesystem from 'fs/promises';
+import fs from 'fs';
 import path from 'path';
 import color from 'picocolors';
 import prettier, { Options } from 'prettier';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 
 import runCLI from '@/cli/cli';
+import { pathExists } from '@/utils/files';
 import { resolvedPrettierConfig } from '@/utils/prettier';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { convertYAMLToJSONFile } from '@tests/utils/json';
@@ -33,11 +34,11 @@ async function generateJSONSchemas(yamlSchemaFileNames: string[]) {
 }
 
 async function validateAndGenerateSchemas() {
-  await filesystem.mkdir(typegenFixtures.openapi.generatedDirectory, { recursive: true });
+  await fs.promises.mkdir(typegenFixtures.openapi.generatedDirectory, { recursive: true });
 
   const [directoryFileNames, generatedDirectoryFileNames] = await Promise.all([
-    filesystem.readdir(typegenFixtures.openapi.directory),
-    filesystem.readdir(typegenFixtures.openapi.generatedDirectory),
+    fs.promises.readdir(typegenFixtures.openapi.directory),
+    fs.promises.readdir(typegenFixtures.openapi.generatedDirectory),
   ]);
 
   const yamlSchemaFileNames = directoryFileNames.filter((fileName) => fileName.endsWith('.yaml'));
@@ -58,7 +59,7 @@ async function validateAndGenerateSchemas() {
        * If there are no generated files yet, this function won't run. */
       async (fileName) => {
         const filePath = path.join(typegenFixtures.openapi.generatedDirectory, fileName);
-        await filesystem.unlink(filePath);
+        await fs.promises.unlink(filePath);
       },
     ),
   );
@@ -224,14 +225,14 @@ describe('Type generation (OpenAPI)', () => {
         return processWriteSpy.mock.calls[0][0].toString();
       } else {
         expect(processWriteSpy).toHaveBeenCalledTimes(0);
-        return filesystem.readFile(outputFilePath, 'utf-8');
+        return fs.promises.readFile(outputFilePath, 'utf-8');
       }
     }
 
     describe.each(fixtureFileTypes)('Type (%s)', (fileType) => {
       for (const fixtureCase of fixtureCases) {
         it(
-          `should correctly generate types: ${fixtureCase.expectedOutputFileName}${fixtureCase.shouldWriteToStdout ? ', stdout true' : ''}`,
+          `should correctly generate types: ${fixtureCase.expectedOutputFileName ?? ''}${fixtureCase.shouldWriteToStdout ? ', stdout true' : ''}`,
           { timeout: 10000 },
           async () => {
             const inputDirectory =
@@ -243,7 +244,7 @@ describe('Type generation (OpenAPI)', () => {
               ? joinURL(schemaInterceptor.baseURL, 'spec', fixtureName)
               : inputFilePath;
 
-            const inputFileBuffer = (await filesystem.readFile(inputFilePath)) as Buffer<ArrayBuffer>;
+            const inputFileBuffer = (await fs.promises.readFile(inputFilePath)) as Buffer<ArrayBuffer>;
 
             schemaInterceptor
               .get(`/spec/${fixtureName}`)
@@ -254,11 +255,19 @@ describe('Type generation (OpenAPI)', () => {
               .times(fixtureCase.shouldUseURLAsInput ? 1 : 0);
 
             const generatedOutputDirectory = typegenFixtures.openapi.generatedDirectory;
-            const outputFilePath = path.join(
-              generatedOutputDirectory,
-              `${path.parse(fixtureCase.expectedOutputFileName).name}.${fileType}.output.ts`,
-            );
-            const outputOption = fixtureCase.shouldWriteToStdout ? undefined : `--output=${outputFilePath}`;
+
+            const outputFilePath =
+              fixtureCase.expectedOutputFileName === undefined
+                ? undefined
+                : path.join(
+                    generatedOutputDirectory,
+                    `${path.parse(fixtureCase.expectedOutputFileName).name}.${fileType}.output.ts`,
+                  );
+
+            const outputOption =
+              fixtureCase.shouldWriteToStdout || outputFilePath === undefined
+                ? undefined
+                : `--output=${outputFilePath}`;
 
             processArgvSpy.mockReturnValue(
               [
@@ -274,7 +283,7 @@ describe('Type generation (OpenAPI)', () => {
               ].filter(isDefined),
             );
 
-            let rawGeneratedOutputContent: string;
+            let rawGeneratedOutputContent: string | undefined;
 
             const processWriteSpy = vi.spyOn(process.stdout, 'write');
             processWriteSpy.mockImplementation((_data, _encoding, callback) => {
@@ -282,13 +291,24 @@ describe('Type generation (OpenAPI)', () => {
               return true;
             });
 
+            const filterFileOptionIndex = fixtureCase.additionalArguments.indexOf('--filter-file');
+            const hasFilterFileOption = filterFileOptionIndex !== -1;
+
+            const filterFilePath = fixtureCase.additionalArguments.at(filterFileOptionIndex + 1);
+            const filterFileExists = filterFilePath ? await pathExists(filterFilePath) : false;
+
             try {
-              await usingIgnoredConsole(['log', 'warn'], async (console) => {
+              await usingIgnoredConsole(['log', 'warn', 'error'], async (console) => {
+                if (hasFilterFileOption && !filterFileExists) {
+                  await expect(runCLI()).rejects.toThrowError(
+                    `Could not read filter file at ${color.yellow(filterFilePath)}`,
+                  );
+                  return;
+                }
+
                 await runCLI();
 
-                const hasFilterFile = fixtureCase.additionalArguments.includes('--filter-file');
-
-                if (hasFilterFile) {
+                if (hasFilterFileOption) {
                   verifyFilterFileWarnings(console);
                 } else if (fixtureName === 'responses') {
                   verifyResponsesWarnings(console);
@@ -303,24 +323,36 @@ describe('Type generation (OpenAPI)', () => {
                 verifySuccessMessage(fixtureCase, successOutputLabel, console);
               });
 
-              rawGeneratedOutputContent = await getGeneratedOutputContent(fixtureCase, outputFilePath, processWriteSpy);
+              if (outputFilePath !== undefined) {
+                rawGeneratedOutputContent = await getGeneratedOutputContent(
+                  fixtureCase,
+                  outputFilePath,
+                  processWriteSpy,
+                );
+              }
             } finally {
               processWriteSpy.mockRestore();
             }
 
-            const generatedOutputContent = normalizeGeneratedFileToCompare(
-              await prettier.format(rawGeneratedOutputContent, { ...prettierConfig, parser: 'typescript' }),
-            );
+            const generatedOutputContent = rawGeneratedOutputContent
+              ? normalizeGeneratedFileToCompare(
+                  await prettier.format(rawGeneratedOutputContent, { ...prettierConfig, parser: 'typescript' }),
+                )
+              : undefined;
 
-            const expectedOutputFilePath = path.join(
-              typegenFixtures.openapi.directory,
-              fixtureCase.expectedOutputFileName,
-            );
-            const expectedOutputContent = normalizeGeneratedFileToCompare(
-              await filesystem.readFile(expectedOutputFilePath, 'utf-8'),
-            );
+            if (fixtureCase.expectedOutputFileName) {
+              const expectedOutputFilePath = path.join(
+                typegenFixtures.openapi.directory,
+                fixtureCase.expectedOutputFileName,
+              );
+              const expectedOutputContent = normalizeGeneratedFileToCompare(
+                await fs.promises.readFile(expectedOutputFilePath, 'utf-8'),
+              );
 
-            expect(generatedOutputContent).toBe(expectedOutputContent);
+              expect(generatedOutputContent).toBe(expectedOutputContent);
+            } else {
+              expect(generatedOutputContent).toBe(undefined);
+            }
           },
         );
       }

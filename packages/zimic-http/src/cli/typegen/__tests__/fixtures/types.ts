@@ -6,7 +6,7 @@ export type TypegenFixtureCaseName = keyof (typeof typegenFixtures)[TypegenFixtu
 
 export interface TypegenFixtureCase {
   inputFileName: string;
-  expectedOutputFileName: string;
+  expectedOutputFileName?: string;
   additionalArguments: string[];
   shouldWriteToStdout?: boolean;
   shouldUseURLAsInput?: boolean;
