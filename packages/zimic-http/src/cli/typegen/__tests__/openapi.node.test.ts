@@ -1,46 +1,49 @@
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 import isDefined from '@zimic/utils/data/isDefined';
 import joinURL from '@zimic/utils/url/joinURL';
-import filesystem from 'fs/promises';
+import fs from 'fs';
+import yaml from 'js-yaml';
 import path from 'path';
 import color from 'picocolors';
 import prettier, { Options } from 'prettier';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 
 import runCLI from '@/cli/cli';
+import { pathExists, replaceFileExtension } from '@/utils/files';
 import { resolvedPrettierConfig } from '@/utils/prettier';
 import { usingIgnoredConsole } from '@tests/utils/console';
-import { convertYAMLToJSONFile } from '@tests/utils/json';
 
 import typegenFixtures from './fixtures/typegenFixtures';
 import { TypegenFixtureCase, TypegenFixtureCaseName } from './fixtures/types';
 
 const fixtureCaseNames = Object.keys(typegenFixtures.openapi.cases).filter((name) => name !== 'all');
 const fixtureCaseEntries = Object.entries(typegenFixtures.openapi.cases).filter(([name]) => name !== 'all');
-const fixtureFileTypes = ['yaml', 'json'] as const;
+const fixtureFileExtensions = ['yaml', 'json'] as const;
 
 async function generateJSONSchemas(yamlSchemaFileNames: string[]) {
   const generationPromises = yamlSchemaFileNames.map(async (yamlFileName) => {
     const yamlFilePath = path.join(typegenFixtures.openapi.directory, yamlFileName);
+    const yamlFileContent = await fs.promises.readFile(yamlFilePath, 'utf-8');
 
-    const yamlFileNameWithoutExtension = path.parse(yamlFileName).name;
-    const jsonFilePath = path.join(typegenFixtures.openapi.generatedDirectory, `${yamlFileNameWithoutExtension}.json`);
+    const jsonFilePath = replaceFileExtension(yamlFilePath, 'json');
+    const jsonFileContent = JSON.stringify(yaml.load(yamlFileContent), null, 2);
 
-    await convertYAMLToJSONFile(yamlFilePath, jsonFilePath);
+    await fs.promises.writeFile(jsonFilePath, jsonFileContent);
   });
 
   await Promise.all(generationPromises);
 }
 
 async function validateAndGenerateSchemas() {
-  await filesystem.mkdir(typegenFixtures.openapi.generatedDirectory, { recursive: true });
+  await fs.promises.mkdir(typegenFixtures.openapi.generatedDirectory, { recursive: true });
 
-  const [directoryFileNames, generatedDirectoryFileNames] = await Promise.all([
-    filesystem.readdir(typegenFixtures.openapi.directory),
-    filesystem.readdir(typegenFixtures.openapi.generatedDirectory),
+  const [schemaFileNames, generatedFileNames] = await Promise.all([
+    fs.promises.readdir(typegenFixtures.openapi.directory),
+    fs.promises.readdir(typegenFixtures.openapi.generatedDirectory),
   ]);
 
-  const yamlSchemaFileNames = directoryFileNames.filter((fileName) => fileName.endsWith('.yaml'));
+  const yamlSchemaFileNames = schemaFileNames.filter((fileName) => fileName.endsWith('.yaml'));
+  const jsonSchemaFileNames = schemaFileNames.filter((fileName) => fileName.endsWith('.json'));
 
   /* istanbul ignore if -- @preserve
    * This is a safety check to ensure that all fixture schemas are being tested. It is not expected to run normally. */
@@ -52,26 +55,34 @@ async function validateAndGenerateSchemas() {
     );
   }
 
+  const filePathsToRemove: string[] = [];
+
+  for (const fileName of jsonSchemaFileNames) {
+    const filePath = path.join(typegenFixtures.openapi.directory, fileName);
+    filePathsToRemove.push(filePath);
+  }
+
+  for (const fileName of generatedFileNames) {
+    const filePath = path.join(typegenFixtures.openapi.generatedDirectory, fileName);
+    filePathsToRemove.push(filePath);
+  }
+
   await Promise.all(
-    generatedDirectoryFileNames.map(
-      /* istanbul ignore next
-       * If there are no generated files yet, this function won't run. */
-      async (fileName) => {
-        const filePath = path.join(typegenFixtures.openapi.generatedDirectory, fileName);
-        await filesystem.unlink(filePath);
-      },
-    ),
+    filePathsToRemove.map(async (filePath) => {
+      await fs.promises.rm(filePath, { force: true, recursive: true });
+    }),
   );
 
   await generateJSONSchemas(yamlSchemaFileNames);
 }
 
-function normalizeGeneratedFileToCompare(fileContent: string) {
-  return fileContent.replace(/^\s*\/\/ eslint-disable-.+$/gm, '');
+function removeESLintComments(generatedOutput: string) {
+  return generatedOutput.replace(/^\s*\/\/ eslint-disable-.+$/gm, '');
 }
 
 describe('Type generation (OpenAPI)', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
+  const processWriteSpy = vi.spyOn(process.stdout, 'write');
 
   let prettierConfig: Options;
 
@@ -81,7 +92,17 @@ describe('Type generation (OpenAPI)', () => {
 
   const schemaInterceptor = createHttpInterceptor<{
     [Path in `/spec/${TypegenFixtureCaseName}`]: {
-      GET: { response: { 200: { body: Blob } } };
+      GET: {
+        response: {
+          200: {
+            headers: { 'content-type': string };
+            body: Blob;
+          };
+          404: {
+            body: { message?: string };
+          };
+        };
+      };
     };
   }>({
     baseURL: 'http://localhost:3000',
@@ -94,9 +115,18 @@ describe('Type generation (OpenAPI)', () => {
   });
 
   beforeEach(() => {
-    processArgvSpy.mockReturnValue([]);
+    processArgvSpy.mockClear().mockReturnValue([]);
+
+    processWriteSpy.mockClear().mockImplementation((_data, _encoding, callback) => {
+      callback?.();
+      return true;
+    });
 
     schemaInterceptor.clear();
+  });
+
+  afterEach(() => {
+    schemaInterceptor.checkTimes();
   });
 
   afterAll(async () => {
@@ -158,172 +188,187 @@ describe('Type generation (OpenAPI)', () => {
     });
   });
 
-  describe.each(fixtureCaseEntries)('Schema (%s)', (fixtureName, fixtureCases: TypegenFixtureCase[]) => {
-    function verifyFilterFileWarnings(console: Console & { warn: MockInstance }) {
-      expect(console.warn).toHaveBeenCalledTimes(1);
+  function verifyFilterFileWarnings(console: Console & { warn: MockInstance }) {
+    expect(console.warn).toHaveBeenCalledTimes(1);
 
-      const message = console.warn.mock.calls[0].join(' ');
+    const message = console.warn.mock.calls[0].join(' ');
+    expect(message).toMatch(/.*\[@zimic\/http\].* /);
+    expect(message).toContain(
+      `Warning: Filter could not be parsed and was ignored: ${color.yellow('invalid filter line')}`,
+    );
+  }
+
+  function verifyResponsesWarnings(console: Console & { log: MockInstance; warn: MockInstance }) {
+    const expectedUnknownStatusCodes = ['unknown'];
+
+    const expectedNumberOfWarnings = expectedUnknownStatusCodes.length;
+
+    expect(console.warn).toHaveBeenCalledTimes(expectedNumberOfWarnings);
+
+    const messages = console.warn.mock.calls
+      .slice(0, expectedUnknownStatusCodes.length)
+      .map((argument) => argument.join(' '))
+      .sort();
+
+    for (const [index, unknownStatusCode] of expectedUnknownStatusCodes.entries()) {
+      const message = messages[index];
       expect(message).toMatch(/.*\[@zimic\/http\].* /);
       expect(message).toContain(
-        `Warning: Filter could not be parsed and was ignored: ${color.yellow('invalid filter line')}`,
+        `Warning: Response has a non-standard status code: ${color.yellow(unknownStatusCode)}. ` +
+          "Consider replacing it with a number (e.g. '200'), a pattern ('1xx', '2xx', '3xx', '4xx', or '5xx'), " +
+          "or 'default'.",
       );
     }
+  }
 
-    function verifyResponsesWarnings(console: Console & { log: MockInstance; warn: MockInstance }) {
-      const expectedUnknownStatusCodes = ['unknown'];
+  function verifySuccessMessage(
+    fixtureCase: TypegenFixtureCase,
+    outputLabel: string,
+    console: Console & { log: MockInstance; warn: MockInstance },
+  ) {
+    let successMessage: string | undefined;
 
-      const expectedNumberOfWarnings = expectedUnknownStatusCodes.length;
+    if (fixtureCase.stdout) {
+      expect(console.log).not.toHaveBeenCalled();
+      successMessage = console.warn.mock.calls.at(-1)?.join(' ');
+    } else {
+      expect(console.log).toHaveBeenCalledTimes(1);
+      successMessage = console.log.mock.calls.at(-1)?.join(' ');
+    }
 
-      expect(console.warn).toHaveBeenCalledTimes(expectedNumberOfWarnings);
+    expect(successMessage).toBeDefined();
+    expect(successMessage).toMatch(/.*\[@zimic\/http\].* /);
+    expect(successMessage).toContain(`Generated ${outputLabel}`);
+    expect(successMessage).toMatch(/.*([\d.]+m?s).*$/);
+  }
 
-      const messages = console.warn.mock.calls
-        .slice(0, expectedUnknownStatusCodes.length)
-        .map((argument) => argument.join(' '))
-        .sort();
+  async function getGeneratedOutput(
+    fixtureCase: TypegenFixtureCase,
+    outputFilePath: string,
+    processWriteSpy: MockInstance<typeof process.stdout.write>,
+  ) {
+    let rawOutput: string;
 
-      for (const [index, unknownStatusCode] of expectedUnknownStatusCodes.entries()) {
-        const message = messages[index];
-        expect(message).toMatch(/.*\[@zimic\/http\].* /);
-        expect(message).toContain(
-          `Warning: Response has a non-standard status code: ${color.yellow(unknownStatusCode)}. ` +
-            "Consider replacing it with a number (e.g. '200'), a pattern ('1xx', '2xx', '3xx', '4xx', or '5xx'), " +
-            "or 'default'.",
+    if (fixtureCase.stdout) {
+      expect(processWriteSpy).toHaveBeenCalledTimes(1);
+      expect(processWriteSpy).toHaveBeenCalledWith(expect.any(String) as string, 'utf-8', expect.any(Function));
+      rawOutput = processWriteSpy.mock.calls[0][0].toString();
+    } else {
+      expect(processWriteSpy).toHaveBeenCalledTimes(0);
+      rawOutput = await fs.promises.readFile(outputFilePath, 'utf-8');
+    }
+
+    return prettier.format(rawOutput, { ...prettierConfig, parser: 'typescript' });
+  }
+
+  describe.each(fixtureCaseEntries)('Schema (%s)', (fixtureName, fixtureCases: TypegenFixtureCase[]) => {
+    describe.each(fixtureFileExtensions)('Extension (%s)', (fileExtension) => {
+      it.each(fixtureCases)('should correctly generate types (%o)', { timeout: 10000 }, async (fixtureCase) => {
+        const {
+          input: inputFileName,
+          expectedOutput: expectedOutputFileName = '',
+          extraArguments: additionalArguments,
+          stdout: shouldWriteToStdout,
+          url: shouldUseURLAsInput,
+          outputDirectoryExists: shouldOutputDirectoryExist = true,
+        } = fixtureCase;
+
+        const inputFilePath = path.join(
+          typegenFixtures.openapi.directory,
+          replaceFileExtension(inputFileName, fileExtension),
         );
-      }
-    }
 
-    function verifySuccessMessage(
-      fixtureCase: TypegenFixtureCase,
-      outputLabel: string,
-      console: Console & { log: MockInstance; warn: MockInstance },
-    ) {
-      let successMessage: string | undefined;
+        const inputFilePathOrURL = shouldUseURLAsInput
+          ? joinURL(schemaInterceptor.baseURL, 'spec', fixtureName)
+          : inputFilePath;
 
-      if (fixtureCase.shouldWriteToStdout) {
-        expect(console.log).not.toHaveBeenCalled();
-        successMessage = console.warn.mock.calls.at(-1)?.join(' ');
-      } else {
-        expect(console.log).toHaveBeenCalledTimes(1);
-        successMessage = console.log.mock.calls.at(-1)?.join(' ');
-      }
+        const inputFileBuffer = (await fs.promises.readFile(inputFilePath)) as Buffer<ArrayBuffer>;
 
-      expect(successMessage).toBeDefined();
-      expect(successMessage).toMatch(/.*\[@zimic\/http\].* /);
-      expect(successMessage).toContain(`Generated ${outputLabel}`);
-      expect(successMessage).toMatch(/.*([\d.]+m?s).*$/);
-    }
+        schemaInterceptor
+          .get(`/spec/${fixtureName}`)
+          .respond({
+            status: 200,
+            headers: { 'content-type': `application/${fileExtension}` },
+            body: new Blob([inputFileBuffer], { type: `application/${fileExtension}` }),
+          })
+          .times(shouldUseURLAsInput ? 1 : 0);
 
-    async function getGeneratedOutputContent(
-      fixtureCase: TypegenFixtureCase,
-      outputFilePath: string,
-      processWriteSpy: MockInstance<typeof process.stdout.write>,
-    ) {
-      if (fixtureCase.shouldWriteToStdout) {
-        expect(processWriteSpy).toHaveBeenCalledTimes(1);
-        expect(processWriteSpy).toHaveBeenCalledWith(expect.any(String) as string, 'utf-8', expect.any(Function));
-        return processWriteSpy.mock.calls[0][0].toString();
-      } else {
-        expect(processWriteSpy).toHaveBeenCalledTimes(0);
-        return filesystem.readFile(outputFilePath, 'utf-8');
-      }
-    }
+        const outputDirectoryParts = [typegenFixtures.openapi.generatedDirectory];
 
-    describe.each(fixtureFileTypes)('Type (%s)', (fileType) => {
-      for (const fixtureCase of fixtureCases) {
-        it(
-          `should correctly generate types: ${fixtureCase.expectedOutputFileName}${fixtureCase.shouldWriteToStdout ? ', stdout true' : ''}`,
-          { timeout: 10000 },
-          async () => {
-            const inputDirectory =
-              fileType === 'json' ? typegenFixtures.openapi.generatedDirectory : typegenFixtures.openapi.directory;
-            const inputFileNameWithoutExtension = path.parse(fixtureCase.inputFileName).name;
-            const inputFilePath = path.join(inputDirectory, `${inputFileNameWithoutExtension}.${fileType}`);
+        if (!shouldOutputDirectoryExist) {
+          outputDirectoryParts.push('unknown');
+        }
 
-            const inputFilePathOrURL = fixtureCase.shouldUseURLAsInput
-              ? joinURL(schemaInterceptor.baseURL, 'spec', fixtureName)
-              : inputFilePath;
+        const outputDirectory = path.join(...outputDirectoryParts);
 
-            const inputFileBuffer = (await filesystem.readFile(inputFilePath)) as Buffer<ArrayBuffer>;
+        if (shouldOutputDirectoryExist) {
+          await fs.promises.mkdir(outputDirectory, { recursive: true });
+          expect(await pathExists(outputDirectory)).toBe(true);
+        } else {
+          await fs.promises.rm(outputDirectory, { force: true, recursive: true });
+          expect(await pathExists(outputDirectory)).toBe(false);
+        }
 
-            schemaInterceptor
-              .get(`/spec/${fixtureName}`)
-              .respond({
-                status: 200,
-                body: new Blob([inputFileBuffer], { type: `application/${fileType}` }),
-              })
-              .times(fixtureCase.shouldUseURLAsInput ? 1 : 0);
+        const outputFilePath = expectedOutputFileName
+          ? path.join(outputDirectory, replaceFileExtension(expectedOutputFileName, `${fileExtension}.output.ts`))
+          : undefined;
 
-            const generatedOutputDirectory = typegenFixtures.openapi.generatedDirectory;
-            const outputFilePath = path.join(
-              generatedOutputDirectory,
-              `${path.parse(fixtureCase.expectedOutputFileName).name}.${fileType}.output.ts`,
+        const outputOptions = shouldWriteToStdout || !outputFilePath ? [] : ['--output', outputFilePath];
+
+        processArgvSpy.mockReturnValue(
+          [
+            'node',
+            './dist/cli.js',
+            'typegen',
+            'openapi',
+            inputFilePathOrURL,
+            ...outputOptions,
+            '--service-name',
+            'my-service',
+            ...additionalArguments,
+          ].filter(isDefined),
+        );
+
+        const filterFileOptionIndex = additionalArguments.indexOf('--filter-file');
+        const hasFilterFileOption = filterFileOptionIndex !== -1;
+
+        const filterFilePath = additionalArguments.at(filterFileOptionIndex + 1);
+        const filterFileExists = filterFilePath ? await pathExists(filterFilePath) : false;
+
+        await usingIgnoredConsole(['log', 'warn', 'error'], async (console) => {
+          if (hasFilterFileOption && filterFilePath && !filterFileExists) {
+            await expect(runCLI()).rejects.toThrowError(
+              `Could not read filter file: ${color.yellow(path.resolve(filterFilePath))}`,
             );
-            const outputOption = fixtureCase.shouldWriteToStdout ? undefined : `--output=${outputFilePath}`;
+          } else {
+            await runCLI();
 
-            processArgvSpy.mockReturnValue(
-              [
-                'node',
-                './dist/cli.js',
-                'typegen',
-                'openapi',
-                inputFilePathOrURL,
-                outputOption,
-                '--service-name',
-                'my-service',
-                ...fixtureCase.additionalArguments,
-              ].filter(isDefined),
-            );
-
-            let rawGeneratedOutputContent: string;
-
-            const processWriteSpy = vi.spyOn(process.stdout, 'write');
-            processWriteSpy.mockImplementation((_data, _encoding, callback) => {
-              callback?.();
-              return true;
-            });
-
-            try {
-              await usingIgnoredConsole(['log', 'warn'], async (console) => {
-                await runCLI();
-
-                const hasFilterFile = fixtureCase.additionalArguments.includes('--filter-file');
-
-                if (hasFilterFile) {
-                  verifyFilterFileWarnings(console);
-                } else if (fixtureName === 'responses') {
-                  verifyResponsesWarnings(console);
-                } else {
-                  expect(console.warn).toHaveBeenCalledTimes(fixtureCase.shouldWriteToStdout ? 1 : 0);
-                }
-
-                const successOutputLabel = fixtureCase.shouldWriteToStdout
-                  ? `to ${color.yellow('stdout')}`
-                  : color.green(outputFilePath);
-
-                verifySuccessMessage(fixtureCase, successOutputLabel, console);
-              });
-
-              rawGeneratedOutputContent = await getGeneratedOutputContent(fixtureCase, outputFilePath, processWriteSpy);
-            } finally {
-              processWriteSpy.mockRestore();
+            if (hasFilterFileOption) {
+              verifyFilterFileWarnings(console);
+            } else if (fixtureName === 'responses') {
+              verifyResponsesWarnings(console);
+            } else {
+              expect(console.warn).toHaveBeenCalledTimes(shouldWriteToStdout ? 1 : 0);
             }
 
-            const generatedOutputContent = normalizeGeneratedFileToCompare(
-              await prettier.format(rawGeneratedOutputContent, { ...prettierConfig, parser: 'typescript' }),
-            );
+            const successOutputLabel = shouldWriteToStdout
+              ? `to ${color.yellow('stdout')}`
+              : color.green(outputFilePath);
 
-            const expectedOutputFilePath = path.join(
-              typegenFixtures.openapi.directory,
-              fixtureCase.expectedOutputFileName,
-            );
-            const expectedOutputContent = normalizeGeneratedFileToCompare(
-              await filesystem.readFile(expectedOutputFilePath, 'utf-8'),
-            );
+            verifySuccessMessage(fixtureCase, successOutputLabel, console);
+          }
+        });
 
-            expect(generatedOutputContent).toBe(expectedOutputContent);
-          },
-        );
-      }
+        const generatedOutput = outputFilePath
+          ? await getGeneratedOutput(fixtureCase, outputFilePath, processWriteSpy)
+          : '';
+
+        const expectedOutput = expectedOutputFileName
+          ? await fs.promises.readFile(path.join(typegenFixtures.openapi.directory, expectedOutputFileName), 'utf-8')
+          : '';
+
+        expect(generatedOutput).toBe(removeESLintComments(expectedOutput));
+      });
     });
   });
 });
