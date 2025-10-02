@@ -1,9 +1,9 @@
-import { HttpSchema, HttpRequest, HttpResponse, JSONSerialized, JSONValue } from '@zimic/http';
+import { HttpSchema, HttpRequest, HttpResponse, JSONSerialized, JSONValue, InvalidJSONError } from '@zimic/http';
 import joinURL from '@zimic/utils/url/joinURL';
+import color from 'picocolors';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import InvalidJSONError from '@/http/interceptorWorker/errors/InvalidJSONError';
 import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { importCrypto } from '@/utils/crypto';
@@ -796,8 +796,16 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
 
           expect(console.error).toHaveBeenCalledTimes(2);
           expect(console.error.mock.calls).toEqual([
-            [new InvalidJSONError(invalidRequestJSONString)],
-            [new InvalidJSONError(invalidResponseJSONString)],
+            [
+              color.cyan('[@zimic/interceptor]'),
+              'Failed to parse request body:',
+              new InvalidJSONError(invalidRequestJSONString),
+            ],
+            [
+              color.cyan('[@zimic/interceptor]'),
+              'Failed to parse response body:',
+              new InvalidJSONError(invalidResponseJSONString),
+            ],
           ]);
         });
 
