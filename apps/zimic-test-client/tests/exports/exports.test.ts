@@ -56,6 +56,9 @@ import {
   type HttpSchemaPath,
   type InferPathParams,
   type MergeHttpResponsesByStatusCode,
+  parseHttpBody,
+  InvalidFormDataError as HttpInvalidFormDataError,
+  InvalidJSONError as HttpInvalidJSONError,
 } from '@zimic/http';
 import {
   createHttpInterceptor,
@@ -91,8 +94,8 @@ import {
   UnknownHttpInterceptorPlatformError,
   UnknownHttpInterceptorTypeError,
   RequestSavingSafeLimitExceededError,
-  InvalidFormDataError,
-  InvalidJSONError,
+  InvalidFormDataError as InterceptorInvalidFormDataError,
+  InvalidJSONError as InterceptorInvalidJSONError,
   UnregisteredBrowserServiceWorkerError,
   DisabledRequestSavingError,
   TimesCheckError,
@@ -175,10 +178,24 @@ describe('Exports', () => {
     expectTypeOf<InferPathParams<never>>().not.toBeAny();
     expectTypeOf<MergeHttpResponsesByStatusCode<never>>().not.toBeAny();
 
-    expectTypeOf<InvalidJSONError>().not.toBeAny();
-    expect(typeof InvalidJSONError).toBe('function');
-    expectTypeOf<InvalidFormDataError>().not.toBeAny();
-    expect(typeof InvalidFormDataError).toBe('function');
+    expectTypeOf(parseHttpBody).not.toBeAny();
+    expect(parseHttpBody).toBe('function');
+
+    expectTypeOf<HttpInvalidJSONError>().not.toBeAny();
+    expect(typeof HttpInvalidJSONError).toBe('function');
+
+    expectTypeOf<HttpInvalidFormDataError>().not.toBeAny();
+    expect(typeof HttpInvalidFormDataError).toBe('function');
+
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    expectTypeOf<InterceptorInvalidJSONError>().not.toBeAny();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    expect(typeof InterceptorInvalidJSONError).toBe('function');
+
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    expectTypeOf<InterceptorInvalidFormDataError>().not.toBeAny();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    expect(typeof InterceptorInvalidFormDataError).toBe('function');
 
     expect(typeof createFetch).toBe('function');
     expectTypeOf<Fetch<never>>().not.toBeAny();
@@ -258,12 +275,6 @@ describe('Exports', () => {
 
     expectTypeOf<RequestSavingSafeLimitExceededError>().not.toBeAny();
     expect(typeof RequestSavingSafeLimitExceededError).toBe('function');
-
-    expectTypeOf<InvalidFormDataError>().not.toBeAny();
-    expect(typeof InvalidFormDataError).toBe('function');
-
-    expectTypeOf<InvalidJSONError>().not.toBeAny();
-    expect(typeof InvalidJSONError).toBe('function');
 
     expectTypeOf<UnregisteredBrowserServiceWorkerError>().not.toBeAny();
     expect(typeof UnregisteredBrowserServiceWorkerError).toBe('function');
