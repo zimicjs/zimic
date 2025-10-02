@@ -69,7 +69,7 @@
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write",
-    "test": "dotenv -v NODE_ENV=test -- vitest",
+    "test": "dotenv -v NODE_ENV=test -v FORCE_COLOR=1 -- vitest",
     "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
     "deps:prepare": "playwright install chromium"
