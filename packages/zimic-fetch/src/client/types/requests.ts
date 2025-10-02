@@ -185,7 +185,7 @@ export type FetchRequestObject = Pick<
    *
    * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/body)
    */
-  body?: string | null;
+  body?: HttpBody | null;
 };
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference} */
@@ -262,7 +262,7 @@ export type FetchResponseObject = Pick<
    *
    * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/body)
    */
-  body?: string | null;
+  body?: HttpBody | null;
 };
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchrequest `fetch.Request` API reference} */

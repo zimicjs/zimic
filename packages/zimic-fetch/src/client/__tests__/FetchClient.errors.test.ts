@@ -1,4 +1,4 @@
-import { HttpSchema } from '@zimic/http';
+import { HttpSchema, JSONValue } from '@zimic/http';
 import { PossiblePromise } from '@zimic/utils/types';
 import joinURL from '@zimic/utils/url/joinURL';
 import { describe, expect, expectTypeOf, it } from 'vitest';
@@ -17,10 +17,10 @@ import { FetchResponse, FetchResponsePerStatusCode } from '../types/requests';
 describe('FetchClient > Errors', () => {
   const baseURL = 'http://localhost:3000';
 
-  interface User {
+  type User = JSONValue<{
     id: string;
     name: string;
-  }
+  }>;
 
   const users: User[] = [
     { id: '1', name: 'User 1' },
@@ -561,7 +561,7 @@ describe('FetchClient > Errors', () => {
               path: '/users',
               method: 'POST',
               headers: { 'content-type': 'application/json' },
-              body: includeRequestBody ? JSON.stringify(users[0]) : undefined,
+              body: includeRequestBody ? users[0] : undefined,
               cache: 'default',
               destination: '',
               credentials: 'same-origin',
@@ -579,7 +579,7 @@ describe('FetchClient > Errors', () => {
               statusText: '',
               ok: false,
               headers: { 'content-type': 'application/json' },
-              body: includeResponseBody ? JSON.stringify({ code: 409, message: 'Conflict' }) : undefined,
+              body: includeResponseBody ? { code: 409, message: 'Conflict' } : undefined,
               redirected: false,
             },
           });
