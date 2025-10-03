@@ -81,4 +81,4 @@ export class InvalidFormDataError extends HttpInvalidFormDataError {}
  *   import { InvalidJSONError } from '@zimic/http';
  *   ```
  */
-export declare class InvalidJSONError extends HttpInvalidJSONError {}
+export class InvalidJSONError extends HttpInvalidJSONError {}
