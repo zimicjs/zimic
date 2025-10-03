@@ -61,7 +61,11 @@ export { createHttpInterceptor } from './interceptor/factory';
  * `'content-type': 'multipart/form-data'`, if the content cannot be parsed to form data.
  *
  * @deprecated This type has been moved to {@link https://zimic.dev/docs/http `@zimic/http`}. Please import
- *   {@link HttpInvalidFormDataError InvalidFormDataError} from `@zimic/http` instead.
+ *   `InvalidFormDataError` from `@zimic/http` instead.
+ *
+ *   ```ts
+ *   import { InvalidFormDataError } from '@zimic/http';
+ *   ```
  */
 export class InvalidFormDataError extends HttpInvalidFormDataError {}
 
@@ -71,6 +75,10 @@ export class InvalidFormDataError extends HttpInvalidFormDataError {}
  * JSON.
  *
  * @deprecated This type has been moved to {@link https://zimic.dev/docs/http `@zimic/http`}. Please import
- *   {@link HttpInvalidJSONError InvalidJSONError} from `@zimic/http` instead.
+ *   `InvalidJSONError` from `@zimic/http` instead.
+ *
+ *   ```ts
+ *   import { InvalidJSONError } from '@zimic/http';
+ *   ```
  */
 export declare class InvalidJSONError extends HttpInvalidJSONError {}
