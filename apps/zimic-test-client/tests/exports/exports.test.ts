@@ -179,7 +179,7 @@ describe('Exports', () => {
     expectTypeOf<MergeHttpResponsesByStatusCode<never>>().not.toBeAny();
 
     expectTypeOf(parseHttpBody).not.toBeAny();
-    expect(parseHttpBody).toBe('function');
+    expect(typeof parseHttpBody).toBe('function');
 
     expectTypeOf<HttpInvalidJSONError>().not.toBeAny();
     expect(typeof HttpInvalidJSONError).toBe('function');
