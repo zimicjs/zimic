@@ -85,7 +85,7 @@ async function parseHttpBodyAsJSON<Body extends HttpBody>(resource: Request | Re
   }
 }
 
-export async function parseHttpBody<Body extends HttpBody>(resource: Request | Response) {
+export async function parseHttpBody<Body extends HttpBody = HttpBody>(resource: Request | Response) {
   const contentType = resource.headers.get('content-type');
 
   if (contentType?.startsWith('application/json')) {
