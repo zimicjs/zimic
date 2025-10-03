@@ -816,66 +816,70 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
       });
     });
 
-    it(`should consider empty ${method} request or response JSON bodies as null`, async () => {
-      type MethodSchema = HttpSchema.Method<{
-        request: {
-          headers: { 'content-type': string };
-          body?: UserAsType;
-        };
-        response: {
-          200: {
+    it.each(['', undefined, null])(
+      `should consider empty ${method} request or response JSON bodies as null`,
+      async (body) => {
+        type MethodSchema = HttpSchema.Method<{
+          request: {
             headers: { 'content-type': string };
-            body?: UserAsType;
+            body?: string | null;
           };
-        };
-      }>;
-
-      await usingHttpInterceptor<{
-        '/users/:id': {
-          POST: MethodSchema;
-          PUT: MethodSchema;
-          PATCH: MethodSchema;
-          DELETE: MethodSchema;
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor[lowerMethod]('/users/:id').respond((request) => {
-            expectTypeOf(request.body).toEqualTypeOf<UserAsType | null>();
-            expect(request.body).toBe(null);
-
-            return {
-              status: 200,
-              headers: { 'content-type': 'application/json' },
+          response: {
+            200: {
+              headers: { 'content-type': string };
+              body?: string | null;
             };
-          }),
-          interceptor,
-        );
-        expect(handler).toBeInstanceOf(Handler);
+          };
+        }>;
 
-        expect(handler.requests).toHaveLength(0);
+        await usingHttpInterceptor<{
+          '/users/:id': {
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
+          };
+        }>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users/:id').respond((request) => {
+              expectTypeOf(request.body).toEqualTypeOf<string | null>();
+              expect(request.body).toBe(null);
 
-        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
-          method,
-          headers: { 'content-type': 'application/json' },
+              return {
+                status: 200,
+                headers: { 'content-type': 'application/json' },
+                body,
+              };
+            }),
+            interceptor,
+          );
+          expect(handler).toBeInstanceOf(Handler);
+
+          expect(handler.requests).toHaveLength(0);
+
+          const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+            method,
+            headers: { 'content-type': 'application/json' },
+          });
+          expect(response.status).toBe(200);
+
+          const fetchedBody = await response.text();
+          expect(fetchedBody).toBe('');
+
+          expect(handler.requests).toHaveLength(1);
+          const [request] = handler.requests;
+
+          expect(request).toBeInstanceOf(Request);
+          expect(request.headers.get('content-type')).toBe('application/json');
+          expectTypeOf(request.body).toEqualTypeOf<string | null>();
+          expect(request.body).toBe(null);
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toBe('application/json');
+          expectTypeOf(request.response.body).toEqualTypeOf<string | null>();
+          expect(request.response.body).toBe(null);
         });
-        expect(response.status).toBe(200);
-
-        const fetchedBody = await response.text();
-        expect(fetchedBody).toBe('');
-
-        expect(handler.requests).toHaveLength(1);
-        const [request] = handler.requests;
-
-        expect(request).toBeInstanceOf(Request);
-        expect(request.headers.get('content-type')).toBe('application/json');
-        expectTypeOf(request.body).toEqualTypeOf<UserAsType | null>();
-        expect(request.body).toBe(null);
-
-        expect(request.response).toBeInstanceOf(Response);
-        expect(request.response.headers.get('content-type')).toBe('application/json');
-        expectTypeOf(request.response.body).toEqualTypeOf<UserAsType | null>();
-        expect(request.response.body).toBe(null);
-      });
-    });
+      },
+    );
   });
 }
