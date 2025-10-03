@@ -161,7 +161,9 @@ export namespace FetchRequest {
 /**
  * A plain object representation of a {@link FetchRequest `FetchRequest`}, compatible with JSON.
  *
- * If the body is included in the object, it is represented as a string or null if empty.
+ * If the body is included in the object, it is automatically parsed based on the `content-type` header of the request.
+ *
+ * @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `error.toObject()`}
  */
 export type FetchRequestObject = Pick<
   FetchRequest.Loose,
@@ -181,9 +183,9 @@ export type FetchRequestObject = Pick<
   /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/Response/headers) */
   headers: HttpHeadersSerialized<HttpHeadersSchema>;
   /**
-   * The body of the response, represented as a string or null if empty.
+   * The body of the request. It is automatically parsed based on the `content-type` header of the request.
    *
-   * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/body)
+   * @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `error.toObject()`}
    */
   body?: HttpBody | null;
 };
@@ -249,7 +251,9 @@ export namespace FetchResponse {
 /**
  * A plain object representation of a {@link FetchResponse `FetchResponse`}, compatible with JSON.
  *
- * If the body is included in the object, it is represented as a string or null if empty.
+ * If the body is included in the object, it is automatically parsed based on the `content-type` header of the response.
+ *
+ * @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `error.toObject()`}
  */
 export type FetchResponseObject = Pick<
   FetchResponse.Loose,
@@ -258,9 +262,9 @@ export type FetchResponseObject = Pick<
   /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/Response/headers) */
   headers: HttpHeadersSerialized<HttpHeadersSchema>;
   /**
-   * The body of the response, represented as a string or null if empty.
+   * The body of the response. It is automatically parsed based on the `content-type` header of the response.
    *
-   * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/body)
+   * @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `error.toObject()`}
    */
   body?: HttpBody | null;
 };
