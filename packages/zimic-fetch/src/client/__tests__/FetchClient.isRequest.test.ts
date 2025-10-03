@@ -17,7 +17,7 @@ describe('FetchClient > isRequest', () => {
     { id: '2', name: 'User 2' },
   ];
 
-  it('should correctly check a fetch request without path params', () => {
+  it('should check a fetch request without path params', () => {
     type Schema = HttpSchema<{
       '/users': {
         POST: {
@@ -66,7 +66,7 @@ describe('FetchClient > isRequest', () => {
     expect(fetch.isRequest(request, 'GET', '/users/:userId')).toBe(false);
   });
 
-  it('should correctly check a fetch request with path params', () => {
+  it('should check a fetch request with path params', () => {
     type Schema = HttpSchema<{
       '/users': {
         POST: {
@@ -113,7 +113,7 @@ describe('FetchClient > isRequest', () => {
     expect(fetch.isRequest(request, 'GET', '/users/:userId')).toBe(true);
   });
 
-  it('should correctly check a fetch request without a leading slash in the path', () => {
+  it('should check a fetch request without a leading slash in the path', () => {
     type Schema = HttpSchema<{
       users: {
         POST: {
@@ -185,7 +185,7 @@ describe('FetchClient > isRequest', () => {
     expect(fetch.isRequest(request, 'GET', '/users/:userId/')).toBe(false);
   });
 
-  it('should correctly check a fetch request with a trailing slash in the path', () => {
+  it('should check a fetch request with a trailing slash in the path', () => {
     type Schema = HttpSchema<{
       'users/': {
         POST: {
@@ -257,7 +257,7 @@ describe('FetchClient > isRequest', () => {
     expect(fetch.isRequest(request, 'GET', '/users/:userId/')).toBe(false);
   });
 
-  it('should correctly check a fetch request with a leading and trailing slash in the path', () => {
+  it('should check a fetch request with a leading and trailing slash in the path', () => {
     type Schema = HttpSchema<{
       '/users/': {
         POST: {
@@ -329,7 +329,7 @@ describe('FetchClient > isRequest', () => {
     expect(fetch.isRequest(request, 'GET', 'users/:userId/')).toBe(false);
   });
 
-  it('should correctly check non-fetch requests', () => {
+  it('should check non-fetch requests', () => {
     type Schema = HttpSchema<{
       '/users': {
         GET: {
