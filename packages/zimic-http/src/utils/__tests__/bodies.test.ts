@@ -1,3 +1,4 @@
+import fileEquals from '@zimic/utils/data/fileEquals';
 import { JSONValue } from '@zimic/utils/types/json';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
@@ -98,11 +99,14 @@ describe('Body utilities', () => {
         expectTypeOf(parsedBody).toEqualTypeOf<HttpFormData<BodySchema> | null>();
         expect(parsedBody).toBeInstanceOf(HttpFormData);
 
-        expect(parsedBody!.toObject()).toEqual<BodySchema>({
+        const parsedBodyObject = parsedBody!.toObject();
+
+        expect(parsedBodyObject).toEqual<BodySchema>({
           value: '1',
           values: ['2', '3'],
-          file,
+          file: expect.any(File) as File,
         });
+        expect(await fileEquals(parsedBodyObject.file, file)).toBe(true);
       });
 
       it.each(['', undefined, null])('should return null when parsing an empty form data body (%o)', async (body) => {
