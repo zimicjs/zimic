@@ -208,6 +208,7 @@ abstract class HttpInterceptorWorker {
 
     if (
       typeof declaration.body === 'string' ||
+      declaration.body === null ||
       declaration.body === undefined ||
       declaration.body instanceof FormData ||
       declaration.body instanceof URLSearchParams ||
