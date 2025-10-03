@@ -173,14 +173,15 @@
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write",
-    "test": "dotenv -v NODE_ENV=test -- vitest",
-    "test:turbo": "dotenv -v CI=true -- pnpm run test run",
+    "test": "dotenv -v NODE_ENV=test -v FORCE_COLOR=1 -- vitest",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
     "typegen:fixtures": "tsx ./scripts/typegen/generateFixtureTypes.js"
   },
   "devDependencies": {
     "@types/node": "^24.5.2",
     "@vitest/browser": "^3.2.4",
+    "@vitest/coverage-istanbul": "^3.2.4",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
