@@ -485,13 +485,15 @@ describe('FetchClient > Errors > toObject', () => {
         expect(errorObject).toMatchObject<DeepPartial<FetchResponseErrorObject>>({
           request: {
             headers: { 'content-type': expect.stringMatching(/^multipart\/form-data; boundary=.+$/) as string },
-            body: requestBody,
+            body: expect.any(HttpFormData) as HttpFormData,
           },
           response: {
             headers: { 'content-type': expect.stringMatching(/^multipart\/form-data; boundary=.+$/) as string },
-            body: responseBody,
+            body: expect.any(HttpFormData) as HttpFormData,
           },
         });
+        expect(await requestBody.equals(errorObject.request.body as typeof requestBody)).toBe(true);
+        expect(await responseBody.equals(errorObject.response.body as typeof responseBody)).toBe(true);
       });
     });
 
