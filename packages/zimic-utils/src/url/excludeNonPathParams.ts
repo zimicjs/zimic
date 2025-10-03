@@ -1,4 +1,4 @@
-function excludeURLParams(url: URL) {
+function excludeNonPathParams(url: URL) {
   url.hash = '';
   url.search = '';
   url.username = '';
@@ -6,4 +6,4 @@ function excludeURLParams(url: URL) {
   return url;
 }
 
-export default excludeURLParams;
+export default excludeNonPathParams;

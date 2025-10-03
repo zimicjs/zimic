@@ -139,11 +139,11 @@
       "require": "./dist/url/createWildcardRegexFromPath.js",
       "default": "./dist/url/createWildcardRegexFromPath.js"
     },
-    "./url/excludeURLParams": {
-      "types": "./url/excludeURLParams.d.ts",
-      "import": "./dist/url/excludeURLParams.mjs",
-      "require": "./dist/url/excludeURLParams.js",
-      "default": "./dist/url/excludeURLParams.js"
+    "./url/excludeNonPathParams": {
+      "types": "./url/excludeNonPathParams.d.ts",
+      "import": "./dist/url/excludeNonPathParams.mjs",
+      "require": "./dist/url/excludeNonPathParams.js",
+      "default": "./dist/url/excludeNonPathParams.js"
     },
     "./url/joinURL": {
       "types": "./url/joinURL.d.ts",

@@ -1141,7 +1141,7 @@ describe('FetchClient > Methods', () => {
     });
   });
 
-  it('should correctly type requests and responses with multiple methods', async () => {
+  it('should type requests and responses with multiple methods', async () => {
     type Schema = HttpSchema<{
       '/users': {
         GET: {
