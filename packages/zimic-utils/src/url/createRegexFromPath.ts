@@ -15,11 +15,11 @@ export function preparePathForRegex(path: string) {
 // Path params names must match the JavaScript identifier pattern.
 // See // https://developer.mozilla.org/docs/Web/JavaScript/Reference/Lexical_grammar#identifiers.
 export function createPathParamRegex() {
-  return /(?<escape>\\)?:(?<identifier>[$_\p{ID_Start}][$\p{ID_Continue}]+)/gu;
+  return /(?<escape>\\)?:(?<identifier>[$_\p{ID_Start}][$\p{ID_Continue}]+)(?!\\[*+?])/gu;
 }
 
 export function createRepeatingPathParamRegex() {
-  return /(?<escape>\\)?:(?<identifier>[$_\p{ID_Start}][$\p{ID_Continue}]+)\\+/gu;
+  return /(?<escape>\\)?:(?<identifier>[$_\p{ID_Start}][$\p{ID_Continue}]+)\\\+/gu;
 }
 
 export function createOptionalPathParamRegex() {
@@ -42,7 +42,7 @@ function createRegexFromPath(path: string) {
         trailingSlash: string | undefined,
       ) => {
         if (escape) {
-          return `:${identifier}`;
+          return `${leadingSlash ?? ''}:${identifier}\\*${trailingSlash ?? ''}`;
         }
 
         const hasSegmentBeforePrefix = leadingSlash === '/';
@@ -63,7 +63,7 @@ function createRegexFromPath(path: string) {
       },
     )
     .replace(createRepeatingPathParamRegex(), (_match, escape: string | undefined, identifier: string) => {
-      return escape ? `:${identifier}` : `(?<${identifier}>.+)`;
+      return escape ? `:${identifier}\\+` : `(?<${identifier}>.+)`;
     })
     .replace(
       createOptionalPathParamRegex(),
@@ -75,7 +75,7 @@ function createRegexFromPath(path: string) {
         trailingSlash: string | undefined,
       ) => {
         if (escape) {
-          return `:${identifier}`;
+          return `${leadingSlash ?? ''}:${identifier}\\?${trailingSlash ?? ''}`;
         }
 
         const hasSegmentBeforePrefix = leadingSlash === '/';

@@ -20,7 +20,7 @@ describe('FetchClient > isResponse', () => {
     { id: '2', name: 'User 2' },
   ];
 
-  it('should correctly check a fetch response without path params', async () => {
+  it('should check a fetch response without path params', async () => {
     type Schema = HttpSchema<{
       '/users': {
         POST: {
@@ -82,7 +82,7 @@ describe('FetchClient > isResponse', () => {
     });
   });
 
-  it('should correctly check a fetch response with path params', async () => {
+  it('should check a fetch response with path params', async () => {
     type Schema = HttpSchema<{
       '/users': {
         POST: {
@@ -142,7 +142,7 @@ describe('FetchClient > isResponse', () => {
     });
   });
 
-  it('should correctly check a fetch response without a leading slash in the path', async () => {
+  it('should check a fetch response without a leading slash in the path', async () => {
     type Schema = HttpSchema<{
       users: {
         POST: {
@@ -227,7 +227,7 @@ describe('FetchClient > isResponse', () => {
     });
   });
 
-  it('should correctly check a fetch response with a trailing slash in the path', async () => {
+  it('should check a fetch response with a trailing slash in the path', async () => {
     type Schema = HttpSchema<{
       'users/': {
         POST: {
@@ -311,7 +311,7 @@ describe('FetchClient > isResponse', () => {
     });
   });
 
-  it('should correctly check a fetch response with a leading and trailing slash in the path', async () => {
+  it('should check a fetch response with a leading and trailing slash in the path', async () => {
     type Schema = HttpSchema<{
       '/users/': {
         POST: {
@@ -395,7 +395,7 @@ describe('FetchClient > isResponse', () => {
     });
   });
 
-  it('should correctly check non-fetch responses', async () => {
+  it('should check non-fetch responses', async () => {
     type Schema = HttpSchema<{
       '/users': {
         GET: {

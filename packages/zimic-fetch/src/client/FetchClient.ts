@@ -7,7 +7,7 @@ import {
   HttpHeaders,
 } from '@zimic/http';
 import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
-import excludeURLParams from '@zimic/utils/url/excludeURLParams';
+import excludeNonPathParams from '@zimic/utils/url/excludeNonPathParams';
 import joinURL from '@zimic/utils/url/joinURL';
 
 import FetchResponseError from './errors/FetchResponseError';
@@ -206,7 +206,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'def
 
         const baseURLWithoutTrailingSlash = baseURL.toString().replace(/\/$/, '');
 
-        this.path = excludeURLParams(url)
+        this.path = excludeNonPathParams(url)
           .toString()
           .replace(baseURLWithoutTrailingSlash, '') as LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>;
       }

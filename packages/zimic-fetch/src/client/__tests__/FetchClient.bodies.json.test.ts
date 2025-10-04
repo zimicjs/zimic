@@ -250,7 +250,7 @@ describe('FetchClient > Bodies > JSON', () => {
       });
 
       expectResponseStatus(response, 201);
-      expect(await response.json()).toEqual(null);
+      expect(await response.text()).toEqual('');
 
       expect(response).toBeInstanceOf(Response);
       expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();

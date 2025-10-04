@@ -1,10 +1,17 @@
-import { HttpSchema, HTTP_METHODS, HttpHeaders, HttpSearchParams, HttpFormData } from '@zimic/http';
+import {
+  HttpSchema,
+  HTTP_METHODS,
+  HttpHeaders,
+  HttpSearchParams,
+  HttpFormData,
+  InvalidFormDataError,
+} from '@zimic/http';
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import joinURL from '@zimic/utils/url/joinURL';
+import color from 'picocolors';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import InvalidFormDataError from '@/http/interceptorWorker/errors/InvalidFormDataError';
 import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
@@ -504,7 +511,11 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
             if (body && !body.has('tag') && platform === 'browser') {
               expect(console.error).toHaveBeenCalledTimes(1);
-              expect(console.error).toHaveBeenCalledWith(expect.any(InvalidFormDataError));
+              expect(console.error).toHaveBeenCalledWith(
+                color.cyan('[@zimic/interceptor]'),
+                'Failed to parse request body:',
+                expect.any(InvalidFormDataError),
+              );
             } else {
               expect(console.error).toHaveBeenCalledTimes(0);
             }
@@ -584,7 +595,11 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
             if (body && !body.has('tag') && platform === 'browser') {
               expect(console.error).toHaveBeenCalledTimes(1);
-              expect(console.error).toHaveBeenCalledWith(expect.any(InvalidFormDataError));
+              expect(console.error).toHaveBeenCalledWith(
+                color.cyan('[@zimic/interceptor]'),
+                'Failed to parse request body:',
+                expect.any(InvalidFormDataError),
+              );
             } else {
               expect(console.error).toHaveBeenCalledTimes(0);
             }

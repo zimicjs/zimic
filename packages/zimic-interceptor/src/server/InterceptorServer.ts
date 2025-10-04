@@ -1,7 +1,7 @@
 import { normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
 import { HttpRequest, HttpMethod } from '@zimic/http';
 import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
-import excludeURLParams from '@zimic/utils/url/excludeURLParams';
+import excludeNonPathParams from '@zimic/utils/url/excludeNonPathParams';
 import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
 
@@ -314,7 +314,7 @@ class InterceptorServer implements PublicInterceptorServer {
   private async createResponseForRequest(request: SerializedHttpRequest) {
     const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
 
-    const requestURL = excludeURLParams(new URL(request.url));
+    const requestURL = excludeNonPathParams(new URL(request.url));
     const requestURLAsString = requestURL.href === `${requestURL.origin}/` ? requestURL.origin : requestURL.href;
 
     let matchedSomeInterceptor = false;
