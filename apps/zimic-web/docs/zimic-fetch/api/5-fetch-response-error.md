@@ -127,6 +127,23 @@ if (!response.ok) {
 }
 ```
 
+If included, the bodies are parsed automatically based on the `content-type` header of the request and response.
+
+| `content-type`                      | Parsed as                                                          |
+| ----------------------------------- | ------------------------------------------------------------------ |
+| `application/json`                  | `JSON` (object)                                                    |
+| `application/xml`                   | `string`                                                           |
+| `application/x-www-form-urlencoded` | [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md) |
+| `application/*` (others)            | `Blob`                                                             |
+| `multipart/form-data`               | [`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md)         |
+| `multipart/*` (others)              | `Blob`                                                             |
+| `text/*`                            | `string`                                                           |
+| `image/*`                           | `Blob`                                                             |
+| `audio/*`                           | `Blob`                                                             |
+| `font/*`                            | `Blob`                                                             |
+| `video/*`                           | `Blob`                                                             |
+| `*/*` (others)                      | `JSON` (object) if possible, otherwise `Blob`                      |
+
 :::tip NOTE: <span>Already used bodies</span>
 
 If the body of the request or response has already been used (e.g., read with
@@ -180,3 +197,7 @@ const errorObject = await response.error.toObject({
 ```
 
 :::
+
+**Related**:
+
+- [Handling errors](/docs/zimic-fetch/guides/6-errors.md)
