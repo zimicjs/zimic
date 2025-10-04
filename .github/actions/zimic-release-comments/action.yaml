@@ -3,7 +3,7 @@ description: Comment on related issues and pull requests after a Zimic release a
 
 inputs:
   type:
-    description: The type of the release (package or documentation)
+    description: The type of the release (package or website)
     required: true
   ref-name:
     description: The Git reference name to create release comments for
@@ -19,8 +19,10 @@ runs:
       uses: actions/github-script@v7
       with:
         script: |
+          const GITHUB_OWNER = 'zimicjs';
+          const GITHUB_REPOSITORY = 'zimic';
+          const ITEMS_PER_PAGE = 100;
           const DELAY_BETWEEN_COMMENTS = 1000;
-          const PER_PAGE = 100;
 
           const releaseType = '${{ inputs.type }}';
           const projectName = '${{ inputs.project-name }}';
@@ -31,15 +33,12 @@ runs:
           const isCanary = version.includes('-canary.');
           const isReleaseCandidate = version.includes('-rc.');
 
-          const githubOwner = 'zimicjs';
-          const githubRepository = 'zimic';
-
           const commentBody = [
-            releaseType === 'package' && `### Released in [${tag}](https://github.com/${githubOwner}/${githubRepository}/releases/tag/${tag}) :tada:\n`,
-            releaseType === 'documentation' && isStable && '### Released to [**zimic.dev**](https://zimic.dev) :tada:\n',
-            releaseType === 'documentation' && isCanary && '### Released to [**canary.zimic.dev**](https://canary.zimic.dev) :tada:\n',
-            releaseType === 'documentation' && isReleaseCandidate && '### Released to [**rc.zimic.dev**](https://rc.zimic.dev) :tada:\n',
-            `- :pushpin: [**Release notes**](https://github.com/${githubOwner}/${githubRepository}/releases/tag/${tag})`,
+            releaseType === 'package' && `### Released in [${tag}](https://github.com/${GITHUB_OWNER}/${GITHUB_REPOSITORY}/releases/tag/${tag}) :tada:\n`,
+            releaseType === 'website' && isStable && '### Released to [**zimic.dev**](https://zimic.dev) :tada:\n',
+            releaseType === 'website' && isCanary && '### Released to [**canary.zimic.dev**](https://canary.zimic.dev) :tada:\n',
+            releaseType === 'website' && isReleaseCandidate && '### Released to [**rc.zimic.dev**](https://rc.zimic.dev) :tada:\n',
+            `- :pushpin: [**Release notes**](https://github.com/${GITHUB_OWNER}/${GITHUB_REPOSITORY}/releases/tag/${tag})`,
             releaseType === 'package' && `- :package: [**NPM package**](https://www.npmjs.com/package/${projectName}/v/${version})`,
           ]
             .filter(Boolean)
@@ -58,7 +57,7 @@ runs:
 
             const matches = text.matchAll(
               new RegExp(
-                `https:\\/\\/github\\.com\\/${githubOwner}\\/${githubRepository}\\/pull\\/(?<pullRequestNumber>\\d+)`,
+                `https:\\/\\/github\\.com\\/${GITHUB_OWNER}\\/${GITHUB_REPOSITORY}\\/pull\\/(?<pullRequestNumber>\\d+)`,
                 'gi',
               ),
             );
@@ -93,8 +92,8 @@ runs:
             ];
 
             const issueNumberPatterns = [
-              `https:\\/\\/github\\.com\\/${githubOwner}\\/${githubRepository}\\/issues\\/(?<issueNumberFromURL>\\d+)`,
-              `${githubOwner}\\/${githubRepository}#(?<issueNumberFromPath>\\d+)`,
+              `https:\\/\\/github\\.com\\/${GITHUB_OWNER}\\/${GITHUB_REPOSITORY}\\/issues\\/(?<issueNumberFromURL>\\d+)`,
+              `${GITHUB_OWNER}\\/${GITHUB_REPOSITORY}#(?<issueNumberFromPath>\\d+)`,
               '#(?<issueNumberFromHash>\\d+)',
             ];
 
@@ -120,19 +119,24 @@ runs:
           let milestone = undefined;
 
           for (let page = 1; milestone === undefined; page++) {
-            console.log(`Fetching milestone ${tag}... (page ${page})`);
+            try {
+              console.log(`Fetching milestone ${tag}... (page ${page})`);
 
-            const milestones = await github.rest.issues.listMilestones({
-              owner: githubOwner,
-              repo: githubRepository,
-              state: 'open',
-              page,
-              per_page: PER_PAGE,
-            });
+              const milestones = await github.rest.issues.listMilestones({
+                owner: GITHUB_OWNER,
+                repo: GITHUB_REPOSITORY,
+                state: 'open',
+                page,
+                per_page: ITEMS_PER_PAGE,
+              });
 
-            milestone = milestones.data.find((milestone) => milestone.title === tag);
+              milestone = milestones.data.find((milestone) => milestone.title === tag);
 
-            if (milestones.data.length < PER_PAGE) {
+              if (milestones.data.length < ITEMS_PER_PAGE) {
+                break;
+              }
+            } catch (error) {
+              console.error(`Could not fetch milestone ${tag}.`, error);
               break;
             }
           }
@@ -150,19 +154,20 @@ runs:
               console.log(`Fetching issues and pull requests with milestone ${tag}... (page ${page})`);
 
               const issues = await github.rest.issues.listForRepo({
-                owner: githubOwner,
-                repo: githubRepository,
+                owner: GITHUB_OWNER,
+                repo: GITHUB_REPOSITORY,
                 milestone: milestone.number,
                 state: 'all',
                 page,
-                per_page: PER_PAGE,
+                per_page: ITEMS_PER_PAGE,
               });
 
               for (const issue of issues.data) {
+                console.log(`Found issue or pull request #${issue.number} with milestone ${tag}.`);
                 issueNumbersToCommentOn.add(issue.number);
               }
 
-              if (issues.data.length < PER_PAGE) {
+              if (issues.data.length < ITEMS_PER_PAGE) {
                 break;
               }
             }
@@ -171,62 +176,74 @@ runs:
           const pullRequestNumbersMentionedInRelease = new Set();
 
           try {
+            console.log(`Fetching release ${tag}...`);
+
             const release = await github.rest.repos.getReleaseByTag({
-              owner: githubOwner,
-              repo: githubRepository,
+              owner: GITHUB_OWNER,
+              repo: GITHUB_REPOSITORY,
               tag,
             });
+
+            console.log(`Fetched release ${tag}.`);
 
             const releaseDescription = release.data.body ?? '';
 
             for (const pullRequestNumber of extractPullRequestNumbersFromText(releaseDescription)) {
+              console.log(`Found pull request #${pullRequestNumber} mentioned in release ${tag}.`);
               pullRequestNumbersMentionedInRelease.add(pullRequestNumber);
               issueNumbersToCommentOn.add(pullRequestNumber);
             }
           } catch (error) {
-            console.warn(`Release ${tag} not accessible. Skipping pull request extraction from release body.`, error);
+            console.error(`Release ${tag} not accessible.`, error);
           }
 
           for (const pullRequestNumber of pullRequestNumbersMentionedInRelease) {
             try {
-              console.log(`Fetching pull request #${pullRequestNumber} to scan for closed issues...`);
+              console.log(`Fetching pull request #${pullRequestNumber}...`);
 
               const pullRequest = await github.rest.pulls.get({
-                owner: githubOwner,
-                repo: githubRepository,
+                owner: GITHUB_OWNER,
+                repo: GITHUB_REPOSITORY,
                 pull_number: pullRequestNumber,
               });
+
+              console.log(`Fetched pull request #${pullRequestNumber}.`);
 
               const pullRequestDescription = pullRequest.data.body ?? '';
 
               for (const issueNumber of extractLinkedIssueNumbersFromText(pullRequestDescription)) {
+                console.log(`Found linked issue #${issueNumber} in pull request #${pullRequestNumber}.`);
                 issueNumbersToCommentOn.add(issueNumber);
               }
             } catch (error) {
-              console.warn(`Could not fetch pull request #${pullRequestNumber} to scan closing keywords.`, error);
+              console.error(`Could not fetch pull request #${pullRequestNumber}.`, error);
             }
           }
 
           if (issueNumbersToCommentOn.size === 0) {
             console.log('No issues or pull requests found to comment on.');
           } else {
-            console.log(`Creating release comments on ${issueNumbersToCommentOn.size} item(s)...`);
+            console.log(
+              `Creating release comments on ${issueNumbersToCommentOn.size} item${
+                issueNumbersToCommentOn.size === 1 ? '' : 's'
+              }...`
+            );
           }
 
           for (const issueNumber of issueNumbersToCommentOn) {
-            console.log(`Creating release comment on #${issueNumber}...`);
+            console.log(`Commenting on #${issueNumber}...`);
 
             try {
               await github.rest.issues.createComment({
-                owner: githubOwner,
-                repo: githubRepository,
+                owner: GITHUB_OWNER,
+                repo: GITHUB_REPOSITORY,
                 issue_number: issueNumber,
                 body: commentBody,
               });
 
-              console.log(`Release comment created on #${issueNumber}.`);
+              console.log(`Commented on #${issueNumber}.`);
             } catch (error) {
-              console.error(`Could not create release comment on #${issueNumber}.`, error);
+              console.error(`Could not comment on #${issueNumber}.`, error);
             }
 
             await waitForDelay(DELAY_BETWEEN_COMMENTS);
@@ -236,11 +253,11 @@ runs:
             console.log(`Closing milestone ${tag}...`);
 
             await github.rest.issues.updateMilestone({
-              owner: githubOwner,
-              repo: githubRepository,
+              owner: GITHUB_OWNER,
+              repo: GITHUB_REPOSITORY,
               milestone_number: milestone.number,
               state: 'closed',
             });
-          }
 
-          console.log('All done!');
+            console.log(`Milestone ${tag} closed.`);
+          }

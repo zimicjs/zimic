@@ -394,6 +394,11 @@ describe('createPathRegExp', () => {
     { path: '\\**/\\*', input: 'path', matches: false },
     { path: '\\**/\\*', input: 'path/other', matches: false },
 
+    { path: '\\**/*', input: '**/*', matches: true },
+    { path: '\\**/*', input: '', matches: false },
+    { path: '\\**/*', input: 'path', matches: false },
+    { path: '\\**/*', input: 'path/other', matches: false },
+
     { path: '/path/\\**', input: '/path/**', matches: true },
     { path: '/path/\\**', input: '/path', matches: false },
     { path: '/path/\\**', input: '/path/other', matches: false },

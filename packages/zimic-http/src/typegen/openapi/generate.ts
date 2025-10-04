@@ -1,5 +1,4 @@
 import isDefined from '@zimic/utils/data/isDefined';
-import filesystem from 'fs/promises';
 import path from 'path';
 import ts from 'typescript';
 
@@ -15,8 +14,9 @@ import { createImportDeclarations } from './transform/imports';
 import {
   convertTypesToString,
   importTypesFromOpenAPI,
-  prepareTypeOutputToSave,
-  writeTypeOutputToStandardOutput,
+  formatTypegenResultToOutput,
+  writeTypegenResultToStandardOutput,
+  writeTypegenResultToFile,
 } from './transform/io';
 import { isOperationsDeclaration, normalizeOperations, removeUnreferencedOperations } from './transform/operations';
 import { isPathsDeclaration, normalizePaths } from './transform/paths';
@@ -97,7 +97,7 @@ async function generateTypesFromOpenAPI({
   filters: filtersFromArguments = [],
   filterFile,
 }: OpenAPITypegenOptions) {
-  const filtersFromFile = filterFile ? await readPathFiltersFromFile(filterFile) : [];
+  const filtersFromFile = filterFile ? await readPathFiltersFromFile(path.resolve(filterFile)) : [];
   const filters = ignoreEmptyFilters([...filtersFromFile, ...filtersFromArguments]);
 
   const rawNodes = await importTypesFromOpenAPI(inputFilePathOrURL);
@@ -110,14 +110,15 @@ async function generateTypesFromOpenAPI({
     nodes.unshift(declaration);
   }
 
-  const typeOutput = await convertTypesToString(nodes, { includeComments });
-  const formattedOutput = prepareTypeOutputToSave(typeOutput);
+  const typegenResult = await convertTypesToString(nodes, { includeComments });
+  const formattedTypegenResult = formatTypegenResultToOutput(typegenResult);
 
-  const shouldWriteToStdout = outputFilePath === undefined;
-  if (shouldWriteToStdout) {
-    await writeTypeOutputToStandardOutput(formattedOutput);
+  const shouldWriteToStandardOutput = outputFilePath === undefined;
+
+  if (shouldWriteToStandardOutput) {
+    await writeTypegenResultToStandardOutput(formattedTypegenResult);
   } else {
-    await filesystem.writeFile(path.resolve(outputFilePath), formattedOutput);
+    await writeTypegenResultToFile(path.resolve(outputFilePath), formattedTypegenResult);
   }
 }
 

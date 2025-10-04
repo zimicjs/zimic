@@ -1,4 +1,4 @@
-import filesystem from 'fs/promises';
+import fs from 'fs';
 import path from 'path';
 import { afterAll, beforeAll, describe, it } from 'vitest';
 
@@ -6,7 +6,8 @@ import { checkTypes, lint } from '@tests/utils/linting';
 import { importExeca } from '@tests/utils/scripting';
 
 async function normalizeStripeTypes(generatedFilePath: string) {
-  const output = await filesystem.readFile(generatedFilePath, 'utf-8');
+  const output = await fs.promises.readFile(generatedFilePath, 'utf-8');
+
   const normalizedOutput = output
     .replace(
       /Get(.+): HttpSchema\.Method<{\n    request: {\n([^]*?)body\?: Record<string, any>;/g,
@@ -17,7 +18,8 @@ async function normalizeStripeTypes(generatedFilePath: string) {
       'PostFiles: HttpSchema.Method<{\n    request: {\n$1' +
         '$2// @ts-expect-error Form data should not contain object values.\n$2body: HttpFormData<{',
     );
-  await filesystem.writeFile(generatedFilePath, normalizedOutput);
+
+  await fs.promises.writeFile(generatedFilePath, normalizedOutput);
 }
 
 describe('Typegen', () => {
@@ -26,7 +28,7 @@ describe('Typegen', () => {
   const eslintConfigFilePath = path.join(generatedDirectory, 'eslint.config.mjs');
 
   beforeAll(async () => {
-    const generatedFileNames = await filesystem.readdir(generatedDirectory);
+    const generatedFileNames = await fs.promises.readdir(generatedDirectory);
     const generatedTypeScriptFileNames = generatedFileNames.filter((fileName) => fileName.endsWith('.ts'));
 
     await Promise.all(
@@ -35,7 +37,7 @@ describe('Typegen', () => {
          * If there are no generated TypeScript files yet, this function won't run. */
         async (fileName) => {
           const filePath = path.join(generatedDirectory, fileName);
-          await filesystem.unlink(filePath);
+          await fs.promises.unlink(filePath);
         },
       ),
     );

@@ -9,7 +9,7 @@ import {
 } from '@zimic/http';
 import { Default, PossiblePromise } from '@zimic/utils/types';
 import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
-import excludeURLParams from '@zimic/utils/url/excludeURLParams';
+import excludeNonPathParams from '@zimic/utils/url/excludeNonPathParams';
 import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
 
 import { isServerSide } from '@/utils/environment';
@@ -109,7 +109,7 @@ class HttpInterceptorClient<
     }
 
     validateURLProtocol(newBaseURL, SUPPORTED_BASE_URL_PROTOCOLS);
-    excludeURLParams(newBaseURL);
+    excludeNonPathParams(newBaseURL);
 
     this._baseURL = newBaseURL;
   }
