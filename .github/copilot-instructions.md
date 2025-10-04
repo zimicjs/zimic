@@ -3,18 +3,18 @@
 These instructions focus on project-specific architecture, workflows, and conventions so an AI agent can make correct,
 minimal, high-quality changes fast.
 
-## 1. Big Picture
+## Big Picture
 
 - Monorepo (pnpm + Turborepo) providing TypeScript-first HTTP integration libraries: `@zimic/http`, `@zimic/fetch`,
   `@zimic/interceptor`, plus internal `@zimic/utils` and supporting configuration packages. Documentation:
   `apps/zimic-web` (Docusaurus). A test consumer app: `apps/zimic-test-client`. Example integrations live under
   `examples/*`.
-- Core flow: Define HTTP schemas (`@zimic/http`) → consume via type-safe client (`@zimic/fetch`) → mock/intercept real
-  network calls locally or remotely (`@zimic/interceptor`). Utilities unify types, URL ops, timing, test helpers.
+- Core flow: Define HTTP schemas (`@zimic/http`) -> consume via type-safe client (`@zimic/fetch`) -> mock/intercept real
+  network calls locally or remotely (`@zimic/interceptor`). Utilities unify types and helpers.
 - All public packages target Node >=20 and modern browsers; builds via `tsup` generate dual ESM/CJS outputs with
   explicit export maps and top-level `.d.ts` entry points.
 
-## 2. Key Directories
+## Key Directories
 
 - `packages/zimic-http/src`: HTTP schema + typed wrappers (headers, params, form data) + typegen CLI
   (`bin: zimic-http`).
@@ -30,17 +30,17 @@ minimal, high-quality changes fast.
 - `examples/*`: Treated as integration tests (different frameworks/toolchains); keep generated typegen files in sync (CI
   step diffing `examples/zimic-with-openapi-typegen/.../generated.ts`).
 
-## 3. Build and Task Workflow
+## Build and Task Workflow
 
-- Root scripts wrap Turborepo tasks: `pnpm build` → `turbo build`; `pnpm test` → `turbo test:turbo`; `pnpm lint` →
-  `turbo lint:turbo`; `pnpm types:check` → `turbo types:check`.
+- Root scripts wrap Turborepo tasks: `pnpm build` -> `turbo build`; `pnpm test` -> `turbo test:turbo`; `pnpm lint` ->
+  `turbo lint:turbo`; `pnpm types:check` -> `turbo types:check`.
 - Task graph (`turbo.json`): `dev` depends on parent `build` (no caching for watch); tests and type checks depend on
   builds to guarantee dist freshness.
 - Package-level scripts often pair `test` (interactive) with `test:turbo` (CI + coverage). Coverage required to remain
   100% for core packages—never lower thresholds; add or adjust tests instead.
 - Avoid editing generated declaration files (`index.d.ts`, `http.d.ts`, etc.); change source and rebuild.
 
-## 4. Testing Conventions
+## Testing Conventions
 
 - Runner: Vitest (Node + `@vitest/browser` + Playwright). Browser tests need chromium via per-package `deps:prepare` /
   `deps:install-playwright` scripts.
@@ -51,10 +51,10 @@ minimal, high-quality changes fast.
   matrices rather than duplicating logic.
 - Use environment matrices (`describe.each(testMatrix)`), avoid mocking internals; prefer exercising the public API of
   interceptors, workers, handlers. Only use spies when asserting side effects; keep test code close to tested module.
-- All test helpers imported through path aliases like `@tests/utils/...`—maintain these when relocating files; ensure
+- All test helpers imported through path aliases like `@tests/utils/...` — maintain these when relocating files; ensure
   not exported in production bundles.
 
-## 5. Path and Build Constraints
+## Path and Build Constraints
 
 - TypeScript config: `moduleResolution: bundler`, strict mode, incremental builds; do not introduce features requiring
   different module resolution without updating shared tsconfig.
@@ -63,20 +63,20 @@ minimal, high-quality changes fast.
 - Publishing filters exclude tests via negative globs in `files`. New folders must be added intentionally if meant for
   publish.
 
-## 6. Interceptor Architecture Notes
+## Interceptor Architecture Notes
 
 - Local vs remote interceptors/workers share test suites; ensure new behavior considers both modes
   (`promiseIfRemote(...)` pattern) and both platforms (Node vs browser).
 - Remote mode may spin up an interceptor server; test helpers manage lifecycle (`createInternalInterceptorServer`,
   `startServer/stopServer` callbacks). Always await start/stop inside `beforeAll/afterAll` to keep test isolation.
 
-## 7. CLI Conventions
+## CLI Conventions
 
 - Each package exposing a CLI uses `tsup` to build `dist/*.js` (with source maps) and declares a `bin` entry. Add new
   CLI commands inside the respective package; wire them through `yargs` with consistent option naming (kebab-case). Keep
   Node compatibility with declared engine.
 
-## 8. CI Expectations
+## CI Expectations
 
 - CI enforces: formatting style, typegen sync for OpenAPI example, lint + types, docs build, multi-Node version tests,
   multi-TypeScript version type checking (excluding core `@zimic/*` packages during TS matrix except for build impact
@@ -84,36 +84,44 @@ minimal, high-quality changes fast.
   runs.
 - To adjust typegen behavior, modify the example script then update the CI diff step accordingly.
 
-## 9. Adding Features Safely
+## Adding Features Safely
 
 When implementing changes:
 
 1. Pick target package; add tests first (cover Node + browser + local/remote if relevant). Reuse shared test
-   declarations; extend matrices rather than branching logic inside helpers.
-2. Implement minimal API surface; export intentionally (update `exports`).
-3. Maintain 100% coverage (add tests for new branches, error paths, edge cases like duplicated path params or CORS
-   preflight differences).
-4. Run locally:
+   declarations if applicable.
+2. Implement clean and readable code with clear purpose. Avoid over-engineering and unnecessary abstractions; prefer
+   composition over inheritance; avoid premature optimization; try to not use `any`; use type inference where possible;
+   abstract only when it improves clarity or reduces duplication (e.g. by moving a general utility to `src/utils/...`).
+3. Implement minimal API surface; export intentionally (update `exports`).
+4. Maintain 100% coverage (add tests for new branches, error paths, and edge cases).
+5. Run locally:
    - `pnpm turbo types:check --filter <project>`
    - `pnpm turbo test:turbo --filter <project>`
    - `pnpm turbo build --filter <project>`
-5. Update docs (`apps/zimic-web/docs`) after API changes, adding short code snippets and updating existing examples;
-   highlight experimental or unstable features as such; ensure Docusaurus build passes.
-6. Update examples (`examples/*`) to reflect new features or changes when needed, ensuring they remain functional and
+6. Update docs (`apps/zimic-web/docs`) after API changes, adding short code snippets and updating existing examples;
+   highlight experimental or unstable features as such; ensure Docusaurus build passes; ensure clear and concise
+   language and examples.
+7. Update examples (`examples/*`) to reflect new features or changes when needed, ensuring they remain functional and
    type-safe.
 
-## 10. Common Pitfalls
+## Common Pitfalls
 
-- Forgetting remote variant tests → behavior regressions (always include both types in matrices).
+- Forgetting to add or update tests, especially for edge cases, error paths, new features, and bug fixes.
+- Forgetting to update documentation or examples after API changes.
+- Forgetting to run tests and type checks.
+- Introducing unwanted breaking changes to public APIs without version bump.
+- Adding third-party dependencies without considering bundle size impact, checking license compatibility, or
+  redundantly, either already available natively or present in another package.
 - Introducing side-effectful top-level code breaks tree-shaking and `sideEffects: false` guarantee.
 - Exporting test utilities accidentally (keep them under `__tests__` or `tests` only).
 - Skipping updates to `exports` map leading to unresolved imports for consumers.
-- Changing path alias usage without updating test helpers.
 
-## 11. Style and Commits
+## Style and Commits
 
-- Conventional Commits with lowercase imperative, scoped to package (e.g., `feat(interceptor): add request caching`).
-  Use `root` scope for repository-wide chores. Keep branch names aligned (e.g., `feat/123-request-caching`).
+- Conventional commits with lowercase imperative, scoped to package (e.g., `feat(interceptor): add request caching`).
+  Use `root` scope for repository-wide changes. Refer to `.commitlintrc.json` to check all scopes and rules. Keep branch
+  names aligned (e.g., `feat/123-request-caching`).
 
 ---
 
