@@ -34,7 +34,7 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
     'time/waitForDelay': 'src/time/waitForDelay.ts',
     'url/createRegexFromPath': 'src/url/createRegexFromPath.ts',
     'url/createWildcardRegexFromPath': 'src/url/createWildcardRegexFromPath.ts',
-    'url/excludeURLParams': 'src/url/excludeURLParams.ts',
+    'url/excludeNonPathParams': 'src/url/excludeNonPathParams.ts',
     'url/joinURL': 'src/url/joinURL.ts',
     'url/validatePathParams': 'src/url/validatePathParams.ts',
     'url/validateURLProtocol': 'src/url/validateURLProtocol.ts',

@@ -20,13 +20,13 @@ data, such as JSON, XML, and binary data such as images and files.
 
 | `content-type`                      | Parsed as                                                          |
 | ----------------------------------- | ------------------------------------------------------------------ |
-| `application/json`                  | `JSON`                                                             |
-| `application/xml`                   | `String`                                                           |
+| `application/json`                  | `JSON` (object)                                                    |
+| `application/xml`                   | `string`                                                           |
 | `application/x-www-form-urlencoded` | [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md) |
 | `application/*` (others)            | `Blob`                                                             |
 | `multipart/form-data`               | [`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md)         |
 | `multipart/*` (others)              | `Blob`                                                             |
-| `text/*`                            | `String`                                                           |
+| `text/*`                            | `string`                                                           |
 | `image/*`                           | `Blob`                                                             |
 | `audio/*`                           | `Blob`                                                             |
 | `font/*`                            | `Blob`                                                             |

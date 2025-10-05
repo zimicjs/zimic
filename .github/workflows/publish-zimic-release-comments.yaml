@@ -1,4 +1,4 @@
-name: Release Comments
+name: Publish Zimic Release Comments
 
 on:
   workflow_dispatch:
@@ -9,16 +9,22 @@ on:
       project-name:
         description: The project name to create release comments for
         required: true
+        type: choice
+        options:
+          - zimic-web
+          - '@zimic/http'
+          - '@zimic/fetch'
+          - '@zimic/interceptor'
       type:
         description: The type of the release
         required: true
         type: choice
         options:
           - package
-          - documentation
+          - website
 
 concurrency:
-  group: release-comments-${{ inputs.ref-name || github.ref_name }}
+  group: publish-release-comments-${{ inputs.ref-name || github.ref_name }}
   cancel-in-progress: false
 
 jobs:

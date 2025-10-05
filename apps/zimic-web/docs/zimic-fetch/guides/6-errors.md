@@ -125,34 +125,19 @@ if (!response.ok) {
 
 ## Logging response errors
 
-[`fetchResponseError.toObject()`](/docs/zimic-fetch/api/5-fetch-response-error.md#errortoobject) is useful get a plain
-object representation of the error. This makes the error easier to log and inspect.
+[`response.error.toObject()`](/docs/zimic-fetch/api/5-fetch-response-error.md#errortoobject) returns a plain object
+representation of the error, making it easier to log, inspect, and debug.
 
 ```ts
 import { FetchResponseError } from '@zimic/fetch';
 
 if (error instanceof FetchResponseError) {
   // highlight-next-line
-  const plainError = error.toObject();
-  console.error(plainError);
+  console.error(error.toObject());
 }
 ```
 
-You can also use
-[`JSON.stringify()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify) or a
-logging library such as [`pino`](https://www.npmjs.com/package/pino) to serialize the error.
-
-```ts
-import { FetchResponseError } from '@zimic/fetch';
-
-if (error instanceof FetchResponseError) {
-  const plainError = error.toObject();
-  // highlight-next-line
-  console.error(JSON.stringify(plainError));
-}
-```
-
-Request and response bodies are not included by default in the result of `toObject`. If you want to see them, use
+Request and response bodies are not included by default in the result of `toObject()`. If you want to see them, use
 `includeRequestBody` and `includeResponseBody`. Note that the result will be a `Promise` that needs to be awaited.
 
 ```ts
@@ -160,33 +145,136 @@ import { FetchResponseError } from '@zimic/fetch';
 
 if (error instanceof FetchResponseError) {
   // highlight-start
-  const plainError = await error.toObject({
+  const errorObject = await error.toObject({
     includeRequestBody: true,
     includeResponseBody: true,
   });
   // highlight-end
-  console.error(JSON.stringify(plainError));
+  console.error(JSON.stringify(errorObject));
 }
 ```
 
-If you are working with form data or blob bodies, such as file uploads or downloads, logging the body may not be useful
-as binary data won't be human-readable and may be too large. In that case, you can check the request and response and
-include the bodies conditionally.
+#### Logging response errors with `pino`
+
+If you are using [`pino`](https://www.npmjs.com/package/pino), a custom serializer may be useful to automatically call
+[`response.error.toObject()`](/docs/zimic-fetch/api/5-fetch-response-error.md#errortoobject).
+
+In the following example, we create a `logger.errorAsync` method to include the request and response bodies, if
+available, which are serialized to a string using `util.inspect()` to improve readability. The default `logger.error`
+method can still be used to log errors without the bodies.
+
+```ts title='logger.ts'
+import { FetchResponseError } from '@zimic/fetch';
+import pino, { Logger, LoggerOptions } from 'pino';
+import util from 'util';
+
+function serializeBody(body: unknown) {
+  return util.inspect(body, {
+    colors: false,
+    compact: true,
+    depth: Infinity,
+    maxArrayLength: Infinity,
+    maxStringLength: Infinity,
+    breakLength: Infinity,
+    sorted: true,
+  });
+}
+
+const syncSerializers = {
+  err(error: unknown): unknown {
+    // highlight-start
+    if (error instanceof FetchResponseError) {
+      // Log response error without bodies
+      const errorObject = error.toObject({
+        includeRequestBody: false,
+        includeResponseBody: false,
+      });
+
+      return pino.stdSerializers.err(errorObject);
+    }
+    // highlight-end
+
+    if (error instanceof Error) {
+      return pino.stdSerializers.err(error);
+    }
+
+    return error;
+  },
+} satisfies LoggerOptions['serializers'];
+
+const asyncSerializers = {
+  async err(error: unknown): Promise<unknown> {
+    // highlight-start
+    if (error instanceof FetchResponseError) {
+      // Log response error with bodies, if available
+      const errorObject = await error.toObject({
+        includeRequestBody: !error.request.bodyUsed,
+        includeResponseBody: !error.response.bodyUsed,
+      });
+
+      // Serialize bodies to a string for better readability in the logs
+      for (const resource of [errorObject.request, errorObject.response]) {
+        if (resource.body !== undefined && resource.body !== null) {
+          resource.body = serializeBody(resource.body);
+        }
+      }
+
+      return pino.stdSerializers.err(errorObject);
+    }
+    // highlight-end
+
+    return syncSerializers.err(error);
+  },
+} satisfies LoggerOptions['serializers'];
+
+interface AsyncLogger extends Logger {
+  // highlight-next-line
+  errorAsync: (this: AsyncLogger, error: unknown, message?: string) => Promise<void>;
+}
+
+// Create logger
+const logger = pino({
+  messageKey: 'message',
+  errorKey: 'error',
+  nestedKey: 'data',
+  formatters: {
+    level: (label) => ({ level: label }),
+  },
+  serializers: syncSerializers,
+}) satisfies Logger as AsyncLogger;
+
+// Declare logger.errorAsync method
+// highlight-start
+logger.errorAsync = async function (this: AsyncLogger, error: unknown, message?: string) {
+  const serializedError = await asyncSerializers.err(error);
+  this.error(serializedError, message);
+};
+// highlight-end
+```
+
+Using the logger:
 
 ```ts
-import { FetchResponseError } from '@zimic/fetch';
+import { createFetch } from '@zimic/fetch';
+import { logger } from './logger';
 
-if (error instanceof FetchResponseError) {
-  const requestContentType = error.request.headers.get('content-type');
-  const responseContentType = error.response.headers.get('content-type');
+const fetch = createFetch<Schema>({
+  baseURL: 'http://localhost:3000',
+});
 
-  const plainError = await error.toObject({
-    // Include the body only if the content type is JSON
-    // highlight-start
-    includeRequestBody: requestContentType === 'application/json',
-    includeResponseBody: responseContentType === 'application/json',
-    // highlight-end
-  });
-  console.error(JSON.stringify(plainError));
+const response = await fetch(`/users/${userId}`, {
+  method: 'GET',
+});
+
+if (response.ok) {
+  logger.info('User fetched successfully.');
+} else {
+  // Synchronous, without bodies
+  // highlight-next-line
+  logger.error(response.error, `Could not fetch user ${userId}.`);
+
+  // Asynchronous, with bodies if available
+  // highlight-next-line
+  await logger.errorAsync(response.error, `Could not fetch user ${userId}.`);
 }
 ```

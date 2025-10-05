@@ -1,9 +1,9 @@
-import { HttpSchema, HttpRequest, HttpResponse, JSONSerialized, JSONValue } from '@zimic/http';
+import { HttpSchema, HttpRequest, HttpResponse, JSONSerialized, JSONValue, InvalidJSONError } from '@zimic/http';
 import joinURL from '@zimic/utils/url/joinURL';
+import color from 'picocolors';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import InvalidJSONError from '@/http/interceptorWorker/errors/InvalidJSONError';
 import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { importCrypto } from '@/utils/crypto';
@@ -796,8 +796,16 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
 
           expect(console.error).toHaveBeenCalledTimes(2);
           expect(console.error.mock.calls).toEqual([
-            [new InvalidJSONError(invalidRequestJSONString)],
-            [new InvalidJSONError(invalidResponseJSONString)],
+            [
+              color.cyan('[@zimic/interceptor]'),
+              'Failed to parse request body:',
+              new InvalidJSONError(invalidRequestJSONString),
+            ],
+            [
+              color.cyan('[@zimic/interceptor]'),
+              'Failed to parse response body:',
+              new InvalidJSONError(invalidResponseJSONString),
+            ],
           ]);
         });
 
@@ -816,66 +824,70 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
       });
     });
 
-    it(`should consider empty ${method} request or response JSON bodies as null`, async () => {
-      type MethodSchema = HttpSchema.Method<{
-        request: {
-          headers: { 'content-type': string };
-          body?: UserAsType;
-        };
-        response: {
-          200: {
+    it.each(['', undefined, null])(
+      `should consider empty ${method} request or response JSON bodies as null`,
+      async (body) => {
+        type MethodSchema = HttpSchema.Method<{
+          request: {
             headers: { 'content-type': string };
-            body?: UserAsType;
+            body?: string | null;
           };
-        };
-      }>;
-
-      await usingHttpInterceptor<{
-        '/users/:id': {
-          POST: MethodSchema;
-          PUT: MethodSchema;
-          PATCH: MethodSchema;
-          DELETE: MethodSchema;
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor[lowerMethod]('/users/:id').respond((request) => {
-            expectTypeOf(request.body).toEqualTypeOf<UserAsType | null>();
-            expect(request.body).toBe(null);
-
-            return {
-              status: 200,
-              headers: { 'content-type': 'application/json' },
+          response: {
+            200: {
+              headers: { 'content-type': string };
+              body?: string | null;
             };
-          }),
-          interceptor,
-        );
-        expect(handler).toBeInstanceOf(Handler);
+          };
+        }>;
 
-        expect(handler.requests).toHaveLength(0);
+        await usingHttpInterceptor<{
+          '/users/:id': {
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
+          };
+        }>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users/:id').respond((request) => {
+              expectTypeOf(request.body).toEqualTypeOf<string | null>();
+              expect(request.body).toBe(null);
 
-        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
-          method,
-          headers: { 'content-type': 'application/json' },
+              return {
+                status: 200,
+                headers: { 'content-type': 'application/json' },
+                body,
+              };
+            }),
+            interceptor,
+          );
+          expect(handler).toBeInstanceOf(Handler);
+
+          expect(handler.requests).toHaveLength(0);
+
+          const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+            method,
+            headers: { 'content-type': 'application/json' },
+          });
+          expect(response.status).toBe(200);
+
+          const fetchedBody = await response.text();
+          expect(fetchedBody).toBe('');
+
+          expect(handler.requests).toHaveLength(1);
+          const [request] = handler.requests;
+
+          expect(request).toBeInstanceOf(Request);
+          expect(request.headers.get('content-type')).toBe('application/json');
+          expectTypeOf(request.body).toEqualTypeOf<string | null>();
+          expect(request.body).toBe(null);
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toBe('application/json');
+          expectTypeOf(request.response.body).toEqualTypeOf<string | null>();
+          expect(request.response.body).toBe(null);
         });
-        expect(response.status).toBe(200);
-
-        const fetchedBody = await response.text();
-        expect(fetchedBody).toBe('');
-
-        expect(handler.requests).toHaveLength(1);
-        const [request] = handler.requests;
-
-        expect(request).toBeInstanceOf(Request);
-        expect(request.headers.get('content-type')).toBe('application/json');
-        expectTypeOf(request.body).toEqualTypeOf<UserAsType | null>();
-        expect(request.body).toBe(null);
-
-        expect(request.response).toBeInstanceOf(Response);
-        expect(request.response.headers.get('content-type')).toBe('application/json');
-        expectTypeOf(request.response.body).toEqualTypeOf<UserAsType | null>();
-        expect(request.response.body).toBe(null);
-      });
-    });
+      },
+    );
   });
 }
