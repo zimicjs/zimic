@@ -1,37 +1,39 @@
-export function getExtraPatternsToEscape() {
+export function createPathCharactersToEscapeRegex() {
   return /([.(){}+$])/g;
 }
 
-export function getURIEncodedBackSlashPattern() {
-  return /%5C/g;
+export function preparePathForRegex(path: string) {
+  // We encode the path using the URL API because, differently from encodeURI and encodeURIComponent, URL does not
+  // re-encode already encoded characters. Since URL requires a full URL, we use a data scheme and strip it later.
+  const pathURLPrefix = `data:${path.startsWith('/') ? '' : '/'}`;
+  const pathAsURL = new URL(`${pathURLPrefix}${path}`);
+  const encodedPath = pathAsURL.href.replace(pathURLPrefix, '');
+
+  return encodedPath.replace(/^\/+/g, '').replace(/\/+$/g, '').replace(createPathCharactersToEscapeRegex(), '\\$1');
 }
 
 // Path params names must match the JavaScript identifier pattern.
 // See // https://developer.mozilla.org/docs/Web/JavaScript/Reference/Lexical_grammar#identifiers.
-export function getPathParamPattern() {
-  return /(?<escape>\\)?:(?<identifier>[$_\p{ID_Start}][$\p{ID_Continue}]+)/gu;
+export function createPathParamRegex() {
+  return /(?<escape>\\)?:(?<identifier>[$_\p{ID_Start}][$\p{ID_Continue}]+)(?!\\[*+?])/gu;
 }
 
-export function getRepeatingPathParamPattern() {
-  return /(?<escape>\\)?:(?<identifier>[$_\p{ID_Start}][$\p{ID_Continue}]+)\\+/gu;
+export function createRepeatingPathParamRegex() {
+  return /(?<escape>\\)?:(?<identifier>[$_\p{ID_Start}][$\p{ID_Continue}]+)\\\+/gu;
 }
 
-export function getOptionalPathParamPattern() {
+export function createOptionalPathParamRegex() {
   return /(?<leadingSlash>\/)?(?<escape>\\)?:(?<identifier>[$_\p{ID_Start}][$\p{ID_Continue}]+)\?(?<trailingSlash>\/)?/gu;
 }
 
-export function getOptionalRepeatingPathParamPattern() {
+export function createOptionalRepeatingPathParamRegex() {
   return /(?<leadingSlash>\/)?(?<escape>\\)?:(?<identifier>[$_\p{ID_Start}][$\p{ID_Continue}]+)\*(?<trailingSlash>\/)?/gu;
 }
 
-function createParametrizedPathPattern(path: string) {
-  const replacedURL = encodeURI(path)
-    .replace(/^\/+/g, '')
-    .replace(/\/+$/g, '')
-    .replace(getExtraPatternsToEscape(), '\\$1')
-    .replace(getURIEncodedBackSlashPattern(), '\\')
+function createRegexFromPath(path: string) {
+  const pathRegexContent = preparePathForRegex(path)
     .replace(
-      getOptionalRepeatingPathParamPattern(),
+      createOptionalRepeatingPathParamRegex(),
       (
         _match,
         leadingSlash: string | undefined,
@@ -40,7 +42,7 @@ function createParametrizedPathPattern(path: string) {
         trailingSlash: string | undefined,
       ) => {
         if (escape) {
-          return `:${identifier}`;
+          return `${leadingSlash ?? ''}:${identifier}\\*${trailingSlash ?? ''}`;
         }
 
         const hasSegmentBeforePrefix = leadingSlash === '/';
@@ -60,11 +62,11 @@ function createParametrizedPathPattern(path: string) {
         }
       },
     )
-    .replace(getRepeatingPathParamPattern(), (_match, escape: string | undefined, identifier: string) => {
-      return escape ? `:${identifier}` : `(?<${identifier}>.+)`;
+    .replace(createRepeatingPathParamRegex(), (_match, escape: string | undefined, identifier: string) => {
+      return escape ? `:${identifier}\\+` : `(?<${identifier}>.+)`;
     })
     .replace(
-      getOptionalPathParamPattern(),
+      createOptionalPathParamRegex(),
       (
         _match,
         leadingSlash: string | undefined,
@@ -73,7 +75,7 @@ function createParametrizedPathPattern(path: string) {
         trailingSlash: string | undefined,
       ) => {
         if (escape) {
-          return `:${identifier}`;
+          return `${leadingSlash ?? ''}:${identifier}\\?${trailingSlash ?? ''}`;
         }
 
         const hasSegmentBeforePrefix = leadingSlash === '/';
@@ -93,11 +95,11 @@ function createParametrizedPathPattern(path: string) {
         }
       },
     )
-    .replace(getPathParamPattern(), (_match, escape: string | undefined, identifier: string) => {
+    .replace(createPathParamRegex(), (_match, escape: string | undefined, identifier: string) => {
       return escape ? `:${identifier}` : `(?<${identifier}>[^\\/]+?)`;
     });
 
-  return new RegExp(`^/?${replacedURL}/?$`);
+  return new RegExp(`^/?${pathRegexContent}/?$`);
 }
 
-export default createParametrizedPathPattern;
+export default createRegexFromPath;

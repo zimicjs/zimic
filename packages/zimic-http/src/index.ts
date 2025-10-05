@@ -56,3 +56,4 @@ export type {
 } from './types/schema';
 
 export { HTTP_METHODS } from './types/schema';
+export { parseHttpBody, InvalidJSONError, InvalidFormDataError } from './utils/bodies';

@@ -1,6 +1,6 @@
 {
   "name": "zimic-web",
-  "version": "0.3.21-canary.0",
+  "version": "0.3.23-canary.1",
   "private": true,
   "scripts": {
     "dev": "docusaurus start --host :: --no-open",
@@ -15,36 +15,36 @@
     "generate:sponsors": "dotenv -c development -- sponsorkit"
   },
   "dependencies": {
-    "@docusaurus/core": "3.8.1",
-    "@docusaurus/plugin-content-docs": "^3.7.0",
-    "@docusaurus/plugin-content-pages": "^3.7.0",
-    "@docusaurus/plugin-sitemap": "^3.7.0",
-    "@docusaurus/plugin-svgr": "^3.7.0",
-    "@docusaurus/theme-classic": "^3.7.0",
-    "@docusaurus/theme-search-algolia": "^3.8.1",
+    "@docusaurus/core": "3.9.1",
+    "@docusaurus/plugin-content-docs": "^3.9.1",
+    "@docusaurus/plugin-content-pages": "^3.9.1",
+    "@docusaurus/plugin-sitemap": "^3.9.1",
+    "@docusaurus/plugin-svgr": "^3.9.1",
+    "@docusaurus/theme-classic": "^3.9.1",
+    "@docusaurus/theme-search-algolia": "^3.9.1",
     "@mdx-js/react": "^3.1.1",
-    "@tanstack/react-query": "^5.89.0",
+    "@tanstack/react-query": "^5.90.2",
     "@zimic/fetch": "workspace:*",
     "@zimic/http": "workspace:*",
     "dompurify": "^3.2.7",
     "prism-react-renderer": "^2.3.0",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "3.8.1",
-    "@docusaurus/types": "3.8.1",
-    "@tailwindcss/postcss": "^4.1.13",
-    "@types/react": "^19.1.13",
+    "@docusaurus/module-type-aliases": "3.9.1",
+    "@docusaurus/types": "3.9.1",
+    "@tailwindcss/postcss": "^4.1.14",
+    "@types/react": "^19.2.0",
     "@zimic/eslint-config-react": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^10.0.0",
     "esbuild-loader": "^4.3.0",
-    "eslint": "^9.36.0",
+    "eslint": "^9.37.0",
     "postcss": "^8.5.6",
     "sponsorkit": "^17.0.0",
-    "tailwindcss": "^4.1.13",
-    "typescript": "^5.9.2"
+    "tailwindcss": "^4.1.14",
+    "typescript": "^5.9.3"
   }
 }

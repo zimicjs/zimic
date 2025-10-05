@@ -36,7 +36,7 @@
 
 ---
 
-`@zimic/fetch` is a minimal (~2 kB minified and gzipped) and type-safe `fetch`-like API client.
+`@zimic/fetch` is a minimal (~2 kB minified gzipped) and type-safe `fetch`-like API client.
 
 ## Highlights
 

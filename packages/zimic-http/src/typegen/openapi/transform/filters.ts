@@ -1,10 +1,10 @@
 import isNonEmpty from '@zimic/utils/data/isNonEmpty';
-import createWildcardPathPattern from '@zimic/utils/url/createWildcardPathPattern';
-import filesystem from 'fs/promises';
-import path from 'path';
+import createWildcardRegexFromPath from '@zimic/utils/url/createWildcardRegexFromPath';
+import fs from 'fs';
 import color from 'picocolors';
 
 import { HTTP_METHODS } from '@/types/schema';
+import { ensurePathExists } from '@/utils/files';
 import { logger } from '@/utils/logging';
 
 import { TypePathFilter, TypePathFilters } from './context';
@@ -27,8 +27,8 @@ export function parseRawFilter(rawFilter: string): TypePathFilter | undefined {
   }
 
   return {
-    methodPattern: new RegExp(`(?:${filteredMethodsOrWildcard.toUpperCase().replace(/,/g, '|').replace(/\*/g, '.*')})`),
-    pathPattern: createWildcardPathPattern(filteredPath),
+    methodRegex: new RegExp(`(?:${filteredMethodsOrWildcard.toUpperCase().replace(/,/g, '|').replace(/\*/g, '.*')})`),
+    pathRegex: createWildcardRegexFromPath(filteredPath),
     isNegativeMatch: filterModifier === '!',
   };
 }
@@ -51,7 +51,11 @@ export function groupParsedFiltersByMatch(parsedFilters: (TypePathFilter | undef
 }
 
 export async function readPathFiltersFromFile(filePath: string) {
-  const fileContent = await filesystem.readFile(path.resolve(filePath), 'utf-8');
+  await ensurePathExists(filePath, {
+    errorMessage: `Could not read filter file: ${color.yellow(filePath)}`,
+  });
+
+  const fileContent = await fs.promises.readFile(filePath, 'utf-8');
   const fileContentWithoutComments = fileContent.replace(/#.*$/gm, '');
 
   const filters = fileContentWithoutComments.split('\n');

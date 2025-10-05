@@ -8,7 +8,7 @@ import {
   HttpSchema,
   HttpStatusCode,
   InferPathParams,
-  HttpFormData,
+  parseHttpBody,
   HttpSearchParams,
 } from '@zimic/http';
 import isDefined from '@zimic/utils/data/isDefined';
@@ -33,8 +33,6 @@ import {
   HttpInterceptorResponse,
 } from '../requestHandler/types/requests';
 import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from './constants';
-import InvalidFormDataError from './errors/InvalidFormDataError';
-import InvalidJSONError from './errors/InvalidJSONError';
 import { MSWHttpResponseFactory } from './types/msw';
 import { HttpInterceptorWorkerType } from './types/options';
 
@@ -208,6 +206,7 @@ abstract class HttpInterceptorWorker {
 
     if (
       typeof declaration.body === 'string' ||
+      declaration.body === null ||
       declaration.body === undefined ||
       declaration.body instanceof FormData ||
       declaration.body instanceof URLSearchParams ||
@@ -229,13 +228,17 @@ abstract class HttpInterceptorWorker {
 
   static async parseRawRequest<Path extends string, MethodSchema extends HttpMethodSchema>(
     originalRawRequest: Request,
-    options?: { baseURL: string; pathPattern: RegExp },
+    options?: { baseURL: string; pathRegex: RegExp },
   ): Promise<HttpInterceptorRequest<Path, MethodSchema>> {
     const rawRequest = originalRawRequest.clone();
     const rawRequestClone = rawRequest.clone();
 
     type BodySchema = Default<Default<MethodSchema['request']>['body']>;
-    const parsedBody = await this.parseRawBody<BodySchema>(rawRequest);
+
+    const parsedBody = await parseHttpBody<BodySchema>(rawRequest).catch((error: unknown) => {
+      logger.error('Failed to parse request body:', error);
+      return null;
+    });
 
     type HeadersSchema = Default<Default<MethodSchema['request']>['headers']>;
     const headers = new HttpHeaders<HeadersSchema>(rawRequest.headers);
@@ -311,7 +314,10 @@ abstract class HttpInterceptorWorker {
     const rawResponseClone = rawResponse.clone();
 
     type BodySchema = Default<Default<Default<MethodSchema['response']>[StatusCode]>['body']>;
-    const parsedBody = await this.parseRawBody<BodySchema>(rawResponse);
+    const parsedBody = await parseHttpBody<BodySchema>(rawResponse).catch((error: unknown) => {
+      logger.error('Failed to parse response body:', error);
+      return null;
+    });
 
     type HeadersSchema = Default<Default<Default<MethodSchema['response']>[StatusCode]>['headers']>;
     const headers = new HttpHeaders<HeadersSchema>(rawResponse.headers);
@@ -362,111 +368,18 @@ abstract class HttpInterceptorWorker {
 
   static parseRawPathParams<Path extends string>(
     request: Request,
-    options?: { baseURL: string; pathPattern: RegExp },
+    options?: { baseURL: string; pathRegex: RegExp },
   ): InferPathParams<Path> {
-    const match = options?.pathPattern.exec(request.url.replace(options.baseURL, ''));
-    return { ...match?.groups } as InferPathParams<Path>;
-  }
+    const requestPath = request.url.replace(options?.baseURL ?? '', '');
+    const paramsMatch = options?.pathRegex.exec(requestPath);
 
-  static async parseRawBody<Body extends HttpBody>(resource: Request | Response) {
-    const contentType = resource.headers.get('content-type');
+    const params: Record<string, string | undefined> = {};
 
-    try {
-      if (contentType) {
-        if (contentType.startsWith('application/json')) {
-          return await this.parseRawBodyAsJSON<Body>(resource);
-        }
-        if (contentType.startsWith('multipart/form-data')) {
-          return await this.parseRawBodyAsFormData<Body>(resource);
-        }
-        if (contentType.startsWith('application/x-www-form-urlencoded')) {
-          return await this.parseRawBodyAsSearchParams<Body>(resource);
-        }
-        if (contentType.startsWith('text/') || contentType.startsWith('application/xml')) {
-          return await this.parseRawBodyAsText<Body>(resource);
-        }
-        if (
-          contentType.startsWith('application/') ||
-          contentType.startsWith('image/') ||
-          contentType.startsWith('audio/') ||
-          contentType.startsWith('font/') ||
-          contentType.startsWith('video/') ||
-          contentType.startsWith('multipart/')
-        ) {
-          return await this.parseRawBodyAsBlob<Body>(resource);
-        }
-      }
-
-      const resourceClone = resource.clone();
-
-      try {
-        return await this.parseRawBodyAsJSON<Body>(resource);
-      } catch {
-        return await this.parseRawBodyAsBlob<Body>(resourceClone);
-      }
-    } catch (error) {
-      console.error(error);
-      return null;
-    }
-  }
-
-  private static async parseRawBodyAsJSON<Body extends HttpBody>(resource: Request | Response) {
-    const bodyAsText = await resource.text();
-
-    if (!bodyAsText.trim()) {
-      return null;
+    for (const [paramName, paramValue] of Object.entries(paramsMatch?.groups ?? {})) {
+      params[paramName] = typeof paramValue === 'string' ? decodeURIComponent(paramValue) : undefined;
     }
 
-    try {
-      const bodyAsJSON = JSON.parse(bodyAsText) as Body;
-      return bodyAsJSON;
-    } catch {
-      throw new InvalidJSONError(bodyAsText);
-    }
-  }
-
-  private static async parseRawBodyAsSearchParams<Body extends HttpBody>(resource: Request | Response) {
-    const bodyAsText = await resource.text();
-
-    if (!bodyAsText.trim()) {
-      return null;
-    }
-
-    const bodyAsSearchParams = new HttpSearchParams(bodyAsText);
-    return bodyAsSearchParams as Body;
-  }
-
-  private static async parseRawBodyAsFormData<Body extends HttpBody>(resource: Request | Response) {
-    const resourceClone = resource.clone();
-
-    try {
-      const bodyAsRawFormData = await resource.formData();
-
-      const bodyAsFormData = new HttpFormData();
-      for (const [key, value] of bodyAsRawFormData) {
-        bodyAsFormData.append(key, value as string);
-      }
-
-      return bodyAsFormData as Body;
-    } catch {
-      const bodyAsText = await resourceClone.text();
-
-      if (!bodyAsText.trim()) {
-        return null;
-      }
-
-      throw new InvalidFormDataError(bodyAsText);
-    }
-  }
-
-  private static async parseRawBodyAsBlob<Body extends HttpBody>(resource: Request | Response) {
-    const bodyAsBlob = await resource.blob();
-    return bodyAsBlob as Body;
-  }
-
-  private static async parseRawBodyAsText<Body extends HttpBody>(resource: Request | Response) {
-    const bodyAsText = await resource.text();
-    return (bodyAsText || null) as Body;
+    return params as InferPathParams<Path>;
   }
 
   static async logUnhandledRequestWarning(rawRequest: Request, action: UnhandledRequestStrategy.Action) {

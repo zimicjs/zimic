@@ -51,8 +51,17 @@ const config: Docusaurus.Config = {
 
   onBrokenAnchors: 'throw',
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'throw',
   onDuplicateRoutes: 'throw',
+
+  markdown: {
+    hooks: {
+      onBrokenMarkdownImages: 'throw',
+      onBrokenMarkdownLinks: 'throw',
+    },
+    anchors: {
+      maintainCase: false,
+    },
+  },
 
   headTags: [
     {
@@ -179,6 +188,7 @@ const config: Docusaurus.Config = {
       searchParameters: {},
       searchPagePath: 'search',
       insights: false,
+      placeholder: 'Search zimic.dev...',
     } satisfies ThemeConfigAlgolia,
 
     navbar: {

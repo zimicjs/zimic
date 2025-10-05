@@ -25,13 +25,21 @@ export async function usingConsoleTime<ReturnType>(
 const FIXTURE_TYPEGEN_BATCH_SIZE = 15;
 
 async function generateFixtureCaseTypes(fixtureType: TypegenFixtureType, fixtureCase: TypegenFixtureCase) {
-  const outputFileName = path.parse(fixtureCase.expectedOutputFileName).base;
-  const typegenPrefix = `[typegen] [${fixtureType}] ${outputFileName}`;
+  const typegenPrefix = `[typegen] [${fixtureType}]`;
 
-  const inputFilePath = path.join(typegenFixtures[fixtureType].directory, fixtureCase.inputFileName);
-  const outputFilePath = path.join(typegenFixtures[fixtureType].directory, fixtureCase.expectedOutputFileName);
+  if (!fixtureCase.expectedOutput) {
+    console.warn(
+      `${typegenPrefix} Skipping generation of ${fixtureCase.input} as it has no expected output file name.`,
+    );
+    return;
+  }
 
-  await usingConsoleTime(typegenPrefix, async () => {
+  const outputFileName = path.basename(fixtureCase.expectedOutput);
+
+  const inputFilePath = path.join(typegenFixtures[fixtureType].directory, fixtureCase.input);
+  const outputFilePath = path.join(typegenFixtures[fixtureType].directory, fixtureCase.expectedOutput);
+
+  await usingConsoleTime(`${typegenPrefix} ${outputFileName}`, async () => {
     const commandArguments = [
       './dist/cli.js',
       'typegen',
@@ -41,7 +49,7 @@ async function generateFixtureCaseTypes(fixtureType: TypegenFixtureType, fixture
       outputFilePath,
       '--service-name',
       'my-service',
-      ...fixtureCase.additionalArguments,
+      ...fixtureCase.extraArguments,
     ];
 
     await $('node', commandArguments);
@@ -66,7 +74,7 @@ interface FixtureTypegenOptions {
 async function generateFixtureCasesTypes({ fixtureType, fixtureNames }: FixtureTypegenOptions) {
   const fixtureCases = fixtureNames
     .flatMap<TypegenFixtureCase>((fixtureName) => typegenFixtures[fixtureType].cases[fixtureName])
-    .filter((fixtureCase) => !fixtureCase.shouldWriteToStdout && !fixtureCase.shouldUseURLAsInput);
+    .filter((fixtureCase) => !fixtureCase.stdout && !fixtureCase.url);
 
   const outputFilePaths: string[] = [];
 
@@ -81,7 +89,9 @@ async function generateFixtureCasesTypes({ fixtureType, fixtureNames }: FixtureT
     );
 
     for (const outputFilePath of newOutputFilePaths) {
-      outputFilePaths.push(outputFilePath);
+      if (outputFilePath) {
+        outputFilePaths.push(outputFilePath);
+      }
     }
   }
 

@@ -1,6 +1,6 @@
 import { HttpRequest, HttpResponse, HttpMethod, HttpSchema } from '@zimic/http';
-import createParametrizedPathPattern from '@zimic/utils/url/createParametrizedPathPattern';
-import excludeURLParams from '@zimic/utils/url/excludeURLParams';
+import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
+import excludeNonPathParams from '@zimic/utils/url/excludeNonPathParams';
 import validatePathParams from '@zimic/utils/url/validatePathParams';
 import { SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
 import * as mswBrowser from 'msw/browser';
@@ -21,7 +21,7 @@ import { LocalHttpInterceptorWorkerOptions } from './types/options';
 interface HttpHandler {
   baseURL: string;
   method: HttpMethod;
-  pathPattern: RegExp;
+  pathRegex: RegExp;
   interceptor: AnyHttpInterceptorClient;
   createResponse: (context: HttpResponseFactoryContext) => Promise<Response>;
 }
@@ -174,7 +174,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     const handler: HttpHandler = {
       baseURL: interceptor.baseURLAsString,
       method,
-      pathPattern: createParametrizedPathPattern(path),
+      pathRegex: createRegexFromPath(path),
       interceptor,
       createResponse: async (context) => {
         const request = context.request as HttpRequest;
@@ -210,7 +210,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   private async createResponseForRequest(request: HttpRequest) {
     const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
 
-    const requestURL = excludeURLParams(new URL(request.url));
+    const requestURL = excludeNonPathParams(new URL(request.url));
     const requestURLAsString = requestURL.href === `${requestURL.origin}/` ? requestURL.origin : requestURL.href;
 
     for (let handlerIndex = methodHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
@@ -222,7 +222,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       }
 
       const requestPath = requestURLAsString.replace(handler.baseURL, '');
-      const matchesPath = handler.pathPattern.test(requestPath);
+      const matchesPath = handler.pathRegex.test(requestPath);
 
       if (!matchesPath) {
         continue;
