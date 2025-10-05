@@ -629,7 +629,7 @@ importers:
   packages/zimic-fetch:
     dependencies:
       '@zimic/http':
-        specifier: ^1.1.0 || workspace:*
+        specifier: ^1.2.0 || workspace:*
         version: link:../zimic-http
     devDependencies:
       '@types/node':
@@ -757,7 +757,7 @@ importers:
         specifier: 0.10.12
         version: 0.10.12
       '@zimic/http':
-        specifier: ^1.1.0 || workspace:*
+        specifier: ^1.2.0 || workspace:*
         version: link:../zimic-http
       execa:
         specifier: 9.6.0
@@ -4318,16 +4318,6 @@ packages:
 
   '@xtuc/long@4.2.2':
     resolution: {integrity: sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==}
-
-  '@zimic/http@1.1.3':
-    resolution: {integrity: sha512-P1wBfF0uDcStr3mgyQSr1Op5SsJH5LDAeYcK4u4BVJMJZxXANDQ0yXihJ42jM8DHujQLbCFjs5WYfJQ9FBLd8w==}
-    engines: {node: '>=20.0.0'}
-    hasBin: true
-    peerDependencies:
-      typescript: '>=5.0.0'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
 
   JSONStream@1.3.5:
     resolution: {integrity: sha512-E+iruNOY8VV9s4JEbe1aNEm6MiszPRr/UfcHMz0TQh1BXSxHK+ASV1R6W4HpjBhSeS+54PIsAMCBmwD06LLsqQ==}
@@ -14425,14 +14415,6 @@ snapshots:
   '@xtuc/ieee754@1.2.0': {}
 
   '@xtuc/long@4.2.2': {}
-
-  '@zimic/http@1.1.3(typescript@5.9.3)':
-    dependencies:
-      openapi-typescript: 7.9.1(typescript@5.9.3)
-      picocolors: 1.1.1
-      yargs: 18.0.0
-    optionalDependencies:
-      typescript: 5.9.3
 
   JSONStream@1.3.5:
     dependencies:
