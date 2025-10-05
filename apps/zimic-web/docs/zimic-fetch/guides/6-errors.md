@@ -213,11 +213,10 @@ const asyncSerializers = {
       });
 
       // Serialize bodies to a string for better readability in the logs
-      if (errorObject.request.body !== undefined) {
-        errorObject.request.body = serializeBody(errorObject.request.body);
-      }
-      if (errorObject.response.body !== undefined) {
-        errorObject.response.body = serializeBody(errorObject.response.body);
+      for (const resource of [errorObject.request, errorObject.response]) {
+        if (resource.body !== undefined && resource.body !== null) {
+          resource.body = serializeBody(resource.body);
+        }
       }
 
       return pino.stdSerializers.err(errorObject);
