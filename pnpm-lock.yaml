@@ -629,7 +629,7 @@ importers:
   packages/zimic-fetch:
     dependencies:
       '@zimic/http':
-        specifier: ^1.1.0 || workspace:*
+        specifier: ^1.2.0 || workspace:*
         version: link:../zimic-http
     devDependencies:
       '@types/node':
