@@ -15,7 +15,10 @@ import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
 import { isServerSide } from '@/utils/environment';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
-import HttpRequestHandlerClient, { AnyHttpRequestHandlerClient } from '../requestHandler/HttpRequestHandlerClient';
+import HttpRequestHandlerClient, {
+  AnyHttpRequestHandlerClient,
+  HttpRequestHandlerRequestMatch,
+} from '../requestHandler/HttpRequestHandlerClient';
 import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
 import { HttpRequestHandler, InternalHttpRequestHandler } from '../requestHandler/types/public';
@@ -54,7 +57,7 @@ class HttpInterceptorClient<
 
   private Handler: HandlerConstructor;
 
-  private handlerClientsByMethod: {
+  private handlers: {
     [Method in HttpMethod]: Map<string, AnyHttpRequestHandlerClient[]>;
   } = {
     GET: new Map(),
@@ -229,21 +232,23 @@ class HttpInterceptorClient<
     Path extends HttpSchemaPath<Schema, Method>,
     StatusCode extends HttpStatusCode = never,
   >(handler: InternalHttpRequestHandler<Schema, Method, Path, StatusCode>) {
-    const handlerClients = this.handlerClientsByMethod[handler.method].get(handler.path) ?? [];
+    const pathHandlers = this.handlers[handler.method].get(handler.path) ?? [];
 
-    const isAlreadyRegistered = handlerClients.includes(handler.client);
+    const isAlreadyRegistered = pathHandlers.includes(handler.client);
+
     if (isAlreadyRegistered) {
       return;
     }
 
-    handlerClients.push(handler.client);
+    pathHandlers.push(handler.client);
 
-    const isFirstHandlerForMethodPath = handlerClients.length === 1;
+    const isFirstHandlerForMethodPath = pathHandlers.length === 1;
+
     if (!isFirstHandlerForMethodPath) {
       return;
     }
 
-    this.handlerClientsByMethod[handler.method].set(handler.path, handlerClients);
+    this.handlers[handler.method].set(handler.path, pathHandlers);
 
     const pathRegex = createRegexFromPath(handler.path);
 
@@ -312,17 +317,44 @@ class HttpInterceptorClient<
   >(
     method: Method,
     path: Path,
-    parsedRequest: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
+    request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<HttpRequestHandlerClient<Schema, Method, Path, any> | undefined> {
     /* istanbul ignore next -- @preserve
      * Ignoring because there will always be a handler for the given method and path at this point. */
-    const handlersByPath = this.handlerClientsByMethod[method].get(path) ?? [];
+    const pathHandlers = this.handlers[method].get(path) ?? [];
 
-    for (let handlerIndex = handlersByPath.length - 1; handlerIndex >= 0; handlerIndex--) {
-      const handler = handlersByPath[handlerIndex];
-      if (await handler.matchesRequest(parsedRequest)) {
+    const failedRequestMatches = new Map<
+      AnyHttpRequestHandlerClient,
+      Extract<HttpRequestHandlerRequestMatch, { success: false }>
+    >();
+
+    // If we find a matching handler that can accept more requests, we return it immediately.
+    for (let handlerIndex = pathHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
+      const handler = pathHandlers[handlerIndex];
+      const requestMatch = await handler.matchesRequest(request);
+
+      if (requestMatch.success) {
+        handler.markRequestAsMatched(request);
         return handler;
+      }
+
+      failedRequestMatches.set(handler, requestMatch);
+    }
+
+    // If no handler matched or could accept more requests, we iterate again over the handlers to check which ones
+    // could have matched considering only restrictions.
+    for (let handlerIndex = pathHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
+      const handler = pathHandlers[handlerIndex];
+      const requestMatch = failedRequestMatches.get(handler);
+
+      // Handlers that did not match due to anything other than restrictions are still marked as matched to trigger a
+      // times check error.
+      if (requestMatch?.cause === 'unmatchedRestrictions') {
+        handler.markRequestAsUnmatched(request, { diff: requestMatch.diff });
+      } else {
+        handler.markRequestAsMatched(request);
+        break;
       }
     }
 
@@ -331,9 +363,9 @@ class HttpInterceptorClient<
 
   checkTimes() {
     for (const method of HTTP_METHODS) {
-      const handlersByPath = this.handlerClientsByMethod[method];
+      const pathHandlers = this.handlers[method];
 
-      for (const handlers of handlersByPath.values()) {
+      for (const handlers of pathHandlers.values()) {
         for (const handler of handlers) {
           handler.checkTimes();
         }
@@ -353,8 +385,8 @@ class HttpInterceptorClient<
         clearResults.push(Promise.resolve(result));
       }
 
-      const handlersByPath = this.handlerClientsByMethod[method];
-      handlersByPath.clear();
+      const pathHandlers = this.handlers[method];
+      pathHandlers.clear();
     }
 
     if (options.onCommitSuccess) {
@@ -363,10 +395,10 @@ class HttpInterceptorClient<
   }
 
   private clearMethodHandlers(method: HttpMethod) {
-    const handlersByPath = this.handlerClientsByMethod[method];
+    const pathHandlers = this.handlers[method];
     const clearResults: PossiblePromise<AnyHttpRequestHandlerClient>[] = [];
 
-    for (const handlers of handlersByPath.values()) {
+    for (const handlers of pathHandlers.values()) {
       for (const handler of handlers) {
         clearResults.push(handler.clear());
       }

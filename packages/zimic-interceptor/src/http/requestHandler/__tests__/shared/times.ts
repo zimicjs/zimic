@@ -1,4 +1,4 @@
-import { HttpFormData, HttpSearchParams } from '@zimic/http';
+import { HttpFormData, HttpHeaders, HttpSearchParams } from '@zimic/http';
 import joinURL from '@zimic/utils/url/joinURL';
 import color from 'picocolors';
 import { expect, it, beforeAll, afterAll, describe } from 'vitest';
@@ -12,6 +12,7 @@ import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorke
 import { importFile, isGlobalFileAvailable } from '@/utils/files';
 import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
+import { HttpRequestHandlerRequestMatch } from '../../HttpRequestHandlerClient';
 import type LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
 import type RemoteHttpRequestHandler from '../../RemoteHttpRequestHandler';
 import { MethodSchema, Schema, SharedHttpRequestHandlerTestOptions } from './types';
@@ -69,15 +70,15 @@ export function declareTimesHttpRequestHandlerTests(
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       await promiseIfRemote(handler.checkTimes(), handler);
 
       await promiseIfRemote(handler.times(2), handler);
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       await promiseIfRemote(handler.checkTimes(), handler);
 
       await promiseIfRemote(handler.times(3), handler);
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       await promiseIfRemote(handler.checkTimes(), handler);
     });
 
@@ -94,18 +95,18 @@ export function declareTimesHttpRequestHandlerTests(
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
 
       await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 2 requests, but got 1.',
         expectedNumberOfRequests: 2,
       });
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       await promiseIfRemote(handler.checkTimes(), handler);
 
       handler.times(4);
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
 
       await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 4 requests, but got 3.',
@@ -126,17 +127,23 @@ export function declareTimesHttpRequestHandlerTests(
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       await promiseIfRemote(handler.checkTimes(), handler);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+        success: false,
+        cause: 'exceededNumberOfRequests',
+      });
 
       await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 1 request, but got 2.',
         expectedNumberOfRequests: 1,
       });
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+        success: false,
+        cause: 'exceededNumberOfRequests',
+      });
 
       await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 1 request, but got 3.',
@@ -156,13 +163,13 @@ export function declareTimesHttpRequestHandlerTests(
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       await promiseIfRemote(handler.checkTimes(), handler);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       await promiseIfRemote(handler.checkTimes(), handler);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       await promiseIfRemote(handler.checkTimes(), handler);
     });
 
@@ -179,14 +186,14 @@ export function declareTimesHttpRequestHandlerTests(
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
 
       await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected at least 2 and at most 3 requests, but got 1.',
         expectedNumberOfRequests: { min: 2, max: 3 },
       });
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       await promiseIfRemote(handler.checkTimes(), handler);
     });
 
@@ -198,9 +205,9 @@ export function declareTimesHttpRequestHandlerTests(
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       await promiseIfRemote(handler.checkTimes(), handler);
     });
 
@@ -212,12 +219,15 @@ export function declareTimesHttpRequestHandlerTests(
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       await promiseIfRemote(handler.checkTimes(), handler);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+        success: false,
+        cause: 'exceededNumberOfRequests',
+      });
 
       await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected at least 2 and at most 3 requests, but got 4.',
@@ -235,10 +245,13 @@ export function declareTimesHttpRequestHandlerTests(
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       await promiseIfRemote(handler.checkTimes(), handler);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+        success: false,
+        cause: 'exceededNumberOfRequests',
+      });
 
       await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected at least 0 and at most 1 request, but got 2.',
@@ -259,10 +272,13 @@ export function declareTimesHttpRequestHandlerTests(
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       await promiseIfRemote(handler.checkTimes(), handler);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+        success: false,
+        cause: 'exceededNumberOfRequests',
+      });
 
       await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 1 request, but got 2.',
@@ -283,17 +299,20 @@ export function declareTimesHttpRequestHandlerTests(
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
 
       await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 2 requests, but got 1.',
         expectedNumberOfRequests: { min: 2, max: 2 },
       });
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       await promiseIfRemote(handler.checkTimes(), handler);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+        success: false,
+        cause: 'exceededNumberOfRequests',
+      });
 
       await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 2 requests, but got 3.',
@@ -331,7 +350,11 @@ export function declareTimesHttpRequestHandlerTests(
             const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
             const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-            expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+            expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+              success: false,
+              cause: 'unmatchedRestrictions',
+              diff: { computed: { expected: true, received: false } },
+            });
 
             await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
               message: [
@@ -359,7 +382,11 @@ export function declareTimesHttpRequestHandlerTests(
         const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: { computed: { expected: true, received: false } },
+        });
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
@@ -393,7 +420,16 @@ export function declareTimesHttpRequestHandlerTests(
         let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            headers: {
+              expected: new HttpHeaders({ accept: 'application/json' }),
+              received: new HttpHeaders({}),
+            },
+          },
+        });
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
@@ -418,7 +454,16 @@ export function declareTimesHttpRequestHandlerTests(
         });
         parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            headers: {
+              expected: new HttpHeaders({ accept: 'application/json' }),
+              received: new HttpHeaders({ accept: 'text/html', 'content-type': 'text/plain' }),
+            },
+          },
+        });
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
@@ -457,7 +502,16 @@ export function declareTimesHttpRequestHandlerTests(
         let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            searchParams: {
+              expected: new HttpSearchParams({ value: '1' }),
+              received: new HttpSearchParams(),
+            },
+          },
+        });
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
@@ -480,7 +534,16 @@ export function declareTimesHttpRequestHandlerTests(
         request = new Request(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'POST' });
         parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            searchParams: {
+              expected: new HttpSearchParams({ value: '1' }),
+              received: searchParams,
+            },
+          },
+        });
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
@@ -519,7 +582,16 @@ export function declareTimesHttpRequestHandlerTests(
         let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            body: {
+              expected: { name: '1' },
+              received: null,
+            },
+          },
+        });
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
@@ -545,7 +617,16 @@ export function declareTimesHttpRequestHandlerTests(
         });
         parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            body: {
+              expected: { name: '1' },
+              received: { name: '2' },
+            },
+          },
+        });
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
@@ -571,8 +652,10 @@ export function declareTimesHttpRequestHandlerTests(
       });
 
       it('should consider requests unmatched due to search params matched requests in times check errors', async () => {
+        const restrictedSearchParams = new HttpSearchParams({ name: '1' });
+
         const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
-          .with({ body: new HttpSearchParams({ name: '1' }) })
+          .with({ body: restrictedSearchParams })
           .respond({ status: 200, body: { success: true } })
           .times(1);
 
@@ -584,7 +667,16 @@ export function declareTimesHttpRequestHandlerTests(
         let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            body: {
+              expected: restrictedSearchParams,
+              received: null,
+            },
+          },
+        });
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
@@ -603,14 +695,25 @@ export function declareTimesHttpRequestHandlerTests(
           expectedNumberOfRequests: 1,
         });
 
+        const searchParams = new HttpSearchParams({ name: '2' });
+
         request = new Request(joinURL(baseURL, '/users'), {
           method: 'POST',
           headers: { 'content-type': 'application/x-www-form-urlencoded' },
-          body: new HttpSearchParams({ name: '2' }),
+          body: searchParams,
         });
         parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            body: {
+              expected: restrictedSearchParams,
+              received: searchParams,
+            },
+          },
+        });
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
@@ -652,7 +755,16 @@ export function declareTimesHttpRequestHandlerTests(
         let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            body: {
+              expected: formDataRestriction,
+              received: null,
+            },
+          },
+        });
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
@@ -688,7 +800,16 @@ export function declareTimesHttpRequestHandlerTests(
         });
         parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            body: {
+              expected: formDataRestriction,
+              received: formData,
+            },
+          },
+        });
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
@@ -728,8 +849,10 @@ export function declareTimesHttpRequestHandlerTests(
       });
 
       it('should consider requests unmatched due to blob body requests in times check errors', async () => {
+        const restrictedBlob = new Blob(['1'], { type: 'application/octet-stream' });
+
         const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
-          .with({ body: new Blob(['1'], { type: 'application/octet-stream' }) })
+          .with({ body: restrictedBlob })
           .respond({ status: 200, body: { success: true } })
           .times(1);
 
@@ -741,7 +864,16 @@ export function declareTimesHttpRequestHandlerTests(
         let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            body: {
+              expected: restrictedBlob,
+              received: null,
+            },
+          },
+        });
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
@@ -760,13 +892,24 @@ export function declareTimesHttpRequestHandlerTests(
           expectedNumberOfRequests: 1,
         });
 
+        const blob = new Blob(['blob'], { type: 'application/octet-stream' });
+
         request = new Request(joinURL(baseURL, '/users'), {
           method: 'POST',
-          body: new Blob(['blob'], { type: 'application/octet-stream' }),
+          body: blob,
         });
         parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            body: {
+              expected: restrictedBlob,
+              received: blob,
+            },
+          },
+        });
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
@@ -805,7 +948,16 @@ export function declareTimesHttpRequestHandlerTests(
         let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            body: {
+              expected: 'example',
+              received: null,
+            },
+          },
+        });
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
@@ -831,7 +983,16 @@ export function declareTimesHttpRequestHandlerTests(
         });
         parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            body: {
+              expected: 'example',
+              received: 'text',
+            },
+          },
+        });
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
@@ -869,11 +1030,17 @@ export function declareTimesHttpRequestHandlerTests(
         const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'missingResponseDeclaration',
+        });
 
         await promiseIfRemote(handler.checkTimes(), handler);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'missingResponseDeclaration',
+        });
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: 'Expected exactly 1 request, but got 2.',
@@ -894,7 +1061,16 @@ export function declareTimesHttpRequestHandlerTests(
         let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            searchParams: {
+              expected: new HttpSearchParams({ value: '1' }),
+              received: new HttpSearchParams(),
+            },
+          },
+        });
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
@@ -917,11 +1093,17 @@ export function declareTimesHttpRequestHandlerTests(
         request = new Request(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'POST' });
         parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'missingResponseDeclaration',
+        });
 
         await promiseIfRemote(handler.checkTimes(), handler);
 
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'missingResponseDeclaration',
+        });
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
@@ -950,7 +1132,10 @@ export function declareTimesHttpRequestHandlerTests(
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+        success: false,
+        cause: 'missingResponseDeclaration',
+      });
 
       await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 0 requests, but got 1.',
@@ -979,14 +1164,17 @@ export function declareTimesHttpRequestHandlerTests(
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       await promiseIfRemote(handler.checkTimes(), handler);
 
       handler.clear();
 
       await promiseIfRemote(handler.checkTimes(), handler);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+        success: false,
+        cause: 'missingResponseDeclaration',
+      });
       await promiseIfRemote(handler.checkTimes(), handler);
     });
 
@@ -1009,14 +1197,17 @@ export function declareTimesHttpRequestHandlerTests(
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       await promiseIfRemote(handler.checkTimes(), handler);
 
       handler.clear();
 
       await promiseIfRemote(handler.checkTimes(), handler);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+        success: false,
+        cause: 'missingResponseDeclaration',
+      });
       await promiseIfRemote(handler.checkTimes(), handler);
     });
   });
