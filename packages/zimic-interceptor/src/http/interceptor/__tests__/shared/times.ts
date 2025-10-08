@@ -1,4 +1,4 @@
-import { HTTP_METHODS, HttpSchema, HttpSearchParams } from '@zimic/http';
+import { HttpSchema, HttpSearchParams } from '@zimic/http';
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import joinURL from '@zimic/utils/url/joinURL';
 import color from 'picocolors';
@@ -6,25 +6,19 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { expectTimesCheckError } from '@/http/requestHandler/__tests__/shared/utils';
-import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
-import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
-import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { importCrypto } from '@/utils/crypto';
-import { expectPreflightResponse } from '@tests/utils/fetch';
-import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
+import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { platform, type, getBaseURL, getInterceptorOptions } = options;
+  const { getBaseURL, getInterceptorOptions } = options;
 
   const crypto = await importCrypto();
 
   let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
-
-  const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
   beforeEach(() => {
     baseURL = getBaseURL();
@@ -36,795 +30,975 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
       searchParams: { value?: string };
     };
     response: {
-      200: { headers: AccessControlHeaders };
+      204: {};
     };
   }>;
 
-  describe.each(HTTP_METHODS)('Method (%s)', (method) => {
-    const { overridesPreflightResponse, numberOfRequestsIncludingPreflight } = assessPreflightInterference({
-      method,
-      platform,
-      type,
+  describe('Exact number of requests', () => {
+    it('should intercept an exact number of limited requests', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }).times(1), interceptor);
+
+        expect(handler.requests).toHaveLength(0);
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 1 request, but got 0.',
+          expectedNumberOfRequests: 1,
+        });
+
+        let response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handler.requests).toHaveLength(1);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+        handler.times(2);
+
+        response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handler.requests).toHaveLength(2);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+        handler.times(1 * 3);
+
+        response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handler.requests).toHaveLength(1 * 3);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      });
     });
 
-    const lowerMethod = method.toLowerCase<'POST'>();
+    it('should intercept less than an exact number of limited requests', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }).times(2), interceptor);
 
-    describe('Exact number of requests', () => {
-      it(`should intercept an exact number of limited ${method} requests`, async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchema;
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
-            HEAD: MethodSchema;
-            OPTIONS: MethodSchema;
-          };
-        }>(interceptorOptions, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users')
-              .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS })
-              .times(numberOfRequestsIncludingPreflight),
-            interceptor,
-          );
-          expect(handler).toBeInstanceOf(Handler);
+        expect(handler.requests).toHaveLength(0);
 
-          expect(handler.requests).toHaveLength(0);
-
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: `Expected exactly ${
-              numberOfRequestsIncludingPreflight
-            } request${numberOfRequestsIncludingPreflight === 1 ? '' : 's'}, but got 0.`,
-            expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
-          });
-
-          let response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
-
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
-
-          handler.times(numberOfRequestsIncludingPreflight * 2);
-
-          response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
-
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 2);
-
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
-
-          handler.times(numberOfRequestsIncludingPreflight * 3);
-
-          response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
-
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
-
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 2 requests, but got 0.',
+          expectedNumberOfRequests: 2,
         });
-      });
 
-      it(`should intercept less than an exact number of limited ${method} requests`, async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchema;
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
-            HEAD: MethodSchema;
-            OPTIONS: MethodSchema;
-          };
-        }>(interceptorOptions, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users')
-              .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS })
-              .times(numberOfRequestsIncludingPreflight * 2),
-            interceptor,
-          );
-          expect(handler).toBeInstanceOf(Handler);
+        let response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
 
-          expect(handler.requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(1);
 
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: `Expected exactly ${numberOfRequestsIncludingPreflight * 2} requests, but got 0.`,
-            expectedNumberOfRequests: numberOfRequestsIncludingPreflight * 2,
-          });
-
-          let response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
-
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: `Expected exactly ${
-              numberOfRequestsIncludingPreflight * 2
-            } requests, but got ${numberOfRequestsIncludingPreflight}.`,
-            expectedNumberOfRequests: numberOfRequestsIncludingPreflight * 2,
-          });
-
-          response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
-
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 2);
-
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
-
-          handler.times(numberOfRequestsIncludingPreflight * 4);
-
-          response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
-
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
-
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: `Expected exactly ${
-              numberOfRequestsIncludingPreflight * 4
-            } requests, but got ${numberOfRequestsIncludingPreflight * 3}.`,
-            expectedNumberOfRequests: numberOfRequestsIncludingPreflight * 4,
-          });
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 2 requests, but got 1.',
+          expectedNumberOfRequests: 2,
         });
-      });
 
-      it(`should not intercept more than an exact number of limited ${method} requests`, async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchema;
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
-            HEAD: MethodSchema;
-            OPTIONS: MethodSchema;
-          };
-        }>(interceptorOptions, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users')
-              .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS })
-              .times(numberOfRequestsIncludingPreflight),
-            interceptor,
-          );
-          expect(handler).toBeInstanceOf(Handler);
+        response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
 
-          expect(handler.requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(2);
 
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: `Expected exactly ${
-              numberOfRequestsIncludingPreflight
-            } request${numberOfRequestsIncludingPreflight === 1 ? '' : 's'}, but got 0.`,
-            expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
-          });
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-          const response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
+        handler.times(1 * 4);
 
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
 
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        expect(handler.requests).toHaveLength(1 * 3);
 
-          let responsePromise = fetch(joinURL(baseURL, '/users'), {
-            method,
-            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-          });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: `Expected exactly ${
-              numberOfRequestsIncludingPreflight
-            } request${numberOfRequestsIncludingPreflight === 1 ? '' : 's'}, but got ${
-              numberOfRequestsIncludingPreflight * 2
-            }.`,
-            expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
-          });
-
-          responsePromise = fetch(joinURL(baseURL, '/users'), { method });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: `Expected exactly ${
-              numberOfRequestsIncludingPreflight
-            } request${numberOfRequestsIncludingPreflight === 1 ? '' : 's'}, but got ${
-              numberOfRequestsIncludingPreflight * 3
-            }.`,
-            expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
-          });
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: `Expected exactly ${1 * 4} requests, but got ${1 * 3}.`,
+          expectedNumberOfRequests: 1 * 4,
         });
       });
     });
 
-    describe('Range number of requests', () => {
-      it(`should intercept the minimum number of ${method} requests limited in a range`, async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchema;
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
-            HEAD: MethodSchema;
-            OPTIONS: MethodSchema;
-          };
-        }>(interceptorOptions, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users')
-              .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS })
-              .times(0, numberOfRequestsIncludingPreflight * 3),
-            interceptor,
-          );
-          expect(handler).toBeInstanceOf(Handler);
+    it('should not intercept more than an exact number of limited requests', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }).times(1), interceptor);
 
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        expect(handler.requests).toHaveLength(0);
 
-          expect(handler.requests).toHaveLength(0);
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 1 request, but got 0.',
+          expectedNumberOfRequests: 1,
+        });
 
-          let response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
+        const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
 
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(handler.requests).toHaveLength(1);
 
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-          response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
+        let responsePromise = fetch(joinURL(baseURL, '/users'), {
+          method: 'GET',
+          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+        });
+        await expectFetchError(responsePromise);
 
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 2);
+        expect(handler.requests).toHaveLength(1);
 
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 1 request, but got 2.',
+          expectedNumberOfRequests: 1,
+        });
 
-          response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
+        responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
 
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
+        await expectFetchError(responsePromise);
 
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        expect(handler.requests).toHaveLength(1);
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: `Expected exactly 1 request, but got ${1 * 3}.`,
+          expectedNumberOfRequests: 1,
         });
       });
+    });
+  });
 
-      it(`should intercept less than the minimum number of ${method} requests limited in a range`, async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchema;
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
-            HEAD: MethodSchema;
-            OPTIONS: MethodSchema;
-          };
-        }>(interceptorOptions, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users')
-              .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS })
-              .times(numberOfRequestsIncludingPreflight * 2, numberOfRequestsIncludingPreflight * 3),
-            interceptor,
-          );
-          expect(handler).toBeInstanceOf(Handler);
+  describe('Range number of requests', () => {
+    it('should intercept the minimum number of requests limited in a range', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor
+            .get('/users')
+            .respond({ status: 204 })
+            .times(0, 1 * 3),
+          interceptor,
+        );
 
-          expect(handler.requests).toHaveLength(0);
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: `Expected at least ${
-              numberOfRequestsIncludingPreflight * 2
-            } and at most ${numberOfRequestsIncludingPreflight * 3} requests, but got 0.`,
+        expect(handler.requests).toHaveLength(0);
 
-            expectedNumberOfRequests: {
-              min: numberOfRequestsIncludingPreflight * 2,
-              max: numberOfRequestsIncludingPreflight * 3,
-            },
-          });
+        let response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
 
-          let response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
+        expect(handler.requests).toHaveLength(1);
 
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: `Expected at least ${
-              numberOfRequestsIncludingPreflight * 2
-            } and at most ${numberOfRequestsIncludingPreflight * 3} requests, but got ${
-              numberOfRequestsIncludingPreflight
-            }.`,
+        response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
 
-            expectedNumberOfRequests: {
-              min: numberOfRequestsIncludingPreflight * 2,
-              max: numberOfRequestsIncludingPreflight * 3,
-            },
-          });
+        expect(handler.requests).toHaveLength(2);
 
-          response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 2);
+        response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
 
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
-        });
+        expect(handler.requests).toHaveLength(1 * 3);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
       });
+    });
 
-      it(`should intercept the maximum number of ${method} requests limited in a range`, async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchema;
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
-            HEAD: MethodSchema;
-            OPTIONS: MethodSchema;
-          };
-        }>(interceptorOptions, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users')
-              .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS })
-              .times(numberOfRequestsIncludingPreflight * 2, numberOfRequestsIncludingPreflight * 3),
-            interceptor,
-          );
-          expect(handler).toBeInstanceOf(Handler);
+    it('should intercept less than the minimum number of requests limited in a range', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor
+            .get('/users')
+            .respond({ status: 204 })
+            .times(2, 1 * 3),
+          interceptor,
+        );
 
-          let response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
+        expect(handler.requests).toHaveLength(0);
 
-          response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
-
-          response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
-
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
-
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: `Expected at least 2 and at most ${1 * 3} requests, but got 0.`,
+          expectedNumberOfRequests: { min: 2, max: 1 * 3 },
         });
-      });
 
-      it(`should not intercept more than the maximum number of ${method} requests limited in a range`, async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchema;
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
-            HEAD: MethodSchema;
-            OPTIONS: MethodSchema;
-          };
-        }>(interceptorOptions, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users')
-              .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS })
-              .times(numberOfRequestsIncludingPreflight * 2, numberOfRequestsIncludingPreflight * 3),
-            interceptor,
-          );
-          expect(handler).toBeInstanceOf(Handler);
+        let response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
 
-          let response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
+        expect(handler.requests).toHaveLength(1);
 
-          response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
-
-          response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
-
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
-
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
-
-          const responsePromise = fetch(joinURL(baseURL, '/users'), {
-            method,
-            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-          });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
-
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: `Expected at least ${
-              numberOfRequestsIncludingPreflight * 2
-            } and at most ${numberOfRequestsIncludingPreflight * 3} requests, but got ${
-              numberOfRequestsIncludingPreflight * 4
-            }.`,
-
-            expectedNumberOfRequests: {
-              min: numberOfRequestsIncludingPreflight * 2,
-              max: numberOfRequestsIncludingPreflight * 3,
-            },
-          });
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: `Expected at least 2 and at most ${1 * 3} requests, but got 1.`,
+          expectedNumberOfRequests: { min: 2, max: 1 * 3 },
         });
+
+        response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handler.requests).toHaveLength(2);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
       });
+    });
 
-      it(`should intercept the exact number of ${method} requests limited in a range where the minimum and maximum are equal`, async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchema;
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
-            HEAD: MethodSchema;
-            OPTIONS: MethodSchema;
-          };
-        }>(interceptorOptions, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users')
-              .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS })
-              .times(numberOfRequestsIncludingPreflight, numberOfRequestsIncludingPreflight),
-            interceptor,
-          );
-          expect(handler).toBeInstanceOf(Handler);
+    it('should intercept the maximum number of requests limited in a range', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor
+            .get('/users')
+            .respond({ status: 204 })
+            .times(2, 1 * 3),
+          interceptor,
+        );
 
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: `Expected exactly ${numberOfRequestsIncludingPreflight} request${
-              numberOfRequestsIncludingPreflight === 1 ? '' : 's'
-            }, but got 0.`,
+        let response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
 
-            expectedNumberOfRequests: {
-              min: numberOfRequestsIncludingPreflight,
-              max: numberOfRequestsIncludingPreflight,
-            },
-          });
+        response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
 
-          const response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
+        response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
 
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(handler.requests).toHaveLength(1 * 3);
 
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      });
+    });
 
-          const responsePromise = fetch(joinURL(baseURL, '/users'), {
-            method,
-            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-          });
+    it('should not intercept more than the maximum number of requests limited in a range', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor
+            .get('/users')
+            .respond({ status: 204 })
+            .times(2, 1 * 3),
+          interceptor,
+        );
 
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
+        let response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
 
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
 
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: `Expected exactly ${numberOfRequestsIncludingPreflight} request${
-              numberOfRequestsIncludingPreflight === 1 ? '' : 's'
-            }, but got ${numberOfRequestsIncludingPreflight * 2}.`,
+        response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
 
-            expectedNumberOfRequests: {
-              min: numberOfRequestsIncludingPreflight,
-              max: numberOfRequestsIncludingPreflight,
-            },
-          });
+        expect(handler.requests).toHaveLength(1 * 3);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+        const responsePromise = fetch(joinURL(baseURL, '/users'), {
+          method: 'GET',
+          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+        });
+        await expectFetchError(responsePromise);
+
+        expect(handler.requests).toHaveLength(1 * 3);
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: `Expected at least 2 and at most ${1 * 3} requests, but got ${1 * 4}.`,
+          expectedNumberOfRequests: { min: 2, max: 1 * 3 },
         });
       });
     });
 
-    describe('Unmatched requests', () => {
-      it('should not consider requests unmatched due to restrictions in times checks', async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchema;
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
-            HEAD: MethodSchema;
-            OPTIONS: MethodSchema;
-          };
-        }>(interceptorOptions, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users')
+    it('should intercept the exact number of requests limited in a range where the minimum and maximum are equal', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor.get('/users').respond({ status: 204 }).times(1, 1),
+          interceptor,
+        );
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 1 request, but got 0.',
+          expectedNumberOfRequests: { min: 1, max: 1 },
+        });
+
+        const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handler.requests).toHaveLength(1);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+        const responsePromise = fetch(joinURL(baseURL, '/users'), {
+          method: 'GET',
+          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+        });
+        await expectFetchError(responsePromise);
+
+        expect(handler.requests).toHaveLength(1);
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 1 request, but got 2.',
+          expectedNumberOfRequests: { min: 1, max: 1 },
+        });
+      });
+    });
+  });
+
+  describe('Request distribution', () => {
+    it('should distribute requests to the next matching handler when the maximum number of requests is reached and no restrictions are used', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handlers = await Promise.all([
+          promiseIfRemote(interceptor.get('/users').respond({ status: 204 }).times(1), interceptor),
+          promiseIfRemote(interceptor.get('/users').respond({ status: 204 }).times(1, 2), interceptor),
+          promiseIfRemote(interceptor.get('/users').respond({ status: 204 }).times(2), interceptor),
+        ]);
+
+        await expectTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
+          message: 'Expected exactly 1 request, but got 0.',
+          expectedNumberOfRequests: 1,
+        });
+        await expectTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
+          message: 'Expected at least 1 and at most 2 requests, but got 0.',
+          expectedNumberOfRequests: { min: 1, max: 2 },
+        });
+        await expectTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
+          message: 'Expected exactly 2 requests, but got 0.',
+          expectedNumberOfRequests: 2,
+        });
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 2 requests, but got 0.',
+          expectedNumberOfRequests: 2,
+        });
+
+        let response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handlers[0].requests).toHaveLength(0);
+        expect(handlers[1].requests).toHaveLength(0);
+        expect(handlers[2].requests).toHaveLength(1);
+
+        await expectTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
+          message: 'Expected exactly 1 request, but got 0.',
+          expectedNumberOfRequests: 1,
+        });
+        await expectTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
+          message: 'Expected at least 1 and at most 2 requests, but got 0.',
+          expectedNumberOfRequests: { min: 1, max: 2 },
+        });
+        await expectTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
+          message: 'Expected exactly 2 requests, but got 1.',
+          expectedNumberOfRequests: 2,
+        });
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 2 requests, but got 1.',
+          expectedNumberOfRequests: 2,
+        });
+
+        response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handlers[0].requests).toHaveLength(0);
+        expect(handlers[1].requests).toHaveLength(0);
+        expect(handlers[2].requests).toHaveLength(2);
+
+        await expectTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
+          message: 'Expected exactly 1 request, but got 0.',
+          expectedNumberOfRequests: 1,
+        });
+        await expectTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
+          message: 'Expected at least 1 and at most 2 requests, but got 0.',
+          expectedNumberOfRequests: { min: 1, max: 2 },
+        });
+        await promiseIfRemote(handlers[2].checkTimes(), handlers[2]);
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected at least 1 and at most 2 requests, but got 0.',
+          expectedNumberOfRequests: { min: 1, max: 2 },
+        });
+
+        response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handlers[0].requests).toHaveLength(0);
+        expect(handlers[1].requests).toHaveLength(1);
+        expect(handlers[2].requests).toHaveLength(2);
+
+        await expectTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
+          message: 'Expected exactly 1 request, but got 0.',
+          expectedNumberOfRequests: 1,
+        });
+        await promiseIfRemote(handlers[1].checkTimes(), handlers[1]);
+        await promiseIfRemote(handlers[2].checkTimes(), handlers[2]);
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 1 request, but got 0.',
+          expectedNumberOfRequests: 1,
+        });
+
+        response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handlers[0].requests).toHaveLength(0);
+        expect(handlers[1].requests).toHaveLength(2);
+        expect(handlers[2].requests).toHaveLength(2);
+
+        await expectTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
+          message: 'Expected exactly 1 request, but got 0.',
+          expectedNumberOfRequests: 1,
+        });
+        await promiseIfRemote(handlers[1].checkTimes(), handlers[1]);
+        await promiseIfRemote(handlers[2].checkTimes(), handlers[2]);
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 1 request, but got 0.',
+          expectedNumberOfRequests: 1,
+        });
+
+        response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handlers[0].requests).toHaveLength(1);
+        expect(handlers[1].requests).toHaveLength(2);
+        expect(handlers[2].requests).toHaveLength(2);
+
+        await promiseIfRemote(handlers[0].checkTimes(), handlers[0]);
+        await promiseIfRemote(handlers[1].checkTimes(), handlers[1]);
+        await promiseIfRemote(handlers[2].checkTimes(), handlers[2]);
+
+        const responsePromise = fetch(joinURL(baseURL, '/users'), {
+          method: 'GET',
+          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+        });
+        await expectFetchError(responsePromise);
+
+        expect(handlers[0].requests).toHaveLength(1);
+        expect(handlers[1].requests).toHaveLength(2);
+        expect(handlers[2].requests).toHaveLength(2);
+
+        await promiseIfRemote(handlers[0].checkTimes(), handlers[0]);
+        await promiseIfRemote(handlers[1].checkTimes(), handlers[1]);
+
+        await expectTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
+          message: 'Expected exactly 2 requests, but got 3.',
+          expectedNumberOfRequests: 2,
+        });
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 2 requests, but got 3.',
+          expectedNumberOfRequests: 2,
+        });
+      });
+    });
+
+    it('should distribute requests to the next matching handler when the maximum number of requests is reached and restrictions are used', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handlers = await Promise.all([
+          promiseIfRemote(
+            interceptor
+              .get('/users')
+              .respond({ status: 204 })
               .with({ searchParams: { value: '1' } })
-              .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS })
               .times(1),
             interceptor,
-          );
-          expect(handler).toBeInstanceOf(Handler);
+          ),
+          promiseIfRemote(
+            interceptor
+              .get('/users')
+              .respond({ status: 204 })
+              .with({ searchParams: { value: '2' } })
+              .times(1, 2),
+            interceptor,
+          ),
+          promiseIfRemote(
+            interceptor
+              .get('/users')
+              .respond({ status: 204 })
+              .with({ searchParams: { value: '2' } })
+              .times(2),
+            interceptor,
+          ),
+        ]);
 
-          expect(handler.requests).toHaveLength(0);
+        await expectTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
+          message: 'Expected exactly 1 matching request, but got 0.',
+          expectedNumberOfRequests: 1,
+        });
+        await expectTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
+          message: 'Expected at least 1 and at most 2 matching requests, but got 0.',
+          expectedNumberOfRequests: { min: 1, max: 2 },
+        });
+        await expectTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
+          message: 'Expected exactly 2 matching requests, but got 0.',
+          expectedNumberOfRequests: 2,
+        });
 
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: 'Expected exactly 1 matching request, but got 0.',
-            expectedNumberOfRequests: 1,
-          });
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 2 matching requests, but got 0.',
+          expectedNumberOfRequests: 2,
+        });
 
-          const responsePromise = fetch(joinURL(baseURL, '/users'), {
-            method,
-            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-          });
+        const searchParams = new HttpSearchParams({ value: '2' });
 
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
+        let response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
+        expect(response.status).toBe(204);
 
-          expect(handler.requests).toHaveLength(0);
+        expect(handlers[0].requests).toHaveLength(0);
+        expect(handlers[1].requests).toHaveLength(0);
+        expect(handlers[2].requests).toHaveLength(1);
 
-          const contentLines = [
-            'Expected exactly 1 matching request, but got 0.',
+        await expectTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
+          message: 'Expected exactly 1 matching request, but got 0.',
+          expectedNumberOfRequests: 1,
+        });
+        await expectTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
+          message: 'Expected at least 1 and at most 2 matching requests, but got 0.',
+          expectedNumberOfRequests: { min: 1, max: 2 },
+        });
+        await expectTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
+          message: 'Expected exactly 2 matching requests, but got 1.',
+          expectedNumberOfRequests: 2,
+        });
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 2 matching requests, but got 1.',
+          expectedNumberOfRequests: 2,
+        });
+
+        searchParams.set('value', '1');
+
+        response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handlers[0].requests).toHaveLength(1);
+        expect(handlers[1].requests).toHaveLength(0);
+        expect(handlers[2].requests).toHaveLength(1);
+
+        await promiseIfRemote(handlers[0].checkTimes(), handlers[0]);
+        await expectTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
+          message: 'Expected at least 1 and at most 2 matching requests, but got 0.',
+          expectedNumberOfRequests: { min: 1, max: 2 },
+        });
+        await expectTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
+          message: 'Expected exactly 2 matching requests, but got 1.',
+          expectedNumberOfRequests: 2,
+        });
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 2 matching requests, but got 1.',
+          expectedNumberOfRequests: 2,
+        });
+
+        searchParams.set('value', 'unknown');
+
+        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+          method: 'GET',
+          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+        });
+        await expectFetchError(responsePromise);
+
+        expect(handlers[0].requests).toHaveLength(1);
+        expect(handlers[1].requests).toHaveLength(0);
+        expect(handlers[2].requests).toHaveLength(1);
+
+        await promiseIfRemote(handlers[0].checkTimes(), handlers[0]);
+        await expectTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
+          message: [
+            'Expected at least 1 and at most 2 matching requests, but got 0.',
             '',
             'Requests evaluated by this handler:',
             '',
             `  ${color.green('- Expected')}`,
             `  ${color.red('+ Received')}`,
-          ];
-
-          for (let requestIndex = 0; requestIndex < numberOfRequestsIncludingPreflight; requestIndex++) {
-            const requestNumber = requestIndex + 1;
-
-            contentLines.push(
-              '',
-              `${requestNumber}: ${method} ${joinURL(baseURL, '/users')}`,
-              '     Search params:',
-              `       ${color.green('- { "value": "1" }')}`,
-              `       ${color.red('+ {}')}`,
-            );
-          }
-
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: contentLines.join('\n'),
-            expectedNumberOfRequests: 1,
-          });
+            '',
+            `1: GET ${joinURL(baseURL, '/users?value=unknown')}`,
+            '     Search params:',
+            `       ${color.green('- { "value": "2" }')}`,
+            `       ${color.red('+ { "value": "unknown" }')}`,
+          ].join('\n'),
+          expectedNumberOfRequests: { min: 1, max: 2 },
         });
-      });
-
-      it('should consider requests unmatched due to missing response declarations in times checks', async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchema;
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
-            HEAD: MethodSchema;
-            OPTIONS: MethodSchema;
-          };
-        }>(interceptorOptions, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users').times(numberOfRequestsIncludingPreflight),
-            interceptor,
-          );
-          expect(handler).toBeInstanceOf(Handler);
-
-          expect(handler.requests).toHaveLength(0);
-
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: `Expected exactly ${numberOfRequestsIncludingPreflight} request${
-              numberOfRequestsIncludingPreflight === 1 ? '' : 's'
-            }, but got 0.`,
-            expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
-          });
-
-          let responsePromise = fetch(joinURL(baseURL, '/users'), { method });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          expect(handler.requests).toHaveLength(0);
-
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
-
-          responsePromise = fetch(joinURL(baseURL, '/users'), { method });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          expect(handler.requests).toHaveLength(0);
-
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: `Expected exactly ${numberOfRequestsIncludingPreflight} request${
-              numberOfRequestsIncludingPreflight === 1 ? '' : 's'
-            }, but got ${numberOfRequestsIncludingPreflight * 2}.`,
-
-            expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
-          });
-        });
-      });
-
-      it('should consider requests with restrictions unmatched due to missing response declarations in times checks', async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchema;
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
-            HEAD: MethodSchema;
-            OPTIONS: MethodSchema;
-          };
-        }>(interceptorOptions, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users')
-              .with({ searchParams: { value: '1' } })
-              .times(numberOfRequestsIncludingPreflight),
-            interceptor,
-          );
-          expect(handler).toBeInstanceOf(Handler);
-
-          expect(handler.requests).toHaveLength(0);
-
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: `Expected exactly ${numberOfRequestsIncludingPreflight} matching request${
-              numberOfRequestsIncludingPreflight === 1 ? '' : 's'
-            }, but got 0.`,
-            expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
-          });
-
-          let responsePromise = fetch(joinURL(baseURL, '/users'), { method });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          expect(handler.requests).toHaveLength(0);
-
-          const contentLines = [
-            `Expected exactly ${numberOfRequestsIncludingPreflight} matching request${
-              numberOfRequestsIncludingPreflight === 1 ? '' : 's'
-            }, but got 0.`,
+        await expectTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
+          message: [
+            'Expected exactly 2 matching requests, but got 1.',
             '',
             'Requests evaluated by this handler:',
             '',
             `  ${color.green('- Expected')}`,
             `  ${color.red('+ Received')}`,
-          ];
+            '',
+            `1: GET ${joinURL(baseURL, '/users?value=unknown')}`,
+            '     Search params:',
+            `       ${color.green('- { "value": "2" }')}`,
+            `       ${color.red('+ { "value": "unknown" }')}`,
+          ].join('\n'),
+          expectedNumberOfRequests: 2,
+        });
 
-          for (let requestIndex = 0; requestIndex < numberOfRequestsIncludingPreflight; requestIndex++) {
-            const requestNumber = requestIndex + 1;
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: [
+            'Expected exactly 2 matching requests, but got 1.',
+            '',
+            'Requests evaluated by this handler:',
+            '',
+            `  ${color.green('- Expected')}`,
+            `  ${color.red('+ Received')}`,
+            '',
+            `1: GET ${joinURL(baseURL, '/users?value=unknown')}`,
+            '     Search params:',
+            `       ${color.green('- { "value": "2" }')}`,
+            `       ${color.red('+ { "value": "unknown" }')}`,
+          ].join('\n'),
+          expectedNumberOfRequests: 2,
+        });
 
-            contentLines.push(
-              '',
-              `${requestNumber}: ${method} ${joinURL(baseURL, '/users')}`,
-              '     Search params:',
-              `       ${color.green('- { "value": "1" }')}`,
-              `       ${color.red('+ {}')}`,
-            );
-          }
+        searchParams.set('value', '2');
 
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: contentLines.join('\n'),
-            expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
-          });
+        response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
+        expect(response.status).toBe(204);
 
-          const searchParams = new HttpSearchParams({ value: '1' });
-          responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+        expect(handlers[0].requests).toHaveLength(1);
+        expect(handlers[1].requests).toHaveLength(0);
+        expect(handlers[2].requests).toHaveLength(2);
 
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
+        await promiseIfRemote(handlers[0].checkTimes(), handlers[0]);
+        await expectTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
+          message: [
+            'Expected at least 1 and at most 2 matching requests, but got 0.',
+            '',
+            'Requests evaluated by this handler:',
+            '',
+            `  ${color.green('- Expected')}`,
+            `  ${color.red('+ Received')}`,
+            '',
+            `1: GET ${joinURL(baseURL, '/users?value=unknown')}`,
+            '     Search params:',
+            `       ${color.green('- { "value": "2" }')}`,
+            `       ${color.red('+ { "value": "unknown" }')}`,
+          ].join('\n'),
+          expectedNumberOfRequests: { min: 1, max: 2 },
+        });
+        await promiseIfRemote(handlers[2].checkTimes(), handlers[2]);
 
-          expect(handler.requests).toHaveLength(0);
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: [
+            'Expected at least 1 and at most 2 matching requests, but got 0.',
+            '',
+            'Requests evaluated by this handler:',
+            '',
+            `  ${color.green('- Expected')}`,
+            `  ${color.red('+ Received')}`,
+            '',
+            `1: GET ${joinURL(baseURL, '/users?value=unknown')}`,
+            '     Search params:',
+            `       ${color.green('- { "value": "2" }')}`,
+            `       ${color.red('+ { "value": "unknown" }')}`,
+          ].join('\n'),
+          expectedNumberOfRequests: { min: 1, max: 2 },
+        });
 
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
+        expect(response.status).toBe(204);
 
-          responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+        expect(handlers[0].requests).toHaveLength(1);
+        expect(handlers[1].requests).toHaveLength(1);
+        expect(handlers[2].requests).toHaveLength(2);
 
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
+        await promiseIfRemote(handlers[0].checkTimes(), handlers[0]);
+        await promiseIfRemote(handlers[1].checkTimes(), handlers[1]);
+        await promiseIfRemote(handlers[2].checkTimes(), handlers[2]);
 
-          expect(handler.requests).toHaveLength(0);
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-          contentLines[0] = `Expected exactly ${numberOfRequestsIncludingPreflight} matching request${
-            numberOfRequestsIncludingPreflight === 1 ? '' : 's'
-          }, but got ${numberOfRequestsIncludingPreflight * 2}.`;
+        response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
+        expect(response.status).toBe(204);
 
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: contentLines.join('\n'),
-            expectedNumberOfRequests: numberOfRequestsIncludingPreflight,
-          });
+        expect(handlers[0].requests).toHaveLength(1);
+        expect(handlers[1].requests).toHaveLength(2);
+        expect(handlers[2].requests).toHaveLength(2);
+
+        await promiseIfRemote(handlers[0].checkTimes(), handlers[0]);
+        await promiseIfRemote(handlers[1].checkTimes(), handlers[1]);
+        await promiseIfRemote(handlers[2].checkTimes(), handlers[2]);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+        responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+          method: 'GET',
+          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+        });
+        await expectFetchError(responsePromise);
+
+        expect(handlers[0].requests).toHaveLength(1);
+        expect(handlers[1].requests).toHaveLength(2);
+        expect(handlers[2].requests).toHaveLength(2);
+
+        await promiseIfRemote(handlers[0].checkTimes(), handlers[0]);
+        await promiseIfRemote(handlers[1].checkTimes(), handlers[1]);
+        await expectTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
+          message: [
+            'Expected exactly 2 matching requests, but got 3.',
+            '',
+            'Requests evaluated by this handler:',
+            '',
+            `  ${color.green('- Expected')}`,
+            `  ${color.red('+ Received')}`,
+            '',
+            `1: GET ${joinURL(baseURL, '/users?value=unknown')}`,
+            '     Search params:',
+            `       ${color.green('- { "value": "2" }')}`,
+            `       ${color.red('+ { "value": "unknown" }')}`,
+          ].join('\n'),
+          expectedNumberOfRequests: 2,
+        });
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: [
+            'Expected exactly 2 matching requests, but got 3.',
+            '',
+            'Requests evaluated by this handler:',
+            '',
+            `  ${color.green('- Expected')}`,
+            `  ${color.red('+ Received')}`,
+            '',
+            `1: GET ${joinURL(baseURL, '/users?value=unknown')}`,
+            '     Search params:',
+            `       ${color.green('- { "value": "2" }')}`,
+            `       ${color.red('+ { "value": "unknown" }')}`,
+          ].join('\n'),
+          expectedNumberOfRequests: 2,
         });
       });
+    });
+  });
 
-      it('should consider requests unmatched due to missing response declarations when no requests are expected in times checks', async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchema;
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
-            HEAD: MethodSchema;
-            OPTIONS: MethodSchema;
-          };
-        }>(interceptorOptions, async (interceptor) => {
-          const handler = await promiseIfRemote(interceptor[lowerMethod]('/users').times(0), interceptor);
-          expect(handler).toBeInstanceOf(Handler);
+  describe('Unmatched requests', () => {
+    it('should not consider requests unmatched due to restrictions in times checks', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor
+            .get('/users')
+            .with({ searchParams: { value: '1' } })
+            .respond({ status: 204 })
+            .times(1),
+          interceptor,
+        );
 
-          expect(handler.requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
-
-          const responsePromise = fetch(joinURL(baseURL, '/users'), { method });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          expect(handler.requests).toHaveLength(0);
-
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: `Expected exactly 0 requests, but got ${numberOfRequestsIncludingPreflight}.`,
-            expectedNumberOfRequests: 0,
-          });
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 1 matching request, but got 0.',
+          expectedNumberOfRequests: 1,
         });
-      });
 
-      it('should not consider requests unmatched due to unmocked path in times checks', async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchema;
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
-            HEAD: MethodSchema;
-            OPTIONS: MethodSchema;
-          };
-        }>(interceptorOptions, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users')
-              .with({ searchParams: { value: '1' } })
-              .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS })
-              .times(1),
-            interceptor,
+        const responsePromise = fetch(joinURL(baseURL, '/users'), {
+          method: 'GET',
+          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+        });
+        await expectFetchError(responsePromise);
+
+        expect(handler.requests).toHaveLength(0);
+
+        const contentLines = [
+          'Expected exactly 1 matching request, but got 0.',
+          '',
+          'Requests evaluated by this handler:',
+          '',
+          `  ${color.green('- Expected')}`,
+          `  ${color.red('+ Received')}`,
+        ];
+
+        for (let requestIndex = 0; requestIndex < 1; requestIndex++) {
+          const requestNumber = requestIndex + 1;
+
+          contentLines.push(
+            '',
+            `${requestNumber}: GET ${joinURL(baseURL, '/users')}`,
+            '     Search params:',
+            `       ${color.green('- { "value": "1" }')}`,
+            `       ${color.red('+ {}')}`,
           );
-          expect(handler).toBeInstanceOf(Handler);
+        }
 
-          expect(handler.requests).toHaveLength(0);
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: contentLines.join('\n'),
+          expectedNumberOfRequests: 1,
+        });
+      });
+    });
 
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: 'Expected exactly 1 matching request, but got 0.',
-            expectedNumberOfRequests: 1,
-          });
+    it('should consider requests unmatched due to missing response declarations in times checks', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.get('/users').times(1), interceptor);
 
-          const responsePromise = fetch(joinURL(baseURL, '/users/other'), { method });
+        expect(handler.requests).toHaveLength(0);
 
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 1 request, but got 0.',
+          expectedNumberOfRequests: 1,
+        });
 
-          expect(handler.requests).toHaveLength(0);
+        let responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
 
-          await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-            message: 'Expected exactly 1 matching request, but got 0.',
-            expectedNumberOfRequests: 1,
-          });
+        await expectFetchError(responsePromise);
+
+        expect(handler.requests).toHaveLength(0);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+        responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+
+        await expectFetchError(responsePromise);
+
+        expect(handler.requests).toHaveLength(0);
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 1 request, but got 2.',
+          expectedNumberOfRequests: 1,
+        });
+      });
+    });
+
+    it('should consider requests with restrictions unmatched due to missing response declarations in times checks', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor
+            .get('/users')
+            .with({ searchParams: { value: '1' } })
+            .times(1),
+          interceptor,
+        );
+
+        expect(handler.requests).toHaveLength(0);
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 1 matching request, but got 0.',
+          expectedNumberOfRequests: 1,
+        });
+
+        let responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+
+        await expectFetchError(responsePromise);
+
+        expect(handler.requests).toHaveLength(0);
+
+        const contentLines = [
+          'Expected exactly 1 matching request, but got 0.',
+          '',
+          'Requests evaluated by this handler:',
+          '',
+          `  ${color.green('- Expected')}`,
+          `  ${color.red('+ Received')}`,
+        ];
+
+        for (let requestIndex = 0; requestIndex < 1; requestIndex++) {
+          const requestNumber = requestIndex + 1;
+
+          contentLines.push(
+            '',
+            `${requestNumber}: GET ${joinURL(baseURL, '/users')}`,
+            '     Search params:',
+            `       ${color.green('- { "value": "1" }')}`,
+            `       ${color.red('+ {}')}`,
+          );
+        }
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: contentLines.join('\n'),
+          expectedNumberOfRequests: 1,
+        });
+
+        const searchParams = new HttpSearchParams({ value: '1' });
+        responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
+
+        await expectFetchError(responsePromise);
+
+        expect(handler.requests).toHaveLength(0);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+        responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
+
+        await expectFetchError(responsePromise);
+
+        expect(handler.requests).toHaveLength(0);
+
+        contentLines[0] = 'Expected exactly 1 matching request, but got 2.';
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: contentLines.join('\n'),
+          expectedNumberOfRequests: 1,
+        });
+      });
+    });
+
+    it('should consider requests unmatched due to missing response declarations when no requests are expected in times checks', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.get('/users').times(0), interceptor);
+
+        expect(handler.requests).toHaveLength(0);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+
+        await expectFetchError(responsePromise);
+
+        expect(handler.requests).toHaveLength(0);
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 0 requests, but got 1.',
+          expectedNumberOfRequests: 0,
+        });
+      });
+    });
+
+    it('should not consider requests unmatched due to unmocked path in times checks', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor
+            .get('/users')
+            .with({ searchParams: { value: '1' } })
+            .respond({ status: 204 })
+            .times(1),
+          interceptor,
+        );
+
+        expect(handler.requests).toHaveLength(0);
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 1 matching request, but got 0.',
+          expectedNumberOfRequests: 1,
+        });
+
+        const responsePromise = fetch(joinURL(baseURL, '/users/other'), { method: 'GET' });
+
+        await expectFetchError(responsePromise);
+
+        expect(handler.requests).toHaveLength(0);
+
+        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 1 matching request, but got 0.',
+          expectedNumberOfRequests: 1,
         });
       });
     });
