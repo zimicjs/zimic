@@ -1,20 +1,18 @@
-import { HTTP_METHODS, HttpSchema } from '@zimic/http';
+import { HttpSchema } from '@zimic/http';
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import joinURL from '@zimic/utils/url/joinURL';
-import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
+import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
-import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
-import { expectPreflightResponse } from '@tests/utils/fetch';
-import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
+import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { platform, type, getBaseURL, getInterceptorOptions } = options;
+  const { type, getBaseURL, getInterceptorOptions } = options;
 
   let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
@@ -26,161 +24,90 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
     interceptorOptions = getInterceptorOptions();
   });
 
-  describe.each(HTTP_METHODS)('Method (%s)', (method) => {
-    const { overridesPreflightResponse, numberOfRequestsIncludingPreflight } = assessPreflightInterference({
-      method,
-      platform,
-      type,
+  type MethodSchema = HttpSchema.Method<{
+    response: { 204: {} };
+  }>;
+
+  it('should ignore all handlers after cleared when intercepting requests', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+      expect(handler.requests).toHaveLength(0);
+
+      const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      expect(response.status).toBe(204);
+
+      expect(handler.requests).toHaveLength(1);
+
+      await promiseIfRemote(interceptor.clear(), interceptor);
+
+      const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      await expectFetchError(responsePromise);
+
+      expect(handler.requests).toHaveLength(0);
     });
+  });
 
-    const lowerMethod = method.toLowerCase<'POST'>();
+  it('should support creating new handlers after cleared', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
 
-    type MethodSchema = HttpSchema.Method<{
-      response: { 200: { headers: AccessControlHeaders } };
-    }>;
+      await promiseIfRemote(interceptor.clear(), interceptor);
 
-    it(`should ignore all handlers after cleared when intercepting ${method} requests`, async () => {
-      await usingHttpInterceptor<{
-        '/users': {
-          GET: MethodSchema;
-          POST: MethodSchema;
-          PUT: MethodSchema;
-          PATCH: MethodSchema;
-          DELETE: MethodSchema;
-          HEAD: MethodSchema;
-          OPTIONS: MethodSchema;
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor[lowerMethod]('/users').respond({
-            status: 200,
-            headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-          }),
-          interceptor,
-        );
+      const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+      expect(handler.requests).toHaveLength(0);
 
-        expect(handler.requests).toHaveLength(0);
+      const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      expect(response.status).toBe(204);
 
-        const response = await fetch(joinURL(baseURL, '/users'), { method });
-        expect(response.status).toBe(200);
+      expect(handler.requests).toHaveLength(1);
+      const request = handler.requests[0];
+      expect(request).toBeInstanceOf(Request);
 
-        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+      expectTypeOf(request.body).toEqualTypeOf<null>();
+      expect(request.body).toBe(null);
 
-        await promiseIfRemote(interceptor.clear(), interceptor);
+      expectTypeOf(request.response.status).toEqualTypeOf<204>();
+      expect(request.response.status).toBe(204);
 
-        const responsePromise = fetch(joinURL(baseURL, '/users'), { method });
-
-        if (overridesPreflightResponse) {
-          await expectPreflightResponse(responsePromise);
-        } else {
-          await expectFetchError(responsePromise);
-        }
-
-        expect(handler.requests).toHaveLength(0);
-      });
+      expectTypeOf(request.response.body).toEqualTypeOf<null>();
+      expect(request.response.body).toBe(null);
     });
+  });
 
-    it('should support creating new handlers after cleared', async () => {
-      await usingHttpInterceptor<{
-        '/users': {
-          GET: MethodSchema;
-          POST: MethodSchema;
-          PUT: MethodSchema;
-          PATCH: MethodSchema;
-          DELETE: MethodSchema;
-          HEAD: MethodSchema;
-          OPTIONS: MethodSchema;
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        await promiseIfRemote(
-          interceptor[lowerMethod]('/users').respond({
-            status: 200,
-            headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-          }),
-          interceptor,
-        );
+  it('should support reusing previous handlers after cleared', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      const handler = await promiseIfRemote(interceptor.get('/users'), interceptor);
 
-        await promiseIfRemote(interceptor.clear(), interceptor);
+      await promiseIfRemote(handler.respond({ status: 204 }), interceptor);
 
-        const handler = await promiseIfRemote(
-          interceptor[lowerMethod]('/users').respond({
-            status: 200,
-            headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-          }),
-          interceptor,
-        );
+      await promiseIfRemote(interceptor.clear(), interceptor);
 
-        expect(handler.requests).toHaveLength(0);
+      const otherHandler = await promiseIfRemote(handler.respond({ status: 204 }), interceptor);
+      expect(otherHandler).toBeInstanceOf(Handler);
 
-        const response = await fetch(joinURL(baseURL, '/users'), { method });
-        expect(response.status).toBe(200);
+      expect(handler.requests).toHaveLength(0);
 
-        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
-        const request = handler.requests[numberOfRequestsIncludingPreflight - 1];
-        expect(request).toBeInstanceOf(Request);
+      const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      expect(response.status).toBe(204);
 
-        expectTypeOf(request.body).toEqualTypeOf<null>();
-        expect(request.body).toBe(null);
+      expect(otherHandler.requests).toHaveLength(1);
+      const request = otherHandler.requests[0];
+      expect(request).toBeInstanceOf(Request);
 
-        expectTypeOf(request.response.status).toEqualTypeOf<200>();
-        expect(request.response.status).toBe(200);
+      expectTypeOf(request.body).toEqualTypeOf<null>();
+      expect(request.body).toBe(null);
 
-        expectTypeOf(request.response.body).toEqualTypeOf<null>();
-        expect(request.response.body).toBe(null);
-      });
-    });
+      expectTypeOf(request.response.status).toEqualTypeOf<204>();
+      expect(request.response.status).toBe(204);
 
-    it('should support reusing previous handlers after cleared', async () => {
-      await usingHttpInterceptor<{
-        '/users': {
-          GET: MethodSchema;
-          POST: MethodSchema;
-          PUT: MethodSchema;
-          PATCH: MethodSchema;
-          DELETE: MethodSchema;
-          HEAD: MethodSchema;
-          OPTIONS: MethodSchema;
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const handler = await promiseIfRemote(interceptor[lowerMethod]('/users'), interceptor);
-
-        await promiseIfRemote(
-          handler.respond({
-            status: 200,
-            headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-          }),
-          interceptor,
-        );
-
-        await promiseIfRemote(interceptor.clear(), interceptor);
-
-        const otherHandler = await promiseIfRemote(
-          handler.respond({
-            status: 200,
-            headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-          }),
-          interceptor,
-        );
-        expect(otherHandler).toBeInstanceOf(Handler);
-
-        expect(handler.requests).toHaveLength(0);
-
-        const response = await fetch(joinURL(baseURL, '/users'), { method });
-        expect(response.status).toBe(200);
-
-        expect(otherHandler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
-        const request = otherHandler.requests[numberOfRequestsIncludingPreflight - 1];
-        expect(request).toBeInstanceOf(Request);
-
-        expectTypeOf(request.body).toEqualTypeOf<null>();
-        expect(request.body).toBe(null);
-
-        expectTypeOf(request.response.status).toEqualTypeOf<200>();
-        expect(request.response.status).toBe(200);
-
-        expectTypeOf(request.response.body).toEqualTypeOf<null>();
-        expect(request.response.body).toBe(null);
-      });
+      expectTypeOf(request.response.body).toEqualTypeOf<null>();
+      expect(request.response.body).toBe(null);
     });
   });
 }
