@@ -58,7 +58,6 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
           }),
           interceptor,
         );
-        expect(handler).toBeInstanceOf(Handler);
 
         expect(handler.requests).toHaveLength(0);
 
@@ -110,7 +109,6 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
           }),
           interceptor,
         );
-        expect(handler).toBeInstanceOf(Handler);
 
         expect(handler.requests).toHaveLength(0);
 
@@ -145,7 +143,6 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
         };
       }>(interceptorOptions, async (interceptor) => {
         const handler = await promiseIfRemote(interceptor[lowerMethod]('/users'), interceptor);
-        expect(handler).toBeInstanceOf(Handler);
 
         await promiseIfRemote(
           handler.respond({

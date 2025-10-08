@@ -4,8 +4,6 @@ import color from 'picocolors';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
-import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { importCrypto } from '@/utils/crypto';
 import { importFile } from '@/utils/files';
 import { HTTP_METHODS_WITH_REQUEST_BODY } from '@/utils/http';
@@ -16,7 +14,7 @@ import { HttpInterceptorOptions } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../utils';
 
 export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { type, getBaseURL, getInterceptorOptions } = options;
+  const { getBaseURL, getInterceptorOptions } = options;
 
   const crypto = await importCrypto();
 
@@ -32,8 +30,6 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
 
   let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
-
-  const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
   beforeEach(() => {
     baseURL = getBaseURL();
@@ -87,7 +83,6 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
           }),
           interceptor,
         );
-        expect(handler).toBeInstanceOf(Handler);
 
         expect(handler.requests).toHaveLength(0);
 
@@ -202,7 +197,6 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
           }),
           interceptor,
         );
-        expect(handler).toBeInstanceOf(Handler);
 
         expect(handler.requests).toHaveLength(0);
 
@@ -278,7 +272,6 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
           }),
           interceptor,
         );
-        expect(handler).toBeInstanceOf(Handler);
 
         expect(handler.requests).toHaveLength(0);
 

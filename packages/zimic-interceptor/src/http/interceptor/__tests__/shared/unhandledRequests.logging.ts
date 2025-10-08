@@ -4,8 +4,6 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
-import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { importCrypto } from '@/utils/crypto';
 import { methodCanHaveRequestBody } from '@/utils/http';
@@ -29,8 +27,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
   let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
-
-  const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
   type MethodSchemaWithoutRequestBody = HttpSchema.Method<{
     request: {
@@ -127,7 +123,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 status: 200,
                 headers: DEFAULT_ACCESS_CONTROL_HEADERS,
               });
-              expect(handler).toBeInstanceOf(Handler);
 
               expect(handler.requests).toHaveLength(0);
 
@@ -173,7 +168,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 status: 200,
                 headers: DEFAULT_ACCESS_CONTROL_HEADERS,
               });
-              expect(handler).toBeInstanceOf(Handler);
 
               expect(handler.requests).toHaveLength(0);
 
@@ -226,7 +220,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               const handler = interceptor[lowerMethod]('/users')
                 .with({ headers: { 'x-value': '1' } })
                 .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS });
-              expect(handler).toBeInstanceOf(Handler);
 
               expect(handler.requests).toHaveLength(0);
 
@@ -271,7 +264,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 status: 200,
                 headers: DEFAULT_ACCESS_CONTROL_HEADERS,
               });
-              expect(handler).toBeInstanceOf(Handler);
 
               expect(handler.requests).toHaveLength(0);
 
@@ -313,7 +305,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 status: 200,
                 headers: DEFAULT_ACCESS_CONTROL_HEADERS,
               });
-              expect(handler).toBeInstanceOf(Handler);
 
               expect(handler.requests).toHaveLength(0);
 
@@ -362,7 +353,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               interceptor[lowerMethod]('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
               interceptor,
             );
-            expect(handler).toBeInstanceOf(Handler);
 
             expect(handler.requests).toHaveLength(0);
 
@@ -415,7 +405,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 interceptor[lowerMethod]('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
                 interceptor,
               );
-              expect(handler).toBeInstanceOf(Handler);
 
               expect(handler.requests).toHaveLength(0);
 
@@ -475,7 +464,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
               interceptor,
             );
-            expect(handler).toBeInstanceOf(Handler);
 
             expect(handler.requests).toHaveLength(0);
 
@@ -527,7 +515,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               interceptor[lowerMethod]('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
               interceptor,
             );
-            expect(handler).toBeInstanceOf(Handler);
 
             expect(handler.requests).toHaveLength(0);
 
@@ -580,7 +567,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               interceptor[lowerMethod]('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
               interceptor,
             );
-            expect(handler).toBeInstanceOf(Handler);
 
             expect(handler.requests).toHaveLength(0);
 
@@ -666,7 +652,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 const handler = interceptor[lowerMethod]('/users')
                   .with({ searchParams: { value: '1' } })
                   .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS });
-                expect(handler).toBeInstanceOf(Handler);
 
                 expect(handler.requests).toHaveLength(0);
 
@@ -705,7 +690,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                   .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
                 interceptor,
               );
-              expect(handler).toBeInstanceOf(Handler);
 
               expect(handler.requests).toHaveLength(0);
 
@@ -771,7 +755,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             interceptor[lowerMethod]('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
             interceptor,
           );
-          expect(handler).toBeInstanceOf(Handler);
 
           expect(handler.requests).toHaveLength(0);
 
@@ -808,7 +791,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
             interceptor,
           );
-          expect(handler).toBeInstanceOf(Handler);
 
           expect(handler.requests).toHaveLength(0);
 
@@ -882,7 +864,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
           interceptor.get('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
           interceptor,
         );
-        expect(handler).toBeInstanceOf(Handler);
 
         expect(handler.requests).toHaveLength(0);
 

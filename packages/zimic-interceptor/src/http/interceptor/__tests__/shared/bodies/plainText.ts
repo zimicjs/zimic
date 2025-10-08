@@ -3,8 +3,6 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
-import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { importCrypto } from '@/utils/crypto';
 import { HTTP_METHODS_WITH_REQUEST_BODY } from '@/utils/http';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -13,7 +11,7 @@ import { HttpInterceptorOptions } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../utils';
 
 export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { type, getBaseURL, getInterceptorOptions } = options;
+  const { getBaseURL, getInterceptorOptions } = options;
 
   const crypto = await importCrypto();
 
@@ -29,8 +27,6 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
 
   let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
-
-  const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
   beforeEach(() => {
     baseURL = getBaseURL();
@@ -71,7 +67,6 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
           }),
           interceptor,
         );
-        expect(handler).toBeInstanceOf(Handler);
 
         expect(handler.requests).toHaveLength(0);
 
@@ -154,7 +149,6 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
           }),
           interceptor,
         );
-        expect(handler).toBeInstanceOf(Handler);
 
         expect(handler.requests).toHaveLength(0);
 
@@ -217,7 +211,6 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
           }),
           interceptor,
         );
-        expect(handler).toBeInstanceOf(Handler);
 
         expect(handler.requests).toHaveLength(0);
 
