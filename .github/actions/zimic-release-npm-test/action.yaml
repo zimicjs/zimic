@@ -85,9 +85,15 @@ runs:
         '
 
         pnpm turbo \
-          types:check lint:turbo test:turbo \
+          types:check lint:turbo \
           --continue \
           --concurrency 100% \
+          --filter zimic-test-client --filter zimic-example*
+
+        pnpm turbo \
+          types:check lint:turbo test:turbo \
+          --continue \
+          --concurrency 1 \
           --filter zimic-test-client --filter zimic-example*
       env:
         TURBO_TOKEN: ${{ inputs.turbo-token }}
