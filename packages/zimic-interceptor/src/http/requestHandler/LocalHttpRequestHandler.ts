@@ -70,8 +70,18 @@ class LocalHttpRequestHandler<
     return this.client.requests;
   }
 
-  matchesRequest(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): Promise<boolean> {
-    return this.client.matchesRequest(request);
+  async matchesRequest(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) {
+    const requestMatch = await this.client.matchesRequest(request);
+
+    if (requestMatch.success) {
+      this.client.markRequestAsMatched(request);
+    } else if (requestMatch.cause === 'unmatchedRestrictions') {
+      this.client.markRequestAsUnmatched(request, { diff: requestMatch.diff });
+    } else {
+      this.client.markRequestAsMatched(request);
+    }
+
+    return requestMatch;
   }
 
   async applyResponseDeclaration(

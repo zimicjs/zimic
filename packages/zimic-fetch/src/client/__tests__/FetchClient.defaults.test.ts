@@ -10,7 +10,7 @@ import { FetchDefaults, FetchOptions } from '../types/public';
 import { FetchResponse, FetchRequest } from '../types/requests';
 
 describe('FetchClient > Defaults', () => {
-  const baseURL = 'http://localhost:3000';
+  const baseURL = 'http://localhost:4000';
 
   interface User {
     id: string;
@@ -188,7 +188,7 @@ describe('FetchClient > Defaults', () => {
         .respond({ status: 200, body: users })
         .times(1);
 
-      const otherBaseURL = 'http://localhost:3001';
+      const otherBaseURL = 'http://localhost:4001';
       expect(otherBaseURL).not.toBe(baseURL);
 
       const fetch = createFetch<Schema>({ baseURL: otherBaseURL });

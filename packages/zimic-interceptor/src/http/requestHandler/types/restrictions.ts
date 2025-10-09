@@ -106,8 +106,8 @@ export type RestrictionMatchResult<Value> = { success: true; diff?: undefined } 
 
 export interface RestrictionDiffs {
   computed?: RestrictionDiff<boolean>;
-  headers?: RestrictionDiff<HttpHeaders<any>>; // eslint-disable-line @typescript-eslint/no-explicit-any
-  searchParams?: RestrictionDiff<HttpSearchParams<any>>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  headers?: RestrictionDiff<HttpHeaders>;
+  searchParams?: RestrictionDiff<HttpSearchParams>;
   body?: RestrictionDiff<unknown>;
 }
 

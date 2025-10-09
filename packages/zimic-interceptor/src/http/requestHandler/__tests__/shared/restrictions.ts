@@ -9,8 +9,10 @@ import { HttpInterceptorType } from '@/http/interceptor/types/options';
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
+import { HttpRequestHandlerRequestMatch } from '../../HttpRequestHandlerClient';
 import type LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
 import type RemoteHttpRequestHandler from '../../RemoteHttpRequestHandler';
+import { RestrictionDiffs } from '../../types/restrictions';
 import { HeadersSchema, MethodSchema, Schema, SearchParamsSchema, SharedHttpRequestHandlerTestOptions } from './types';
 
 export function declareRestrictionHttpRequestHandlerTests(
@@ -69,8 +71,12 @@ export function declareRestrictionHttpRequestHandlerTests(
 
         for (const matchingSearchParams of [new HttpSearchParams<SearchParamsSchema>({ name })]) {
           const request = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`));
+
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-          expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+
+          expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+            success: true,
+          });
         }
 
         for (const mismatchingSearchParams of [
@@ -79,8 +85,19 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpSearchParams<SearchParamsSchema>({}),
         ]) {
           const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
+
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-          expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+          expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+            success: false,
+            cause: 'unmatchedRestrictions',
+            diff: {
+              searchParams: {
+                expected: new HttpSearchParams<SearchParamsSchema>({ name }),
+                received: mismatchingSearchParams,
+              },
+            },
+          });
         }
       },
     );
@@ -105,8 +122,12 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpSearchParams<SearchParamsSchema>({ name, other: 'param' }),
         ]) {
           const request = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`));
+
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-          expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+
+          expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+            success: true,
+          });
         }
 
         for (const mismatchingSearchParams of [
@@ -115,8 +136,19 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpSearchParams<SearchParamsSchema>({}),
         ]) {
           const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
+
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-          expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+          expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+            success: false,
+            cause: 'unmatchedRestrictions',
+            diff: {
+              searchParams: {
+                expected: new HttpSearchParams<SearchParamsSchema>({ name }),
+                received: mismatchingSearchParams,
+              },
+            },
+          });
         }
       },
     );
@@ -143,8 +175,10 @@ export function declareRestrictionHttpRequestHandlerTests(
         new HttpSearchParams<SearchParamsSchema>({ name: `${name} other` }),
       ]) {
         const request = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`));
+
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-        expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       }
 
       for (const mismatchingSearchParams of [
@@ -152,8 +186,16 @@ export function declareRestrictionHttpRequestHandlerTests(
         new HttpSearchParams<SearchParamsSchema>({}),
       ]) {
         const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
+
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            computed: { expected: true, received: false },
+          },
+        });
       }
     });
   });
@@ -176,8 +218,12 @@ export function declareRestrictionHttpRequestHandlerTests(
 
         for (const matchingHeaders of [new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage })]) {
           const request = new Request(baseURL, { headers: matchingHeaders });
+
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-          expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+
+          expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+            success: true,
+          });
         }
 
         for (const mismatchingHeaders of [
@@ -186,8 +232,19 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpHeaders<HeadersSchema>({}),
         ]) {
           const request = new Request(baseURL, { headers: mismatchingHeaders });
+
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-          expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+          expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+            success: false,
+            cause: 'unmatchedRestrictions',
+            diff: {
+              headers: {
+                expected: new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage }),
+                received: mismatchingHeaders,
+              },
+            },
+          });
         }
       },
     );
@@ -212,8 +269,12 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage, accept: '*/*' }),
         ]) {
           const request = new Request(baseURL, { headers: matchingHeaders });
+
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-          expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+
+          expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+            success: true,
+          });
         }
 
         for (const mismatchingHeaders of [
@@ -222,8 +283,19 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpHeaders<HeadersSchema>({}),
         ]) {
           const request = new Request(baseURL, { headers: mismatchingHeaders });
+
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-          expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+          expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+            success: false,
+            cause: 'unmatchedRestrictions',
+            diff: {
+              headers: {
+                expected: new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage }),
+                received: mismatchingHeaders,
+              },
+            },
+          });
         }
       },
     );
@@ -250,8 +322,10 @@ export function declareRestrictionHttpRequestHandlerTests(
         new HttpHeaders<HeadersSchema>({ 'content-language': `${contentLanguage}/other` }),
       ]) {
         const request = new Request(baseURL, { headers: matchingHeaders });
+
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-        expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       }
 
       for (const mismatchingHeaders of [
@@ -259,8 +333,16 @@ export function declareRestrictionHttpRequestHandlerTests(
         new HttpHeaders<HeadersSchema>({}),
       ]) {
         const request = new Request(baseURL, { headers: mismatchingHeaders });
+
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            computed: { expected: true, received: false },
+          },
+        });
       }
     });
   });
@@ -287,8 +369,12 @@ export function declareRestrictionHttpRequestHandlerTests(
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify(matchingBody),
           });
+
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-          expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+
+          expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+            success: true,
+          });
         }
 
         for (const mismatchingBody of [
@@ -301,8 +387,16 @@ export function declareRestrictionHttpRequestHandlerTests(
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify(mismatchingBody),
           });
+
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-          expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+          expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+            success: false,
+            cause: 'unmatchedRestrictions',
+            diff: {
+              body: { expected: { name }, received: mismatchingBody },
+            },
+          });
         }
       },
     );
@@ -332,8 +426,12 @@ export function declareRestrictionHttpRequestHandlerTests(
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify(matchingBody),
           });
+
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-          expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+
+          expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+            success: true,
+          });
         }
 
         for (const mismatchingBody of [{}] satisfies MethodSchema['request']['body'][]) {
@@ -342,8 +440,16 @@ export function declareRestrictionHttpRequestHandlerTests(
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify(mismatchingBody),
           });
+
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-          expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+          expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+            success: false,
+            cause: 'unmatchedRestrictions',
+            diff: {
+              body: { expected: { name }, received: mismatchingBody },
+            },
+          });
         }
       },
     );
@@ -374,8 +480,10 @@ export function declareRestrictionHttpRequestHandlerTests(
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(matchingBody),
         });
+
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-        expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       }
 
       for (const mismatchingBody of [{}, { name: `Other ${name}` }, {}] satisfies MethodSchema['request']['body'][]) {
@@ -384,8 +492,16 @@ export function declareRestrictionHttpRequestHandlerTests(
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(mismatchingBody),
         });
+
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            computed: { expected: true, received: false },
+          },
+        });
       }
     });
   });
@@ -448,16 +564,34 @@ export function declareRestrictionHttpRequestHandlerTests(
         const request = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`), {
           headers: matchingHeaders,
         });
+
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-        expect(await handler.matchesRequest(parsedRequest)).toBe(true);
+
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
       }
 
       for (const mismatchingSearchParams of mismatchingSearchParamsSamples) {
         const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`), {
           headers: matchingHeaders,
         });
+
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: expect.toBeOneOf<RestrictionDiffs>([
+            {
+              searchParams: {
+                expected: new HttpSearchParams<SearchParamsSchema>({ name }),
+                received: mismatchingSearchParams,
+              },
+            },
+            {
+              computed: { expected: true, received: false },
+            },
+          ]) as RestrictionDiffs,
+        });
       }
     }
 
@@ -466,16 +600,64 @@ export function declareRestrictionHttpRequestHandlerTests(
         const request = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`), {
           headers: mismatchingHeaders,
         });
+
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: expect.toBeOneOf<RestrictionDiffs>([
+            {
+              headers: {
+                expected: new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage }),
+                received: mismatchingHeaders,
+              },
+            },
+            {
+              computed: { expected: true, received: false },
+            },
+          ]) as RestrictionDiffs,
+        });
       }
 
       for (const mismatchingSearchParams of mismatchingSearchParamsSamples) {
         const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`), {
           headers: mismatchingHeaders,
         });
+
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: expect.toBeOneOf<RestrictionDiffs>([
+            {
+              headers: {
+                expected: new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage }),
+                received: mismatchingHeaders,
+              },
+            },
+            {
+              searchParams: {
+                expected: new HttpSearchParams<SearchParamsSchema>({ name }),
+                received: mismatchingSearchParams,
+              },
+            },
+            {
+              headers: {
+                expected: new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage }),
+                received: mismatchingHeaders,
+              },
+              searchParams: {
+                expected: new HttpSearchParams<SearchParamsSchema>({ name }),
+                received: mismatchingSearchParams,
+              },
+            },
+            {
+              computed: { expected: true, received: false },
+            },
+          ]) as RestrictionDiffs,
+        });
       }
     }
   });
