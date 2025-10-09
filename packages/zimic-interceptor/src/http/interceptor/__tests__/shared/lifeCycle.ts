@@ -45,12 +45,13 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
 
       let responsePromise = fetch(joinURL(baseURL, '/users'), {
         method: 'GET',
+        signal: AbortSignal.timeout(500),
       });
 
       if (type === 'local') {
-        await expectBypassedResponse(responsePromise);
+        await expectBypassedResponse(responsePromise, { canBeAborted: true });
       } else {
-        await expectFetchError(responsePromise);
+        await expectFetchError(responsePromise, { canBeAborted: true });
       }
 
       expect(handler.requests).toHaveLength(0);
@@ -88,8 +89,9 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
 
         let responsePromise = fetch(joinURL(baseURL, '/users'), {
           method: 'GET',
+          signal: AbortSignal.timeout(500),
         });
-        await expectFetchError(responsePromise);
+        await expectFetchError(responsePromise, { canBeAborted: true });
 
         expect(handler.requests).toHaveLength(0);
 

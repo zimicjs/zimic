@@ -742,12 +742,12 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
           await interceptor.stop();
 
-          responsePromise = fetch(request);
+          responsePromise = fetch(request, { signal: AbortSignal.timeout(500) });
 
           if (type === 'local') {
-            await expectBypassedResponse(responsePromise);
+            await expectBypassedResponse(responsePromise, { canBeAborted: true });
           } else {
-            await expectFetchError(responsePromise);
+            await expectFetchError(responsePromise, { canBeAborted: true });
           }
 
           expect(console.warn).toHaveBeenCalledTimes(0);

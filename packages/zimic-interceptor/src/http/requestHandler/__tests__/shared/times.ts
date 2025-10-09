@@ -800,16 +800,29 @@ export function declareTimesHttpRequestHandlerTests(
         });
         parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+        const requestMatch = (await handler.matchesRequest(
+          parsedRequest,
+        )) satisfies HttpRequestHandlerRequestMatch as Extract<
+          HttpRequestHandlerRequestMatch,
+          { success: false; cause: 'unmatchedRestrictions' }
+        >;
+
+        expect(requestMatch).toEqual<HttpRequestHandlerRequestMatch>({
           success: false,
           cause: 'unmatchedRestrictions',
           diff: {
             body: {
-              expected: formDataRestriction,
-              received: formData,
+              expected: expect.any(HttpFormData),
+              received: expect.any(HttpFormData),
             },
           },
         });
+
+        const expectedFormData = requestMatch.diff.body!.expected as typeof formDataRestriction;
+        expect(await formDataRestriction.equals(expectedFormData)).toBe(true);
+
+        const receivedFormData = requestMatch.diff.body!.received as typeof formData;
+        expect(await formData.equals(receivedFormData)).toBe(true);
 
         await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
