@@ -161,7 +161,10 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         expect(delayedSpiedRequestHandler).not.toHaveBeenCalled();
 
-        let responsePromise = fetch(baseURL, { method, signal: AbortSignal.timeout(50) });
+        let responsePromise = fetch(baseURL, {
+          method,
+          signal: AbortSignal.timeout(50),
+        });
         await expectFetchError(responsePromise, { canBeAborted: true });
 
         resolveWaitPromise?.();

@@ -94,10 +94,6 @@ export function getHttpServerPort(server: HttpServer) {
 
 export const HTTP_METHODS_WITH_REQUEST_BODY = new Set<HttpMethod>(['POST', 'PUT', 'PATCH', 'DELETE']);
 
-export function methodCanHaveRequestBody(method: HttpMethod) {
-  return HTTP_METHODS_WITH_REQUEST_BODY.has(method);
-}
-
 export const HTTP_METHODS_WITH_RESPONSE_BODY = new Set<HttpMethod>([
   'GET',
   'POST',

@@ -85,6 +85,33 @@ async function parseHttpBodyAsJSON<Body extends HttpBody>(resource: Request | Re
   }
 }
 
+/**
+ * Parses the body of a {@link https://developer.mozilla.org/docs/Web/API/Request request} or
+ * {@link https://developer.mozilla.org/docs/Web/API/Response response} based on its `content-type` header.
+ *
+ * If the body is empty, `null` is returned. If the `content-type` header is not present or not recognized, an attempt
+ * is made to parse the body as JSON, and if that fails, it is returned as a `Blob`.
+ *
+ * | `content-type`                      | Parsed as                                                                |
+ * | ----------------------------------- | ------------------------------------------------------------------------ |
+ * | `application/json`                  | `JSON` (object)                                                          |
+ * | `application/xml`                   | `string`                                                                 |
+ * | `application/x-www-form-urlencoded` | [`HttpSearchParams`](https://zimic.dev/docs/http/api/http-search-params) |
+ * | `application/*` (others)            | `Blob`                                                                   |
+ * | `multipart/form-data`               | [`HttpFormData`](https://zimic.dev/docs/http/api/http-form-data)         |
+ * | `multipart/*` (others)              | `Blob`                                                                   |
+ * | `text/*`                            | `string`                                                                 |
+ * | `image/*`                           | `Blob`                                                                   |
+ * | `audio/*`                           | `Blob`                                                                   |
+ * | `font/*`                            | `Blob`                                                                   |
+ * | `video/*`                           | `Blob`                                                                   |
+ * | Others                              | `JSON` if possible, otherwise `Blob`                                     |
+ *
+ * @throws {InvalidJSONError} If the `content-type` starts with `application/json` but the body cannot be parsed to
+ *   JSON.
+ * @throws {InvalidFormDataError} If the `content-type` starts with `multipart/form-data` but the body cannot be parsed
+ *   to form data.
+ */
 export async function parseHttpBody<Body extends HttpBody = HttpBody>(resource: Request | Response) {
   const contentType = resource.headers.get('content-type');
 

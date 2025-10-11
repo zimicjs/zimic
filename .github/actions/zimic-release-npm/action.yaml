@@ -11,9 +11,6 @@ inputs:
   project-directory:
     description: The project directory to release
     required: true
-  npm-token:
-    description: The NPM token to release
-    required: true
 
 outputs:
   version-value:
@@ -48,9 +45,12 @@ runs:
     - name: Release to NPM
       shell: bash
       working-directory: ${{ inputs.project-directory }}
-      run: pnpm publish --no-git-checks --tag ${{ steps.zimic-version.outputs.label }}
+      run: |
+        # npm 11.5.1 or later is required for trusted publishing.
+        npm install -g npm@11.6.2
+
+        npm publish --tag ${{ steps.zimic-version.outputs.label }}
       env:
-        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
         NPM_CONFIG_PROVENANCE: true
 
     - name: Save turbo cache

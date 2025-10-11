@@ -20,13 +20,13 @@ import { ClientTestOptionsByWorkerType, ZIMIC_SERVER_PORT } from '.';
 
 function getAuthBaseURL(type: HttpInterceptorType, crypto: IsomorphicCrypto) {
   return type === 'local'
-    ? 'http://localhost:3000'
+    ? 'http://localhost:4000'
     : `http://localhost:${ZIMIC_SERVER_PORT}/auth-${crypto.randomUUID()}`;
 }
 
 function getNotificationsBaseURL(type: HttpInterceptorType, crypto: IsomorphicCrypto) {
   return type === 'local'
-    ? 'http://localhost:3001'
+    ? 'http://localhost:4001'
     : `http://localhost:${ZIMIC_SERVER_PORT}/notifications-${crypto.randomUUID()}`;
 }
 

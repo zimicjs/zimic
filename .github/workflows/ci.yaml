@@ -133,7 +133,7 @@ jobs:
           pnpm turbo \
             test:turbo \
             --continue \
-            --concurrency 100% \
+            --concurrency 1 \
             ${{ env.TURBO_FILTERS }}
         env:
           PLAYWRIGHT_WORKERS: 2
