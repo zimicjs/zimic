@@ -45,7 +45,6 @@ jobs:
           ref-name: ${{ github.ref_name }}
           project-name: '@zimic/fetch'
           project-directory: packages/zimic-fetch
-          npm-token: ${{ secrets.ZIMIC_NPM_RELEASE_TOKEN }}
 
   test-npm-release:
     name: Test NPM release

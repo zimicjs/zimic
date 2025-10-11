@@ -11,9 +11,6 @@ inputs:
   project-directory:
     description: The project directory to release
     required: true
-  npm-token:
-    description: The NPM token to release
-    required: true
 
 outputs:
   version-value:
@@ -50,7 +47,6 @@ runs:
       working-directory: ${{ inputs.project-directory }}
       run: pnpm publish --no-git-checks --tag ${{ steps.zimic-version.outputs.label }}
       env:
-        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
         NPM_CONFIG_PROVENANCE: true
 
     - name: Save turbo cache
