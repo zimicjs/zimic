@@ -25,10 +25,10 @@ inputs:
 outputs:
   install-filters:
     description: Filter flags of the packages included in the install step
-    value: ${{ steps.install-dependencies.outputs.install-filters }}
+    value: ${{ steps.filters.outputs.install }}
   build-filters:
     description: Filter flags of the packages included in the build step
-    value: ${{ steps.build-dependencies.outputs.build-filters }}
+    value: ${{ steps.filters.outputs.build }}
 
 runs:
   using: composite
@@ -62,8 +62,8 @@ runs:
         path: .turbo
         key: ${{ runner.os }}-turbo
 
-    - name: Install dependencies
-      id: install-dependencies
+    - name: Get installation and build filters
+      id: filters
       shell: bash
       run: |
         function composeFilterOptions() {
@@ -85,9 +85,20 @@ runs:
           fullInstallFilters="--filter zimic-root $installFilters"
         fi
 
-        echo "install-filters=$installFilters" >> $GITHUB_OUTPUT
+        if [[ '${{ inputs.build }}' == '' ]]; then
+          buildFilters=''
+        else
+          buildFilters="$(composeFilterOptions ${{ inputs.build }})"
+        fi
 
-        pnpm install --prefer-offline --frozen-lockfile $fullInstallFilters
+        echo "install=$installFilters" >> $GITHUB_OUTPUT
+        echo "full-install=$fullInstallFilters" >> $GITHUB_OUTPUT
+        echo "build=$buildFilters" >> $GITHUB_OUTPUT
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pnpm install --prefer-offline --frozen-lockfile ${{ steps.filters.outputs.full-install }}
       env:
         NODE_VERSION: ${{ inputs.node-version }}
         TURBO_TOKEN: ${{ inputs.turbo-token }}
@@ -131,12 +142,12 @@ runs:
           libcairo2 \
           libpango-1.0-0
 
-        for additionalSetupArguments in \
+        for setupArguments in \
           'deps:setup-msw' \
           'deps:setup-zimic' \
           '--workspace-concurrency 1 deps:setup-playwright -- --only-shell' \
         ; do
-          pnpm run --recursive --if-present --stream $fullInstallFilters $additionalSetupArguments
+          pnpm run --recursive --if-present --stream ${{ steps.filters.outputs.full-install }} $setupArguments
         done
       env:
         NODE_VERSION: ${{ inputs.node-version }}
@@ -145,22 +156,13 @@ runs:
         TURBO_LOG_ORDER: stream
 
     - name: Build packages
-      id: build-dependencies
       shell: bash
       run: |
-        if [[ '${{ inputs.build }}' == '' ]]; then
-          buildFilters=''
-        else
-          buildFilters="$(composeFilterOptions ${{ inputs.build }})"
-        fi
-
-        echo "build-filters=$buildFilters" >> $GITHUB_OUTPUT
-
-        if [[ "$buildFilters" != '' ]]; then
-          pnpm turbo build $buildFilters
+        if [[ '${{ steps.filters.outputs.build }}' != '' ]]; then
+          pnpm turbo build ${{ steps.filters.outputs.build }}
 
           # apply the build outputs of the internal packages
-          pnpm install --offline $fullInstallFilters
+          pnpm install --offline ${{ steps.filters.outputs.full-install }}
         fi
       env:
         NODE_VERSION: ${{ inputs.node-version }}
