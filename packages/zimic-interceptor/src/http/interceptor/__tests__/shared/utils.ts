@@ -68,7 +68,7 @@ export async function verifyUnhandledRequestMessage(
   }
 }
 
-export function verifyUnhandledRequest(request: UnhandledHttpInterceptorRequest, method: string) {
+export function verifyUnhandledRequest(request: UnhandledHttpInterceptorRequest) {
   expect(request).toBeInstanceOf(Request);
   expect(request).not.toHaveProperty('response');
 
@@ -93,6 +93,6 @@ export function verifyUnhandledRequest(request: UnhandledHttpInterceptorRequest,
   expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<BodySchema, Record<string, string>>>();
   expect(request.raw).toBeInstanceOf(Request);
   expect(request.raw.url).toBe(request.url);
-  expect(request.raw.method).toBe(method);
+  expect(request.raw.method).toBe(request.method);
   expect(Object.fromEntries(request.headers)).toEqual(expect.objectContaining(Object.fromEntries(request.raw.headers)));
 }

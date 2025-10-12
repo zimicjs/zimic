@@ -23,7 +23,7 @@ describe('Fetch client', async () => {
   const crypto = await importCrypto();
 
   const authFetch = createFetch<AuthServiceSchema>({
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:4000',
   });
 
   const authInterceptor = createHttpInterceptor<AuthServiceSchema>({
@@ -32,7 +32,7 @@ describe('Fetch client', async () => {
   });
 
   const notificationFetch = createFetch<NotificationServiceSchema>({
-    baseURL: 'http://localhost:3001',
+    baseURL: 'http://localhost:4001',
   });
 
   const notificationInterceptor = createHttpInterceptor<NotificationServiceSchema>({

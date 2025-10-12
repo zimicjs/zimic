@@ -43,6 +43,11 @@ const DEFAULT_NUMBER_OF_REQUEST_LIMITS: Range<number> = Object.freeze({
   max: Infinity,
 });
 
+export type HttpRequestHandlerRequestMatch =
+  | { success: true }
+  | { success: false; cause: 'missingResponseDeclaration' | 'exceededNumberOfRequests' }
+  | { success: false; cause: 'unmatchedRestrictions'; diff: RestrictionDiffs };
+
 class HttpRequestHandlerClient<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
@@ -158,33 +163,49 @@ class HttpRequestHandlerClient<
     return this;
   }
 
-  async matchesRequest(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): Promise<boolean> {
-    const hasDeclaredResponse = this.createResponseDeclaration !== undefined;
+  async matchesRequest(
+    request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
+  ): Promise<HttpRequestHandlerRequestMatch> {
+    const restrictionsMatch = await this.matchesRestrictions(request);
 
-    const restrictionsMatch = await this.matchesRequestRestrictions(request);
-
-    if (restrictionsMatch.success) {
-      this.numberOfMatchedRequests++;
-    } else {
-      const shouldSaveUnmatchedGroup =
-        this.interceptor.requestSaving.enabled &&
-        this.restrictions.length > 0 &&
-        this.timesDeclarationPointer !== undefined;
-
-      if (shouldSaveUnmatchedGroup) {
-        this.unmatchedRequestGroups.push({ request, diff: restrictionsMatch.diff });
-      }
+    if (!restrictionsMatch.success) {
+      return { success: false, cause: 'unmatchedRestrictions', diff: restrictionsMatch.diff };
     }
 
-    if (!hasDeclaredResponse) {
-      return false;
+    const hasResponseDeclaration = this.createResponseDeclaration !== undefined;
+
+    if (!hasResponseDeclaration) {
+      return { success: false, cause: 'missingResponseDeclaration' };
     }
 
-    const isWithinLimits = this.numberOfMatchedRequests <= this.limits.numberOfRequests.max;
-    return restrictionsMatch.success && isWithinLimits;
+    const canAcceptMoreRequests = this.numberOfMatchedRequests < this.limits.numberOfRequests.max;
+
+    if (!canAcceptMoreRequests) {
+      return { success: false, cause: 'exceededNumberOfRequests' };
+    }
+
+    return { success: true };
   }
 
-  private async matchesRequestRestrictions(
+  markRequestAsMatched(_request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) {
+    this.numberOfMatchedRequests++;
+  }
+
+  markRequestAsUnmatched(
+    request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
+    options: { diff: RestrictionDiffs },
+  ) {
+    const shouldSaveUnmatchedRequests =
+      this.interceptor.requestSaving.enabled &&
+      this.restrictions.length > 0 &&
+      this.timesDeclarationPointer !== undefined;
+
+    if (shouldSaveUnmatchedRequests) {
+      this.unmatchedRequestGroups.push({ request, diff: options.diff });
+    }
+  }
+
+  async matchesRestrictions(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
   ): Promise<RestrictionMatchResult<RestrictionDiffs>> {
     for (const restriction of this.restrictions) {
@@ -392,6 +413,7 @@ class HttpRequestHandlerClient<
     if (!this.createResponseDeclaration) {
       throw new NoResponseDefinitionError();
     }
+
     const appliedDeclaration = await this.createResponseDeclaration(request);
     return appliedDeclaration;
   }
