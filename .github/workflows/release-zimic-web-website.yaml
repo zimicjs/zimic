@@ -17,7 +17,7 @@ env:
 jobs:
   release-to-vercel:
     name: Release to Vercel
-    runs-on: ubuntu-24.04-arm
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     timeout-minutes: 4
 
     environment: Vercel
@@ -49,7 +49,7 @@ jobs:
 
   publish-release-comments:
     name: Publish release comments
-    runs-on: ubuntu-24.04-arm
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     timeout-minutes: 15
     if: ${{ needs.release-to-vercel.outputs.version-label == 'latest' }}
 

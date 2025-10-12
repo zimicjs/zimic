@@ -30,7 +30,7 @@ concurrency:
 jobs:
   publish-release-comments:
     name: Publish release comments
-    runs-on: ubuntu-24.04-arm
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     timeout-minutes: 15
 
     permissions:

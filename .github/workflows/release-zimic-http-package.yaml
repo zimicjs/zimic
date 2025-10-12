@@ -20,7 +20,7 @@ env:
 jobs:
   release-to-npm:
     name: Release to NPM
-    runs-on: ubuntu-24.04-arm
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     if: ${{ startsWith(github.ref_name, '@zimic/http@') }}
     timeout-minutes: 7
 
@@ -48,7 +48,7 @@ jobs:
 
   test-npm-release:
     name: Test NPM release
-    runs-on: ubuntu-24.04-arm
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     timeout-minutes: 15
 
     needs:
@@ -71,7 +71,7 @@ jobs:
 
   publish-release-comments:
     name: Publish release comments
-    runs-on: ubuntu-24.04-arm
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     timeout-minutes: 15
     if: ${{ needs.release-to-npm.outputs.version-label == 'latest' }}
 
