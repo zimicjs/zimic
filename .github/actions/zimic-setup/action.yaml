@@ -62,28 +62,6 @@ runs:
         path: .turbo
         key: ${{ runner.os }}-turbo
 
-    - name: Get installed playwright versions
-      id: playwright
-      shell: bash
-      run: |
-        versions=$(
-          pnpm list playwright --recursive --json |
-            jq '.[] | to_entries[] | select(.key | test("dependencies"; "i")) | .value.playwright.version' --raw-output |
-            sort -V |
-            uniq |
-            paste --serial --delimiters '-' -
-        )
-        echo "versions=$versions" >> $GITHUB_OUTPUT
-
-    - name: Restore playwright cache
-      id: playwright-cache
-      uses: actions/cache/restore@v4
-      with:
-        path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.versions }}
-        restore-keys: |
-          ${{ runner.os }}-playwright-
-
     - name: Install dependencies
       id: install-dependencies
       shell: bash
@@ -110,15 +88,66 @@ runs:
         echo "install-filters=$installFilters" >> $GITHUB_OUTPUT
 
         pnpm install --prefer-offline --frozen-lockfile $fullInstallFilters
+      env:
+        NODE_VERSION: ${{ inputs.node-version }}
+        TURBO_TOKEN: ${{ inputs.turbo-token }}
+        TURBO_TEAM: ${{ inputs.turbo-team }}
+        TURBO_LOG_ORDER: stream
+
+    - name: Get playwright information
+      id: playwright
+      shell: bash
+      run: |
+        versions=$(
+          pnpm list playwright --recursive --json |
+            jq '.[] | to_entries[] | select(.key | test("dependencies"; "i")) | .value.playwright.version' --raw-output |
+            sort -V |
+            uniq |
+            paste --serial --delimiters '-' -
+        )
+        echo "versions=$versions" >> $GITHUB_OUTPUT
+
+    - name: Restore playwright cache
+      id: playwright-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.versions }}
+        restore-keys: |
+          ${{ runner.os }}-playwright-
+
+    - name: Set up dependencies
+      shell: bash
+      run: |
+        # Install additional dependencies required by Playwright
+        sudo apt update
+
+        sudo apt install libatk1.0-0t64 \
+          libatk-bridge2.0-0t64 \
+          libcups2t64 \
+          libatspi2.0-0t64 \
+          libxcomposite1 \
+          libxdamage1 \
+          libcairo2 \
+          libpango-1.0-0
 
         for additionalSetupArguments in \
           'deps:setup-msw' \
           'deps:setup-zimic' \
-          '--workspace-concurrency 1 deps:setup-playwright -- --with-deps --only-shell' \
+          '--workspace-concurrency 1 deps:setup-playwright -- --only-shell' \
         ; do
           pnpm run --recursive --if-present --stream $fullInstallFilters $additionalSetupArguments
         done
+      env:
+        NODE_VERSION: ${{ inputs.node-version }}
+        TURBO_TOKEN: ${{ inputs.turbo-token }}
+        TURBO_TEAM: ${{ inputs.turbo-team }}
+        TURBO_LOG_ORDER: stream
 
+    - name: Build packages
+      id: build-dependencies
+      shell: bash
+      run: |
         if [[ '${{ inputs.build }}' == '' ]]; then
           buildFilters=''
         else
