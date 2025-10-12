@@ -12,7 +12,7 @@
     "api",
     "static"
   ],
-  "version": "1.2.1-canary.2",
+  "version": "1.2.1-canary.3",
   "homepage": "https://zimic.dev/docs/http",
   "repository": {
     "type": "git",
