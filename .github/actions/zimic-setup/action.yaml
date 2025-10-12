@@ -111,7 +111,11 @@ runs:
 
         pnpm install --prefer-offline --frozen-lockfile $fullInstallFilters
 
-        for additionalSetupArguments in 'deps:setup-msw' 'deps:setup-zimic' 'deps:setup-playwright --with-deps'; do
+        for additionalSetupArguments in \
+          'deps:setup-msw' \
+          'deps:setup-zimic' \
+          '--workspace-concurrency 1 deps:setup-playwright -- --with-deps --only-shell' \
+        ; do
           pnpm run --recursive --if-present --stream $fullInstallFilters $additionalSetupArguments
         done
 
