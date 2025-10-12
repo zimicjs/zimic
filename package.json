@@ -13,7 +13,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "setup": "pnpm install && pnpm --dir packages/zimic-interceptor deps:init-msw && pnpm build --filter './packages/*'",
+    "setup": "pnpm install && pnpm run --recursive --if-present --stream deps:setup && pnpm build --filter './packages/*'",
     "dev": "turbo dev --parallel --continue",
     "build": "turbo build --concurrency 50%",
     "lint": "turbo lint:turbo --continue --concurrency 50%",
