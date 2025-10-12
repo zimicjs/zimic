@@ -121,6 +121,19 @@ runs:
         restore-keys: |
           ${{ runner.os }}-playwright-
 
+    - name: Build packages
+      shell: bash
+      run: |
+        if [[ '${{ steps.filters.outputs.build }}' != '' ]]; then
+          pnpm turbo build ${{ steps.filters.outputs.build }}
+          pnpm install --offline ${{ steps.filters.outputs.full-install }}
+        fi
+      env:
+        NODE_VERSION: ${{ inputs.node-version }}
+        TURBO_TOKEN: ${{ inputs.turbo-token }}
+        TURBO_TEAM: ${{ inputs.turbo-team }}
+        TURBO_LOG_ORDER: stream
+
     - name: Set up dependencies
       shell: bash
       run: |
@@ -135,21 +148,6 @@ runs:
         pnpm run --recursive --if-present --stream \
           ${{ steps.filters.outputs.full-install }} \
           deps:setup-playwright
-      env:
-        NODE_VERSION: ${{ inputs.node-version }}
-        TURBO_TOKEN: ${{ inputs.turbo-token }}
-        TURBO_TEAM: ${{ inputs.turbo-team }}
-        TURBO_LOG_ORDER: stream
-
-    - name: Build packages
-      shell: bash
-      run: |
-        if [[ '${{ steps.filters.outputs.build }}' != '' ]]; then
-          pnpm turbo build ${{ steps.filters.outputs.build }}
-
-          # apply the build outputs of the internal packages
-          pnpm install --offline ${{ steps.filters.outputs.full-install }}
-        fi
       env:
         NODE_VERSION: ${{ inputs.node-version }}
         TURBO_TOKEN: ${{ inputs.turbo-token }}
