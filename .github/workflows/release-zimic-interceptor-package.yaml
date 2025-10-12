@@ -45,7 +45,6 @@ jobs:
           ref-name: ${{ github.ref_name }}
           project-name: '@zimic/interceptor'
           project-directory: packages/zimic-interceptor
-          npm-token: ${{ secrets.ZIMIC_NPM_RELEASE_TOKEN }}
 
   test-npm-release:
     name: Test NPM release

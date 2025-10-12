@@ -12,7 +12,7 @@
     "api",
     "static"
   ],
-  "version": "1.2.0",
+  "version": "1.2.1-canary.4",
   "homepage": "https://zimic.dev/docs/http",
   "repository": {
     "type": "git",
@@ -83,7 +83,8 @@
     "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
     "typegen:fixtures": "tsx ./scripts/typegen/generateFixtureTypes.ts",
-    "deps:prepare": "playwright install chromium"
+    "deps:setup-playwright": "playwright install chromium",
+    "deps:setup": "pnpm deps:setup-playwright"
   },
   "dependencies": {
     "openapi-typescript": "7.9.1",
@@ -92,7 +93,7 @@
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^24.6.2",
+    "@types/node": "^24.7.2",
     "@types/yargs": "^17.0.33",
     "@vitest/browser": "^3.2.4",
     "@vitest/coverage-istanbul": "^3.2.4",
@@ -105,7 +106,7 @@
     "eslint": "^9.37.0",
     "execa": "9.6.0",
     "js-yaml": "^4.1.0",
-    "playwright": "^1.55.1",
+    "playwright": "^1.56.0",
     "prettier": "^3.6.2",
     "tsup": "^8.4.0",
     "tsx": "^4.20.6",

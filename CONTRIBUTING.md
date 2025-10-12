@@ -81,6 +81,11 @@ pnpm run setup
 > [Corepack](https://nodejs.org/api/corepack.html) is great to automatically switch to the correct version when working
 > on Zimic.
 
+> [!IMPORTANT]
+>
+> After installing, updating, or removing dependencies, consider running `pnpm run setup` to configure the monorepo and
+> rebuild any affected packages.
+
 ## Architecture
 
 Zimic is a monorepo managed with [pnpm](https://pnpm.io) and [Turborepo](https://turbo.build/repo/docs). The project is
@@ -99,6 +104,11 @@ structured as follows:
   - `zimic-test-client`: Test application to check Zimic installed as a dependency; important to verify the library
     exports and build artifacts;
 - `examples`: Example projects using Zimic;
+
+> [!IMPORTANT]
+>
+> After making changes to a package, run `pnpm turbo build --filter <package-name>` to rebuild it. This is necessary to
+> regenerate the build artifacts and type declarations.
 
 ## Implementing changes
 
