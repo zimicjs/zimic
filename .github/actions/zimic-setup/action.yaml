@@ -71,7 +71,7 @@ runs:
           filterOptions=()
 
           for filterEntry in ${filterEntries[@]}; do
-            filterOptions+=("--filter $filterEntry")
+            filterOptions+=("--filter '$filterEntry'")
           done
 
           echo "${filterOptions[@]}"
@@ -97,13 +97,7 @@ runs:
 
     - name: Install dependencies
       shell: bash
-      run: |
-        pnpm install --prefer-offline --frozen-lockfile ${{ steps.filters.outputs.full-install }}
-      env:
-        NODE_VERSION: ${{ inputs.node-version }}
-        TURBO_TOKEN: ${{ inputs.turbo-token }}
-        TURBO_TEAM: ${{ inputs.turbo-team }}
-        TURBO_LOG_ORDER: stream
+      run: pnpm install --prefer-offline --frozen-lockfile ${{ steps.filters.outputs.full-install }}
 
     - name: Get playwright information
       id: playwright

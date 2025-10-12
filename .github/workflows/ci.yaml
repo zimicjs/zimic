@@ -210,8 +210,8 @@ jobs:
           pnpm update \
             typescript@${{ matrix.typescript-version }} \
             --recursive \
-            --filter !@zimic/* \
-            --filter !zimic-web \
+            --filter '!@zimic/*' \
+            --filter '!zimic-web' \
             ${{ env.TURBO_FILTERS }}
 
       - name: Check types
@@ -226,8 +226,8 @@ jobs:
             types:check \
             --continue \
             --concurrency 100% \
-            --filter !@zimic/* \
-            --filter !zimic-web \
+            --filter '!@zimic/*' \
+            --filter '!zimic-web' \
             $([[ '${{ matrix.typescript-version }}' =~ ^(5\.0) ]] && echo ${filterOptionsOfPackagesUsingServerComponents[@]}) \
             ${{ env.TURBO_FILTERS }}
 
