@@ -197,9 +197,9 @@ jobs:
         run: |
           # Check types if some change in a @zimic/* package may have affected them
           shouldCheckTypes=$(
-            pnpm turbo build types:check --dry=json --filter '...@zimic/*[HEAD^1]' \
-            | jq '.tasks[] | select(. | .command != "<NONEXISTENT>") | .taskId' --raw-output \
-            | grep -q . && echo "true" || echo "false"
+            pnpm turbo build types:check --dry=json --filter '...@zimic/*[HEAD^1]' |
+              jq '.tasks[] | select(. | .command != "<NONEXISTENT>") | .taskId' --raw-output |
+              grep -q . && echo "true" || echo "false"
           )
 
           echo "value=${shouldCheckTypes}" >> $GITHUB_OUTPUT

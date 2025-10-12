@@ -89,6 +89,10 @@ runs:
 
         pnpm install --prefer-offline --frozen-lockfile $fullInstallFilters
 
+        for additionalSetupArguments in 'deps:setup-msw' 'deps:setup-zimic' 'deps:setup-playwright --with-deps'; do
+          pnpm run --recursive --if-present --stream $fullInstallFilters $additionalSetupArguments
+        done
+
         if [[ '${{ inputs.build }}' == '' ]]; then
           buildFilters=''
         else

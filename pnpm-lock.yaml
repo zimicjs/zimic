@@ -808,6 +808,9 @@ importers:
       '@zimic/utils':
         specifier: workspace:*
         version: link:../zimic-utils
+      concurrently:
+        specifier: ^9.2.1
+        version: 9.2.1
       dotenv-cli:
         specifier: ^10.0.0
         version: 10.0.0
