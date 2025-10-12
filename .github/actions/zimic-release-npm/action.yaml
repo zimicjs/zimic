@@ -40,7 +40,7 @@ runs:
 
     - name: Build ${{ inputs.project-name }}
       shell: bash
-      run: pnpm turbo build --filter ${{ inputs.project-name }}
+      run: pnpm turbo build --filter '${{ inputs.project-name }}'
 
     - name: Release to NPM
       shell: bash

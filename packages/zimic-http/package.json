@@ -83,7 +83,8 @@
     "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
     "typegen:fixtures": "tsx ./scripts/typegen/generateFixtureTypes.ts",
-    "deps:prepare": "playwright install chromium"
+    "deps:setup-playwright": "playwright install chromium",
+    "deps:setup": "pnpm deps:setup-playwright"
   },
   "dependencies": {
     "openapi-typescript": "7.9.1",

@@ -42,8 +42,8 @@ minimal, high-quality changes fast.
 
 ## Testing Conventions
 
-- Runner: Vitest (Node + `@vitest/browser` + Playwright). Browser tests need chromium via per-package `deps:prepare` /
-  `deps:install-playwright` scripts.
+- Runner: Vitest (Node + `@vitest/browser` + Playwright). Browser tests need chromium via per-package `deps:setup` /
+  `deps:setup-playwright` scripts.
 - File layout: Source-near `__tests__` directories; test filenames: `Something.*.node.test.ts` /
   `Something.*.browser.test.ts` or combined patterns (e.g. `HttpInterceptor.unhandledRequests.browser.test.ts`). Shared
   parametrized suites live under `__tests__/shared/` and are invoked via helpers

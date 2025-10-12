@@ -10,8 +10,8 @@
     "test": "dotenv -c test -- dotenv -c development -- pnpm mock -- playwright test",
     "test:turbo": "dotenv -v CI=true -- pnpm run test",
     "types:check": "tsc --noEmit",
-    "deps:install-playwright": "playwright install chromium",
-    "postinstall": "pnpm deps:install-playwright"
+    "deps:setup-playwright": "playwright install chromium",
+    "deps:setup": "pnpm deps:setup-playwright"
   },
   "dependencies": {
     "@zimic/fetch": "latest",
