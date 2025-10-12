@@ -43,7 +43,7 @@ env:
 jobs:
   pre-release-to-github:
     name: Pre-release to GitHub
-    runs-on: ubuntu-24.04-arm
+    runs-on: blacksmith-2vcpu-ubuntu-2404-arm
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
     timeout-minutes: 5
 
@@ -78,7 +78,7 @@ jobs:
 
   release-to-github:
     name: Release to GitHub
-    runs-on: ubuntu-24.04-arm
+    runs-on: blacksmith-2vcpu-ubuntu-2404-arm
     if: ${{ needs.pre-release-to-github.outputs.upgrade-type != '' }}
     needs:
       - pre-release-to-github

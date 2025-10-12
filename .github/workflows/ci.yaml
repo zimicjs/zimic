@@ -32,7 +32,7 @@ env:
 jobs:
   ci-general:
     name: CI General
-    runs-on: ubuntu-24.04-arm
+    runs-on: blacksmith-2vcpu-ubuntu-2404-arm
     timeout-minutes: 15
 
     steps:
@@ -98,7 +98,7 @@ jobs:
 
   ci-node:
     name: CI Node.js
-    runs-on: ubuntu-24.04-arm
+    runs-on: blacksmith-2vcpu-ubuntu-2404-arm
     timeout-minutes: 15
 
     strategy:
@@ -159,7 +159,7 @@ jobs:
 
   ci-typescript:
     name: CI TypeScript
-    runs-on: ubuntu-24.04-arm
+    runs-on: blacksmith-2vcpu-ubuntu-2404-arm
     timeout-minutes: 15
 
     strategy:
