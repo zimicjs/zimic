@@ -116,7 +116,7 @@ runs:
       id: playwright-cache
       uses: actions/cache/restore@v4
       with:
-        path: ~/.cache/ms-playwright
+        path: /home/runner/.cache/ms-playwright
         key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.versions }}
         restore-keys: |
           ${{ runner.os }}-playwright-
@@ -167,5 +167,5 @@ runs:
       uses: actions/cache/save@v4
       if: ${{ steps.playwright-cache.outputs.cache-hit != 'true' }}
       with:
-        path: ~/.cache/ms-playwright
+        path: /home/runner/.cache/ms-playwright
         key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.versions }}
