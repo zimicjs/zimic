@@ -124,22 +124,10 @@ runs:
     - name: Set up dependencies
       shell: bash
       run: |
-        # Install additional dependencies required by Playwright
-        sudo apt update
-
-        sudo apt install libatk1.0-0t64 \
-          libatk-bridge2.0-0t64 \
-          libcups2t64 \
-          libatspi2.0-0t64 \
-          libxcomposite1 \
-          libxdamage1 \
-          libcairo2 \
-          libpango-1.0-0
-
         for setupArguments in \
           'deps:setup-msw' \
           'deps:setup-zimic' \
-          '--workspace-concurrency 1 deps:setup-playwright -- --only-shell' \
+          '--workspace-concurrency 1 deps:setup-playwright -- --with-deps --only-shell' \
         ; do
           pnpm run --recursive --if-present --stream ${{ steps.filters.outputs.full-install }} $setupArguments
         done
