@@ -124,13 +124,17 @@ runs:
     - name: Set up dependencies
       shell: bash
       run: |
-        for setupArguments in \
-          'deps:setup-msw' \
-          'deps:setup-zimic' \
-          '--workspace-concurrency 1 deps:setup-playwright -- --with-deps --only-shell' \
-        ; do
-          pnpm run --recursive --if-present --stream ${{ steps.filters.outputs.full-install }} $setupArguments
-        done
+        pnpm run --recursive --if-present --stream \
+          ${{ steps.filters.outputs.full-install }} \
+          deps:setup-msw
+
+        pnpm run --recursive --if-present --stream \
+          ${{ steps.filters.outputs.full-install }} \
+          deps:setup-zimic
+
+        pnpm run --recursive --if-present --stream \
+          ${{ steps.filters.outputs.full-install }} \
+          deps:setup-playwright
       env:
         NODE_VERSION: ${{ inputs.node-version }}
         TURBO_TOKEN: ${{ inputs.turbo-token }}
