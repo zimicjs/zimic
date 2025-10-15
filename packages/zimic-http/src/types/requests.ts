@@ -1,4 +1,4 @@
-import { Default, DefaultNoExclude, IfNever, ReplaceBy } from '@zimic/utils/types';
+import { Default, DefaultNoExclude, IfNever, Replace } from '@zimic/utils/types';
 import { JSONValue } from '@zimic/utils/types/json';
 
 import { HttpMethodSchema, HttpRequestSchema, HttpResponseSchema, HttpStatusCode } from '@/types/schema';
@@ -16,7 +16,7 @@ export type HttpBody = JSONValue | HttpFormData<any> | HttpSearchParams<any> | B
 
 export namespace HttpBody {
   /** A loose version of the HTTP body type. JSON values are not strictly typed. */
-  export type Loose = ReplaceBy<HttpBody, JSONValue, JSONValue.Loose>;
+  export type Loose = Replace<HttpBody, JSONValue, JSONValue.Loose>;
 }
 
 /**
@@ -123,7 +123,7 @@ export type HttpRequestHeadersSchema<MethodSchema extends HttpMethodSchema> =
 export type HttpRequestSearchParamsSchema<MethodSchema extends HttpMethodSchema> =
   'searchParams' extends keyof MethodSchema['request'] ? Default<MethodSchema['request']>['searchParams'] : never;
 
-export type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = ReplaceBy<
+export type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = Replace<
   IfNever<DefaultNoExclude<Default<MethodSchema['request']>['body']>, null>,
   undefined,
   null
@@ -158,10 +158,7 @@ export type HttpResponseHeadersSchema<
         | Extract<Default<Default<MethodSchema['response']>[StatusCode]>['headers'], undefined>
   : HttpResponseHeadersSchemaFromBody<Default<Default<MethodSchema['response']>[StatusCode]>, never>;
 
-export type HttpResponseBodySchema<
-  MethodSchema extends HttpMethodSchema,
-  StatusCode extends HttpStatusCode,
-> = ReplaceBy<
+export type HttpResponseBodySchema<MethodSchema extends HttpMethodSchema, StatusCode extends HttpStatusCode> = Replace<
   IfNever<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['body']>, null>,
   undefined,
   null

@@ -35,7 +35,7 @@ export type NonArrayKey<Type> =
 
 export type NonEmptyArray<Type> = [Type, ...Type[]];
 
-export type ReplaceBy<Type, Source, Target> = Type extends Source ? Target : Type;
+export type Replace<Type, Source, Target> = Type extends Source ? Target : Type;
 
 export type Collection<Type> = Type[] | Set<Type>;
 

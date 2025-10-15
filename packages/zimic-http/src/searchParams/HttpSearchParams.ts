@@ -1,4 +1,4 @@
-import { ReplaceBy, ArrayItemIfArray } from '@zimic/utils/types';
+import { Replace, ArrayItemIfArray } from '@zimic/utils/types';
 
 import {
   HttpSearchParamsSchema,
@@ -64,7 +64,7 @@ class HttpSearchParams<
   /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamsget `searchParams.get()` API reference} */
   get<Name extends HttpSearchParamsSchemaName.NonArray<this['_schema']>>(
     name: Name,
-  ): ReplaceBy<ArrayItemIfArray<this['_schema'][Name]>, undefined, null> {
+  ): Replace<ArrayItemIfArray<this['_schema'][Name]>, undefined, null> {
     return super.get(name) as never;
   }
 
