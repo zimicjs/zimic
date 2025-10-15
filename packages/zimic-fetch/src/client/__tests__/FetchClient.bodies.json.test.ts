@@ -260,10 +260,10 @@ describe('FetchClient > Bodies > JSON', () => {
       expect(response.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
 
-      expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
+      expectTypeOf(response.json).toEqualTypeOf<() => Promise<never>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
-      expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
+      expectTypeOf(response.formData).toEqualTypeOf<() => Promise<never>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
       expectTypeOf(response.error).toEqualTypeOf<null>();
 
@@ -275,10 +275,10 @@ describe('FetchClient > Bodies > JSON', () => {
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<never>>();
 
-      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<null>>();
+      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<never>>();
       expect(await response.request.text()).toEqual('');
       expectTypeOf(response.request.text).toEqualTypeOf<() => Promise<string>>();
-      expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<FormData>>();
+      expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<never>>();
       expectTypeOf(response.request.clone).toEqualTypeOf<() => typeof response.request>();
     });
   });

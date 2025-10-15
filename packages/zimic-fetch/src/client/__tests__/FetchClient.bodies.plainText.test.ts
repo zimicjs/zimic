@@ -119,7 +119,7 @@ describe('FetchClient > Bodies > Plain text', () => {
       expect(response.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
 
-      expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
+      expectTypeOf(response.json).toEqualTypeOf<() => Promise<never>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
@@ -135,7 +135,7 @@ describe('FetchClient > Bodies > Plain text', () => {
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'text/plain' }>>();
 
-      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<null>>();
+      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<never>>();
       expectTypeOf(response.request.text).toEqualTypeOf<() => Promise<string>>();
       expect(await response.request.text()).toBe('');
       expectTypeOf(response.request.text).toEqualTypeOf<() => Promise<string>>();

@@ -70,9 +70,9 @@ describe('FetchClient > Types', () => {
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expectTypeOf(response.json).toEqualTypeOf<
-        (() => Promise<User[]>) | (() => Promise<never>) | (() => Promise<null>) | (() => Promise<{ message: string }>)
+        (() => Promise<User[]>) | (() => Promise<never>) | (() => Promise<{ message: string }>)
       >();
-      expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
+      expectTypeOf(response.formData).toEqualTypeOf<(() => Promise<FormData>) | (() => Promise<never>)>();
       expectTypeOf(response.clone).toEqualTypeOf<
         | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 200>)
         | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 201>)
