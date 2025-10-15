@@ -78,7 +78,7 @@ describe('FetchClient > Bodies > Plain text', () => {
     });
   });
 
-  it('should consider requests and responses with empty plain text bodies as null', async () => {
+  it('should consider requests and responses with empty plain text bodies as empty', async () => {
     type Schema = HttpSchema<{
       '/users': {
         POST: {

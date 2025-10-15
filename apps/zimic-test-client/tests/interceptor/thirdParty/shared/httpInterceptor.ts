@@ -351,7 +351,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
 
         expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
         expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
         expect(await listHandler.requests[0].raw.text()).toBe('');
 
         expectTypeOf(listHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>[]>();
@@ -394,7 +394,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
 
         expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
         expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
         expect(await listHandler.requests[0].raw.text()).toBe('');
 
         expectTypeOf(listHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>[]>();
@@ -441,7 +441,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
 
         expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
         expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
         expect(await listHandler.requests[0].raw.text()).toBe('');
 
         expectTypeOf(listHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>[]>();
@@ -489,7 +489,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
 
         expectTypeOf(getHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
         expect(getHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(getHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expectTypeOf(getHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
         expect(await getHandler.requests[0].raw.text()).toBe('');
 
         expectTypeOf(getHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>>();
@@ -533,7 +533,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
 
         expectTypeOf(getHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
         expect(getHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(getHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expectTypeOf(getHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
         expect(await getHandler.requests[0].raw.text()).toBe('');
 
         expectTypeOf(getHandler.requests[0].response.body).toEqualTypeOf<NotFoundError>();
@@ -690,7 +690,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
 
         expectTypeOf(deleteHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
         expect(deleteHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(deleteHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expectTypeOf(deleteHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
         expect(await deleteHandler.requests[0].raw.text()).toBe('');
 
         expectTypeOf(deleteHandler.requests[0].response.body).toEqualTypeOf<null>();
@@ -698,7 +698,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
 
         expectTypeOf(deleteHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<null, never, 204>>();
         expect(deleteHandler.requests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(deleteHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<null>>();
+        expectTypeOf(deleteHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<never>>();
         expect(await deleteHandler.requests[0].response.raw.text()).toBe('');
       });
 
@@ -732,7 +732,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
 
         expectTypeOf(deleteHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
         expect(deleteHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(deleteHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expectTypeOf(deleteHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
         expect(await deleteHandler.requests[0].raw.text()).toBe('');
 
         expectTypeOf(deleteHandler.requests[0].response.body).toEqualTypeOf<NotFoundError>();
@@ -798,7 +798,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
 
         expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
         expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
         expect(await listHandler.requests[0].raw.text()).toBe('');
 
         expectTypeOf(listHandler.requests[0].response.body).toEqualTypeOf<Notification[]>();

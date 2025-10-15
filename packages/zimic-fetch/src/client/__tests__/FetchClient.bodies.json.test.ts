@@ -222,7 +222,7 @@ describe('FetchClient > Bodies > JSON', () => {
     });
   });
 
-  it('should consider request with empty JSON bodies as null', async () => {
+  it('should consider request with empty JSON bodies as never', async () => {
     type Schema = HttpSchema<{
       '/users': {
         POST: {
