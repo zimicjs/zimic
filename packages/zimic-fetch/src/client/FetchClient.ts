@@ -5,6 +5,9 @@ import {
   LiteralHttpSchemaPathFromNonLiteral,
   HttpSchema,
   HttpHeaders,
+  HttpHeadersSchema,
+  HttpSearchParamsSchema,
+  HttpMethod,
 } from '@zimic/http';
 import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
 import excludeNonPathParams from '@zimic/utils/url/excludeNonPathParams';
@@ -14,24 +17,48 @@ import FetchResponseError from './errors/FetchResponseError';
 import { FetchInput, FetchOptions, Fetch, FetchDefaults } from './types/public';
 import { FetchRequestConstructor, FetchRequestInit, FetchRequest, FetchResponse } from './types/requests';
 
-class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'defaults' | 'loose' | 'Request'> {
+class FetchClient<Schema extends HttpSchema>
+  implements Omit<Fetch<Schema>, 'defaults' | 'loose' | 'Request'>, FetchDefaults
+{
   fetch: Fetch<Schema>;
 
-  constructor({ onRequest, onResponse, ...defaults }: FetchOptions<Schema>) {
+  baseURL: string;
+  headers: HttpHeadersSchema.Loose;
+  searchParams: HttpSearchParamsSchema.Loose;
+
+  method?: HttpMethod;
+  body?: FetchDefaults['body'];
+  mode?: FetchDefaults['mode'];
+  cache?: FetchDefaults['cache'];
+  credentials?: FetchDefaults['credentials'];
+  integrity?: FetchDefaults['integrity'];
+  keepalive?: FetchDefaults['keepalive'];
+  priority?: FetchDefaults['priority'];
+  redirect?: FetchDefaults['redirect'];
+  referrer?: FetchDefaults['referrer'];
+  referrerPolicy?: FetchDefaults['referrerPolicy'];
+  signal?: FetchDefaults['signal'];
+  window?: FetchDefaults['window'];
+  duplex?: FetchDefaults['duplex'];
+
+  constructor({ baseURL, headers = {}, searchParams = {}, ...options }: FetchOptions<Schema>) {
     this.fetch = this.createFetchFunction();
 
-    this.fetch.defaults = {
-      ...defaults,
-      headers: defaults.headers ?? {},
-      searchParams: defaults.searchParams ?? {},
-    };
+    this.baseURL = baseURL;
+    this.headers = headers;
+    this.searchParams = searchParams;
+
+    Object.assign(this, options);
+
+    Object.defineProperty(this.fetch, 'defaults', {
+      get: () => this,
+      enumerable: false,
+      configurable: false,
+    });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.fetch.loose = this.fetch as Fetch<any> as Fetch.Loose;
-
-    this.fetch.Request = this.createRequestClass(this.fetch.defaults);
-    this.fetch.onRequest = onRequest;
-    this.fetch.onResponse = onResponse;
+    this.fetch.Request = this.createRequestClass(this.fetch);
   }
 
   private createFetchFunction() {
@@ -148,7 +175,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'def
     return fetchResponse;
   }
 
-  private createRequestClass(defaults: FetchDefaults) {
+  private createRequestClass(fetch: Fetch<Schema>) {
     class Request<
       Method extends HttpSchemaMethod<Schema>,
       Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
@@ -159,9 +186,29 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'def
         input: FetchInput<Schema, Method, Path>,
         init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
       ) {
-        const initWithDefaults = { ...defaults, ...init };
+        const initWithDefaults: FetchDefaults = {
+          baseURL: fetch.baseURL,
+          headers: fetch.headers,
+          searchParams: fetch.searchParams,
 
-        const headersFromDefaults = new HttpHeaders(defaults.headers);
+          body: fetch.body,
+          mode: fetch.mode,
+          cache: fetch.cache,
+          credentials: fetch.credentials,
+          integrity: fetch.integrity,
+          keepalive: fetch.keepalive,
+          priority: fetch.priority,
+          redirect: fetch.redirect,
+          referrer: fetch.referrer,
+          referrerPolicy: fetch.referrerPolicy,
+          signal: fetch.signal,
+          window: fetch.window,
+          duplex: fetch.duplex,
+
+          ...init,
+        };
+
+        const headersFromDefaults = new HttpHeaders(fetch.headers);
         const headersFromInit = new HttpHeaders((init satisfies RequestInit as RequestInit).headers);
 
         let url: URL;
@@ -191,7 +238,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'def
 
           url = input instanceof URL ? new URL(input) : new URL(joinURL(baseURL, input));
 
-          const searchParamsFromDefaults = new HttpSearchParams(defaults.searchParams);
+          const searchParamsFromDefaults = new HttpSearchParams(fetch.searchParams);
           const searchParamsFromInit = new HttpSearchParams(initWithDefaults.searchParams);
 
           initWithDefaults.searchParams = {
