@@ -12,7 +12,9 @@ export type FetchInput<
 > = Path | URL | FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference} */
-export interface Fetch<Schema extends HttpSchema> extends Pick<FetchOptions<Schema>, 'onRequest' | 'onResponse'> {
+export interface Fetch<Schema extends HttpSchema>
+  extends Pick<FetchOptions<Schema>, 'onRequest' | 'onResponse'>,
+    FetchDefaults {
   <
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
@@ -31,7 +33,15 @@ export interface Fetch<Schema extends HttpSchema> extends Pick<FetchOptions<Sche
     init?: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Redirect>,
   ): Promise<FetchResponse<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, false, Redirect>>;
 
-  /** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchdefaults `fetch.defaults`} */
+  /**
+   * @deprecated You can access the default properties directly on the fetch instance. For example:
+   *
+   *   - `fetch.defaults.baseURL` -> `fetch.baseURL`
+   *   - `fetch.defaults.headers` -> `fetch.headers`
+   *   - `fetch.defaults.searchParams` -> `fetch.searchParams`
+   *
+   * @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchdefaults `fetch.defaults`}
+   */
   defaults: FetchDefaults;
 
   /** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchloose `fetch.loose`} */
