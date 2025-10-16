@@ -54,13 +54,13 @@ describe('Typegen', () => {
     it.concurrent.each([
       {
         input:
-          'https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.yaml',
+          'https://raw.githubusercontent.com/github/rest-api-description/f336d3c68a59c7e0bd736f015972149abc4d505f/descriptions/api.github.com/api.github.com.yaml',
         serviceName: 'GitHub',
         outputFileName: 'github-3.0.openapi.ts',
       },
       {
         input:
-          'https://raw.githubusercontent.com/github/rest-api-description/main/descriptions-next/api.github.com/api.github.com.yaml',
+          'https://raw.githubusercontent.com/github/rest-api-description/f336d3c68a59c7e0bd736f015972149abc4d505f/descriptions-next/api.github.com/api.github.com.yaml',
         serviceName: 'GitHub',
         outputFileName: 'github-3.1.openapi.ts',
       },
