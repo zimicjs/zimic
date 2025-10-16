@@ -87,7 +87,7 @@
     "deps:setup": "pnpm deps:setup-playwright"
   },
   "dependencies": {
-    "openapi-typescript": "7.9.1",
+    "openapi-typescript": "7.10.1",
     "picocolors": "^1.1.1",
     "yargs": "18.0.0"
   },
