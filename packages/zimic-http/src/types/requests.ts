@@ -1,4 +1,4 @@
-import { Default, DefaultNoExclude, IfNever, ReplaceBy } from '@zimic/utils/types';
+import { Default, DefaultNoExclude, IfNever, Replace } from '@zimic/utils/types';
 import { JSONValue } from '@zimic/utils/types/json';
 
 import { HttpMethodSchema, HttpRequestSchema, HttpResponseSchema, HttpStatusCode } from '@/types/schema';
@@ -16,7 +16,7 @@ export type HttpBody = JSONValue | HttpFormData<any> | HttpSearchParams<any> | B
 
 export namespace HttpBody {
   /** A loose version of the HTTP body type. JSON values are not strictly typed. */
-  export type Loose = ReplaceBy<HttpBody, JSONValue, JSONValue.Loose>;
+  export type Loose = Replace<HttpBody, JSONValue, JSONValue.Loose>;
 }
 
 /**
@@ -56,13 +56,17 @@ export interface HttpRequest<
 > extends Request {
   headers: StrictHeaders<StrictHeadersSchema>;
   text: () => Promise<StrictBody extends string ? StrictBody : string>;
-  json: () => Promise<StrictBody extends string | Exclude<HttpBody, JSONValue> ? never : StrictBody>;
+  json: () => Promise<
+    StrictBody extends string | Exclude<HttpBody, JSONValue> ? never : Replace<StrictBody, null | undefined, never>
+  >;
   formData: () => Promise<
     StrictBody extends HttpFormData<infer HttpFormDataSchema>
       ? StrictFormData<HttpFormDataSchema>
       : StrictBody extends HttpSearchParams<infer HttpSearchParamsSchema>
         ? StrictFormData<HttpSearchParamsSchema>
-        : FormData
+        : StrictBody extends null | undefined
+          ? never
+          : FormData
   >;
   clone: () => this;
 }
@@ -82,13 +86,17 @@ export interface HttpResponse<
   status: StatusCode;
   headers: StrictHeaders<StrictHeadersSchema>;
   text: () => Promise<StrictBody extends string ? StrictBody : string>;
-  json: () => Promise<StrictBody extends string | Exclude<HttpBody, JSONValue> ? never : StrictBody>;
+  json: () => Promise<
+    StrictBody extends string | Exclude<HttpBody, JSONValue> ? never : Replace<StrictBody, null | undefined, never>
+  >;
   formData: () => Promise<
     StrictBody extends HttpFormData<infer HttpFormDataSchema>
       ? StrictFormData<HttpFormDataSchema>
       : StrictBody extends HttpSearchParams<infer HttpSearchParamsSchema>
         ? StrictFormData<HttpSearchParamsSchema>
-        : FormData
+        : StrictBody extends null | undefined
+          ? never
+          : FormData
   >;
   clone: () => this;
 }
@@ -123,7 +131,7 @@ export type HttpRequestHeadersSchema<MethodSchema extends HttpMethodSchema> =
 export type HttpRequestSearchParamsSchema<MethodSchema extends HttpMethodSchema> =
   'searchParams' extends keyof MethodSchema['request'] ? Default<MethodSchema['request']>['searchParams'] : never;
 
-export type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = ReplaceBy<
+export type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = Replace<
   IfNever<DefaultNoExclude<Default<MethodSchema['request']>['body']>, null>,
   undefined,
   null
@@ -158,10 +166,7 @@ export type HttpResponseHeadersSchema<
         | Extract<Default<Default<MethodSchema['response']>[StatusCode]>['headers'], undefined>
   : HttpResponseHeadersSchemaFromBody<Default<Default<MethodSchema['response']>[StatusCode]>, never>;
 
-export type HttpResponseBodySchema<
-  MethodSchema extends HttpMethodSchema,
-  StatusCode extends HttpStatusCode,
-> = ReplaceBy<
+export type HttpResponseBodySchema<MethodSchema extends HttpMethodSchema, StatusCode extends HttpStatusCode> = Replace<
   IfNever<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['body']>, null>,
   undefined,
   null
