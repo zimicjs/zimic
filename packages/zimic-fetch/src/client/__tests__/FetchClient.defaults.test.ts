@@ -380,7 +380,10 @@ describe('FetchClient > Defaults', () => {
 
       const response = await fetch('/users', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'accept-language': 'fr' },
+        headers: {
+          'content-type': 'application/json',
+          'accept-language': 'fr',
+        },
       });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
@@ -518,12 +521,12 @@ describe('FetchClient > Defaults', () => {
       expect(response).toBeInstanceOf(Response);
       expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
-      expect(response.url).toBe(joinURL(baseURL, '/users?limit=20&page=1&username=any&username=other'));
+      expect(response.url).toBe(joinURL(baseURL, '/users?page=1&limit=20&username=any&username=other'));
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
-      expect(response.request.url).toBe(joinURL(baseURL, '/users?limit=20&page=1&username=any&username=other'));
+      expect(response.request.url).toBe(joinURL(baseURL, '/users?page=1&limit=20&username=any&username=other'));
     });
   });
 });

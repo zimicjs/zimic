@@ -182,72 +182,54 @@ class FetchClient<Schema extends HttpSchema>
     > extends globalThis.Request {
       path: LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>;
 
-      constructor(
-        input: FetchInput<Schema, Method, Path>,
-        init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
-      ) {
+      constructor(input: FetchInput<Schema, Method, Path>, init?: FetchRequestInit.Loose) {
         let actualInput: URL | globalThis.Request;
 
-        const actualInit: FetchDefaults = {
-          baseURL: fetch.baseURL,
-          headers: fetch.headers,
-          searchParams: fetch.searchParams,
-
-          body: fetch.body,
-          mode: fetch.mode,
-          cache: fetch.cache,
-          credentials: fetch.credentials,
-          integrity: fetch.integrity,
-          keepalive: fetch.keepalive,
-          priority: fetch.priority,
-          redirect: fetch.redirect,
-          referrer: fetch.referrer,
-          referrerPolicy: fetch.referrerPolicy,
-          signal: fetch.signal,
-          window: fetch.window,
-          duplex: fetch.duplex,
-
-          ...init,
+        const actualInit = {
+          baseURL: init?.baseURL ?? fetch.baseURL,
+          method: init?.method ?? fetch.method,
+          headers: new HttpHeaders(fetch.headers),
+          searchParams: new HttpSearchParams(fetch.searchParams),
+          body: init?.body ?? fetch.body,
+          mode: init?.mode ?? fetch.mode,
+          cache: init?.cache ?? fetch.cache,
+          credentials: init?.credentials ?? fetch.credentials,
+          integrity: init?.integrity ?? fetch.integrity,
+          keepalive: init?.keepalive ?? fetch.keepalive,
+          priority: init?.priority ?? fetch.priority,
+          redirect: init?.redirect ?? fetch.redirect,
+          referrer: init?.referrer ?? fetch.referrer,
+          referrerPolicy: init?.referrerPolicy ?? fetch.referrerPolicy,
+          signal: init?.signal ?? fetch.signal,
+          window: init?.window === undefined ? fetch.window : init.window,
+          duplex: init?.duplex ?? fetch.duplex,
         };
 
-        const headersFromDefaults = new HttpHeaders(fetch.headers);
-        const headersFromInit = new HttpHeaders((init satisfies RequestInit as RequestInit).headers);
+        if (init?.headers) {
+          actualInit.headers.assign(new HttpHeaders(init.headers));
+        }
 
         let url: URL;
         const baseURL = new URL(actualInit.baseURL);
 
         if (input instanceof globalThis.Request) {
-          // Optimize type checking by narrowing the type of input
           const request = input as globalThis.Request;
-          actualInput = request;
 
-          // Optimize type checking by narrowing the type of headers
-          const headersFromRequest = new HttpHeaders(input.headers as Headers);
-
-          actualInit.headers = {
-            ...headersFromDefaults.toObject(),
-            ...headersFromRequest.toObject(),
-            ...headersFromInit.toObject(),
-          };
+          actualInit.headers.assign(new HttpHeaders(request.headers));
 
           url = new URL(input.url);
+
+          actualInput = request;
         } else {
-          actualInit.headers = {
-            ...headersFromDefaults.toObject(),
-            ...headersFromInit.toObject(),
-          };
+          url = new URL(input instanceof URL ? input : joinURL(baseURL, input));
 
-          url = input instanceof URL ? new URL(input) : new URL(joinURL(baseURL, input));
+          actualInit.searchParams.assign(new HttpSearchParams(url.searchParams));
 
-          const searchParamsFromDefaults = new HttpSearchParams(fetch.searchParams);
-          const searchParamsFromInit = new HttpSearchParams(actualInit.searchParams);
+          if (init?.searchParams) {
+            actualInit.searchParams.assign(new HttpSearchParams(init.searchParams));
+          }
 
-          actualInit.searchParams = {
-            ...searchParamsFromDefaults.toObject(),
-            ...searchParamsFromInit.toObject(),
-          };
-
-          url.search = new HttpSearchParams(actualInit.searchParams).toString();
+          url.search = actualInit.searchParams.toString();
 
           actualInput = url;
         }
@@ -261,17 +243,9 @@ class FetchClient<Schema extends HttpSchema>
           .replace(baseURLWithoutTrailingSlash, '') as LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>;
       }
 
-      clone(): Request<Method, Path> {
+      clone(): this {
         const rawClone = super.clone();
-
-        return new Request<Method, Path>(
-          rawClone as unknown as FetchInput<Schema, Method, Path>,
-          rawClone as unknown as FetchRequestInit<
-            Schema,
-            Method,
-            LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>
-          >,
-        );
+        return new Request(rawClone as FetchInput<Schema, Method, Path>) as this;
       }
     }
 

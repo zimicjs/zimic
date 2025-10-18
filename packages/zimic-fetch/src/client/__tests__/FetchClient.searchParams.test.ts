@@ -181,7 +181,7 @@ describe('FetchClient > Search params', () => {
       expect(request).toBeInstanceOf(Request);
       expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
-      expect(request.url).toBe(joinURL(baseURL, '/users?name=User&orderBy=name&usernames=User+1&usernames=User+2'));
+      expect(request.url).toBe(joinURL(baseURL, '/users?name=User&usernames=User+1&usernames=User+2&orderBy=name'));
 
       responses.push(await fetch(request));
 
