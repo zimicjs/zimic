@@ -1,4 +1,4 @@
-import { HttpSchema } from '@zimic/http';
+import { HttpHeaders, HttpSchema, HttpSearchParams } from '@zimic/http';
 import joinURL from '@zimic/utils/url/joinURL';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
@@ -37,8 +37,8 @@ describe('FetchClient > Defaults', () => {
       const fetch = createFetch<Schema>({ baseURL });
 
       expect(fetch.baseURL).toBe(baseURL);
-      expect(fetch.headers).toEqual({});
-      expect(fetch.searchParams).toEqual({});
+      expect(fetch.headers).toEqual(new HttpHeaders());
+      expect(fetch.searchParams).toEqual(new HttpSearchParams());
 
       const response = await fetch('/users', { method: 'GET' });
 
@@ -97,12 +97,14 @@ describe('FetchClient > Defaults', () => {
         baseURL,
         cache: 'no-cache',
         credentials: 'same-origin',
-        headers: { 'content-type': 'application/json' },
-        searchParams: {
+        headers: new HttpHeaders({
+          'content-type': 'application/json',
+        }),
+        searchParams: new HttpSearchParams({
           orderBy: 'name:asc',
           limit: 10,
           full: true,
-        },
+        }),
         body: JSON.stringify({ name: 'User 1' }),
         keepalive: true,
         mode: 'cors',
@@ -142,7 +144,7 @@ describe('FetchClient > Defaults', () => {
       );
 
       expect(response.request.cache).toBe(defaults.cache);
-      expect(response.request.headers.get('content-type')).toBe(defaults.headers['content-type']);
+      expect(response.request.headers.get('content-type')).toBe(defaults.headers.get('content-type'));
       expect(response.request.credentials).toBe(defaults.credentials);
       expect(await response.request.text()).toBe(defaults.body);
       expect(response.request.keepalive).toBe(defaults.keepalive);
@@ -194,21 +196,21 @@ describe('FetchClient > Defaults', () => {
       const fetch = createFetch<Schema>({ baseURL: otherBaseURL });
 
       expect(fetch.baseURL).toBe(otherBaseURL);
-      expect(fetch.headers).toEqual({});
-      expect(fetch.searchParams).toEqual({});
+      expect(fetch.headers).toEqual(new HttpHeaders());
+      expect(fetch.searchParams).toEqual(new HttpSearchParams());
 
       const defaults = {
         baseURL,
         cache: 'no-cache',
         credentials: 'same-origin',
-        headers: {
+        headers: new HttpHeaders({
           'content-type': 'application/json',
-        },
-        searchParams: {
+        }),
+        searchParams: new HttpSearchParams({
           orderBy: 'name:asc',
           limit: 10,
           full: true,
-        },
+        }),
         body: JSON.stringify({ name: 'User 1' }),
         keepalive: true,
         mode: 'cors',
@@ -220,20 +222,7 @@ describe('FetchClient > Defaults', () => {
         duplex: 'half',
       } satisfies FetchOptions<Schema>;
 
-      fetch.baseURL = defaults.baseURL;
-      fetch.cache = defaults.cache;
-      fetch.credentials = defaults.credentials;
-      fetch.headers['content-type'] = defaults.headers['content-type'];
-      fetch.searchParams = defaults.searchParams;
-      fetch.body = defaults.body;
-      fetch.keepalive = defaults.keepalive;
-      fetch.mode = defaults.mode;
-      fetch.redirect = defaults.redirect;
-      fetch.priority = defaults.priority;
-      fetch.referrer = defaults.referrer;
-      fetch.referrerPolicy = defaults.referrerPolicy;
-      fetch.signal = defaults.signal;
-      fetch.duplex = defaults.duplex;
+      Object.assign(fetch, defaults);
 
       for (const [key, value] of Object.entries(defaults)) {
         expect(fetch[key]).toEqual(value);
@@ -261,7 +250,7 @@ describe('FetchClient > Defaults', () => {
       );
 
       expect(response.request.cache).toBe(defaults.cache);
-      expect(response.request.headers.get('content-type')).toBe(defaults.headers['content-type']);
+      expect(response.request.headers.get('content-type')).toBe(defaults.headers.get('content-type'));
       expect(response.request.credentials).toBe(defaults.credentials);
       expect(await response.request.text()).toBe(defaults.body);
       expect(response.request.keepalive).toBe(defaults.keepalive);
@@ -310,8 +299,8 @@ describe('FetchClient > Defaults', () => {
       });
 
       expect(fetch.baseURL).toBe(baseURL);
-      expect(fetch.headers).toEqual({ 'accept-language': 'en' });
-      expect(fetch.searchParams).toEqual({});
+      expect(fetch.headers).toEqual(new HttpHeaders({ 'accept-language': 'en' }));
+      expect(fetch.searchParams).toEqual(new HttpSearchParams());
 
       const response = await fetch('/users', {
         method: 'POST',
@@ -375,12 +364,15 @@ describe('FetchClient > Defaults', () => {
       });
 
       expect(fetch.baseURL).toBe(baseURL);
-      expect(fetch.headers).toEqual({ 'accept-language': 'en' });
-      expect(fetch.searchParams).toEqual({});
+      expect(fetch.headers).toEqual(new HttpHeaders({ 'accept-language': 'en' }));
+      expect(fetch.searchParams).toEqual(new HttpSearchParams());
 
       const response = await fetch('/users', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'accept-language': 'fr' },
+        headers: {
+          'content-type': 'application/json',
+          'accept-language': 'fr',
+        },
       });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
@@ -440,8 +432,8 @@ describe('FetchClient > Defaults', () => {
       });
 
       expect(fetch.baseURL).toBe(baseURL);
-      expect(fetch.headers).toEqual({});
-      expect(fetch.searchParams).toEqual({ limit: 10 });
+      expect(fetch.headers).toEqual(new HttpHeaders());
+      expect(fetch.searchParams).toEqual(new HttpSearchParams({ limit: 10 }));
 
       const response = await fetch('/users', {
         method: 'GET',
@@ -502,8 +494,8 @@ describe('FetchClient > Defaults', () => {
       });
 
       expect(fetch.baseURL).toBe(baseURL);
-      expect(fetch.headers).toEqual({});
-      expect(fetch.searchParams).toEqual({ limit: 10, username: ['my', 'other'] });
+      expect(fetch.headers).toEqual(new HttpHeaders());
+      expect(fetch.searchParams).toEqual(new HttpSearchParams({ limit: 10, username: ['my', 'other'] }));
 
       const response = await fetch('/users', {
         method: 'GET',
@@ -518,12 +510,12 @@ describe('FetchClient > Defaults', () => {
       expect(response).toBeInstanceOf(Response);
       expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
-      expect(response.url).toBe(joinURL(baseURL, '/users?limit=20&page=1&username=any&username=other'));
+      expect(response.url).toBe(joinURL(baseURL, '/users?page=1&limit=20&username=any&username=other'));
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
-      expect(response.request.url).toBe(joinURL(baseURL, '/users?limit=20&page=1&username=any&username=other'));
+      expect(response.request.url).toBe(joinURL(baseURL, '/users?page=1&limit=20&username=any&username=other'));
     });
   });
 });

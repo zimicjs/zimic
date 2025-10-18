@@ -1,5 +1,12 @@
-import { HttpSchemaPath, HttpSchemaMethod, LiteralHttpSchemaPathFromNonLiteral, HttpSchema } from '@zimic/http';
-import { PossiblePromise, RequiredByKey } from '@zimic/utils/types';
+import {
+  HttpSchemaPath,
+  HttpSchemaMethod,
+  LiteralHttpSchemaPathFromNonLiteral,
+  HttpSchema,
+  HttpHeaders,
+  HttpSearchParams,
+} from '@zimic/http';
+import { Override, PossiblePromise } from '@zimic/utils/types';
 
 import FetchResponseError from '../errors/FetchResponseError';
 import { FetchRequest, FetchRequestConstructor, FetchRequestInit, FetchResponse } from './requests';
@@ -89,7 +96,10 @@ export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchReque
  *
  * @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference}
  */
-export type FetchDefaults = RequiredByKey<FetchRequestInit.Defaults, 'headers' | 'searchParams'>;
+export type FetchDefaults = Override<
+  FetchRequestInit.Defaults,
+  { headers: HttpHeaders; searchParams: HttpSearchParams }
+>;
 
 /**
  * Infers the schema of a {@link https://zimic.dev/docs/fetch/api/fetch fetch instance}.
