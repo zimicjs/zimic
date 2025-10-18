@@ -85,9 +85,9 @@ export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchReque
 }
 
 /**
- * The default options for each request sent by the fetch instance.
+ * The default options to send with each request.
  *
- * @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchdefaults `fetch.defaults` API reference}
+ * @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference}
  */
 export type FetchDefaults = RequiredByKey<FetchRequestInit.Defaults, 'headers' | 'searchParams'>;
 

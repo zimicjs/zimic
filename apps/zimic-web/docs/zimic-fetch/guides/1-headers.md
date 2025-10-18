@@ -81,8 +81,8 @@ You can also set headers after the fetch instance is created. This is useful for
 as [authentication tokens](/docs/zimic-fetch/guides/5-authentication.md).
 
 ```ts
-fetch.defaults.headers['accept-language'] = 'en';
-fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
+fetch.headers['accept-language'] = 'en';
+fetch.headers.authorization = `Bearer ${accessToken}`;
 ```
 
 [`fetch.onRequest`](/docs/zimic-fetch/api/2-fetch.md#fetchonrequest) can also be used to set headers. Use this listener

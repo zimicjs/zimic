@@ -155,7 +155,7 @@ const fetch = createFetch<Schema>({
 });
 
 //  highlight-next-line
-fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
+fetch.headers.authorization = `Bearer ${accessToken}`;
 ```
 
 **Related**:
