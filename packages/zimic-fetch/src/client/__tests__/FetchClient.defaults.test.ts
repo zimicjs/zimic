@@ -36,7 +36,7 @@ describe('FetchClient > Defaults', () => {
 
       const fetch = createFetch<Schema>({ baseURL });
 
-      expect(fetch.defaults).toEqual<FetchDefaults>({
+      expect(fetch).toMatchObject<FetchDefaults>({
         baseURL,
         headers: {},
         searchParams: {},
@@ -118,7 +118,7 @@ describe('FetchClient > Defaults', () => {
 
       const fetch = createFetch<Schema>(defaults);
 
-      expect(fetch.defaults).toEqual<FetchDefaults>(defaults);
+      expect(fetch).toMatchObject<FetchDefaults>(defaults);
 
       const response = await fetch('/users', { method: 'POST' });
 
@@ -193,7 +193,7 @@ describe('FetchClient > Defaults', () => {
 
       const fetch = createFetch<Schema>({ baseURL: otherBaseURL });
 
-      expect(fetch.defaults).toEqual<FetchDefaults>({
+      expect(fetch).toMatchObject<FetchDefaults>({
         baseURL: otherBaseURL,
         headers: {},
         searchParams: {},
@@ -220,22 +220,22 @@ describe('FetchClient > Defaults', () => {
         duplex: 'half',
       } satisfies FetchOptions<Schema>;
 
-      fetch.defaults.baseURL = defaults.baseURL;
-      fetch.defaults.cache = defaults.cache;
-      fetch.defaults.credentials = defaults.credentials;
-      fetch.defaults.headers['content-type'] = defaults.headers['content-type'];
-      fetch.defaults.searchParams = defaults.searchParams;
-      fetch.defaults.body = defaults.body;
-      fetch.defaults.keepalive = defaults.keepalive;
-      fetch.defaults.mode = defaults.mode;
-      fetch.defaults.redirect = defaults.redirect;
-      fetch.defaults.priority = defaults.priority;
-      fetch.defaults.referrer = defaults.referrer;
-      fetch.defaults.referrerPolicy = defaults.referrerPolicy;
-      fetch.defaults.signal = defaults.signal;
-      fetch.defaults.duplex = defaults.duplex;
+      fetch.baseURL = defaults.baseURL;
+      fetch.cache = defaults.cache;
+      fetch.credentials = defaults.credentials;
+      fetch.headers['content-type'] = defaults.headers['content-type'];
+      fetch.searchParams = defaults.searchParams;
+      fetch.body = defaults.body;
+      fetch.keepalive = defaults.keepalive;
+      fetch.mode = defaults.mode;
+      fetch.redirect = defaults.redirect;
+      fetch.priority = defaults.priority;
+      fetch.referrer = defaults.referrer;
+      fetch.referrerPolicy = defaults.referrerPolicy;
+      fetch.signal = defaults.signal;
+      fetch.duplex = defaults.duplex;
 
-      expect(fetch.defaults).toEqual<FetchDefaults>(defaults);
+      expect(fetch).toMatchObject<FetchDefaults>(defaults);
 
       const response = await fetch('/users', { method: 'POST' });
 
@@ -307,7 +307,7 @@ describe('FetchClient > Defaults', () => {
         headers: { 'accept-language': 'en' },
       });
 
-      expect(fetch.defaults).toEqual<FetchDefaults>({
+      expect(fetch).toMatchObject<FetchDefaults>({
         baseURL,
         headers: { 'accept-language': 'en' },
         searchParams: {},
@@ -374,7 +374,7 @@ describe('FetchClient > Defaults', () => {
         headers: { 'accept-language': 'en' },
       });
 
-      expect(fetch.defaults).toEqual<FetchDefaults>({
+      expect(fetch).toMatchObject<FetchDefaults>({
         baseURL,
         headers: { 'accept-language': 'en' },
         searchParams: {},
@@ -441,7 +441,7 @@ describe('FetchClient > Defaults', () => {
         searchParams: { limit: 10 },
       });
 
-      expect(fetch.defaults).toEqual<FetchDefaults>({
+      expect(fetch).toMatchObject<FetchDefaults>({
         baseURL,
         headers: {},
         searchParams: { limit: 10 },
@@ -505,7 +505,7 @@ describe('FetchClient > Defaults', () => {
         searchParams: { limit: 10, username: ['my', 'other'] },
       });
 
-      expect(fetch.defaults).toEqual<FetchDefaults>({
+      expect(fetch).toMatchObject<FetchDefaults>({
         baseURL,
         headers: {},
         searchParams: { limit: 10, username: ['my', 'other'] },

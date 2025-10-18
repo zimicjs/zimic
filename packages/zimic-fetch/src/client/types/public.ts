@@ -34,12 +34,7 @@ export interface Fetch<Schema extends HttpSchema>
   ): Promise<FetchResponse<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, false, Redirect>>;
 
   /**
-   * @deprecated You can access the default properties directly on the fetch instance. For example:
-   *
-   *   - `fetch.defaults.baseURL` -> `fetch.baseURL`
-   *   - `fetch.defaults.headers` -> `fetch.headers`
-   *   - `fetch.defaults.searchParams` -> `fetch.searchParams`
-   *
+   * @deprecated Considering accessing the default options directly on the fetch instance.
    * @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchdefaults `fetch.defaults`}
    */
   defaults: FetchDefaults;
