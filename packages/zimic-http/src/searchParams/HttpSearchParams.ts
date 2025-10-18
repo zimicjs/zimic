@@ -158,6 +158,19 @@ class HttpSearchParams<
     return true;
   }
 
+  /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamsassign `searchParams.assign()` API reference} */
+  assign(...otherParams: HttpSearchParams<LooseSchema>[]) {
+    for (const params of otherParams) {
+      for (const key of params.keys()) {
+        this.delete(key);
+      }
+
+      for (const [key, value] of params.entries()) {
+        this.append(key, value);
+      }
+    }
+  }
+
   /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamstoobject `searchParams.toObject()` API reference} */
   toObject() {
     const object = {} as this['_schema'];
