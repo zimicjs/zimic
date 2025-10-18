@@ -90,8 +90,6 @@ export namespace FetchRequestInit {
   /** The default options for each request sent by a fetch instance. */
   export interface Defaults extends Omit<RequestInit, 'headers'> {
     baseURL: string;
-    /** The HTTP method of the request. */
-    method?: HttpMethod;
     /** The headers of the request. */
     headers?: HttpHeadersSchema.Loose;
     /** The search parameters of the request. */
