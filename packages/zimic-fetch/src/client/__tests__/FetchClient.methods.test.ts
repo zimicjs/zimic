@@ -1201,8 +1201,8 @@ describe('FetchClient > Methods', () => {
       expect(getResponse.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(getResponse.request.headers).toEqualTypeOf<StrictHeaders<never>>();
 
-      expectTypeOf(getResponse.request.json).toEqualTypeOf<() => Promise<null>>();
-      expectTypeOf(getResponse.request.formData).toEqualTypeOf<() => Promise<FormData>>();
+      expectTypeOf(getResponse.request.json).toEqualTypeOf<() => Promise<never>>();
+      expectTypeOf(getResponse.request.formData).toEqualTypeOf<() => Promise<never>>();
       expectTypeOf(getResponse.request.clone).toEqualTypeOf<() => typeof getResponse.request>();
 
       await interceptor

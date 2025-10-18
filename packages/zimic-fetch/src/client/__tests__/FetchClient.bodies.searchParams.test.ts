@@ -136,10 +136,10 @@ describe('FetchClient > Bodies > Search params', () => {
       expect(response.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
 
-      expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
+      expectTypeOf(response.json).toEqualTypeOf<() => Promise<never>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
-      expectTypeOf(response.formData).toEqualTypeOf<() => Promise<StrictFormData<SearchParamsSchema> | FormData>>();
+      expectTypeOf(response.formData).toEqualTypeOf<() => Promise<StrictFormData<SearchParamsSchema>>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
       expectTypeOf(response.error).toEqualTypeOf<null>();
 
@@ -151,11 +151,9 @@ describe('FetchClient > Bodies > Search params', () => {
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<never>>();
 
-      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<null>>();
+      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<never>>();
       expectTypeOf(response.request.text).toEqualTypeOf<() => Promise<string>>();
-      expectTypeOf(response.request.formData).toEqualTypeOf<
-        () => Promise<StrictFormData<SearchParamsSchema> | FormData>
-      >();
+      expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<StrictFormData<SearchParamsSchema>>>();
       expectTypeOf(response.request.clone).toEqualTypeOf<() => typeof response.request>();
     });
   });

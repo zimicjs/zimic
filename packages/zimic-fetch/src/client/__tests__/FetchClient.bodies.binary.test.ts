@@ -116,7 +116,7 @@ describe('FetchClient > Bodies > Binary', () => {
       expect(response.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'application/octet-stream' }>>();
 
-      expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
+      expectTypeOf(response.json).toEqualTypeOf<() => Promise<never>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
       expectTypeOf(response.blob).toEqualTypeOf<() => Promise<Blob>>();
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
@@ -128,7 +128,7 @@ describe('FetchClient > Bodies > Binary', () => {
         StrictHeaders<{ 'content-type': 'application/octet-stream' }>
       >();
 
-      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<null>>();
+      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<never>>();
       expectTypeOf(response.request.blob).toEqualTypeOf<() => Promise<Blob>>();
       expect(await response.request.blob()).toEqual(new Blob([], { type: 'application/octet-stream' }));
       expectTypeOf(response.request.text).toEqualTypeOf<() => Promise<string>>();
@@ -252,7 +252,7 @@ describe('FetchClient > Bodies > Binary', () => {
       expect(response.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'application/octet-stream' }>>();
 
-      expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
+      expectTypeOf(response.json).toEqualTypeOf<() => Promise<never>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
@@ -263,7 +263,7 @@ describe('FetchClient > Bodies > Binary', () => {
         StrictHeaders<{ 'content-type': 'application/octet-stream' }>
       >();
 
-      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<null>>();
+      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<never>>();
       expectTypeOf(response.request.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expect(await response.request.arrayBuffer()).toEqual(new ArrayBuffer(0));
       expectTypeOf(response.request.text).toEqualTypeOf<() => Promise<string>>();
@@ -419,7 +419,7 @@ describe('FetchClient > Bodies > Binary', () => {
       expect(response.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'application/octet-stream' }>>();
 
-      expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
+      expectTypeOf(response.json).toEqualTypeOf<() => Promise<never>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
       expectTypeOf(response.blob).toEqualTypeOf<() => Promise<Blob>>();
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
@@ -430,7 +430,7 @@ describe('FetchClient > Bodies > Binary', () => {
       expectTypeOf(response.request.headers).toEqualTypeOf<
         StrictHeaders<{ 'content-type': 'application/octet-stream' }>
       >();
-      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<null>>();
+      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<never>>();
       expectTypeOf(response.request.blob).toEqualTypeOf<() => Promise<Blob>>();
       expectTypeOf(response.request.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expectTypeOf(response.request.blob).toEqualTypeOf<() => Promise<Blob>>();

@@ -1,4 +1,4 @@
-import { Default, ReplaceBy } from '@zimic/utils/types';
+import { Default, Replace } from '@zimic/utils/types';
 
 import { HttpHeadersSchema, HttpHeadersInit, HttpHeadersSchemaName, HttpHeadersSerialized } from './types';
 
@@ -36,7 +36,7 @@ class HttpHeaders<LooseSchema extends HttpHeadersSchema.Loose = HttpHeadersSchem
   /** @see {@link https://zimic.dev/docs/http/api/http-headers#headersget `headers.get()` API reference} */
   get<Name extends HttpHeadersSchemaName<this['_schema']>>(
     name: Name,
-  ): ReplaceBy<this['_schema'][Name], undefined, null> {
+  ): Replace<this['_schema'][Name], undefined, null> {
     return super.get(name) as never;
   }
 

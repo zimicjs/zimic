@@ -1,5 +1,5 @@
 import fileEquals from '@zimic/utils/data/fileEquals';
-import { ArrayItemIfArray, ReplaceBy } from '@zimic/utils/types';
+import { ArrayItemIfArray, Replace } from '@zimic/utils/types';
 
 import { HttpFormDataSchema, HttpFormDataSchemaName, HttpFormDataSerialized } from './types';
 
@@ -54,14 +54,14 @@ class HttpFormData<LooseSchema extends HttpFormDataSchema.Loose = HttpFormDataSc
   /** @see {@link https://zimic.dev/docs/http/api/http-form-data#formdataget `formData.get()` API reference} */
   get<Name extends HttpFormDataSchemaName.NonArray<this['_schema']>>(
     name: Name,
-  ): ReplaceBy<ReplaceBy<ArrayItemIfArray<this['_schema'][Name]>, undefined, null>, Blob, File> {
+  ): Replace<Replace<ArrayItemIfArray<this['_schema'][Name]>, undefined, null>, Blob, File> {
     return super.get(name) as never;
   }
 
   /** @see {@link https://zimic.dev/docs/http/api/http-form-data#formdatagetall `formData.getAll()` API reference} */
   getAll<Name extends HttpFormDataSchemaName.Array<this['_schema']>>(
     name: Name,
-  ): ReplaceBy<ArrayItemIfArray<NonNullable<this['_schema'][Name]>>, Blob, File>[] {
+  ): Replace<ArrayItemIfArray<NonNullable<this['_schema'][Name]>>, Blob, File>[] {
     return super.getAll(name) as never;
   }
 
@@ -78,7 +78,7 @@ class HttpFormData<LooseSchema extends HttpFormDataSchema.Loose = HttpFormDataSc
   /** @see {@link https://zimic.dev/docs/http/api/http-form-data#formdataforEach `formData.forEach()` API reference} */
   forEach<This extends HttpFormData<this['_schema']>>(
     callback: <Key extends HttpFormDataSchemaName<this['_schema']>>(
-      value: ReplaceBy<ArrayItemIfArray<NonNullable<this['_schema'][Key]>>, Blob, File>,
+      value: Replace<ArrayItemIfArray<NonNullable<this['_schema'][Key]>>, Blob, File>,
       key: Key,
       formData: HttpFormData<this['_schema']>,
     ) => void,
@@ -94,7 +94,7 @@ class HttpFormData<LooseSchema extends HttpFormDataSchema.Loose = HttpFormDataSc
 
   /** @see {@link https://zimic.dev/docs/http/api/http-form-data#formdatavalues `formData.values()` API reference} */
   values(): FormDataIterator<
-    ReplaceBy<ArrayItemIfArray<NonNullable<this['_schema'][HttpFormDataSchemaName<this['_schema']>]>>, Blob, File>
+    Replace<ArrayItemIfArray<NonNullable<this['_schema'][HttpFormDataSchemaName<this['_schema']>]>>, Blob, File>
   > {
     return super.values() as never;
   }
@@ -103,7 +103,7 @@ class HttpFormData<LooseSchema extends HttpFormDataSchema.Loose = HttpFormDataSc
   entries(): FormDataIterator<
     [
       HttpFormDataSchemaName<this['_schema']>,
-      ReplaceBy<ArrayItemIfArray<NonNullable<this['_schema'][HttpFormDataSchemaName<this['_schema']>]>>, Blob, File>,
+      Replace<ArrayItemIfArray<NonNullable<this['_schema'][HttpFormDataSchemaName<this['_schema']>]>>, Blob, File>,
     ]
   > {
     return super.entries() as never;
@@ -112,7 +112,7 @@ class HttpFormData<LooseSchema extends HttpFormDataSchema.Loose = HttpFormDataSc
   [Symbol.iterator](): FormDataIterator<
     [
       HttpFormDataSchemaName<this['_schema']>,
-      ReplaceBy<ArrayItemIfArray<NonNullable<this['_schema'][HttpFormDataSchemaName<this['_schema']>]>>, Blob, File>,
+      Replace<ArrayItemIfArray<NonNullable<this['_schema'][HttpFormDataSchemaName<this['_schema']>]>>, Blob, File>,
     ]
   > {
     return super[Symbol.iterator]() as never;
