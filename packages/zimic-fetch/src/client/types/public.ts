@@ -30,7 +30,10 @@ export interface Fetch<Schema extends HttpSchema>
     Redirect extends RequestRedirect = 'follow',
   >(
     input: FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
-    init?: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Redirect>,
+    init?: Omit<
+      FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Redirect>,
+      'baseURL' | 'searchParams'
+    >,
   ): Promise<FetchResponse<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, false, Redirect>>;
 
   /**
