@@ -344,7 +344,7 @@ describe('FetchClient > isRequest', () => {
       baseURL,
     });
 
-    const request = new Request(`${fetch.defaults.baseURL}/users`, {
+    const request = new Request(`${fetch.baseURL}/users`, {
       method: 'GET',
     });
 

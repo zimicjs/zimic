@@ -421,7 +421,7 @@ describe('FetchClient > isResponseError', () => {
         baseURL,
       });
 
-      const response = await globalThis.fetch(`${fetch.defaults.baseURL}/users`, {
+      const response = await globalThis.fetch(`${fetch.baseURL}/users`, {
         method: 'GET',
       });
 
