@@ -27,7 +27,7 @@ describe('Fetch client', async () => {
   });
 
   const authInterceptor = createHttpInterceptor<AuthServiceSchema>({
-    baseURL: authFetch.defaults.baseURL,
+    baseURL: authFetch.baseURL,
     requestSaving: { enabled: true },
   });
 
@@ -36,7 +36,7 @@ describe('Fetch client', async () => {
   });
 
   const notificationInterceptor = createHttpInterceptor<NotificationServiceSchema>({
-    baseURL: notificationFetch.defaults.baseURL,
+    baseURL: notificationFetch.baseURL,
     requestSaving: { enabled: true },
   });
 
@@ -487,7 +487,7 @@ describe('Fetch client', async () => {
         expect(returnedUsers).toEqual(serializeUser(user));
 
         expect(getHandler.requests).toHaveLength(1);
-        expect(getHandler.requests[0].url).toBe(`${authFetch.defaults.baseURL}/users/${user.id}`);
+        expect(getHandler.requests[0].url).toBe(`${authFetch.baseURL}/users/${user.id}`);
 
         expectTypeOf(getHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
@@ -537,7 +537,7 @@ describe('Fetch client', async () => {
         expectResponseStatus(error.response, 404);
 
         expect(getHandler.requests).toHaveLength(1);
-        expect(getHandler.requests[0].url).toBe(`${authFetch.defaults.baseURL}/users/${user.id}`);
+        expect(getHandler.requests[0].url).toBe(`${authFetch.baseURL}/users/${user.id}`);
 
         expectTypeOf(getHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(getHandler.requests[0].pathParams).toEqual({ userId: user.id });
@@ -704,7 +704,7 @@ describe('Fetch client', async () => {
         expectResponseStatus(response, 204);
 
         expect(deleteHandler.requests).toHaveLength(1);
-        expect(deleteHandler.requests[0].url).toBe(`${authFetch.defaults.baseURL}/users/${user.id}`);
+        expect(deleteHandler.requests[0].url).toBe(`${authFetch.baseURL}/users/${user.id}`);
 
         expectTypeOf(deleteHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(deleteHandler.requests[0].pathParams).toEqual({});
@@ -751,7 +751,7 @@ describe('Fetch client', async () => {
         expectResponseStatus(error.response, 404);
 
         expect(deleteHandler.requests).toHaveLength(1);
-        expect(deleteHandler.requests[0].url).toBe(`${authFetch.defaults.baseURL}/users/${user.id}`);
+        expect(deleteHandler.requests[0].url).toBe(`${authFetch.baseURL}/users/${user.id}`);
 
         expectTypeOf(deleteHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(deleteHandler.requests[0].pathParams).toEqual({ userId: user.id });
@@ -828,9 +828,7 @@ describe('Fetch client', async () => {
         expect(returnedNotifications).toEqual([notification]);
 
         expect(listHandler.requests).toHaveLength(1);
-        expect(listHandler.requests[0].url).toBe(
-          `${notificationFetch.defaults.baseURL}/notifications/${notification.userId}`,
-        );
+        expect(listHandler.requests[0].url).toBe(`${notificationFetch.baseURL}/notifications/${notification.userId}`);
 
         expectTypeOf(listHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(listHandler.requests[0].pathParams).toEqual({ userId: notification.userId });
