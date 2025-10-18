@@ -108,7 +108,7 @@ const fetch = createFetch<Schema>({
 You can also set search params after the fetch instance is created.
 
 ```ts
-fetch.defaults.searchParams.orderBy = 'createdAt:desc';
+fetch.searchParams.orderBy = 'createdAt:desc';
 ```
 
 [`fetch.onRequest`](/docs/zimic-fetch/api/2-fetch.md#fetchonrequest) can also be used to set search params. Use this

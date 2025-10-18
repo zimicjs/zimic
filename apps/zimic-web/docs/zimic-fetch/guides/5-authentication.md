@@ -48,7 +48,7 @@ const fetch = createFetch<Schema>({
 });
 
 // highlight-next-line
-fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
+fetch.headers.authorization = `Bearer ${accessToken}`;
 ```
 
 Learn more about [using default request headers](/docs/zimic-fetch/guides/1-headers.md#using-default-request-headers).
@@ -152,7 +152,7 @@ const fetch = createFetch<Schema>({
         // Set the new access token in the default headers
         const newAuthorization = `Bearer ${accessToken}`;
         // highlight-next-line
-        fetch.defaults.headers.authorization = newAuthorization;
+        fetch.headers.authorization = newAuthorization;
 
         // Clone the original request and update its headers
         const updatedRequest = response.request.clone();
@@ -187,7 +187,7 @@ const loginRequest = await fetch('/auth/login', {
 const { accessToken } = await loginRequest.json();
 
 // Set the authorization header for all requests
-fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
+fetch.headers.authorization = `Bearer ${accessToken}`;
 
 // Make requests authenticated by default
 const request = await fetch('/users', {

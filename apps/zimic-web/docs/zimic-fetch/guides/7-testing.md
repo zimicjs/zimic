@@ -94,7 +94,7 @@ const fetch = createFetch<Schema>({
 
 // highlight-next-line
 const interceptor = createHttpInterceptor<Schema>({
-  baseURL: fetch.defaults.baseURL,
+  baseURL: fetch.baseURL,
 });
 
 await interceptor.start();
