@@ -6,7 +6,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { expectResponseStatus } from '@tests/utils/requests';
 
 import createFetch from '../factory';
-import { FetchDefaults, FetchOptions } from '../types/public';
+import { FetchOptions } from '../types/public';
 import { FetchResponse, FetchRequest } from '../types/requests';
 
 describe('FetchClient > Defaults', () => {
@@ -36,11 +36,9 @@ describe('FetchClient > Defaults', () => {
 
       const fetch = createFetch<Schema>({ baseURL });
 
-      expect(fetch).toMatchObject<FetchDefaults>({
-        baseURL,
-        headers: {},
-        searchParams: {},
-      });
+      expect(fetch.baseURL).toBe(baseURL);
+      expect(fetch.headers).toEqual({});
+      expect(fetch.searchParams).toEqual({});
 
       const response = await fetch('/users', { method: 'GET' });
 
@@ -118,7 +116,9 @@ describe('FetchClient > Defaults', () => {
 
       const fetch = createFetch<Schema>(defaults);
 
-      expect(fetch).toMatchObject<FetchDefaults>(defaults);
+      for (const [key, value] of Object.entries(defaults)) {
+        expect(fetch[key]).toEqual(value);
+      }
 
       const response = await fetch('/users', { method: 'POST' });
 
@@ -193,17 +193,17 @@ describe('FetchClient > Defaults', () => {
 
       const fetch = createFetch<Schema>({ baseURL: otherBaseURL });
 
-      expect(fetch).toMatchObject<FetchDefaults>({
-        baseURL: otherBaseURL,
-        headers: {},
-        searchParams: {},
-      });
+      expect(fetch.baseURL).toBe(otherBaseURL);
+      expect(fetch.headers).toEqual({});
+      expect(fetch.searchParams).toEqual({});
 
       const defaults = {
         baseURL,
         cache: 'no-cache',
         credentials: 'same-origin',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+        },
         searchParams: {
           orderBy: 'name:asc',
           limit: 10,
@@ -235,7 +235,9 @@ describe('FetchClient > Defaults', () => {
       fetch.signal = defaults.signal;
       fetch.duplex = defaults.duplex;
 
-      expect(fetch).toMatchObject<FetchDefaults>(defaults);
+      for (const [key, value] of Object.entries(defaults)) {
+        expect(fetch[key]).toEqual(value);
+      }
 
       const response = await fetch('/users', { method: 'POST' });
 
@@ -307,11 +309,9 @@ describe('FetchClient > Defaults', () => {
         headers: { 'accept-language': 'en' },
       });
 
-      expect(fetch).toMatchObject<FetchDefaults>({
-        baseURL,
-        headers: { 'accept-language': 'en' },
-        searchParams: {},
-      });
+      expect(fetch.baseURL).toBe(baseURL);
+      expect(fetch.headers).toEqual({ 'accept-language': 'en' });
+      expect(fetch.searchParams).toEqual({});
 
       const response = await fetch('/users', {
         method: 'POST',
@@ -374,11 +374,9 @@ describe('FetchClient > Defaults', () => {
         headers: { 'accept-language': 'en' },
       });
 
-      expect(fetch).toMatchObject<FetchDefaults>({
-        baseURL,
-        headers: { 'accept-language': 'en' },
-        searchParams: {},
-      });
+      expect(fetch.baseURL).toBe(baseURL);
+      expect(fetch.headers).toEqual({ 'accept-language': 'en' });
+      expect(fetch.searchParams).toEqual({});
 
       const response = await fetch('/users', {
         method: 'POST',
@@ -441,11 +439,9 @@ describe('FetchClient > Defaults', () => {
         searchParams: { limit: 10 },
       });
 
-      expect(fetch).toMatchObject<FetchDefaults>({
-        baseURL,
-        headers: {},
-        searchParams: { limit: 10 },
-      });
+      expect(fetch.baseURL).toBe(baseURL);
+      expect(fetch.headers).toEqual({});
+      expect(fetch.searchParams).toEqual({ limit: 10 });
 
       const response = await fetch('/users', {
         method: 'GET',
@@ -505,11 +501,9 @@ describe('FetchClient > Defaults', () => {
         searchParams: { limit: 10, username: ['my', 'other'] },
       });
 
-      expect(fetch).toMatchObject<FetchDefaults>({
-        baseURL,
-        headers: {},
-        searchParams: { limit: 10, username: ['my', 'other'] },
-      });
+      expect(fetch.baseURL).toBe(baseURL);
+      expect(fetch.headers).toEqual({});
+      expect(fetch.searchParams).toEqual({ limit: 10, username: ['my', 'other'] });
 
       const response = await fetch('/users', {
         method: 'GET',
