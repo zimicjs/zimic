@@ -5,9 +5,6 @@ import {
   LiteralHttpSchemaPathFromNonLiteral,
   HttpSchema,
   HttpHeaders,
-  HttpHeadersSchema,
-  HttpSearchParamsSchema,
-  HttpMethod,
 } from '@zimic/http';
 import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
 import excludeNonPathParams from '@zimic/utils/url/excludeNonPathParams';
@@ -17,48 +14,22 @@ import FetchResponseError from './errors/FetchResponseError';
 import { FetchInput, FetchOptions, Fetch, FetchDefaults } from './types/public';
 import { FetchRequestConstructor, FetchRequestInit, FetchRequest, FetchResponse } from './types/requests';
 
-class FetchClient<Schema extends HttpSchema>
-  implements Omit<Fetch<Schema>, 'defaults' | 'loose' | 'Request'>, FetchDefaults
-{
+class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loose' | 'Request' | keyof FetchDefaults> {
   fetch: Fetch<Schema>;
 
-  baseURL: string;
-  headers: HttpHeadersSchema.Loose;
-  searchParams: HttpSearchParamsSchema.Loose;
-
-  method?: HttpMethod;
-  body?: FetchDefaults['body'];
-  mode?: FetchDefaults['mode'];
-  cache?: FetchDefaults['cache'];
-  credentials?: FetchDefaults['credentials'];
-  integrity?: FetchDefaults['integrity'];
-  keepalive?: FetchDefaults['keepalive'];
-  priority?: FetchDefaults['priority'];
-  redirect?: FetchDefaults['redirect'];
-  referrer?: FetchDefaults['referrer'];
-  referrerPolicy?: FetchDefaults['referrerPolicy'];
-  signal?: FetchDefaults['signal'];
-  window?: FetchDefaults['window'];
-  duplex?: FetchDefaults['duplex'];
-
-  constructor({ baseURL, headers = {}, searchParams = {}, ...options }: FetchOptions<Schema>) {
+  constructor({ headers = {}, searchParams = {}, ...otherOptions }: FetchOptions<Schema>) {
     this.fetch = this.createFetchFunction();
-
-    this.baseURL = baseURL;
-    this.headers = headers;
-    this.searchParams = searchParams;
-
-    Object.assign(this, options);
-
-    Object.defineProperty(this.fetch, 'defaults', {
-      get: () => this,
-      enumerable: false,
-      configurable: false,
-    });
+    this.fetch.headers = headers;
+    this.fetch.searchParams = searchParams;
+    Object.assign(this.fetch, otherOptions);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.fetch.loose = this.fetch as Fetch<any> as Fetch.Loose;
     this.fetch.Request = this.createRequestClass(this.fetch);
+  }
+
+  get defaults(): FetchDefaults {
+    return this.fetch;
   }
 
   private createFetchFunction() {
