@@ -139,6 +139,19 @@ class HttpHeaders<LooseSchema extends HttpHeadersSchema.Loose = HttpHeadersSchem
     return true;
   }
 
+  /** @see {@link https://zimic.dev/docs/http/api/http-headers#headersassign `headers.assign()` API reference} */
+  assign<OtherSchema extends LooseSchema>(...otherHeaders: HttpHeaders<OtherSchema>[]) {
+    for (const headers of otherHeaders) {
+      for (const headerName of headers.keys()) {
+        super.delete(headerName);
+      }
+
+      for (const [headerName, headerValue] of headers.entries()) {
+        super.append(headerName, headerValue);
+      }
+    }
+  }
+
   /** @see {@link https://zimic.dev/docs/http/api/http-headers#headerstoobject `headers.toObject()` API reference} */
   toObject(): this['_schema'] {
     const object = {} as this['_schema'];

@@ -164,6 +164,19 @@ class HttpFormData<LooseSchema extends HttpFormDataSchema.Loose = HttpFormDataSc
     return true;
   }
 
+  /** @see {@link https://zimic.dev/docs/http/api/http-form-data#formdataassign `formData.assign()` API reference} */
+  assign<OtherSchema extends LooseSchema>(...otherHeaders: HttpFormData<OtherSchema>[]) {
+    for (const headers of otherHeaders) {
+      for (const headerName of headers.keys()) {
+        super.delete(headerName);
+      }
+
+      for (const [headerName, headerValue] of headers.entries()) {
+        super.append(headerName, headerValue);
+      }
+    }
+  }
+
   /** @see {@link https://zimic.dev/docs/http/api/http-form-data#formdatatoobject `formData.toObject()` API reference} */
   toObject() {
     const object = {} as this['_schema'];
