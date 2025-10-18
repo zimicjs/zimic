@@ -5,9 +5,9 @@ import {
   LiteralHttpSchemaPathFromNonLiteral,
   HttpSchema,
   HttpHeaders,
-  HttpMethod,
-  HttpSearchParamsSchema,
   HttpHeadersSchema,
+  HttpSearchParamsSchema,
+  HttpMethod,
 } from '@zimic/http';
 import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
 import excludeNonPathParams from '@zimic/utils/url/excludeNonPathParams';
@@ -22,9 +22,9 @@ class FetchClient<Schema extends HttpSchema>
 {
   fetch: Fetch<Schema>;
 
-  baseURL: FetchDefaults['baseURL'];
-  headers: FetchDefaults['headers'];
-  searchParams: FetchDefaults['searchParams'];
+  baseURL: string;
+  headers: HttpHeadersSchema.Loose;
+  searchParams: HttpSearchParamsSchema.Loose;
 
   method?: HttpMethod;
   body?: FetchDefaults['body'];
@@ -41,14 +41,14 @@ class FetchClient<Schema extends HttpSchema>
   window?: FetchDefaults['window'];
   duplex?: FetchDefaults['duplex'];
 
-  constructor({ baseURL, headers = {}, searchParams = {}, ...otherOptions }: FetchOptions<Schema>) {
+  constructor({ baseURL, headers = {}, searchParams = {}, ...options }: FetchOptions<Schema>) {
     this.fetch = this.createFetchFunction();
 
     this.baseURL = baseURL;
-    this.headers = new HttpHeaders(headers);
-    this.searchParams = new HttpSearchParams(searchParams);
+    this.headers = headers;
+    this.searchParams = searchParams;
 
-    Object.assign(this, otherOptions);
+    Object.assign(this, options);
 
     Object.defineProperty(this.fetch, 'defaults', {
       get: () => this,
@@ -188,91 +188,77 @@ class FetchClient<Schema extends HttpSchema>
       ) {
         let actualInput: URL | globalThis.Request;
 
-        const actualInit = new Proxy({} as typeof init & typeof fetch, {
-          has(target, property) {
-            return Reflect.has(target, property) || Reflect.has(init, property) || Reflect.has(fetch, property);
-          },
+        const actualInit: FetchDefaults = {
+          baseURL: fetch.baseURL,
+          headers: fetch.headers,
+          searchParams: fetch.searchParams,
 
-          get(target, property, receiver) {
-            if (Reflect.has(target, property)) {
-              return Reflect.get(target, property, receiver);
-            } else if (Reflect.has(init, property)) {
-              return Reflect.get(init, property);
-            } else {
-              return Reflect.get(fetch, property) as unknown;
-            }
-          },
+          body: fetch.body,
+          mode: fetch.mode,
+          cache: fetch.cache,
+          credentials: fetch.credentials,
+          integrity: fetch.integrity,
+          keepalive: fetch.keepalive,
+          priority: fetch.priority,
+          redirect: fetch.redirect,
+          referrer: fetch.referrer,
+          referrerPolicy: fetch.referrerPolicy,
+          signal: fetch.signal,
+          window: fetch.window,
+          duplex: fetch.duplex,
 
-          set(target, property, value, receiver) {
-            return Reflect.set(target, property, value, receiver);
-          },
-        });
+          ...init,
+        };
+
+        const headersFromDefaults = new HttpHeaders(fetch.headers);
+        const headersFromInit = new HttpHeaders((init satisfies RequestInit as RequestInit).headers);
 
         let url: URL;
         const baseURL = new URL(actualInit.baseURL);
 
         if (input instanceof globalThis.Request) {
+          // Optimize type checking by narrowing the type of input
           const request = input as globalThis.Request;
           actualInput = request;
-          url = new URL(request.url);
+
+          // Optimize type checking by narrowing the type of headers
+          const headersFromRequest = new HttpHeaders(input.headers as Headers);
+
+          actualInit.headers = {
+            ...headersFromDefaults.toObject(),
+            ...headersFromRequest.toObject(),
+            ...headersFromInit.toObject(),
+          };
+
+          url = new URL(input.url);
         } else {
-          url = input instanceof URL ? input : new URL(joinURL(baseURL, input));
+          actualInit.headers = {
+            ...headersFromDefaults.toObject(),
+            ...headersFromInit.toObject(),
+          };
+
+          url = input instanceof URL ? new URL(input) : new URL(joinURL(baseURL, input));
+
+          const searchParamsFromDefaults = new HttpSearchParams(fetch.searchParams);
+          const searchParamsFromInit = new HttpSearchParams(actualInit.searchParams);
+
+          actualInit.searchParams = {
+            ...searchParamsFromDefaults.toObject(),
+            ...searchParamsFromInit.toObject(),
+          };
+
+          url.search = new HttpSearchParams(actualInit.searchParams).toString();
+
           actualInput = url;
-        }
-
-        const hasCustomHeaders = actualInit.headers !== fetch.headers;
-
-        if (hasCustomHeaders) {
-          const initHeaders = new HttpHeaders<HttpHeadersSchema>(actualInit.headers);
-          actualInit.headers = new HttpHeaders<HttpHeadersSchema>(fetch.headers);
-
-          for (const headerName of initHeaders.keys()) {
-            actualInit.headers.delete(headerName);
-          }
-
-          for (const [headerName, headerValue] of initHeaders.entries()) {
-            actualInit.headers.append(headerName, headerValue);
-          }
-        }
-
-        const hasCustomSearchParams = actualInit.searchParams !== fetch.searchParams;
-
-        if (hasCustomSearchParams) {
-          const initSearchParams = new HttpSearchParams<HttpSearchParamsSchema>(actualInit.searchParams);
-          actualInit.searchParams = new HttpSearchParams<HttpSearchParamsSchema>(fetch.searchParams);
-
-          for (const searchParamName of initSearchParams.keys()) {
-            actualInit.searchParams.delete(searchParamName);
-          }
-
-          for (const [searchParamName, searchParamValue] of initSearchParams.entries()) {
-            actualInit.searchParams.append(searchParamName, searchParamValue);
-          }
-        }
-
-        const searchParamsString = actualInit.searchParams.toString();
-        const shouldOverrideURLSearchParams = url.search !== searchParamsString;
-
-        if (shouldOverrideURLSearchParams) {
-          url = new URL(url);
-          url.search = searchParamsString;
-
-          if (actualInput instanceof globalThis.Request) {
-            actualInput = new globalThis.Request(url, actualInput);
-          } else {
-            actualInput = url;
-          }
         }
 
         super(actualInput, actualInit);
 
+        const baseURLWithoutTrailingSlash = baseURL.toString().replace(/\/$/, '');
+
         this.path = excludeNonPathParams(url)
           .toString()
-          .replace(baseURL.toString().replace(/\/$/, ''), '') as LiteralHttpSchemaPathFromNonLiteral<
-          Schema,
-          Method,
-          Path
-        >;
+          .replace(baseURLWithoutTrailingSlash, '') as LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>;
       }
 
       clone(): Request<Method, Path> {

@@ -93,9 +93,9 @@ export namespace FetchRequestInit {
     /** The HTTP method of the request. */
     method?: HttpMethod;
     /** The headers of the request. */
-    headers?: HttpHeadersInit;
+    headers?: HttpHeadersSchema.Loose;
     /** The search parameters of the request. */
-    searchParams?: HttpSearchParamsInit;
+    searchParams?: HttpSearchParamsSchema.Loose;
     /** The duplex mode of the request. */
     duplex?: 'half';
   }
