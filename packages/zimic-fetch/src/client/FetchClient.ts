@@ -186,7 +186,9 @@ class FetchClient<Schema extends HttpSchema>
         input: FetchInput<Schema, Method, Path>,
         init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
       ) {
-        const initWithDefaults: FetchDefaults = {
+        let actualInput: URL | globalThis.Request;
+
+        const actualInit: FetchDefaults = {
           baseURL: fetch.baseURL,
           headers: fetch.headers,
           searchParams: fetch.searchParams,
@@ -212,26 +214,25 @@ class FetchClient<Schema extends HttpSchema>
         const headersFromInit = new HttpHeaders((init satisfies RequestInit as RequestInit).headers);
 
         let url: URL;
-        const baseURL = new URL(initWithDefaults.baseURL);
+        const baseURL = new URL(actualInit.baseURL);
 
         if (input instanceof globalThis.Request) {
           // Optimize type checking by narrowing the type of input
           const request = input as globalThis.Request;
+          actualInput = request;
 
           // Optimize type checking by narrowing the type of headers
           const headersFromRequest = new HttpHeaders(input.headers as Headers);
 
-          initWithDefaults.headers = {
+          actualInit.headers = {
             ...headersFromDefaults.toObject(),
             ...headersFromRequest.toObject(),
             ...headersFromInit.toObject(),
           };
 
-          super(request, initWithDefaults);
-
           url = new URL(input.url);
         } else {
-          initWithDefaults.headers = {
+          actualInit.headers = {
             ...headersFromDefaults.toObject(),
             ...headersFromInit.toObject(),
           };
@@ -239,17 +240,19 @@ class FetchClient<Schema extends HttpSchema>
           url = input instanceof URL ? new URL(input) : new URL(joinURL(baseURL, input));
 
           const searchParamsFromDefaults = new HttpSearchParams(fetch.searchParams);
-          const searchParamsFromInit = new HttpSearchParams(initWithDefaults.searchParams);
+          const searchParamsFromInit = new HttpSearchParams(actualInit.searchParams);
 
-          initWithDefaults.searchParams = {
+          actualInit.searchParams = {
             ...searchParamsFromDefaults.toObject(),
             ...searchParamsFromInit.toObject(),
           };
 
-          url.search = new HttpSearchParams(initWithDefaults.searchParams).toString();
+          url.search = new HttpSearchParams(actualInit.searchParams).toString();
 
-          super(url, initWithDefaults);
+          actualInput = url;
         }
+
+        super(actualInput, actualInit);
 
         const baseURLWithoutTrailingSlash = baseURL.toString().replace(/\/$/, '');
 
