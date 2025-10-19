@@ -82,8 +82,17 @@ runs:
 
           numberOfPushRetries=$((numberOfPushRetries + 1))
 
-          echo 'Push failed. Retrying...'
+          echo 'Push failed.'
 
+          if git diff --quiet; then
+            echo 'No unstaged changes.'
+          else
+            echo 'Stashing unstaged changes...'
+            git stash --include-untracked
+            git stash drop
+          fi
+
+          echo 'Syncing local branch with remote...'
           git pull
         done
 
@@ -117,10 +126,18 @@ runs:
 
               numberOfPushRetries=$((numberOfPushRetries + 1))
 
-              echo 'Push failed. Retrying...'
+              echo 'Push failed.'
+               
+              if git diff --quiet; then
+                echo 'No unstaged changes.'
+              else
+                echo 'Stashing unstaged changes...'
+                git stash --include-untracked
+                git stash drop
+              fi
 
+              echo 'Syncing local branch with remote...'
               git reset --hard origin/$branch
-              git pull
             done
 
             git checkout -
