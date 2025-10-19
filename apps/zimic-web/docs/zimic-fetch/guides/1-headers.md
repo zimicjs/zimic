@@ -64,8 +64,8 @@ const response = await fetch('/users', {
 
 ### Using default request headers
 
-A [fetch instance](/docs/zimic-fetch/api/2-fetch.md) can have [defaults](/docs/zimic-fetch/api/2-fetch.md#fetchdefaults)
-that are applied to all requests. These include headers:
+A [fetch instance](/docs/zimic-fetch/api/2-fetch.md) can have
+[defaults](/docs/zimic-fetch/api/2-fetch.md#fetch-defaults) that are applied to all requests. These include headers:
 
 ```ts
 import { createFetch } from '@zimic/fetch';

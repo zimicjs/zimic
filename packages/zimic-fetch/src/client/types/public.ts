@@ -37,8 +37,8 @@ export interface Fetch<Schema extends HttpSchema>
   ): Promise<FetchResponse<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, false, Redirect>>;
 
   /**
-   * @deprecated Considering accessing the default options directly on the fetch instance.
-   * @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchdefaults `fetch.defaults`}
+   * @deprecated Consider accessing the default options directly from the fetch instance.
+   * @see {@link https://zimic.dev/docs/fetch/api/fetch#fetch-defaults `fetch` defaults}
    */
   defaults: FetchDefaults;
 

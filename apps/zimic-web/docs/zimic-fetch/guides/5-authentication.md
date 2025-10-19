@@ -36,7 +36,7 @@ Learn more about [using request headers](/docs/zimic-fetch/guides/1-headers.md#u
 
 ### Using defaults
 
-A fetch instance can have [default options](/docs/zimic-fetch/api/2-fetch.md#fetchdefaults). These are useful for
+A fetch instance can have [default options](/docs/zimic-fetch/api/2-fetch.md#fetch-defaults). These are useful for
 configuring common headers and other options to authenticate all requests, without having to manually set them for each
 request.
 
@@ -179,28 +179,31 @@ they expire.
 
 ```ts
 // Authenticate
-const loginRequest = await fetch('/auth/login', {
+const loginResponse = await fetch('/auth/login', {
   method: 'POST',
   headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ username: 'me', password: 'password' }),
 });
-const { accessToken } = await loginRequest.json();
+
+if (!loginResponse.ok) {
+  throw loginResponse.error;
+}
+
+const { accessToken } = await loginResponse.json();
 
 // Set the authorization header for all requests
 fetch.headers.authorization = `Bearer ${accessToken}`;
 
 // Make requests authenticated by default
-const request = await fetch('/users', {
+const response = await fetch('/users', {
   method: 'GET',
   searchParams: { query: 'u' },
 });
-
-const users = await request.json(); // User[]
 ```
 
-:::note
+:::tip NOTE
 
-The example in this section is a simplified implementation. In a real-world application, you should tailor your code to
-the behavior of your API, such as error cods, response formats, and authentication methods.
+The examples in this section are simplified for demonstration purposes. In a real-world application, you should tailor
+your code to the behavior of your API, such as error codes, response formats, and authentication methods.
 
 :::

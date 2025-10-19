@@ -10,7 +10,7 @@ The result of [`createFetch`](/docs/zimic-fetch/api/1-create-fetch.md) is a fetc
 mostly compatible with the native [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API).
 
 Requests sent by the fetch instance have their URL automatically prefixed with the base URL of the instance.
-[Default options](#fetchdefaults) are also applied to the requests, if provided.
+[Default options](#fetch-defaults) are also applied to the requests, if provided.
 
 ```ts
 fetch(input);
@@ -104,14 +104,11 @@ const users = await response.json();
 return users; // User[]
 ```
 
-## `fetch.defaults`
+## `fetch` defaults
 
-The default options for each request sent by the fetch instance.
-
-**Type**: `FetchDefaults`
-
-`fetch.defaults` inherits from the native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit)
-interface, with the following additional properties:
+Fetch instances inherit from the native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit)
+interface and can have default options applied to all requests made through them. On top of the native properties in
+`RequestInit`, fetch instance also accept:
 
 - **baseURL**: `string | undefined`
 
@@ -151,12 +148,28 @@ type Schema = HttpSchema<{
 
 const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
-  headers: { 'accept-language': 'en' },
+  // Setting defaults when creating the fetch instance
+  // highlight-next-line
+  headers: {
+    'accept-language': 'en',
+    'cache-control': 'no-cache',
+  },
 });
 
-//  highlight-next-line
+// Somewhere else in the code, you can update the defaults
+// highlight-next-line
 fetch.headers.authorization = `Bearer ${accessToken}`;
 ```
+
+:::info INFO: <span>Setting defaults before `@zimic/fetch@1.2.0`</span>
+
+Up to `@zimic/fetch@1.1.x`, the default options were available under the `fetch.defaults` property. Starting from 1.2.0,
+you can access them directly on the fetch instance (e.g., `fetch.headers` instead of `fetch.defaults.headers`).
+
+`fetch.defaults` is still available for backward compatibility, but it is deprecated and will be removed in the next
+major release.
+
+:::
 
 **Related**:
 
