@@ -62,6 +62,11 @@ export type HttpRequestHandlerResponseDeclarationFactory<
   request: Omit<HttpInterceptorRequest<Path, MethodSchema>, 'response'>,
 ) => PossiblePromise<HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>>;
 
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerdelay `handler.delay()` API reference} */
+export type HttpRequestHandlerResponseDelayFactory<Path extends string, MethodSchema extends HttpMethodSchema> = (
+  request: Omit<HttpInterceptorRequest<Path, MethodSchema>, 'response'>,
+) => PossiblePromise<number>;
+
 /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrequests `handler.requests` API reference} */
 export interface HttpInterceptorRequest<Path extends string, MethodSchema extends HttpMethodSchema>
   extends Omit<HttpRequest, keyof Body | 'headers' | 'clone'> {

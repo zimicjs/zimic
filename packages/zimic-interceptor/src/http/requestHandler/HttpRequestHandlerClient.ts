@@ -12,9 +12,11 @@ import {
 import blobEquals from '@zimic/utils/data/blobEquals';
 import jsonContains from '@zimic/utils/data/jsonContains';
 import jsonEquals from '@zimic/utils/data/jsonEquals';
+import waitForDelay from '@zimic/utils/time/waitForDelay';
 import { Default, Range } from '@zimic/utils/types';
 
 import { convertArrayBufferToBlob, convertReadableStreamToBlob } from '@/utils/data';
+import { randomInt } from '@/utils/numbers';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import DisabledRequestSavingError from './errors/DisabledRequestSavingError';
@@ -27,6 +29,7 @@ import {
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
+  HttpRequestHandlerResponseDelayFactory,
   InterceptedHttpInterceptorRequest,
 } from './types/requests';
 import {
@@ -72,6 +75,11 @@ class HttpRequestHandlerClient<
     StatusCode
   >;
 
+  private responseDelay?:
+    | number
+    | Range<number>
+    | HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>;
+
   constructor(
     private interceptor: HttpInterceptorClient<Schema>,
     public method: Method,
@@ -81,6 +89,18 @@ class HttpRequestHandlerClient<
 
   with(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>): this {
     this.restrictions.push(restriction);
+    return this;
+  }
+
+  delay(
+    firstDelayParameter: number | HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>,
+    secondDelayParameter?: number,
+  ): this {
+    if (secondDelayParameter === undefined) {
+      this.responseDelay = firstDelayParameter;
+    } else {
+      this.responseDelay = { min: firstDelayParameter as number, max: secondDelayParameter };
+    }
     return this;
   }
 
@@ -159,6 +179,7 @@ class HttpRequestHandlerClient<
     this.clearInterceptedRequests();
 
     this.createResponseDeclaration = undefined;
+    this.responseDelay = undefined;
 
     return this;
   }
@@ -407,11 +428,36 @@ class HttpRequestHandlerClient<
     return typeof restriction === 'function';
   }
 
+  private async calculateDelayInMilliseconds(
+    request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
+  ): Promise<number> {
+    if (this.responseDelay === undefined) {
+      return 0;
+    }
+
+    if (typeof this.responseDelay === 'number') {
+      return this.responseDelay;
+    }
+
+    if (typeof this.responseDelay === 'function') {
+      const delay = await this.responseDelay(request);
+      return delay;
+    }
+
+    return randomInt(this.responseDelay.min, this.responseDelay.max + 1);
+  }
+
   async applyResponseDeclaration(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
   ): Promise<HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>> {
     if (!this.createResponseDeclaration) {
       throw new NoResponseDefinitionError();
+    }
+
+    const delayInMilliseconds = await this.calculateDelayInMilliseconds(request);
+
+    if (delayInMilliseconds > 0) {
+      await waitForDelay(delayInMilliseconds);
     }
 
     const appliedDeclaration = await this.createResponseDeclaration(request);

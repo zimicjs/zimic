@@ -142,6 +142,72 @@ asynchronous nature of remote interceptors, make sure to await the handler befor
 
 - [Restrictions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#restrictions)
 
+## `handler.delay()`
+
+Declares a delay to apply before responding to matched intercepted requests.
+
+The delay is applied after the request matches the handler but before the response is created. This is useful for
+simulating network latency or testing timeout behavior.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+handler.delay(delayInMilliseconds);
+handler.delay(minDelayInMilliseconds, maxDelayInMilliseconds);
+handler.delay((request) => delayInMilliseconds);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await handler.delay(delayInMilliseconds);
+await handler.delay(minDelayInMilliseconds, maxDelayInMilliseconds);
+await handler.delay((request) => delayInMilliseconds);
+```
+
+  </TabItem>
+</Tabs>
+
+**Arguments**:
+
+1. **delayInMilliseconds**: `number | HttpRequestHandlerResponseDelayFactory<MethodSchema>`
+
+   The delay to apply before responding, in milliseconds. It can be:
+   - A **fixed number**: The same delay will be applied to all matched requests.
+   - A **factory function**: A function that receives the intercepted request and returns the delay in milliseconds,
+     either synchronously or asynchronously. This allows for dynamic delays based on the request.
+
+2. **maxDelayInMilliseconds** (optional): `number`
+
+   If provided along with the first argument (which must be a number in this case), the delay will be a random value
+   between `delayInMilliseconds` (minimum) and `maxDelayInMilliseconds` (maximum), inclusive.
+
+**Returns**: `HttpRequestHandler<Method, Path, StatusCode>`
+
+The same handler, now including the delay configuration.
+
+**Examples**:
+
+```ts
+// Fixed delay
+interceptor.get('/users').delay(200).respond({ status: 200, body: [] });
+
+// Random delay between 100ms and 500ms
+interceptor.get('/users').delay(100, 500).respond({ status: 200, body: [] });
+
+// Computed delay based on request
+interceptor
+  .get('/users')
+  .delay((request) => {
+    const isSlow = request.searchParams.get('slow') === 'true';
+    return isSlow ? 1000 : 0;
+  })
+  .respond({ status: 200, body: [] });
+```
+
 ## `handler.respond()`
 
 Declares a response to return for matched intercepted requests.

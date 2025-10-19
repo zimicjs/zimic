@@ -12,6 +12,7 @@ import {
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
+  HttpRequestHandlerResponseDelayFactory,
   InterceptedHttpInterceptorRequest,
 } from './types/requests';
 import { HttpRequestHandlerRestriction } from './types/restrictions';
@@ -72,6 +73,14 @@ class RemoteHttpRequestHandler<
 
   with(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>): this {
     this.client.with(restriction);
+    return this.unsynced;
+  }
+
+  delay(
+    firstDelayParameter: number | HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>,
+    secondDelayParameter?: number,
+  ): this {
+    this.client.delay(firstDelayParameter, secondDelayParameter);
     return this.unsynced;
   }
 
