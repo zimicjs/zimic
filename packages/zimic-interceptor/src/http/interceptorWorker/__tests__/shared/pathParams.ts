@@ -4,7 +4,7 @@ import { PossiblePromise } from '@zimic/utils/types';
 import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
 import joinURL from '@zimic/utils/url/joinURL';
 import { DuplicatedPathParamError } from '@zimic/utils/url/validatePathParams';
-import { afterAll, beforeAll, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
 import { expectBypassedResponse } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptorWorker } from '@tests/utils/interceptors';
@@ -39,7 +39,9 @@ export function declarePathParamsHttpInterceptorWorkerTests(options: SharedHttpI
     if (defaultWorkerOptions.type === 'remote') {
       await startServer?.();
     }
+  });
 
+  beforeEach(async () => {
     baseURL = await getBaseURL(defaultWorkerOptions.type);
 
     workerOptions =
