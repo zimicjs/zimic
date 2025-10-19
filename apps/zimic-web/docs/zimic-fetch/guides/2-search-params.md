@@ -92,8 +92,9 @@ const response = await fetch(url, { method: 'GET' });
 
 ### Setting default request search params
 
-A [fetch instance](/docs/zimic-fetch/api/2-fetch.md) can have [defaults](/docs/zimic-fetch/api/2-fetch.md#fetchdefaults)
-that are applied to all requests. These include search params:
+A [fetch instance](/docs/zimic-fetch/api/2-fetch.md) can have
+[defaults](/docs/zimic-fetch/api/2-fetch.md#fetch-defaults) that are applied to all requests. These include search
+params:
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -108,7 +109,7 @@ const fetch = createFetch<Schema>({
 You can also set search params after the fetch instance is created.
 
 ```ts
-fetch.defaults.searchParams.orderBy = 'createdAt:desc';
+fetch.searchParams.orderBy = 'createdAt:desc';
 ```
 
 [`fetch.onRequest`](/docs/zimic-fetch/api/2-fetch.md#fetchonrequest) can also be used to set search params. Use this
