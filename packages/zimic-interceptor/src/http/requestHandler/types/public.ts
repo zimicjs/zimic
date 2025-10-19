@@ -11,7 +11,6 @@ import HttpRequestHandlerClient from '../HttpRequestHandlerClient';
 import {
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
-  HttpRequestHandlerDelayDeclaration,
   InterceptedHttpInterceptorRequest,
 } from './requests';
 import { HttpRequestHandlerRestriction } from './restrictions';
@@ -64,9 +63,6 @@ export interface LocalHttpRequestHandler<
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ) => LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerdelay `handler.delay()` API reference} */
-  delay: (declaration: HttpRequestHandlerDelayDeclaration<Path, Default<Schema[Path][Method]>>) => this;
-
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes `handler.times()` API reference} */
   times: ((numberOfRequests: number) => this) & ((minNumberOfRequests: number, maxNumberOfRequests: number) => this);
 
@@ -109,11 +105,6 @@ export interface SyncedRemoteHttpRequestHandler<
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
-
-  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerdelay `handler.delay()` API reference} */
-  delay: (
-    declaration: HttpRequestHandlerDelayDeclaration<Path, Default<Schema[Path][Method]>>,
-  ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes `handler.times()` API reference} */
   times: ((numberOfRequests: number) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>) &
