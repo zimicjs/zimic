@@ -48,8 +48,8 @@ correct, minimal, high-quality changes and review proposed modifications effecti
   builds of their dependencies; linting depends on type checks to avoid false positives.
 - Package-level scripts often pair `test` (interactive) with `test:turbo` (CI + coverage). Coverage required to remain
   100% for core packages; never lower thresholds; add or adjust tests instead.
-- Avoid editing generated declaration files (`index.d.ts`, `http.d.ts`, etc.), except the top-level entry points; ;
-  change source and rebuild.
+- Avoid editing generated declaration files (`index.d.ts`, `http.d.ts`, etc.), except the top-level entry points; change
+  source and rebuild.
 
 ## Testing Conventions
 
@@ -73,9 +73,9 @@ correct, minimal, high-quality changes and review proposed modifications effecti
 
 - Most resources should be compatible with both Node.js and browser environments; ensure new behavior considers both
   environments and both platforms (Node.js vs browser);
-- Local and remove interceptors have different implementations, but share similar public APIs and behavior; ensure that
-  tests are written in a way that is compatible with both implementations; also ensure that tests verify both
-  implementations with little to no distinction;
+- In `@zimic/interceptor`, local and remote interceptors have different implementations, but share similar public APIs
+  and behavior; ensure that tests are written in a way that is compatible with both implementations; also ensure that
+  tests verify both implementations with little to no distinction;
 - Remote mode may spin up an interceptor server; test helpers manage lifecycle (`createInternalInterceptorServer`,
   `startServer/stopServer` callbacks).
 
