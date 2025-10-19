@@ -747,6 +747,17 @@ describe('HttpFormData', async () => {
       expect(formData.toObject()).toEqual({ file });
       expect(otherFormData.toObject()).toEqual({});
     });
+
+    it('should not change the target form data when assigning it to itself', () => {
+      const formData = new HttpFormData<{ file?: File }>();
+      formData.set('file', file);
+
+      expect(formData.toObject()).toEqual({ file });
+
+      formData.assign(formData);
+
+      expect(formData.toObject()).toEqual({ file });
+    });
   });
 
   describe('Types', () => {

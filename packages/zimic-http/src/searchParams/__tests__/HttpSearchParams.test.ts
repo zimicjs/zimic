@@ -633,6 +633,28 @@ describe('HttpSearchParams', () => {
       expect(searchParams.toObject()).toEqual({ names: 'User1' });
       expect(otherSearchParams.toObject()).toEqual({});
     });
+
+    it('should not change the target search params when assigning itself', () => {
+      const searchParams = new HttpSearchParams<{
+        names?: string[];
+        page?: `${number}`;
+      }>({
+        names: ['User1', 'User2'],
+        page: '1',
+      });
+
+      expect(searchParams.toObject()).toEqual({
+        names: ['User1', 'User2'],
+        page: '1',
+      });
+
+      searchParams.assign(searchParams);
+
+      expect(searchParams.toObject()).toEqual({
+        names: ['User1', 'User2'],
+        page: '1',
+      });
+    });
   });
 
   describe('Object conversion', () => {

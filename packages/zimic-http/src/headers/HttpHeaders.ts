@@ -142,6 +142,10 @@ class HttpHeaders<LooseSchema extends HttpHeadersSchema.Loose = HttpHeadersSchem
   /** @see {@link https://zimic.dev/docs/http/api/http-headers#headersassign `headers.assign()` API reference} */
   assign<OtherSchema extends LooseSchema>(...otherHeadersArray: HttpHeaders<OtherSchema>[]) {
     for (const otherHeaders of otherHeadersArray) {
+      if (this === (otherHeaders as unknown)) {
+        continue;
+      }
+
       for (const headerName of otherHeaders.keys()) {
         super.delete(headerName);
       }

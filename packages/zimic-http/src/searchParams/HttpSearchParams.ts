@@ -163,6 +163,10 @@ class HttpSearchParams<
   /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamsassign `searchParams.assign()` API reference} */
   assign<OtherSchema extends LooseSchema>(...otherParamsArray: HttpSearchParams<OtherSchema>[]) {
     for (const otherParams of otherParamsArray) {
+      if (this === (otherParams as unknown)) {
+        continue;
+      }
+
       for (const paramName of otherParams.keys()) {
         super.delete(paramName);
       }

@@ -169,6 +169,10 @@ class HttpFormData<LooseSchema extends HttpFormDataSchema.Loose = HttpFormDataSc
   /** @see {@link https://zimic.dev/docs/http/api/http-form-data#formdataassign `formData.assign()` API reference} */
   assign<OtherSchema extends LooseSchema>(...otherDataArray: HttpFormData<OtherSchema>[]) {
     for (const otherData of otherDataArray) {
+      if (this === (otherData as unknown)) {
+        continue;
+      }
+
       for (const fieldName of otherData.keys()) {
         super.delete(fieldName);
       }

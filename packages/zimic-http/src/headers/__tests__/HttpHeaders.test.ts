@@ -627,6 +627,18 @@ describe('HttpHeaders', () => {
       expect(headers.toObject()).toEqual({ accept: '*/*' });
       expect(otherHeaders.toObject()).toEqual({});
     });
+
+    it('should not change the target headers if assigned to itself', () => {
+      const headers = new HttpHeaders<{
+        accept?: string;
+      }>({ accept: '*/*' });
+
+      expect(headers.toObject()).toEqual({ accept: '*/*' });
+
+      headers.assign(headers);
+
+      expect(headers.toObject()).toEqual({ accept: '*/*' });
+    });
   });
 
   describe('Object conversion', () => {
