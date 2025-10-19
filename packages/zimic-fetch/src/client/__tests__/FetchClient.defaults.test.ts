@@ -25,14 +25,19 @@ describe('FetchClient > Defaults', () => {
   it('should support creating a fetch client without defaults', async () => {
     type Schema = HttpSchema<{
       '/users': {
-        GET: {
-          response: { 200: { body: User[] } };
+        POST: {
+          request: {
+            headers?: { 'content-type': 'application/json' };
+            searchParams?: { orderBy?: 'name:asc'; limit?: number; full?: boolean };
+            body?: { name: string };
+          };
+          response: { 200: { body: User } };
         };
       };
     }>;
 
     await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
-      await interceptor.get('/users').respond({ status: 200, body: users }).times(1);
+      await interceptor.post('/users').respond({ status: 200, body: users[0] }).times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
 
@@ -53,22 +58,60 @@ describe('FetchClient > Defaults', () => {
       expect(fetch.window).toBe(undefined);
       expect(fetch.duplex).toBe(undefined);
 
-      const response = await fetch('/users', { method: 'GET' });
+      const requestOptions = {
+        baseURL,
+        headers: { 'content-type': 'application/json' as const },
+        searchParams: { orderBy: 'name:asc' as const, limit: 10, full: true },
+        body: JSON.stringify({ name: 'User 1' }),
+        mode: 'cors',
+        cache: 'no-cache',
+        credentials: 'same-origin',
+        integrity: '',
+        keepalive: true,
+        priority: 'high',
+        redirect: 'follow',
+        referrer: 'about:client',
+        referrerPolicy: 'origin',
+        signal: new AbortController().signal,
+        window: null,
+        duplex: 'half',
+      } satisfies FetchOptions<Schema>;
+
+      const response = await fetch('/users', {
+        method: 'POST',
+        ...requestOptions,
+      });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
       expectResponseStatus(response, 200);
 
-      expect(await response.json()).toEqual(users);
+      expect(await response.json()).toEqual(users[0]);
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
 
-      expect(response.url).toBe(joinURL(baseURL, '/users'));
+      expect(response.url).toBe(
+        joinURL(baseURL, `/users?orderBy=${encodeURIComponent('name:asc')}&limit=10&full=true`),
+      );
 
       expect(response.request).toBeInstanceOf(Request);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
-      expect(response.request.url).toBe(joinURL(baseURL, '/users'));
+      expect(response.request.url).toBe(
+        joinURL(baseURL, `/users?orderBy=${encodeURIComponent('name:asc')}&limit=10&full=true`),
+      );
+
+      expect(response.request.cache).toBe(requestOptions.cache);
+      expect(response.request.headers.get('content-type')).toBe(requestOptions.headers['content-type']);
+      expect(response.request.credentials).toBe(requestOptions.credentials);
+      expect(await response.request.text()).toBe(requestOptions.body);
+      expect(response.request.integrity).toBe(requestOptions.integrity);
+      expect(response.request.keepalive).toBe(requestOptions.keepalive);
+      expect(response.request.mode).toBe(requestOptions.mode);
+      expect(response.request.redirect).toBe(requestOptions.redirect);
+      expect(response.request.referrer).toBe(requestOptions.referrer);
+      expect(response.request.referrerPolicy).toBe(requestOptions.referrerPolicy);
+      expect(response.request.signal).toBeInstanceOf(AbortSignal);
     });
   });
 
