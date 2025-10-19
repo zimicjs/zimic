@@ -273,6 +273,34 @@ headers.contains(otherHeaders);
 
 `true` if all headers from `otherHeaders` are present in the current headers, `false` otherwise.
 
+## `headers.assign()`
+
+Assigns another `HttpHeaders` instance to the current instance, similarly to
+[`Object.assign()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object/assign). Only the
+instance where this method is called will be modified.
+
+```ts
+headers.assign(otherHeaders);
+```
+
+**Returns**: `void`
+
+```ts
+const headers = new HttpHeaders({
+  accept: '*/*',
+  'content-type': 'application/json',
+});
+
+const otherHeaders = new HttpHeaders({
+  'content-type': 'text/html',
+});
+
+headers.assign(otherHeaders);
+
+console.log(headers.get('accept')); // '*/*'
+console.log(headers.get('content-type')); // 'text/html'
+```
+
 ## `headers.toObject()`
 
 Converts an `HttpHeaders` instance to a plain object. This method is useful for serialization and debugging purposes.

@@ -284,6 +284,37 @@ formData.contains(otherFormData);
 
 `true` if the current form data contains all keys and values of the other form data, `false` otherwise.
 
+## `formData.assign()`
+
+Assigns another `HttpFormData` instance to the current instance, similarly to
+[`Object.assign()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object/assign). Only the
+instance where this method is called will be modified.
+
+```ts
+formData.assign(otherFormData);
+```
+
+**Returns**: `void`
+
+```ts
+const formData = new HttpFormData<{
+  title: string;
+  content: string;
+}>();
+formData.set('title', 'My title');
+formData.set('content', 'Old content');
+
+const otherFormData = new HttpFormData<{
+  content: string;
+}>();
+otherFormData.set('content', 'New content');
+
+formData.assign(otherFormData);
+
+console.log(formData.get('title')); // 'My title'
+console.log(formData.get('content')); // 'New content'
+```
+
 ## `formData.toObject()`
 
 Converts the `HttpFormData` instance to a plain object. This method is useful for serialization and debugging purposes.
