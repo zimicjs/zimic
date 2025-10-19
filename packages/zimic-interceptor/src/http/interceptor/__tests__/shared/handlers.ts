@@ -155,10 +155,7 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
         expect(handler.requests).toHaveLength(0);
 
         await usingIgnoredConsole(['error', 'warn'], async (console) => {
-          const request = new Request(joinURL(baseURL, '/users'), {
-            method,
-            headers: { 'cache-control': 'no-store' },
-          });
+          const request = new Request(joinURL(baseURL, '/users'), { method });
           const responsePromise = fetch(request);
 
           if (overridesPreflightResponse) {

@@ -136,10 +136,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-        let responsePromise = fetch(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          headers: { 'cache-control': 'no-store' },
-        });
+        let responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(1);
@@ -293,10 +290,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-        const responsePromise = fetch(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          headers: { 'cache-control': 'no-store' },
-        });
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(1 * 3);
@@ -329,10 +323,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-        const responsePromise = fetch(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          headers: { 'cache-control': 'no-store' },
-        });
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(1);
@@ -470,10 +461,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         await promiseIfRemote(handlers[1].checkTimes(), handlers[1]);
         await promiseIfRemote(handlers[2].checkTimes(), handlers[2]);
 
-        const responsePromise = fetch(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          headers: { 'cache-control': 'no-store' },
-        });
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handlers[0].requests).toHaveLength(1);
@@ -597,10 +585,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         searchParams.set('value', 'unknown');
 
-        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-          method: 'GET',
-          headers: { 'cache-control': 'no-store' },
-        });
+        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handlers[0].requests).toHaveLength(1);
@@ -729,10 +714,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-        responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-          method: 'GET',
-          headers: { 'cache-control': 'no-store' },
-        });
+        responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handlers[0].requests).toHaveLength(1);
@@ -799,10 +781,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
           expectedNumberOfRequests: 1,
         });
 
-        const responsePromise = fetch(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          headers: { 'cache-control': 'no-store' },
-        });
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(0);
@@ -848,20 +827,14 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
           expectedNumberOfRequests: 1,
         });
 
-        let responsePromise = fetch(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          headers: { 'cache-control': 'no-store' },
-        });
+        let responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(0);
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-        responsePromise = fetch(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          headers: { 'cache-control': 'no-store' },
-        });
+        responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(0);
@@ -892,10 +865,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
           expectedNumberOfRequests: 1,
         });
 
-        let responsePromise = fetch(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          headers: { 'cache-control': 'no-store' },
-        });
+        let responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(0);
@@ -928,20 +898,14 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         const searchParams = new HttpSearchParams({ value: '1' });
 
-        responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-          method: 'GET',
-          headers: { 'cache-control': 'no-store' },
-        });
+        responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(0);
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-        responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-          method: 'GET',
-          headers: { 'cache-control': 'no-store' },
-        });
+        responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(0);
@@ -965,10 +929,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-        const responsePromise = fetch(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          headers: { 'cache-control': 'no-store' },
-        });
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(0);
@@ -1000,10 +961,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
           expectedNumberOfRequests: 1,
         });
 
-        const responsePromise = fetch(joinURL(baseURL, '/users/other'), {
-          method: 'GET',
-          headers: { 'cache-control': 'no-store' },
-        });
+        const responsePromise = fetch(joinURL(baseURL, '/users/other'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(0);

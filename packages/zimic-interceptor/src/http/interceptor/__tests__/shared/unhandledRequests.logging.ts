@@ -188,10 +188,7 @@ export function declareUnhandledRequestLoggingHttpInterceptorTests(options: Runt
             expect(handler.requests).toHaveLength(0);
 
             await usingIgnoredConsole(['warn', 'error'], async (console) => {
-              const response = await fetch(joinURL(baseURL, '/users'), {
-                method: 'GET',
-                headers: { 'x-value': '1' },
-              });
+              const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET', headers: { 'x-value': '1' } });
               expect(response.status).toBe(204);
 
               expect(handler.requests).toHaveLength(1);
@@ -327,10 +324,7 @@ export function declareUnhandledRequestLoggingHttpInterceptorTests(options: Runt
 
             await promiseIfRemote(handler.clear(), interceptor);
 
-            const request = new Request(joinURL(baseURL, '/users'), {
-              method: 'GET',
-              headers: { 'cache-control': 'no-store' },
-            });
+            const request = new Request(joinURL(baseURL, '/users'), { method: 'GET' });
             const responsePromise = fetch(request);
             await expectFetchError(responsePromise);
 
@@ -376,10 +370,7 @@ export function declareUnhandledRequestLoggingHttpInterceptorTests(options: Runt
 
             const request = new Request(joinURL(baseURL, '/users'), {
               method: 'POST',
-              headers: {
-                'content-type': 'application/json',
-                'cache-control': 'no-store',
-              },
+              headers: { 'content-type': 'application/json' },
               body: JSON.stringify({ message: 'ok' }),
             });
             const requestClone = request.clone();
@@ -418,10 +409,7 @@ export function declareUnhandledRequestLoggingHttpInterceptorTests(options: Runt
           await usingIgnoredConsole(['warn', 'error'], async (console) => {
             const searchParams = new HttpSearchParams({ value: '1' });
 
-            const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-              method: 'GET',
-              headers: { 'cache-control': 'no-store' },
-            });
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
             expect(response.status).toBe(204);
 
             expect(handler.requests).toHaveLength(1);
@@ -432,10 +420,7 @@ export function declareUnhandledRequestLoggingHttpInterceptorTests(options: Runt
             expect(console.warn).toHaveBeenCalledTimes(0);
             expect(console.error).toHaveBeenCalledTimes(0);
 
-            const request = new Request(joinURL(baseURL, '/users'), {
-              method: 'GET',
-              headers: { 'cache-control': 'no-store' },
-            });
+            const request = new Request(joinURL(baseURL, '/users'), { method: 'GET' });
             const responsePromise = fetch(request);
             await expectFetchError(responsePromise);
 
@@ -473,10 +458,7 @@ export function declareUnhandledRequestLoggingHttpInterceptorTests(options: Runt
             expect(console.warn).toHaveBeenCalledTimes(0);
             expect(console.error).toHaveBeenCalledTimes(0);
 
-            const request = new Request(joinURL(baseURL, '/users/other'), {
-              method: 'GET',
-              headers: { 'cache-control': 'no-store' },
-            });
+            const request = new Request(joinURL(baseURL, '/users/other'), { method: 'GET' });
             const responsePromise = fetch(request);
 
             await expectFetchError(responsePromise);
@@ -521,10 +503,7 @@ export function declareUnhandledRequestLoggingHttpInterceptorTests(options: Runt
               arrayWithMultipleValues: ['value-1', 'value-2'],
             });
 
-            const request = new Request(joinURL(baseURL, `/users/other?${searchParams.toString()}`), {
-              method: 'GET',
-              headers: { 'cache-control': 'no-store' },
-            });
+            const request = new Request(joinURL(baseURL, `/users/other?${searchParams.toString()}`), { method: 'GET' });
             const responsePromise = fetch(request);
 
             await expectFetchError(responsePromise);
@@ -722,10 +701,7 @@ export function declareUnhandledRequestLoggingHttpInterceptorTests(options: Runt
           expect(console.warn).toHaveBeenCalledTimes(0);
           expect(console.error).toHaveBeenCalledTimes(0);
 
-          const request = new Request(joinURL(baseURL, '/users'), {
-            method: 'GET',
-            headers: { 'cache-control': 'no-store' },
-          });
+          const request = new Request(joinURL(baseURL, '/users'), { method: 'GET' });
           let responsePromise = fetch(request);
           await expectFetchError(responsePromise);
 
@@ -783,10 +759,7 @@ export function declareUnhandledRequestLoggingHttpInterceptorTests(options: Runt
           expect(console.warn).toHaveBeenCalledTimes(0);
           expect(console.error).toHaveBeenCalledTimes(0);
 
-          const request = new Request(joinURL(baseURL, '/users/unknown'), {
-            method: 'GET',
-            headers: { 'cache-control': 'no-store' },
-          });
+          const request = new Request(joinURL(baseURL, '/users/unknown'), { method: 'GET' });
           const responsePromise = fetch(request);
 
           await expectFetchError(responsePromise);
@@ -815,10 +788,7 @@ export function declareUnhandledRequestLoggingHttpInterceptorTests(options: Runt
           expect(console.warn).toHaveBeenCalledTimes(0);
           expect(console.error).toHaveBeenCalledTimes(0);
 
-          const request = new Request(joinURL(baseURL, '/users/unknown'), {
-            method: 'GET',
-            headers: { 'cache-control': 'no-store' },
-          });
+          const request = new Request(joinURL(baseURL, '/users/unknown'), { method: 'GET' });
           const responsePromise = fetch(request);
 
           await expectFetchError(responsePromise);

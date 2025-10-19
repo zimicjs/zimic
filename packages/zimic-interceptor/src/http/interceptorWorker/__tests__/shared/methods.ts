@@ -118,10 +118,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         expect(emptySpiedRequestHandler).not.toHaveBeenCalled();
 
-        const responsePromise = fetch(baseURL, {
-          method,
-          headers: { 'cache-control': 'no-store' },
-        });
+        const responsePromise = fetch(baseURL, { method });
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);

@@ -32,6 +32,7 @@ export default defineConfig({
           include: ['./{src,tests,scripts}/**/*.test.ts', './{src,tests,scripts}/**/*.browser.test.ts'],
           exclude: ['**/*.node.test.ts'],
           globalSetup: './tests/setup/global/browser.ts',
+          setupFiles: ['./tests/setup/browser.ts'],
           browser: {
             instances: [{ browser: 'chromium' }],
             provider: 'playwright',

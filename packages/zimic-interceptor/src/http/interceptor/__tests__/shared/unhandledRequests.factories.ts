@@ -69,10 +69,7 @@ export function declareUnhandledRequestFactoriesHttpInterceptorTests(
         searchParams.set('value', '2');
         searchParams.set('name', 'User 1');
 
-        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-          method: 'GET',
-          headers: { 'cache-control': 'no-store' },
-        });
+        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(1);
@@ -135,10 +132,7 @@ export function declareUnhandledRequestFactoriesHttpInterceptorTests(
         searchParams.set('value', '2');
         searchParams.set('name', 'User 1');
 
-        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-          method: 'GET',
-          headers: { 'cache-control': 'no-store' },
-        });
+        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(1);
@@ -202,10 +196,7 @@ export function declareUnhandledRequestFactoriesHttpInterceptorTests(
         searchParams.set('value', '2');
         searchParams.set('name', 'User 1');
 
-        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-          method: 'GET',
-          headers: { 'cache-control': 'no-store' },
-        });
+        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(1);
@@ -280,10 +271,7 @@ export function declareUnhandledRequestFactoriesHttpInterceptorTests(
         searchParams.set('value', '2');
         searchParams.set('name', 'User 1');
 
-        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-          method: 'GET',
-          headers: { 'cache-control': 'no-store' },
-        });
+        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(1);
