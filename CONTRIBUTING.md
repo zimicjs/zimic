@@ -98,12 +98,12 @@ structured as follows:
     `fetch`-like API client;
   - `zimic-interceptor`: Implementation of the package `@zimic/interceptor`, a type-safe interceptor library for
     handling and mocking HTTP requests in development and testing;
-  - `zimic-utils`: Shared primitives (data comparison, URL building, wait utilities, logging, type helpers). Each
-    exported resource is exported as a single file to keep bundles small and help clients import only what they need.
+  - `zimic-utils`: Shared primitives (data comparison, URL building, wait utilities, logging, type helpers); each
+    exported resource is exported as a single file to keep bundles small and help clients import only what they need;
   - `tsconfig`: Shared TypeScript configuration;
   - `eslint-config`: General ESLint configuration;
   - `eslint-config-node`: Node.js-specific ESLint configuration;
-  - `lint-staged-config`: Configuration for [lint-staged](https://github.com/lint-staged/lint-staged).
+  - `lint-staged-config`: Configuration for [lint-staged](https://github.com/lint-staged/lint-staged);
 - `apps`
   - `zimic-web`: [zimic.dev](https://zimic.dev) documentation website built with [Docusaurus](https://docusaurus.io) and
     styled with Tailwind CSS;
