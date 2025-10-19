@@ -84,7 +84,7 @@ export function declareUnhandledRequestFactoriesHttpInterceptorTests(
 
         expect(handler.requests).toHaveLength(1);
 
-        expect(onUnhandledRequest).toHaveBeenCalledTimes(1 * 2);
+        expect(onUnhandledRequest).toHaveBeenCalledTimes(2);
         expect(console.warn).toHaveBeenCalledTimes(0);
         expect(console.error).toHaveBeenCalledTimes(1);
 
@@ -98,7 +98,7 @@ export function declareUnhandledRequestFactoriesHttpInterceptorTests(
     const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(async (request) => {
       const url = new URL(request.url);
 
-      await waitForDelay(10);
+      await waitForDelay(100);
 
       return {
         action: 'reject',
@@ -147,7 +147,7 @@ export function declareUnhandledRequestFactoriesHttpInterceptorTests(
 
         expect(handler.requests).toHaveLength(1);
 
-        expect(onUnhandledRequest).toHaveBeenCalledTimes(1 * 2);
+        expect(onUnhandledRequest).toHaveBeenCalledTimes(2);
         expect(console.warn).toHaveBeenCalledTimes(0);
         expect(console.error).toHaveBeenCalledTimes(1);
 
@@ -211,10 +211,10 @@ export function declareUnhandledRequestFactoriesHttpInterceptorTests(
 
         expect(handler.requests).toHaveLength(1);
 
-        expect(onUnhandledRequest).toHaveBeenCalledTimes(1 * 2);
+        expect(onUnhandledRequest).toHaveBeenCalledTimes(2);
 
         expect(console.warn).toHaveBeenCalledTimes(0);
-        expect(console.error).toHaveBeenCalledTimes(1 * 2);
+        expect(console.error).toHaveBeenCalledTimes(2);
 
         expect(console.error).toHaveBeenNthCalledWith(1, error);
 
@@ -286,10 +286,10 @@ export function declareUnhandledRequestFactoriesHttpInterceptorTests(
 
         expect(handler.requests).toHaveLength(1);
 
-        expect(onUnhandledRequest).toHaveBeenCalledTimes(1 * 2);
+        expect(onUnhandledRequest).toHaveBeenCalledTimes(2);
 
         expect(console.warn).toHaveBeenCalledTimes(0);
-        expect(console.error).toHaveBeenCalledTimes(1 * 2);
+        expect(console.error).toHaveBeenCalledTimes(2);
 
         expect(console.error).toHaveBeenNthCalledWith(1, error);
 
