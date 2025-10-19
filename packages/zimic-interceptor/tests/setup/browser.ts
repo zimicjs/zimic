@@ -6,7 +6,7 @@ const DEFAULT_HEADERS: Record<string, string> = {
 const originalFetch = globalThis.fetch;
 
 function customFetch(input: string | URL | Request, init?: RequestInit) {
-  const request = input instanceof Request ? input : new Request(input, init);
+  const request = new Request(input, { ...init, cache: 'no-store', keepalive: false });
 
   for (const [headerName, headerValue] of Object.entries(DEFAULT_HEADERS)) {
     if (!request.headers.has(headerName)) {

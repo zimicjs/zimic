@@ -2,7 +2,7 @@ import { HttpResponse, HttpHeaders, HTTP_METHODS } from '@zimic/http';
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import waitForDelay from '@zimic/utils/time/waitForDelay';
 import { PossiblePromise } from '@zimic/utils/types';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import NotRunningHttpInterceptorError from '@/http/interceptor/errors/NotRunningHttpInterceptorError';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
@@ -32,7 +32,9 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     if (defaultWorkerOptions.type === 'remote') {
       await startServer?.();
     }
+  });
 
+  beforeEach(async () => {
     baseURL = await getBaseURL(defaultWorkerOptions.type);
 
     workerOptions =

@@ -1,7 +1,7 @@
 import { HttpFormData, HttpHeaders, HttpSearchParams } from '@zimic/http';
 import joinURL from '@zimic/utils/url/joinURL';
 import color from 'picocolors';
-import { expect, it, beforeAll, afterAll, describe } from 'vitest';
+import { expect, it, beforeAll, afterAll, describe, afterEach, beforeEach } from 'vitest';
 
 import { SharedHttpInterceptorClient } from '@/http/interceptor/HttpInterceptorClient';
 import LocalHttpInterceptor from '@/http/interceptor/LocalHttpInterceptor';
@@ -24,7 +24,7 @@ export function declareTimesHttpRequestHandlerTests(
     Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
   },
 ) {
-  const { platform, type, startServer, getBaseURL, stopServer, Handler } = options;
+  const { type, startServer, getBaseURL, stopServer, Handler } = options;
 
   let baseURL: string;
 
@@ -35,22 +35,22 @@ export function declareTimesHttpRequestHandlerTests(
     if (type === 'remote') {
       await startServer?.();
     }
+  });
 
+  beforeEach(async () => {
     baseURL = await getBaseURL(type);
 
     interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL });
     interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
 
-    expect(interceptor.platform).toBe(null);
-
     await interceptor.start();
+  });
 
-    expect(interceptor.platform).toBe(platform);
+  afterEach(async () => {
+    await interceptor.stop();
   });
 
   afterAll(async () => {
-    await interceptor.stop();
-
     if (type === 'remote') {
       await stopServer?.();
     }

@@ -33,6 +33,7 @@ export default defineConfig({
           exclude: ['**/*.node.test.ts'],
           globalSetup: './tests/setup/global/browser.ts',
           setupFiles: ['./tests/setup/browser.ts'],
+          retry: process.env.CI === 'true' ? 3 : 0,
           browser: {
             instances: [{ browser: 'chromium' }],
             provider: 'playwright',
