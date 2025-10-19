@@ -284,6 +284,10 @@ class HttpInterceptorClient<
     }
 
     const responseDeclaration = await matchedHandler.applyResponseDeclaration(parsedRequest);
+
+    // Apply delay if configured
+    await matchedHandler.applyDelay(parsedRequest);
+
     const response = HttpInterceptorWorker.createResponseFromDeclaration(request, responseDeclaration);
 
     if (this.requestSaving.enabled) {

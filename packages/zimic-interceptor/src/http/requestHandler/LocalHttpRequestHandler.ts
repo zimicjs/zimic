@@ -9,6 +9,7 @@ import {
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
+  HttpRequestHandlerDelayDeclaration,
   InterceptedHttpInterceptorRequest,
 } from './types/requests';
 import { HttpRequestHandlerRestriction } from './types/restrictions';
@@ -50,6 +51,11 @@ class LocalHttpRequestHandler<
 
     const newThis = this as unknown as LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
     return newThis;
+  }
+
+  delay(declaration: HttpRequestHandlerDelayDeclaration<Path, Default<Schema[Path][Method]>>): this {
+    this.client.delay(declaration);
+    return this;
   }
 
   times(minNumberOfRequests: number, maxNumberOfRequests?: number): this {

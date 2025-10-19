@@ -374,6 +374,7 @@ test('example', async () => {
       headers: { authorization: 'Bearer my-token' },
       searchParams: { query: 'u' },
     })
+    .delay(200) // Add a 200ms delay to simulate network latency
     .respond({
       status: 200,
       body: users,
@@ -400,6 +401,7 @@ test('example', async () => {
       headers: { authorization: 'Bearer my-token' },
       searchParams: { query: 'u' },
     })
+    .delay(200) // Add a 200ms delay to simulate network latency
     .respond({
       status: 200,
       body: users,

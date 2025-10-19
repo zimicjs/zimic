@@ -12,6 +12,7 @@ import {
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
+  HttpRequestHandlerDelayDeclaration,
   InterceptedHttpInterceptorRequest,
 } from './types/requests';
 import { HttpRequestHandlerRestriction } from './types/restrictions';
@@ -85,6 +86,11 @@ class RemoteHttpRequestHandler<
     return newUnsyncedThis;
   }
 
+  delay(declaration: HttpRequestHandlerDelayDeclaration<Path, Default<Schema[Path][Method]>>): this {
+    this.client.delay(declaration);
+    return this.unsynced;
+  }
+
   times(minNumberOfRequests: number, maxNumberOfRequests?: number): this {
     this.client.times(minNumberOfRequests, maxNumberOfRequests);
     return this;
@@ -128,6 +134,10 @@ class RemoteHttpRequestHandler<
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
   ): Promise<HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>> {
     return this.client.applyResponseDeclaration(request);
+  }
+
+  async applyDelay(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): Promise<void> {
+    return this.client.applyDelay(request);
   }
 
   saveInterceptedRequest(

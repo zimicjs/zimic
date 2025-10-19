@@ -27,6 +27,7 @@ import {
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
+  HttpRequestHandlerDelayDeclaration,
   InterceptedHttpInterceptorRequest,
 } from './types/requests';
 import {
@@ -72,6 +73,8 @@ class HttpRequestHandlerClient<
     StatusCode
   >;
 
+  private delayDeclaration?: HttpRequestHandlerDelayDeclaration<Path, Default<Schema[Path][Method]>>;
+
   constructor(
     private interceptor: HttpInterceptorClient<Schema>,
     public method: Method,
@@ -103,6 +106,11 @@ class HttpRequestHandlerClient<
     this.interceptor.registerRequestHandler(this.handler);
 
     return newThis;
+  }
+
+  delay(declaration: HttpRequestHandlerDelayDeclaration<Path, Default<Schema[Path][Method]>>): this {
+    this.delayDeclaration = declaration;
+    return this;
   }
 
   private isResponseDeclarationFactory(
@@ -159,6 +167,7 @@ class HttpRequestHandlerClient<
     this.clearInterceptedRequests();
 
     this.createResponseDeclaration = undefined;
+    this.delayDeclaration = undefined;
 
     return this;
   }
@@ -416,6 +425,29 @@ class HttpRequestHandlerClient<
 
     const appliedDeclaration = await this.createResponseDeclaration(request);
     return appliedDeclaration;
+  }
+
+  async applyDelay(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): Promise<void> {
+    if (!this.delayDeclaration) {
+      return;
+    }
+
+    let delayMs: number;
+
+    if (typeof this.delayDeclaration === 'number') {
+      delayMs = this.delayDeclaration;
+    } else if (Array.isArray(this.delayDeclaration)) {
+      const [min, max] = this.delayDeclaration;
+      delayMs = Math.random() * (max - min) + min;
+    } else {
+      delayMs = await this.delayDeclaration(request);
+    }
+
+    if (delayMs > 0) {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, delayMs);
+      });
+    }
   }
 
   saveInterceptedRequest(

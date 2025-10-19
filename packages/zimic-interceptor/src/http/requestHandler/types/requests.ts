@@ -154,3 +154,9 @@ export interface InterceptedHttpInterceptorRequest<
   /** The response that was returned for the intercepted request. */
   response: StatusCode extends [never] ? never : HttpInterceptorResponse<MethodSchema, StatusCode>;
 }
+
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerdelay `handler.delay()` API reference} */
+export type HttpRequestHandlerDelayDeclaration<Path extends string, MethodSchema extends HttpMethodSchema> =
+  | number
+  | [number, number]
+  | ((request: HttpInterceptorRequest<Path, MethodSchema>) => PossiblePromise<number>);
