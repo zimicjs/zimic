@@ -632,12 +632,15 @@ export function declareUnhandledRequestLoggingHttpInterceptorTests(options: Runt
       expect(console.error).toHaveBeenCalledTimes(0);
 
       const request = new Request(joinURL(baseURL, '/users'), { method: 'GET' });
-      const responsePromise = fetch(request);
+
+      const responsePromise = fetch(request, {
+        signal: AbortSignal.timeout(500),
+      });
 
       if (type === 'local') {
-        await expectBypassedResponse(responsePromise);
+        await expectBypassedResponse(responsePromise, { canBeAborted: true });
       } else {
-        await expectFetchError(responsePromise);
+        await expectFetchError(responsePromise, { canBeAborted: true });
       }
 
       expect(console.warn).toHaveBeenCalledTimes(0);
