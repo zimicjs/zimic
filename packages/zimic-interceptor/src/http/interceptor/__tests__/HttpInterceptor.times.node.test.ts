@@ -6,7 +6,7 @@ import { createInternalInterceptorServer } from '@tests/utils/interceptorServers
 import testMatrix from './shared/matrix';
 import { declareTimesHttpInterceptorTests } from './shared/times';
 
-describe.each(testMatrix)('HttpInterceptor (node, $type) > Times', async ({ type }) => {
+describe.each(testMatrix)('HttpInterceptor (node, $type) > Times', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   let baseURL: string;
@@ -24,7 +24,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Times', async ({ type
     }
   });
 
-  await declareTimesHttpInterceptorTests({
+  declareTimesHttpInterceptorTests({
     platform: 'node',
     type,
     getBaseURL: () => baseURL,

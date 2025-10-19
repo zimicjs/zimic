@@ -25,8 +25,8 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Unhandled requests', 
     }
   });
 
-  describe('Logging', async () => {
-    await declareUnhandledRequestLoggingHttpInterceptorTests({
+  describe('Logging', () => {
+    declareUnhandledRequestLoggingHttpInterceptorTests({
       platform: 'node',
       type,
       getBaseURL: () => baseURL,
@@ -34,8 +34,8 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Unhandled requests', 
     });
   });
 
-  describe('Factories', async () => {
-    await declareUnhandledRequestFactoriesHttpInterceptorTests({
+  describe('Factories', () => {
+    declareUnhandledRequestFactoriesHttpInterceptorTests({
       platform: 'node',
       type,
       getBaseURL: () => baseURL,
