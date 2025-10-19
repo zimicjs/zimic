@@ -3,6 +3,7 @@ import { Default } from '@zimic/utils/types';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import HttpRequestHandlerClient from './HttpRequestHandlerClient';
+import { HttpRequestHandlerDelayDeclaration } from './types/delays';
 import { InternalHttpRequestHandler } from './types/public';
 import {
   HttpInterceptorRequest,
@@ -38,6 +39,11 @@ class LocalHttpRequestHandler<
 
   with(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>): this {
     this.client.with(restriction);
+    return this;
+  }
+
+  delay(declaration: HttpRequestHandlerDelayDeclaration<Path, Default<Schema[Path][Method]>>): this {
+    this.client.delay(declaration);
     return this;
   }
 

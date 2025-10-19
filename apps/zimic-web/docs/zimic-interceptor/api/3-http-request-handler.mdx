@@ -29,6 +29,7 @@ leading to non-deterministic behavior. A single `await` is enough, even if you a
 const handler = interceptor.patch('/users/:userId');
 await handler.with((request) => /^\d+$/.test(request.pathParams.userId));
 await handler.with({ body: { username: 'new-username' } });
+await handler.delay(100);
 await handler.respond({ status: 204 });
 await handler.times(1);
 
@@ -37,6 +38,7 @@ const handler = await interceptor
   .patch('/users/:userId')
   .with((request) => /^\d+$/.test(request.pathParams.userId))
   .with({ body: { username: 'new-username' } })
+  .delay(100)
   .respond({ status: 204 })
   .times(1);
 ```
@@ -141,6 +143,101 @@ asynchronous nature of remote interceptors, make sure to await the handler befor
 **Related**:
 
 - [Restrictions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#restrictions)
+
+## `handler.delay()`
+
+Declares a delay to apply before returning a response for matched intercepted requests. The delay can be fixed, ranged,
+or computed based on the request.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+handler.delay(milliseconds);
+handler.delay({ min: minMilliseconds, max: maxMilliseconds });
+handler.delay((request) => milliseconds);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await handler.delay(milliseconds);
+await handler.delay({ min: minMilliseconds, max: maxMilliseconds });
+await handler.delay((request) => milliseconds);
+```
+
+  </TabItem>
+</Tabs>
+
+**Arguments**:
+
+1. **declaration**: `HttpRequestHandlerDelayDeclaration<Path, MethodSchema>`
+
+   The delay declaration. It can be:
+
+   - **Fixed delay** (`number`): A fixed delay in milliseconds to apply before returning each response.
+
+     ```ts
+     handler.delay(200); // Fixed 200ms delay
+     ```
+
+   - **Ranged delay** (`{ min: number; max: number }`): A random delay within the specified range (inclusive) in
+     milliseconds. A random value will be selected within the interval `[min, max]` for each response.
+
+     ```ts
+     handler.delay({ min: 200, max: 500 }); // Random delay between 200ms and 500ms
+     ```
+
+   - **Computed delay** (`(request) => number | Promise<number>`): A function to dynamically compute the delay based on
+     the intercepted request.
+
+     **Arguments**:
+
+     1. **request**: `HttpInterceptorRequest<Path, MethodSchema>`
+
+        The intercepted request to compute the delay for.
+
+     **Returns**: `Promise<number> | number`
+
+     The delay in milliseconds to apply before returning the response.
+
+     ```ts
+     handler.delay((request) => {
+       return request.url.includes('slow=true') ? 1000 : 0;
+     });
+     ```
+
+**Returns**: `HttpRequestHandler<Method, Path, StatusCode>`
+
+The same handler, now including the specified delay.
+
+If the interceptor is local, the delay is immediately applied to the handler. If the interceptor is remote, the delay is
+asynchronously sent to the [interceptor server](/docs/zimic-interceptor/cli/1-server.md). Because of the asynchronous
+nature of remote interceptors, make sure to await the handler before making requests.
+
+**Examples**:
+
+```ts
+// Fixed delay
+const handler = interceptor
+  .get('/users')
+  .delay(200) // Fixed 200ms delay
+  .respond({ status: 200, body: [] });
+
+// Ranged delay
+const handler = interceptor
+  .get('/users')
+  .delay({ min: 200, max: 500 }) // Random delay between 200ms and 500ms
+  .respond({ status: 200, body: [] });
+
+// Computed delay
+const handler = interceptor
+  .get('/users')
+  .delay((request) => (request.url.includes('slow=true') ? 1000 : 0))
+  .respond({ status: 200, body: [] });
+```
 
 ## `handler.respond()`
 
@@ -306,10 +403,10 @@ await handler.checkTimes();
 
 ## `handler.clear()`
 
-Clears any response declared with [`handler.respond()`](#handlerrespond), restrictions declared with
-[`handler.with()`](#handlerwith), and intercepted requests, making the handler stop matching requests. The next handler,
-created before this one, that matches the same method and path will be used if present. If not, the requests of the
-method and path will not be intercepted.
+Clears any response declared with [`handler.respond()`](#handlerrespond), delays declared with
+[`handler.delay()`](#handlerdelay), restrictions declared with [`handler.with()`](#handlerwith), and intercepted
+requests, making the handler stop matching requests. The next handler, created before this one, that matches the same
+method and path will be used if present. If not, the requests of the method and path will not be intercepted.
 
 To make the handler match requests again, register a new response with [`handler.respond()`](#handlerrespond).
 

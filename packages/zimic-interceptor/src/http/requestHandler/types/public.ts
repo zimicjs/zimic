@@ -8,6 +8,7 @@ import {
 import { Default, PossiblePromise } from '@zimic/utils/types';
 
 import HttpRequestHandlerClient from '../HttpRequestHandlerClient';
+import { HttpRequestHandlerDelayDeclaration } from './delays';
 import {
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
@@ -56,6 +57,9 @@ export interface LocalHttpRequestHandler<
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
   with: (restriction: HttpRequestHandlerRestriction<Schema, Method, Path>) => this;
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerdelay `handler.delay()` API reference} */
+  delay: (declaration: HttpRequestHandlerDelayDeclaration<Path, Default<Schema[Path][Method]>>) => this;
+
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
   respond: <NewStatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
@@ -97,6 +101,11 @@ export interface SyncedRemoteHttpRequestHandler<
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
   with: (
     restriction: HttpRequestHandlerRestriction<Schema, Method, Path>,
+  ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
+
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerdelay `handler.delay()` API reference} */
+  delay: (
+    declaration: HttpRequestHandlerDelayDeclaration<Path, Default<Schema[Path][Method]>>,
   ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */

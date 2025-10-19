@@ -3,6 +3,7 @@ import { Default, PossiblePromise } from '@zimic/utils/types';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import HttpRequestHandlerClient from './HttpRequestHandlerClient';
+import { HttpRequestHandlerDelayDeclaration } from './types/delays';
 import {
   InternalHttpRequestHandler,
   SyncedRemoteHttpRequestHandler as PublicSyncedRemoteHttpRequestHandler,
@@ -72,6 +73,11 @@ class RemoteHttpRequestHandler<
 
   with(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>): this {
     this.client.with(restriction);
+    return this.unsynced;
+  }
+
+  delay(declaration: HttpRequestHandlerDelayDeclaration<Path, Default<Schema[Path][Method]>>): this {
+    this.client.delay(declaration);
     return this.unsynced;
   }
 

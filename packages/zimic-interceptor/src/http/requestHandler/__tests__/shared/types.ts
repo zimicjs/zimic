@@ -41,6 +41,19 @@ export type MethodSchema = HttpSchema.Method<{
 
 export type Schema = HttpSchema<{
   '/users': {
+    GET: HttpSchema.Method<{
+      request: {
+        headers: HeadersSchema;
+      };
+      response: {
+        200: {
+          body: never[];
+        };
+        500: {
+          body: never[];
+        };
+      };
+    }>;
     POST: MethodSchema;
   };
 }>;

@@ -21,6 +21,11 @@ import DisabledRequestSavingError from './errors/DisabledRequestSavingError';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
 import TimesCheckError from './errors/TimesCheckError';
 import TimesDeclarationPointer from './errors/TimesDeclarationPointer';
+import {
+  HttpRequestHandlerComputedDelay,
+  HttpRequestHandlerDelayDeclaration,
+  HttpRequestHandlerRangedDelay,
+} from './types/delays';
 import { InternalHttpRequestHandler } from './types/public';
 import {
   HttpInterceptorRequest,
@@ -72,6 +77,8 @@ class HttpRequestHandlerClient<
     StatusCode
   >;
 
+  private delayDeclaration?: HttpRequestHandlerDelayDeclaration<Path, Default<Schema[Path][Method]>>;
+
   constructor(
     private interceptor: HttpInterceptorClient<Schema>,
     public method: Method,
@@ -81,6 +88,11 @@ class HttpRequestHandlerClient<
 
   with(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>): this {
     this.restrictions.push(restriction);
+    return this;
+  }
+
+  delay(declaration: HttpRequestHandlerDelayDeclaration<Path, Default<Schema[Path][Method]>>): this {
+    this.delayDeclaration = declaration;
     return this;
   }
 
@@ -159,6 +171,7 @@ class HttpRequestHandlerClient<
     this.clearInterceptedRequests();
 
     this.createResponseDeclaration = undefined;
+    this.delayDeclaration = undefined;
 
     return this;
   }
@@ -414,8 +427,50 @@ class HttpRequestHandlerClient<
       throw new NoResponseDefinitionError();
     }
 
+    await this.applyDelay(request);
+
     const appliedDeclaration = await this.createResponseDeclaration(request);
     return appliedDeclaration;
+  }
+
+  private async applyDelay(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) {
+    if (this.delayDeclaration === undefined) {
+      return;
+    }
+
+    const delayInMilliseconds = await this.computeDelay(request);
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, delayInMilliseconds);
+    });
+  }
+
+  private async computeDelay(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): Promise<number> {
+    if (this.delayDeclaration === undefined) {
+      return 0;
+    }
+
+    if (this.isComputedDelay(this.delayDeclaration)) {
+      return this.delayDeclaration(request);
+    }
+
+    if (this.isRangedDelay(this.delayDeclaration)) {
+      const { min, max } = this.delayDeclaration;
+      return Math.random() * (max - min) + min;
+    }
+
+    return this.delayDeclaration;
+  }
+
+  private isComputedDelay(
+    declaration: HttpRequestHandlerDelayDeclaration<Path, Default<Schema[Path][Method]>>,
+  ): declaration is HttpRequestHandlerComputedDelay<Path, Default<Schema[Path][Method]>> {
+    return typeof declaration === 'function';
+  }
+
+  private isRangedDelay(
+    declaration: HttpRequestHandlerDelayDeclaration<Path, Default<Schema[Path][Method]>>,
+  ): declaration is HttpRequestHandlerRangedDelay {
+    return typeof declaration === 'object' && 'min' in declaration && 'max' in declaration;
   }
 
   saveInterceptedRequest(
