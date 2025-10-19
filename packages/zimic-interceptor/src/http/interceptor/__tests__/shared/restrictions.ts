@@ -230,7 +230,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
       response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
       expect(response.status).toBe(204);
 
-      expect(handler.requests).toHaveLength(1 * 2);
+      expect(handler.requests).toHaveLength(2);
     });
   });
 

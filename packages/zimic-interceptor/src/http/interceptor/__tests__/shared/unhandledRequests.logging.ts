@@ -4,7 +4,6 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import { importCrypto } from '@/utils/crypto';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectBypassedResponse } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -16,12 +15,8 @@ import {
   verifyUnhandledRequestMessage,
 } from './utils';
 
-export async function declareUnhandledRequestLoggingHttpInterceptorTests(
-  options: RuntimeSharedHttpInterceptorTestsOptions,
-) {
+export function declareUnhandledRequestLoggingHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
-
-  const crypto = await importCrypto();
 
   let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
@@ -193,10 +188,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             expect(handler.requests).toHaveLength(0);
 
             await usingIgnoredConsole(['warn', 'error'], async (console) => {
-              const response = await fetch(joinURL(baseURL, '/users'), {
-                method: 'GET',
-                headers: { 'x-value': '1' },
-              });
+              const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET', headers: { 'x-value': '1' } });
               expect(response.status).toBe(204);
 
               expect(handler.requests).toHaveLength(1);
@@ -332,10 +324,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
             await promiseIfRemote(handler.clear(), interceptor);
 
-            const request = new Request(joinURL(baseURL, '/users'), {
-              method: 'GET',
-              headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-            });
+            const request = new Request(joinURL(baseURL, '/users'), { method: 'GET' });
             const responsePromise = fetch(request);
             await expectFetchError(responsePromise);
 
@@ -381,10 +370,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
             const request = new Request(joinURL(baseURL, '/users'), {
               method: 'POST',
-              headers: {
-                'x-id': crypto.randomUUID(), // Ensure the request is unique.
-                'content-type': 'application/json',
-              },
+              headers: { 'content-type': 'application/json' },
               body: JSON.stringify({ message: 'ok' }),
             });
             const requestClone = request.clone();
@@ -434,10 +420,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             expect(console.warn).toHaveBeenCalledTimes(0);
             expect(console.error).toHaveBeenCalledTimes(0);
 
-            const request = new Request(joinURL(baseURL, '/users'), {
-              method: 'GET',
-              headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-            });
+            const request = new Request(joinURL(baseURL, '/users'), { method: 'GET' });
             const responsePromise = fetch(request);
             await expectFetchError(responsePromise);
 
@@ -475,10 +458,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             expect(console.warn).toHaveBeenCalledTimes(0);
             expect(console.error).toHaveBeenCalledTimes(0);
 
-            const request = new Request(joinURL(baseURL, '/users/other'), {
-              method: 'GET',
-              headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-            });
+            const request = new Request(joinURL(baseURL, '/users/other'), { method: 'GET' });
             const responsePromise = fetch(request);
 
             await expectFetchError(responsePromise);
@@ -523,10 +503,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               arrayWithMultipleValues: ['value-1', 'value-2'],
             });
 
-            const request = new Request(joinURL(baseURL, `/users/other?${searchParams.toString()}`), {
-              method: 'GET',
-              headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-            });
+            const request = new Request(joinURL(baseURL, `/users/other?${searchParams.toString()}`), { method: 'GET' });
             const responsePromise = fetch(request);
 
             await expectFetchError(responsePromise);
@@ -655,12 +632,15 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
       expect(console.error).toHaveBeenCalledTimes(0);
 
       const request = new Request(joinURL(baseURL, '/users'), { method: 'GET' });
-      const responsePromise = fetch(request);
+
+      const responsePromise = fetch(request, {
+        signal: AbortSignal.timeout(500),
+      });
 
       if (type === 'local') {
-        await expectBypassedResponse(responsePromise);
+        await expectBypassedResponse(responsePromise, { canBeAborted: true });
       } else {
-        await expectFetchError(responsePromise);
+        await expectFetchError(responsePromise, { canBeAborted: true });
       }
 
       expect(console.warn).toHaveBeenCalledTimes(0);
@@ -724,10 +704,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
           expect(console.warn).toHaveBeenCalledTimes(0);
           expect(console.error).toHaveBeenCalledTimes(0);
 
-          const request = new Request(joinURL(baseURL, '/users'), {
-            method: 'GET',
-            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-          });
+          const request = new Request(joinURL(baseURL, '/users'), { method: 'GET' });
           let responsePromise = fetch(request);
           await expectFetchError(responsePromise);
 
@@ -785,10 +762,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
           expect(console.warn).toHaveBeenCalledTimes(0);
           expect(console.error).toHaveBeenCalledTimes(0);
 
-          const request = new Request(joinURL(baseURL, '/users/unknown'), {
-            method: 'GET',
-            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-          });
+          const request = new Request(joinURL(baseURL, '/users/unknown'), { method: 'GET' });
           const responsePromise = fetch(request);
 
           await expectFetchError(responsePromise);
@@ -817,10 +791,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
           expect(console.warn).toHaveBeenCalledTimes(0);
           expect(console.error).toHaveBeenCalledTimes(0);
 
-          const request = new Request(joinURL(baseURL, '/users/unknown'), {
-            method: 'GET',
-            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-          });
+          const request = new Request(joinURL(baseURL, '/users/unknown'), { method: 'GET' });
           const responsePromise = fetch(request);
 
           await expectFetchError(responsePromise);

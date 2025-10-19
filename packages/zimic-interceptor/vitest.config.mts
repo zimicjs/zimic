@@ -28,11 +28,12 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'browser',
-          retry: 1,
           environment: undefined,
           include: ['./{src,tests,scripts}/**/*.test.ts', './{src,tests,scripts}/**/*.browser.test.ts'],
           exclude: ['**/*.node.test.ts'],
           globalSetup: './tests/setup/global/browser.ts',
+          setupFiles: ['./tests/setup/browser.ts'],
+          retry: process.env.CI === 'true' ? 3 : 0,
           browser: {
             instances: [{ browser: 'chromium' }],
             provider: 'playwright',

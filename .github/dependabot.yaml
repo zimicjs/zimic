@@ -17,12 +17,6 @@ updates:
       npm:
         patterns:
           - '*'
-    ignore:
-      # Blocked by https://github.com/swc-project/swc/issues/11120.
-      - dependency-name: '@swc/core'
-        update-types:
-          - version-update:semver-minor
-          - version-update:semver-patch
 
   - package-ecosystem: github-actions
     directory: /
