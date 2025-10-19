@@ -6,16 +6,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { expectTimesCheckError } from '@/http/requestHandler/__tests__/shared/utils';
-import { importCrypto } from '@/utils/crypto';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
-export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { getBaseURL, getInterceptorOptions } = options;
-
-  const crypto = await importCrypto();
 
   let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
@@ -141,7 +138,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         let responsePromise = fetch(joinURL(baseURL, '/users'), {
           method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
         await expectFetchError(responsePromise);
 
@@ -298,7 +295,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         const responsePromise = fetch(joinURL(baseURL, '/users'), {
           method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
         await expectFetchError(responsePromise);
 
@@ -334,7 +331,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         const responsePromise = fetch(joinURL(baseURL, '/users'), {
           method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
         await expectFetchError(responsePromise);
 
@@ -475,7 +472,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         const responsePromise = fetch(joinURL(baseURL, '/users'), {
           method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
         await expectFetchError(responsePromise);
 
@@ -602,7 +599,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
           method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
         await expectFetchError(responsePromise);
 
@@ -734,7 +731,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
           method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
         await expectFetchError(responsePromise);
 
@@ -804,7 +801,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         const responsePromise = fetch(joinURL(baseURL, '/users'), {
           method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
         await expectFetchError(responsePromise);
 
@@ -853,7 +850,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         let responsePromise = fetch(joinURL(baseURL, '/users'), {
           method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
         await expectFetchError(responsePromise);
 
@@ -863,7 +860,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         responsePromise = fetch(joinURL(baseURL, '/users'), {
           method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
         await expectFetchError(responsePromise);
 
@@ -897,7 +894,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         let responsePromise = fetch(joinURL(baseURL, '/users'), {
           method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
         await expectFetchError(responsePromise);
 
@@ -933,7 +930,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
           method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
         await expectFetchError(responsePromise);
 
@@ -943,7 +940,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
           method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
         await expectFetchError(responsePromise);
 
@@ -970,7 +967,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         const responsePromise = fetch(joinURL(baseURL, '/users'), {
           method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
         await expectFetchError(responsePromise);
 
@@ -1005,7 +1002,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         const responsePromise = fetch(joinURL(baseURL, '/users/other'), {
           method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
         await expectFetchError(responsePromise);
 

@@ -6,7 +6,6 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import NotRunningHttpInterceptorError from '@/http/interceptor/errors/NotRunningHttpInterceptorError';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
-import { importCrypto } from '@/utils/crypto';
 import { expectBypassedResponse, expectPreflightResponse } from '@tests/utils/fetch';
 import {
   assessPreflightInterference,
@@ -119,11 +118,9 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         expect(emptySpiedRequestHandler).not.toHaveBeenCalled();
 
-        const crypto = await importCrypto();
-
         const responsePromise = fetch(baseURL, {
           method,
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
 
         if (overridesPreflightResponse) {

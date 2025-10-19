@@ -5,19 +5,16 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import { importCrypto } from '@/utils/crypto';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions, verifyUnhandledRequestMessage } from './utils';
 
-export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
+export function declareUnhandledRequestFactoriesHttpInterceptorTests(
   options: RuntimeSharedHttpInterceptorTestsOptions,
 ) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
-
-  const crypto = await importCrypto();
 
   let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
@@ -74,7 +71,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
 
         let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
           method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
         await expectFetchError(responsePromise);
 
@@ -140,7 +137,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
 
         let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
           method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
         await expectFetchError(responsePromise);
 
@@ -207,7 +204,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
 
         let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
           method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
         await expectFetchError(responsePromise);
 
@@ -285,7 +282,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
 
         let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
           method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          headers: { 'cache-control': 'no-store' },
         });
         await expectFetchError(responsePromise);
 

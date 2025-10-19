@@ -9,7 +9,11 @@ export const GLOBAL_FALLBACK_SERVER_HOSTNAME = 'localhost';
 export const GLOBAL_FALLBACK_SERVER_PORT = Number(process.env.GLOBAL_FALLBACK_SERVER_PORT);
 
 export const GLOBAL_FALLBACK_SERVER_RESPONSE_STATUS = 200;
-export const GLOBAL_FALLBACK_SERVER_HEADERS = { 'x-global-fallback': 'true' };
+
+export const GLOBAL_FALLBACK_SERVER_HEADERS = {
+  'cache-control': 'no-store',
+  'global-fallback': 'true', // Custom header to identify responses from the fallback server.
+};
 
 // This server is used as a fallback in tests that check if unhandled requests are bypassed. When a request is bypassed,
 // this server will handle it. If the request is rejected, it should not reach this server.

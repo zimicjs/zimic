@@ -7,7 +7,6 @@ import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promis
 import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
-import { importCrypto } from '@/utils/crypto';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectPreflightResponse } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -15,10 +14,8 @@ import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions, verifyUnhandledRequestMessage } from './utils';
 
-export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
-
-  const crypto = await importCrypto();
 
   let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
@@ -160,7 +157,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
         await usingIgnoredConsole(['error', 'warn'], async (console) => {
           const request = new Request(joinURL(baseURL, '/users'), {
             method,
-            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+            headers: { 'cache-control': 'no-store' },
           });
           const responsePromise = fetch(request);
 

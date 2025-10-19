@@ -28,7 +28,6 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'browser',
-          retry: 1,
           environment: undefined,
           include: ['./{src,tests,scripts}/**/*.test.ts', './{src,tests,scripts}/**/*.browser.test.ts'],
           exclude: ['**/*.node.test.ts'],
