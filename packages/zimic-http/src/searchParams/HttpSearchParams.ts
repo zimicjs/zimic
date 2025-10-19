@@ -36,10 +36,10 @@ class HttpSearchParams<
   }
 
   private populateInitArrayProperties(init: LooseSchema) {
-    for (const [key, value] of Object.entries(init)) {
-      if (Array.isArray(value)) {
-        for (const item of value as unknown[]) {
-          super.append(key, String(item));
+    for (const [paramName, paramValues] of Object.entries(init)) {
+      if (Array.isArray(paramValues)) {
+        for (const paramValue of paramValues as unknown[]) {
+          super.append(paramName, String(paramValue));
         }
       }
     }
@@ -141,16 +141,18 @@ class HttpSearchParams<
 
   /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamscontains `searchParams.contains()` API reference} */
   contains<OtherSchema extends LooseSchema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
-    for (const [key, otherValue] of otherParams.entries()) {
-      const values = super.getAll.call(this, key);
+    for (const [paramName, otherParamValue] of otherParams.entries()) {
+      const paramValues = super.getAll.call(this, paramName);
 
-      const haveSameNumberOfValues = values.length === super.getAll.call(otherParams, key).length;
-      if (!haveSameNumberOfValues) {
+      const haveSameNumberOfParamValues = paramValues.length === super.getAll.call(otherParams, paramName).length;
+
+      if (!haveSameNumberOfParamValues) {
         return false;
       }
 
-      const valueExists = values.includes(otherValue);
-      if (!valueExists) {
+      const paramValueExists = paramValues.includes(otherParamValue);
+
+      if (!paramValueExists) {
         return false;
       }
     }
@@ -159,14 +161,14 @@ class HttpSearchParams<
   }
 
   /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamsassign `searchParams.assign()` API reference} */
-  assign<OtherSchema extends LooseSchema>(...otherParams: HttpSearchParams<OtherSchema>[]) {
-    for (const params of otherParams) {
-      for (const key of params.keys()) {
-        super.delete(key);
+  assign<OtherSchema extends LooseSchema>(...otherParamsArray: HttpSearchParams<OtherSchema>[]) {
+    for (const otherParams of otherParamsArray) {
+      for (const paramName of otherParams.keys()) {
+        super.delete(paramName);
       }
 
-      for (const [key, value] of params.entries()) {
-        super.append(key, value);
+      for (const [paramName, paramValue] of otherParams.entries()) {
+        super.append(paramName, paramValue);
       }
     }
   }
@@ -177,17 +179,17 @@ class HttpSearchParams<
 
     type SchemaValue = this['_schema'][HttpSearchParamsSchemaName<this['_schema']>];
 
-    for (const [key, value] of this.entries()) {
-      if (key in object) {
-        const existingValue = object[key] as SchemaValue[];
+    for (const [paramName, paramValue] of this.entries()) {
+      if (paramName in object) {
+        const existingParamValue = object[paramName] as SchemaValue[];
 
-        if (Array.isArray<SchemaValue>(existingValue)) {
-          existingValue.push(value as SchemaValue);
+        if (Array.isArray<SchemaValue>(existingParamValue)) {
+          existingParamValue.push(paramValue as SchemaValue);
         } else {
-          object[key] = [existingValue, value] as SchemaValue;
+          object[paramName] = [existingParamValue, paramValue] as SchemaValue;
         }
       } else {
-        object[key] = value as SchemaValue;
+        object[paramName] = paramValue as SchemaValue;
       }
     }
 

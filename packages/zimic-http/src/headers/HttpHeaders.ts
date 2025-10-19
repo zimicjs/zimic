@@ -102,9 +102,8 @@ class HttpHeaders<LooseSchema extends HttpHeadersSchema.Loose = HttpHeadersSchem
       return false;
     }
 
-    for (const key of this.keys()) {
-      const otherHasKey = super.has.call(otherHeaders, key);
-      if (!otherHasKey) {
+    for (const headerName of this.keys()) {
+      if (!super.has.call(otherHeaders, headerName)) {
         return false;
       }
     }
@@ -114,23 +113,24 @@ class HttpHeaders<LooseSchema extends HttpHeadersSchema.Loose = HttpHeadersSchem
 
   /** @see {@link https://zimic.dev/docs/http/api/http-headers#headerscontains `headers.contains()` API reference} */
   contains<OtherSchema extends LooseSchema>(otherHeaders: HttpHeaders<OtherSchema>): boolean {
-    for (const [key, otherValue] of otherHeaders.entries()) {
-      const value = super.get.call(this, key);
+    for (const [headerName, otherHeaderValue] of otherHeaders.entries()) {
+      const headerValue = super.get.call(this, headerName);
 
-      if (value === null) {
+      if (headerValue === null) {
         return false;
       }
 
-      const valueItems = this.splitHeaderValues(value);
-      const otherValueItems = this.splitHeaderValues(otherValue);
+      const headerValueItems = this.splitHeaderValues(headerValue);
+      const otherHeaderValueItems = this.splitHeaderValues(otherHeaderValue);
 
-      const haveSameNumberOfValues = valueItems.length === otherValueItems.length;
-      if (!haveSameNumberOfValues) {
+      const haveSameNumberOfHeaderValues = headerValueItems.length === otherHeaderValueItems.length;
+
+      if (!haveSameNumberOfHeaderValues) {
         return false;
       }
 
-      for (const otherValueItem of otherValueItems) {
-        if (!valueItems.includes(otherValueItem)) {
+      for (const otherValueItem of otherHeaderValueItems) {
+        if (!headerValueItems.includes(otherValueItem)) {
           return false;
         }
       }
@@ -140,13 +140,13 @@ class HttpHeaders<LooseSchema extends HttpHeadersSchema.Loose = HttpHeadersSchem
   }
 
   /** @see {@link https://zimic.dev/docs/http/api/http-headers#headersassign `headers.assign()` API reference} */
-  assign<OtherSchema extends LooseSchema>(...otherHeaders: HttpHeaders<OtherSchema>[]) {
-    for (const headers of otherHeaders) {
-      for (const headerName of headers.keys()) {
+  assign<OtherSchema extends LooseSchema>(...otherHeadersArray: HttpHeaders<OtherSchema>[]) {
+    for (const otherHeaders of otherHeadersArray) {
+      for (const headerName of otherHeaders.keys()) {
         super.delete(headerName);
       }
 
-      for (const [headerName, headerValue] of headers.entries()) {
+      for (const [headerName, headerValue] of otherHeaders.entries()) {
         super.append(headerName, headerValue);
       }
     }
@@ -156,8 +156,8 @@ class HttpHeaders<LooseSchema extends HttpHeadersSchema.Loose = HttpHeadersSchem
   toObject(): this['_schema'] {
     const object = {} as this['_schema'];
 
-    for (const [key, value] of this.entries()) {
-      object[key] = value;
+    for (const [headerName, headerValue] of this.entries()) {
+      object[headerName] = headerValue;
     }
 
     return object;
