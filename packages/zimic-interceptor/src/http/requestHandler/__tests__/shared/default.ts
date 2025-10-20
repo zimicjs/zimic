@@ -1,7 +1,7 @@
 import { HttpRequest, HttpResponse, StrictFormData } from '@zimic/http';
 import waitForDelay from '@zimic/utils/time/waitForDelay';
 import joinURL from '@zimic/utils/url/joinURL';
-import { expectTypeOf, expect, vi, it, beforeAll, afterAll, describe } from 'vitest';
+import { expectTypeOf, expect, vi, it, beforeAll, afterAll, describe, beforeEach, afterEach } from 'vitest';
 
 import { SharedHttpInterceptorClient } from '@/http/interceptor/HttpInterceptorClient';
 import LocalHttpInterceptor from '@/http/interceptor/LocalHttpInterceptor';
@@ -41,7 +41,9 @@ export function declareDefaultHttpRequestHandlerTests(
     if (type === 'remote') {
       await startServer?.();
     }
+  });
 
+  beforeEach(async () => {
     baseURL = await getBaseURL(type);
 
     interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL });
@@ -54,9 +56,11 @@ export function declareDefaultHttpRequestHandlerTests(
     expect(interceptor.platform).toBe(platform);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await interceptor.stop();
+  });
 
+  afterAll(async () => {
     if (type === 'remote') {
       await stopServer?.();
     }
@@ -417,6 +421,8 @@ export function declareDefaultHttpRequestHandlerTests(
           body: { success: true },
         });
 
+        await handler;
+
         expect(handler).toHaveProperty('then', expect.any(Function));
         expect(handler).toHaveProperty('catch', expect.any(Function));
         expect(handler).toHaveProperty('finally', expect.any(Function));
@@ -452,6 +458,8 @@ export function declareDefaultHttpRequestHandlerTests(
           status: 200,
           body: { success: true },
         });
+
+        await handler;
 
         expect(handler).toHaveProperty('then', expect.any(Function));
         expect(handler).toHaveProperty('catch', expect.any(Function));
@@ -513,6 +521,8 @@ export function declareDefaultHttpRequestHandlerTests(
           status: 200,
           body: { success: true },
         });
+
+        await handler;
 
         expect(handler).toHaveProperty('then', expect.any(Function));
         expect(handler).toHaveProperty('catch', expect.any(Function));

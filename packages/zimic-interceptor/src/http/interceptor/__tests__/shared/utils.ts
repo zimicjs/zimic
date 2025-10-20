@@ -1,5 +1,5 @@
 import { HttpHeaders, HttpSearchParams, HttpRequest, HttpRequestBodySchema } from '@zimic/http';
-import { PossiblePromise, ReplaceBy } from '@zimic/utils/types';
+import { PossiblePromise, Replace } from '@zimic/utils/types';
 import { expect, expectTypeOf } from 'vitest';
 
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
@@ -81,7 +81,7 @@ export function verifyUnhandledRequest(request: UnhandledHttpInterceptorRequest)
   expectTypeOf(request.pathParams).toEqualTypeOf<{}>();
   expect(request.pathParams).toEqual({});
 
-  type BodySchema = ReplaceBy<
+  type BodySchema = Replace<
     HttpRequestBodySchema<UnhandledHttpInterceptorRequestMethodSchema>,
     ArrayBuffer | ReadableStream,
     Blob

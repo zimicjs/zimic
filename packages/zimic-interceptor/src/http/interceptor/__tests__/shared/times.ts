@@ -6,16 +6,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { expectTimesCheckError } from '@/http/requestHandler/__tests__/shared/utils';
-import { importCrypto } from '@/utils/crypto';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
-export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { getBaseURL, getInterceptorOptions } = options;
-
-  const crypto = await importCrypto();
 
   let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
@@ -139,10 +136,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-        let responsePromise = fetch(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-        });
+        let responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(1);
@@ -296,10 +290,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-        const responsePromise = fetch(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-        });
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(1 * 3);
@@ -332,10 +323,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-        const responsePromise = fetch(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-        });
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(1);
@@ -473,10 +461,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
         await promiseIfRemote(handlers[1].checkTimes(), handlers[1]);
         await promiseIfRemote(handlers[2].checkTimes(), handlers[2]);
 
-        const responsePromise = fetch(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-        });
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handlers[0].requests).toHaveLength(1);
@@ -600,10 +585,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         searchParams.set('value', 'unknown');
 
-        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-          method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-        });
+        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handlers[0].requests).toHaveLength(1);
@@ -732,10 +714,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-        responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-          method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-        });
+        responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handlers[0].requests).toHaveLength(1);
@@ -802,10 +781,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           expectedNumberOfRequests: 1,
         });
 
-        const responsePromise = fetch(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-        });
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(0);
@@ -851,20 +827,14 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           expectedNumberOfRequests: 1,
         });
 
-        let responsePromise = fetch(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-        });
+        let responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(0);
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-        responsePromise = fetch(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-        });
+        responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(0);
@@ -895,10 +865,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           expectedNumberOfRequests: 1,
         });
 
-        let responsePromise = fetch(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-        });
+        let responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(0);
@@ -931,20 +898,14 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         const searchParams = new HttpSearchParams({ value: '1' });
 
-        responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-          method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-        });
+        responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(0);
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-        responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-          method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-        });
+        responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(0);
@@ -968,10 +929,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-        const responsePromise = fetch(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-        });
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(0);
@@ -1003,10 +961,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           expectedNumberOfRequests: 1,
         });
 
-        const responsePromise = fetch(joinURL(baseURL, '/users/other'), {
-          method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-        });
+        const responsePromise = fetch(joinURL(baseURL, '/users/other'), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(0);

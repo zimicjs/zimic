@@ -5,19 +5,16 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import { importCrypto } from '@/utils/crypto';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions, verifyUnhandledRequestMessage } from './utils';
 
-export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
+export function declareUnhandledRequestFactoriesHttpInterceptorTests(
   options: RuntimeSharedHttpInterceptorTestsOptions,
 ) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
-
-  const crypto = await importCrypto();
 
   let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
@@ -72,10 +69,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
         searchParams.set('value', '2');
         searchParams.set('name', 'User 1');
 
-        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-          method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-        });
+        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(1);
@@ -90,7 +84,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
 
         expect(handler.requests).toHaveLength(1);
 
-        expect(onUnhandledRequest).toHaveBeenCalledTimes(1 * 2);
+        expect(onUnhandledRequest).toHaveBeenCalledTimes(2);
         expect(console.warn).toHaveBeenCalledTimes(0);
         expect(console.error).toHaveBeenCalledTimes(1);
 
@@ -104,7 +98,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
     const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(async (request) => {
       const url = new URL(request.url);
 
-      await waitForDelay(10);
+      await waitForDelay(100);
 
       return {
         action: 'reject',
@@ -138,10 +132,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
         searchParams.set('value', '2');
         searchParams.set('name', 'User 1');
 
-        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-          method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-        });
+        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(1);
@@ -156,7 +147,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
 
         expect(handler.requests).toHaveLength(1);
 
-        expect(onUnhandledRequest).toHaveBeenCalledTimes(1 * 2);
+        expect(onUnhandledRequest).toHaveBeenCalledTimes(2);
         expect(console.warn).toHaveBeenCalledTimes(0);
         expect(console.error).toHaveBeenCalledTimes(1);
 
@@ -205,10 +196,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
         searchParams.set('value', '2');
         searchParams.set('name', 'User 1');
 
-        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-          method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-        });
+        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(1);
@@ -223,10 +211,10 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
 
         expect(handler.requests).toHaveLength(1);
 
-        expect(onUnhandledRequest).toHaveBeenCalledTimes(1 * 2);
+        expect(onUnhandledRequest).toHaveBeenCalledTimes(2);
 
         expect(console.warn).toHaveBeenCalledTimes(0);
-        expect(console.error).toHaveBeenCalledTimes(1 * 2);
+        expect(console.error).toHaveBeenCalledTimes(2);
 
         expect(console.error).toHaveBeenNthCalledWith(1, error);
 
@@ -283,10 +271,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
         searchParams.set('value', '2');
         searchParams.set('name', 'User 1');
 
-        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-          method: 'GET',
-          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-        });
+        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(1);
@@ -301,10 +286,10 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
 
         expect(handler.requests).toHaveLength(1);
 
-        expect(onUnhandledRequest).toHaveBeenCalledTimes(1 * 2);
+        expect(onUnhandledRequest).toHaveBeenCalledTimes(2);
 
         expect(console.warn).toHaveBeenCalledTimes(0);
-        expect(console.error).toHaveBeenCalledTimes(1 * 2);
+        expect(console.error).toHaveBeenCalledTimes(2);
 
         expect(console.error).toHaveBeenNthCalledWith(1, error);
 

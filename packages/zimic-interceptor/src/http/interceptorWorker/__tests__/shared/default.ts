@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
 import NotRunningHttpInterceptorError from '@/http/interceptor/errors/NotRunningHttpInterceptorError';
 import { usingIgnoredConsole } from '@tests/utils/console';
@@ -26,7 +26,9 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
     if (defaultWorkerOptions.type === 'remote') {
       await startServer?.();
     }
+  });
 
+  beforeEach(async () => {
     baseURL = await getBaseURL(defaultWorkerOptions.type);
 
     workerOptions =

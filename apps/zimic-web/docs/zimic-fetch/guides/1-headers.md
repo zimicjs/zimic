@@ -64,8 +64,8 @@ const response = await fetch('/users', {
 
 ### Using default request headers
 
-A [fetch instance](/docs/zimic-fetch/api/2-fetch.md) can have [defaults](/docs/zimic-fetch/api/2-fetch.md#fetchdefaults)
-that are applied to all requests. These include headers:
+A [fetch instance](/docs/zimic-fetch/api/2-fetch.md) can have
+[defaults](/docs/zimic-fetch/api/2-fetch.md#fetch-defaults) that are applied to all requests. These include headers:
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -81,8 +81,8 @@ You can also set headers after the fetch instance is created. This is useful for
 as [authentication tokens](/docs/zimic-fetch/guides/5-authentication.md).
 
 ```ts
-fetch.defaults.headers['accept-language'] = 'en';
-fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
+fetch.headers['accept-language'] = 'en';
+fetch.headers.authorization = `Bearer ${accessToken}`;
 ```
 
 [`fetch.onRequest`](/docs/zimic-fetch/api/2-fetch.md#fetchonrequest) can also be used to set headers. Use this listener
@@ -217,7 +217,7 @@ information about cookies, see the [MDN documentation](https://developer.mozilla
 
 :::
 
-:::warning WARNING: `HttpOnly` cookies
+:::warning WARNING: <span>`HttpOnly` cookies</span>
 
 Cookies marked with the
 [`HttpOnly` flag](https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/Set-Cookie#httponly) are not accessible
