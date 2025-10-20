@@ -12,7 +12,9 @@ export type FetchInput<
 > = Path | URL | FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference} */
-export interface Fetch<Schema extends HttpSchema> extends Pick<FetchOptions<Schema>, 'onRequest' | 'onResponse'> {
+export interface Fetch<Schema extends HttpSchema>
+  extends Pick<FetchOptions<Schema>, 'onRequest' | 'onResponse'>,
+    FetchDefaults {
   <
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
@@ -28,10 +30,16 @@ export interface Fetch<Schema extends HttpSchema> extends Pick<FetchOptions<Sche
     Redirect extends RequestRedirect = 'follow',
   >(
     input: FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
-    init?: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Redirect>,
+    init?: Omit<
+      FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Redirect>,
+      'baseURL' | 'searchParams'
+    >,
   ): Promise<FetchResponse<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, false, Redirect>>;
 
-  /** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchdefaults `fetch.defaults`} */
+  /**
+   * @deprecated Consider accessing the default options directly from the fetch instance.
+   * @see {@link https://zimic.dev/docs/fetch/api/fetch#fetch-defaults `fetch` defaults}
+   */
   defaults: FetchDefaults;
 
   /** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchloose `fetch.loose`} */
@@ -80,9 +88,9 @@ export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchReque
 }
 
 /**
- * The default options for each request sent by the fetch instance.
+ * The default options to send with each request.
  *
- * @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchdefaults `fetch.defaults` API reference}
+ * @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference}
  */
 export type FetchDefaults = RequiredByKey<FetchRequestInit.Defaults, 'headers' | 'searchParams'>;
 

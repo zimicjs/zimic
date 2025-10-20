@@ -14,24 +14,22 @@ import FetchResponseError from './errors/FetchResponseError';
 import { FetchInput, FetchOptions, Fetch, FetchDefaults } from './types/public';
 import { FetchRequestConstructor, FetchRequestInit, FetchRequest, FetchResponse } from './types/requests';
 
-class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'defaults' | 'loose' | 'Request'> {
+class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loose' | 'Request' | keyof FetchDefaults> {
   fetch: Fetch<Schema>;
 
-  constructor({ onRequest, onResponse, ...defaults }: FetchOptions<Schema>) {
+  constructor({ headers = {}, searchParams = {}, ...otherOptions }: FetchOptions<Schema>) {
     this.fetch = this.createFetchFunction();
-
-    this.fetch.defaults = {
-      ...defaults,
-      headers: defaults.headers ?? {},
-      searchParams: defaults.searchParams ?? {},
-    };
+    this.fetch.headers = headers;
+    this.fetch.searchParams = searchParams;
+    Object.assign(this.fetch, otherOptions);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.fetch.loose = this.fetch as Fetch<any> as Fetch.Loose;
+    this.fetch.Request = this.createRequestClass(this.fetch);
+  }
 
-    this.fetch.Request = this.createRequestClass(this.fetch.defaults);
-    this.fetch.onRequest = onRequest;
-    this.fetch.onResponse = onResponse;
+  get defaults(): FetchDefaults {
+    return this.fetch;
   }
 
   private createFetchFunction() {
@@ -148,61 +146,66 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'def
     return fetchResponse;
   }
 
-  private createRequestClass(defaults: FetchDefaults) {
+  private createRequestClass(fetch: Fetch<Schema>) {
     class Request<
       Method extends HttpSchemaMethod<Schema>,
       Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
     > extends globalThis.Request {
       path: LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>;
 
-      constructor(
-        input: FetchInput<Schema, Method, Path>,
-        init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
-      ) {
-        const initWithDefaults = { ...defaults, ...init };
+      constructor(input: FetchInput<Schema, Method, Path>, init?: FetchRequestInit.Loose) {
+        let actualInput: URL | globalThis.Request;
 
-        const headersFromDefaults = new HttpHeaders(defaults.headers);
-        const headersFromInit = new HttpHeaders((init satisfies RequestInit as RequestInit).headers);
+        const actualInit = {
+          baseURL: init?.baseURL ?? fetch.baseURL,
+          method: init?.method ?? fetch.method,
+          headers: new HttpHeaders(fetch.headers),
+          searchParams: new HttpSearchParams(fetch.searchParams),
+          body: init?.body ?? fetch.body,
+          mode: init?.mode ?? fetch.mode,
+          cache: init?.cache ?? fetch.cache,
+          credentials: init?.credentials ?? fetch.credentials,
+          integrity: init?.integrity ?? fetch.integrity,
+          keepalive: init?.keepalive ?? fetch.keepalive,
+          priority: init?.priority ?? fetch.priority,
+          redirect: init?.redirect ?? fetch.redirect,
+          referrer: init?.referrer ?? fetch.referrer,
+          referrerPolicy: init?.referrerPolicy ?? fetch.referrerPolicy,
+          signal: init?.signal ?? fetch.signal,
+          window: init?.window === undefined ? fetch.window : init.window,
+          duplex: init?.duplex ?? fetch.duplex,
+        };
+
+        if (init?.headers) {
+          actualInit.headers.assign(new HttpHeaders(init.headers));
+        }
 
         let url: URL;
-        const baseURL = new URL(initWithDefaults.baseURL);
+        const baseURL = new URL(actualInit.baseURL);
 
         if (input instanceof globalThis.Request) {
-          // Optimize type checking by narrowing the type of input
           const request = input as globalThis.Request;
 
-          // Optimize type checking by narrowing the type of headers
-          const headersFromRequest = new HttpHeaders(input.headers as Headers);
-
-          initWithDefaults.headers = {
-            ...headersFromDefaults.toObject(),
-            ...headersFromRequest.toObject(),
-            ...headersFromInit.toObject(),
-          };
-
-          super(request, initWithDefaults);
+          actualInit.headers.assign(new HttpHeaders(request.headers));
 
           url = new URL(input.url);
+
+          actualInput = request;
         } else {
-          initWithDefaults.headers = {
-            ...headersFromDefaults.toObject(),
-            ...headersFromInit.toObject(),
-          };
+          url = new URL(input instanceof URL ? input : joinURL(baseURL, input));
 
-          url = input instanceof URL ? new URL(input) : new URL(joinURL(baseURL, input));
+          actualInit.searchParams.assign(new HttpSearchParams(url.searchParams));
 
-          const searchParamsFromDefaults = new HttpSearchParams(defaults.searchParams);
-          const searchParamsFromInit = new HttpSearchParams(initWithDefaults.searchParams);
+          if (init?.searchParams) {
+            actualInit.searchParams.assign(new HttpSearchParams(init.searchParams));
+          }
 
-          initWithDefaults.searchParams = {
-            ...searchParamsFromDefaults.toObject(),
-            ...searchParamsFromInit.toObject(),
-          };
+          url.search = actualInit.searchParams.toString();
 
-          url.search = new HttpSearchParams(initWithDefaults.searchParams).toString();
-
-          super(url, initWithDefaults);
+          actualInput = url;
         }
+
+        super(actualInput, actualInit);
 
         const baseURLWithoutTrailingSlash = baseURL.toString().replace(/\/$/, '');
 
@@ -211,17 +214,9 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'def
           .replace(baseURLWithoutTrailingSlash, '') as LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>;
       }
 
-      clone(): Request<Method, Path> {
+      clone(): this {
         const rawClone = super.clone();
-
-        return new Request<Method, Path>(
-          rawClone as unknown as FetchInput<Schema, Method, Path>,
-          rawClone as unknown as FetchRequestInit<
-            Schema,
-            Method,
-            LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>
-          >,
-        );
+        return new Request(rawClone as FetchInput<Schema, Method, Path>) as this;
       }
     }
 

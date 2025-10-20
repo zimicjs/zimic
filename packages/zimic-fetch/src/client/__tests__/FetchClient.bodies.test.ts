@@ -95,10 +95,10 @@ describe('FetchClient > Bodies', () => {
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
 
-        expectTypeOf(request.json).toEqualTypeOf<() => Promise<null>>();
+        expectTypeOf(request.json).toEqualTypeOf<() => Promise<never>>();
         expectTypeOf(request.text).toEqualTypeOf<() => Promise<string>>();
         expectTypeOf(request.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
-        expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
+        expectTypeOf(request.formData).toEqualTypeOf<() => Promise<never>>();
 
         const response = await fetch(request);
         responses.push(response);
@@ -148,10 +148,10 @@ describe('FetchClient > Bodies', () => {
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
 
-        expectTypeOf(request.json).toEqualTypeOf<() => Promise<null>>();
+        expectTypeOf(request.json).toEqualTypeOf<() => Promise<never>>();
         expectTypeOf(request.text).toEqualTypeOf<() => Promise<string>>();
         expectTypeOf(request.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
-        expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
+        expectTypeOf(request.formData).toEqualTypeOf<() => Promise<never>>();
 
         const response = await fetch(request);
         responses.push(response);
@@ -203,10 +203,10 @@ describe('FetchClient > Bodies', () => {
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
 
-        expectTypeOf(request.json).toEqualTypeOf<() => Promise<null>>();
+        expectTypeOf(request.json).toEqualTypeOf<() => Promise<never>>();
         expectTypeOf(request.text).toEqualTypeOf<() => Promise<string>>();
         expectTypeOf(request.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
-        expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
+        expectTypeOf(request.formData).toEqualTypeOf<() => Promise<never>>();
 
         const response = await fetch(request);
         responses.push(response);
