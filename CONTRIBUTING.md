@@ -92,15 +92,21 @@ Zimic is a monorepo managed with [pnpm](https://pnpm.io) and [Turborepo](https:/
 structured as follows:
 
 - `packages`
-  - `zimic-http`: Implementation of the package `@zimic/http`;
-  - `zimic-fetch`: Implementation of the package `@zimic/fetch`;
-  - `zimic-interceptor`: Implementation of the package `@zimic/interceptor`;
+  - `zimic-http`: Implementation of the package `@zimic/http`, a collection of type-safe utilities to handle HTTP
+    requests and responses, including headers, search params, and form data;
+  - `zimic-fetch`: Implementation of the package `@zimic/fetch`, a minimal (~2 kB minified gzipped) and type-safe
+    `fetch`-like API client;
+  - `zimic-interceptor`: Implementation of the package `@zimic/interceptor`, a type-safe interceptor library for
+    handling and mocking HTTP requests in development and testing;
+  - `zimic-utils`: Shared primitives (data comparison, URL building, wait utilities, logging, type helpers); each
+    exported resource is exported as a single file to keep bundles small and help clients import only what they need;
   - `tsconfig`: Shared TypeScript configuration;
   - `eslint-config`: General ESLint configuration;
   - `eslint-config-node`: Node.js-specific ESLint configuration;
   - `lint-staged-config`: Configuration for [lint-staged](https://github.com/lint-staged/lint-staged);
 - `apps`
-  - `zimic-web`: [zimic.dev](https://zimic.dev) documentation website built with [Docusaurus](https://docusaurus.io);
+  - `zimic-web`: [zimic.dev](https://zimic.dev) documentation website built with [Docusaurus](https://docusaurus.io) and
+    styled with Tailwind CSS;
   - `zimic-test-client`: Test application to check Zimic installed as a dependency; important to verify the library
     exports and build artifacts;
 - `examples`: Example projects using Zimic;

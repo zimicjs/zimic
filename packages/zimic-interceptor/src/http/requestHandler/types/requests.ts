@@ -14,7 +14,7 @@ import {
   HttpStatusCode,
   InferPathParams,
 } from '@zimic/http';
-import { Default, PartialByKey, PossiblePromise, ReplaceBy } from '@zimic/utils/types';
+import { Default, PartialByKey, PossiblePromise, Replace } from '@zimic/utils/types';
 
 type HttpRequestHandlerResponseBody<
   ResponseSchema extends HttpResponseSchema,
@@ -92,7 +92,7 @@ export interface HttpInterceptorRequest<Path extends string, MethodSchema extend
    *
    * @see {@link https://zimic.dev/docs/interceptor/guides/http/bodies#using-request-bodies Using request bodies}
    */
-  body: ReplaceBy<HttpRequestBodySchema<MethodSchema>, ArrayBuffer | ReadableStream, Blob>;
+  body: Replace<HttpRequestBodySchema<MethodSchema>, ArrayBuffer | ReadableStream, Blob>;
 
   /** The raw request object. */
   raw: HttpRequest<HttpRequestBodySchema<MethodSchema>, Default<HttpRequestHeadersSchema<MethodSchema>>>;
@@ -117,7 +117,7 @@ export interface HttpInterceptorResponse<MethodSchema extends HttpMethodSchema, 
    *
    * @see {@link https://zimic.dev/docs/interceptor/guides/http/bodies#using-response-bodies Using response bodies}
    */
-  body: ReplaceBy<HttpResponseBodySchema<MethodSchema, StatusCode>, ArrayBuffer | ReadableStream, Blob>;
+  body: Replace<HttpResponseBodySchema<MethodSchema, StatusCode>, ArrayBuffer | ReadableStream, Blob>;
 
   /** The raw response object. */
   raw: HttpResponse<
