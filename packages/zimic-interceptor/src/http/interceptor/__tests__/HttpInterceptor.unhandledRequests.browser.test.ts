@@ -13,8 +13,8 @@ describe.each(testMatrix)('HttpInterceptor (browser, $type) > Unhandled requests
     baseURL = await getBrowserBaseURL(type);
   });
 
-  describe('Logging', async () => {
-    await declareUnhandledRequestLoggingHttpInterceptorTests({
+  describe('Logging', () => {
+    declareUnhandledRequestLoggingHttpInterceptorTests({
       platform: 'browser',
       type,
       getBaseURL: () => baseURL,
@@ -22,8 +22,8 @@ describe.each(testMatrix)('HttpInterceptor (browser, $type) > Unhandled requests
     });
   });
 
-  describe('Factories', async () => {
-    await declareUnhandledRequestFactoriesHttpInterceptorTests({
+  describe('Factories', () => {
+    declareUnhandledRequestFactoriesHttpInterceptorTests({
       platform: 'browser',
       type,
       getBaseURL: () => baseURL,

@@ -10,7 +10,7 @@ A type representing a typed fetch request, which inherits from the native
 [Request](https://developer.mozilla.org/docs/Web/API/Request).
 
 On top of the properties available in native requests, `FetchRequest` instances have their URL automatically prefixed
-with the base URL of their fetch instance. [Default options](/docs/zimic-fetch/api/2-fetch.md#fetchdefaults) are also
+with the base URL of their fetch instance. [Default options](/docs/zimic-fetch/api/2-fetch.md#fetch-defaults) are also
 applied, if present in the fetch instance.
 
 The path of the request is extracted from the URL, excluding the base URL, and is available in the `path` property.

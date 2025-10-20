@@ -292,6 +292,34 @@ searchParams.contains(otherSearchParams);
 
 `true` if the current search parameters contain all keys and values of the other search parameters, `false` otherwise.
 
+## `searchParams.assign()`
+
+Assigns another `HttpSearchParams` instance to the current instance, similarly to
+[`Object.assign()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object/assign). Only the
+instance where this method is called will be modified.
+
+```ts
+searchParams.assign(otherSearchParams);
+```
+
+**Returns**: `void`
+
+```ts
+const searchParams = new HttpSearchParams({
+  names: ['user 1'],
+  page: '1',
+});
+
+const otherSearchParams = new HttpSearchParams({
+  names: ['user 2'],
+});
+
+searchParams.assign(otherSearchParams);
+
+console.log(searchParams.getAll('names')); // ['user 2']
+console.log(searchParams.get('page')); // '1'
+```
+
 ## `searchParams.toObject()`
 
 Converts the `HttpSearchParams` instance to a plain object. This method is useful for serialization and debugging
