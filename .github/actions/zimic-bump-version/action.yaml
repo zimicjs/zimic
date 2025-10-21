@@ -127,7 +127,10 @@ runs:
               numberOfPushRetries=$((numberOfPushRetries + 1))
 
               echo 'Push failed.'
-               
+
+              echo 'Undoing merge commit...'
+              git reset HEAD~1
+
               if git diff --quiet; then
                 echo 'No unstaged changes.'
               else
@@ -137,7 +140,7 @@ runs:
               fi
 
               echo 'Syncing local branch with remote...'
-              git reset --hard origin/$branch
+              git pull
             done
 
             git checkout -
