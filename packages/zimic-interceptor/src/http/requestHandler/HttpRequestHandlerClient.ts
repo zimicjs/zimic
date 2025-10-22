@@ -69,13 +69,13 @@ class HttpRequestHandlerClient<
   private unmatchedRequestGroups: UnmatchedHttpInterceptorRequestGroup[] = [];
   private _requests: InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] = [];
 
-  createResponseDeclaration?: HttpRequestHandlerResponseDeclarationFactory<
+  private createResponseDeclaration?: HttpRequestHandlerResponseDeclarationFactory<
     Path,
     Default<Schema[Path][Method]>,
     StatusCode
   >;
 
-  createResponseDelay?: HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>;
+  private createResponseDelay?: HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>;
 
   constructor(
     private interceptor: HttpInterceptorClient<Schema>,
