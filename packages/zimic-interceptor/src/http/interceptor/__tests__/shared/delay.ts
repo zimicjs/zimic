@@ -157,6 +157,52 @@ export function declareDelayHttpInterceptorTests(options: RuntimeSharedHttpInter
         }
       });
     });
+
+    it('should apply an exact delay when the range limits are equal', async () => {
+      await usingHttpInterceptor<Schema>(interceptorOptions, async (interceptor) => {
+        const delay = 50;
+
+        const handler = await promiseIfRemote(
+          interceptor.get('/users').delay(delay, delay).respond({ status: 204 }),
+          interceptor,
+        );
+
+        expect(handler.requests).toHaveLength(0);
+
+        const { result: response, elapsedTime } = await usingElapsedTime(async () => {
+          return fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        });
+        expect(response.status).toBe(204);
+        expect(elapsedTime).toBeGreaterThanOrEqual(delay);
+
+        expect(handler.requests).toHaveLength(1);
+
+        expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
+        expect(waitForDelaySpy).toHaveBeenCalledWith(delay);
+      });
+    });
+
+    it('should apply the highest delay when the minimum limit is higher than the maximum limit', async () => {
+      await usingHttpInterceptor<Schema>(interceptorOptions, async (interceptor) => {
+        const minDelay = 100;
+        const maxDelay = 50;
+
+        expect(minDelay).toBeGreaterThan(maxDelay);
+
+        const handler = await promiseIfRemote(
+          interceptor.get('/users').delay(minDelay, maxDelay).respond({ status: 204 }),
+          interceptor,
+        );
+
+        const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handler.requests).toHaveLength(1);
+
+        expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
+        expect(waitForDelaySpy).toHaveBeenCalledWith(minDelay);
+      });
+    });
   });
 
   describe('Computed delay', () => {

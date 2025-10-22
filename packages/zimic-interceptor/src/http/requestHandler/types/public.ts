@@ -108,11 +108,11 @@ export interface SyncedRemoteHttpRequestHandler<
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerdelay `handler.delay()` API reference} */
   delay: ((
-    delayInMilliseconds: number | HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>,
+    milliseconds: number | HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>,
   ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>) &
     ((
-      minDelayInMilliseconds: number,
-      maxDelayInMilliseconds: number,
+      minMilliseconds: number,
+      maxMilliseconds: number,
     ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>);
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */

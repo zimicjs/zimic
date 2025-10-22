@@ -16,7 +16,7 @@ import waitForDelay from '@zimic/utils/time/waitForDelay';
 import { Default, Range } from '@zimic/utils/types';
 
 import { convertArrayBufferToBlob, convertReadableStreamToBlob } from '@/utils/data';
-import { randomInt } from '@/utils/numbers';
+import { random } from '@/utils/numbers';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import DisabledRequestSavingError from './errors/DisabledRequestSavingError';
@@ -98,7 +98,7 @@ class HttpRequestHandlerClient<
     }
 
     if (typeof minMilliseconds === 'number' && typeof maxMilliseconds === 'number') {
-      this.createResponseDelay = () => randomInt(minMilliseconds, maxMilliseconds + 1);
+      this.createResponseDelay = () => random(minMilliseconds, maxMilliseconds);
       return this;
     }
 
