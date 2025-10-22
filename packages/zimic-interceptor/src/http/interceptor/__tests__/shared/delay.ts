@@ -34,7 +34,7 @@ export function declareDelayHttpInterceptorTests(options: RuntimeSharedHttpInter
   });
 
   describe('Exact delay', () => {
-    it('should apply a exact delay before responding', async () => {
+    it('should apply an exact delay before responding', async () => {
       await usingHttpInterceptor<Schema>(interceptorOptions, async (interceptor) => {
         const delay = 100;
 
