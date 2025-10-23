@@ -30,7 +30,7 @@ function HomePage() {
         <div className="flex flex-col items-center space-y-8 px-12">
           <div className="relative">
             <div
-              className="bg-highlight-500/30 -z-1 absolute -inset-4 h-[calc(100%+2rem)] w-[calc(100%+2rem)] rounded-full"
+              className="bg-highlight-500/30 absolute -inset-4 -z-1 h-[calc(100%+2rem)] w-[calc(100%+2rem)] rounded-full"
               style={{ filter: 'blur(4rem)' }}
             />
 

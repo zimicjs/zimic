@@ -1,6 +1,6 @@
-function waitForDelay(duration: number) {
+function waitForDelay(milliseconds: number) {
   return new Promise<void>((resolve) => {
-    setTimeout(resolve, duration);
+    setTimeout(resolve, milliseconds);
   });
 }
 
