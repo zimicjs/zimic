@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "dev": "dotenv -c development -- next dev --turbo",
+    "dev": "dotenv -c development -- next dev",
     "mock": "zimic-interceptor server start --hostname 127.0.0.1 --port 4002 --ephemeral",
     "test": "dotenv -c test -- dotenv -c development -- pnpm mock -- playwright test",
     "test:turbo": "dotenv -v CI=true -- pnpm run test",
