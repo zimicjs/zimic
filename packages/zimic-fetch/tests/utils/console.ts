@@ -1,21 +1,26 @@
 import { PossiblePromise } from '@zimic/utils/types';
 import { MockInstance, vi } from 'vitest';
 
-type IgnorableConsoleMethod = 'error' | 'warn' | 'info' | 'log' | 'debug';
+const _IGNORABLE_CONSOLE_METHODS = ['error', 'warn', 'info', 'log', 'debug'] satisfies (keyof Console)[];
+type IgnorableConsoleMethod = (typeof _IGNORABLE_CONSOLE_METHODS)[number];
 
-type SpyByConsoleMethod<Method extends IgnorableConsoleMethod = IgnorableConsoleMethod> = {
+export type SpiedConsole<Method extends IgnorableConsoleMethod = IgnorableConsoleMethod> = Console & {
   [Key in Method]: MockInstance;
 };
 
 export async function usingIgnoredConsole<Method extends IgnorableConsoleMethod, ReturnType>(
   ignoredMethods: Method[],
-  callback: (spiedConsole: Console & SpyByConsoleMethod<Method>) => PossiblePromise<ReturnType>,
+  callback: (spiedConsole: SpiedConsole<Method>) => PossiblePromise<ReturnType>,
 ) {
   for (const method of ignoredMethods) {
-    vi.spyOn(console, method).mockImplementation(vi.fn());
+    vi.spyOn(console, method);
   }
 
-  const spiedConsole = console as Console & SpyByConsoleMethod<Method>;
+  const spiedConsole = console satisfies Console as SpiedConsole<Method>;
+
+  for (const method of ignoredMethods) {
+    spiedConsole[method].mockImplementation(vi.fn());
+  }
 
   try {
     const result = await callback(spiedConsole);

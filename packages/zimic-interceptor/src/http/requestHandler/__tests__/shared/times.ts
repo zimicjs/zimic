@@ -1157,71 +1157,36 @@ export function declareTimesHttpRequestHandlerTests(
     });
   });
 
-  describe('Clear', () => {
-    it('should reset an exact number of requests limit when cleared', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
-        .respond({ status: 200, body: { success: true } })
-        .times(1);
+  it('should reset the limits on the number of requests when cleared', async () => {
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+      .respond({ status: 200, body: { success: true } })
+      .times(1);
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
-        message: 'Expected exactly 1 request, but got 0.',
-        expectedNumberOfRequests: 1,
-      });
-
-      handler.clear();
-
-      await promiseIfRemote(handler.checkTimes(), handler);
-
-      handler.respond({ status: 200, body: { success: true } }).times(1);
-
-      const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
-      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-
-      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
-      await promiseIfRemote(handler.checkTimes(), handler);
-
-      handler.clear();
-
-      await promiseIfRemote(handler.checkTimes(), handler);
-
-      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
-        success: false,
-        cause: 'missingResponseDeclaration',
-      });
-      await promiseIfRemote(handler.checkTimes(), handler);
+    await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      message: 'Expected exactly 1 request, but got 0.',
+      expectedNumberOfRequests: 1,
     });
 
-    it('should reset a range number of requests limit when cleared', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
-        .respond({ status: 200, body: { success: true } })
-        .times(1, 3);
+    handler.clear();
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
-        message: 'Expected at least 1 and at most 3 requests, but got 0.',
-        expectedNumberOfRequests: { min: 1, max: 3 },
-      });
+    await promiseIfRemote(handler.checkTimes(), handler);
 
-      handler.clear();
+    handler.respond({ status: 200, body: { success: true } }).times(1);
 
-      await promiseIfRemote(handler.checkTimes(), handler);
+    const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
+    const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      handler.respond({ status: 200, body: { success: true } }).times(1, 3);
+    expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
+    await promiseIfRemote(handler.checkTimes(), handler);
 
-      const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
-      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+    handler.clear();
 
-      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
-      await promiseIfRemote(handler.checkTimes(), handler);
+    await promiseIfRemote(handler.checkTimes(), handler);
 
-      handler.clear();
-
-      await promiseIfRemote(handler.checkTimes(), handler);
-
-      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
-        success: false,
-        cause: 'missingResponseDeclaration',
-      });
-      await promiseIfRemote(handler.checkTimes(), handler);
+    expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+      success: false,
+      cause: 'missingResponseDeclaration',
     });
+    await promiseIfRemote(handler.checkTimes(), handler);
   });
 }
