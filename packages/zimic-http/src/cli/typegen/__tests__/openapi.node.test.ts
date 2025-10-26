@@ -11,7 +11,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, MockI
 import runCLI from '@/cli/cli';
 import { pathExists, replaceFileExtension } from '@/utils/files';
 import { resolvedPrettierConfig } from '@/utils/prettier';
-import { usingIgnoredConsole } from '@tests/utils/console';
+import { SpiedConsole, usingIgnoredConsole } from '@tests/utils/console';
 
 import typegenFixtures from './fixtures/typegenFixtures';
 import { TypegenFixtureCase, TypegenFixtureCaseName } from './fixtures/types';
@@ -224,7 +224,7 @@ describe('Type generation (OpenAPI)', () => {
   function verifySuccessMessage(
     fixtureCase: TypegenFixtureCase,
     outputLabel: string,
-    console: Console & { log: MockInstance; warn: MockInstance },
+    console: SpiedConsole<'log' | 'warn'>,
   ) {
     let successMessage: string | undefined;
 
