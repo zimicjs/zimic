@@ -139,7 +139,7 @@ jobs:
           PLAYWRIGHT_WORKERS: 2
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: ${{ always() }}
         with:
           name: test-results-node-${{ matrix.node-version }}
