@@ -41,10 +41,11 @@ with `@zimic/interceptor`.
 
 > [!NOTE]
 >
-> In the Playwright configuration, one instance of the application is started for each test worker, whose number is
-> defined in the environment variable `PLAYWRIGHT_WORKERS` (see [.env.test](./.env.test)). Each instance uses a
-> different `GITHUB_API_BASE_URL` value, with the worker index as suffix. This allows the tests to run in parallel
-> without the interceptors interfering with each other.
+> In the Playwright configuration, one instance of the application is started for each test worker, pointing to a
+> [dedicated build directory](./next.config.ts#L6). The number of workers is defined in the environment variable
+> `PLAYWRIGHT_WORKERS` (see [.env.test](./.env.test)). Each instance uses a different `GITHUB_API_BASE_URL` value, with
+> the worker index as suffix. This allows the tests to run in parallel without the interceptors interfering with each
+> other.
 
 ## Try it
 

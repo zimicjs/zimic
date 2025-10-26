@@ -1,6 +1,6 @@
 {
   "name": "zimic-web",
-  "version": "0.3.28",
+  "version": "0.3.29-canary.1",
   "private": true,
   "scripts": {
     "dev": "docusaurus start --host :: --no-open",
@@ -34,7 +34,7 @@
   "devDependencies": {
     "@docusaurus/module-type-aliases": "3.9.2",
     "@docusaurus/types": "3.9.2",
-    "@tailwindcss/postcss": "^4.1.14",
+    "@tailwindcss/postcss": "^4.1.16",
     "@types/react": "^19.2.2",
     "@zimic/eslint-config-react": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
@@ -44,7 +44,7 @@
     "eslint": "^9.38.0",
     "postcss": "^8.5.6",
     "sponsorkit": "^17.0.0",
-    "tailwindcss": "^4.1.14",
+    "tailwindcss": "^4.1.16",
     "typescript": "^5.9.3"
   }
 }
