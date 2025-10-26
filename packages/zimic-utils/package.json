@@ -181,6 +181,7 @@
   "devDependencies": {
     "@types/node": "^24.9.1",
     "@vitest/browser": "^4.0.3",
+    "@vitest/browser-playwright": "^4.0.3",
     "@vitest/coverage-istanbul": "^4.0.3",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
