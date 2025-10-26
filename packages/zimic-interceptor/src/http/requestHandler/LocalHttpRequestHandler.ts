@@ -9,6 +9,7 @@ import {
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
+  HttpRequestHandlerResponseDelayFactory,
   InterceptedHttpInterceptorRequest,
 } from './types/requests';
 import { HttpRequestHandlerRestriction } from './types/restrictions';
@@ -38,6 +39,14 @@ class LocalHttpRequestHandler<
 
   with(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>): this {
     this.client.with(restriction);
+    return this;
+  }
+
+  delay(
+    minMilliseconds: number | HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>,
+    maxMilliseconds?: number,
+  ): this {
+    this.client.delay(minMilliseconds, maxMilliseconds);
     return this;
   }
 
