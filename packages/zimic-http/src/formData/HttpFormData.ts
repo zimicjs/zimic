@@ -124,9 +124,8 @@ class HttpFormData<LooseSchema extends HttpFormDataSchema.Loose = HttpFormDataSc
       return false;
     }
 
-    for (const key of this.keys()) {
-      const otherHasKey = super.has.call(otherData, key);
-      if (!otherHasKey) {
+    for (const fieldName of this.keys()) {
+      if (!super.has.call(otherData, fieldName)) {
         return false;
       }
     }
@@ -136,32 +135,52 @@ class HttpFormData<LooseSchema extends HttpFormDataSchema.Loose = HttpFormDataSc
 
   /** @see {@link https://zimic.dev/docs/http/api/http-form-data#formdatacontains `formData.contains()` API reference} */
   async contains<OtherSchema extends LooseSchema>(otherData: HttpFormData<OtherSchema>): Promise<boolean> {
-    for (const [otherKey, otherValue] of otherData.entries()) {
-      const values = super.getAll.call(this, otherKey);
+    for (const [otherFieldName, otherFieldValue] of otherData.entries()) {
+      const fieldValues = super.getAll.call(this, otherFieldName);
 
-      const haveSameNumberOfValues = values.length === super.getAll.call(otherData, otherKey).length;
-      if (!haveSameNumberOfValues) {
+      const haveSameNumberOfFieldValues = fieldValues.length === super.getAll.call(otherData, otherFieldName).length;
+
+      if (!haveSameNumberOfFieldValues) {
         return false;
       }
 
-      let valueExists = false;
+      let fieldValueExists = false;
 
-      for (const value of values) {
+      for (const fieldValue of fieldValues) {
         if (
-          value === otherValue ||
-          (value instanceof Blob && (otherValue as Blob) instanceof Blob && (await fileEquals(value, otherValue)))
+          fieldValue === otherFieldValue ||
+          (fieldValue instanceof Blob &&
+            (otherFieldValue as Blob) instanceof Blob &&
+            (await fileEquals(fieldValue, otherFieldValue)))
         ) {
-          valueExists = true;
+          fieldValueExists = true;
           break;
         }
       }
 
-      if (!valueExists) {
+      if (!fieldValueExists) {
         return false;
       }
     }
 
     return true;
+  }
+
+  /** @see {@link https://zimic.dev/docs/http/api/http-form-data#formdataassign `formData.assign()` API reference} */
+  assign<OtherSchema extends LooseSchema>(...otherDataArray: HttpFormData<OtherSchema>[]) {
+    for (const otherData of otherDataArray) {
+      if (this === (otherData as unknown)) {
+        continue;
+      }
+
+      for (const fieldName of otherData.keys()) {
+        super.delete(fieldName);
+      }
+
+      for (const [fieldName, fieldValue] of otherData.entries()) {
+        super.append(fieldName, fieldValue);
+      }
+    }
   }
 
   /** @see {@link https://zimic.dev/docs/http/api/http-form-data#formdatatoobject `formData.toObject()` API reference} */
@@ -170,17 +189,17 @@ class HttpFormData<LooseSchema extends HttpFormDataSchema.Loose = HttpFormDataSc
 
     type SchemaValue = this['_schema'][HttpFormDataSchemaName<this['_schema']>];
 
-    for (const [key, value] of this.entries()) {
-      if (key in object) {
-        const existingValue = object[key] as SchemaValue[];
+    for (const [fieldName, fieldValue] of this.entries()) {
+      if (fieldName in object) {
+        const existingFieldValue = object[fieldName] as SchemaValue[];
 
-        if (Array.isArray<SchemaValue>(existingValue)) {
-          existingValue.push(value as SchemaValue);
+        if (Array.isArray<SchemaValue>(existingFieldValue)) {
+          existingFieldValue.push(fieldValue as SchemaValue);
         } else {
-          object[key] = [existingValue, value] as SchemaValue;
+          object[fieldName] = [existingFieldValue, fieldValue] as SchemaValue;
         }
       } else {
-        object[key] = value as SchemaValue;
+        object[fieldName] = fieldValue as SchemaValue;
       }
     }
 
