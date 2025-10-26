@@ -11,6 +11,7 @@ import HttpRequestHandlerClient from '../HttpRequestHandlerClient';
 import {
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
+  HttpRequestHandlerResponseDelayFactory,
   InterceptedHttpInterceptorRequest,
 } from './requests';
 import { HttpRequestHandlerRestriction } from './restrictions';
@@ -56,6 +57,12 @@ export interface LocalHttpRequestHandler<
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
   with: (restriction: HttpRequestHandlerRestriction<Schema, Method, Path>) => this;
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerdelay `handler.delay()` API reference} */
+  delay: ((
+    milliseconds: number | HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>,
+  ) => this) &
+    ((minMilliseconds: number, maxMilliseconds: number) => this);
+
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
   respond: <NewStatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
@@ -98,6 +105,15 @@ export interface SyncedRemoteHttpRequestHandler<
   with: (
     restriction: HttpRequestHandlerRestriction<Schema, Method, Path>,
   ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
+
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerdelay `handler.delay()` API reference} */
+  delay: ((
+    milliseconds: number | HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>,
+  ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>) &
+    ((
+      minMilliseconds: number,
+      maxMilliseconds: number,
+    ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>);
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
   respond: <NewStatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(

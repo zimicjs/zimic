@@ -1,4 +1,5 @@
 import path from 'path';
+import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
@@ -8,7 +9,6 @@ export default defineConfig({
     testTimeout: 5000,
     hookTimeout: 5000,
     maxWorkers: process.env.CI === 'true' ? '50%' : '25%',
-    minWorkers: 1,
     clearMocks: true,
     projects: [
       {
@@ -28,8 +28,8 @@ export default defineConfig({
           include: ['./{src,tests,scripts}/**/*.test.ts', './{src,tests,scripts}/**/*.browser.test.ts'],
           exclude: ['**/*.node.test.ts'],
           browser: {
+            provider: playwright(),
             instances: [{ browser: 'chromium' }],
-            provider: 'playwright',
             enabled: true,
             headless: true,
             screenshotFailures: false,

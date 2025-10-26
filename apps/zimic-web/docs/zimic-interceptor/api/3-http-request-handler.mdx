@@ -142,6 +142,55 @@ asynchronous nature of remote interceptors, make sure to await the handler befor
 
 - [Restrictions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#restrictions)
 
+## `handler.delay()`
+
+Declares a delay to wait before responding to requests. This is useful for simulating network latency, server processing
+time, or testing loading states in your application, for example.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+handler.delay(milliseconds);
+handler.delay(minMilliseconds, maxMilliseconds);
+handler.delay((request) => milliseconds);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await handler.delay(milliseconds);
+await handler.delay(minMilliseconds, maxMilliseconds);
+await handler.delay((request) => milliseconds);
+```
+
+  </TabItem>
+</Tabs>
+
+**Arguments**:
+
+1. **milliseconds**: `number | HttpRequestHandlerResponseDelayFactory<Path, MethodSchema>`
+
+   The delay to apply before responding, in milliseconds. It can be either:
+   - An exact number for static delays, or;
+   - A function that returns the delay, which can be useful to generate dynamic delays based on the request.
+
+2. **maxMilliseconds** (optional): `number`
+
+   If two arguments are provided, the first is considered the minimum delay and the second the maximum delay, both in
+   milliseconds. Each response will have a random delay within this range, calculated using
+   [`Math.random()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Math/random).
+
+**Returns**: `HttpRequestHandler<Method, Path, StatusCode>`
+
+The same handler, now including the configured delay.
+
+**Related**:
+
+- [Declarative delays](/docs/zimic-interceptor/guides/http/8-declarative-delays.mdx)
+
 ## `handler.respond()`
 
 Declares a response to return for matched intercepted requests.

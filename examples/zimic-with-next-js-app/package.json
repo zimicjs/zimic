@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "dev": "dotenv -c development -- next dev --turbo",
+    "dev": "dotenv -c development -- next dev",
     "mock": "pnpm mock:start -- pnpm mock:load",
     "mock:start": "zimic-interceptor server start --hostname 127.0.0.1 --port 4001 --ephemeral",
     "mock:load": "tsx ./tests/interceptors/scripts/load.ts",
@@ -16,20 +16,20 @@
   "dependencies": {
     "@zimic/fetch": "latest",
     "@zimic/http": "latest",
-    "next": "^15.5.6",
+    "next": "^16.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
-    "@tailwindcss/postcss": "^4.1.14",
+    "@tailwindcss/postcss": "^4.1.16",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@zimic/interceptor": "latest",
     "dotenv-cli": "^10.0.0",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.14",
+    "tailwindcss": "^4.1.16",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   }

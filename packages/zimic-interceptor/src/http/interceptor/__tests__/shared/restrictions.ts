@@ -5,7 +5,6 @@ import color from 'picocolors';
 import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { importFile } from '@/utils/files';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -54,7 +53,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
       searchParams: RequestSearchParamsSchema;
     };
     response: {
-      204: { headers: AccessControlHeaders };
+      204: {};
     };
   }>;
 
@@ -86,10 +85,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
             expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<RequestHeadersSchema>>();
             expect(request.headers).toBeInstanceOf(HttpHeaders);
 
-            return {
-              status: 204,
-              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-            };
+            return { status: 204 };
           }),
         interceptor,
       );
@@ -181,10 +177,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
             expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<RequestSearchParamsSchema>>();
             expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
-            return {
-              status: 204,
-              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-            };
+            return { status: 204 };
           }),
         interceptor,
       );
@@ -858,6 +851,38 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         expect(handler.requests).toHaveLength(1);
       }
+    });
+  });
+
+  it('should reset restrictions when cleared', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      const handler = await promiseIfRemote(
+        interceptor
+          .get('/users')
+          .with({ headers: { count: 1 } })
+          .respond({ status: 204 }),
+        interceptor,
+      );
+
+      expect(handler.requests).toHaveLength(0);
+
+      const headers = new HttpHeaders<RequestHeadersSchema>({ count: 1 });
+
+      let response = await fetch(joinURL(baseURL, '/users'), { method: 'GET', headers });
+      expect(response.status).toBe(204);
+
+      expect(handler.requests).toHaveLength(1);
+
+      await promiseIfRemote(handler.clear(), handler);
+
+      handler.respond({ status: 204 });
+
+      response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      expect(response.status).toBe(204);
+
+      expect(handler.requests).toHaveLength(1);
     });
   });
 }
