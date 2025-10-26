@@ -1,5 +1,6 @@
 import path from 'path';
 import { defineConfig } from 'vitest/config';
+import { playwright } from '@vitest/browser-playwright';
 
 export default defineConfig({
   publicDir: './public',
@@ -8,7 +9,6 @@ export default defineConfig({
     testTimeout: 7500,
     hookTimeout: 7500,
     maxWorkers: process.env.CI === 'true' ? '50%' : '25%',
-    minWorkers: 1,
     clearMocks: true,
     projects: [
       {
@@ -36,7 +36,7 @@ export default defineConfig({
           retry: process.env.CI === 'true' ? 3 : 0,
           browser: {
             instances: [{ browser: 'chromium' }],
-            provider: 'playwright',
+            provider: playwright(),
             enabled: true,
             headless: true,
             screenshotFailures: false,

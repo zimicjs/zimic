@@ -13,7 +13,7 @@ function Input({ label, className, ...rest }: Props, ref: ForwardedRef<HTMLInput
       <input
         ref={ref}
         className={cn(
-          'outline-hidden rounded-sm px-2 py-1.5 ring-2 ring-slate-300 transition-shadow hover:ring-slate-400 focus:ring-slate-600',
+          'rounded-sm px-2 py-1.5 ring-2 ring-slate-300 outline-hidden transition-shadow hover:ring-slate-400 focus:ring-slate-600',
           className,
         )}
         {...rest}
