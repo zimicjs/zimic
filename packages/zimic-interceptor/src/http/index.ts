@@ -17,6 +17,7 @@ export { default as TimesCheckError } from './requestHandler/errors/TimesCheckEr
 export type {
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
+  HttpRequestHandlerResponseDelayFactory,
   HttpInterceptorRequest,
   HttpInterceptorResponse,
   InterceptedHttpInterceptorRequest,

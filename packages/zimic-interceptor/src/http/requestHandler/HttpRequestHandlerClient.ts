@@ -12,9 +12,11 @@ import {
 import blobEquals from '@zimic/utils/data/blobEquals';
 import jsonContains from '@zimic/utils/data/jsonContains';
 import jsonEquals from '@zimic/utils/data/jsonEquals';
+import waitForDelay from '@zimic/utils/time/waitForDelay';
 import { Default, Range } from '@zimic/utils/types';
 
 import { convertArrayBufferToBlob, convertReadableStreamToBlob } from '@/utils/data';
+import { random } from '@/utils/numbers';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import DisabledRequestSavingError from './errors/DisabledRequestSavingError';
@@ -27,6 +29,7 @@ import {
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
+  HttpRequestHandlerResponseDelayFactory,
   InterceptedHttpInterceptorRequest,
 } from './types/requests';
 import {
@@ -60,7 +63,7 @@ class HttpRequestHandlerClient<
     numberOfRequests: DEFAULT_NUMBER_OF_REQUEST_LIMITS,
   };
 
-  private timesDeclarationPointer?: TimesDeclarationPointer;
+  private timesPointer?: TimesDeclarationPointer;
 
   private numberOfMatchedRequests = 0;
   private unmatchedRequestGroups: UnmatchedHttpInterceptorRequestGroup[] = [];
@@ -72,6 +75,8 @@ class HttpRequestHandlerClient<
     StatusCode
   >;
 
+  private createResponseDelay?: HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>;
+
   constructor(
     private interceptor: HttpInterceptorClient<Schema>,
     public method: Method,
@@ -81,6 +86,28 @@ class HttpRequestHandlerClient<
 
   with(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>): this {
     this.restrictions.push(restriction);
+    return this;
+  }
+
+  delay(
+    minMilliseconds: number | HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>,
+    maxMilliseconds?: number,
+  ): this {
+    if (minMilliseconds === maxMilliseconds) {
+      return this.delay(minMilliseconds);
+    }
+
+    if (typeof minMilliseconds === 'number' && typeof maxMilliseconds === 'number') {
+      this.createResponseDelay = () => random(minMilliseconds, maxMilliseconds);
+      return this;
+    }
+
+    if (typeof minMilliseconds === 'number') {
+      this.createResponseDelay = () => minMilliseconds;
+      return this;
+    }
+
+    this.createResponseDelay = minMilliseconds;
     return this;
   }
 
@@ -122,7 +149,7 @@ class HttpRequestHandlerClient<
       max: maxNumberOfRequests ?? minNumberOfRequests,
     };
 
-    this.timesDeclarationPointer = new TimesDeclarationPointer(minNumberOfRequests, maxNumberOfRequests);
+    this.timesPointer = new TimesDeclarationPointer(minNumberOfRequests, maxNumberOfRequests);
 
     return this;
   }
@@ -136,7 +163,7 @@ class HttpRequestHandlerClient<
       throw new TimesCheckError({
         requestLimits: this.limits.numberOfRequests,
         numberOfMatchedRequests: this.numberOfMatchedRequests,
-        declarationPointer: this.timesDeclarationPointer,
+        declarationPointer: this.timesPointer,
         unmatchedRequestGroups: this.unmatchedRequestGroups,
         hasRestrictions: this.restrictions.length > 0,
         requestSaving: this.interceptor.requestSaving,
@@ -151,7 +178,7 @@ class HttpRequestHandlerClient<
       numberOfRequests: DEFAULT_NUMBER_OF_REQUEST_LIMITS,
     };
 
-    this.timesDeclarationPointer = undefined;
+    this.timesPointer = undefined;
 
     this.numberOfMatchedRequests = 0;
     this.unmatchedRequestGroups.length = 0;
@@ -159,6 +186,7 @@ class HttpRequestHandlerClient<
     this.clearInterceptedRequests();
 
     this.createResponseDeclaration = undefined;
+    this.createResponseDelay = undefined;
 
     return this;
   }
@@ -196,9 +224,7 @@ class HttpRequestHandlerClient<
     options: { diff: RestrictionDiffs },
   ) {
     const shouldSaveUnmatchedRequests =
-      this.interceptor.requestSaving.enabled &&
-      this.restrictions.length > 0 &&
-      this.timesDeclarationPointer !== undefined;
+      this.interceptor.requestSaving.enabled && this.restrictions.length > 0 && this.timesPointer !== undefined;
 
     if (shouldSaveUnmatchedRequests) {
       this.unmatchedRequestGroups.push({ request, diff: options.diff });
@@ -412,6 +438,14 @@ class HttpRequestHandlerClient<
   ): Promise<HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>> {
     if (!this.createResponseDeclaration) {
       throw new NoResponseDefinitionError();
+    }
+
+    if (this.createResponseDelay) {
+      const delay = await this.createResponseDelay(request);
+
+      if (delay > 0) {
+        await waitForDelay(delay);
+      }
     }
 
     const appliedDeclaration = await this.createResponseDeclaration(request);

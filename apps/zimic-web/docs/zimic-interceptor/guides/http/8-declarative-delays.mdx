@@ -1,0 +1,76 @@
+---
+title: Declarative delays | @zimic/interceptor
+sidebar_label: Declarative delays
+slug: /interceptor/guides/http/declarative-delays
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Declarative delays
+
+[`HTTP interceptors`](/docs/zimic-interceptor/api/2-http-interceptor.mdx) are very efficient and can respond requests
+within milliseconds. This is great to keep your development and test environments fast, but sometimes you may want to
+simulate network latency, reproduce server processing time, check loading states in your application, or test how it
+behaves under slow conditions.
+
+[`handler.delay()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerdelay) allows you to add declarative
+delays to your intercepted requests.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .get('/users')
+  .respond({ status: 200, body: [] })
+  // highlight-next-line
+  .delay(200); // Static delay of 200ms
+
+interceptor
+  .get('/users')
+  .respond({ status: 200, body: [] })
+  // highlight-next-line
+  .delay(100, 500); // Random delay between 100ms and 500ms
+
+interceptor
+  .get('/users')
+  .respond({ status: 200, body: [] })
+  // highlight-start
+  .delay((request) => {
+    const isSlow = request.searchParams.get('slow') === 'true';
+    return isSlow ? 1000 : 0;
+  }); // Dynamic delay based on request
+// highlight-end
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .get('/users')
+  .respond({ status: 200, body: [] })
+  // highlight-next-line
+  .delay(200); // Static delay of 200ms
+
+await interceptor
+  .get('/users')
+  .respond({ status: 200, body: [] })
+  // highlight-next-line
+  .delay(100, 500); // Random delay between 100ms and 500ms
+
+await interceptor
+  .get('/users')
+  .respond({ status: 200, body: [] })
+  // highlight-start
+  .delay((request) => {
+    const isSlow = request.searchParams.get('slow') === 'true';
+    return isSlow ? 1000 : 0;
+  }); // Dynamic delay based on request
+// highlight-end
+```
+
+  </TabItem>
+</Tabs>

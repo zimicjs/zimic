@@ -66,7 +66,7 @@ createHttpInterceptor<Schema>(options);
 
    - **onUnhandledRequest**: `UnhandledRequestStrategy | undefined`
 
-     The strategy to use for [unhandled requests](/docs/zimic-interceptor/guides/http/8-unhandled-requests.md). If a
+     The strategy to use for [unhandled requests](/docs/zimic-interceptor/guides/http/9-unhandled-requests.md). If a
      request starts with the base URL of the interceptor, but no matching handler exists, this strategy will be used. If
      a function is provided, it will be called with the unhandled request.
      - **action**: `'bypass' | 'reject'`
@@ -139,4 +139,4 @@ const interceptor = createHttpInterceptor<Schema>({
 
 - [Using local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md)
 - [Using remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md)
-- [Unhandled requests](/docs/zimic-interceptor/guides/http/8-unhandled-requests.md)
+- [Unhandled requests](/docs/zimic-interceptor/guides/http/9-unhandled-requests.md)
