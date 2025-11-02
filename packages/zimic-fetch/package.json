@@ -76,22 +76,22 @@
     "deps:setup": "pnpm deps:setup-playwright"
   },
   "devDependencies": {
-    "@types/node": "^24.9.1",
-    "@vitest/browser": "^4.0.3",
-    "@vitest/browser-playwright": "^4.0.3",
-    "@vitest/coverage-istanbul": "^4.0.3",
+    "@types/node": "^24.9.2",
+    "@vitest/browser": "^4.0.6",
+    "@vitest/browser-playwright": "^4.0.6",
+    "@vitest/coverage-istanbul": "^4.0.6",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
-    "dotenv-cli": "^10.0.0",
-    "eslint": "^9.38.0",
+    "dotenv-cli": "^11.0.0",
+    "eslint": "^9.39.0",
     "picocolors": "^1.1.1",
     "playwright": "^1.56.1",
     "tsup": "^8.4.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.3"
+    "vitest": "^4.0.6"
   },
   "peerDependencies": {
     "@zimic/http": "^1.3.0 || workspace:*",
