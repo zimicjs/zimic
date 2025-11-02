@@ -93,17 +93,17 @@
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^24.9.1",
+    "@types/node": "^24.9.2",
     "@types/yargs": "^17.0.34",
-    "@vitest/browser": "^4.0.3",
-    "@vitest/browser-playwright": "^4.0.3",
-    "@vitest/coverage-istanbul": "^4.0.3",
+    "@vitest/browser": "^4.0.6",
+    "@vitest/browser-playwright": "^4.0.6",
+    "@vitest/coverage-istanbul": "^4.0.6",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
-    "dotenv-cli": "^10.0.0",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9.38.0",
     "execa": "9.6.0",
     "js-yaml": "^4.1.0",
@@ -112,7 +112,7 @@
     "tsup": "^8.4.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.3"
+    "vitest": "^4.0.6"
   },
   "peerDependencies": {
     "typescript": ">=5.0.0"
