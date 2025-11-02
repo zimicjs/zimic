@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "dev": "dotenv -c development -- next dev --turbo",
+    "dev": "dotenv -c development -- next dev",
     "mock": "zimic-interceptor server start --hostname 127.0.0.1 --port 4002 --ephemeral",
     "test": "dotenv -c test -- dotenv -c development -- pnpm mock -- playwright test",
     "test:turbo": "dotenv -v CI=true -- pnpm run test",
@@ -14,7 +14,7 @@
   "dependencies": {
     "@zimic/fetch": "latest",
     "@zimic/http": "latest",
-    "next": "^16.0.0",
+    "next": "^16.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "^4.1.12"
@@ -25,7 +25,7 @@
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@zimic/interceptor": "latest",
-    "dotenv-cli": "^10.0.0",
+    "dotenv-cli": "^11.0.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.16",
     "tsx": "^4.20.6",
