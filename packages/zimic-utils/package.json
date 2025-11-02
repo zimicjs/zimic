@@ -187,7 +187,7 @@
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^11.0.0",
-    "eslint": "^9.38.0",
+    "eslint": "^9.39.0",
     "tsup": "^8.4.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.6"
