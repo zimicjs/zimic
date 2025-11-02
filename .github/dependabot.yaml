@@ -21,6 +21,13 @@ updates:
       # Blocked by https://github.com/mswjs/msw/issues/2585 and https://github.com/mswjs/msw/issues/2597.
       - dependency-name: msw
         update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+          - version-update:semver-patch
+      # Blocked by https://github.com/eslint/eslint/issues/20272
+      - dependency-name: eslint
+        update-types:
+          - version-update:semver-major
           - version-update:semver-minor
           - version-update:semver-patch
 
