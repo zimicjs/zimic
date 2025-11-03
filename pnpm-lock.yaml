@@ -203,10 +203,10 @@ importers:
     dependencies:
       '@zimic/fetch':
         specifier: latest
-        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
+        version: link:../zimic-fetch
       '@zimic/http':
         specifier: latest
-        version: 1.3.2(typescript@5.9.3)
+        version: link:../zimic-http
     devDependencies:
       '@zimic/eslint-config-react':
         specifier: workspace:*
@@ -228,10 +228,10 @@ importers:
     dependencies:
       '@zimic/fetch':
         specifier: latest
-        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
+        version: link:../zimic-fetch
       '@zimic/http':
         specifier: latest
-        version: 1.3.2(typescript@5.9.3)
+        version: link:../zimic-http
     devDependencies:
       '@jest/globals':
         specifier: ^30.2.0
@@ -244,7 +244,7 @@ importers:
         version: 0.2.39(@swc/core@1.14.0)
       '@zimic/interceptor':
         specifier: latest
-        version: 1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)
+        version: link:../zimic-interceptor
       dotenv-cli:
         specifier: ^11.0.0
         version: 11.0.0
@@ -262,10 +262,10 @@ importers:
     dependencies:
       '@zimic/fetch':
         specifier: latest
-        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
+        version: link:../zimic-fetch
       '@zimic/http':
         specifier: latest
-        version: 1.3.2(typescript@5.9.3)
+        version: link:../zimic-http
     devDependencies:
       '@jest/globals':
         specifier: ^30.2.0
@@ -278,7 +278,7 @@ importers:
         version: 0.2.39(@swc/core@1.14.0)
       '@zimic/interceptor':
         specifier: latest
-        version: 1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)
+        version: link:../zimic-interceptor
       dotenv-cli:
         specifier: ^11.0.0
         version: 11.0.0
@@ -293,10 +293,10 @@ importers:
     dependencies:
       '@zimic/fetch':
         specifier: latest
-        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
+        version: link:../zimic-fetch
       '@zimic/http':
         specifier: latest
-        version: 1.3.2(typescript@5.9.3)
+        version: link:../zimic-http
       next:
         specifier: ^16.0.1
         version: 16.0.1(@opentelemetry/api@1.9.0)(@playwright/test@1.56.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -324,7 +324,7 @@ importers:
         version: 19.2.2(@types/react@19.2.2)
       '@zimic/interceptor':
         specifier: latest
-        version: 1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)
+        version: link:../zimic-interceptor
       dotenv-cli:
         specifier: ^11.0.0
         version: 11.0.0
@@ -348,10 +348,10 @@ importers:
         version: 5.90.6(react@19.2.0)
       '@zimic/fetch':
         specifier: latest
-        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
+        version: link:../zimic-fetch
       '@zimic/http':
         specifier: latest
-        version: 1.3.2(typescript@5.9.3)
+        version: link:../zimic-http
       next:
         specifier: ^16.0.1
         version: 16.0.1(@opentelemetry/api@1.9.0)(@playwright/test@1.56.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -379,7 +379,7 @@ importers:
         version: 19.2.2(@types/react@19.2.2)
       '@zimic/interceptor':
         specifier: latest
-        version: 1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)
+        version: link:../zimic-interceptor
       concurrently:
         specifier: ^9.2.1
         version: 9.2.1
@@ -400,14 +400,14 @@ importers:
     dependencies:
       '@zimic/fetch':
         specifier: latest
-        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
+        version: link:../zimic-fetch
       '@zimic/http':
         specifier: latest
-        version: 1.3.2(typescript@5.9.3)
+        version: link:../zimic-http
     devDependencies:
       '@zimic/interceptor':
         specifier: latest
-        version: 1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)
+        version: link:../zimic-interceptor
       dotenv-cli:
         specifier: ^11.0.0
         version: 11.0.0
@@ -422,10 +422,10 @@ importers:
     dependencies:
       '@zimic/fetch':
         specifier: latest
-        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
+        version: link:../zimic-fetch
       '@zimic/http':
         specifier: latest
-        version: 1.3.2(typescript@5.9.3)
+        version: link:../zimic-http
       next:
         specifier: ^16.0.1
         version: 16.0.1(@opentelemetry/api@1.9.0)(@playwright/test@1.56.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -453,7 +453,7 @@ importers:
         version: 19.2.2(@types/react@19.2.2)
       '@zimic/interceptor':
         specifier: latest
-        version: 1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)
+        version: link:../zimic-interceptor
       dotenv-cli:
         specifier: ^11.0.0
         version: 11.0.0
@@ -474,10 +474,10 @@ importers:
     dependencies:
       '@zimic/fetch':
         specifier: latest
-        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
+        version: link:../zimic-fetch
       '@zimic/http':
         specifier: latest
-        version: 1.3.2(typescript@5.9.3)
+        version: link:../zimic-http
     devDependencies:
       '@vitest/browser':
         specifier: ^4.0.6
@@ -487,7 +487,7 @@ importers:
         version: 4.0.6(bufferutil@4.0.9)(msw@2.11.2(@types/node@24.9.2)(typescript@5.9.3))(playwright@1.56.1)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
       '@zimic/interceptor':
         specifier: latest
-        version: 1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)
+        version: link:../zimic-interceptor
       concurrently:
         specifier: ^9.2.1
         version: 9.2.1
@@ -508,14 +508,14 @@ importers:
     dependencies:
       '@zimic/fetch':
         specifier: latest
-        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
+        version: link:../zimic-fetch
       '@zimic/http':
         specifier: latest
-        version: 1.3.2(typescript@5.9.3)
+        version: link:../zimic-http
     devDependencies:
       '@zimic/interceptor':
         specifier: latest
-        version: 1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)
+        version: link:../zimic-interceptor
       dotenv-cli:
         specifier: ^11.0.0
         version: 11.0.0
@@ -533,14 +533,14 @@ importers:
     dependencies:
       '@zimic/fetch':
         specifier: latest
-        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
+        version: link:../zimic-fetch
       '@zimic/http':
         specifier: latest
-        version: 1.3.2(typescript@5.9.3)
+        version: link:../zimic-http
     devDependencies:
       '@zimic/interceptor':
         specifier: latest
-        version: 1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)
+        version: link:../zimic-interceptor
       dotenv-cli:
         specifier: ^11.0.0
         version: 11.0.0
