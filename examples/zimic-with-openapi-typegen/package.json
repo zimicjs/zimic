@@ -17,6 +17,6 @@
     "@zimic/interceptor": "latest",
     "dotenv-cli": "^11.0.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.6"
+    "vitest": "^4.0.8"
   }
 }
