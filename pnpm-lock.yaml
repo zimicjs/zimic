@@ -49,10 +49,10 @@ importers:
         version: 8.1.9
       '@vitest/browser':
         specifier: ^4.0.6
-        version: 4.0.6(bufferutil@4.0.9)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
+        version: 4.0.6(bufferutil@4.0.9)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
       '@vitest/browser-playwright':
         specifier: ^4.0.6
-        version: 4.0.6(bufferutil@4.0.9)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(playwright@1.56.1)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
+        version: 4.0.6(bufferutil@4.0.9)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(playwright@1.56.1)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
       '@vitest/coverage-istanbul':
         specifier: ^4.0.6
         version: 4.0.6(vitest@4.0.6)
@@ -106,7 +106,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^4.0.6
-        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
 
   apps/zimic-web:
     dependencies:
@@ -203,10 +203,10 @@ importers:
     dependencies:
       '@zimic/fetch':
         specifier: latest
-        version: link:../packages/zimic-fetch
+        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
       '@zimic/http':
         specifier: latest
-        version: link:../packages/zimic-http
+        version: 1.3.2(typescript@5.9.3)
     devDependencies:
       '@zimic/eslint-config-react':
         specifier: workspace:*
@@ -228,10 +228,10 @@ importers:
     dependencies:
       '@zimic/fetch':
         specifier: latest
-        version: link:../../packages/zimic-fetch
+        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
       '@zimic/http':
         specifier: latest
-        version: link:../../packages/zimic-http
+        version: 1.3.2(typescript@5.9.3)
     devDependencies:
       '@jest/globals':
         specifier: ^30.2.0
@@ -244,7 +244,7 @@ importers:
         version: 0.2.39(@swc/core@1.14.0)
       '@zimic/interceptor':
         specifier: latest
-        version: link:../../packages/zimic-interceptor
+        version: 1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)
       dotenv-cli:
         specifier: ^11.0.0
         version: 11.0.0
@@ -262,10 +262,10 @@ importers:
     dependencies:
       '@zimic/fetch':
         specifier: latest
-        version: link:../../packages/zimic-fetch
+        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
       '@zimic/http':
         specifier: latest
-        version: link:../../packages/zimic-http
+        version: 1.3.2(typescript@5.9.3)
     devDependencies:
       '@jest/globals':
         specifier: ^30.2.0
@@ -278,7 +278,7 @@ importers:
         version: 0.2.39(@swc/core@1.14.0)
       '@zimic/interceptor':
         specifier: latest
-        version: link:../../packages/zimic-interceptor
+        version: 1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)
       dotenv-cli:
         specifier: ^11.0.0
         version: 11.0.0
@@ -293,10 +293,10 @@ importers:
     dependencies:
       '@zimic/fetch':
         specifier: latest
-        version: link:../../packages/zimic-fetch
+        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
       '@zimic/http':
         specifier: latest
-        version: link:../../packages/zimic-http
+        version: 1.3.2(typescript@5.9.3)
       next:
         specifier: ^16.0.1
         version: 16.0.1(@opentelemetry/api@1.9.0)(@playwright/test@1.56.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -324,7 +324,7 @@ importers:
         version: 19.2.2(@types/react@19.2.2)
       '@zimic/interceptor':
         specifier: latest
-        version: link:../../packages/zimic-interceptor
+        version: 1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)
       dotenv-cli:
         specifier: ^11.0.0
         version: 11.0.0
@@ -348,10 +348,10 @@ importers:
         version: 5.90.6(react@19.2.0)
       '@zimic/fetch':
         specifier: latest
-        version: link:../../packages/zimic-fetch
+        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
       '@zimic/http':
         specifier: latest
-        version: link:../../packages/zimic-http
+        version: 1.3.2(typescript@5.9.3)
       next:
         specifier: ^16.0.1
         version: 16.0.1(@opentelemetry/api@1.9.0)(@playwright/test@1.56.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -379,7 +379,7 @@ importers:
         version: 19.2.2(@types/react@19.2.2)
       '@zimic/interceptor':
         specifier: latest
-        version: link:../../packages/zimic-interceptor
+        version: 1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)
       concurrently:
         specifier: ^9.2.1
         version: 9.2.1
@@ -400,14 +400,14 @@ importers:
     dependencies:
       '@zimic/fetch':
         specifier: latest
-        version: link:../../packages/zimic-fetch
+        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
       '@zimic/http':
         specifier: latest
-        version: link:../../packages/zimic-http
+        version: 1.3.2(typescript@5.9.3)
     devDependencies:
       '@zimic/interceptor':
         specifier: latest
-        version: link:../../packages/zimic-interceptor
+        version: 1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)
       dotenv-cli:
         specifier: ^11.0.0
         version: 11.0.0
@@ -416,16 +416,16 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^4.0.6
-        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
 
   examples/zimic-with-playwright:
     dependencies:
       '@zimic/fetch':
         specifier: latest
-        version: link:../../packages/zimic-fetch
+        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
       '@zimic/http':
         specifier: latest
-        version: link:../../packages/zimic-http
+        version: 1.3.2(typescript@5.9.3)
       next:
         specifier: ^16.0.1
         version: 16.0.1(@opentelemetry/api@1.9.0)(@playwright/test@1.56.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -453,7 +453,7 @@ importers:
         version: 19.2.2(@types/react@19.2.2)
       '@zimic/interceptor':
         specifier: latest
-        version: link:../../packages/zimic-interceptor
+        version: 1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)
       dotenv-cli:
         specifier: ^11.0.0
         version: 11.0.0
@@ -474,20 +474,20 @@ importers:
     dependencies:
       '@zimic/fetch':
         specifier: latest
-        version: link:../../packages/zimic-fetch
+        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
       '@zimic/http':
         specifier: latest
-        version: link:../../packages/zimic-http
+        version: 1.3.2(typescript@5.9.3)
     devDependencies:
       '@vitest/browser':
         specifier: ^4.0.6
-        version: 4.0.6(bufferutil@4.0.9)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
+        version: 4.0.6(bufferutil@4.0.9)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
       '@vitest/browser-playwright':
         specifier: ^4.0.6
-        version: 4.0.6(bufferutil@4.0.9)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(playwright@1.56.1)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
+        version: 4.0.6(bufferutil@4.0.9)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(playwright@1.56.1)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
       '@zimic/interceptor':
         specifier: latest
-        version: link:../../packages/zimic-interceptor
+        version: 1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)
       concurrently:
         specifier: ^9.2.1
         version: 9.2.1
@@ -502,20 +502,20 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^4.0.6
-        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
 
   examples/zimic-with-vitest-jsdom:
     dependencies:
       '@zimic/fetch':
         specifier: latest
-        version: link:../../packages/zimic-fetch
+        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
       '@zimic/http':
         specifier: latest
-        version: link:../../packages/zimic-http
+        version: 1.3.2(typescript@5.9.3)
     devDependencies:
       '@zimic/interceptor':
         specifier: latest
-        version: link:../../packages/zimic-interceptor
+        version: 1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)
       dotenv-cli:
         specifier: ^11.0.0
         version: 11.0.0
@@ -527,20 +527,20 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^4.0.6
-        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
 
   examples/zimic-with-vitest-node:
     dependencies:
       '@zimic/fetch':
         specifier: latest
-        version: link:../../packages/zimic-fetch
+        version: 1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)
       '@zimic/http':
         specifier: latest
-        version: link:../../packages/zimic-http
+        version: 1.3.2(typescript@5.9.3)
     devDependencies:
       '@zimic/interceptor':
         specifier: latest
-        version: link:../../packages/zimic-interceptor
+        version: 1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)
       dotenv-cli:
         specifier: ^11.0.0
         version: 11.0.0
@@ -549,7 +549,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^4.0.6
-        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
 
   packages/eslint-config:
     dependencies:
@@ -643,10 +643,10 @@ importers:
         version: 24.9.2
       '@vitest/browser':
         specifier: ^4.0.6
-        version: 4.0.6(bufferutil@4.0.9)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
+        version: 4.0.6(bufferutil@4.0.9)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
       '@vitest/browser-playwright':
         specifier: ^4.0.6
-        version: 4.0.6(bufferutil@4.0.9)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(playwright@1.56.1)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
+        version: 4.0.6(bufferutil@4.0.9)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(playwright@1.56.1)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
       '@vitest/coverage-istanbul':
         specifier: ^4.0.6
         version: 4.0.6(vitest@4.0.6)
@@ -685,7 +685,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^4.0.6
-        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
 
   packages/zimic-http:
     dependencies:
@@ -710,10 +710,10 @@ importers:
         version: 17.0.34
       '@vitest/browser':
         specifier: ^4.0.6
-        version: 4.0.6(bufferutil@4.0.9)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
+        version: 4.0.6(bufferutil@4.0.9)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
       '@vitest/browser-playwright':
         specifier: ^4.0.6
-        version: 4.0.6(bufferutil@4.0.9)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(playwright@1.56.1)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
+        version: 4.0.6(bufferutil@4.0.9)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(playwright@1.56.1)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
       '@vitest/coverage-istanbul':
         specifier: ^4.0.6
         version: 4.0.6(vitest@4.0.6)
@@ -761,7 +761,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^4.0.6
-        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
 
   packages/zimic-interceptor:
     dependencies:
@@ -778,8 +778,8 @@ importers:
         specifier: 5.0.0
         version: 5.0.0(ws@8.18.3(bufferutil@4.0.9))
       msw:
-        specifier: 2.11.6
-        version: 2.11.6(@types/node@24.9.2)(typescript@5.9.3)
+        specifier: 2.12.0
+        version: 2.12.0(@types/node@24.9.2)(typescript@5.9.3)
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
@@ -804,10 +804,10 @@ importers:
         version: 17.0.34
       '@vitest/browser':
         specifier: ^4.0.6
-        version: 4.0.6(bufferutil@4.0.9)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
+        version: 4.0.6(bufferutil@4.0.9)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
       '@vitest/browser-playwright':
         specifier: ^4.0.6
-        version: 4.0.6(bufferutil@4.0.9)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(playwright@1.56.1)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
+        version: 4.0.6(bufferutil@4.0.9)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(playwright@1.56.1)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
       '@vitest/coverage-istanbul':
         specifier: ^4.0.6
         version: 4.0.6(vitest@4.0.6)
@@ -843,7 +843,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^4.0.6
-        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
 
   packages/zimic-utils:
     devDependencies:
@@ -852,10 +852,10 @@ importers:
         version: 24.9.2
       '@vitest/browser':
         specifier: ^4.0.6
-        version: 4.0.6(bufferutil@4.0.9)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
+        version: 4.0.6(bufferutil@4.0.9)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
       '@vitest/browser-playwright':
         specifier: ^4.0.6
-        version: 4.0.6(bufferutil@4.0.9)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(playwright@1.56.1)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
+        version: 4.0.6(bufferutil@4.0.9)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(playwright@1.56.1)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
       '@vitest/coverage-istanbul':
         specifier: ^4.0.6
         version: 4.0.6(vitest@4.0.6)
@@ -882,7 +882,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^4.0.6
-        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
 
 packages:
 
@@ -1665,6 +1665,12 @@ packages:
 
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
+
+  '@bundled-es-modules/cookie@2.0.1':
+    resolution: {integrity: sha512-8o+5fRPLNbjbdGRRmJj3h6Hh1AQJf2dk3qQ/5ZFb+PXkRNiSoMGGUKlsgLfrxneb72axVJyIYji64E2+nNfYyw==}
+
+  '@bundled-es-modules/statuses@1.0.1':
+    resolution: {integrity: sha512-yn7BklA5acgcBr+7w064fGV+SGIFySjCKpqjcWgBAIfrAkY+4GQTJJHQMeT3V/sgz23VTEVV8TtOmkvJAhFVfg==}
 
   '@colors/colors@1.5.0':
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
@@ -3211,6 +3217,10 @@ packages:
       '@types/react': '>=16'
       react: '>=16'
 
+  '@mswjs/interceptors@0.39.8':
+    resolution: {integrity: sha512-2+BzZbjRO7Ct61k8fMNHEtoKjeWI9pIlHFTqBwZ5icHpqszIgEZbjb1MW5Z0+bITTCTl3gk4PDBxs9tA/csXvA==}
+    engines: {node: '>=18'}
+
   '@mswjs/interceptors@0.40.0':
     resolution: {integrity: sha512-EFd6cVbHsgLa6wa4RljGj6Wk75qoHxUSyc5asLyyPSyuhIcdS2Q3Phw6ImS1q+CkALthJRShiYfKANcQMuMqsQ==}
     engines: {node: '>=18'}
@@ -3906,6 +3916,9 @@ packages:
   '@types/conventional-commits-parser@5.0.1':
     resolution: {integrity: sha512-7uz5EHdzz2TqoMfV7ee61Egf5y6NkcO4FB/1iCCQnbeiI1F3xzv3vK5dBCXUCLQgGYS+mUeigK1iKQzvED+QnQ==}
 
+  '@types/cookie@0.6.0':
+    resolution: {integrity: sha512-4Kh9a6B2bQciAhf7FSuMRRkUWecJgJu9nPnx3yzpsfXX/c50REIqpHY4C82bXP90qrLtXtkDxTZosYO3UpOwlA==}
+
   '@types/cookiejar@2.1.5':
     resolution: {integrity: sha512-he+DHOWReW0nghN24E1WUqM0efK4kI9oTqDm6XmK8ZPe2djZ90BSNdGnIyCLzCPw7/pogPlGbzI2wHGGmi4O/Q==}
 
@@ -4355,6 +4368,37 @@ packages:
 
   '@xtuc/long@4.2.2':
     resolution: {integrity: sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==}
+
+  '@zimic/fetch@1.2.2':
+    resolution: {integrity: sha512-hEzyXO2MXrG/G4xG64laR69fc0g2d4wO4h7rkohn1HkYbBm4g84i+NvGzDlSXOhiyETDj0XviasW83KXxCtZ6A==}
+    engines: {node: '>=20.0.0'}
+    peerDependencies:
+      '@zimic/http': ^1.3.0 || workspace:*
+      typescript: '>=5.0.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
+  '@zimic/http@1.3.2':
+    resolution: {integrity: sha512-xzAU3syx7STA+Br4gOKWKxvQe+WdymjHwV23i1zZFUR7cUNsxRJ3PBw2vLheBXJ6+Eixm8uD58IeaohrHe/eMA==}
+    engines: {node: '>=20.0.0'}
+    hasBin: true
+    peerDependencies:
+      typescript: '>=5.0.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
+  '@zimic/interceptor@1.2.1':
+    resolution: {integrity: sha512-gi7wII1rCX14OcYsXcMSOnbXPPhD4wzPAtuu8bXxv5wl5VxL+I64bT7NAq4Rqk5pcYFqRH7M5gODis6FJLwDbg==}
+    engines: {node: '>=20.0.0'}
+    hasBin: true
+    peerDependencies:
+      '@zimic/http': ^1.2.0 || workspace:*
+      typescript: '>=5.0.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   JSONStream@1.3.5:
     resolution: {integrity: sha512-E+iruNOY8VV9s4JEbe1aNEm6MiszPRr/UfcHMz0TQh1BXSxHK+ASV1R6W4HpjBhSeS+54PIsAMCBmwD06LLsqQ==}
@@ -5077,6 +5121,10 @@ packages:
 
   cookie@0.7.1:
     resolution: {integrity: sha512-6DnInpx7SJ2AK3+CTUE/ZM0vWTUboZCegxhC2xiIydHR9jNuTAASBrfEpHhiGOZw/nX51bHt6YQl8jsGo4y/0w==}
+    engines: {node: '>= 0.6'}
+
+  cookie@0.7.2:
+    resolution: {integrity: sha512-yki5XnKuf750l50uGTllt6kKILY4nQ1eNIQatoXEByZ5dWgnKqbnqmTrBE5B4N7lrMJKQ2ytWMiTO2o0v6Ew/w==}
     engines: {node: '>= 0.6'}
 
   cookie@1.0.2:
@@ -7751,8 +7799,18 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
-  msw@2.11.6:
-    resolution: {integrity: sha512-MCYMykvmiYScyUm7I6y0VCxpNq1rgd5v7kG8ks5dKtvmxRUUPjribX6mUoUNBbM5/3PhUyoelEWiKXGOz84c+w==}
+  msw@2.11.1:
+    resolution: {integrity: sha512-dGSRx0AJmQVQfpGXTsAAq4JFdwdhOBdJ6sJS/jnN0ac3s0NZB6daacHF1z5Pefx+IejmvuiLWw260RlyQOf3sQ==}
+    engines: {node: '>=18'}
+    hasBin: true
+    peerDependencies:
+      typescript: '>= 4.8.x'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
+  msw@2.12.0:
+    resolution: {integrity: sha512-jzf2eVnd8+iWXN74dccLrHUw3i3hFVvNVQRWS4vBl2KxaUt7Tdur0Eyda/DODGFkZDu2P5MXaeLe/9Qx8PZkrg==}
     engines: {node: '>=18'}
     hasBin: true
     peerDependencies:
@@ -11413,6 +11471,14 @@ snapshots:
 
   '@bcoe/v8-coverage@0.2.3': {}
 
+  '@bundled-es-modules/cookie@2.0.1':
+    dependencies:
+      cookie: 0.7.2
+
+  '@bundled-es-modules/statuses@1.0.1':
+    dependencies:
+      statuses: 2.0.2
+
   '@colors/colors@1.5.0':
     optional: true
 
@@ -13300,6 +13366,15 @@ snapshots:
       '@types/react': 19.2.2
       react: 19.2.0
 
+  '@mswjs/interceptors@0.39.8':
+    dependencies:
+      '@open-draft/deferred-promise': 2.2.0
+      '@open-draft/logger': 0.3.0
+      '@open-draft/until': 2.1.0
+      is-node-process: 1.2.0
+      outvariant: 1.4.3
+      strict-event-emitter: 0.5.1
+
   '@mswjs/interceptors@0.40.0':
     dependencies:
       '@open-draft/deferred-promise': 2.2.0
@@ -13932,6 +14007,8 @@ snapshots:
     dependencies:
       '@types/node': 24.9.2
 
+  '@types/cookie@0.6.0': {}
+
   '@types/cookiejar@2.1.5': {}
 
   '@types/debug@4.1.12':
@@ -14284,29 +14361,29 @@ snapshots:
 
   '@vercel/oidc@3.0.3': {}
 
-  '@vitest/browser-playwright@4.0.6(bufferutil@4.0.9)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(playwright@1.56.1)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)':
+  '@vitest/browser-playwright@4.0.6(bufferutil@4.0.9)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(playwright@1.56.1)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)':
     dependencies:
-      '@vitest/browser': 4.0.6(bufferutil@4.0.9)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
-      '@vitest/mocker': 4.0.6(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+      '@vitest/browser': 4.0.6(bufferutil@4.0.9)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
+      '@vitest/mocker': 4.0.6(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       playwright: 1.56.1
       tinyrainbow: 3.0.3
-      vitest: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+      vitest: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
     transitivePeerDependencies:
       - bufferutil
       - msw
       - utf-8-validate
       - vite
 
-  '@vitest/browser@4.0.6(bufferutil@4.0.9)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)':
+  '@vitest/browser@4.0.6(bufferutil@4.0.9)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)':
     dependencies:
-      '@vitest/mocker': 4.0.6(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+      '@vitest/mocker': 4.0.6(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@vitest/utils': 4.0.6
       magic-string: 0.30.21
       pixelmatch: 7.1.0
       pngjs: 7.0.0
       sirv: 3.0.2
       tinyrainbow: 3.0.3
-      vitest: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+      vitest: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
       ws: 8.18.3(bufferutil@4.0.9)
     transitivePeerDependencies:
       - bufferutil
@@ -14325,7 +14402,7 @@ snapshots:
       istanbul-reports: 3.2.0
       magicast: 0.3.5
       tinyrainbow: 3.0.3
-      vitest: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+      vitest: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -14338,13 +14415,13 @@ snapshots:
       chai: 6.2.0
       tinyrainbow: 3.0.3
 
-  '@vitest/mocker@4.0.6(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))':
+  '@vitest/mocker@4.0.6(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))':
     dependencies:
       '@vitest/spy': 4.0.6
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      msw: 2.11.6(@types/node@24.9.2)(typescript@5.9.3)
+      msw: 2.12.0(@types/node@24.9.2)(typescript@5.9.3)
       vite: 7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
 
   '@vitest/pretty-format@4.0.6':
@@ -14477,6 +14554,38 @@ snapshots:
   '@xtuc/ieee754@1.2.0': {}
 
   '@xtuc/long@4.2.2': {}
+
+  '@zimic/fetch@1.2.2(@zimic/http@1.3.2(typescript@5.9.3))(typescript@5.9.3)':
+    dependencies:
+      '@zimic/http': 1.3.2(typescript@5.9.3)
+    optionalDependencies:
+      typescript: 5.9.3
+
+  '@zimic/http@1.3.2(typescript@5.9.3)':
+    dependencies:
+      openapi-typescript: 7.10.1(typescript@5.9.3)
+      picocolors: 1.1.1
+      yargs: 18.0.0
+    optionalDependencies:
+      typescript: 5.9.3
+
+  '@zimic/interceptor@1.2.1(@types/node@24.9.2)(@zimic/http@1.3.2(typescript@5.9.3))(bufferutil@4.0.9)(typescript@5.9.3)':
+    dependencies:
+      '@whatwg-node/server': 0.10.13
+      '@zimic/http': 1.3.2(typescript@5.9.3)
+      execa: 9.6.0
+      isomorphic-ws: 5.0.0(ws@8.18.3(bufferutil@4.0.9))
+      msw: 2.11.1(@types/node@24.9.2)(typescript@5.9.3)
+      picocolors: 1.1.1
+      ws: 8.18.3(bufferutil@4.0.9)
+      yargs: 18.0.0
+      zod: 4.1.12
+    optionalDependencies:
+      typescript: 5.9.3
+    transitivePeerDependencies:
+      - '@types/node'
+      - bufferutil
+      - utf-8-validate
 
   JSONStream@1.3.5:
     dependencies:
@@ -15284,6 +15393,8 @@ snapshots:
   cookie-signature@1.0.6: {}
 
   cookie@0.7.1: {}
+
+  cookie@0.7.2: {}
 
   cookie@1.0.2: {}
 
@@ -18873,7 +18984,32 @@ snapshots:
 
   ms@2.1.3: {}
 
-  msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3):
+  msw@2.11.1(@types/node@24.9.2)(typescript@5.9.3):
+    dependencies:
+      '@bundled-es-modules/cookie': 2.0.1
+      '@bundled-es-modules/statuses': 1.0.1
+      '@inquirer/confirm': 5.1.19(@types/node@24.9.2)
+      '@mswjs/interceptors': 0.39.8
+      '@open-draft/deferred-promise': 2.2.0
+      '@open-draft/until': 2.1.0
+      '@types/cookie': 0.6.0
+      '@types/statuses': 2.0.6
+      graphql: 16.12.0
+      headers-polyfill: 4.0.3
+      is-node-process: 1.2.0
+      outvariant: 1.4.3
+      path-to-regexp: 6.3.0
+      picocolors: 1.1.1
+      strict-event-emitter: 0.5.1
+      tough-cookie: 6.0.0
+      type-fest: 4.41.0
+      yargs: 17.7.2
+    optionalDependencies:
+      typescript: 5.9.3
+    transitivePeerDependencies:
+      - '@types/node'
+
+  msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3):
     dependencies:
       '@inquirer/confirm': 5.1.19(@types/node@24.9.2)
       '@mswjs/interceptors': 0.40.0
@@ -21412,10 +21548,10 @@ snapshots:
       tsx: 4.20.6
       yaml: 2.8.1
 
-  vitest@4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1):
+  vitest@4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1):
     dependencies:
       '@vitest/expect': 4.0.6
-      '@vitest/mocker': 4.0.6(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+      '@vitest/mocker': 4.0.6(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@vitest/pretty-format': 4.0.6
       '@vitest/runner': 4.0.6
       '@vitest/snapshot': 4.0.6
@@ -21437,7 +21573,7 @@ snapshots:
     optionalDependencies:
       '@types/debug': 4.1.12
       '@types/node': 24.9.2
-      '@vitest/browser-playwright': 4.0.6(bufferutil@4.0.9)(msw@2.11.6(@types/node@24.9.2)(typescript@5.9.3))(playwright@1.56.1)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
+      '@vitest/browser-playwright': 4.0.6(bufferutil@4.0.9)(msw@2.12.0(@types/node@24.9.2)(typescript@5.9.3))(playwright@1.56.1)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
       jsdom: 27.1.0(bufferutil@4.0.9)
     transitivePeerDependencies:
       - jiti
