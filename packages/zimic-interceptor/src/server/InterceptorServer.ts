@@ -1,5 +1,5 @@
 import { normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
-import { HttpRequest, HttpMethod } from '@zimic/http';
+import { HttpRequest, HttpMethod, HttpSearchParams } from '@zimic/http';
 import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
 import excludeNonPathParams from '@zimic/utils/url/excludeNonPathParams';
 import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
@@ -149,14 +149,14 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private getWebSocketRequestTokenValue(request: IncomingMessage) {
     const protocols = request.headers['sec-websocket-protocol'] ?? '';
-    const parametersAsString = decodeURIComponent(protocols).split(', ');
+    const parametersAsString = protocols.split(', ');
 
     for (const parameterAsString of parametersAsString) {
-      const tokenValueMatch = /^token=(?<tokenValue>.+?)$/.exec(parameterAsString);
-      const tokenValue = tokenValueMatch?.groups?.tokenValue;
+      const parameters = new HttpSearchParams<{ token?: string }>(parameterAsString);
+      const token = parameters.get('token');
 
-      if (tokenValue) {
-        return tokenValue;
+      if (token) {
+        return token;
       }
     }
 

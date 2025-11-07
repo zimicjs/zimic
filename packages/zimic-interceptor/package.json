@@ -101,13 +101,17 @@
     "execa": "9.6.0",
     "isomorphic-ws": "5.0.0",
     "msw": "2.11.1",
+    "nodemailer": "^7.0.10",
     "picocolors": "^1.1.1",
+    "smtp-server": "^3.16.1",
     "ws": "8.18.3",
     "yargs": "18.0.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
+    "@types/nodemailer": "^7.0.3",
+    "@types/smtp-server": "^3.5.12",
     "@types/ws": "^8.18.1",
     "@types/yargs": "^17.0.35",
     "@vitest/browser": "^4.0.9",
