@@ -21,13 +21,13 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
-    "@tailwindcss/postcss": "^4.1.16",
+    "@tailwindcss/postcss": "^4.1.17",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@zimic/interceptor": "latest",
     "dotenv-cli": "^11.0.0",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.16",
+    "tailwindcss": "^4.1.17",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   }
