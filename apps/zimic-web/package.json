@@ -1,6 +1,6 @@
 {
   "name": "zimic-web",
-  "version": "0.3.30",
+  "version": "0.3.31",
   "private": true,
   "scripts": {
     "dev": "docusaurus start --host :: --no-open",
@@ -23,7 +23,7 @@
     "@docusaurus/theme-classic": "^3.9.2",
     "@docusaurus/theme-search-algolia": "^3.9.2",
     "@mdx-js/react": "^3.1.1",
-    "@tanstack/react-query": "^5.90.6",
+    "@tanstack/react-query": "^5.90.7",
     "@zimic/fetch": "workspace:*",
     "@zimic/http": "workspace:*",
     "dompurify": "^3.3.0",
@@ -34,17 +34,17 @@
   "devDependencies": {
     "@docusaurus/module-type-aliases": "3.9.2",
     "@docusaurus/types": "3.9.2",
-    "@tailwindcss/postcss": "^4.1.16",
+    "@tailwindcss/postcss": "^4.1.17",
     "@types/react": "^19.2.2",
     "@zimic/eslint-config-react": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^11.0.0",
     "esbuild-loader": "^4.4.0",
-    "eslint": "^9.38.0",
+    "eslint": "^9.39.1",
     "postcss": "^8.5.6",
     "sponsorkit": "^17.0.0",
-    "tailwindcss": "^4.1.16",
+    "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3"
   }
 }

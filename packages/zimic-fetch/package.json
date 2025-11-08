@@ -13,7 +13,7 @@
     "api",
     "static"
   ],
-  "version": "1.2.2",
+  "version": "1.2.3-canary.0",
   "homepage": "https://zimic.dev/docs/fetch",
   "repository": {
     "type": "git",
@@ -76,7 +76,7 @@
     "deps:setup": "pnpm deps:setup-playwright"
   },
   "devDependencies": {
-    "@types/node": "^24.9.2",
+    "@types/node": "^24.10.0",
     "@vitest/browser": "^4.0.6",
     "@vitest/browser-playwright": "^4.0.6",
     "@vitest/coverage-istanbul": "^4.0.6",
@@ -86,7 +86,7 @@
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^11.0.0",
-    "eslint": "^9.38.0",
+    "eslint": "^9.39.1",
     "picocolors": "^1.1.1",
     "playwright": "^1.56.1",
     "tsup": "^8.4.0",
