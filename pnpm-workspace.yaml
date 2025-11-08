@@ -4,6 +4,7 @@ packages:
   - examples
   - examples/*
   - docs/*
+
 onlyBuiltDependencies:
   - '@swc/core'
   - bufferutil
@@ -11,5 +12,6 @@ onlyBuiltDependencies:
   - core-js-pure
   - esbuild
   - msw
+  - rollup
   - sharp
   - unrs-resolver
