@@ -33,7 +33,9 @@ export default defineConfig({
           exclude: ['**/*.node.test.ts'],
           globalSetup: './tests/setup/global/browser.ts',
           setupFiles: ['./tests/setup/browser.ts'],
-          retry: process.env.CI === 'true' ? 3 : 0,
+          // We may need to retry browser tests on CI because browsers may retry failed requests, causing tests that
+          // expect failures to be flaky.
+          retry: process.env.CI === 'true' ? 5 : 0,
           browser: {
             instances: [{ browser: 'chromium' }],
             provider: playwright(),
