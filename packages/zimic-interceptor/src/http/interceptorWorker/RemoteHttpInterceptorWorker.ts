@@ -60,8 +60,8 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
         waitForAuthentication: true,
       });
 
-      this.webSocketClient.onEvent('interceptors/responses/create', this.createResponse);
-      this.webSocketClient.onEvent('interceptors/responses/unhandled', this.handleUnhandledServerRequest);
+      this.webSocketClient.on('event', 'interceptors/responses/create', this.createResponse);
+      this.webSocketClient.on('event', 'interceptors/responses/unhandled', this.handleUnhandledServerRequest);
 
       this.platform = this.readPlatform();
       this.isRunning = true;
@@ -122,8 +122,8 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     await super.sharedStop(async () => {
       await this.clearHandlers();
 
-      this.webSocketClient.offEvent('interceptors/responses/create', this.createResponse);
-      this.webSocketClient.offEvent('interceptors/responses/unhandled', this.handleUnhandledServerRequest);
+      this.webSocketClient.off('event', 'interceptors/responses/create', this.createResponse);
+      this.webSocketClient.off('event', 'interceptors/responses/unhandled', this.handleUnhandledServerRequest);
 
       await this.webSocketClient.stop();
 
