@@ -4,14 +4,14 @@ packages:
   - examples
   - examples/*
   - docs/*
+
 onlyBuiltDependencies:
   - '@swc/core'
-  - '@tailwindcss/oxide'
-  - '@zimic/interceptor'
   - bufferutil
   - core-js
   - core-js-pure
   - esbuild
   - msw
+  - rollup
   - sharp
   - unrs-resolver

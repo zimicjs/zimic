@@ -24,8 +24,26 @@ updates:
           - version-update:semver-major
           - version-update:semver-minor
           - version-update:semver-patch
-      # Blocked by https://github.com/eslint/eslint/issues/20272
-      - dependency-name: eslint
+      # Blocked by https://github.com/vitest-dev/vitest/issues/8983.
+      - dependency-name: vitest
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+          - version-update:semver-patch
+      # Blocked by https://github.com/vitest-dev/vitest/issues/8983.
+      - dependency-name: '@vitest/browser'
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+          - version-update:semver-patch
+      # Blocked by https://github.com/vitest-dev/vitest/issues/8983.
+      - dependency-name: '@vitest/browser-playwright'
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+          - version-update:semver-patch
+      # Blocked by https://github.com/vitest-dev/vitest/issues/8983.
+      - dependency-name: '@vitest/coverage-istanbul'
         update-types:
           - version-update:semver-major
           - version-update:semver-minor
