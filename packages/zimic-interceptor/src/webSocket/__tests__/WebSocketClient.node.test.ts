@@ -286,7 +286,7 @@ describe('Web socket client', async () => {
       type RequestMessage = WebSocketEventMessage<Schema, 'with-reply'>;
       const requestMessages: RequestMessage[] = [];
 
-      client.onEvent('with-reply', (message) => {
+      client.on('event', 'with-reply', (message) => {
         requestMessages.push(message);
         return { response: 'answer' };
       });
@@ -348,7 +348,7 @@ describe('Web socket client', async () => {
       type EventMessage = WebSocketEventMessage<Schema, 'no-reply'>;
       const eventMessages: EventMessage[] = [];
 
-      client.onEvent('no-reply', (message) => {
+      client.on('event', 'no-reply', (message) => {
         eventMessages.push(message);
       });
 
@@ -384,7 +384,8 @@ describe('Web socket client', async () => {
       type EventMessage = WebSocketEventMessage<Schema, 'no-reply'>;
       const eventMessages: EventMessage[] = [];
 
-      const eventListener = client.onEvent(
+      const eventListener = client.on(
+        'event',
         'no-reply',
         vi.fn<WebSocketEventMessageListener<Schema, 'no-reply'>>(
           /* istanbul ignore next -- @preserve
@@ -395,7 +396,7 @@ describe('Web socket client', async () => {
         ),
       );
 
-      client.offEvent('no-reply', eventListener);
+      client.off('event', 'no-reply', eventListener);
 
       const eventMessage: EventMessage['data'] = { message: 'test' };
       rawServerSockets[0].send(
@@ -433,7 +434,7 @@ describe('Web socket client', async () => {
       type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
       const replyMessages: ReplyMessage[] = [];
 
-      client.onReply('with-reply', (message) => {
+      client.on('reply', 'with-reply', (message) => {
         replyMessages.push(message);
       });
 
@@ -510,7 +511,8 @@ describe('Web socket client', async () => {
       type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
       const replyMessages: ReplyMessage[] = [];
 
-      const replyListener = client.onReply(
+      const replyListener = client.on(
+        'reply',
         'with-reply',
         vi.fn<WebSocketReplyMessageListener<Schema, 'with-reply'>>(
           /* istanbul ignore next -- @preserve
@@ -537,7 +539,7 @@ describe('Web socket client', async () => {
         expect(replyMessages.length).toBeGreaterThan(0);
       });
 
-      client.offReply('with-reply', replyListener);
+      client.off('reply', 'with-reply', replyListener);
 
       const replyMessage: ReplyMessage['data'] = { response: 'answer' };
 

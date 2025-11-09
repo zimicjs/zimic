@@ -49,10 +49,10 @@ class WebSocketClient<Schema extends WebSocketSchema> extends WebSocketHandler<S
   }
 
   async stop() {
-    super.removeAllChannelListeners();
+    super.offAny();
 
     const sockets = this.socket ? [this.socket] : [];
-    super.abortSocketMessages(sockets);
+    super.abortPendingMessages(sockets);
     await super.closeClientSockets(sockets);
 
     this.socket = undefined;
