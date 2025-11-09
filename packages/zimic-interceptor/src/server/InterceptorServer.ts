@@ -176,8 +176,8 @@ class InterceptorServer implements PublicInterceptorServer {
   private startWebSocketServer() {
     this.webSocketServerOrThrow.start();
 
-    this.webSocketServerOrThrow.onEvent('interceptors/workers/commit', this.commitWorker);
-    this.webSocketServerOrThrow.onEvent('interceptors/workers/reset', this.resetWorker);
+    this.webSocketServerOrThrow.on('event', 'interceptors/workers/commit', this.commitWorker);
+    this.webSocketServerOrThrow.on('event', 'interceptors/workers/reset', this.resetWorker);
   }
 
   private commitWorker = (
@@ -204,7 +204,7 @@ class InterceptorServer implements PublicInterceptorServer {
     if (isWorkerNoLongerCommitted) {
       // When a worker is no longer committed, we should abort all requests that were using it.
       // This ensures that we only wait for responses from committed worker sockets.
-      this.webSocketServerOrThrow.abortSocketMessages([socket]);
+      this.webSocketServerOrThrow.abortPendingMessages([socket]);
     } else {
       for (const handler of handlersToResetTo) {
         this.registerHttpHandler(handler, socket);
@@ -263,8 +263,8 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private async stopWebSocketServer() {
-    this.webSocketServerOrThrow.offEvent('interceptors/workers/commit', this.commitWorker);
-    this.webSocketServerOrThrow.offEvent('interceptors/workers/reset', this.resetWorker);
+    this.webSocketServerOrThrow.off('event', 'interceptors/workers/commit', this.commitWorker);
+    this.webSocketServerOrThrow.off('event', 'interceptors/workers/reset', this.resetWorker);
 
     await this.webSocketServerOrThrow.stop();
 
