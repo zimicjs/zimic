@@ -3,7 +3,7 @@
   "display": "React",
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": ["esnext", "dom", "dom.iterable"],
     "jsx": "preserve",
     "allowJs": true,
     "noEmit": true

@@ -15,35 +15,60 @@ This guide will help you get started with `@zimic/fetch`.
 
 ### Supported environments
 
-#### Client side
+<Tabs groupId="runtime-environments">
+  <TabItem value="client" label="Client side">
 
 `@zimic/fetch` is designed to work in any environment that supports the
 [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). This includes any relatively modern browser.
 [Can I Use](https://caniuse.com/?search=fetch) is a great resource to check the compatibility of specific features with
 different browsers.
 
-#### Server side
+  </TabItem>
+  <TabItem value="server" label="Server side">
 
 | Runtime                       | Version   |
 | ----------------------------- | --------- |
 | [Node.js](https://nodejs.org) | >= 20.0.0 |
 
+  </TabItem>
+</Tabs>
+
 ### Supported languages
 
 #### TypeScript
 
-`@zimic/fetch` requires [TypeScript](https://www.typescriptlang.org) >= 5.0.
+`@zimic/fetch` requires [TypeScript](https://www.typescriptlang.org) >= 5.0, with the following configuration:
 
-We recommend enabling `strict` in your `tsconfig.json`:
+<Tabs groupId="runtime-environments">
+  <TabItem value="client" label="Client side">
 
 ```json title='tsconfig.json'
 {
   "compilerOptions": {
-    // highlight-next-line
-    "strict": true
+    // highlight-start
+    "strict": true,
+    "lib": ["esnext", "dom", "dom.iterable"]
+    // highlight-end
   }
 }
 ```
+
+  </TabItem>
+  <TabItem value="server" label="Server side">
+
+```json title='tsconfig.json'
+{
+  "compilerOptions": {
+    // highlight-start
+    "strict": true,
+    "lib": ["esnext", "webworker", "webworker.iterable"]
+    // highlight-end
+  }
+}
+```
+
+  </TabItem>
+</Tabs>
 
 #### JavaScript
 
