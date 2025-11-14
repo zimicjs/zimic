@@ -76,8 +76,12 @@
     "deps:setup-playwright": "playwright install chromium",
     "deps:setup": "pnpm deps:setup-playwright"
   },
+  "dependencies": {
+    "ws": "8.18.3"
+  },
   "devDependencies": {
     "@types/node": "^24.10.0",
+    "@types/ws": "^8.18.1",
     "@vitest/browser": "^4.0.6",
     "@vitest/browser-playwright": "^4.0.6",
     "@vitest/coverage-istanbul": "^4.0.6",
@@ -85,6 +89,7 @@
     "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
+    "@zimic/utils": "workspace:*",
     "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.1",
     "picocolors": "^1.1.1",

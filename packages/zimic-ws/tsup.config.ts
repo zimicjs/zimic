@@ -18,6 +18,7 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   dts: format === 'cjs' ? { resolve: true } : false,
   entry: {
     index: 'src/index.ts',
+    server: 'src/server/index.ts',
   },
 }));
 
