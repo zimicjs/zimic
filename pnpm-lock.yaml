@@ -888,6 +888,54 @@ importers:
         specifier: ^4.0.13
         version: 4.0.13(@opentelemetry/api@1.9.0)(@types/debug@4.1.12)(@types/node@24.10.1)(@vitest/browser-playwright@4.0.13)(jiti@2.6.1)(jsdom@27.2.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.11.2(@types/node@24.10.1)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
 
+  packages/zimic-ws:
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.0
+        version: 24.10.0
+      '@vitest/browser':
+        specifier: ^4.0.6
+        version: 4.0.6(bufferutil@4.0.9)(msw@2.11.2(@types/node@24.10.0)(typescript@5.9.3))(vite@7.2.2(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
+      '@vitest/browser-playwright':
+        specifier: ^4.0.6
+        version: 4.0.6(bufferutil@4.0.9)(msw@2.11.2(@types/node@24.10.0)(typescript@5.9.3))(playwright@1.56.1)(vite@7.2.2(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.6)
+      '@vitest/coverage-istanbul':
+        specifier: ^4.0.6
+        version: 4.0.6(vitest@4.0.6)
+      '@zimic/eslint-config-node':
+        specifier: workspace:*
+        version: link:../eslint-config-node
+      '@zimic/interceptor':
+        specifier: workspace:*
+        version: link:../zimic-interceptor
+      '@zimic/lint-staged-config':
+        specifier: workspace:*
+        version: link:../lint-staged-config
+      '@zimic/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      dotenv-cli:
+        specifier: ^11.0.0
+        version: 11.0.0
+      eslint:
+        specifier: ^9.39.1
+        version: 9.39.1(jiti@2.6.1)
+      picocolors:
+        specifier: ^1.1.1
+        version: 1.1.1
+      playwright:
+        specifier: ^1.56.1
+        version: 1.56.1
+      tsup:
+        specifier: ^8.4.0
+        version: 8.5.0(@swc/core@1.15.1)(jiti@2.6.1)(postcss@8.5.6)(tsx@4.20.6)(typescript@5.9.3)(yaml@2.8.1)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.6
+        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.10.0)(@vitest/browser-playwright@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.11.2(@types/node@24.10.0)(typescript@5.9.3))(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+
 packages:
 
   '@acemir/cssom@0.9.23':

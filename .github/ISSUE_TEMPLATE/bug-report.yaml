@@ -20,6 +20,7 @@ body:
         - General
         - '@zimic/http'
         - '@zimic/fetch'
+        - '@zimic/ws'
         - '@zimic/interceptor'
     validations:
       required: true
