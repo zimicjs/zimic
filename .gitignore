@@ -5,6 +5,8 @@ node_modules
 /out
 /apps/*/dist
 /apps/*/build
+/apps/*/.docusaurus
+/apps/*/public/mockServiceWorker.js
 /apps/*/.next
 /apps/*/out
 /packages/*/dist

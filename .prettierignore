@@ -14,8 +14,6 @@ pnpm-lock.yaml
 
 /examples/*/.next
 
-**/public/mockServiceWorker.js
-
 # Tests
 /apps/*/tests/coverage
 /packages/*/tests/coverage
