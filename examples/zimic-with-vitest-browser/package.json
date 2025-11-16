@@ -3,12 +3,10 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
+    "setup": "concurrently --names playwright,zimic 'playwright install chromium' 'zimic-interceptor browser init ./public || true'",
     "test": "vitest",
     "test:turbo": "dotenv -v CI=true -- pnpm run test run",
-    "types:check": "tsc --noEmit",
-    "deps:setup-playwright": "playwright install chromium",
-    "deps:setup-zimic": "zimic-interceptor browser init ./public || true",
-    "deps:setup": "concurrently --names playwright,zimic 'pnpm deps:setup-playwright' 'pnpm deps:setup-zimic'"
+    "types:check": "tsc --noEmit"
   },
   "dependencies": {
     "@zimic/fetch": "latest",

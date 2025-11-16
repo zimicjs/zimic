@@ -3,13 +3,11 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
+    "setup": "concurrently --names playwright,zimic 'playwright install chromium' 'zimic-interceptor browser init ./public || true'",
     "dev": "dotenv -c development -- next dev",
     "test": "dotenv -c test -- dotenv -c development -- playwright test",
     "test:turbo": "dotenv -v CI=true -- pnpm run test",
-    "types:check": "tsc --noEmit",
-    "deps:setup-playwright": "playwright install chromium",
-    "deps:setup-zimic": "zimic-interceptor browser init ./public || true",
-    "deps:setup": "concurrently --names playwright,zimic 'pnpm deps:setup-playwright' 'pnpm deps:setup-zimic'"
+    "types:check": "tsc --noEmit"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.10",
