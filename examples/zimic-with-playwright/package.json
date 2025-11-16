@@ -3,13 +3,13 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
+    "setup": "pnpm setup-playwright",
+    "setup-playwright": "playwright install chromium",
     "dev": "dotenv -c development -- next dev",
     "mock": "zimic-interceptor server start --hostname 127.0.0.1 --port 4002 --ephemeral",
     "test": "dotenv -c test -- dotenv -c development -- pnpm mock -- playwright test",
     "test:turbo": "dotenv -v CI=true -- pnpm run test",
-    "types:check": "tsc --noEmit",
-    "deps:setup-playwright": "playwright install chromium",
-    "deps:setup": "pnpm deps:setup-playwright"
+    "types:check": "tsc --noEmit"
   },
   "dependencies": {
     "@zimic/fetch": "latest",

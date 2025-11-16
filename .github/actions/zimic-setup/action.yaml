@@ -139,15 +139,15 @@ runs:
       run: |
         pnpm run --recursive --if-present --stream \
           ${{ steps.filters.outputs.full-install }} \
-          deps:setup-msw
+          setup-msw
 
         pnpm run --recursive --if-present --stream \
           ${{ steps.filters.outputs.full-install }} \
-          deps:setup-zimic
+          setup-zimic
 
         pnpm run --recursive --if-present --stream \
           ${{ steps.filters.outputs.full-install }} \
-          deps:setup-playwright
+          setup-playwright
       env:
         NODE_VERSION: ${{ inputs.node-version }}
         TURBO_TOKEN: ${{ inputs.turbo-token }}

@@ -80,6 +80,9 @@
     "./package.json": "./package.json"
   },
   "scripts": {
+    "setup": "concurrently --names playwright,msw 'pnpm setup-playwright' 'pnpm setup-msw'",
+    "setup-msw": "msw init ./public --no-save",
+    "setup-playwright": "playwright install chromium",
     "dev": "tsup --watch",
     "cli": "node --enable-source-maps ./dist/cli.js",
     "build": "tsup",
@@ -91,9 +94,6 @@
     "test": "dotenv -v NODE_ENV=test -v FORCE_COLOR=1 -- vitest",
     "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
-    "deps:setup-playwright": "playwright install chromium",
-    "deps:setup-msw": "msw init ./public --no-save",
-    "deps:setup": "concurrently --names playwright,msw 'pnpm deps:setup-playwright' 'pnpm deps:setup-msw'",
     "postinstall": "node --enable-source-maps -e \"try{require('./dist/scripts/postinstall')}catch(error){console.error(error)}\""
   },
   "dependencies": {
