@@ -12,7 +12,7 @@
     "deps:setup": "concurrently --names playwright,zimic 'pnpm deps:setup-playwright' 'pnpm deps:setup-zimic'"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.90.9",
+    "@tanstack/react-query": "^5.90.10",
     "@zimic/fetch": "latest",
     "@zimic/http": "latest",
     "next": "^16.0.3",
