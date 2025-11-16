@@ -3,9 +3,7 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "setup": "concurrently --names playwright,zimic 'pnpm setup-playwright' 'pnpm setup-zimic'",
-    "setup-zimic": "zimic-interceptor browser init ./public || true",
-    "setup-playwright": "playwright install chromium",
+    "setup": "concurrently --names playwright,zimic 'playwright install chromium' 'zimic-interceptor browser init ./public || true'",
     "test": "vitest",
     "test:turbo": "dotenv -v CI=true -- pnpm run test run",
     "types:check": "tsc --noEmit"

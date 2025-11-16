@@ -3,9 +3,7 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "setup": "concurrently --names playwright,zimic 'pnpm setup-playwright' 'pnpm setup-zimic'",
-    "setup-zimic": "zimic-interceptor browser init ./public || true",
-    "setup-playwright": "playwright install chromium",
+    "setup": "concurrently --names playwright,zimic 'playwright install chromium' 'zimic-interceptor browser init ./public || true'",
     "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",

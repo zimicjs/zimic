@@ -62,8 +62,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "setup": "pnpm setup-playwright",
-    "setup-playwright": "playwright install chromium",
+    "setup": "playwright install chromium",
     "dev": "tsup --watch",
     "build": "tsup",
     "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
