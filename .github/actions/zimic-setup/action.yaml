@@ -59,7 +59,7 @@ runs:
     - name: Restore turbo cache
       uses: actions/cache/restore@v4
       with:
-        path: .turbo
+        path: .turbo/cache
         key: ${{ runner.os }}-turbo
 
     - name: Get installation and build filters

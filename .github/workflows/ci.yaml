@@ -93,7 +93,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/cache/save@v4
         with:
-          path: .turbo
+          path: .turbo/cache
           key: ${{ runner.os }}-turbo
 
   ci-node:
@@ -154,7 +154,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/cache/save@v4
         with:
-          path: .turbo
+          path: .turbo/cache
           key: ${{ runner.os }}-turbo
 
   ci-typescript:
@@ -235,5 +235,5 @@ jobs:
         if: ${{ always() }}
         uses: actions/cache/save@v4
         with:
-          path: .turbo
+          path: .turbo/cache
           key: ${{ runner.os }}-turbo
