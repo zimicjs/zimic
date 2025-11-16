@@ -12,10 +12,10 @@
     "deps:setup": "concurrently --names playwright,zimic 'pnpm deps:setup-playwright' 'pnpm deps:setup-zimic'"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.90.7",
+    "@tanstack/react-query": "^5.90.10",
     "@zimic/fetch": "latest",
     "@zimic/http": "latest",
-    "next": "^16.0.1",
+    "next": "^16.0.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "^4.1.12"
@@ -23,8 +23,8 @@
   "devDependencies": {
     "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4.1.17",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
     "@zimic/interceptor": "latest",
     "concurrently": "^9.2.1",
     "dotenv-cli": "^11.0.0",
