@@ -184,9 +184,9 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       /* istanbul ignore next -- @preserve
        *
        * If the socket is closed before receiving a response, the message is aborted with an error. This can happen if
-       * we send a request message and the interceptor server closes the socket before sending a response. In this
-       * case, we can safely ignore the error because we know that the server is shutting down and resetting is no
-       * longer necessary.
+       * we send a request message and the interceptor server closes the socket before sending a response. In this case,
+       * we can safely ignore the error because we know that the server is shutting down and resetting is no longer
+       * necessary.
        *
        * Due to the rare nature of this edge case, we can't reliably reproduce it in tests. */
       const isMessageAbortError = error instanceof WebSocketMessageAbortError;
@@ -226,9 +226,9 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       /* istanbul ignore next -- @preserve
        *
        * If the socket is closed before receiving a response, the message is aborted with an error. This can happen if
-       * we send a request message and the interceptor server closes the socket before sending a response. In this
-       * case, we can safely ignore the error because we know that the server is shutting down and resetting is no
-       * longer necessary.
+       * we send a request message and the interceptor server closes the socket before sending a response. In this case,
+       * we can safely ignore the error because we know that the server is shutting down and resetting is no longer
+       * necessary.
        *
        * Due to the rare nature of this edge case, we can't reliably reproduce it in tests. */
       const isMessageAbortError = error instanceof WebSocketMessageAbortError;

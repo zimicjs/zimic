@@ -380,9 +380,7 @@ class HttpInterceptorClient<
     ];
 
     for (const method of HTTP_METHODS) {
-      const newClearResults = this.clearMethodHandlers(method);
-
-      for (const result of newClearResults) {
+      for (const result of this.clearMethodHandlers(method)) {
         clearPromises.push(Promise.resolve(result));
       }
 
