@@ -5,6 +5,7 @@ import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/ty
 import { importCrypto } from '@/utils/crypto';
 import { isClientSide, isServerSide } from '@/utils/environment';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
+import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocketEventMessage } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 
@@ -173,8 +174,27 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     this.httpHandlers.clear();
 
-    if (this.webSocketClient.isRunning) {
+    if (!this.webSocketClient.isRunning) {
+      return;
+    }
+
+    try {
       await this.webSocketClient.request('interceptors/workers/reset', undefined);
+    } catch (error) {
+      /* istanbul ignore next -- @preserve
+       *
+       * If the socket is closed before receiving a response, the message is aborted with an error. This can happen if
+       * we send a request message and the interceptor server closes the socket before sending a response. In this
+       * case, we can safely ignore the error because we know that the server is shutting down and resetting is no
+       * longer necessary.
+       *
+       * Due to the rare nature of this edge case, we can't reliably reproduce it in tests. */
+      const isMessageAbortError = error instanceof WebSocketMessageAbortError;
+
+      /* istanbul ignore next -- @preserve */
+      if (!isMessageAbortError) {
+        throw error;
+      }
     }
   }
 
@@ -189,15 +209,34 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       }
     }
 
-    if (this.webSocketClient.isRunning) {
-      const groupsToRecommit = Array.from<HttpHandler, HttpHandlerCommit>(this.httpHandlers.values(), (handler) => ({
-        id: handler.id,
-        baseURL: handler.baseURL,
-        method: handler.method,
-        path: handler.path,
-      }));
+    if (!this.webSocketClient.isRunning) {
+      return;
+    }
 
+    const groupsToRecommit = Array.from<HttpHandler, HttpHandlerCommit>(this.httpHandlers.values(), (handler) => ({
+      id: handler.id,
+      baseURL: handler.baseURL,
+      method: handler.method,
+      path: handler.path,
+    }));
+
+    try {
       await this.webSocketClient.request('interceptors/workers/reset', groupsToRecommit);
+    } catch (error) {
+      /* istanbul ignore next -- @preserve
+       *
+       * If the socket is closed before receiving a response, the message is aborted with an error. This can happen if
+       * we send a request message and the interceptor server closes the socket before sending a response. In this
+       * case, we can safely ignore the error because we know that the server is shutting down and resetting is no
+       * longer necessary.
+       *
+       * Due to the rare nature of this edge case, we can't reliably reproduce it in tests. */
+      const isMessageAbortError = error instanceof WebSocketMessageAbortError;
+
+      /* istanbul ignore next -- @preserve */
+      if (!isMessageAbortError) {
+        throw error;
+      }
     }
   }
 
