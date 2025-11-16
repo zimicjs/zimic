@@ -385,8 +385,13 @@ class InterceptorServer implements PublicInterceptorServer {
         }
       } catch (error) {
         /* istanbul ignore next -- @preserve
-         * This try..catch is for the case when the remote interceptor web socket client is closed before responding.
-         * Since simulating this scenario is difficult, we are ignoring this branch fow now. */
+         *
+         * If the socket is closed before receiving a response, the message is aborted with an error. This can happen if
+         * we send a request message and the interceptor worker closes the socket before sending a response. In this
+         * case, we can safely ignore the error because we know that the worker is shutting down and won't handle
+         * any more requests.
+         *
+         * Due to the rare nature of this edge case, we can't reliably reproduce it in tests. */
         const isMessageAbortError = error instanceof WebSocketMessageAbortError;
 
         /* istanbul ignore next -- @preserve */

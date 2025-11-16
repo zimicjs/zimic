@@ -116,7 +116,7 @@ class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttp
   }
 
   clear() {
-    this.client.clear();
+    void this.client.clear();
   }
 }
 
