@@ -1,6 +1,7 @@
 import path from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
 import { DEFAULT_HOSTNAME, DEFAULT_LOG_UNHANDLED_REQUESTS } from '../constants';
@@ -18,37 +19,86 @@ describe('Interceptor server', () => {
     await server?.stop();
   });
 
-  it('should not throw an error is started multiple times', async () => {
-    server = createInternalInterceptorServer();
+  describe('Lifecycle', () => {
+    it('should not throw an error is started multiple times', async () => {
+      server = createInternalInterceptorServer();
 
-    expect(server.isRunning).toBe(false);
+      expect(server.isRunning).toBe(false);
 
-    await server.start();
-    expect(server.isRunning).toBe(true);
+      await server.start();
+      expect(server.isRunning).toBe(true);
 
-    await server.start();
-    expect(server.isRunning).toBe(true);
+      await server.start();
+      expect(server.isRunning).toBe(true);
 
-    await server.start();
-    expect(server.isRunning).toBe(true);
-  });
+      await server.start();
+      expect(server.isRunning).toBe(true);
+    });
 
-  it('should not throw an error if stopped multiple times', async () => {
-    server = createInternalInterceptorServer();
+    it('should not throw an error if stopped multiple times', async () => {
+      server = createInternalInterceptorServer();
 
-    expect(server.isRunning).toBe(false);
+      expect(server.isRunning).toBe(false);
 
-    await server.start();
-    expect(server.isRunning).toBe(true);
+      await server.start();
+      expect(server.isRunning).toBe(true);
 
-    await server.stop();
-    expect(server.isRunning).toBe(false);
+      await server.stop();
+      expect(server.isRunning).toBe(false);
 
-    await server.stop();
-    expect(server.isRunning).toBe(false);
+      await server.stop();
+      expect(server.isRunning).toBe(false);
 
-    await server.stop();
-    expect(server.isRunning).toBe(false);
+      await server.stop();
+      expect(server.isRunning).toBe(false);
+    });
+
+    it('should not throw an error if stopped at the same time a connected interceptor is stopped', async () => {
+      server = createInternalInterceptorServer();
+
+      await server.start();
+      expect(server.isRunning).toBe(true);
+
+      const interceptor = createInternalHttpInterceptor({
+        type: 'remote',
+        baseURL: `http://${server.hostname}:${server.port}`,
+      });
+      expect(interceptor.isRunning).toBe(false);
+
+      await interceptor.start();
+      expect(interceptor.isRunning).toBe(true);
+
+      await Promise.all([server.stop(), interceptor.stop()]);
+
+      expect(server.isRunning).toBe(false);
+      expect(interceptor.isRunning).toBe(false);
+    });
+
+    it('should not throw an error if stopped at the same time a connected interceptor is cleared', async () => {
+      server = createInternalInterceptorServer();
+
+      await server.start();
+      expect(server.isRunning).toBe(true);
+
+      const interceptor = createInternalHttpInterceptor({
+        type: 'remote',
+        baseURL: `http://${server.hostname}:${server.port}`,
+      });
+      expect(interceptor.isRunning).toBe(false);
+
+      await interceptor.start();
+      expect(interceptor.isRunning).toBe(true);
+
+      await Promise.all([server.stop(), interceptor.clear()]);
+
+      expect(server.isRunning).toBe(false);
+      expect(interceptor.isRunning).toBe(true);
+
+      await interceptor.stop();
+
+      expect(server.isRunning).toBe(false);
+      expect(interceptor.isRunning).toBe(false);
+    });
   });
 
   describe('Hostname', () => {
