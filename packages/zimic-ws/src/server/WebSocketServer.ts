@@ -19,12 +19,12 @@ class WebSocketServer {
     this.socket = new ServerSocket({ server: options.server });
   }
 
-  async start(options: { timeout?: number } = {}) {
+  async open(options: { timeout?: number } = {}) {
     await openServerSocket(this.server, this.socket, options);
     this.isRunning = true;
   }
 
-  async stop(options: { timeout?: number } = {}) {
+  async close(options: { timeout?: number } = {}) {
     try {
       await closeServerSocket(this.server, this.socket, options);
     } finally {
