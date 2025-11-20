@@ -88,12 +88,10 @@ export type JSONSerialized<Type> = Type extends JSONValue
                     }
                   : never;
 
-declare const jsonValue: unique symbol;
-
-export type JSONStringified<Value> = string & { [jsonValue]: Value };
-
 declare global {
   interface JSON {
+    readonly value: unique symbol;
+
     // eslint-disable-next-line @typescript-eslint/method-signature-style
     stringify<Value>(
       value: Value,
@@ -106,3 +104,5 @@ declare global {
     parse<Value>(text: JSONStringified<Value>, reviver?: (this: any, key: string, value: any) => any): Value;
   }
 }
+
+export type JSONStringified<Value> = string & { [JSON.value]: Value };
