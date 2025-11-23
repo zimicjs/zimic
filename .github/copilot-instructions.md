@@ -53,8 +53,7 @@ correct, minimal, high-quality changes and review proposed modifications effecti
 
 ## Testing Conventions
 
-- Runner: Vitest (Node + `@vitest/browser` + Playwright); browser tests need chromium via per-package `deps:setup` /
-  `deps:setup-playwright` scripts;
+- Runner: Vitest (Node + `@vitest/browser` + Playwright); browser tests need chromium via per-package `setup` script;
 - File layout: source-near `__tests__` directories; test filenames: `<resource>.test.ts`; test suites dedicated to
   specific features or environments can have a prefix (e.g., `<resource>.<feature>.test.ts`);
 - Avoid mocking internals; prefer exercising the public APIs;

@@ -37,7 +37,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
@@ -93,7 +93,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/cache/save@v4
         with:
-          path: .turbo
+          path: .turbo/cache
           key: ${{ runner.os }}-turbo
 
   ci-node:
@@ -114,7 +114,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
@@ -154,7 +154,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/cache/save@v4
         with:
-          path: .turbo
+          path: .turbo/cache
           key: ${{ runner.os }}-turbo
 
   ci-typescript:
@@ -179,7 +179,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
@@ -235,5 +235,5 @@ jobs:
         if: ${{ always() }}
         uses: actions/cache/save@v4
         with:
-          path: .turbo
+          path: .turbo/cache
           key: ${{ runner.os }}-turbo

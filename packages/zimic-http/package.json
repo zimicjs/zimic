@@ -12,7 +12,7 @@
     "api",
     "static"
   ],
-  "version": "1.3.3",
+  "version": "1.3.4-canary.7",
   "homepage": "https://zimic.dev/docs/http",
   "repository": {
     "type": "git",
@@ -71,6 +71,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
+    "setup": "playwright install chromium",
     "dev": "tsup --watch",
     "cli": "node --enable-source-maps ./dist/cli.js",
     "build": "tsup",
@@ -82,9 +83,7 @@
     "test": "dotenv -v NODE_ENV=test -v FORCE_COLOR=1 -- vitest",
     "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
-    "typegen:fixtures": "tsx ./scripts/typegen/generateFixtureTypes.ts",
-    "deps:setup-playwright": "playwright install chromium",
-    "deps:setup": "pnpm deps:setup-playwright"
+    "typegen:fixtures": "tsx ./scripts/typegen/generateFixtureTypes.ts"
   },
   "dependencies": {
     "openapi-typescript": "7.10.1",
@@ -93,11 +92,11 @@
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^24.10.0",
-    "@types/yargs": "^17.0.34",
-    "@vitest/browser": "^4.0.6",
-    "@vitest/browser-playwright": "^4.0.6",
-    "@vitest/coverage-istanbul": "^4.0.6",
+    "@types/node": "^24.10.1",
+    "@types/yargs": "^17.0.35",
+    "@vitest/browser": "^4.0.13",
+    "@vitest/browser-playwright": "^4.0.13",
+    "@vitest/coverage-istanbul": "^4.0.13",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
@@ -106,13 +105,13 @@
     "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.1",
     "execa": "9.6.0",
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^4.1.1",
     "playwright": "^1.56.1",
     "prettier": "^3.6.2",
-    "tsup": "^8.4.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.6"
+    "vitest": "^4.0.13"
   },
   "peerDependencies": {
     "typescript": ">=5.0.0"

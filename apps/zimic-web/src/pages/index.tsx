@@ -106,7 +106,7 @@ function HomePage() {
         <HomeSection
           title="Sponsors"
           titleId="sponsors"
-          description="Zimic is open source and backed by amazing people."
+          description="Zimic is open source and free to use. If you find it useful, consider becoming a sponsor!"
           className="mx-auto -mt-16 max-w-[96rem] space-y-12"
         >
           <Button
