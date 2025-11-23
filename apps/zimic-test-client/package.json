@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
+    "setup": "concurrently --names playwright,zimic 'playwright install chromium' 'zimic-interceptor browser init ./public || true'",
     "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
@@ -10,16 +11,13 @@
     "style:format": "pnpm style --write",
     "test": "dotenv -v NODE_ENV=test -v FORCE_COLOR=1 -- zimic-interceptor server start --port 4000 --ephemeral -- vitest",
     "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
-    "types:check": "tsc --noEmit",
-    "deps:setup-playwright": "playwright install chromium",
-    "deps:setup-zimic": "zimic-interceptor browser init ./public || true",
-    "deps:setup": "concurrently --names playwright,zimic 'pnpm deps:setup-playwright' 'pnpm deps:setup-zimic'"
+    "types:check": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/superagent": "^8.1.9",
-    "@vitest/browser": "^4.0.9",
-    "@vitest/browser-playwright": "^4.0.9",
-    "@vitest/coverage-istanbul": "^4.0.9",
+    "@vitest/browser": "^4.0.13",
+    "@vitest/browser-playwright": "^4.0.13",
+    "@vitest/coverage-istanbul": "^4.0.13",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/fetch": "workspace:*",
     "@zimic/http": "workspace:*",
@@ -36,6 +34,6 @@
     "playwright": "^1.56.1",
     "superagent": "^10.2.3",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.9"
+    "vitest": "^4.0.13"
   }
 }

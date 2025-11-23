@@ -3,15 +3,14 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
+    "setup": "playwright install chromium",
     "dev": "dotenv -c development -- next dev",
     "mock": "pnpm mock:start -- pnpm mock:load",
     "mock:start": "zimic-interceptor server start --hostname 127.0.0.1 --port 4001 --ephemeral",
     "mock:load": "tsx ./tests/interceptors/scripts/load.ts",
     "test": "dotenv -c test -- dotenv -c development -- pnpm mock -- playwright test",
     "test:turbo": "dotenv -v CI=true -- pnpm run test",
-    "types:check": "tsc --noEmit",
-    "deps:setup-playwright": "playwright install chromium",
-    "deps:setup": "pnpm deps:setup-playwright"
+    "types:check": "tsc --noEmit"
   },
   "dependencies": {
     "@zimic/fetch": "latest",
@@ -24,7 +23,7 @@
   "devDependencies": {
     "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4.1.17",
-    "@types/react": "^19.2.5",
+    "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3",
     "@zimic/interceptor": "latest",
     "dotenv-cli": "^11.0.0",
