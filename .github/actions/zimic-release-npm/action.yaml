@@ -57,5 +57,5 @@ runs:
       if: ${{ always() }}
       uses: actions/cache/save@v4
       with:
-        path: .turbo
+        path: .turbo/cache
         key: ${{ runner.os }}-turbo

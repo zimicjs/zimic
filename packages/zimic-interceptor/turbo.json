@@ -15,13 +15,8 @@
       "outputs": ["dist/**"]
     },
 
-    "deps:setup-msw": {
-      "inputs": ["package.json"],
-      "outputs": ["public/mockServiceWorker.js"]
-    },
-
     "test:turbo": {
-      "dependsOn": ["^build", "@zimic/http#build", "deps:setup-msw"],
+      "dependsOn": ["^build", "@zimic/http#build"],
       "inputs": ["{src,tests,scripts}/**/*.{ts,json}", "{package,tsconfig}.json", "vitest.config.mts"]
     },
 

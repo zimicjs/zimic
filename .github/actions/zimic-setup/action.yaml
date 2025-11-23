@@ -59,7 +59,7 @@ runs:
     - name: Restore turbo cache
       uses: actions/cache/restore@v4
       with:
-        path: .turbo
+        path: .turbo/cache
         key: ${{ runner.os }}-turbo
 
     - name: Get installation and build filters
@@ -139,15 +139,7 @@ runs:
       run: |
         pnpm run --recursive --if-present --stream \
           ${{ steps.filters.outputs.full-install }} \
-          deps:setup-msw
-
-        pnpm run --recursive --if-present --stream \
-          ${{ steps.filters.outputs.full-install }} \
-          deps:setup-zimic
-
-        pnpm run --recursive --if-present --stream \
-          ${{ steps.filters.outputs.full-install }} \
-          deps:setup-playwright
+          setup
       env:
         NODE_VERSION: ${{ inputs.node-version }}
         TURBO_TOKEN: ${{ inputs.turbo-token }}

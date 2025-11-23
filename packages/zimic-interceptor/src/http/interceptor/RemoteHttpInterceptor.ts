@@ -157,12 +157,7 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
   }
 
   async clear() {
-    await new Promise<void>((resolve, reject) => {
-      this.client.clear({
-        onCommitSuccess: resolve,
-        onCommitError: reject,
-      });
-    });
+    await this.client.clear();
   }
 }
 
