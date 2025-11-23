@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Zimic
         uses: ./.github/actions/zimic-setup
@@ -43,5 +43,5 @@ jobs:
         if: ${{ always() }}
         uses: actions/cache/save@v4
         with:
-          path: .turbo
+          path: .turbo/cache
           key: ${{ runner.os }}-turbo

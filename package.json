@@ -13,7 +13,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "setup": "pnpm install && pnpm run --recursive --if-present --stream deps:setup && pnpm build --filter './packages/*'",
+    "setup": "pnpm install && pnpm run --recursive --if-present --stream setup && pnpm build --filter './packages/*'",
     "dev": "turbo dev --parallel --continue",
     "build": "turbo build --concurrency 50%",
     "lint": "turbo lint:turbo --continue --concurrency 50%",
@@ -34,7 +34,7 @@
     "@zimic/lint-staged-config": "workspace:*",
     "concurrently": "^9.2.1",
     "husky": "^9.1.7",
-    "lint-staged": "^16.2.6",
+    "lint-staged": "^16.2.7",
     "prettier": "3.6.2",
     "prettier-plugin-jsdoc": "1.5.0",
     "prettier-plugin-sh": "0.18.0",
