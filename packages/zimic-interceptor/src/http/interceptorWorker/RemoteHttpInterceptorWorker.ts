@@ -55,13 +55,13 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async start() {
     await super.sharedStart(async () => {
+      this.webSocketClient.onChannel('event', 'interceptors/responses/create', this.createResponse);
+      this.webSocketClient.onChannel('event', 'interceptors/responses/unhandled', this.handleUnhandledServerRequest);
+
       await this.webSocketClient.start({
         parameters: this.auth ? { token: this.auth.token } : undefined,
         waitForAuthentication: true,
       });
-
-      this.webSocketClient.on('event', 'interceptors/responses/create', this.createResponse);
-      this.webSocketClient.on('event', 'interceptors/responses/unhandled', this.handleUnhandledServerRequest);
 
       this.platform = this.readPlatform();
       this.isRunning = true;
@@ -120,12 +120,8 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async stop() {
     await super.sharedStop(async () => {
-      await this.clearHandlers();
-
-      this.webSocketClient.off('event', 'interceptors/responses/create', this.createResponse);
-      this.webSocketClient.off('event', 'interceptors/responses/unhandled', this.handleUnhandledServerRequest);
-
       await this.webSocketClient.stop();
+      await this.clearHandlers();
 
       this.isRunning = false;
     });
@@ -167,45 +163,22 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     });
   }
 
-  async clearHandlers() {
+  async clearHandlers<Schema extends HttpSchema>(
+    options: {
+      interceptor?: HttpInterceptorClient<Schema>;
+    } = {},
+  ) {
     if (!this.isRunning) {
       throw new NotRunningHttpInterceptorError();
     }
 
-    this.httpHandlers.clear();
-
-    if (!this.webSocketClient.isRunning) {
-      return;
-    }
-
-    try {
-      await this.webSocketClient.request('interceptors/workers/reset', undefined);
-    } catch (error) {
-      /* istanbul ignore next -- @preserve
-       *
-       * If the socket is closed before receiving a response, the message is aborted with an error. This can happen if
-       * we send a request message and the interceptor server closes the socket before sending a response. In this case,
-       * we can safely ignore the error because we know that the server is shutting down and resetting is no longer
-       * necessary.
-       *
-       * Due to the rare nature of this edge case, we can't reliably reproduce it in tests. */
-      const isMessageAbortError = error instanceof WebSocketMessageAbortError;
-
-      /* istanbul ignore next -- @preserve */
-      if (!isMessageAbortError) {
-        throw error;
-      }
-    }
-  }
-
-  async clearInterceptorHandlers<Schema extends HttpSchema>(interceptor: HttpInterceptorClient<Schema>) {
-    if (!this.isRunning) {
-      throw new NotRunningHttpInterceptorError();
-    }
-
-    for (const handler of this.httpHandlers.values()) {
-      if (handler.interceptor === interceptor) {
-        this.httpHandlers.delete(handler.id);
+    if (options.interceptor === undefined) {
+      this.httpHandlers.clear();
+    } else {
+      for (const handler of this.httpHandlers.values()) {
+        if (handler.interceptor === options.interceptor) {
+          this.httpHandlers.delete(handler.id);
+        }
       }
     }
 

@@ -79,12 +79,12 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
       return;
     }
 
-    super.offAny();
-    super.abortPendingMessages();
     await super.closeClientSockets();
-
     await closeServerSocket(this.webSocketServer, { timeout: this.socketTimeout });
+
     this.webSocketServer.removeAllListeners();
+    super.offAny();
+
     this.webSocketServer = undefined;
   }
 }

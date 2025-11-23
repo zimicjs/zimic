@@ -17,7 +17,7 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
   };
 
   'interceptors/workers/reset': {
-    event?: HttpHandlerCommit[];
+    event: HttpHandlerCommit[];
     reply: {};
   };
 

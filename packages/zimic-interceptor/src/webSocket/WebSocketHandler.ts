@@ -12,7 +12,7 @@ import {
 } from '@/utils/webSocket';
 
 import { WEB_SOCKET_CONTROL_MESSAGES, WebSocketControlMessage } from './constants';
-import InvalidWebSocketMessage from './errors/InvalidWebSocketMessage';
+import InvalidWebSocketMessageError from './errors/InvalidWebSocketMessage';
 import NotRunningWebSocketHandlerError from './errors/NotRunningWebSocketHandlerError';
 import {
   WebSocketEventMessageListener,
@@ -26,6 +26,10 @@ import {
   WebSocketMessage,
   WebSocketMessageListener,
 } from './types';
+
+interface WebSocketRequestAbortOptions<Schema extends WebSocketSchema> {
+  predicate?: (request: WebSocketEventMessage<Schema>) => boolean;
+}
 
 abstract class WebSocketHandler<Schema extends WebSocketSchema> {
   private sockets = new Set<ClientSocket>();
@@ -41,7 +45,7 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
   } = {};
 
   private socketListeners = {
-    messageAbort: new Map<ClientSocket, Set<(error: unknown) => void>>(),
+    abortRequests: new Map<ClientSocket, Set<(options?: WebSocketRequestAbortOptions<Schema>) => void>>(),
   };
 
   protected constructor(options: { socketTimeout?: number; messageTimeout?: number }) {
@@ -72,11 +76,16 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     socket.addEventListener('error', handleSocketError);
 
     const handleSocketClose = () => {
+      this.sockets.delete(socket);
+
+      for (const listener of this.socketListeners.abortRequests.get(socket) ?? []) {
+        listener();
+      }
+      this.socketListeners.abortRequests.delete(socket);
+
       socket.removeEventListener('message', handleSocketMessage);
       socket.removeEventListener('close', handleSocketClose);
       socket.removeEventListener('error', handleSocketError);
-
-      this.removeSocket(socket);
     };
 
     socket.addEventListener('close', handleSocketClose);
@@ -110,7 +119,7 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     if (typeof data === 'string') {
       return data;
     } else {
-      throw new InvalidWebSocketMessage(data);
+      throw new InvalidWebSocketMessageError(data);
     }
   }
 
@@ -120,11 +129,11 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     try {
       parsedMessage = JSON.parse(stringifiedMessage) as unknown;
     } catch {
-      throw new InvalidWebSocketMessage(stringifiedMessage);
+      throw new InvalidWebSocketMessageError(stringifiedMessage);
     }
 
     if (!this.isMessage(parsedMessage)) {
-      throw new InvalidWebSocketMessage(stringifiedMessage);
+      throw new InvalidWebSocketMessageError(stringifiedMessage);
     }
 
     if (this.isReplyMessage(parsedMessage)) {
@@ -153,6 +162,13 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
       typeof message.channel === 'string' &&
       (!('requestId' in message) || typeof message.requestId === 'string')
     );
+  }
+
+  isChannelEvent<Channel extends WebSocketChannel<Schema>>(
+    event: WebSocketEventMessage<Schema>,
+    channel: Channel,
+  ): event is WebSocketEventMessage<Schema, Channel> {
+    return event.channel === channel;
   }
 
   private async notifyListeners(message: WebSocketMessage<Schema>, socket: ClientSocket) {
@@ -194,11 +210,6 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     await Promise.all(closingPromises);
   }
 
-  private removeSocket(socket: ClientSocket) {
-    this.abortPendingMessages([socket]);
-    this.sockets.delete(socket);
-  }
-
   private async createEventMessage<Channel extends WebSocketChannel<Schema>>(
     channel: Channel,
     eventData: WebSocketEventMessage<Schema, Channel>['data'],
@@ -234,43 +245,65 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     const request = await this.createEventMessage(channel, requestData);
     this.sendMessage(request, options.sockets);
 
-    const response = await this.waitForReply(channel, request.id, options.sockets);
+    const response = await this.waitForReply(channel, request, options.sockets);
     return response.data;
   }
 
   async waitForReply<Channel extends WebSocketChannelWithReply<Schema>>(
     channel: Channel,
-    requestId: WebSocketEventMessage<Schema, Channel>['id'],
+    request: WebSocketEventMessage<Schema, Channel>,
     sockets: Collection<ClientSocket> = this.sockets,
   ) {
     return new Promise<WebSocketReplyMessage<Schema, Channel>>((resolve, reject) => {
       const replyTimeout = setTimeout(() => {
-        this.off('reply', channel, replyListener); // eslint-disable-line @typescript-eslint/no-use-before-define
-        this.offAbortPendingMessages(sockets, abortListener); // eslint-disable-line @typescript-eslint/no-use-before-define
+        this.offChannel('reply', channel, replyListener); // eslint-disable-line @typescript-eslint/no-use-before-define
+
+        for (const socket of sockets) {
+          this.offSocket('abortRequests', socket, abortRequestsHandler); // eslint-disable-line @typescript-eslint/no-use-before-define
+        }
 
         const timeoutError = new WebSocketMessageTimeoutError(this.messageTimeout);
         reject(timeoutError);
       }, this.messageTimeout);
 
-      const abortListener = this.onAbortPendingMessages(sockets, (error) => {
+      const replyListener = this.onChannel('reply', channel, (message) => {
+        if (message.requestId !== request.id) {
+          return;
+        }
+
         clearTimeout(replyTimeout);
 
-        this.off('reply', channel, replyListener); // eslint-disable-line @typescript-eslint/no-use-before-define
-        this.offAbortPendingMessages(sockets, abortListener);
+        this.offChannel('reply', channel, replyListener);
 
-        reject(error);
-      });
-
-      const replyListener = this.on('reply', channel, (message) => {
-        if (message.requestId === requestId) {
-          clearTimeout(replyTimeout);
-
-          this.off('reply', channel, replyListener);
-          this.offAbortPendingMessages(sockets, abortListener);
-
-          resolve(message);
+        for (const socket of sockets) {
+          this.offSocket('abortRequests', socket, abortRequestsHandler); // eslint-disable-line @typescript-eslint/no-use-before-define
         }
+
+        resolve(message);
       });
+
+      const abortRequestsHandler = (options: WebSocketRequestAbortOptions<Schema> = {}) => {
+        const shouldAbort = options.predicate === undefined || options.predicate(request);
+
+        if (!shouldAbort) {
+          return;
+        }
+
+        clearTimeout(replyTimeout);
+
+        this.offChannel('reply', channel, replyListener);
+
+        for (const socket of sockets) {
+          this.offSocket('abortRequests', socket, abortRequestsHandler);
+        }
+
+        const abortError = new WebSocketMessageAbortError();
+        reject(abortError);
+      };
+
+      for (const socket of sockets) {
+        this.onSocket('abortRequests', socket, abortRequestsHandler);
+      }
     });
   }
 
@@ -323,17 +356,17 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     }
   }
 
-  on<Channel extends WebSocketChannel<Schema>, Listener extends WebSocketEventMessageListener<Schema, Channel>>(
+  onChannel<Channel extends WebSocketChannel<Schema>, Listener extends WebSocketEventMessageListener<Schema, Channel>>(
     type: 'event',
     channel: Channel,
     eventListener: Listener,
   ): Listener;
-  on<Channel extends WebSocketChannel<Schema>, Listener extends WebSocketReplyMessageListener<Schema, Channel>>(
+  onChannel<Channel extends WebSocketChannel<Schema>, Listener extends WebSocketReplyMessageListener<Schema, Channel>>(
     type: 'reply',
     channel: Channel,
     replyListener: Listener,
   ): Listener;
-  on<Channel extends WebSocketChannel<Schema>, Listener extends WebSocketMessageListener<Schema, Channel>>(
+  onChannel<Channel extends WebSocketChannel<Schema>, Listener extends WebSocketMessageListener<Schema, Channel>>(
     type: 'event' | 'reply',
     channel: Channel,
     listener: Listener,
@@ -341,29 +374,6 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     const listeners = this.getOrCreateChannelListeners<Channel>(channel);
     listeners[type].add(listener);
     return listener;
-  }
-
-  off<Channel extends WebSocketChannel<Schema>>(
-    type: 'event',
-    channel: Channel,
-    eventListener: WebSocketEventMessageListener<Schema, Channel>,
-  ): void;
-  off<Channel extends WebSocketChannel<Schema>>(
-    type: 'reply',
-    channel: Channel,
-    replyListener: WebSocketReplyMessageListener<Schema, Channel>,
-  ): void;
-  off<Channel extends WebSocketChannel<Schema>>(
-    type: 'event' | 'reply',
-    channel: Channel,
-    listener: WebSocketMessageListener<Schema, Channel>,
-  ): void {
-    const listeners = this.channelListeners[channel];
-    listeners?.[type].delete(listener);
-  }
-
-  offAny() {
-    this.channelListeners = {};
   }
 
   private getOrCreateChannelListeners<Channel extends WebSocketChannel<Schema>>(channel: Channel) {
@@ -379,32 +389,58 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     return listeners;
   }
 
-  private onAbortPendingMessages(sockets: Collection<ClientSocket>, listener: (error: unknown) => void) {
-    for (const socket of sockets) {
-      let listeners = this.socketListeners.messageAbort.get(socket);
-      if (!listeners) {
-        listeners = new Set();
-        this.socketListeners.messageAbort.set(socket, listeners);
-      }
-      listeners.add(listener);
-    }
+  offChannel<Channel extends WebSocketChannel<Schema>>(
+    type: 'event',
+    channel: Channel,
+    eventListener: WebSocketEventMessageListener<Schema, Channel>,
+  ): void;
+  offChannel<Channel extends WebSocketChannel<Schema>>(
+    type: 'reply',
+    channel: Channel,
+    replyListener: WebSocketReplyMessageListener<Schema, Channel>,
+  ): void;
+  offChannel<Channel extends WebSocketChannel<Schema>>(
+    type: 'event' | 'reply',
+    channel: Channel,
+    listener: WebSocketMessageListener<Schema, Channel>,
+  ) {
+    const listeners = this.channelListeners[channel];
+    listeners?.[type].delete(listener);
+  }
 
+  onSocket<Listener extends () => void>(type: 'abortRequests', socket: ClientSocket, listener: Listener): Listener {
+    const listeners = this.getOrCreateSocketListeners(type, socket);
+    listeners.add(listener);
     return listener;
   }
 
-  private offAbortPendingMessages(sockets: Collection<ClientSocket>, listener: (error: unknown) => void) {
-    for (const socket of sockets) {
-      this.socketListeners.messageAbort.get(socket)?.delete(listener);
+  private getOrCreateSocketListeners(type: 'abortRequests', socket: ClientSocket) {
+    const listeners = this.socketListeners[type].get(socket) ?? new Set();
+
+    if (!this.socketListeners[type].has(socket)) {
+      this.socketListeners[type].set(socket, listeners);
+    }
+
+    return listeners;
+  }
+
+  offSocket<Listener extends () => void>(type: 'abortRequests', socket: ClientSocket, listener: Listener) {
+    const listeners = this.socketListeners[type].get(socket);
+    listeners?.delete(listener as () => void);
+  }
+
+  emitSocket(type: 'abortRequests', socket: ClientSocket, options: WebSocketRequestAbortOptions<Schema> = {}) {
+    for (const listener of this.socketListeners[type].get(socket) ?? []) {
+      listener(options);
     }
   }
 
-  abortPendingMessages(sockets: Collection<ClientSocket> = this.sockets) {
-    const abortError = new WebSocketMessageAbortError();
+  offAny() {
+    this.channelListeners = {};
 
-    for (const socket of sockets) {
-      const listeners = this.socketListeners.messageAbort.get(socket) ?? [];
-      for (const listener of listeners) {
-        listener(abortError);
+    for (const listenersBySocket of Object.values(this.socketListeners)) {
+      for (const listeners of listenersBySocket.values()) {
+        listeners.clear();
       }
     }
   }

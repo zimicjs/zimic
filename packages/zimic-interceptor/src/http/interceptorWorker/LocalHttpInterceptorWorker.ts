@@ -248,22 +248,26 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     }
   }
 
-  clearHandlers() {
-    this.internalWorkerOrThrow.resetHandlers();
-
-    for (const handlers of Object.values(this.httpHandlersByMethod)) {
-      handlers.length = 0;
-    }
-  }
-
-  clearInterceptorHandlers<Schema extends HttpSchema>(interceptor: HttpInterceptorClient<Schema>) {
+  clearHandlers<Schema extends HttpSchema>(
+    options: {
+      interceptor?: HttpInterceptorClient<Schema>;
+    } = {},
+  ) {
     if (!this.isRunning) {
       throw new NotRunningHttpInterceptorError();
     }
 
-    for (const methodHandlers of Object.values(this.httpHandlersByMethod)) {
-      const groupToRemoveIndex = methodHandlers.findIndex((group) => group.interceptor === interceptor);
-      removeArrayIndex(methodHandlers, groupToRemoveIndex);
+    if (options.interceptor === undefined) {
+      this.internalWorkerOrThrow.resetHandlers();
+
+      for (const handlers of Object.values(this.httpHandlersByMethod)) {
+        handlers.length = 0;
+      }
+    } else {
+      for (const methodHandlers of Object.values(this.httpHandlersByMethod)) {
+        const groupToRemoveIndex = methodHandlers.findIndex((group) => group.interceptor === options.interceptor);
+        removeArrayIndex(methodHandlers, groupToRemoveIndex);
+      }
     }
   }
 

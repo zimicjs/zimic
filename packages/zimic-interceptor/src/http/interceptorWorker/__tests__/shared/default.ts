@@ -145,7 +145,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
       const interceptor = createDefaultHttpInterceptor();
 
       await expect(async () => {
-        await worker.clearInterceptorHandlers(interceptor.client);
+        await worker.clearHandlers({ interceptor: interceptor.client });
       }).rejects.toThrowError(new NotRunningHttpInterceptorError());
     });
   });
@@ -188,7 +188,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
 
         const interceptor = createDefaultHttpInterceptor();
 
-        const clearPromise = worker.clearInterceptorHandlers(interceptor.client);
+        const clearPromise = worker.clearHandlers({ interceptor: interceptor.client });
         await expect(clearPromise).resolves.not.toThrowError();
       });
     });
