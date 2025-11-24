@@ -11,6 +11,7 @@ overrides:
 
 onlyBuiltDependencies:
   - '@swc/core'
+  - '@zimic/interceptor'
   - bufferutil
   - core-js
   - core-js-pure

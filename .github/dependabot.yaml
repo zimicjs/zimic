@@ -17,13 +17,6 @@ updates:
       npm:
         patterns:
           - '*'
-    ignore:
-      # Blocked by https://github.com/mswjs/msw/issues/2585 and https://github.com/mswjs/msw/issues/2597.
-      - dependency-name: msw
-        update-types:
-          - version-update:semver-major
-          - version-update:semver-minor
-          - version-update:semver-patch
 
   - package-ecosystem: github-actions
     directory: /
