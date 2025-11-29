@@ -1,8 +1,8 @@
-class InvalidWebSocketMessageError extends Error {
+class InvalidWebSocketMessage extends Error {
   constructor(message: unknown) {
     super(`Web socket message is invalid and could not be parsed: ${message}`);
-    this.name = 'InvalidWebSocketMessageError';
+    this.name = 'InvalidWebSocketMessage';
   }
 }
 
-export default InvalidWebSocketMessageError;
+export default InvalidWebSocketMessage;

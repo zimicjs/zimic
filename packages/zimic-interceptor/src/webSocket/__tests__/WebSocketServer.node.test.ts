@@ -16,7 +16,7 @@ import {
 } from '@/utils/webSocket';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
-import InvalidWebSocketMessageError from '../errors/InvalidWebSocketMessage';
+import InvalidWebSocketMessage from '../errors/InvalidWebSocketMessage';
 import NotRunningWebSocketHandlerError from '../errors/NotRunningWebSocketHandlerError';
 import {
   WebSocketEventMessage,
@@ -600,7 +600,7 @@ describe('Web socket server', async () => {
         rawClient?.send(invalidMessage);
 
         await waitFor(() => {
-          expect(console.error).toHaveBeenCalledWith(new InvalidWebSocketMessageError(invalidMessage));
+          expect(console.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
         });
       });
     });
@@ -617,7 +617,7 @@ describe('Web socket server', async () => {
         rawClient?.send(invalidMessage);
 
         await waitFor(() => {
-          expect(console.error).toHaveBeenCalledWith(new InvalidWebSocketMessageError(invalidMessage));
+          expect(console.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
         });
       });
     });

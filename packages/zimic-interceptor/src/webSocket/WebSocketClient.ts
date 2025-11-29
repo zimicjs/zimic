@@ -49,11 +49,11 @@ class WebSocketClient<Schema extends WebSocketSchema> extends WebSocketHandler<S
   }
 
   async stop() {
+    super.offAny();
+
     if (this.socket) {
       await super.closeClientSockets([this.socket]);
     }
-
-    super.offAny();
 
     this.socket = undefined;
   }

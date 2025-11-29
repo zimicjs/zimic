@@ -12,7 +12,7 @@ import {
 } from '@/utils/webSocket';
 
 import { WEB_SOCKET_CONTROL_MESSAGES, WebSocketControlMessage } from './constants';
-import InvalidWebSocketMessageError from './errors/InvalidWebSocketMessage';
+import InvalidWebSocketMessage from './errors/InvalidWebSocketMessage';
 import NotRunningWebSocketHandlerError from './errors/NotRunningWebSocketHandlerError';
 import {
   WebSocketEventMessageListener,
@@ -28,7 +28,7 @@ import {
 } from './types';
 
 interface WebSocketRequestAbortOptions<Schema extends WebSocketSchema> {
-  predicate?: (request: WebSocketEventMessage<Schema>) => boolean;
+  shouldAbortRequest?: (request: WebSocketEventMessage<Schema>) => boolean;
 }
 
 abstract class WebSocketHandler<Schema extends WebSocketSchema> {
@@ -78,9 +78,7 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     const handleSocketClose = () => {
       this.sockets.delete(socket);
 
-      for (const listener of this.socketListeners.abortRequests.get(socket) ?? []) {
-        listener();
-      }
+      this.emitSocket('abortRequests', socket);
       this.socketListeners.abortRequests.delete(socket);
 
       socket.removeEventListener('message', handleSocketMessage);
@@ -119,7 +117,7 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     if (typeof data === 'string') {
       return data;
     } else {
-      throw new InvalidWebSocketMessageError(data);
+      throw new InvalidWebSocketMessage(data);
     }
   }
 
@@ -129,11 +127,11 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     try {
       parsedMessage = JSON.parse(stringifiedMessage) as unknown;
     } catch {
-      throw new InvalidWebSocketMessageError(stringifiedMessage);
+      throw new InvalidWebSocketMessage(stringifiedMessage);
     }
 
     if (!this.isMessage(parsedMessage)) {
-      throw new InvalidWebSocketMessageError(stringifiedMessage);
+      throw new InvalidWebSocketMessage(stringifiedMessage);
     }
 
     if (this.isReplyMessage(parsedMessage)) {
@@ -283,9 +281,9 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
       });
 
       const abortRequestsHandler = (options: WebSocketRequestAbortOptions<Schema> = {}) => {
-        const shouldAbort = options.predicate === undefined || options.predicate(request);
+        const shouldAbortRequest = options.shouldAbortRequest === undefined || options.shouldAbortRequest(request);
 
-        if (!shouldAbort) {
+        if (!shouldAbortRequest) {
           return;
         }
 

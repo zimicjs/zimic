@@ -6,14 +6,14 @@ class HttpServerTimeoutError extends Error {}
 export class HttpServerStartTimeoutError extends HttpServerTimeoutError {
   constructor(reachedTimeout: number) {
     super(`HTTP server start timed out after ${reachedTimeout}ms.`);
-    this.name = 'HttpServerStartTimeoutError';
+    this.name = 'HttpServerStartTimeout';
   }
 }
 
 export class HttpServerStopTimeoutError extends HttpServerTimeoutError {
   constructor(reachedTimeout: number) {
     super(`HTTP server stop timed out after ${reachedTimeout}ms.`);
-    this.name = 'HttpServerStopTimeoutError';
+    this.name = 'HttpServerStopTimeout';
   }
 }
 

@@ -170,6 +170,7 @@ class InterceptorServer implements PublicInterceptorServer {
       hostname: this.hostname,
       port: this.port,
     });
+
     this.port = getHttpServerPort(this.httpServerOrThrow);
   }
 
@@ -199,10 +200,16 @@ class InterceptorServer implements PublicInterceptorServer {
     this.registerWorkerSocketIfUnknown(socket);
 
     this.webSocketServerOrThrow.emitSocket('abortRequests', socket, {
-      // If the request is not from any of the kept handlers and is for 'interceptors/responses/create', abort it.
-      predicate: (request) =>
-        this.webSocketServerOrThrow.isChannelEvent(request, 'interceptors/responses/create') &&
-        handlersToResetTo.every((handler) => request.data.handlerId !== handler.id),
+      shouldAbortRequest: (request) => {
+        const hasHandler = this.webSocketServerOrThrow.isChannelEvent(request, 'interceptors/responses/create');
+
+        if (!hasHandler) {
+          return false;
+        }
+
+        const isHandlerInResetList = handlersToResetTo.some((handler) => request.data.handlerId === handler.id);
+        return !isHandlerInResetList;
+      },
     });
 
     this.removeHttpHandlersBySocket(socket);
@@ -261,6 +268,9 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private async stopWebSocketServer() {
+    this.webSocketServerOrThrow.offChannel('event', 'interceptors/workers/commit', this.commitWorker);
+    this.webSocketServerOrThrow.offChannel('event', 'interceptors/workers/reset', this.resetWorker);
+
     await this.webSocketServerOrThrow.stop();
 
     this.webSocketServer = undefined;

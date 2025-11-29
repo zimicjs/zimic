@@ -120,8 +120,12 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async stop() {
     await super.sharedStop(async () => {
-      await this.webSocketClient.stop();
+      this.webSocketClient.offChannel('event', 'interceptors/responses/create', this.createResponse);
+      this.webSocketClient.offChannel('event', 'interceptors/responses/unhandled', this.handleUnhandledServerRequest);
+
       await this.clearHandlers();
+
+      await this.webSocketClient.stop();
 
       this.isRunning = false;
     });
