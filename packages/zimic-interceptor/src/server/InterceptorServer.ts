@@ -201,9 +201,12 @@ class InterceptorServer implements PublicInterceptorServer {
 
     this.webSocketServerOrThrow.emitSocket('abortRequests', socket, {
       shouldAbortRequest: (request) => {
-        const hasHandler = this.webSocketServerOrThrow.isChannelEvent(request, 'interceptors/responses/create');
+        const isResponseCreationRequest = this.webSocketServerOrThrow.isChannelEvent(
+          request,
+          'interceptors/responses/create',
+        );
 
-        if (!hasHandler) {
+        if (!isResponseCreationRequest) {
           return false;
         }
 

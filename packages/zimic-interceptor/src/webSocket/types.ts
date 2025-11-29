@@ -57,7 +57,6 @@ export type WebSocketReplyMessageListener<Schema extends WebSocketSchema, Channe
   socket: ClientSocket,
 ) => PossiblePromise<void>;
 
-export type WebSocketMessageListener<
-  Schema extends WebSocketSchema,
-  Channel extends WebSocketChannel<Schema>,
-> = WebSocketEventMessageListener<Schema, Channel> & WebSocketReplyMessageListener<Schema, Channel>;
+export type WebSocketMessageListener<Schema extends WebSocketSchema, Channel extends WebSocketChannel<Schema>> =
+  | WebSocketEventMessageListener<Schema, Channel>
+  | WebSocketReplyMessageListener<Schema, Channel>;

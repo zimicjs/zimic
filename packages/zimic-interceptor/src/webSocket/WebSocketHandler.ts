@@ -24,7 +24,6 @@ import {
   WebSocketChannelWithReply,
   WebSocketChannelWithNoReply,
   WebSocketMessage,
-  WebSocketMessageListener,
 } from './types';
 
 interface WebSocketRequestAbortOptions<Schema extends WebSocketSchema> {
@@ -364,11 +363,10 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     channel: Channel,
     replyListener: Listener,
   ): Listener;
-  onChannel<Channel extends WebSocketChannel<Schema>, Listener extends WebSocketMessageListener<Schema, Channel>>(
-    type: 'event' | 'reply',
-    channel: Channel,
-    listener: Listener,
-  ): Listener {
+  onChannel<
+    Channel extends WebSocketChannel<Schema>,
+    Listener extends WebSocketEventMessageListener<Schema, Channel> & WebSocketReplyMessageListener<Schema, Channel>,
+  >(type: 'event' | 'reply', channel: Channel, listener: Listener): Listener {
     const listeners = this.getOrCreateChannelListeners<Channel>(channel);
     listeners[type].add(listener);
     return listener;
@@ -400,13 +398,17 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
   offChannel<Channel extends WebSocketChannel<Schema>>(
     type: 'event' | 'reply',
     channel: Channel,
-    listener: WebSocketMessageListener<Schema, Channel>,
+    listener: WebSocketEventMessageListener<Schema, Channel> & WebSocketReplyMessageListener<Schema, Channel>,
   ) {
     const listeners = this.channelListeners[channel];
     listeners?.[type].delete(listener);
   }
 
-  onSocket<Listener extends () => void>(type: 'abortRequests', socket: ClientSocket, listener: Listener): Listener {
+  onSocket<Listener extends (options?: WebSocketRequestAbortOptions<Schema>) => void>(
+    type: 'abortRequests',
+    socket: ClientSocket,
+    listener: Listener,
+  ): Listener {
     const listeners = this.getOrCreateSocketListeners(type, socket);
     listeners.add(listener);
     return listener;
@@ -422,9 +424,13 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     return listeners;
   }
 
-  offSocket<Listener extends () => void>(type: 'abortRequests', socket: ClientSocket, listener: Listener) {
+  offSocket<Listener extends (options?: WebSocketRequestAbortOptions<Schema>) => void>(
+    type: 'abortRequests',
+    socket: ClientSocket,
+    listener: Listener,
+  ) {
     const listeners = this.socketListeners[type].get(socket);
-    listeners?.delete(listener as () => void);
+    listeners?.delete(listener);
   }
 
   emitSocket(type: 'abortRequests', socket: ClientSocket, options: WebSocketRequestAbortOptions<Schema> = {}) {
