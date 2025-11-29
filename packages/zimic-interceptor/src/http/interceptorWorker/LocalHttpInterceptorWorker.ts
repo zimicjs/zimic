@@ -50,6 +50,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   get internalWorkerOrThrow() {
+    /* istanbul ignore if -- @preserve
+     * Trying to access the internal worker when it does not exist should not happen. */
     if (!this.internalWorker) {
       throw new NotRunningHttpInterceptorError();
     }
@@ -258,8 +260,6 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     }
 
     if (options.interceptor === undefined) {
-      this.internalWorkerOrThrow.resetHandlers();
-
       for (const handlers of Object.values(this.httpHandlersByMethod)) {
         handlers.length = 0;
       }

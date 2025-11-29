@@ -206,6 +206,9 @@ class InterceptorServer implements PublicInterceptorServer {
           'interceptors/responses/create',
         );
 
+        /* istanbul ignore if -- @preserve
+         * While resetting a worker, there could be other types of requests in progress. These are not guaranteed to
+         * exist and are not related to handler resets, so we let them continue. */
         if (!isResponseCreationRequest) {
           return false;
         }

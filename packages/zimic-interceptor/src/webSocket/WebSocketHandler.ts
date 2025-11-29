@@ -44,7 +44,7 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
   } = {};
 
   private socketListeners = {
-    abortRequests: new Map<ClientSocket, Set<(options?: WebSocketRequestAbortOptions<Schema>) => void>>(),
+    abortRequests: new Map<ClientSocket, Set<(options: WebSocketRequestAbortOptions<Schema>) => void>>(),
   };
 
   protected constructor(options: { socketTimeout?: number; messageTimeout?: number }) {
@@ -279,9 +279,11 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
         resolve(message);
       });
 
-      const abortRequestsHandler = (options: WebSocketRequestAbortOptions<Schema> = {}) => {
+      const abortRequestsHandler = (options: WebSocketRequestAbortOptions<Schema>) => {
         const shouldAbortRequest = options.shouldAbortRequest === undefined || options.shouldAbortRequest(request);
 
+        /* istanbul ignore if -- @preserve
+         * Aborting requests is highly non-deterministic because it depends on specific timing of socket events. */
         if (!shouldAbortRequest) {
           return;
         }
@@ -404,7 +406,7 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     listeners?.[type].delete(listener);
   }
 
-  onSocket<Listener extends (options?: WebSocketRequestAbortOptions<Schema>) => void>(
+  onSocket<Listener extends (options: WebSocketRequestAbortOptions<Schema>) => void>(
     type: 'abortRequests',
     socket: ClientSocket,
     listener: Listener,
@@ -424,7 +426,7 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     return listeners;
   }
 
-  offSocket<Listener extends (options?: WebSocketRequestAbortOptions<Schema>) => void>(
+  offSocket<Listener extends (options: WebSocketRequestAbortOptions<Schema>) => void>(
     type: 'abortRequests',
     socket: ClientSocket,
     listener: Listener,
