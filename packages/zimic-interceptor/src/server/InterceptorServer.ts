@@ -194,7 +194,7 @@ class InterceptorServer implements PublicInterceptorServer {
   };
 
   private resetWorker = (
-    { data: handlersToResetTo }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/workers/reset'>,
+    { data: handlersToRecommit }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/workers/reset'>,
     socket: Socket,
   ) => {
     this.registerWorkerSocketIfUnknown(socket);
@@ -213,14 +213,21 @@ class InterceptorServer implements PublicInterceptorServer {
           return false;
         }
 
-        const isHandlerInResetList = handlersToResetTo.some((handler) => request.data.handlerId === handler.id);
-        return !isHandlerInResetList;
+        // TODO: create a test with two interceptors, one for each path,, and reset only one of them.
+        const isHandlerStillCommitted = handlersToRecommit.some(
+          /* istanbul ignore next -- @preserve
+           * Ensuring this function is called in tests is difficult because it requires clearing or stopping a worker
+           * at the exact moment a request is being handled, in a scenario when there are other handlers still
+           * committed. */
+          (handler) => request.data.handlerId === handler.id,
+        );
+        return !isHandlerStillCommitted;
       },
     });
 
     this.removeHttpHandlersBySocket(socket);
 
-    for (const handler of handlersToResetTo) {
+    for (const handler of handlersToRecommit) {
       this.registerHttpHandler(handler, socket);
     }
 

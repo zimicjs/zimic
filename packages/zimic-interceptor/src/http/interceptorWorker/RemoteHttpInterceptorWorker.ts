@@ -190,7 +190,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       return;
     }
 
-    const groupsToRecommit = Array.from<HttpHandler, HttpHandlerCommit>(this.httpHandlers.values(), (handler) => ({
+    const handlersToRecommit = Array.from<HttpHandler, HttpHandlerCommit>(this.httpHandlers.values(), (handler) => ({
       id: handler.id,
       baseURL: handler.baseURL,
       method: handler.method,
@@ -198,7 +198,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     }));
 
     try {
-      await this.webSocketClient.request('interceptors/workers/reset', groupsToRecommit);
+      await this.webSocketClient.request('interceptors/workers/reset', handlersToRecommit);
     } catch (error) {
       /* istanbul ignore next -- @preserve
        *
