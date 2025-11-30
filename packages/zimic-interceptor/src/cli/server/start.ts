@@ -1,15 +1,10 @@
+import { ProcessExitEvent, PROCESS_EXIT_EVENTS, PROCESS_EXIT_CODE_BY_EXIT_EVENT } from '@zimic/utils/process/constants';
+import runCommand, { CommandError } from '@zimic/utils/process/runCommand';
 import color from 'picocolors';
 
 import { InterceptorServer, createInterceptorServer } from '@/server';
 import { InterceptorServerOptions } from '@/server/types/options';
 import { logger } from '@/utils/logging';
-import {
-  CommandError,
-  PROCESS_EXIT_CODE_BY_EXIT_EVENT,
-  PROCESS_EXIT_EVENTS,
-  ProcessExitEvent,
-  runCommand,
-} from '@/utils/processes';
 
 interface InterceptorServerStartOptions extends InterceptorServerOptions {
   ephemeral: boolean;

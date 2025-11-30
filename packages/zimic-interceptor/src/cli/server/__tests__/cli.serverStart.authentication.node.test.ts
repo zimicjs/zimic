@@ -1,3 +1,4 @@
+import { PROCESS_EXIT_EVENTS } from '@zimic/utils/process/constants';
 import color from 'picocolors';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,7 +11,6 @@ import {
   listInterceptorTokens,
   removeInterceptorToken,
 } from '@/server/utils/auth';
-import { PROCESS_EXIT_EVENTS } from '@/utils/processes';
 import UnauthorizedWebSocketConnectionError from '@/webSocket/errors/UnauthorizedWebSocketConnectionError';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
