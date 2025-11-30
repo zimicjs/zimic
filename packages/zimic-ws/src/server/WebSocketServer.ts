@@ -12,24 +12,21 @@ class WebSocketServer {
   private server: HttpServer | HttpsServer;
   private socket: ServerSocket;
 
-  isRunning = false;
-
   constructor(options: WebSocketServerOptions) {
     this.server = options.server;
     this.socket = new ServerSocket({ server: options.server });
   }
 
+  get listening() {
+    return this.server.listening;
+  }
+
   async open(options: { timeout?: number } = {}) {
     await openServerSocket(this.server, this.socket, options);
-    this.isRunning = true;
   }
 
   async close(options: { timeout?: number } = {}) {
-    try {
-      await closeServerSocket(this.server, this.socket, options);
-    } finally {
-      this.isRunning = false;
-    }
+    await closeServerSocket(this.server, this.socket, options);
   }
 }
 
