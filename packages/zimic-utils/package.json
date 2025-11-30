@@ -175,6 +175,12 @@
       "require": "./dist/process/constants.js",
       "default": "./dist/process/constants.js"
     },
+    "./server/lifecycle": {
+      "types": "./server/lifecycle.d.ts",
+      "import": "./dist/server/lifecycle.mjs",
+      "require": "./dist/server/lifecycle.js",
+      "default": "./dist/server/lifecycle.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
