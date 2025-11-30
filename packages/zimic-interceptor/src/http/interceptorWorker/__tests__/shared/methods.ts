@@ -338,7 +338,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         expect(noContentHandlerContext.request).toBeInstanceOf(Request);
         expect(noContentHandlerContext.request.method).toBe(method);
 
-        await promiseIfRemote(worker.clearInterceptorHandlers(otherInterceptor.client), worker);
+        await promiseIfRemote(worker.clearHandlers({ interceptor: otherInterceptor.client }), worker);
 
         interceptorsWithHandlers = worker.interceptorsWithHandlers;
         expect(interceptorsWithHandlers).toHaveLength(1);
@@ -354,7 +354,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         expect(okHandlerContext.request).toBeInstanceOf(Request);
         expect(okHandlerContext.request.method).toBe(method);
 
-        await promiseIfRemote(worker.clearInterceptorHandlers(interceptor.client), worker);
+        await promiseIfRemote(worker.clearHandlers({ interceptor: interceptor.client }), worker);
 
         interceptorsWithHandlers = worker.interceptorsWithHandlers;
         expect(interceptorsWithHandlers).toHaveLength(0);

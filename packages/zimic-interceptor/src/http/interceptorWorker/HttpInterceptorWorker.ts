@@ -184,11 +184,9 @@ abstract class HttpInterceptorWorker {
     return interceptor.onUnhandledRequest;
   }
 
-  abstract clearHandlers(): PossiblePromise<void>;
-
-  abstract clearInterceptorHandlers<Schema extends HttpSchema>(
-    interceptor: HttpInterceptorClient<Schema>,
-  ): PossiblePromise<void>;
+  abstract clearHandlers<Schema extends HttpSchema>(options?: {
+    interceptor?: HttpInterceptorClient<Schema>;
+  }): PossiblePromise<void>;
 
   abstract get interceptorsWithHandlers(): AnyHttpInterceptorClient[];
 

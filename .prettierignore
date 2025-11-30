@@ -11,10 +11,10 @@ pnpm-lock.yaml
 
 /packages/*/dist
 /packages/*/build
+/packages/*/public/mockServiceWorker.js
 
 /examples/*/.next
-
-**/public/mockServiceWorker.js
+/examples/*/public/mockServiceWorker.js
 
 # Tests
 /apps/*/tests/coverage

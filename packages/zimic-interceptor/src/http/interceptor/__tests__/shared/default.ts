@@ -26,13 +26,13 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
 
   beforeAll(() => {
     baseURL = getBaseURL();
-    serverURL = new URL(new URL(baseURL).origin);
+    serverURL = new URL(baseURL);
 
     const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
     expect(worker).toBe(undefined);
 
     expect(store.numberOfRunningLocalInterceptors).toBe(0);
-    expect(store.numberOfRunningRemoteInterceptors(new URL(baseURL))).toBe(0);
+    expect(store.numberOfRunningRemoteInterceptors(serverURL)).toBe(0);
   });
 
   afterEach(() => {
@@ -40,7 +40,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     expect(worker).toBe(undefined);
 
     expect(store.numberOfRunningLocalInterceptors).toBe(0);
-    expect(store.numberOfRunningRemoteInterceptors(new URL(baseURL))).toBe(0);
+    expect(store.numberOfRunningRemoteInterceptors(serverURL)).toBe(0);
   });
 
   describe('Types', () => {

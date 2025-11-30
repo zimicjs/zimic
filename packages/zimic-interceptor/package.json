@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "1.2.3-canary.6",
+  "version": "1.2.4-canary.2",
   "homepage": "https://zimic.dev/docs/interceptor",
   "repository": {
     "type": "git",
@@ -96,21 +96,21 @@
   },
   "dependencies": {
     "@whatwg-node/server": "0.10.17",
-    "execa": "9.6.0",
+    "execa": "9.6.1",
     "isomorphic-ws": "5.0.0",
-    "msw": "2.12.2",
+    "msw": "2.12.3",
     "picocolors": "^1.1.1",
     "ws": "8.18.3",
     "yargs": "18.0.0",
-    "zod": "^4.1.12"
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
     "@types/ws": "^8.18.1",
     "@types/yargs": "^17.0.35",
-    "@vitest/browser": "^4.0.13",
-    "@vitest/browser-playwright": "^4.0.13",
-    "@vitest/coverage-istanbul": "^4.0.13",
+    "@vitest/browser": "^4.0.14",
+    "@vitest/browser-playwright": "^4.0.14",
+    "@vitest/coverage-istanbul": "^4.0.14",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
@@ -118,10 +118,10 @@
     "concurrently": "^9.2.1",
     "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.1",
-    "playwright": "^1.56.1",
+    "playwright": "^1.57.0",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.13"
+    "vitest": "^4.0.14"
   },
   "peerDependencies": {
     "@zimic/http": "^1.2.0 || workspace:*",

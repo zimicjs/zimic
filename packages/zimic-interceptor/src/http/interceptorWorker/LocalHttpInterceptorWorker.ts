@@ -57,6 +57,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   get internalWorkerOrThrow() {
+    /* istanbul ignore if -- @preserve
+     * Trying to access the internal worker when it does not exist should not happen. */
     if (!this.internalWorker) {
       throw new NotRunningHttpInterceptorError();
     }
@@ -257,22 +259,24 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     }
   }
 
-  clearHandlers() {
-    this.internalWorkerOrThrow.resetHandlers();
-
-    for (const handlers of Object.values(this.httpHandlersByMethod)) {
-      handlers.length = 0;
-    }
-  }
-
-  clearInterceptorHandlers<Schema extends HttpSchema>(interceptor: HttpInterceptorClient<Schema>) {
+  clearHandlers<Schema extends HttpSchema>(
+    options: {
+      interceptor?: HttpInterceptorClient<Schema>;
+    } = {},
+  ) {
     if (!this.isRunning) {
       throw new NotRunningHttpInterceptorError();
     }
 
-    for (const methodHandlers of Object.values(this.httpHandlersByMethod)) {
-      const groupToRemoveIndex = methodHandlers.findIndex((group) => group.interceptor === interceptor);
-      removeArrayIndex(methodHandlers, groupToRemoveIndex);
+    if (options.interceptor === undefined) {
+      for (const handlers of Object.values(this.httpHandlersByMethod)) {
+        handlers.length = 0;
+      }
+    } else {
+      for (const methodHandlers of Object.values(this.httpHandlersByMethod)) {
+        const groupToRemoveIndex = methodHandlers.findIndex((group) => group.interceptor === options.interceptor);
+        removeArrayIndex(methodHandlers, groupToRemoveIndex);
+      }
     }
   }
 

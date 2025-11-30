@@ -25,10 +25,13 @@ class HttpInterceptorStore {
   }
 
   private getRemoteWorkerKey(baseURL: URL, options: RemoteWorkerKeyOptions) {
-    if (!options.auth) {
-      return baseURL.origin;
+    const key = [`${baseURL.origin}${baseURL.pathname}`];
+
+    if (options.auth) {
+      key.push(options.auth.token);
     }
-    return `${baseURL.origin}:${options.auth.token}`;
+
+    return key.join(':');
   }
 
   remoteWorker(baseURL: URL, options: RemoteWorkerKeyOptions) {
