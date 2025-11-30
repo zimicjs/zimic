@@ -135,9 +135,9 @@ export interface FetchRequest<
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath.Literal<Schema, Method>,
 > extends HttpRequest<
-    HttpRequestBodySchema<Default<Schema[Path][Method]>>,
-    Default<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>
-  > {
+  HttpRequestBodySchema<Default<Schema[Path][Method]>>,
+  Default<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>
+> {
   /** The path of the request, excluding the base URL. */
   path: AllowAnyStringInPathParams<Path>;
   /** The HTTP method of the request. */
@@ -195,10 +195,10 @@ export interface FetchResponsePerStatusCode<
   Path extends HttpSchemaPath.Literal<Schema, Method>,
   StatusCode extends HttpStatusCode = HttpStatusCode,
 > extends HttpResponse<
-    HttpResponseBodySchema<Default<Schema[Path][Method]>, StatusCode>,
-    Default<HttpResponseHeadersSchema<Default<Schema[Path][Method]>, StatusCode>>,
-    StatusCode
-  > {
+  HttpResponseBodySchema<Default<Schema[Path][Method]>, StatusCode>,
+  Default<HttpResponseHeadersSchema<Default<Schema[Path][Method]>, StatusCode>>,
+  StatusCode
+> {
   /** The request that originated the response. */
   request: FetchRequest<Schema, Method, Path>;
 
@@ -220,11 +220,8 @@ export type FetchResponse<
   Path extends HttpSchemaPath.Literal<Schema, Method>,
   ErrorOnly extends boolean = false,
   Redirect extends RequestRedirect = 'follow',
-  StatusCode extends FetchResponseStatusCode<
-    Default<Schema[Path][Method]>,
-    ErrorOnly,
-    Redirect
-  > = FetchResponseStatusCode<Default<Schema[Path][Method]>, ErrorOnly, Redirect>,
+  StatusCode extends FetchResponseStatusCode<Default<Schema[Path][Method]>, ErrorOnly, Redirect> =
+    FetchResponseStatusCode<Default<Schema[Path][Method]>, ErrorOnly, Redirect>,
 > = StatusCode extends StatusCode ? FetchResponsePerStatusCode<Schema, Method, Path, StatusCode> : never;
 
 export namespace FetchResponse {
