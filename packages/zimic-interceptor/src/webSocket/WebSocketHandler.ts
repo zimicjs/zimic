@@ -12,7 +12,7 @@ import {
 } from '@/utils/webSocket';
 
 import { WEB_SOCKET_CONTROL_MESSAGES, WebSocketControlMessage } from './constants';
-import InvalidWebSocketMessage from './errors/InvalidWebSocketMessage';
+import InvalidWebSocketMessageError from './errors/InvalidWebSocketMessageError';
 import NotRunningWebSocketHandlerError from './errors/NotRunningWebSocketHandlerError';
 import {
   WebSocketEventMessageListener,
@@ -116,7 +116,7 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     if (typeof data === 'string') {
       return data;
     } else {
-      throw new InvalidWebSocketMessage(data);
+      throw new InvalidWebSocketMessageError(data);
     }
   }
 
@@ -126,11 +126,11 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     try {
       parsedMessage = JSON.parse(stringifiedMessage) as unknown;
     } catch {
-      throw new InvalidWebSocketMessage(stringifiedMessage);
+      throw new InvalidWebSocketMessageError(stringifiedMessage);
     }
 
     if (!this.isMessage(parsedMessage)) {
-      throw new InvalidWebSocketMessage(stringifiedMessage);
+      throw new InvalidWebSocketMessageError(stringifiedMessage);
     }
 
     if (this.isReplyMessage(parsedMessage)) {
