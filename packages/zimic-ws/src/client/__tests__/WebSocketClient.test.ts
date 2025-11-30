@@ -1,20 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
+import { ClientSocket } from '../ClientSocket';
 import WebSocketClient from '../WebSocketClient';
 
 describe('WebSocketClient', () => {
   it('should inherit all ready states from the native WebSocket class', () => {
-    expect(WebSocketClient.CONNECTING).toBe(WebSocket.CONNECTING);
-    expect(WebSocketClient.OPEN).toBe(WebSocket.OPEN);
-    expect(WebSocketClient.CLOSING).toBe(WebSocket.CLOSING);
-    expect(WebSocketClient.CLOSED).toBe(WebSocket.CLOSED);
+    expect(WebSocketClient.CONNECTING).toBe(ClientSocket.CONNECTING);
+    expect(WebSocketClient.OPEN).toBe(ClientSocket.OPEN);
+    expect(WebSocketClient.CLOSING).toBe(ClientSocket.CLOSING);
+    expect(WebSocketClient.CLOSED).toBe(ClientSocket.CLOSED);
 
     const client = new WebSocketClient('ws://localhost:3000');
 
-    expect(client.CONNECTING).toBe(WebSocket.CONNECTING);
-    expect(client.OPEN).toBe(WebSocket.OPEN);
-    expect(client.CLOSING).toBe(WebSocket.CLOSING);
-    expect(client.CLOSED).toBe(WebSocket.CLOSED);
+    expect(client.CONNECTING).toBe(ClientSocket.CONNECTING);
+    expect(client.OPEN).toBe(ClientSocket.OPEN);
+    expect(client.CLOSING).toBe(ClientSocket.CLOSING);
+    expect(client.CLOSED).toBe(ClientSocket.CLOSED);
   });
 
   it('should have the correct URL after instantiated', () => {
