@@ -25,7 +25,6 @@
     "pre:commit": "lint-staged",
     "pre:push": "concurrently --names style,lint 'pnpm style:check' 'turbo types:check lint:turbo --filter ...[${PARENT_REF:-origin/canary}...HEAD] --concurrency 50% --continue'",
     "pnpm:devPreinstall": "node scripts/preinstall.mjs",
-    "postinstall": "node scripts/preinstall.mjs",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -35,7 +34,7 @@
     "concurrently": "^9.2.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
-    "prettier": "3.6.2",
+    "prettier": "3.7.3",
     "prettier-plugin-jsdoc": "1.5.0",
     "prettier-plugin-sh": "0.18.0",
     "prettier-plugin-tailwindcss": "0.7.1",

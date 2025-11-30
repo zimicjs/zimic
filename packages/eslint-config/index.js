@@ -231,7 +231,7 @@ export default [
       '@typescript-eslint/require-await': 'warn',
       '@typescript-eslint/prefer-for-of': 'warn',
       '@typescript-eslint/no-inferrable-types': 'warn',
-      '@typescript-eslint/unified-signatures': 'warn',
+      '@typescript-eslint/unified-signatures': ['warn', { ignoreDifferentlyNamedParameters: true }],
       '@typescript-eslint/unbound-method': 'error',
       '@typescript-eslint/array-type': ['error', { default: 'array', readonly: 'array' }],
       '@typescript-eslint/no-misused-new': 'error',
@@ -331,6 +331,7 @@ export default [
         },
       ],
       '@typescript-eslint/use-unknown-in-catch-callback-variable': 'warn',
+      '@typescript-eslint/no-redundant-type-constituents': 'off',
     },
   },
   {

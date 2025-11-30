@@ -180,9 +180,9 @@
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
-    "@vitest/browser": "^4.0.13",
-    "@vitest/browser-playwright": "^4.0.13",
-    "@vitest/coverage-istanbul": "^4.0.13",
+    "@vitest/browser": "^4.0.14",
+    "@vitest/browser-playwright": "^4.0.14",
+    "@vitest/coverage-istanbul": "^4.0.14",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
@@ -190,6 +190,6 @@
     "eslint": "^9.39.1",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.13"
+    "vitest": "^4.0.14"
   }
 }
