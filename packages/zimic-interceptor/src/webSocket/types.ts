@@ -1,8 +1,8 @@
-import { JSONSerialized, JSONValue } from '@zimic/http';
+import { JSONValue } from '@zimic/http';
 import { PossiblePromise } from '@zimic/utils/types';
 import type { WebSocket as ClientSocket } from 'isomorphic-ws';
 
-export interface WebSocketChannelData<Channel extends string> {
+export interface WebSocketChannelFrame<Channel extends string> {
   id: string;
   channel: Channel;
 }
@@ -10,14 +10,14 @@ export interface WebSocketChannelData<Channel extends string> {
 export interface WebSocketEventMessage<
   Schema extends WebSocketSchema,
   Channel extends WebSocketChannel<Schema> = WebSocketChannel<Schema>,
-> extends WebSocketChannelData<Channel> {
+> extends WebSocketChannelFrame<Channel> {
   data: Schema[Channel]['event'];
 }
 
 export interface WebSocketReplyMessage<
   Schema extends WebSocketSchema,
   Channel extends WebSocketChannel<Schema> = WebSocketChannel<Schema>,
-> extends WebSocketChannelData<Channel> {
+> extends WebSocketChannelFrame<Channel> {
   data: Schema[Channel]['reply'];
   requestId: string;
 }
@@ -34,16 +34,7 @@ interface BaseWebSocketSchema {
   };
 }
 
-export type WebSocketSchema<Schema extends BaseWebSocketSchema = BaseWebSocketSchema> =
-  WebSocketSchema.ConvertToStrict<Schema>;
-
-export namespace WebSocketSchema {
-  export type ConvertToStrict<Schema extends BaseWebSocketSchema> = {
-    [Channel in keyof Schema]: {
-      [Key in keyof Schema[Channel]]: JSONSerialized<Schema[Channel][Key]>;
-    };
-  };
-}
+export type WebSocketSchema<Schema extends BaseWebSocketSchema = BaseWebSocketSchema> = Schema;
 
 export type WebSocketChannel<Schema extends WebSocketSchema> = keyof Schema & string;
 
@@ -65,3 +56,7 @@ export type WebSocketReplyMessageListener<Schema extends WebSocketSchema, Channe
   message: WebSocketReplyMessage<Schema, Channel>,
   socket: ClientSocket,
 ) => PossiblePromise<void>;
+
+export type WebSocketMessageListener<Schema extends WebSocketSchema, Channel extends WebSocketChannel<Schema>> =
+  | WebSocketEventMessageListener<Schema, Channel>
+  | WebSocketReplyMessageListener<Schema, Channel>;

@@ -19,8 +19,7 @@ class LocalHttpRequestHandler<
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
   StatusCode extends HttpStatusCode = never,
-> implements InternalHttpRequestHandler<Schema, Method, Path, StatusCode>
-{
+> implements InternalHttpRequestHandler<Schema, Method, Path, StatusCode> {
   readonly type = 'local';
 
   client: HttpRequestHandlerClient<Schema, Method, Path, StatusCode>;

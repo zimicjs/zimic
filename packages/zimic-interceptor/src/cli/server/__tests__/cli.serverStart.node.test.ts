@@ -1,4 +1,6 @@
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
+import { PROCESS_EXIT_EVENTS, PROCESS_EXIT_CODE_BY_EXIT_EVENT } from '@zimic/utils/process/constants';
+import { CommandError } from '@zimic/utils/process/runCommand';
 import waitFor from '@zimic/utils/time/waitFor';
 import waitForDelay from '@zimic/utils/time/waitForDelay';
 import waitForNot from '@zimic/utils/time/waitForNot';
@@ -13,7 +15,6 @@ import { createHttpInterceptor } from '@/http/interceptor/factory';
 import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/server/constants';
 import { importCrypto } from '@/utils/crypto';
 import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@/utils/http';
-import { CommandError, PROCESS_EXIT_CODE_BY_EXIT_EVENT, PROCESS_EXIT_EVENTS } from '@/utils/processes';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 import WebSocketServer from '@/webSocket/WebSocketServer';
 import { usingIgnoredConsole } from '@tests/utils/console';
@@ -372,7 +373,8 @@ describe('CLI > Server start', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--ephemeral', '--', unknownCommand]);
 
     await usingIgnoredConsole(['log', 'error'], async (console) => {
-      const error = new CommandError(unknownCommand, { originalMessage: `spawn ${unknownCommand} ENOENT` });
+      const spawnError = new Error(`spawn ${unknownCommand} ENOENT`);
+      const error = new CommandError(unknownCommand, { cause: spawnError });
 
       await runCLI();
 
@@ -382,7 +384,13 @@ describe('CLI > Server start', async () => {
       expect(processExitSpy).toHaveBeenNthCalledWith(2, 0);
 
       expect(console.error).toHaveBeenCalledTimes(1);
-      expect(console.error).toHaveBeenCalledWith(error);
+
+      const calledError = console.error.mock.calls[0][0] as CommandError;
+      expect(calledError).toBeInstanceOf(CommandError);
+      expect(calledError.message).toBe(error.message);
+      expect(calledError.command).toEqual(error.command);
+      expect(calledError.exitCode).toBe(error.exitCode);
+      expect(calledError.cause!.message).toBe(spawnError.message);
     });
   });
 
