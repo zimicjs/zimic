@@ -6,6 +6,7 @@ const sharedConfig: Options = {
   sourcemap: true,
   treeshake: true,
   minify: false,
+  // `clean: true` is causing concurrency problems. Let's disable it for now and use `rm -rf` manually when needed.
   clean: false,
   keepNames: false,
 };

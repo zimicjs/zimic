@@ -18,8 +18,18 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   dts: format === 'cjs' ? { resolve: true } : false,
   entry: {
     index: 'src/index.ts',
+  },
+}));
+
+const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
+  ...sharedConfig,
+  name: `node-${format}`,
+  platform: 'node',
+  format: [format],
+  dts: format === 'cjs' ? { resolve: true } : false,
+  entry: {
     server: 'src/server/index.ts',
   },
 }));
 
-export default defineConfig([...neutralConfig]);
+export default defineConfig([...neutralConfig, ...nodeConfig]);
