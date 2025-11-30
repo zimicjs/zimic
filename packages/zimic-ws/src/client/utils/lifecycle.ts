@@ -48,7 +48,10 @@ export async function openClientSocket(socket: ClientSocket, options: { timeout?
   });
 }
 
-export async function closeClientSocket(socket: ClientSocket, options: { timeout?: number } = {}) {
+export async function closeClientSocket(
+  socket: ClientSocket,
+  options: { code?: number; reason?: string; timeout?: number } = {},
+) {
   const { timeout: timeoutDuration } = options;
 
   const isAlreadyClosed = socket.readyState === socket.CLOSED;
@@ -85,6 +88,6 @@ export async function closeClientSocket(socket: ClientSocket, options: { timeout
     socket.addEventListener('error', handleError);
     socket.addEventListener('close', handleClose);
 
-    socket.close();
+    socket.close(options.code, options.reason);
   });
 }

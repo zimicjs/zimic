@@ -3,7 +3,10 @@ import { WebSocketEvent, WebSocketEventType, WebSocketMessageData, WebSocketSche
 import { ClientSocket } from './ClientSocket';
 import { closeClientSocket, openClientSocket } from './utils/lifecycle';
 
-class WebSocketClient<Schema extends WebSocketSchema> {
+class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
+  WebSocket,
+  `${string}EventListener` | `on${string}`
+> {
   private socket?: ClientSocket;
   private _binaryType: BinaryType = 'blob';
 
@@ -12,15 +15,34 @@ class WebSocketClient<Schema extends WebSocketSchema> {
     (this: ClientSocket, event: Event) => unknown
   >();
 
-  readonly CONNECTING = ClientSocket.CONNECTING;
-  readonly OPEN = ClientSocket.OPEN;
-  readonly CLOSING = ClientSocket.CLOSING;
-  readonly CLOSED = ClientSocket.CLOSED;
-
   constructor(
     private _url: string,
     private protocols?: string | string[],
   ) {}
+
+  static CONNECTING = ClientSocket.CONNECTING;
+
+  get CONNECTING() {
+    return WebSocketClient.CONNECTING;
+  }
+
+  static OPEN = ClientSocket.OPEN;
+
+  get OPEN() {
+    return WebSocketClient.OPEN;
+  }
+
+  static CLOSING = ClientSocket.CLOSING;
+
+  get CLOSING() {
+    return WebSocketClient.CLOSING;
+  }
+
+  static CLOSED = ClientSocket.CLOSED;
+
+  get CLOSED() {
+    return WebSocketClient.CLOSED;
+  }
 
   get binaryType() {
     return this.socket?.binaryType ?? this._binaryType;
@@ -64,13 +86,13 @@ class WebSocketClient<Schema extends WebSocketSchema> {
     await openClientSocket(this.socket, options);
   }
 
-  async close(options: { timeout?: number } = {}) {
+  async close(code?: number, reason?: string, options: { timeout?: number } = {}) {
     if (!this.socket) {
       return;
     }
 
     try {
-      await closeClientSocket(this.socket, options);
+      await closeClientSocket(this.socket, { ...options, code, reason });
     } finally {
       this.socket = undefined;
     }
@@ -142,6 +164,10 @@ class WebSocketClient<Schema extends WebSocketSchema> {
     if (handler) {
       this.addEventListener('error', handler);
     }
+  }
+
+  dispatchEvent<Type extends WebSocketEventType<Schema>>(event: WebSocketEvent<Type>) {
+    return this.socket?.dispatchEvent(event) ?? false;
   }
 }
 
