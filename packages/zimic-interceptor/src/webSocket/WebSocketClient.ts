@@ -49,11 +49,11 @@ class WebSocketClient<Schema extends WebSocketSchema> extends WebSocketHandler<S
   }
 
   async stop() {
-    super.removeAllChannelListeners();
+    super.offAny();
 
-    const sockets = this.socket ? [this.socket] : [];
-    super.abortSocketMessages(sockets);
-    await super.closeClientSockets(sockets);
+    if (this.socket) {
+      await super.closeClientSockets([this.socket]);
+    }
 
     this.socket = undefined;
   }
