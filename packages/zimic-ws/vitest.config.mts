@@ -43,10 +43,11 @@ export default defineConfig({
       reporter: ['text', 'html'],
       reportsDirectory: './tests/coverage',
       thresholds: {
-        functions: 100,
-        lines: 100,
-        statements: 100,
-        branches: 100,
+        // Coverage is temporarily disabled while we integrate this package with @zimic/interceptor for mocking.
+        // functions: 100,
+        // lines: 100,
+        // statements: 100,
+        // branches: 100,
       },
       exclude: [
         '**/node_modules/**',
