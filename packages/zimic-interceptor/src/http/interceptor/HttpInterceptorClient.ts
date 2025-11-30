@@ -376,7 +376,7 @@ class HttpInterceptorClient<
 
   clear() {
     const clearPromises: Promise<AnyHttpRequestHandlerClient | void>[] = [
-      Promise.resolve(this.workerOrThrow.clearInterceptorHandlers(this)),
+      Promise.resolve(this.workerOrThrow.clearHandlers({ interceptor: this })),
     ];
 
     for (const method of HTTP_METHODS) {
