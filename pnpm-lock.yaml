@@ -7,6 +7,7 @@ settings:
 overrides:
   form-data: ^4.0.4
   glob: ^10.5.0
+  node-forge: ^1.3.2
 
 importers:
 
@@ -4403,6 +4404,16 @@ packages:
   '@xtuc/long@4.2.2':
     resolution: {integrity: sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==}
 
+  '@zimic/http@1.3.4':
+    resolution: {integrity: sha512-FYbF4UkybKtZZRxYRNAtBPtszIbPA5s0zNFfGMB4ya/90GGuQvinik5Be4gEsccxl86YkctY+QuMtb0IwSyQ6A==}
+    engines: {node: '>=20.0.0'}
+    hasBin: true
+    peerDependencies:
+      typescript: '>=5.0.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   JSONStream@1.3.5:
     resolution: {integrity: sha512-E+iruNOY8VV9s4JEbe1aNEm6MiszPRr/UfcHMz0TQh1BXSxHK+ASV1R6W4HpjBhSeS+54PIsAMCBmwD06LLsqQ==}
     hasBin: true
@@ -7718,8 +7729,8 @@ packages:
     resolution: {integrity: sha512-dRB78srN/l6gqWulah9SrxeYnxeddIG30+GOqK/9OlLVyLg3HPnr6SqOWTWOXKRwC2eGYCkZ59NNuSgvSrpgOA==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
-  node-forge@1.3.1:
-    resolution: {integrity: sha512-dPEtOeMvF9VMcYV/1Wb8CPoVAXtp6MKMlcbAt4ddqmGqUJ6fQZFXkNZNkNlfevtNkGtaSoXf/vNNNSvgrdXwtA==}
+  node-forge@1.3.2:
+    resolution: {integrity: sha512-6xKiQ+cph9KImrRh0VsjH2d8/GXA4FIMlgU4B757iI1ApvcyA9VlouP0yZJha01V+huImO+kKMU7ih+2+E14fw==}
     engines: {node: '>= 6.13.0'}
 
   node-gyp-build@4.8.4:
@@ -14349,6 +14360,14 @@ snapshots:
 
   '@xtuc/long@4.2.2': {}
 
+  '@zimic/http@1.3.4(typescript@5.9.3)':
+    dependencies:
+      openapi-typescript: 7.10.1(typescript@5.9.3)
+      picocolors: 1.1.1
+      yargs: 18.0.0
+    optionalDependencies:
+      typescript: 5.9.3
+
   JSONStream@1.3.5:
     dependencies:
       jsonparse: 1.3.1
@@ -18515,7 +18534,7 @@ snapshots:
       fetch-blob: 3.2.0
       formdata-polyfill: 4.0.10
 
-  node-forge@1.3.1: {}
+  node-forge@1.3.2: {}
 
   node-gyp-build@4.8.4:
     optional: true
@@ -19858,7 +19877,7 @@ snapshots:
   selfsigned@2.4.1:
     dependencies:
       '@types/node-forge': 1.3.14
-      node-forge: 1.3.1
+      node-forge: 1.3.2
 
   semver-diff@4.0.0:
     dependencies:
