@@ -16,7 +16,7 @@ import {
 } from '@/utils/webSocket';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
-import InvalidWebSocketMessage from '../errors/InvalidWebSocketMessage';
+import InvalidWebSocketMessageError from '../errors/InvalidWebSocketMessageError';
 import NotRunningWebSocketHandlerError from '../errors/NotRunningWebSocketHandlerError';
 import {
   WebSocketEventMessage,
@@ -317,7 +317,7 @@ describe('Web socket server', async () => {
       type RequestMessage = WebSocketEventMessage<Schema, 'with-reply'>;
       const requestMessages: RequestMessage[] = [];
 
-      server.on('event', 'with-reply', (message) => {
+      server.onChannel('event', 'with-reply', (message) => {
         requestMessages.push(message);
         return { response: 'answer' };
       });
@@ -373,7 +373,7 @@ describe('Web socket server', async () => {
       type EventMessage = WebSocketEventMessage<Schema, 'no-reply'>;
       const eventMessages: EventMessage[] = [];
 
-      server.on('event', 'no-reply', (message) => {
+      server.onChannel('event', 'no-reply', (message) => {
         eventMessages.push(message);
       });
 
@@ -406,7 +406,7 @@ describe('Web socket server', async () => {
       type EventMessage = WebSocketEventMessage<Schema, 'no-reply'>;
       const eventMessages: EventMessage[] = [];
 
-      const eventListener = server.on(
+      const eventListener = server.onChannel(
         'event',
         'no-reply',
         vi.fn<WebSocketEventMessageListener<Schema, 'no-reply'>>(
@@ -421,7 +421,7 @@ describe('Web socket server', async () => {
       rawClient = new ClientSocket(`ws://localhost:${port}`);
       await waitForOpenClientSocket(rawClient);
 
-      server.off('event', 'no-reply', eventListener);
+      server.offChannel('event', 'no-reply', eventListener);
 
       const eventMessage = { message: 'test' };
       rawClient.send(
@@ -461,7 +461,7 @@ describe('Web socket server', async () => {
       type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
       const replyMessages: ReplyMessage[] = [];
 
-      server.on('reply', 'with-reply', (message) => {
+      server.onChannel('reply', 'with-reply', (message) => {
         replyMessages.push(message);
       });
 
@@ -524,7 +524,7 @@ describe('Web socket server', async () => {
       type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
       const replyMessages: ReplyMessage[] = [];
 
-      const replyListener = server.on(
+      const replyListener = server.onChannel(
         'reply',
         'with-reply',
         vi.fn<WebSocketReplyMessageListener<Schema, 'with-reply'>>(
@@ -552,7 +552,7 @@ describe('Web socket server', async () => {
         expect(replyMessages.length).toBeGreaterThan(0);
       });
 
-      server.off('reply', 'with-reply', replyListener);
+      server.offChannel('reply', 'with-reply', replyListener);
 
       const replyMessage: ReplyMessage['data'] = { response: 'answer' };
 
@@ -600,7 +600,7 @@ describe('Web socket server', async () => {
         rawClient?.send(invalidMessage);
 
         await waitFor(() => {
-          expect(console.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
+          expect(console.error).toHaveBeenCalledWith(new InvalidWebSocketMessageError(invalidMessage));
         });
       });
     });
@@ -617,7 +617,7 @@ describe('Web socket server', async () => {
         rawClient?.send(invalidMessage);
 
         await waitFor(() => {
-          expect(console.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
+          expect(console.error).toHaveBeenCalledWith(new InvalidWebSocketMessageError(invalidMessage));
         });
       });
     });

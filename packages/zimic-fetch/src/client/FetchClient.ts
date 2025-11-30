@@ -147,10 +147,9 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
   }
 
   private createRequestClass(fetch: Fetch<Schema>) {
-    class Request<
-      Method extends HttpSchemaMethod<Schema>,
-      Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
-    > extends globalThis.Request {
+    class Request<Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.NonLiteral<Schema, Method>>
+      extends globalThis.Request
+    {
       path: LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>;
 
       constructor(input: FetchInput<Schema, Method, Path>, init?: FetchRequestInit.Loose) {

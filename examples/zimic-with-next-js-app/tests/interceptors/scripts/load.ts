@@ -2,8 +2,8 @@ import { spawn, SpawnOptions } from 'child_process';
 
 import githubInterceptor, { githubMockData } from '../github';
 
-function runCommand(commandEntry: string, commandArguments: string[], options: SpawnOptions) {
-  return new Promise<void>((resolve, reject) => {
+async function runCommand(commandEntry: string, commandArguments: string[], options: SpawnOptions) {
+  await new Promise<void>((resolve, reject) => {
     const commandProcess = spawn(commandEntry, commandArguments, options);
 
     commandProcess.once('error', (error) => {

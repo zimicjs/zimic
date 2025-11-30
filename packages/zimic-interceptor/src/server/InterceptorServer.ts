@@ -164,20 +164,21 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private async startHttpServer() {
+    this.httpServerOrThrow.on('request', this.handleHttpRequest);
+
     await startHttpServer(this.httpServerOrThrow, {
       hostname: this.hostname,
       port: this.port,
     });
-    this.port = getHttpServerPort(this.httpServerOrThrow);
 
-    this.httpServerOrThrow.on('request', this.handleHttpRequest);
+    this.port = getHttpServerPort(this.httpServerOrThrow);
   }
 
   private startWebSocketServer() {
-    this.webSocketServerOrThrow.start();
+    this.webSocketServerOrThrow.onChannel('event', 'interceptors/workers/commit', this.commitWorker);
+    this.webSocketServerOrThrow.onChannel('event', 'interceptors/workers/reset', this.resetWorker);
 
-    this.webSocketServerOrThrow.on('event', 'interceptors/workers/commit', this.commitWorker);
-    this.webSocketServerOrThrow.on('event', 'interceptors/workers/reset', this.resetWorker);
+    this.webSocketServerOrThrow.start();
   }
 
   private commitWorker = (
@@ -193,25 +194,42 @@ class InterceptorServer implements PublicInterceptorServer {
   };
 
   private resetWorker = (
-    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/workers/reset'>,
+    { data: handlersToRecommit }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/workers/reset'>,
     socket: Socket,
   ) => {
+    this.registerWorkerSocketIfUnknown(socket);
+
+    this.webSocketServerOrThrow.emitSocket('abortRequests', socket, {
+      shouldAbortRequest: (request) => {
+        const isResponseCreationRequest = this.webSocketServerOrThrow.isChannelEvent(
+          request,
+          'interceptors/responses/create',
+        );
+
+        /* istanbul ignore if -- @preserve
+         * While resetting a worker, there could be other types of requests in progress. These are not guaranteed to
+         * exist and are not related to handler resets, so we let them continue. */
+        if (!isResponseCreationRequest) {
+          return false;
+        }
+
+        // TODO: create a test with two interceptors, one for each path,, and reset only one of them.
+        const isHandlerStillCommitted = handlersToRecommit.some(
+          /* istanbul ignore next -- @preserve
+           * Ensuring this function is called in tests is difficult because it requires clearing or stopping a worker
+           * at the exact moment a request is being handled, in a scenario when there are other handlers still
+           * committed. */
+          (handler) => request.data.handlerId === handler.id,
+        );
+        return !isHandlerStillCommitted;
+      },
+    });
+
     this.removeHttpHandlersBySocket(socket);
 
-    const handlersToResetTo = message.data;
-    const isWorkerNoLongerCommitted = handlersToResetTo === undefined;
-
-    if (isWorkerNoLongerCommitted) {
-      // When a worker is no longer committed, we should abort all requests that were using it.
-      // This ensures that we only wait for responses from committed worker sockets.
-      this.webSocketServerOrThrow.abortPendingMessages([socket]);
-    } else {
-      for (const handler of handlersToResetTo) {
-        this.registerHttpHandler(handler, socket);
-      }
+    for (const handler of handlersToRecommit) {
+      this.registerHttpHandler(handler, socket);
     }
-
-    this.registerWorkerSocketIfUnknown(socket);
 
     return {};
   };
@@ -263,8 +281,8 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private async stopWebSocketServer() {
-    this.webSocketServerOrThrow.off('event', 'interceptors/workers/commit', this.commitWorker);
-    this.webSocketServerOrThrow.off('event', 'interceptors/workers/reset', this.resetWorker);
+    this.webSocketServerOrThrow.offChannel('event', 'interceptors/workers/commit', this.commitWorker);
+    this.webSocketServerOrThrow.offChannel('event', 'interceptors/workers/reset', this.resetWorker);
 
     await this.webSocketServerOrThrow.stop();
 

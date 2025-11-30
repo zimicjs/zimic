@@ -1,3 +1,5 @@
+import { HttpSchema } from '@zimic/http';
+import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import path from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -86,18 +88,109 @@ describe('Interceptor server', () => {
       });
       expect(interceptor.isRunning).toBe(false);
 
-      await interceptor.start();
-      expect(interceptor.isRunning).toBe(true);
+      try {
+        await interceptor.start();
 
-      await Promise.all([server.stop(), interceptor.clear()]);
+        expect(interceptor.isRunning).toBe(true);
 
-      expect(server.isRunning).toBe(false);
-      expect(interceptor.isRunning).toBe(true);
+        await Promise.all([server.stop(), interceptor.clear()]);
 
-      await interceptor.stop();
+        expect(server.isRunning).toBe(false);
+        expect(interceptor.isRunning).toBe(true);
+      } finally {
+        await interceptor.stop();
 
-      expect(server.isRunning).toBe(false);
-      expect(interceptor.isRunning).toBe(false);
+        expect(server.isRunning).toBe(false);
+        expect(interceptor.isRunning).toBe(false);
+      }
+    });
+
+    it('should only reset handlers of cleared interceptors, preserving handlers of other interceptors even if they share the same base URL', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+
+      await server.start();
+      expect(server.isRunning).toBe(true);
+
+      type Schema = HttpSchema<{
+        '/': {
+          GET: {
+            response: { 204: {} };
+          };
+        };
+      }>;
+
+      const interceptors = [
+        createInternalHttpInterceptor<Schema>({
+          type: 'remote',
+          baseURL: `http://${server.hostname}:${server.port}/path`,
+        }),
+        createInternalHttpInterceptor<Schema>({
+          type: 'remote',
+          baseURL: `http://${server.hostname}:${server.port}/path`,
+        }),
+        createInternalHttpInterceptor<Schema>({
+          type: 'remote',
+          baseURL: `http://${server.hostname}:${server.port}/other-path`,
+        }),
+      ];
+
+      expect(interceptors[0].baseURL).toBe(interceptors[1].baseURL);
+      expect(interceptors[0].baseURL).not.toBe(interceptors[2].baseURL);
+
+      for (const interceptor of interceptors) {
+        expect(interceptor.isRunning).toBe(false);
+      }
+
+      try {
+        await Promise.all(interceptors.map((interceptor) => interceptor.start()));
+
+        for (const interceptor of interceptors) {
+          expect(interceptor.isRunning).toBe(true);
+        }
+
+        const handlers = await Promise.all(
+          interceptors.map((interceptor) => interceptor.get('/').respond({ status: 204 })),
+        );
+
+        let response = await fetch(interceptors[0].baseURL, { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handlers[0].requests).toHaveLength(0);
+        expect(handlers[1].requests).toHaveLength(1);
+        expect(handlers[2].requests).toHaveLength(0);
+
+        let responsePromise = fetch(interceptors[1].baseURL, { method: 'GET' });
+        await interceptors[1].clear();
+
+        response = await responsePromise;
+        expect(response.status).toBe(204);
+
+        expect(handlers[0].requests).toHaveLength(1); // Request was processed by the first handler
+        expect(handlers[1].requests).toHaveLength(0);
+        expect(handlers[2].requests).toHaveLength(0);
+
+        responsePromise = fetch(interceptors[0].baseURL, { method: 'GET' });
+        await interceptors[0].clear();
+        await expectFetchError(responsePromise);
+
+        expect(handlers[0].requests).toHaveLength(0);
+        expect(handlers[1].requests).toHaveLength(0);
+        expect(handlers[2].requests).toHaveLength(0);
+
+        responsePromise = fetch(interceptors[2].baseURL, { method: 'GET' });
+        await interceptors[2].clear();
+        await expectFetchError(responsePromise);
+
+        expect(handlers[0].requests).toHaveLength(0);
+        expect(handlers[1].requests).toHaveLength(0);
+        expect(handlers[2].requests).toHaveLength(0);
+      } finally {
+        await Promise.all(interceptors.map((interceptor) => interceptor.stop()));
+
+        for (const interceptor of interceptors) {
+          expect(interceptor.isRunning).toBe(false);
+        }
+      }
     });
   });
 

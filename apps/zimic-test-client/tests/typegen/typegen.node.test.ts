@@ -1,9 +1,9 @@
+import runCommand from '@zimic/utils/process/runCommand';
 import fs from 'fs';
 import path from 'path';
 import { afterAll, beforeAll, describe, it } from 'vitest';
 
 import { checkTypes, lint } from '@tests/utils/linting';
-import { importExeca } from '@tests/utils/scripting';
 
 async function normalizeStripeTypes(generatedFilePath: string) {
   const output = await fs.promises.readFile(generatedFilePath, 'utf-8');
@@ -87,12 +87,10 @@ describe('Typegen', () => {
       async ({ input, serviceName, outputFileName }) => {
         const generatedFilePath = path.join(generatedDirectory, outputFileName);
 
-        const { $ } = await importExeca();
-
-        await $(
+        await runCommand(
           'pnpm',
           ['zimic-http', 'typegen', 'openapi', input, '--output', generatedFilePath, '--service-name', serviceName],
-          { stderr: 'inherit' },
+          { stdio: ['ignore', 'ignore', 'inherit'] },
         );
 
         if (serviceName === 'Stripe') {
