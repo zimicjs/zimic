@@ -24,7 +24,7 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
       baseURL,
       createWorker: () => {
         return this.store.getOrCreateRemoteWorker({
-          serverURL: new URL(baseURL.origin),
+          serverURL: baseURL,
           auth: this._auth,
         });
       },

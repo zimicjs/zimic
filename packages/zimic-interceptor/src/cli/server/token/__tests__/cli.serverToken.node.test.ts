@@ -1,7 +1,7 @@
+import { PROCESS_EXIT_EVENTS } from '@zimic/utils/process/constants';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import runCLI from '@/cli/cli';
-import { PROCESS_EXIT_EVENTS } from '@/utils/processes';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
 describe('CLI > Server token', () => {

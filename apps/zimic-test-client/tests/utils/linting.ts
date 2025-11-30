@@ -1,17 +1,13 @@
-import { importExeca } from './scripting';
+import runCommand from '@zimic/utils/process/runCommand';
 
 export async function checkTypes(tsconfigFilePath: string) {
-  const { $ } = await importExeca();
-
-  return $('pnpm', ['tsc', '--noEmit', '--project', tsconfigFilePath], {
-    stderr: 'inherit',
+  return runCommand('pnpm', ['tsc', '--noEmit', '--project', tsconfigFilePath], {
+    stdio: ['ignore', 'ignore', 'inherit'],
   });
 }
 
 export async function lint(input: string, eslintConfigFilePath: string) {
-  const { $ } = await importExeca();
-
-  return $('pnpm', ['lint', input, '--no-ignore', '--max-warnings', '0', '--config', eslintConfigFilePath], {
-    stderr: 'inherit',
+  return runCommand('pnpm', ['lint', input, '--no-ignore', '--max-warnings', '0', '--config', eslintConfigFilePath], {
+    stdio: ['ignore', 'ignore', 'inherit'],
   });
 }

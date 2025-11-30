@@ -13,8 +13,7 @@ export type FetchInput<
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference} */
 export interface Fetch<Schema extends HttpSchema>
-  extends Pick<FetchOptions<Schema>, 'onRequest' | 'onResponse'>,
-    FetchDefaults {
+  extends Pick<FetchOptions<Schema>, 'onRequest' | 'onResponse'>, FetchDefaults {
   <
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
