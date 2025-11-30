@@ -47,8 +47,8 @@ An [interceptor server](/docs/zimic-interceptor/api/5-interceptor-server.md) whi
 import { spawn, SpawnOptions } from 'child_process';
 import { createInterceptorServer } from '@zimic/interceptor/server';
 
-function runCommand(commandEntry: string, commandArguments: string[], options: SpawnOptions) {
-  return new Promise<void>((resolve, reject) => {
+async function runCommand(commandEntry: string, commandArguments: string[], options: SpawnOptions) {
+  await new Promise<void>((resolve, reject) => {
     const commandProcess = spawn(commandEntry, commandArguments, options);
 
     commandProcess.once('error', (error) => {

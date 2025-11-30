@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "1.2.4-canary.1",
+  "version": "1.2.4-canary.5",
   "homepage": "https://zimic.dev/docs/interceptor",
   "repository": {
     "type": "git",
@@ -96,7 +96,6 @@
   },
   "dependencies": {
     "@whatwg-node/server": "0.10.17",
-    "execa": "9.6.1",
     "isomorphic-ws": "5.0.0",
     "msw": "2.11.1",
     "picocolors": "^1.1.1",
