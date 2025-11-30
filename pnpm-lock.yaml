@@ -82,6 +82,9 @@ importers:
       '@zimic/utils':
         specifier: workspace:*
         version: link:../../packages/zimic-utils
+      '@zimic/ws':
+        specifier: workspace:*
+        version: link:../../packages/zimic-ws
       axios:
         specifier: ^1.13.2
         version: 1.13.2

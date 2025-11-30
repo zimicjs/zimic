@@ -1,1 +1,6 @@
-export class WebSocketTimeoutError extends Error {}
+export class WebSocketTimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'WebSocketTimeoutError';
+  }
+}
