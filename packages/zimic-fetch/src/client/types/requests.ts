@@ -53,7 +53,7 @@ type FetchRequestBodySchema<RequestSchema extends HttpRequestSchema> = 'body' ex
         ? JSONStringified<Exclude<RequestSchema['body'], null | undefined>> | null | undefined
         : JSONStringified<Exclude<RequestSchema['body'], null>> | Extract<RequestSchema['body'], null>
       : undefined extends RequestSchema['body']
-        ? RequestSchema['body'] | null
+        ? RequestSchema['body']
         : RequestSchema['body']
   : null | undefined;
 
