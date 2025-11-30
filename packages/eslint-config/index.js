@@ -331,6 +331,7 @@ export default [
         },
       ],
       '@typescript-eslint/use-unknown-in-catch-callback-variable': 'warn',
+      '@typescript-eslint/no-redundant-type-constituents': 'off',
     },
   },
   {
