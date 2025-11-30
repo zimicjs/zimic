@@ -1,13 +1,11 @@
+minimumReleaseAge: 1440
+
 packages:
   - apps/*
   - packages/*
   - examples
   - examples/*
   - docs/*
-
-overrides:
-  form-data: '^4.0.4'
-  glob: '^10.5.0'
 
 onlyBuiltDependencies:
   - '@swc/core'
@@ -16,6 +14,9 @@ onlyBuiltDependencies:
   - core-js-pure
   - esbuild
   - msw
-  - rollup
   - sharp
   - unrs-resolver
+
+overrides:
+  form-data: ^4.0.4
+  glob: ^10.5.0
