@@ -23,13 +23,13 @@
     "@docusaurus/theme-classic": "^3.9.2",
     "@docusaurus/theme-search-algolia": "^3.9.2",
     "@mdx-js/react": "^3.1.1",
-    "@tanstack/react-query": "^5.90.11",
+    "@tanstack/react-query": "^5.90.12",
     "@zimic/fetch": "workspace:*",
     "@zimic/http": "workspace:*",
     "dompurify": "^3.3.0",
     "prism-react-renderer": "^2.3.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1"
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "3.9.2",
