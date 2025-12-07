@@ -3,6 +3,13 @@ import { WebSocketEvent, WebSocketEventType, WebSocketMessageData, WebSocketSche
 import { ClientSocket } from './ClientSocket';
 import { closeClientSocket, openClientSocket } from './utils/lifecycle';
 
+export type WebSocketClientEventListener<Schema extends WebSocketSchema, Type extends WebSocketEventType<Schema>> = (
+  this: WebSocketClient<Schema>,
+  event: WebSocketEvent<Type>,
+) => unknown;
+
+type WebSocketClientRawEventListener = (this: ClientSocket, event: Event) => unknown;
+
 class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
   WebSocket,
   `${string}EventListener` | `on${string}`
@@ -10,9 +17,14 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
   private socket?: ClientSocket;
   private _binaryType: BinaryType = 'blob';
 
-  private rawListeners = new WeakMap<
-    (this: WebSocketClient<Schema>, event: WebSocketEvent<never>) => unknown,
-    (this: ClientSocket, event: Event) => unknown
+  private _onopen: WebSocketClientEventListener<Schema, 'open'> | null = null;
+  private _onmessage: WebSocketClientEventListener<Schema, 'message'> | null = null;
+  private _onclose: WebSocketClientEventListener<Schema, 'close'> | null = null;
+  private _onerror: WebSocketClientEventListener<Schema, 'error'> | null = null;
+
+  private listeners = new Map<
+    WebSocketClientEventListener<Schema, WebSocketEventType<Schema>>,
+    { type: WebSocketEventType<Schema>; rawListener: WebSocketClientRawEventListener }
   >();
 
   constructor(
@@ -94,6 +106,17 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     try {
       await closeClientSocket(this.socket, { ...options, code, reason });
     } finally {
+      this.onopen = null;
+      this.onmessage = null;
+      this.onclose = null;
+      this.onerror = null;
+
+      for (const { type, rawListener } of this.listeners.values()) {
+        this.socket.removeEventListener(type, rawListener);
+      }
+
+      this.listeners.clear();
+
       this.socket = undefined;
     }
   }
@@ -107,10 +130,10 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     listener: (this: WebSocketClient<Schema>, event: WebSocketEvent<Type>) => unknown,
     options?: boolean | AddEventListenerOptions,
   ) {
-    const rawListener = listener.bind(this) as (this: ClientSocket, event: Event) => unknown;
+    const rawListener = listener.bind(this) as WebSocketClientRawEventListener;
 
     this.socket?.addEventListener(type, rawListener, options);
-    this.rawListeners.set(listener, rawListener);
+    this.listeners.set(listener, { type, rawListener });
   }
 
   removeEventListener<Type extends WebSocketEventType<Schema>>(
@@ -118,51 +141,71 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     listener: (this: WebSocketClient<Schema>, event: WebSocketEvent<Type>) => unknown,
     options?: boolean | EventListenerOptions,
   ) {
-    const rawListener = this.rawListeners.get(listener);
+    const { rawListener } = this.listeners.get(listener) ?? {};
 
     if (rawListener) {
       this.socket?.removeEventListener(type, rawListener, options);
-      this.rawListeners.delete(listener);
+      this.listeners.delete(listener);
     }
   }
 
   get onopen() {
-    return null;
+    return this._onopen;
   }
 
-  set onopen(handler: ((this: WebSocketClient<Schema>, event: WebSocketEvent<'open'>) => unknown) | null) {
-    if (handler) {
-      this.addEventListener('open', handler);
-    }
+  set onopen(listener: WebSocketClientEventListener<Schema, 'open'> | null) {
+    this.setUnitaryEventListener('open', listener);
   }
 
   get onmessage() {
-    return null;
+    return this._onmessage;
   }
 
-  set onmessage(handler: ((this: WebSocketClient<Schema>, event: WebSocketEvent<'message'>) => unknown) | null) {
-    if (handler) {
-      this.addEventListener('message', handler);
-    }
+  set onmessage(listener: WebSocketClientEventListener<Schema, 'message'> | null) {
+    this.setUnitaryEventListener('message', listener);
   }
 
   get onclose() {
-    return null;
+    return this._onclose;
   }
 
-  set onclose(handler: ((this: WebSocketClient<Schema>, event: WebSocketEvent<'close'>) => unknown) | null) {
-    if (handler) {
-      this.addEventListener('close', handler);
-    }
+  set onclose(listener: WebSocketClientEventListener<Schema, 'close'> | null) {
+    this.setUnitaryEventListener('close', listener);
   }
 
   get onerror() {
-    return null;
+    return this._onerror;
   }
 
-  set onerror(handler: ((this: WebSocketClient<Schema>, event: WebSocketEvent<'error'>) => unknown) | null) {
-    if (handler) {
-      this.addEventListener('error', handler);
+  set onerror(listener: WebSocketClientEventListener<Schema, 'error'> | null) {
+    this.setUnitaryEventListener('error', listener);
+  }
+
+  private setUnitaryEventListener<Type extends WebSocketEventType<Schema>>(
+    type: WebSocketEventType<Schema>,
+    listener: WebSocketClientEventListener<Schema, Type> | null,
+  ) {
+    if (listener) {
+      const rawListener = listener.bind(this) as WebSocketClientRawEventListener;
+      this.listeners.set(listener, { type, rawListener });
+
+      if (this.socket) {
+        this.socket[`on${type}`] = rawListener;
+      }
+
+      this[`_on${type}`] = listener;
+    } else {
+      const currentListener = this[`_on${type}`];
+
+      if (currentListener) {
+        this.listeners.delete(currentListener);
+      }
+
+      if (this.socket) {
+        this.socket[`on${type}`] = null;
+      }
+
+      this[`_on${type}`] = null;
     }
   }
 
