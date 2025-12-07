@@ -10,12 +10,12 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.90.11",
+    "@tanstack/react-query": "^5.90.12",
     "@zimic/fetch": "latest",
     "@zimic/http": "latest",
-    "next": "^16.0.5",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "next": "^16.0.7",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
     "zod": "^4.1.13"
   },
   "devDependencies": {
