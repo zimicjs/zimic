@@ -13,9 +13,9 @@
   "dependencies": {
     "@zimic/fetch": "latest",
     "@zimic/http": "latest",
-    "next": "^16.0.5",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "next": "^16.0.7",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
     "zod": "^4.1.13"
   },
   "devDependencies": {
@@ -27,7 +27,7 @@
     "dotenv-cli": "^11.0.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.17",
-    "tsx": "^4.20.6",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }
