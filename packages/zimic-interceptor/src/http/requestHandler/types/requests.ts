@@ -41,23 +41,6 @@ export type HttpRequestHandlerResponseDeclarationWithHeaders<ResponseSchema exte
       ? { headers?: HttpRequestHandlerResponseDeclarationHeaders<ResponseSchema> }
       : { headers: HttpRequestHandlerResponseDeclarationHeaders<ResponseSchema> };
 
-/** Action to bypass or reject a request at the handler level. */
-export namespace HttpRequestHandlerResponseAction {
-  /** Action to bypass a request and let it reach the real network. Only available for local interceptors. */
-  export type LocalBypass = 'bypass';
-
-  /** Action to reject a request with a network error. */
-  export type Reject = 'reject';
-
-  /** Local interceptor actions: bypass or reject. */
-  export type Local = LocalBypass | Reject;
-
-  /** Remote interceptor actions: reject only. */
-  export type Remote = Reject;
-}
-
-// Removed action response object types - actions are returned as string literals directly
-
 /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
 export type HttpRequestHandlerResponseDeclaration<
   MethodSchema extends HttpMethodSchema = HttpMethodSchema,
@@ -78,36 +61,6 @@ export type HttpRequestHandlerResponseDeclarationFactory<
 > = (
   request: Omit<HttpInterceptorRequest<Path, MethodSchema>, 'response'>,
 ) => PossiblePromise<HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>>;
-
-/** Local handler response: status-based or bypass/reject action. */
-export type HttpRequestHandlerLocalResponseDeclaration<
-  MethodSchema extends HttpMethodSchema = HttpMethodSchema,
-  StatusCode extends HttpStatusCode = HttpStatusCode,
-> = HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode> | HttpRequestHandlerResponseAction.Local;
-
-/** Local handler response factory: status-based or bypass/reject action. */
-export type HttpRequestHandlerLocalResponseDeclarationFactory<
-  Path extends string,
-  MethodSchema extends HttpMethodSchema,
-  StatusCode extends HttpStatusCode = HttpStatusCode,
-> = (
-  request: Omit<HttpInterceptorRequest<Path, MethodSchema>, 'response'>,
-) => PossiblePromise<HttpRequestHandlerLocalResponseDeclaration<MethodSchema, StatusCode>>;
-
-/** Remote handler response: status-based or reject action. */
-export type HttpRequestHandlerRemoteResponseDeclaration<
-  MethodSchema extends HttpMethodSchema = HttpMethodSchema,
-  StatusCode extends HttpStatusCode = HttpStatusCode,
-> = HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode> | HttpRequestHandlerResponseAction.Remote;
-
-/** Remote handler response factory: status-based or reject action. */
-export type HttpRequestHandlerRemoteResponseDeclarationFactory<
-  Path extends string,
-  MethodSchema extends HttpMethodSchema,
-  StatusCode extends HttpStatusCode = HttpStatusCode,
-> = (
-  request: Omit<HttpInterceptorRequest<Path, MethodSchema>, 'response'>,
-) => PossiblePromise<HttpRequestHandlerRemoteResponseDeclaration<MethodSchema, StatusCode>>;
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerdelay `handler.delay()` API reference} */
 export type HttpRequestHandlerResponseDelayFactory<Path extends string, MethodSchema extends HttpMethodSchema> = (

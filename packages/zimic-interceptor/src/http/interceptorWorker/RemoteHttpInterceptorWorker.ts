@@ -14,7 +14,7 @@ import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHt
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import { HttpInterceptorPlatform } from '../interceptor/types/options';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
-import { HttpHandlerActionResult, HttpResponseFactoryContext } from './types/http';
+import { HttpResponseFactoryContext } from './types/http';
 import { MSWHttpResponseFactory } from './types/msw';
 import { RemoteHttpInterceptorWorkerOptions } from './types/options';
 
@@ -24,7 +24,7 @@ interface HttpHandler {
   method: HttpMethod;
   path: string;
   interceptor: AnyHttpInterceptorClient;
-  createResponse: (context: HttpResponseFactoryContext) => Promise<Response | HttpHandlerActionResult>;
+  createResponse: (context: HttpResponseFactoryContext) => Promise<Response | null>;
 }
 
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
@@ -78,19 +78,9 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     try {
       const rawResponse = (await handler?.createResponse({ request })) ?? null;
+      const response = rawResponse && request.method === 'HEAD' ? new Response(null, rawResponse) : rawResponse;
 
-      // Check if the response is an action (bypass or reject)
-      if (this.isActionResponse(rawResponse)) {
-        // For remote interceptors, only reject is allowed
-        if (rawResponse.action === 'reject') {
-          return { response: null, action: 'reject' as const };
-        }
-        // Note: 'bypass' should not be reachable due to type safety, but handle it gracefully
-        // Fall through to unhandled request handling
-      } else if (rawResponse) {
-        // At this point, rawResponse is guaranteed to be a Response
-        const response = request.method === 'HEAD' ? new Response(null, rawResponse) : rawResponse;
-
+      if (response) {
         return { response: await serializeResponse(response) };
       }
     } catch (error) {
@@ -102,14 +92,6 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     return { response: null };
   };
-
-  private isActionResponse(value: unknown): value is { action: 'bypass' | 'reject' } {
-    if (value === null || typeof value !== 'object') {
-      return false;
-    }
-    const action = (value as { action?: string }).action;
-    return action === 'bypass' || action === 'reject';
-  }
 
   private handleUnhandledServerRequest = async (
     message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/responses/unhandled'>,
