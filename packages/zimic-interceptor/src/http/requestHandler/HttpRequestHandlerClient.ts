@@ -13,7 +13,7 @@ import blobEquals from '@zimic/utils/data/blobEquals';
 import jsonContains from '@zimic/utils/data/jsonContains';
 import jsonEquals from '@zimic/utils/data/jsonEquals';
 import waitForDelay from '@zimic/utils/time/waitForDelay';
-import { Default, Range } from '@zimic/utils/types';
+import { Default, PossiblePromise, Range } from '@zimic/utils/types';
 
 import { convertArrayBufferToBlob, convertReadableStreamToBlob } from '@/utils/data';
 import { random } from '@/utils/numbers';
@@ -27,6 +27,7 @@ import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
+  HttpRequestHandlerResponseAction,
   HttpRequestHandlerResponseDeclarationFactory,
   HttpRequestHandlerResponseDelayFactory,
   InterceptedHttpInterceptorRequest,
@@ -68,10 +69,12 @@ class HttpRequestHandlerClient<
   private unmatchedRequestGroups: UnmatchedHttpInterceptorRequestGroup[] = [];
   private _requests: InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] = [];
 
-  private createResponseDeclaration?: HttpRequestHandlerResponseDeclarationFactory<
-    Path,
-    Default<Schema[Path][Method]>,
-    StatusCode
+  private createResponseDeclaration?: (
+    request: Omit<HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>, 'response'>,
+  ) => PossiblePromise<
+    | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
+    | HttpRequestHandlerResponseAction.Local
+    | HttpRequestHandlerResponseAction.Remote
   >;
 
   private createResponseDelay?: HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>;
@@ -113,13 +116,33 @@ class HttpRequestHandlerClient<
   respond<NewStatusCode extends HttpStatusCode>(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
+      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>
+      | HttpRequestHandlerResponseAction.Local
+      | HttpRequestHandlerResponseAction.Remote,
   ): HttpRequestHandlerClient<Schema, Method, Path, NewStatusCode> {
     const newThis = this as unknown as HttpRequestHandlerClient<Schema, Method, Path, NewStatusCode>;
 
-    newThis.createResponseDeclaration = this.isResponseDeclarationFactory(declaration)
-      ? declaration
-      : () => declaration;
+    const isFactory = this.isResponseDeclarationFactory(declaration);
+
+    if (isFactory) {
+      // Declaration is already a factory function
+      newThis.createResponseDeclaration = declaration as (
+        request: Omit<HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>, 'response'>,
+      ) => PossiblePromise<
+        | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
+        | HttpRequestHandlerResponseAction.Local
+        | HttpRequestHandlerResponseAction.Remote
+      >;
+    } else {
+      // Declaration is a static value (object or action string), wrap it in a factory
+      newThis.createResponseDeclaration = (() => declaration) as (
+        request: Omit<HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>, 'response'>,
+      ) => PossiblePromise<
+        | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
+        | HttpRequestHandlerResponseAction.Local
+        | HttpRequestHandlerResponseAction.Remote
+      >;
+    }
 
     newThis.numberOfMatchedRequests = 0;
     newThis.unmatchedRequestGroups.length = 0;
@@ -134,8 +157,18 @@ class HttpRequestHandlerClient<
   private isResponseDeclarationFactory(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>>
-      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>>,
+      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>>
+      | HttpRequestHandlerResponseAction.Local
+      | HttpRequestHandlerResponseAction.Remote
+      | ((
+          request: Omit<HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>, 'response'>,
+        ) => PossiblePromise<HttpRequestHandlerResponseAction.Local | HttpRequestHandlerResponseAction.Remote>),
   ) {
+    // Actions are never factories - they're static strings
+    if (typeof declaration === 'string') {
+      return false;
+    }
+    // If it's not a string, it's a factory if it's a function (regardless of what type of factory)
     return typeof declaration === 'function';
   }
 

@@ -8,8 +8,9 @@ import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
-  HttpRequestHandlerResponseDeclarationFactory,
   HttpRequestHandlerResponseDelayFactory,
+  HttpRequestHandlerLocalResponseDeclaration,
+  HttpRequestHandlerLocalResponseDeclarationFactory,
   InterceptedHttpInterceptorRequest,
 } from './types/requests';
 import { HttpRequestHandlerRestriction } from './types/restrictions';
@@ -51,10 +52,14 @@ class LocalHttpRequestHandler<
 
   respond<NewStatusCode extends HttpStatusCode>(
     declaration:
-      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
+      | HttpRequestHandlerLocalResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
+      | HttpRequestHandlerLocalResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ): LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode> {
-    this.client.respond(declaration);
+    // The client's respond method is generic and shared with RemoteHttpRequestHandler.
+    // Local declarations include action types that Remote doesn't, but we know they're
+    // compatible at runtime since this is LocalHttpRequestHandler.
+    // istanbul ignore next -- type narrowing for generics
+    this.client.respond(declaration as never);
 
     const newThis = this as unknown as LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
     return newThis;
