@@ -22,7 +22,7 @@ import HttpRequestHandlerClient, {
 import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
 import { HttpRequestHandler, InternalHttpRequestHandler } from '../requestHandler/types/public';
-import { HttpInterceptorRequest, HttpRequestHandlerResponseDeclaration } from '../requestHandler/types/requests';
+import { HttpInterceptorRequest } from '../requestHandler/types/requests';
 import NotRunningHttpInterceptorError from './errors/NotRunningHttpInterceptorError';
 import RequestSavingSafeLimitExceededError from './errors/RequestSavingSafeLimitExceededError';
 import RunningHttpInterceptorError from './errors/RunningHttpInterceptorError';
@@ -271,12 +271,7 @@ class HttpInterceptorClient<
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
-  >(
-    method: Method,
-    path: Path,
-    pathRegex: RegExp,
-    { request }: Context,
-  ): Promise<HttpResponse | { action: 'bypass' | 'reject' } | null> {
+  >(method: Method, path: Path, pathRegex: RegExp, { request }: Context): Promise<HttpResponse | null> {
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Path, Default<Schema[Path][Method]>>(request, {
       baseURL: this.baseURLAsString,
       pathRegex,
@@ -296,14 +291,12 @@ class HttpInterceptorClient<
 
     const response = HttpInterceptorWorker.createResponseFromDeclaration(request, responseDeclaration);
 
-    if (this.requestSaving.enabled && typeof responseDeclaration === 'object' && 'status' in responseDeclaration) {
+    if (this.requestSaving.enabled) {
       const responseClone = response.clone();
-
-      const _status = (responseDeclaration as HttpRequestHandlerResponseDeclaration).status;
 
       const parsedResponse = await HttpInterceptorWorker.parseRawResponse<
         Default<Schema[Path][Method]>,
-        typeof _status
+        typeof responseDeclaration.status
       >(responseClone);
 
       matchedHandler.saveInterceptedRequest(parsedRequest, parsedResponse);
