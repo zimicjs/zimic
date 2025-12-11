@@ -101,11 +101,12 @@ When implementing changes:
   general utility to `src/utils/...`);
 - Implement minimal API surface; export intentionally (update `exports`);
 - Maintain 100% coverage (add tests for new branches, error paths, and edge cases);
-- Run locally (inside target app or package):
-  - `pnpm types:check`
-  - `pnpm lint .`
-  - `pnpm test`
-  - `pnpm build`
+- Run locally (inside target package):
+  - `pnpm types:check`: check types in a package using `tsc`; accepts no arguments;
+  - `pnpm lint <pattern>`: lint a package using ESLint; accepts a pattern to limit scope, such as a file or directory;
+  - `pnpm run test <pattern>`: run tests in a package using Vitest; accepts a pattern to limit scope, such as a file or
+    directory;
+  - `pnpm build`: build a package using `tsup`;
 - Update documentation (`apps/zimic-web/docs`) after API changes, adding short code snippets and updating existing
   examples; highlight experimental or unstable features as such; ensure Docusaurus build passes; ensure clear and
   concise language and examples;
