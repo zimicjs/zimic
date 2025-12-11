@@ -14,7 +14,7 @@ import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHt
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
-import { HttpHandlerActionResult, HttpResponseFactoryContext } from './types/http';
+import { HttpResponseFactoryContext } from './types/http';
 import { BrowserMSWWorker, MSWHttpResponseFactory, MSWWorker, NodeMSWWorker } from './types/msw';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
 
@@ -182,30 +182,17 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
         const request = context.request as HttpRequest;
         const requestClone = request.clone();
 
-        let result: HttpResponse | HttpHandlerActionResult = null;
+        let response: HttpResponse | null = null;
 
         try {
-          result = await createResponse({ ...context, request });
+          response = await createResponse({ ...context, request });
         } catch (error) {
           console.error(error);
         }
 
-        // Handle action responses
-        if (result && typeof result === 'object' && 'action' in result) {
-          const action = (result as { action?: string }).action;
-          if (action === 'bypass') {
-            return passthrough();
-          } else if (action === 'reject') {
-            return Response.error();
-          }
-        }
-
-        if (!result) {
+        if (!response) {
           return this.bypassOrRejectUnhandledRequest(requestClone);
         }
-
-        // At this point, result is guaranteed to be HttpResponse
-        const response = result as HttpResponse;
 
         if (context.request.method === 'HEAD') {
           return new Response(null, {
