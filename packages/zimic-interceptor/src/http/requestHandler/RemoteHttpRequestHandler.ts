@@ -11,8 +11,9 @@ import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
-  HttpRequestHandlerResponseDeclarationFactory,
   HttpRequestHandlerResponseDelayFactory,
+  HttpRequestHandlerRemoteResponseDeclaration,
+  HttpRequestHandlerRemoteResponseDeclarationFactory,
   InterceptedHttpInterceptorRequest,
 } from './types/requests';
 import { HttpRequestHandlerRestriction } from './types/restrictions';
@@ -85,11 +86,15 @@ class RemoteHttpRequestHandler<
 
   respond<NewStatusCode extends HttpStatusCode>(
     declaration:
-      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
+      | HttpRequestHandlerRemoteResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
+      | HttpRequestHandlerRemoteResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ): RemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode> {
     const newUnsyncedThis = this.unsynced as unknown as RemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
-    newUnsyncedThis.client.respond(declaration);
+    // The client's respond method is generic and shared with LocalHttpRequestHandler.
+    // Remote declarations are more restrictive than Local, but we know they're compatible
+    // at runtime since this is RemoteHttpRequestHandler.
+    // istanbul ignore next -- type narrowing for generics
+    newUnsyncedThis.client.respond(declaration as never);
     return newUnsyncedThis;
   }
 
