@@ -6,8 +6,6 @@ const sharedConfig: Options = {
   sourcemap: true,
   treeshake: true,
   minify: false,
-  // `clean: true` is causing concurrency problems. Let's disable it for now and use `rm -rf` manually when needed.
-  clean: false,
   keepNames: false,
 };
 
@@ -55,4 +53,13 @@ const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   },
 }));
 
-export default defineConfig([...neutralConfig, ...nodeConfig]);
+const configs: Options[] = [...neutralConfig, ...nodeConfig];
+
+export default defineConfig(
+  configs.map((config, index) => ({
+    ...config,
+    // Builds performed by tsup face concurrency problems when generating .d.ts files with multiple configs.
+    // To workaround this, we only clean the dist folder on the last build.
+    clean: index === configs.length - 1,
+  })),
+);
