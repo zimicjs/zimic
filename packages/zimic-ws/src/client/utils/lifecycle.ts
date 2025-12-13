@@ -15,17 +15,13 @@ export async function openClientSocket(socket: ClientSocket, options: { timeout?
   await new Promise<void>((resolve, reject) => {
     function removeAllSocketListeners() {
       socket.removeEventListener('open', handleOpenSuccess); // eslint-disable-line @typescript-eslint/no-use-before-define
-      socket.removeEventListener('error', handleOpenError); // eslint-disable-line @typescript-eslint/no-use-before-define
-      socket.removeEventListener('close', handleClose); // eslint-disable-line @typescript-eslint/no-use-before-define
+      socket.removeEventListener('error', handleError); // eslint-disable-line @typescript-eslint/no-use-before-define
+      socket.removeEventListener('close', handleError); // eslint-disable-line @typescript-eslint/no-use-before-define
     }
 
-    function handleOpenError(error: unknown) {
+    function handleError(error: unknown) {
       removeAllSocketListeners();
       reject(error);
-    }
-
-    function handleClose(event: CloseEvent) {
-      handleOpenError(event);
     }
 
     const openTimeout =
@@ -33,7 +29,7 @@ export async function openClientSocket(socket: ClientSocket, options: { timeout?
         ? undefined
         : setTimeout(() => {
             const timeoutError = new WebSocketOpenTimeoutError(timeoutDuration);
-            handleOpenError(timeoutError);
+            handleError(timeoutError);
           }, timeoutDuration);
 
     function handleOpenSuccess() {
@@ -43,8 +39,8 @@ export async function openClientSocket(socket: ClientSocket, options: { timeout?
     }
 
     socket.addEventListener('open', handleOpenSuccess);
-    socket.addEventListener('error', handleOpenError);
-    socket.addEventListener('close', handleOpenError);
+    socket.addEventListener('error', handleError);
+    socket.addEventListener('close', handleError);
   });
 }
 
