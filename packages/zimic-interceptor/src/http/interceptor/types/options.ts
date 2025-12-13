@@ -12,7 +12,13 @@ export type HttpInterceptorPlatform = 'node' | 'browser';
 /** @see {@link https://zimic.dev/docs/interceptor/guides/http/unhandled-requests Unhandled requests} */
 export namespace UnhandledRequestStrategy {
   /** @see {@link https://zimic.dev/docs/interceptor/guides/http/unhandled-requests Unhandled requests} */
-  export type Action = 'bypass' | 'reject';
+  export type LocalAction = 'bypass' | 'reject';
+
+  /** @see {@link https://zimic.dev/docs/interceptor/guides/http/unhandled-requests Unhandled requests} */
+  export type RemoteAction = 'reject';
+
+  /** @see {@link https://zimic.dev/docs/interceptor/guides/http/unhandled-requests Unhandled requests} */
+  export type Action = LocalAction | RemoteAction;
 
   /** @see {@link https://zimic.dev/docs/interceptor/guides/http/unhandled-requests Unhandled requests} */
   export interface Declaration<DeclarationAction extends Action = Action> {
@@ -29,16 +35,16 @@ export namespace UnhandledRequestStrategy {
   ) => PossiblePromise<Declaration<DeclarationAction>>;
 
   /** @see {@link https://zimic.dev/docs/interceptor/guides/http/unhandled-requests Unhandled requests} */
-  export type LocalDeclaration = Declaration;
+  export type LocalDeclaration = Declaration<LocalAction>;
 
   /** @see {@link https://zimic.dev/docs/interceptor/guides/http/unhandled-requests Unhandled requests} */
-  export type LocalDeclarationFactory = DeclarationFactory;
+  export type LocalDeclarationFactory = DeclarationFactory<LocalAction>;
 
   /** @see {@link https://zimic.dev/docs/interceptor/guides/http/unhandled-requests Unhandled requests} */
-  export type RemoteDeclaration = Declaration<'reject'>;
+  export type RemoteDeclaration = Declaration<RemoteAction>;
 
   /** @see {@link https://zimic.dev/docs/interceptor/guides/http/unhandled-requests Unhandled requests} */
-  export type RemoteDeclarationFactory = DeclarationFactory<'reject'>;
+  export type RemoteDeclarationFactory = DeclarationFactory<RemoteAction>;
 
   /** @see {@link https://zimic.dev/docs/interceptor/guides/http/unhandled-requests Unhandled requests} */
   export type Local = LocalDeclaration | LocalDeclarationFactory;

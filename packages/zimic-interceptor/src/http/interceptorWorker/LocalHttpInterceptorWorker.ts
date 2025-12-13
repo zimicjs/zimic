@@ -14,8 +14,8 @@ import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHt
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
-import { HttpResponseFactoryContext } from './types/http';
-import { BrowserMSWWorker, MSWHttpResponseFactory, MSWWorker, NodeMSWWorker } from './types/msw';
+import { HttpResponseFactory, HttpResponseFactoryContext } from './types/http';
+import { BrowserMSWWorker, MSWWorker, NodeMSWWorker } from './types/msw';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
 
 interface HttpHandler {
@@ -163,7 +163,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
     path: string,
-    createResponse: MSWHttpResponseFactory,
+    createResponse: HttpResponseFactory,
   ) {
     if (!this.isRunning) {
       throw new NotRunningHttpInterceptorError();
@@ -192,6 +192,14 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
         if (!response) {
           return this.bypassOrRejectUnhandledRequest(requestClone);
+        }
+
+        if (HttpInterceptorWorker.isBypassedResponse(response)) {
+          return passthrough();
+        }
+
+        if (HttpInterceptorWorker.isRejectedResponse(response)) {
+          return response;
         }
 
         if (context.request.method === 'HEAD') {

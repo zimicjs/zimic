@@ -18,11 +18,11 @@ import type LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '../../RemoteHttpRequestHandler';
 import {
   HttpInterceptorRequest,
-  HttpRequestHandlerResponseDeclaration,
   HTTP_INTERCEPTOR_REQUEST_HIDDEN_PROPERTIES,
   HTTP_INTERCEPTOR_RESPONSE_HIDDEN_PROPERTIES,
 } from '../../types/requests';
 import { SharedHttpRequestHandlerTestOptions, Schema, MethodSchema, HeadersSchema } from './types';
+import { expectStatusResponseDeclaration } from './utils';
 
 export function declareDefaultHttpRequestHandlerTests(
   options: SharedHttpRequestHandlerTestOptions & {
@@ -154,34 +154,34 @@ export function declareDefaultHttpRequestHandlerTests(
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-    const response = await handler.applyResponseDeclaration(parsedRequest);
 
-    expect(response.status).toBe(responseStatus);
-    expect(response.body).toEqual(responseBody);
+    const responseDeclaration = await handler.applyResponseDeclaration(parsedRequest);
+    expectStatusResponseDeclaration(responseDeclaration);
+
+    expect(responseDeclaration.status).toBe(responseStatus);
+    expect(responseDeclaration.body).toEqual(responseBody);
   });
 
   it('should create response with declared status and body factory', async () => {
     const responseStatus = 200;
     const responseBody = { success: true } as const;
 
-    const responseFactory = vi.fn<
-      (
-        request: HttpInterceptorRequest<'/users', MethodSchema>,
-      ) => HttpRequestHandlerResponseDeclaration<MethodSchema, 200>
-    >(() => ({
-      status: responseStatus,
-      body: responseBody,
-    }));
+    const responseFactory = vi.fn(
+      (_request: HttpInterceptorRequest<'/users', MethodSchema>) =>
+        ({ status: responseStatus, body: responseBody }) as const,
+    );
 
     const handler = new Handler<Schema, 'POST', '/users', 200>(interceptorClient, 'POST', '/users');
     await promiseIfRemote(handler.respond(responseFactory), interceptor);
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-    const response = await handler.applyResponseDeclaration(parsedRequest);
 
-    expect(response.status).toBe(responseStatus);
-    expect(response.body).toEqual(responseBody);
+    const responseDeclaration = await handler.applyResponseDeclaration(parsedRequest);
+    expectStatusResponseDeclaration(responseDeclaration);
+
+    expect(responseDeclaration.status).toBe(responseStatus);
+    expect(responseDeclaration.body).toEqual(responseBody);
 
     expect(responseFactory).toHaveBeenCalledTimes(1);
   });
@@ -210,9 +210,9 @@ export function declareDefaultHttpRequestHandlerTests(
     const parsedFirstRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(firstRequest);
 
     const firstResponseDeclaration = await handler.applyResponseDeclaration(parsedFirstRequest);
-    const firstResponse = Response.json(firstResponseDeclaration.body, {
-      status: firstResponseDeclaration.status,
-    });
+    expectStatusResponseDeclaration(firstResponseDeclaration);
+
+    const firstResponse = Response.json(firstResponseDeclaration.body, { status: firstResponseDeclaration.status });
     const firstResponseClone = firstResponse.clone();
     const parsedFirstResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(firstResponse);
 
@@ -227,11 +227,11 @@ export function declareDefaultHttpRequestHandlerTests(
 
     const secondRequest = new Request(joinURL(baseURL, '/path'));
     const parsedSecondRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(secondRequest);
-    const secondResponseDeclaration = await handler.applyResponseDeclaration(parsedSecondRequest);
 
-    const secondResponse = Response.json(secondResponseDeclaration.body, {
-      status: secondResponseDeclaration.status,
-    });
+    const secondResponseDeclaration = await handler.applyResponseDeclaration(parsedSecondRequest);
+    expectStatusResponseDeclaration(secondResponseDeclaration);
+
+    const secondResponse = Response.json(secondResponseDeclaration.body, { status: secondResponseDeclaration.status });
     const parsedSecondResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(secondResponse);
 
     handler.saveInterceptedRequest(parsedSecondRequest, parsedSecondResponse);
@@ -259,9 +259,9 @@ export function declareDefaultHttpRequestHandlerTests(
     const parsedFirstRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(firstRequest);
 
     const firstResponseDeclaration = await handler.applyResponseDeclaration(parsedFirstRequest);
-    const firstResponse = Response.json(firstResponseDeclaration.body, {
-      status: firstResponseDeclaration.status,
-    });
+    expectStatusResponseDeclaration(firstResponseDeclaration);
+
+    const firstResponse = Response.json(firstResponseDeclaration.body, { status: firstResponseDeclaration.status });
     const firstResponseClone = firstResponse.clone();
     const parsedFirstResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(firstResponse);
 
@@ -293,6 +293,8 @@ export function declareDefaultHttpRequestHandlerTests(
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
     const responseDeclaration = await handler.applyResponseDeclaration(parsedRequest);
+    expectStatusResponseDeclaration(responseDeclaration);
+
     const response = Response.json(responseDeclaration.body, { status: responseDeclaration.status });
     const parsedResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(response);
 
@@ -340,6 +342,8 @@ export function declareDefaultHttpRequestHandlerTests(
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
     const responseDeclaration = await handler.applyResponseDeclaration(parsedRequest);
+    expectStatusResponseDeclaration(responseDeclaration);
+
     const response = Response.json(responseDeclaration.body, { status: responseDeclaration.status });
     const parsedResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(response);
 

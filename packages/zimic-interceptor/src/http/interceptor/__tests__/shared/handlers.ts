@@ -9,7 +9,7 @@ import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHan
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectPreflightResponse } from '@tests/utils/fetch';
-import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
+import { getPreflightAssessment, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions, verifyUnhandledRequestMessage } from './utils';
@@ -32,7 +32,7 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
   });
 
   describe.each(HTTP_METHODS)('Method (%s)', (method) => {
-    const { overridesPreflightResponse, numberOfRequestsIncludingPreflight } = assessPreflightInterference({
+    const { overridesPreflightResponse, numberOfRequestsIncludingPreflight } = getPreflightAssessment({
       method,
       platform,
       type,

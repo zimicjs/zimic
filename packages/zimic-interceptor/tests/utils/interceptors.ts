@@ -164,7 +164,7 @@ export async function usingHttpInterceptorWorker(
   }
 }
 
-export function assessPreflightInterference(resources: {
+export function getPreflightAssessment(resources: {
   method: HttpMethod;
   platform: HttpInterceptorPlatform;
   type: HttpInterceptorType;

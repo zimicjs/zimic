@@ -1,4 +1,5 @@
 import { HttpMethod, HttpSchema } from '@zimic/http';
+import { PossiblePromise } from '@zimic/utils/types';
 import validatePathParams from '@zimic/utils/url/validatePathParams';
 
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/types/schema';
@@ -14,8 +15,7 @@ import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHt
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import { HttpInterceptorPlatform } from '../interceptor/types/options';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
-import { HttpResponseFactoryContext } from './types/http';
-import { MSWHttpResponseFactory } from './types/msw';
+import { HttpResponseFactory, HttpResponseFactoryContext } from './types/http';
 import { RemoteHttpInterceptorWorkerOptions } from './types/options';
 
 interface HttpHandler {
@@ -24,7 +24,7 @@ interface HttpHandler {
   method: HttpMethod;
   path: string;
   interceptor: AnyHttpInterceptorClient;
-  createResponse: (context: HttpResponseFactoryContext) => Promise<Response | null>;
+  createResponse: (context: HttpResponseFactoryContext) => PossiblePromise<Response | null>;
 }
 
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
@@ -135,7 +135,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
     path: string,
-    createResponse: MSWHttpResponseFactory,
+    createResponse: HttpResponseFactory,
   ) {
     if (!this.isRunning) {
       throw new NotRunningHttpInterceptorError();
@@ -151,10 +151,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       method,
       path,
       interceptor,
-      async createResponse(context) {
-        const response = await createResponse(context);
-        return response;
-      },
+      createResponse,
     };
 
     this.httpHandlers.set(handler.id, handler);
