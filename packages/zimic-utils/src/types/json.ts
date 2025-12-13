@@ -87,3 +87,22 @@ export type JSONSerialized<Type> = Type extends JSONValue
                       >;
                     }
                   : never;
+
+declare global {
+  interface JSON {
+    readonly value: unique symbol;
+
+    // eslint-disable-next-line @typescript-eslint/method-signature-style
+    stringify<Value>(
+      value: Value,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      replacer?: ((this: any, key: string, value: Value) => any) | (number | string)[] | null,
+      space?: string | number,
+    ): JSONStringified<Value>;
+
+    // eslint-disable-next-line @typescript-eslint/method-signature-style, @typescript-eslint/no-explicit-any
+    parse<Value>(text: JSONStringified<Value>, reviver?: (this: any, key: string, value: any) => any): Value;
+  }
+}
+
+export type JSONStringified<Value> = string & { [JSON.value]: Value };

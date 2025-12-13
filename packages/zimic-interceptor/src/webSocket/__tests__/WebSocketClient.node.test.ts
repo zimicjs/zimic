@@ -1,3 +1,4 @@
+import { startHttpServer, stopHttpServer } from '@zimic/utils/server/lifecycle';
 import waitFor from '@zimic/utils/time/waitFor';
 import waitForNot from '@zimic/utils/time/waitForNot';
 import { createServer } from 'http';
@@ -6,7 +7,6 @@ import { AddressInfo } from 'net';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { importCrypto } from '@/utils/crypto';
-import { startHttpServer, stopHttpServer } from '@/utils/http';
 import {
   closeServerSocket,
   WebSocketCloseTimeoutError,

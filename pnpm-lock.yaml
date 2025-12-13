@@ -82,6 +82,9 @@ importers:
       '@zimic/utils':
         specifier: workspace:*
         version: link:../../packages/zimic-utils
+      '@zimic/ws':
+        specifier: workspace:*
+        version: link:../../packages/zimic-ws
       axios:
         specifier: ^1.13.2
         version: 1.13.2
@@ -878,6 +881,61 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^4.0.15
+        version: 4.0.15(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(@vitest/browser-playwright@4.0.15)(jiti@2.6.1)(jsdom@27.2.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.11.2(@types/node@24.10.1)(typescript@5.9.3))(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1)
+
+  packages/zimic-ws:
+    dependencies:
+      ws:
+        specifier: 8.18.3
+        version: 8.18.3(bufferutil@4.0.9)
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.0
+        version: 24.10.1
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
+      '@vitest/browser':
+        specifier: ^4.0.6
+        version: 4.0.15(bufferutil@4.0.9)(msw@2.11.2(@types/node@24.10.1)(typescript@5.9.3))(vite@7.2.6(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))(vitest@4.0.15)
+      '@vitest/browser-playwright':
+        specifier: ^4.0.6
+        version: 4.0.15(bufferutil@4.0.9)(msw@2.11.2(@types/node@24.10.1)(typescript@5.9.3))(playwright@1.57.0)(vite@7.2.6(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))(vitest@4.0.15)
+      '@vitest/coverage-istanbul':
+        specifier: ^4.0.6
+        version: 4.0.15(vitest@4.0.15)
+      '@zimic/eslint-config-node':
+        specifier: workspace:*
+        version: link:../eslint-config-node
+      '@zimic/interceptor':
+        specifier: workspace:*
+        version: link:../zimic-interceptor
+      '@zimic/lint-staged-config':
+        specifier: workspace:*
+        version: link:../lint-staged-config
+      '@zimic/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@zimic/utils':
+        specifier: workspace:*
+        version: link:../zimic-utils
+      dotenv-cli:
+        specifier: ^11.0.0
+        version: 11.0.0
+      eslint:
+        specifier: ^9.39.1
+        version: 9.39.1(jiti@2.6.1)
+      playwright:
+        specifier: ^1.56.1
+        version: 1.57.0
+      tsup:
+        specifier: ^8.4.0
+        version: 8.5.1(@swc/core@1.15.3)(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.1)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.6
         version: 4.0.15(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(@vitest/browser-playwright@4.0.15)(jiti@2.6.1)(jsdom@27.2.0(bufferutil@4.0.9))(lightningcss@1.30.2)(msw@2.11.2(@types/node@24.10.1)(typescript@5.9.3))(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1)
 
 packages:

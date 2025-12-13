@@ -26,9 +26,9 @@ import {
   HttpFormData,
 } from '@zimic/http';
 import { Default } from '@zimic/utils/types';
+import { JSONStringified } from '@zimic/utils/types/json';
 
 import FetchResponseError, { AnyFetchRequestError } from '../errors/FetchResponseError';
-import { JSONStringified } from './json';
 import { FetchInput } from './public';
 
 type FetchRequestInitWithHeaders<HeadersSchema extends HttpHeadersSchema | undefined> = [HeadersSchema] extends [never]

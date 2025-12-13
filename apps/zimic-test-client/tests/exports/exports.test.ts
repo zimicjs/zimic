@@ -101,10 +101,17 @@ import {
   DisabledRequestSavingError,
   TimesCheckError,
 } from '@zimic/interceptor/http';
+import {
+  WebSocketClient,
+  WebSocketTimeoutError,
+  WebSocketOpenTimeoutError,
+  WebSocketCloseTimeoutError,
+  WebSocketMessageAbortError,
+} from '@zimic/ws';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 describe('Exports', () => {
-  it('should export all expected resources', () => {
+  it('exports all expected resources from @zimic/http', () => {
     expectTypeOf<JSONValue>().not.toBeAny();
     expectTypeOf<JSONValue<never>>().not.toBeAny();
     expectTypeOf<JSONSerialized<never>>().not.toBeAny();
@@ -187,17 +194,9 @@ describe('Exports', () => {
 
     expectTypeOf<HttpInvalidFormDataError>().not.toBeAny();
     expect(typeof HttpInvalidFormDataError).toBe('function');
+  });
 
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    expectTypeOf<InterceptorInvalidJSONError>().not.toBeAny();
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    expect(typeof InterceptorInvalidJSONError).toBe('function');
-
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    expectTypeOf<InterceptorInvalidFormDataError>().not.toBeAny();
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    expect(typeof InterceptorInvalidFormDataError).toBe('function');
-
+  it('exports all expected resources from @zimic/fetch', () => {
     expect(typeof createFetch).toBe('function');
     expectTypeOf<Fetch<never>>().not.toBeAny();
     expectTypeOf<Fetch.Loose>().not.toBeAny();
@@ -218,6 +217,35 @@ describe('Exports', () => {
     expectTypeOf<FetchResponseErrorObjectOptions.WithBody>().not.toBeAny();
     expectTypeOf<FetchResponseErrorObjectOptions.WithoutBody>().not.toBeAny();
     expectTypeOf<JSONStringified<never>>().not.toBeAny();
+  });
+
+  it('exports all expected resources from @zimic/ws', () => {
+    expectTypeOf<WebSocketClient<never>>().not.toBeAny();
+    expect(typeof WebSocketClient).toBe('function');
+
+    expectTypeOf<WebSocketTimeoutError>().not.toBeAny();
+    expect(typeof WebSocketTimeoutError).toBe('function');
+
+    expectTypeOf<WebSocketOpenTimeoutError>().not.toBeAny();
+    expect(typeof WebSocketOpenTimeoutError).toBe('function');
+
+    expectTypeOf<WebSocketCloseTimeoutError>().not.toBeAny();
+    expect(typeof WebSocketCloseTimeoutError).toBe('function');
+
+    expectTypeOf<WebSocketMessageAbortError>().not.toBeAny();
+    expect(typeof WebSocketMessageAbortError).toBe('function');
+  });
+
+  it('exports all expected resources from @zimic/interceptor', () => {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    expectTypeOf<InterceptorInvalidJSONError>().not.toBeAny();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    expect(typeof InterceptorInvalidJSONError).toBe('function');
+
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    expectTypeOf<InterceptorInvalidFormDataError>().not.toBeAny();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    expect(typeof InterceptorInvalidFormDataError).toBe('function');
 
     expectTypeOf(createHttpInterceptor).not.toBeAny();
     expect(typeof createHttpInterceptor).toBe('function');
