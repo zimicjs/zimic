@@ -16,6 +16,8 @@ import {
 } from '@zimic/http';
 import { Default, PartialByKey, PossiblePromise, Replace } from '@zimic/utils/types';
 
+import { UnhandledRequestStrategy } from '@/http/interceptor/types/options';
+
 type HttpRequestHandlerResponseBody<
   ResponseSchema extends HttpResponseSchema,
   StatusCode extends HttpStatusCode,
@@ -42,16 +44,28 @@ export type HttpRequestHandlerResponseDeclarationWithHeaders<ResponseSchema exte
       : { headers: HttpRequestHandlerResponseDeclarationHeaders<ResponseSchema> };
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
-export type HttpRequestHandlerResponseDeclaration<
+export type HttpRequestHandlerStatusResponseDeclaration<
   MethodSchema extends HttpMethodSchema = HttpMethodSchema,
   StatusCode extends HttpStatusCode = HttpStatusCode,
 > = StatusCode extends StatusCode
-  ? { status: StatusCode } & HttpRequestHandlerResponseWithBody<
-      Default<Default<MethodSchema['response']>[StatusCode]>,
-      StatusCode
-    > &
+  ? {
+      status: StatusCode;
+      action?: never;
+    } & HttpRequestHandlerResponseWithBody<Default<Default<MethodSchema['response']>[StatusCode]>, StatusCode> &
       HttpRequestHandlerResponseDeclarationWithHeaders<Default<Default<MethodSchema['response']>[StatusCode]>>
   : never;
+
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
+export interface HttpRequestHandlerActionResponseDeclaration {
+  status?: never;
+  action: UnhandledRequestStrategy.Action;
+}
+
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
+export type HttpRequestHandlerResponseDeclaration<
+  MethodSchema extends HttpMethodSchema = HttpMethodSchema,
+  StatusCode extends HttpStatusCode = HttpStatusCode,
+> = HttpRequestHandlerStatusResponseDeclaration<MethodSchema, StatusCode> | HttpRequestHandlerActionResponseDeclaration;
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
 export type HttpRequestHandlerResponseDeclarationFactory<

@@ -8,7 +8,7 @@ import NotRunningHttpInterceptorError from '@/http/interceptor/errors/NotRunning
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { expectBypassedResponse, expectPreflightResponse } from '@tests/utils/fetch';
 import {
-  assessPreflightInterference,
+  getPreflightAssessment,
   createInternalHttpInterceptor,
   usingHttpInterceptorWorker,
 } from '@tests/utils/interceptors';
@@ -50,7 +50,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
   });
 
   describe.each(HTTP_METHODS)('Method (%s)', (method) => {
-    const { overridesPreflightResponse, numberOfRequestsIncludingPreflight } = assessPreflightInterference({
+    const { overridesPreflightResponse, numberOfRequestsIncludingPreflight } = getPreflightAssessment({
       method,
       platform,
       type: defaultWorkerOptions.type,

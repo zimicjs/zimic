@@ -294,10 +294,7 @@ class HttpInterceptorClient<
     if (this.requestSaving.enabled) {
       const responseClone = response.clone();
 
-      const parsedResponse = await HttpInterceptorWorker.parseRawResponse<
-        Default<Schema[Path][Method]>,
-        typeof responseDeclaration.status
-      >(responseClone);
+      const parsedResponse = await HttpInterceptorWorker.parseRawResponse<Default<Schema[Path][Method]>>(responseClone);
 
       matchedHandler.saveInterceptedRequest(parsedRequest, parsedResponse);
     }

@@ -17,11 +17,11 @@ import type LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '../../RemoteHttpRequestHandler';
 import {
   HttpInterceptorRequest,
-  HttpRequestHandlerResponseDeclaration,
   HTTP_INTERCEPTOR_REQUEST_HIDDEN_PROPERTIES,
   HTTP_INTERCEPTOR_RESPONSE_HIDDEN_PROPERTIES,
 } from '../../types/requests';
 import { SharedHttpRequestHandlerTestOptions, Schema, MethodSchema, HeadersSchema } from './types';
+import { expectStatusResponseDeclaration } from './utils';
 
 export function declareDefaultHttpRequestHandlerTests(
   options: SharedHttpRequestHandlerTestOptions & {
@@ -163,14 +163,10 @@ export function declareDefaultHttpRequestHandlerTests(
     const responseStatus = 200;
     const responseBody = { success: true } as const;
 
-    const responseFactory = vi.fn<
-      (
-        request: HttpInterceptorRequest<'/users', MethodSchema>,
-      ) => HttpRequestHandlerResponseDeclaration<MethodSchema, 200>
-    >(() => ({
-      status: responseStatus,
-      body: responseBody,
-    }));
+    const responseFactory = vi.fn(
+      (_request: HttpInterceptorRequest<'/users', MethodSchema>) =>
+        ({ status: responseStatus, body: responseBody }) as const,
+    );
 
     const handler = new Handler<Schema, 'POST', '/users', 200>(interceptorClient, 'POST', '/users');
     await promiseIfRemote(handler.respond(responseFactory), interceptor);
@@ -224,9 +220,10 @@ export function declareDefaultHttpRequestHandlerTests(
     const parsedSecondRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(secondRequest);
     const secondResponseDeclaration = (await handler.applyResponseDeclaration(parsedSecondRequest))!;
 
-    const secondResponse = Response.json(secondResponseDeclaration.body, {
-      status: secondResponseDeclaration.status,
-    });
+    const secondResponseDeclaration = await handler.applyResponseDeclaration(parsedSecondRequest);
+    expectStatusResponseDeclaration(secondResponseDeclaration);
+
+    const secondResponse = Response.json(secondResponseDeclaration.body, { status: secondResponseDeclaration.status });
     const parsedSecondResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(secondResponse);
 
     handler.saveInterceptedRequest(parsedSecondRequest, parsedSecondResponse);
