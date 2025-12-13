@@ -33,8 +33,12 @@ import {
   HttpInterceptorResponse,
 } from '../requestHandler/types/requests';
 import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from './constants';
-import { MSWHttpResponseFactory } from './types/msw';
+import { HttpResponseFactory } from './types/http';
 import { HttpInterceptorWorkerType } from './types/options';
+
+const BYPASSED_RESPONSE_URL = 'about:blank';
+const BYPASSED_RESPONSE_STATUS = 307;
+const BYPASSED_RESPONSE_HEADER = 'x-zimic-interceptor-internal-bypassed';
 
 abstract class HttpInterceptorWorker {
   abstract get type(): HttpInterceptorWorkerType;
@@ -100,7 +104,7 @@ abstract class HttpInterceptorWorker {
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
     path: string,
-    createResponse: MSWHttpResponseFactory,
+    createResponse: HttpResponseFactory,
   ): PossiblePromise<void>;
 
   protected async logUnhandledRequestIfNecessary(
@@ -189,17 +193,48 @@ abstract class HttpInterceptorWorker {
 
   abstract get interceptorsWithHandlers(): AnyHttpInterceptorClient[];
 
+  private static createBypassedResponse() {
+    const response = Response.redirect(BYPASSED_RESPONSE_URL, BYPASSED_RESPONSE_STATUS) as HttpResponse;
+    response.headers.set(BYPASSED_RESPONSE_HEADER, 'true');
+    return response;
+  }
+
+  static isBypassedResponse(response: Response) {
+    return (
+      response.url === BYPASSED_RESPONSE_URL &&
+      response.status === BYPASSED_RESPONSE_STATUS &&
+      response.headers.get(BYPASSED_RESPONSE_HEADER) === 'true'
+    );
+  }
+
+  private static createRejectedResponse() {
+    return Response.error() as HttpResponse;
+  }
+
+  static isRejectedResponse(response: Response) {
+    return response.type === 'error';
+  }
+
   static createResponseFromDeclaration(
     request: Request,
-    declaration: { status: number; headers?: HttpHeadersInit; body?: HttpBody },
+    declaration:
+      | { status: number; headers?: HttpHeadersInit; body?: HttpBody }
+      | { action: UnhandledRequestStrategy.Action },
   ): HttpResponse {
-    const headers = new HttpHeaders(declaration.headers);
-    const status = declaration.status;
+    if ('action' in declaration) {
+      if (declaration.action === 'bypass') {
+        return this.createBypassedResponse();
+      } else {
+        return this.createRejectedResponse();
+      }
+    }
 
-    const canHaveBody = methodCanHaveResponseBody(request.method as HttpMethod) && status !== 204;
+    const headers = new HttpHeaders(declaration.headers);
+
+    const canHaveBody = methodCanHaveResponseBody(request.method as HttpMethod) && declaration.status !== 204;
 
     if (!canHaveBody) {
-      return new Response(null, { headers, status }) as HttpResponse;
+      return new Response(null, { headers, status: declaration.status }) as HttpResponse;
     }
 
     if (
@@ -212,10 +247,10 @@ abstract class HttpInterceptorWorker {
       declaration.body instanceof ArrayBuffer ||
       declaration.body instanceof ReadableStream
     ) {
-      return new Response(declaration.body ?? null, { headers, status }) as HttpResponse;
+      return new Response(declaration.body ?? null, { headers, status: declaration.status }) as HttpResponse;
     }
 
-    return Response.json(declaration.body, { headers, status }) as HttpResponse;
+    return Response.json(declaration.body, { headers, status: declaration.status }) as HttpResponse;
   }
 
   static async parseRawUnhandledRequest(request: Request) {
@@ -305,9 +340,10 @@ abstract class HttpInterceptorWorker {
     return HTTP_INTERCEPTOR_REQUEST_HIDDEN_PROPERTIES.has(property as never);
   }
 
-  static async parseRawResponse<MethodSchema extends HttpMethodSchema, StatusCode extends HttpStatusCode>(
-    originalRawResponse: Response,
-  ): Promise<HttpInterceptorResponse<MethodSchema, StatusCode>> {
+  static async parseRawResponse<
+    MethodSchema extends HttpMethodSchema,
+    StatusCode extends HttpStatusCode = HttpStatusCode,
+  >(originalRawResponse: Response): Promise<HttpInterceptorResponse<MethodSchema, StatusCode>> {
     const rawResponse = originalRawResponse.clone();
     const rawResponseClone = rawResponse.clone();
 

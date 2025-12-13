@@ -21,6 +21,7 @@ import {
 } from './constants';
 import NotRunningInterceptorServerError from './errors/NotRunningInterceptorServerError';
 import RunningInterceptorServerError from './errors/RunningInterceptorServerError';
+import UnsupportedBypassedResponseError from './errors/UnsupportedBypassedResponseError';
 import { InterceptorServerOptions } from './types/options';
 import { InterceptorServer as PublicInterceptorServer } from './types/public';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from './types/schema';
@@ -297,7 +298,17 @@ class InterceptorServer implements PublicInterceptorServer {
       const { response, matchedSomeInterceptor } = await this.createResponseForRequest(serializedRequest);
 
       if (response) {
-        this.setDefaultAccessControlHeaders(response, ['access-control-allow-origin', 'access-control-expose-headers']);
+        if (HttpInterceptorWorker.isBypassedResponse(response)) {
+          throw new UnsupportedBypassedResponseError();
+        }
+
+        if (!HttpInterceptorWorker.isRejectedResponse(response)) {
+          this.setDefaultAccessControlHeaders(response, [
+            'access-control-allow-origin',
+            'access-control-expose-headers',
+          ]);
+        }
+
         await sendNodeResponse(response, nodeResponse, nodeRequest, true);
         return;
       }
@@ -316,7 +327,7 @@ class InterceptorServer implements PublicInterceptorServer {
         await this.logUnhandledRequestIfNecessary(request, serializedRequest);
       }
 
-      nodeResponse.destroy();
+      await sendNodeResponse(Response.error(), nodeResponse, nodeRequest, true);
     } catch (error) {
       const isMessageAbortError = error instanceof WebSocketMessageAbortError;
 
@@ -325,7 +336,7 @@ class InterceptorServer implements PublicInterceptorServer {
         await this.logUnhandledRequestIfNecessary(request, serializedRequest);
       }
 
-      nodeResponse.destroy();
+      await sendNodeResponse(Response.error(), nodeResponse, nodeRequest, true);
     }
   };
 
