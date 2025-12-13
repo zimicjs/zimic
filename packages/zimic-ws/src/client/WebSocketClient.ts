@@ -5,7 +5,7 @@ import { closeClientSocket, openClientSocket } from './utils/lifecycle';
 
 export type WebSocketClientEventListener<Schema extends WebSocketSchema, Type extends WebSocketEventType<Schema>> = (
   this: WebSocketClient<Schema>,
-  event: WebSocketEvent<Type>,
+  event: WebSocketEvent<Schema, Type>,
 ) => unknown;
 
 type WebSocketClientRawEventListener = (this: ClientSocket, event: Event) => unknown;
@@ -22,10 +22,17 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
   private _onclose: WebSocketClientEventListener<Schema, 'close'> | null = null;
   private _onerror: WebSocketClientEventListener<Schema, 'error'> | null = null;
 
-  private listeners = new Map<
-    WebSocketClientEventListener<Schema, WebSocketEventType<Schema>>,
-    { type: WebSocketEventType<Schema>; rawListener: WebSocketClientRawEventListener }
-  >();
+  private listeners: {
+    [Type in WebSocketEventType<Schema>]: Map<
+      WebSocketClientEventListener<Schema, Type>,
+      WebSocketClientRawEventListener
+    >;
+  } = {
+    open: new Map(),
+    message: new Map(),
+    close: new Map(),
+    error: new Map(),
+  };
 
   constructor(
     private _url: string,
@@ -111,11 +118,13 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
       this.onclose = null;
       this.onerror = null;
 
-      for (const { type, rawListener } of this.listeners.values()) {
-        this.socket.removeEventListener(type, rawListener);
-      }
+      for (const [type, listenerToRawListener] of Object.entries(this.listeners)) {
+        for (const rawListener of listenerToRawListener.values()) {
+          this.socket.removeEventListener(type, rawListener);
+        }
 
-      this.listeners.clear();
+        listenerToRawListener.clear();
+      }
 
       this.socket = undefined;
     }
@@ -127,25 +136,25 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
 
   addEventListener<Type extends WebSocketEventType<Schema>>(
     type: Type,
-    listener: (this: WebSocketClient<Schema>, event: WebSocketEvent<Type>) => unknown,
+    listener: (this: WebSocketClient<Schema>, event: WebSocketEvent<Schema, Type>) => unknown,
     options?: boolean | AddEventListenerOptions,
   ) {
     const rawListener = listener.bind(this) as WebSocketClientRawEventListener;
 
     this.socket?.addEventListener(type, rawListener, options);
-    this.listeners.set(listener, { type, rawListener });
+    this.listeners[type].set(listener, rawListener);
   }
 
   removeEventListener<Type extends WebSocketEventType<Schema>>(
     type: Type,
-    listener: (this: WebSocketClient<Schema>, event: WebSocketEvent<Type>) => unknown,
+    listener: (this: WebSocketClient<Schema>, event: WebSocketEvent<Schema, Type>) => unknown,
     options?: boolean | EventListenerOptions,
   ) {
-    const { rawListener } = this.listeners.get(listener) ?? {};
+    const rawListener = this.listeners[type].get(listener);
 
     if (rawListener) {
       this.socket?.removeEventListener(type, rawListener, options);
-      this.listeners.delete(listener);
+      this.listeners[type].delete(listener);
     }
   }
 
@@ -182,34 +191,36 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
   }
 
   private setUnitaryEventListener<Type extends WebSocketEventType<Schema>>(
-    type: WebSocketEventType<Schema>,
+    type: Type,
     listener: WebSocketClientEventListener<Schema, Type> | null,
   ) {
+    type PrivateUnitaryListener = typeof listener;
+
     if (listener) {
       const rawListener = listener.bind(this) as WebSocketClientRawEventListener;
-      this.listeners.set(listener, { type, rawListener });
+      this.listeners[type].set(listener, rawListener);
 
       if (this.socket) {
         this.socket[`on${type}`] = rawListener;
       }
 
-      this[`_on${type}`] = listener;
+      (this[`_on${type}`] as PrivateUnitaryListener) = listener;
     } else {
-      const currentListener = this[`_on${type}`];
+      const currentListener = this[`_on${type}`] as PrivateUnitaryListener;
 
       if (currentListener) {
-        this.listeners.delete(currentListener);
+        this.listeners[type].delete(currentListener);
       }
 
       if (this.socket) {
         this.socket[`on${type}`] = null;
       }
 
-      this[`_on${type}`] = null;
+      (this[`_on${type}`] as PrivateUnitaryListener) = null;
     }
   }
 
-  dispatchEvent<Type extends WebSocketEventType<Schema>>(event: WebSocketEvent<Type>) {
+  dispatchEvent<Type extends WebSocketEventType<Schema>>(event: WebSocketEvent<Schema, Type>) {
     return this.socket?.dispatchEvent(event) ?? false;
   }
 }
