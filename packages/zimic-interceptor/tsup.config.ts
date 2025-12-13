@@ -7,12 +7,12 @@ const sharedConfig: Options = {
   treeshake: true,
   minify: false,
   keepNames: false,
+  noExternal: ['@zimic/utils'],
   env: {
     INTERCEPTOR_SERVER_ACCESS_CONTROL_MAX_AGE: '',
     INTERCEPTOR_TOKEN_HASH_ITERATIONS: '1000000',
     VITEST_POOL_ID: '',
   },
-  noExternal: ['@zimic/utils'],
 };
 
 const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
