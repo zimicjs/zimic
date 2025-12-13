@@ -47,7 +47,8 @@
     "!src/**/__tests__",
     "!src/**/*.test.ts",
     "dist",
-    "index.d.ts"
+    "index.d.ts",
+    "server.d.ts"
   ],
   "sideEffects": false,
   "main": "./dist/index.js",
