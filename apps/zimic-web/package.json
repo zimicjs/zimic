@@ -26,25 +26,25 @@
     "@tanstack/react-query": "^5.90.12",
     "@zimic/fetch": "workspace:*",
     "@zimic/http": "workspace:*",
-    "dompurify": "^3.3.0",
+    "dompurify": "^3.3.1",
     "prism-react-renderer": "^2.3.0",
-    "react": "^19.2.1",
-    "react-dom": "^19.2.1"
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "3.9.2",
     "@docusaurus/types": "3.9.2",
-    "@tailwindcss/postcss": "^4.1.17",
+    "@tailwindcss/postcss": "^4.1.18",
     "@types/react": "^19.2.7",
     "@zimic/eslint-config-react": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^11.0.0",
     "esbuild-loader": "^4.4.0",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.2",
     "postcss": "^8.5.6",
     "sponsorkit": "^17.0.0",
-    "tailwindcss": "^4.1.17",
+    "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3"
   }
 }

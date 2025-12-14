@@ -197,7 +197,7 @@
     "typegen:fixtures": "tsx ./scripts/typegen/generateFixtureTypes.js"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
+    "@types/node": "^25.0.2",
     "@vitest/browser": "^4.0.15",
     "@vitest/browser-playwright": "^4.0.15",
     "@vitest/coverage-istanbul": "^4.0.15",
@@ -205,7 +205,7 @@
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^11.0.0",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.2",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vitest": "^4.0.15"
