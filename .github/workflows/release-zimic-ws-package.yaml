@@ -1,12 +1,9 @@
 name: 'Release Package: @zimic/ws'
 
 on:
-  release:
-    types:
-      - published
   push:
     tags:
-      - '@zimic/ws@*-*'
+      - '@zimic/ws@*'
 
 concurrency:
   group: release-zimic-ws-${{ github.ref_name }}
