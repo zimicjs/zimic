@@ -87,7 +87,7 @@
     "ws": "8.18.3"
   },
   "devDependencies": {
-    "@types/node": "^24.10.0",
+    "@types/node": "^25.0.2",
     "@types/ws": "^8.18.1",
     "@vitest/browser": "^4.0.6",
     "@vitest/browser-playwright": "^4.0.6",
@@ -98,7 +98,7 @@
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^11.0.0",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.2",
     "playwright": "^1.56.1",
     "tsup": "^8.4.0",
     "typescript": "^5.9.3",
