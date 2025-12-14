@@ -93,7 +93,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ always() }}
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: .turbo/cache
           key: ${{ runner.os }}-turbo
@@ -142,7 +142,7 @@ jobs:
           PLAYWRIGHT_WORKERS: 2
 
       - name: Upload test results
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: ${{ always() }}
         with:
           name: test-results-node-${{ matrix.node-version }}
@@ -155,7 +155,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ always() }}
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: .turbo/cache
           key: ${{ runner.os }}-turbo
@@ -237,7 +237,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ always() }}
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: .turbo/cache
           key: ${{ runner.os }}-turbo
