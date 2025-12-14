@@ -1,6 +1,7 @@
 minimumReleaseAge: 1440
 
 minimumReleaseAgeExclude:
+  - '@zimic/*'
   - '@types/*'
 
 packages:
