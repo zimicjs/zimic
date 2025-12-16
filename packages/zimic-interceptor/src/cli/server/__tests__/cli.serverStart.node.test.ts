@@ -4,7 +4,6 @@ import { CommandError } from '@zimic/utils/process/runCommand';
 import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@zimic/utils/server/lifecycle';
 import waitFor from '@zimic/utils/time/waitFor';
 import waitForDelay from '@zimic/utils/time/waitForDelay';
-import waitForNot from '@zimic/utils/time/waitForNot';
 import { PossiblePromise } from '@zimic/utils/types';
 import fs from 'fs';
 import path from 'path';
@@ -18,6 +17,7 @@ import { importCrypto } from '@/utils/crypto';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 import WebSocketServer from '@/webSocket/WebSocketServer';
 import { usingIgnoredConsole } from '@tests/utils/console';
+import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import runCLI from '../../cli';
 import { serverSingleton as server } from '../start';
@@ -729,23 +729,20 @@ describe('CLI > Server start', async () => {
       expect(server!.hostname).toBe('localhost');
       expect(server!.port).toEqual(expect.any(Number));
 
-      const interceptor = createHttpInterceptor<{
+      await usingHttpInterceptor<{
         '/users': {
           GET: { response: { 204: {} } };
         };
-      }>({
-        type: 'remote',
-        baseURL: `http://localhost:${server!.port}`,
-      });
-
-      try {
-        await interceptor.start();
+      }>({ type: 'remote', baseURL: `http://localhost:${server!.port}` }, async (interceptor) => {
         expect(interceptor.isRunning).toBe(true);
 
         let responseFactoryPromise: Promise<{ status: 204 }> | undefined;
+        let resolveResponseFactoryPromise: ((value: { status: 204 }) => void) | undefined;
 
-        const responseFactory = vi.fn(async () => {
-          responseFactoryPromise = waitForDelay(250).then(() => ({ status: 204 }) as const);
+        const responseFactory = vi.fn(() => {
+          responseFactoryPromise = new Promise<{ status: 204 }>((resolve) => {
+            resolveResponseFactoryPromise = resolve;
+          });
           return responseFactoryPromise;
         });
 
@@ -756,6 +753,7 @@ describe('CLI > Server start', async () => {
 
         await waitFor(() => {
           expect(responseFactoryPromise).toBeDefined();
+          expect(resolveResponseFactoryPromise).toBeDefined();
         });
 
         await interceptor.stop();
@@ -765,15 +763,13 @@ describe('CLI > Server start', async () => {
         await responsePromise;
         expect(onFetchError).toHaveBeenCalled();
 
+        resolveResponseFactoryPromise!({ status: 204 });
+
         // Wait for slow factory to return the response after the interceptor is already stopped
         await responseFactoryPromise;
 
-        await waitForNot(() => {
-          expect(console.error).toHaveBeenCalled();
-        });
-      } finally {
-        await interceptor.stop();
-      }
+        expect(console.error).not.toHaveBeenCalled();
+      });
     });
   });
 

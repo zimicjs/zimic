@@ -56,6 +56,7 @@ export function deserializeRequest(serializedRequest: SerializedHttpRequest): Re
 }
 
 export type SerializedResponse = JSONValue<{
+  type: Response['type'];
   status: number;
   statusText: string;
   headers: Record<string, string>;
@@ -67,6 +68,7 @@ export async function serializeResponse(response: Response): Promise<SerializedR
   const serializedBody = responseClone.body ? convertArrayBufferToBase64(await responseClone.arrayBuffer()) : null;
 
   return {
+    type: response.type,
     status: response.status,
     statusText: response.statusText,
     headers: Object.fromEntries(response.headers),
@@ -75,6 +77,10 @@ export async function serializeResponse(response: Response): Promise<SerializedR
 }
 
 export function deserializeResponse(serializedResponse: SerializedResponse): Response {
+  if (serializedResponse.type === 'error') {
+    return Response.error();
+  }
+
   const deserializedBody = serializedResponse.body ? convertBase64ToArrayBuffer(serializedResponse.body) : null;
 
   return new Response(deserializedBody, {

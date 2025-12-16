@@ -267,7 +267,7 @@ class HttpInterceptorClient<
     }
   }
 
-  private async handleInterceptedRequest<
+  async handleInterceptedRequest<
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
@@ -284,9 +284,12 @@ class HttpInterceptorClient<
     }
 
     const responseDeclaration = await matchedHandler.applyResponseDeclaration(parsedRequest);
-    const response = HttpInterceptorWorker.createResponseFromDeclaration(request, responseDeclaration);
+    const response = await this.workerOrThrow.createResponseFromDeclaration(request, responseDeclaration);
 
-    if (this.requestSaving.enabled) {
+    const shouldSaveInterceptedRequest =
+      this.requestSaving.enabled && response && !HttpInterceptorWorker.isRejectedResponse(response);
+
+    if (shouldSaveInterceptedRequest) {
       const responseClone = response.clone();
 
       const parsedResponse = await HttpInterceptorWorker.parseRawResponse<Default<Schema[Path][Method]>>(responseClone);

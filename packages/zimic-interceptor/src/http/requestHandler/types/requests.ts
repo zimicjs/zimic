@@ -48,10 +48,10 @@ export type HttpRequestHandlerStatusResponseDeclaration<
   MethodSchema extends HttpMethodSchema = HttpMethodSchema,
   StatusCode extends HttpStatusCode = HttpStatusCode,
 > = StatusCode extends StatusCode
-  ? {
-      status: StatusCode;
-      action?: never;
-    } & HttpRequestHandlerResponseWithBody<Default<Default<MethodSchema['response']>[StatusCode]>, StatusCode> &
+  ? { status: StatusCode; action?: never } & HttpRequestHandlerResponseWithBody<
+      Default<Default<MethodSchema['response']>[StatusCode]>,
+      StatusCode
+    > &
       HttpRequestHandlerResponseDeclarationWithHeaders<Default<Default<MethodSchema['response']>[StatusCode]>>
   : never;
 

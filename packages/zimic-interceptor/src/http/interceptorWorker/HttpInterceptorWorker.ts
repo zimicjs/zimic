@@ -10,6 +10,7 @@ import {
   InferPathParams,
   parseHttpBody,
   HttpSearchParams,
+  HttpRequest,
 } from '@zimic/http';
 import isDefined from '@zimic/utils/data/isDefined';
 import { Default, PossiblePromise } from '@zimic/utils/types';
@@ -36,9 +37,8 @@ import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from './constants';
 import { HttpResponseFactory } from './types/http';
 import { HttpInterceptorWorkerType } from './types/options';
 
-const BYPASSED_RESPONSE_URL = 'about:blank';
-const BYPASSED_RESPONSE_STATUS = 307;
-const BYPASSED_RESPONSE_HEADER = 'x-zimic-interceptor-internal-bypassed';
+const BYPASSED_RESPONSE_STATUS = 302;
+const BYPASSED_RESPONSE_HEADER = 'x-zimic-interceptor-bypassed';
 
 abstract class HttpInterceptorWorker {
   abstract get type(): HttpInterceptorWorkerType;
@@ -193,21 +193,18 @@ abstract class HttpInterceptorWorker {
 
   abstract get interceptorsWithHandlers(): AnyHttpInterceptorClient[];
 
-  private static createBypassedResponse() {
-    const response = Response.redirect(BYPASSED_RESPONSE_URL, BYPASSED_RESPONSE_STATUS) as HttpResponse;
-    response.headers.set(BYPASSED_RESPONSE_HEADER, 'true');
-    return response;
+  private createBypassedResponse() {
+    return new Response(null, {
+      status: BYPASSED_RESPONSE_STATUS,
+      headers: { [BYPASSED_RESPONSE_HEADER]: 'true' },
+    }) as HttpResponse;
   }
 
   static isBypassedResponse(response: Response) {
-    return (
-      response.url === BYPASSED_RESPONSE_URL &&
-      response.status === BYPASSED_RESPONSE_STATUS &&
-      response.headers.get(BYPASSED_RESPONSE_HEADER) === 'true'
-    );
+    return response.status === BYPASSED_RESPONSE_STATUS && response.headers.get(BYPASSED_RESPONSE_HEADER) === 'true';
   }
 
-  private static createRejectedResponse() {
+  private createRejectedResponse() {
     return Response.error() as HttpResponse;
   }
 
@@ -215,12 +212,12 @@ abstract class HttpInterceptorWorker {
     return response.type === 'error';
   }
 
-  static createResponseFromDeclaration(
-    request: Request,
+  createResponseFromDeclaration(
+    request: HttpRequest,
     declaration:
       | { status: number; headers?: HttpHeadersInit; body?: HttpBody }
       | { action: UnhandledRequestStrategy.Action },
-  ): HttpResponse {
+  ): PossiblePromise<HttpResponse | null> {
     if ('action' in declaration) {
       if (declaration.action === 'bypass') {
         return this.createBypassedResponse();
@@ -234,7 +231,10 @@ abstract class HttpInterceptorWorker {
     const canHaveBody = methodCanHaveResponseBody(request.method as HttpMethod) && declaration.status !== 204;
 
     if (!canHaveBody) {
-      return new Response(null, { headers, status: declaration.status }) as HttpResponse;
+      return new Response(null, {
+        headers,
+        status: declaration.status,
+      }) as HttpResponse;
     }
 
     if (
@@ -247,10 +247,16 @@ abstract class HttpInterceptorWorker {
       declaration.body instanceof ArrayBuffer ||
       declaration.body instanceof ReadableStream
     ) {
-      return new Response(declaration.body ?? null, { headers, status: declaration.status }) as HttpResponse;
+      return new Response(declaration.body ?? null, {
+        headers,
+        status: declaration.status,
+      }) as HttpResponse;
     }
 
-    return Response.json(declaration.body, { headers, status: declaration.status }) as HttpResponse;
+    return Response.json(declaration.body, {
+      headers,
+      status: declaration.status,
+    }) as HttpResponse;
   }
 
   static async parseRawUnhandledRequest(request: Request) {
