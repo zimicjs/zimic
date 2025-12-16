@@ -88,13 +88,13 @@ runs:
           types:check lint:turbo \
           --continue \
           --concurrency 100% \
-          --filter zimic-test-client --filter 'zimic-example*'
+          --filter ...^${{ inputs.project-name }}
 
         pnpm turbo \
           types:check lint:turbo test:turbo \
           --continue \
           --concurrency 1 \
-          --filter zimic-test-client --filter 'zimic-example*'
+          --filter ...^${{ inputs.project-name }}
       env:
         TURBO_TOKEN: ${{ inputs.turbo-token }}
         TURBO_TEAM: ${{ inputs.turbo-team }}
