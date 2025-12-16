@@ -1,4 +1,4 @@
-import { HttpResponse, HttpHeaders, HTTP_METHODS } from '@zimic/http';
+import { HttpResponse, HttpHeaders, HTTP_METHODS, HttpMethod } from '@zimic/http';
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import waitForDelay from '@zimic/utils/time/waitForDelay';
 import { PossiblePromise } from '@zimic/utils/types';
@@ -6,6 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 
 import NotRunningHttpInterceptorError from '@/http/interceptor/errors/NotRunningHttpInterceptorError';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
+import { methodCanHaveResponseBody } from '@/utils/http';
 import { expectBypassedResponse, expectPreflightResponse } from '@tests/utils/fetch';
 import {
   getPreflightAssessment,
@@ -71,8 +72,16 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     const responseStatus = 200;
     const responseBody = { success: true };
 
-    function requestHandler(_context: HttpResponseFactoryContext): PossiblePromise<HttpResponse | null> {
-      const response = Response.json(responseBody, {
+    function requestHandler({ request }: HttpResponseFactoryContext): PossiblePromise<HttpResponse | null> {
+      if (methodCanHaveResponseBody(request.method as HttpMethod)) {
+        const response = Response.json(responseBody, {
+          status: responseStatus,
+          headers: defaultHeaders,
+        });
+        return response as HttpResponse;
+      }
+
+      const response = new Response(null, {
         status: responseStatus,
         headers: defaultHeaders,
       });

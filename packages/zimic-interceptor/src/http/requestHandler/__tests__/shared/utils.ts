@@ -5,7 +5,6 @@ import { expect } from 'vitest';
 import TimesCheckError from '../../errors/TimesCheckError';
 import TimesDeclarationPointer from '../../errors/TimesDeclarationPointer';
 import {
-  HttpRequestHandlerActionResponseDeclaration,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerStatusResponseDeclaration,
 } from '../../types/requests';
@@ -67,14 +66,4 @@ export function expectStatusResponseDeclaration<
 ): asserts declaration is HttpRequestHandlerStatusResponseDeclaration<MethodSchema, StatusCode> {
   expect(declaration).toHaveProperty('status');
   expect(declaration).not.toHaveProperty('action');
-}
-
-export function expectActionResponseDeclaration<
-  MethodSchema extends HttpMethodSchema = HttpMethodSchema,
-  StatusCode extends HttpStatusCode = HttpStatusCode,
->(
-  declaration: HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>,
-): asserts declaration is HttpRequestHandlerActionResponseDeclaration {
-  expect(declaration).toHaveProperty('action');
-  expect(declaration).not.toHaveProperty('status');
 }

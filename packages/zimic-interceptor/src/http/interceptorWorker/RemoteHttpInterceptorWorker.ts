@@ -1,7 +1,8 @@
-import { HttpMethod, HttpSchema } from '@zimic/http';
+import { HttpBody, HttpHeadersInit, HttpMethod, HttpRequest, HttpSchema } from '@zimic/http';
 import { PossiblePromise } from '@zimic/utils/types';
 import validatePathParams from '@zimic/utils/url/validatePathParams';
 
+import UnsupportedBypassedResponseError from '@/server/errors/UnsupportedBypassedResponseError';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/types/schema';
 import { importCrypto } from '@/utils/crypto';
 import { isClientSide, isServerSide } from '@/utils/environment';
@@ -13,7 +14,7 @@ import WebSocketClient from '@/webSocket/WebSocketClient';
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
-import { HttpInterceptorPlatform } from '../interceptor/types/options';
+import { HttpInterceptorPlatform, UnhandledRequestStrategy } from '../interceptor/types/options';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { HttpResponseFactory, HttpResponseFactoryContext } from './types/http';
 import { RemoteHttpInterceptorWorkerOptions } from './types/options';
@@ -162,6 +163,25 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       method: handler.method,
       path: handler.path,
     });
+  }
+
+  async createResponseFromDeclaration(
+    request: HttpRequest,
+    declaration:
+      | { status: number; headers?: HttpHeadersInit; body?: HttpBody }
+      | { action: UnhandledRequestStrategy.Action },
+  ) {
+    const response = await super.createResponseFromDeclaration(request, declaration);
+
+    if (response && HttpInterceptorWorker.isBypassedResponse(response)) {
+      throw new UnsupportedBypassedResponseError();
+    }
+
+    if (response && HttpInterceptorWorker.isRejectedResponse(response)) {
+      return response;
+    }
+
+    return response;
   }
 
   async clearHandlers<Schema extends HttpSchema>(
