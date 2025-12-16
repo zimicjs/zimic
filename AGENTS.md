@@ -6,8 +6,8 @@ Guidelines for implementing changes that align with project architecture, conven
 
 TypeScript monorepo (pnpm + turborepo) providing HTTP integration libraries:
 
-- **Core packages**: `@zimic/http` (HTTP schemas), `@zimic/fetch` (type-safe client), `@zimic/interceptor` (request
-  mocking), `@zimic/utils` (shared utilities)
+- **Core packages**: `@zimic/http` (HTTP schemas), `@zimic/fetch` (Fetch client), `@zimic/ws` (WebSocket client and
+  server), `@zimic/interceptor` (HTTP request mocking), `@zimic/utils` (shared utilities)
 - **Configuration**: `tsconfig`, `eslint-config`, `eslint-config-node`, `lint-staged-config`
 - **Documentation**: `apps/zimic-web` (Docusaurus + Tailwind CSS)
 - **Testing**: `apps/zimic-test-client` (verifies exports and build artifacts)
@@ -84,17 +84,6 @@ Run in the target package directory:
 - **Optimization**: Only when measured; avoid premature optimization
 - **CLI** (if applicable): Build to `dist/*.js` via `tsup`; use `yargs` with kebab-case options
 
-## Common Mistakes to Avoid
-
-- Missing tests for edge cases, error paths, or new features
-- Forgetting to update documentation or examples after API changes
-- Skipping local verification (types, lint, tests, build)
-- Breaking public APIs without version bump
-- Adding unnecessary dependencies (check bundle size, license, redundancy)
-- Introducing side effects that break tree-shaking
-- Exporting test utilities in production bundles
-- Missing `exports` map updates for new public APIs
-
 ## Commit Conventions
 
 - **Format**: Conventional commits, lowercase imperative, scoped to package
@@ -102,3 +91,16 @@ Run in the target package directory:
 - **Scope**: Use `root` for repository-wide changes; see `.commitlintrc.json` for all scopes
 - **Branches**: Align with commit type (e.g., `feat/123-request-caching`)
 - **PRs**: Follow same conventions; link issues; ensure all CI checks pass
+
+## Code Review Guidelines
+
+Focus reviews on relevance and quality:
+
+- **Scope**: Changes match specification; no unrelated modifications
+- **Quality**: Clear naming, simple implementation, proper abstractions
+- **Testing**: 100% coverage maintained; high-quality tests covering edge cases and error paths; cross-platform verified
+- **Compatibility**: Works in Node.js and browser; local + remote modes tested (interceptor)
+- **Security**: No hardcoded secrets; input validation; proper error handling; no vulnerable pathways
+- **Maintainability**: Documentation and examples updated; `exports` map current; breaking changes versioned
+- **Bundle**: No unnecessary dependencies; tree-shaking preserved; granular exports without test or internal code
+- **Build**: TypeScript strict compliance; no `any`; all verification steps pass (types, lint, tests, build)
