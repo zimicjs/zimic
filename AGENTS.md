@@ -8,7 +8,7 @@ TypeScript monorepo (pnpm + turborepo) providing HTTP integration libraries:
 
 - **Core packages**: `@zimic/http` (HTTP schemas), `@zimic/fetch` (Fetch client), `@zimic/ws` (WebSocket client and
   server), `@zimic/interceptor` (HTTP request mocking), `@zimic/utils` (shared utilities)
-- **Configuration**: `tsconfig`, `eslint-config`, `eslint-config-node`, `lint-staged-config`
+- **Configuration**: `tsconfig`, `eslint-config`, `eslint-config-node`, `eslint-config-react`, `lint-staged-config`
 - **Documentation**: `apps/zimic-web` (Docusaurus + Tailwind CSS)
 - **Testing**: `apps/zimic-test-client` (verifies exports and build artifacts)
 - **Examples**: `examples/*` (integration demonstrations)
