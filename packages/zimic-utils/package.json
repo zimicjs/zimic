@@ -197,10 +197,10 @@
     "typegen:fixtures": "tsx ./scripts/typegen/generateFixtureTypes.js"
   },
   "devDependencies": {
-    "@types/node": "^25.0.2",
-    "@vitest/browser": "^4.0.15",
-    "@vitest/browser-playwright": "^4.0.15",
-    "@vitest/coverage-istanbul": "^4.0.15",
+    "@types/node": "^25.0.3",
+    "@vitest/browser": "^4.0.16",
+    "@vitest/browser-playwright": "^4.0.16",
+    "@vitest/coverage-istanbul": "^4.0.16",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
@@ -208,6 +208,6 @@
     "eslint": "^9.39.2",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.15"
+    "vitest": "^4.0.16"
   }
 }
