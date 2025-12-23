@@ -153,7 +153,9 @@ export function declareDefaultHttpRequestHandlerTests(
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+
     const responseDeclaration = (await handler.applyResponseDeclaration(parsedRequest))!;
+    expectStatusResponseDeclaration(responseDeclaration);
 
     expect(responseDeclaration.status).toBe(responseStatus);
     expect(responseDeclaration.body).toEqual(responseBody);
@@ -173,8 +175,12 @@ export function declareDefaultHttpRequestHandlerTests(
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-    const responseDeclaration = (await handler.applyResponseDeclaration(parsedRequest))!;
 
+    const responseDeclaration = (await handler.applyResponseDeclaration(parsedRequest))!;
+    expectStatusResponseDeclaration(responseDeclaration);
+
+    expect(responseDeclaration.status).toBe(responseStatus);
+    expect(responseDeclaration.body).toEqual(responseBody);
     expect(responseDeclaration.status).toBe(responseStatus);
     expect(responseDeclaration.body).toEqual(responseBody);
 
@@ -201,6 +207,8 @@ export function declareDefaultHttpRequestHandlerTests(
     const parsedFirstRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(firstRequest);
 
     const firstResponseDeclaration = (await handler.applyResponseDeclaration(parsedFirstRequest))!;
+    expectStatusResponseDeclaration(firstResponseDeclaration);
+
     const firstResponse = Response.json(firstResponseDeclaration.body, {
       status: firstResponseDeclaration.status,
     });
@@ -218,9 +226,8 @@ export function declareDefaultHttpRequestHandlerTests(
 
     const secondRequest = new Request(joinURL(baseURL, '/path'));
     const parsedSecondRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(secondRequest);
-    const secondResponseDeclaration = (await handler.applyResponseDeclaration(parsedSecondRequest))!;
 
-    const secondResponseDeclaration = await handler.applyResponseDeclaration(parsedSecondRequest);
+    const secondResponseDeclaration = (await handler.applyResponseDeclaration(parsedSecondRequest))!;
     expectStatusResponseDeclaration(secondResponseDeclaration);
 
     const secondResponse = Response.json(secondResponseDeclaration.body, { status: secondResponseDeclaration.status });
@@ -251,6 +258,8 @@ export function declareDefaultHttpRequestHandlerTests(
     const parsedFirstRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(firstRequest);
 
     const firstResponseDeclaration = (await handler.applyResponseDeclaration(parsedFirstRequest))!;
+    expectStatusResponseDeclaration(firstResponseDeclaration);
+
     const firstResponse = Response.json(firstResponseDeclaration.body, {
       status: firstResponseDeclaration.status,
     });
@@ -285,6 +294,8 @@ export function declareDefaultHttpRequestHandlerTests(
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
     const responseDeclaration = (await handler.applyResponseDeclaration(parsedRequest))!;
+    expectStatusResponseDeclaration(responseDeclaration);
+
     const response = Response.json(responseDeclaration.body, { status: responseDeclaration.status });
     const parsedResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(response);
 
@@ -332,6 +343,8 @@ export function declareDefaultHttpRequestHandlerTests(
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
     const responseDeclaration = (await handler.applyResponseDeclaration(parsedRequest))!;
+    expectStatusResponseDeclaration(responseDeclaration);
+
     const response = Response.json(responseDeclaration.body, { status: responseDeclaration.status });
     const parsedResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(response);
 

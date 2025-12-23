@@ -289,7 +289,7 @@ class HttpInterceptorClient<
       return null;
     }
 
-    const response = HttpInterceptorWorker.createResponseFromDeclaration(request, responseDeclaration);
+    const response = await this.workerOrThrow.createResponseFromDeclaration(request, responseDeclaration);
 
     const shouldSaveInterceptedRequest =
       this.requestSaving.enabled && response && !HttpInterceptorWorker.isRejectedResponse(response);

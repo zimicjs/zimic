@@ -37,8 +37,7 @@ import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from './constants';
 import { HttpResponseFactory } from './types/http';
 import { HttpInterceptorWorkerType } from './types/options';
 
-const BYPASSED_RESPONSE_STATUS = 302;
-const BYPASSED_RESPONSE_HEADER = 'x-zimic-interceptor-bypassed';
+const RESPONSE_ACTION_SYMBOL = Symbol.for('HttpResponse.action');
 
 abstract class HttpInterceptorWorker {
   abstract get type(): HttpInterceptorWorkerType;
@@ -193,23 +192,47 @@ abstract class HttpInterceptorWorker {
 
   abstract get interceptorsWithHandlers(): AnyHttpInterceptorClient[];
 
+  static setResponseAction(response: Response, action: UnhandledRequestStrategy.Action) {
+    Object.defineProperty(response, RESPONSE_ACTION_SYMBOL, {
+      value: action,
+      enumerable: false,
+      configurable: false,
+      writable: false,
+    });
+  }
+
+  static getResponseAction(response: Response): UnhandledRequestStrategy.Action | undefined {
+    if (!(RESPONSE_ACTION_SYMBOL in response)) {
+      return undefined;
+    }
+
+    const action = response[RESPONSE_ACTION_SYMBOL];
+
+    if (action !== 'bypass' && action !== 'reject') {
+      return undefined;
+    }
+
+    return action;
+  }
+
   private createBypassedResponse() {
-    return new Response(null, {
-      status: BYPASSED_RESPONSE_STATUS,
-      headers: { [BYPASSED_RESPONSE_HEADER]: 'true' },
-    }) as HttpResponse;
+    const response = Response.redirect('about:blank', 302) as HttpResponse;
+    HttpInterceptorWorker.setResponseAction(response, 'bypass');
+    return response;
   }
 
   static isBypassedResponse(response: Response) {
-    return response.status === BYPASSED_RESPONSE_STATUS && response.headers.get(BYPASSED_RESPONSE_HEADER) === 'true';
+    return this.getResponseAction(response) === 'bypass';
   }
 
   private createRejectedResponse() {
-    return Response.error() as HttpResponse;
+    const response = Response.error() as HttpResponse;
+    HttpInterceptorWorker.setResponseAction(response, 'reject');
+    return response;
   }
 
   static isRejectedResponse(response: Response) {
-    return response.type === 'error';
+    return this.getResponseAction(response) === 'reject';
   }
 
   createResponseFromDeclaration(
@@ -231,10 +254,7 @@ abstract class HttpInterceptorWorker {
     const canHaveBody = methodCanHaveResponseBody(request.method as HttpMethod) && declaration.status !== 204;
 
     if (!canHaveBody) {
-      return new Response(null, {
-        headers,
-        status: declaration.status,
-      }) as HttpResponse;
+      return new Response(null, { headers, status: declaration.status }) as HttpResponse;
     }
 
     if (
@@ -247,16 +267,10 @@ abstract class HttpInterceptorWorker {
       declaration.body instanceof ArrayBuffer ||
       declaration.body instanceof ReadableStream
     ) {
-      return new Response(declaration.body ?? null, {
-        headers,
-        status: declaration.status,
-      }) as HttpResponse;
+      return new Response(declaration.body ?? null, { headers, status: declaration.status }) as HttpResponse;
     }
 
-    return Response.json(declaration.body, {
-      headers,
-      status: declaration.status,
-    }) as HttpResponse;
+    return Response.json(declaration.body, { headers, status: declaration.status }) as HttpResponse;
   }
 
   static async parseRawUnhandledRequest(request: Request) {
