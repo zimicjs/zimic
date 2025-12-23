@@ -2,11 +2,12 @@ import { HttpBody, HttpHeadersInit, HttpMethod, HttpRequest, HttpSchema } from '
 import { PossiblePromise } from '@zimic/utils/types';
 import validatePathParams from '@zimic/utils/url/validatePathParams';
 
-import UnsupportedBypassedResponseError from '@/server/errors/UnsupportedBypassedResponseError';
+import UnsupportedResponseBypassError from '@/server/errors/UnsupportedResponseBypassError';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/types/schema';
 import { importCrypto } from '@/utils/crypto';
 import { isClientSide, isServerSide } from '@/utils/environment';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
+import { methodCanHaveResponseBody } from '@/utils/http';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocketEventMessage } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
@@ -79,9 +80,12 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     try {
       const rawResponse = (await handler?.createResponse({ request })) ?? null;
-      const response = rawResponse && request.method === 'HEAD' ? new Response(null, rawResponse) : rawResponse;
 
-      if (response) {
+      if (rawResponse) {
+        const response = methodCanHaveResponseBody(request.method as HttpMethod)
+          ? rawResponse
+          : new Response(null, rawResponse);
+
         return { response: await serializeResponse(response) };
       }
     } catch (error) {
@@ -174,7 +178,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     const response = await super.createResponseFromDeclaration(request, declaration);
 
     if (response && HttpInterceptorWorker.isBypassedResponse(response)) {
-      throw new UnsupportedBypassedResponseError();
+      throw new UnsupportedResponseBypassError();
     }
 
     if (response && HttpInterceptorWorker.isRejectedResponse(response)) {

@@ -1,5 +1,8 @@
 import { JSONValue } from '@zimic/http';
 
+import { UnhandledRequestStrategy } from '@/http';
+import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
+
 import { convertArrayBufferToBase64, convertBase64ToArrayBuffer } from './data';
 
 export type SerializedHttpRequest = JSONValue<{
@@ -57,6 +60,7 @@ export function deserializeRequest(serializedRequest: SerializedHttpRequest): Re
 
 export type SerializedResponse = JSONValue<{
   type: Response['type'];
+  action?: UnhandledRequestStrategy.Action;
   status: number;
   statusText: string;
   headers: Record<string, string>;
@@ -69,6 +73,7 @@ export async function serializeResponse(response: Response): Promise<SerializedR
 
   return {
     type: response.type,
+    action: HttpInterceptorWorker.getResponseAction(response),
     status: response.status,
     statusText: response.statusText,
     headers: Object.fromEntries(response.headers),
@@ -77,15 +82,23 @@ export async function serializeResponse(response: Response): Promise<SerializedR
 }
 
 export function deserializeResponse(serializedResponse: SerializedResponse): Response {
+  let response: Response;
+
   if (serializedResponse.type === 'error') {
-    return Response.error();
+    response = Response.error();
+  } else {
+    const deserializedBody = serializedResponse.body ? convertBase64ToArrayBuffer(serializedResponse.body) : null;
+
+    response = new Response(deserializedBody, {
+      status: serializedResponse.status,
+      statusText: serializedResponse.statusText,
+      headers: new Headers(serializedResponse.headers),
+    });
   }
 
-  const deserializedBody = serializedResponse.body ? convertBase64ToArrayBuffer(serializedResponse.body) : null;
+  if (serializedResponse.action) {
+    HttpInterceptorWorker.setResponseAction(response, serializedResponse.action);
+  }
 
-  return new Response(deserializedBody, {
-    status: serializedResponse.status,
-    statusText: serializedResponse.statusText,
-    headers: new Headers(serializedResponse.headers),
-  });
+  return response;
 }

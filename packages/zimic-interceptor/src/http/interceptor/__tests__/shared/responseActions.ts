@@ -4,7 +4,7 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import UnsupportedBypassedResponseError from '@/server/errors/UnsupportedBypassedResponseError';
+import UnsupportedResponseBypassError from '@/server/errors/UnsupportedResponseBypassError';
 import { usingElapsedTime } from '@/utils/time';
 import {
   GLOBAL_FALLBACK_SERVER_RESPONSE_STATUS,
@@ -115,7 +115,7 @@ export function declareResponseActionsHttpInterceptorTests(options: RuntimeShare
           await expectFetchError(responsePromise);
 
           expect(console.error).toHaveBeenCalledTimes(1);
-          expect(console.error).toHaveBeenCalledWith(new UnsupportedBypassedResponseError());
+          expect(console.error).toHaveBeenCalledWith(new UnsupportedResponseBypassError());
         });
 
         expect(handler.requests).toHaveLength(0);
@@ -228,60 +228,59 @@ export function declareResponseActionsHttpInterceptorTests(options: RuntimeShare
         await usingHttpInterceptor<{
           '/users': { GET: MethodSchema };
         }>(interceptorOptions, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor
-              .get('/users')
-              .with({ searchParams: { value: '1' } })
-              .respond({ status: 204 }),
-            interceptor,
-          );
-          expect(handler.requests).toHaveLength(0);
+          const handlers = await Promise.all([
+            promiseIfRemote(
+              interceptor
+                .get('/users')
+                .with({ searchParams: { value: '1' } })
+                .respond({ status: 204 }),
+              interceptor,
+            ),
+            promiseIfRemote(
+              interceptor
+                .get('/users')
+                .with({ searchParams: { value: '2' } })
+                .respond({ action: 'bypass' }),
+              interceptor,
+            ),
+          ]);
+
+          expect(handlers[0].requests).toHaveLength(0);
+          expect(handlers[1].requests).toHaveLength(0);
 
           const searchParams = new HttpSearchParams({ value: '1' });
 
           let response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
           expect(response.status).toBe(204);
 
-          expect(handler.requests).toHaveLength(1);
-          expect(handler.requests[0].response.status).toBe(204);
+          expect(handlers[0].requests).toHaveLength(1);
+          expect(handlers[1].requests).toHaveLength(0);
+
+          expect(handlers[0].requests[0].response.status).toBe(204);
 
           searchParams.set('value', '2');
 
-          let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
-          await expectFetchError(responsePromise);
-
-          expect(handler.requests).toHaveLength(1);
-
-          const otherHandler = await promiseIfRemote(
-            interceptor
-              .get('/users')
-              .with({ searchParams: { value: '2' } })
-              .respond({ action: 'bypass' }),
-            interceptor,
-          );
-          expect(otherHandler.requests).toHaveLength(0);
-
-          responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
+          const responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
           await expectBypassedResponse(responsePromise);
 
-          expect(handler.requests).toHaveLength(1);
-          expect(otherHandler.requests).toHaveLength(1);
+          expect(handlers[0].requests).toHaveLength(1);
+          expect(handlers[1].requests).toHaveLength(1);
 
-          expect(otherHandler.requests[0].response.status).toBe(GLOBAL_FALLBACK_SERVER_RESPONSE_STATUS);
-          expect(Object.fromEntries(otherHandler.requests[0].response.headers.entries())).toEqual(
+          expect(handlers[1].requests[0].response.status).toBe(GLOBAL_FALLBACK_SERVER_RESPONSE_STATUS);
+          expect(Object.fromEntries(handlers[1].requests[0].response.headers.entries())).toEqual(
             expect.objectContaining(GLOBAL_FALLBACK_SERVER_HEADERS),
           );
-          expect(otherHandler.requests[0].response.body).toBe(null);
+          expect(handlers[1].requests[0].response.body).toBe(null);
 
           searchParams.set('value', '1');
 
           response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
           expect(response.status).toBe(204);
 
-          expect(handler.requests).toHaveLength(2);
-          expect(otherHandler.requests).toHaveLength(1);
+          expect(handlers[0].requests).toHaveLength(2);
+          expect(handlers[1].requests).toHaveLength(1);
 
-          expect(handler.requests[1].response.status).toBe(204);
+          expect(handlers[0].requests[1].response.status).toBe(204);
         });
       });
     }
@@ -316,19 +315,13 @@ export function declareResponseActionsHttpInterceptorTests(options: RuntimeShare
         expect(response.status).toBe(204);
 
         expect(handlers[0].requests).toHaveLength(1);
-        expect(handlers[0].requests[0].response.status).toBe(204);
-
         expect(handlers[1].requests).toHaveLength(0);
+
+        expect(handlers[0].requests[0].response.status).toBe(204);
 
         searchParams.set('value', '2');
 
-        let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
-        await expectFetchError(responsePromise);
-
-        expect(handlers[0].requests).toHaveLength(1);
-        expect(handlers[1].requests).toHaveLength(0);
-
-        responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
+        const responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
         await expectFetchError(responsePromise);
 
         expect(handlers[0].requests).toHaveLength(1);
@@ -340,9 +333,9 @@ export function declareResponseActionsHttpInterceptorTests(options: RuntimeShare
         expect(response.status).toBe(204);
 
         expect(handlers[0].requests).toHaveLength(2);
-        expect(handlers[0].requests[1].response.status).toBe(204);
-
         expect(handlers[1].requests).toHaveLength(0);
+
+        expect(handlers[0].requests[1].response.status).toBe(204);
       });
     });
   });
@@ -366,6 +359,7 @@ export function declareResponseActionsHttpInterceptorTests(options: RuntimeShare
 
           expect(handlers[0].requests).toHaveLength(0);
           expect(handlers[1].requests).toHaveLength(1);
+
           expect(handlers[1].requests[0].response.status).toBe(GLOBAL_FALLBACK_SERVER_RESPONSE_STATUS);
           expect(Object.fromEntries(handlers[1].requests[0].response.headers.entries())).toEqual(
             expect.objectContaining(GLOBAL_FALLBACK_SERVER_HEADERS),
@@ -376,9 +370,9 @@ export function declareResponseActionsHttpInterceptorTests(options: RuntimeShare
           expect(response.status).toBe(204);
 
           expect(handlers[0].requests).toHaveLength(1);
-          expect(handlers[0].requests[0].response.status).toBe(204);
-
           expect(handlers[1].requests).toHaveLength(1);
+
+          expect(handlers[0].requests[0].response.status).toBe(204);
 
           responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
           await expectFetchError(responsePromise);
@@ -411,9 +405,9 @@ export function declareResponseActionsHttpInterceptorTests(options: RuntimeShare
         expect(response.status).toBe(204);
 
         expect(handlers[0].requests).toHaveLength(1);
-        expect(handlers[0].requests[0].response.status).toBe(204);
-
         expect(handlers[1].requests).toHaveLength(0);
+
+        expect(handlers[0].requests[0].response.status).toBe(204);
 
         responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         await expectFetchError(responsePromise);
@@ -446,11 +440,13 @@ export function declareResponseActionsHttpInterceptorTests(options: RuntimeShare
           expect(handler.requests).toHaveLength(0);
 
           const { elapsedTime } = await usingElapsedTime(async () => {
-            return fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+            const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+            await expectBypassedResponse(responsePromise);
           });
           expect(elapsedTime).toBeGreaterThanOrEqual(delay);
 
           expect(handler.requests).toHaveLength(1);
+
           expect(handler.requests[0].response.status).toBe(GLOBAL_FALLBACK_SERVER_RESPONSE_STATUS);
           expect(Object.fromEntries(handler.requests[0].response.headers.entries())).toEqual(
             expect.objectContaining(GLOBAL_FALLBACK_SERVER_HEADERS),

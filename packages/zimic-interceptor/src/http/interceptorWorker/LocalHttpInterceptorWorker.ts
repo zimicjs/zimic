@@ -217,7 +217,6 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       | { action: UnhandledRequestStrategy.Action },
   ) {
     const requestClone = request.clone();
-
     const response = await super.createResponseFromDeclaration(request, declaration);
 
     if (response && HttpInterceptorWorker.isBypassedResponse(response)) {
