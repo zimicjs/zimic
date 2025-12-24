@@ -100,9 +100,13 @@ declare global {
       space?: string | number,
     ): JSONStringified<Value>;
 
-    // eslint-disable-next-line @typescript-eslint/method-signature-style, @typescript-eslint/no-explicit-any
-    parse<Value>(text: JSONStringified<Value>, reviver?: (this: any, key: string, value: any) => any): Value;
+    // eslint-disable-next-line @typescript-eslint/method-signature-style
+    parse<Value>(
+      text: JSONStringified<Value>,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      reviver?: (this: any, key: string, value: any) => any,
+    ): JSONSerialized<Value>;
   }
 }
 
-export type JSONStringified<Value> = string & { [JSON.value]: Value };
+export type JSONStringified<Value> = string & { [JSON.value]: JSONSerialized<Value> };
