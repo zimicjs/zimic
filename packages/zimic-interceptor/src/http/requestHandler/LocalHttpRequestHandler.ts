@@ -92,9 +92,7 @@ class LocalHttpRequestHandler<
     return requestMatch;
   }
 
-  async applyResponseDeclaration(
-    request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
-  ): Promise<HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>> {
+  async applyResponseDeclaration(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) {
     return this.client.applyResponseDeclaration(request);
   }
 
