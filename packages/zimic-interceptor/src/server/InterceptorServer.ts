@@ -1,5 +1,6 @@
 import { normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
 import { HttpRequest, HttpMethod } from '@zimic/http';
+import { startHttpServer, stopHttpServer, getHttpServerPort } from '@zimic/utils/server/lifecycle';
 import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
 import excludeNonPathParams from '@zimic/utils/url/excludeNonPathParams';
 import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
@@ -8,7 +9,6 @@ import type { WebSocket as Socket } from 'isomorphic-ws';
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
 import { removeArrayIndex } from '@/utils/arrays';
 import { deserializeResponse, SerializedHttpRequest, serializeRequest } from '@/utils/fetch';
-import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocketEventMessage } from '@/webSocket/types';
 import WebSocketServer, { WebSocketServerAuthenticate } from '@/webSocket/WebSocketServer';

@@ -1,6 +1,6 @@
 {
   "name": "@zimic/fetch",
-  "description": "Next-gen TypeScript-first fetch API client",
+  "description": "Next-gen TypeScript-first Fetch client",
   "keywords": [
     "zimic",
     "fetch",
@@ -13,7 +13,7 @@
     "api",
     "static"
   ],
-  "version": "1.2.6",
+  "version": "1.2.7-canary.6",
   "homepage": "https://zimic.dev/docs/fetch",
   "repository": {
     "type": "git",
@@ -75,22 +75,22 @@
     "types:check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
-    "@vitest/browser": "^4.0.15",
-    "@vitest/browser-playwright": "^4.0.15",
-    "@vitest/coverage-istanbul": "^4.0.15",
+    "@types/node": "^25.0.3",
+    "@vitest/browser": "^4.0.16",
+    "@vitest/browser-playwright": "^4.0.16",
+    "@vitest/coverage-istanbul": "^4.0.16",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^11.0.0",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.2",
     "picocolors": "^1.1.1",
     "playwright": "^1.57.0",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.15"
+    "vitest": "^4.0.16"
   },
   "peerDependencies": {
     "@zimic/http": "^1.3.0 || workspace:*",

@@ -17,6 +17,7 @@
         "test-client",
         "http",
         "fetch",
+        "ws",
         "interceptor",
         "utils",
         "eslint",
