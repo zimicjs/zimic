@@ -1,6 +1,7 @@
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import { PROCESS_EXIT_EVENTS, PROCESS_EXIT_CODE_BY_EXIT_EVENT } from '@zimic/utils/process/constants';
 import { CommandError } from '@zimic/utils/process/runCommand';
+import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@zimic/utils/server/lifecycle';
 import waitFor from '@zimic/utils/time/waitFor';
 import waitForDelay from '@zimic/utils/time/waitForDelay';
 import waitForNot from '@zimic/utils/time/waitForNot';
@@ -14,7 +15,6 @@ import { verifyUnhandledRequestMessage } from '@/http/interceptor/__tests__/shar
 import { createHttpInterceptor } from '@/http/interceptor/factory';
 import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/server/constants';
 import { importCrypto } from '@/utils/crypto';
-import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@/utils/http';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 import WebSocketServer from '@/webSocket/WebSocketServer';
 import { usingIgnoredConsole } from '@tests/utils/console';

@@ -284,6 +284,11 @@ class HttpInterceptorClient<
     }
 
     const responseDeclaration = await matchedHandler.applyResponseDeclaration(parsedRequest);
+
+    if (!responseDeclaration) {
+      return null;
+    }
+
     const response = HttpInterceptorWorker.createResponseFromDeclaration(request, responseDeclaration);
 
     if (this.requestSaving.enabled) {

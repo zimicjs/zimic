@@ -1,150 +1,106 @@
 # AI Agent Instructions
 
-These instructions focus on project-specific architecture, workflows, and conventions so that an AI agent can make
-correct, minimal, high-quality changes and review proposed modifications effectively.
+Guidelines for implementing changes that align with project architecture, conventions, and quality standards.
 
-## Overview
+## Project Overview
 
-- Monorepo (pnpm + turborepo) providing TypeScript-first HTTP integration libraries: `@zimic/http`, `@zimic/fetch`,
-  `@zimic/interceptor`, plus internal `@zimic/utils` and supporting configuration packages.
-- Documentation: `apps/zimic-web` (Docusaurus).
-- Test consumer app: `apps/zimic-test-client`.
-- Example projects: `examples/*`.
-- Core flow: define HTTP schemas (`@zimic/http`) -> consume via type-safe client (`@zimic/fetch`) -> mock/intercept real
-  network calls locally or remotely (`@zimic/interceptor`).
-- All public packages target Node >=20 and modern browsers;
-- Builds via `tsup` generate dual ESM/CJS outputs with explicit export maps and top-level `.d.ts` entry points.
+TypeScript monorepo (pnpm + turborepo) providing HTTP integration libraries:
 
-## Project Structure
+- **Core packages**: `@zimic/http` (HTTP schemas), `@zimic/fetch` (Fetch client), `@zimic/ws` (WebSocket client and
+  server), `@zimic/interceptor` (HTTP request mocking), `@zimic/utils` (shared utilities)
+- **Configuration**: `tsconfig`, `eslint-config`, `eslint-config-node`, `eslint-config-react`, `lint-staged-config`
+- **Documentation**: `apps/zimic-web` (Docusaurus + Tailwind CSS)
+- **Testing**: `apps/zimic-test-client` (verifies exports and build artifacts)
+- **Examples**: `examples/*` (integration demonstrations)
 
-- `packages`
-  - `zimic-http`: Implementation of the package `@zimic/http`, a collection of type-safe utilities to handle HTTP
-    requests and responses, including headers, search params, and form data;
-  - `zimic-fetch`: Implementation of the package `@zimic/fetch`, a minimal (~2 kB minified gzipped) and type-safe
-    `fetch`-like API client;
-  - `zimic-interceptor`: Implementation of the package `@zimic/interceptor`, a type-safe interceptor library for
-    handling and mocking HTTP requests in development and testing;
-  - `zimic-utils`: Shared primitives (data comparison, URL building, wait utilities, logging, type helpers); each
-    exported resource is exported as a single file to keep bundles small and help clients import only what they need;
-  - `tsconfig`: Shared TypeScript configuration;
-  - `eslint-config`: General ESLint configuration;
-  - `eslint-config-node`: Node.js-specific ESLint configuration;
-  - `lint-staged-config`: Configuration for [lint-staged](https://github.com/lint-staged/lint-staged);
-- `apps`
-  - `zimic-web`: [zimic.dev](https://zimic.dev) documentation website built with [Docusaurus](https://docusaurus.io) and
-    styled with Tailwind CSS;
-  - `zimic-test-client`: Test application to check Zimic installed as a dependency; important to verify the library
-    exports and build artifacts;
-- `examples`: Example projects using Zimic;
+**Targets**: Node >=20, modern browsers; dual ESM/CJS via `tsup` with explicit `exports` maps.
 
-## Build and Task Workflow
+## Key Architecture Constraints
 
-- Root scripts wrap turborepo tasks:
-  - `pnpm build` -> `turbo build`;
-  - `pnpm test` -> `turbo test:turbo`;
-  - `pnpm lint` -> `turbo lint:turbo`;
-  - `pnpm types:check` -> `turbo types:check`;
-- Task graph (`turbo.json`): `dev` depends on parent `build` (no caching for watch); tests and type checks depend on
-  builds of their dependencies; linting depends on type checks to avoid false positives.
-- Package-level scripts often pair `test` (interactive) with `test:turbo` (CI + coverage). Coverage required to remain
-  100% for core packages; never lower thresholds; add or adjust tests instead.
-- Avoid editing generated declaration files (`index.d.ts`, `http.d.ts`, etc.), except the top-level entry points; change
-  source and rebuild.
+- **Module resolution**: `moduleResolution: bundler`, strict mode, incremental builds
+- **Exports**: Explicit `exports` map required for all public APIs; update when adding resources
+- **Tree-shaking**: `sideEffects: false` must be respected; avoid top-level side effects
+- **Cross-platform**: Most code must work in Node.js and browser environments
+- **Interceptor duality**: Local and remote interceptors share APIs but differ in implementation; tests must verify both
+- **Bundle size**: Each `@zimic/utils` export is a separate file to minimize client bundles
 
-## Testing Conventions
+## Development Workflow
 
-- Runner: Vitest (Node + `@vitest/browser` + Playwright); browser tests need chromium via per-package `setup` script;
-- File layout: source-near `__tests__` directories; test filenames: `<resource>.test.ts`; test suites dedicated to
-  specific features or environments can have a prefix (e.g., `<resource>.<feature>.test.ts`);
-- Avoid mocking internals; prefer exercising the public APIs;
-- Only use spies when asserting side effects;
-- Keep test code close to tested module;
-- Ensure test utilities are not exported in production bundles;
+### Before Changes
 
-## Path and Build Constraints
+1. Identify target package
+2. Review existing tests and structure for patterns to reuse
+3. Check if cross-platform (Node + browser) or dual-mode (local + remote) support needed
 
-- TypeScript config: `moduleResolution: bundler`, strict mode, incremental builds;
-- Do not introduce features requiring different module resolution without updating shared tsconfig;
-- Exports are explicit; adding a new public resource requires updating the entry point where it will be exported;
-- Keep tree-shakability: avoid side effects (respect `sideEffects: false`);
+### During Implementation
 
-## Interceptor Architecture Notes
+1. **Write tests first** covering all branches, error paths, and edge cases
+2. Implement feature with clear, explicit naming (avoid abbreviations)
+3. Keep code simple; avoid premature optimization and unnecessary abstractions
+4. Never use `any`; leverage type inference
+5. Update `exports` map if adding new public API
+6. Update documentation (`apps/zimic-web/docs`) with examples
+7. Update relevant examples (`examples/*`) if needed
 
-- Most resources should be compatible with both Node.js and browser environments; ensure new behavior considers both
-  environments and both platforms (Node.js vs browser);
-- In `@zimic/interceptor`, local and remote interceptors have different implementations, but share similar public APIs
-  and behavior; ensure that tests are written in a way that is compatible with both implementations; also ensure that
-  tests verify both implementations with little to no distinction;
-- Remote mode may spin up an interceptor server; test helpers manage lifecycle (`createInternalInterceptorServer`,
-  `startServer/stopServer` callbacks).
+### Verification
 
-## CLI Conventions
+Run in the target package directory:
 
-- Each package exposing a CLI uses `tsup` to build `dist/*.js` (with source maps) and declares a `bin` entry;
-- Add new CLI commands inside the respective package; wire them through `yargs` with consistent option naming
-  (kebab-case);
-- Keep Node compatibility with declared engine;
+- `pnpm types:check`: Type check with `tsc`
+- `pnpm lint <pattern>`: Lint specific files or directories using `eslint`
+- `pnpm test run <pattern>`: Run specific tests using `vitest`
+- `pnpm build`: Build package with `tsup`
 
-## Adding Features Safely
+### Critical Rules
 
-When implementing changes:
+- **Coverage**: Maintain 100% for core packages; never lower thresholds
+- **Declarations**: Don't edit generated `.d.ts` files except top-level entry points
+- **Dependencies**: Avoid adding unless essential; prefer native modules; check bundle size and license
+- **Breaking changes**: Require version bump
 
-- Pick target package; add tests first (cover Node + browser + local/remote if relevant). Reuse shared test declarations
-  and/or existing structure and utilities if applicable;
-- Implement clean and readable code with clear purpose;
-- Avoid abbreviations and unclear names; prefer explicit and descriptive naming, even if longer;
-- Avoid over-engineering and unnecessary abstractions;
-- Prefer composition over inheritance;
-- Avoid premature optimization;
-- Try to not use `any`;
-- Use type inference where possible; abstract only when it improves clarity or reduces duplication (e.g. by moving a
-  general utility to `src/utils/...`);
-- Implement minimal API surface; export intentionally (update `exports`);
-- Maintain 100% coverage (add tests for new branches, error paths, and edge cases);
-- Run locally (inside target app or package):
-  - `pnpm types:check`
-  - `pnpm lint .`
-  - `pnpm test`
-  - `pnpm build`
-- Update documentation (`apps/zimic-web/docs`) after API changes, adding short code snippets and updating existing
-  examples; highlight experimental or unstable features as such; ensure Docusaurus build passes; ensure clear and
-  concise language and examples;
-- Update examples (`examples/*`) to reflect new features or changes when needed, ensuring they remain functional and
-  type-safe;
+## Testing Standards
 
-## Common Pitfalls
+**Runner**: Vitest with Node + `@vitest/browser` (Playwright/Chromium)
 
-- Forgetting to add or update tests, especially for edge cases, error paths, new features, and bug fixes.
-- Forgetting to update documentation or examples after API changes.
-- Forgetting to run tests and type checks.
-- Introducing unwanted breaking changes to public APIs without version bump.
-- Adding third-party dependencies without considering bundle size impact, checking license compatibility, or
-  redundantly, either already available natively or present in another package.
-- Introducing side-effectful top-level code breaks tree-shaking and `sideEffects: false` guarantee.
-- Exporting test utilities accidentally (keep them under `__tests__` or `tests` only).
-- Skipping updates to `exports` map leading to unresolved imports for consumers.
+**Structure**:
 
-## Style and Commits
+- Location: `__tests__/` directories near source
+- Naming: `<resource>.test.ts` or `<resource>.<feature>.test.ts`
+- Test utilities: Keep in `__tests__/` or `tests/` only (never export in production)
 
-- Conventional commits with lowercase imperative, scoped to package (e.g., `feat(interceptor): add request caching`).
-  Use `root` scope for repository-wide changes. Refer to `.commitlintrc.json` to check all scopes and rules. Keep branch
-  names aligned (e.g., `feat/123-request-caching`).
-- Pull requests: use the same conventional style in titles; provide clear descriptions of changes, linking to relevant
-  issues or discussions; ensure all checks pass before requesting reviews.
+**Principles**:
 
-## CI Expectations
+- Test public APIs, not internals
+- Avoid mocking; exercise real behavior
+- Use spies only for side-effect assertions
+- Ensure 100% coverage including edge cases and error paths
+- Support both Node + browser, local + remote where applicable
 
-- CI enforces:
-  - Formatting style;
-  - Lint;
-  - Types;
-  - Documentation build;
-  - Multi-Node version tests;
-  - Multi-TypeScript version type checking (excluding core `@zimic/*` packages during TypeScript matrix except for build
-    impact detection);
-- Do not rely on implicit dependencies; declare them;
+## Code Quality Standards
 
----
+- **Naming**: Explicit and descriptive (prefer clarity over brevity)
+- **Architecture**: Composition over inheritance; minimal API surface
+- **Type Safety**: Strict TypeScript; avoid `any`; use inference
+- **Optimization**: Only when measured; avoid premature optimization
+- **CLI** (if applicable): Build to `dist/*.js` via `tsup`; use `yargs` with kebab-case options
 
-Feedback welcome: Identify any missing architectural nuance, unclear workflow, or additional conventions you want
-documented.
+## Commit Conventions
+
+- **Format**: Conventional commits, lowercase imperative, scoped to package
+- **Examples**: `feat(interceptor): add request caching`, `fix(http): handle empty headers`
+- **Scope**: Use `root` for repository-wide changes; see `.commitlintrc.json` for all scopes
+- **Branches**: Align with commit type (e.g., `feat/123-request-caching`)
+- **PRs**: Follow same conventions; link issues; ensure all CI checks pass
+
+## Code Review Guidelines
+
+Focus reviews on relevance and quality:
+
+- **Scope**: Changes match specification; no unrelated modifications
+- **Quality**: Clear naming, simple implementation, proper abstractions
+- **Testing**: 100% coverage maintained; high-quality tests covering edge cases and error paths; cross-platform verified
+- **Compatibility**: Works in Node.js and browser; local + remote modes tested (interceptor)
+- **Security**: No hardcoded secrets; input validation; proper error handling; no vulnerable pathways
+- **Maintainability**: Documentation and examples updated; `exports` map current; breaking changes versioned
+- **Bundle**: No unnecessary dependencies; tree-shaking preserved; granular exports without test or internal code
+- **Build**: TypeScript strict compliance; no `any`; all verification steps pass (types, lint, tests, build)

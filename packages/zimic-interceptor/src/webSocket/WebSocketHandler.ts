@@ -374,6 +374,16 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     return listener;
   }
 
+  offAny() {
+    this.channelListeners = {};
+
+    for (const listenersBySocket of Object.values(this.socketListeners)) {
+      for (const listeners of listenersBySocket.values()) {
+        listeners.clear();
+      }
+    }
+  }
+
   private getOrCreateChannelListeners<Channel extends WebSocketChannel<Schema>>(channel: Channel) {
     const listeners = this.channelListeners[channel] ?? {
       event: new Set(),
@@ -438,16 +448,6 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
   emitSocket(type: 'abortRequests', socket: ClientSocket, options: WebSocketRequestAbortOptions<Schema> = {}) {
     for (const listener of this.socketListeners[type].get(socket) ?? []) {
       listener(options);
-    }
-  }
-
-  offAny() {
-    this.channelListeners = {};
-
-    for (const listenersBySocket of Object.values(this.socketListeners)) {
-      for (const listeners of listenersBySocket.values()) {
-        listeners.clear();
-      }
     }
   }
 }
