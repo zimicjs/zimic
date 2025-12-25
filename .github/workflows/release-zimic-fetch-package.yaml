@@ -1,12 +1,9 @@
 name: 'Release Package: @zimic/fetch'
 
 on:
-  release:
-    types:
-      - published
   push:
     tags:
-      - '@zimic/fetch@*-*'
+      - '@zimic/fetch@*'
 
 concurrency:
   group: release-zimic-fetch-${{ github.ref_name }}

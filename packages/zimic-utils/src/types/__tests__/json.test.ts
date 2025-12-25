@@ -1,6 +1,6 @@
-import { describe, expectTypeOf, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import { JSONValue, JSONSerialized } from '../json';
+import { JSONValue, JSONSerialized, JSONStringified } from '../json';
 
 describe('JSON types', () => {
   it('should type JSON values correctly', () => {
@@ -125,6 +125,78 @@ describe('JSON types', () => {
         b: string;
       }>
     >().toEqualTypeOf<{
+      a: { name: string; message: string; stack?: string };
+      b: string;
+    }>();
+  });
+
+  it('should convert types to their JSON-stringified versions', () => {
+    expectTypeOf(JSON.stringify('')).toEqualTypeOf<JSONStringified<string>>();
+    expectTypeOf(JSON.stringify(0)).toEqualTypeOf<JSONStringified<number>>();
+    expectTypeOf(JSON.stringify(true)).toEqualTypeOf<JSONStringified<boolean>>();
+    expectTypeOf(JSON.stringify(null)).toEqualTypeOf<JSONStringified<null>>();
+    expectTypeOf(JSON.stringify(undefined)).toEqualTypeOf<JSONStringified<undefined>>();
+    expectTypeOf(JSON.stringify(['a', 'b', 'c'])).toEqualTypeOf<JSONStringified<string[]>>();
+    expectTypeOf(JSON.stringify({ a: 'a', b: 1 })).toEqualTypeOf<JSONStringified<{ a: string; b: number }>>();
+
+    expectTypeOf(JSON.stringify(new Date())).toEqualTypeOf<JSONStringified<string>>();
+    expectTypeOf(JSON.stringify(Symbol('a'))).toEqualTypeOf<JSONStringified<never>>();
+    expectTypeOf(JSON.stringify(new Map())).toEqualTypeOf<JSONStringified<Record<string, never>>>();
+    expectTypeOf(JSON.stringify(new Set())).toEqualTypeOf<JSONStringified<Record<string, never>>>();
+
+    expectTypeOf(JSON.stringify({ a: new Date() })).toEqualTypeOf<JSONStringified<{ a: string }>>();
+    expectTypeOf(JSON.stringify({ a: [new Date()], b: 'b' })).toEqualTypeOf<
+      JSONStringified<{ a: string[]; b: string }>
+    >();
+    expectTypeOf(JSON.stringify(() => undefined)).toEqualTypeOf<JSONStringified<never>>();
+    expectTypeOf(JSON.stringify({ a: () => undefined })).toEqualTypeOf<JSONStringified<{}>>();
+    expectTypeOf(JSON.stringify({ a: () => undefined, b: 'b' })).toEqualTypeOf<JSONStringified<{ b: string }>>();
+    expectTypeOf(JSON.stringify({ a: Symbol('a'), b: 'b' })).toEqualTypeOf<JSONStringified<{ b: string }>>();
+    expectTypeOf(JSON.stringify({ a: new Error(), b: 'b' })).toEqualTypeOf<
+      JSONStringified<{
+        a: { name: string; message: string; stack?: string };
+        b: string;
+      }>
+    >();
+  });
+
+  it('should parse JSON-stringified types to their JSON-serialized versions', () => {
+    expectTypeOf(JSON.parse(JSON.stringify(''))).toEqualTypeOf<string>();
+    expectTypeOf(JSON.parse(JSON.stringify(0))).toEqualTypeOf<number>();
+    expectTypeOf(JSON.parse(JSON.stringify(true))).toEqualTypeOf<boolean>();
+    expectTypeOf(JSON.parse(JSON.stringify(null))).toEqualTypeOf<null>();
+
+    expect(() => {
+      // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
+      expectTypeOf(JSON.parse(JSON.stringify(undefined))).toEqualTypeOf<undefined>();
+    }).toThrowError(new SyntaxError('"undefined" is not valid JSON'));
+
+    expectTypeOf(JSON.parse(JSON.stringify(['a', 'b', 'c']))).toEqualTypeOf<string[]>();
+    expectTypeOf(JSON.parse(JSON.stringify({ a: 'a', b: 1 }))).toEqualTypeOf<{ a: string; b: number }>();
+
+    expectTypeOf(JSON.parse(JSON.stringify(new Date()))).toEqualTypeOf<string>();
+
+    expect(() => {
+      expectTypeOf(JSON.parse(JSON.stringify(Symbol('a')))).toEqualTypeOf<never>();
+    }).toThrowError(new SyntaxError('"undefined" is not valid JSON'));
+
+    expectTypeOf(JSON.parse(JSON.stringify(new Map()))).toEqualTypeOf<Record<string, never>>();
+    expectTypeOf(JSON.parse(JSON.stringify(new Set()))).toEqualTypeOf<Record<string, never>>();
+
+    expectTypeOf(JSON.parse(JSON.stringify({ a: new Date() }))).toEqualTypeOf<{ a: string }>();
+    expectTypeOf(JSON.parse(JSON.stringify({ a: [new Date()], b: 'b' }))).toEqualTypeOf<{
+      a: string[];
+      b: string;
+    }>();
+
+    expect(() => {
+      expectTypeOf(JSON.parse(JSON.stringify(() => undefined))).toEqualTypeOf<never>();
+    }).toThrowError(new SyntaxError('"undefined" is not valid JSON'));
+
+    expectTypeOf(JSON.parse(JSON.stringify({ a: () => undefined }))).toEqualTypeOf<{}>();
+    expectTypeOf(JSON.parse(JSON.stringify({ a: () => undefined, b: 'b' }))).toEqualTypeOf<{ b: string }>();
+    expectTypeOf(JSON.parse(JSON.stringify({ a: Symbol('a'), b: 'b' }))).toEqualTypeOf<{ b: string }>();
+    expectTypeOf(JSON.parse(JSON.stringify({ a: new Error(), b: 'b' }))).toEqualTypeOf<{
       a: { name: string; message: string; stack?: string };
       b: string;
     }>();
