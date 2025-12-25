@@ -12,7 +12,6 @@ import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorke
 import LocalHttpInterceptorWorker from '@/http/interceptorWorker/LocalHttpInterceptorWorker';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
-import NoResponseDefinitionError from '../../errors/NoResponseDefinitionError';
 import { HttpRequestHandlerRequestMatch } from '../../HttpRequestHandlerClient';
 import type LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '../../RemoteHttpRequestHandler';
@@ -154,10 +153,10 @@ export function declareDefaultHttpRequestHandlerTests(
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-    const response = await handler.applyResponseDeclaration(parsedRequest);
+    const responseDeclaration = (await handler.applyResponseDeclaration(parsedRequest))!;
 
-    expect(response.status).toBe(responseStatus);
-    expect(response.body).toEqual(responseBody);
+    expect(responseDeclaration.status).toBe(responseStatus);
+    expect(responseDeclaration.body).toEqual(responseBody);
   });
 
   it('should create response with declared status and body factory', async () => {
@@ -178,26 +177,22 @@ export function declareDefaultHttpRequestHandlerTests(
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-    const response = await handler.applyResponseDeclaration(parsedRequest);
+    const responseDeclaration = (await handler.applyResponseDeclaration(parsedRequest))!;
 
-    expect(response.status).toBe(responseStatus);
-    expect(response.body).toEqual(responseBody);
+    expect(responseDeclaration.status).toBe(responseStatus);
+    expect(responseDeclaration.body).toEqual(responseBody);
 
     expect(responseFactory).toHaveBeenCalledTimes(1);
   });
 
-  it('should throw an error if trying to create a response without a declared response', async () => {
+  it('should not throw an error if trying to create a response without a declared response', async () => {
     const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-    const error = new NoResponseDefinitionError();
-    expect(error).toBeInstanceOf(TypeError);
-
-    await expect(async () => {
-      await handler.applyResponseDeclaration(parsedRequest);
-    }).rejects.toThrowError(error);
+    const responseDeclarationPromise = handler.applyResponseDeclaration(parsedRequest);
+    await expect(responseDeclarationPromise).resolves.toBe(undefined);
   });
 
   it('should keep track of the intercepted requests and responses', async () => {
@@ -209,7 +204,7 @@ export function declareDefaultHttpRequestHandlerTests(
     const firstRequest = new Request(baseURL);
     const parsedFirstRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(firstRequest);
 
-    const firstResponseDeclaration = await handler.applyResponseDeclaration(parsedFirstRequest);
+    const firstResponseDeclaration = (await handler.applyResponseDeclaration(parsedFirstRequest))!;
     const firstResponse = Response.json(firstResponseDeclaration.body, {
       status: firstResponseDeclaration.status,
     });
@@ -227,7 +222,7 @@ export function declareDefaultHttpRequestHandlerTests(
 
     const secondRequest = new Request(joinURL(baseURL, '/path'));
     const parsedSecondRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(secondRequest);
-    const secondResponseDeclaration = await handler.applyResponseDeclaration(parsedSecondRequest);
+    const secondResponseDeclaration = (await handler.applyResponseDeclaration(parsedSecondRequest))!;
 
     const secondResponse = Response.json(secondResponseDeclaration.body, {
       status: secondResponseDeclaration.status,
@@ -258,7 +253,7 @@ export function declareDefaultHttpRequestHandlerTests(
     const firstRequest = new Request(baseURL);
     const parsedFirstRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(firstRequest);
 
-    const firstResponseDeclaration = await handler.applyResponseDeclaration(parsedFirstRequest);
+    const firstResponseDeclaration = (await handler.applyResponseDeclaration(parsedFirstRequest))!;
     const firstResponse = Response.json(firstResponseDeclaration.body, {
       status: firstResponseDeclaration.status,
     });
@@ -292,7 +287,7 @@ export function declareDefaultHttpRequestHandlerTests(
     });
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-    const responseDeclaration = await handler.applyResponseDeclaration(parsedRequest);
+    const responseDeclaration = (await handler.applyResponseDeclaration(parsedRequest))!;
     const response = Response.json(responseDeclaration.body, { status: responseDeclaration.status });
     const parsedResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(response);
 
@@ -339,7 +334,7 @@ export function declareDefaultHttpRequestHandlerTests(
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-    const responseDeclaration = await handler.applyResponseDeclaration(parsedRequest);
+    const responseDeclaration = (await handler.applyResponseDeclaration(parsedRequest))!;
     const response = Response.json(responseDeclaration.body, { status: responseDeclaration.status });
     const parsedResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(response);
 

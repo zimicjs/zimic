@@ -6,7 +6,6 @@ const sharedConfig: Options = {
   sourcemap: true,
   treeshake: true,
   minify: false,
-  clean: true,
   keepNames: false,
 };
 
@@ -38,10 +37,29 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
     'url/joinURL': 'src/url/joinURL.ts',
     'url/validatePathParams': 'src/url/validatePathParams.ts',
     'url/validateURLProtocol': 'src/url/validateURLProtocol.ts',
-    'process/runCommand': 'src/process/runCommand.ts',
-    'process/constants': 'src/process/constants.ts',
   },
-  external: ['child_process'],
 }));
 
-export default defineConfig([...neutralConfig]);
+const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
+  ...sharedConfig,
+  name: `node-${format}`,
+  platform: 'node',
+  format: [format],
+  dts: format === 'cjs',
+  entry: {
+    'process/runCommand': 'src/process/runCommand.ts',
+    'process/constants': 'src/process/constants.ts',
+    'server/lifecycle': 'src/server/lifecycle.ts',
+  },
+}));
+
+const configs: Options[] = [...neutralConfig, ...nodeConfig];
+
+export default defineConfig(
+  configs.map((config, index) => ({
+    ...config,
+    // Builds performed by tsup face concurrency problems when generating .d.ts files with multiple configs.
+    // To workaround this, we only clean the dist folder on the last build.
+    clean: index === configs.length - 1,
+  })),
+);
