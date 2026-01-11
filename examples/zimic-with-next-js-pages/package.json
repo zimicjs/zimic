@@ -16,12 +16,12 @@
     "next": "^16.1.1",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "zod": "^4.3.4"
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4.1.18",
-    "@types/react": "^19.2.7",
+    "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
     "@zimic/interceptor": "latest",
     "concurrently": "^9.2.1",
