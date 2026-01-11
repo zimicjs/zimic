@@ -208,6 +208,8 @@ abstract class HttpInterceptorWorker {
 
     const action = response[RESPONSE_ACTION_SYMBOL];
 
+    /* istanbul ignore if -- @preserve
+     * This is just a type guard to ensure the value is valid. In practice, this condition should never be true. */
     if (action !== 'bypass' && action !== 'reject') {
       return undefined;
     }
