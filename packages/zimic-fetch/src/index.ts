@@ -1,4 +1,4 @@
-export type { JSONStringified } from '@zimic/utils/types/json';
+export type { JSONStringified } from '@zimic/utils/types';
 
 export type { Fetch, InferFetchSchema, FetchOptions, FetchDefaults, FetchInput } from './client/types/public';
 

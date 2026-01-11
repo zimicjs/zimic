@@ -1,4 +1,4 @@
-import { startHttpServer, stopHttpServer } from '@zimic/utils/server/lifecycle';
+import { startHttpServer, stopHttpServer } from '@zimic/utils/server';
 import { createServer as createHttpServer } from 'http';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 

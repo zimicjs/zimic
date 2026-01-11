@@ -1,4 +1,4 @@
-import isDefined from '@zimic/utils/data/isDefined';
+import { isDefined } from '@zimic/utils/data';
 import path from 'path';
 import ts from 'typescript';
 

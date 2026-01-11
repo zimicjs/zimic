@@ -1,7 +1,5 @@
 import { HttpRequest, HttpResponse, HttpMethod, HttpSchema, HttpHeadersInit, HttpBody } from '@zimic/http';
-import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
-import excludeNonPathParams from '@zimic/utils/url/excludeNonPathParams';
-import validatePathParams from '@zimic/utils/url/validatePathParams';
+import { createRegexFromPath, excludeNonPathParams, validatePathParams } from '@zimic/utils/url';
 import { SharedOptions as MSWWorkerSharedOptions, bypass, http, passthrough } from 'msw';
 import * as mswBrowser from 'msw/browser';
 import * as mswNode from 'msw/node';

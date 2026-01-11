@@ -1,6 +1,6 @@
 import { HttpResponse, HttpHeaders, HTTP_METHODS, HttpMethod } from '@zimic/http';
-import createPromiseWithResolvers from '@zimic/utils/data/createPromiseWithResolvers';
-import expectFetchError from '@zimic/utils/fetch/expectFetchError';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
+import { expectFetchError } from '@zimic/utils/fetch';
 import { PossiblePromise } from '@zimic/utils/types';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 

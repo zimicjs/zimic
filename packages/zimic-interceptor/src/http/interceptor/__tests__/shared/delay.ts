@@ -1,8 +1,7 @@
 import { HttpSchema } from '@zimic/http';
-import expectFetchError from '@zimic/utils/fetch/expectFetchError';
-import waitFor from '@zimic/utils/time/waitFor';
-import waitForDelay from '@zimic/utils/time/waitForDelay';
-import joinURL from '@zimic/utils/url/joinURL';
+import { expectFetchError } from '@zimic/utils/fetch';
+import { waitFor, waitForDelay } from '@zimic/utils/time';
+import { joinURL } from '@zimic/utils/url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';

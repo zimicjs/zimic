@@ -1,6 +1,6 @@
 import { HttpRequest, HttpResponse, StrictFormData } from '@zimic/http';
-import waitForDelay from '@zimic/utils/time/waitForDelay';
-import joinURL from '@zimic/utils/url/joinURL';
+import { waitForDelay } from '@zimic/utils/time';
+import { joinURL } from '@zimic/utils/url';
 import { expectTypeOf, expect, vi, it, beforeAll, afterAll, describe, beforeEach, afterEach } from 'vitest';
 
 import { SharedHttpInterceptorClient } from '@/http/interceptor/HttpInterceptorClient';

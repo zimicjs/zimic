@@ -1,4 +1,4 @@
-import runCommand from '@zimic/utils/process/runCommand';
+import { runCommand } from '@zimic/utils/process';
 import { PossiblePromise } from '@zimic/utils/types';
 import path from 'path';
 import yargs from 'yargs';
