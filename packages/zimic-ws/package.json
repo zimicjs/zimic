@@ -78,7 +78,7 @@
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write",
     "test": "dotenv -v NODE_ENV=test -v FORCE_COLOR=1 -- vitest",
-    "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test --coverage",
     "types:check": "tsc --noEmit",
     "deps:setup-playwright": "playwright install chromium",
     "deps:setup": "pnpm deps:setup-playwright"

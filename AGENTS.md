@@ -48,7 +48,7 @@ Run in the target package directory:
 
 - `pnpm types:check`: Type check with `tsc`
 - `pnpm lint <pattern>`: Lint specific files or directories using `eslint`
-- `pnpm test run <pattern>`: Run specific tests using `vitest`
+- `pnpm test <pattern>`: Run specific tests using `vitest`
 - `pnpm build`: Build package with `tsup`
 
 ### Critical Rules

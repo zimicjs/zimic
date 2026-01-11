@@ -5,6 +5,7 @@ import { playwright } from '@vitest/browser-playwright';
 export default defineConfig({
   publicDir: './public',
   test: {
+    watch: false,
     globals: false,
     testTimeout: 7500,
     hookTimeout: 7500,
