@@ -12,7 +12,7 @@ import {
   HttpSearchParams,
   HttpRequest,
 } from '@zimic/http';
-import isDefined from '@zimic/utils/data/isDefined';
+import { isDefined } from '@zimic/utils/data';
 import { Default, PossiblePromise } from '@zimic/utils/types';
 import color from 'picocolors';
 

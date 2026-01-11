@@ -25,8 +25,7 @@ import {
   HttpSearchParams,
   HttpFormData,
 } from '@zimic/http';
-import { Default } from '@zimic/utils/types';
-import { JSONStringified } from '@zimic/utils/types/json';
+import { Default, JSONStringified } from '@zimic/utils/types';
 
 import FetchResponseError, { AnyFetchRequestError } from '../errors/FetchResponseError';
 import { FetchInput } from './public';

@@ -1,10 +1,8 @@
-import createPromiseWithResolvers from '@zimic/utils/data/createPromiseWithResolvers';
-import expectFetchError from '@zimic/utils/fetch/expectFetchError';
-import { PROCESS_EXIT_EVENTS, PROCESS_EXIT_CODE_BY_EXIT_EVENT } from '@zimic/utils/process/constants';
-import { CommandError } from '@zimic/utils/process/runCommand';
-import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@zimic/utils/server/lifecycle';
-import waitFor from '@zimic/utils/time/waitFor';
-import waitForDelay from '@zimic/utils/time/waitForDelay';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
+import { expectFetchError } from '@zimic/utils/fetch';
+import { PROCESS_EXIT_EVENTS, PROCESS_EXIT_CODE_BY_EXIT_EVENT, CommandError } from '@zimic/utils/process';
+import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@zimic/utils/server';
+import { waitFor, waitForDelay } from '@zimic/utils/time';
 import { PossiblePromise } from '@zimic/utils/types';
 import fs from 'fs';
 import path from 'path';

@@ -8,9 +8,7 @@ import {
   HttpSchema,
 } from '@zimic/http';
 import { Default, PossiblePromise } from '@zimic/utils/types';
-import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
-import excludeNonPathParams from '@zimic/utils/url/excludeNonPathParams';
-import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
+import { createRegexFromPath, excludeNonPathParams, validateURLProtocol } from '@zimic/utils/url';
 
 import { isServerSide } from '@/utils/environment';
 

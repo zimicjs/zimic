@@ -1,8 +1,7 @@
 import { normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
 import { HttpRequest, HttpMethod } from '@zimic/http';
-import { startHttpServer, stopHttpServer, getHttpServerPort } from '@zimic/utils/server/lifecycle';
-import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
-import excludeNonPathParams from '@zimic/utils/url/excludeNonPathParams';
+import { startHttpServer, stopHttpServer, getHttpServerPort } from '@zimic/utils/server';
+import { createRegexFromPath, excludeNonPathParams } from '@zimic/utils/url';
 import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
 

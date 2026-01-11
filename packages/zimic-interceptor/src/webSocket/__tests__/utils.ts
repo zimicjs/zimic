@@ -1,4 +1,4 @@
-import waitForDelay from '@zimic/utils/time/waitForDelay';
+import { waitForDelay } from '@zimic/utils/time';
 import ClientSocket from 'isomorphic-ws';
 import { vi } from 'vitest';
 

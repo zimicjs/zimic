@@ -1,5 +1,5 @@
-import fileEquals from '@zimic/utils/data/fileEquals';
-import { JSONValue } from '@zimic/utils/types/json';
+import { fileEquals } from '@zimic/utils/data';
+import { JSONValue } from '@zimic/utils/types';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import HttpFormData from '@/formData/HttpFormData';

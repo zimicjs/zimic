@@ -1,4 +1,4 @@
-import isDefined from '@zimic/utils/data/isDefined';
+import { isDefined } from '@zimic/utils/data';
 import { Override } from '@zimic/utils/types';
 import ts from 'typescript';
 

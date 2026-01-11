@@ -16,31 +16,24 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   format: [format],
   dts: format === 'cjs',
   entry: {
+    // Types
     types: 'src/types/index.ts',
-    'types/json': 'src/types/json.ts',
-    'data/isDefined': 'src/data/isDefined.ts',
-    'data/isNonEmpty': 'src/data/isNonEmpty.ts',
-    'data/blobEquals': 'src/data/blobEquals.ts',
-    'data/fileEquals': 'src/data/fileEquals.ts',
-    'data/jsonContains': 'src/data/jsonContains.ts',
-    'data/jsonEquals': 'src/data/jsonEquals.ts',
-    'data/createPromiseWithResolvers': 'src/data/createPromiseWithResolvers.ts',
-    'error/expectToThrow': 'src/error/expectToThrow.ts',
-    'fetch/expectFetchError': 'src/fetch/expectFetchError.ts',
-    'import/createCachedDynamicImport': 'src/import/createCachedDynamicImport.ts',
-    'logging/Logger': 'src/logging/Logger.ts',
-    'time/waitFor': 'src/time/waitFor.ts',
-    'time/waitForNot': 'src/time/waitForNot.ts',
-    'time/waitForDelay': 'src/time/waitForDelay.ts',
-    'url/createRegexFromPath': 'src/url/createRegexFromPath.ts',
-    'url/createWildcardRegexFromPath': 'src/url/createWildcardRegexFromPath.ts',
-    'url/excludeNonPathParams': 'src/url/excludeNonPathParams.ts',
-    'url/joinURL': 'src/url/joinURL.ts',
-    'url/validatePathParams': 'src/url/validatePathParams.ts',
-    'url/validateURLProtocol': 'src/url/validateURLProtocol.ts',
+
+    // Universal modules
+    data: 'src/data/index.ts',
+    error: 'src/error/index.ts',
+    fetch: 'src/fetch/index.ts',
+    import: 'src/import/index.ts',
+    logging: 'src/logging/index.ts',
+    time: 'src/time/index.ts',
+    url: 'src/url/index.ts',
   },
 }));
 
+/**
+ * Node config for server-only utilities. These utilities depend on Node.js-specific modules (child_process, http,
+ * etc.).
+ */
 const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   ...sharedConfig,
   name: `node-${format}`,
@@ -48,9 +41,8 @@ const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   format: [format],
   dts: format === 'cjs',
   entry: {
-    'process/runCommand': 'src/process/runCommand.ts',
-    'process/constants': 'src/process/constants.ts',
-    'server/lifecycle': 'src/server/lifecycle.ts',
+    process: 'src/process/index.ts',
+    server: 'src/server/index.ts',
   },
 }));
 

@@ -1,6 +1,6 @@
 import { HttpSchema, HttpMethod } from '@zimic/http';
 import { PossiblePromise } from '@zimic/utils/types';
-import joinURL from '@zimic/utils/url/joinURL';
+import { joinURL } from '@zimic/utils/url';
 import { expect } from 'vitest';
 
 import { createHttpInterceptor } from '@/http';

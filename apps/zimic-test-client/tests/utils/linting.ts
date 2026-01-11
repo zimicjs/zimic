@@ -1,4 +1,4 @@
-import runCommand from '@zimic/utils/process/runCommand';
+import { runCommand } from '@zimic/utils/process';
 
 export async function checkTypes(tsconfigFilePath: string) {
   return runCommand('pnpm', ['tsc', '--noEmit', '--project', tsconfigFilePath], {

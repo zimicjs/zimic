@@ -1,6 +1,6 @@
 import { HttpBody, HttpHeadersInit, HttpMethod, HttpRequest, HttpSchema } from '@zimic/http';
 import { PossiblePromise } from '@zimic/utils/types';
-import validatePathParams from '@zimic/utils/url/validatePathParams';
+import { validatePathParams } from '@zimic/utils/url';
 
 import UnsupportedResponseBypassError from '@/server/errors/UnsupportedResponseBypassError';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/types/schema';
