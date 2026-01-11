@@ -1,6 +1,6 @@
 {
   "name": "zimic-web",
-  "version": "0.3.39",
+  "version": "0.3.40",
   "private": true,
   "scripts": {
     "dev": "docusaurus start --host :: --no-open",
@@ -35,7 +35,7 @@
     "@docusaurus/module-type-aliases": "3.9.2",
     "@docusaurus/types": "3.9.2",
     "@tailwindcss/postcss": "^4.1.18",
-    "@types/react": "^19.2.7",
+    "@types/react": "^19.2.8",
     "@zimic/eslint-config-react": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
