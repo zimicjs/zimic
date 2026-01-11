@@ -9,7 +9,7 @@
     "mock:start": "zimic-interceptor server start --hostname 127.0.0.1 --port 4001 --ephemeral",
     "mock:load": "tsx ./tests/interceptors/scripts/load.ts",
     "test": "dotenv -c test -- dotenv -c development -- pnpm mock -- playwright test",
-    "test:turbo": "dotenv -v CI=true -- pnpm run test",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test --reporter tree",
     "types:check": "tsc --noEmit"
   },
   "dependencies": {

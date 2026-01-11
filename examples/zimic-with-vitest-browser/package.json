@@ -5,7 +5,7 @@
   "scripts": {
     "setup": "concurrently --names playwright,zimic 'playwright install chromium' 'zimic-interceptor browser init ./public || true'",
     "test": "vitest",
-    "test:turbo": "dotenv -v CI=true -- pnpm run test",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test --reporter tree",
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
