@@ -246,7 +246,7 @@ await handler.respond((request) => declaration);
      setting it to `'reject'` will make the request fail with a network error. This behavior is similar to
      [unhandled request actions](/docs/zimic-interceptor/guides/http/9-unhandled-requests.md).
 
-     While `reject` is supported by both local and remote interceptors, only local interceptors can bypass requests.
+     `reject` is supported by both local and remote interceptors. However, only local interceptors can bypass requests.
 
    A declaration can also be a function to dynamically decide how to respond to the request:
 
