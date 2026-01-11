@@ -1,3 +1,4 @@
+import createPromiseWithResolvers from '@zimic/utils/data/createPromiseWithResolvers';
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import { PROCESS_EXIT_EVENTS, PROCESS_EXIT_CODE_BY_EXIT_EVENT } from '@zimic/utils/process/constants';
 import { CommandError } from '@zimic/utils/process/runCommand';
@@ -736,15 +737,8 @@ describe('CLI > Server start', async () => {
       }>({ type: 'remote', baseURL: `http://localhost:${server!.port}` }, async (interceptor) => {
         expect(interceptor.isRunning).toBe(true);
 
-        let responseFactoryPromise: Promise<{ status: 204 }> | undefined;
-        let resolveResponseFactoryPromise: ((value: { status: 204 }) => void) | undefined;
-
-        const responseFactory = vi.fn(() => {
-          responseFactoryPromise = new Promise<{ status: 204 }>((resolve) => {
-            resolveResponseFactoryPromise = resolve;
-          });
-          return responseFactoryPromise;
-        });
+        const responseFactoryPromise = createPromiseWithResolvers<{ status: 204 }>();
+        const responseFactory = vi.fn(() => responseFactoryPromise);
 
         await interceptor.get('/users').respond(responseFactory);
 
@@ -752,8 +746,7 @@ describe('CLI > Server start', async () => {
         const responsePromise = fetch(`http://localhost:${server!.port}/users`).catch(onFetchError);
 
         await waitFor(() => {
-          expect(responseFactoryPromise).toBeDefined();
-          expect(resolveResponseFactoryPromise).toBeDefined();
+          expect(responseFactory).toHaveBeenCalledTimes(1);
         });
 
         await interceptor.stop();
@@ -763,7 +756,7 @@ describe('CLI > Server start', async () => {
         await responsePromise;
         expect(onFetchError).toHaveBeenCalled();
 
-        resolveResponseFactoryPromise!({ status: 204 });
+        responseFactoryPromise.resolve({ status: 204 });
 
         // Wait for slow factory to return the response after the interceptor is already stopped
         await responseFactoryPromise;

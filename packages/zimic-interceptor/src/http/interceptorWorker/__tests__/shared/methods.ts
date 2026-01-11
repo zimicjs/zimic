@@ -1,6 +1,6 @@
 import { HttpResponse, HttpHeaders, HTTP_METHODS, HttpMethod } from '@zimic/http';
+import createPromiseWithResolvers from '@zimic/utils/data/createPromiseWithResolvers';
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
-import waitForDelay from '@zimic/utils/time/waitForDelay';
 import { PossiblePromise } from '@zimic/utils/types';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -151,11 +151,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         const interceptor = createDefaultHttpInterceptor();
 
-        let resolveWaitPromise: (() => void) | undefined;
-
-        let waitPromise = new Promise<void>((resolve) => {
-          resolveWaitPromise = resolve;
-        });
+        const waitPromise = createPromiseWithResolvers();
 
         const delayedSpiedRequestHandler = vi.fn(requestHandler).mockImplementation(async (context) => {
           await waitPromise;
@@ -172,9 +168,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         });
         await expectFetchError(responsePromise, { canBeAborted: true });
 
-        resolveWaitPromise?.();
-
-        waitPromise = waitForDelay(100);
+        waitPromise.resolve();
 
         responsePromise = fetch(baseURL, { method });
         await expect(responsePromise).resolves.toBeInstanceOf(Response);

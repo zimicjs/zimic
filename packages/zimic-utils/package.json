@@ -85,6 +85,12 @@
       "require": "./dist/data/jsonEquals.js",
       "default": "./dist/data/jsonEquals.js"
     },
+    "./data/createPromiseWithResolvers": {
+      "types": "./data/createPromiseWithResolvers.d.ts",
+      "import": "./dist/data/createPromiseWithResolvers.mjs",
+      "require": "./dist/data/createPromiseWithResolvers.js",
+      "default": "./dist/data/createPromiseWithResolvers.js"
+    },
     "./error/expectToThrow": {
       "types": "./error/expectToThrow.d.ts",
       "import": "./dist/error/expectToThrow.mjs",
