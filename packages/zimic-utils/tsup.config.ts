@@ -7,6 +7,7 @@ const sharedConfig: Options = {
   treeshake: true,
   minify: false,
   keepNames: false,
+  external: [/.*vitest.*/],
 };
 
 const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
@@ -16,10 +17,7 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   format: [format],
   dts: format === 'cjs',
   entry: {
-    // Types
     types: 'src/types/index.ts',
-
-    // Universal modules
     data: 'src/data/index.ts',
     error: 'src/error/index.ts',
     fetch: 'src/fetch/index.ts',
@@ -30,10 +28,6 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   },
 }));
 
-/**
- * Node config for server-only utilities. These utilities depend on Node.js-specific modules (child_process, http,
- * etc.).
- */
 const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   ...sharedConfig,
   name: `node-${format}`,
