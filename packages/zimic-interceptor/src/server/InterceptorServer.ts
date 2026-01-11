@@ -297,8 +297,17 @@ class InterceptorServer implements PublicInterceptorServer {
       const { response, matchedSomeInterceptor } = await this.createResponseForRequest(serializedRequest);
 
       if (response) {
-        this.setDefaultAccessControlHeaders(response, ['access-control-allow-origin', 'access-control-expose-headers']);
-        await sendNodeResponse(response, nodeResponse, nodeRequest, true);
+        if (HttpInterceptorWorker.isRejectedResponse(response)) {
+          nodeResponse.destroy();
+        } else {
+          this.setDefaultAccessControlHeaders(response, [
+            'access-control-allow-origin',
+            'access-control-expose-headers',
+          ]);
+
+          await sendNodeResponse(response, nodeResponse, nodeRequest, true);
+        }
+
         return;
       }
 

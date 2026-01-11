@@ -1,10 +1,13 @@
-import { HttpMethod, HttpSchema } from '@zimic/http';
+import { HttpBody, HttpHeadersInit, HttpMethod, HttpRequest, HttpSchema } from '@zimic/http';
+import { PossiblePromise } from '@zimic/utils/types';
 import validatePathParams from '@zimic/utils/url/validatePathParams';
 
+import UnsupportedResponseBypassError from '@/server/errors/UnsupportedResponseBypassError';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/types/schema';
 import { importCrypto } from '@/utils/crypto';
 import { isClientSide, isServerSide } from '@/utils/environment';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
+import { methodCanHaveResponseBody } from '@/utils/http';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocketEventMessage } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
@@ -12,10 +15,9 @@ import WebSocketClient from '@/webSocket/WebSocketClient';
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
-import { HttpInterceptorPlatform } from '../interceptor/types/options';
+import { HttpInterceptorPlatform, UnhandledRequestStrategy } from '../interceptor/types/options';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
-import { HttpResponseFactoryContext } from './types/http';
-import { MSWHttpResponseFactory } from './types/msw';
+import { HttpResponseFactory, HttpResponseFactoryContext } from './types/http';
 import { RemoteHttpInterceptorWorkerOptions } from './types/options';
 
 interface HttpHandler {
@@ -24,7 +26,7 @@ interface HttpHandler {
   method: HttpMethod;
   path: string;
   interceptor: AnyHttpInterceptorClient;
-  createResponse: (context: HttpResponseFactoryContext) => Promise<Response | null>;
+  createResponse: (context: HttpResponseFactoryContext) => PossiblePromise<Response | null>;
 }
 
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
@@ -78,9 +80,12 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     try {
       const rawResponse = (await handler?.createResponse({ request })) ?? null;
-      const response = rawResponse && request.method === 'HEAD' ? new Response(null, rawResponse) : rawResponse;
 
-      if (response) {
+      if (rawResponse) {
+        const response = methodCanHaveResponseBody(request.method as HttpMethod)
+          ? rawResponse
+          : new Response(null, rawResponse);
+
         return { response: await serializeResponse(response) };
       }
     } catch (error) {
@@ -135,7 +140,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
     path: string,
-    createResponse: MSWHttpResponseFactory,
+    createResponse: HttpResponseFactory,
   ) {
     if (!this.isRunning) {
       throw new NotRunningHttpInterceptorError();
@@ -151,10 +156,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       method,
       path,
       interceptor,
-      async createResponse(context) {
-        const response = await createResponse(context);
-        return response;
-      },
+      createResponse,
     };
 
     this.httpHandlers.set(handler.id, handler);
@@ -165,6 +167,25 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       method: handler.method,
       path: handler.path,
     });
+  }
+
+  async createResponseFromDeclaration(
+    request: HttpRequest,
+    declaration:
+      | { status: number; headers?: HttpHeadersInit; body?: HttpBody }
+      | { action: UnhandledRequestStrategy.Action },
+  ) {
+    const response = await super.createResponseFromDeclaration(request, declaration);
+
+    if (response && HttpInterceptorWorker.isBypassedResponse(response)) {
+      throw new UnsupportedResponseBypassError();
+    }
+
+    if (response && HttpInterceptorWorker.isRejectedResponse(response)) {
+      return response;
+    }
+
+    return response;
   }
 
   async clearHandlers<Schema extends HttpSchema>(

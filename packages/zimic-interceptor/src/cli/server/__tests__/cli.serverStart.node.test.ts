@@ -1,10 +1,10 @@
+import createPromiseWithResolvers from '@zimic/utils/data/createPromiseWithResolvers';
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import { PROCESS_EXIT_EVENTS, PROCESS_EXIT_CODE_BY_EXIT_EVENT } from '@zimic/utils/process/constants';
 import { CommandError } from '@zimic/utils/process/runCommand';
 import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@zimic/utils/server/lifecycle';
 import waitFor from '@zimic/utils/time/waitFor';
 import waitForDelay from '@zimic/utils/time/waitForDelay';
-import waitForNot from '@zimic/utils/time/waitForNot';
 import { PossiblePromise } from '@zimic/utils/types';
 import fs from 'fs';
 import path from 'path';
@@ -18,6 +18,7 @@ import { importCrypto } from '@/utils/crypto';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 import WebSocketServer from '@/webSocket/WebSocketServer';
 import { usingIgnoredConsole } from '@tests/utils/console';
+import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import runCLI from '../../cli';
 import { serverSingleton as server } from '../start';
@@ -729,25 +730,15 @@ describe('CLI > Server start', async () => {
       expect(server!.hostname).toBe('localhost');
       expect(server!.port).toEqual(expect.any(Number));
 
-      const interceptor = createHttpInterceptor<{
+      await usingHttpInterceptor<{
         '/users': {
           GET: { response: { 204: {} } };
         };
-      }>({
-        type: 'remote',
-        baseURL: `http://localhost:${server!.port}`,
-      });
-
-      try {
-        await interceptor.start();
+      }>({ type: 'remote', baseURL: `http://localhost:${server!.port}` }, async (interceptor) => {
         expect(interceptor.isRunning).toBe(true);
 
-        let responseFactoryPromise: Promise<{ status: 204 }> | undefined;
-
-        const responseFactory = vi.fn(async () => {
-          responseFactoryPromise = waitForDelay(250).then(() => ({ status: 204 }) as const);
-          return responseFactoryPromise;
-        });
+        const responseFactoryPromise = createPromiseWithResolvers<{ status: 204 }>();
+        const responseFactory = vi.fn(() => responseFactoryPromise);
 
         await interceptor.get('/users').respond(responseFactory);
 
@@ -755,7 +746,7 @@ describe('CLI > Server start', async () => {
         const responsePromise = fetch(`http://localhost:${server!.port}/users`).catch(onFetchError);
 
         await waitFor(() => {
-          expect(responseFactoryPromise).toBeDefined();
+          expect(responseFactory).toHaveBeenCalledTimes(1);
         });
 
         await interceptor.stop();
@@ -765,15 +756,13 @@ describe('CLI > Server start', async () => {
         await responsePromise;
         expect(onFetchError).toHaveBeenCalled();
 
+        responseFactoryPromise.resolve({ status: 204 });
+
         // Wait for slow factory to return the response after the interceptor is already stopped
         await responseFactoryPromise;
 
-        await waitForNot(() => {
-          expect(console.error).toHaveBeenCalled();
-        });
-      } finally {
-        await interceptor.stop();
-      }
+        expect(console.error).not.toHaveBeenCalled();
+      });
     });
   });
 

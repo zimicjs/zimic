@@ -85,6 +85,12 @@
       "require": "./dist/data/jsonEquals.js",
       "default": "./dist/data/jsonEquals.js"
     },
+    "./data/createPromiseWithResolvers": {
+      "types": "./data/createPromiseWithResolvers.d.ts",
+      "import": "./dist/data/createPromiseWithResolvers.mjs",
+      "require": "./dist/data/createPromiseWithResolvers.js",
+      "default": "./dist/data/createPromiseWithResolvers.js"
+    },
     "./error/expectToThrow": {
       "types": "./error/expectToThrow.d.ts",
       "import": "./dist/error/expectToThrow.mjs",
@@ -185,14 +191,14 @@
   },
   "scripts": {
     "dev": "tsup --watch",
-    "build": "rm -rf dist/* && tsup",
+    "build": "tsup",
     "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write",
     "test": "dotenv -v NODE_ENV=test -v FORCE_COLOR=1 -- vitest",
-    "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test --coverage --reporter tree",
     "types:check": "tsc --noEmit",
     "typegen:fixtures": "tsx ./scripts/typegen/generateFixtureTypes.js"
   },

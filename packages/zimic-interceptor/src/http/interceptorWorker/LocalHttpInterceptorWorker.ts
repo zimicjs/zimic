@@ -1,8 +1,8 @@
-import { HttpRequest, HttpResponse, HttpMethod, HttpSchema } from '@zimic/http';
+import { HttpRequest, HttpResponse, HttpMethod, HttpSchema, HttpHeadersInit, HttpBody } from '@zimic/http';
 import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
 import excludeNonPathParams from '@zimic/utils/url/excludeNonPathParams';
 import validatePathParams from '@zimic/utils/url/validatePathParams';
-import { SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
+import { SharedOptions as MSWWorkerSharedOptions, bypass, http, passthrough } from 'msw';
 import * as mswBrowser from 'msw/browser';
 import * as mswNode from 'msw/node';
 
@@ -12,10 +12,11 @@ import { isClientSide, isServerSide } from '@/utils/environment';
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
+import { UnhandledRequestStrategy } from '../interceptor/types/options';
 import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
-import { HttpResponseFactoryContext } from './types/http';
-import { BrowserMSWWorker, MSWHttpResponseFactory, MSWWorker, NodeMSWWorker } from './types/msw';
+import { HttpResponseFactory, HttpResponseFactoryContext } from './types/http';
+import { BrowserMSWWorker, MSWWorker, NodeMSWWorker } from './types/msw';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
 
 interface HttpHandler {
@@ -163,7 +164,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
     path: string,
-    createResponse: MSWHttpResponseFactory,
+    createResponse: HttpResponseFactory,
   ) {
     if (!this.isRunning) {
       throw new NotRunningHttpInterceptorError();
@@ -185,7 +186,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
         let response: HttpResponse | null = null;
 
         try {
-          response = await createResponse({ ...context, request });
+          response = await createResponse({ request });
         } catch (error) {
           console.error(error);
         }
@@ -207,6 +208,32 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     };
 
     methodHandlers.push(handler);
+  }
+
+  async createResponseFromDeclaration(
+    request: HttpRequest,
+    declaration:
+      | { status: number; headers?: HttpHeadersInit; body?: HttpBody }
+      | { action: UnhandledRequestStrategy.Action },
+  ) {
+    const requestClone = request.clone();
+    const response = await super.createResponseFromDeclaration(request, declaration);
+
+    if (response && HttpInterceptorWorker.isBypassedResponse(response)) {
+      try {
+        const response = (await fetch(bypass(requestClone))) as HttpResponse;
+        return response;
+      } catch (error) {
+        console.error(error);
+        return null;
+      }
+    }
+
+    if (response && HttpInterceptorWorker.isRejectedResponse(response)) {
+      return response;
+    }
+
+    return response;
   }
 
   private async createResponseForRequest(request: HttpRequest) {
@@ -244,9 +271,9 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     await super.logUnhandledRequestIfNecessary(requestClone, strategy);
 
     if (strategy?.action === 'reject') {
-      return Response.error();
+      return Response.error() as HttpResponse;
     } else {
-      return passthrough();
+      return passthrough() as HttpResponse;
     }
   }
 
