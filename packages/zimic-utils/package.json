@@ -28,7 +28,8 @@
     "!src/**/__tests__",
     "!src/**/*.test.ts",
     "dist",
-    "*/*.d.ts"
+    "*.d.ts",
+    "types/*.d.ts"
   ],
   "exports": {
     "./types": {
@@ -43,161 +44,77 @@
       "require": "./dist/types/globals.js",
       "default": "./dist/types/globals.js"
     },
-    "./types/json": {
-      "types": "./types/json.d.ts",
-      "import": "./dist/types/json.mjs",
-      "require": "./dist/types/json.js",
-      "default": "./dist/types/json.js"
+    "./data": {
+      "types": "./data.d.ts",
+      "import": "./dist/data.mjs",
+      "require": "./dist/data.js",
+      "default": "./dist/data.js"
     },
-    "./data/isDefined": {
-      "types": "./data/isDefined.d.ts",
-      "import": "./dist/data/isDefined.mjs",
-      "require": "./dist/data/isDefined.js",
-      "default": "./dist/data/isDefined.js"
+    "./error": {
+      "types": "./error.d.ts",
+      "import": "./dist/error.mjs",
+      "require": "./dist/error.js",
+      "default": "./dist/error.js"
     },
-    "./data/isNonEmpty": {
-      "types": "./data/isNonEmpty.d.ts",
-      "import": "./dist/data/isNonEmpty.mjs",
-      "require": "./dist/data/isNonEmpty.js",
-      "default": "./dist/data/isNonEmpty.js"
+    "./fetch": {
+      "types": "./fetch.d.ts",
+      "import": "./dist/fetch.mjs",
+      "require": "./dist/fetch.js",
+      "default": "./dist/fetch.js"
     },
-    "./data/blobEquals": {
-      "types": "./data/blobEquals.d.ts",
-      "import": "./dist/data/blobEquals.mjs",
-      "require": "./dist/data/blobEquals.js",
-      "default": "./dist/data/blobEquals.js"
+    "./import": {
+      "types": "./import.d.ts",
+      "import": "./dist/import.mjs",
+      "require": "./dist/import.js",
+      "default": "./dist/import.js"
     },
-    "./data/fileEquals": {
-      "types": "./data/fileEquals.d.ts",
-      "import": "./dist/data/fileEquals.mjs",
-      "require": "./dist/data/fileEquals.js",
-      "default": "./dist/data/fileEquals.js"
+    "./logging": {
+      "types": "./logging.d.ts",
+      "import": "./dist/logging.mjs",
+      "require": "./dist/logging.js",
+      "default": "./dist/logging.js"
     },
-    "./data/jsonContains": {
-      "types": "./data/jsonContains.d.ts",
-      "import": "./dist/data/jsonContains.mjs",
-      "require": "./dist/data/jsonContains.js",
-      "default": "./dist/data/jsonContains.js"
+    "./time": {
+      "types": "./time.d.ts",
+      "import": "./dist/time.mjs",
+      "require": "./dist/time.js",
+      "default": "./dist/time.js"
     },
-    "./data/jsonEquals": {
-      "types": "./data/jsonEquals.d.ts",
-      "import": "./dist/data/jsonEquals.mjs",
-      "require": "./dist/data/jsonEquals.js",
-      "default": "./dist/data/jsonEquals.js"
+    "./url": {
+      "types": "./url.d.ts",
+      "import": "./dist/url.mjs",
+      "require": "./dist/url.js",
+      "default": "./dist/url.js"
     },
-    "./error/expectToThrow": {
-      "types": "./error/expectToThrow.d.ts",
-      "import": "./dist/error/expectToThrow.mjs",
-      "require": "./dist/error/expectToThrow.js",
-      "default": "./dist/error/expectToThrow.js"
+    "./process": {
+      "types": "./process.d.ts",
+      "import": "./dist/process.mjs",
+      "require": "./dist/process.js",
+      "default": "./dist/process.js"
     },
-    "./fetch/expectFetchError": {
-      "types": "./fetch/expectFetchError.d.ts",
-      "import": "./dist/fetch/expectFetchError.mjs",
-      "require": "./dist/fetch/expectFetchError.js",
-      "default": "./dist/fetch/expectFetchError.js"
-    },
-    "./import/createCachedDynamicImport": {
-      "types": "./import/createCachedDynamicImport.d.ts",
-      "import": "./dist/import/createCachedDynamicImport.mjs",
-      "require": "./dist/import/createCachedDynamicImport.js",
-      "default": "./dist/import/createCachedDynamicImport.js"
-    },
-    "./logging/Logger": {
-      "types": "./logging/Logger.d.ts",
-      "import": "./dist/logging/Logger.mjs",
-      "require": "./dist/logging/Logger.js",
-      "default": "./dist/logging/Logger.js"
-    },
-    "./time/waitFor": {
-      "types": "./time/waitFor.d.ts",
-      "import": "./dist/time/waitFor.mjs",
-      "require": "./dist/time/waitFor.js",
-      "default": "./dist/time/waitFor.js"
-    },
-    "./time/waitForNot": {
-      "types": "./time/waitForNot.d.ts",
-      "import": "./dist/time/waitForNot.mjs",
-      "require": "./dist/time/waitForNot.js",
-      "default": "./dist/time/waitForNot.js"
-    },
-    "./time/waitForDelay": {
-      "types": "./time/waitForDelay.d.ts",
-      "import": "./dist/time/waitForDelay.mjs",
-      "require": "./dist/time/waitForDelay.js",
-      "default": "./dist/time/waitForDelay.js"
-    },
-    "./url/createRegexFromPath": {
-      "types": "./url/createRegexFromPath.d.ts",
-      "import": "./dist/url/createRegexFromPath.mjs",
-      "require": "./dist/url/createRegexFromPath.js",
-      "default": "./dist/url/createRegexFromPath.js"
-    },
-    "./url/createWildcardRegexFromPath": {
-      "types": "./url/createWildcardRegexFromPath.d.ts",
-      "import": "./dist/url/createWildcardRegexFromPath.mjs",
-      "require": "./dist/url/createWildcardRegexFromPath.js",
-      "default": "./dist/url/createWildcardRegexFromPath.js"
-    },
-    "./url/excludeNonPathParams": {
-      "types": "./url/excludeNonPathParams.d.ts",
-      "import": "./dist/url/excludeNonPathParams.mjs",
-      "require": "./dist/url/excludeNonPathParams.js",
-      "default": "./dist/url/excludeNonPathParams.js"
-    },
-    "./url/joinURL": {
-      "types": "./url/joinURL.d.ts",
-      "import": "./dist/url/joinURL.mjs",
-      "require": "./dist/url/joinURL.js",
-      "default": "./dist/url/joinURL.js"
-    },
-    "./url/validatePathParams": {
-      "types": "./url/validatePathParams.d.ts",
-      "import": "./dist/url/validatePathParams.mjs",
-      "require": "./dist/url/validatePathParams.js",
-      "default": "./dist/url/validatePathParams.js"
-    },
-    "./url/validateURLProtocol": {
-      "types": "./url/validateURLProtocol.d.ts",
-      "import": "./dist/url/validateURLProtocol.mjs",
-      "require": "./dist/url/validateURLProtocol.js",
-      "default": "./dist/url/validateURLProtocol.js"
-    },
-    "./process/runCommand": {
-      "types": "./process/runCommand.d.ts",
-      "import": "./dist/process/runCommand.mjs",
-      "require": "./dist/process/runCommand.js",
-      "default": "./dist/process/runCommand.js"
-    },
-    "./process/constants": {
-      "types": "./process/constants.d.ts",
-      "import": "./dist/process/constants.mjs",
-      "require": "./dist/process/constants.js",
-      "default": "./dist/process/constants.js"
-    },
-    "./server/lifecycle": {
-      "types": "./server/lifecycle.d.ts",
-      "import": "./dist/server/lifecycle.mjs",
-      "require": "./dist/server/lifecycle.js",
-      "default": "./dist/server/lifecycle.js"
+    "./server": {
+      "types": "./server.d.ts",
+      "import": "./dist/server.mjs",
+      "require": "./dist/server.js",
+      "default": "./dist/server.js"
     },
     "./package.json": "./package.json"
   },
   "scripts": {
     "dev": "tsup --watch",
-    "build": "rm -rf dist/* && tsup",
+    "build": "tsup",
     "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write",
     "test": "dotenv -v NODE_ENV=test -v FORCE_COLOR=1 -- vitest",
-    "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test --coverage --reporter tree",
     "types:check": "tsc --noEmit",
     "typegen:fixtures": "tsx ./scripts/typegen/generateFixtureTypes.js"
   },
   "devDependencies": {
-    "@types/node": "^25.0.3",
+    "@types/node": "^25.0.6",
     "@vitest/browser": "^4.0.16",
     "@vitest/browser-playwright": "^4.0.16",
     "@vitest/coverage-istanbul": "^4.0.16",

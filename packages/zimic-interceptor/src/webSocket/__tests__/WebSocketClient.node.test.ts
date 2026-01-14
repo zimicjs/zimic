@@ -1,6 +1,5 @@
-import { startHttpServer, stopHttpServer } from '@zimic/utils/server/lifecycle';
-import waitFor from '@zimic/utils/time/waitFor';
-import waitForNot from '@zimic/utils/time/waitForNot';
+import { startHttpServer, stopHttpServer } from '@zimic/utils/server';
+import { waitFor, waitForNot } from '@zimic/utils/time';
 import { createServer } from 'http';
 import ClientSocket from 'isomorphic-ws';
 import { AddressInfo } from 'net';

@@ -5,6 +5,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   publicDir: './public',
   test: {
+    watch: false,
     globals: false,
     testTimeout: 5000,
     hookTimeout: 5000,

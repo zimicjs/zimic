@@ -1,4 +1,4 @@
-export type { JSONValue, JSONSerialized } from '@zimic/utils/types/json';
+export type { JSONValue, JSONSerialized } from '@zimic/utils/types';
 
 export { default as HttpFormData } from './formData/HttpFormData';
 export type { HttpFormDataSchema, HttpFormDataSchemaName, HttpFormDataSerialized } from './formData/types';

@@ -10,7 +10,7 @@
     ".": "./index.js"
   },
   "dependencies": {
-    "@eslint/compat": "^2.0.0",
+    "@eslint/compat": "^2.0.1",
     "@zimic/eslint-config": "workspace:*",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",

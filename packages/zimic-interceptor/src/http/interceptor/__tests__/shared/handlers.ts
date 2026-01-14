@@ -1,6 +1,6 @@
 import { HttpHeaders, HttpSearchParams, HTTP_METHODS, HttpSchema } from '@zimic/http';
-import expectFetchError from '@zimic/utils/fetch/expectFetchError';
-import joinURL from '@zimic/utils/url/joinURL';
+import { expectFetchError } from '@zimic/utils/fetch';
+import { joinURL } from '@zimic/utils/url';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
@@ -9,7 +9,7 @@ import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHan
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectPreflightResponse } from '@tests/utils/fetch';
-import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
+import { getPreflightAssessment, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions, verifyUnhandledRequestMessage } from './utils';
@@ -32,7 +32,7 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
   });
 
   describe.each(HTTP_METHODS)('Method (%s)', (method) => {
-    const { overridesPreflightResponse, numberOfRequestsIncludingPreflight } = assessPreflightInterference({
+    const { overridesPreflightResponse, numberOfRequestsIncludingPreflight } = getPreflightAssessment({
       method,
       platform,
       type,

@@ -1,9 +1,7 @@
 import { HttpResponse } from '@zimic/http';
-import expectFetchError from '@zimic/utils/fetch/expectFetchError';
+import { expectFetchError } from '@zimic/utils/fetch';
 import { PossiblePromise } from '@zimic/utils/types';
-import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
-import joinURL from '@zimic/utils/url/joinURL';
-import { DuplicatedPathParamError } from '@zimic/utils/url/validatePathParams';
+import { createRegexFromPath, joinURL, DuplicatedPathParamError } from '@zimic/utils/url';
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
 import { expectBypassedResponse } from '@tests/utils/fetch';

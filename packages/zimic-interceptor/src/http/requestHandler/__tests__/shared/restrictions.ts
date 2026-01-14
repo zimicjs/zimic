@@ -1,5 +1,5 @@
 import { HttpHeaders, HttpSearchParams } from '@zimic/http';
-import joinURL from '@zimic/utils/url/joinURL';
+import { joinURL } from '@zimic/utils/url';
 import { expectTypeOf, expect, it, beforeAll, afterAll, describe, beforeEach, afterEach } from 'vitest';
 
 import { SharedHttpInterceptorClient } from '@/http/interceptor/HttpInterceptorClient';

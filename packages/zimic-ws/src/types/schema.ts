@@ -1,5 +1,4 @@
-import { Branded } from '@zimic/utils/types';
-import { JSONValue } from '@zimic/utils/types/json';
+import { Branded, JSONValue } from '@zimic/utils/types';
 
 import { JSONStringified } from './json';
 

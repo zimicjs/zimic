@@ -674,23 +674,23 @@ export function declareTypeHttpInterceptorTests(
         body: users[0],
       });
 
+      // @ts-expect-error Providing an accept header is required
       _listHandler = await interceptor.get('/users').respond({
         status: 200,
-        // @ts-expect-error Providing an accept header is required
         headers: {},
         body: users[0],
       });
 
+      // @ts-expect-error Providing an accept header is required
       _listHandler = await interceptor.get('/users').respond({
         status: 200,
-        // @ts-expect-error Providing an accept header is required
         headers: { 'content-type': undefined },
         body: users[0],
       });
 
+      // @ts-expect-error Providing an accept header is required
       _listHandler = await interceptor.get('/users').respond({
         status: 200,
-        // @ts-expect-error Providing an accept header is required
         headers: { 'content-type': 'application/json' },
         body: users[0],
       });
@@ -850,9 +850,9 @@ export function declareTypeHttpInterceptorTests(
         body: undefined,
       });
 
+      // @ts-expect-error The response body should match the schema
       await interceptor.get('/users').respond({
         status: 200,
-        // @ts-expect-error The response body should match the schema
         body: '',
       });
       // @ts-expect-error The response body should match the schema
@@ -861,9 +861,9 @@ export function declareTypeHttpInterceptorTests(
         body: '',
       }));
 
+      // @ts-expect-error The response body should match the schema
       await interceptor.post('/notifications/read').respond({
         status: 204,
-        // @ts-expect-error The response body should match the schema
         body: users,
       });
       // @ts-expect-error The response body should match the schema

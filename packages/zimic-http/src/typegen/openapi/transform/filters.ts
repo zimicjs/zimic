@@ -1,5 +1,5 @@
-import isNonEmpty from '@zimic/utils/data/isNonEmpty';
-import createWildcardRegexFromPath from '@zimic/utils/url/createWildcardRegexFromPath';
+import { isNonEmpty } from '@zimic/utils/data';
+import { createWildcardRegexFromPath } from '@zimic/utils/url';
 import fs from 'fs';
 import color from 'picocolors';
 

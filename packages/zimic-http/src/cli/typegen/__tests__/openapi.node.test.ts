@@ -1,6 +1,6 @@
 import { createHttpInterceptor } from '@zimic/interceptor/http';
-import isDefined from '@zimic/utils/data/isDefined';
-import joinURL from '@zimic/utils/url/joinURL';
+import { isDefined } from '@zimic/utils/data';
+import { joinURL } from '@zimic/utils/url';
 import fs from 'fs';
 import yaml from 'js-yaml';
 import path from 'path';

@@ -1,4 +1,4 @@
-import { JSONStringified as InternalJSONStringified } from '@zimic/utils/types/json';
+import { JSONStringified as InternalJSONStringified } from '@zimic/utils/types';
 
 /**
  * Represents a value stringified by `JSON.stringify`, maintaining a type reference to the original type.

@@ -223,18 +223,30 @@ await handler.respond((request) => declaration);
 1. **declaration**:
    `HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode> | HttpRequestHandlerResponseDeclarationFactory<MethodSchema, StatusCode>`
 
-   The response declaration or a factory to create it. It can be a static object:
+   The response declaration or a factory to create it.
+
+   If declared as a static object, the declaration can have the following properties:
    - **status**: `HttpStatusCode`
 
      The status code for the response.
 
-   - **headers**: `HttpHeadersInit<HeadersSchema> | undefined`
+   - **headers** (optional): `HttpHeadersInit<HeadersSchema>`
 
      The headers to include in the response.
 
-   - **body**: `HttpBody`
+   - **body** (optional): `HttpBody`
 
      The body to include in the response.
+
+   If you need to bypass or reject the request instead of responding with a mock response, you can use the special
+   `action` property:
+   - **action** (optional): `'bypass' | 'reject'`
+
+     If set to `'bypass'`, the request will be sent to the actual server instead of being mocked. On the other hand,
+     setting it to `'reject'` will make the request fail with a network error. This behavior is similar to
+     [unhandled request actions](/docs/zimic-interceptor/guides/http/9-unhandled-requests.md).
+
+     `reject` is supported by both local and remote interceptors. However, only local interceptors can bypass requests.
 
    A declaration can also be a function to dynamically decide how to respond to the request:
 
@@ -248,11 +260,11 @@ await handler.respond((request) => declaration);
 
 **Returns**: `HttpRequestHandler<Method, Path, StatusCode>`
 
-The same handler, now including type information about the response declaration based on the status code.
+The same handler, now including type information about the response declaration.
 
-If the interceptor is local, the response is immediately applied to the handler. If the interceptor is remote, the
-response is asynchronously sent to the [interceptor server](/docs/zimic-interceptor/cli/1-server.md). Because of the
-asynchronous nature of remote interceptors, make sure to await the handler before making requests.
+If the interceptor is local, the response declaration is immediately applied to the handler. If the interceptor is
+remote, the declaration is asynchronously sent to the [interceptor server](/docs/zimic-interceptor/cli/1-server.md).
+Because of the asynchronous nature of remote interceptors, make sure to await the handler before making requests.
 
 ## `handler.times()`
 

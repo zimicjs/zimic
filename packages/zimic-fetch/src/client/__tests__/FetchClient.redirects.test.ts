@@ -1,5 +1,5 @@
 import { HttpSchema, HttpSchemaPath } from '@zimic/http';
-import expectFetchError from '@zimic/utils/fetch/expectFetchError';
+import { expectFetchError } from '@zimic/utils/fetch';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { isClientSide } from '@/utils/environment';
