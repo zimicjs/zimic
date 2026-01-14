@@ -1,4 +1,4 @@
-import { ExpectFetchErrorOptions, createFetchErrorMessageRegExp } from '@zimic/utils/fetch/expectFetchError';
+import { ExpectFetchErrorOptions, createFetchErrorMessageRegExp } from '@zimic/utils/fetch';
 import { expect } from 'vitest';
 
 import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from '@/server/constants';

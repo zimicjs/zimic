@@ -8,6 +8,7 @@ const sharedConfig: Options = {
   minify: false,
   keepNames: false,
   noExternal: ['@zimic/utils'],
+  external: [/.*vitest.*/],
 };
 
 const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({

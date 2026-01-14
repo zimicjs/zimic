@@ -1,5 +1,5 @@
 import { HttpFormData, HttpSchema, StrictFormData, StrictHeaders } from '@zimic/http';
-import joinURL from '@zimic/utils/url/joinURL';
+import { joinURL } from '@zimic/utils/url';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { importFile } from '@/utils/files';

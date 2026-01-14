@@ -6,9 +6,7 @@ import {
   HttpSchema,
   HttpHeaders,
 } from '@zimic/http';
-import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
-import excludeNonPathParams from '@zimic/utils/url/excludeNonPathParams';
-import joinURL from '@zimic/utils/url/joinURL';
+import { createRegexFromPath, excludeNonPathParams, joinURL } from '@zimic/utils/url';
 
 import FetchResponseError from './errors/FetchResponseError';
 import { FetchInput, FetchOptions, Fetch, FetchDefaults } from './types/public';

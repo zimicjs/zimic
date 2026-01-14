@@ -1,3 +1,5 @@
+export * from './json';
+
 export type Default<Type, IfEmpty = never> = [undefined | void] extends [Type]
   ? IfEmpty
   : Exclude<Type, undefined | void>;

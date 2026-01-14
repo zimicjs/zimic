@@ -1,4 +1,4 @@
-import runCommand from '@zimic/utils/process/runCommand';
+import { runCommand } from '@zimic/utils/process';
 import fs from 'fs';
 import path from 'path';
 import { afterAll, beforeAll, describe, it } from 'vitest';

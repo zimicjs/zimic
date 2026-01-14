@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "1.2.7-canary.1",
+  "version": "1.3.0-canary.1",
   "homepage": "https://zimic.dev/docs/interceptor",
   "repository": {
     "type": "git",
@@ -90,7 +90,7 @@
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write",
     "test": "dotenv -v NODE_ENV=test -v FORCE_COLOR=1 -- vitest",
-    "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test --coverage --reporter tree",
     "types:check": "tsc --noEmit",
     "postinstall": "node --enable-source-maps -e \"try{require('./dist/scripts/postinstall')}catch(error){console.error(error)}\""
   },

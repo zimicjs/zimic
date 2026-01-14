@@ -8,9 +8,7 @@ import {
   HttpSchema,
 } from '@zimic/http';
 import { Default, PossiblePromise } from '@zimic/utils/types';
-import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
-import excludeNonPathParams from '@zimic/utils/url/excludeNonPathParams';
-import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
+import { createRegexFromPath, excludeNonPathParams, validateURLProtocol } from '@zimic/utils/url';
 
 import { isServerSide } from '@/utils/environment';
 
@@ -267,7 +265,7 @@ class HttpInterceptorClient<
     }
   }
 
-  private async handleInterceptedRequest<
+  async handleInterceptedRequest<
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
@@ -289,15 +287,15 @@ class HttpInterceptorClient<
       return null;
     }
 
-    const response = HttpInterceptorWorker.createResponseFromDeclaration(request, responseDeclaration);
+    const response = await this.workerOrThrow.createResponseFromDeclaration(request, responseDeclaration);
 
-    if (this.requestSaving.enabled) {
+    const shouldSaveInterceptedRequest =
+      this.requestSaving.enabled && response && !HttpInterceptorWorker.isRejectedResponse(response);
+
+    if (shouldSaveInterceptedRequest) {
       const responseClone = response.clone();
 
-      const parsedResponse = await HttpInterceptorWorker.parseRawResponse<
-        Default<Schema[Path][Method]>,
-        typeof responseDeclaration.status
-      >(responseClone);
+      const parsedResponse = await HttpInterceptorWorker.parseRawResponse<Default<Schema[Path][Method]>>(responseClone);
 
       matchedHandler.saveInterceptedRequest(parsedRequest, parsedResponse);
     }
