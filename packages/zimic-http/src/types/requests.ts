@@ -1,5 +1,4 @@
-import { Default, DefaultNoExclude, IfNever, Replace } from '@zimic/utils/types';
-import { JSONValue } from '@zimic/utils/types/json';
+import { Default, DefaultNoExclude, IfNever, Replace, JSONValue } from '@zimic/utils/types';
 
 import { HttpMethodSchema, HttpRequestSchema, HttpResponseSchema, HttpStatusCode } from '@/types/schema';
 

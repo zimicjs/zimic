@@ -1,4 +1,4 @@
-import fileEquals from '@zimic/utils/data/fileEquals';
+import { fileEquals } from '@zimic/utils/data';
 import { ArrayItemIfArray, Replace } from '@zimic/utils/types';
 
 import { HttpFormDataSchema, HttpFormDataSchemaName, HttpFormDataSerialized } from './types';

@@ -1,4 +1,4 @@
-import createCachedDynamicImport from '@zimic/utils/import/createCachedDynamicImport';
+import { createCachedDynamicImport } from '@zimic/utils/import';
 import fs from 'fs';
 import type { SchemaObject } from 'openapi-typescript';
 import path from 'path';

@@ -1,6 +1,6 @@
 import { HttpFormData, HttpHeaders, HttpSearchParams } from '@zimic/http';
-import createCachedDynamicImport from '@zimic/utils/import/createCachedDynamicImport';
-import Logger from '@zimic/utils/logging/Logger';
+import { createCachedDynamicImport } from '@zimic/utils/import';
+import { Logger } from '@zimic/utils/logging';
 import color from 'picocolors';
 
 import { isClientSide } from './environment';

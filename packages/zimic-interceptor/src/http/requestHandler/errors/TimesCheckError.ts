@@ -1,4 +1,4 @@
-import isNonEmpty from '@zimic/utils/data/isNonEmpty';
+import { isNonEmpty } from '@zimic/utils/data';
 import { Range } from '@zimic/utils/types';
 import color from 'picocolors';
 

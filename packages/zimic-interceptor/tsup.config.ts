@@ -1,6 +1,6 @@
 import { Options, defineConfig } from 'tsup';
 
-const sharedConfig: Options = {
+const sharedConfig = {
   bundle: true,
   splitting: true,
   sourcemap: true,
@@ -8,12 +8,13 @@ const sharedConfig: Options = {
   minify: false,
   keepNames: false,
   noExternal: ['@zimic/utils'],
+  external: [/.*vitest.*/],
   env: {
     INTERCEPTOR_SERVER_ACCESS_CONTROL_MAX_AGE: '',
     INTERCEPTOR_TOKEN_HASH_ITERATIONS: '1000000',
     VITEST_POOL_ID: '',
   },
-};
+} satisfies Options;
 
 const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   ...sharedConfig,
@@ -25,7 +26,7 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
     index: 'src/index.ts',
     http: 'src/http/index.ts',
   },
-  external: ['fs', 'util', 'buffer', 'crypto'],
+  external: [...sharedConfig.external, 'fs', 'util', 'buffer', 'crypto'],
 }));
 
 const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => {

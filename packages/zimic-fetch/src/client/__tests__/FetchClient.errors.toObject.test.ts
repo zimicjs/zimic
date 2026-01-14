@@ -7,7 +7,7 @@ import {
   JSONValue,
 } from '@zimic/http';
 import { DeepPartial, PossiblePromise } from '@zimic/utils/types';
-import joinURL from '@zimic/utils/url/joinURL';
+import { joinURL } from '@zimic/utils/url';
 import color from 'picocolors';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
