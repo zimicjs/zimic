@@ -1,4 +1,4 @@
-import createCachedDynamicImport from '@zimic/utils/import/createCachedDynamicImport';
+import { createCachedDynamicImport } from '@zimic/utils/import';
 import type fs from 'fs';
 
 export const importFile = createCachedDynamicImport(

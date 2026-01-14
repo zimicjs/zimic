@@ -1,5 +1,10 @@
-import { ProcessExitEvent, PROCESS_EXIT_EVENTS, PROCESS_EXIT_CODE_BY_EXIT_EVENT } from '@zimic/utils/process/constants';
-import runCommand, { CommandError } from '@zimic/utils/process/runCommand';
+import {
+  ProcessExitEvent,
+  PROCESS_EXIT_EVENTS,
+  PROCESS_EXIT_CODE_BY_EXIT_EVENT,
+  runCommand,
+  CommandError,
+} from '@zimic/utils/process';
 import color from 'picocolors';
 
 import { InterceptorServer, createInterceptorServer } from '@/server';

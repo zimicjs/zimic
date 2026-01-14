@@ -1,5 +1,5 @@
 import { HTTP_METHODS, HttpSchema } from '@zimic/http';
-import { DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT } from '@zimic/utils/server/lifecycle';
+import { DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT } from '@zimic/utils/server';
 
 import { DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT } from '@/utils/webSocket';
 

@@ -9,10 +9,8 @@ import {
   HttpRequestSearchParamsSchema,
   HttpRequestHeadersSchema,
 } from '@zimic/http';
-import blobEquals from '@zimic/utils/data/blobEquals';
-import jsonContains from '@zimic/utils/data/jsonContains';
-import jsonEquals from '@zimic/utils/data/jsonEquals';
-import waitForDelay from '@zimic/utils/time/waitForDelay';
+import { blobEquals, jsonContains, jsonEquals } from '@zimic/utils/data';
+import { waitForDelay } from '@zimic/utils/time';
 import { Default, Range } from '@zimic/utils/types';
 
 import { convertArrayBufferToBlob, convertReadableStreamToBlob } from '@/utils/data';

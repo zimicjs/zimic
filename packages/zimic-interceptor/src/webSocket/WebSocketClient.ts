@@ -1,4 +1,4 @@
-import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
+import { validateURLProtocol } from '@zimic/utils/url';
 import ClientSocket from 'isomorphic-ws';
 
 import { WebSocketSchema } from './types';

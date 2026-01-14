@@ -1,5 +1,8 @@
 import { JSONValue } from '@zimic/http';
 
+import { UnhandledRequestStrategy } from '@/http';
+import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
+
 import { convertArrayBufferToBase64, convertBase64ToArrayBuffer } from './data';
 
 export type SerializedHttpRequest = JSONValue<{
@@ -56,6 +59,8 @@ export function deserializeRequest(serializedRequest: SerializedHttpRequest): Re
 }
 
 export type SerializedResponse = JSONValue<{
+  type: Response['type'];
+  action?: UnhandledRequestStrategy.Action;
   status: number;
   statusText: string;
   headers: Record<string, string>;
@@ -67,6 +72,8 @@ export async function serializeResponse(response: Response): Promise<SerializedR
   const serializedBody = responseClone.body ? convertArrayBufferToBase64(await responseClone.arrayBuffer()) : null;
 
   return {
+    type: response.type,
+    action: HttpInterceptorWorker.getResponseAction(response),
     status: response.status,
     statusText: response.statusText,
     headers: Object.fromEntries(response.headers),
@@ -75,11 +82,23 @@ export async function serializeResponse(response: Response): Promise<SerializedR
 }
 
 export function deserializeResponse(serializedResponse: SerializedResponse): Response {
-  const deserializedBody = serializedResponse.body ? convertBase64ToArrayBuffer(serializedResponse.body) : null;
+  let response: Response;
 
-  return new Response(deserializedBody, {
-    status: serializedResponse.status,
-    statusText: serializedResponse.statusText,
-    headers: new Headers(serializedResponse.headers),
-  });
+  if (serializedResponse.type === 'error') {
+    response = Response.error();
+  } else {
+    const deserializedBody = serializedResponse.body ? convertBase64ToArrayBuffer(serializedResponse.body) : null;
+
+    response = new Response(deserializedBody, {
+      status: serializedResponse.status,
+      statusText: serializedResponse.statusText,
+      headers: new Headers(serializedResponse.headers),
+    });
+  }
+
+  if (serializedResponse.action) {
+    HttpInterceptorWorker.setResponseAction(response, serializedResponse.action);
+  }
+
+  return response;
 }

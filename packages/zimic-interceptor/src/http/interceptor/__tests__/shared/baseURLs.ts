@@ -1,6 +1,5 @@
-import expectFetchError from '@zimic/utils/fetch/expectFetchError';
-import joinURL from '@zimic/utils/url/joinURL';
-import { UnsupportedURLProtocolError } from '@zimic/utils/url/validateURLProtocol';
+import { expectFetchError } from '@zimic/utils/fetch';
+import { joinURL, UnsupportedURLProtocolError } from '@zimic/utils/url';
 import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';

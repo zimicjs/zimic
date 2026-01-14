@@ -1,5 +1,5 @@
 import { HttpSearchParams, HttpRequest, HttpResponse, StrictFormData, HttpSchema } from '@zimic/http';
-import joinURL from '@zimic/utils/url/joinURL';
+import { joinURL } from '@zimic/utils/url';
 import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';

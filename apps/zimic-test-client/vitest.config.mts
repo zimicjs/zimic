@@ -7,6 +7,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   publicDir: './public',
   test: {
+    watch: false,
     globals: false,
     testTimeout: 5000,
     maxWorkers: process.env.CI === 'true' ? '50%' : '25%',

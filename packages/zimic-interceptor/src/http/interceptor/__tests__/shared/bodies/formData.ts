@@ -1,5 +1,5 @@
 import { HttpSchema, HttpFormData, HttpRequest, HttpResponse, StrictFormData, InvalidFormDataError } from '@zimic/http';
-import joinURL from '@zimic/utils/url/joinURL';
+import { joinURL } from '@zimic/utils/url';
 import color from 'picocolors';
 import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
