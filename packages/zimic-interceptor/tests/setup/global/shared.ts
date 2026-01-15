@@ -1,7 +1,6 @@
 import { HttpHeaders } from '@zimic/http';
+import { startHttpServer, stopHttpServer } from '@zimic/utils/server';
 import type { Server } from 'http';
-
-import { startHttpServer, stopHttpServer } from '@/utils/http';
 
 let fallbackServer: Server | undefined;
 

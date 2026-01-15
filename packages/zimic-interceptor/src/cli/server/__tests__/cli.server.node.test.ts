@@ -1,6 +1,6 @@
+import { PROCESS_EXIT_EVENTS } from '@zimic/utils/process';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { PROCESS_EXIT_EVENTS } from '@/utils/processes';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
 import runCLI from '../../cli';

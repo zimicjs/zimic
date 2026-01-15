@@ -1,4 +1,4 @@
-import createCachedDynamicImport from '@zimic/utils/import/createCachedDynamicImport';
+import { createCachedDynamicImport } from '@zimic/utils/import';
 
 export const importFile = createCachedDynamicImport(
   /* istanbul ignore next -- @preserve

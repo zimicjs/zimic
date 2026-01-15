@@ -1,20 +1,20 @@
 import { Options, defineConfig } from 'tsup';
 
-const sharedConfig: Options = {
+const sharedConfig = {
   bundle: true,
   splitting: true,
   sourcemap: true,
   treeshake: true,
   minify: false,
-  clean: true,
   keepNames: false,
+  noExternal: ['@zimic/utils'],
+  external: [/.*vitest.*/],
   env: {
     INTERCEPTOR_SERVER_ACCESS_CONTROL_MAX_AGE: '',
     INTERCEPTOR_TOKEN_HASH_ITERATIONS: '1000000',
     VITEST_POOL_ID: '',
   },
-  noExternal: ['@zimic/utils'],
-};
+} satisfies Options;
 
 const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   ...sharedConfig,
@@ -26,7 +26,7 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
     index: 'src/index.ts',
     http: 'src/http/index.ts',
   },
-  external: ['fs', 'util', 'buffer', 'crypto'],
+  external: [...sharedConfig.external, 'fs', 'util', 'buffer', 'crypto'],
 }));
 
 const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => {
@@ -50,4 +50,13 @@ const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => {
   };
 });
 
-export default defineConfig([...neutralConfig, ...nodeConfig]);
+const configs: Options[] = [...neutralConfig, ...nodeConfig];
+
+export default defineConfig(
+  configs.map((config, index) => ({
+    ...config,
+    // Builds performed by tsup face concurrency problems when generating .d.ts files with multiple configs.
+    // To workaround this, we only clean the dist folder on the last build.
+    clean: index === configs.length - 1,
+  })),
+);

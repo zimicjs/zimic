@@ -10,8 +10,9 @@ import {
   InferPathParams,
   parseHttpBody,
   HttpSearchParams,
+  HttpRequest,
 } from '@zimic/http';
-import isDefined from '@zimic/utils/data/isDefined';
+import { isDefined } from '@zimic/utils/data';
 import { Default, PossiblePromise } from '@zimic/utils/types';
 import color from 'picocolors';
 
@@ -33,8 +34,10 @@ import {
   HttpInterceptorResponse,
 } from '../requestHandler/types/requests';
 import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from './constants';
-import { MSWHttpResponseFactory } from './types/msw';
+import { HttpResponseFactory } from './types/http';
 import { HttpInterceptorWorkerType } from './types/options';
+
+const RESPONSE_ACTION_SYMBOL = Symbol.for('HttpResponse.action');
 
 abstract class HttpInterceptorWorker {
   abstract get type(): HttpInterceptorWorkerType;
@@ -101,7 +104,7 @@ abstract class HttpInterceptorWorker {
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
     path: string,
-    createResponse: MSWHttpResponseFactory,
+    createResponse: HttpResponseFactory,
   ): PossiblePromise<void>;
 
   protected async logUnhandledRequestIfNecessary(
@@ -190,17 +193,71 @@ abstract class HttpInterceptorWorker {
 
   abstract get interceptorsWithHandlers(): AnyHttpInterceptorClient[];
 
-  static createResponseFromDeclaration(
-    request: Request,
-    declaration: { status: number; headers?: HttpHeadersInit; body?: HttpBody },
-  ): HttpResponse {
-    const headers = new HttpHeaders(declaration.headers);
-    const status = declaration.status;
+  static setResponseAction(response: Response, action: UnhandledRequestStrategy.Action) {
+    Object.defineProperty(response, RESPONSE_ACTION_SYMBOL, {
+      value: action,
+      enumerable: false,
+      configurable: false,
+      writable: false,
+    });
+  }
 
-    const canHaveBody = methodCanHaveResponseBody(request.method as HttpMethod) && status !== 204;
+  static getResponseAction(response: Response): UnhandledRequestStrategy.Action | undefined {
+    if (!(RESPONSE_ACTION_SYMBOL in response)) {
+      return undefined;
+    }
+
+    const action = response[RESPONSE_ACTION_SYMBOL];
+
+    /* istanbul ignore if -- @preserve
+     * This is just a type guard to ensure the value is valid. In practice, this condition should never be true. */
+    if (action !== 'bypass' && action !== 'reject') {
+      return undefined;
+    }
+
+    return action;
+  }
+
+  private createBypassedResponse() {
+    const response = Response.redirect('about:blank', 302) as HttpResponse;
+    HttpInterceptorWorker.setResponseAction(response, 'bypass');
+    return response;
+  }
+
+  static isBypassedResponse(response: Response) {
+    return this.getResponseAction(response) === 'bypass';
+  }
+
+  private createRejectedResponse() {
+    const response = Response.error() as HttpResponse;
+    HttpInterceptorWorker.setResponseAction(response, 'reject');
+    return response;
+  }
+
+  static isRejectedResponse(response: Response) {
+    return this.getResponseAction(response) === 'reject';
+  }
+
+  createResponseFromDeclaration(
+    request: HttpRequest,
+    declaration:
+      | { status: number; headers?: HttpHeadersInit; body?: HttpBody }
+      | { action: UnhandledRequestStrategy.Action },
+  ): PossiblePromise<HttpResponse | null> {
+    if ('action' in declaration) {
+      if (declaration.action === 'bypass') {
+        return this.createBypassedResponse();
+      } else {
+        return this.createRejectedResponse();
+      }
+    }
+
+    const headers = new HttpHeaders(declaration.headers);
+
+    const canHaveBody = methodCanHaveResponseBody(request.method as HttpMethod) && declaration.status !== 204;
 
     if (!canHaveBody) {
-      return new Response(null, { headers, status }) as HttpResponse;
+      return new Response(null, { headers, status: declaration.status }) as HttpResponse;
     }
 
     if (
@@ -213,10 +270,10 @@ abstract class HttpInterceptorWorker {
       declaration.body instanceof ArrayBuffer ||
       declaration.body instanceof ReadableStream
     ) {
-      return new Response(declaration.body ?? null, { headers, status }) as HttpResponse;
+      return new Response(declaration.body ?? null, { headers, status: declaration.status }) as HttpResponse;
     }
 
-    return Response.json(declaration.body, { headers, status }) as HttpResponse;
+    return Response.json(declaration.body, { headers, status: declaration.status }) as HttpResponse;
   }
 
   static async parseRawUnhandledRequest(request: Request) {
@@ -306,9 +363,10 @@ abstract class HttpInterceptorWorker {
     return HTTP_INTERCEPTOR_REQUEST_HIDDEN_PROPERTIES.has(property as never);
   }
 
-  static async parseRawResponse<MethodSchema extends HttpMethodSchema, StatusCode extends HttpStatusCode>(
-    originalRawResponse: Response,
-  ): Promise<HttpInterceptorResponse<MethodSchema, StatusCode>> {
+  static async parseRawResponse<
+    MethodSchema extends HttpMethodSchema,
+    StatusCode extends HttpStatusCode = HttpStatusCode,
+  >(originalRawResponse: Response): Promise<HttpInterceptorResponse<MethodSchema, StatusCode>> {
     const rawResponse = originalRawResponse.clone();
     const rawResponseClone = rawResponse.clone();
 

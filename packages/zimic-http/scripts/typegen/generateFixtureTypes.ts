@@ -1,5 +1,5 @@
+import { runCommand } from '@zimic/utils/process';
 import { PossiblePromise } from '@zimic/utils/types';
-import { execa as $ } from 'execa';
 import path from 'path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -52,7 +52,7 @@ async function generateFixtureCaseTypes(fixtureType: TypegenFixtureType, fixture
       ...fixtureCase.extraArguments,
     ];
 
-    await $('node', commandArguments);
+    await runCommand('node', commandArguments);
   });
 
   return outputFilePath;
@@ -62,7 +62,7 @@ async function lintGeneratedFiles(filePaths: string[]) {
   const lintPrefix = '[lint]';
 
   await usingConsoleTime(lintPrefix, async () => {
-    await $('pnpm', ['--silent', 'lint', ...filePaths]);
+    await runCommand('pnpm', ['--silent', 'lint', ...filePaths]);
   });
 }
 

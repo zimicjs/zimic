@@ -1,4 +1,4 @@
-import Logger from '@zimic/utils/logging/Logger';
+import { Logger } from '@zimic/utils/logging';
 import color from 'picocolors';
 
 export const logger = new Logger({

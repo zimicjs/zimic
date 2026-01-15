@@ -1,5 +1,5 @@
 import { HttpSchema } from '@zimic/http';
-import expectFetchError from '@zimic/utils/fetch/expectFetchError';
+import { expectFetchError } from '@zimic/utils/fetch';
 import path from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 

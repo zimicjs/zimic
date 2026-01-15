@@ -6,9 +6,9 @@ const sharedConfig: Options = {
   sourcemap: true,
   treeshake: true,
   minify: false,
-  clean: true,
   keepNames: false,
   noExternal: ['@zimic/utils'],
+  external: [/.*vitest.*/],
 };
 
 const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
@@ -22,4 +22,13 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   },
 }));
 
-export default defineConfig([...neutralConfig]);
+const configs: Options[] = [...neutralConfig];
+
+export default defineConfig(
+  configs.map((config, index) => ({
+    ...config,
+    // Builds performed by tsup face concurrency problems when generating .d.ts files with multiple configs.
+    // To workaround this, we only clean the dist folder on the last build.
+    clean: index === configs.length - 1,
+  })),
+);

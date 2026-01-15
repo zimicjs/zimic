@@ -66,24 +66,45 @@ export namespace JSONValue {
  */
 export type JSONSerialized<Type> = Type extends JSONValue
   ? Type
-  : Type extends string | number | boolean | null | undefined
-    ? Type
-    : Type extends Date
-      ? string
-      : Type extends (...parameters: never[]) => unknown
+  : Type extends Date
+    ? string
+    : Type extends (...parameters: never[]) => unknown
+      ? never
+      : Type extends symbol
         ? never
-        : Type extends symbol
-          ? never
-          : Type extends Map<infer _Key, infer _Value>
+        : Type extends Map<infer _Key, infer _Value>
+          ? Record<string, never>
+          : Type extends Set<infer _Value>
             ? Record<string, never>
-            : Type extends Set<infer _Value>
-              ? Record<string, never>
-              : Type extends (infer ArrayItem)[]
-                ? JSONSerialized<ArrayItem>[]
-                : Type extends object
-                  ? {
-                      [Key in keyof Type as [JSONSerialized<Type[Key]>] extends [never] ? never : Key]: JSONSerialized<
-                        Type[Key]
-                      >;
-                    }
-                  : never;
+            : Type extends (infer ArrayItem)[]
+              ? JSONSerialized<ArrayItem>[]
+              : Type extends object
+                ? {
+                    [Key in keyof Type as [JSONSerialized<Type[Key]>] extends [never] ? never : Key]: JSONSerialized<
+                      Type[Key]
+                    >;
+                  }
+                : never;
+
+declare global {
+  interface JSON {
+    readonly value: unique symbol;
+
+    // eslint-disable-next-line @typescript-eslint/method-signature-style
+    stringify<Value>(
+      value: Value,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      replacer?: ((this: any, key: string, value: Value) => any) | (number | string)[] | null,
+      space?: string | number,
+    ): JSONStringified<Value>;
+
+    // eslint-disable-next-line @typescript-eslint/method-signature-style
+    parse<Value>(
+      text: JSONStringified<Value>,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      reviver?: (this: any, key: string, value: any) => any,
+    ): JSONSerialized<Value>;
+  }
+}
+
+export type JSONStringified<Value> = string & { [JSON.value]: JSONSerialized<Value> };

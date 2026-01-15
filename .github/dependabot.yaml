@@ -17,6 +17,13 @@ updates:
       npm:
         patterns:
           - '*'
+    ignore:
+      # Blocked by https://github.com/hosseinmd/prettier-plugin-jsdoc/issues/254.
+      - dependency-name: prettier-plugin-jsdoc
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+          - version-update:semver-patch
 
   - package-ecosystem: github-actions
     directory: /

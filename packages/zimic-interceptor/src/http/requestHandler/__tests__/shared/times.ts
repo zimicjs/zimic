@@ -1,5 +1,5 @@
 import { HttpFormData, HttpHeaders, HttpSearchParams } from '@zimic/http';
-import joinURL from '@zimic/utils/url/joinURL';
+import { joinURL } from '@zimic/utils/url';
 import color from 'picocolors';
 import { expect, it, beforeAll, afterAll, describe, afterEach, beforeEach } from 'vitest';
 

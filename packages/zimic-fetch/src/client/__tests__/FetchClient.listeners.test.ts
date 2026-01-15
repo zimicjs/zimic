@@ -1,7 +1,7 @@
 import { HttpHeaders, HttpSchema, HttpSearchParams, StrictHeaders } from '@zimic/http';
-import expectFetchError from '@zimic/utils/fetch/expectFetchError';
+import { expectFetchError } from '@zimic/utils/fetch';
 import { Default } from '@zimic/utils/types';
-import joinURL from '@zimic/utils/url/joinURL';
+import { joinURL } from '@zimic/utils/url';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';

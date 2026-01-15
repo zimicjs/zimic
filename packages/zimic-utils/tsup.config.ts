@@ -6,8 +6,8 @@ const sharedConfig: Options = {
   sourcemap: true,
   treeshake: true,
   minify: false,
-  clean: true,
   keepNames: false,
+  external: [/.*vitest.*/],
 };
 
 const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
@@ -18,27 +18,35 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   dts: format === 'cjs',
   entry: {
     types: 'src/types/index.ts',
-    'types/json': 'src/types/json.ts',
-    'data/isDefined': 'src/data/isDefined.ts',
-    'data/isNonEmpty': 'src/data/isNonEmpty.ts',
-    'data/blobEquals': 'src/data/blobEquals.ts',
-    'data/fileEquals': 'src/data/fileEquals.ts',
-    'data/jsonContains': 'src/data/jsonContains.ts',
-    'data/jsonEquals': 'src/data/jsonEquals.ts',
-    'error/expectToThrow': 'src/error/expectToThrow.ts',
-    'fetch/expectFetchError': 'src/fetch/expectFetchError.ts',
-    'import/createCachedDynamicImport': 'src/import/createCachedDynamicImport.ts',
-    'logging/Logger': 'src/logging/Logger.ts',
-    'time/waitFor': 'src/time/waitFor.ts',
-    'time/waitForNot': 'src/time/waitForNot.ts',
-    'time/waitForDelay': 'src/time/waitForDelay.ts',
-    'url/createRegexFromPath': 'src/url/createRegexFromPath.ts',
-    'url/createWildcardRegexFromPath': 'src/url/createWildcardRegexFromPath.ts',
-    'url/excludeNonPathParams': 'src/url/excludeNonPathParams.ts',
-    'url/joinURL': 'src/url/joinURL.ts',
-    'url/validatePathParams': 'src/url/validatePathParams.ts',
-    'url/validateURLProtocol': 'src/url/validateURLProtocol.ts',
+    data: 'src/data/index.ts',
+    error: 'src/error/index.ts',
+    fetch: 'src/fetch/index.ts',
+    import: 'src/import/index.ts',
+    logging: 'src/logging/index.ts',
+    time: 'src/time/index.ts',
+    url: 'src/url/index.ts',
   },
 }));
 
-export default defineConfig([...neutralConfig]);
+const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
+  ...sharedConfig,
+  name: `node-${format}`,
+  platform: 'node',
+  format: [format],
+  dts: format === 'cjs',
+  entry: {
+    process: 'src/process/index.ts',
+    server: 'src/server/index.ts',
+  },
+}));
+
+const configs: Options[] = [...neutralConfig, ...nodeConfig];
+
+export default defineConfig(
+  configs.map((config, index) => ({
+    ...config,
+    // Builds performed by tsup face concurrency problems when generating .d.ts files with multiple configs.
+    // To workaround this, we only clean the dist folder on the last build.
+    clean: index === configs.length - 1,
+  })),
+);

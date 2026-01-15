@@ -6,6 +6,7 @@ on:
       - opened
       - synchronize
       - reopened
+      - ready_for_review
   merge_group:
   workflow_dispatch:
 
@@ -34,6 +35,7 @@ jobs:
     name: CI General
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
 
     steps:
       - name: Checkout code
@@ -91,7 +93,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ always() }}
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: .turbo/cache
           key: ${{ runner.os }}-turbo
@@ -100,6 +102,7 @@ jobs:
     name: CI Node.js
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
 
     strategy:
       fail-fast: false
@@ -139,7 +142,7 @@ jobs:
           PLAYWRIGHT_WORKERS: 2
 
       - name: Upload test results
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: ${{ always() }}
         with:
           name: test-results-node-${{ matrix.node-version }}
@@ -152,7 +155,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ always() }}
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: .turbo/cache
           key: ${{ runner.os }}-turbo
@@ -161,6 +164,7 @@ jobs:
     name: CI TypeScript
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
 
     strategy:
       fail-fast: false
@@ -233,7 +237,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ always() }}
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: .turbo/cache
           key: ${{ runner.os }}-turbo

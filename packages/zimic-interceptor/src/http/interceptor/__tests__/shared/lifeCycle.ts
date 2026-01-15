@@ -1,6 +1,6 @@
 import { HttpSchema } from '@zimic/http';
-import expectFetchError from '@zimic/utils/fetch/expectFetchError';
-import joinURL from '@zimic/utils/url/joinURL';
+import { expectFetchError } from '@zimic/utils/fetch';
+import { joinURL } from '@zimic/utils/url';
 import { beforeEach, expect, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';

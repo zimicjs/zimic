@@ -1,4 +1,4 @@
-import createCachedDynamicImport from '@zimic/utils/import/createCachedDynamicImport';
+import { createCachedDynamicImport } from '@zimic/utils/import';
 
 import { requestCanHaveBody } from '@tests/utils/bodies';
 import { convertHeadersToObject, convertObjectToHeaders } from '@tests/utils/headers';

@@ -1,14 +1,13 @@
 import { normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
 import { HttpRequest, HttpMethod } from '@zimic/http';
-import createRegexFromPath from '@zimic/utils/url/createRegexFromPath';
-import excludeNonPathParams from '@zimic/utils/url/excludeNonPathParams';
+import { startHttpServer, stopHttpServer, getHttpServerPort } from '@zimic/utils/server';
+import { createRegexFromPath, excludeNonPathParams } from '@zimic/utils/url';
 import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
 
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
 import { removeArrayIndex } from '@/utils/arrays';
 import { deserializeResponse, SerializedHttpRequest, serializeRequest } from '@/utils/fetch';
-import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocketEventMessage } from '@/webSocket/types';
 import WebSocketServer, { WebSocketServerAuthenticate } from '@/webSocket/WebSocketServer';
@@ -297,8 +296,17 @@ class InterceptorServer implements PublicInterceptorServer {
       const { response, matchedSomeInterceptor } = await this.createResponseForRequest(serializedRequest);
 
       if (response) {
-        this.setDefaultAccessControlHeaders(response, ['access-control-allow-origin', 'access-control-expose-headers']);
-        await sendNodeResponse(response, nodeResponse, nodeRequest, true);
+        if (HttpInterceptorWorker.isRejectedResponse(response)) {
+          nodeResponse.destroy();
+        } else {
+          this.setDefaultAccessControlHeaders(response, [
+            'access-control-allow-origin',
+            'access-control-expose-headers',
+          ]);
+
+          await sendNodeResponse(response, nodeResponse, nodeRequest, true);
+        }
+
         return;
       }
 

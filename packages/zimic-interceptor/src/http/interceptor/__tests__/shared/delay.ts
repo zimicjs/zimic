@@ -1,10 +1,12 @@
 import { HttpSchema } from '@zimic/http';
-import waitForDelay from '@zimic/utils/time/waitForDelay';
-import joinURL from '@zimic/utils/url/joinURL';
+import { expectFetchError } from '@zimic/utils/fetch';
+import { waitFor, waitForDelay } from '@zimic/utils/time';
+import { joinURL } from '@zimic/utils/url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { usingElapsedTime } from '@/utils/time';
+import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
@@ -309,6 +311,39 @@ export function declareDelayHttpInterceptorTests(options: RuntimeSharedHttpInter
 
       expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
       expect(waitForDelaySpy).toHaveBeenCalledWith(secondDelay);
+    });
+  });
+
+  it('should not throw an error if the handler is cleared while the delay is being awaited', async () => {
+    await usingHttpInterceptor<Schema>(interceptorOptions, async (interceptor) => {
+      const delay = 200;
+
+      const handler = await promiseIfRemote(
+        interceptor.get('/users').delay(delay).respond({ status: 204 }),
+        interceptor,
+      );
+
+      expect(handler.requests).toHaveLength(0);
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        const { elapsedTime } = await usingElapsedTime(async () => {
+          const fetchPromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+
+          await waitFor(() => {
+            expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
+            expect(waitForDelaySpy).toHaveBeenCalledWith(delay);
+          });
+
+          await promiseIfRemote(handler.clear(), interceptor);
+
+          await expectFetchError(fetchPromise);
+        });
+
+        expect(elapsedTime).toBeGreaterThanOrEqual(delay);
+        expect(handler.requests).toHaveLength(0);
+
+        expect(console.error).toHaveBeenCalledTimes(0);
+      });
     });
   });
 }

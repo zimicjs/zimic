@@ -1,6 +1,6 @@
 import { HttpSchema, HttpMethod } from '@zimic/http';
 import { PossiblePromise } from '@zimic/utils/types';
-import joinURL from '@zimic/utils/url/joinURL';
+import { joinURL } from '@zimic/utils/url';
 import { expect } from 'vitest';
 
 import { createHttpInterceptor } from '@/http';
@@ -164,7 +164,7 @@ export async function usingHttpInterceptorWorker(
   }
 }
 
-export function assessPreflightInterference(resources: {
+export function getPreflightAssessment(resources: {
   method: HttpMethod;
   platform: HttpInterceptorPlatform;
   type: HttpInterceptorType;

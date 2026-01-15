@@ -9,10 +9,8 @@ import {
   HttpRequestSearchParamsSchema,
   HttpRequestHeadersSchema,
 } from '@zimic/http';
-import blobEquals from '@zimic/utils/data/blobEquals';
-import jsonContains from '@zimic/utils/data/jsonContains';
-import jsonEquals from '@zimic/utils/data/jsonEquals';
-import waitForDelay from '@zimic/utils/time/waitForDelay';
+import { blobEquals, jsonContains, jsonEquals } from '@zimic/utils/data';
+import { waitForDelay } from '@zimic/utils/time';
 import { Default, Range } from '@zimic/utils/types';
 
 import { convertArrayBufferToBlob, convertReadableStreamToBlob } from '@/utils/data';
@@ -20,7 +18,6 @@ import { random } from '@/utils/numbers';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import DisabledRequestSavingError from './errors/DisabledRequestSavingError';
-import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
 import TimesCheckError from './errors/TimesCheckError';
 import TimesDeclarationPointer from './errors/TimesDeclarationPointer';
 import { InternalHttpRequestHandler } from './types/public';
@@ -433,13 +430,7 @@ class HttpRequestHandlerClient<
     return typeof restriction === 'function';
   }
 
-  async applyResponseDeclaration(
-    request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
-  ): Promise<HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>> {
-    if (!this.createResponseDeclaration) {
-      throw new NoResponseDefinitionError();
-    }
-
+  async applyResponseDeclaration(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) {
     if (this.createResponseDelay) {
       const delay = await this.createResponseDelay(request);
 
@@ -448,7 +439,7 @@ class HttpRequestHandlerClient<
       }
     }
 
-    const appliedDeclaration = await this.createResponseDeclaration(request);
+    const appliedDeclaration = await this.createResponseDeclaration?.(request);
     return appliedDeclaration;
   }
 
