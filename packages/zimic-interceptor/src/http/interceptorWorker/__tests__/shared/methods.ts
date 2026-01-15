@@ -173,7 +173,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         responsePromise = fetch(baseURL, { method });
         await expect(responsePromise).resolves.toBeInstanceOf(Response);
 
-        expect(delayedSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight + 1);
+        expect(delayedSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
 
         for (const [handlerContext] of delayedSpiedRequestHandler.mock.calls) {
           expect(handlerContext.request).toBeInstanceOf(Request);

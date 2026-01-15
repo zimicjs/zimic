@@ -75,6 +75,7 @@ class HttpInterceptorStore {
 
   getOrCreateLocalWorker(workerOptions: Omit<LocalHttpInterceptorWorkerOptions, 'type'>) {
     const existingWorker = this.class._localWorker;
+
     if (existingWorker) {
       return existingWorker;
     }

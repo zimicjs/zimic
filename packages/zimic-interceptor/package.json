@@ -97,7 +97,7 @@
   "dependencies": {
     "@whatwg-node/server": "0.10.18",
     "isomorphic-ws": "5.0.0",
-    "msw": "2.11.1",
+    "msw": "2.12.3",
     "picocolors": "^1.1.1",
     "ws": "8.19.0",
     "yargs": "18.0.0",
