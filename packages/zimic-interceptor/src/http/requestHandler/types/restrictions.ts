@@ -22,7 +22,7 @@ type PartialHttpHeadersOrSchema<Schema extends HttpHeadersSchema.Loose> = IfNeve
   Partial<Schema> | HttpHeaders<Partial<Schema>> | HttpHeaders<Schema>
 >;
 
-/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwith `handler.with()` API reference} */
 export type HttpRequestHandlerHeadersStaticRestriction<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
@@ -35,7 +35,7 @@ type PartialHttpSearchParamsOrSchema<Schema extends HttpSearchParamsSchema.Loose
   Partial<Schema> | HttpSearchParams<Partial<Schema>> | HttpSearchParams<Schema>
 >;
 
-/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwith `handler.with()` API reference} */
 export type HttpRequestHandlerSearchParamsStaticRestriction<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
@@ -55,40 +55,40 @@ type PartialBodyOrSchema<Body extends HttpBody> =
             ? Body
             : DeepPartial<Body>;
 
-/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwith `handler.with()` API reference} */
 export type HttpRequestHandlerBodyStaticRestriction<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
 > = PartialBodyOrSchema<HttpRequestBodySchema<Default<Schema[Path][Method]>>>;
 
-/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwith `handler.with()` API reference} */
 export interface HttpRequestHandlerStaticRestriction<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
 > {
-  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwith `handler.with()` API reference} */
   headers?: HttpRequestHandlerHeadersStaticRestriction<Schema, Method, Path>;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwith `handler.with()` API reference} */
   searchParams?: HttpRequestHandlerSearchParamsStaticRestriction<Schema, Method, Path>;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwith `handler.with()` API reference} */
   body?: HttpRequestHandlerBodyStaticRestriction<Schema, Method, Path>;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwith `handler.with()` API reference} */
   exact?: boolean;
 }
 
-/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwith `handler.with()` API reference} */
 export type HttpRequestHandlerComputedRestriction<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
 > = (request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) => PossiblePromise<boolean>;
 
-/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwith `handler.with()` API reference} */
 export type HttpRequestHandlerRestriction<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
