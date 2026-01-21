@@ -91,7 +91,7 @@ class HttpSearchParams<
     super.delete(name, value);
   }
 
-  /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamsforEach `searchParams.forEach()` API reference} */
+  /** @see {@link https://zimic.dev/docs/http/api/http-search-params#searchparamsforeach `searchParams.forEach()` API reference} */
   forEach<This extends HttpSearchParams<this['_schema']>>(
     callback: <Key extends HttpSearchParamsSchemaName<this['_schema']>>(
       value: ArrayItemIfArray<NonNullable<this['_schema'][Key]>>,
