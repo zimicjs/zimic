@@ -47,21 +47,21 @@ export interface Fetch<Schema extends HttpSchema>
   /** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchrequest `fetch.Request`} */
   Request: FetchRequestConstructor<Schema>;
 
-  /** @see {@link https://zimic.dev/docs/fetch/api/fetch#isrequest `fetch.isRequest`} */
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchisrequest `fetch.isRequest`} */
   isRequest: <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.Literal<Schema, Method>>(
     request: unknown,
     method: Method,
     path: Path,
   ) => request is FetchRequest<Schema, Method, Path>;
 
-  /** @see {@link https://zimic.dev/docs/fetch/api/fetch#isresponseerror `fetch.isResponse`} */
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchisresponse `fetch.isResponse`} */
   isResponse: <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.Literal<Schema, Method>>(
     response: unknown,
     method: Method,
     path: Path,
   ) => response is FetchResponse<Schema, Method, Path>;
 
-  /** @see {@link https://zimic.dev/docs/fetch/api/fetch#isresponseerror `fetch.isResponseError`} */
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchisresponseerror `fetch.isResponseError`} */
   isResponseError: <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.Literal<Schema, Method>>(
     error: unknown,
     method: Method,
