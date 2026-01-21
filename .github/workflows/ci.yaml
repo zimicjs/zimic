@@ -94,6 +94,7 @@ jobs:
       - name: Check documentation links
         run: |
           pnpm turbo start --filter zimic-web &
+          trap 'echo "Stopping zimic-web..."; kill %1' EXIT
 
           timeout 300 bash -c '
             until curl http://localhost:3000 --silent --fail > /dev/null; do
@@ -105,9 +106,6 @@ jobs:
           echo "zimic-web started."
 
           bash apps/zimic-web/scripts/check-links.sh
-
-          echo "Stopping zimic-web..."
-          kill %1
 
       - name: Save turbo cache
         if: ${{ always() }}
