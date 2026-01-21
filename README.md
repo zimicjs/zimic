@@ -123,9 +123,9 @@ A type-safe interceptor library for handling and mocking HTTP requests in develo
 - :globe_with_meridians: **HTTP interceptors**
 
   Use your [`@zimic/http` schema](https://zimic.dev/docs/http/guides/schemas) to declare
-  [local](https://zimic.dev/docs/interceptor/guides/interceptors/local) and
-  [remote](https://zimic.dev/docs/interceptor/guides/interceptors/remote) HTTP interceptors. Mock external services and
-  simulate success, loading, and error states with ease and type safety.
+  [local](https://zimic.dev/docs/interceptor/guides/http/local-interceptors) and
+  [remote](https://zimic.dev/docs/interceptor/guides/http/remote-interceptors) HTTP interceptors. Mock external services
+  and simulate success, loading, and error states with ease and type safety.
 
 - :link: **Network-level interception**
 
@@ -136,7 +136,7 @@ A type-safe interceptor library for handling and mocking HTTP requests in develo
 - :bulb: **Readability**
 
   `@zimic/interceptor` was designed to encourage clarity and readability in your mocks. Use
-  [declarative assertions](https://zimic.dev/docs/interceptor/guides/declarative-assertions) to verify that your
+  [declarative assertions](https://zimic.dev/docs/interceptor/guides/http/declarative-assertions) to verify that your
   application is making the expected requests and test with confidence.
 
 **Learn more**:
