@@ -25,7 +25,7 @@ import {
   HttpSearchParams,
   HttpFormData,
 } from '@zimic/http';
-import { Default, JSONStringified, UnionToIntersection } from '@zimic/utils/types';
+import { Default, IndexUnion, JSONStringified, UnionToIntersection } from '@zimic/utils/types';
 
 import FetchResponseError, { AnyFetchRequestError } from '../errors/FetchResponseError';
 import { FetchInput } from './public';
@@ -86,8 +86,6 @@ export type FetchRequestInit<
 } & (Path extends Path ? FetchRequestInitPerPath<Default<Schema[Path][Method]>> : never);
 
 export namespace FetchRequestInit {
-  type IndexUnion<Union, Key> = Union extends Union ? (Key extends keyof Union ? Union[Key] : never) : never;
-
   type DefaultHeadersSchema<Schema extends HttpSchema> = {
     [Path in HttpSchemaPath.Literal<Schema>]: {
       [Method in keyof Schema[Path]]: HttpRequestHeadersSchema<Default<Schema[Path][Method]>>;
@@ -114,7 +112,7 @@ export namespace FetchRequestInit {
     >;
   };
 
-  type DefaultBodySchema<Schema extends HttpSchema> = {
+  export type DefaultBody<Schema extends HttpSchema> = {
     [Path in HttpSchemaPath.Literal<Schema>]: {
       [Method in keyof Schema[Path]]: FetchRequestBodySchema<
         Default<Schema[Path][Method]> extends HttpMethodSchema
@@ -123,8 +121,6 @@ export namespace FetchRequestInit {
       >;
     }[keyof Schema[Path]];
   }[HttpSchemaPath.Literal<Schema>];
-
-  export type DefaultBody<Schema extends HttpSchema> = DefaultBodySchema<Schema>;
 
   /** The default options for each request sent by a fetch instance. */
   export interface Defaults<Schema extends HttpSchema = HttpSchema> extends Omit<RequestInit, 'headers' | 'body'> {
