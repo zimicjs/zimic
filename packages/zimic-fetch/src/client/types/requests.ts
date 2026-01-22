@@ -114,13 +114,27 @@ export namespace FetchRequestInit {
     >;
   };
 
+  type DefaultBodySchema<Schema extends HttpSchema> = {
+    [Path in HttpSchemaPath.Literal<Schema>]: {
+      [Method in keyof Schema[Path]]: FetchRequestBodySchema<
+        Default<Schema[Path][Method]> extends HttpMethodSchema
+          ? Default<Default<Schema[Path][Method]>['request']>
+          : never
+      >;
+    }[keyof Schema[Path]];
+  }[HttpSchemaPath.Literal<Schema>];
+
+  export type DefaultBody<Schema extends HttpSchema> = DefaultBodySchema<Schema>;
+
   /** The default options for each request sent by a fetch instance. */
-  export interface Defaults<Schema extends HttpSchema = HttpSchema> extends Omit<RequestInit, 'headers'> {
+  export interface Defaults<Schema extends HttpSchema = HttpSchema> extends Omit<RequestInit, 'headers' | 'body'> {
     baseURL: string;
     /** The headers of the request. */
     headers?: DefaultHeaders<Schema>;
     /** The search parameters of the request. */
     searchParams?: DefaultSearchParams<Schema>;
+    /** A BodyInit object or null to set request's body. */
+    body?: DefaultBody<Schema>;
     /** The duplex mode of the request. */
     duplex?: 'half';
   }

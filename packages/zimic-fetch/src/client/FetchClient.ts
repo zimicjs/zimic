@@ -26,7 +26,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
     this.fetch.Request = this.createRequestClass(this.fetch);
   }
 
-  get defaults(): FetchDefaults {
+  get defaults(): FetchDefaults<Schema> {
     return this.fetch;
   }
 
@@ -158,7 +158,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
           method: init?.method ?? fetch.method,
           headers: new HttpHeaders(fetch.headers),
           searchParams: new HttpSearchParams(fetch.searchParams),
-          body: init?.body ?? fetch.body,
+          body: (init?.body ?? fetch.body) as BodyInit | null,
           mode: init?.mode ?? fetch.mode,
           cache: init?.cache ?? fetch.cache,
           credentials: init?.credentials ?? fetch.credentials,
