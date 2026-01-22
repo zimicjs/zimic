@@ -13,13 +13,13 @@
     "@zimic/http": "latest"
   },
   "devDependencies": {
-    "@vitest/browser": "^4.0.16",
-    "@vitest/browser-playwright": "^4.0.16",
+    "@vitest/browser": "^4.0.17",
+    "@vitest/browser-playwright": "^4.0.17",
     "@zimic/interceptor": "latest",
     "concurrently": "^9.2.1",
     "dotenv-cli": "^11.0.0",
     "playwright": "^1.57.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.17"
   }
 }

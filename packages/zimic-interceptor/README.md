@@ -44,9 +44,9 @@ testing.
 - :globe_with_meridians: **HTTP interceptors**
 
   Use your [`@zimic/http` schema](https://zimic.dev/docs/http/guides/schemas) to declare
-  [local](https://zimic.dev/docs/interceptor/guides/interceptors/local) and
-  [remote](https://zimic.dev/docs/interceptor/guides/interceptors/remote) HTTP interceptors. Mock external services and
-  simulate success, loading, and error states with ease and type safety.
+  [local](https://zimic.dev/docs/interceptor/guides/http/local-interceptors) and
+  [remote](https://zimic.dev/docs/interceptor/guides/http/remote-interceptors) HTTP interceptors. Mock external services
+  and simulate success, loading, and error states with ease and type safety.
 
 - :link: **Network-level interception**
 
@@ -58,7 +58,7 @@ testing.
 
   `@zimic/interceptor` was designed to encourage clarity and readability. Declare intuitive mocks, test with confidence,
   and verify that your application is making the expected requests with
-  [declarative assertions](https://zimic.dev/docs/interceptor/guides/declarative-assertions).
+  [declarative assertions](https://zimic.dev/docs/interceptor/guides/http/declarative-assertions).
 
 **Learn more**:
 

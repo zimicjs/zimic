@@ -85,11 +85,27 @@ jobs:
             --concurrency 100% \
             ${{ env.TURBO_FILTERS }}
 
-      - name: Build documentation and check links
+      - name: Build documentation
         uses: ./.github/actions/zimic-build-web
         with:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
+
+      - name: Check documentation links
+        run: |
+          pnpm turbo start --filter zimic-web &
+          trap 'echo "Stopping zimic-web..."; kill %1' EXIT
+
+          timeout 300 bash -c '
+            until curl http://localhost:3000 --silent --fail > /dev/null; do
+              echo "Waiting for zimic-web to start..."
+              sleep 5
+            done
+          '
+
+          echo "zimic-web started."
+
+          bash apps/zimic-web/scripts/check-links.sh
 
       - name: Save turbo cache
         if: ${{ always() }}

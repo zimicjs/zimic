@@ -75,7 +75,7 @@ class HttpFormData<LooseSchema extends HttpFormDataSchema.Loose = HttpFormDataSc
     super.delete(name);
   }
 
-  /** @see {@link https://zimic.dev/docs/http/api/http-form-data#formdataforEach `formData.forEach()` API reference} */
+  /** @see {@link https://zimic.dev/docs/http/api/http-form-data#formdataforeach `formData.forEach()` API reference} */
   forEach<This extends HttpFormData<this['_schema']>>(
     callback: <Key extends HttpFormDataSchemaName<this['_schema']>>(
       value: Replace<ArrayItemIfArray<NonNullable<this['_schema'][Key]>>, Blob, File>,
