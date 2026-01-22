@@ -396,9 +396,13 @@ describe('FetchClient > Defaults', () => {
 
       fetch.headers['content-type'] = defaults.headers['content-type'];
       expect(fetch.headers).toEqual(defaults.headers);
+      expectTypeOf(fetch.headers['content-type']).not.toBeAny();
 
       fetch.searchParams = defaults.searchParams;
       expect(fetch.searchParams).toEqual(defaults.searchParams);
+      expectTypeOf(fetch.searchParams.orderBy).not.toBeAny();
+      expectTypeOf(fetch.searchParams.limit).not.toBeAny();
+      expectTypeOf(fetch.searchParams.full).not.toBeAny();
 
       fetch.body = defaults.body;
       expect(fetch.body).toBe(defaults.body);

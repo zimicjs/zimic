@@ -90,9 +90,9 @@ export namespace FetchRequestInit {
   export interface Defaults extends Omit<RequestInit, 'headers'> {
     baseURL: string;
     /** The headers of the request. */
-    headers?: HttpHeadersSchema.Loose;
+    headers?: Record<string, string | number | boolean | null | undefined>;
     /** The search parameters of the request. */
-    searchParams?: HttpSearchParamsSchema.Loose;
+    searchParams?: Record<string, string | number | boolean | null | undefined | (string | number | boolean)[]>;
     /** The duplex mode of the request. */
     duplex?: 'half';
   }
