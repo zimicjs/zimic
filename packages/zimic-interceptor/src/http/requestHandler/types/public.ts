@@ -54,7 +54,7 @@ export interface LocalHttpRequestHandler<
   /** @readonly */
   get type(): 'local';
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwith `handler.with()` API reference} */
   with: (restriction: HttpRequestHandlerRestriction<Schema, Method, Path>) => this;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerdelay `handler.delay()` API reference} */
@@ -101,7 +101,7 @@ export interface SyncedRemoteHttpRequestHandler<
   /** @readonly */
   get type(): 'remote';
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwithrestriction `handler.with()` API reference} */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwith `handler.with()` API reference} */
   with: (
     restriction: HttpRequestHandlerRestriction<Schema, Method, Path>,
   ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
@@ -191,10 +191,6 @@ export interface PendingRemoteHttpRequestHandler<
  * A remote HTTP request handler to declare responses for intercepted requests. In a remote handler, the mocking
  * operations are asynchronous and include remote calls to the connected
  * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
- *
- * When multiple handlers of the same interceptor match the same method and path, the _last_ handler created with
- * {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptormethodpath `interceptor.<method>(path)`}
- * will be used.
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler `HttpRequestHandler` API reference}
  */
