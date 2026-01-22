@@ -183,7 +183,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
         if (input instanceof globalThis.Request) {
           const request = input as globalThis.Request;
 
-          actualInit.headers.assign(new HttpHeaders(request.headers));
+          actualInit.headers.assign(new HttpHeaders<FetchRequestInit.DefaultHeaders<Schema>>(request.headers));
 
           url = new URL(input.url);
 
@@ -191,7 +191,9 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
         } else {
           url = new URL(input instanceof URL ? input : joinURL(baseURL, input));
 
-          actualInit.searchParams.assign(new HttpSearchParams(url.searchParams));
+          actualInit.searchParams.assign(
+            new HttpSearchParams<FetchRequestInit.DefaultSearchParams<Schema>>(url.searchParams),
+          );
 
           if (init?.searchParams) {
             actualInit.searchParams.assign(new HttpSearchParams(init.searchParams));

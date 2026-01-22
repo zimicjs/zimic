@@ -25,7 +25,7 @@ import {
   HttpSearchParams,
   HttpFormData,
 } from '@zimic/http';
-import { Default, JSONStringified } from '@zimic/utils/types';
+import { Default, JSONStringified, UnionToIntersection } from '@zimic/utils/types';
 
 import FetchResponseError, { AnyFetchRequestError } from '../errors/FetchResponseError';
 import { FetchInput } from './public';
@@ -86,13 +86,41 @@ export type FetchRequestInit<
 } & (Path extends Path ? FetchRequestInitPerPath<Default<Schema[Path][Method]>> : never);
 
 export namespace FetchRequestInit {
+  type IndexUnion<Union, Key> = Union extends Union ? (Key extends keyof Union ? Union[Key] : never) : never;
+
+  type DefaultHeadersSchema<Schema extends HttpSchema> = {
+    [Path in HttpSchemaPath.Literal<Schema>]: {
+      [Method in keyof Schema[Path]]: HttpRequestHeadersSchema<Default<Schema[Path][Method]>>;
+    }[keyof Schema[Path]];
+  }[HttpSchemaPath.Literal<Schema>];
+
+  export type DefaultHeaders<Schema extends HttpSchema> = {
+    [HeaderName in keyof UnionToIntersection<Default<DefaultHeadersSchema<Schema>>>]?: IndexUnion<
+      DefaultHeadersSchema<Schema>,
+      HeaderName
+    >;
+  };
+
+  type DefaultSearchParamsSchema<Schema extends HttpSchema> = {
+    [Path in HttpSchemaPath.Literal<Schema>]: {
+      [Method in keyof Schema[Path]]: HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>;
+    }[keyof Schema[Path]];
+  }[HttpSchemaPath.Literal<Schema>];
+
+  export type DefaultSearchParams<Schema extends HttpSchema> = {
+    [SearchParamName in keyof UnionToIntersection<Default<DefaultSearchParamsSchema<Schema>>>]?: IndexUnion<
+      DefaultSearchParamsSchema<Schema>,
+      SearchParamName
+    >;
+  };
+
   /** The default options for each request sent by a fetch instance. */
-  export interface Defaults extends Omit<RequestInit, 'headers'> {
+  export interface Defaults<Schema extends HttpSchema = HttpSchema> extends Omit<RequestInit, 'headers'> {
     baseURL: string;
     /** The headers of the request. */
-    headers?: Record<string, string | number | boolean | null | undefined>;
+    headers?: DefaultHeaders<Schema>;
     /** The search parameters of the request. */
-    searchParams?: Record<string, string | number | boolean | null | undefined | (string | number | boolean)[]>;
+    searchParams?: DefaultSearchParams<Schema>;
     /** The duplex mode of the request. */
     duplex?: 'half';
   }
