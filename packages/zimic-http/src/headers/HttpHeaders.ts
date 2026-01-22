@@ -40,7 +40,7 @@ class HttpHeaders<LooseSchema extends HttpHeadersSchema.Loose = HttpHeadersSchem
     return super.get(name) as never;
   }
 
-  /** @see {@link https://zimic.dev/docs/http/api/http-headers#headersgetSetCookie `headers.getSetCookie()` API reference} */
+  /** @see {@link https://zimic.dev/docs/http/api/http-headers#headersgetsetcookie `headers.getSetCookie()` API reference} */
   getSetCookie(): NonNullable<Default<this['_schema']['Set-Cookie'], string>>[] {
     return super.getSetCookie() as never;
   }
@@ -55,7 +55,7 @@ class HttpHeaders<LooseSchema extends HttpHeadersSchema.Loose = HttpHeadersSchem
     super.delete(name);
   }
 
-  /** @see {@link https://zimic.dev/docs/http/api/http-headers#headersforEach `headers.forEach()` API reference} */
+  /** @see {@link https://zimic.dev/docs/http/api/http-headers#headersforeach `headers.forEach()` API reference} */
   forEach<This extends HttpHeaders<this['_schema']>>(
     callback: <Key extends HttpHeadersSchemaName<this['_schema']>>(
       value: NonNullable<this['_schema'][Key]> & string,
