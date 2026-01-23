@@ -129,7 +129,7 @@ export namespace FetchRequestInit {
     headers?: DefaultHeaders<Schema>;
     /** The search parameters of the request. */
     searchParams?: DefaultSearchParams<Schema>;
-    /** A BodyInit object or null to set request's body. */
+    /** The body of the request. */
     body?: DefaultBody<Schema>;
     /** The duplex mode of the request. */
     duplex?: 'half';
