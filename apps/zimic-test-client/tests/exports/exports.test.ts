@@ -211,7 +211,6 @@ describe('Exports', () => {
     expectTypeOf<FetchRequestInit.DefaultHeaders<never>>().not.toBeAny();
     expectTypeOf<FetchRequestInit.DefaultSearchParams<never>>().not.toBeAny();
     expectTypeOf<FetchRequestInit.DefaultBody<never>>().not.toBeAny();
-    expectTypeOf<FetchRequestInit.DefaultBody<never>>().not.toBeAny();
     expectTypeOf<FetchRequestInit.Loose>().not.toBeAny();
     expectTypeOf<FetchResponse<never, never, never>>().not.toBeAny();
     expectTypeOf<FetchResponsePerStatusCode<never, never, never, never>>().not.toBeAny();
