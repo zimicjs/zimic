@@ -887,168 +887,159 @@ describe('FetchClient > Defaults', () => {
   });
 
   it('should correctly type defaults by combining all available headers, search params, and bodies in the schema', () => {
-    const fetchWithSingleRequest = createFetch<
-      HttpSchema<{
-        '/users': {
-          POST: {
-            request: {
-              headers: { 'content-type': 'application/json' };
-              body?: { name: string };
-            };
-            response: { 200: { body: User } };
-          };
-        };
-      }>
-    >({ baseURL });
-
-    expect(fetchWithSingleRequest.headers).toEqual({});
-    expectTypeOf(fetchWithSingleRequest.headers).toEqualTypeOf<{ 'content-type'?: 'application/json' }>();
-    expectTypeOf(fetchWithSingleRequest.defaults.headers).toEqualTypeOf(fetchWithSingleRequest.headers); // eslint-disable-line @typescript-eslint/no-deprecated
-
-    expect(fetchWithSingleRequest.searchParams).toEqual({});
-    expectTypeOf(fetchWithSingleRequest.searchParams).toEqualTypeOf<{}>();
-    expectTypeOf(fetchWithSingleRequest.defaults.searchParams).toEqualTypeOf(fetchWithSingleRequest.searchParams); // eslint-disable-line @typescript-eslint/no-deprecated
-
-    expect(fetchWithSingleRequest.body).toBe(undefined);
-    expectTypeOf(fetchWithSingleRequest.body).toEqualTypeOf<JSONStringified<{ name: string }> | null | undefined>();
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    expectTypeOf(fetchWithSingleRequest.defaults.body).toEqualTypeOf<
-      JSONStringified<{ name: string }> | null | undefined
-    >();
-
-    const fetchWithMultipleRequests = createFetch<
-      HttpSchema<{
-        '/users': {
-          POST: {
-            request: {
-              headers: { 'content-type': 'application/json' };
-              body: { name: string };
-            };
-            response: { 200: { body: User } };
-          };
-
-          GET: {
-            request: {
-              headers: {
-                'accept-language': string;
-                issuer: string;
-                authorization: string;
+    const fetches = [
+      createFetch<
+        HttpSchema<{
+          '/users': {
+            POST: {
+              request: {
+                headers: { 'content-type': 'application/json' };
+                body?: { name: string };
               };
-              searchParams?: {
-                orderBy?: 'name:asc';
-                page?: number;
-                limit?: number;
-                full?: boolean;
+              response: { 200: { body: User } };
+            };
+          };
+        }>
+      >({ baseURL }),
+
+      createFetch<
+        HttpSchema<{
+          '/users': {
+            POST: {
+              request: {
+                headers: { 'content-type': 'application/json' };
+                body: { name: string };
               };
+              response: { 200: { body: User } };
             };
-            response: { 200: { body: User[] } };
-          };
-        };
 
-        '/users/:userId': {
-          GET: {
-            request: {
-              headers?: { authorization: string };
-            };
-            response: { 200: { body: User } };
-          };
-
-          PATCH: {
-            request: {
-              headers: {
-                'content-type': 'application/json' | 'text/plain';
-                authorization: string;
+            GET: {
+              request: {
+                headers: {
+                  'accept-language': string;
+                  issuer: string;
+                  authorization: string;
+                };
+                searchParams?: {
+                  orderBy?: 'name:asc';
+                  page?: number;
+                  limit?: number;
+                  full?: boolean;
+                };
               };
-              body: { name?: string };
+              response: { 200: { body: User[] } };
             };
-            response: { 200: { body: User } };
           };
 
-          DELETE: {
-            request: {
-              headers: { authorization: string };
-            };
-            response: { 204: {} };
-          };
-        };
-
-        '/posts': {
-          GET: {
-            request: {
-              headers: { 'accept-language': string };
-              searchParams: {
-                category: string;
-                orderBy?: `title:${'asc' | 'desc'}`;
-                page?: number;
-                limit?: number;
-                full?: boolean;
+          '/users/:userId': {
+            GET: {
+              request: {
+                headers?: { authorization: string };
               };
+              response: { 200: { body: User } };
             };
-            response: { 200: { body: Post[] } };
+
+            PATCH: {
+              request: {
+                headers: {
+                  'content-type': 'application/json' | 'text/plain';
+                  authorization: string;
+                };
+                body: { name?: string };
+              };
+              response: { 200: { body: User } };
+            };
+
+            DELETE: {
+              request: {
+                headers: { authorization: string };
+              };
+              response: { 204: {} };
+            };
           };
 
-          POST: {
-            request: {
-              headers: { 'content-type': 'application/json' };
-              body?: { title: string };
+          '/posts': {
+            GET: {
+              request: {
+                headers: { 'accept-language': string };
+                searchParams: {
+                  category: string;
+                  orderBy?: `title:${'asc' | 'desc'}`;
+                  page?: number;
+                  limit?: number;
+                  full?: boolean;
+                };
+              };
+              response: { 200: { body: Post[] } };
             };
-            response: { 201: { body: Post } };
-          };
-        };
 
-        '/posts/:postId': {
-          PUT: {
-            request: {
-              headers: { 'content-type': 'application/json' | 'application/xml' };
-              body: { title: string };
+            POST: {
+              request: {
+                headers: { 'content-type': 'application/json' };
+                body?: { title: string };
+              };
+              response: { 201: { body: Post } };
             };
-            response: { 200: { body: Post } };
           };
 
-          DELETE: {
-            request: {
-              headers: { authorization: string };
+          '/posts/:postId': {
+            PUT: {
+              request: {
+                headers: { 'content-type': 'application/json' | 'application/xml' };
+                body: { title: string };
+              };
+              response: { 200: { body: Post } };
             };
-            response: { 204: {} };
-          };
-        };
-      }>
-    >({ baseURL });
 
-    expect(fetchWithMultipleRequests.headers).toEqual({});
-    expectTypeOf(fetchWithMultipleRequests.headers).toEqualTypeOf<{
+            DELETE: {
+              request: {
+                headers: { authorization: string };
+              };
+              response: { 204: {} };
+            };
+          };
+        }>
+      >({ baseURL }),
+    ] as const;
+
+    type ExpectedBodyTypes = [
+      JSONStringified<{ name: string }> | null | undefined,
+      (
+        | JSONStringified<{ name: string }>
+        | JSONStringified<{ name?: string }>
+        | JSONStringified<{ title: string }>
+        | null
+        | undefined
+      ),
+    ];
+
+    expectTypeOf(fetches[0].headers).toEqualTypeOf<{ 'content-type'?: 'application/json' }>();
+    expectTypeOf(fetches[0].defaults.headers).toEqualTypeOf(fetches[0].headers); // eslint-disable-line @typescript-eslint/no-deprecated
+
+    expectTypeOf(fetches[0].searchParams).toEqualTypeOf<{}>();
+    expectTypeOf(fetches[0].defaults.searchParams).toEqualTypeOf(fetches[0].searchParams); // eslint-disable-line @typescript-eslint/no-deprecated
+
+    expectTypeOf(fetches[0].body).toEqualTypeOf<ExpectedBodyTypes[0]>();
+    expectTypeOf(fetches[0].defaults.body).toEqualTypeOf<ExpectedBodyTypes[0]>(); // eslint-disable-line @typescript-eslint/no-deprecated
+
+    expectTypeOf(fetches[1].headers).toEqualTypeOf<{
       'content-type'?: 'application/json' | 'text/plain' | 'application/xml';
       'accept-language'?: string;
       issuer?: string;
       authorization?: string;
     }>();
-    expectTypeOf(fetchWithMultipleRequests.defaults.headers).toEqualTypeOf(fetchWithMultipleRequests.headers); // eslint-disable-line @typescript-eslint/no-deprecated
+    expectTypeOf(fetches[1].defaults.headers).toEqualTypeOf(fetches[1].headers); // eslint-disable-line @typescript-eslint/no-deprecated
 
-    expect(fetchWithMultipleRequests.searchParams).toEqual({});
-    expectTypeOf(fetchWithMultipleRequests.searchParams).toEqualTypeOf<{
+    expectTypeOf(fetches[1].searchParams).toEqualTypeOf<{
       orderBy?: 'name:asc' | `title:${'asc' | 'desc'}`;
       limit?: number;
       full?: boolean;
       page?: number;
       category?: string;
     }>();
-    expectTypeOf(fetchWithMultipleRequests.defaults.searchParams).toEqualTypeOf(fetchWithMultipleRequests.searchParams); // eslint-disable-line @typescript-eslint/no-deprecated
+    expectTypeOf(fetches[1].defaults.searchParams).toEqualTypeOf(fetches[1].searchParams); // eslint-disable-line @typescript-eslint/no-deprecated
 
-    expect(fetchWithMultipleRequests.body).toBe(undefined);
-    expectTypeOf(fetchWithMultipleRequests.body).toEqualTypeOf<
-      | JSONStringified<{ name: string }>
-      | JSONStringified<{ name?: string }>
-      | JSONStringified<{ title: string }>
-      | null
-      | undefined
-    >();
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    expectTypeOf(fetchWithMultipleRequests.defaults.body).branded.toEqualTypeOf<
-      | JSONStringified<{ name: string }>
-      | JSONStringified<{ name?: string }>
-      | JSONStringified<{ title: string }>
-      | null
-      | undefined
-    >();
+    expectTypeOf(fetches[1].body).toEqualTypeOf<ExpectedBodyTypes[1]>();
+    expectTypeOf(fetches[1].defaults.body).toEqualTypeOf<ExpectedBodyTypes[1]>(); // eslint-disable-line @typescript-eslint/no-deprecated
   });
 });
