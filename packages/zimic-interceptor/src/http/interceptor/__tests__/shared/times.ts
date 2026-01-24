@@ -781,19 +781,12 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
           '',
           `  ${color.green('- Expected')}`,
           `  ${color.red('+ Received')}`,
+          '',
+          `1: GET ${joinURL(baseURL, '/users')}`,
+          '     Search params:',
+          `       ${color.green('- { "value": "1" }')}`,
+          `       ${color.red('+ {}')}`,
         ];
-
-        for (let requestIndex = 0; requestIndex < 1; requestIndex++) {
-          const requestNumber = requestIndex + 1;
-
-          contentLines.push(
-            '',
-            `${requestNumber}: GET ${joinURL(baseURL, '/users')}`,
-            '     Search params:',
-            `       ${color.green('- { "value": "1" }')}`,
-            `       ${color.red('+ {}')}`,
-          );
-        }
 
         await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: contentLines.join('\n'),
@@ -865,19 +858,12 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
           '',
           `  ${color.green('- Expected')}`,
           `  ${color.red('+ Received')}`,
+          '',
+          `1: GET ${joinURL(baseURL, '/users')}`,
+          '     Search params:',
+          `       ${color.green('- { "value": "1" }')}`,
+          `       ${color.red('+ {}')}`,
         ];
-
-        for (let requestIndex = 0; requestIndex < 1; requestIndex++) {
-          const requestNumber = requestIndex + 1;
-
-          contentLines.push(
-            '',
-            `${requestNumber}: GET ${joinURL(baseURL, '/users')}`,
-            '     Search params:',
-            `       ${color.green('- { "value": "1" }')}`,
-            `       ${color.red('+ {}')}`,
-          );
-        }
 
         await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: contentLines.join('\n'),
