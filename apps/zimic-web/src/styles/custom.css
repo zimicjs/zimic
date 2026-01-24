@@ -73,7 +73,6 @@
     'Segoe UI Symbol';
 
   font-family: var(--ifm-font-family-base);
-  font-size: 0.96rem;
 }
 
 :root[data-theme='dark'] {
