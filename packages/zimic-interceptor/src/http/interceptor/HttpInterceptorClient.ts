@@ -369,8 +369,7 @@ class HttpInterceptorClient<
       const pathHandlers = this.handlers[method];
 
       for (const handlers of pathHandlers.values()) {
-        for (let handlerIndex = handlers.length - 1; handlerIndex >= 0; handlerIndex--) {
-          const handler = handlers[handlerIndex];
+        for (const handler of handlers) {
           handler.checkTimes();
         }
       }
