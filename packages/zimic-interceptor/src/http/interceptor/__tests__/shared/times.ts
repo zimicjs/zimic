@@ -361,8 +361,8 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         });
 
         await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-          message: 'Expected exactly 2 requests, but got 0.',
-          expectedNumberOfRequests: 2,
+          message: 'Expected exactly 1 request, but got 0.',
+          expectedNumberOfRequests: 1,
         });
 
         let response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
@@ -386,8 +386,8 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         });
 
         await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-          message: 'Expected exactly 2 requests, but got 1.',
-          expectedNumberOfRequests: 2,
+          message: 'Expected exactly 1 request, but got 0.',
+          expectedNumberOfRequests: 1,
         });
 
         response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
@@ -408,8 +408,8 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         await promiseIfRemote(handlers[2].checkTimes(), handlers[2]);
 
         await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-          message: 'Expected at least 1 and at most 2 requests, but got 0.',
-          expectedNumberOfRequests: { min: 1, max: 2 },
+          message: 'Expected exactly 1 request, but got 0.',
+          expectedNumberOfRequests: 1,
         });
 
         response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
@@ -528,8 +528,8 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         });
 
         await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-          message: 'Expected exactly 2 matching requests, but got 0.',
-          expectedNumberOfRequests: 2,
+          message: 'Expected exactly 1 matching request, but got 0.',
+          expectedNumberOfRequests: 1,
         });
 
         const searchParams = new HttpSearchParams({ value: '2' });
@@ -555,8 +555,8 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         });
 
         await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-          message: 'Expected exactly 2 matching requests, but got 1.',
-          expectedNumberOfRequests: 2,
+          message: 'Expected exactly 1 matching request, but got 0.',
+          expectedNumberOfRequests: 1,
         });
 
         searchParams.set('value', '1');
@@ -579,8 +579,8 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         });
 
         await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-          message: 'Expected exactly 2 matching requests, but got 1.',
-          expectedNumberOfRequests: 2,
+          message: 'Expected at least 1 and at most 2 matching requests, but got 0.',
+          expectedNumberOfRequests: { min: 1, max: 2 },
         });
 
         searchParams.set('value', 'unknown');
@@ -628,7 +628,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: [
-            'Expected exactly 2 matching requests, but got 1.',
+            'Expected at least 1 and at most 2 matching requests, but got 0.',
             '',
             'Requests evaluated by this handler:',
             '',
@@ -640,7 +640,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
             `       ${color.green('- { "value": "2" }')}`,
             `       ${color.red('+ { "value": "unknown" }')}`,
           ].join('\n'),
-          expectedNumberOfRequests: 2,
+          expectedNumberOfRequests: { min: 1, max: 2 },
         });
 
         searchParams.set('value', '2');
