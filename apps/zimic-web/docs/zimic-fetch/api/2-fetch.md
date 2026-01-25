@@ -186,6 +186,8 @@ major release.
 
 **Related**:
 
+- [Guides - Headers](/docs/zimic-fetch/guides/1-headers.md#setting-default-request-headers)
+- [Guides - Search params](/docs/zimic-fetch/guides/2-search-params.md#setting-default-request-search-params)
 - [Guides - Authentication](/docs/zimic-fetch/guides/5-authentication.md#handling-errors)
 
 ## `fetch.onRequest`
