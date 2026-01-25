@@ -109,6 +109,10 @@ const fetch = createFetch<Schema>({
 });
 ```
 
+**Related**:
+
+- [API - `fetch` defaults](/docs/zimic-fetch/api/2-fetch.md#fetch-defaults)
+
 ## Using response headers
 
 Similarly to requests, you can declare the types of response headers in your

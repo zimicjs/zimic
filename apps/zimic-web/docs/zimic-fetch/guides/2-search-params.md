@@ -142,3 +142,7 @@ const fetch = createFetch<Schema>({
 
 Note that we need to create a new `Request` object to change the search params. This is because the URL of a request is
 immutable, including the search params.
+
+**Related**:
+
+- [API - `fetch` defaults](/docs/zimic-fetch/api/2-fetch.md#fetch-defaults)
