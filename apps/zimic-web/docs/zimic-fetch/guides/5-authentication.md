@@ -51,7 +51,8 @@ const fetch = createFetch<Schema>({
 fetch.headers.authorization = `Bearer ${accessToken}`;
 ```
 
-Learn more about [using default request headers](/docs/zimic-fetch/guides/1-headers.md#using-default-request-headers).
+Learn more about
+[setting default request headers](/docs/zimic-fetch/guides/1-headers.md#setting-default-request-headers).
 
 ### Using listeners
 
