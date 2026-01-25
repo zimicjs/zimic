@@ -252,7 +252,6 @@ export default [
       '@typescript-eslint/no-duplicate-enum-values': 'warn',
       '@typescript-eslint/no-for-in-array': 'error',
       '@typescript-eslint/no-unnecessary-qualifier': 'warn',
-      '@typescript-eslint/no-redundant-type-constituents': 'warn',
       '@typescript-eslint/no-invalid-this': ['error', {}],
       '@typescript-eslint/no-use-before-define': 'warn',
       '@typescript-eslint/no-dupe-class-members': 'error',
