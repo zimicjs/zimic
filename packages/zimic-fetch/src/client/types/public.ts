@@ -13,7 +13,7 @@ export type FetchInput<
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference} */
 export interface Fetch<Schema extends HttpSchema>
-  extends Pick<FetchOptions<Schema>, 'onRequest' | 'onResponse'>, FetchDefaults {
+  extends Pick<FetchOptions<Schema>, 'onRequest' | 'onResponse'>, FetchDefaults<Schema> {
   <
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
@@ -39,7 +39,7 @@ export interface Fetch<Schema extends HttpSchema>
    * @deprecated Consider accessing the default options directly from the fetch instance.
    * @see {@link https://zimic.dev/docs/fetch/api/fetch#fetch-defaults `fetch` defaults}
    */
-  defaults: FetchDefaults;
+  defaults: FetchDefaults<Schema>;
 
   /** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchloose `fetch.loose`} */
   loose: Fetch.Loose;
@@ -78,7 +78,7 @@ export namespace Fetch {
 }
 
 /** @see {@link https://zimic.dev/docs/fetch/api/create-fetch `createFetch` API reference} */
-export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchRequestInit.Defaults, 'method'> {
+export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchRequestInit.Defaults<Schema>, 'method'> {
   /** @see {@link https://zimic.dev/docs/fetch/api/create-fetch#onrequest `createFetch.onRequest`} API reference */
   onRequest?: (this: Fetch<Schema>, request: FetchRequest.Loose) => PossiblePromise<Request>;
 
@@ -91,7 +91,10 @@ export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchReque
  *
  * @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference}
  */
-export type FetchDefaults = RequiredByKey<FetchRequestInit.Defaults, 'headers' | 'searchParams'>;
+export type FetchDefaults<Schema extends HttpSchema = HttpSchema> = RequiredByKey<
+  FetchRequestInit.Defaults<Schema>,
+  'headers' | 'searchParams'
+>;
 
 /**
  * Infers the schema of a {@link https://zimic.dev/docs/fetch/api/fetch fetch instance}.

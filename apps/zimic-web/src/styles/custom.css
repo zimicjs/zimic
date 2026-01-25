@@ -47,8 +47,6 @@
   --ifm-footer-link-color: var(--ifm-font-color-base);
   --ifm-footer-background-color: var(--ifm-navbar-background-color);
 
-  --ifm-code-font-size: 90%;
-
   --ifm-hover-overlay: color-mix(in oklab, var(--color-primary-600) 5%, transparent);
 
   --highlighted-code-background-color: #eaeff9;
@@ -73,7 +71,6 @@
     'Segoe UI Symbol';
 
   font-family: var(--ifm-font-family-base);
-  font-size: 0.96rem;
 }
 
 :root[data-theme='dark'] {
@@ -122,10 +119,6 @@ input,
 select,
 textarea {
   font-family: var(--ifm-font-family-base);
-}
-
-.markdown p code {
-  vertical-align: text-top;
 }
 
 .menu__list-item-collapsible:has(.menu__link:not([href])) {

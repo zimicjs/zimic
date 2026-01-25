@@ -26,7 +26,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
     this.fetch.Request = this.createRequestClass(this.fetch);
   }
 
-  get defaults(): FetchDefaults {
+  get defaults(): FetchDefaults<Schema> {
     return this.fetch;
   }
 
@@ -158,7 +158,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
           method: init?.method ?? fetch.method,
           headers: new HttpHeaders(fetch.headers),
           searchParams: new HttpSearchParams(fetch.searchParams),
-          body: init?.body ?? fetch.body,
+          body: (init?.body ?? fetch.body) as BodyInit | null,
           mode: init?.mode ?? fetch.mode,
           cache: init?.cache ?? fetch.cache,
           credentials: init?.credentials ?? fetch.credentials,
@@ -183,7 +183,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
         if (input instanceof globalThis.Request) {
           const request = input as globalThis.Request;
 
-          actualInit.headers.assign(new HttpHeaders(request.headers));
+          actualInit.headers.assign(new HttpHeaders<FetchRequestInit.DefaultHeaders<Schema>>(request.headers));
 
           url = new URL(input.url);
 
@@ -191,7 +191,9 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
         } else {
           url = new URL(input instanceof URL ? input : joinURL(baseURL, input));
 
-          actualInit.searchParams.assign(new HttpSearchParams(url.searchParams));
+          actualInit.searchParams.assign(
+            new HttpSearchParams<FetchRequestInit.DefaultSearchParams<Schema>>(url.searchParams),
+          );
 
           if (init?.searchParams) {
             actualInit.searchParams.assign(new HttpSearchParams(init.searchParams));
