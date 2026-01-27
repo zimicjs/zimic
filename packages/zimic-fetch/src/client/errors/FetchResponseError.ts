@@ -182,7 +182,4 @@ class FetchResponseError<
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyFetchRequestError = FetchResponseError<any, any, any>;
-
 export default FetchResponseError;

@@ -27,7 +27,7 @@ import {
 } from '@zimic/http';
 import { Default, IndexUnion, JSONStringified, UnionToIntersection } from '@zimic/utils/types';
 
-import FetchResponseError, { AnyFetchRequestError } from '../errors/FetchResponseError';
+import FetchResponseError from '../errors/FetchResponseError';
 import { FetchInput } from './public';
 
 type FetchRequestInitWithHeaders<HeadersSchema extends HttpHeadersSchema | undefined> = [HeadersSchema] extends [never]
@@ -232,7 +232,7 @@ export namespace FetchResponse {
   /** A loosely typed version of a {@link FetchResponse}. */
   export interface Loose extends Response {
     request: FetchRequest.Loose;
-    error: AnyFetchRequestError | null;
+    error: FetchResponseError<any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
     clone: () => Loose;
   }
 }

@@ -37,13 +37,7 @@ describe('FetchClient > Errors', () => {
     }>;
 
     await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
-      await interceptor
-        .get('/users')
-        .respond({
-          status: 200,
-          body: users,
-        })
-        .times(1);
+      await interceptor.get('/users').respond({ status: 200, body: users }).times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
 
@@ -115,10 +109,7 @@ describe('FetchClient > Errors', () => {
     await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
-        .respond({
-          status: 403,
-          body: { code: 403, message: 'Forbidden' },
-        })
+        .respond({ status: 403, body: { code: 403, message: 'Forbidden' } })
         .times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
@@ -220,10 +211,7 @@ describe('FetchClient > Errors', () => {
     await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
-        .respond({
-          status: 403,
-          body: { code: 403, message: 'Forbidden' },
-        })
+        .respond({ status: 403, body: { code: 403, message: 'Forbidden' } })
         .times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
@@ -303,10 +291,7 @@ describe('FetchClient > Errors', () => {
     await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get(`/users/${users[0].id}`)
-        .respond({
-          status: 404,
-          body: { code: 404, message: 'Not Found' },
-        })
+        .respond({ status: 404, body: { code: 404, message: 'Not Found' } })
         .times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
