@@ -102,10 +102,11 @@ console.log(response.request); // FetchRequest<Schema, 'POST', '/users'>
 
 ## `response.error`
 
-The [error](/docs/zimic-fetch/api/5-fetch-response-error.md) associated with the response, if the response has a failure
-status code (4XX or 5XX). If the response is successful, `response.error` is `null`.
+An [error](/docs/zimic-fetch/api/5-fetch-response-error.md) associated with the response, if you need to throw it to be
+handled elsewhere. `response.error` is always available, even if the response was successful, since some APIs may return
+failure responses with status codes other than `4XX` or `5XX`, or may have different meanings for certain status codes.
 
-**Type**: `FetchResponseError<Schema, Method, Path> | null`
+**Type**: `FetchResponseError<Schema, Method, Path>`
 
 ```ts
 const response = await fetch('/users', {
@@ -118,3 +119,7 @@ if (response.status === 404) {
   console.error(response.error); // FetchResponseError<Schema, 'POST', '/users'>
 }
 ```
+
+**Related**:
+
+- [Guides - Handling errors](/docs/zimic-fetch/guides/6-errors.md)
