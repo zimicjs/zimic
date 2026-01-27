@@ -5,6 +5,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { expectResponseStatus } from '@tests/utils/requests';
 
+import FetchResponseError from '../errors/FetchResponseError';
 import createFetch from '../factory';
 import { FetchResponse, FetchRequest } from '../types/requests';
 
@@ -1185,7 +1186,7 @@ describe('FetchClient > Methods', () => {
       expectTypeOf(getResponse.json).toEqualTypeOf<() => Promise<User[]>>();
       expectTypeOf(getResponse.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(getResponse.clone).toEqualTypeOf<() => typeof getResponse>();
-      expectTypeOf(getResponse.error).toEqualTypeOf<null>();
+      expectTypeOf(getResponse.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
 
       expect(getResponse.request).toBeInstanceOf(Request);
       expectTypeOf(getResponse.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
@@ -1231,7 +1232,7 @@ describe('FetchClient > Methods', () => {
       expectTypeOf(patchResponse.json).toEqualTypeOf<() => Promise<User>>();
       expectTypeOf(patchResponse.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(patchResponse.clone).toEqualTypeOf<() => typeof patchResponse>();
-      expectTypeOf(patchResponse.error).toEqualTypeOf<null>();
+      expectTypeOf(patchResponse.error).toEqualTypeOf<FetchResponseError<Schema, 'PATCH', '/users'>>();
 
       expect(patchResponse.request).toBeInstanceOf(Request);
       expectTypeOf(patchResponse.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'PATCH', '/users'>>();

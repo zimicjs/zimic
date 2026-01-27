@@ -7,6 +7,7 @@ import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { expectResponseStatus } from '@tests/utils/requests';
 
+import FetchResponseError from '../errors/FetchResponseError';
 import createFetch from '../factory';
 import { Fetch } from '../types/public';
 import { FetchRequest, FetchResponse, FetchResponsePerStatusCode } from '../types/requests';
@@ -812,7 +813,13 @@ describe('FetchClient > Listeners', () => {
             const updatedRequest = response.request.clone();
             updatedRequest.headers.set('authorization', `Bearer ${accessToken}`);
 
-            return this.loose(updatedRequest);
+            const newResponse = await this.loose(updatedRequest);
+
+            expectTypeOf(newResponse).toEqualTypeOf<FetchResponse.Loose>();
+            expectTypeOf(newResponse.status).toEqualTypeOf<number>();
+            expectTypeOf(newResponse.error).toEqualTypeOf<FetchResponseError<any, any, any>>(); // eslint-disable-line @typescript-eslint/no-explicit-any
+
+            return newResponse;
           }
         }
 
