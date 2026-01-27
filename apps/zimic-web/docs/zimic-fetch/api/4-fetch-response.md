@@ -103,8 +103,9 @@ console.log(response.request); // FetchRequest<Schema, 'POST', '/users'>
 ## `response.error`
 
 An [error](/docs/zimic-fetch/api/5-fetch-response-error.md) associated with the response, if you need to throw it to be
-handled elsewhere. `response.error` is always available, even if the response was successful, since some APIs may return
-failure responses with status codes other than `4XX` or `5XX`, or may have different meanings for certain status codes.
+handled elsewhere. `response.error` is always available, even if the response has a `2XX` or `3XX` status code. Some
+noncompliant APIs may return failure responses with status codes other than `4XX` or `5XX`, or may have different
+meanings for certain status codes, so your application can handle those cases as response errors as needed.
 
 **Type**: `FetchResponseError<Schema, Method, Path>`
 
