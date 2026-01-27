@@ -73,7 +73,8 @@ describe('FetchClient > Errors', () => {
         | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 500>)
       >();
 
-      expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'> | null>();
+      expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
+      expect(response.error).toEqual(new FetchResponseError(response.request, response));
 
       expect(response.ok).toBe(true);
 
@@ -81,8 +82,6 @@ describe('FetchClient > Errors', () => {
        * response.ok is true. This if is necessary to narrow the response to a successful type. */
       if (!response.ok) {
         expectTypeOf(response.status).toEqualTypeOf<401 | 403 | 500>();
-        expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
-
         throw response.error;
       }
 
@@ -96,9 +95,6 @@ describe('FetchClient > Errors', () => {
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expectTypeOf(response.clone).toEqualTypeOf<() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 200>>();
-
-      expectTypeOf(response.error).toEqualTypeOf<null>();
-      expect(response.error).toBe(null);
     });
   });
 
@@ -152,7 +148,8 @@ describe('FetchClient > Errors', () => {
         | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 500>)
       >();
 
-      expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'> | null>();
+      expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
+      expect(response.error).toEqual(new FetchResponseError(response.request, response));
 
       expect(response.ok).toBe(false);
 
@@ -160,9 +157,7 @@ describe('FetchClient > Errors', () => {
        * response.ok is false. This if is necessary to narrow the response to a failed type. */
       if (response.ok) {
         expectTypeOf(response.status).toEqualTypeOf<200>();
-        expectTypeOf(response.error).toEqualTypeOf<null>();
-
-        throw new Error('Expected a failed response.');
+        throw response.error;
       }
 
       expectTypeOf(response.status).toEqualTypeOf<401 | 403 | 500>();
@@ -187,9 +182,6 @@ describe('FetchClient > Errors', () => {
         | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 403>)
         | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 500>)
       >();
-
-      expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
-      expect(response.error).toEqual(new FetchResponseError<Schema, 'GET', '/users'>(response.request, response));
     });
   });
 
@@ -247,7 +239,8 @@ describe('FetchClient > Errors', () => {
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
-      expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'> | null>();
+      expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
+      expect(response.error).toEqual(new FetchResponseError(response.request, response));
 
       expect(response.ok).toBe(false);
 
@@ -255,9 +248,7 @@ describe('FetchClient > Errors', () => {
        * response.ok is false. This if is necessary to narrow the response to a failed type. */
       if (response.ok) {
         expectTypeOf(response.status).toEqualTypeOf<200>();
-        expectTypeOf(response.error).toEqualTypeOf<null>();
-
-        throw new Error('Expected a failed response.');
+        throw response.error;
       }
 
       expect(fetch.isResponseError(response.error, 'GET', '/users')).toBe(true);
@@ -269,8 +260,6 @@ describe('FetchClient > Errors', () => {
       if (!fetch.isResponseError(response.error, 'GET', '/users')) {
         expectTypeOf(response.error).toEqualTypeOf<never>();
       }
-
-      expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
 
       expect(response.error.request).toBe(response.request);
       expect(response.error.response).toBe(response);
@@ -332,6 +321,7 @@ describe('FetchClient > Errors', () => {
       expect(fetch.isResponseError(response.error, 'GET', '/users/:id')).toBe(true);
 
       expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users/:id'>>();
+      expect(response.error).toEqual(new FetchResponseError(response.request, response));
 
       expect(response.error.request).toBe(response.request);
       expect(response.error.response).toBe(response);

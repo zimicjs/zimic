@@ -127,14 +127,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
 
     Object.defineProperty(fetchResponse, 'error', {
       get() {
-        if (responseError === undefined) {
-          responseError = fetchResponse.ok
-            ? null
-            : new FetchResponseError(
-                fetchRequest,
-                fetchResponse as FetchResponse<Schema, Method, Path, true, 'manual'>,
-              );
-        }
+        responseError ??= new FetchResponseError(fetchRequest, fetchResponse);
         return responseError;
       },
       enumerable: true,

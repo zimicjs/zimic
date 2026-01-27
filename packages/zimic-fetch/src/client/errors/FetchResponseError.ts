@@ -55,7 +55,7 @@ class FetchResponseError<
 > extends Error {
   constructor(
     public request: FetchRequest<Schema, Method, Path>,
-    public response: FetchResponse<Schema, Method, Path, true, 'manual'>,
+    public response: FetchResponse<Schema, Method, Path>,
   ) {
     super(`${request.method} ${request.url} failed with status ${response.status}: ${response.statusText}`);
     this.name = 'FetchResponseError';
@@ -141,7 +141,7 @@ class FetchResponseError<
   }
 
   private convertHeadersToObject(
-    resource: FetchRequest<Schema, Method, Path> | FetchResponse<Schema, Method, Path, true, 'manual'>,
+    resource: FetchRequest<Schema, Method, Path> | FetchResponse<Schema, Method, Path>,
   ): HttpHeadersSchema {
     return HttpHeaders.prototype.toObject.call(resource.headers) as HttpHeadersSchema;
   }

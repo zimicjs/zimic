@@ -238,16 +238,7 @@ export interface FetchResponsePerStatusCode<
 > {
   /** The request that originated the response. */
   request: FetchRequest<Schema, Method, Path>;
-
-  /**
-   * An error representing a response with a failure status code (4XX or 5XX). It can be thrown to handle the error
-   * upper in the call stack.
-   *
-   * If the response has a success status code (1XX, 2XX or 3XX), this property will be null.
-   */
-  error: StatusCode extends HttpStatusCode.ClientError | HttpStatusCode.ServerError
-    ? FetchResponseError<Schema, Method, Path>
-    : null;
+  error: FetchResponseError<Schema, Method, Path>;
 }
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference} */

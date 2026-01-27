@@ -81,7 +81,8 @@ describe('FetchClient > Types', () => {
         | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 401>)
       >();
 
-      expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'> | null>();
+      expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
+      expect(response.error).toEqual(new FetchResponseError<Schema, 'GET', '/users'>(response.request, response));
 
       expect(response.ok).toBe(true);
 
@@ -89,8 +90,6 @@ describe('FetchClient > Types', () => {
        * response.ok is true. This if is necessary to narrow the response to a successful type. */
       if (!response.ok) {
         expectTypeOf(response.status).toEqualTypeOf<400 | 401>();
-        expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
-
         throw response.error;
       }
 
@@ -111,8 +110,8 @@ describe('FetchClient > Types', () => {
         | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 204>)
       >();
 
-      expectTypeOf(response.error).toEqualTypeOf<null>();
-      expect(response.error).toBe(null);
+      expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
+      expect(response.error).toEqual(new FetchResponseError<Schema, 'GET', '/users'>(response.request, response));
     });
   });
 
