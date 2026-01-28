@@ -79,7 +79,7 @@ const handler = interceptor
 
 // Run the application and make requests...
 
-console.log(handler.requests); // 1
+console.log(handler.requests.length); // 1
 // highlight-start
 console.log(handler.requests[0].headers.get('authorization'));
 console.log(handler.requests[0].headers.get('accept-language'));
@@ -116,7 +116,7 @@ const handler = await interceptor
 
 // Run the application and make requests...
 
-console.log(handler.requests); // 1
+console.log(handler.requests.length); // 1
 // highlight-start
 console.log(handler.requests[0].headers.get('authorization'));
 console.log(handler.requests[0].headers.get('accept-language'));
