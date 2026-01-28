@@ -251,7 +251,7 @@ if (!response.ok) {
   throw response.error;
 }
 
-// If the request was ok, the data type is inferred as User[]
+// If the request was ok, the body type is inferred as User[]
 const users = await response.json();
 return users;
 ```
