@@ -8,13 +8,26 @@ slug: /fetch/guides/errors
 
 `@zimic/fetch` fully types the requests and responses based on your [schema](/docs/zimic-http/guides/1-schemas.md). If a
 response fails with a status code in the `4XX` or `5XX` ranges, the
-[`response.ok`](https://developer.mozilla.org/docs/Web/API/Response/ok) property will be `false`. In this case,
-`response.error` will contain a `FetchResponseError` representing the failure.
+[`response.ok`](https://developer.mozilla.org/docs/Web/API/Response/ok) property will be `false`.
 
 ## Handling response errors
 
-To handle errors, check the `response.status` or the `response.ok` properties to determine if the request was successful
-or not. Alternatively, you can throw the `response.error` to handle it upper in the call stack.
+To handle response errors, check the `response.status` or the `response.ok` properties to determine if the request was
+successful or not. In case you need to handle a response as an error upper in the call stack, you can throw the
+[`response.error`](/docs/zimic-fetch/api/4-fetch-response.md#responseerror) property. `response.error` is always
+available, even if the response has a `2XX` or `3XX` status code. Some noncompliant APIs may return failure responses
+with status codes other than `4XX` or `5XX`, or may have different meanings for certain status codes, so your
+application can handle those cases as response errors as needed.
+
+:::important IMPORTANT: <span>Handling network errors</span>
+
+Some network errors, such as DNS resolution failures, CORS errors, or request timeouts, may not return a valid HTTP
+response. In these cases, `@zimic/fetch` will throw a native
+[`TypeError`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/TypeError) instead of resolving
+with a response, which is the default behavior of the [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API).
+Make sure to handle these errors as necessary in your application.
+
+:::
 
 The [`onResponse`](/docs/zimic-fetch/api/2-fetch.md#fetchonresponse) listener can be a good strategy if you want to
 handle errors transparently. The listener can automatically retry the request without bubbling the error up to the
@@ -92,9 +105,9 @@ async function fetchUser(userId: string) {
 
 :::tip TIP: <span>Throwing unknown errors</span>
 
-Checking the `response.ok` and `response.status` properties is a good practice handle errors. A common strategy is to
-first check status codes that require specific logic, depending on your application, and throwing other errors a global
-error handler.
+Depending on your application, checking the `response.ok` and `response.status` properties can be a good practice to
+handle errors. A common strategy is to first check status codes that require specific logic, if any, and throwing
+`response.error` for all other errors to be handled elsewhere.
 
 ```ts
 if (response.status === 401) {

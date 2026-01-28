@@ -108,15 +108,23 @@ return users; // User[]
 
 Fetch instances inherit from the native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit)
 interface and can have default options applied to all requests made through them. On top of the native properties in
-`RequestInit`, fetch instance also accept:
+`RequestInit`, fetch instances also accept:
 
-- **baseURL**: `string | undefined`
+- **baseURL**: `string`
 
   The base URL for the fetch instance, which will be prepended to all request URLs.
 
-- **searchParams**: `HttpSearchParamsSchema.Loose | undefined`
+- **headers**: `FetchRequestInit.DefaultHeaders<Schema> | undefined`
 
-  The default search parameters to be sent with each request.
+  The default headers for each request, typed based on the schema.
+
+- **searchParams**: `FetchRequestInit.DefaultSearchParams<Schema> | undefined`
+
+  The default search parameters for each request, typed based on the schema.
+
+- **body**: `FetchRequestInit.DefaultBody<Schema> | undefined`
+
+  The default body for each request, typed based on the schema.
 
 - **duplex**: `'half' | undefined`
 
@@ -136,7 +144,11 @@ type Schema = HttpSchema<{
   '/posts': {
     POST: {
       request: {
-        headers: { authorization?: string };
+        headers: {
+          'accept-language'?: string;
+          'cache-control'?: string;
+          authorization?: string;
+        };
         body: { title: string };
       };
       response: {
@@ -149,14 +161,15 @@ type Schema = HttpSchema<{
 const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
   // Setting defaults when creating the fetch instance
-  // highlight-next-line
+  // highlight-start
   headers: {
     'accept-language': 'en',
     'cache-control': 'no-cache',
   },
+  // highlight-end
 });
 
-// Somewhere else in the code, you can update the defaults
+// Somewhere else in the code, you can update the defaults as needed
 // highlight-next-line
 fetch.headers.authorization = `Bearer ${accessToken}`;
 ```
@@ -173,6 +186,8 @@ major release.
 
 **Related**:
 
+- [Guides - Headers](/docs/zimic-fetch/guides/1-headers.md#setting-default-request-headers)
+- [Guides - Search params](/docs/zimic-fetch/guides/2-search-params.md#setting-default-request-search-params)
 - [Guides - Authentication](/docs/zimic-fetch/guides/5-authentication.md#handling-errors)
 
 ## `fetch.onRequest`
