@@ -150,7 +150,7 @@ The schema represents the structure of your API, including the paths, methods, r
 
 For APIs with an [OpenAPI documentation](https://www.openapis.org) (e.g. [Swagger](https://swagger.io)), the
 [`zimic-http typegen` CLI](/docs/zimic-http/guides/2-typegen.mdx) can automatically infer the types and generate the
-schema for you. This is a great way to keep your schema is up to date and save time on manual type definitions.
+schema for you. This is a great way to keep your schema up to date and save time on manual type definitions.
 
 :::
 
@@ -241,7 +241,7 @@ const response = await fetch('/users', {
   searchParams: { query: 'u', limit: 10 },
 });
 
-// If the user was not found, return null
+// If not found, return null
 if (response.status === 404) {
   return null;
 }
