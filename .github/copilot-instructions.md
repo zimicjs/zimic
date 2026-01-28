@@ -79,10 +79,23 @@ Run in the target package directory:
 ## Code Quality Standards
 
 - **Naming**: Explicit and descriptive (prefer clarity over brevity)
+- **Props Types**: Name component props interfaces as `Props` (not `ComponentNameProps`)
+- **Component Structure**: Break complex components into smaller subcomponents to reduce complexity
+- **Constants**: Avoid unnecessary constants; prefer inlining values directly where used unless shared across multiple
+  locations
 - **Architecture**: Composition over inheritance; minimal API surface
 - **Type Safety**: Strict TypeScript; avoid `any`; use inference
 - **Optimization**: Only when measured; avoid premature optimization
 - **CLI** (if applicable): Build to `dist/*.js` via `tsup`; use `yargs` with kebab-case options
+
+## Docusaurus Web App (zimic-web) Specific
+
+- **Theme Hooks**: When using `useColorMode` or other Docusaurus theme hooks, ensure `@docusaurus/theme-common` is added
+  as a dependency
+- **Prism Themes**: Use `prism-react-renderer` for syntax highlighting with `themes.github` (light) and
+  `themes.nightOwl` (dark)
+- **Static Rendering**: Ensure all components are server-side renderable for SEO; avoid client-only features in initial
+  render
 
 ## Commit Conventions
 

@@ -6,14 +6,21 @@ import ZimicLogo from '@@/public/images/logo.svg';
 import Button from '@/components/common/Button';
 import ChecklistIcon from '@/components/icons/ChecklistIcon';
 import CogIcon from '@/components/icons/CogIcon';
+import FeatherIcon from '@/components/icons/FeatherIcon';
+import FlaskIcon from '@/components/icons/FlaskIcon';
+import GlobeIcon from '@/components/icons/GlobeIcon';
 import HeartIcon from '@/components/icons/HeartIcon';
 import HighVoltageIcon from '@/components/icons/HighVoltageIcon';
 import OpenPackageIcon from '@/components/icons/OpenPackageIcon';
+import ShieldIcon from '@/components/icons/ShieldIcon';
+import StarIcon from '@/components/icons/StarIcon';
+import TargetIcon from '@/components/icons/TargetIcon';
 
 import FeatureCard from './components/FeatureCard';
 import GetStartedLink from './components/GetStartedLink';
 import GradientBackground from './components/GradientBackground';
 import HomeSection from './components/HomeSection';
+import PackageShowcase from './components/PackageShowcase';
 import ProjectCard from './components/ProjectCard';
 import SponsorsImage from './components/SponsorsImage';
 
@@ -93,6 +100,138 @@ function HomePage() {
             />
           </div>
         </HomeSection>
+
+        <PackageShowcase
+          packageName="@zimic/http"
+          tagline="TypeScript-first HTTP schema definitions"
+          highlights={[
+            {
+              icon: <StarIcon aria-hidden="true" />,
+              title: 'Type-Safe Schemas',
+              description: 'Define HTTP endpoints with full TypeScript support',
+            },
+            {
+              icon: <CogIcon aria-hidden="true" />,
+              title: 'OpenAPI Integration',
+              description: 'Generate schemas from OpenAPI specs automatically',
+            },
+            {
+              icon: <OpenPackageIcon aria-hidden="true" />,
+              title: 'Typed Utilities',
+              description: 'HttpHeaders, HttpSearchParams, HttpFormData with type safety',
+            },
+          ]}
+          codeSnippet={{
+            code: `import { HttpSchema } from '@zimic/http';
+
+type MySchema = HttpSchema<{
+  '/users': {
+    GET: {
+      request: {
+        searchParams: { query?: string };
+      };
+      response: {
+        200: { body: User[] };
+      };
+    };
+    POST: {
+      request: { body: CreateUserInput };
+      response: {
+        201: { body: User };
+      };
+    };
+  };
+}>;`,
+            language: 'typescript',
+          }}
+          docsLink="/docs/http"
+          direction="left"
+          tinted
+        />
+
+        <PackageShowcase
+          packageName="@zimic/fetch"
+          tagline="Typed fetch-like API client"
+          highlights={[
+            {
+              icon: <HighVoltageIcon aria-hidden="true" />,
+              title: 'Type-Safe Requests',
+              description: 'Full autocompletion for paths, methods, and bodies',
+            },
+            {
+              icon: <FeatherIcon aria-hidden="true" />,
+              title: 'Zero Dependencies',
+              description: 'Lightweight (~2kB gzipped), blazing fast',
+            },
+            {
+              icon: <TargetIcon aria-hidden="true" />,
+              title: 'Familiar API',
+              description: 'Works just like native fetch, but with types',
+            },
+          ]}
+          codeSnippet={{
+            code: `import { createFetch } from '@zimic/fetch';
+
+const fetch = createFetch<MySchema>({
+  baseURL: 'http://localhost:3000',
+});
+
+const response = await fetch('/users', {
+  method: 'POST',
+  body: { name: 'John' },
+});
+
+if (response.ok) {
+  const user = await response.json(); // Typed as User
+}`,
+            language: 'typescript',
+          }}
+          docsLink="/docs/fetch"
+          direction="right"
+        />
+
+        <PackageShowcase
+          packageName="@zimic/interceptor"
+          tagline="Type-safe HTTP intercepting and mocking"
+          highlights={[
+            {
+              icon: <GlobeIcon aria-hidden="true" />,
+              title: 'Network-Level Mocking',
+              description: 'Intercept real HTTP requests in tests',
+            },
+            {
+              icon: <ShieldIcon aria-hidden="true" />,
+              title: 'Type-Safe Mocks',
+              description: 'Mocks are validated against your schema',
+            },
+            {
+              icon: <FlaskIcon aria-hidden="true" />,
+              title: 'Test Integration',
+              description: 'Works with Vitest, Jest, Playwright, and more',
+            },
+          ]}
+          codeSnippet={{
+            code: `import { createHttpInterceptor } from '@zimic/interceptor/http';
+
+const interceptor = createHttpInterceptor<MySchema>({
+  baseURL: 'http://localhost:3000',
+});
+
+await interceptor.start();
+
+interceptor
+  .post('/users')
+  .with({ body: { name: 'John' } })
+  .respond({
+    status: 201,
+    body: { id: '1', name: 'John' },
+  });`,
+            language: 'typescript',
+          }}
+          docsLink="/docs/interceptor"
+          direction="left"
+          tinted
+        />
 
         <HomeSection
           title="Level up your TypeScript experience"
