@@ -21,13 +21,23 @@ export async function axiosAsFetch(request: Request, options: { adapter?: 'fetch
       headers: convertObjectToHeaders({ ...axiosResponse.headers }),
     });
   } catch (error) {
+    let axiosError: AxiosError | null = null;
+
+    /* istanbul ignore else -- @preserve
+     * Ignoring as a safeguard that is not expected to be covered. */
+    if (error instanceof Error && error.cause instanceof AxiosError) {
+      axiosError = error.cause;
+    } else if (error instanceof AxiosError) {
+      axiosError = error;
+    }
+
     /* istanbul ignore next -- @preserve
-     * Ignoring as this is expected not to be covered. */
-    if (!(error instanceof AxiosError) || !error.response) {
+     * Ignoring as a safeguard that is not expected to be covered. */
+    if (!axiosError?.response) {
       throw error;
     }
 
-    const axiosResponse = error.response;
+    const axiosResponse = axiosError.response;
     const responseBody = JSON.stringify(axiosResponse.data);
 
     return new Response(responseBody, {
