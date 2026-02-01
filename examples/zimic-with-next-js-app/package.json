@@ -15,15 +15,15 @@
   "dependencies": {
     "@zimic/fetch": "latest",
     "@zimic/http": "latest",
-    "next": "^16.1.5",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
+    "next": "^16.1.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.0",
+    "@playwright/test": "^1.58.1",
     "@tailwindcss/postcss": "^4.1.18",
-    "@types/react": "^19.2.9",
+    "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
     "@zimic/interceptor": "latest",
     "dotenv-cli": "^11.0.0",
