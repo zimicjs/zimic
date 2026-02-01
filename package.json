@@ -28,8 +28,8 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.3.1",
-    "@commitlint/config-conventional": "^20.3.1",
+    "@commitlint/cli": "^20.4.0",
+    "@commitlint/config-conventional": "^20.4.0",
     "@zimic/lint-staged-config": "workspace:*",
     "concurrently": "^9.2.1",
     "husky": "^9.1.7",
@@ -38,6 +38,6 @@
     "prettier-plugin-jsdoc": "1.5.0",
     "prettier-plugin-sh": "0.18.0",
     "prettier-plugin-tailwindcss": "0.7.2",
-    "turbo": "^2.7.3"
+    "turbo": "^2.8.1"
   }
 }
