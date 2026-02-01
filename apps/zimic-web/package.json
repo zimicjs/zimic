@@ -1,6 +1,6 @@
 {
   "name": "zimic-web",
-  "version": "0.3.50",
+  "version": "0.3.51",
   "private": true,
   "scripts": {
     "dev": "docusaurus start --host :: --no-open",
@@ -28,14 +28,14 @@
     "@zimic/http": "workspace:*",
     "dompurify": "^3.3.1",
     "prism-react-renderer": "^2.3.0",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "3.9.2",
     "@docusaurus/types": "3.9.2",
     "@tailwindcss/postcss": "^4.1.18",
-    "@types/react": "^19.2.9",
+    "@types/react": "^19.2.10",
     "@zimic/eslint-config-react": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
