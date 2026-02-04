@@ -1,15 +1,15 @@
 import { ReactNode } from 'react';
 
-import { CodeSnippet } from '@/components/code';
+import CodeSnippet from '@/components/code/CodeSnippet';
 import Button from '@/components/common/Button';
 import ArrowIcon from '@/components/icons/ArrowIcon';
 import { cn } from '@/utils/styles';
 
 import HomeSection from './HomeSection';
 
-function trimExtraIndentation(value: string) {
+function trimCodeSnippet(value: string) {
   const indentationToTrim = /^[\n\s]*/.exec(value)?.[0].length ?? 0;
-  return value.replaceAll(new RegExp(`^\\s{0,${indentationToTrim}}`, 'gm'), '');
+  return value.replaceAll(new RegExp(`^\\s{0,${indentationToTrim}}`, 'gm'), '').trim();
 }
 
 interface Props {
@@ -62,7 +62,7 @@ function PackageShowcase({ href, name, description, highlights, snippet, directi
         </div>
 
         <div className="flex items-center">
-          <CodeSnippet language="typescript" code={trimExtraIndentation(snippet)} className="w-full" />
+          <CodeSnippet language="typescript" code={trimCodeSnippet(snippet)} className="w-full" />
         </div>
       </div>
     </HomeSection>
