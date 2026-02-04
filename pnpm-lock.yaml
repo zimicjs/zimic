@@ -149,6 +149,9 @@ importers:
       '@docusaurus/theme-classic':
         specifier: ^3.9.2
         version: 3.9.2(@types/react@19.2.14)(bufferutil@4.0.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@6.0.1-rc)
+      '@docusaurus/theme-common':
+        specifier: ^3.9.2
+        version: 3.9.2(@docusaurus/plugin-content-docs@3.9.2(@mdx-js/react@3.1.1(@types/react@19.2.14)(react@19.2.4))(bufferutil@4.0.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@6.0.1-rc))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@docusaurus/theme-search-algolia':
         specifier: ^3.9.2
         version: 3.9.2(@algolia/client-search@5.40.1)(@mdx-js/react@3.1.1(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(bufferutil@4.0.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(search-insights@2.17.3)(typescript@6.0.1-rc)
