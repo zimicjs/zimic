@@ -33,6 +33,8 @@ export const SUPPORTED_BASE_URL_PROTOCOLS = Object.freeze(['http', 'https']);
 
 export const DEFAULT_REQUEST_SAVING_SAFE_LIMIT = 1000;
 
+export type HttpRequestHandlerConstructor = typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
+
 class HttpInterceptorClient<
   Schema extends HttpSchema,
   HandlerConstructor extends HttpRequestHandlerConstructor = HttpRequestHandlerConstructor,
@@ -409,8 +411,6 @@ class HttpInterceptorClient<
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyHttpInterceptorClient = HttpInterceptorClient<any>;
-
-export type HttpRequestHandlerConstructor = typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
 
 export type SharedHttpInterceptorClient<Schema extends HttpSchema> = HttpInterceptorClient<
   Schema,

@@ -16,10 +16,10 @@ import { Default, Range } from '@zimic/utils/types';
 import { convertArrayBufferToBlob, convertReadableStreamToBlob } from '@/utils/data';
 import { random } from '@/utils/numbers';
 
+import TimesCheckError from '../../errors/TimesCheckError';
+import TimesDeclarationPointer from '../../errors/TimesDeclarationPointer';
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import DisabledRequestSavingError from './errors/DisabledRequestSavingError';
-import TimesCheckError from './errors/TimesCheckError';
-import TimesDeclarationPointer from './errors/TimesDeclarationPointer';
 import { InternalHttpRequestHandler } from './types/public';
 import {
   HttpInterceptorRequest,
@@ -75,7 +75,7 @@ class HttpRequestHandlerClient<
   private createResponseDelay?: HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>;
 
   constructor(
-    private interceptor: HttpInterceptorClient<Schema>,
+    private interceptorClient: HttpInterceptorClient<Schema>,
     public method: Method,
     public path: Path,
     private handler: InternalHttpRequestHandler<Schema, Method, Path, StatusCode>,
@@ -124,7 +124,7 @@ class HttpRequestHandlerClient<
 
     newThis.clearInterceptedRequests();
 
-    this.interceptor.registerRequestHandler(this.handler);
+    this.interceptorClient.registerRequestHandler(this.handler);
 
     return newThis;
   }
@@ -163,7 +163,7 @@ class HttpRequestHandlerClient<
         declarationPointer: this.timesPointer,
         unmatchedRequestGroups: this.unmatchedRequestGroups,
         hasRestrictions: this.restrictions.length > 0,
-        requestSaving: this.interceptor.requestSaving,
+        requestSaving: this.interceptorClient.requestSaving,
       });
     }
   }
@@ -221,7 +221,7 @@ class HttpRequestHandlerClient<
     options: { diff: RestrictionDiffs },
   ) {
     const shouldSaveUnmatchedRequests =
-      this.interceptor.requestSaving.enabled && this.restrictions.length > 0 && this.timesPointer !== undefined;
+      this.interceptorClient.requestSaving.enabled && this.restrictions.length > 0 && this.timesPointer !== undefined;
 
     if (shouldSaveUnmatchedRequests) {
       this.unmatchedRequestGroups.push({ request, diff: options.diff });
@@ -449,11 +449,11 @@ class HttpRequestHandlerClient<
   ) {
     const interceptedRequest = this.createInterceptedRequest(request, response);
     this._requests.push(interceptedRequest);
-    this.interceptor.incrementNumberOfSavedRequests(1);
+    this.interceptorClient.incrementNumberOfSavedRequests(1);
   }
 
   private clearInterceptedRequests() {
-    this.interceptor.incrementNumberOfSavedRequests(-this._requests.length);
+    this.interceptorClient.incrementNumberOfSavedRequests(-this._requests.length);
     this._requests.length = 0;
   }
 
@@ -478,7 +478,7 @@ class HttpRequestHandlerClient<
   }
 
   get requests(): readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
-    if (!this.interceptor.requestSaving.enabled) {
+    if (!this.interceptorClient.requestSaving.enabled) {
       throw new DisabledRequestSavingError();
     }
 

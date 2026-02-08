@@ -2,8 +2,9 @@ import { HttpMethodSchema, HttpStatusCode } from '@zimic/http';
 import { PossiblePromise } from '@zimic/utils/types';
 import { expect } from 'vitest';
 
-import TimesCheckError from '../../errors/TimesCheckError';
-import TimesDeclarationPointer from '../../errors/TimesDeclarationPointer';
+import TimesDeclarationPointer from '@/errors/TimesDeclarationPointer';
+import { TimesCheckError } from '@/ws';
+
 import {
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerStatusResponseDeclaration,

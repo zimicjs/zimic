@@ -24,8 +24,8 @@ class LocalHttpRequestHandler<
 
   client: HttpRequestHandlerClient<Schema, Method, Path, StatusCode>;
 
-  constructor(interceptor: HttpInterceptorClient<Schema>, method: Method, path: Path) {
-    this.client = new HttpRequestHandlerClient(interceptor, method, path, this);
+  constructor(interceptorClient: HttpInterceptorClient<Schema>, method: Method, path: Path) {
+    this.client = new HttpRequestHandlerClient(interceptorClient, method, path, this);
   }
 
   get method() {
