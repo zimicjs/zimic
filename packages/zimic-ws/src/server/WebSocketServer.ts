@@ -11,38 +11,30 @@ export interface WebSocketServerOptions {
 class WebSocketServer {
   private server: HttpServer | HttpsServer;
   private socket: ServerSocket;
-  private isSocketOpen: boolean;
 
   constructor(options: WebSocketServerOptions) {
     this.server = options.server;
-    this.socket = new ServerSocket({ server: options.server });
-    this.isSocketOpen = options.server.listening;
+    this.socket = new ServerSocket({ server: this.server });
   }
 
   get isRunning() {
-    return this.server.listening && this.isSocketOpen;
+    return this.server.listening;
   }
 
   async start(options: { timeout?: number } = {}) {
-    if (this.isSocketOpen) {
+    if (this.isRunning) {
       return;
     }
 
     await openServerSocket(this.server, this.socket, options);
-
-    this.isSocketOpen = true;
   }
 
   async stop(options: { timeout?: number } = {}) {
-    if (!this.isSocketOpen) {
+    if (!this.isRunning) {
       return;
     }
 
-    try {
-      await closeServerSocket(this.server, this.socket, options);
-    } finally {
-      this.isSocketOpen = false;
-    }
+    await closeServerSocket(this.server, this.socket, options);
   }
 }
 
