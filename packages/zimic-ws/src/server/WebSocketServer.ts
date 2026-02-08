@@ -29,6 +29,7 @@ class WebSocketServer {
     }
 
     await openServerSocket(this.server, this.socket, options);
+
     this.isSocketOpen = true;
   }
 
@@ -37,8 +38,11 @@ class WebSocketServer {
       return;
     }
 
-    await closeServerSocket(this.server, this.socket, options);
-    this.isSocketOpen = false;
+    try {
+      await closeServerSocket(this.server, this.socket, options);
+    } finally {
+      this.isSocketOpen = false;
+    }
   }
 }
 

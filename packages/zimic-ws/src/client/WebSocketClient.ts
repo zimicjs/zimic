@@ -96,13 +96,32 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
   }
 
   async open(options: { timeout?: number } = {}) {
-    this.socket = new ClientSocket(this._url, this.protocols);
+    const socket = new ClientSocket(this.url, this.protocols);
 
-    if (this.socket.binaryType !== this._binaryType) {
-      this.socket.binaryType = this._binaryType;
+    if (socket.binaryType !== this.binaryType) {
+      socket.binaryType = this.binaryType;
     }
 
-    await openClientSocket(this.socket, options);
+    this.applyListeners(socket);
+
+    await openClientSocket(socket, options);
+
+    this.socket = socket;
+  }
+
+  private applyListeners(socket: ClientSocket) {
+    for (const type of ['open', 'message', 'close', 'error'] as const) {
+      const unitaryListener = this[`on${type}`] as WebSocketClientEventListener<Schema, typeof type> | null;
+      const rawUnitaryListener = unitaryListener ? this.listeners[type].get(unitaryListener) : undefined;
+
+      if (rawUnitaryListener) {
+        socket[`on${type}`] = rawUnitaryListener;
+      }
+
+      for (const rawListener of this.listeners[type].values()) {
+        socket.addEventListener(type, rawListener);
+      }
+    }
   }
 
   async close(code?: number, reason?: string, options: { timeout?: number } = {}) {
@@ -113,19 +132,6 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     try {
       await closeClientSocket(this.socket, { ...options, code, reason });
     } finally {
-      this.onopen = null;
-      this.onmessage = null;
-      this.onclose = null;
-      this.onerror = null;
-
-      for (const [type, listenerToRawListener] of Object.entries(this.listeners)) {
-        for (const rawListener of listenerToRawListener.values()) {
-          this.socket.removeEventListener(type, rawListener);
-        }
-
-        listenerToRawListener.clear();
-      }
-
       this.socket = undefined;
     }
   }
@@ -163,7 +169,7 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
   }
 
   set onopen(listener: WebSocketClientEventListener<Schema, 'open'> | null) {
-    this.setUnitaryEventListener('open', listener);
+    this.setEventListener('open', listener);
   }
 
   get onmessage() {
@@ -171,7 +177,7 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
   }
 
   set onmessage(listener: WebSocketClientEventListener<Schema, 'message'> | null) {
-    this.setUnitaryEventListener('message', listener);
+    this.setEventListener('message', listener);
   }
 
   get onclose() {
@@ -179,7 +185,7 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
   }
 
   set onclose(listener: WebSocketClientEventListener<Schema, 'close'> | null) {
-    this.setUnitaryEventListener('close', listener);
+    this.setEventListener('close', listener);
   }
 
   get onerror() {
@@ -187,14 +193,14 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
   }
 
   set onerror(listener: WebSocketClientEventListener<Schema, 'error'> | null) {
-    this.setUnitaryEventListener('error', listener);
+    this.setEventListener('error', listener);
   }
 
-  private setUnitaryEventListener<Type extends WebSocketEventType<Schema>>(
-    type: Type,
-    listener: WebSocketClientEventListener<Schema, Type> | null,
-  ) {
-    type PrivateUnitaryListener = typeof listener;
+  private setEventListener<
+    Type extends WebSocketEventType<Schema>,
+    Listener extends WebSocketClientEventListener<Schema, Type> | null,
+  >(type: Type, listener: Listener) {
+    const listenerProperty = `_on${type}` as keyof WebSocketClient<Schema>;
 
     if (listener) {
       const rawListener = listener.bind(this) as WebSocketClientRawEventListener;
@@ -204,9 +210,9 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
         this.socket[`on${type}`] = rawListener;
       }
 
-      (this[`_on${type}`] as PrivateUnitaryListener) = listener;
+      (this[listenerProperty] as Listener) = listener;
     } else {
-      const currentListener = this[`_on${type}`] as PrivateUnitaryListener;
+      const currentListener = this[listenerProperty] as Listener;
 
       if (currentListener) {
         this.listeners[type].delete(currentListener);
@@ -216,7 +222,7 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
         this.socket[`on${type}`] = null;
       }
 
-      (this[`_on${type}`] as PrivateUnitaryListener) = null;
+      (this[listenerProperty] as Listener | null) = null;
     }
   }
 
