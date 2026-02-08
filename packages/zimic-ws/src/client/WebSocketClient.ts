@@ -1,6 +1,7 @@
 import { WebSocketEvent, WebSocketEventType, WebSocketMessageData, WebSocketSchema } from '@/types/schema';
 
 import { ClientSocket } from './ClientSocket';
+import { WebSocketReadyState } from './types';
 import { closeClientSocket, openClientSocket } from './utils/lifecycle';
 
 export type WebSocketClientEventListener<Schema extends WebSocketSchema, Type extends WebSocketEventType<Schema>> = (
@@ -87,8 +88,9 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     return this.socket?.extensions ?? '';
   }
 
-  get readyState() {
-    return this.socket?.readyState ?? ClientSocket.CLOSED;
+  get readyState(): WebSocketReadyState {
+    const readyState = this.socket?.readyState ?? ClientSocket.CLOSED;
+    return readyState as WebSocketReadyState;
   }
 
   get bufferedAmount() {
@@ -138,34 +140,6 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
 
   send(data: WebSocketMessageData<Schema>) {
     this.socket?.send(data);
-  }
-
-  on<Type extends WebSocketEventType<Schema>>(
-    type: Type,
-    listener: (this: WebSocketClient<Schema>, event: WebSocketEvent<Schema, Type>) => unknown,
-    options?: boolean | AddEventListenerOptions,
-  ) {
-    this.addEventListener(type, listener, options);
-  }
-
-  once<Type extends WebSocketEventType<Schema>>(
-    type: Type,
-    listener: (this: WebSocketClient<Schema>, event: WebSocketEvent<Schema, Type>) => unknown,
-    options?: boolean | AddEventListenerOptions,
-  ) {
-    function wrappedListener(this: WebSocketClient<Schema>, event: WebSocketEvent<Schema, Type>) {
-      listener.call(this, event);
-      this.off(type, wrappedListener, options);
-    }
-    this.on(type, wrappedListener, options);
-  }
-
-  off<Type extends WebSocketEventType<Schema>>(
-    type: Type,
-    listener: (this: WebSocketClient<Schema>, event: WebSocketEvent<Schema, Type>) => unknown,
-    options?: boolean | EventListenerOptions,
-  ) {
-    this.removeEventListener(type, listener, options);
   }
 
   addEventListener<Type extends WebSocketEventType<Schema>>(
