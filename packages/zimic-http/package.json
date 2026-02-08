@@ -103,7 +103,7 @@
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^11.0.0",
-    "eslint": "^10.0.0",
+    "eslint": "^9.39.2",
     "js-yaml": "^4.1.1",
     "playwright": "^1.58.2",
     "prettier": "^3.8.1",

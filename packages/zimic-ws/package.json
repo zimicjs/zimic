@@ -98,7 +98,7 @@
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^11.0.0",
-    "eslint": "^10.0.0",
+    "eslint": "^9.39.2",
     "playwright": "^1.58.2",
     "tsup": "^8.4.0",
     "typescript": "^5.9.3",
