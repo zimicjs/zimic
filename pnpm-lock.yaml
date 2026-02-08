@@ -823,6 +823,9 @@ importers:
       '@zimic/http':
         specifier: workspace:^1.2.0
         version: link:../zimic-http
+      '@zimic/ws':
+        specifier: workspace:^0.1.0
+        version: link:../zimic-ws
       isomorphic-ws:
         specifier: 5.0.0
         version: 5.0.0(ws@8.21.0)
