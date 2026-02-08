@@ -5,8 +5,16 @@ import color from 'picocolors';
 import { HttpInterceptorRequestSaving } from '@/http/interceptor/types/public';
 import { stringifyValueToLog } from '@/utils/logging';
 
-import HttpTimesDeclarationPointer from './HttpTimesDeclarationPointer';
+<<<<<<<< HEAD:packages/zimic-interceptor/src/http/errors/HttpTimesCheckError.ts
 import { UnmatchedHttpInterceptorRequestGroup } from '../requestHandler/types/restrictions';
+import HttpTimesDeclarationPointer from './HttpTimesDeclarationPointer';
+|||||||| parent of 69f95126 (refactor(interceptor): start websocket interceptors):packages/zimic-interceptor/src/http/requestHandler/errors/TimesCheckError.ts
+import { UnmatchedHttpInterceptorRequestGroup } from '../types/restrictions';
+import TimesDeclarationPointer from './TimesDeclarationPointer';
+========
+import { UnmatchedHttpInterceptorRequestGroup } from '../http/requestHandler/types/restrictions';
+import TimesDeclarationPointer from './TimesDeclarationPointer';
+>>>>>>>> 69f95126 (refactor(interceptor): start websocket interceptors):packages/zimic-interceptor/src/errors/TimesCheckError.ts
 
 interface HttpTimesCheckErrorOptions {
   requestLimits: Range<number>;
@@ -124,29 +132,26 @@ function createMessage(options: HttpTimesCheckErrorOptions) {
   return [messageHeader, messageDiffs, messageFooter].filter(isNonEmpty).join('\n\n');
 }
 
+/** Error thrown when the number of requests matched by a handler does not satisfy its `handler.times()` declaration. */
+class HttpTimesCheckError extends TypeError {
+  constructor(options: HttpTimesCheckErrorOptions) {
+    const message = createMessage(options);
+    super(message);
+
+    this.name = 'HttpTimesCheckError';
+    this.cause = options.declarationPointer;
+  }
+}
+
 /**
  * Error thrown when the number of requests matched by a handler does not satisfy its `handler.times()` declaration.
  *
  * @deprecated `TimesCheckError` has been renamed to `HttpTimesCheckError`.
  */
-export class TimesCheckError extends TypeError {
+export class TimesCheckError extends HttpTimesCheckError {
   constructor(options: HttpTimesCheckErrorOptions) {
-    const message = createMessage(options);
-    super(message);
-
-    this.name = 'TimesCheckError';
-    this.cause = options.declarationPointer;
-  }
-}
-
-/** Error thrown when the number of requests matched by a handler does not satisfy its `handler.times()` declaration. */
-// eslint-disable-next-line @typescript-eslint/no-deprecated
-class HttpTimesCheckError extends TimesCheckError {
-  constructor(options: HttpTimesCheckErrorOptions) {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
     super(options);
-
-    this.name = 'HttpTimesCheckError';
+    this.name = 'TimesCheckError';
   }
 }
 
