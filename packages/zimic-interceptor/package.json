@@ -71,6 +71,12 @@
       "require": "./dist/http.js",
       "default": "./dist/http.js"
     },
+    "./ws": {
+      "types": "./ws.d.ts",
+      "import": "./dist/ws.mjs",
+      "require": "./dist/ws.js",
+      "default": "./dist/ws.js"
+    },
     "./server": {
       "types": "./server.d.ts",
       "import": "./dist/server.mjs",
@@ -124,6 +130,7 @@
   },
   "peerDependencies": {
     "@zimic/http": "^1.2.0 || workspace:*",
+    "@zimic/ws": "^0.1.0 || workspace:*",
     "typescript": ">=5.0.0"
   },
   "peerDependenciesMeta": {

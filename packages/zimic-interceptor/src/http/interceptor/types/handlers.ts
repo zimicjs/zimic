@@ -23,7 +23,3 @@ export type AsyncHttpInterceptorMethodHandler<Schema extends HttpSchema, Method 
       ) => RemoteHttpRequestHandler<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>
     : // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (path: never) => RemoteHttpRequestHandler<any, any, never>;
-
-export type HttpInterceptorMethodHandler<Schema extends HttpSchema, Method extends HttpMethod> =
-  | SyncHttpInterceptorMethodHandler<Schema, Method>
-  | AsyncHttpInterceptorMethodHandler<Schema, Method>;

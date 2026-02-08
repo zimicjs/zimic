@@ -9,8 +9,8 @@ import { isClientSide, isServerSide } from '@/utils/environment';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
 import { methodCanHaveResponseBody } from '@/utils/http';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
-import { WebSocketEventMessage } from '@/webSocket/types';
-import WebSocketClient from '@/webSocket/WebSocketClient';
+import { WebSocketEventMessage } from '@/utils/webSocket/types';
+import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';

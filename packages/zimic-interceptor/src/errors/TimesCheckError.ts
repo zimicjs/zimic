@@ -5,7 +5,7 @@ import color from 'picocolors';
 import { HttpInterceptorRequestSaving } from '@/http/interceptor/types/public';
 import { stringifyValueToLog } from '@/utils/logging';
 
-import { UnmatchedHttpInterceptorRequestGroup } from '../types/restrictions';
+import { UnmatchedHttpInterceptorRequestGroup } from '../http/requestHandler/types/restrictions';
 import TimesDeclarationPointer from './TimesDeclarationPointer';
 
 interface TimesCheckErrorOptions {

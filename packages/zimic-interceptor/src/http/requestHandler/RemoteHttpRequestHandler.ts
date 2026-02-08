@@ -17,7 +17,7 @@ import {
 } from './types/requests';
 import { HttpRequestHandlerRestriction } from './types/restrictions';
 
-const PENDING_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Promise<unknown>)[]);
+const UNSYNCED_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Promise<unknown>)[]);
 
 class RemoteHttpRequestHandler<
   Schema extends HttpSchema,
@@ -34,8 +34,12 @@ class RemoteHttpRequestHandler<
   private unsynced: this;
   private synced: this;
 
-  constructor(interceptor: HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>, method: Method, path: Path) {
-    this.client = new HttpRequestHandlerClient(interceptor, method, path, this);
+  constructor(
+    interceptorClient: HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>,
+    method: Method,
+    path: Path,
+  ) {
+    this.client = new HttpRequestHandlerClient(interceptorClient, method, path, this);
     this.unsynced = this;
     this.synced = this.createSyncedProxy();
   }
@@ -59,7 +63,7 @@ class RemoteHttpRequestHandler<
   }
 
   private isHiddenPropertyWhenSynced(property: string | symbol) {
-    return PENDING_PROPERTIES.has(property);
+    return UNSYNCED_PROPERTIES.has(property);
   }
 
   get method() {

@@ -1,7 +1,7 @@
 import ClientSocket, { type WebSocketServer as ServerSocket } from 'isomorphic-ws';
 
-import { WebSocketControlMessage } from '@/webSocket/constants';
-import UnauthorizedWebSocketConnectionError from '@/webSocket/errors/UnauthorizedWebSocketConnectionError';
+import { WebSocketControlMessage } from '@/utils/webSocket/constants';
+import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
 
 class WebSocketTimeoutError extends Error {}
 
