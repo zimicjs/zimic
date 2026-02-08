@@ -140,6 +140,34 @@ class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     this.socket?.send(data);
   }
 
+  on<Type extends WebSocketEventType<Schema>>(
+    type: Type,
+    listener: (this: WebSocketClient<Schema>, event: WebSocketEvent<Schema, Type>) => unknown,
+    options?: boolean | AddEventListenerOptions,
+  ) {
+    this.addEventListener(type, listener, options);
+  }
+
+  once<Type extends WebSocketEventType<Schema>>(
+    type: Type,
+    listener: (this: WebSocketClient<Schema>, event: WebSocketEvent<Schema, Type>) => unknown,
+    options?: boolean | AddEventListenerOptions,
+  ) {
+    function wrappedListener(this: WebSocketClient<Schema>, event: WebSocketEvent<Schema, Type>) {
+      listener.call(this, event);
+      this.off(type, wrappedListener, options);
+    }
+    this.on(type, wrappedListener, options);
+  }
+
+  off<Type extends WebSocketEventType<Schema>>(
+    type: Type,
+    listener: (this: WebSocketClient<Schema>, event: WebSocketEvent<Schema, Type>) => unknown,
+    options?: boolean | EventListenerOptions,
+  ) {
+    this.removeEventListener(type, listener, options);
+  }
+
   addEventListener<Type extends WebSocketEventType<Schema>>(
     type: Type,
     listener: (this: WebSocketClient<Schema>, event: WebSocketEvent<Schema, Type>) => unknown,
