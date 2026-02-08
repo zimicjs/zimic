@@ -150,6 +150,7 @@ export interface GitHubComponents {
       has_pages: boolean;
       has_downloads: boolean;
       has_discussions: boolean;
+      has_pull_requests: boolean;
       archived: boolean;
       disabled: boolean;
       visibility: string;
@@ -200,6 +201,9 @@ export interface GitHubComponents {
         status?: 'enabled' | 'disabled';
       };
       secret_scanning_ai_detection?: {
+        status?: 'enabled' | 'disabled';
+      };
+      secret_scanning_delegated_alert_dismissal?: {
         status?: 'enabled' | 'disabled';
       };
     } | null;
@@ -280,6 +284,7 @@ export interface GitHubComponents {
       has_pages: boolean;
       has_downloads: boolean;
       has_discussions: boolean;
+      has_pull_requests: boolean;
       archived: boolean;
       disabled: boolean;
       visibility: string;
@@ -384,6 +389,7 @@ export interface GitHubComponents {
       has_pages: boolean;
       has_downloads?: boolean;
       has_discussions: boolean;
+      has_pull_requests?: boolean;
       archived: boolean;
       disabled: boolean;
       visibility?: string;
