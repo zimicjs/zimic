@@ -176,6 +176,15 @@ In the following example, we create a `logger.errorAsync` method to include the 
 available, which are serialized to a string using `util.inspect()` to improve readability. The default `logger.error`
 method can still be used to log errors without the bodies.
 
+:::tip NOTE: <span>Redacting sensitive information</span>
+
+Logging response errors can be useful for debugging purposes, but be careful to avoid including sensitive information,
+such as authentication tokens, personally identifiable information, or any other confidential data. See Pino's
+[redaction guide](https://getpino.io/#/docs/redaction) for more information on how to redact sensitive data from your
+logs.
+
+:::
+
 ```ts title='logger.ts'
 import { FetchResponseError } from '@zimic/fetch';
 import pino, { Logger, LoggerOptions } from 'pino';
@@ -234,6 +243,19 @@ const logger = pino({
     level: (label) => ({ level: label }),
   },
   serializers: syncSerializers,
+  redact: {
+    // Redact sensitive information from error objects
+    // highlight-start
+    paths: [
+      'error.*.headers.authorization',
+      'error.*.headers.cookie',
+      'error.*.headers.set-cookie',
+      'error.*.body.email',
+      'error.*.body.username',
+      'error.*.body.password',
+    ],
+    // highlight-end
+  },
 }) satisfies Logger as AsyncLogger;
 
 // Declare logger.errorAsync method
