@@ -173,25 +173,21 @@ If you are using [`pino`](https://www.npmjs.com/package/pino), a custom serializ
 [`response.error.toObject()`](/docs/zimic-fetch/api/5-fetch-response-error.md#errortoobject).
 
 In the following example, we create a `logger.errorAsync` method to include the request and response bodies, if
-available, which are serialized to a string using `util.inspect()` to improve readability. The default `logger.error`
-method can still be used to log errors without the bodies.
+available, as structured data in the log output. The default `logger.error` method can still be used to log errors
+without the bodies.
+
+:::tip NOTE: <span>Redacting sensitive information</span>
+
+Logging response errors can be useful for debugging purposes, but be careful to avoid including sensitive information,
+such as authentication tokens, personally identifiable information, or any other confidential data. See Pino's
+[redaction guide](https://getpino.io/#/docs/redaction) for more information on how to redact sensitive data from your
+logs.
+
+:::
 
 ```ts title='logger.ts'
 import { FetchResponseError } from '@zimic/fetch';
 import pino, { Logger, LoggerOptions } from 'pino';
-import util from 'util';
-
-function serializeBody(body: unknown) {
-  return util.inspect(body, {
-    colors: false,
-    compact: true,
-    depth: Infinity,
-    maxArrayLength: Infinity,
-    maxStringLength: Infinity,
-    breakLength: Infinity,
-    sorted: true,
-  });
-}
 
 const syncSerializers = {
   err(error: unknown): unknown {
@@ -219,18 +215,11 @@ const asyncSerializers = {
   async err(error: unknown): Promise<unknown> {
     // highlight-start
     if (error instanceof FetchResponseError) {
-      // Log response error with bodies, if available
+      // Log response error with bodies
       const errorObject = await error.toObject({
-        includeRequestBody: !error.request.bodyUsed,
-        includeResponseBody: !error.response.bodyUsed,
+        includeRequestBody: true,
+        includeResponseBody: true,
       });
-
-      // Serialize bodies to a string for better readability in the logs
-      for (const resource of [errorObject.request, errorObject.response]) {
-        if (resource.body !== undefined && resource.body !== null) {
-          resource.body = serializeBody(resource.body);
-        }
-      }
 
       return pino.stdSerializers.err(errorObject);
     }
@@ -254,6 +243,19 @@ const logger = pino({
     level: (label) => ({ level: label }),
   },
   serializers: syncSerializers,
+  redact: {
+    // Redact sensitive information from error objects
+    // highlight-start
+    paths: [
+      'error.*.headers.authorization',
+      'error.*.headers.cookie',
+      'error.*.headers.set-cookie',
+      'error.*.body.email',
+      'error.*.body.username',
+      'error.*.body.password',
+    ],
+    // highlight-end
+  },
 }) satisfies Logger as AsyncLogger;
 
 // Declare logger.errorAsync method
