@@ -179,19 +179,6 @@ method can still be used to log errors without the bodies.
 ```ts title='logger.ts'
 import { FetchResponseError } from '@zimic/fetch';
 import pino, { Logger, LoggerOptions } from 'pino';
-import util from 'util';
-
-function serializeBody(body: unknown) {
-  return util.inspect(body, {
-    colors: false,
-    compact: true,
-    depth: Infinity,
-    maxArrayLength: Infinity,
-    maxStringLength: Infinity,
-    breakLength: Infinity,
-    sorted: true,
-  });
-}
 
 const syncSerializers = {
   err(error: unknown): unknown {
@@ -219,18 +206,11 @@ const asyncSerializers = {
   async err(error: unknown): Promise<unknown> {
     // highlight-start
     if (error instanceof FetchResponseError) {
-      // Log response error with bodies, if available
+      // Log response error with bodies
       const errorObject = await error.toObject({
-        includeRequestBody: !error.request.bodyUsed,
-        includeResponseBody: !error.response.bodyUsed,
+        includeRequestBody: true,
+        includeResponseBody: true,
       });
-
-      // Serialize bodies to a string for better readability in the logs
-      for (const resource of [errorObject.request, errorObject.response]) {
-        if (resource.body !== undefined && resource.body !== null) {
-          resource.body = serializeBody(resource.body);
-        }
-      }
 
       return pino.stdSerializers.err(errorObject);
     }
