@@ -173,8 +173,8 @@ If you are using [`pino`](https://www.npmjs.com/package/pino), a custom serializ
 [`response.error.toObject()`](/docs/zimic-fetch/api/5-fetch-response-error.md#errortoobject).
 
 In the following example, we create a `logger.errorAsync` method to include the request and response bodies, if
-available, which are serialized to a string using `util.inspect()` to improve readability. The default `logger.error`
-method can still be used to log errors without the bodies.
+available, as structured data in the log output. The default `logger.error` method can still be used to log errors
+without the bodies.
 
 :::tip NOTE: <span>Redacting sensitive information</span>
 
