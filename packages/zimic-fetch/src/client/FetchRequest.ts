@@ -14,11 +14,12 @@ import {
   AllowAnyStringInPathParams,
   LiteralHttpSchemaPathFromNonLiteral,
 } from '@zimic/http';
-import { Default } from '@zimic/utils/types';
+import { Default, PossiblePromise } from '@zimic/utils/types';
 import { excludeNonPathParams, joinURL } from '@zimic/utils/url';
 
 import { Fetch, FetchInput } from './types/public';
 import { FetchRequestInit } from './types/requests';
+import { convertHeadersToObject, withIncludedBodyIfAvailable } from './utils/objects';
 
 export namespace FetchRequest {
   /** A loosely typed version of a {@link FetchRequest `FetchRequest`}. */
@@ -237,5 +238,32 @@ export class FetchRequest<
 
   [Symbol.hasInstance](instance: unknown) {
     return instance instanceof globalThis.Request && 'path' in instance && 'method' in instance;
+  }
+
+  toObject(options: { includeBody: true }): Promise<FetchRequestObject>;
+  toObject(options: { includeBody: false }): FetchRequestObject;
+  toObject(options: { includeBody: boolean }): PossiblePromise<FetchRequestObject>;
+  toObject(options: { includeBody: boolean }): PossiblePromise<FetchRequestObject> {
+    const requestObject: FetchRequestObject = {
+      url: this.url,
+      path: this.path,
+      method: this.method,
+      headers: convertHeadersToObject(this),
+      cache: this.cache,
+      destination: this.destination,
+      credentials: this.credentials,
+      integrity: this.integrity,
+      keepalive: this.keepalive,
+      mode: this.mode,
+      redirect: this.redirect,
+      referrer: this.referrer,
+      referrerPolicy: this.referrerPolicy,
+    };
+
+    if (!options.includeBody) {
+      return requestObject;
+    }
+
+    return withIncludedBodyIfAvailable(this.request, requestObject);
   }
 }
