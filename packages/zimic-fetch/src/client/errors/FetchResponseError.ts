@@ -8,7 +8,8 @@ import {
 } from '@zimic/http';
 import { PossiblePromise } from '@zimic/utils/types';
 
-import { FetchRequest, FetchRequestObject, FetchResponse, FetchResponseObject } from '../types/requests';
+import { FetchRequestObject, FetchRequest } from '../FetchRequest';
+import { FetchResponse, FetchResponseObject } from '../types/requests';
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `fetchResponseError.toObject()` API reference} */
 export interface FetchResponseErrorObjectOptions {
@@ -92,29 +93,7 @@ class FetchResponseError<
   private requestToObject(options: { includeBody: false }): FetchRequestObject;
   private requestToObject(options: { includeBody: boolean }): PossiblePromise<FetchRequestObject>;
   private requestToObject(options: { includeBody: boolean }): PossiblePromise<FetchRequestObject> {
-    const request = this.request;
-
-    const requestObject: FetchRequestObject = {
-      url: request.url,
-      path: request.path,
-      method: request.method,
-      headers: this.convertHeadersToObject(request),
-      cache: request.cache,
-      destination: request.destination,
-      credentials: request.credentials,
-      integrity: request.integrity,
-      keepalive: request.keepalive,
-      mode: request.mode,
-      redirect: request.redirect,
-      referrer: request.referrer,
-      referrerPolicy: request.referrerPolicy,
-    };
-
-    if (!options.includeBody) {
-      return requestObject;
-    }
-
-    return this.withIncludedBodyIfAvailable('request', requestObject);
+    return this.request.toObject({ includeBody: options.includeBody });
   }
 
   private responseToObject(options: { includeBody: true }): Promise<FetchResponseObject>;
