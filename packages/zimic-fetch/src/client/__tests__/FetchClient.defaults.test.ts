@@ -7,8 +7,9 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { expectResponseStatus } from '@tests/utils/requests';
 
 import createFetch from '../factory';
+import { FetchRequest } from '../FetchRequest';
 import { FetchOptions } from '../types/public';
-import { FetchResponse, FetchRequest } from '../types/requests';
+import { FetchResponse } from '../types/requests';
 
 describe('FetchClient > Defaults', () => {
   const baseURL = 'http://localhost:4000';

@@ -7,7 +7,8 @@ import { expectResponseStatus } from '@tests/utils/requests';
 
 import FetchResponseError from '../errors/FetchResponseError';
 import createFetch from '../factory';
-import { FetchRequest, FetchResponse } from '../types/requests';
+import { FetchRequest } from '../FetchRequest';
+import { FetchResponse } from '../types/requests';
 
 describe('FetchClient > Bodies > Search params', () => {
   const baseURL = 'http://localhost:3000';

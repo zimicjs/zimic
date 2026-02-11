@@ -1,6 +1,5 @@
 import {
   HttpRequestSchema,
-  HttpMethod,
   HttpSchema,
   HttpSchemaPath,
   HttpSchemaMethod,
@@ -8,9 +7,6 @@ import {
   HttpResponseSchemaStatusCode,
   HttpStatusCode,
   HttpResponse,
-  HttpRequest,
-  AllowAnyStringInPathParams,
-  LiteralHttpSchemaPathFromNonLiteral,
   HttpResponseBodySchema,
   HttpResponseHeadersSchema,
   HttpRequestHeadersSchema,
@@ -20,7 +16,6 @@ import {
   HttpHeadersSerialized,
   HttpSearchParamsInit,
   HttpBody,
-  HttpRequestBodySchema,
   HttpRequestSearchParamsSchema,
   HttpSearchParams,
   HttpFormData,
@@ -28,7 +23,7 @@ import {
 import { Default, IndexUnion, JSONStringified, UnionToIntersection } from '@zimic/utils/types';
 
 import FetchResponseError from '../errors/FetchResponseError';
-import { FetchInput } from './public';
+import { FetchRequest } from '../FetchRequest';
 
 type FetchRequestInitWithHeaders<HeadersSchema extends HttpHeadersSchema | undefined> = [HeadersSchema] extends [never]
   ? { headers?: undefined }
@@ -159,48 +154,6 @@ type FetchResponseStatusCode<
   Redirect
 >;
 
-/** @see {@link https://zimic.dev/docs/fetch/api/fetch-request `FetchRequest` API reference} */
-export interface FetchRequest<
-  Schema extends HttpSchema,
-  Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath.Literal<Schema, Method>,
-> extends HttpRequest<
-  HttpRequestBodySchema<Default<Schema[Path][Method]>>,
-  Default<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>
-> {
-  path: AllowAnyStringInPathParams<Path>;
-  method: Method;
-}
-
-export namespace FetchRequest {
-  /** A loosely typed version of a {@link FetchRequest `FetchRequest`}. */
-  export interface Loose extends Request {
-    path: string;
-    method: HttpMethod;
-    clone: () => Loose;
-  }
-}
-
-/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `error.toObject()`} */
-export type FetchRequestObject = Pick<
-  FetchRequest.Loose,
-  | 'url'
-  | 'path'
-  | 'method'
-  | 'cache'
-  | 'destination'
-  | 'credentials'
-  | 'integrity'
-  | 'keepalive'
-  | 'mode'
-  | 'redirect'
-  | 'referrer'
-  | 'referrerPolicy'
-> & {
-  headers: HttpHeadersSerialized<HttpHeadersSchema>;
-  body?: HttpBody | null;
-};
-
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference} */
 export interface FetchResponsePerStatusCode<
   Schema extends HttpSchema,
@@ -214,6 +167,7 @@ export interface FetchResponsePerStatusCode<
 > {
   request: FetchRequest<Schema, Method, Path>;
   error: FetchResponseError<Schema, Method, Path>;
+  clone: () => FetchResponsePerStatusCode<Schema, Method, Path, StatusCode>;
 }
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference} */
@@ -245,12 +199,3 @@ export type FetchResponseObject = Pick<
   headers: HttpHeadersSerialized<HttpHeadersSchema>;
   body?: HttpBody | null;
 };
-
-/** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchrequest `fetch.Request` API reference} */
-export type FetchRequestConstructor<Schema extends HttpSchema> = new <
-  Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
->(
-  input: FetchInput<Schema, Method, Path>,
-  init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
-) => FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
