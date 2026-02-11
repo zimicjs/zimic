@@ -45,13 +45,14 @@ jobs:
           SPONSORKIT_GITHUB_TOKEN: ${{ secrets.SPONSORKIT_GITHUB_TOKEN }}
 
       - name: Commit changes
+        working-directory: ./apps/zimic-web
         run: |
           echo 'Committing changes...'
 
           git config user.name '${{ vars.RELEASE_COMMIT_USER_NAME }}'
           git config user.email '${{ vars.RELEASE_COMMIT_USER_EMAIL }}'
 
-          git add --all
+          git add ./public/images/sponsors.svg
 
           if ! git commit -m 'chore(web): update sponsors'; then
             echo 'Sponsors are up to date. No changes to commit.'
