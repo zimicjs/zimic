@@ -6,7 +6,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { expectResponseStatus } from '@tests/utils/requests';
 
 import createFetch from '../factory';
-import { FetchRequest } from '../types/requests';
+import { FetchRequest } from '../FetchRequest';
 
 describe('FetchClient > Bodies', () => {
   const baseURL = 'http://localhost:3000';

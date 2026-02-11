@@ -9,8 +9,9 @@ import { expectResponseStatus } from '@tests/utils/requests';
 
 import FetchResponseError from '../errors/FetchResponseError';
 import createFetch from '../factory';
+import { FetchRequest } from '../FetchRequest';
 import { Fetch } from '../types/public';
-import { FetchRequest, FetchResponse, FetchResponsePerStatusCode } from '../types/requests';
+import { FetchResponse, FetchResponsePerStatusCode } from '../types/requests';
 
 describe('FetchClient > Listeners', () => {
   const baseURL = 'http://localhost:3000';

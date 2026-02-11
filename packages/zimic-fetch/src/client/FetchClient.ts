@@ -1,16 +1,10 @@
-import {
-  HttpSchemaPath,
-  HttpSchemaMethod,
-  HttpSearchParams,
-  LiteralHttpSchemaPathFromNonLiteral,
-  HttpSchema,
-  HttpHeaders,
-} from '@zimic/http';
-import { createRegexFromPath, excludeNonPathParams, joinURL } from '@zimic/utils/url';
+import { HttpSchemaPath, HttpSchemaMethod, LiteralHttpSchemaPathFromNonLiteral, HttpSchema } from '@zimic/http';
+import { createRegexFromPath } from '@zimic/utils/url';
 
 import FetchResponseError from './errors/FetchResponseError';
+import { FetchRequest, FetchRequestConstructor } from './FetchRequest';
 import { FetchInput, FetchOptions, Fetch, FetchDefaults } from './types/public';
-import { FetchRequestConstructor, FetchRequestInit, FetchRequest, FetchResponse } from './types/requests';
+import { FetchRequestInit, FetchResponse } from './types/requests';
 
 class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loose' | 'Request' | keyof FetchDefaults> {
   fetch: Fetch<Schema>;
@@ -63,9 +57,15 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
     Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
   >(
     input: FetchInput<Schema, Method, Path>,
-    init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
+    init?: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
   ) {
-    let request = input instanceof Request ? input : new this.fetch.Request(input, init);
+    let request: FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
+
+    if (input instanceof FetchRequest) {
+      request = input;
+    } else {
+      request = new this.fetch.Request(input, init);
+    }
 
     if (this.fetch.onRequest) {
       const requestAfterInterceptor = await this.fetch.onRequest(
@@ -76,9 +76,15 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
       if (requestAfterInterceptor !== request) {
         const isFetchRequest = requestAfterInterceptor instanceof this.fetch.Request;
 
-        request = isFetchRequest
-          ? (requestAfterInterceptor as Request as typeof request)
-          : new this.fetch.Request(requestAfterInterceptor as FetchInput<Schema, Method, Path>, init);
+        if (isFetchRequest) {
+          if (requestAfterInterceptor instanceof FetchRequest) {
+            request = requestAfterInterceptor as FetchRequest.Loose as typeof request;
+          } else {
+            request = new this.fetch.Request(requestAfterInterceptor, init);
+          }
+        } else {
+          request = new this.fetch.Request(requestAfterInterceptor as FetchInput<Schema, Method, Path>, init);
+        }
       }
     }
 
@@ -138,81 +144,14 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
   }
 
   private createRequestClass(fetch: Fetch<Schema>) {
-    class Request<Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.NonLiteral<Schema, Method>>
-      extends globalThis.Request
-    {
-      path: LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>;
-
+    return class Request<
+      Method extends HttpSchemaMethod<Schema>,
+      Path extends HttpSchemaPath.Literal<Schema, Method>,
+    > extends FetchRequest<Schema, Method, Path> {
       constructor(input: FetchInput<Schema, Method, Path>, init?: FetchRequestInit.Loose) {
-        let actualInput: URL | globalThis.Request;
-
-        const actualInit = {
-          baseURL: init?.baseURL ?? fetch.baseURL,
-          method: init?.method ?? fetch.method,
-          headers: new HttpHeaders(fetch.headers),
-          searchParams: new HttpSearchParams(fetch.searchParams),
-          body: (init?.body ?? fetch.body) as BodyInit | null,
-          mode: init?.mode ?? fetch.mode,
-          cache: init?.cache ?? fetch.cache,
-          credentials: init?.credentials ?? fetch.credentials,
-          integrity: init?.integrity ?? fetch.integrity,
-          keepalive: init?.keepalive ?? fetch.keepalive,
-          priority: init?.priority ?? fetch.priority,
-          redirect: init?.redirect ?? fetch.redirect,
-          referrer: init?.referrer ?? fetch.referrer,
-          referrerPolicy: init?.referrerPolicy ?? fetch.referrerPolicy,
-          signal: init?.signal ?? fetch.signal,
-          window: init?.window === undefined ? fetch.window : init.window,
-          duplex: init?.duplex ?? fetch.duplex,
-        };
-
-        if (init?.headers) {
-          actualInit.headers.assign(new HttpHeaders(init.headers));
-        }
-
-        let url: URL;
-        const baseURL = new URL(actualInit.baseURL);
-
-        if (input instanceof globalThis.Request) {
-          const request = input as globalThis.Request;
-
-          actualInit.headers.assign(new HttpHeaders<FetchRequestInit.DefaultHeaders<Schema>>(request.headers));
-
-          url = new URL(input.url);
-
-          actualInput = request;
-        } else {
-          url = new URL(input instanceof URL ? input : joinURL(baseURL, input));
-
-          actualInit.searchParams.assign(
-            new HttpSearchParams<FetchRequestInit.DefaultSearchParams<Schema>>(url.searchParams),
-          );
-
-          if (init?.searchParams) {
-            actualInit.searchParams.assign(new HttpSearchParams(init.searchParams));
-          }
-
-          url.search = actualInit.searchParams.toString();
-
-          actualInput = url;
-        }
-
-        super(actualInput, actualInit);
-
-        const baseURLWithoutTrailingSlash = baseURL.toString().replace(/\/$/, '');
-
-        this.path = excludeNonPathParams(url)
-          .toString()
-          .replace(baseURLWithoutTrailingSlash, '') as LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>;
+        super(input, init, fetch);
       }
-
-      clone(): this {
-        const rawClone = super.clone();
-        return new Request(rawClone as FetchInput<Schema, Method, Path>) as this;
-      }
-    }
-
-    return Request as FetchRequestConstructor<Schema>;
+    } as FetchRequestConstructor<Schema>;
   }
 
   isRequest<Path extends HttpSchemaPath.Literal<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(

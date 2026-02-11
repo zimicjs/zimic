@@ -2,13 +2,14 @@ import { HttpSchemaPath, HttpSchemaMethod, LiteralHttpSchemaPathFromNonLiteral, 
 import { PossiblePromise, RequiredByKey } from '@zimic/utils/types';
 
 import FetchResponseError from '../errors/FetchResponseError';
-import { FetchRequest, FetchRequestConstructor, FetchRequestInit, FetchResponse } from './requests';
+import { FetchRequest, FetchRequestConstructor } from '../FetchRequest';
+import { FetchRequestInit, FetchResponse } from './requests';
 
 /** @see {@link  https://zimic.dev/docs/fetch/api/fetch `fetch` API reference} */
 export type FetchInput<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
+  Path extends HttpSchemaPath.Literal<Schema, Method> | HttpSchemaPath.NonLiteral<Schema, Method>,
 > = Path | URL | FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference} */
