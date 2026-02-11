@@ -67,7 +67,7 @@ export interface HttpRequest<
           ? never
           : FormData
   >;
-  clone: () => this;
+  clone: () => HttpRequest<StrictBody, StrictHeadersSchema>;
 }
 
 /**
@@ -97,7 +97,7 @@ export interface HttpResponse<
           ? never
           : FormData
   >;
-  clone: () => this;
+  clone: () => HttpResponse<StrictBody, StrictHeadersSchema, StatusCode>;
 }
 
 type HttpRequestHeadersSchemaFromBody<
