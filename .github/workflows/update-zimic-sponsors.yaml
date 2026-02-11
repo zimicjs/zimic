@@ -22,9 +22,14 @@ jobs:
 
     environment: GitHub
 
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
 
       - name: Set up Zimic
         uses: ./.github/actions/zimic-setup
