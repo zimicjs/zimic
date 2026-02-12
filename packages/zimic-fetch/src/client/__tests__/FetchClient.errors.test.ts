@@ -7,7 +7,8 @@ import { expectResponseStatus } from '@tests/utils/requests';
 
 import FetchResponseError from '../errors/FetchResponseError';
 import createFetch from '../factory';
-import { FetchResponse, FetchResponsePerStatusCode } from '../types/requests';
+import { FetchResponse } from '../response/FetchResponse';
+import { FetchResponseForStatusCode } from '../response/types';
 
 describe('FetchClient > Errors', () => {
   const baseURL = 'http://localhost:3000';
@@ -49,7 +50,7 @@ describe('FetchClient > Errors', () => {
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponseForStatusCode<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
@@ -61,10 +62,10 @@ describe('FetchClient > Errors', () => {
       >();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<
-        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 200>)
-        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 401>)
-        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 403>)
-        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 500>)
+        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 200>)
+        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 401>)
+        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 403>)
+        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 500>)
       >();
 
       expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
@@ -83,12 +84,12 @@ describe('FetchClient > Errors', () => {
 
       expect(response).toBeInstanceOf(Response);
       expectTypeOf(response satisfies Response).toEqualTypeOf<
-        FetchResponsePerStatusCode<Schema, 'GET', '/users', 200>
+        FetchResponse<Schema, 'GET', '/users', false, 'follow', 200>
       >();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
-      expectTypeOf(response.clone).toEqualTypeOf<() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 200>>();
+      expectTypeOf(response.clone).toEqualTypeOf<() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 200>>();
     });
   });
 
@@ -121,7 +122,7 @@ describe('FetchClient > Errors', () => {
       expect(await response.json()).toEqual({ code: 403, message: 'Forbidden' });
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponseForStatusCode<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
@@ -133,10 +134,10 @@ describe('FetchClient > Errors', () => {
       >();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<
-        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 200>)
-        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 401>)
-        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 403>)
-        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 500>)
+        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 200>)
+        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 401>)
+        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 403>)
+        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 500>)
       >();
 
       expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
@@ -155,9 +156,9 @@ describe('FetchClient > Errors', () => {
 
       expect(response).toBeInstanceOf(Response);
       expectTypeOf(response satisfies Response).toEqualTypeOf<
-        | FetchResponsePerStatusCode<Schema, 'GET', '/users', 401>
-        | FetchResponsePerStatusCode<Schema, 'GET', '/users', 403>
-        | FetchResponsePerStatusCode<Schema, 'GET', '/users', 500>
+        | FetchResponse<Schema, 'GET', '/users', false, 'follow', 401>
+        | FetchResponse<Schema, 'GET', '/users', false, 'follow', 403>
+        | FetchResponse<Schema, 'GET', '/users', false, 'follow', 500>
       >();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
@@ -169,9 +170,9 @@ describe('FetchClient > Errors', () => {
       >();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<
-        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 401>)
-        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 403>)
-        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 500>)
+        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 401>)
+        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 403>)
+        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 500>)
       >();
     });
   });
@@ -223,7 +224,7 @@ describe('FetchClient > Errors', () => {
       expect(await response.json()).toEqual({ code: 403, message: 'Forbidden' });
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponseForStatusCode<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 

@@ -8,58 +8,27 @@ import {
   HttpHeaders,
   HttpSearchParams,
   HttpMethod,
-  HttpHeadersSerialized,
-  HttpHeadersSchema,
-  HttpBody,
   AllowAnyStringInPathParams,
-  LiteralHttpSchemaPathFromNonLiteral,
+  HttpHeadersSchema,
 } from '@zimic/http';
 import { Default, PossiblePromise } from '@zimic/utils/types';
 import { excludeNonPathParams, joinURL } from '@zimic/utils/url';
 
-import { Fetch, FetchInput } from './types/public';
-import { FetchRequestInit } from './types/requests';
-import { convertHeadersToObject, withIncludedBodyIfAvailable } from './utils/objects';
+import { Fetch, FetchInput } from '../types/public';
+import { withIncludedBodyIfAvailable } from '../utils/objects';
+import { FetchRequestInit, FetchRequestObject } from './types';
 
 export namespace FetchRequest {
   /** A loosely typed version of a {@link FetchRequest `FetchRequest`}. */
   export interface Loose extends Request {
+    raw: Request;
     path: string;
     method: HttpMethod;
     clone: () => Loose;
   }
 }
 
-/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `error.toObject()`} */
-export type FetchRequestObject = Pick<
-  FetchRequest.Loose,
-  | 'url'
-  | 'path'
-  | 'method'
-  | 'cache'
-  | 'destination'
-  | 'credentials'
-  | 'integrity'
-  | 'keepalive'
-  | 'mode'
-  | 'redirect'
-  | 'referrer'
-  | 'referrerPolicy'
-> & {
-  headers: HttpHeadersSerialized<HttpHeadersSchema>;
-  body?: HttpBody | null;
-};
-
-/** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchrequest `fetch.Request` API reference} */
-export type FetchRequestConstructor<Schema extends HttpSchema> = new <
-  Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
->(
-  input: FetchInput<Schema, Method, Path>,
-  init?: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
-) => FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
-
-type BaseFetchRequest<
+type FetchHttpRequest<
   Schema extends HttpSchema,
   Path extends HttpSchemaPath.Literal<Schema, Method>,
   Method extends HttpSchemaMethod<Schema>,
@@ -68,22 +37,16 @@ type BaseFetchRequest<
   Default<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>
 >;
 
-const REQUEST = Symbol.for('request');
-
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request `FetchRequest` API reference} */
 export class FetchRequest<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath.Literal<Schema, Method>,
-> implements BaseFetchRequest<Schema, Path, Method> {
-  path: AllowAnyStringInPathParams<Path>;
-  method: Method;
+> implements FetchHttpRequest<Schema, Path, Method> {
+  #raw: Request;
 
-  private [REQUEST]: Request;
-
-  private get request() {
-    return this[REQUEST];
-  }
+  #path: AllowAnyStringInPathParams<Path>;
+  #method: Method;
 
   constructor(input: FetchInput<Schema, Method, Path>, init?: FetchRequestInit.Loose, fetch?: Fetch<Schema>) {
     let actualInput: URL | globalThis.Request;
@@ -140,104 +103,112 @@ export class FetchRequest<
       actualInput = url;
     }
 
-    this[REQUEST] = new Request(actualInput, actualInit);
+    this.#raw = new Request(actualInput, actualInit);
 
     const baseURLWithoutTrailingSlash = baseURL.toString().replace(/\/$/, '');
 
-    this.path = excludeNonPathParams(url)
+    this.#path = excludeNonPathParams(url)
       .toString()
       .replace(baseURLWithoutTrailingSlash, '') as AllowAnyStringInPathParams<Path>;
 
-    this.method = (actualInit.method ?? 'GET') as Method;
+    this.#method = (actualInit.method ?? 'GET') as Method;
+  }
+
+  get raw() {
+    return this.#raw;
+  }
+
+  get path() {
+    return this.#path;
+  }
+
+  get method() {
+    return this.#method;
   }
 
   get headers() {
-    return this.request.headers as BaseFetchRequest<Schema, Path, Method>['headers'];
+    return this.raw.headers as FetchHttpRequest<Schema, Path, Method>['headers'];
   }
 
   get cache() {
-    return this.request.cache;
+    return this.raw.cache;
   }
 
   get credentials() {
-    return this.request.credentials;
+    return this.raw.credentials;
   }
 
   get destination() {
-    return this.request.destination;
+    return this.raw.destination;
   }
 
   get integrity() {
-    return this.request.integrity;
+    return this.raw.integrity;
   }
 
   get keepalive() {
-    return this.request.keepalive;
+    return this.raw.keepalive;
   }
 
   get mode() {
-    return this.request.mode;
+    return this.raw.mode;
   }
 
   get redirect() {
-    return this.request.redirect;
+    return this.raw.redirect;
   }
 
   get referrer() {
-    return this.request.referrer;
+    return this.raw.referrer;
   }
 
   get referrerPolicy() {
-    return this.request.referrerPolicy;
+    return this.raw.referrerPolicy;
   }
 
   get signal() {
-    return this.request.signal;
+    return this.raw.signal;
   }
 
   get url() {
-    return this.request.url;
+    return this.raw.url;
   }
 
   get body() {
-    return this.request.body;
+    return this.raw.body;
   }
 
   get bodyUsed() {
-    return this.request.bodyUsed;
+    return this.raw.bodyUsed;
   }
 
   text() {
-    return this.request.text() as ReturnType<BaseFetchRequest<Schema, Path, Method>['text']>;
+    return this.raw.text() as ReturnType<FetchHttpRequest<Schema, Path, Method>['text']>;
   }
 
   json() {
-    return this.request.json() as ReturnType<BaseFetchRequest<Schema, Path, Method>['json']>;
+    return this.raw.json() as ReturnType<FetchHttpRequest<Schema, Path, Method>['json']>;
   }
 
   formData() {
-    return this.request.formData() as ReturnType<BaseFetchRequest<Schema, Path, Method>['formData']>;
+    return this.raw.formData() as ReturnType<FetchHttpRequest<Schema, Path, Method>['formData']>;
   }
 
   arrayBuffer() {
-    return this.request.arrayBuffer();
+    return this.raw.arrayBuffer();
   }
 
   blob() {
-    return this.request.blob();
+    return this.raw.blob();
   }
 
   bytes() {
-    return this.request.bytes();
+    return this.raw.bytes();
   }
 
-  clone(): FetchRequest<Schema, Method, Path> {
-    const requestClone = this.request.clone();
+  clone() {
+    const requestClone = this.raw.clone();
     return new FetchRequest<Schema, Method, Path>(requestClone as FetchInput<Schema, Method, Path>);
-  }
-
-  [Symbol.hasInstance](instance: unknown) {
-    return instance instanceof globalThis.Request && 'path' in instance && 'method' in instance;
   }
 
   toObject(options: { includeBody: true }): Promise<FetchRequestObject>;
@@ -248,7 +219,7 @@ export class FetchRequest<
       url: this.url,
       path: this.path,
       method: this.method,
-      headers: convertHeadersToObject(this),
+      headers: HttpHeaders.prototype.toObject.call(this.headers) as HttpHeadersSchema,
       cache: this.cache,
       destination: this.destination,
       credentials: this.credentials,
@@ -264,6 +235,8 @@ export class FetchRequest<
       return requestObject;
     }
 
-    return withIncludedBodyIfAvailable(this.request, requestObject);
+    return withIncludedBodyIfAvailable(this.raw, requestObject);
   }
 }
+
+Object.setPrototypeOf(FetchRequest.prototype, Request.prototype);

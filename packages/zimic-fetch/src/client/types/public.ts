@@ -2,8 +2,10 @@ import { HttpSchemaPath, HttpSchemaMethod, LiteralHttpSchemaPathFromNonLiteral, 
 import { PossiblePromise, RequiredByKey } from '@zimic/utils/types';
 
 import FetchResponseError from '../errors/FetchResponseError';
-import { FetchRequest, FetchRequestConstructor } from '../FetchRequest';
-import { FetchRequestInit, FetchResponse } from './requests';
+import { FetchRequest } from '../request/FetchRequest';
+import { FetchRequestConstructor, FetchRequestInit } from '../request/types';
+import { FetchResponse } from '../response/FetchResponse';
+import { FetchResponseForStatusCode } from '../response/types';
 
 /** @see {@link  https://zimic.dev/docs/fetch/api/fetch `fetch` API reference} */
 export type FetchInput<
@@ -22,7 +24,15 @@ export interface Fetch<Schema extends HttpSchema>
   >(
     input: Path | URL,
     init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Redirect>,
-  ): Promise<FetchResponse<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, false, Redirect>>;
+  ): Promise<
+    FetchResponseForStatusCode<
+      Schema,
+      Method,
+      LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>,
+      false,
+      Redirect
+    >
+  >;
 
   <
     Method extends HttpSchemaMethod<Schema>,
@@ -34,7 +44,15 @@ export interface Fetch<Schema extends HttpSchema>
       FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Redirect>,
       'baseURL' | 'searchParams'
     >,
-  ): Promise<FetchResponse<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, false, Redirect>>;
+  ): Promise<
+    FetchResponseForStatusCode<
+      Schema,
+      Method,
+      LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>,
+      false,
+      Redirect
+    >
+  >;
 
   /**
    * @deprecated Consider accessing the default options directly from the fetch instance.

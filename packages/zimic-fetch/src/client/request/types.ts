@@ -1,29 +1,25 @@
 import {
-  HttpRequestSchema,
-  HttpSchema,
-  HttpSchemaPath,
-  HttpSchemaMethod,
-  HttpMethodSchema,
-  HttpResponseSchemaStatusCode,
-  HttpStatusCode,
-  HttpResponse,
-  HttpResponseBodySchema,
-  HttpResponseHeadersSchema,
-  HttpRequestHeadersSchema,
   HttpHeadersSchema,
-  HttpSearchParamsSchema,
   HttpHeadersInit,
-  HttpHeadersSerialized,
+  HttpSearchParamsSchema,
   HttpSearchParamsInit,
-  HttpBody,
-  HttpRequestSearchParamsSchema,
+  HttpRequestSchema,
   HttpSearchParams,
   HttpFormData,
+  HttpBody,
+  HttpMethodSchema,
+  HttpRequestHeadersSchema,
+  HttpRequestSearchParamsSchema,
+  HttpSchema,
+  HttpSchemaMethod,
+  HttpSchemaPath,
+  HttpHeadersSerialized,
+  LiteralHttpSchemaPathFromNonLiteral,
 } from '@zimic/http';
-import { Default, IndexUnion, JSONStringified, UnionToIntersection } from '@zimic/utils/types';
+import { Default, JSONStringified, UnionToIntersection, IndexUnion } from '@zimic/utils/types';
 
-import FetchResponseError from '../errors/FetchResponseError';
-import { FetchRequest } from '../FetchRequest';
+import { FetchInput } from '../types/public';
+import { FetchRequest } from './FetchRequest';
 
 type FetchRequestInitWithHeaders<HeadersSchema extends HttpHeadersSchema | undefined> = [HeadersSchema] extends [never]
   ? { headers?: undefined }
@@ -127,75 +123,31 @@ export namespace FetchRequestInit {
   export type Loose = Partial<Defaults>;
 }
 
-type AllFetchResponseStatusCode<MethodSchema extends HttpMethodSchema> = HttpResponseSchemaStatusCode<
-  Default<MethodSchema['response']>
->;
-
-type FilterFetchResponseStatusCodeByError<
-  StatusCode extends HttpStatusCode,
-  ErrorOnly extends boolean,
-> = ErrorOnly extends true ? Extract<StatusCode, HttpStatusCode.ClientError | HttpStatusCode.ServerError> : StatusCode;
-
-type FilterFetchResponseStatusCodeByRedirect<
-  StatusCode extends HttpStatusCode,
-  Redirect extends RequestRedirect,
-> = Redirect extends 'error'
-  ? FilterFetchResponseStatusCodeByRedirect<StatusCode, 'follow'>
-  : Redirect extends 'follow'
-    ? Exclude<StatusCode, Exclude<HttpStatusCode.Redirection, 304>>
-    : StatusCode;
-
-type FetchResponseStatusCode<
-  MethodSchema extends HttpMethodSchema,
-  ErrorOnly extends boolean,
-  Redirect extends RequestRedirect,
-> = FilterFetchResponseStatusCodeByRedirect<
-  FilterFetchResponseStatusCodeByError<AllFetchResponseStatusCode<MethodSchema>, ErrorOnly>,
-  Redirect
->;
-
-/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference} */
-export interface FetchResponsePerStatusCode<
-  Schema extends HttpSchema,
-  Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath.Literal<Schema, Method>,
-  StatusCode extends HttpStatusCode = HttpStatusCode,
-> extends HttpResponse<
-  HttpResponseBodySchema<Default<Schema[Path][Method]>, StatusCode>,
-  Default<HttpResponseHeadersSchema<Default<Schema[Path][Method]>, StatusCode>>,
-  StatusCode
-> {
-  request: FetchRequest<Schema, Method, Path>;
-  error: FetchResponseError<Schema, Method, Path>;
-  clone: () => FetchResponsePerStatusCode<Schema, Method, Path, StatusCode>;
-}
-
-/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference} */
-export type FetchResponse<
-  Schema extends HttpSchema,
-  Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath.Literal<Schema, Method>,
-  /** @deprecated The type parameter `ErrorOnly` will be removed in the next major version. */
-  ErrorOnly extends boolean = false,
-  Redirect extends RequestRedirect = 'follow',
-  StatusCode extends FetchResponseStatusCode<Default<Schema[Path][Method]>, ErrorOnly, Redirect> =
-    FetchResponseStatusCode<Default<Schema[Path][Method]>, ErrorOnly, Redirect>,
-> = StatusCode extends StatusCode ? FetchResponsePerStatusCode<Schema, Method, Path, StatusCode> : never;
-
-export namespace FetchResponse {
-  /** A loosely typed version of a {@link FetchResponse}. */
-  export interface Loose extends Response {
-    request: FetchRequest.Loose;
-    error: FetchResponseError<any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
-    clone: () => Loose;
-  }
-}
-
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `error.toObject()`} */
-export type FetchResponseObject = Pick<
-  FetchResponse.Loose,
-  'url' | 'type' | 'status' | 'statusText' | 'ok' | 'redirected'
+export type FetchRequestObject = Pick<
+  FetchRequest.Loose,
+  | 'url'
+  | 'path'
+  | 'method'
+  | 'cache'
+  | 'destination'
+  | 'credentials'
+  | 'integrity'
+  | 'keepalive'
+  | 'mode'
+  | 'redirect'
+  | 'referrer'
+  | 'referrerPolicy'
 > & {
   headers: HttpHeadersSerialized<HttpHeadersSchema>;
   body?: HttpBody | null;
 };
+
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchrequest `fetch.Request` API reference} */
+export type FetchRequestConstructor<Schema extends HttpSchema> = new <
+  Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
+>(
+  input: FetchInput<Schema, Method, Path>,
+  init?: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
+) => FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
