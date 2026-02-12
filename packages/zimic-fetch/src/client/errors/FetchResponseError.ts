@@ -1,15 +1,11 @@
-import {
-  HttpHeaders,
-  HttpHeadersSchema,
-  HttpSchema,
-  HttpSchemaMethod,
-  HttpSchemaPath,
-  parseHttpBody,
-} from '@zimic/http';
+import { HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@zimic/http';
 import { PossiblePromise } from '@zimic/utils/types';
 
-import { FetchRequestObject, FetchRequest } from '../FetchRequest';
-import { FetchResponse, FetchResponseObject } from '../types/requests';
+import { FetchRequestObject } from '@/index';
+
+import { FetchRequest } from '../request/FetchRequest';
+import { FetchResponse } from '../response/FetchResponse';
+import { FetchResponseObject } from '../response/types';
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `fetchResponseError.toObject()` API reference} */
 export interface FetchResponseErrorObjectOptions {
@@ -56,7 +52,7 @@ class FetchResponseError<
 > extends Error {
   constructor(
     public request: FetchRequest<Schema, Method, Path>,
-    public response: FetchResponse<Schema, Method, Path>,
+    public response: FetchResponse<Schema, Method, Path, false, RequestRedirect, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
   ) {
     super(`${request.method} ${request.url} failed with status ${response.status}: ${response.statusText}`);
     this.name = 'FetchResponseError';
@@ -78,86 +74,15 @@ class FetchResponseError<
     if (!includeRequestBody && !includeResponseBody) {
       return {
         ...partialObject,
-        request: this.requestToObject({ includeBody: false }),
-        response: this.responseToObject({ includeBody: false }),
+        request: this.request.toObject({ includeBody: false }),
+        response: this.response.toObject({ includeBody: false }),
       };
     }
 
     return Promise.all([
-      Promise.resolve(this.requestToObject({ includeBody: includeRequestBody })),
-      Promise.resolve(this.responseToObject({ includeBody: includeResponseBody })),
+      Promise.resolve(this.request.toObject({ includeBody: includeRequestBody })),
+      Promise.resolve(this.response.toObject({ includeBody: includeResponseBody })),
     ]).then(([request, response]) => ({ ...partialObject, request, response }));
-  }
-
-  private requestToObject(options: { includeBody: true }): Promise<FetchRequestObject>;
-  private requestToObject(options: { includeBody: false }): FetchRequestObject;
-  private requestToObject(options: { includeBody: boolean }): PossiblePromise<FetchRequestObject>;
-  private requestToObject(options: { includeBody: boolean }): PossiblePromise<FetchRequestObject> {
-    return this.request.toObject({ includeBody: options.includeBody });
-  }
-
-  private responseToObject(options: { includeBody: true }): Promise<FetchResponseObject>;
-  private responseToObject(options: { includeBody: false }): FetchResponseObject;
-  private responseToObject(options: { includeBody: boolean }): PossiblePromise<FetchResponseObject>;
-  private responseToObject(options: { includeBody: boolean }): PossiblePromise<FetchResponseObject> {
-    const response = this.response;
-
-    const responseObject: FetchResponseObject = {
-      url: response.url,
-      type: response.type,
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok,
-      headers: this.convertHeadersToObject(response),
-      redirected: response.redirected,
-    };
-
-    if (!options.includeBody) {
-      return responseObject;
-    }
-
-    return this.withIncludedBodyIfAvailable('response', responseObject);
-  }
-
-  private convertHeadersToObject(
-    resource: FetchRequest<Schema, Method, Path> | FetchResponse<Schema, Method, Path>,
-  ): HttpHeadersSchema {
-    return HttpHeaders.prototype.toObject.call(resource.headers) as HttpHeadersSchema;
-  }
-
-  private withIncludedBodyIfAvailable(
-    resourceType: 'request',
-    resourceObject: FetchRequestObject,
-  ): PossiblePromise<FetchRequestObject>;
-  private withIncludedBodyIfAvailable(
-    resourceType: 'response',
-    resourceObject: FetchResponseObject,
-  ): PossiblePromise<FetchResponseObject>;
-  private withIncludedBodyIfAvailable(
-    resourceType: 'request' | 'response',
-    resourceObject: FetchRequestObject | FetchResponseObject,
-  ): PossiblePromise<FetchRequestObject | FetchResponseObject> {
-    const resource = this[resourceType] as Request | Response;
-
-    if (resource.bodyUsed) {
-      console.warn(
-        '[@zimic/fetch]',
-        `Could not include the ${resourceType} body because it is already used. ` +
-          'If you access the body before calling `error.toObject()`, consider reading it from a cloned ' +
-          `${resourceType}.\n\nLearn more: https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject`,
-      );
-      return resourceObject;
-    }
-
-    return parseHttpBody(resource)
-      .then((body) => {
-        resourceObject.body = body;
-        return resourceObject;
-      })
-      .catch((error: unknown) => {
-        console.error('[@zimic/fetch]', `Failed to parse ${resourceType} body:`, error);
-        return resourceObject;
-      });
   }
 }
 

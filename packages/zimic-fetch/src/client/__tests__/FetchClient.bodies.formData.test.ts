@@ -8,8 +8,8 @@ import { expectResponseStatus } from '@tests/utils/requests';
 
 import FetchResponseError from '../errors/FetchResponseError';
 import createFetch from '../factory';
-import { FetchRequest } from '../FetchRequest';
-import { FetchResponse } from '../types/requests';
+import { FetchRequest } from '../request/FetchRequest';
+import { FetchResponseForStatusCode } from '../response/types';
 
 describe('FetchClient > Bodies > Form data', () => {
   const baseURL = 'http://localhost:3000';
@@ -73,7 +73,7 @@ describe('FetchClient > Bodies > Form data', () => {
       expect(await receivedResponseFile.arrayBuffer()).toEqual(await responseFile.arrayBuffer());
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponseForStatusCode<Schema, 'POST', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
@@ -142,7 +142,7 @@ describe('FetchClient > Bodies > Form data', () => {
       expect(await response.text()).toBe('');
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponseForStatusCode<Schema, 'POST', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 

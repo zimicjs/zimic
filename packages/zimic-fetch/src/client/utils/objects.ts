@@ -1,23 +1,8 @@
-import {
-  HttpHeadersSchema,
-  HttpHeaders,
-  parseHttpBody,
-  HttpSchemaMethod,
-  HttpSchema,
-  HttpSchemaPath,
-} from '@zimic/http';
+import { parseHttpBody } from '@zimic/http';
 import { PossiblePromise } from '@zimic/utils/types';
 
-import { FetchRequest, FetchRequestObject } from '../FetchRequest';
-import { FetchResponse, FetchResponseObject } from '../types/requests';
-
-export function convertHeadersToObject<
-  Schema extends HttpSchema,
-  Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath.Literal<Schema, Method>,
->(resource: FetchRequest<Schema, Method, Path> | FetchResponse<Schema, Method, Path>): HttpHeadersSchema {
-  return HttpHeaders.prototype.toObject.call(resource.headers) as HttpHeadersSchema;
-}
+import { FetchRequestObject } from '../request/types';
+import { FetchResponseObject } from '../response/types';
 
 export function withIncludedBodyIfAvailable(
   resource: Request,
