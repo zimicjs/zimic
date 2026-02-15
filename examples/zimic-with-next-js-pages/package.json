@@ -10,7 +10,7 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.90.20",
+    "@tanstack/react-query": "^5.90.21",
     "@zimic/fetch": "latest",
     "@zimic/http": "latest",
     "next": "^16.1.6",
@@ -21,7 +21,7 @@
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4.1.18",
-    "@types/react": "^19.2.13",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@zimic/interceptor": "latest",
     "concurrently": "^9.2.1",
