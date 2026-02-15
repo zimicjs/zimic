@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "0.1.1-canary.10",
+  "version": "0.1.1-canary.11",
   "homepage": "https://zimic.dev/docs/ws",
   "repository": {
     "type": "git",
@@ -87,7 +87,7 @@
     "ws": "8.19.0"
   },
   "devDependencies": {
-    "@types/node": "^25.2.2",
+    "@types/node": "^25.2.3",
     "@types/ws": "^8.18.1",
     "@vitest/browser": "^4.0.18",
     "@vitest/browser-playwright": "^4.0.18",
