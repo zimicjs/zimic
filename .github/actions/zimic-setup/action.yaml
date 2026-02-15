@@ -100,15 +100,14 @@ runs:
       run: |
         pnpm install --prefer-offline --frozen-lockfile ${{ steps.filters.outputs.full-install }}
 
-        # If pnpm-lock.yaml changed after running scripts/preinstall.mjs and `pnpm install`, the lockfile is out of date
-        # and we should not continue.
         echo 'Checking if pnpm-lock.yaml is up to date...' >&2
 
         if git diff --exit-code pnpm-lock.yaml; then
-          echo 'pnpm-lock.yaml is out of date. Please run `pnpm install` and commit the changes.' >&2
-          exit 1
-        else
           echo 'pnpm-lock.yaml is up to date.'
+        else
+          echo 'pnpm-lock.yaml is out of date. It was likely changed by scripts/preinstall.mjs.' >&2
+          echo 'Please run `pnpm install` locally and commit the changes.' >&2
+          exit 1
         fi
 
     - name: Get playwright information
