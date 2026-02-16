@@ -27,7 +27,7 @@ import {
 } from '@zimic/http';
 import { Default, IndexUnion, JSONStringified, UnionToIntersection } from '@zimic/utils/types';
 
-import FetchResponseError, { AnyFetchRequestError } from '../errors/FetchResponseError';
+import FetchResponseError from '../errors/FetchResponseError';
 import { FetchInput } from './public';
 
 type FetchRequestInitWithHeaders<HeadersSchema extends HttpHeadersSchema | undefined> = [HeadersSchema] extends [never]
@@ -75,16 +75,13 @@ export type FetchRequestInit<
   Path extends HttpSchemaPath<Schema, Method>,
   Redirect extends RequestRedirect = 'follow',
 > = Omit<RequestInit, 'method' | 'headers' | 'body'> & {
-  /** The HTTP method of the request. */
   method: Method;
-  /** The base URL to prefix the path of the request. */
   baseURL?: string;
-  /** The redirect mode of the request. */
   redirect?: Redirect;
-  /** The duplex mode of the request. */
   duplex?: 'half';
 } & (Path extends Path ? FetchRequestInitPerPath<Default<Schema[Path][Method]>> : never);
 
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference} */
 export namespace FetchRequestInit {
   type DefaultHeadersSchema<Schema extends HttpSchema> = {
     [Path in HttpSchemaPath.Literal<Schema>]: {
@@ -122,20 +119,16 @@ export namespace FetchRequestInit {
     }[keyof Schema[Path]];
   }[HttpSchemaPath.Literal<Schema>];
 
-  /** The default options for each request sent by a fetch instance. */
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetch-defaults `fetch` defaults API reference} */
   export interface Defaults<Schema extends HttpSchema = HttpSchema> extends Omit<RequestInit, 'headers' | 'body'> {
     baseURL: string;
-    /** The headers of the request. */
     headers?: DefaultHeaders<Schema>;
-    /** The search parameters of the request. */
     searchParams?: DefaultSearchParams<Schema>;
-    /** The body of the request. */
     body?: DefaultBody<Schema>;
-    /** The duplex mode of the request. */
     duplex?: 'half';
   }
 
-  /** A loosely typed version of {@link FetchRequestInit `FetchRequestInit`}. */
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference} */
   export type Loose = Partial<Defaults>;
 }
 
@@ -175,31 +168,20 @@ export interface FetchRequest<
   HttpRequestBodySchema<Default<Schema[Path][Method]>>,
   Default<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>
 > {
-  /** The path of the request, excluding the base URL. */
   path: AllowAnyStringInPathParams<Path>;
-  /** The HTTP method of the request. */
   method: Method;
 }
 
 export namespace FetchRequest {
   /** A loosely typed version of a {@link FetchRequest `FetchRequest`}. */
   export interface Loose extends Request {
-    /** The path of the request, excluding the base URL. */
     path: string;
-    /** The HTTP method of the request. */
     method: HttpMethod;
-    /** Clones the request instance, returning a new instance with the same properties. */
     clone: () => Loose;
   }
 }
 
-/**
- * A plain object representation of a {@link FetchRequest `FetchRequest`}, compatible with JSON.
- *
- * If the body is included in the object, it is automatically parsed based on the `content-type` header of the request.
- *
- * @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `error.toObject()`}
- */
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `error.toObject()`} */
 export type FetchRequestObject = Pick<
   FetchRequest.Loose,
   | 'url'
@@ -215,13 +197,7 @@ export type FetchRequestObject = Pick<
   | 'referrer'
   | 'referrerPolicy'
 > & {
-  /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/Response/headers) */
   headers: HttpHeadersSerialized<HttpHeadersSchema>;
-  /**
-   * The body of the request. It is automatically parsed based on the `content-type` header of the request.
-   *
-   * @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `error.toObject()`}
-   */
   body?: HttpBody | null;
 };
 
@@ -236,18 +212,8 @@ export interface FetchResponsePerStatusCode<
   Default<HttpResponseHeadersSchema<Default<Schema[Path][Method]>, StatusCode>>,
   StatusCode
 > {
-  /** The request that originated the response. */
   request: FetchRequest<Schema, Method, Path>;
-
-  /**
-   * An error representing a response with a failure status code (4XX or 5XX). It can be thrown to handle the error
-   * upper in the call stack.
-   *
-   * If the response has a success status code (1XX, 2XX or 3XX), this property will be null.
-   */
-  error: StatusCode extends HttpStatusCode.ClientError | HttpStatusCode.ServerError
-    ? FetchResponseError<Schema, Method, Path>
-    : null;
+  error: FetchResponseError<Schema, Method, Path>;
 }
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference} */
@@ -255,6 +221,7 @@ export type FetchResponse<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath.Literal<Schema, Method>,
+  /** @deprecated The type parameter `ErrorOnly` will be removed in the next major version. */
   ErrorOnly extends boolean = false,
   Redirect extends RequestRedirect = 'follow',
   StatusCode extends FetchResponseStatusCode<Default<Schema[Path][Method]>, ErrorOnly, Redirect> =
@@ -264,40 +231,18 @@ export type FetchResponse<
 export namespace FetchResponse {
   /** A loosely typed version of a {@link FetchResponse}. */
   export interface Loose extends Response {
-    /** The request that originated the response. */
     request: FetchRequest.Loose;
-
-    /**
-     * An error representing a response with a failure status code (4XX or 5XX). It can be thrown to handle the error
-     * upper in the call stack.
-     *
-     * If the response has a success status code (1XX, 2XX or 3XX), this property will be null.
-     */
-    error: AnyFetchRequestError | null;
-
-    /** Clones the request instance, returning a new instance with the same properties. */
+    error: FetchResponseError<any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
     clone: () => Loose;
   }
 }
 
-/**
- * A plain object representation of a {@link FetchResponse `FetchResponse`}, compatible with JSON.
- *
- * If the body is included in the object, it is automatically parsed based on the `content-type` header of the response.
- *
- * @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `error.toObject()`}
- */
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `error.toObject()`} */
 export type FetchResponseObject = Pick<
   FetchResponse.Loose,
   'url' | 'type' | 'status' | 'statusText' | 'ok' | 'redirected'
 > & {
-  /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/Response/headers) */
   headers: HttpHeadersSerialized<HttpHeadersSchema>;
-  /**
-   * The body of the response. It is automatically parsed based on the `content-type` header of the response.
-   *
-   * @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `error.toObject()`}
-   */
   body?: HttpBody | null;
 };
 

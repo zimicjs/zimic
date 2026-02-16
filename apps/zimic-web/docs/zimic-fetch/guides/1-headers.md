@@ -62,10 +62,13 @@ const response = await fetch('/users', {
 });
 ```
 
-### Using default request headers
+### Setting default request headers
 
 A [fetch instance](/docs/zimic-fetch/api/2-fetch.md) can have
-[defaults](/docs/zimic-fetch/api/2-fetch.md#fetch-defaults) that are applied to all requests. These include headers:
+[defaults](/docs/zimic-fetch/api/2-fetch.md#fetch-defaults) that are applied to all requests. These include headers,
+which are typed based on your schema.
+
+A default header can be set as long as there is at least one endpoint in the schema that declares it.
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -105,6 +108,10 @@ const fetch = createFetch<Schema>({
   // highlight-end
 });
 ```
+
+**Related**:
+
+- [API - `fetch` defaults](/docs/zimic-fetch/api/2-fetch.md#fetch-defaults)
 
 ## Using response headers
 

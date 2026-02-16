@@ -194,11 +194,11 @@ client implementation, or `@zimic/fetch` with any HTTP mocking library. See our
 
 ## Contributing
 
-If you find an issue with this documentation of this project in general, feel free to
+If you find an issue with this documentation or this project in general, feel free to
 [open an issue](https://github.com/zimicjs/zimic/issues/new/choose). If you have a question, please
 [open a discussion](https://github.com/zimicjs/zimic/discussions/new/choose) instead.
 
-In case you are interested in contributing to Zimic, first of all, thank you! Check out or
+In case you are interested in contributing to Zimic, first of all, thank you! Check out our
 [contributing guide](https://github.com/zimicjs/zimic/blob/canary/CONTRIBUTING.md) to get started. Please create an
 issue or discussion before working on a new feature or bug fix. Let's make sure that your contribution is aligned with
 the project's goals and vision first!

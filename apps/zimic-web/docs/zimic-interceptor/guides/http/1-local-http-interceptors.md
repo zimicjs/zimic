@@ -197,7 +197,7 @@ const handler = interceptor
 
 // Run the application and make requests...
 
-console.log(handler.requests); // 1
+console.log(handler.requests.length); // 1
 
 console.log(handler.requests[0].headers.get('authorization')); // 'Bearer my-token'
 

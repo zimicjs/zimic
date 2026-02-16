@@ -192,7 +192,7 @@ describe('Fetch client', async () => {
             authFetch.isResponseError(error, 'POST', '/users'),
         );
 
-        expectTypeOf(error.response.status).toEqualTypeOf<400 | 409 | 500>();
+        expectTypeOf(error.response.status).toEqualTypeOf<201 | 400 | 409 | 500>();
         expectResponseStatus(error.response, 400);
 
         expect(creationHandler.requests).toHaveLength(1);
@@ -245,7 +245,7 @@ describe('Fetch client', async () => {
             authFetch.isResponseError(error, 'POST', '/users'),
         );
 
-        expectTypeOf(error.response.status).toEqualTypeOf<400 | 409 | 500>();
+        expectTypeOf(error.response.status).toEqualTypeOf<201 | 400 | 409 | 500>();
         expectResponseStatus(error.response, 409);
 
         expect(creationHandler.requests).toHaveLength(1);
@@ -533,7 +533,7 @@ describe('Fetch client', async () => {
             authFetch.isResponseError(error, 'GET', '/users/:userId'),
         );
 
-        expectTypeOf(error.response.status).toEqualTypeOf<404 | 500>();
+        expectTypeOf(error.response.status).toEqualTypeOf<200 | 404 | 500>();
         expectResponseStatus(error.response, 404);
 
         expect(getHandler.requests).toHaveLength(1);
@@ -651,7 +651,7 @@ describe('Fetch client', async () => {
             authFetch.isResponseError(error, 'PATCH', '/users/:userId'),
         );
 
-        expectTypeOf(error.response.status).toEqualTypeOf<400 | 404 | 500>();
+        expectTypeOf(error.response.status).toEqualTypeOf<200 | 400 | 404 | 500>();
         expectResponseStatus(error.response, 404);
 
         expect(updateHandler.requests).toHaveLength(1);
@@ -676,7 +676,7 @@ describe('Fetch client', async () => {
             authFetch.isResponseError(error, 'PATCH', '/users/:userId'),
         );
 
-        expectTypeOf(error.response.status).toEqualTypeOf<400 | 404 | 500>();
+        expectTypeOf(error.response.status).toEqualTypeOf<200 | 400 | 404 | 500>();
         expectResponseStatus(error.response, 400);
 
         expect(updateHandler.requests).toHaveLength(1);
@@ -747,7 +747,7 @@ describe('Fetch client', async () => {
             authFetch.isResponseError(error, 'DELETE', '/users/:userId'),
         );
 
-        expectTypeOf(error.response.status).toEqualTypeOf<404 | 500>();
+        expectTypeOf(error.response.status).toEqualTypeOf<204 | 404 | 500>();
         expectResponseStatus(error.response, 404);
 
         expect(deleteHandler.requests).toHaveLength(1);
