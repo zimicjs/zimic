@@ -1,41 +1,10 @@
-import {
-  HttpSchema,
-  HttpSchemaMethod,
-  HttpSchemaPath,
-  HttpResponse,
-  HttpResponseBodySchema,
-  HttpResponseHeadersSchema,
-  HttpStatusCode,
-  HttpMethod,
-  HttpHeadersSchema,
-  HttpHeaders,
-} from '@zimic/http';
+import { HttpSchema, HttpSchemaMethod, HttpSchemaPath, HttpMethod, HttpHeadersSchema, HttpHeaders } from '@zimic/http';
 import { Default, PossiblePromise } from '@zimic/utils/types';
 
-import FetchResponseError from '../errors/FetchResponseError';
 import { FetchRequest } from '../request/FetchRequest';
 import { withIncludedBodyIfAvailable } from '../utils/objects';
-import { FetchResponseObject, FetchResponseStatusCode } from './types';
-
-/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference} */
-export interface FetchResponsePerStatusCode<
-  Schema extends HttpSchema,
-  Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath.Literal<Schema, Method>,
-  StatusCode extends HttpStatusCode = HttpStatusCode,
-> extends HttpResponse<
-  HttpResponseBodySchema<Default<Schema[Path][Method]>, StatusCode>,
-  Default<HttpResponseHeadersSchema<Default<Schema[Path][Method]>, StatusCode>>,
-  StatusCode
-> {
-  raw: Response;
-  request: FetchRequest<Schema, Method, Path>;
-  error: FetchResponseError<Schema, Method, Path>;
-  toObject: ((options: { includeBody: true }) => Promise<FetchResponseObject>) &
-    ((options?: { includeBody?: false }) => FetchResponseObject) &
-    ((options?: { includeBody?: boolean }) => PossiblePromise<FetchResponseObject>);
-  clone: () => FetchResponsePerStatusCode<Schema, Method, Path, StatusCode>;
-}
+import FetchResponseError from './error/FetchResponseError';
+import { FetchResponseObject, FetchResponsePerStatusCode, FetchResponseStatusCode } from './types';
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference} */
 export type FetchResponse<

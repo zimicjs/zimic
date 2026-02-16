@@ -1,9 +1,9 @@
 import { HttpSchemaPath, HttpSchemaMethod, LiteralHttpSchemaPathFromNonLiteral, HttpSchema } from '@zimic/http';
 import { createRegexFromPath } from '@zimic/utils/url';
 
-import FetchResponseError from './errors/FetchResponseError';
 import { createFetchRequestClass, FetchRequest } from './request/FetchRequest';
 import { FetchRequestInit } from './request/types';
+import FetchResponseError from './response/error/FetchResponseError';
 import { createFetchResponse, FetchResponse } from './response/FetchResponse';
 import { FetchInput, FetchOptions, Fetch, FetchDefaults } from './types/public';
 
@@ -14,6 +14,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
     this.fetch = this.createFetchFunction();
     this.fetch.headers = headers;
     this.fetch.searchParams = searchParams;
+
     Object.assign(this.fetch, otherOptions);
 
     this.fetch.loose = this.fetch as unknown as Fetch.Loose;
@@ -61,7 +62,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
 
       if (newFetchRequest !== fetchRequest) {
         if (newFetchRequest instanceof FetchRequest) {
-          fetchRequest = newFetchRequest as FetchRequest.Loose as typeof fetchRequest;
+          fetchRequest = newFetchRequest as typeof fetchRequest;
         } else {
           fetchRequest = new this.fetch.Request(newFetchRequest as FetchInput<Schema, Method, Path>, init);
         }
@@ -94,7 +95,12 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
     method: Method,
     path: Path,
   ): request is FetchRequest<Schema, Method, Path> {
-    return request instanceof FetchRequest && request.method === method && createRegexFromPath(path).test(request.path);
+    return (
+      request instanceof FetchRequest &&
+      request.method === method &&
+      typeof request.path === 'string' &&
+      createRegexFromPath(path).test(request.path)
+    );
   }
 
   isResponse<Path extends HttpSchemaPath.Literal<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(

@@ -5,9 +5,9 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { expectResponseStatus } from '@tests/utils/requests';
 
-import FetchResponseError from '../errors/FetchResponseError';
 import createFetch from '../factory';
 import { FetchRequest } from '../request/FetchRequest';
+import FetchResponseError from '../response/error/FetchResponseError';
 import { FetchResponse } from '../response/FetchResponse';
 
 describe('FetchClient > Methods', () => {

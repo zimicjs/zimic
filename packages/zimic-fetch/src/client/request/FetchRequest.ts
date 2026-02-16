@@ -29,10 +29,10 @@ export namespace FetchRequest {
   }
 }
 
-type FetchHttpRequest<
+type BaseFetchRequest<
   Schema extends HttpSchema,
-  Path extends HttpSchemaPath<Schema, Method>,
   Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath<Schema, Method>,
 > = HttpRequest<
   HttpRequestBodySchema<Default<Schema[Path][Method]>>,
   Default<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>
@@ -43,8 +43,9 @@ export class FetchRequest<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
-> implements FetchHttpRequest<Schema, Path, Method> {
+> implements BaseFetchRequest<Schema, Method, Path> {
   #raw: globalThis.Request;
+  #fetch: Fetch<Schema>;
   #path: AllowAnyStringInPathParams<Path>;
   #method: Method;
 
@@ -104,6 +105,7 @@ export class FetchRequest<
     }
 
     this.#raw = new globalThis.Request(actualInput, actualInit);
+    this.#fetch = fetch;
 
     const baseURLWithoutTrailingSlash = baseURL.toString().replace(/\/$/, '');
 
@@ -127,7 +129,7 @@ export class FetchRequest<
   }
 
   get headers() {
-    return this.raw.headers as FetchHttpRequest<Schema, Path, Method>['headers'];
+    return this.raw.headers as BaseFetchRequest<Schema, Method, Path>['headers'];
   }
 
   get cache() {
@@ -183,15 +185,15 @@ export class FetchRequest<
   }
 
   text() {
-    return this.raw.text() as ReturnType<FetchHttpRequest<Schema, Method, Path>['text']>;
+    return this.raw.text() as ReturnType<BaseFetchRequest<Schema, Method, Path>['text']>;
   }
 
   json() {
-    return this.raw.json() as ReturnType<FetchHttpRequest<Schema, Method, Path>['json']>;
+    return this.raw.json() as ReturnType<BaseFetchRequest<Schema, Method, Path>['json']>;
   }
 
   formData() {
-    return this.raw.formData() as ReturnType<FetchHttpRequest<Schema, Method, Path>['formData']>;
+    return this.raw.formData() as ReturnType<BaseFetchRequest<Schema, Method, Path>['formData']>;
   }
 
   arrayBuffer() {
@@ -207,8 +209,7 @@ export class FetchRequest<
   }
 
   clone() {
-    const requestClone = this.raw.clone();
-    return new FetchRequest<Schema, Method, Path>(requestClone as FetchInput<Schema, Method, Path>);
+    return new FetchRequest(this.#fetch, this.raw.clone() as FetchInput<Schema, Method, Path>);
   }
 
   toObject(options: { includeBody: true }): Promise<FetchRequestObject>;

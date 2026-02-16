@@ -4,8 +4,8 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import FetchResponseError from '../errors/FetchResponseError';
 import createFetch from '../factory';
+import FetchResponseError from '../response/error/FetchResponseError';
 import { FetchResponse } from '../response/FetchResponse';
 import { Fetch, InferFetchSchema } from '../types/public';
 

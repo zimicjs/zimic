@@ -16,11 +16,9 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { expectResponseStatus } from '@tests/utils/requests';
 
-import FetchResponseError, {
-  FetchResponseErrorObject,
-  FetchResponseErrorObjectOptions,
-} from '../errors/FetchResponseError';
 import createFetch from '../factory';
+import FetchResponseError from '../response/error/FetchResponseError';
+import { FetchResponseErrorObject, FetchResponseErrorObjectOptions } from '../response/error/types';
 
 describe('FetchClient > Errors > toObject', () => {
   const baseURL = 'http://localhost:3000';
