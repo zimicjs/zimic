@@ -21,7 +21,9 @@ import { Default, JSONStringified, UnionToIntersection, IndexUnion } from '@zimi
 import { FetchInput } from '../types/public';
 import { FetchRequest } from './FetchRequest';
 
-type FetchRequestInitWithHeaders<HeadersSchema extends HttpHeadersSchema | undefined> = [HeadersSchema] extends [never]
+export type FetchRequestInitWithHeaders<HeadersSchema extends HttpHeadersSchema | undefined> = [HeadersSchema] extends [
+  never,
+]
   ? { headers?: undefined }
   : undefined extends HeadersSchema
     ? { headers?: HttpHeadersInit<Default<HeadersSchema>> }
@@ -35,7 +37,7 @@ type FetchRequestInitWithSearchParams<SearchParamsSchema extends HttpSearchParam
     ? { searchParams?: HttpSearchParamsInit<Default<SearchParamsSchema>> }
     : { searchParams: HttpSearchParamsInit<Default<SearchParamsSchema>> };
 
-type FetchRequestBodySchema<RequestSchema extends HttpRequestSchema> = 'body' extends keyof RequestSchema
+export type FetchRequestBodySchema<RequestSchema extends HttpRequestSchema> = 'body' extends keyof RequestSchema
   ? [RequestSchema['body']] extends [never]
     ? null | undefined
     : [Extract<RequestSchema['body'], BodyInit | HttpSearchParams | HttpFormData>] extends [never]
@@ -47,7 +49,7 @@ type FetchRequestBodySchema<RequestSchema extends HttpRequestSchema> = 'body' ex
         : RequestSchema['body']
   : null | undefined;
 
-type FetchRequestInitWithBody<BodySchema extends HttpBody> = [BodySchema] extends [never]
+export type FetchRequestInitWithBody<BodySchema extends HttpBody> = [BodySchema] extends [never]
   ? { body?: BodySchema }
   : undefined extends BodySchema
     ? { body?: BodySchema }

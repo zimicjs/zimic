@@ -1,10 +1,17 @@
-import { HttpSchema, HttpSchemaMethod, HttpSchemaPath, HttpMethod, HttpHeadersSchema, HttpHeaders } from '@zimic/http';
+import { HttpSchema, HttpSchemaMethod, HttpSchemaPath, HttpHeadersSchema, HttpHeaders } from '@zimic/http';
 import { Default, PossiblePromise } from '@zimic/utils/types';
 
 import { FetchRequest } from '../request/FetchRequest';
 import { withIncludedBodyIfAvailable } from '../utils/objects';
 import FetchResponseError from './error/FetchResponseError';
-import { FetchResponseObject, FetchResponsePerStatusCode, FetchResponseStatusCode } from './types';
+import {
+  FetchResponseBodySchema,
+  FetchResponseConstructor,
+  FetchResponseInit,
+  FetchResponseObject,
+  FetchResponsePerStatusCode,
+  FetchResponseStatusCode,
+} from './types';
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference} */
 export type FetchResponse<
@@ -30,64 +37,35 @@ export namespace FetchResponse {
 
 const FETCH_RESPONSE_BRAND = Symbol.for('FetchResponse');
 
-export const FetchResponse = {
-  [Symbol.hasInstance](instance: unknown): instance is FetchResponse<HttpSchema, HttpMethod, string> {
-    return instance instanceof Response && FETCH_RESPONSE_BRAND in instance;
-  },
-};
-
-function createFetchResponseObject<
+// FetchResponse is not a proper class to keep backward compatibility. FetchResponse used to be only a type and it is
+// not possible to replicate the same behavior with a class without breaking changes. After the next major version,
+// FetchResponse will be refactored into a proper class to make the implementation more straightforward.
+// @deprecated
+export const FetchResponse = (<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath.Literal<Schema, Method>,
->(response: FetchResponse<Schema, Method, Path>, options: { includeBody: true }): Promise<FetchResponseObject>;
-function createFetchResponseObject<
-  Schema extends HttpSchema,
-  Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath.Literal<Schema, Method>,
->(response: FetchResponse<Schema, Method, Path>, options: { includeBody?: false }): FetchResponseObject;
-function createFetchResponseObject<
-  Schema extends HttpSchema,
-  Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath.Literal<Schema, Method>,
+  /** @deprecated The type parameter `ErrorOnly` will be removed in the next major version. */
+  ErrorOnly extends boolean = false,
+  Redirect extends RequestRedirect = 'follow',
+  StatusCode extends FetchResponseStatusCode<Default<Schema[Path][Method]>, ErrorOnly, Redirect> =
+    FetchResponseStatusCode<Default<Schema[Path][Method]>, ErrorOnly, Redirect>,
 >(
-  response: FetchResponse<Schema, Method, Path>,
-  options?: { includeBody?: boolean },
-): PossiblePromise<FetchResponseObject>;
-function createFetchResponseObject<
-  Schema extends HttpSchema,
-  Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath.Literal<Schema, Method>,
->(
-  response: FetchResponse<Schema, Method, Path>,
-  options?: { includeBody?: boolean },
-): PossiblePromise<FetchResponseObject> {
-  const responseObject: FetchResponseObject = {
-    url: response.url,
-    type: response.type,
-    status: response.status,
-    statusText: response.statusText,
-    ok: response.ok,
-    headers: HttpHeaders.prototype.toObject.call(response.headers) as HttpHeadersSchema,
-    redirected: response.redirected,
-  };
+  fetchRequest: FetchRequest<Schema, Method, Path>,
+  responseOrBody?:
+    | Response
+    | FetchResponseBodySchema<Default<Default<Default<Schema[Path][Method]>['response']>[StatusCode]>>,
+  init?: FetchResponseInit<Schema, Method, Path, ErrorOnly, Redirect, StatusCode>,
+): FetchResponse<Schema, Method, Path, ErrorOnly, Redirect, StatusCode> => {
+  const response =
+    responseOrBody instanceof Response
+      ? responseOrBody
+      : new Response(responseOrBody as BodyInit | null, init as ResponseInit);
 
-  if (!options?.includeBody) {
-    return responseObject;
-  }
-
-  return withIncludedBodyIfAvailable(response.raw, responseObject);
-}
-
-export function createFetchResponse<
-  Schema extends HttpSchema,
-  Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath.Literal<Schema, Method>,
->(fetchRequest: FetchRequest<Schema, Method, Path>, response: Response): FetchResponse<Schema, Method, Path> {
-  const fetchResponse = response as FetchResponse<Schema, Method, Path>;
+  const fetchResponse = Object.create(response) as FetchResponse<Schema, Method, Path, ErrorOnly, Redirect, StatusCode>;
 
   Object.defineProperty(fetchResponse, FETCH_RESPONSE_BRAND, {
-    value: undefined,
+    value: true,
     writable: false,
     enumerable: false,
     configurable: false,
@@ -124,7 +102,21 @@ export function createFetchResponse<
       this: FetchResponse<Schema, Method, Path>,
       options?: { includeBody?: boolean },
     ): PossiblePromise<FetchResponseObject> {
-      return createFetchResponseObject(this, options);
+      const responseObject: FetchResponseObject = {
+        url: response.url,
+        type: response.type,
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: HttpHeaders.prototype.toObject.call(response.headers) as HttpHeadersSchema,
+        redirected: response.redirected,
+      };
+
+      if (!options?.includeBody) {
+        return responseObject;
+      }
+
+      return withIncludedBodyIfAvailable(response, responseObject);
     },
     writable: false,
     enumerable: true,
@@ -132,4 +124,15 @@ export function createFetchResponse<
   });
 
   return fetchResponse;
-}
+}) as unknown as FetchResponseConstructor;
+
+Object.defineProperty(FetchResponse, Symbol.hasInstance, {
+  value(instance: unknown): boolean {
+    return instance instanceof Response && FETCH_RESPONSE_BRAND in instance;
+  },
+  writable: false,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.setPrototypeOf(FetchResponse.prototype, Response.prototype);

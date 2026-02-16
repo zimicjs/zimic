@@ -44,13 +44,13 @@ export class FetchRequest<
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
 > implements BaseFetchRequest<Schema, Method, Path> {
-  #raw: globalThis.Request;
+  #raw: Request;
   #fetch: Fetch<Schema>;
   #path: AllowAnyStringInPathParams<Path>;
   #method: Method;
 
   constructor(fetch: Fetch<Schema>, input: FetchInput<Schema, Method, Path>, init?: FetchRequestInit.Loose) {
-    let actualInput: URL | globalThis.Request;
+    let actualInput: URL | Request;
 
     const actualInit = {
       baseURL: init?.baseURL ?? fetch.baseURL,
@@ -104,7 +104,7 @@ export class FetchRequest<
       actualInput = url;
     }
 
-    this.#raw = new globalThis.Request(actualInput, actualInit);
+    this.#raw = new Request(actualInput, actualInit);
     this.#fetch = fetch;
 
     const baseURLWithoutTrailingSlash = baseURL.toString().replace(/\/$/, '');
@@ -239,6 +239,8 @@ export class FetchRequest<
     return withIncludedBodyIfAvailable(this.raw, requestObject);
   }
 }
+
+Object.setPrototypeOf(FetchRequest.prototype, Request.prototype);
 
 export function createFetchRequestClass<Schema extends HttpSchema>(fetch: Fetch<Schema>) {
   class Request<

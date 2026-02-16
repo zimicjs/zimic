@@ -8,7 +8,13 @@ export { FetchRequest } from './client/request/FetchRequest';
 export type { FetchRequestInit, FetchRequestObject, FetchRequestConstructor } from './client/request/types';
 
 export { FetchResponse } from './client/response/FetchResponse';
-export type { FetchResponseStatusCode, FetchResponsePerStatusCode, FetchResponseObject } from './client/response/types';
+export type {
+  FetchResponseStatusCode,
+  FetchResponsePerStatusCode,
+  FetchResponseObject,
+  FetchResponseConstructor,
+  FetchResponseInit,
+} from './client/response/types';
 
 export { default as FetchResponseError } from './client/response/error/FetchResponseError';
 export type { FetchResponseErrorObject, FetchResponseErrorObjectOptions } from './client/response/error/types';

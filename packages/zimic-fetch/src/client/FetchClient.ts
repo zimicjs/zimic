@@ -4,7 +4,7 @@ import { createRegexFromPath } from '@zimic/utils/url';
 import { createFetchRequestClass, FetchRequest } from './request/FetchRequest';
 import { FetchRequestInit } from './request/types';
 import FetchResponseError from './response/error/FetchResponseError';
-import { createFetchResponse, FetchResponse } from './response/FetchResponse';
+import { FetchResponse } from './response/FetchResponse';
 import { FetchInput, FetchOptions, Fetch, FetchDefaults } from './types/public';
 
 class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loose' | 'Request' | keyof FetchDefaults> {
@@ -76,7 +76,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath.Literal<Schema, Method>,
   >(fetchRequest: FetchRequest<Schema, Method, Path>, response: Response) {
-    let fetchResponse = createFetchResponse<Schema, Method, Path>(fetchRequest, response);
+    let fetchResponse = new FetchResponse<Schema, Method, Path>(fetchRequest, response);
 
     if (this.fetch.onResponse) {
       const newFetchResponse = await this.fetch.onResponse(fetchResponse as FetchResponse.Loose);
@@ -84,7 +84,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
       fetchResponse =
         newFetchResponse instanceof FetchResponse
           ? (newFetchResponse as FetchResponse.Loose as typeof fetchResponse)
-          : createFetchResponse<Schema, Method, Path>(fetchRequest, newFetchResponse);
+          : new FetchResponse<Schema, Method, Path>(fetchRequest, newFetchResponse);
     }
 
     return fetchResponse;
