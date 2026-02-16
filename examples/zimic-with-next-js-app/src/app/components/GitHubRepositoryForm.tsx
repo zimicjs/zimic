@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useRef } from 'react';
+import { SubmitEvent, useRef } from 'react';
 
 import Button from '../../components/Button';
 import Input from '../../components/Input';
@@ -12,7 +12,7 @@ function GitHubRepositoryForm() {
   const ownerInputRef = useRef<HTMLInputElement | null>(null);
   const repositoryInputRef = useRef<HTMLInputElement | null>(null);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setHomePageSearchParams({

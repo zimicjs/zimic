@@ -24,13 +24,16 @@ updates:
           - version-update:semver-major
           - version-update:semver-minor
           - version-update:semver-patch
-
       # Blocked by https://github.com/hosseinmd/prettier-plugin-jsdoc/issues/254.
       - dependency-name: prettier-plugin-jsdoc
         update-types:
           - version-update:semver-major
           - version-update:semver-minor
           - version-update:semver-patch
+      # Blocked by https://github.com/jsx-eslint/eslint-plugin-react/issues/3977.
+      - dependency-name: eslint
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: github-actions
     directory: /

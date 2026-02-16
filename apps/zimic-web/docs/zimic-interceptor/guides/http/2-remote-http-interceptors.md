@@ -33,7 +33,7 @@ interception algorithms.
   requests and verify how you application handles success and error responses. When using
   [Cypress](https://www.cypress.io), [Playwright](https://playwright.dev), or other end-to-end testing tools, this is
   generally the case because the test runner and the application run separately. Complex unit and integration test
-  setups might also benefic from remote interceptors, such as testing a server that is running in another terminal.
+  setups might also benefit from remote interceptors, such as testing a server that is running in another terminal.
   Because remote interceptors do not rely on local interception, they are generally more robust and simulate real server
   behavior more closely.
 
