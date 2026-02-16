@@ -10,13 +10,14 @@ import {
   HttpMethod,
   AllowAnyStringInPathParams,
   HttpHeadersSchema,
+  LiteralHttpSchemaPathFromNonLiteral,
 } from '@zimic/http';
 import { Default, PossiblePromise } from '@zimic/utils/types';
 import { excludeNonPathParams, joinURL } from '@zimic/utils/url';
 
 import { Fetch, FetchInput } from '../types/public';
 import { withIncludedBodyIfAvailable } from '../utils/objects';
-import { FetchRequestInit, FetchRequestObject } from './types';
+import { FetchRequestConstructor, FetchRequestInit, FetchRequestObject } from './types';
 
 export namespace FetchRequest {
   /** A loosely typed version of a {@link FetchRequest `FetchRequest`}. */
@@ -30,7 +31,7 @@ export namespace FetchRequest {
 
 type FetchHttpRequest<
   Schema extends HttpSchema,
-  Path extends HttpSchemaPath.Literal<Schema, Method>,
+  Path extends HttpSchemaPath<Schema, Method>,
   Method extends HttpSchemaMethod<Schema>,
 > = HttpRequest<
   HttpRequestBodySchema<Default<Schema[Path][Method]>>,
@@ -41,34 +42,33 @@ type FetchHttpRequest<
 export class FetchRequest<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath.Literal<Schema, Method>,
+  Path extends HttpSchemaPath<Schema, Method>,
 > implements FetchHttpRequest<Schema, Path, Method> {
-  #raw: Request;
-
+  #raw: globalThis.Request;
   #path: AllowAnyStringInPathParams<Path>;
   #method: Method;
 
-  constructor(input: FetchInput<Schema, Method, Path>, init?: FetchRequestInit.Loose, fetch?: Fetch<Schema>) {
+  constructor(fetch: Fetch<Schema>, input: FetchInput<Schema, Method, Path>, init?: FetchRequestInit.Loose) {
     let actualInput: URL | globalThis.Request;
 
     const actualInit = {
-      baseURL: init?.baseURL ?? fetch?.baseURL,
-      method: init?.method ?? fetch?.method,
-      headers: new HttpHeaders(fetch?.headers),
-      searchParams: new HttpSearchParams(fetch?.searchParams),
-      body: (init?.body ?? fetch?.body) as BodyInit | null,
-      mode: init?.mode ?? fetch?.mode,
-      cache: init?.cache ?? fetch?.cache,
-      credentials: init?.credentials ?? fetch?.credentials,
-      integrity: init?.integrity ?? fetch?.integrity,
-      keepalive: init?.keepalive ?? fetch?.keepalive,
-      priority: init?.priority ?? fetch?.priority,
-      redirect: init?.redirect ?? fetch?.redirect,
-      referrer: init?.referrer ?? fetch?.referrer,
-      referrerPolicy: init?.referrerPolicy ?? fetch?.referrerPolicy,
-      signal: init?.signal ?? fetch?.signal,
-      window: init?.window === undefined ? fetch?.window : init.window,
-      duplex: init?.duplex ?? fetch?.duplex,
+      baseURL: init?.baseURL ?? fetch.baseURL,
+      method: init?.method ?? fetch.method,
+      headers: new HttpHeaders(fetch.headers),
+      searchParams: new HttpSearchParams(fetch.searchParams),
+      body: (init?.body ?? fetch.body) as BodyInit | null,
+      mode: init?.mode ?? fetch.mode,
+      cache: init?.cache ?? fetch.cache,
+      credentials: init?.credentials ?? fetch.credentials,
+      integrity: init?.integrity ?? fetch.integrity,
+      keepalive: init?.keepalive ?? fetch.keepalive,
+      priority: init?.priority ?? fetch.priority,
+      redirect: init?.redirect ?? fetch.redirect,
+      referrer: init?.referrer ?? fetch.referrer,
+      referrerPolicy: init?.referrerPolicy ?? fetch.referrerPolicy,
+      signal: init?.signal ?? fetch.signal,
+      window: init?.window === undefined ? fetch.window : init.window,
+      duplex: init?.duplex ?? fetch.duplex,
     };
 
     if (init?.headers) {
@@ -76,7 +76,7 @@ export class FetchRequest<
     }
 
     let url: URL;
-    const baseURL = new URL(actualInit.baseURL ?? '');
+    const baseURL = new URL(actualInit.baseURL);
 
     if (input instanceof FetchRequest) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -103,7 +103,7 @@ export class FetchRequest<
       actualInput = url;
     }
 
-    this.#raw = new Request(actualInput, actualInit);
+    this.#raw = new globalThis.Request(actualInput, actualInit);
 
     const baseURLWithoutTrailingSlash = baseURL.toString().replace(/\/$/, '');
 
@@ -183,15 +183,15 @@ export class FetchRequest<
   }
 
   text() {
-    return this.raw.text() as ReturnType<FetchHttpRequest<Schema, Path, Method>['text']>;
+    return this.raw.text() as ReturnType<FetchHttpRequest<Schema, Method, Path>['text']>;
   }
 
   json() {
-    return this.raw.json() as ReturnType<FetchHttpRequest<Schema, Path, Method>['json']>;
+    return this.raw.json() as ReturnType<FetchHttpRequest<Schema, Method, Path>['json']>;
   }
 
   formData() {
-    return this.raw.formData() as ReturnType<FetchHttpRequest<Schema, Path, Method>['formData']>;
+    return this.raw.formData() as ReturnType<FetchHttpRequest<Schema, Method, Path>['formData']>;
   }
 
   arrayBuffer() {
@@ -212,9 +212,9 @@ export class FetchRequest<
   }
 
   toObject(options: { includeBody: true }): Promise<FetchRequestObject>;
-  toObject(options: { includeBody: false }): FetchRequestObject;
-  toObject(options: { includeBody: boolean }): PossiblePromise<FetchRequestObject>;
-  toObject(options: { includeBody: boolean }): PossiblePromise<FetchRequestObject> {
+  toObject(options?: { includeBody?: false }): FetchRequestObject;
+  toObject(options?: { includeBody?: boolean }): PossiblePromise<FetchRequestObject>;
+  toObject(options?: { includeBody?: boolean }): PossiblePromise<FetchRequestObject> {
     const requestObject: FetchRequestObject = {
       url: this.url,
       path: this.path,
@@ -231,7 +231,7 @@ export class FetchRequest<
       referrerPolicy: this.referrerPolicy,
     };
 
-    if (!options.includeBody) {
+    if (!options?.includeBody) {
       return requestObject;
     }
 
@@ -239,4 +239,18 @@ export class FetchRequest<
   }
 }
 
-Object.setPrototypeOf(FetchRequest.prototype, Request.prototype);
+export function createFetchRequestClass<Schema extends HttpSchema>(fetch: Fetch<Schema>) {
+  class Request<
+    Method extends HttpSchemaMethod<Schema>,
+    Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
+  > extends FetchRequest<Schema, Method, Path> {
+    constructor(
+      input: FetchInput<Schema, Method, Path>,
+      init?: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
+    ) {
+      super(fetch, input, init);
+    }
+  }
+
+  return Request as FetchRequestConstructor<Schema>;
+}

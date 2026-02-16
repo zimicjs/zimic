@@ -8,7 +8,6 @@ import { expectResponseStatus } from '@tests/utils/requests';
 import FetchResponseError from '../errors/FetchResponseError';
 import createFetch from '../factory';
 import { FetchResponse } from '../response/FetchResponse';
-import { FetchResponseForStatusCode } from '../response/types';
 
 describe('FetchClient > Errors', () => {
   const baseURL = 'http://localhost:3000';
@@ -50,7 +49,7 @@ describe('FetchClient > Errors', () => {
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponseForStatusCode<Schema, 'GET', '/users'>>();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
@@ -122,7 +121,7 @@ describe('FetchClient > Errors', () => {
       expect(await response.json()).toEqual({ code: 403, message: 'Forbidden' });
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponseForStatusCode<Schema, 'GET', '/users'>>();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
@@ -224,7 +223,7 @@ describe('FetchClient > Errors', () => {
       expect(await response.json()).toEqual({ code: 403, message: 'Forbidden' });
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponseForStatusCode<Schema, 'GET', '/users'>>();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 

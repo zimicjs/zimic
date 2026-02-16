@@ -2,10 +2,9 @@ import { HttpSchemaPath, HttpSchemaMethod, LiteralHttpSchemaPathFromNonLiteral, 
 import { createRegexFromPath } from '@zimic/utils/url';
 
 import FetchResponseError from './errors/FetchResponseError';
-import { FetchRequest } from './request/FetchRequest';
-import { FetchRequestConstructor, FetchRequestInit } from './request/types';
-import { FetchResponse } from './response/FetchResponse';
-import { FetchResponseForStatusCode } from './response/types';
+import { createFetchRequestClass, FetchRequest } from './request/FetchRequest';
+import { FetchRequestInit } from './request/types';
+import { createFetchResponse, FetchResponse } from './response/FetchResponse';
 import { FetchInput, FetchOptions, Fetch, FetchDefaults } from './types/public';
 
 class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loose' | 'Request' | keyof FetchDefaults> {
@@ -18,7 +17,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
     Object.assign(this.fetch, otherOptions);
 
     this.fetch.loose = this.fetch as unknown as Fetch.Loose;
-    this.fetch.Request = this.createRequestClass(this.fetch);
+    this.fetch.Request = createFetchRequestClass(this.fetch);
   }
 
   get defaults(): FetchDefaults<Schema> {
@@ -34,21 +33,15 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
       input: FetchInput<Schema, Method, Path>,
       init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Redirect>,
     ) => {
-      const request = await this.createFetchRequest<Method, Path>(input, init);
+      const fetchRequest = await this.createFetchRequest<Method, Path>(input, init);
 
-      const rawResponse = await globalThis.fetch(request.raw);
-      const response = await this.createFetchResponse<
+      const response = await globalThis.fetch(fetchRequest.raw.clone());
+      const fetchResponse = await this.createFetchResponse<
         Method,
         LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>
-      >(request, rawResponse);
+      >(fetchRequest, response);
 
-      return response as unknown as FetchResponseForStatusCode<
-        Schema,
-        Method,
-        LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>,
-        false,
-        Redirect
-      >;
+      return fetchResponse;
     };
 
     return fetch as Fetch<Schema>;
@@ -61,65 +54,39 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
     input: FetchInput<Schema, Method, Path>,
     init?: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
   ) {
-    let request: FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
-
-    if (input instanceof FetchRequest) {
-      request = input;
-    } else {
-      request = new this.fetch.Request(input, init);
-    }
+    let fetchRequest = input instanceof FetchRequest ? input : new this.fetch.Request(input, init);
 
     if (this.fetch.onRequest) {
-      const requestAfterInterceptor = await this.fetch.onRequest(
-        // Optimize type checking by narrowing the type of request
-        request as FetchRequest.Loose,
-      );
+      const newFetchRequest = await this.fetch.onRequest(fetchRequest as FetchRequest.Loose);
 
-      if (requestAfterInterceptor !== request) {
-        const isFetchRequest = requestAfterInterceptor instanceof this.fetch.Request;
-
-        if (isFetchRequest) {
-          if (requestAfterInterceptor instanceof FetchRequest) {
-            request = requestAfterInterceptor as FetchRequest.Loose as typeof request;
-          } else {
-            request = new this.fetch.Request(requestAfterInterceptor, init);
-          }
+      if (newFetchRequest !== fetchRequest) {
+        if (newFetchRequest instanceof FetchRequest) {
+          fetchRequest = newFetchRequest as FetchRequest.Loose as typeof fetchRequest;
         } else {
-          request = new this.fetch.Request(requestAfterInterceptor as FetchInput<Schema, Method, Path>, init);
+          fetchRequest = new this.fetch.Request(newFetchRequest as FetchInput<Schema, Method, Path>, init);
         }
       }
     }
 
-    return request;
+    return fetchRequest;
   }
 
   private async createFetchResponse<
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath.Literal<Schema, Method>,
   >(fetchRequest: FetchRequest<Schema, Method, Path>, response: Response) {
-    let fetchResponse = new FetchResponse<Schema, Method, Path>(fetchRequest, response);
+    let fetchResponse = createFetchResponse<Schema, Method, Path>(fetchRequest, response);
 
     if (this.fetch.onResponse) {
-      const responseAfterInterceptor = await this.fetch.onResponse(fetchResponse as unknown as FetchResponse.Loose);
+      const newFetchResponse = await this.fetch.onResponse(fetchResponse as FetchResponse.Loose);
 
       fetchResponse =
-        responseAfterInterceptor instanceof FetchResponse
-          ? responseAfterInterceptor
-          : new FetchResponse<Schema, Method, Path>(fetchRequest, responseAfterInterceptor);
+        newFetchResponse instanceof FetchResponse
+          ? (newFetchResponse as FetchResponse.Loose as typeof fetchResponse)
+          : createFetchResponse<Schema, Method, Path>(fetchRequest, newFetchResponse);
     }
 
     return fetchResponse;
-  }
-
-  private createRequestClass(fetch: Fetch<Schema>) {
-    return class Request<
-      Method extends HttpSchemaMethod<Schema>,
-      Path extends HttpSchemaPath.Literal<Schema, Method>,
-    > extends FetchRequest<Schema, Method, Path> {
-      constructor(input: FetchInput<Schema, Method, Path>, init?: FetchRequestInit.Loose) {
-        super(input, init, fetch);
-      }
-    } as FetchRequestConstructor<Schema>;
   }
 
   isRequest<Path extends HttpSchemaPath.Literal<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
@@ -127,12 +94,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
     method: Method,
     path: Path,
   ): request is FetchRequest<Schema, Method, Path> {
-    return (
-      request instanceof FetchRequest &&
-      request.method === method &&
-      typeof request.path === 'string' &&
-      createRegexFromPath(path).test(request.path)
-    );
+    return request instanceof FetchRequest && request.method === method && createRegexFromPath(path).test(request.path);
   }
 
   isResponse<Path extends HttpSchemaPath.Literal<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
@@ -140,11 +102,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
     method: Method,
     path: Path,
   ): response is FetchResponse<Schema, Method, Path> {
-    return (
-      response instanceof FetchResponse &&
-      this.isRequest(response.request, method, path) &&
-      response.error instanceof FetchResponseError
-    );
+    return response instanceof FetchResponse && this.isRequest(response.request, method, path);
   }
 
   isResponseError<Path extends HttpSchemaPath.Literal<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(

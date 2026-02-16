@@ -52,7 +52,7 @@ class FetchResponseError<
 > extends Error {
   constructor(
     public request: FetchRequest<Schema, Method, Path>,
-    public response: FetchResponse<Schema, Method, Path, false, RequestRedirect, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
+    public response: FetchResponse<Schema, Method, Path>,
   ) {
     super(`${request.method} ${request.url} failed with status ${response.status}: ${response.statusText}`);
     this.name = 'FetchResponseError';

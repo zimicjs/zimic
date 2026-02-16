@@ -7,7 +7,6 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import FetchResponseError from '../errors/FetchResponseError';
 import createFetch from '../factory';
 import { FetchResponse } from '../response/FetchResponse';
-import { FetchResponseForStatusCode } from '../response/types';
 import { Fetch, InferFetchSchema } from '../types/public';
 
 describe('FetchClient > Types', () => {
@@ -66,7 +65,7 @@ describe('FetchClient > Types', () => {
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponseForStatusCode<Schema, 'GET', '/users'>>();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 

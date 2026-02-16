@@ -1,13 +1,10 @@
 import {
+  HttpBody,
+  HttpHeadersSchema,
+  HttpHeadersSerialized,
   HttpMethodSchema,
   HttpResponseSchemaStatusCode,
   HttpStatusCode,
-  HttpHeadersSchema,
-  HttpHeadersSerialized,
-  HttpBody,
-  HttpSchema,
-  HttpSchemaMethod,
-  HttpSchemaPath,
 } from '@zimic/http';
 import { Default } from '@zimic/utils/types';
 
@@ -39,18 +36,6 @@ export type FetchResponseStatusCode<
   FilterFetchResponseStatusCodeByError<AllFetchResponseStatusCode<MethodSchema>, ErrorOnly>,
   Redirect
 >;
-
-/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference} */
-export type FetchResponseForStatusCode<
-  Schema extends HttpSchema,
-  Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath.Literal<Schema, Method>,
-  /** @deprecated The type parameter `ErrorOnly` will be removed in the next major version. */
-  ErrorOnly extends boolean = false,
-  Redirect extends RequestRedirect = 'follow',
-  StatusCode extends FetchResponseStatusCode<Default<Schema[Path][Method]>, ErrorOnly, Redirect> =
-    FetchResponseStatusCode<Default<Schema[Path][Method]>, ErrorOnly, Redirect>,
-> = StatusCode extends StatusCode ? FetchResponse<Schema, Method, Path, ErrorOnly, Redirect, StatusCode> : never;
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `error.toObject()`} */
 export type FetchResponseObject = Pick<
