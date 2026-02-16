@@ -8,13 +8,26 @@ slug: /fetch/guides/errors
 
 `@zimic/fetch` fully types the requests and responses based on your [schema](/docs/zimic-http/guides/1-schemas.md). If a
 response fails with a status code in the `4XX` or `5XX` ranges, the
-[`response.ok`](https://developer.mozilla.org/docs/Web/API/Response/ok) property will be `false`. In this case,
-`response.error` will contain a `FetchResponseError` representing the failure.
+[`response.ok`](https://developer.mozilla.org/docs/Web/API/Response/ok) property will be `false`.
 
 ## Handling response errors
 
-To handle errors, check the `response.status` or the `response.ok` properties to determine if the request was successful
-or not. Alternatively, you can throw the `response.error` to handle it upper in the call stack.
+To handle response errors, check the `response.status` or the `response.ok` properties to determine if the request was
+successful or not. In case you need to handle a response as an error upper in the call stack, you can throw the
+[`response.error`](/docs/zimic-fetch/api/4-fetch-response.md#responseerror) property. `response.error` is always
+available, even if the response has a `2XX` or `3XX` status code. Some noncompliant APIs may return failure responses
+with status codes other than `4XX` or `5XX`, or may have different meanings for certain status codes, so your
+application can handle those cases as response errors as needed.
+
+:::important IMPORTANT: <span>Handling network errors</span>
+
+Some network errors, such as DNS resolution failures, CORS errors, or request timeouts, may not return a valid HTTP
+response. In these cases, `@zimic/fetch` will throw a native
+[`TypeError`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/TypeError) instead of resolving
+with a response, which is the default behavior of the [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API).
+Make sure to handle these errors as necessary in your application.
+
+:::
 
 The [`onResponse`](/docs/zimic-fetch/api/2-fetch.md#fetchonresponse) listener can be a good strategy if you want to
 handle errors transparently. The listener can automatically retry the request without bubbling the error up to the
@@ -92,9 +105,9 @@ async function fetchUser(userId: string) {
 
 :::tip TIP: <span>Throwing unknown errors</span>
 
-Checking the `response.ok` and `response.status` properties is a good practice handle errors. A common strategy is to
-first check status codes that require specific logic, depending on your application, and throwing other errors a global
-error handler.
+Depending on your application, checking the `response.ok` and `response.status` properties can be a good practice to
+handle errors. A common strategy is to first check status codes that require specific logic, if any, and throwing
+`response.error` for all other errors to be handled elsewhere.
 
 ```ts
 if (response.status === 401) {
@@ -160,25 +173,21 @@ If you are using [`pino`](https://www.npmjs.com/package/pino), a custom serializ
 [`response.error.toObject()`](/docs/zimic-fetch/api/5-fetch-response-error.md#errortoobject).
 
 In the following example, we create a `logger.errorAsync` method to include the request and response bodies, if
-available, which are serialized to a string using `util.inspect()` to improve readability. The default `logger.error`
-method can still be used to log errors without the bodies.
+available, as structured data in the log output. The default `logger.error` method can still be used to log errors
+without the bodies.
+
+:::tip NOTE: <span>Redacting sensitive information</span>
+
+Logging response errors can be useful for debugging purposes, but be careful to avoid including sensitive information,
+such as authentication tokens, personally identifiable information, or any other confidential data. See Pino's
+[redaction guide](https://getpino.io/#/docs/redaction) for more information on how to redact sensitive data from your
+logs.
+
+:::
 
 ```ts title='logger.ts'
 import { FetchResponseError } from '@zimic/fetch';
 import pino, { Logger, LoggerOptions } from 'pino';
-import util from 'util';
-
-function serializeBody(body: unknown) {
-  return util.inspect(body, {
-    colors: false,
-    compact: true,
-    depth: Infinity,
-    maxArrayLength: Infinity,
-    maxStringLength: Infinity,
-    breakLength: Infinity,
-    sorted: true,
-  });
-}
 
 const syncSerializers = {
   err(error: unknown): unknown {
@@ -206,18 +215,11 @@ const asyncSerializers = {
   async err(error: unknown): Promise<unknown> {
     // highlight-start
     if (error instanceof FetchResponseError) {
-      // Log response error with bodies, if available
+      // Log response error with bodies
       const errorObject = await error.toObject({
-        includeRequestBody: !error.request.bodyUsed,
-        includeResponseBody: !error.response.bodyUsed,
+        includeRequestBody: true,
+        includeResponseBody: true,
       });
-
-      // Serialize bodies to a string for better readability in the logs
-      for (const resource of [errorObject.request, errorObject.response]) {
-        if (resource.body !== undefined && resource.body !== null) {
-          resource.body = serializeBody(resource.body);
-        }
-      }
 
       return pino.stdSerializers.err(errorObject);
     }
@@ -241,6 +243,19 @@ const logger = pino({
     level: (label) => ({ level: label }),
   },
   serializers: syncSerializers,
+  redact: {
+    // Redact sensitive information from error objects
+    // highlight-start
+    paths: [
+      'error.*.headers.authorization',
+      'error.*.headers.cookie',
+      'error.*.headers.set-cookie',
+      'error.*.body.email',
+      'error.*.body.username',
+      'error.*.body.password',
+    ],
+    // highlight-end
+  },
 }) satisfies Logger as AsyncLogger;
 
 // Declare logger.errorAsync method

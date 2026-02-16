@@ -1,4 +1,4 @@
-import { FormEvent, useRef } from 'react';
+import { SubmitEvent, useRef } from 'react';
 
 import Button from '../../components/Button';
 import Input from '../../components/Input';
@@ -10,7 +10,7 @@ function GitHubRepositoryForm() {
   const ownerInputRef = useRef<HTMLInputElement | null>(null);
   const repositoryInputRef = useRef<HTMLInputElement | null>(null);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const ownerName = ownerInputRef.current?.value;
