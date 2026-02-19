@@ -2,8 +2,6 @@ export type { JSONStringified } from '@zimic/utils/types';
 
 export type { Fetch, InferFetchSchema, FetchOptions, FetchDefaults, FetchInput } from './client/types/public';
 
-export { default as createFetch } from './client/factory';
-
 export { FetchRequest } from './client/request/FetchRequest';
 export type { FetchRequestInit, FetchRequestObject, FetchRequestConstructor } from './client/request/types';
 
@@ -18,3 +16,5 @@ export type {
 
 export { default as FetchResponseError } from './client/response/error/FetchResponseError';
 export type { FetchResponseErrorObject, FetchResponseErrorObjectOptions } from './client/response/error/types';
+
+export { default as createFetch } from './client/factory';

@@ -10,7 +10,7 @@ import { FetchResponse } from '../response/FetchResponse';
 export type FetchInput<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath.Literal<Schema, Method> | HttpSchemaPath.NonLiteral<Schema, Method>,
+  Path extends HttpSchemaPath<Schema, Method>,
 > = Path | URL | FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference} */
