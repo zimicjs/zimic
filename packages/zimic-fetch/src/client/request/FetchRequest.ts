@@ -47,7 +47,6 @@ export class FetchRequest<
   #raw: Request;
   #fetch: Fetch<Schema>;
   #path: AllowAnyStringInPathParams<Path>;
-  #method: Method;
 
   constructor(fetch: Fetch<Schema>, input: FetchInput<Schema, Method, Path>, init?: FetchRequestInit.Loose) {
     let actualInput: URL | Request;
@@ -79,9 +78,8 @@ export class FetchRequest<
     let url: URL;
     const baseURL = new URL(actualInit.baseURL);
 
-    if (input instanceof FetchRequest) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const request = input as FetchRequest<any, any, never>;
+    if (input instanceof FetchRequest || input instanceof Request) {
+      const request = input as Request;
 
       actualInit.headers.assign(new HttpHeaders<FetchRequestInit.DefaultHeaders<Schema>>(request.headers));
 
@@ -112,8 +110,6 @@ export class FetchRequest<
     this.#path = excludeNonPathParams(url)
       .toString()
       .replace(baseURLWithoutTrailingSlash, '') as AllowAnyStringInPathParams<Path>;
-
-    this.#method = (actualInit.method ?? 'GET') as Method;
   }
 
   get raw() {
@@ -125,91 +121,111 @@ export class FetchRequest<
   }
 
   get method() {
-    return this.#method;
+    return this.#raw.method as Method;
   }
 
   get headers() {
-    return this.raw.headers as BaseFetchRequest<Schema, Method, Path>['headers'];
+    return this.#raw.headers as BaseFetchRequest<Schema, Method, Path>['headers'];
   }
 
   get cache() {
-    return this.raw.cache;
+    return this.#raw.cache;
   }
 
   get credentials() {
-    return this.raw.credentials;
+    return this.#raw.credentials;
   }
 
   get destination() {
-    return this.raw.destination;
+    return this.#raw.destination;
   }
 
   get integrity() {
-    return this.raw.integrity;
+    return this.#raw.integrity;
   }
 
   get keepalive() {
-    return this.raw.keepalive;
+    return this.#raw.keepalive;
   }
 
   get mode() {
-    return this.raw.mode;
+    return this.#raw.mode;
   }
 
   get redirect() {
-    return this.raw.redirect;
+    return this.#raw.redirect;
   }
 
   get referrer() {
-    return this.raw.referrer;
+    return this.#raw.referrer;
   }
 
   get referrerPolicy() {
-    return this.raw.referrerPolicy;
+    return this.#raw.referrerPolicy;
   }
 
   get signal() {
-    return this.raw.signal;
+    return this.#raw.signal;
   }
 
   get url() {
-    return this.raw.url;
+    return this.#raw.url;
   }
 
   get body() {
-    return this.raw.body;
+    return this.#raw.body;
   }
 
   get bodyUsed() {
-    return this.raw.bodyUsed;
+    return this.#raw.bodyUsed;
+  }
+
+  get isReloadNavigation() {
+    // @ts-expect-error `isReloadNavigation` is a non-standard property.
+    return this.#raw.isReloadNavigation as boolean;
+  }
+
+  get isHistoryNavigation() {
+    // @ts-expect-error `isHistoryNavigation` is a non-standard property.
+    return this.#raw.isHistoryNavigation as boolean;
+  }
+
+  get duplex() {
+    // @ts-expect-error `duplex` is a non-standard property.
+    return this.#raw.duplex as FetchRequestInit<Schema, Method, Path>['duplex'];
+  }
+
+  get targetAddressSpace() {
+    // @ts-expect-error `targetAddressSpace` is a non-standard property.
+    return this.#raw.targetAddressSpace as string;
   }
 
   text() {
-    return this.raw.text() as ReturnType<BaseFetchRequest<Schema, Method, Path>['text']>;
+    return this.#raw.text() as ReturnType<BaseFetchRequest<Schema, Method, Path>['text']>;
   }
 
   json() {
-    return this.raw.json() as ReturnType<BaseFetchRequest<Schema, Method, Path>['json']>;
+    return this.#raw.json() as ReturnType<BaseFetchRequest<Schema, Method, Path>['json']>;
   }
 
   formData() {
-    return this.raw.formData() as ReturnType<BaseFetchRequest<Schema, Method, Path>['formData']>;
+    return this.#raw.formData() as ReturnType<BaseFetchRequest<Schema, Method, Path>['formData']>;
   }
 
   arrayBuffer() {
-    return this.raw.arrayBuffer();
+    return this.#raw.arrayBuffer();
   }
 
   blob() {
-    return this.raw.blob();
+    return this.#raw.blob();
   }
 
   bytes() {
-    return this.raw.bytes();
+    return this.#raw.bytes();
   }
 
   clone() {
-    return new FetchRequest(this.#fetch, this.raw.clone() as FetchInput<Schema, Method, Path>);
+    return new FetchRequest(this.#fetch, this.#raw.clone() as FetchInput<Schema, Method, Path>);
   }
 
   toObject(options: { includeBody: true }): Promise<FetchRequestObject>;
@@ -236,7 +252,7 @@ export class FetchRequest<
       return requestObject;
     }
 
-    return withIncludedBodyIfAvailable(this.raw, requestObject);
+    return withIncludedBodyIfAvailable(this.#raw, requestObject);
   }
 }
 

@@ -90,7 +90,7 @@ describe('FetchClient > Bodies', () => {
         // @ts-expect-error Forcing some headers
         new fetch.Request('/users', { method: 'POST', body: {} }),
       ]) {
-        expect(request).toBeInstanceOf(Request);
+        expect(request).toBeInstanceOf(FetchRequest);
         expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
@@ -143,7 +143,7 @@ describe('FetchClient > Bodies', () => {
         // @ts-expect-error Forcing some headers
         new fetch.Request('/users', { method: 'POST', body: {} }),
       ]) {
-        expect(request).toBeInstanceOf(Request);
+        expect(request).toBeInstanceOf(FetchRequest);
         expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
@@ -198,7 +198,7 @@ describe('FetchClient > Bodies', () => {
         // @ts-expect-error Forcing some headers
         new fetch.Request('/users', { method: 'POST', headers, body: {} }),
       ]) {
-        expect(request).toBeInstanceOf(Request);
+        expect(request).toBeInstanceOf(FetchRequest);
         expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));

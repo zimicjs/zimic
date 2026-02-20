@@ -48,7 +48,7 @@ describe('FetchClient > Errors', () => {
 
       expect(await response.json()).toEqual(users);
 
-      expect(response).toBeInstanceOf(Response);
+      expect(response).toBeInstanceOf(FetchResponse);
       expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
@@ -81,7 +81,7 @@ describe('FetchClient > Errors', () => {
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
 
-      expect(response).toBeInstanceOf(Response);
+      expect(response).toBeInstanceOf(FetchResponse);
       expectTypeOf(response satisfies Response).toEqualTypeOf<
         FetchResponse<Schema, 'GET', '/users', false, 'follow', 200>
       >();
@@ -120,7 +120,7 @@ describe('FetchClient > Errors', () => {
       expect(response.status).toBe(403);
       expect(await response.json()).toEqual({ code: 403, message: 'Forbidden' });
 
-      expect(response).toBeInstanceOf(Response);
+      expect(response).toBeInstanceOf(FetchResponse);
       expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
@@ -153,7 +153,7 @@ describe('FetchClient > Errors', () => {
 
       expectTypeOf(response.status).toEqualTypeOf<401 | 403 | 500>();
 
-      expect(response).toBeInstanceOf(Response);
+      expect(response).toBeInstanceOf(FetchResponse);
       expectTypeOf(response satisfies Response).toEqualTypeOf<
         | FetchResponse<Schema, 'GET', '/users', false, 'follow', 401>
         | FetchResponse<Schema, 'GET', '/users', false, 'follow', 403>
@@ -222,7 +222,7 @@ describe('FetchClient > Errors', () => {
       expect(response.status).toBe(403);
       expect(await response.json()).toEqual({ code: 403, message: 'Forbidden' });
 
-      expect(response).toBeInstanceOf(Response);
+      expect(response).toBeInstanceOf(FetchResponse);
       expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));

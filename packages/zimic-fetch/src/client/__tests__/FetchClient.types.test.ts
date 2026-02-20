@@ -64,7 +64,7 @@ describe('FetchClient > Types', () => {
 
       expect(await response.json()).toEqual(users);
 
-      expect(response).toBeInstanceOf(Response);
+      expect(response).toBeInstanceOf(FetchResponse);
       expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
@@ -95,7 +95,7 @@ describe('FetchClient > Types', () => {
 
       expectTypeOf(response.status).toEqualTypeOf<200 | 201 | 204>();
 
-      expect(response).toBeInstanceOf(Response);
+      expect(response).toBeInstanceOf(FetchResponse);
       expectTypeOf(response satisfies Response).toEqualTypeOf<
         | FetchResponse<Schema, 'GET', '/users', false, 'follow', 200>
         | FetchResponse<Schema, 'GET', '/users', false, 'follow', 201>

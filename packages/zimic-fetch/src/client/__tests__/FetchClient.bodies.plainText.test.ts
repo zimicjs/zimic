@@ -49,7 +49,7 @@ describe('FetchClient > Bodies > Plain text', () => {
       expectResponseStatus(response, 201);
       expect(await response.text()).toBe('response');
 
-      expect(response).toBeInstanceOf(Response);
+      expect(response).toBeInstanceOf(FetchResponse);
       expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
@@ -64,7 +64,7 @@ describe('FetchClient > Bodies > Plain text', () => {
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
       expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'POST', '/users'>>();
 
-      expect(response.request).toBeInstanceOf(Request);
+      expect(response.request).toBeInstanceOf(FetchRequest);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
@@ -113,7 +113,7 @@ describe('FetchClient > Bodies > Plain text', () => {
       expectResponseStatus(response, 201);
       expect(await response.text()).toBe('');
 
-      expect(response).toBeInstanceOf(Response);
+      expect(response).toBeInstanceOf(FetchResponse);
       expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
@@ -129,7 +129,7 @@ describe('FetchClient > Bodies > Plain text', () => {
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
       expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'POST', '/users'>>();
 
-      expect(response.request).toBeInstanceOf(Request);
+      expect(response.request).toBeInstanceOf(FetchRequest);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));

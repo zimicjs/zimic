@@ -15,7 +15,28 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
     this.fetch.headers = headers;
     this.fetch.searchParams = searchParams;
 
-    Object.assign(this.fetch, otherOptions);
+    for (const propertyName of [
+      'body',
+      'cache',
+      'credentials',
+      'integrity',
+      'keepalive',
+      'mode',
+      'priority',
+      'redirect',
+      'referrer',
+      'referrerPolicy',
+      'signal',
+      'window',
+      'baseURL',
+      'duplex',
+      'onRequest',
+      'onResponse',
+    ] as const) {
+      if (otherOptions[propertyName] !== undefined) {
+        this.fetch[propertyName] = otherOptions[propertyName] as never;
+      }
+    }
 
     this.fetch.loose = this.fetch as unknown as Fetch.Loose;
     this.fetch.Request = createFetchRequestClass(this.fetch);
@@ -45,7 +66,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
       return fetchResponse;
     };
 
-    return fetch as Fetch<Schema>;
+    return Object.setPrototypeOf(fetch, this) as Fetch<Schema>;
   }
 
   private async createFetchRequest<

@@ -6,7 +6,6 @@ import { withIncludedBodyIfAvailable } from '../utils/objects';
 import FetchResponseError from './error/FetchResponseError';
 import {
   FetchResponseBodySchema,
-  FetchResponseConstructor,
   FetchResponseInit,
   FetchResponseObject,
   FetchResponsePerStatusCode,
@@ -35,13 +34,7 @@ export namespace FetchResponse {
   }
 }
 
-const FETCH_RESPONSE_BRAND = Symbol.for('FetchResponse');
-
-// FetchResponse is not a proper class to keep backward compatibility. FetchResponse used to be only a type and it is
-// not possible to replicate the same behavior with a class without breaking changes. After the next major version,
-// FetchResponse will be refactored into a proper class to make the implementation more straightforward.
-// @deprecated
-export const FetchResponse = (<
+export const FetchResponse = class FetchResponse<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath.Literal<Schema, Method>,
@@ -50,89 +43,123 @@ export const FetchResponse = (<
   Redirect extends RequestRedirect = 'follow',
   StatusCode extends FetchResponseStatusCode<Default<Schema[Path][Method]>, ErrorOnly, Redirect> =
     FetchResponseStatusCode<Default<Schema[Path][Method]>, ErrorOnly, Redirect>,
->(
-  fetchRequest: FetchRequest<Schema, Method, Path>,
-  responseOrBody?:
-    | Response
-    | FetchResponseBodySchema<Default<Default<Default<Schema[Path][Method]>['response']>[StatusCode]>>,
-  init?: FetchResponseInit<Schema, Method, Path, ErrorOnly, Redirect, StatusCode>,
-): FetchResponse<Schema, Method, Path, ErrorOnly, Redirect, StatusCode> => {
-  const response =
-    responseOrBody instanceof Response
-      ? responseOrBody
-      : new Response(responseOrBody as BodyInit | null, init as ResponseInit);
+> {
+  #raw: Response;
+  #request: FetchRequest<Schema, Method, Path>;
+  #error: FetchResponseError<Schema, Method, Path> | null = null;
 
-  const fetchResponse = Object.create(response) as FetchResponse<Schema, Method, Path, ErrorOnly, Redirect, StatusCode>;
+  constructor(
+    fetchRequest: FetchRequest<Schema, Method, Path>,
+    responseOrBody?:
+      | Response
+      | FetchResponseBodySchema<Default<Default<Default<Schema[Path][Method]>['response']>[StatusCode]>>,
+    init?: FetchResponseInit<Schema, Method, Path, ErrorOnly, Redirect, StatusCode>,
+  ) {
+    this.#raw =
+      responseOrBody instanceof Response
+        ? responseOrBody
+        : new Response(responseOrBody as BodyInit | null, init as ResponseInit);
 
-  Object.defineProperty(fetchResponse, FETCH_RESPONSE_BRAND, {
-    value: true,
-    writable: false,
-    enumerable: false,
-    configurable: false,
-  });
+    this.#request = fetchRequest;
+  }
 
-  Object.defineProperty(fetchResponse, 'raw', {
-    value: response,
-    writable: false,
-    enumerable: true,
-    configurable: false,
-  });
+  get raw() {
+    return this.#raw;
+  }
 
-  Object.defineProperty(fetchResponse, 'request', {
-    value: fetchRequest,
-    writable: false,
-    enumerable: true,
-    configurable: false,
-  });
+  get request() {
+    return this.#request;
+  }
 
-  let error: FetchResponseError<Schema, Method, Path> | null = null;
+  get error() {
+    this.#error ??= new FetchResponseError(this.#request, this as never /* TODO */);
+    return this.#error;
+  }
 
-  Object.defineProperty(fetchResponse, 'error', {
-    get(this: FetchResponse<Schema, Method, Path>) {
-      error ??= new FetchResponseError(this.request, this);
-      return error;
-    },
-    writable: false,
-    enumerable: true,
-    configurable: false,
-  });
+  get headers() {
+    return this.#raw.headers;
+  }
 
-  Object.defineProperty(fetchResponse, 'toObject', {
-    value(
-      this: FetchResponse<Schema, Method, Path>,
-      options?: { includeBody?: boolean },
-    ): PossiblePromise<FetchResponseObject> {
-      const responseObject: FetchResponseObject = {
-        url: response.url,
-        type: response.type,
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-        headers: HttpHeaders.prototype.toObject.call(response.headers) as HttpHeadersSchema,
-        redirected: response.redirected,
-      };
+  get ok() {
+    return this.#raw.ok;
+  }
 
-      if (!options?.includeBody) {
-        return responseObject;
-      }
+  get redirected() {
+    return this.#raw.redirected;
+  }
 
-      return withIncludedBodyIfAvailable(response, responseObject);
-    },
-    writable: false,
-    enumerable: true,
-    configurable: false,
-  });
+  get status() {
+    return this.#raw.status;
+  }
 
-  return fetchResponse;
-}) as unknown as FetchResponseConstructor;
+  get statusText() {
+    return this.#raw.statusText;
+  }
 
-Object.defineProperty(FetchResponse, Symbol.hasInstance, {
-  value(instance: unknown): boolean {
-    return instance instanceof Response && FETCH_RESPONSE_BRAND in instance;
-  },
-  writable: false,
-  enumerable: false,
-  configurable: false,
-});
+  get type() {
+    return this.#raw.type;
+  }
+
+  get url() {
+    return this.#raw.url;
+  }
+
+  get body() {
+    return this.#raw.body;
+  }
+
+  get bodyUsed() {
+    return this.#raw.bodyUsed;
+  }
+
+  text() {
+    return this.#raw.text();
+  }
+
+  json() {
+    return this.#raw.json();
+  }
+
+  formData() {
+    return this.#raw.formData();
+  }
+
+  arrayBuffer() {
+    return this.#raw.arrayBuffer();
+  }
+
+  blob() {
+    return this.#raw.blob();
+  }
+
+  bytes() {
+    return this.#raw.bytes();
+  }
+
+  clone() {
+    return new FetchResponse(this.#request, this.#raw.clone());
+  }
+
+  toObject(options: { includeBody: true }): Promise<FetchResponseObject>;
+  toObject(options?: { includeBody?: false }): FetchResponseObject;
+  toObject(options?: { includeBody?: boolean }): PossiblePromise<FetchResponseObject>;
+  toObject(options?: { includeBody?: boolean }): PossiblePromise<FetchResponseObject> {
+    const responseObject: FetchResponseObject = {
+      url: this.#raw.url,
+      type: this.#raw.type,
+      status: this.#raw.status,
+      statusText: this.#raw.statusText,
+      ok: this.#raw.ok,
+      headers: HttpHeaders.prototype.toObject.call(this.#raw.headers) as HttpHeadersSchema,
+      redirected: this.#raw.redirected,
+    };
+
+    if (!options?.includeBody) {
+      return responseObject;
+    }
+
+    return withIncludedBodyIfAvailable(this.#raw, responseObject);
+  }
+};
 
 Object.setPrototypeOf(FetchResponse.prototype, Response.prototype);
