@@ -1,4 +1,4 @@
-import { GitHubRepository } from '../../src/clients/github/types';
+import { GitHubRepository } from '@/clients/github/types';
 
 export function createGitHubRepository(partialRepository: Partial<GitHubRepository> = {}): GitHubRepository {
   return {

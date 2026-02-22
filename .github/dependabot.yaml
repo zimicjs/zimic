@@ -31,6 +31,7 @@ updates:
           - version-update:semver-minor
           - version-update:semver-patch
       # Blocked by https://github.com/jsx-eslint/eslint-plugin-react/issues/3977.
+      # Remember to re-enable @typescript-eslint/only-throw-error on packages/eslint-config/index.js after resolved.
       - dependency-name: eslint
         update-types:
           - version-update:semver-major
