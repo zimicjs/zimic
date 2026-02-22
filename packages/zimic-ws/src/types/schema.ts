@@ -11,13 +11,11 @@ export type WebSocketSchema<Schema extends BaseWebSocketSchema = BaseWebSocketSc
 
 export type WebSocketMessageData<Schema extends WebSocketSchema> = Schema extends Blob
   ? Schema
-  : Schema extends ArrayBufferLike
+  : Schema extends BufferSource
     ? Schema
-    : Schema extends ArrayBufferView
+    : Schema extends string
       ? Schema
-      : Schema extends string
-        ? Schema
-        : JSONStringified<Schema>;
+      : JSONStringified<Schema>;
 
 export interface WebSocketEventMap<Schema extends WebSocketSchema> {
   open: Event;
