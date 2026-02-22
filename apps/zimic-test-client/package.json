@@ -33,7 +33,7 @@
     "node-fetch": "^3.3.2",
     "playwright": "^1.58.2",
     "superagent": "^10.3.0",
-    "typescript": "^5.9.3",
+    "typescript": "6.0.0-beta",
     "vitest": "^4.0.18"
   }
 }
