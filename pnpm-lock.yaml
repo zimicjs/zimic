@@ -180,6 +180,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.2.0
         version: 4.2.0
+      '@types/node':
+        specifier: ^25.3.0
+        version: 25.3.0
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.14
@@ -331,6 +334,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.2.0
         version: 4.2.0
+      '@types/node':
+        specifier: ^25.3.0
+        version: 25.3.0
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.14
@@ -386,6 +392,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.2.0
         version: 4.2.0
+      '@types/node':
+        specifier: ^25.3.0
+        version: 25.3.0
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.14
@@ -460,6 +469,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.2.0
         version: 4.2.0
+      '@types/node':
+        specifier: ^25.3.0
+        version: 25.3.0
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.14
@@ -651,7 +663,7 @@ importers:
     dependencies:
       '@zimic/http':
         specifier: ^1.3.0 || workspace:*
-        version: link:../zimic-http
+        version: 1.3.11(typescript@6.0.0-beta)
     devDependencies:
       '@types/node':
         specifier: ^25.3.0
@@ -782,7 +794,7 @@ importers:
         version: 0.10.18
       '@zimic/http':
         specifier: ^1.2.0 || workspace:*
-        version: link:../zimic-http
+        version: 1.3.11(typescript@6.0.0-beta)
       isomorphic-ws:
         specifier: 5.0.0
         version: 5.0.0(ws@8.19.0(bufferutil@4.0.9))
@@ -4646,6 +4658,16 @@ packages:
 
   '@xtuc/long@4.2.2':
     resolution: {integrity: sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==}
+
+  '@zimic/http@1.3.11':
+    resolution: {integrity: sha512-XykCzBKcEIPQUkr3ZUEQ9wljh7K4BZDA/vDp2XS9r00oJrNQmdAqxuD0bu3fyz8VGJAZ9jj4ZLX4+E7rGaF9pA==}
+    engines: {node: '>=20.0.0'}
+    hasBin: true
+    peerDependencies:
+      typescript: '>=5.0.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   accepts@1.3.8:
     resolution: {integrity: sha512-PYAthTa2m2VKxuvSD3DPC/Gy+U+sOA1LAuT8mkmRuvw+NACSaeXEQ+NHcVF7rONl6qcaxV3Uuemwawk+7+SJLw==}
@@ -14792,6 +14814,14 @@ snapshots:
   '@xtuc/ieee754@1.2.0': {}
 
   '@xtuc/long@4.2.2': {}
+
+  '@zimic/http@1.3.11(typescript@6.0.0-beta)':
+    dependencies:
+      openapi-typescript: 7.13.0(typescript@6.0.0-beta)
+      picocolors: 1.1.1
+      yargs: 18.0.0
+    optionalDependencies:
+      typescript: 6.0.0-beta
 
   accepts@1.3.8:
     dependencies:

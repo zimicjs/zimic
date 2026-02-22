@@ -5,6 +5,7 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "tsBuildInfoFile": "tsconfig.tsbuildinfo",
+    "types": ["node"],
     "paths": {
       "@/*": ["./src/*"],
       "@@/*": ["./*"]
