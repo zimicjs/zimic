@@ -16,7 +16,11 @@
     "plugins": [{ "name": "next" }],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@tests/*": ["./tests/*"]
+    }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.mts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]

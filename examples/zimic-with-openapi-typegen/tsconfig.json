@@ -10,7 +10,11 @@
     "skipLibCheck": true,
     "pretty": true,
     "strict": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@tests/*": ["./tests/*"]
+    }
   },
   "include": ["**/*.ts", "**/*.mts"],
   "exclude": ["node_modules"]
