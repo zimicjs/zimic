@@ -15,7 +15,7 @@
     "@zimic/interceptor": "latest",
     "dotenv-cli": "^11.0.0",
     "jsdom": "^28.1.0",
-    "typescript": "6.0.0-beta",
+    "typescript": "5.9.3",
     "vitest": "^4.0.18"
   }
 }
