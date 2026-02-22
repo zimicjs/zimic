@@ -92,7 +92,7 @@
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^25.2.3",
+    "@types/node": "^25.3.0",
     "@types/yargs": "^17.0.35",
     "@vitest/browser": "^4.0.18",
     "@vitest/browser-playwright": "^4.0.18",
@@ -103,7 +103,7 @@
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^11.0.0",
-    "eslint": "^9.39.2",
+    "eslint": "^9.39.3",
     "js-yaml": "^4.1.1",
     "playwright": "^1.58.2",
     "prettier": "^3.8.1",
