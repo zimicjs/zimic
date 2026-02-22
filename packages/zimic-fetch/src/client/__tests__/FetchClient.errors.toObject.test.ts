@@ -16,11 +16,9 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { expectResponseStatus } from '@tests/utils/requests';
 
-import FetchResponseError, {
-  FetchResponseErrorObject,
-  FetchResponseErrorObjectOptions,
-} from '../errors/FetchResponseError';
 import createFetch from '../factory';
+import FetchResponseError from '../response/error/FetchResponseError';
+import { FetchResponseErrorObject, FetchResponseErrorObjectOptions } from '../response/error/types';
 
 describe('FetchClient > Errors > toObject', () => {
   const baseURL = 'http://localhost:3000';
@@ -362,7 +360,7 @@ describe('FetchClient > Errors > toObject', () => {
             body: requestBody,
           });
 
-          expect(console.error).toHaveBeenCalledTimes(isClientSide() ? 1 : 2);
+          expect(console.error).toHaveBeenCalledTimes(2);
 
           expect(console.error).toHaveBeenCalledWith(
             color.cyan('[@zimic/interceptor]'),
@@ -370,13 +368,11 @@ describe('FetchClient > Errors > toObject', () => {
             new InvalidJSONError(requestBody),
           );
 
-          if (!isClientSide()) {
-            expect(console.error).toHaveBeenCalledWith(
-              color.cyan('[@zimic/interceptor]'),
-              'Failed to parse response body:',
-              new InvalidJSONError(responseBody),
-            );
-          }
+          expect(console.error).toHaveBeenCalledWith(
+            color.cyan('[@zimic/interceptor]'),
+            'Failed to parse response body:',
+            new InvalidJSONError(responseBody),
+          );
 
           return response;
         });
@@ -596,7 +592,7 @@ describe('FetchClient > Errors > toObject', () => {
             body: requestBody,
           });
 
-          expect(console.error).toHaveBeenCalledTimes(isClientSide() ? 1 : 2);
+          expect(console.error).toHaveBeenCalledTimes(2);
 
           expect(console.error).toHaveBeenCalledWith(
             color.cyan('[@zimic/interceptor]'),
@@ -604,13 +600,11 @@ describe('FetchClient > Errors > toObject', () => {
             new InvalidFormDataError(requestBody),
           );
 
-          if (!isClientSide()) {
-            expect(console.error).toHaveBeenCalledWith(
-              color.cyan('[@zimic/interceptor]'),
-              'Failed to parse response body:',
-              new InvalidFormDataError(responseBody),
-            );
-          }
+          expect(console.error).toHaveBeenCalledWith(
+            color.cyan('[@zimic/interceptor]'),
+            'Failed to parse response body:',
+            new InvalidFormDataError(responseBody),
+          );
 
           return response;
         });
