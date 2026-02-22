@@ -124,7 +124,7 @@
   },
   "peerDependencies": {
     "@zimic/http": "^1.2.0 || workspace:*",
-    "typescript": ">=5.0.0"
+    "typescript": "^5.0.0 || ^6.0.0 || ^6.0.0-beta"
   },
   "peerDependenciesMeta": {
     "typescript": {
