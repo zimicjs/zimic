@@ -25,7 +25,7 @@ export default [
 
     languageOptions: {
       parser: typescriptParser,
-      ecmaVersion: 2020,
+      ecmaVersion: 2025,
       sourceType: 'module',
       parserOptions: {
         ecmaFeatures: { ts: true, tsx: true },
