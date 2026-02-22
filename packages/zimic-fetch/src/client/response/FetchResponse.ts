@@ -34,6 +34,10 @@ export namespace FetchResponse {
   }
 }
 
+// FetchResponse is declared as a constant to keep backward compatibility. FetchResponse is only a type up to
+// @zimic/fetch@^1.4 and is not possible to replicate the same typing behavior in a class without breaking changes.
+// Starting from @zimic/fetch@^2, the constant declaration can be removed and FetchResponse can be declared directly as
+// a class.
 export const FetchResponse = class FetchResponse<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
@@ -49,7 +53,7 @@ export const FetchResponse = class FetchResponse<
   #error: FetchResponseError<Schema, Method, Path> | null = null;
 
   constructor(
-    fetchRequest: FetchRequest<Schema, Method, Path>,
+    request: FetchRequest<Schema, Method, Path>,
     responseOrBody?:
       | Response
       | FetchResponseBodySchema<Default<Default<Default<Schema[Path][Method]>['response']>[StatusCode]>>,
@@ -60,7 +64,7 @@ export const FetchResponse = class FetchResponse<
         ? responseOrBody
         : new Response(responseOrBody as BodyInit | null, init as ResponseInit);
 
-    this.#request = fetchRequest;
+    this.#request = request;
   }
 
   get raw() {
@@ -72,7 +76,14 @@ export const FetchResponse = class FetchResponse<
   }
 
   get error() {
-    this.#error ??= new FetchResponseError(this.#request, this as never /* TODO */);
+    // We create the error lazily to preserve the stack trace of the error where it was first accessed.
+    this.#error ??= new FetchResponseError(
+      this.#request,
+      // @ts-expect-error Since FetchResponse as is both a mapped type and a class, they are not comparable. For now,
+      // we need to ignore the error. This will be fixed when FetchResponse (type) and FetchResponse (class) are merged
+      // are merged in @zimic/fetch@^2.
+      this,
+    );
     return this.#error;
   }
 
@@ -145,13 +156,13 @@ export const FetchResponse = class FetchResponse<
   toObject(options?: { includeBody?: boolean }): PossiblePromise<FetchResponseObject>;
   toObject(options?: { includeBody?: boolean }): PossiblePromise<FetchResponseObject> {
     const responseObject: FetchResponseObject = {
-      url: this.#raw.url,
-      type: this.#raw.type,
-      status: this.#raw.status,
-      statusText: this.#raw.statusText,
-      ok: this.#raw.ok,
-      headers: HttpHeaders.prototype.toObject.call(this.#raw.headers) as HttpHeadersSchema,
-      redirected: this.#raw.redirected,
+      url: this.url,
+      type: this.type,
+      status: this.status,
+      statusText: this.statusText,
+      ok: this.ok,
+      headers: HttpHeaders.prototype.toObject.call(this.headers) as HttpHeadersSchema,
+      redirected: this.redirected,
     };
 
     if (!options?.includeBody) {

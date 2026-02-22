@@ -61,7 +61,7 @@ describe('FetchClient > Search params', () => {
         searchParams,
       });
       expect(request).toBeInstanceOf(FetchRequest);
-      expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+      expectTypeOf(request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(request.url).toBe(joinURL(baseURL, '/users?name=User'));
 
@@ -116,7 +116,7 @@ describe('FetchClient > Search params', () => {
         searchParams,
       });
       expect(request).toBeInstanceOf(FetchRequest);
-      expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+      expectTypeOf(request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(request.url).toBe(joinURL(baseURL, '/users?name=User'));
 
@@ -179,7 +179,7 @@ describe('FetchClient > Search params', () => {
         searchParams,
       });
       expect(request).toBeInstanceOf(FetchRequest);
-      expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+      expectTypeOf(request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(request.url).toBe(joinURL(baseURL, '/users?name=User&usernames=User+1&usernames=User+2&orderBy=name'));
 
@@ -226,7 +226,7 @@ describe('FetchClient > Search params', () => {
         new fetch.Request('/users', { method: 'GET', searchParams: new HttpSearchParams() }),
       ]) {
         expect(request).toBeInstanceOf(FetchRequest);
-        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+        expectTypeOf(request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
 
@@ -275,7 +275,7 @@ describe('FetchClient > Search params', () => {
         new fetch.Request('/users', { method: 'GET', searchParams: new HttpSearchParams() }),
       ]) {
         expect(request).toBeInstanceOf(FetchRequest);
-        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+        expectTypeOf(request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
 
@@ -326,7 +326,7 @@ describe('FetchClient > Search params', () => {
         new fetch.Request('/users', { method: 'GET', headers, searchParams: new HttpSearchParams() }),
       ]) {
         expect(request).toBeInstanceOf(FetchRequest);
-        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+        expectTypeOf(request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
 

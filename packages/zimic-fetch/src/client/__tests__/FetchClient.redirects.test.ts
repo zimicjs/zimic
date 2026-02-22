@@ -72,7 +72,7 @@ describe('FetchClient > Redirects', () => {
 
       const secondResponse = await fetch(redirectPath, {
         method: 'GET',
-        redirect: 'manual',
+        redirect,
       });
 
       expectTypeOf(secondResponse.status).toEqualTypeOf<200 | 301 | 304 | 307 | 308>();

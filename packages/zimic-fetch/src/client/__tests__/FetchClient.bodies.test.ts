@@ -91,7 +91,7 @@ describe('FetchClient > Bodies', () => {
         new fetch.Request('/users', { method: 'POST', body: {} }),
       ]) {
         expect(request).toBeInstanceOf(FetchRequest);
-        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+        expectTypeOf(request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
 
@@ -144,7 +144,7 @@ describe('FetchClient > Bodies', () => {
         new fetch.Request('/users', { method: 'POST', body: {} }),
       ]) {
         expect(request).toBeInstanceOf(FetchRequest);
-        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+        expectTypeOf(request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
 
@@ -199,7 +199,7 @@ describe('FetchClient > Bodies', () => {
         new fetch.Request('/users', { method: 'POST', headers, body: {} }),
       ]) {
         expect(request).toBeInstanceOf(FetchRequest);
-        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+        expectTypeOf(request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
 

@@ -7,6 +7,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import createFetch from '../factory';
 import FetchResponseError from '../response/error/FetchResponseError';
 import { FetchResponse } from '../response/FetchResponse';
+import { FetchResponsePerStatusCode } from '../response/types';
 import { Fetch, InferFetchSchema } from '../types/public';
 
 describe('FetchClient > Types', () => {
@@ -65,7 +66,7 @@ describe('FetchClient > Types', () => {
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(FetchResponse);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
+      expectTypeOf(response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
@@ -74,11 +75,11 @@ describe('FetchClient > Types', () => {
       >();
       expectTypeOf(response.formData).toEqualTypeOf<(() => Promise<FormData>) | (() => Promise<never>)>();
       expectTypeOf(response.clone).toEqualTypeOf<
-        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 200>)
-        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 201>)
-        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 204>)
-        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 400>)
-        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 401>)
+        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 200>)
+        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 201>)
+        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 204>)
+        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 400>)
+        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 401>)
       >();
 
       expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
@@ -96,18 +97,18 @@ describe('FetchClient > Types', () => {
       expectTypeOf(response.status).toEqualTypeOf<200 | 201 | 204>();
 
       expect(response).toBeInstanceOf(FetchResponse);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<
-        | FetchResponse<Schema, 'GET', '/users', false, 'follow', 200>
-        | FetchResponse<Schema, 'GET', '/users', false, 'follow', 201>
-        | FetchResponse<Schema, 'GET', '/users', false, 'follow', 204>
+      expectTypeOf(response).toEqualTypeOf<
+        | FetchResponsePerStatusCode<Schema, 'GET', '/users', 200>
+        | FetchResponsePerStatusCode<Schema, 'GET', '/users', 201>
+        | FetchResponsePerStatusCode<Schema, 'GET', '/users', 204>
       >();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expectTypeOf(response.clone).toEqualTypeOf<
-        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 200>)
-        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 201>)
-        | (() => FetchResponse<Schema, 'GET', '/users', false, 'follow', 204>)
+        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 200>)
+        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 201>)
+        | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 204>)
       >();
 
       expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();

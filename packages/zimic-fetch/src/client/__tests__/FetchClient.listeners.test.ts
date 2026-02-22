@@ -11,6 +11,7 @@ import createFetch from '../factory';
 import { FetchRequest } from '../request/FetchRequest';
 import FetchResponseError from '../response/error/FetchResponseError';
 import { FetchResponse } from '../response/FetchResponse';
+import { FetchResponsePerStatusCode } from '../response/types';
 import { Fetch } from '../types/public';
 
 describe('FetchClient > Listeners', () => {
@@ -53,7 +54,7 @@ describe('FetchClient > Listeners', () => {
         request: FetchRequest.Loose,
       ) {
         expect(request).toBeInstanceOf(FetchRequest);
-        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest.Loose>();
+        expectTypeOf(request).toEqualTypeOf<FetchRequest.Loose>();
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
 
@@ -74,7 +75,7 @@ describe('FetchClient > Listeners', () => {
          * This else is necessary to narrow the error type to a specific error. */
         if (this.isRequest(request, 'POST', '/users')) {
           expect(request).toBeInstanceOf(FetchRequest);
-          expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+          expectTypeOf(request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
           const requestClone = request.clone();
           expectTypeOf(requestClone).toEqualTypeOf(request);
@@ -111,12 +112,12 @@ describe('FetchClient > Listeners', () => {
       expect(await response.json()).toEqual(users[0]);
 
       expect(response).toBeInstanceOf(FetchResponse);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
+      expectTypeOf(response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expect(response.request).toBeInstanceOf(FetchRequest);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+      expectTypeOf(response.request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
@@ -151,7 +152,7 @@ describe('FetchClient > Listeners', () => {
         request: FetchRequest.Loose,
       ) {
         expect(request).toBeInstanceOf(FetchRequest);
-        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest.Loose>();
+        expectTypeOf(request).toEqualTypeOf<FetchRequest.Loose>();
 
         expect(request.url).toBe(joinURL(baseURL, `/users/${users[0].id}`));
 
@@ -172,7 +173,7 @@ describe('FetchClient > Listeners', () => {
          * This else is necessary to narrow the error type to a specific error. */
         if (this.isRequest(request, 'POST', '/users/:id')) {
           expect(request).toBeInstanceOf(FetchRequest);
-          expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users/:id'>>();
+          expectTypeOf(request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users/:id'>>();
 
           const requestClone = request.clone();
           expectTypeOf(requestClone).toEqualTypeOf(request);
@@ -209,12 +210,12 @@ describe('FetchClient > Listeners', () => {
       expect(await response.json()).toEqual(users[0]);
 
       expect(response).toBeInstanceOf(FetchResponse);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users/:id'>>();
+      expectTypeOf(response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users/:id'>>();
 
       expect(response.url).toBe(joinURL(baseURL, `/users/${users[0].id}`));
 
       expect(response.request).toBeInstanceOf(FetchRequest);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users/:id'>>();
+      expectTypeOf(response.request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users/:id'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, `/users/${users[0].id}`));
 
@@ -264,12 +265,12 @@ describe('FetchClient > Listeners', () => {
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(FetchResponse);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
+      expectTypeOf(response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expect(response.request).toBeInstanceOf(FetchRequest);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+      expectTypeOf(response.request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
@@ -354,12 +355,12 @@ describe('FetchClient > Listeners', () => {
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(FetchResponse);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
+      expectTypeOf(response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users?page=1&limit=10'));
 
       expect(response.request).toBeInstanceOf(FetchRequest);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+      expectTypeOf(response.request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users?page=1&limit=10'));
 
@@ -421,12 +422,12 @@ describe('FetchClient > Listeners', () => {
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(FetchResponse);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
+      expectTypeOf(response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users?page=1&limit=10'));
 
       expect(response.request).toBeInstanceOf(FetchRequest);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+      expectTypeOf(response.request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users?page=1&limit=10'));
 
@@ -485,12 +486,12 @@ describe('FetchClient > Listeners', () => {
         expect(await response.json()).toEqual(users);
 
         expect(response).toBeInstanceOf(FetchResponse);
-        expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
+        expectTypeOf(response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
         expect(response.url).toBe(joinURL(baseURL, '/users'));
 
         expect(response.request).toBeInstanceOf(FetchRequest);
-        expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+        expectTypeOf(response.request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
         expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
@@ -526,7 +527,7 @@ describe('FetchClient > Listeners', () => {
         response: FetchResponse.Loose,
       ) {
         expect(response).toBeInstanceOf(FetchResponse);
-        expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse.Loose>();
+        expectTypeOf(response).toEqualTypeOf<FetchResponse.Loose>();
 
         expect(response.url).toBe(joinURL(baseURL, '/users'));
 
@@ -540,7 +541,7 @@ describe('FetchClient > Listeners', () => {
         expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
 
         expect(response.request).toBeInstanceOf(FetchRequest);
-        expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest.Loose>();
+        expectTypeOf(response.request).toEqualTypeOf<FetchRequest.Loose>();
 
         expect(response.request.headers).toBeInstanceOf(Headers);
         expectTypeOf(response.request.headers).toEqualTypeOf<Headers>();
@@ -560,7 +561,7 @@ describe('FetchClient > Listeners', () => {
          * This else is necessary to narrow the error type to a specific error. */
         if (this.isResponse(response, 'GET', '/users')) {
           expect(response).toBeInstanceOf(FetchResponse);
-          expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
+          expectTypeOf(response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
         } else {
           expectTypeOf(response).toEqualTypeOf<FetchResponse.Loose>();
         }
@@ -581,12 +582,12 @@ describe('FetchClient > Listeners', () => {
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(FetchResponse);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
+      expectTypeOf(response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expect(response.request).toBeInstanceOf(FetchRequest);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+      expectTypeOf(response.request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
@@ -617,7 +618,7 @@ describe('FetchClient > Listeners', () => {
         response: FetchResponse.Loose,
       ) {
         expect(response).toBeInstanceOf(FetchResponse);
-        expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse.Loose>();
+        expectTypeOf(response).toEqualTypeOf<FetchResponse.Loose>();
 
         expect(response.url).toBe(joinURL(baseURL, `/users/${users[0].id}`));
 
@@ -631,7 +632,7 @@ describe('FetchClient > Listeners', () => {
         expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
 
         expect(response.request).toBeInstanceOf(FetchRequest);
-        expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest.Loose>();
+        expectTypeOf(response.request).toEqualTypeOf<FetchRequest.Loose>();
 
         expect(response.request.headers).toBeInstanceOf(Headers);
         expectTypeOf(response.request.headers).toEqualTypeOf<Headers>();
@@ -651,7 +652,7 @@ describe('FetchClient > Listeners', () => {
          * This else is necessary to narrow the error type to a specific error. */
         if (this.isResponse(response, 'GET', '/users/:id')) {
           expect(response).toBeInstanceOf(FetchResponse);
-          expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users/:id'>>();
+          expectTypeOf(response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users/:id'>>();
         } else {
           expectTypeOf(response).toEqualTypeOf<FetchResponse.Loose>();
         }
@@ -672,12 +673,12 @@ describe('FetchClient > Listeners', () => {
       expect(await response.json()).toEqual(users[0]);
 
       expect(response).toBeInstanceOf(FetchResponse);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users/:id'>>();
+      expectTypeOf(response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users/:id'>>();
 
       expect(response.url).toBe(joinURL(baseURL, `/users/${users[0].id}`));
 
       expect(response.request).toBeInstanceOf(FetchRequest);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users/:id'>>();
+      expectTypeOf(response.request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users/:id'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, `/users/${users[0].id}`));
 
@@ -734,7 +735,7 @@ describe('FetchClient > Listeners', () => {
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(FetchResponse);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
+      expectTypeOf(response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe('');
 
@@ -745,7 +746,7 @@ describe('FetchClient > Listeners', () => {
       expect(response.headers.get('content-language')).toBe('en');
 
       expect(response.request).toBeInstanceOf(FetchRequest);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+      expectTypeOf(response.request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
@@ -843,14 +844,12 @@ describe('FetchClient > Listeners', () => {
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(FetchResponse);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<
-        FetchResponse<Schema, 'GET', '/users', false, 'follow', 200>
-      >();
+      expectTypeOf(response).toEqualTypeOf<FetchResponsePerStatusCode<Schema, 'GET', '/users', 200>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expect(response.request).toBeInstanceOf(FetchRequest);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+      expectTypeOf(response.request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
@@ -922,7 +921,7 @@ describe('FetchClient > Listeners', () => {
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(FetchResponse);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
+      expectTypeOf(response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe('');
 
@@ -933,7 +932,7 @@ describe('FetchClient > Listeners', () => {
       expect(response.headers.get('content-language')).toBe('en');
 
       expect(response.request).toBeInstanceOf(FetchRequest);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+      expectTypeOf(response.request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 

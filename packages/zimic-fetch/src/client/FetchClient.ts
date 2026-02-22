@@ -7,39 +7,50 @@ import FetchResponseError from './response/error/FetchResponseError';
 import { FetchResponse } from './response/FetchResponse';
 import { FetchInput, FetchOptions, Fetch, FetchDefaults } from './types/public';
 
+const FETCH_OPTIONS_DEFAULT_PROPERTY_NAMES = [
+  'baseURL',
+  'onRequest',
+  'onResponse',
+  'body',
+  'cache',
+  'credentials',
+  'integrity',
+  'keepalive',
+  'mode',
+  'priority',
+  'redirect',
+  'referrer',
+  'referrerPolicy',
+  'signal',
+  'window',
+  'duplex',
+] satisfies (keyof FetchOptions<never>)[];
+
 class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loose' | 'Request' | keyof FetchDefaults> {
   fetch: Fetch<Schema>;
 
-  constructor({ headers = {}, searchParams = {}, ...otherOptions }: FetchOptions<Schema>) {
+  constructor(options: FetchOptions<Schema>) {
     this.fetch = this.createFetchFunction();
-    this.fetch.headers = headers;
-    this.fetch.searchParams = searchParams;
-
-    for (const propertyName of [
-      'body',
-      'cache',
-      'credentials',
-      'integrity',
-      'keepalive',
-      'mode',
-      'priority',
-      'redirect',
-      'referrer',
-      'referrerPolicy',
-      'signal',
-      'window',
-      'baseURL',
-      'duplex',
-      'onRequest',
-      'onResponse',
-    ] as const) {
-      if (otherOptions[propertyName] !== undefined) {
-        this.fetch[propertyName] = otherOptions[propertyName] as never;
-      }
-    }
+    this.assignDefaults(this.fetch, options);
 
     this.fetch.loose = this.fetch as unknown as Fetch.Loose;
     this.fetch.Request = createFetchRequestClass(this.fetch);
+  }
+
+  private assignDefaults(
+    fetch: Fetch<Schema>,
+    { headers = {}, searchParams = {}, ...otherOptions }: FetchOptions<Schema>,
+  ) {
+    fetch.headers = headers;
+    fetch.searchParams = searchParams;
+
+    for (const propertyName of FETCH_OPTIONS_DEFAULT_PROPERTY_NAMES) {
+      const propertyValue = otherOptions[propertyName];
+
+      if (propertyValue !== undefined) {
+        fetch[propertyName] = propertyValue as never;
+      }
+    }
   }
 
   get defaults(): FetchDefaults<Schema> {
@@ -79,13 +90,13 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
     let fetchRequest = input instanceof FetchRequest ? input : new this.fetch.Request(input, init);
 
     if (this.fetch.onRequest) {
-      const newFetchRequest = await this.fetch.onRequest(fetchRequest as FetchRequest.Loose);
+      const newRequest = await this.fetch.onRequest(fetchRequest as FetchRequest.Loose);
 
-      if (newFetchRequest !== fetchRequest) {
-        if (newFetchRequest instanceof FetchRequest) {
-          fetchRequest = newFetchRequest as typeof fetchRequest;
+      if (newRequest !== fetchRequest) {
+        if (newRequest instanceof FetchRequest) {
+          fetchRequest = newRequest as typeof fetchRequest;
         } else {
-          fetchRequest = new this.fetch.Request(newFetchRequest as FetchInput<Schema, Method, Path>, init);
+          fetchRequest = new this.fetch.Request(newRequest as FetchInput<Schema, Method, Path>, init);
         }
       }
     }
@@ -100,12 +111,12 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
     let fetchResponse = new FetchResponse<Schema, Method, Path>(fetchRequest, response);
 
     if (this.fetch.onResponse) {
-      const newFetchResponse = await this.fetch.onResponse(fetchResponse as FetchResponse.Loose);
+      const newResponse = await this.fetch.onResponse(fetchResponse as FetchResponse.Loose);
 
       fetchResponse =
-        newFetchResponse instanceof FetchResponse
-          ? (newFetchResponse as FetchResponse.Loose as typeof fetchResponse)
-          : new FetchResponse<Schema, Method, Path>(fetchRequest, newFetchResponse);
+        newResponse instanceof FetchResponse
+          ? (newResponse as FetchResponse.Loose as typeof fetchResponse)
+          : new FetchResponse<Schema, Method, Path>(fetchRequest, newResponse);
     }
 
     return fetchResponse;

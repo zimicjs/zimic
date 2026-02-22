@@ -16,9 +16,9 @@ class FetchResponseError<
 
   constructor(request: FetchRequest<Schema, Method, Path>, response: FetchResponse<Schema, Method, Path>) {
     super(`${request.method} ${request.url} failed with status ${response.status}: ${response.statusText}`);
+    this.name = 'FetchResponseError';
     this.#request = request;
     this.#response = response;
-    this.name = 'FetchResponseError';
   }
 
   get request() {
@@ -33,16 +33,13 @@ class FetchResponseError<
   toObject(options: FetchResponseErrorObjectOptions.WithBody): Promise<FetchResponseErrorObject>;
   toObject(options?: FetchResponseErrorObjectOptions.WithoutBody): FetchResponseErrorObject;
   toObject(options?: FetchResponseErrorObjectOptions): PossiblePromise<FetchResponseErrorObject>;
-  toObject({
-    includeRequestBody = false,
-    includeResponseBody = false,
-  }: FetchResponseErrorObjectOptions = {}): PossiblePromise<FetchResponseErrorObject> {
+  toObject(options?: FetchResponseErrorObjectOptions): PossiblePromise<FetchResponseErrorObject> {
     const partialObject = {
       name: this.name,
       message: this.message,
     } satisfies Partial<FetchResponseErrorObject>;
 
-    if (!includeRequestBody && !includeResponseBody) {
+    if (!options?.includeRequestBody && !options?.includeResponseBody) {
       return {
         ...partialObject,
         request: this.request.toObject({ includeBody: false }),
@@ -51,8 +48,8 @@ class FetchResponseError<
     }
 
     return Promise.all([
-      Promise.resolve(this.request.toObject({ includeBody: includeRequestBody })),
-      Promise.resolve(this.response.toObject({ includeBody: includeResponseBody })),
+      Promise.resolve(this.request.toObject({ includeBody: options.includeRequestBody })),
+      Promise.resolve(this.response.toObject({ includeBody: options.includeResponseBody })),
     ]).then(([request, response]) => ({ ...partialObject, request, response }));
   }
 }
