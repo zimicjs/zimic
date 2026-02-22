@@ -70,8 +70,11 @@ interface FetchRequestClass {
 
 const FETCH_REQUEST_BRAND = Symbol.for('FetchRequest');
 
+const FETCH_REQUEST_EXTRA_PROPERTIES = [FETCH_REQUEST_BRAND, 'raw', 'path', 'method', 'toObject'] as const;
+type FetchRequestExtraProperty = (typeof FETCH_REQUEST_EXTRA_PROPERTIES)[number];
+
 function createFetchRequestClass() {
-  function FetchRequest<
+  const FetchRequestClass = function FetchRequest<
     Schema extends HttpSchema,
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
@@ -120,7 +123,7 @@ function createFetchRequestClass() {
 
       url = new URL(input.url);
 
-      actualInput = request;
+      actualInput = request instanceof FetchRequestClass ? request.raw : request;
     } else {
       url = new URL(input instanceof URL ? input : joinURL(baseURL, input));
 
@@ -139,96 +142,103 @@ function createFetchRequestClass() {
 
     const request = new Request(actualInput, actualInit);
 
-    const fetchRequest = Object.create(request) as FetchRequest<
-      Schema,
-      Method,
-      LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>
-    >;
-
-    Object.defineProperty(fetchRequest, FETCH_REQUEST_BRAND, {
-      value: true,
-      writable: false,
-      enumerable: false,
-      configurable: false,
-    });
-
-    Object.defineProperty(fetchRequest, 'raw', {
-      value: request,
-      writable: false,
-      enumerable: false,
-      configurable: true,
-    });
-
     const baseURLWithoutTrailingSlash = baseURL.toString().replace(/\/$/, '');
     const path = excludeNonPathParams(url).toString().replace(baseURLWithoutTrailingSlash, '');
 
-    Object.defineProperty(fetchRequest, 'path', {
-      value: path,
-      writable: false,
-      enumerable: false,
-      configurable: true,
-    });
+    function clone() {
+      return new FetchRequestClass(fetch, request.clone() as FetchInput<Schema, Method, Path>);
+    }
 
-    Object.defineProperty(fetchRequest, 'method', {
-      value: fetchRequest.method,
-      writable: false,
-      enumerable: false,
-      configurable: true,
-    });
+    function toObject(options: { includeBody: true }): Promise<FetchRequestObject>;
+    function toObject(options?: { includeBody?: false }): FetchRequestObject;
+    function toObject(options?: { includeBody?: boolean }): PossiblePromise<FetchRequestObject>;
+    function toObject(options?: { includeBody?: boolean }): PossiblePromise<FetchRequestObject> {
+      const requestObject: FetchRequestObject = {
+        url: request.url,
+        path,
+        method: request.method as HttpMethod,
+        headers: HttpHeaders.prototype.toObject.call(request.headers) as HttpHeadersSchema,
+        cache: request.cache,
+        destination: request.destination,
+        credentials: request.credentials,
+        integrity: request.integrity,
+        keepalive: request.keepalive,
+        mode: request.mode,
+        redirect: request.redirect,
+        referrer: request.referrer,
+        referrerPolicy: request.referrerPolicy,
+      };
 
-    Object.defineProperty(fetchRequest, 'clone', {
-      value(this: FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>) {
-        return FetchRequest(fetch, this);
-      },
-      writable: false,
-      enumerable: false,
-      configurable: true,
-    });
+      if (!options?.includeBody) {
+        return requestObject;
+      }
 
-    Object.defineProperty(fetchRequest, 'toObject', {
-      get: (options?: { includeBody?: boolean }): PossiblePromise<FetchRequestObject> => {
-        const requestObject: FetchRequestObject = {
-          url: fetchRequest.url,
-          path: fetchRequest.path,
-          method: fetchRequest.method,
-          headers: HttpHeaders.prototype.toObject.call(fetchRequest.headers) as HttpHeadersSchema,
-          cache: fetchRequest.cache,
-          destination: fetchRequest.destination,
-          credentials: fetchRequest.credentials,
-          integrity: fetchRequest.integrity,
-          keepalive: fetchRequest.keepalive,
-          mode: fetchRequest.mode,
-          redirect: fetchRequest.redirect,
-          referrer: fetchRequest.referrer,
-          referrerPolicy: fetchRequest.referrerPolicy,
-        };
+      return withIncludedBodyIfAvailable(request, requestObject);
+    }
 
-        if (!options?.includeBody) {
-          return requestObject;
+    type FetchRequestInstance = FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
+
+    const fetchRequest = new Proxy(request, {
+      get(target, property) {
+        if (property === FETCH_REQUEST_BRAND) {
+          return true;
         }
 
-        return withIncludedBodyIfAvailable(request, requestObject);
+        if (property === ('raw' satisfies keyof FetchRequestInstance)) {
+          return request satisfies FetchRequestInstance['raw'];
+        }
+
+        if (property === ('path' satisfies keyof FetchRequestInstance)) {
+          return path as AllowAnyStringInPathParams<
+            LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>
+          > satisfies FetchRequestInstance['path'];
+        }
+
+        if (property === ('method' satisfies keyof FetchRequestInstance)) {
+          return request.method as Method satisfies FetchRequestInstance['method'];
+        }
+
+        if (property === ('clone' satisfies keyof FetchRequestInstance)) {
+          return clone satisfies FetchRequestInstance['clone'];
+        }
+
+        if (property === ('toObject' satisfies keyof FetchRequestInstance)) {
+          return toObject satisfies FetchRequestInstance['toObject'];
+        }
+
+        // Fallback other properties to the original `Request` instance.
+        const value = Reflect.get(target, property, target) as unknown;
+
+        if (typeof value === 'function') {
+          return value.bind(target) as unknown;
+        }
+
+        return value;
       },
-      writable: false,
-      enumerable: false,
-      configurable: true,
-    });
+
+      has(target, property) {
+        return (
+          FETCH_REQUEST_EXTRA_PROPERTIES.includes(property as FetchRequestExtraProperty) ||
+          Reflect.has(target, property)
+        );
+      },
+    }) as unknown as FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
 
     return fetchRequest;
-  }
+  } as unknown as FetchRequestClass;
 
-  Object.defineProperty(FetchRequest, Symbol.hasInstance, {
+  Object.defineProperty(FetchRequestClass, Symbol.hasInstance, {
     value(instance: unknown): boolean {
-      return instance instanceof Request && FETCH_REQUEST_BRAND in instance;
+      return instance instanceof Request && FETCH_REQUEST_BRAND in instance && instance[FETCH_REQUEST_BRAND] === true;
     },
     writable: false,
     enumerable: false,
     configurable: false,
   });
 
-  Object.setPrototypeOf(FetchRequest.prototype, Request.prototype);
+  Object.setPrototypeOf(FetchRequestClass.prototype, Request.prototype);
 
-  return FetchRequest as unknown as FetchRequestClass;
+  return FetchRequestClass;
 }
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request `FetchRequest` API reference} */

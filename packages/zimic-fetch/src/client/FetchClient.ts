@@ -7,7 +7,7 @@ import FetchResponseError from './response/error/FetchResponseError';
 import { FetchResponse } from './response/FetchResponse';
 import { FetchInput, FetchOptions, Fetch, FetchDefaults, FetchRequestConstructor } from './types/public';
 
-const FETCH_OPTIONS_DEFAULT_PROPERTY_NAMES = [
+const FETCH_OPTIONS_DEFAULT_PROPERTIES = [
   'baseURL',
   'onRequest',
   'onResponse',
@@ -44,11 +44,11 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
     fetch.headers = headers;
     fetch.searchParams = searchParams;
 
-    for (const propertyName of FETCH_OPTIONS_DEFAULT_PROPERTY_NAMES) {
-      const propertyValue = otherOptions[propertyName];
+    for (const property of FETCH_OPTIONS_DEFAULT_PROPERTIES) {
+      const propertyValue = otherOptions[property];
 
       if (propertyValue !== undefined) {
-        fetch[propertyName] = propertyValue as never;
+        fetch[property] = propertyValue as never;
       }
     }
   }

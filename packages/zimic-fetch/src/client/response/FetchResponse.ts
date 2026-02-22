@@ -97,8 +97,11 @@ interface FetchResponseClass {
 
 const FETCH_RESPONSE_BRAND = Symbol.for('FetchResponse');
 
+const FETCH_RESPONSE_EXTRA_PROPERTIES = ['raw', 'request', 'error', 'toObject'] as const;
+type FetchResponseExtraProperty = (typeof FETCH_RESPONSE_EXTRA_PROPERTIES)[number];
+
 function createFetchResponseClass() {
-  function FetchResponse<
+  const FetchResponseClass = function FetchResponse<
     Schema extends HttpSchema,
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath.Literal<Schema, Method>,
@@ -119,104 +122,100 @@ function createFetchResponseClass() {
         ? responseOrBody
         : new Response(responseOrBody as BodyInit | null, init as ResponseInit);
 
-    const fetchResponse = Object.create(response) as FetchResponse<
-      Schema,
-      Method,
-      Path,
-      ErrorOnly,
-      Redirect,
-      StatusCode
-    >;
-
-    Object.defineProperty(fetchResponse, FETCH_RESPONSE_BRAND, {
-      value: true,
-      writable: false,
-      enumerable: false,
-      configurable: false,
-    });
-
-    Object.defineProperty(fetchResponse, 'raw', {
-      value: response,
-      writable: false,
-      enumerable: true,
-      configurable: false,
-    });
-
-    Object.defineProperty(fetchResponse, 'request', {
-      value: fetchRequest,
-      writable: false,
-      enumerable: true,
-      configurable: false,
-    });
-
     let error: FetchResponseError<Schema, Method, Path> | null = null;
 
-    Object.defineProperty(fetchResponse, 'error', {
-      get(this: FetchResponse<Schema, Method, Path>) {
-        error ??= new FetchResponseError(this.request, this);
-        return error;
-      },
-      writable: false,
-      enumerable: true,
-      configurable: false,
-    });
+    function clone() {
+      return new FetchResponseClass(fetchRequest, response.clone());
+    }
 
-    Object.defineProperty(fetchResponse, 'clone', {
-      value(this: FetchResponse<Schema, Method, Path>) {
-        return FetchResponse(this.request, this.raw.clone());
-      },
-      writable: false,
-      enumerable: false,
-      configurable: true,
-    });
+    function toObject(options: { includeBody: true }): Promise<FetchResponseObject>;
+    function toObject(options?: { includeBody?: false }): FetchResponseObject;
+    function toObject(options?: { includeBody?: boolean }): PossiblePromise<FetchResponseObject>;
+    function toObject(options?: { includeBody?: boolean }): PossiblePromise<FetchResponseObject> {
+      const responseObject: FetchResponseObject = {
+        url: response.url,
+        type: response.type,
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: HttpHeaders.prototype.toObject.call(response.headers) as HttpHeadersSchema,
+        redirected: response.redirected,
+      };
 
-    Object.defineProperty(fetchResponse, 'clone', {
-      value(this: FetchResponse<Schema, Method, Path>) {
-        return FetchResponse(this.request, this.raw.clone());
-      },
-      writable: false,
-      enumerable: false,
-      configurable: true,
-    });
+      if (!options?.includeBody) {
+        return responseObject;
+      }
 
-    Object.defineProperty(fetchRequest, 'toObject', {
-      get: (options?: { includeBody?: boolean }): PossiblePromise<FetchResponseObject> => {
-        const responseObject: FetchResponseObject = {
-          url: fetchResponse.url,
-          type: fetchResponse.type,
-          status: fetchResponse.status,
-          statusText: fetchResponse.statusText,
-          ok: fetchResponse.ok,
-          headers: HttpHeaders.prototype.toObject.call(fetchResponse.headers) as HttpHeadersSchema,
-          redirected: fetchResponse.redirected,
-        };
+      return withIncludedBodyIfAvailable(response, responseObject);
+    }
 
-        if (!options?.includeBody) {
-          return responseObject;
+    type FetchResponseInstance = FetchResponse<Schema, Method, Path, ErrorOnly, Redirect, StatusCode>;
+
+    const fetchResponse = new Proxy(response, {
+      get(target, property, receiver) {
+        if (property === FETCH_RESPONSE_BRAND) {
+          return true;
         }
 
-        return withIncludedBodyIfAvailable(response, responseObject);
+        if (property === ('raw' satisfies keyof FetchResponseInstance)) {
+          return response satisfies FetchResponseInstance['raw'];
+        }
+
+        if (property === ('request' satisfies keyof FetchResponseInstance)) {
+          return fetchRequest satisfies FetchResponseInstance['request'];
+        }
+
+        if (property === ('error' satisfies keyof FetchResponseInstance)) {
+          error ??= new FetchResponseError(fetchRequest, receiver as FetchResponse<Schema, Method, Path>);
+          return error satisfies FetchResponseInstance['error'];
+        }
+
+        if (property === ('clone' satisfies keyof FetchResponseInstance)) {
+          // The `clone` method is not compatible with the mapping we do in `FetchResponse`(i.e.
+          // `StatusCode extends StatusCode ? ... : ...`), so we need a type assertion here.
+          return clone as FetchResponseInstance['clone'];
+        }
+
+        if (property === ('toObject' satisfies keyof FetchResponseInstance)) {
+          return toObject satisfies FetchResponseInstance['toObject'];
+        }
+
+        // Fallback other properties to the original `Response` instance.
+        const value = Reflect.get(target, property, target) as unknown;
+
+        if (typeof value === 'function') {
+          return value.bind(target) as unknown;
+        }
+
+        return value;
       },
-      writable: false,
-      enumerable: false,
-      configurable: true,
-    });
+
+      has(target, property) {
+        return (
+          property === FETCH_RESPONSE_BRAND ||
+          FETCH_RESPONSE_EXTRA_PROPERTIES.includes(property as FetchResponseExtraProperty) ||
+          Reflect.has(target, property)
+        );
+      },
+    }) as unknown as FetchResponse<Schema, Method, Path, ErrorOnly, Redirect, StatusCode>;
 
     return fetchResponse;
-  }
+  } as unknown as FetchResponseClass;
 
-  Object.defineProperty(FetchResponse, Symbol.hasInstance, {
+  Object.defineProperty(FetchResponseClass, Symbol.hasInstance, {
     value(instance: unknown): boolean {
-      return instance instanceof Response && FETCH_RESPONSE_BRAND in instance;
+      return (
+        instance instanceof Response && FETCH_RESPONSE_BRAND in instance && instance[FETCH_RESPONSE_BRAND] === true
+      );
     },
     writable: false,
     enumerable: false,
     configurable: false,
   });
 
-  Object.setPrototypeOf(FetchResponse.prototype, Response.prototype);
+  Object.setPrototypeOf(FetchResponseClass.prototype, Response.prototype);
 
-  return FetchResponse as unknown as FetchResponseClass;
+  return FetchResponseClass;
 }
 
 export const FetchResponse = createFetchResponseClass();
