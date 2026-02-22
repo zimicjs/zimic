@@ -151,5 +151,5 @@ export type FetchRequestConstructor<Schema extends HttpSchema> = new <
   Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
 >(
   input: FetchInput<Schema, Method, Path>,
-  init?: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
+  init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
 ) => FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;

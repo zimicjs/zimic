@@ -48,7 +48,11 @@ export class FetchRequest<
   #fetch: Fetch<Schema>;
   #path: AllowAnyStringInPathParams<Path>;
 
-  constructor(fetch: Fetch<Schema>, input: FetchInput<Schema, Method, Path>, init?: FetchRequestInit.Loose) {
+  constructor(
+    fetch: Fetch<Schema>,
+    input: FetchInput<Schema, Method, Path>,
+    init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
+  ) {
     let actualInput: URL | Request;
 
     const actualInit = {
