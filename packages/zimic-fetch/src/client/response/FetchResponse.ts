@@ -100,7 +100,7 @@ export const FetchResponse = class FetchResponse<
   }
 
   get status() {
-    return this.#raw.status;
+    return this.#raw.status as StatusCode;
   }
 
   get statusText() {
