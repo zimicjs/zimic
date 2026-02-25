@@ -206,7 +206,9 @@ function createFetchResponseClass() {
 
   Object.defineProperty(FetchResponseClass, Symbol.hasInstance, {
     value(instance: unknown): boolean {
-      return instance instanceof Response && FETCH_RESPONSE_BRAND in instance;
+      return (
+        instance instanceof Response && FETCH_RESPONSE_BRAND in instance && instance[FETCH_RESPONSE_BRAND] === true
+      );
     },
     writable: false,
     enumerable: false,

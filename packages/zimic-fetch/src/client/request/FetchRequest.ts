@@ -227,7 +227,7 @@ function createFetchRequestClass() {
 
   Object.defineProperty(FetchRequestClass, Symbol.hasInstance, {
     value(instance: unknown): boolean {
-      return instance instanceof Request && FETCH_REQUEST_BRAND in instance;
+      return instance instanceof Request && FETCH_REQUEST_BRAND in instance && instance[FETCH_REQUEST_BRAND] === true;
     },
     writable: false,
     enumerable: false,
