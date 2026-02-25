@@ -15,10 +15,10 @@ export type { FetchRequestInit, FetchRequestObject } from './client/request/type
 export { FetchResponse } from './client/response/FetchResponse';
 export type { FetchResponsePerStatusCode } from './client/response/FetchResponse';
 export type {
-  FetchResponseStatusCode,
   FetchResponseObject,
   FetchResponseConstructor,
   FetchResponseInit,
+  FetchResponseStatusCode,
 } from './client/response/types';
 
 export { default as FetchResponseError } from './client/response/error/FetchResponseError';

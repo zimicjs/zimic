@@ -11,25 +11,15 @@ class FetchResponseError<
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath.Literal<Schema, Method>,
 > extends Error {
-  #request: FetchRequest<Schema, Method, Path>;
-  #response: FetchResponse<Schema, Method, Path>;
-
-  constructor(request: FetchRequest<Schema, Method, Path>, response: FetchResponse<Schema, Method, Path>) {
+  constructor(
+    public request: FetchRequest<Schema, Method, Path>,
+    public response: FetchResponse<Schema, Method, Path>,
+  ) {
     super(`${request.method} ${request.url} failed with status ${response.status}: ${response.statusText}`);
     this.name = 'FetchResponseError';
-    this.#request = request;
-    this.#response = response;
   }
 
-  get request() {
-    return this.#request;
-  }
-
-  get response() {
-    return this.#response;
-  }
-
-  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `fetchResponseError.toObject()` API reference} */
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `response.error.toObject()` API reference} */
   toObject(options: FetchResponseErrorObjectOptions.WithBody): Promise<FetchResponseErrorObject>;
   toObject(options?: FetchResponseErrorObjectOptions.WithoutBody): FetchResponseErrorObject;
   toObject(options?: FetchResponseErrorObjectOptions): PossiblePromise<FetchResponseErrorObject>;

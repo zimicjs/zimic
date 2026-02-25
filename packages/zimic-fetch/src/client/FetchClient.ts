@@ -32,9 +32,8 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
   constructor(options: FetchOptions<Schema>) {
     this.fetch = this.createFetchFunction();
     this.assignDefaults(this.fetch, options);
-
     this.fetch.loose = this.fetch as unknown as Fetch.Loose;
-    this.fetch.Request = this.createFetchRequestClass(this.fetch);
+    this.fetch.Request = this.createFetchRequestConstructor(this.fetch);
   }
 
   private assignDefaults(
@@ -80,7 +79,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
     return Object.setPrototypeOf(fetch, this) as Fetch<Schema>;
   }
 
-  private createFetchRequestClass<Schema extends HttpSchema>(fetch: Fetch<Schema>) {
+  private createFetchRequestConstructor<Schema extends HttpSchema>(fetch: Fetch<Schema>) {
     function Request<
       Method extends HttpSchemaMethod<Schema>,
       Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
@@ -132,7 +131,7 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
 
       fetchResponse =
         newResponse instanceof FetchResponse
-          ? (newResponse as FetchResponse.Loose as typeof fetchResponse)
+          ? (newResponse as typeof fetchResponse)
           : new FetchResponse<Schema, Method, Path>(fetchRequest, newResponse);
     }
 

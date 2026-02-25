@@ -35,6 +35,7 @@ type FilterFetchResponseStatusCodeByRedirect<
     ? Exclude<StatusCode, Exclude<HttpStatusCode.Redirection, 304>>
     : StatusCode;
 
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference} */
 export type FetchResponseStatusCode<
   MethodSchema extends HttpMethodSchema,
   ErrorOnly extends boolean,
@@ -54,7 +55,7 @@ type FetchResponseInitPerStatusCode<
   StatusCode extends AllFetchResponseStatusCode<MethodSchema>,
 > = { status: StatusCode } & FetchResponseInitWithHeaders<HttpResponseHeadersSchema<MethodSchema, StatusCode>>;
 
-/** @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference} */
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference} */
 export type FetchResponseInit<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
@@ -67,6 +68,7 @@ export type FetchResponseInit<
 > = Omit<ResponseInit, 'headers' | 'status'> &
   (StatusCode extends StatusCode ? FetchResponseInitPerStatusCode<Default<Schema[Path][Method]>, StatusCode> : never);
 
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference} */
 export interface FetchResponseConstructor {
   new <
     Schema extends HttpSchema,
@@ -99,7 +101,7 @@ export interface FetchResponseConstructor {
   [Symbol.hasInstance]: (instance: unknown) => boolean;
 }
 
-/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `error.toObject()`} */
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response#responsetoobject `response.toObject()`} */
 export type FetchResponseObject = Pick<
   FetchResponse.Loose,
   'url' | 'type' | 'status' | 'statusText' | 'ok' | 'redirected'

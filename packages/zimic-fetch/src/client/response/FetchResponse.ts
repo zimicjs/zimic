@@ -183,8 +183,31 @@ function createFetchResponseClass() {
         // Fallback other properties to the original `Response` instance.
         const value = Reflect.get(target, property, target) as unknown;
 
-        if (typeof value === 'function') {
-          return value.bind(target) as unknown;
+        const isFunctionValue =
+          (property === 'json' ||
+            property === 'formData' ||
+            property === 'text' ||
+            property === 'arrayBuffer' ||
+            property === 'blob' ||
+            property === 'bytes') &&
+          typeof value === 'function';
+
+        if (isFunctionValue) {
+          // We cache the bound function on the proxy instance to avoid re-binding it on every access.
+          const shouldDefineBoundValue = !Object.prototype.hasOwnProperty.call(response, property);
+
+          if (shouldDefineBoundValue) {
+            const boundValue = value.bind(target) as unknown;
+
+            Object.defineProperty(response, property, {
+              value: boundValue,
+              configurable: true,
+              enumerable: false,
+              writable: true,
+            });
+
+            return boundValue;
+          }
         }
 
         return value;

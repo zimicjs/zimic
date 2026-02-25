@@ -72,7 +72,6 @@ export type FetchRequestInit<
   duplex?: 'half';
 } & (Path extends Path ? FetchRequestInitPerPath<Default<Schema[Path][Method]>> : never);
 
-/** @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference} */
 export namespace FetchRequestInit {
   type DefaultHeadersSchema<Schema extends HttpSchema> = {
     [Path in HttpSchemaPath.Literal<Schema>]: {
@@ -123,7 +122,7 @@ export namespace FetchRequestInit {
   export type Loose = Partial<Defaults>;
 }
 
-/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject `error.toObject()`} */
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#requesttoobject `request.toObject()`} */
 export type FetchRequestObject = Pick<
   FetchRequest.Loose,
   | 'url'
