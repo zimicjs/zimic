@@ -12,7 +12,7 @@ import {
 import { Default, PossiblePromise } from '@zimic/utils/types';
 
 import { FetchRequest } from '../request/FetchRequest';
-import { withIncludedBodyIfAvailable } from '../utils/objects';
+import { getOrSetBoundBodyMethod, isBodyMethod, withIncludedBodyIfAvailable } from '../utils/objects';
 import FetchResponseError from './error/FetchResponseError';
 import { FetchResponseBodySchema, FetchResponseInit, FetchResponseObject, FetchResponseStatusCode } from './types';
 
@@ -97,7 +97,7 @@ interface FetchResponseClass {
 
 const FETCH_RESPONSE_BRAND = Symbol.for('FetchResponse');
 
-const FETCH_RESPONSE_EXTRA_PROPERTIES = ['raw', 'request', 'error', 'toObject'] as const;
+const FETCH_RESPONSE_EXTRA_PROPERTIES = [FETCH_RESPONSE_BRAND, 'raw', 'request', 'error', 'toObject'] as const;
 type FetchResponseExtraProperty = (typeof FETCH_RESPONSE_EXTRA_PROPERTIES)[number];
 
 function createFetchResponseClass() {
@@ -166,6 +166,7 @@ function createFetchResponseClass() {
         }
 
         if (property === ('error' satisfies keyof FetchResponseInstance)) {
+          // We create the error lazily to preserve the stack trace from the point where it was first accessed.
           error ??= new FetchResponseError(fetchRequest, receiver as FetchResponse<Schema, Method, Path>);
           return error satisfies FetchResponseInstance['error'];
         }
@@ -183,31 +184,8 @@ function createFetchResponseClass() {
         // Fallback other properties to the original `Response` instance.
         const value = Reflect.get(target, property, target) as unknown;
 
-        const isFunctionValue =
-          (property === 'json' ||
-            property === 'formData' ||
-            property === 'text' ||
-            property === 'arrayBuffer' ||
-            property === 'blob' ||
-            property === 'bytes') &&
-          typeof value === 'function';
-
-        if (isFunctionValue) {
-          // We cache the bound function on the proxy instance to avoid re-binding it on every access.
-          const shouldDefineBoundValue = !Object.prototype.hasOwnProperty.call(response, property);
-
-          if (shouldDefineBoundValue) {
-            const boundValue = value.bind(target) as unknown;
-
-            Object.defineProperty(response, property, {
-              value: boundValue,
-              configurable: true,
-              enumerable: false,
-              writable: true,
-            });
-
-            return boundValue;
-          }
+        if (isBodyMethod(property, value)) {
+          return getOrSetBoundBodyMethod(response, property, value);
         }
 
         return value;
@@ -215,7 +193,6 @@ function createFetchResponseClass() {
 
       has(target, property) {
         return (
-          property === FETCH_RESPONSE_BRAND ||
           FETCH_RESPONSE_EXTRA_PROPERTIES.includes(property as FetchResponseExtraProperty) ||
           Reflect.has(target, property)
         );
@@ -227,9 +204,7 @@ function createFetchResponseClass() {
 
   Object.defineProperty(FetchResponseClass, Symbol.hasInstance, {
     value(instance: unknown): boolean {
-      return (
-        instance instanceof Response && FETCH_RESPONSE_BRAND in instance && instance[FETCH_RESPONSE_BRAND] === true
-      );
+      return instance instanceof Response && FETCH_RESPONSE_BRAND in instance;
     },
     writable: false,
     enumerable: false,

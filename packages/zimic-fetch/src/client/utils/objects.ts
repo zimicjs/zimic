@@ -4,6 +4,37 @@ import { PossiblePromise } from '@zimic/utils/types';
 import { FetchRequestObject } from '../request/types';
 import { FetchResponseObject } from '../response/types';
 
+const BODY_METHOD = ['json', 'formData', 'text', 'arrayBuffer', 'blob', 'bytes'] satisfies (keyof Body)[];
+type BodyMethod = (typeof BODY_METHOD)[number];
+
+export function isBodyMethod(property: string | symbol, value: unknown): value is Body[BodyMethod] {
+  return BODY_METHOD.includes(property as BodyMethod) && typeof value === 'function';
+}
+
+export function getOrSetBoundBodyMethod(
+  resource: Request | Response,
+  property: string | symbol,
+  value: Body[BodyMethod],
+) {
+  // We cache the bound function on the proxy instance to avoid re-binding it on every access.
+  const isValueAlreadyBound = Object.prototype.hasOwnProperty.call(resource, property);
+
+  if (isValueAlreadyBound) {
+    return value;
+  }
+
+  const boundValue = value.bind(resource) as unknown;
+
+  Object.defineProperty(resource, property, {
+    value: boundValue,
+    configurable: true,
+    enumerable: false,
+    writable: true,
+  });
+
+  return boundValue;
+}
+
 export function withIncludedBodyIfAvailable(
   resource: Request,
   resourceObject: FetchRequestObject,

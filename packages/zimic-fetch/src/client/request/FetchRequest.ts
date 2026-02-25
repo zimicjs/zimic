@@ -18,7 +18,7 @@ import { Default, PossiblePromise } from '@zimic/utils/types';
 import { excludeNonPathParams, joinURL } from '@zimic/utils/url';
 
 import { Fetch, FetchInput } from '../types/public';
-import { withIncludedBodyIfAvailable } from '../utils/objects';
+import { getOrSetBoundBodyMethod, isBodyMethod, withIncludedBodyIfAvailable } from '../utils/objects';
 import { FetchRequestBodySchema, FetchRequestInit, FetchRequestObject } from './types';
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request `FetchRequest` API reference} */
@@ -205,31 +205,8 @@ function createFetchRequestClass() {
         // Fallback other properties to the original `Request` instance.
         const value = Reflect.get(target, property, target) as unknown;
 
-        const isFunctionValue =
-          (property === 'json' ||
-            property === 'formData' ||
-            property === 'text' ||
-            property === 'arrayBuffer' ||
-            property === 'blob' ||
-            property === 'bytes') &&
-          typeof value === 'function';
-
-        if (isFunctionValue) {
-          // We cache the bound function on the proxy instance to avoid re-binding it on every access.
-          const shouldDefineBoundValue = !Object.prototype.hasOwnProperty.call(request, property);
-
-          if (shouldDefineBoundValue) {
-            const boundValue = value.bind(target) as unknown;
-
-            Object.defineProperty(request, property, {
-              value: boundValue,
-              configurable: true,
-              enumerable: false,
-              writable: true,
-            });
-
-            return boundValue;
-          }
+        if (isBodyMethod(property, value)) {
+          return getOrSetBoundBodyMethod(request, property, value);
         }
 
         return value;
@@ -248,7 +225,7 @@ function createFetchRequestClass() {
 
   Object.defineProperty(FetchRequestClass, Symbol.hasInstance, {
     value(instance: unknown): boolean {
-      return instance instanceof Request && FETCH_REQUEST_BRAND in instance && instance[FETCH_REQUEST_BRAND] === true;
+      return instance instanceof Request && FETCH_REQUEST_BRAND in instance;
     },
     writable: false,
     enumerable: false,
