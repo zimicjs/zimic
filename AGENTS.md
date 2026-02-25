@@ -44,14 +44,14 @@ TypeScript monorepo (pnpm + turborepo) providing HTTP integration libraries:
 
 ### Verification
 
-Run in the target package directory:
+After implementation, always verify your changes with the following commands:
 
 1. `pnpm types:check`: Type check with `tsc`
-2. `pnpm lint <pattern>`: Lint specific files or directories using `eslint`
-3. `pnpm build`: Build package with `tsup`
-4. `pnpm test <pattern>`: Run specific tests using `vitest`
+2. `pnpm lint`: Lint files or directories using `eslint`
+3. `pnpm build`: Build app/package, if the app/package has a build step
+4. `pnpm test <pattern>`: Run tests, if the app/package has any
 
-CRITICAL: Always `cd` into the package directory before running these commands.
+**CRITICAL**: execute these commands inside the target app/package directory; use `pnpm --dir <path>` if needed;
 
 ### Critical Rules
 
