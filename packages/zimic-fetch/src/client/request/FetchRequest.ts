@@ -34,7 +34,7 @@ export interface FetchRequest<
   path: AllowAnyStringInPathParams<Path>;
   method: Method;
   clone: () => FetchRequest<Schema, Method, Path>;
-  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#toObject `request.toObject()` API reference} */
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#requesttoobject `request.toObject()` API reference} */
   toObject: ((options: { includeBody: true }) => Promise<FetchRequestObject>) &
     ((options?: { includeBody?: false }) => FetchRequestObject) &
     ((options?: { includeBody?: boolean }) => PossiblePromise<FetchRequestObject>);
@@ -47,7 +47,7 @@ export namespace FetchRequest {
     path: string;
     method: HttpMethod;
     clone: () => Loose;
-    /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#toObject `request.toObject()` API reference} */
+    /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#requesttoobject `request.toObject()` API reference} */
     toObject: ((options: { includeBody: true }) => Promise<FetchRequestObject>) &
       ((options?: { includeBody?: false }) => FetchRequestObject);
   }

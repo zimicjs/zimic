@@ -31,7 +31,7 @@ export interface FetchResponsePerStatusCode<
   request: FetchRequest<Schema, Method, Path>;
   error: FetchResponseError<Schema, Method, Path>;
   clone: () => FetchResponsePerStatusCode<Schema, Method, Path, StatusCode>;
-  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response#toObject `response.toObject()` API reference} */
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response#responsetoobject `response.toObject()` API reference} */
   toObject: ((options: { includeBody: true }) => Promise<FetchResponseObject>) &
     ((options?: { includeBody?: false }) => FetchResponseObject) &
     ((options?: { includeBody?: boolean }) => PossiblePromise<FetchResponseObject>);
@@ -56,7 +56,7 @@ export namespace FetchResponse {
     request: FetchRequest.Loose;
     error: FetchResponseError<any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
     clone: () => Loose;
-    /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response#toObject `response.toObject()` API reference} */
+    /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response#responsetoobject `response.toObject()` API reference} */
     toObject: ((options: { includeBody: true }) => Promise<FetchResponseObject>) &
       ((options?: { includeBody?: false }) => FetchResponseObject);
   }
