@@ -34,7 +34,7 @@ TypeScript monorepo (pnpm + turborepo) providing HTTP integration libraries:
 
 ### During Implementation
 
-1. **Write tests first** covering all branches, error paths, and edge cases
+1. Write tests covering all branches, error paths, and edge cases
 2. Implement feature with clear, explicit naming (avoid abbreviations)
 3. Keep code simple; avoid premature optimization and unnecessary abstractions
 4. Never use `any`; leverage type inference
@@ -46,10 +46,12 @@ TypeScript monorepo (pnpm + turborepo) providing HTTP integration libraries:
 
 Run in the target package directory:
 
-- `pnpm types:check`: Type check with `tsc`
-- `pnpm lint <pattern>`: Lint specific files or directories using `eslint`
-- `pnpm test <pattern>`: Run specific tests using `vitest`
-- `pnpm build`: Build package with `tsup`
+1. `pnpm types:check`: Type check with `tsc`
+2. `pnpm lint <pattern>`: Lint specific files or directories using `eslint`
+3. `pnpm build`: Build package with `tsup`
+4. `pnpm test <pattern>`: Run specific tests using `vitest`
+
+CRITICAL: Always `cd` into the package directory before running these commands.
 
 ### Critical Rules
 
@@ -83,14 +85,6 @@ Run in the target package directory:
 - **Type Safety**: Strict TypeScript; avoid `any`; use inference
 - **Optimization**: Only when measured; avoid premature optimization
 - **CLI** (if applicable): Build to `dist/*.js` via `tsup`; use `yargs` with kebab-case options
-
-## Commit Conventions
-
-- **Format**: Conventional commits, lowercase imperative, scoped to package
-- **Examples**: `feat(interceptor): add request caching`, `fix(http): handle empty headers`
-- **Scope**: Use `root` for repository-wide changes; see `.commitlintrc.json` for all scopes
-- **Branches**: Align with commit type (e.g., `feat/123-request-caching`)
-- **PRs**: Follow same conventions; link issues; ensure all CI checks pass
 
 ## Code Review Guidelines
 
