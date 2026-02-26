@@ -701,7 +701,7 @@ describe('FetchResponse', () => {
         expect(console.warn).toHaveBeenCalledWith(
           '[@zimic/fetch]',
           'Could not include the response body because it is already used. If you access the body ' +
-            'before calling `error.toObject()`, consider reading it from a cloned response.\n\n' +
+            'before calling `toObject()`, consider reading it from a cloned response.\n\n' +
             'Learn more: https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject',
         );
 
