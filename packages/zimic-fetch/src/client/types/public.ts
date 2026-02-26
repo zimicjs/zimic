@@ -1,14 +1,49 @@
 import { HttpSchemaPath, HttpSchemaMethod, LiteralHttpSchemaPathFromNonLiteral, HttpSchema } from '@zimic/http';
 import { PossiblePromise, RequiredByKey } from '@zimic/utils/types';
 
-import FetchResponseError from '../errors/FetchResponseError';
-import { FetchRequest, FetchRequestConstructor, FetchRequestInit, FetchResponse } from './requests';
+import { FetchRequest } from '../request/FetchRequest';
+import { FetchRequestInit } from '../request/types';
+import FetchResponseError from '../response/error/FetchResponseError';
+import { FetchResponse } from '../response/FetchResponse';
+
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchrequest `fetch.Request` API reference} */
+export interface FetchRequestConstructor<Schema extends HttpSchema> {
+  new <
+    Method extends HttpSchemaMethod<Schema>,
+    Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
+    Redirect extends RequestRedirect = 'follow',
+  >(
+    input: Path | URL,
+    init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Redirect>,
+  ): FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
+
+  new <
+    Method extends HttpSchemaMethod<Schema>,
+    Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
+    Redirect extends RequestRedirect = 'follow',
+  >(
+    input: FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
+    init?: Omit<
+      FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Redirect>,
+      'baseURL' | 'searchParams'
+    >,
+  ): FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
+
+  new <
+    Method extends HttpSchemaMethod<Schema>,
+    Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
+    Redirect extends RequestRedirect = 'follow',
+  >(
+    input: FetchInput<Schema, Method, Path>,
+    init?: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Redirect>,
+  ): FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
+}
 
 /** @see {@link  https://zimic.dev/docs/fetch/api/fetch `fetch` API reference} */
 export type FetchInput<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
+  Path extends HttpSchemaPath<Schema, Method>,
 > = Path | URL | FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference} */

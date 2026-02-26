@@ -4,10 +4,10 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import FetchResponseError from '../errors/FetchResponseError';
 import createFetch from '../factory';
+import FetchResponseError from '../response/error/FetchResponseError';
+import { FetchResponse, FetchResponsePerStatusCode } from '../response/FetchResponse';
 import { Fetch, InferFetchSchema } from '../types/public';
-import { FetchResponse, FetchResponsePerStatusCode } from '../types/requests';
 
 describe('FetchClient > Types', () => {
   const baseURL = 'http://localhost:3000';
@@ -64,8 +64,8 @@ describe('FetchClient > Types', () => {
 
       expect(await response.json()).toEqual(users);
 
-      expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
+      expect(response).toBeInstanceOf(FetchResponse);
+      expectTypeOf(response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
@@ -95,8 +95,8 @@ describe('FetchClient > Types', () => {
 
       expectTypeOf(response.status).toEqualTypeOf<200 | 201 | 204>();
 
-      expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<
+      expect(response).toBeInstanceOf(FetchResponse);
+      expectTypeOf(response).toEqualTypeOf<
         | FetchResponsePerStatusCode<Schema, 'GET', '/users', 200>
         | FetchResponsePerStatusCode<Schema, 'GET', '/users', 201>
         | FetchResponsePerStatusCode<Schema, 'GET', '/users', 204>

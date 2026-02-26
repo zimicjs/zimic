@@ -41,7 +41,10 @@ export async function usingHttpInterceptor<Schema extends HttpSchema>(
   interceptorOptions: HttpInterceptorOptions,
   callback: UsingInterceptorCallback<Schema>,
 ): Promise<void> {
-  const interceptor = createHttpInterceptor<Schema>(interceptorOptions);
+  const interceptor = createHttpInterceptor<Schema>({
+    ...interceptorOptions,
+    requestSaving: { enabled: true },
+  });
 
   await interceptor.start();
 
