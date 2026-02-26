@@ -344,8 +344,8 @@ describe('FetchRequest', () => {
       body: JSON.stringify(users[0]),
     });
 
-    // These methods bes bound the the internal request instance because they access internal state. However,
-    // this binding bes done only once to avoid unnecessary memory allocation on every access.
+    // These methods are bound to the internal request instance because they access internal state. However,
+    // this binding should be done only once to avoid unnecessary memory allocation on every access.
     expect(request.json).toBe(request.json);
     expect(request.text).toBe(request.text);
     expect(request.formData).toBe(request.formData);

@@ -399,8 +399,8 @@ describe('FetchResponse', () => {
       headers: { 'content-type': 'application/json' },
     });
 
-    // These methods are bound to the internal response instance because they access internal state. However,
-    // this binding is done only once to avoid unnecessary memory allocation on every access.
+    // These methods are bound to the internal request instance because they access internal state. However,
+    // this binding should be done only once to avoid unnecessary memory allocation on every access.
     expect(response.json).toBe(response.json);
     expect(response.text).toBe(response.text);
     expect(response.formData).toBe(response.formData);
