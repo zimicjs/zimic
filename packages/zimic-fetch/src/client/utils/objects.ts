@@ -53,7 +53,7 @@ export function withIncludedBodyIfAvailable(
     console.warn(
       '[@zimic/fetch]',
       `Could not include the ${resourceType} body because it is already used. ` +
-        'If you access the body before calling `error.toObject()`, consider reading it from a cloned ' +
+        'If you access the body before calling `toObject()`, consider reading it from a cloned ' +
         `${resourceType}.\n\nLearn more: https://zimic.dev/docs/fetch/api/fetch-response-error#errortoobject`,
     );
     return resourceObject;
