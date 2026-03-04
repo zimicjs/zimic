@@ -48,8 +48,9 @@ jobs:
         with:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: '"./{apps,packages}/*...[HEAD^1]" "zimic-example*...[HEAD^1]"'
-          build: '"./apps/*^...[HEAD^1]" "./packages/*...[HEAD^1]"'
+          install:
+            '"./{apps,packages}/*...[HEAD^1]" "zimic-example*...[HEAD^1]" "zimic-example-with-openapi-typegen..."'
+          build: '"./apps/*^...[HEAD^1]" "./packages/*...[HEAD^1]" "zimic-example-with-openapi-typegen^..."'
 
       - name: Check formatting style
         uses: ./.github/actions/zimic-style-check
