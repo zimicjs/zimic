@@ -85,6 +85,7 @@ abstract class HttpInterceptorWorker {
     if (!this.isRunning) {
       return;
     }
+
     if (this.stoppingPromise) {
       return this.stoppingPromise;
     }
