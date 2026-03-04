@@ -33,8 +33,8 @@ jobs:
         with:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: '"./{apps,packages}/*..." "zimic-example*..."'
-          build: '"./packages/*"'
+          install: '"@zimic/*" "zimic-*..."'
+          build: '@zimic/*'
 
       - name: Check formatting style and save prettier cache
         uses: ./.github/actions/zimic-style-check
