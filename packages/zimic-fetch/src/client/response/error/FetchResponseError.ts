@@ -15,7 +15,7 @@ class FetchResponseError<
     public request: FetchRequest<Schema, Method, Path>,
     public response: FetchResponse<Schema, Method, Path>,
   ) {
-    super(`${request.method} ${request.url} failed with status ${response.status}: ${response.statusText}`);
+    super(`${request.method} ${request.url} failed with status ${response.status}.`);
     this.name = 'FetchResponseError';
   }
 

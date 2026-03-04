@@ -81,7 +81,7 @@ describe('FetchClient > Errors > toObject', () => {
         expectTypeOf(errorObject).toEqualTypeOf<FetchResponseErrorObject>();
 
         expect(errorObject).toEqual<FetchResponseErrorObject>({
-          message: `POST ${joinURL(baseURL, '/users')} failed with status 409: `,
+          message: `POST ${joinURL(baseURL, '/users')} failed with status 409.`,
           name: 'FetchResponseError',
           request: {
             url: joinURL(baseURL, '/users'),
@@ -161,7 +161,7 @@ describe('FetchClient > Errors > toObject', () => {
         const errorObject = await errorObjectPromise;
 
         expect(errorObject).toEqual<FetchResponseErrorObject>({
-          message: `POST ${joinURL(baseURL, '/users')} failed with status 409: `,
+          message: `POST ${joinURL(baseURL, '/users')} failed with status 409.`,
           name: 'FetchResponseError',
           request: {
             url: joinURL(baseURL, '/users'),
@@ -1189,7 +1189,7 @@ describe('FetchClient > Errors > toObject', () => {
       const errorObject = await errorObjectPromise;
 
       expect(errorObject).toEqual<FetchResponseErrorObject>({
-        message: `POST ${joinURL(baseURL, '/users')} failed with status 409: `,
+        message: `POST ${joinURL(baseURL, '/users')} failed with status 409.`,
         name: 'FetchResponseError',
         request: {
           url: joinURL(baseURL, '/users'),
@@ -1344,7 +1344,7 @@ describe('FetchClient > Errors > toObject', () => {
       expectTypeOf(errorObject).toEqualTypeOf<FetchResponseErrorObject>();
 
       expect(errorObject).toMatchObject<DeepPartial<FetchResponseErrorObject>>({
-        message: `GET ${joinURL(baseURL, '/users?page=1&limit=10')} failed with status 401: `,
+        message: `GET ${joinURL(baseURL, '/users?page=1&limit=10')} failed with status 401.`,
         request: {
           url: joinURL(baseURL, '/users?page=1&limit=10'),
         },
