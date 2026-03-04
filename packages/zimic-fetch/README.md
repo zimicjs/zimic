@@ -53,8 +53,8 @@
 - :muscle: **Developer experience**
 
   Define default options to apply to your requests, such as a base URL, headers, search parameters, and more. Inspect
-  and modify requests and responses using [`onRequest`](https://zimic.dev/docs/fetch/api/fetch#onrequest) and
-  [`onResponse`](https://zimic.dev/docs/fetch/api/fetch#onresponse) listeners.
+  and modify requests and responses using [`onRequest`](https://zimic.dev/docs/fetch/api/fetch#fetchonrequest) and
+  [`onResponse`](https://zimic.dev/docs/fetch/api/fetch#fetchonresponse) listeners.
 
 **Learn more**:
 

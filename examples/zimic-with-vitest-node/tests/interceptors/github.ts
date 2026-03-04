@@ -1,6 +1,6 @@
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-import { GITHUB_API_BASE_URL, GitHubSchema } from '../../src/clients/github';
+import { GITHUB_API_BASE_URL, GitHubSchema } from '@/clients/github';
 
 const githubInterceptor = createHttpInterceptor<GitHubSchema>({
   baseURL: GITHUB_API_BASE_URL,

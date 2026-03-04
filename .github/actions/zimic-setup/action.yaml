@@ -97,7 +97,18 @@ runs:
 
     - name: Install dependencies
       shell: bash
-      run: pnpm install --prefer-offline --frozen-lockfile ${{ steps.filters.outputs.full-install }}
+      run: |
+        pnpm install --prefer-offline --frozen-lockfile ${{ steps.filters.outputs.full-install }}
+
+        echo 'Checking if pnpm-lock.yaml is up to date...' >&2
+
+        if git diff --exit-code pnpm-lock.yaml; then
+          echo 'pnpm-lock.yaml is up to date.'
+        else
+          echo 'pnpm-lock.yaml is out of date. It was likely changed by scripts/preinstall.mjs.' >&2
+          echo 'Please run `pnpm install` locally and commit the changes.' >&2
+          exit 1
+        fi
 
     - name: Get playwright information
       id: playwright

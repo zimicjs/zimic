@@ -4,10 +4,10 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import FetchResponseError from '../errors/FetchResponseError';
 import createFetch from '../factory';
+import FetchResponseError from '../response/error/FetchResponseError';
+import { FetchResponse, FetchResponsePerStatusCode } from '../response/FetchResponse';
 import { Fetch, InferFetchSchema } from '../types/public';
-import { FetchResponse, FetchResponsePerStatusCode } from '../types/requests';
 
 describe('FetchClient > Types', () => {
   const baseURL = 'http://localhost:3000';
@@ -64,8 +64,8 @@ describe('FetchClient > Types', () => {
 
       expect(await response.json()).toEqual(users);
 
-      expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
+      expect(response).toBeInstanceOf(FetchResponse);
+      expectTypeOf(response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
@@ -81,7 +81,8 @@ describe('FetchClient > Types', () => {
         | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 401>)
       >();
 
-      expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'> | null>();
+      expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
+      expect(response.error).toEqual(new FetchResponseError<Schema, 'GET', '/users'>(response.request, response));
 
       expect(response.ok).toBe(true);
 
@@ -89,15 +90,13 @@ describe('FetchClient > Types', () => {
        * response.ok is true. This if is necessary to narrow the response to a successful type. */
       if (!response.ok) {
         expectTypeOf(response.status).toEqualTypeOf<400 | 401>();
-        expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
-
         throw response.error;
       }
 
       expectTypeOf(response.status).toEqualTypeOf<200 | 201 | 204>();
 
-      expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<
+      expect(response).toBeInstanceOf(FetchResponse);
+      expectTypeOf(response).toEqualTypeOf<
         | FetchResponsePerStatusCode<Schema, 'GET', '/users', 200>
         | FetchResponsePerStatusCode<Schema, 'GET', '/users', 201>
         | FetchResponsePerStatusCode<Schema, 'GET', '/users', 204>
@@ -111,8 +110,8 @@ describe('FetchClient > Types', () => {
         | (() => FetchResponsePerStatusCode<Schema, 'GET', '/users', 204>)
       >();
 
-      expectTypeOf(response.error).toEqualTypeOf<null>();
-      expect(response.error).toBe(null);
+      expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
+      expect(response.error).toEqual(new FetchResponseError<Schema, 'GET', '/users'>(response.request, response));
     });
   });
 

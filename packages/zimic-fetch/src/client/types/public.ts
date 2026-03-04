@@ -1,19 +1,54 @@
 import { HttpSchemaPath, HttpSchemaMethod, LiteralHttpSchemaPathFromNonLiteral, HttpSchema } from '@zimic/http';
 import { PossiblePromise, RequiredByKey } from '@zimic/utils/types';
 
-import FetchResponseError from '../errors/FetchResponseError';
-import { FetchRequest, FetchRequestConstructor, FetchRequestInit, FetchResponse } from './requests';
+import { FetchRequest } from '../request/FetchRequest';
+import { FetchRequestInit } from '../request/types';
+import FetchResponseError from '../response/error/FetchResponseError';
+import { FetchResponse } from '../response/FetchResponse';
+
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchrequest `fetch.Request` API reference} */
+export interface FetchRequestConstructor<Schema extends HttpSchema> {
+  new <
+    Method extends HttpSchemaMethod<Schema>,
+    Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
+    Redirect extends RequestRedirect = 'follow',
+  >(
+    input: Path | URL,
+    init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Redirect>,
+  ): FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
+
+  new <
+    Method extends HttpSchemaMethod<Schema>,
+    Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
+    Redirect extends RequestRedirect = 'follow',
+  >(
+    input: FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
+    init?: Omit<
+      FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Redirect>,
+      'baseURL' | 'searchParams'
+    >,
+  ): FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
+
+  new <
+    Method extends HttpSchemaMethod<Schema>,
+    Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
+    Redirect extends RequestRedirect = 'follow',
+  >(
+    input: FetchInput<Schema, Method, Path>,
+    init?: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Redirect>,
+  ): FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
+}
 
 /** @see {@link  https://zimic.dev/docs/fetch/api/fetch `fetch` API reference} */
 export type FetchInput<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
+  Path extends HttpSchemaPath<Schema, Method>,
 > = Path | URL | FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference} */
 export interface Fetch<Schema extends HttpSchema>
-  extends Pick<FetchOptions<Schema>, 'onRequest' | 'onResponse'>, FetchDefaults {
+  extends Pick<FetchOptions<Schema>, 'onRequest' | 'onResponse'>, FetchDefaults<Schema> {
   <
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
@@ -39,7 +74,7 @@ export interface Fetch<Schema extends HttpSchema>
    * @deprecated Consider accessing the default options directly from the fetch instance.
    * @see {@link https://zimic.dev/docs/fetch/api/fetch#fetch-defaults `fetch` defaults}
    */
-  defaults: FetchDefaults;
+  defaults: FetchDefaults<Schema>;
 
   /** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchloose `fetch.loose`} */
   loose: Fetch.Loose;
@@ -47,21 +82,21 @@ export interface Fetch<Schema extends HttpSchema>
   /** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchrequest `fetch.Request`} */
   Request: FetchRequestConstructor<Schema>;
 
-  /** @see {@link https://zimic.dev/docs/fetch/api/fetch#isrequest `fetch.isRequest`} */
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchisrequest `fetch.isRequest`} */
   isRequest: <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.Literal<Schema, Method>>(
     request: unknown,
     method: Method,
     path: Path,
   ) => request is FetchRequest<Schema, Method, Path>;
 
-  /** @see {@link https://zimic.dev/docs/fetch/api/fetch#isresponseerror `fetch.isResponse`} */
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchisresponse `fetch.isResponse`} */
   isResponse: <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.Literal<Schema, Method>>(
     response: unknown,
     method: Method,
     path: Path,
   ) => response is FetchResponse<Schema, Method, Path>;
 
-  /** @see {@link https://zimic.dev/docs/fetch/api/fetch#isresponseerror `fetch.isResponseError`} */
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch#fetchisresponseerror `fetch.isResponseError`} */
   isResponseError: <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.Literal<Schema, Method>>(
     error: unknown,
     method: Method,
@@ -78,7 +113,7 @@ export namespace Fetch {
 }
 
 /** @see {@link https://zimic.dev/docs/fetch/api/create-fetch `createFetch` API reference} */
-export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchRequestInit.Defaults, 'method'> {
+export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchRequestInit.Defaults<Schema>, 'method'> {
   /** @see {@link https://zimic.dev/docs/fetch/api/create-fetch#onrequest `createFetch.onRequest`} API reference */
   onRequest?: (this: Fetch<Schema>, request: FetchRequest.Loose) => PossiblePromise<Request>;
 
@@ -91,7 +126,10 @@ export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchReque
  *
  * @see {@link https://zimic.dev/docs/fetch/api/fetch `fetch` API reference}
  */
-export type FetchDefaults = RequiredByKey<FetchRequestInit.Defaults, 'headers' | 'searchParams'>;
+export type FetchDefaults<Schema extends HttpSchema = HttpSchema> = RequiredByKey<
+  FetchRequestInit.Defaults<Schema>,
+  'headers' | 'searchParams'
+>;
 
 /**
  * Infers the schema of a {@link https://zimic.dev/docs/fetch/api/fetch fetch instance}.

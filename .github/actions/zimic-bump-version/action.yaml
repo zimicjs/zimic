@@ -64,7 +64,7 @@ runs:
         git config user.name '${{ inputs.commit-user-name }}'
         git config user.email '${{ inputs.commit-user-email }}'
 
-        git add --all
+        git add package.json
         git commit -m "chore(release): $projectName@$bumpedVersion"
 
         echo 'Pushing changes...'

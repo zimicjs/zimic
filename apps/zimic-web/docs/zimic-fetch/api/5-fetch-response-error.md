@@ -201,3 +201,5 @@ const errorObject = await response.error.toObject({
 **Related**:
 
 - [Handling errors](/docs/zimic-fetch/guides/6-errors.md)
+- [`request.toObject()`](/docs/zimic-fetch/api/3-fetch-request.md#requesttoobject)
+- [`response.toObject()`](/docs/zimic-fetch/api/4-fetch-response.md#responsetoobject)

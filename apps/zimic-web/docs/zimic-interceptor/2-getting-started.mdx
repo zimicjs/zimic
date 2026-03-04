@@ -40,7 +40,7 @@ different browsers.
 `@zimic/interceptor` requires [TypeScript](https://www.typescriptlang.org) >= 5.0, with the following configuration:
 
 <Tabs groupId="runtime-environments">
-  <TabItem value="client" label="Client side">
+  <TabItem value="client-typescript-5" label="Client (TypeScript 5)">
 
 ```json title='tsconfig.json'
 {
@@ -54,7 +54,21 @@ different browsers.
 ```
 
   </TabItem>
-  <TabItem value="server" label="Server side">
+  <TabItem value="client-typescript-6" label="Client (TypeScript 6)">
+
+```json title='tsconfig.json'
+{
+  "compilerOptions": {
+    // highlight-start
+    "strict": true,
+    "lib": ["esnext", "dom"]
+    // highlight-end
+  }
+}
+```
+
+  </TabItem>
+  <TabItem value="server-typescript-5" label="Server (TypeScript 5)">
 
 ```json title='tsconfig.json'
 {
@@ -62,6 +76,20 @@ different browsers.
     // highlight-start
     "strict": true,
     "lib": ["esnext", "webworker", "webworker.iterable"]
+    // highlight-end
+  }
+}
+```
+
+  </TabItem>
+  <TabItem value="server-typescript-6" label="Server (TypeScript 6)">
+
+```json title='tsconfig.json'
+{
+  "compilerOptions": {
+    // highlight-start
+    "strict": true,
+    "lib": ["esnext", "webworker"]
     // highlight-end
   }
 }
@@ -149,7 +177,7 @@ The schema represents the structure of your API, including the paths, methods, r
 
 For APIs with an [OpenAPI documentation](https://www.openapis.org) (e.g. [Swagger](https://swagger.io)), the
 [`zimic-http typegen` CLI](/docs/zimic-http/guides/2-typegen.mdx) can automatically infer the types and generate the
-schema for you. This is a great way to keep your schema is up to date and save time on manual type definitions.
+schema for you. This is a great way to keep your schema up to date and save time on manual type definitions.
 
 :::
 
@@ -472,7 +500,7 @@ const handler = interceptor
 // Run the application and make requests...
 
 //  highlight-start
-console.log(handler.requests); // 1
+console.log(handler.requests.length); // 1
 
 console.log(handler.requests[0].headers.get('authorization')); // 'Bearer my-token'
 
@@ -504,7 +532,7 @@ const handler = await interceptor
 // Run the application and make requests...
 
 //  highlight-start
-console.log(handler.requests); // 1
+console.log(handler.requests.length); // 1
 
 console.log(handler.requests[0].headers.get('authorization')); // 'Bearer my-token'
 

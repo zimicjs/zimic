@@ -15,7 +15,7 @@ automatically type your requests and responses with [`@zimic/fetch`](/docs/zimic
 
 For APIs with an [OpenAPI documentation](https://www.openapis.org) (e.g. [Swagger](https://swagger.io)), the
 [`zimic-http typegen` CLI](/docs/zimic-http/guides/2-typegen.mdx) can automatically infer the types and generate the
-schema for you. This is a great way to keep your schema is up to date and save time on manual type definitions.
+schema for you. This is a great way to keep your schema up to date and save time on manual type definitions.
 
 :::
 

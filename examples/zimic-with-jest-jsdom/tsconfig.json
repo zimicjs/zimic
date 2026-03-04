@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "lib": ["esnext", "dom", "dom.iterable"],
+    "lib": ["esnext", "dom"],
     "target": "esnext",
     "module": "nodenext",
     "incremental": true,
@@ -10,7 +10,11 @@
     "skipLibCheck": true,
     "pretty": true,
     "strict": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@tests/*": ["./tests/*"]
+    }
   },
   "include": ["**/*.ts", "**/*.mts", "tests/resolver.js"],
   "exclude": ["node_modules"]

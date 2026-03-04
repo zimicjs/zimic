@@ -6,7 +6,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { expectResponseStatus } from '@tests/utils/requests';
 
 import createFetch from '../factory';
-import { FetchRequest } from '../types/requests';
+import { FetchRequest } from '../request/FetchRequest';
 
 describe('FetchClient > Bodies', () => {
   const baseURL = 'http://localhost:3000';
@@ -90,8 +90,8 @@ describe('FetchClient > Bodies', () => {
         // @ts-expect-error Forcing some headers
         new fetch.Request('/users', { method: 'POST', body: {} }),
       ]) {
-        expect(request).toBeInstanceOf(Request);
-        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+        expect(request).toBeInstanceOf(FetchRequest);
+        expectTypeOf(request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
 
@@ -143,8 +143,8 @@ describe('FetchClient > Bodies', () => {
         // @ts-expect-error Forcing some headers
         new fetch.Request('/users', { method: 'POST', body: {} }),
       ]) {
-        expect(request).toBeInstanceOf(Request);
-        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+        expect(request).toBeInstanceOf(FetchRequest);
+        expectTypeOf(request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
 
@@ -198,8 +198,8 @@ describe('FetchClient > Bodies', () => {
         // @ts-expect-error Forcing some headers
         new fetch.Request('/users', { method: 'POST', headers, body: {} }),
       ]) {
-        expect(request).toBeInstanceOf(Request);
-        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+        expect(request).toBeInstanceOf(FetchRequest);
+        expectTypeOf(request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
 

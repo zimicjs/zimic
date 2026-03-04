@@ -25,7 +25,7 @@ export default [
 
     languageOptions: {
       parser: typescriptParser,
-      ecmaVersion: 2020,
+      ecmaVersion: 2025,
       sourceType: 'module',
       parserOptions: {
         ecmaFeatures: { ts: true, tsx: true },
@@ -238,7 +238,8 @@ export default [
       '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
       '@typescript-eslint/no-floating-promises': ['warn', { ignoreVoid: true }],
       '@typescript-eslint/adjacent-overload-signatures': 'error',
-      '@typescript-eslint/only-throw-error': 'error',
+      // ESLint 9 is causing false positives with TypeScript 6 in this rule. Let's disable it for now.
+      '@typescript-eslint/only-throw-error': 'off',
       '@typescript-eslint/no-meaningless-void-operator': 'error',
       '@typescript-eslint/no-useless-empty-export': 'warn',
       '@typescript-eslint/non-nullable-type-assertion-style': 'warn',
@@ -252,7 +253,6 @@ export default [
       '@typescript-eslint/no-duplicate-enum-values': 'warn',
       '@typescript-eslint/no-for-in-array': 'error',
       '@typescript-eslint/no-unnecessary-qualifier': 'warn',
-      '@typescript-eslint/no-redundant-type-constituents': 'warn',
       '@typescript-eslint/no-invalid-this': ['error', {}],
       '@typescript-eslint/no-use-before-define': 'warn',
       '@typescript-eslint/no-dupe-class-members': 'error',

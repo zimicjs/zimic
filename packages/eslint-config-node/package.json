@@ -11,11 +11,11 @@
   },
   "dependencies": {
     "eslint-plugin-import": "^2.32.0",
-    "@eslint/compat": "^2.0.1",
+    "@eslint/compat": "^2.0.2",
     "@zimic/eslint-config": "workspace:*"
   },
   "peerDependencies": {
-    "eslint": ">=9.0.0",
-    "typescript": ">=5.0.0"
+    "eslint": "^9.0.0",
+    "typescript": "^5.0.0 || ^6.0.0 || ^6.0.0-beta"
   }
 }

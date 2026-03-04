@@ -24,7 +24,6 @@ export default [
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-redundant-type-constituents': 'off',
     },
   },
 ];

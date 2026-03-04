@@ -12,13 +12,24 @@ export type IfNever<Type, Yes, No = Type> = [Type] extends [never] ? Yes : No;
 
 export type PossiblePromise<Type> = Type | PromiseLike<Type>;
 
+/** Converts a union type to an intersection type. For example, `A | B` becomes `A & B`. */
 export type UnionToIntersection<Union> = (Union extends unknown ? (union: Union) => void : never) extends (
   intersectedUnion: infer IntersectedUnion,
 ) => void
   ? IntersectedUnion
   : never;
 
+/**
+ * Determines if a union type has more than one type in it. If the union is a single type, it evaluates to `false`;
+ * otherwise, it evaluates to `true`.
+ */
 export type UnionHasMoreThanOneType<Union> = [UnionToIntersection<Union>] extends [never] ? true : false;
+
+/**
+ * Extracts the values of a specific key from a union of types. If the key does not exist in a type within the union, it
+ * evaluates to `never` for that type.
+ */
+export type IndexUnion<Union, Key> = Union extends Union ? (Key extends keyof Union ? Union[Key] : never) : never;
 
 export type Prettify<Type> = {
   [Key in keyof Type]: Type[Key];
