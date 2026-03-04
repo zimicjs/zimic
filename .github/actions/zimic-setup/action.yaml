@@ -16,10 +16,13 @@ inputs:
     description: Turbo remote cache team
     required: false
   install:
-    description: Filter to install the dependencies of a specific app or package
+    description: Filter to install the dependencies of specific apps or packages
     required: false
   build:
-    description: Filter to build the dependencies of a specific app or package
+    description: Filter to build specific apps or packages
+    required: false
+  setup:
+    description: Filter to set up specific apps or packages for testing
     required: false
 
 outputs:
@@ -91,9 +94,19 @@ runs:
           buildFilters="$(composeFilterOptions ${{ inputs.build }})"
         fi
 
+        if [[ '${{ inputs.setup }}' == '' ]]; then
+          setupFilters=''
+          fullSetupFilters='--filter zimic-root'
+        else
+          setupFilters="$(composeFilterOptions ${{ inputs.setup }})"
+          fullSetupFilters="--filter zimic-root $setupFilters"
+        fi
+
         echo "install=$installFilters" >> $GITHUB_OUTPUT
         echo "full-install=$fullInstallFilters" >> $GITHUB_OUTPUT
         echo "build=$buildFilters" >> $GITHUB_OUTPUT
+        echo "setup=$setupFilters" >> $GITHUB_OUTPUT
+        echo "full-setup=$fullSetupFilters" >> $GITHUB_OUTPUT
 
     - name: Install dependencies
       shell: bash
@@ -133,23 +146,22 @@ runs:
           ${{ runner.os }}-playwright-
 
     - name: Build packages
+      if: ${{ steps.filters.outputs.build != '' }}
       shell: bash
       run: |
-        if [[ '${{ steps.filters.outputs.build }}' != '' ]]; then
-          pnpm turbo build ${{ steps.filters.outputs.build }}
-          pnpm install --offline ${{ steps.filters.outputs.full-install }}
-        fi
+        pnpm turbo build ${{ steps.filters.outputs.build }}
       env:
         NODE_VERSION: ${{ inputs.node-version }}
         TURBO_TOKEN: ${{ inputs.turbo-token }}
         TURBO_TEAM: ${{ inputs.turbo-team }}
         TURBO_LOG_ORDER: stream
 
-    - name: Set up dependencies
+    - name: Set up dependencies for testing
+      if: ${{ steps.filters.outputs.setup != '' }}
       shell: bash
       run: |
         pnpm run --recursive --if-present --stream \
-          ${{ steps.filters.outputs.full-install }} \
+          ${{ steps.filters.outputs.full-setup }} \
           setup
       env:
         NODE_VERSION: ${{ inputs.node-version }}
