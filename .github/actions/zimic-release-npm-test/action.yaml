@@ -35,7 +35,7 @@ runs:
       with:
         turbo-token: ${{ inputs.turbo-token }}
         turbo-team: ${{ inputs.turbo-team }}
-        install: '"zimic-test-client..." "zimic-example*..."'
+        install: '"@zimic/*..." "zimic-test-client..." "zimic-example*..."'
         build: '"zimic-test-client^..." "zimic-example*^..."'
         setup: '"zimic-test-client..." "zimic-example*..."'
 
