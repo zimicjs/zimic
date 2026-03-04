@@ -96,17 +96,14 @@ runs:
 
         if [[ '${{ inputs.setup }}' == '' ]]; then
           setupFilters=''
-          fullSetupFilters='--filter zimic-root'
         else
           setupFilters="$(composeFilterOptions ${{ inputs.setup }})"
-          fullSetupFilters="--filter zimic-root $setupFilters"
         fi
 
         echo "install=$installFilters" >> $GITHUB_OUTPUT
         echo "full-install=$fullInstallFilters" >> $GITHUB_OUTPUT
         echo "build=$buildFilters" >> $GITHUB_OUTPUT
         echo "setup=$setupFilters" >> $GITHUB_OUTPUT
-        echo "full-setup=$fullSetupFilters" >> $GITHUB_OUTPUT
 
     - name: Install dependencies
       shell: bash
@@ -149,7 +146,9 @@ runs:
       if: ${{ steps.filters.outputs.build != '' }}
       shell: bash
       run: |
-        pnpm turbo build ${{ steps.filters.outputs.build }}
+        pnpm turbo build \
+          ${{ steps.filters.outputs.build }} \
+          --concurrency 100%
       env:
         NODE_VERSION: ${{ inputs.node-version }}
         TURBO_TOKEN: ${{ inputs.turbo-token }}
@@ -160,9 +159,9 @@ runs:
       if: ${{ steps.filters.outputs.setup != '' }}
       shell: bash
       run: |
-        pnpm run --recursive --if-present --stream \
-          ${{ steps.filters.outputs.full-setup }} \
-          setup
+        pnpm turbo setup \
+          ${{ steps.filters.outputs.setup }} \
+          --concurrency 100%
       env:
         NODE_VERSION: ${{ inputs.node-version }}
         TURBO_TOKEN: ${{ inputs.turbo-token }}
