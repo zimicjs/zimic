@@ -149,6 +149,8 @@ runs:
         pnpm turbo build \
           ${{ steps.filters.outputs.build }} \
           --concurrency 100%
+
+        pnpm install --offline ${{ steps.filters.outputs.full-install }}
       env:
         NODE_VERSION: ${{ inputs.node-version }}
         TURBO_TOKEN: ${{ inputs.turbo-token }}
