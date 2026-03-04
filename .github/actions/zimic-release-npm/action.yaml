@@ -35,7 +35,7 @@ runs:
       uses: ./.github/actions/zimic-setup
       with:
         node-registry-url: https://registry.npmjs.org
-        install: ${{ inputs.project-name }}...
+        install: '"@zimic/*..." "${{ inputs.project-name }}..."'
         build: ${{ inputs.project-name }}^...
 
     - name: Build ${{ inputs.project-name }}
