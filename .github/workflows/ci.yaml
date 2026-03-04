@@ -48,8 +48,7 @@ jobs:
         with:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install:
-            '"./packages/*..." "./apps/*...[HEAD^1]" "zimic-example*...[HEAD^1]" "zimic-example-with-openapi-typegen..."'
+          install: '"./packages/*..." "./apps/*..." "zimic-example*..." "zimic-example-with-openapi-typegen..."'
           build: '"./packages/*...[HEAD^1]" "./apps/*^...[HEAD^1]" "zimic-example-with-openapi-typegen^..."'
 
       - name: Check formatting style
@@ -144,7 +143,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: '"./packages/*..." "./apps/*...[HEAD^1]" "zimic-example*...[HEAD^1]"'
+          install: '"./packages/*..." "./apps/*..." "zimic-example*..."'
           build: '"./packages/*...[HEAD^1]" "./apps/*^...[HEAD^1]" "zimic-example*^...[HEAD^1]"'
           setup: '"./packages/*...[HEAD^1]" "./apps/*...[HEAD^1]" "zimic-example*...[HEAD^1]"'
 
@@ -211,7 +210,7 @@ jobs:
         with:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: '"./packages/*..." "./apps/*...[HEAD^1]" "zimic-example*...[HEAD^1]"'
+          install: '"./packages/*..." "./apps/*..." "zimic-example*..."'
           build: '"./packages/*...[HEAD^1]" "./apps/*^...[HEAD^1]" "zimic-example*^...[HEAD^1]"'
 
       - name: Check if types need to be checked
