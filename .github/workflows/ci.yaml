@@ -18,17 +18,16 @@ env:
   CI: true
 
   TURBO_TOKEN:
-    ${{ !(github.event_name == 'pull_request' && (startsWith(github.event.pull_request.base.ref, 'v') ||
-    startsWith(github.event.pull_request.base.ref, '@zimic/'))) && secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
+    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, '@zimic/')) &&
+    secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
   TURBO_TEAM:
-    ${{ !(github.event_name == 'pull_request' && (startsWith(github.event.pull_request.base.ref, 'v') ||
-    startsWith(github.event.pull_request.base.ref, '@zimic/'))) && secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
+    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, '@zimic/')) &&
+    secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
 
   TURBO_LOG_ORDER: stream
   TURBO_FILTERS:
-    ${{ github.event_name == 'pull_request' && (startsWith(github.event.pull_request.base.ref, 'v') ||
-    startsWith(github.event.pull_request.base.ref, '@zimic/')) && '--filter "./{apps,packages}/*" --filter
-    "zimic-example*"' || '--filter "...[HEAD^1]"' }}
+    ${{ github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, '@zimic/') && '--filter
+    "./{apps,packages}/*" --filter "zimic-example*"' || '--filter "...[HEAD^1]"' }}
 
 jobs:
   ci-general:
@@ -49,8 +48,8 @@ jobs:
         with:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: '"./{apps,packages}/*..." "zimic-example*..."'
-          build: '"./packages/*"'
+          install: '"@zimic/*..." "zimic-*..."'
+          build: '"@zimic/*...[HEAD^1]" "zimic-*^...[HEAD^1]" "zimic-example-with-openapi-typegen^..."'
 
       - name: Check formatting style
         uses: ./.github/actions/zimic-style-check
@@ -144,8 +143,9 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: '"./{apps,packages}/*..." "zimic-example*..."'
-          build: '"./packages/*"'
+          install: '"@zimic/*..." "zimic-*..."'
+          build: '"@zimic/*...[HEAD^1]" "zimic-*^...[HEAD^1]"'
+          setup: '"@zimic/*...[HEAD^1]" "zimic-*...[HEAD^1]"'
 
       - name: Run tests
         run: |
@@ -210,8 +210,8 @@ jobs:
         with:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: '"./{apps,packages}/*..." "zimic-example*..."'
-          build: '"./packages/*"'
+          install: '"@zimic/*..." "zimic-*..."'
+          build: '"@zimic/*...[HEAD^1]" "zimic-*^...[HEAD^1]"'
 
       - name: Check if types need to be checked
         id: should-check-types

@@ -4,6 +4,10 @@
   "daemon": false,
   "globalEnv": ["NODE_VERSION"],
   "tasks": {
+    "setup": {
+      "cache": false
+    },
+
     "dev": {
       "cache": false,
       "persistent": true,

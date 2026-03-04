@@ -33,10 +33,11 @@ runs:
       uses: ./.github/actions/zimic-setup
       id: zimic-setup
       with:
-        install: '"zimic-test-client..." "zimic-example*..."'
-        build: '"zimic-test-client^..." "zimic-example*^..."'
         turbo-token: ${{ inputs.turbo-token }}
         turbo-team: ${{ inputs.turbo-team }}
+        install: '"zimic-test-client..." "zimic-example*..."'
+        build: '"zimic-test-client^..." "zimic-example*^..."'
+        setup: '"zimic-test-client..." "zimic-example*..."'
 
     - name: Change package versions for testing
       shell: bash
