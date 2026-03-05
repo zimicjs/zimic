@@ -85,16 +85,16 @@ error.toObject(options);
 
 **Arguments**:
 
-1. `options`: `FetchResponseErrorObjectOptions`
+1. `options`: `FetchResponseErrorObjectOptions | undefined`
 
    The options for converting the error. By default, the body of the request and response will not be included.
    - `includeRequestBody`: `boolean | undefined` (default `false`)
 
-     Whether to include the body of the request in the plain object.
+     Whether to include the body of the request.
 
    - `includeResponseBody`: `boolean | undefined` (default `false`)
 
-     Whether to include the body of the response in the plain object.
+     Whether to include the body of the response.
 
 **Returns**: `FetchResponseErrorObject`
 
@@ -127,74 +127,18 @@ if (!response.ok) {
 }
 ```
 
-If included, the bodies are parsed automatically based on the `content-type` header of the request and response.
-
-| `content-type`                      | Parsed as                                                          |
-| ----------------------------------- | ------------------------------------------------------------------ |
-| `application/json`                  | `JSON` (object)                                                    |
-| `application/xml`                   | `string`                                                           |
-| `application/x-www-form-urlencoded` | [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md) |
-| `application/*` (others)            | `Blob`                                                             |
-| `multipart/form-data`               | [`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md)         |
-| `multipart/*` (others)              | `Blob`                                                             |
-| `text/*`                            | `string`                                                           |
-| `image/*`                           | `Blob`                                                             |
-| `audio/*`                           | `Blob`                                                             |
-| `font/*`                            | `Blob`                                                             |
-| `video/*`                           | `Blob`                                                             |
-| `*/*` (others)                      | `JSON` (object) if possible, otherwise `Blob`                      |
+If included, the bodies are parsed automatically as in
+[`request.toObject()`](/docs/zimic-fetch/api/3-fetch-request.md#requesttoobject) and
+[`response.toObject()`](/docs/zimic-fetch/api/4-fetch-response.md#responsetoobject).
 
 :::tip NOTE: <span>Already used bodies</span>
 
 If the body of the request or response has already been used (e.g., read with
 [`response.json()`](https://developer.mozilla.org/docs/Web/API/Response/json)), it will not be included in the plain
-object, even if `options.includeRequestBody` or `options.includeResponseBody` is `true`. This will be flagged with a
-warning in the console.
-
-If you access a body before calling `error.toObject()`, consider reading it from a cloned request or response with
-[`request.clone()`](https://developer.mozilla.org/docs/Web/API/Request/clone) or
-[`response.clone()`](https://developer.mozilla.org/docs/Web/API/Response/clone), respectively.
-
-```ts
-const request = new fetch.Request(`/users/${userId}`, {
-  method: 'POST',
-  body: JSON.stringify({ ... }),
-});
-
-// Reading the body from a cloned request:
-// highlight-next-line
-const requestBody = await request.clone().json();
-console.log(requestBody);
-
-const response = await fetch(request);
-
-// Reading the body from a cloned response:
-// highlight-next-line
-const responseBody = await response.clone().json();
-console.log(responseBody);
-
-if (!response.ok) {
-  const errorObject = await response.error.toObject({
-    includeRequestBody: true,
-    includeResponseBody: true,
-  });
-  console.log(errorObject);
-}
-```
-
-Alternatively, you can disable the warning by including each body conditionally based on
-[`request.bodyUsed`](https://developer.mozilla.org/docs/Web/API/Request/bodyUsed) and
-[`response.bodyUsed`](https://developer.mozilla.org/docs/Web/API/Response/bodyUsed).
-
-```ts
-// Include the bodies only if available:
-const errorObject = await response.error.toObject({
-  // highlight-start
-  includeRequestBody: !response.error.request.bodyUsed,
-  includeResponseBody: !response.error.response.bodyUsed,
-  // highlight-end
-});
-```
+object, even if `options.includeRequestBody` or `options.includeResponseBody` is `true`. See
+[`request.toObject()`](/docs/zimic-fetch/api/3-fetch-request.md#requesttoobject) and
+[`response.toObject()`](/docs/zimic-fetch/api/4-fetch-response.md#responsetoobject) for more details on this behavior
+and alternative implementations.
 
 :::
 

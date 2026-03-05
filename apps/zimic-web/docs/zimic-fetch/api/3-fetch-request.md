@@ -131,12 +131,12 @@ request.toObject(options);
 
 **Arguments**:
 
-1. `options`: `{ includeBody?: boolean | undefined }`
+1. `options`: `FetchRequestObjectOptions | undefined`
 
    The options for converting the request. By default, the body of the request will not be included.
    - `includeBody`: `boolean | undefined` (default `false`)
 
-     Whether to include the body of the request in the plain object.
+     Whether to include the body of the request.
 
 **Returns**: `FetchRequestObject`
 
@@ -153,12 +153,12 @@ const request = new fetch.Request('/users', {
 // highlight-next-line
 const requestObject = request.toObject();
 console.log(requestObject);
-// { url: '...', path: '/users', method: 'POST', headers: { ... }, ... }
+// { url: '...', path: '/users', method: 'POST', ... }
 
 // highlight-next-line
 const requestObjectWithBody = await request.toObject({ includeBody: true });
 console.log(requestObjectWithBody);
-// { url: '...', path: '/users', method: 'POST', headers: { ... }, body: { username: 'me' }, ... }
+// { url: '...', path: '/users', method: 'POST', body: { username: 'me' }, ... }
 ```
 
 If included, the body is parsed automatically based on the `content-type` header of the request.

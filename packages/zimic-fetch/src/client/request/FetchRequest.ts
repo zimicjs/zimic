@@ -19,7 +19,7 @@ import { excludeNonPathParams, joinURL } from '@zimic/utils/url';
 
 import { Fetch, FetchInput } from '../types/public';
 import { getOrSetBoundBodyMethod, isBodyMethod, withIncludedBodyIfAvailable } from '../utils/objects';
-import { FetchRequestBodySchema, FetchRequestInit, FetchRequestObject } from './types';
+import { FetchRequestBodySchema, FetchRequestInit, FetchRequestObject, FetchRequestObjectOptions } from './types';
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request `FetchRequest` API reference} */
 export interface FetchRequest<
@@ -35,9 +35,9 @@ export interface FetchRequest<
   method: Method;
   clone: () => FetchRequest<Schema, Method, Path>;
   /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#requesttoobject `request.toObject()` API reference} */
-  toObject: ((options: { includeBody: true }) => Promise<FetchRequestObject>) &
-    ((options?: { includeBody?: false }) => FetchRequestObject) &
-    ((options?: { includeBody?: boolean }) => PossiblePromise<FetchRequestObject>);
+  toObject: ((options: FetchRequestObjectOptions.WithBody) => Promise<FetchRequestObject>) &
+    ((options?: FetchRequestObjectOptions.WithoutBody) => FetchRequestObject) &
+    ((options?: FetchRequestObjectOptions) => PossiblePromise<FetchRequestObject>);
 }
 
 export namespace FetchRequest {
@@ -48,8 +48,9 @@ export namespace FetchRequest {
     method: HttpMethod;
     clone: () => Loose;
     /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#requesttoobject `request.toObject()` API reference} */
-    toObject: ((options: { includeBody: true }) => Promise<FetchRequestObject>) &
-      ((options?: { includeBody?: false }) => FetchRequestObject);
+    toObject: ((options: FetchRequestObjectOptions.WithBody) => Promise<FetchRequestObject>) &
+      ((options?: FetchRequestObjectOptions.WithoutBody) => FetchRequestObject) &
+      ((options?: FetchRequestObjectOptions) => PossiblePromise<FetchRequestObject>);
   }
 }
 

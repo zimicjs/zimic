@@ -14,7 +14,13 @@ import { Default, PossiblePromise } from '@zimic/utils/types';
 import { FetchRequest } from '../request/FetchRequest';
 import { getOrSetBoundBodyMethod, isBodyMethod, withIncludedBodyIfAvailable } from '../utils/objects';
 import FetchResponseError from './error/FetchResponseError';
-import { FetchResponseBodySchema, FetchResponseInit, FetchResponseObject, FetchResponseStatusCode } from './types';
+import {
+  FetchResponseBodySchema,
+  FetchResponseInit,
+  FetchResponseObject,
+  FetchResponseObjectOptions,
+  FetchResponseStatusCode,
+} from './types';
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference} */
 export interface FetchResponsePerStatusCode<
@@ -32,9 +38,9 @@ export interface FetchResponsePerStatusCode<
   error: FetchResponseError<Schema, Method, Path>;
   clone: () => FetchResponsePerStatusCode<Schema, Method, Path, StatusCode>;
   /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response#responsetoobject `response.toObject()` API reference} */
-  toObject: ((options: { includeBody: true }) => Promise<FetchResponseObject>) &
-    ((options?: { includeBody?: false }) => FetchResponseObject) &
-    ((options?: { includeBody?: boolean }) => PossiblePromise<FetchResponseObject>);
+  toObject: ((options: FetchResponseObjectOptions.WithBody) => Promise<FetchResponseObject>) &
+    ((options?: FetchResponseObjectOptions.WithoutBody) => FetchResponseObject) &
+    ((options?: FetchResponseObjectOptions) => PossiblePromise<FetchResponseObject>);
 }
 
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response `FetchResponse` API reference} */
@@ -57,8 +63,9 @@ export namespace FetchResponse {
     error: FetchResponseError<any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
     clone: () => Loose;
     /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response#responsetoobject `response.toObject()` API reference} */
-    toObject: ((options: { includeBody: true }) => Promise<FetchResponseObject>) &
-      ((options?: { includeBody?: false }) => FetchResponseObject);
+    toObject: ((options: FetchResponseObjectOptions.WithBody) => Promise<FetchResponseObject>) &
+      ((options?: FetchResponseObjectOptions.WithoutBody) => FetchResponseObject) &
+      ((options?: FetchResponseObjectOptions) => PossiblePromise<FetchResponseObject>);
   }
 }
 

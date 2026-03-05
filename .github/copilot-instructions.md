@@ -92,7 +92,8 @@ Focus reviews on relevance and quality:
 
 - **Scope**: Changes match specification; no unrelated modifications
 - **Quality**: Clear naming, simple implementation, proper abstractions
-- **Testing**: 100% coverage maintained; high-quality tests covering edge cases and error paths; cross-platform verified
+- **Testing**: 100% coverage maintained; high-quality tests covering edge cases and error paths; cross-platform
+  verified; exports checked in `apps/zimic-test-client`
 - **Compatibility**: Works in Node.js and browser; local + remote modes tested (interceptor)
 - **Security**: No hardcoded secrets; input validation; proper error handling; no vulnerable pathways
 - **Maintainability**: Documentation and examples updated; `exports` map current; breaking changes versioned

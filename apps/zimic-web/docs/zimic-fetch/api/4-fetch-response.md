@@ -132,12 +132,12 @@ response.toObject(options);
 
 **Arguments**:
 
-1. `options`: `{ includeBody?: boolean | undefined }`
+1. `options`: `FetchResponseObjectOptions | undefined`
 
    The options for converting the response. By default, the body of the response will not be included.
    - `includeBody`: `boolean | undefined` (default `false`)
 
-     Whether to include the body of the response in the plain object.
+     Whether to include the body of the response.
 
 **Returns**: `FetchResponseObject`
 
@@ -154,12 +154,12 @@ const response = await fetch('/users', {
 // highlight-next-line
 const responseObject = response.toObject();
 console.log(responseObject);
-// { url: '...', type: 'basic', status: 201, statusText: 'Created', ok: true, headers: { ... }, redirected: false }
+// { url: '...', status: 201, ok: true, ... }
 
 // highlight-next-line
 const responseObjectWithBody = await response.toObject({ includeBody: true });
 console.log(responseObjectWithBody);
-// { url: '...', type: 'basic', status: 201, statusText: 'Created', ok: true, headers: { ... }, redirected: false, body: { ... } }
+// { url: '...', status: 201, ok: true, body: { ... }, ... }
 ```
 
 If included, the body is parsed automatically based on the `content-type` header of the response.

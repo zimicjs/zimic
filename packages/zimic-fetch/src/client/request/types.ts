@@ -122,6 +122,24 @@ export namespace FetchRequestInit {
   export type Loose = Partial<Defaults>;
 }
 
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#requesttoobject `request.toObject()` API reference} */
+export interface FetchRequestObjectOptions {
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#requesttoobject `request.toObject()` API reference} */
+  includeBody?: boolean;
+}
+
+export namespace FetchRequestObjectOptions {
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#requesttoobject `request.toObject()` API reference} */
+  export interface WithBody {
+    includeBody: true;
+  }
+
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#requesttoobject `request.toObject()` API reference} */
+  export interface WithoutBody {
+    includeBody?: false;
+  }
+}
+
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#requesttoobject `request.toObject()`} */
 export type FetchRequestObject = Pick<
   FetchRequest.Loose,
