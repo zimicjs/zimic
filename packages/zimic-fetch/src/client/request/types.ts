@@ -122,19 +122,19 @@ export namespace FetchRequestInit {
   export type Loose = Partial<Defaults>;
 }
 
-/** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#errortoobject `request.toObject()` API reference} */
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#requesttoobject `request.toObject()` API reference} */
 export interface FetchRequestObjectOptions {
-  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#errortoobject `request.toObject()` API reference} */
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#requesttoobject `request.toObject()` API reference} */
   includeBody?: boolean;
 }
 
 export namespace FetchRequestObjectOptions {
-  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#errortoobject `request.toObject()` API reference} */
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#requesttoobject `request.toObject()` API reference} */
   export interface WithBody {
     includeBody: true;
   }
 
-  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#errortoobject `request.toObject()` API reference} */
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-request#requesttoobject `request.toObject()` API reference} */
   export interface WithoutBody {
     includeBody?: false;
   }
