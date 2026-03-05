@@ -153,12 +153,12 @@ const request = new fetch.Request('/users', {
 // highlight-next-line
 const requestObject = request.toObject();
 console.log(requestObject);
-// { url: '...', path: '/users', method: 'POST', headers: { ... }, ... }
+// { url: '...', path: '/users', method: 'POST', ... }
 
 // highlight-next-line
 const requestObjectWithBody = await request.toObject({ includeBody: true });
 console.log(requestObjectWithBody);
-// { url: '...', path: '/users', method: 'POST', headers: { ... }, body: { username: 'me' }, ... }
+// { url: '...', path: '/users', method: 'POST', body: { username: 'me' }, ... }
 ```
 
 If included, the body is parsed automatically based on the `content-type` header of the request.
