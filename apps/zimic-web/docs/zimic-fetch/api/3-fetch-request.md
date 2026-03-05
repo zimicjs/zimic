@@ -131,12 +131,12 @@ request.toObject(options);
 
 **Arguments**:
 
-1. `options`: `{ includeBody?: boolean | undefined }`
+1. `options`: `FetchRequestObjectOptions | undefined`
 
    The options for converting the request. By default, the body of the request will not be included.
    - `includeBody`: `boolean | undefined` (default `false`)
 
-     Whether to include the body of the request in the plain object.
+     Whether to include the body of the request.
 
 **Returns**: `FetchRequestObject`
 

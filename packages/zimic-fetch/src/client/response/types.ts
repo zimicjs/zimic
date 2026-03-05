@@ -101,6 +101,24 @@ export interface FetchResponseConstructor {
   [Symbol.hasInstance]: (instance: unknown) => boolean;
 }
 
+/** @see {@link https://zimic.dev/docs/fetch/api/fetch-response#errortoobject `response.toObject()` API reference} */
+export interface FetchResponseObjectOptions {
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response#errortoobject `response.toObject()` API reference} */
+  includeBody?: boolean;
+}
+
+export namespace FetchResponseObjectOptions {
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response#errortoobject `response.toObject()` API reference} */
+  export interface WithBody {
+    includeBody: true;
+  }
+
+  /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response#errortoobject `response.toObject()` API reference} */
+  export interface WithoutBody {
+    includeBody?: false;
+  }
+}
+
 /** @see {@link https://zimic.dev/docs/fetch/api/fetch-response#responsetoobject `response.toObject()`} */
 export type FetchResponseObject = Pick<
   FetchResponse.Loose,

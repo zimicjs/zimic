@@ -132,12 +132,12 @@ response.toObject(options);
 
 **Arguments**:
 
-1. `options`: `{ includeBody?: boolean | undefined }`
+1. `options`: `FetchResponseObjectOptions | undefined`
 
    The options for converting the response. By default, the body of the response will not be included.
    - `includeBody`: `boolean | undefined` (default `false`)
 
-     Whether to include the body of the response in the plain object.
+     Whether to include the body of the response.
 
 **Returns**: `FetchResponseObject`
 
