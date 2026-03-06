@@ -1,12 +1,10 @@
 {
   "extends": "@zimic/tsconfig/tsconfig.node.json",
   "compilerOptions": {
-    "lib": ["esnext", "dom", "dom.iterable"],
-    "target": "esnext",
-    "allowSyntheticDefaultImports": true,
+    "lib": ["esnext", "dom"],
     "tsBuildInfoFile": "tsconfig.tsbuildinfo",
-    "types": ["@zimic/utils/types/globals"],
-    "baseUrl": ".",
+    "types": ["node", "@zimic/utils/types/globals"],
+    "ignoreDeprecations": "6.0",
     "paths": {
       "@/*": ["./src/*"],
       "@tests/*": ["./tests/*"],

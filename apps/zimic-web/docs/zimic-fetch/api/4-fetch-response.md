@@ -121,6 +121,102 @@ if (response.status === 404) {
 }
 ```
 
+## `response.toObject()`
+
+Converts the response into a plain object. This method is useful for serialization, debugging, and logging purposes.
+
+```ts
+response.toObject();
+response.toObject(options);
+```
+
+**Arguments**:
+
+1. `options`: `FetchResponseObjectOptions | undefined`
+
+   The options for converting the response. By default, the body of the response will not be included.
+   - `includeBody`: `boolean | undefined` (default `false`)
+
+     Whether to include the body of the response.
+
+**Returns**: `FetchResponseObject`
+
+A plain object representing this response. If `options.includeBody` is `true`, the body will be included and the return
+is a `Promise`. Otherwise, the return is the plain object itself without the body.
+
+```ts
+const response = await fetch('/users', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ username: 'me' }),
+});
+
+// highlight-next-line
+const responseObject = response.toObject();
+console.log(responseObject);
+// { url: '...', status: 201, ok: true, ... }
+
+// highlight-next-line
+const responseObjectWithBody = await response.toObject({ includeBody: true });
+console.log(responseObjectWithBody);
+// { url: '...', status: 201, ok: true, body: { ... }, ... }
+```
+
+If included, the body is parsed automatically based on the `content-type` header of the response.
+
+| `content-type`                      | Parsed as                                                          |
+| ----------------------------------- | ------------------------------------------------------------------ |
+| `application/json`                  | `JSON` (object)                                                    |
+| `application/xml`                   | `string`                                                           |
+| `application/x-www-form-urlencoded` | [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md) |
+| `application/*` (others)            | `Blob`                                                             |
+| `multipart/form-data`               | [`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md)         |
+| `multipart/*` (others)              | `Blob`                                                             |
+| `text/*`                            | `string`                                                           |
+| `image/*`                           | `Blob`                                                             |
+| `audio/*`                           | `Blob`                                                             |
+| `font/*`                            | `Blob`                                                             |
+| `video/*`                           | `Blob`                                                             |
+| `*/*` (others)                      | `JSON` (object) if possible, otherwise `Blob`                      |
+
+:::tip NOTE: <span>Already used body</span>
+
+If the body of the response has already been used (e.g., read with
+[`response.json()`](https://developer.mozilla.org/docs/Web/API/Response/json)), it will not be included in the plain
+object, even if `options.includeBody` is `true`. This will be flagged with a warning in the console.
+
+If you access the body before calling `response.toObject()`, consider reading it from a cloned response with
+[`response.clone()`](https://developer.mozilla.org/docs/Web/API/Response/clone).
+
+```ts
+const response = await fetch('/users', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ username: 'me' }),
+});
+
+// Reading the body from a cloned response:
+// highlight-next-line
+const responseBody = await response.clone().json();
+console.log(responseBody);
+
+const responseObject = await response.toObject({ includeBody: true });
+console.log(responseObject);
+```
+
+Alternatively, you can disable the warning by including the body conditionally based on
+[`response.bodyUsed`](https://developer.mozilla.org/docs/Web/API/Response/bodyUsed).
+
+```ts
+// Include the body only if available:
+const responseObject = await response.toObject({
+  // highlight-next-line
+  includeBody: !response.bodyUsed,
+});
+```
+
+:::
+
 **Related**:
 
 - [Guides - Handling errors](/docs/zimic-fetch/guides/6-errors.md)

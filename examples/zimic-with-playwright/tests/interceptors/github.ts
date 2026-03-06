@@ -1,7 +1,7 @@
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-import { GitHubSchema } from '../../src/clients/github';
-import environment from '../../src/config/environment';
+import { GitHubSchema } from '@/clients/github';
+import environment from '@/config/environment';
 
 const githubInterceptor = createHttpInterceptor<GitHubSchema>({
   type: 'remote',

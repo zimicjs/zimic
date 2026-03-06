@@ -4,7 +4,7 @@
   "private": false,
   "scripts": {
     "test": "vitest",
-    "test:turbo": "dotenv -v CI=true -- pnpm run test --reporter tree",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test --reporter verbose",
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
@@ -14,7 +14,7 @@
   "devDependencies": {
     "@zimic/interceptor": "latest",
     "dotenv-cli": "^11.0.0",
-    "typescript": "^5.9.3",
+    "typescript": "5.9.3",
     "vitest": "^4.0.18"
   }
 }

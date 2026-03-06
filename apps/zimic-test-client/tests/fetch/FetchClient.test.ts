@@ -1,4 +1,4 @@
-import { createFetch, FetchResponseError } from '@zimic/fetch';
+import { createFetch, FetchRequest, FetchResponse, FetchResponseError } from '@zimic/fetch';
 import { JSONSerialized, HttpHeaders, HttpSearchParams, HttpRequest, HttpResponse } from '@zimic/http';
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 import { expectToThrow } from '@zimic/utils/error';
@@ -95,6 +95,8 @@ describe('Fetch client', async () => {
         if (!response.ok) {
           throw response.error;
         }
+
+        expect(response).toBeInstanceOf(FetchResponse);
 
         return response;
       }
@@ -309,10 +311,14 @@ describe('Fetch client', async () => {
       });
 
       async function listUsers(filters: UserListSearchParams = {}) {
-        const response = await authFetch('/users', {
+        const request = new authFetch.Request('/users', {
           method: 'GET',
           searchParams: filters,
         });
+
+        expect(request).toBeInstanceOf(FetchRequest);
+
+        const response = await authFetch(request);
 
         if (!response.ok) {
           throw response.error;

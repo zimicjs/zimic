@@ -13,7 +13,7 @@ response fails with a status code in the `4XX` or `5XX` ranges, the
 ## Handling response errors
 
 To handle response errors, check the `response.status` or the `response.ok` properties to determine if the request was
-successful or not. In case you need to handle a response as an error upper in the call stack, you can throw the
+successful or not. In case you need to handle a response as an error higher up in the call stack, you can throw the
 [`response.error`](/docs/zimic-fetch/api/4-fetch-response.md#responseerror) property. `response.error` is always
 available, even if the response has a `2XX` or `3XX` status code. Some noncompliant APIs may return failure responses
 with status codes other than `4XX` or `5XX`, or may have different meanings for certain status codes, so your
