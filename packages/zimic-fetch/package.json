@@ -13,7 +13,7 @@
     "api",
     "static"
   ],
-  "version": "1.5.0-canary.6",
+  "version": "1.5.0-canary.7",
   "homepage": "https://zimic.dev/docs/fetch",
   "repository": {
     "type": "git",
