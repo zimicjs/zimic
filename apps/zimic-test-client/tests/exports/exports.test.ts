@@ -2,19 +2,25 @@ import {
   createFetch,
   type Fetch,
   type FetchOptions,
+  type FetchDefaults,
   type InferFetchSchema,
   type FetchInput,
   type FetchRequestConstructor,
-  type FetchRequest,
+  FetchRequest,
   type FetchRequestObject,
   type FetchRequestInit,
-  type FetchResponse,
+  FetchResponse,
+  type FetchResponseConstructor,
+  type FetchResponseInit,
+  type FetchResponseStatusCode,
   type FetchResponsePerStatusCode,
   type FetchResponseObject,
   type JSONStringified,
   FetchResponseError,
   type FetchResponseErrorObject,
   type FetchResponseErrorObjectOptions,
+  type FetchResponseObjectOptions,
+  type FetchRequestObjectOptions,
 } from '@zimic/fetch';
 import {
   type JSONValue,
@@ -56,6 +62,14 @@ import {
   type HttpSchemaPath,
   type InferPathParams,
   type MergeHttpResponsesByStatusCode,
+  type AllowAnyStringInPathParams,
+  HTTP_METHODS,
+  type HttpRequestBodySchema,
+  type HttpRequestHeadersSchema,
+  type HttpRequestSearchParamsSchema,
+  type HttpResponseBodySchema,
+  type HttpResponseHeadersSchema,
+  type LiteralHttpSchemaPathFromNonLiteral,
   parseHttpBody,
   InvalidFormDataError as HttpInvalidFormDataError,
   InvalidJSONError as HttpInvalidJSONError,
@@ -185,6 +199,14 @@ describe('Exports', () => {
     expectTypeOf<HttpSchemaPath.NonLiteral<never, never>>().not.toBeAny();
     expectTypeOf<InferPathParams<never>>().not.toBeAny();
     expectTypeOf<MergeHttpResponsesByStatusCode<never>>().not.toBeAny();
+    expectTypeOf<AllowAnyStringInPathParams<never>>().not.toBeAny();
+    expect(Array.isArray(HTTP_METHODS)).toBe(true);
+    expectTypeOf<HttpRequestBodySchema<never>>().not.toBeAny();
+    expectTypeOf<HttpRequestHeadersSchema<never>>().not.toBeAny();
+    expectTypeOf<HttpRequestSearchParamsSchema<never>>().not.toBeAny();
+    expectTypeOf<HttpResponseBodySchema<never, never>>().not.toBeAny();
+    expectTypeOf<HttpResponseHeadersSchema<never, never>>().not.toBeAny();
+    expectTypeOf<LiteralHttpSchemaPathFromNonLiteral<never, never, never>>().not.toBeAny();
 
     expectTypeOf(parseHttpBody).not.toBeAny();
     expect(typeof parseHttpBody).toBe('function');
@@ -201,10 +223,15 @@ describe('Exports', () => {
     expectTypeOf<Fetch<never>>().not.toBeAny();
     expectTypeOf<Fetch.Loose>().not.toBeAny();
     expectTypeOf<FetchOptions<never>>().not.toBeAny();
+    expectTypeOf<FetchDefaults<never>>().not.toBeAny();
     expectTypeOf<InferFetchSchema<never>>().not.toBeAny();
     expectTypeOf<FetchInput<never, never, never>>().not.toBeAny();
     expectTypeOf<FetchRequest<never, never, never>>().not.toBeAny();
+    expect(typeof FetchRequest).toBe('function');
     expectTypeOf<FetchRequestObject>().not.toBeAny();
+    expectTypeOf<FetchRequestObjectOptions>().not.toBeAny();
+    expectTypeOf<FetchRequestObjectOptions.WithBody>().not.toBeAny();
+    expectTypeOf<FetchRequestObjectOptions.WithoutBody>().not.toBeAny();
     expectTypeOf<FetchRequestConstructor<never>>().not.toBeAny();
     expectTypeOf<FetchRequestInit<never, never, never>>().not.toBeAny();
     expectTypeOf<FetchRequestInit.Defaults<never>>().not.toBeAny();
@@ -213,8 +240,15 @@ describe('Exports', () => {
     expectTypeOf<FetchRequestInit.DefaultBody<never>>().not.toBeAny();
     expectTypeOf<FetchRequestInit.Loose>().not.toBeAny();
     expectTypeOf<FetchResponse<never, never, never>>().not.toBeAny();
+    expect(typeof FetchResponse).toBe('function');
+    expectTypeOf<FetchResponseConstructor>().not.toBeAny();
+    expectTypeOf<FetchResponseInit<never, never, never>>().not.toBeAny();
+    expectTypeOf<FetchResponseStatusCode<never, never, never>>().not.toBeAny();
     expectTypeOf<FetchResponsePerStatusCode<never, never, never, never>>().not.toBeAny();
     expectTypeOf<FetchResponseObject>().not.toBeAny();
+    expectTypeOf<FetchResponseObjectOptions>().not.toBeAny();
+    expectTypeOf<FetchResponseObjectOptions.WithBody>().not.toBeAny();
+    expectTypeOf<FetchResponseObjectOptions.WithoutBody>().not.toBeAny();
     expectTypeOf<FetchResponseError<never, never, never>>().not.toBeAny();
     expect(typeof FetchResponseError).toBe('function');
     expectTypeOf<FetchResponseErrorObject>().not.toBeAny();

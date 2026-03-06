@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "0.1.1-canary.11",
+  "version": "0.1.1-canary.17",
   "homepage": "https://zimic.dev/docs/ws",
   "repository": {
     "type": "git",
@@ -78,7 +78,7 @@
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write",
     "test": "dotenv -v NODE_ENV=test -v FORCE_COLOR=1 -- vitest",
-    "test:turbo": "dotenv -v CI=true -- pnpm run test --coverage --reporter tree",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test --coverage --reporter verbose",
     "types:check": "tsc --noEmit",
     "deps:setup-playwright": "playwright install chromium",
     "deps:setup": "pnpm deps:setup-playwright"
@@ -87,7 +87,7 @@
     "ws": "8.19.0"
   },
   "devDependencies": {
-    "@types/node": "^25.2.3",
+    "@types/node": "^25.3.0",
     "@types/ws": "^8.18.1",
     "@vitest/browser": "^4.0.18",
     "@vitest/browser-playwright": "^4.0.18",
@@ -98,14 +98,14 @@
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^11.0.0",
-    "eslint": "^9.39.2",
+    "eslint": "^9.39.3",
     "playwright": "^1.58.2",
     "tsup": "^8.4.0",
-    "typescript": "^5.9.3",
+    "typescript": "6.0.0-beta",
     "vitest": "^4.0.18"
   },
   "peerDependencies": {
-    "typescript": ">=5.0.0"
+    "typescript": "^5.0.0 || ^6.0.0 || ^6.0.0-beta"
   },
   "peerDependenciesMeta": {
     "typescript": {
