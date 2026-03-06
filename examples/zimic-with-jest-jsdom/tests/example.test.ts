@@ -1,6 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { githubFetch } from '../src/clients/github';
+import { githubFetch } from '@/clients/github';
+
 import { createGitHubRepository } from './factories/github';
 import githubInterceptor from './interceptors/github';
 import { expectResponseStatus } from './utils/expect';

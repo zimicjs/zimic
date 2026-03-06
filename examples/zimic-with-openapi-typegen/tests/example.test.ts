@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { githubFetch } from '../src/clients/github/client';
+import { githubFetch } from '@/clients/github/client';
+
 import { createGitHubRepository } from './factories/github';
 import githubInterceptor from './interceptors/github/interceptor';
 import { expectResponseStatus } from './utils/expect';

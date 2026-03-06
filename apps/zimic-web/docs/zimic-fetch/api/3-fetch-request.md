@@ -119,3 +119,99 @@ const request = new fetch.Request('/users', {
 // highlight-next-line
 console.log(request.method); // 'POST'
 ```
+
+## `request.toObject()`
+
+Converts the request into a plain object. This method is useful for serialization, debugging, and logging purposes.
+
+```ts
+request.toObject();
+request.toObject(options);
+```
+
+**Arguments**:
+
+1. `options`: `FetchRequestObjectOptions | undefined`
+
+   The options for converting the request. By default, the body of the request will not be included.
+   - `includeBody`: `boolean | undefined` (default `false`)
+
+     Whether to include the body of the request.
+
+**Returns**: `FetchRequestObject`
+
+A plain object representing this request. If `options.includeBody` is `true`, the body will be included and the return
+is a `Promise`. Otherwise, the return is the plain object itself without the body.
+
+```ts
+const request = new fetch.Request('/users', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ username: 'me' }),
+});
+
+// highlight-next-line
+const requestObject = request.toObject();
+console.log(requestObject);
+// { url: '...', path: '/users', method: 'POST', ... }
+
+// highlight-next-line
+const requestObjectWithBody = await request.toObject({ includeBody: true });
+console.log(requestObjectWithBody);
+// { url: '...', path: '/users', method: 'POST', body: { username: 'me' }, ... }
+```
+
+If included, the body is parsed automatically based on the `content-type` header of the request.
+
+| `content-type`                      | Parsed as                                                          |
+| ----------------------------------- | ------------------------------------------------------------------ |
+| `application/json`                  | `JSON` (object)                                                    |
+| `application/xml`                   | `string`                                                           |
+| `application/x-www-form-urlencoded` | [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md) |
+| `application/*` (others)            | `Blob`                                                             |
+| `multipart/form-data`               | [`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md)         |
+| `multipart/*` (others)              | `Blob`                                                             |
+| `text/*`                            | `string`                                                           |
+| `image/*`                           | `Blob`                                                             |
+| `audio/*`                           | `Blob`                                                             |
+| `font/*`                            | `Blob`                                                             |
+| `video/*`                           | `Blob`                                                             |
+| `*/*` (others)                      | `JSON` (object) if possible, otherwise `Blob`                      |
+
+:::tip NOTE: <span>Already used body</span>
+
+If the body of the request has already been used (e.g., read with
+[`request.json()`](https://developer.mozilla.org/docs/Web/API/Request/json)), it will not be included in the plain
+object, even if `options.includeBody` is `true`. This will be flagged with a warning in the console.
+
+If you access the body before calling `request.toObject()`, consider reading it from a cloned request with
+[`request.clone()`](https://developer.mozilla.org/docs/Web/API/Request/clone).
+
+```ts
+const request = new fetch.Request('/users', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ username: 'me' }),
+});
+
+// Reading the body from a cloned request:
+// highlight-next-line
+const requestBody = await request.clone().json();
+console.log(requestBody);
+
+const requestObject = await request.toObject({ includeBody: true });
+console.log(requestObject);
+```
+
+Alternatively, you can disable the warning by including the body conditionally based on
+[`request.bodyUsed`](https://developer.mozilla.org/docs/Web/API/Request/bodyUsed).
+
+```ts
+// Include the body only if available:
+const requestObject = await request.toObject({
+  // highlight-next-line
+  includeBody: !request.bodyUsed,
+});
+```
+
+:::

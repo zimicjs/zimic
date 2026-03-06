@@ -34,7 +34,7 @@ TypeScript monorepo (pnpm + turborepo) providing HTTP integration libraries:
 
 ### During Implementation
 
-1. **Write tests first** covering all branches, error paths, and edge cases
+1. Write tests covering all branches, error paths, and edge cases
 2. Implement feature with clear, explicit naming (avoid abbreviations)
 3. Keep code simple; avoid premature optimization and unnecessary abstractions
 4. Never use `any`; leverage type inference
@@ -44,12 +44,14 @@ TypeScript monorepo (pnpm + turborepo) providing HTTP integration libraries:
 
 ### Verification
 
-Run in the target package directory:
+After implementation, always verify your changes with the following commands:
 
-- `pnpm types:check`: Type check with `tsc`
-- `pnpm lint <pattern>`: Lint specific files or directories using `eslint`
-- `pnpm test <pattern>`: Run specific tests using `vitest`
-- `pnpm build`: Build package with `tsup`
+1. `pnpm types:check`: Type check with `tsc`
+2. `pnpm lint`: Lint files or directories using `eslint`
+3. `pnpm build`: Build app/package, if the app/package has a build step
+4. `pnpm test <pattern>`: Run tests, if the app/package has any
+
+**CRITICAL**: execute these commands inside the target app/package directory; use `pnpm --dir <path>` if needed;
 
 ### Critical Rules
 
@@ -84,21 +86,14 @@ Run in the target package directory:
 - **Optimization**: Only when measured; avoid premature optimization
 - **CLI** (if applicable): Build to `dist/*.js` via `tsup`; use `yargs` with kebab-case options
 
-## Commit Conventions
-
-- **Format**: Conventional commits, lowercase imperative, scoped to package
-- **Examples**: `feat(interceptor): add request caching`, `fix(http): handle empty headers`
-- **Scope**: Use `root` for repository-wide changes; see `.commitlintrc.json` for all scopes
-- **Branches**: Align with commit type (e.g., `feat/123-request-caching`)
-- **PRs**: Follow same conventions; link issues; ensure all CI checks pass
-
 ## Code Review Guidelines
 
 Focus reviews on relevance and quality:
 
 - **Scope**: Changes match specification; no unrelated modifications
 - **Quality**: Clear naming, simple implementation, proper abstractions
-- **Testing**: 100% coverage maintained; high-quality tests covering edge cases and error paths; cross-platform verified
+- **Testing**: 100% coverage maintained; high-quality tests covering edge cases and error paths; cross-platform
+  verified; exports checked in `apps/zimic-test-client`
 - **Compatibility**: Works in Node.js and browser; local + remote modes tested (interceptor)
 - **Security**: No hardcoded secrets; input validation; proper error handling; no vulnerable pathways
 - **Maintainability**: Documentation and examples updated; `exports` map current; breaking changes versioned

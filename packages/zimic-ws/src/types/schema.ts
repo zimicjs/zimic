@@ -2,7 +2,7 @@ import { Branded, JSONValue } from '@zimic/utils/types';
 
 import { JSONStringified } from './json';
 
-type BaseWebSocketSchema = JSONValue | string | Blob | ArrayBufferLike | ArrayBufferView;
+type BaseWebSocketSchema = JSONValue | string | Blob | BufferSource;
 
 export type WebSocketSchema<Schema extends BaseWebSocketSchema = BaseWebSocketSchema> = Branded<
   Schema,
@@ -11,13 +11,11 @@ export type WebSocketSchema<Schema extends BaseWebSocketSchema = BaseWebSocketSc
 
 export type WebSocketMessageData<Schema extends WebSocketSchema> = Schema extends Blob
   ? Schema
-  : Schema extends ArrayBufferLike
+  : Schema extends BufferSource
     ? Schema
-    : Schema extends ArrayBufferView
+    : Schema extends string
       ? Schema
-      : Schema extends string
-        ? Schema
-        : JSONStringified<Schema>;
+      : JSONStringified<Schema>;
 
 export interface WebSocketEventMap<Schema extends WebSocketSchema> {
   open: Event;
