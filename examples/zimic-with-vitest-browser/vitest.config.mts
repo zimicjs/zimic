@@ -1,5 +1,6 @@
 /// <reference types="vitest" />
 
+import path from 'path';
 import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
 
@@ -17,6 +18,12 @@ export default defineConfig({
       enabled: true,
       headless: true,
       screenshotFailures: false,
+    },
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@tests': path.resolve(__dirname, './tests'),
     },
   },
 });

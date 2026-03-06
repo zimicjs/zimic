@@ -36,7 +36,7 @@ jobs:
         with:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: '"./apps/zimic-web..."'
+          install: '"@zimic/*..." "./apps/zimic-web..."'
 
       - name: Fetch latest sponsors and sync resources
         working-directory: ./apps/zimic-web

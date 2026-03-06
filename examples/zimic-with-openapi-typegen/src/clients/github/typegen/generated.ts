@@ -151,6 +151,7 @@ export interface GitHubComponents {
       has_downloads: boolean;
       has_discussions: boolean;
       has_pull_requests: boolean;
+      pull_request_creation_policy?: 'all' | 'collaborators_only';
       archived: boolean;
       disabled: boolean;
       visibility: string;
@@ -205,6 +206,15 @@ export interface GitHubComponents {
       };
       secret_scanning_delegated_alert_dismissal?: {
         status?: 'enabled' | 'disabled';
+      };
+      secret_scanning_delegated_bypass?: {
+        status?: 'enabled' | 'disabled';
+      };
+      secret_scanning_delegated_bypass_options?: {
+        reviewers?: {
+          reviewer_id: number;
+          reviewer_type: 'TEAM' | 'ROLE';
+        }[];
       };
     } | null;
     'nullable-repository': {
@@ -285,6 +295,7 @@ export interface GitHubComponents {
       has_downloads: boolean;
       has_discussions: boolean;
       has_pull_requests: boolean;
+      pull_request_creation_policy?: 'all' | 'collaborators_only';
       archived: boolean;
       disabled: boolean;
       visibility: string;
@@ -390,6 +401,7 @@ export interface GitHubComponents {
       has_downloads?: boolean;
       has_discussions: boolean;
       has_pull_requests?: boolean;
+      pull_request_creation_policy?: 'all' | 'collaborators_only';
       archived: boolean;
       disabled: boolean;
       visibility?: string;

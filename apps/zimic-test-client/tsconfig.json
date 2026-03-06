@@ -2,7 +2,6 @@
   "extends": "@zimic/tsconfig/tsconfig.node.json",
   "compilerOptions": {
     "tsBuildInfoFile": "tsconfig.tsbuildinfo",
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@tests/*": ["./tests/*"]
