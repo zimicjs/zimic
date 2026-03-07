@@ -28,15 +28,11 @@ new FetchResponse<Schema, Method, Path, ErrorOnly, Redirect>(request, body, init
 
    The [fetch request](/docs/zimic-fetch/api/3-fetch-request.md) that originated this response.
 
-2. **response**: `Response`
-
-   A native `Response` instance to wrap as a typed fetch response.
-
-3. **body**: `FetchResponseBodySchema | undefined`
+2. **body**: `FetchResponseBodySchema | undefined`
 
    The response body to create a response from when not providing `response`.
 
-4. **init**: `FetchResponseInit | undefined`
+3. **init**: `FetchResponseInit | undefined`
 
    Optional response initialization options (for example `status` and `headers`) used with `body`.
 
@@ -65,6 +61,23 @@ new FetchResponse<Schema, Method, Path, ErrorOnly, Redirect>(request, body, init
    The redirect mode for the request, which can be one of `'follow'`, `'error'`, or `'manual'`. Defaults to `'follow'`.
    If `follow` or `error`, the response will not include status codes that are considered redirects (300, 301, 302, 303,
    307, and 308).
+
+An alternative constructor receives a native `Response` object instead of a body and init. This is useful when you
+already have a response and want to convert it into a `FetchResponse` instance.
+
+```ts
+new FetchResponse<Schema, Method, Path, ErrorOnly, Redirect>(request, response);
+```
+
+**Arguments**:
+
+1. **request**: `FetchRequest`
+
+   The [fetch request](/docs/zimic-fetch/api/3-fetch-request.md) that originated this response.
+
+2. **response**: `Response | undefined`
+
+   The [response](https://developer.mozilla.org/docs/Web/API/Response) to create a `FetchResponse` from.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
