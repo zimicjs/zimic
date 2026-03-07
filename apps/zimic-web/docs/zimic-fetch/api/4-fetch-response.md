@@ -26,19 +26,19 @@ new FetchResponse<Schema, Method, Path, ErrorOnly, Redirect>(request, body, init
 
 1. **request**: `FetchRequest`
 
-The [fetch request](/docs/zimic-fetch/api/3-fetch-request.md) that originated this response.
+   The [fetch request](/docs/zimic-fetch/api/3-fetch-request.md) that originated this response.
 
 2. **response**: `Response`
 
-A native `Response` instance to wrap as a typed fetch response.
+   A native `Response` instance to wrap as a typed fetch response.
 
 3. **body**: `FetchResponseBodySchema | undefined`
 
-The response body to create a response from when not providing `response`.
+   The response body to create a response from when not providing `response`.
 
 4. **init**: `FetchResponseInit | undefined`
 
-Optional response initialization options (for example `status` and `headers`) used with `body`.
+   Optional response initialization options (for example `status` and `headers`) used with `body`.
 
 **Type arguments**:
 
@@ -107,8 +107,6 @@ const response = new FetchResponse(
   },
 );
 //  highlight-end
-
-console.log(response); // FetchResponse<Schema, 'GET', '/users/:userId', false, 'follow'>
 ```
 
 **Related**:

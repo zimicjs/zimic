@@ -87,8 +87,6 @@ const request = new FetchRequest(fetch, '/users', {
   body: JSON.stringify({ username: 'me' }),
 });
 // highlight-end
-
-console.log(request); // FetchRequest<Schema, 'POST', '/users'>
 ```
 
 **Related**:
