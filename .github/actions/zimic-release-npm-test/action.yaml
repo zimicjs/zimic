@@ -85,6 +85,9 @@ runs:
           done
         '
 
+        echo 'Re-running `pnpm install` in case `pnpm-lock.yaml` was changed by scripts/preinstall.mjs...'
+        pnpm install --no-frozen-lockfile ${{ steps.zimic-setup.outputs.install-filters }}
+
         pnpm turbo \
           types:check lint:turbo \
           --continue \

@@ -152,6 +152,7 @@ export interface GitHubComponents {
       has_discussions: boolean;
       has_pull_requests: boolean;
       pull_request_creation_policy?: 'all' | 'collaborators_only';
+      has_commit_comments: boolean;
       archived: boolean;
       disabled: boolean;
       visibility: string;
@@ -296,6 +297,7 @@ export interface GitHubComponents {
       has_discussions: boolean;
       has_pull_requests: boolean;
       pull_request_creation_policy?: 'all' | 'collaborators_only';
+      has_commit_comments: boolean;
       archived: boolean;
       disabled: boolean;
       visibility: string;
@@ -402,6 +404,7 @@ export interface GitHubComponents {
       has_discussions: boolean;
       has_pull_requests?: boolean;
       pull_request_creation_policy?: 'all' | 'collaborators_only';
+      has_commit_comments?: boolean;
       archived: boolean;
       disabled: boolean;
       visibility?: string;
