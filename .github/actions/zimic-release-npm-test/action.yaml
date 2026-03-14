@@ -48,19 +48,22 @@ runs:
 
         echo "Using ${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} for testing..."
 
-        internalPackageNames=(@zimic/http @zimic/fetch @zimic/ws @zimic/interceptor)
-
         for packageFile in {apps,examples,packages}/*/package.json examples/package.json; do
-          for packageName in "${internalPackageNames[@]}"; do
-            sed -i -E \
-              "s;\"$packageName\": \"(latest|workspace:.*|\^.+|>=.+)\";\"$packageName\": \"workspace:*\";" \
-              "$packageFile"
-          done
-
+          # Change all package references to use the released version
           sed -i -E \
-            "s;\"${{ inputs.project-name }}\": \"(latest|workspace:.*)\";\"${{ inputs.project-name }}\": \"${{ steps.zimic-version.outputs.value }}\";" \
+            "s;\"${{ inputs.project-name }}\": \"([^\"]+)\";\"${{ inputs.project-name }}\": \"${{ steps.zimic-version.outputs.value }}\";" \
+            "$packageFile"
+
+          # Change the package name to force pnpm to fetch it from NPM instead of using the local workspace version
+          sed -i -E \
+            "s;\"name\": \"${{ inputs.project-name }}\";\"name\": \"${{ inputs.project-name }}-tmp\";" \
             "$packageFile"
         done
+
+        # Disable root preinstall script to allow using @zimic/* packages from registry
+        sed -i -E \
+          "s;\"pnpm:devPreinstall\": \"([^\"]+)\";\"pnpm:devPreinstall\": \"echo 'Skipped preinstall script: \1'\";" \
+          package.json
 
     - name: Wait for released package to be available on NPM
       shell: bash
@@ -73,7 +76,7 @@ runs:
           done
         '
 
-        echo "${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} is now available on NPM!"
+        echo "${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} is available on NPM."
 
     - name: Test released package
       shell: bash
@@ -84,9 +87,6 @@ runs:
             echo "Retrying..."
           done
         '
-
-        echo 'Re-running `pnpm install` in case `pnpm-lock.yaml` was changed by scripts/preinstall.mjs...'
-        pnpm install --no-frozen-lockfile ${{ steps.zimic-setup.outputs.install-filters }}
 
         pnpm turbo \
           types:check lint:turbo \
