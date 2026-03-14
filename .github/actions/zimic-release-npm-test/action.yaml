@@ -70,14 +70,17 @@ runs:
     - name: Test released package
       shell: bash
       run: |
-        timeout 90s bash -c '
+        # Allow scripts/postinstall.mjs to autofix pnpm-lock.yaml, in case projects stopped referencing @zimic/*
+        # packages using local links. pnpm sometimes removes links to local packages in favor of registry versions after
+        # installing or updating packages.
+        CI=false EXIT_ON_NON_LOCAL_PACKAGES=false timeout 90s bash -c '
           until pnpm install --no-frozen-lockfile ${{ steps.zimic-setup.outputs.install-filters }}; do
             sleep 5
             echo "Retrying..."
           done
         '
 
-        echo 'Re-running `pnpm install` in case `pnpm-lock.yaml` was changed by scripts/preinstall.mjs...'
+        echo 'Re-running `pnpm install` in case `pnpm-lock.yaml` was changed by scripts/postinstall.mjs...'
         pnpm install --no-frozen-lockfile ${{ steps.zimic-setup.outputs.install-filters }}
 
         # Return the package name back to the original for turbo tasks
