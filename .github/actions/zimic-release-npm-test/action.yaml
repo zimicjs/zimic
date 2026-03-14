@@ -49,9 +49,9 @@ runs:
         echo "Using ${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} for testing..."
 
         for packageFile in {apps,examples,packages}/*/package.json examples/package.json; do
-          # Change all package version references to the released version
+          # Change all package references to use the released version
           sed -i -E \
-            "s;\"${{ inputs.project-name }}\": \"(latest|workspace:.+|\^.+|>=.+)\";\"${{ inputs.project-name }}\": \"${{ steps.zimic-version.outputs.value }}\";" \
+            "s;\"${{ inputs.project-name }}\": \"([^\"]+)\";\"${{ inputs.project-name }}\": \"${{ steps.zimic-version.outputs.value }}\";" \
             "$packageFile"
 
           # Change the package name to force pnpm to fetch it from NPM instead of using the local workspace version
