@@ -571,7 +571,7 @@ export function declarePathParamsHttpInterceptorWorkerTests(options: SharedHttpI
 
         await expect(async () => {
           await worker.use(interceptor.client, 'GET', testCase.path, spiedRequestHandler);
-        }).rejects.toThrowError(new DuplicatedPathParamError(testCase.path, testCase.duplicatedParameter));
+        }).rejects.toThrow(new DuplicatedPathParamError(testCase.path, testCase.duplicatedParameter));
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 

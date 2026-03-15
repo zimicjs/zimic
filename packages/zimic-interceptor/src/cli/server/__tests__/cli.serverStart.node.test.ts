@@ -175,9 +175,7 @@ describe('CLI > Server start', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--ephemeral', '--port', 'abc']);
 
     await usingIgnoredConsole(['error'], async (console) => {
-      await expect(runCLI()).rejects.toThrowError(
-        'options.port should be >= 0 and < 65536. Received type number (NaN).',
-      );
+      await expect(runCLI()).rejects.toThrow('options.port should be >= 0 and < 65536. Received type number (NaN).');
 
       expect(console.error).toHaveBeenCalledTimes(1);
 
@@ -213,7 +211,7 @@ describe('CLI > Server start', async () => {
       expect(initialServer!.port).toBe(5001);
 
       try {
-        await expect(runCLI()).rejects.toThrowError('EADDRINUSE: address already in use');
+        await expect(runCLI()).rejects.toThrow('EADDRINUSE: address already in use');
 
         expect(console.error).toHaveBeenCalledTimes(1);
 
@@ -246,7 +244,7 @@ describe('CLI > Server start', async () => {
         vi.advanceTimersByTime(DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT);
 
         const timeoutError = new HttpServerStartTimeoutError(DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT);
-        await expect(cliPromise).rejects.toThrowError(timeoutError);
+        await expect(cliPromise).rejects.toThrow(timeoutError);
 
         expect(console.error).toHaveBeenCalledTimes(1);
         expect(console.error).toHaveBeenCalledWith(timeoutError);
@@ -355,7 +353,7 @@ describe('CLI > Server start', async () => {
         const cliPromise = runCLI();
 
         const timeoutError = new HttpServerStopTimeoutError(DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT);
-        await expect(cliPromise).rejects.toThrowError(timeoutError);
+        await expect(cliPromise).rejects.toThrow(timeoutError);
 
         expect(console.error).toHaveBeenCalledTimes(1);
         expect(console.error).toHaveBeenCalledWith(timeoutError);

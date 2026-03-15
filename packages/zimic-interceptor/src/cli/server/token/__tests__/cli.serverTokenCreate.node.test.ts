@@ -56,7 +56,7 @@ describe('CLI > Server token create', () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create', '--help']);
 
     await usingIgnoredConsole(['log'], async (console) => {
-      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
+      await expect(runCLI()).rejects.toThrow('process.exit unexpectedly called with "0"');
 
       expect(console.log).toHaveBeenCalledTimes(1);
       expect(console.log).toHaveBeenCalledWith(serverStartHelpOutput);
@@ -221,7 +221,7 @@ describe('CLI > Server token create', () => {
 
       try {
         await usingIgnoredConsole(['error'], async (console) => {
-          await expect(runCLI()).rejects.toThrowError(appendFileError);
+          await expect(runCLI()).rejects.toThrow(appendFileError);
 
           expect(console.error).toHaveBeenCalledTimes(2);
           expect(console.error).toHaveBeenNthCalledWith(

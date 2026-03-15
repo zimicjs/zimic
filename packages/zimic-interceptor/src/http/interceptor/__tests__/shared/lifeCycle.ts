@@ -113,6 +113,6 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
 
     await expect(async () => {
       await interceptor.get('/');
-    }).rejects.toThrowError(new NotRunningHttpInterceptorError());
+    }).rejects.toThrow(new NotRunningHttpInterceptorError());
   });
 }
