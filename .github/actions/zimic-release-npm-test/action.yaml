@@ -79,7 +79,7 @@ runs:
         # Allow scripts/postinstall.mjs to autofix pnpm-lock.yaml, in case projects stopped referencing @zimic/*
         # packages using local links. pnpm sometimes removes links to local packages in favor of registry versions after
         # installing or updating packages.
-        CI=false EXIT_ON_NON_LOCAL_PACKAGES=false timeout 90s bash -c "
+        timeout 90s bash -c "
           until pnpm install --no-frozen-lockfile ${{ steps.zimic-setup.outputs.install-filters }}; do
             sleep 5
             echo 'Retrying...'
@@ -110,6 +110,7 @@ runs:
         TURBO_TEAM: ${{ inputs.turbo-team }}
         TURBO_LOG_ORDER: stream
         ALLOWED_NON_LOCAL_PACKAGES: ${{ inputs.project-name }}
+        EXIT_ON_NON_LOCAL_PACKAGES: false
 
     - name: Save turbo cache
       if: ${{ always() }}
