@@ -44,12 +44,18 @@ runs:
       run: |
         echo "Using ${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} for testing..."
 
-        # Change all package references to use the released version
+        # Change references in the format `"<package>": "<version> || workspace:<version>"` to use the released version.
+        # We need to preserve existing "|| workspace:<version>" to prevent turbo from warning about cyclic dependencies.
         sed -i -E \
-          "s;\"${{ inputs.project-name }}\": \"([^\"]+)\";\"${{ inputs.project-name }}\": \"${{ steps.zimic-version.outputs.value }}\";" \
+          "s;\"${{ inputs.project-name }}\": \"([^\"]+?)( \|\| workspace:[^\"]+)\";\"${{ inputs.project-name }}\": \"${{ steps.zimic-version.outputs.value }}\2\";" \
           {apps,examples,packages}/*/package.json examples/package.json
 
-        # Change the package name to force pnpm to fetch it from NPM instead of using the local workspace version
+        # Change references in the format "<package>": "<version>" to use the released version.
+        sed -i -E \
+          "s;\"${{ inputs.project-name }}\": \"([^\" ]+)\";\"${{ inputs.project-name }}\": \"${{ steps.zimic-version.outputs.value }}\";" \
+          {apps,examples,packages}/*/package.json examples/package.json
+
+        # Change package name to force pnpm to fetch it from NPM instead of using the local workspace version
         sed -i -E \
           "s;\"name\": \"${{ inputs.project-name }}\";\"name\": \"${{ inputs.project-name }}-tmp\";" \
           {apps,examples,packages}/*/package.json examples/package.json
@@ -73,12 +79,12 @@ runs:
         # Allow scripts/postinstall.mjs to autofix pnpm-lock.yaml, in case projects stopped referencing @zimic/*
         # packages using local links. pnpm sometimes removes links to local packages in favor of registry versions after
         # installing or updating packages.
-        CI=false EXIT_ON_NON_LOCAL_PACKAGES=false timeout 90s bash -c '
+        CI=false EXIT_ON_NON_LOCAL_PACKAGES=false timeout 90s bash -c "
           until pnpm install --no-frozen-lockfile ${{ steps.zimic-setup.outputs.install-filters }}; do
             sleep 5
-            echo "Retrying..."
+            echo 'Retrying...'
           done
-        '
+        "
 
         echo 'Re-running `pnpm install` in case `pnpm-lock.yaml` was changed by scripts/postinstall.mjs...'
         pnpm install --no-frozen-lockfile ${{ steps.zimic-setup.outputs.install-filters }}
