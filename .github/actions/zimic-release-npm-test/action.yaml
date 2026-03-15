@@ -46,7 +46,7 @@ runs:
 
         # Change all package references to use the released version
         sed -i -E \
-          "s;\"${{ inputs.project-name }}\": \"([^\"]+)\";\"${{ inputs.project-name }}\": \"npm:${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }}\";" \
+          "s;\"${{ inputs.project-name }}\": \"([^\"]+)\";\"${{ inputs.project-name }}\": \"${{ steps.zimic-version.outputs.value }}\";" \
           {apps,examples,packages}/*/package.json examples/package.json
 
         # Change the package name to force pnpm to fetch it from NPM instead of using the local workspace version
