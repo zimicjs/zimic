@@ -196,7 +196,7 @@ jobs:
           - '5.7'
           - '5.8'
           - '5.9'
-          - '6.0.0-beta'
+          - '6.0.1-rc'
 
     steps:
       - name: Checkout code

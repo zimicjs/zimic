@@ -119,12 +119,12 @@
     "eslint": "^9.39.4",
     "playwright": "^1.58.2",
     "tsup": "^8.5.1",
-    "typescript": "6.0.0-beta",
+    "typescript": "6.0.1-rc",
     "vitest": "^4.1.0"
   },
   "peerDependencies": {
     "@zimic/http": "^1.2.0 || workspace:*",
-    "typescript": "^5.0.0 || ^6.0.0 || ^6.0.0-beta"
+    "typescript": "^5.0.0 || ^6.0.0 || ^6.0.0-beta || ^6.0.1-rc"
   },
   "peerDependenciesMeta": {
     "typescript": {

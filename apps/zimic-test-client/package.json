@@ -34,7 +34,7 @@
     "node-fetch": "^3.3.2",
     "playwright": "^1.58.2",
     "superagent": "^10.3.0",
-    "typescript": "6.0.0-beta",
+    "typescript": "6.0.1-rc",
     "vitest": "^4.1.0"
   }
 }

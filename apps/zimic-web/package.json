@@ -46,6 +46,6 @@
     "postcss": "^8.5.8",
     "sponsorkit": "^17.0.0",
     "tailwindcss": "^4.2.1",
-    "typescript": "6.0.0-beta"
+    "typescript": "6.0.1-rc"
   }
 }
