@@ -169,7 +169,7 @@ describe('JSON types', () => {
     expect(() => {
       // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
       expectTypeOf(JSON.parse(JSON.stringify(undefined))).toEqualTypeOf<undefined>();
-    }).toThrowError(new SyntaxError('"undefined" is not valid JSON'));
+    }).toThrow(new SyntaxError('"undefined" is not valid JSON'));
 
     expectTypeOf(JSON.parse(JSON.stringify(['a', 'b', 'c']))).toEqualTypeOf<string[]>();
     expectTypeOf(JSON.parse(JSON.stringify({ a: 'a', b: 1 }))).toEqualTypeOf<{ a: string; b: number }>();
@@ -178,7 +178,7 @@ describe('JSON types', () => {
 
     expect(() => {
       expectTypeOf(JSON.parse(JSON.stringify(Symbol('a')))).toEqualTypeOf<never>();
-    }).toThrowError(new SyntaxError('"undefined" is not valid JSON'));
+    }).toThrow(new SyntaxError('"undefined" is not valid JSON'));
 
     expectTypeOf(JSON.parse(JSON.stringify(new Map()))).toEqualTypeOf<Record<string, never>>();
     expectTypeOf(JSON.parse(JSON.stringify(new Set()))).toEqualTypeOf<Record<string, never>>();
@@ -191,7 +191,7 @@ describe('JSON types', () => {
 
     expect(() => {
       expectTypeOf(JSON.parse(JSON.stringify(() => undefined))).toEqualTypeOf<never>();
-    }).toThrowError(new SyntaxError('"undefined" is not valid JSON'));
+    }).toThrow(new SyntaxError('"undefined" is not valid JSON'));
 
     expectTypeOf(JSON.parse(JSON.stringify({ a: () => undefined }))).toEqualTypeOf<{}>();
     expectTypeOf(JSON.parse(JSON.stringify({ a: () => undefined, b: 'b' }))).toEqualTypeOf<{ b: string }>();

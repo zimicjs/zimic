@@ -48,7 +48,7 @@ describe('CLI > Server token remove', () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'rm', '--help']);
 
     await usingIgnoredConsole(['log'], async (console) => {
-      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
+      await expect(runCLI()).rejects.toThrow('process.exit unexpectedly called with "0"');
 
       expect(console.log).toHaveBeenCalledTimes(1);
       expect(console.log).toHaveBeenCalledWith(serverStartHelpOutput);
@@ -105,7 +105,7 @@ describe('CLI > Server token remove', () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'rm', tokenId]);
 
     await usingIgnoredConsole(['error'], async (console) => {
-      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
+      await expect(runCLI()).rejects.toThrow('process.exit unexpectedly called with "1"');
 
       expect(console.error).toHaveBeenCalledTimes(2);
       expect(console.error).toHaveBeenNthCalledWith(
@@ -136,7 +136,7 @@ describe('CLI > Server token remove', () => {
 
     await usingIgnoredConsole(['error'], async (console) => {
       const error = new InvalidInterceptorTokenError(invalidTokenId);
-      await expect(runCLI()).rejects.toThrowError(error);
+      await expect(runCLI()).rejects.toThrow(error);
 
       expect(console.error).toHaveBeenCalledTimes(1);
       expect(console.error).toHaveBeenCalledWith(error);
@@ -207,7 +207,7 @@ describe('CLI > Server token remove', () => {
       const error = new Error('process.exit unexpectedly called with "1"');
 
       await usingIgnoredConsole(['error'], async (console) => {
-        await expect(runCLI()).rejects.toThrowError(error);
+        await expect(runCLI()).rejects.toThrow(error);
 
         expect(console.error).toHaveBeenCalledTimes(2);
         expect(console.error).toHaveBeenNthCalledWith(

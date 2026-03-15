@@ -181,7 +181,7 @@ describe('Type generation (OpenAPI)', () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'typegen', 'openapi', '--help']);
 
     await usingIgnoredConsole(['log'], async (console) => {
-      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
+      await expect(runCLI()).rejects.toThrow('process.exit unexpectedly called with "0"');
 
       expect(console.log).toHaveBeenCalledTimes(1);
       expect(console.log).toHaveBeenCalledWith(helpOutput);
@@ -337,7 +337,7 @@ describe('Type generation (OpenAPI)', () => {
 
         await usingIgnoredConsole(['log', 'warn', 'error'], async (console) => {
           if (hasFilterFileOption && filterFilePath && !filterFileExists) {
-            await expect(runCLI()).rejects.toThrowError(
+            await expect(runCLI()).rejects.toThrow(
               `Could not read filter file: ${color.yellow(path.resolve(filterFilePath))}`,
             );
           } else {

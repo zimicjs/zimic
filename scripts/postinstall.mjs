@@ -1,8 +1,8 @@
 import fs from 'fs';
 
 const CI = process.env.CI === 'true';
-const EXIT_ON_NON_LOCAL_PACKAGES = process.env.EXIT_ON_NON_LOCAL_PACKAGES !== 'false';
 const ALLOWED_NON_LOCAL_PACKAGES = process.env.ALLOWED_NON_LOCAL_PACKAGES?.split(',') ?? [];
+const EXIT_ON_NON_LOCAL_PACKAGES = process.env.EXIT_ON_NON_LOCAL_PACKAGES !== 'false';
 
 // pnpm sometimes resolves @zimic/* packages to registry versions instead of local links. This is because our examples
 // reference @zimic/* packages using `latest` instead of using `workspace:` specifiers, to make them easier to clone and
@@ -39,11 +39,11 @@ async function ensureLocalPackagesInLockFile() {
 
   console.warn('pnpm-lock.yaml is using @zimic/* packages from the registry instead of local links.');
 
+  await fs.promises.writeFile('pnpm-lock.yaml', newLockFile, 'utf-8');
+
   if (CI) {
     console.warn('Please run `pnpm install` locally and commit the changes to pnpm-lock.yaml.');
   } else {
-    await fs.promises.writeFile('pnpm-lock.yaml', newLockFile, 'utf-8');
-
     console.warn('pnpm-lock.yaml is now fixed. Please run `pnpm install` again and commit its changes.');
   }
 

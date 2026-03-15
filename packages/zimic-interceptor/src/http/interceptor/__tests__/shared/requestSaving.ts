@@ -74,7 +74,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
               expect(() => {
                 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
                 handler.requests;
-              }).toThrowError(error);
+              }).toThrow(error);
 
               // @ts-expect-error Checking that no intercepted requests are saved.
               // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -90,7 +90,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
               expect(() => {
                 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
                 handler.requests;
-              }).toThrowError(error);
+              }).toThrow(error);
 
               // @ts-expect-error Checking that no intercepted requests are saved.
               // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -140,7 +140,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
         expect(() => {
           // eslint-disable-next-line @typescript-eslint/no-unused-expressions
           handler.requests;
-        }).toThrowError(error);
+        }).toThrow(error);
 
         // @ts-expect-error Checking that no intercepted requests are saved.
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -156,7 +156,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
         expect(() => {
           // eslint-disable-next-line @typescript-eslint/no-unused-expressions
           handler.requests;
-        }).toThrowError(error);
+        }).toThrow(error);
 
         // @ts-expect-error Checking that no intercepted requests are saved.
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -193,7 +193,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
           expect(() => {
             // eslint-disable-next-line @typescript-eslint/no-unused-expressions
             handler.requests;
-          }).toThrowError(error);
+          }).toThrow(error);
 
           // @ts-expect-error Checking that no intercepted requests are saved.
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -477,7 +477,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
       expect(() => {
         // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         handler.requests;
-      }).toThrowError(error);
+      }).toThrow(error);
 
       // @ts-expect-error Checking that no intercepted requests are saved.
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -493,7 +493,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
       expect(() => {
         // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         handler.requests;
-      }).toThrowError(error);
+      }).toThrow(error);
 
       // @ts-expect-error Checking that no intercepted requests are saved.
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access

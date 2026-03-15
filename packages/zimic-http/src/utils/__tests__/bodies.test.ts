@@ -72,7 +72,7 @@ describe('Body utilities', () => {
 
         await expect(async () => {
           await parseHttpBody<JSONValue>(resource);
-        }).rejects.toThrowError(new InvalidJSONError(body));
+        }).rejects.toThrow(new InvalidJSONError(body));
       });
     });
 
@@ -131,7 +131,7 @@ describe('Body utilities', () => {
 
         await expect(async () => {
           await parseHttpBody<HttpFormData>(resource);
-        }).rejects.toThrowError(new InvalidFormDataError(body));
+        }).rejects.toThrow(new InvalidFormDataError(body));
       });
     });
 
