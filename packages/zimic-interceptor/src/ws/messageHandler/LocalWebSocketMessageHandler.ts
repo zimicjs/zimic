@@ -1,20 +1,26 @@
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
-import WebSocketInterceptorClient from '../interceptor/WebSocketInterceptorClient';
+import { WebSocketInterceptorClient } from '../interceptor/types/messages';
+import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
 import { WebSocketMessageHandlerDelayFactory } from './types/messages';
 import { LocalWebSocketMessageHandler as PublicLocalWebSocketMessageHandler } from './types/public';
 import { WebSocketMessageHandlerRestriction } from './types/restrictions';
-import { WebSocketMessageHandlerClient } from './WebSocketMessageHandlerClient';
+import WebSocketMessageHandlerImplementation from './WebSocketMessageHandlerImplementation';
 
 export class LocalWebSocketMessageHandler<
   Schema extends WebSocketSchema,
 > implements PublicLocalWebSocketMessageHandler<Schema> {
   readonly type = 'local';
 
-  client: WebSocketMessageHandlerClient<Schema>;
+  client: WebSocketMessageHandlerImplementation<Schema>;
 
-  constructor(interceptorClient: WebSocketInterceptorClient<Schema>) {
-    this.client = new WebSocketMessageHandlerClient<Schema>(interceptorClient);
+  constructor(interceptorImplementation: WebSocketInterceptorImplementation<Schema>) {
+    this.client = new WebSocketMessageHandlerImplementation<Schema>(interceptorImplementation);
+  }
+
+  from(sender: WebSocketInterceptorClient<Schema>) {
+    this.client.from(sender);
+    return this;
   }
 
   with(restriction: WebSocketMessageHandlerRestriction<Schema>) {

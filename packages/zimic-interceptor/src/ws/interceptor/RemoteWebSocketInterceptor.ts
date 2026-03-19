@@ -4,15 +4,15 @@ import { RemoteWebSocketMessageHandler } from '../messageHandler/RemoteWebSocket
 import { WebSocketInterceptorClient as PublicWebSocketInterceptorClient } from './types/messages';
 import { RemoteWebSocketInterceptorOptions, WebSocketInterceptorMessageSaving } from './types/options';
 import { RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor } from './types/public';
-import WebSocketInterceptorClient from './WebSocketInterceptorClient';
+import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
 
 class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements PublicRemoteWebSocketInterceptor<Schema> {
-  client: WebSocketInterceptorClient<Schema>;
+  implementation: WebSocketInterceptorImplementation<Schema>;
 
   constructor(options: RemoteWebSocketInterceptorOptions) {
     const baseURL = new URL(options.baseURL);
 
-    this.client = new WebSocketInterceptorClient<Schema>({
+    this.implementation = new WebSocketInterceptorImplementation<Schema>({
       baseURL,
       Handler: RemoteWebSocketMessageHandler,
     });
@@ -23,31 +23,31 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
   }
 
   get baseURL() {
-    return this.client.baseURLAsString;
+    return this.implementation.baseURLAsString;
   }
 
   set baseURL(baseURL: RemoteWebSocketInterceptorOptions['baseURL']) {
-    this.client.baseURL = new URL(baseURL);
+    this.implementation.baseURL = new URL(baseURL);
   }
 
   get platform() {
-    return this.client.platform;
+    return this.implementation.platform;
   }
 
   get isRunning() {
-    return this.client.isRunning;
+    return this.implementation.isRunning;
   }
 
   get messageSaving() {
-    return this.client.messageSaving;
+    return this.implementation.messageSaving;
   }
 
   set messageSaving(messageSaving: WebSocketInterceptorMessageSaving) {
-    this.client.messageSaving = messageSaving;
+    this.implementation.messageSaving = messageSaving;
   }
 
-  on(type: 'message') {
-    return this.client.on(type) as RemoteWebSocketMessageHandler<Schema>;
+  message() {
+    return this.implementation.message() as RemoteWebSocketMessageHandler<Schema>;
   }
 
   // TODO
@@ -61,7 +61,7 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
       return;
     }
 
-    await this.client.start();
+    await this.implementation.start();
   }
 
   async stop() {
@@ -70,13 +70,13 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
     }
 
     await this.clear();
-    await this.client.stop();
+    await this.implementation.stop();
   }
 
   checkTimes() {
     return new Promise<void>((resolve, reject) => {
       try {
-        this.client.checkTimes();
+        this.implementation.checkTimes();
         resolve();
       } catch (error) {
         reject(error);
@@ -85,7 +85,7 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
   }
 
   async clear() {
-    await this.client.clear();
+    await this.implementation.clear();
   }
 }
 

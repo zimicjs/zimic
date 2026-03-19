@@ -1,16 +1,20 @@
 import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
-import { WebSocketMessageHandlerClient } from '../WebSocketMessageHandlerClient';
+import { WebSocketInterceptorClient } from '@/ws/interceptor/types/messages';
+
+import WebSocketMessageHandlerImplementation from '../WebSocketMessageHandlerImplementation';
 import { WebSocketMessageHandlerDelayFactory } from './messages';
 import { WebSocketMessageHandlerRestriction } from './restrictions';
 
 export interface InternalWebSocketMessageHandler<Schema extends WebSocketSchema> {
-  client: WebSocketMessageHandlerClient<Schema>;
+  client: WebSocketMessageHandlerImplementation<Schema>;
 }
 
 export interface LocalWebSocketMessageHandler<Schema extends WebSocketSchema> {
   get type(): 'local';
+
+  from: (sender: WebSocketInterceptorClient<Schema>) => this;
 
   with: (restriction: WebSocketMessageHandlerRestriction<Schema>) => this;
 
@@ -28,6 +32,8 @@ export interface LocalWebSocketMessageHandler<Schema extends WebSocketSchema> {
 
 export interface SyncedRemoteWebSocketMessageHandler<Schema extends WebSocketSchema> {
   get type(): 'remote';
+
+  from: (sender: WebSocketInterceptorClient<Schema>) => PendingRemoteWebSocketMessageHandler<Schema>;
 
   with: (restriction: WebSocketMessageHandlerRestriction<Schema>) => PendingRemoteWebSocketMessageHandler<Schema>;
 
