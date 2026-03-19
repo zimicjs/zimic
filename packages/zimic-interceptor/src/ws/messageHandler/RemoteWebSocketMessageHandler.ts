@@ -1,5 +1,5 @@
 import { PossiblePromise } from '@zimic/utils/types';
-import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import { WebSocketSchema } from '@zimic/ws';
 
 import { WebSocketInterceptorClient } from '../interceptor/types/messages';
 import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
@@ -7,6 +7,7 @@ import { WebSocketMessageHandlerDelayFactory } from './types/messages';
 import {
   SyncedRemoteWebSocketMessageHandler as PublicSyncedRemoteWebSocketMessageHandler,
   PendingRemoteWebSocketMessageHandler as PublicPendingRemoteWebSocketMessageHandler,
+  WebSocketMessageInterceptedCallback,
 } from './types/public';
 import { WebSocketMessageHandlerRestriction } from './types/restrictions';
 import WebSocketMessageHandlerImplementation from './WebSocketMessageHandlerImplementation';
@@ -68,8 +69,8 @@ export class RemoteWebSocketMessageHandler<
     return this.unsynced;
   }
 
-  send(message: WebSocketMessageData<Schema>) {
-    this.client.send(message);
+  run(callback: WebSocketMessageInterceptedCallback<Schema>) {
+    this.client.run(callback);
     return this.unsynced;
   }
 
