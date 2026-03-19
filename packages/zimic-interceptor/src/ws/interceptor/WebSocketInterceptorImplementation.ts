@@ -1,5 +1,5 @@
 import { excludeNonPathParams, validateURLProtocol } from '@zimic/utils/url';
-import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import { WebSocketSchema } from '@zimic/ws';
 
 import { isServerSide } from '@/utils/environment';
 
@@ -22,7 +22,7 @@ class WebSocketInterceptorImplementation<
   private _baseURL!: URL;
 
   messageSaving: WebSocketInterceptorMessageSaving;
-  private numberOfSavedMessages = 0;
+  private _numberOfSavedMessages = 0;
 
   isRunning = false;
 
@@ -108,7 +108,7 @@ class WebSocketInterceptorImplementation<
     // TODO
   }
 
-  async handleInterceptedMessage(_message: WebSocketMessageData<Schema>) {
+  async handleInterceptedMessage(_message: Schema) {
     // TODO
   }
 
