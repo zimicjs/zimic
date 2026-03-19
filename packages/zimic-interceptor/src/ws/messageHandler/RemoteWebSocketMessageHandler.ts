@@ -1,14 +1,15 @@
 import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
-import WebSocketInterceptorClient from '../interceptor/WebSocketInterceptorClient';
+import { WebSocketInterceptorClient } from '../interceptor/types/messages';
+import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
 import { WebSocketMessageHandlerDelayFactory } from './types/messages';
 import {
   SyncedRemoteWebSocketMessageHandler as PublicSyncedRemoteWebSocketMessageHandler,
   PendingRemoteWebSocketMessageHandler as PublicPendingRemoteWebSocketMessageHandler,
 } from './types/public';
 import { WebSocketMessageHandlerRestriction } from './types/restrictions';
-import { WebSocketMessageHandlerClient } from './WebSocketMessageHandlerClient';
+import WebSocketMessageHandlerImplementation from './WebSocketMessageHandlerImplementation';
 
 const UNSYNCED_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Promise<unknown>)[]);
 
@@ -17,15 +18,15 @@ export class RemoteWebSocketMessageHandler<
 > implements PublicPendingRemoteWebSocketMessageHandler<Schema> {
   readonly type = 'remote';
 
-  client: WebSocketMessageHandlerClient<Schema>;
+  client: WebSocketMessageHandlerImplementation<Schema>;
 
   private syncPromises: Promise<unknown>[] = [];
 
   private unsynced: this;
   private synced: this;
 
-  constructor(interceptorClient: WebSocketInterceptorClient<Schema>) {
-    this.client = new WebSocketMessageHandlerClient<Schema>(interceptorClient);
+  constructor(interceptorImplementation: WebSocketInterceptorImplementation<Schema>) {
+    this.client = new WebSocketMessageHandlerImplementation<Schema>(interceptorImplementation);
     this.unsynced = this;
     this.synced = this.createSyncedProxy();
   }
@@ -50,6 +51,11 @@ export class RemoteWebSocketMessageHandler<
 
   private isHiddenPropertyWhenSynced(property: string | symbol) {
     return UNSYNCED_PROPERTIES.has(property);
+  }
+
+  from(sender: WebSocketInterceptorClient<Schema>) {
+    this.client.from(sender);
+    return this.unsynced;
   }
 
   with(restriction: WebSocketMessageHandlerRestriction<Schema>) {

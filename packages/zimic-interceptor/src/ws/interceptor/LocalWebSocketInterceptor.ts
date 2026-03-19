@@ -4,15 +4,15 @@ import { LocalWebSocketMessageHandler } from '../messageHandler/LocalWebSocketMe
 import { WebSocketInterceptorClient as PublicWebSocketInterceptorClient } from './types/messages';
 import { LocalWebSocketInterceptorOptions, WebSocketInterceptorMessageSaving } from './types/options';
 import { LocalWebSocketInterceptor as PublicLocalWebSocketInterceptor } from './types/public';
-import WebSocketInterceptorClient from './WebSocketInterceptorClient';
+import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
 
 class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements PublicLocalWebSocketInterceptor<Schema> {
-  client: WebSocketInterceptorClient<Schema>;
+  implementation: WebSocketInterceptorImplementation<Schema>;
 
   constructor(options: LocalWebSocketInterceptorOptions) {
     const baseURL = new URL(options.baseURL);
 
-    this.client = new WebSocketInterceptorClient<Schema>({
+    this.implementation = new WebSocketInterceptorImplementation<Schema>({
       baseURL,
       Handler: LocalWebSocketMessageHandler,
     });
@@ -23,31 +23,31 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
   }
 
   get baseURL() {
-    return this.client.baseURLAsString;
+    return this.implementation.baseURLAsString;
   }
 
   set baseURL(baseURL: LocalWebSocketInterceptorOptions['baseURL']) {
-    this.client.baseURL = new URL(baseURL);
+    this.implementation.baseURL = new URL(baseURL);
   }
 
   get platform() {
-    return this.client.platform;
+    return this.implementation.platform;
   }
 
   get isRunning() {
-    return this.client.isRunning;
+    return this.implementation.isRunning;
   }
 
   get messageSaving() {
-    return this.client.messageSaving;
+    return this.implementation.messageSaving;
   }
 
   set messageSaving(messageSaving: WebSocketInterceptorMessageSaving) {
-    this.client.messageSaving = messageSaving;
+    this.implementation.messageSaving = messageSaving;
   }
 
-  on(type: 'message') {
-    return this.client.on(type) as LocalWebSocketMessageHandler<Schema>;
+  message() {
+    return this.implementation.message() as LocalWebSocketMessageHandler<Schema>;
   }
 
   // TODO
@@ -61,7 +61,7 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
       return;
     }
 
-    await this.client.start();
+    await this.implementation.start();
   }
 
   async stop() {
@@ -70,15 +70,15 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
     }
 
     this.clear();
-    await this.client.stop();
+    await this.implementation.stop();
   }
 
   checkTimes() {
-    this.client.checkTimes();
+    this.implementation.checkTimes();
   }
 
   clear() {
-    void this.client.clear();
+    void this.implementation.clear();
   }
 }
 

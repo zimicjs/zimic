@@ -12,8 +12,8 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
   get platform(): WebSocketInterceptorPlatform | null;
   get isRunning(): boolean;
 
-  server: WebSocketInterceptorClient<Schema>;
-  clients: WebSocketInterceptorClient<Schema>[];
+  get server(): WebSocketInterceptorClient<Schema>;
+  get clients(): WebSocketInterceptorClient<Schema>[];
 
   start: () => Promise<void>;
   stop: () => Promise<void>;
@@ -25,7 +25,7 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
 export interface LocalWebSocketInterceptor<Schema extends WebSocketSchema> extends WebSocketInterceptor<Schema> {
   get type(): 'local';
 
-  on: (type: 'message') => LocalWebSocketMessageHandler<Schema>;
+  message: () => LocalWebSocketMessageHandler<Schema>;
 
   checkTimes: () => void;
   clear: () => void;
@@ -34,7 +34,7 @@ export interface LocalWebSocketInterceptor<Schema extends WebSocketSchema> exten
 export interface RemoteWebSocketInterceptor<Schema extends WebSocketSchema> extends WebSocketInterceptor<Schema> {
   get type(): 'remote';
 
-  on: (type: 'message') => RemoteWebSocketMessageHandler<Schema>;
+  message: () => RemoteWebSocketMessageHandler<Schema>;
 
   checkTimes: () => Promise<void>;
   clear: () => Promise<void>;
