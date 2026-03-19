@@ -15,7 +15,7 @@ export const DEFAULT_MESSAGE_SAVING_SAFE_LIMIT = 1000;
 
 export type WebSocketHandlerConstructor = typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
 
-class WebSocketInterceptorClient<
+class WebSocketInterceptorImplementation<
   Schema extends WebSocketSchema,
   HandlerConstructor extends WebSocketHandlerConstructor = WebSocketHandlerConstructor,
 > {
@@ -89,7 +89,7 @@ class WebSocketInterceptorClient<
     return 0;
   }
 
-  on(_type: 'message') {
+  message() {
     return this.createWebSocketMessageHandler();
   }
 
@@ -122,4 +122,4 @@ class WebSocketInterceptorClient<
   }
 }
 
-export default WebSocketInterceptorClient;
+export default WebSocketInterceptorImplementation;

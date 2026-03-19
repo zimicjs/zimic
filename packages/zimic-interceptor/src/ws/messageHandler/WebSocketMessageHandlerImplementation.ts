@@ -1,11 +1,16 @@
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
-import WebSocketInterceptorClient from '../interceptor/WebSocketInterceptorClient';
+import { WebSocketInterceptorClient } from '../interceptor/types/messages';
+import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
 import { WebSocketMessageHandlerDelayFactory } from './types/messages';
 import { WebSocketMessageHandlerRestriction } from './types/restrictions';
 
-export class WebSocketMessageHandlerClient<Schema extends WebSocketSchema> {
-  constructor(private interceptorClient: WebSocketInterceptorClient<Schema>) {}
+class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema> {
+  constructor(private interceptorImplementation: WebSocketInterceptorImplementation<Schema>) {}
+
+  from(_sender: WebSocketInterceptorClient<Schema>) {
+    // TODO
+  }
 
   with(_restriction: WebSocketMessageHandlerRestriction<Schema>) {
     // TODO
@@ -31,3 +36,5 @@ export class WebSocketMessageHandlerClient<Schema extends WebSocketSchema> {
     // TODO
   }
 }
+
+export default WebSocketMessageHandlerImplementation;
