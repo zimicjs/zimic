@@ -1,5 +1,5 @@
 import { PossiblePromise } from '@zimic/utils/types';
-import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import { WebSocketSchema } from '@zimic/ws';
 
 import { WebSocketInterceptorClient } from '@/ws/interceptor/types/messages';
 
@@ -11,6 +11,11 @@ export interface InternalWebSocketMessageHandler<Schema extends WebSocketSchema>
   client: WebSocketMessageHandlerImplementation<Schema>;
 }
 
+export type WebSocketMessageInterceptedCallback<Schema extends WebSocketSchema> = (
+  message: Schema,
+  context: { sender: WebSocketInterceptorClient<Schema> },
+) => PossiblePromise<void>;
+
 export interface LocalWebSocketMessageHandler<Schema extends WebSocketSchema> {
   get type(): 'local';
 
@@ -21,7 +26,7 @@ export interface LocalWebSocketMessageHandler<Schema extends WebSocketSchema> {
   delay: ((milliseconds: number | WebSocketMessageHandlerDelayFactory<Schema>) => this) &
     ((minMilliseconds: number, maxMilliseconds: number) => this);
 
-  send: (message: WebSocketMessageData<Schema>) => this;
+  run: (callback: WebSocketMessageInterceptedCallback<Schema>) => this;
 
   times: ((numberOfMessages: number) => this) & ((minNumberOfMessages: number, maxNumberOfMessages: number) => this);
 
@@ -42,7 +47,7 @@ export interface SyncedRemoteWebSocketMessageHandler<Schema extends WebSocketSch
   ) => PendingRemoteWebSocketMessageHandler<Schema>) &
     ((minMilliseconds: number, maxMilliseconds: number) => PendingRemoteWebSocketMessageHandler<Schema>);
 
-  send: (message: WebSocketMessageData<Schema>) => PendingRemoteWebSocketMessageHandler<Schema>;
+  run: (callback: WebSocketMessageInterceptedCallback<Schema>) => PendingRemoteWebSocketMessageHandler<Schema>;
 
   times: ((numberOfRequests: number) => PendingRemoteWebSocketMessageHandler<Schema>) &
     ((minNumberOfRequests: number, maxNumberOfRequests: number) => PendingRemoteWebSocketMessageHandler<Schema>);

@@ -28,6 +28,7 @@ export type {
   LocalWebSocketInterceptorOptions,
   RemoteWebSocketInterceptorOptions,
   WebSocketInterceptorOptions,
+  WebSocketInterceptorMessageSaving,
 } from './interceptor/types/options';
 
 export type { InferWebSocketInterceptorSchema } from './interceptor/types/schema';

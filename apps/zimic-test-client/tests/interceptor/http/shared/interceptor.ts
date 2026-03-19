@@ -1,73 +1,93 @@
-import { createFetch, FetchRequest, FetchResponse, FetchResponseError } from '@zimic/fetch';
-import { JSONSerialized, HttpHeaders, HttpSearchParams, HttpRequest, HttpResponse } from '@zimic/http';
-import { createHttpInterceptor } from '@zimic/interceptor/http';
-import { expectToThrow } from '@zimic/utils/error';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
+import { JSONSerialized, HttpHeaders, HttpRequest, HttpResponse, HttpSearchParams } from '@zimic/http';
+import { createHttpInterceptor, HttpInterceptorType } from '@zimic/interceptor/http';
+import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf, afterEach } from 'vitest';
 
+import { ZIMIC_SERVER_PORT } from '@tests/constants';
 import {
   AuthHttpSchema,
-  ConflictError,
-  NotFoundError,
-  Notification,
   NotificationHttpSchema,
   User,
   UserCreationRequestBody,
-  UserListSearchParams,
-  UserUpdatePayload,
   ValidationError,
+  ConflictError,
+  UserListSearchParams,
+  NotFoundError,
+  Notification,
+  UserUpdatePayload,
 } from '@tests/types/schema';
-import { importCrypto } from '@tests/utils/crypto';
-import { expectResponseStatus } from '@tests/utils/requests';
+import { importCrypto, IsomorphicCrypto } from '@tests/utils/crypto';
+import { serializeUser } from '@tests/utils/schema';
 
-describe('Fetch client', async () => {
+import { ClientTestOptionsByWorkerType } from './client';
+
+function getAuthBaseURL(type: HttpInterceptorType, crypto: IsomorphicCrypto) {
+  return type === 'local'
+    ? 'http://localhost:4000'
+    : `http://localhost:${ZIMIC_SERVER_PORT}/auth-${crypto.randomUUID()}`;
+}
+
+function getNotificationBaseURL(type: HttpInterceptorType, crypto: IsomorphicCrypto) {
+  return type === 'local'
+    ? 'http://localhost:4001'
+    : `http://localhost:${ZIMIC_SERVER_PORT}/notification-${crypto.randomUUID()}`;
+}
+
+export async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerType) {
+  const { platform, type } = options;
+
   const crypto = await importCrypto();
 
-  const authFetch = createFetch<AuthHttpSchema>({
-    baseURL: 'http://localhost:4000',
-  });
-
   const authInterceptor = createHttpInterceptor<AuthHttpSchema>({
-    baseURL: authFetch.baseURL,
+    type,
+    baseURL: getAuthBaseURL(type, crypto),
     requestSaving: { enabled: true },
   });
 
-  const notificationFetch = createFetch<NotificationHttpSchema>({
-    baseURL: 'http://localhost:4001',
-  });
-
   const notificationInterceptor = createHttpInterceptor<NotificationHttpSchema>({
-    baseURL: notificationFetch.baseURL,
+    type,
+    baseURL: getNotificationBaseURL(type, crypto),
     requestSaving: { enabled: true },
   });
 
   const interceptors = [authInterceptor, notificationInterceptor];
 
+  const authBaseURL = authInterceptor.baseURL;
+  const notificationBaseURL = notificationInterceptor.baseURL;
+
   beforeAll(async () => {
-    await Promise.all(interceptors.map((interceptor) => interceptor.start()));
+    await Promise.all(
+      interceptors.map(async (interceptor) => {
+        await interceptor.start();
+        expect(interceptor.isRunning).toBe(true);
+        expect(interceptor.platform).toBe(platform);
+      }),
+    );
   });
 
-  beforeEach(() => {
-    for (const interceptor of interceptors) {
-      interceptor.clear();
-    }
+  beforeEach(async () => {
+    await Promise.all(
+      interceptors.map(async (interceptor) => {
+        await interceptor.clear();
+      }),
+    );
   });
 
-  afterEach(() => {
-    for (const interceptor of interceptors) {
-      interceptor.checkTimes();
-    }
+  afterEach(async () => {
+    await Promise.all(
+      interceptors.map(async (interceptor) => {
+        await interceptor.checkTimes();
+      }),
+    );
   });
 
   afterAll(async () => {
-    await Promise.all(interceptors.map((interceptor) => interceptor.stop()));
+    await Promise.all(
+      interceptors.map(async (interceptor) => {
+        await interceptor.stop();
+        expect(interceptor.isRunning).toBe(false);
+      }),
+    );
   });
-
-  function serializeUser(user: User): JSONSerialized<User> {
-    return {
-      ...user,
-      birthDate: user.birthDate.toISOString(),
-    };
-  }
 
   describe('Users', () => {
     const user: User = {
@@ -86,23 +106,20 @@ describe('Fetch client', async () => {
       };
 
       async function createUser(payload: UserCreationRequestBody) {
-        const response = await authFetch('/users', {
+        const request = new Request(`${authBaseURL}/users`, {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          headers: {
+            'content-type': 'application/json',
+            accept: 'application/json',
+          },
           body: JSON.stringify(payload),
         });
 
-        if (!response.ok) {
-          throw response.error;
-        }
-
-        expect(response).toBeInstanceOf(FetchResponse);
-
-        return response;
+        return fetch(request);
       }
 
       it('should support creating users', async () => {
-        const creationHandler = authInterceptor
+        const creationHandler = await authInterceptor
           .post('/users')
           .with({
             headers: { 'content-type': 'application/json' },
@@ -127,10 +144,9 @@ describe('Fetch client', async () => {
           .times(1);
 
         const response = await createUser(creationPayload);
-        expectTypeOf(response.status).toEqualTypeOf<201>();
-        expectResponseStatus(response, 201);
+        expect(response.status).toBe(201);
 
-        const createdUser = await response.json();
+        const createdUser = (await response.json()) as User;
         expect(createdUser).toEqual<JSONSerialized<User>>({
           id: expect.any(String) as string,
           name: creationPayload.name,
@@ -182,20 +198,14 @@ describe('Fetch client', async () => {
           message: 'Invalid payload',
         };
 
-        const creationHandler = authInterceptor
+        const creationHandler = await authInterceptor
           .post('/users')
           .with({ body: invalidPayload })
           .respond({ status: 400, body: validationError })
           .times(1);
 
-        const error = await expectToThrow(
-          createUser(invalidPayload),
-          (error): error is FetchResponseError<AuthHttpSchema, 'POST', '/users'> =>
-            authFetch.isResponseError(error, 'POST', '/users'),
-        );
-
-        expectTypeOf(error.response.status).toEqualTypeOf<201 | 400 | 409 | 500>();
-        expectResponseStatus(error.response, 400);
+        const response = await createUser(invalidPayload);
+        expect(response.status).toBe(400);
 
         expect(creationHandler.requests).toHaveLength(1);
 
@@ -234,21 +244,14 @@ describe('Fetch client', async () => {
           code: 'conflict',
           message: 'User already exists',
         };
-
-        const creationHandler = authInterceptor
+        const creationHandler = await authInterceptor
           .post('/users')
           .with({ body: conflictingPayload })
           .respond({ status: 409, body: conflictError })
           .times(1);
 
-        const error = await expectToThrow(
-          createUser(conflictingPayload),
-          (error): error is FetchResponseError<AuthHttpSchema, 'POST', '/users'> =>
-            authFetch.isResponseError(error, 'POST', '/users'),
-        );
-
-        expectTypeOf(error.response.status).toEqualTypeOf<201 | 400 | 409 | 500>();
-        expectResponseStatus(error.response, 409);
+        const response = await createUser(conflictingPayload);
+        expect(response.status).toBe(409);
 
         expect(creationHandler.requests).toHaveLength(1);
 
@@ -303,41 +306,31 @@ describe('Fetch client', async () => {
         },
       ];
 
-      beforeEach(() => {
-        authInterceptor.get('/users').respond({
+      beforeEach(async () => {
+        await authInterceptor.get('/users').respond({
           status: 200,
           body: [],
         });
       });
 
       async function listUsers(filters: UserListSearchParams = {}) {
-        const request = new authFetch.Request('/users', {
+        const searchParams = new HttpSearchParams<UserListSearchParams>(filters);
+        const request = new Request(`${authBaseURL}/users?${searchParams.toString()}`, {
           method: 'GET',
-          searchParams: filters,
         });
-
-        expect(request).toBeInstanceOf(FetchRequest);
-
-        const response = await authFetch(request);
-
-        if (!response.ok) {
-          throw response.error;
-        }
-
-        return response;
+        return fetch(request);
       }
 
       it('should list users', async () => {
-        const listHandler = authInterceptor
+        const listHandler = await authInterceptor
           .get('/users')
           .respond({ status: 200, body: users.map(serializeUser) })
           .times(1);
 
         const response = await listUsers();
-        expectTypeOf(response.status).toEqualTypeOf<200>();
-        expectResponseStatus(response, 200);
+        expect(response.status).toBe(200);
 
-        const returnedUsers = await response.json();
+        const returnedUsers = (await response.json()) as User[];
         expect(returnedUsers).toEqual(users.map(serializeUser));
 
         expect(listHandler.requests).toHaveLength(1);
@@ -370,17 +363,16 @@ describe('Fetch client', async () => {
       it('should list users filtered by name', async () => {
         const user = users[0];
 
-        const listHandler = authInterceptor
+        const listHandler = await authInterceptor
           .get('/users')
           .with({ searchParams: { name: user.name } })
           .respond({ status: 200, body: [serializeUser(user)] })
           .times(1);
 
         const response = await listUsers({ name: user.name });
-        expectTypeOf(response.status).toEqualTypeOf<200>();
-        expectResponseStatus(response, 200);
+        expect(response.status).toBe(200);
 
-        const returnedUsers = await response.json();
+        const returnedUsers = (await response.json()) as User[];
         expect(returnedUsers).toEqual([serializeUser(user)]);
 
         expect(listHandler.requests).toHaveLength(1);
@@ -416,22 +408,18 @@ describe('Fetch client', async () => {
           return otherUser.email.localeCompare(user.email);
         });
 
-        const listHandler = authInterceptor
+        const listHandler = await authInterceptor
           .get('/users')
           .with({ searchParams: { orderBy: ['email.desc'] } })
-          .respond({
-            status: 200,
-            body: usersSortedByDescendingEmail.map(serializeUser),
-          })
+          .respond({ status: 200, body: usersSortedByDescendingEmail.map(serializeUser) })
           .times(1);
 
         const response = await listUsers({
           orderBy: ['email.desc'],
         });
-        expectTypeOf(response.status).toEqualTypeOf<200>();
-        expectResponseStatus(response, 200);
+        expect(response.status).toBe(200);
 
-        const returnedUsers = await response.json();
+        const returnedUsers = (await response.json()) as User[];
         expect(returnedUsers).toEqual(usersSortedByDescendingEmail.map(serializeUser));
 
         expect(listHandler.requests).toHaveLength(1);
@@ -467,33 +455,24 @@ describe('Fetch client', async () => {
 
     describe('User get by id', () => {
       async function getUserById(userId: string) {
-        const response = await authFetch(`/users/${userId}`, { method: 'GET' });
-
-        if (!response.ok) {
-          throw response.error;
-        }
-
-        return response;
+        const request = new Request(`${authBaseURL}/users/${userId}`, { method: 'GET' });
+        return fetch(request);
       }
 
       it('should support getting users by id', async () => {
-        const getHandler = authInterceptor
+        const getHandler = await authInterceptor
           .get(`/users/${user.id}`)
-          .respond({
-            status: 200,
-            body: serializeUser(user),
-          })
+          .respond({ status: 200, body: serializeUser(user) })
           .times(1);
 
         const response = await getUserById(user.id);
-        expectTypeOf(response.status).toEqualTypeOf<200>();
-        expectResponseStatus(response, 200);
+        expect(response.status).toBe(200);
 
-        const returnedUsers = await response.json();
+        const returnedUsers = (await response.json()) as User[];
         expect(returnedUsers).toEqual(serializeUser(user));
 
         expect(getHandler.requests).toHaveLength(1);
-        expect(getHandler.requests[0].url).toBe(`${authFetch.baseURL}/users/${user.id}`);
+        expect(getHandler.requests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
 
         expectTypeOf(getHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
@@ -525,25 +504,16 @@ describe('Fetch client', async () => {
           message: 'User not found',
         };
 
-        const getHandler = authInterceptor
+        const getHandler = await authInterceptor
           .get('/users/:userId')
-          .respond({
-            status: 404,
-            body: notFoundError,
-          })
+          .respond({ status: 404, body: notFoundError })
           .times(1);
 
-        const error = await expectToThrow(
-          getUserById(user.id),
-          (error): error is FetchResponseError<AuthHttpSchema, 'GET', '/users/:userId'> =>
-            authFetch.isResponseError(error, 'GET', '/users/:userId'),
-        );
-
-        expectTypeOf(error.response.status).toEqualTypeOf<200 | 404 | 500>();
-        expectResponseStatus(error.response, 404);
+        const response = await getUserById(user.id);
+        expect(response.status).toBe(404);
 
         expect(getHandler.requests).toHaveLength(1);
-        expect(getHandler.requests[0].url).toBe(`${authFetch.baseURL}/users/${user.id}`);
+        expect(getHandler.requests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
 
         expectTypeOf(getHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(getHandler.requests[0].pathParams).toEqual({ userId: user.id });
@@ -580,30 +550,23 @@ describe('Fetch client', async () => {
         birthDate: new Date().toISOString(),
       };
 
-      async function updateUser(userId: string, payload: Partial<UserCreationRequestBody>) {
-        const response = await authFetch(`/users/${userId}`, {
+      async function updateUser(userId: string, payload: UserUpdatePayload) {
+        const request = new Request(`${authBaseURL}/users/${userId}`, {
           method: 'PATCH',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(payload),
         });
-
-        if (!response.ok) {
-          throw response.error;
-        }
-
-        return response;
+        return fetch(request);
       }
 
       it('should support updating users', async () => {
-        const updateHandler = authInterceptor
+        const updateHandler = await authInterceptor
           .patch(`/users/${user.id}`)
           .with({
             headers: { 'content-type': 'application/json' },
             body: updatePayload,
           })
           .respond((request) => {
-            expect(request.headers.get('content-type')).toBe('application/json');
-
             const updatedUser: JSONSerialized<User> = {
               ...serializeUser(user),
               ...request.body,
@@ -617,10 +580,9 @@ describe('Fetch client', async () => {
           .times(1);
 
         const response = await updateUser(user.id, updatePayload);
-        expectTypeOf(response.status).toEqualTypeOf<200>();
-        expectResponseStatus(response, 200);
+        expect(response.status).toBe(200);
 
-        const updatedUser = await response.json();
+        const updatedUser = (await response.json()) as JSONSerialized<User>;
         expect(updatedUser).toEqual<JSONSerialized<User>>({
           ...serializeUser(user),
           ...updatePayload,
@@ -637,6 +599,10 @@ describe('Fetch client', async () => {
 
         expectTypeOf(updateHandler.requests[0].body).toEqualTypeOf<UserUpdatePayload>();
         expect(updateHandler.requests[0].body).toEqual(updatePayload);
+
+        expectTypeOf(updateHandler.requests[0].response.raw).toEqualTypeOf<
+          HttpResponse<JSONSerialized<User>, { 'content-type': 'application/json' }, 200>
+        >();
       });
 
       it('should return an error if user not found', async () => {
@@ -645,23 +611,21 @@ describe('Fetch client', async () => {
           message: 'User not found',
         };
 
-        const updateHandler = authInterceptor
+        const updateHandler = await authInterceptor
           .patch('/users/:userId')
           .with({ body: updatePayload })
           .respond({ status: 404, body: notFoundError })
           .times(1);
 
-        const error = await expectToThrow(
-          updateUser(crypto.randomUUID(), updatePayload),
-          (error): error is FetchResponseError<AuthHttpSchema, 'PATCH', '/users/:userId'> =>
-            authFetch.isResponseError(error, 'PATCH', '/users/:userId'),
-        );
-
-        expectTypeOf(error.response.status).toEqualTypeOf<200 | 400 | 404 | 500>();
-        expectResponseStatus(error.response, 404);
+        const response = await updateUser(crypto.randomUUID(), updatePayload);
+        expect(response.status).toBe(404);
 
         expect(updateHandler.requests).toHaveLength(1);
         expect(updateHandler.requests[0].response.body).toEqual(notFoundError);
+
+        expectTypeOf(updateHandler.requests[0].response.raw).toEqualTypeOf<
+          HttpResponse<NotFoundError, { 'content-type': 'application/json' }, 404>
+        >();
       });
 
       it('should return an error if payload is invalid', async () => {
@@ -670,47 +634,43 @@ describe('Fetch client', async () => {
           message: 'Invalid payload',
         };
 
-        const updateHandler = authInterceptor
+        const invalidPayload: UserUpdatePayload = {
+          // @ts-expect-error Forcing an invalid payload
+          invalid: 'invalid',
+        };
+
+        const updateHandler = await authInterceptor
           .patch('/users/:userId')
-          .with({ body: {} })
+          .with({ body: invalidPayload })
           .respond({ status: 400, body: validationError })
           .times(1);
 
-        const error = await expectToThrow(
-          updateUser(user.id, {}),
-          (error): error is FetchResponseError<AuthHttpSchema, 'PATCH', '/users/:userId'> =>
-            authFetch.isResponseError(error, 'PATCH', '/users/:userId'),
-        );
-
-        expectTypeOf(error.response.status).toEqualTypeOf<200 | 400 | 404 | 500>();
-        expectResponseStatus(error.response, 400);
+        const response = await updateUser(user.id, invalidPayload);
+        expect(response.status).toBe(400);
 
         expect(updateHandler.requests).toHaveLength(1);
         expect(updateHandler.requests[0].response.body).toEqual(validationError);
+
+        expectTypeOf(updateHandler.requests[0].response.raw).toEqualTypeOf<
+          HttpResponse<ValidationError, { 'content-type': 'application/json' }, 400>
+        >();
       });
     });
 
     describe('User deletion', () => {
       async function deleteUserById(userId: string) {
-        const request = new authFetch.Request(`/users/${userId}`, { method: 'DELETE' });
-        const response = await authFetch(request);
-
-        if (!response.ok) {
-          throw response.error;
-        }
-
-        return response;
+        const request = new Request(`${authBaseURL}/users/${userId}`, { method: 'DELETE' });
+        return fetch(request);
       }
 
       it('should support deleting users by id', async () => {
-        const deleteHandler = authInterceptor.delete(`/users/${user.id}`).respond({ status: 204 }).times(1);
+        const deleteHandler = await authInterceptor.delete(`/users/${user.id}`).respond({ status: 204 }).times(1);
 
         const response = await deleteUserById(user.id);
-        expectTypeOf(response.status).toEqualTypeOf<204>();
-        expectResponseStatus(response, 204);
+        expect(response.status).toBe(204);
 
         expect(deleteHandler.requests).toHaveLength(1);
-        expect(deleteHandler.requests[0].url).toBe(`${authFetch.baseURL}/users/${user.id}`);
+        expect(deleteHandler.requests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
 
         expectTypeOf(deleteHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(deleteHandler.requests[0].pathParams).toEqual({});
@@ -742,22 +702,17 @@ describe('Fetch client', async () => {
           code: 'not_found',
           message: 'User not found',
         };
-        const deleteHandler = authInterceptor
+
+        const deleteHandler = await authInterceptor
           .delete('/users/:userId')
           .respond({ status: 404, body: notFoundError })
           .times(1);
 
-        const error = await expectToThrow(
-          deleteUserById(user.id),
-          (error): error is FetchResponseError<AuthHttpSchema, 'DELETE', '/users/:userId'> =>
-            authFetch.isResponseError(error, 'DELETE', '/users/:userId'),
-        );
-
-        expectTypeOf(error.response.status).toEqualTypeOf<204 | 404 | 500>();
-        expectResponseStatus(error.response, 404);
+        const response = await deleteUserById(user.id);
+        expect(response.status).toBe(404);
 
         expect(deleteHandler.requests).toHaveLength(1);
-        expect(deleteHandler.requests[0].url).toBe(`${authFetch.baseURL}/users/${user.id}`);
+        expect(deleteHandler.requests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
 
         expectTypeOf(deleteHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(deleteHandler.requests[0].pathParams).toEqual({ userId: user.id });
@@ -793,48 +748,38 @@ describe('Fetch client', async () => {
       id: crypto.randomUUID(),
       userId: crypto.randomUUID(),
       content: 'Notification content',
+      readAt: null,
     };
 
     describe('Notification list', () => {
-      beforeEach(() => {
-        notificationInterceptor.get('/notifications/:userId').respond({
+      beforeEach(async () => {
+        await notificationInterceptor.get('/notifications/:userId').respond({
           status: 200,
           body: [],
         });
       });
 
       async function listNotifications(userId: string) {
-        const request = new notificationFetch.Request(`/notifications/${encodeURIComponent(userId)}`, {
+        const request = new Request(`${notificationBaseURL}/notifications/${encodeURIComponent(userId)}`, {
           method: 'GET',
         });
-
-        const response = await notificationFetch(request);
-
-        if (!response.ok) {
-          throw response.error;
-        }
-
-        return response;
+        return fetch(request);
       }
 
       it('should list notifications', async () => {
-        const listHandler = notificationInterceptor
+        const listHandler = await notificationInterceptor
           .get('/notifications/:userId')
-          .respond({
-            status: 200,
-            body: [notification],
-          })
+          .respond({ status: 200, body: [notification] })
           .times(0, 1);
 
         let response = await listNotifications(notification.userId);
-        expectTypeOf(response.status).toEqualTypeOf<200>();
-        expectResponseStatus(response, 200);
+        expect(response.status).toBe(200);
 
-        let returnedNotifications = await response.json();
+        let returnedNotifications = (await response.json()) as Notification[];
         expect(returnedNotifications).toEqual([notification]);
 
         expect(listHandler.requests).toHaveLength(1);
-        expect(listHandler.requests[0].url).toBe(`${notificationFetch.baseURL}/notifications/${notification.userId}`);
+        expect(listHandler.requests[0].url).toBe(`${notificationBaseURL}/notifications/${notification.userId}`);
 
         expectTypeOf(listHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(listHandler.requests[0].pathParams).toEqual({ userId: notification.userId });
@@ -862,17 +807,111 @@ describe('Fetch client', async () => {
         expectTypeOf(listHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<Notification[]>>();
         expect(await listHandler.requests[0].response.raw.json()).toEqual([notification]);
 
-        listHandler.clear();
+        await listHandler.clear();
 
         response = await listNotifications(notification.userId);
-        expectTypeOf(response.status).toEqualTypeOf<200>();
-        expectResponseStatus(response, 200);
+        expect(response.status).toBe(200);
 
-        returnedNotifications = await response.json();
+        returnedNotifications = (await response.json()) as Notification[];
         expect(returnedNotifications).toEqual([]);
 
         expect(listHandler.requests).toHaveLength(0);
       });
     });
+
+    describe('Notification reading', () => {
+      async function markNotificationAsRead(notificationId: string) {
+        const request = new Request(`${notificationBaseURL}/notifications/${encodeURIComponent(notificationId)}/read`, {
+          method: 'POST',
+        });
+        return fetch(request);
+      }
+
+      async function markNotificationAsUnread(notificationId: string) {
+        const request = new Request(
+          `${notificationBaseURL}/notifications/${encodeURIComponent(notificationId)}/unread`,
+          {
+            method: 'POST',
+          },
+        );
+        return fetch(request);
+      }
+
+      it('should support marking notifications as read', async () => {
+        const markAsReadHandler = await notificationInterceptor
+          .post('/notifications/:notificationId/read')
+          .respond({ status: 204 })
+          .times(1);
+
+        const response = await markNotificationAsRead(notification.id);
+        expect(response.status).toBe(204);
+
+        expect(markAsReadHandler.requests).toHaveLength(1);
+        expect(markAsReadHandler.requests[0].url).toBe(`${notificationBaseURL}/notifications/${notification.id}/read`);
+
+        expectTypeOf(markAsReadHandler.requests[0].pathParams).toEqualTypeOf<{ notificationId: string }>();
+        expect(markAsReadHandler.requests[0].pathParams).toEqual({ notificationId: notification.id });
+
+        expectTypeOf(markAsReadHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+
+        expectTypeOf(markAsReadHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expect(markAsReadHandler.requests[0].searchParams.size).toBe(0);
+
+        expectTypeOf(markAsReadHandler.requests[0].body).toEqualTypeOf<null>();
+        expect(markAsReadHandler.requests[0].body).toBe(null);
+
+        expectTypeOf(markAsReadHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
+        expect(markAsReadHandler.requests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(markAsReadHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
+        expect(await markAsReadHandler.requests[0].raw.text()).toBe('');
+
+        expectTypeOf(markAsReadHandler.requests[0].response.body).toEqualTypeOf<null>();
+        expect(markAsReadHandler.requests[0].response.body).toBe(null);
+
+        expectTypeOf(markAsReadHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<null, never, 204>>();
+        expect(markAsReadHandler.requests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(markAsReadHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<never>>();
+        expect(await markAsReadHandler.requests[0].response.raw.text()).toBe('');
+      });
+
+      it('should support marking notifications as unread', async () => {
+        const markAsUnreadHandler = await notificationInterceptor
+          .post('/notifications/:notificationId/unread')
+          .respond({ status: 204 })
+          .times(1);
+
+        const response = await markNotificationAsUnread(notification.id);
+        expect(response.status).toBe(204);
+
+        expect(markAsUnreadHandler.requests).toHaveLength(1);
+        expect(markAsUnreadHandler.requests[0].url).toBe(
+          `${notificationBaseURL}/notifications/${notification.id}/unread`,
+        );
+
+        expectTypeOf(markAsUnreadHandler.requests[0].pathParams).toEqualTypeOf<{ notificationId: string }>();
+        expect(markAsUnreadHandler.requests[0].pathParams).toEqual({ notificationId: notification.id });
+
+        expectTypeOf(markAsUnreadHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+
+        expectTypeOf(markAsUnreadHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expect(markAsUnreadHandler.requests[0].searchParams.size).toBe(0);
+
+        expectTypeOf(markAsUnreadHandler.requests[0].body).toEqualTypeOf<null>();
+        expect(markAsUnreadHandler.requests[0].body).toBe(null);
+
+        expectTypeOf(markAsUnreadHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
+        expect(markAsUnreadHandler.requests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(markAsUnreadHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
+        expect(await markAsUnreadHandler.requests[0].raw.text()).toBe('');
+
+        expectTypeOf(markAsUnreadHandler.requests[0].response.body).toEqualTypeOf<null>();
+        expect(markAsUnreadHandler.requests[0].response.body).toBe(null);
+
+        expectTypeOf(markAsUnreadHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<null, never, 204>>();
+        expect(markAsUnreadHandler.requests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(markAsUnreadHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<never>>();
+        expect(await markAsUnreadHandler.requests[0].response.raw.text()).toBe('');
+      });
+    });
   });
-});
+}

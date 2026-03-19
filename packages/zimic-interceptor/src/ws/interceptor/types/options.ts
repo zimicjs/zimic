@@ -10,7 +10,7 @@ export interface WebSocketInterceptorMessageSaving {
 export interface SharedWebSocketInterceptorOptions {
   type?: WebSocketInterceptorType;
   baseURL: string;
-  requestSaving?: Partial<WebSocketInterceptorMessageSaving>;
+  messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
 }
 
 export interface LocalWebSocketInterceptorOptions extends SharedWebSocketInterceptorOptions {

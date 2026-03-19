@@ -1,56 +1,65 @@
-import { JSONSerialized, HttpHeaders, HttpRequest, HttpResponse, HttpSearchParams } from '@zimic/http';
-import { createHttpInterceptor, HttpInterceptorType } from '@zimic/interceptor/http';
+/*
+
+TODO: This file is partially commented while the WebSocket interceptor is still being implemented.
+
+import { JSONSerialized } from '@zimic/http';
+import { createWebSocketInterceptor, WebSocketInterceptorType } from '@zimic/interceptor/ws';
+import { WebSocketClient } from '@zimic/ws';
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf, afterEach } from 'vitest';
 
+import { ZIMIC_SERVER_PORT } from '@tests/constants';
 import {
-  AuthServiceSchema,
-  NotificationServiceSchema,
+  AuthWebSocketSchema,
+  ConflictError,
+  NotFoundError,
+  NotificationWebSocketSchema,
   User,
   UserCreationRequestBody,
-  ValidationError,
-  ConflictError,
   UserListSearchParams,
-  NotFoundError,
-  Notification,
   UserUpdatePayload,
+  ValidationError,
 } from '@tests/types/schema';
 import { importCrypto, IsomorphicCrypto } from '@tests/utils/crypto';
+import { serializeUser } from '@tests/utils/schema';
 
-import { ClientTestOptionsByWorkerType, ZIMIC_SERVER_PORT } from '.';
-
-function getAuthBaseURL(type: HttpInterceptorType, crypto: IsomorphicCrypto) {
-  return type === 'local'
-    ? 'http://localhost:4000'
-    : `http://localhost:${ZIMIC_SERVER_PORT}/auth-${crypto.randomUUID()}`;
+function getAuthBaseURL(type: WebSocketInterceptorType, crypto: IsomorphicCrypto) {
+  return type === 'local' ? 'ws://localhost:4000' : `ws://localhost:${ZIMIC_SERVER_PORT}/auth-${crypto.randomUUID()}`;
 }
 
-function getNotificationsBaseURL(type: HttpInterceptorType, crypto: IsomorphicCrypto) {
+function getNotificationBaseURL(type: WebSocketInterceptorType, crypto: IsomorphicCrypto) {
   return type === 'local'
-    ? 'http://localhost:4001'
-    : `http://localhost:${ZIMIC_SERVER_PORT}/notifications-${crypto.randomUUID()}`;
+    ? 'ws://localhost:4001'
+    : `ws://localhost:${ZIMIC_SERVER_PORT}/notification-${crypto.randomUUID()}`;
 }
+*/
 
-async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerType) {
-  const { platform, type, fetch } = options;
+import { ClientTestOptionsByWorkerType } from './client';
+
+export async function declareWebSocketInterceptorTests(_options: ClientTestOptionsByWorkerType) {
+  /*
+  const { platform, type } = _options;
 
   const crypto = await importCrypto();
 
-  const authInterceptor = createHttpInterceptor<AuthServiceSchema>({
+  const authInterceptor = createWebSocketInterceptor<AuthWebSocketSchema>({
     type,
     baseURL: getAuthBaseURL(type, crypto),
-    requestSaving: { enabled: true },
+    messageSaving: { enabled: true },
   });
 
-  const notificationInterceptor = createHttpInterceptor<NotificationServiceSchema>({
+  const notificationInterceptor = createWebSocketInterceptor<NotificationWebSocketSchema>({
     type,
-    baseURL: getNotificationsBaseURL(type, crypto),
-    requestSaving: { enabled: true },
+    baseURL: getNotificationBaseURL(type, crypto),
+    messageSaving: { enabled: true },
   });
 
   const interceptors = [authInterceptor, notificationInterceptor];
 
   const authBaseURL = authInterceptor.baseURL;
+  const authSocket = new WebSocketClient<AuthWebSocketSchema>(authBaseURL);
+
   const notificationBaseURL = notificationInterceptor.baseURL;
+  const notificationSocket = new WebSocketClient<NotificationWebSocketSchema>(notificationBaseURL);
 
   beforeAll(async () => {
     await Promise.all(
@@ -60,6 +69,11 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(interceptor.platform).toBe(platform);
       }),
     );
+
+    await Promise.all([authSocket.open(), notificationSocket.open()]);
+
+    expect(authInterceptor.clients).toHaveLength(1);
+    expect(notificationInterceptor.clients).toHaveLength(1);
   });
 
   beforeEach(async () => {
@@ -79,6 +93,11 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
   });
 
   afterAll(async () => {
+    await Promise.all([authSocket.close(), notificationSocket.close()]);
+
+    expect(authInterceptor.clients).toHaveLength(0);
+    expect(notificationInterceptor.clients).toHaveLength(0);
+
     await Promise.all(
       interceptors.map(async (interceptor) => {
         await interceptor.stop();
@@ -86,13 +105,6 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
       }),
     );
   });
-
-  function serializeUser(user: User): JSONSerialized<User> {
-    return {
-      ...user,
-      birthDate: user.birthDate.toISOString(),
-    };
-  }
 
   describe('Users', () => {
     const user: User = {
@@ -110,41 +122,41 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         birthDate: new Date().toISOString(),
       };
 
-      async function createUser(payload: UserCreationRequestBody) {
-        const request = new Request(`${authBaseURL}/users`, {
-          method: 'POST',
-          headers: {
-            'content-type': 'application/json',
-            accept: 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-
-        return fetch(request);
+      function createUser(payload: UserCreationRequestBody) {
+        authSocket.send(
+          JSON.stringify({
+            type: 'user:create',
+            data: payload,
+          }),
+        );
       }
 
       it('should support creating users', async () => {
         const creationHandler = await authInterceptor
-          .post('/users')
+          .message()
+          .from(authInterceptor.clients[0])
           .with({
-            headers: { 'content-type': 'application/json' },
-            body: creationPayload,
+            type: 'user:create',
+            data: creationPayload,
           })
-          .respond((request) => {
-            expect(request.headers.get('content-type')).toBe('application/json');
+          .run((message, { sender }) => {
+            if (message.type !== 'user:create') {
+              return;
+            }
 
             const user: JSONSerialized<User> = {
               id: crypto.randomUUID(),
-              name: request.body.name,
-              email: request.body.email,
-              birthDate: request.body.birthDate,
+              name: message.data.name,
+              email: message.data.email,
+              birthDate: message.data.birthDate,
             };
 
-            return {
-              status: 201,
-              headers: { 'x-user-id': user.id },
-              body: user,
-            };
+            sender.send(
+              JSON.stringify({
+                type: 'user:created',
+                data: user,
+              }),
+            );
           })
           .times(1);
 
@@ -162,10 +174,10 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(creationHandler.requests).toHaveLength(1);
 
         expectTypeOf(creationHandler.requests[0].headers).toEqualTypeOf<
-          HttpHeaders<{ 'content-type': 'application/json' }>
+          WebSocketHeaders<{ 'content-type': 'application/json' }>
         >();
 
-        expectTypeOf(creationHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expectTypeOf(creationHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<never>>();
         expect(creationHandler.requests[0].searchParams.size).toBe(0);
 
         expect(response.headers.get('x-user-id')).toBe(createdUser.id);
@@ -175,7 +187,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(creationHandler.requests[0].body).toEqual(creationPayload);
 
         expectTypeOf(creationHandler.requests[0].raw).toEqualTypeOf<
-          HttpRequest<UserCreationRequestBody, { 'content-type': 'application/json' }>
+          WebSocketRequest<UserCreationRequestBody, { 'content-type': 'application/json' }>
         >();
         expect(creationHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(creationHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
@@ -185,7 +197,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(creationHandler.requests[0].response.body).toEqual(createdUser);
 
         expectTypeOf(creationHandler.requests[0].response.raw).branded.toEqualTypeOf<
-          HttpResponse<JSONSerialized<User>, { 'x-user-id': User['id']; 'content-type': 'application/json' }, 201>
+          WebSocketResponse<JSONSerialized<User>, { 'x-user-id': User['id']; 'content-type': 'application/json' }, 201>
         >();
         expect(creationHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(creationHandler.requests[0].response.raw.json).toEqualTypeOf<
@@ -215,17 +227,17 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(creationHandler.requests).toHaveLength(1);
 
         expectTypeOf(creationHandler.requests[0].headers).toEqualTypeOf<
-          HttpHeaders<{ 'content-type': 'application/json' }>
+          WebSocketHeaders<{ 'content-type': 'application/json' }>
         >();
 
-        expectTypeOf(creationHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expectTypeOf(creationHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<never>>();
         expect(creationHandler.requests[0].searchParams.size).toBe(0);
 
         expectTypeOf(creationHandler.requests[0].body).toEqualTypeOf<UserCreationRequestBody>();
         expect(creationHandler.requests[0].body).toEqual(invalidPayload);
 
         expectTypeOf(creationHandler.requests[0].raw).toEqualTypeOf<
-          HttpRequest<UserCreationRequestBody, { 'content-type': 'application/json' }>
+          WebSocketRequest<UserCreationRequestBody, { 'content-type': 'application/json' }>
         >();
         expect(creationHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(creationHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
@@ -235,7 +247,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(creationHandler.requests[0].response.body).toEqual(validationError);
 
         expectTypeOf(creationHandler.requests[0].response.raw).toEqualTypeOf<
-          HttpResponse<ValidationError, { 'content-type': 'application/json' }, 400>
+          WebSocketResponse<ValidationError, { 'content-type': 'application/json' }, 400>
         >();
         expect(creationHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(creationHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<ValidationError>>();
@@ -261,17 +273,17 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(creationHandler.requests).toHaveLength(1);
 
         expectTypeOf(creationHandler.requests[0].headers).toEqualTypeOf<
-          HttpHeaders<{ 'content-type': 'application/json' }>
+          WebSocketHeaders<{ 'content-type': 'application/json' }>
         >();
 
-        expectTypeOf(creationHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expectTypeOf(creationHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<never>>();
         expect(creationHandler.requests[0].searchParams.size).toBe(0);
 
         expectTypeOf(creationHandler.requests[0].body).toEqualTypeOf<UserCreationRequestBody>();
         expect(creationHandler.requests[0].body).toEqual(conflictingPayload);
 
         expectTypeOf(creationHandler.requests[0].raw).toEqualTypeOf<
-          HttpRequest<UserCreationRequestBody, { 'content-type': 'application/json' }>
+          WebSocketRequest<UserCreationRequestBody, { 'content-type': 'application/json' }>
         >();
         expect(creationHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(creationHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
@@ -281,7 +293,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(creationHandler.requests[0].response.body).toEqual(conflictError);
 
         expectTypeOf(creationHandler.requests[0].response.raw).toEqualTypeOf<
-          HttpResponse<ConflictError, { 'content-type': 'application/json' }, 409>
+          WebSocketResponse<ConflictError, { 'content-type': 'application/json' }, 409>
         >();
         expect(creationHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(creationHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<ConflictError>>();
@@ -319,7 +331,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
       });
 
       async function listUsers(filters: UserListSearchParams = {}) {
-        const searchParams = new HttpSearchParams<UserListSearchParams>(filters);
+        const searchParams = new WebSocketSearchParams<UserListSearchParams>(filters);
         const request = new Request(`${authBaseURL}/users?${searchParams.toString()}`, {
           method: 'GET',
         });
@@ -340,16 +352,16 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
 
         expect(listHandler.requests).toHaveLength(1);
 
-        expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+        expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<WebSocketHeaders<never>>();
 
-        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<UserListSearchParams>>();
         expect(listHandler.requests[0].searchParams.get('name')).toBe(null);
         expect(listHandler.requests[0].searchParams.getAll('orderBy')).toEqual([]);
 
         expectTypeOf(listHandler.requests[0].body).toEqualTypeOf<null>();
         expect(listHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
+        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<WebSocketRequest<null, never>>();
         expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
         expect(await listHandler.requests[0].raw.text()).toBe('');
@@ -358,7 +370,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(listHandler.requests[0].response.body).toEqual(users.map(serializeUser));
 
         expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<
-          HttpResponse<JSONSerialized<User>[], { 'content-type': 'application/json' }, 200>
+          WebSocketResponse<JSONSerialized<User>[], { 'content-type': 'application/json' }, 200>
         >();
         expect(listHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(listHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>[]>>();
@@ -382,9 +394,9 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
 
         expect(listHandler.requests).toHaveLength(1);
 
-        expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+        expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<WebSocketHeaders<never>>();
 
-        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<UserListSearchParams>>();
         expect(listHandler.requests[0].searchParams.size).toBe(1);
         expect(listHandler.requests[0].searchParams.get('name')).toBe(user.name);
         expect(listHandler.requests[0].searchParams.getAll('orderBy')).toEqual([]);
@@ -392,7 +404,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expectTypeOf(listHandler.requests[0].body).toEqualTypeOf<null>();
         expect(listHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
+        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<WebSocketRequest<null, never>>();
         expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
         expect(await listHandler.requests[0].raw.text()).toBe('');
@@ -401,7 +413,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(listHandler.requests[0].response.body).toEqual([serializeUser(user)]);
 
         expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<
-          HttpResponse<JSONSerialized<User>[], { 'content-type': 'application/json' }, 200>
+          WebSocketResponse<JSONSerialized<User>[], { 'content-type': 'application/json' }, 200>
         >();
         expect(listHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(listHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>[]>>();
@@ -429,9 +441,9 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
 
         expect(listHandler.requests).toHaveLength(1);
 
-        expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+        expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<WebSocketHeaders<never>>();
 
-        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<UserListSearchParams>>();
         expect(listHandler.requests[0].searchParams.size).toBe(1);
         expect(listHandler.requests[0].searchParams.get('name')).toBe(null);
         expect(listHandler.requests[0].searchParams.getAll('orderBy')).toEqual(['email.desc']);
@@ -439,7 +451,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expectTypeOf(listHandler.requests[0].body).toEqualTypeOf<null>();
         expect(listHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
+        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<WebSocketRequest<null, never>>();
         expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
         expect(await listHandler.requests[0].raw.text()).toBe('');
@@ -448,7 +460,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(listHandler.requests[0].response.body).toEqual(usersSortedByDescendingEmail.map(serializeUser));
 
         expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<
-          HttpResponse<JSONSerialized<User>[], { 'content-type': 'application/json' }, 200>
+          WebSocketResponse<JSONSerialized<User>[], { 'content-type': 'application/json' }, 200>
         >();
         expect(listHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(listHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>[]>>();
@@ -479,15 +491,15 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(getHandler.requests).toHaveLength(1);
         expect(getHandler.requests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
 
-        expectTypeOf(getHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+        expectTypeOf(getHandler.requests[0].headers).toEqualTypeOf<WebSocketHeaders<never>>();
 
-        expectTypeOf(getHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expectTypeOf(getHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<never>>();
         expect(getHandler.requests[0].searchParams.size).toBe(0);
 
         expectTypeOf(getHandler.requests[0].body).toEqualTypeOf<null>();
         expect(getHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(getHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
+        expectTypeOf(getHandler.requests[0].raw).toEqualTypeOf<WebSocketRequest<null, never>>();
         expect(getHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(getHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
         expect(await getHandler.requests[0].raw.text()).toBe('');
@@ -496,7 +508,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(getHandler.requests[0].response.body).toEqual(serializeUser(user));
 
         expectTypeOf(getHandler.requests[0].response.raw).toEqualTypeOf<
-          HttpResponse<JSONSerialized<User>, { 'content-type': 'application/json' }, 200>
+          WebSocketResponse<JSONSerialized<User>, { 'content-type': 'application/json' }, 200>
         >();
         expect(getHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(getHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>>>();
@@ -523,15 +535,15 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expectTypeOf(getHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(getHandler.requests[0].pathParams).toEqual({ userId: user.id });
 
-        expectTypeOf(getHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+        expectTypeOf(getHandler.requests[0].headers).toEqualTypeOf<WebSocketHeaders<never>>();
 
-        expectTypeOf(getHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expectTypeOf(getHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<never>>();
         expect(getHandler.requests[0].searchParams.size).toBe(0);
 
         expectTypeOf(getHandler.requests[0].body).toEqualTypeOf<null>();
         expect(getHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(getHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
+        expectTypeOf(getHandler.requests[0].raw).toEqualTypeOf<WebSocketRequest<null, never>>();
         expect(getHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(getHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
         expect(await getHandler.requests[0].raw.text()).toBe('');
@@ -540,7 +552,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(getHandler.requests[0].response.body).toEqual(notFoundError);
 
         expectTypeOf(getHandler.requests[0].response.raw).toEqualTypeOf<
-          HttpResponse<NotFoundError, { 'content-type': 'application/json' }, 404>
+          WebSocketResponse<NotFoundError, { 'content-type': 'application/json' }, 404>
         >();
         expect(getHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(getHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<NotFoundError>>();
@@ -596,17 +608,17 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(updateHandler.requests).toHaveLength(1);
 
         expectTypeOf(updateHandler.requests[0].headers).branded.toEqualTypeOf<
-          HttpHeaders<{ 'content-type': string }>
+          WebSocketHeaders<{ 'content-type': string }>
         >();
 
-        expectTypeOf(updateHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expectTypeOf(updateHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<never>>();
         expect(updateHandler.requests[0].searchParams.size).toBe(0);
 
         expectTypeOf(updateHandler.requests[0].body).toEqualTypeOf<UserUpdatePayload>();
         expect(updateHandler.requests[0].body).toEqual(updatePayload);
 
         expectTypeOf(updateHandler.requests[0].response.raw).toEqualTypeOf<
-          HttpResponse<JSONSerialized<User>, { 'content-type': 'application/json' }, 200>
+          WebSocketResponse<JSONSerialized<User>, { 'content-type': 'application/json' }, 200>
         >();
       });
 
@@ -629,7 +641,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(updateHandler.requests[0].response.body).toEqual(notFoundError);
 
         expectTypeOf(updateHandler.requests[0].response.raw).toEqualTypeOf<
-          HttpResponse<NotFoundError, { 'content-type': 'application/json' }, 404>
+          WebSocketResponse<NotFoundError, { 'content-type': 'application/json' }, 404>
         >();
       });
 
@@ -657,7 +669,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(updateHandler.requests[0].response.body).toEqual(validationError);
 
         expectTypeOf(updateHandler.requests[0].response.raw).toEqualTypeOf<
-          HttpResponse<ValidationError, { 'content-type': 'application/json' }, 400>
+          WebSocketResponse<ValidationError, { 'content-type': 'application/json' }, 400>
         >();
       });
     });
@@ -680,15 +692,15 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expectTypeOf(deleteHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(deleteHandler.requests[0].pathParams).toEqual({});
 
-        expectTypeOf(deleteHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+        expectTypeOf(deleteHandler.requests[0].headers).toEqualTypeOf<WebSocketHeaders<never>>();
 
-        expectTypeOf(deleteHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expectTypeOf(deleteHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<never>>();
         expect(deleteHandler.requests[0].searchParams.size).toBe(0);
 
         expectTypeOf(deleteHandler.requests[0].body).toEqualTypeOf<null>();
         expect(deleteHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(deleteHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
+        expectTypeOf(deleteHandler.requests[0].raw).toEqualTypeOf<WebSocketRequest<null, never>>();
         expect(deleteHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(deleteHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
         expect(await deleteHandler.requests[0].raw.text()).toBe('');
@@ -696,7 +708,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expectTypeOf(deleteHandler.requests[0].response.body).toEqualTypeOf<null>();
         expect(deleteHandler.requests[0].response.body).toBe(null);
 
-        expectTypeOf(deleteHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<null, never, 204>>();
+        expectTypeOf(deleteHandler.requests[0].response.raw).toEqualTypeOf<WebSocketResponse<null, never, 204>>();
         expect(deleteHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(deleteHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<never>>();
         expect(await deleteHandler.requests[0].response.raw.text()).toBe('');
@@ -722,15 +734,15 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expectTypeOf(deleteHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(deleteHandler.requests[0].pathParams).toEqual({ userId: user.id });
 
-        expectTypeOf(deleteHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+        expectTypeOf(deleteHandler.requests[0].headers).toEqualTypeOf<WebSocketHeaders<never>>();
 
-        expectTypeOf(deleteHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expectTypeOf(deleteHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<never>>();
         expect(deleteHandler.requests[0].searchParams.size).toBe(0);
 
         expectTypeOf(deleteHandler.requests[0].body).toEqualTypeOf<null>();
         expect(deleteHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(deleteHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
+        expectTypeOf(deleteHandler.requests[0].raw).toEqualTypeOf<WebSocketRequest<null, never>>();
         expect(deleteHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(deleteHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
         expect(await deleteHandler.requests[0].raw.text()).toBe('');
@@ -739,7 +751,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(deleteHandler.requests[0].response.body).toEqual(notFoundError);
 
         expectTypeOf(deleteHandler.requests[0].response.raw).toEqualTypeOf<
-          HttpResponse<NotFoundError, { 'content-type': 'application/json' }, 404>
+          WebSocketResponse<NotFoundError, { 'content-type': 'application/json' }, 404>
         >();
         expect(deleteHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(deleteHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<NotFoundError>>();
@@ -788,15 +800,15 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expectTypeOf(listHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(listHandler.requests[0].pathParams).toEqual({ userId: notification.userId });
 
-        expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+        expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<WebSocketHeaders<never>>();
 
-        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<never>>();
         expect(listHandler.requests[0].searchParams.size).toBe(0);
 
         expectTypeOf(listHandler.requests[0].body).toEqualTypeOf<null>();
         expect(listHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
+        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<WebSocketRequest<null, never>>();
         expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
         expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
         expect(await listHandler.requests[0].raw.text()).toBe('');
@@ -805,7 +817,7 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
         expect(listHandler.requests[0].response.body).toEqual([notification]);
 
         expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<
-          HttpResponse<Notification[], { 'content-type': 'application/json' }, 200>
+          WebSocketResponse<Notification[], { 'content-type': 'application/json' }, 200>
         >();
         expect(listHandler.requests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(listHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<Notification[]>>();
@@ -823,6 +835,5 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
       });
     });
   });
+*/
 }
-
-export default declareHttpInterceptorTests;

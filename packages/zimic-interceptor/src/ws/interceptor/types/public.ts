@@ -1,3 +1,4 @@
+import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
 import { LocalWebSocketMessageHandler, RemoteWebSocketMessageHandler } from '@/ws/messageHandler/types/public';
@@ -18,8 +19,8 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
   start: () => Promise<void>;
   stop: () => Promise<void>;
 
-  checkTimes: (() => void) | (() => Promise<void>);
-  clear: (() => void) | (() => Promise<void>);
+  checkTimes: () => PossiblePromise<void>;
+  clear: () => PossiblePromise<void>;
 }
 
 export interface LocalWebSocketInterceptor<Schema extends WebSocketSchema> extends WebSocketInterceptor<Schema> {
