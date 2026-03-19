@@ -1,7 +1,7 @@
 import { HttpInterceptorPlatform } from '@zimic/interceptor/http';
 import { describe } from 'vitest';
 
-import declareClientTests from '../shared';
+import declareClientTests from '../shared/client';
 import { axiosAsFetch } from './utils';
 
 describe('Axios client (Browser)', () => {

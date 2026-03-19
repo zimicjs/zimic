@@ -1,11 +1,11 @@
 import { describe } from 'vitest';
 
-import declareClientTests from '../shared';
+import declareClientTests from '../shared/client';
 import { superagentAsFetch } from './utils';
 
-describe('Superagent client (Node.js)', () => {
+describe('Superagent client (Browser)', () => {
   declareClientTests({
-    platform: 'node',
+    platform: 'browser',
     fetch: superagentAsFetch,
   });
 });

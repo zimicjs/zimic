@@ -2,9 +2,10 @@ import { JSONSerialized, HttpHeaders, HttpRequest, HttpResponse, HttpSearchParam
 import { createHttpInterceptor, HttpInterceptorType } from '@zimic/interceptor/http';
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf, afterEach } from 'vitest';
 
+import { ZIMIC_SERVER_PORT } from '@tests/constants';
 import {
-  AuthServiceSchema,
-  NotificationServiceSchema,
+  AuthHttpSchema,
+  NotificationHttpSchema,
   User,
   UserCreationRequestBody,
   ValidationError,
@@ -14,8 +15,9 @@ import {
   Notification,
   UserUpdatePayload,
 } from '@tests/types/schema';
+import { serializeUser } from '@tests/utils/schema';
 
-import { ClientTestOptionsByWorkerType, ZIMIC_SERVER_PORT } from '.';
+import { ClientTestOptionsByWorkerType } from './client';
 
 function getAuthBaseURL(type: HttpInterceptorType) {
   return type === 'local'
@@ -23,24 +25,24 @@ function getAuthBaseURL(type: HttpInterceptorType) {
     : `http://localhost:${ZIMIC_SERVER_PORT}/auth-${crypto.randomUUID()}`;
 }
 
-function getNotificationsBaseURL(type: HttpInterceptorType) {
+function getNotificationBaseURL(type: HttpInterceptorType) {
   return type === 'local'
     ? 'http://localhost:4001'
-    : `http://localhost:${ZIMIC_SERVER_PORT}/notifications-${crypto.randomUUID()}`;
+    : `http://localhost:${ZIMIC_SERVER_PORT}/notification-${crypto.randomUUID()}`;
 }
 
 function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerType) {
-  const { platform, type, fetch } = options;
+  const { platform, type } = options;
 
-  const authInterceptor = createHttpInterceptor<AuthServiceSchema>({
+  const authInterceptor = createHttpInterceptor<AuthHttpSchema>({
     type,
     baseURL: getAuthBaseURL(type),
     requestSaving: { enabled: true },
   });
 
-  const notificationInterceptor = createHttpInterceptor<NotificationServiceSchema>({
+  const notificationInterceptor = createHttpInterceptor<NotificationHttpSchema>({
     type,
-    baseURL: getNotificationsBaseURL(type),
+    baseURL: getNotificationBaseURL(type),
     requestSaving: { enabled: true },
   });
 
@@ -83,13 +85,6 @@ function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerType) {
       }),
     );
   });
-
-  function serializeUser(user: User): JSONSerialized<User> {
-    return {
-      ...user,
-      birthDate: user.birthDate.toISOString(),
-    };
-  }
 
   describe('Users', () => {
     const user: User = {
@@ -750,6 +745,7 @@ function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerType) {
       id: crypto.randomUUID(),
       userId: crypto.randomUUID(),
       content: 'Notification content',
+      readAt: null,
     };
 
     describe('Notification list', () => {
@@ -819,7 +815,100 @@ function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerType) {
         expect(listHandler.requests).toHaveLength(0);
       });
     });
+
+    describe('Notification reading', () => {
+      async function markNotificationAsRead(notificationId: string) {
+        const request = new Request(`${notificationBaseURL}/notifications/${encodeURIComponent(notificationId)}/read`, {
+          method: 'POST',
+        });
+        return fetch(request);
+      }
+
+      async function markNotificationAsUnread(notificationId: string) {
+        const request = new Request(
+          `${notificationBaseURL}/notifications/${encodeURIComponent(notificationId)}/unread`,
+          {
+            method: 'POST',
+          },
+        );
+        return fetch(request);
+      }
+
+      it('should support marking notifications as read', async () => {
+        const markAsReadHandler = await notificationInterceptor
+          .post('/notifications/:notificationId/read')
+          .respond({ status: 204 })
+          .times(1);
+
+        const response = await markNotificationAsRead(notification.id);
+        expect(response.status).toBe(204);
+
+        expect(markAsReadHandler.requests).toHaveLength(1);
+        expect(markAsReadHandler.requests[0].url).toBe(`${notificationBaseURL}/notifications/${notification.id}/read`);
+
+        expectTypeOf(markAsReadHandler.requests[0].pathParams).toEqualTypeOf<{ notificationId: string }>();
+        expect(markAsReadHandler.requests[0].pathParams).toEqual({ notificationId: notification.id });
+
+        expectTypeOf(markAsReadHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+
+        expectTypeOf(markAsReadHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expect(markAsReadHandler.requests[0].searchParams.size).toBe(0);
+
+        expectTypeOf(markAsReadHandler.requests[0].body).toEqualTypeOf<null>();
+        expect(markAsReadHandler.requests[0].body).toBe(null);
+
+        expectTypeOf(markAsReadHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
+        expect(markAsReadHandler.requests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(markAsReadHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
+        expect(await markAsReadHandler.requests[0].raw.text()).toBe('');
+
+        expectTypeOf(markAsReadHandler.requests[0].response.body).toEqualTypeOf<null>();
+        expect(markAsReadHandler.requests[0].response.body).toBe(null);
+
+        expectTypeOf(markAsReadHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<null, never, 204>>();
+        expect(markAsReadHandler.requests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(markAsReadHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<never>>();
+        expect(await markAsReadHandler.requests[0].response.raw.text()).toBe('');
+      });
+
+      it('should support marking notifications as unread', async () => {
+        const markAsUnreadHandler = await notificationInterceptor
+          .post('/notifications/:notificationId/unread')
+          .respond({ status: 204 })
+          .times(1);
+
+        const response = await markNotificationAsUnread(notification.id);
+        expect(response.status).toBe(204);
+
+        expect(markAsUnreadHandler.requests).toHaveLength(1);
+        expect(markAsUnreadHandler.requests[0].url).toBe(
+          `${notificationBaseURL}/notifications/${notification.id}/unread`,
+        );
+
+        expectTypeOf(markAsUnreadHandler.requests[0].pathParams).toEqualTypeOf<{ notificationId: string }>();
+        expect(markAsUnreadHandler.requests[0].pathParams).toEqual({ notificationId: notification.id });
+
+        expectTypeOf(markAsUnreadHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+
+        expectTypeOf(markAsUnreadHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expect(markAsUnreadHandler.requests[0].searchParams.size).toBe(0);
+
+        expectTypeOf(markAsUnreadHandler.requests[0].body).toEqualTypeOf<null>();
+        expect(markAsUnreadHandler.requests[0].body).toBe(null);
+
+        expectTypeOf(markAsUnreadHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
+        expect(markAsUnreadHandler.requests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(markAsUnreadHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
+        expect(await markAsUnreadHandler.requests[0].raw.text()).toBe('');
+
+        expectTypeOf(markAsUnreadHandler.requests[0].response.body).toEqualTypeOf<null>();
+        expect(markAsUnreadHandler.requests[0].response.body).toBe(null);
+
+        expectTypeOf(markAsUnreadHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<null, never, 204>>();
+        expect(markAsUnreadHandler.requests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(markAsUnreadHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<never>>();
+        expect(await markAsUnreadHandler.requests[0].response.raw.text()).toBe('');
+      });
+    });
   });
 }
-
-export default declareHttpInterceptorTests;
