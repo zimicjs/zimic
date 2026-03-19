@@ -1,9 +1,12 @@
-import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import { WebSocketSchema } from '@zimic/ws';
 
 import { WebSocketInterceptorClient } from '../interceptor/types/messages';
 import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
 import { WebSocketMessageHandlerDelayFactory } from './types/messages';
-import { LocalWebSocketMessageHandler as PublicLocalWebSocketMessageHandler } from './types/public';
+import {
+  LocalWebSocketMessageHandler as PublicLocalWebSocketMessageHandler,
+  WebSocketMessageInterceptedCallback,
+} from './types/public';
 import { WebSocketMessageHandlerRestriction } from './types/restrictions';
 import WebSocketMessageHandlerImplementation from './WebSocketMessageHandlerImplementation';
 
@@ -33,8 +36,8 @@ export class LocalWebSocketMessageHandler<
     return this;
   }
 
-  send(message: WebSocketMessageData<Schema>) {
-    this.client.send(message);
+  run(callback: WebSocketMessageInterceptedCallback<Schema>) {
+    this.client.run(callback);
     return this;
   }
 

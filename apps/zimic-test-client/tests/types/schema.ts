@@ -1,4 +1,5 @@
 import { JSONValue, JSONSerialized, HttpSchema } from '@zimic/http';
+import { WebSocketSchema } from '@zimic/ws';
 
 export interface User {
   id: string;
@@ -153,15 +154,16 @@ type SessionPaths = HttpSchema<{
   };
 }>;
 
-export type AuthServiceSchema = UserPaths & UserByIdPaths & SessionPaths;
+export type AuthHttpSchema = UserPaths & UserByIdPaths & SessionPaths;
 
 export type Notification = JSONValue<{
   id: string;
   userId: string;
   content: string;
+  readAt: ReturnType<Date['toISOString']> | null;
 }>;
 
-export type NotificationServiceSchema = HttpSchema<{
+export type NotificationHttpSchema = HttpSchema<{
   '/notifications/:userId': {
     GET: {
       response: {
@@ -171,4 +173,101 @@ export type NotificationServiceSchema = HttpSchema<{
       };
     };
   };
+
+  '/notifications/:notificationId/read': {
+    POST: {
+      response: {
+        204: {};
+        404: { body: NotFoundError };
+        500: { body: InternalServerError };
+      };
+    };
+  };
+
+  '/notifications/:notificationId/unread': {
+    POST: {
+      response: {
+        204: {};
+        404: { body: NotFoundError };
+        500: { body: InternalServerError };
+      };
+    };
+  };
 }>;
+
+type SessionWebSocketEvent = WebSocketSchema<
+  | {
+      type: 'session:login';
+      data: { email: string; password: string };
+    }
+  | {
+      type: 'session:loggedIn';
+      data: { userId: User['id'] };
+    }
+  | {
+      type: 'session:refresh';
+      data: { refreshToken: string };
+    }
+  | {
+      type: 'session:refreshed';
+      data: { userId: User['id'] };
+    }
+  | {
+      type: 'session:logout';
+      data: undefined;
+    }
+  | {
+      type: 'session:loggedOut';
+      data: { userId: User['id'] };
+    }
+>;
+
+type UserWebSocketEvent = WebSocketSchema<
+  | {
+      type: 'user:create';
+      data: UserCreationRequestBody;
+    }
+  | {
+      type: 'user:created';
+      data: JSONSerialized<User>;
+    }
+  | {
+      type: 'user:update';
+      data: { id: User['id'] } & UserUpdatePayload;
+    }
+  | {
+      type: 'user:updated';
+      data: JSONSerialized<User>;
+    }
+  | {
+      type: 'user:delete';
+      data: { id: User['id'] };
+    }
+  | {
+      type: 'user:deleted';
+      data: { id: User['id'] };
+    }
+>;
+
+export type AuthWebSocketSchema = WebSocketSchema<UserWebSocketEvent>;
+
+type NotificationWebSocketEvent = WebSocketSchema<
+  | {
+      type: 'notification:created';
+      data: JSONSerialized<Notification>;
+    }
+  | {
+      type: 'notification:updated';
+      data: JSONSerialized<Notification>;
+    }
+  | {
+      type: 'notification:read';
+      data: JSONSerialized<Notification>;
+    }
+  | {
+      type: 'notification:unread';
+      data: JSONSerialized<Notification>;
+    }
+>;
+
+export type NotificationWebSocketSchema = WebSocketSchema<NotificationWebSocketEvent>;
