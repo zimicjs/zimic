@@ -18,6 +18,6 @@
     "@zimic/interceptor": "latest",
     "dotenv-cli": "^11.0.0",
     "jest": "^30.3.0",
-    "typescript": "5.9.3"
+    "typescript": "6.0.1-rc"
   }
 }
