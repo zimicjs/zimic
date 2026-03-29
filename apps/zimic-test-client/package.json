@@ -16,9 +16,9 @@
   "devDependencies": {
     "@types/node": "^25.5.0",
     "@types/superagent": "^8.1.9",
-    "@vitest/browser": "^4.1.0",
-    "@vitest/browser-playwright": "^4.1.0",
-    "@vitest/coverage-istanbul": "^4.1.0",
+    "@vitest/browser": "^4.1.2",
+    "@vitest/browser-playwright": "^4.1.2",
+    "@vitest/coverage-istanbul": "^4.1.2",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/fetch": "workspace:*",
     "@zimic/http": "workspace:*",
@@ -27,14 +27,14 @@
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "@zimic/ws": "workspace:*",
-    "axios": "^1.13.6",
+    "axios": "^1.14.0",
     "concurrently": "^9.2.1",
     "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.4",
     "node-fetch": "^3.3.2",
     "playwright": "^1.58.2",
     "superagent": "^10.3.0",
-    "typescript": "6.0.1-rc",
-    "vitest": "^4.1.0"
+    "typescript": "6.0.2",
+    "vitest": "^4.1.2"
   }
 }
