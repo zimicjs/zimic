@@ -84,14 +84,14 @@
     "deps:setup": "pnpm deps:setup-playwright"
   },
   "dependencies": {
-    "ws": "8.19.0"
+    "ws": "8.20.0"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
     "@types/ws": "^8.18.1",
-    "@vitest/browser": "^4.1.0",
-    "@vitest/browser-playwright": "^4.1.0",
-    "@vitest/coverage-istanbul": "^4.1.0",
+    "@vitest/browser": "^4.1.2",
+    "@vitest/browser-playwright": "^4.1.2",
+    "@vitest/coverage-istanbul": "^4.1.2",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
@@ -100,12 +100,12 @@
     "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.4",
     "playwright": "^1.58.2",
-    "tsup": "^8.4.0",
-    "typescript": "6.0.1-rc",
-    "vitest": "^4.1.0"
+    "tsup": "^8.5.1",
+    "typescript": "6.0.2",
+    "vitest": "^4.1.2"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0 || ^6.0.0 || ^6.0.0-beta || ^6.0.1-rc"
+    "typescript": "^5.0.0 || ^6.0.0"
   },
   "peerDependenciesMeta": {
     "typescript": {

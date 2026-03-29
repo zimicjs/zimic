@@ -41,7 +41,6 @@ describe('JSON types', () => {
 
   it('should validate if type declarations are JSON-compatible', () => {
     // Checking compatibility with abstract JSON value
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-arguments
     expectTypeOf<JSONValue<JSONValue>>().not.toBeAny();
 
     expectTypeOf<JSONValue<string>>().not.toBeAny();
