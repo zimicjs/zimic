@@ -71,11 +71,11 @@
       "require": "./dist/http.js",
       "default": "./dist/http.js"
     },
-    "./ws": {
-      "types": "./ws.d.ts",
-      "import": "./dist/ws.mjs",
-      "require": "./dist/ws.js",
-      "default": "./dist/ws.js"
+    "./experimental/ws": {
+      "types": "./experimental/ws.d.ts",
+      "import": "./dist/experimental/ws.mjs",
+      "require": "./dist/experimental/ws.js",
+      "default": "./dist/experimental/ws.js"
     },
     "./server": {
       "types": "./server.d.ts",
