@@ -16,6 +16,7 @@ export type WebSocketMessageInterceptedCallback<Schema extends WebSocketSchema> 
   context: { sender: WebSocketInterceptorClient<Schema> },
 ) => PossiblePromise<void>;
 
+/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export interface LocalWebSocketMessageHandler<Schema extends WebSocketSchema> {
   get type(): 'local';
 
@@ -35,6 +36,7 @@ export interface LocalWebSocketMessageHandler<Schema extends WebSocketSchema> {
   clear: () => this;
 }
 
+/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export interface SyncedRemoteWebSocketMessageHandler<Schema extends WebSocketSchema> {
   get type(): 'remote';
 
@@ -57,6 +59,7 @@ export interface SyncedRemoteWebSocketMessageHandler<Schema extends WebSocketSch
   clear: () => PendingRemoteWebSocketMessageHandler<Schema>;
 }
 
+/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export interface PendingRemoteWebSocketMessageHandler<
   Schema extends WebSocketSchema,
 > extends SyncedRemoteWebSocketMessageHandler<Schema> {
@@ -72,9 +75,11 @@ export interface PendingRemoteWebSocketMessageHandler<
   finally: (onFinally?: (() => void) | null) => Promise<SyncedRemoteWebSocketMessageHandler<Schema>>;
 }
 
+/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export type RemoteWebSocketMessageHandler<Schema extends WebSocketSchema> =
   PendingRemoteWebSocketMessageHandler<Schema>;
 
+/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export type WebSocketMessageHandler<Schema extends WebSocketSchema> =
   | LocalWebSocketMessageHandler<Schema>
   | RemoteWebSocketMessageHandler<Schema>;
