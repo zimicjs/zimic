@@ -75,6 +75,35 @@ import {
   InvalidJSONError as HttpInvalidJSONError,
 } from '@zimic/http';
 import {
+  createWebSocketInterceptor,
+  type WebSocketInterceptor,
+  type LocalWebSocketInterceptor,
+  type RemoteWebSocketInterceptor,
+  type WebSocketInterceptorOptions,
+  type LocalWebSocketInterceptorOptions,
+  type RemoteWebSocketInterceptorOptions,
+  type WebSocketInterceptorType,
+  type WebSocketInterceptorPlatform,
+  type WebSocketInterceptorMessageSaving,
+  type WebSocketMessageHandler,
+  type LocalWebSocketMessageHandler,
+  type RemoteWebSocketMessageHandler,
+  type PendingRemoteWebSocketMessageHandler,
+  type SyncedRemoteWebSocketMessageHandler,
+  type WebSocketMessageHandlerComputedRestriction,
+  type WebSocketMessageHandlerDelayFactory,
+  type WebSocketMessageHandlerRestriction,
+  type WebSocketMessageHandlerStaticRestriction,
+  type InferWebSocketInterceptorSchema,
+  type MessageSavingSafeLimitExceededError,
+  type NotRunningWebSocketInterceptorError,
+  type RunningWebSocketInterceptorError,
+  type WebSocketTimesCheckError,
+  type UnknownWebSocketInterceptorPlatformError,
+  type UnknownWebSocketInterceptorTypeError,
+  type DisabledMessageSavingError,
+} from '@zimic/interceptor/experimental/ws';
+import {
   createHttpInterceptor,
   type HttpInterceptor,
   type LocalHttpInterceptor,
@@ -272,7 +301,7 @@ describe('Exports', () => {
     expect(typeof WebSocketCloseTimeoutError).toBe('function');
   });
 
-  it('exports all expected resources from @zimic/interceptor', () => {
+  it('exports all expected resources from @zimic/interceptor/http', () => {
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     expectTypeOf<InterceptorInvalidJSONError>().not.toBeAny();
     // eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -355,5 +384,41 @@ describe('Exports', () => {
     expectTypeOf<TimesCheckError>().not.toBeAny();
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     expect(typeof TimesCheckError).toBe('function');
+  });
+
+  it('exports all expected resources from @zimic/interceptor/ws', () => {
+    expect(typeof createWebSocketInterceptor).toBe('function');
+
+    expectTypeOf<WebSocketInterceptor<never>>().not.toBeAny();
+    expectTypeOf<LocalWebSocketInterceptor<never>>().not.toBeAny();
+    expectTypeOf<RemoteWebSocketInterceptor<never>>().not.toBeAny();
+
+    expectTypeOf<WebSocketInterceptorOptions>().not.toBeAny();
+    expectTypeOf<LocalWebSocketInterceptorOptions>().not.toBeAny();
+    expectTypeOf<RemoteWebSocketInterceptorOptions>().not.toBeAny();
+    expectTypeOf<WebSocketInterceptorType>().not.toBeAny();
+    expectTypeOf<WebSocketInterceptorPlatform>().not.toBeAny();
+    expectTypeOf<WebSocketInterceptorMessageSaving>().not.toBeAny();
+
+    expectTypeOf<WebSocketMessageHandler<never>>().not.toBeAny();
+    expectTypeOf<LocalWebSocketMessageHandler<never>>().not.toBeAny();
+    expectTypeOf<RemoteWebSocketMessageHandler<never>>().not.toBeAny();
+    expectTypeOf<PendingRemoteWebSocketMessageHandler<never>>().not.toBeAny();
+    expectTypeOf<SyncedRemoteWebSocketMessageHandler<never>>().not.toBeAny();
+
+    expectTypeOf<WebSocketMessageHandlerComputedRestriction<never>>().not.toBeAny();
+    expectTypeOf<WebSocketMessageHandlerDelayFactory<never>>().not.toBeAny();
+    expectTypeOf<WebSocketMessageHandlerRestriction<never>>().not.toBeAny();
+    expectTypeOf<WebSocketMessageHandlerStaticRestriction<never>>().not.toBeAny();
+
+    expectTypeOf<InferWebSocketInterceptorSchema<never>>().not.toBeAny();
+
+    expectTypeOf<MessageSavingSafeLimitExceededError>().not.toBeAny();
+    expectTypeOf<NotRunningWebSocketInterceptorError>().not.toBeAny();
+    expectTypeOf<RunningWebSocketInterceptorError>().not.toBeAny();
+    expectTypeOf<WebSocketTimesCheckError>().not.toBeAny();
+    expectTypeOf<UnknownWebSocketInterceptorPlatformError>().not.toBeAny();
+    expectTypeOf<UnknownWebSocketInterceptorTypeError>().not.toBeAny();
+    expectTypeOf<DisabledMessageSavingError>().not.toBeAny();
   });
 });
