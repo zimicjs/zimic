@@ -1,3 +1,4 @@
+/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 class DisabledMessageSavingError extends TypeError {
   constructor() {
     super(

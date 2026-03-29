@@ -1,3 +1,4 @@
+/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 class MessageSavingSafeLimitExceededError extends TypeError {
   constructor(numberOfSavedMessages: number, safeLimit: number) {
     super(

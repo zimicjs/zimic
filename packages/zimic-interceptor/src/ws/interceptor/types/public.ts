@@ -6,6 +6,7 @@ import { LocalWebSocketMessageHandler, RemoteWebSocketMessageHandler } from '@/w
 import { WebSocketInterceptorClient } from './messages';
 import { WebSocketInterceptorMessageSaving, WebSocketInterceptorPlatform } from './options';
 
+/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
   baseURL: string;
   messageSaving: WebSocketInterceptorMessageSaving;
@@ -23,6 +24,7 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
   clear: () => PossiblePromise<void>;
 }
 
+/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export interface LocalWebSocketInterceptor<Schema extends WebSocketSchema> extends WebSocketInterceptor<Schema> {
   get type(): 'local';
 
@@ -32,6 +34,7 @@ export interface LocalWebSocketInterceptor<Schema extends WebSocketSchema> exten
   clear: () => void;
 }
 
+/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export interface RemoteWebSocketInterceptor<Schema extends WebSocketSchema> extends WebSocketInterceptor<Schema> {
   get type(): 'remote';
 
