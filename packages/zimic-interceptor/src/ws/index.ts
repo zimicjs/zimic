@@ -5,6 +5,7 @@ export { default as UnknownWebSocketInterceptorTypeError } from './interceptor/e
 export { default as MessageSavingSafeLimitExceededError } from './interceptor/errors/MessageSavingSafeLimitExceededError';
 
 export { default as DisabledMessageSavingError } from './messageHandler/errors/DisabledMessageSavingError';
+export { default as WebSocketTimesCheckError } from './errors/WebSocketTimesCheckError';
 
 export type { WebSocketMessageHandlerDelayFactory } from './messageHandler/types/messages';
 
