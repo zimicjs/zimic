@@ -793,6 +793,7 @@ describe('Fetch client', async () => {
       id: crypto.randomUUID(),
       userId: crypto.randomUUID(),
       content: 'Notification content',
+      readAt: null,
     };
 
     describe('Notification list', () => {
