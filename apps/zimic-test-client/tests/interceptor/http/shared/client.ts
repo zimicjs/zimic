@@ -5,6 +5,7 @@ import { declareHttpInterceptorTests } from './interceptor';
 
 export interface ClientTestOptions {
   platform: HttpInterceptorPlatform;
+  fetch: (request: Request) => Promise<Response>;
 }
 
 export interface ClientTestOptionsByWorkerType extends ClientTestOptions {
