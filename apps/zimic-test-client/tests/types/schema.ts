@@ -249,7 +249,7 @@ type UserWebSocketEvent = WebSocketSchema<
     }
 >;
 
-export type AuthWebSocketSchema = WebSocketSchema<UserWebSocketEvent>;
+export type AuthWebSocketSchema = WebSocketSchema<SessionWebSocketEvent | UserWebSocketEvent>;
 
 type NotificationWebSocketEvent = WebSocketSchema<
   | {
