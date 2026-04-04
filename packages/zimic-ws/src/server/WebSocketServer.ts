@@ -1,3 +1,4 @@
+import { getHttpServerHostname, getHttpServerPort } from '@zimic/utils/server';
 import { PossiblePromise } from '@zimic/utils/types';
 import { Server as HttpServer, IncomingMessage } from 'http';
 import { Server as HttpsServer } from 'https';
@@ -6,7 +7,12 @@ import { WebSocketServer as NodeWebSocketServer } from 'ws';
 import { WebSocketClient } from '@/client/WebSocketClient';
 import { WebSocketSchema } from '@/types/schema';
 
-import { closeServerSocket, openServerSocket } from './utils/lifecycle';
+import {
+  closeWebSocketServer,
+  openWebSocketServer,
+  WebSocketServerCloseOptions,
+  WebSocketServerOpenOptions,
+} from './utils/lifecycle';
 
 export namespace WebSocketServer {
   export type EventType = 'listening' | 'connection' | 'error' | 'close';
@@ -25,7 +31,7 @@ export namespace WebSocketServer {
 }
 
 export interface WebSocketServerOptions {
-  server: HttpServer | HttpsServer;
+  httpServer: HttpServer | HttpsServer;
 }
 
 export interface WebSocketServerRawEventListenerParameters {
@@ -40,10 +46,8 @@ type WebSocketServerRawEventListener<Type extends WebSocketServer.EventType> = (
 ) => void;
 
 export class WebSocketServer<Schema extends WebSocketSchema> {
-  private httpServer: HttpServer | HttpsServer;
-  private webSocketServer: NodeWebSocketServer;
-
-  #isOpen = false;
+  #httpServer: HttpServer | HttpsServer;
+  #webSocketServer?: NodeWebSocketServer;
 
   private listeners: {
     [Type in WebSocketServer.EventType]: Map<
@@ -58,31 +62,56 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
   };
 
   constructor(options: WebSocketServerOptions) {
-    this.httpServer = options.server;
-    this.webSocketServer = new NodeWebSocketServer({ server: this.httpServer });
-    this.#isOpen = this.httpServer.listening;
+    this.#httpServer = options.httpServer;
+  }
+
+  get baseURL() {
+    return `${this.protocol}://${this.hostname}:${this.port}`;
+  }
+
+  get protocol() {
+    return this.#httpServer instanceof HttpsServer ? 'https' : 'http';
+  }
+
+  get hostname() {
+    return getHttpServerHostname(this.#httpServer);
+  }
+
+  get port() {
+    return getHttpServerPort(this.#httpServer);
+  }
+
+  get httpServer() {
+    return this.#httpServer;
   }
 
   get isOpen() {
-    return this.httpServer.listening && this.#isOpen;
+    return this.#httpServer.listening && this.#webSocketServer !== undefined;
   }
 
-  async open(options: { timeout?: number } = {}) {
-    if (this.#isOpen) {
+  async open(options: WebSocketServerOpenOptions = {}) {
+    if (this.#webSocketServer) {
+      await this.close();
+    }
+
+    this.#webSocketServer = new NodeWebSocketServer({ server: this.#httpServer });
+
+    for (const [type, listeners] of Object.entries(this.listeners)) {
+      for (const [_listener, rawListener] of listeners) {
+        this.#webSocketServer.addListener(type, rawListener);
+      }
+    }
+
+    await openWebSocketServer(this.#httpServer, this.#webSocketServer, options);
+  }
+
+  async close(options: WebSocketServerCloseOptions = {}) {
+    if (!this.#webSocketServer) {
       return;
     }
 
-    await openServerSocket(this.httpServer, this.webSocketServer, options);
-    this.#isOpen = true;
-  }
-
-  async close(options: { timeout?: number } = {}) {
-    if (!this.#isOpen) {
-      return;
-    }
-
-    await closeServerSocket(this.httpServer, this.webSocketServer, options);
-    this.#isOpen = false;
+    await closeWebSocketServer(this.#httpServer, this.#webSocketServer, options);
+    this.#webSocketServer = undefined;
   }
 
   addEventListener(type: 'connection', listener: WebSocketServer.EventListener<Schema, 'connection'>): void;
@@ -96,7 +125,7 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
     listener: WebSocketServer.EventListener<Schema, Type>,
   ) {
     const rawListener = this.createRawListener(type, listener);
-    this.webSocketServer.addListener(type, rawListener);
+    this.#webSocketServer?.addListener(type, rawListener);
     this.listeners[type].set(listener, rawListener);
   }
 
@@ -134,7 +163,7 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
     const rawListener = this.listeners[type].get(listener);
 
     if (rawListener) {
-      this.webSocketServer.removeListener(type, rawListener);
+      this.#webSocketServer?.removeListener(type, rawListener);
       this.listeners[type].delete(listener);
     }
   }

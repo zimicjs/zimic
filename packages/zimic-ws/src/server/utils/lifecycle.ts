@@ -5,14 +5,18 @@ import { WebSocketServer as NodeWebSocketServer } from 'ws';
 import { WebSocketCloseTimeoutError } from '@/errors/WebSocketCloseTimeoutError';
 import { WebSocketOpenTimeoutError } from '@/errors/WebSocketOpenTimeoutError';
 
-export async function openServerSocket(
-  server: HttpServer | HttpsServer,
-  socket: NodeWebSocketServer,
-  options: { timeout?: number } = {},
+export interface WebSocketServerOpenOptions {
+  timeout?: number;
+}
+
+export async function openWebSocketServer(
+  httpServer: HttpServer | HttpsServer,
+  webSocketServer: NodeWebSocketServer,
+  options: WebSocketServerOpenOptions = {},
 ) {
   const { timeout: timeoutDuration } = options;
 
-  const isAlreadyOpen = server.listening;
+  const isAlreadyOpen = httpServer.listening;
 
   if (isAlreadyOpen) {
     return;
@@ -27,26 +31,28 @@ export async function openServerSocket(
             reject(timeoutError);
           }, timeoutDuration);
 
-    socket.once('listening', () => {
+    webSocketServer.once('listening', () => {
       clearTimeout(openTimeout);
       resolve();
     });
 
-    socket.once('error', (error) => {
+    webSocketServer.once('error', (error) => {
       clearTimeout(openTimeout);
       reject(error);
     });
   });
 }
 
-export async function closeServerSocket(
-  server: HttpServer | HttpsServer,
-  socket: NodeWebSocketServer,
-  options: { timeout?: number } = {},
+export type WebSocketServerCloseOptions = WebSocketServerOpenOptions;
+
+export async function closeWebSocketServer(
+  httpServer: HttpServer | HttpsServer,
+  webSocketServer: NodeWebSocketServer,
+  options: WebSocketServerCloseOptions = {},
 ) {
   const { timeout: timeoutDuration } = options;
 
-  const isAlreadyClosed = !server.listening;
+  const isAlreadyClosed = !httpServer.listening;
 
   if (isAlreadyClosed) {
     return;
@@ -61,11 +67,11 @@ export async function closeServerSocket(
             reject(timeoutError);
           }, timeoutDuration);
 
-    for (const client of socket.clients) {
+    for (const client of webSocketServer.clients) {
       client.close();
     }
 
-    socket.close((error) => {
+    webSocketServer.close((error) => {
       clearTimeout(closeTimeout);
 
       /* istanbul ignore if -- @preserve
