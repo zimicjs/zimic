@@ -1,9 +1,7 @@
 import { WebSocketCloseTimeoutError } from '@/errors/WebSocketCloseTimeoutError';
 import { WebSocketOpenTimeoutError } from '@/errors/WebSocketOpenTimeoutError';
 
-import { ClientSocket } from '../ClientSocket';
-
-export async function openClientSocket(socket: ClientSocket, options: { timeout?: number } = {}) {
+export async function openClientSocket(socket: WebSocket, options: { timeout?: number } = {}) {
   const { timeout: timeoutDuration } = options;
 
   const isAlreadyOpen = socket.readyState === socket.OPEN;
@@ -45,7 +43,7 @@ export async function openClientSocket(socket: ClientSocket, options: { timeout?
 }
 
 export async function closeClientSocket(
-  socket: ClientSocket,
+  socket: WebSocket,
   options: { code?: number; reason?: string; timeout?: number } = {},
 ) {
   const { timeout: timeoutDuration } = options;

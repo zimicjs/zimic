@@ -1,14 +1,13 @@
 import { Server as HttpServer } from 'http';
 import { Server as HttpsServer } from 'https';
+import { WebSocketServer as NodeWebSocketServer } from 'ws';
 
 import { WebSocketCloseTimeoutError } from '@/errors/WebSocketCloseTimeoutError';
 import { WebSocketOpenTimeoutError } from '@/errors/WebSocketOpenTimeoutError';
 
-import { ServerSocket } from '../ServerSocket';
-
 export async function openServerSocket(
   server: HttpServer | HttpsServer,
-  socket: ServerSocket,
+  socket: NodeWebSocketServer,
   options: { timeout?: number } = {},
 ) {
   const { timeout: timeoutDuration } = options;
@@ -42,7 +41,7 @@ export async function openServerSocket(
 
 export async function closeServerSocket(
   server: HttpServer | HttpsServer,
-  socket: ServerSocket,
+  socket: NodeWebSocketServer,
   options: { timeout?: number } = {},
 ) {
   const { timeout: timeoutDuration } = options;
