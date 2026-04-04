@@ -9,7 +9,6 @@ export default defineConfig({
     globals: false,
     testTimeout: 5000,
     hookTimeout: 5000,
-    retry: process.env.CI === 'true' ? 1 : 0,
     maxWorkers: process.env.CI === 'true' ? '50%' : '25%',
     clearMocks: true,
     projects: [
@@ -22,22 +21,25 @@ export default defineConfig({
           exclude: ['**/*.browser.test.ts'],
         },
       },
-      {
-        extends: true,
-        test: {
-          name: 'browser',
-          environment: undefined,
-          include: ['./{src,tests}/**/*.test.ts', './{src,tests}/**/*.browser.test.ts'],
-          exclude: ['**/*.node.test.ts'],
-          browser: {
-            instances: [{ browser: 'chromium' }],
-            provider: playwright(),
-            enabled: true,
-            headless: true,
-            screenshotFailures: false,
-          },
-        },
-      },
+      // TODO: Testing in a browser environment is temporarily disabled while we implement WebSocket interceptors in
+      // @zimic/interceptor. For now, we only run tests in a Node environment, which can spin up and manipulate
+      // WebSocket servers for testing.
+      // {
+      //   extends: true,
+      //   test: {
+      //     name: 'browser',
+      //     environment: undefined,
+      //     include: ['./{src,tests}/**/*.test.ts', './{src,tests}/**/*.browser.test.ts'],
+      //     exclude: ['**/*.node.test.ts'],
+      //     browser: {
+      //       instances: [{ browser: 'chromium' }],
+      //       provider: playwright(),
+      //       enabled: true,
+      //       headless: true,
+      //       screenshotFailures: false,
+      //     },
+      //   },
+      // },
     ],
     coverage: {
       provider: 'istanbul',
