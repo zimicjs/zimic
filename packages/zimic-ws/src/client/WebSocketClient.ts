@@ -2,7 +2,12 @@ import { PossiblePromise } from '@zimic/utils/types';
 
 import { WebSocketMessageData, WebSocketSchema } from '@/types/schema';
 
-import { closeClientSocket, openClientSocket } from './utils/lifecycle';
+import {
+  closeWebSocketClient,
+  openWebSocketClient,
+  WebSocketClientCloseOptions,
+  WebSocketClientOpenOptions,
+} from './utils/lifecycle';
 
 export namespace WebSocketClient {
   export type ReadyState =
@@ -151,7 +156,7 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     return this.socket?.bufferedAmount ?? 0;
   }
 
-  async open(options: { timeout?: number } = {}) {
+  async open(options: WebSocketClientOpenOptions = {}) {
     const socket = new WebSocket(this.#url, this.#protocols);
 
     if (socket.binaryType !== this.binaryType) {
@@ -160,7 +165,7 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
 
     this.applyListeners(socket);
 
-    await openClientSocket(socket, options);
+    await openWebSocketClient(socket, options);
 
     this.socket = socket;
   }
@@ -180,13 +185,13 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     }
   }
 
-  async close(code?: number, reason?: string, options: { timeout?: number } = {}) {
+  async close(code?: number, reason?: string, options: WebSocketClientCloseOptions = {}) {
     if (!this.socket) {
       return;
     }
 
     try {
-      await closeClientSocket(this.socket, { ...options, code, reason });
+      await closeWebSocketClient(this.socket, { ...options, code, reason });
     } finally {
       this.socket = undefined;
     }

@@ -6,3 +6,4 @@ export { WebSocketOpenTimeoutError } from './errors/WebSocketOpenTimeoutError';
 export { WebSocketTimeoutError } from './errors/WebSocketTimeoutError';
 
 export { WebSocketClient } from './client/WebSocketClient';
+export type { WebSocketClientOpenOptions, WebSocketClientCloseOptions } from './client/utils/lifecycle';
