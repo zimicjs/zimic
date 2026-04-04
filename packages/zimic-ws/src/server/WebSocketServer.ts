@@ -7,6 +7,7 @@ import { WebSocketServer as NodeWebSocketServer } from 'ws';
 import { WebSocketClient } from '@/client/WebSocketClient';
 import { WebSocketSchema } from '@/types/schema';
 
+import ClosedWebSocketServerError from './errors/ClosedWebSocketServerError';
 import {
   closeWebSocketServer,
   openWebSocketServer,
@@ -17,7 +18,7 @@ import {
 export namespace WebSocketServer {
   export type EventType = 'listening' | 'connection' | 'error' | 'close';
 
-  interface EventListenerParameters<Schema extends WebSocketSchema> {
+  export interface EventListenerParameters<Schema extends WebSocketSchema> {
     connection: [client: WebSocketClient<Schema>, request: IncomingMessage];
     error: [error: Error];
     close: [];
@@ -66,23 +67,28 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
   }
 
   get baseURL() {
+    if (!this.isOpen) {
+      throw new ClosedWebSocketServerError();
+    }
     return `${this.protocol}://${this.hostname}:${this.port}`;
   }
 
   get protocol() {
-    return this.#httpServer instanceof HttpsServer ? 'https' : 'http';
+    return this.#httpServer instanceof HttpsServer ? 'wss' : 'ws';
   }
 
   get hostname() {
+    if (!this.isOpen) {
+      throw new ClosedWebSocketServerError();
+    }
     return getHttpServerHostname(this.#httpServer);
   }
 
   get port() {
+    if (!this.isOpen) {
+      throw new ClosedWebSocketServerError();
+    }
     return getHttpServerPort(this.#httpServer);
-  }
-
-  get httpServer() {
-    return this.#httpServer;
   }
 
   get isOpen() {
@@ -94,15 +100,17 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
       await this.close();
     }
 
-    this.#webSocketServer = new NodeWebSocketServer({ server: this.#httpServer });
+    const webSocketServer = new NodeWebSocketServer({ server: this.#httpServer });
 
     for (const [type, listeners] of Object.entries(this.listeners)) {
       for (const [_listener, rawListener] of listeners) {
-        this.#webSocketServer.addListener(type, rawListener);
+        webSocketServer.addListener(type, rawListener);
       }
     }
 
-    await openWebSocketServer(this.#httpServer, this.#webSocketServer, options);
+    await openWebSocketServer(this.#httpServer, webSocketServer, options);
+
+    this.#webSocketServer = webSocketServer;
   }
 
   async close(options: WebSocketServerCloseOptions = {}) {
@@ -111,6 +119,7 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
     }
 
     await closeWebSocketServer(this.#httpServer, this.#webSocketServer, options);
+
     this.#webSocketServer = undefined;
   }
 
@@ -125,7 +134,7 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
     listener: WebSocketServer.EventListener<Schema, Type>,
   ) {
     const rawListener = this.createRawListener(type, listener);
-    this.#webSocketServer?.addListener(type, rawListener);
+    this.#webSocketServer?.on(type, rawListener);
     this.listeners[type].set(listener, rawListener);
   }
 
@@ -138,7 +147,10 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
         const typedListener = listener as WebSocketServer.EventListener<Schema, 'connection'>;
 
         return ((...[rawClient, ...parameters]: WebSocketServerRawEventListenerParameters['connection']) => {
-          typedListener.call(this, new WebSocketClient<Schema>(rawClient), ...parameters);
+          const wrappedClient =
+            rawClient instanceof WebSocketClient ? rawClient : new WebSocketClient<Schema>(rawClient);
+
+          typedListener.call(this, wrappedClient, ...parameters);
         }) as WebSocketServerRawEventListener<Type>;
       }
 
@@ -163,8 +175,21 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
     const rawListener = this.listeners[type].get(listener);
 
     if (rawListener) {
-      this.#webSocketServer?.removeListener(type, rawListener);
+      this.#webSocketServer?.off(type, rawListener);
       this.listeners[type].delete(listener);
+    }
+  }
+
+  emit<Type extends WebSocketServer.EventType>(
+    type: Type,
+    ...parameters: WebSocketServer.EventListenerParameters<Schema>[Type]
+  ) {
+    if (this.#webSocketServer) {
+      this.#webSocketServer.emit(type, ...parameters);
+    } else {
+      for (const [listener] of this.listeners[type]) {
+        listener.call(this, ...parameters);
+      }
     }
   }
 }
