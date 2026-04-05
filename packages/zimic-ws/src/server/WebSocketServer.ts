@@ -102,13 +102,18 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
 
     const webSocketServer = new NodeWebSocketServer({ server: this.#httpServer });
 
-    for (const [type, listeners] of Object.entries(this.listeners)) {
-      for (const [_listener, rawListener] of listeners) {
-        webSocketServer.addListener(type, rawListener);
+    try {
+      for (const [type, listeners] of Object.entries(this.listeners)) {
+        for (const [_listener, rawListener] of listeners) {
+          webSocketServer.addListener(type, rawListener);
+        }
       }
-    }
 
-    await openWebSocketServer(this.#httpServer, webSocketServer, options);
+      await openWebSocketServer(this.#httpServer, webSocketServer, options);
+    } catch (error) {
+      await closeWebSocketServer(this.#httpServer, webSocketServer);
+      throw error;
+    }
 
     this.#webSocketServer = webSocketServer;
   }
