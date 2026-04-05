@@ -31,7 +31,7 @@ export async function expectTimesCheckError(
       }
       throw error;
     }
-  }).rejects.toThrowError(TimesCheckError);
+  }).rejects.toThrow(TimesCheckError);
 
   expect(timesCheckError).toBeDefined();
   expect(timesCheckError!.name).toBe('TimesCheckError');

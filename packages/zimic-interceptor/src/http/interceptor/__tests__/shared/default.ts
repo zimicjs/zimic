@@ -79,7 +79,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
           type: unknownType, // eslint-disable-line @typescript-eslint/no-unsafe-assignment
           baseURL,
         });
-      }).toThrowError(new UnknownHttpInterceptorTypeError(unknownType));
+      }).toThrow(new UnknownHttpInterceptorTypeError(unknownType));
     });
   });
 
@@ -241,7 +241,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
 
     await expect(async () => {
       await interceptor.clear();
-    }).rejects.toThrowError(new NotRunningHttpInterceptorError());
+    }).rejects.toThrow(new NotRunningHttpInterceptorError());
   });
 
   if (type === 'remote') {
@@ -276,7 +276,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
 
           expect(() => {
             interceptor.auth = { token: 'token' };
-          }).toThrowError(
+          }).toThrow(
             new RunningHttpInterceptorError(
               'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',
             ),
@@ -299,7 +299,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
 
           expect(() => {
             interceptor.auth!.token = otherAuth.token;
-          }).toThrowError(
+          }).toThrow(
             new RunningHttpInterceptorError(
               'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',
             ),
