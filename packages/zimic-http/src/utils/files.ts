@@ -1,13 +1,5 @@
-import { createCachedDynamicImport } from '@zimic/utils/import';
 import fs from 'fs';
 import path from 'path';
-
-export const importFile = createCachedDynamicImport(
-  /* istanbul ignore next -- @preserve
-   * Ignoring as Node.js >=20 provides a global File and the import fallback won't run. */
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  async () => globalThis.File ?? (await import('buffer')).File,
-);
 
 export function replaceFileExtension(filePath: string, newExtension: string) {
   const parsedFilePath = path.parse(filePath);
