@@ -49,17 +49,10 @@ export async function openWebSocketServer(
 export type WebSocketServerCloseOptions = WebSocketServerOpenOptions;
 
 export async function closeWebSocketServer(
-  httpServer: HttpServer | HttpsServer,
   webSocketServer: NodeWebSocketServer,
   options: WebSocketServerCloseOptions = {},
 ) {
   const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options;
-
-  const isAlreadyClosed = !httpServer.listening;
-
-  if (isAlreadyClosed) {
-    return;
-  }
 
   await new Promise<void>((resolve, reject) => {
     const closeTimeout = setTimeout(() => {

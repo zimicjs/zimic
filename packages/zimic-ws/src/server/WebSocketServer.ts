@@ -111,7 +111,7 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
 
       await openWebSocketServer(this.#httpServer, webSocketServer, options);
     } catch (error) {
-      await closeWebSocketServer(this.#httpServer, webSocketServer);
+      await closeWebSocketServer(webSocketServer);
       throw error;
     }
 
@@ -123,7 +123,7 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
       return;
     }
 
-    await closeWebSocketServer(this.#httpServer, this.#webSocketServer, options);
+    await closeWebSocketServer(this.#webSocketServer, options);
 
     this.#webSocketServer = undefined;
   }
