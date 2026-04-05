@@ -22,20 +22,21 @@ export async function openWebSocketClient(socket: WebSocket, options: WebSocketC
       handleError(timeoutError); // eslint-disable-line @typescript-eslint/no-use-before-define
     }, timeoutDuration);
 
-    function clearTimeoutAndListeners() {
+    function removeListenersAndTimeout() {
       clearTimeout(openTimeout);
+
       socket.removeEventListener('open', handleOpenSuccess); // eslint-disable-line @typescript-eslint/no-use-before-define
       socket.removeEventListener('error', handleError); // eslint-disable-line @typescript-eslint/no-use-before-define
       socket.removeEventListener('close', handleError); // eslint-disable-line @typescript-eslint/no-use-before-define
     }
 
     function handleError(error: unknown) {
-      clearTimeoutAndListeners();
+      removeListenersAndTimeout();
       reject(error);
     }
 
     function handleOpenSuccess() {
-      clearTimeoutAndListeners();
+      removeListenersAndTimeout();
       resolve();
     }
 
@@ -65,19 +66,20 @@ export async function closeWebSocketClient(
       handleError(timeoutError); // eslint-disable-line @typescript-eslint/no-use-before-define
     }, timeoutDuration);
 
-    function removeListeners() {
+    function removeListenersAndTimeout() {
       clearTimeout(closeTimeout);
+
       socket.removeEventListener('error', handleError); // eslint-disable-line @typescript-eslint/no-use-before-define
       socket.removeEventListener('close', handleClose); // eslint-disable-line @typescript-eslint/no-use-before-define
     }
 
     function handleError(error: unknown) {
-      removeListeners();
+      removeListenersAndTimeout();
       reject(error);
     }
 
     function handleClose() {
-      removeListeners();
+      removeListenersAndTimeout();
       resolve();
     }
 

@@ -29,20 +29,27 @@ export async function openWebSocketServer(
       reject(timeoutError);
     }, timeoutDuration);
 
-    webSocketServer.once('listening', () => {
+    function removeListenersAndTimeout() {
       clearTimeout(openTimeout);
-      resolve();
-    });
 
-    webSocketServer.once(
-      'error',
-      /* istanbul ignore next -- @preserve
-       * This is not expected since the server is not started unless it is not running. */
-      (error) => {
-        clearTimeout(openTimeout);
-        reject(error);
-      },
-    );
+      webSocketServer.off('listening', handleListening); // eslint-disable-line @typescript-eslint/no-use-before-define
+      webSocketServer.off('error', handleError); // eslint-disable-line @typescript-eslint/no-use-before-define
+    }
+
+    /* istanbul ignore next -- @preserve
+     * This is not expected since the server is not started unless it is not running. */
+    function handleError(error: unknown) {
+      removeListenersAndTimeout();
+      reject(error);
+    }
+
+    function handleListening() {
+      removeListenersAndTimeout();
+      resolve();
+    }
+
+    webSocketServer.on('listening', handleListening);
+    webSocketServer.on('error', handleError);
   });
 }
 
