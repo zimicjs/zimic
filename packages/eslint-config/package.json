@@ -10,14 +10,14 @@
     ".": "./index.js"
   },
   "dependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.56.0",
-    "@typescript-eslint/parser": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^8.58.0",
+    "@typescript-eslint/parser": "^8.58.0",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-import-helpers": "^2.0.1"
   },
   "peerDependencies": {
     "eslint": "^9.0.0",
-    "typescript": "^5.0.0 || ^6.0.0 || ^6.0.0-beta"
+    "typescript": "^5.0.0 || ^6.0.0"
   }
 }

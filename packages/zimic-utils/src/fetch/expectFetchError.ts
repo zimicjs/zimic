@@ -19,7 +19,7 @@ export function createFetchErrorMessageRegExp(options: ExpectFetchErrorOptions) 
 }
 
 async function expectFetchError(responsePromise: Promise<Response>, options: ExpectFetchErrorOptions = {}) {
-  await expect(responsePromise).rejects.toThrowError(createFetchErrorMessageRegExp(options));
+  await expect(responsePromise).rejects.toThrow(createFetchErrorMessageRegExp(options));
 }
 
 export default expectFetchError;

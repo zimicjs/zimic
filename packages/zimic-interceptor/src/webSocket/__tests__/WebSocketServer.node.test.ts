@@ -123,7 +123,7 @@ describe('Web socket server', async () => {
         expect(server.socketTimeout).toBe(socketTimeout);
         server.start();
 
-        await expect(server.stop()).rejects.toThrowError(new WebSocketCloseTimeoutError(socketTimeout));
+        await expect(server.stop()).rejects.toThrow(new WebSocketCloseTimeoutError(socketTimeout));
       } finally {
         delayedServerSocketClose.mockRestore();
       }
@@ -183,7 +183,7 @@ describe('Web socket server', async () => {
         rawClient = new ClientSocket(`ws://localhost:${port}`);
         await waitForOpenClientSocket(rawClient);
 
-        await expect(server.stop()).rejects.toThrowError(new WebSocketCloseTimeoutError(socketTimeout));
+        await expect(server.stop()).rejects.toThrow(new WebSocketCloseTimeoutError(socketTimeout));
       } finally {
         delayedClientSocketClose.mockRestore();
       }
@@ -301,7 +301,7 @@ describe('Web socket server', async () => {
       await waitForOpenClientSocket(rawClient);
 
       const requestMessage = { question: 'test' };
-      await expect(server.request('with-reply', requestMessage)).rejects.toThrowError(
+      await expect(server.request('with-reply', requestMessage)).rejects.toThrow(
         new WebSocketMessageTimeoutError(messageTimeout),
       );
     });
@@ -627,7 +627,7 @@ describe('Web socket server', async () => {
 
       await expect(async () => {
         await server?.send('no-reply', { message: 'test' });
-      }).rejects.toThrowError(new NotRunningWebSocketHandlerError());
+      }).rejects.toThrow(new NotRunningWebSocketHandlerError());
     });
   });
 });
