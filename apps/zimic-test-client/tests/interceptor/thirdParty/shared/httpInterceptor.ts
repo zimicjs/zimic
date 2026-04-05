@@ -14,36 +14,33 @@ import {
   Notification,
   UserUpdatePayload,
 } from '@tests/types/schema';
-import { importCrypto, IsomorphicCrypto } from '@tests/utils/crypto';
 
 import { ClientTestOptionsByWorkerType, ZIMIC_SERVER_PORT } from '.';
 
-function getAuthBaseURL(type: HttpInterceptorType, crypto: IsomorphicCrypto) {
+function getAuthBaseURL(type: HttpInterceptorType) {
   return type === 'local'
     ? 'http://localhost:4000'
     : `http://localhost:${ZIMIC_SERVER_PORT}/auth-${crypto.randomUUID()}`;
 }
 
-function getNotificationsBaseURL(type: HttpInterceptorType, crypto: IsomorphicCrypto) {
+function getNotificationsBaseURL(type: HttpInterceptorType) {
   return type === 'local'
     ? 'http://localhost:4001'
     : `http://localhost:${ZIMIC_SERVER_PORT}/notifications-${crypto.randomUUID()}`;
 }
 
-async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerType) {
+function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerType) {
   const { platform, type, fetch } = options;
-
-  const crypto = await importCrypto();
 
   const authInterceptor = createHttpInterceptor<AuthServiceSchema>({
     type,
-    baseURL: getAuthBaseURL(type, crypto),
+    baseURL: getAuthBaseURL(type),
     requestSaving: { enabled: true },
   });
 
   const notificationInterceptor = createHttpInterceptor<NotificationServiceSchema>({
     type,
-    baseURL: getNotificationsBaseURL(type, crypto),
+    baseURL: getNotificationsBaseURL(type),
     requestSaving: { enabled: true },
   });
 
