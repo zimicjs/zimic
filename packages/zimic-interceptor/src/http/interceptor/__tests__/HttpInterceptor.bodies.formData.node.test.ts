@@ -6,16 +6,16 @@ import { createInternalInterceptorServer } from '@tests/utils/interceptorServers
 import { declareFormDataBodyHttpInterceptorTests } from './shared/bodies/formData';
 import testMatrix from './shared/matrix';
 
-describe.each(testMatrix)('HttpInterceptor (node, $type) > Form data', async ({ type }) => {
+describe.each(testMatrix)('HttpInterceptor (node, $type) > Form data', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   let baseURL: string;
 
-  beforeAll(async () => {
+  beforeAll(() => {
     if (type === 'remote') {
       await server.start();
     }
-    baseURL = await getNodeBaseURL(type, server);
+    baseURL = getNodeBaseURL(type, server);
   });
 
   afterAll(async () => {
@@ -24,7 +24,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Form data', async ({ 
     }
   });
 
-  await declareFormDataBodyHttpInterceptorTests({
+  declareFormDataBodyHttpInterceptorTests({
     platform: 'node',
     type,
     getBaseURL: () => baseURL,

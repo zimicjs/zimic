@@ -4,7 +4,6 @@ import { validatePathParams } from '@zimic/utils/url';
 
 import UnsupportedResponseBypassError from '@/server/errors/UnsupportedResponseBypassError';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/types/schema';
-import { importCrypto } from '@/utils/crypto';
 import { isClientSide, isServerSide } from '@/utils/environment';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
 import { methodCanHaveResponseBody } from '@/utils/http';
@@ -147,8 +146,6 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     }
 
     validatePathParams(path);
-
-    const crypto = await importCrypto();
 
     const handler: HttpHandler = {
       id: crypto.randomUUID(),

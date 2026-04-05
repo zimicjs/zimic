@@ -1,7 +1,6 @@
 import { Collection } from '@zimic/utils/types';
 import ClientSocket from 'isomorphic-ws';
 
-import { importCrypto } from '@/utils/crypto';
 import {
   DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT,
   DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT,
@@ -194,7 +193,7 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
 
     const listenerPromises = Array.from(listeners, async (listener) => {
       const replyData = await listener(message, socket);
-      await this.reply(message, replyData, { sockets: [socket] });
+      this.reply(message, replyData, { sockets: [socket] });
     });
 
     await Promise.all(listenerPromises);
@@ -207,12 +206,10 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     await Promise.all(closingPromises);
   }
 
-  private async createEventMessage<Channel extends WebSocketChannel<Schema>>(
+  private createEventMessage<Channel extends WebSocketChannel<Schema>>(
     channel: Channel,
     eventData: WebSocketEventMessage<Schema, Channel>['data'],
   ) {
-    const crypto = await importCrypto();
-
     const eventMessage: WebSocketEventMessage<Schema, Channel> = {
       id: crypto.randomUUID(),
       channel,
@@ -221,14 +218,14 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     return eventMessage;
   }
 
-  async send<Channel extends WebSocketChannelWithNoReply<Schema>>(
+  send<Channel extends WebSocketChannelWithNoReply<Schema>>(
     channel: Channel,
     eventData: WebSocketEventMessage<Schema, Channel>['data'],
     options: {
       sockets?: Collection<ClientSocket>;
     } = {},
   ) {
-    const event = await this.createEventMessage(channel, eventData);
+    const event = this.createEventMessage(channel, eventData);
     this.sendMessage(event, options.sockets);
   }
 
@@ -239,7 +236,7 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
       sockets?: Collection<ClientSocket>;
     } = {},
   ) {
-    const request = await this.createEventMessage(channel, requestData);
+    const request = this.createEventMessage(channel, requestData);
     this.sendMessage(request, options.sockets);
 
     const response = await this.waitForReply(channel, request, options.sockets);
@@ -310,14 +307,14 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     return 'requestId' in message;
   }
 
-  async reply<Channel extends WebSocketChannel<Schema>>(
+  reply<Channel extends WebSocketChannel<Schema>>(
     request: WebSocketEventMessage<Schema, Channel>,
     replyData: WebSocketReplyMessage<Schema, Channel>['data'],
     options: {
       sockets: Collection<ClientSocket>;
     },
   ) {
-    const reply = await this.createReplyMessage(request, replyData);
+    const reply = this.createReplyMessage(request, replyData);
 
     // If this handler received a request and was stopped before responding, discard any pending replies.
     if (this.isRunning) {
@@ -325,12 +322,10 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     }
   }
 
-  private async createReplyMessage<Channel extends WebSocketChannel<Schema>>(
+  private createReplyMessage<Channel extends WebSocketChannel<Schema>>(
     request: WebSocketEventMessage<Schema, Channel>,
     replyData: WebSocketReplyMessage<Schema, Channel>['data'],
   ) {
-    const crypto = await importCrypto();
-
     const replyMessage: WebSocketReplyMessage<Schema, Channel> = {
       id: crypto.randomUUID(),
       channel: request.channel,

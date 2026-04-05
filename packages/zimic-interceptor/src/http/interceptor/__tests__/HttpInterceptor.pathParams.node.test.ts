@@ -6,16 +6,16 @@ import { createInternalInterceptorServer } from '@tests/utils/interceptorServers
 import testMatrix from './shared/matrix';
 import { declarePathParamsHttpInterceptorTests } from './shared/pathParams';
 
-describe.each(testMatrix)('HttpInterceptor (node, $type) > Path params', async ({ type }) => {
+describe.each(testMatrix)('HttpInterceptor (node, $type) > Path params', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   let baseURL: string;
 
-  beforeAll(async () => {
+  beforeAll(() => {
     if (type === 'remote') {
       await server.start();
     }
-    baseURL = await getNodeBaseURL(type, server);
+    baseURL = getNodeBaseURL(type, server);
   });
 
   afterAll(async () => {
@@ -24,7 +24,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Path params', async (
     }
   });
 
-  await declarePathParamsHttpInterceptorTests({
+  declarePathParamsHttpInterceptorTests({
     platform: 'node',
     type,
     getBaseURL: () => baseURL,

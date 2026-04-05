@@ -12,7 +12,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
-export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, getBaseURL, getInterceptorOptions } = options;
 
   const File = await importFile();

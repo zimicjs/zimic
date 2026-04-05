@@ -3,16 +3,13 @@ import { joinURL } from '@zimic/utils/url';
 import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import { importCrypto } from '@/utils/crypto';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../utils';
 
-export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+export function declarePlainTextBodyHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { getBaseURL, getInterceptorOptions } = options;
-
-  const crypto = await importCrypto();
 
   interface User {
     id: string;

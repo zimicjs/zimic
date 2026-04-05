@@ -3,7 +3,6 @@ import { joinURL } from '@zimic/utils/url';
 import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import { importCrypto } from '@/utils/crypto';
 import { importFile } from '@/utils/files';
 import { randomInt } from '@/utils/numbers';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -40,10 +39,8 @@ async function createRandomFile(
   }
 }
 
-export async function declareBinaryBodyHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+export function declareBinaryBodyHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { getBaseURL, getInterceptorOptions } = options;
-
-  const crypto = await importCrypto();
 
   interface User {
     id: string;

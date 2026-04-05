@@ -844,13 +844,13 @@ export function declareTimesHttpRequestHandlerTests(
             `       ${color.red(
               `+ FormData { "name": "2", ${
                 /* istanbul ignore next -- @preserve
-                 * Ignoring as Node.js >=20 provides a global File and only one branch can be covered at a time. */
+                 * Ignoring as Node.js >=22 provides a global File and only one branch can be covered at a time. */
                 isGlobalFileAvailable()
                   ? "\"blob\": File { name: 'blob', type: 'text/plain', size: 8 },"
                   : '"blob": Blob { type: \'text/plain\', size: 8 },'
               } ${
                 /* istanbul ignore next -- @preserve
-                 * Ignoring as Node.js >=20 provides a global File and only one branch can be covered at a time. */
+                 * Ignoring as Node.js >=22 provides a global File and only one branch can be covered at a time. */
                 isGlobalFileAvailable()
                   ? "\"file\": File { name: 'tag.txt', type: 'text/plain', size: 8 }"
                   : '"file": Blob { type: \'text/plain\', size: 8 }'
