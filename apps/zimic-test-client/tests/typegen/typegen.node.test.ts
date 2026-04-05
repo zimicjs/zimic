@@ -71,7 +71,7 @@ describe('Typegen', () => {
       },
       {
         input:
-          'https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.json',
+          'https://raw.githubusercontent.com/googlemaps/openapi-specification/ef437434d55ad2d988c0fc8c0b3d14fe2dcb7441/dist/google-maps-platform-openapi3.json',
         serviceName: 'GoogleMaps',
         outputFileName: 'google-maps-3.0.openapi.ts',
       },

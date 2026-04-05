@@ -10,7 +10,7 @@ async function waitForNot(callback: () => PossiblePromise<void>, options?: WaitF
   const { expect } = await importVitest();
 
   const waitForPromise = waitFor(callback, { timeout: 100, ...options });
-  await expect(waitForPromise).rejects.toThrowError();
+  await expect(waitForPromise).rejects.toThrow();
 }
 
 export default waitForNot;

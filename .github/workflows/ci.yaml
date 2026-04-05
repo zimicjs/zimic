@@ -196,7 +196,7 @@ jobs:
           - '5.7'
           - '5.8'
           - '5.9'
-          - '6.0.0-beta'
+          - '6.0'
 
     steps:
       - name: Checkout code
@@ -228,12 +228,18 @@ jobs:
       - name: Set TypeScript version
         if: ${{ steps.should-check-types.outputs.value == 'true' }}
         run: |
-          pnpm update \
+          # Allow scripts/postinstall.mjs to autofix pnpm-lock.yaml, in case projects stopped referencing @zimic/*
+          # packages using local links. pnpm sometimes removes links to local packages in favor of registry versions
+          # when installing or updating packages.
+          CI=false EXIT_ON_NON_LOCAL_PACKAGES=false pnpm update \
             typescript@${{ matrix.typescript-version }} \
             --recursive \
             --filter '!@zimic/*' \
             --filter '!zimic-web' \
             ${{ env.TURBO_FILTERS }}
+
+          echo 'Re-running `pnpm install` in case `pnpm-lock.yaml` was changed by scripts/postinstall.mjs...'
+          pnpm install --no-frozen-lockfile ${{ steps.zimic-setup.outputs.install-filters }}
 
       - name: Check types
         if: ${{ steps.should-check-types.outputs.value == 'true' }}
