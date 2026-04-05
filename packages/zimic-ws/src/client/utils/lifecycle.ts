@@ -17,25 +17,25 @@ export async function openWebSocketClient(socket: WebSocket, options: WebSocketC
   }
 
   await new Promise<void>((resolve, reject) => {
-    function removeListeners() {
+    const openTimeout = setTimeout(() => {
+      const timeoutError = new WebSocketOpenTimeoutError(timeoutDuration);
+      handleError(timeoutError); // eslint-disable-line @typescript-eslint/no-use-before-define
+    }, timeoutDuration);
+
+    function clearTimeoutAndListeners() {
+      clearTimeout(openTimeout);
       socket.removeEventListener('open', handleOpenSuccess); // eslint-disable-line @typescript-eslint/no-use-before-define
       socket.removeEventListener('error', handleError); // eslint-disable-line @typescript-eslint/no-use-before-define
       socket.removeEventListener('close', handleError); // eslint-disable-line @typescript-eslint/no-use-before-define
     }
 
     function handleError(error: unknown) {
-      removeListeners();
+      clearTimeoutAndListeners();
       reject(error);
     }
 
-    const openTimeout = setTimeout(() => {
-      const timeoutError = new WebSocketOpenTimeoutError(timeoutDuration);
-      handleError(timeoutError);
-    }, timeoutDuration);
-
     function handleOpenSuccess() {
-      removeListeners();
-      clearTimeout(openTimeout);
+      clearTimeoutAndListeners();
       resolve();
     }
 
@@ -60,7 +60,13 @@ export async function closeWebSocketClient(
   }
 
   await new Promise<void>((resolve, reject) => {
+    const closeTimeout = setTimeout(() => {
+      const timeoutError = new WebSocketCloseTimeoutError(timeoutDuration);
+      handleError(timeoutError); // eslint-disable-line @typescript-eslint/no-use-before-define
+    }, timeoutDuration);
+
     function removeListeners() {
+      clearTimeout(closeTimeout);
       socket.removeEventListener('error', handleError); // eslint-disable-line @typescript-eslint/no-use-before-define
       socket.removeEventListener('close', handleClose); // eslint-disable-line @typescript-eslint/no-use-before-define
     }
@@ -70,14 +76,8 @@ export async function closeWebSocketClient(
       reject(error);
     }
 
-    const closeTimeout = setTimeout(() => {
-      const timeoutError = new WebSocketCloseTimeoutError(timeoutDuration);
-      handleError(timeoutError);
-    }, timeoutDuration);
-
     function handleClose() {
       removeListeners();
-      clearTimeout(closeTimeout);
       resolve();
     }
 
