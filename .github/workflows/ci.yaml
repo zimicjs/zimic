@@ -149,11 +149,18 @@ jobs:
 
       - name: Run tests
         run: |
+          extraTurboFilters=''
+
+          if [[ "$NODE_VERSION" -lt 22 ]]; then
+            # @zimic/ws requires Node.js >=22.
+            extraTurboFilters='--filter !@zimic/ws'
+          fi
+
           pnpm turbo \
             test:turbo \
             --continue \
             --concurrency 1 \
-            ${{ env.TURBO_FILTERS }}
+            ${{ env.TURBO_FILTERS }} $extraTurboFilters
         env:
           PLAYWRIGHT_WORKERS: 2
 
