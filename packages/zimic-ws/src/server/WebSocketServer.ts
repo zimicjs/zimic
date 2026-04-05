@@ -95,9 +95,9 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
     return this.#httpServer.listening && this.#webSocketServer !== undefined;
   }
 
-  async open(options: WebSocketServerOpenOptions = {}) {
-    if (this.#webSocketServer) {
-      await this.close();
+  async open(options?: WebSocketServerOpenOptions) {
+    if (this.isOpen) {
+      return;
     }
 
     const webSocketServer = new NodeWebSocketServer({ server: this.#httpServer });
@@ -113,7 +113,7 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
     this.#webSocketServer = webSocketServer;
   }
 
-  async close(options: WebSocketServerCloseOptions = {}) {
+  async close(options?: WebSocketServerCloseOptions) {
     if (!this.#webSocketServer) {
       return;
     }

@@ -69,12 +69,16 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
   #protocols?: string | string[];
   #binaryType: BinaryType = 'blob';
 
-  #onopen: WebSocketClient.EventListener<Schema, 'open'> | null = null;
-  #onmessage: WebSocketClient.EventListener<Schema, 'message'> | null = null;
-  #onclose: WebSocketClient.EventListener<Schema, 'close'> | null = null;
-  #onerror: WebSocketClient.EventListener<Schema, 'error'> | null = null;
+  private unitaryListeners: {
+    [Type in WebSocketClient.EventType]: WebSocketClient.EventListener<Schema, Type> | null;
+  } = {
+    open: null,
+    message: null,
+    close: null,
+    error: null,
+  };
 
-  private listeners: {
+  private nonUnitaryListeners: {
     [Type in WebSocketClient.EventType]: Map<
       WebSocketClient.EventListener<Schema, Type>,
       WebSocketClientRawEventListener
@@ -156,7 +160,13 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     return this.socket?.bufferedAmount ?? 0;
   }
 
-  async open(options: WebSocketClientOpenOptions = {}) {
+  async open(options?: WebSocketClientOpenOptions) {
+    if (this.readyState === WebSocketClient.OPEN) {
+      return;
+    }
+
+    await this.close();
+
     const socket = new WebSocket(this.#url, this.#protocols);
 
     if (socket.binaryType !== this.binaryType) {
@@ -173,19 +183,19 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
   private applyListeners(socket: WebSocket) {
     for (const type of ['open', 'message', 'close', 'error'] as const) {
       const unitaryListener = this[`on${type}`] as WebSocketClient.EventListener<Schema, typeof type> | null;
-      const rawUnitaryListener = unitaryListener ? this.listeners[type].get(unitaryListener) : undefined;
+      const rawUnitaryListener = unitaryListener ? this.nonUnitaryListeners[type].get(unitaryListener) : undefined;
 
       if (rawUnitaryListener) {
         socket[`on${type}`] = rawUnitaryListener;
       }
 
-      for (const rawListener of this.listeners[type].values()) {
+      for (const rawListener of this.nonUnitaryListeners[type].values()) {
         socket.addEventListener(type, rawListener);
       }
     }
   }
 
-  async close(code?: number, reason?: string, options: WebSocketClientCloseOptions = {}) {
+  async close(code?: number, reason?: string, options?: WebSocketClientCloseOptions) {
     if (!this.socket) {
       return;
     }
@@ -209,7 +219,7 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     const rawListener = listener.bind(this) as WebSocketClientRawEventListener;
 
     this.socket?.addEventListener(type, rawListener, options);
-    this.listeners[type].set(listener, rawListener);
+    this.nonUnitaryListeners[type].set(listener, rawListener);
   }
 
   removeEventListener<Type extends WebSocketClient.EventType>(
@@ -217,16 +227,16 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     listener: WebSocketClient.EventListener<Schema, Type>,
     options?: boolean | EventListenerOptions,
   ) {
-    const rawListener = this.listeners[type].get(listener);
+    const rawListener = this.nonUnitaryListeners[type].get(listener);
 
     if (rawListener) {
       this.socket?.removeEventListener(type, rawListener, options);
-      this.listeners[type].delete(listener);
+      this.nonUnitaryListeners[type].delete(listener);
     }
   }
 
   get onopen() {
-    return this.#onopen;
+    return this.unitaryListeners.open;
   }
 
   set onopen(listener: WebSocketClient.EventListener<Schema, 'open'> | null) {
@@ -234,7 +244,7 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
   }
 
   get onmessage() {
-    return this.#onmessage;
+    return this.unitaryListeners.message;
   }
 
   set onmessage(listener: WebSocketClient.EventListener<Schema, 'message'> | null) {
@@ -242,7 +252,7 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
   }
 
   get onclose() {
-    return this.#onclose;
+    return this.unitaryListeners.close;
   }
 
   set onclose(listener: WebSocketClient.EventListener<Schema, 'close'> | null) {
@@ -250,7 +260,7 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
   }
 
   get onerror() {
-    return this.#onerror;
+    return this.unitaryListeners.error;
   }
 
   set onerror(listener: WebSocketClient.EventListener<Schema, 'error'> | null) {
@@ -261,29 +271,33 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     Type extends WebSocketClient.EventType,
     Listener extends WebSocketClient.EventListener<Schema, Type> | null,
   >(type: Type, listener: Listener) {
-    const listenerProperty = `_on${type}` as keyof WebSocketClient<Schema>;
+    const currentListener = this.unitaryListeners[type];
+
+    if (currentListener) {
+      const rawListener = this.nonUnitaryListeners[type].get(currentListener);
+
+      if (this.socket && rawListener) {
+        this.socket[`on${type}`] = null;
+      }
+
+      this.nonUnitaryListeners[type].delete(currentListener);
+    }
 
     if (listener) {
       const rawListener = listener.bind(this) as WebSocketClientRawEventListener;
-      this.listeners[type].set(listener, rawListener);
+      this.nonUnitaryListeners[type].set(listener, rawListener);
 
       if (this.socket) {
         this.socket[`on${type}`] = rawListener;
       }
 
-      (this[listenerProperty] as Listener) = listener;
+      (this.unitaryListeners[type] as Listener) = listener;
     } else {
-      const currentListener = this[listenerProperty] as Listener;
-
-      if (currentListener) {
-        this.listeners[type].delete(currentListener);
-      }
-
       if (this.socket) {
         this.socket[`on${type}`] = null;
       }
 
-      (this[listenerProperty] as Listener | null) = null;
+      (this.unitaryListeners[type] as Listener | null) = null;
     }
   }
 

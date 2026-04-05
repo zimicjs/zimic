@@ -50,7 +50,7 @@ export type WebSocketClientCloseOptions = WebSocketClientOpenOptions;
 
 export async function closeWebSocketClient(
   socket: WebSocket,
-  options: WebSocketClientCloseOptions & { code?: number; reason?: string } = {},
+  options: WebSocketClientCloseOptions & { code?: number; reason?: string },
 ) {
   const { timeout: timeoutDuration } = options;
 
