@@ -8,7 +8,7 @@ export function delayWebSocketServerClose(delayDuration: number) {
   const promises = new Set<Promise<void>>();
 
   const delayedWebSocketServerClose = vi.spyOn(WebSocketServer.prototype, 'close').mockImplementationOnce(function (
-    this: WebSocket,
+    this: WebSocketServer,
     ...parameters
   ) {
     const promise = waitForDelay(delayDuration).then(() => {
