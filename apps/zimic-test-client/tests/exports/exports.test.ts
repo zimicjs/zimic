@@ -120,7 +120,6 @@ import {
   WebSocketTimeoutError,
   WebSocketOpenTimeoutError,
   WebSocketCloseTimeoutError,
-  WebSocketMessageAbortError,
 } from '@zimic/ws';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
@@ -270,9 +269,6 @@ describe('Exports', () => {
 
     expectTypeOf<WebSocketCloseTimeoutError>().not.toBeAny();
     expect(typeof WebSocketCloseTimeoutError).toBe('function');
-
-    expectTypeOf<WebSocketMessageAbortError>().not.toBeAny();
-    expect(typeof WebSocketMessageAbortError).toBe('function');
   });
 
   it('exports all expected resources from @zimic/interceptor', () => {

@@ -25,7 +25,9 @@ The hostname of the server. It can be reassigned to a new value if the server is
 
 ## `server.port`
 
-The port of the server. It can be reassigned to a new value if the server is not running.
+The port of the server. It can be reassigned to a new value if the server is not running. If not provided, it will be
+`undefined` until the server is started, at which point the server will use a random available port and this property
+will be updated accordingly.
 
 **Type**: `number | undefined`
 
