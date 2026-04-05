@@ -1,10 +1,6 @@
 import { FetchAPI } from '@whatwg-node/server';
 
-import { importFile } from '@/utils/files';
-
-export async function getFetchAPI(): Promise<FetchAPI> {
-  const File = await importFile();
-
+export function getFetchAPI(): FetchAPI {
   return {
     fetch,
     Request,

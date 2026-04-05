@@ -8,8 +8,8 @@ import { declareResponseActionsHttpInterceptorTests } from './shared/responseAct
 describe.each(testMatrix)('HttpInterceptor (browser, $type) > Response actions', ({ type }) => {
   let baseURL: string;
 
-  beforeAll(async () => {
-    baseURL = await getBrowserBaseURL(type);
+  beforeAll(() => {
+    baseURL = getBrowserBaseURL(type);
   });
 
   declareResponseActionsHttpInterceptorTests({

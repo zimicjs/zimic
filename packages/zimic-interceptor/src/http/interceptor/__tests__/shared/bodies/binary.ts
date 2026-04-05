@@ -3,14 +3,13 @@ import { joinURL } from '@zimic/utils/url';
 import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import { importFile } from '@/utils/files';
 import { randomInt } from '@/utils/numbers';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../utils';
 
-async function createRandomFile(
+function createRandomFile(
   contentType:
     | 'image/png'
     | 'audio/mp3'
@@ -19,9 +18,7 @@ async function createRandomFile(
     | 'application/pdf'
     | 'application/octet-stream'
     | 'multipart/mixed',
-): Promise<File> {
-  const File = await importFile();
-
+) {
   const randomContent = Uint8Array.from({ length: 1024 }, () => randomInt(0, 256));
 
   if (contentType === 'image/png') {
@@ -85,7 +82,7 @@ export function declareBinaryBodyHttpInterceptorTests(options: RuntimeSharedHttp
     await usingHttpInterceptor<{
       '/users/:id': { POST: MethodSchema };
     }>(interceptorOptions, async (interceptor) => {
-      const responseFile = await createRandomFile(contentType);
+      const responseFile = createRandomFile(contentType);
 
       const handler = await promiseIfRemote(
         interceptor.post('/users/:id').respond((request) => {
@@ -99,7 +96,7 @@ export function declareBinaryBodyHttpInterceptorTests(options: RuntimeSharedHttp
 
       expect(handler.requests).toHaveLength(0);
 
-      const requestFile = await createRandomFile(contentType);
+      const requestFile = createRandomFile(contentType);
 
       const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
         method: 'POST',

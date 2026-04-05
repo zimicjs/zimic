@@ -14,8 +14,8 @@ vi.mock('@zimic/utils/time', async (importActual) => {
 describe.each(testMatrix)('HttpInterceptor (browser, $type) > Delay', ({ type }) => {
   let baseURL: string;
 
-  beforeAll(async () => {
-    baseURL = await getBrowserBaseURL(type);
+  beforeAll(() => {
+    baseURL = getBrowserBaseURL(type);
   });
 
   declareDelayHttpInterceptorTests({

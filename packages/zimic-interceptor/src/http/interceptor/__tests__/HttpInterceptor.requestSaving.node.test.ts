@@ -15,7 +15,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Request saving', ({ t
     if (type === 'remote') {
       await server.start();
     }
-    baseURL = await getNodeBaseURL(type, server);
+    baseURL = getNodeBaseURL(type, server);
   });
 
   afterAll(async () => {

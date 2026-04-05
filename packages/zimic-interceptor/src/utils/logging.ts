@@ -4,7 +4,6 @@ import { Logger } from '@zimic/utils/logging';
 import color from 'picocolors';
 
 import { isClientSide } from './environment';
-import { isGlobalFileAvailable } from './files';
 
 export const logger = new Logger({
   prefix: color.cyan('[@zimic/interceptor]'),
@@ -52,7 +51,7 @@ export function stringifyValueToLog(
     return `FormData ${stringifyValueToLog(value.toObject())}`;
   }
 
-  if (isGlobalFileAvailable() && value instanceof File) {
+  if (value instanceof File) {
     return `File { name: '${value.name}', type: '${value.type}', size: ${value.size} }`;
   }
 

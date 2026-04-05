@@ -8,8 +8,8 @@ import testMatrix from './shared/matrix';
 describe.each(testMatrix)('HttpInterceptor (browser, $type) > Handlers', ({ type }) => {
   let baseURL: string;
 
-  beforeAll(async () => {
-    baseURL = await getBrowserBaseURL(type);
+  beforeAll(() => {
+    baseURL = getBrowserBaseURL(type);
   });
 
   declareHandlerHttpInterceptorTests({

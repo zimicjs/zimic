@@ -5,7 +5,6 @@ import color from 'picocolors';
 import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import { importFile } from '@/utils/files';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -14,8 +13,6 @@ import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, getBaseURL, getInterceptorOptions } = options;
-
-  const File = await importFile();
 
   let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
