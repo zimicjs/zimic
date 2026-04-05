@@ -11,7 +11,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Path params', ({ type
 
   let baseURL: string;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     if (type === 'remote') {
       await server.start();
     }
