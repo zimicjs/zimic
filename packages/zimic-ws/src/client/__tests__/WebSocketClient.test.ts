@@ -27,7 +27,7 @@ describe('WebSocketClient', () => {
     httpServer = createHttpServer();
     webSocketServer = new WebSocketServer({ httpServer });
 
-    await startHttpServer(httpServer, { hostname: 'localhost' });
+    await startHttpServer(httpServer, { hostname: '127.0.0.1' });
     await webSocketServer.open();
 
     expect(webSocketServer.isOpen).toBe(true);

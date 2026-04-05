@@ -19,7 +19,7 @@ describe('WebSocketServer', () => {
 
   beforeEach(async () => {
     httpServer = createHttpServer();
-    await startHttpServer(httpServer, { hostname: 'localhost' });
+    await startHttpServer(httpServer, { hostname: '127.0.0.1' });
   });
 
   afterEach(async () => {
@@ -137,7 +137,7 @@ describe('WebSocketServer', () => {
       const httpsServer = createHttpsServer();
 
       try {
-        await startHttpServer(httpsServer, { hostname: 'localhost' });
+        await startHttpServer(httpsServer, { hostname: '127.0.0.1' });
 
         webSocketServer = new WebSocketServer({ httpServer: httpsServer });
         await webSocketServer.open();
@@ -291,7 +291,7 @@ describe('WebSocketServer', () => {
       expect(listeningListener).toHaveBeenCalledTimes(0);
 
       const openPromise = webSocketServer.open();
-      await startHttpServer(httpServer, { hostname: 'localhost' });
+      await startHttpServer(httpServer, { hostname: '127.0.0.1' });
 
       await openPromise;
 

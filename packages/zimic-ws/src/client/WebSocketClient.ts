@@ -103,25 +103,33 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     this.#protocols = protocols;
   }
 
-  static CONNECTING = WebSocket.CONNECTING;
+  static get CONNECTING() {
+    return WebSocket.CONNECTING;
+  }
 
   get CONNECTING() {
     return WebSocketClient.CONNECTING;
   }
 
-  static OPEN = WebSocket.OPEN;
+  static get OPEN() {
+    return WebSocket.OPEN;
+  }
 
   get OPEN() {
     return WebSocketClient.OPEN;
   }
 
-  static CLOSING = WebSocket.CLOSING;
+  static get CLOSING() {
+    return WebSocket.CLOSING;
+  }
 
   get CLOSING() {
     return WebSocketClient.CLOSING;
   }
 
-  static CLOSED = WebSocket.CLOSED;
+  static get CLOSED() {
+    return WebSocket.CLOSED;
+  }
 
   get CLOSED() {
     return WebSocketClient.CLOSED;
