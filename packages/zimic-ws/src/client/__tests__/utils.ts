@@ -6,10 +6,9 @@ export function delayWebSocketListenerTrigger(delayDuration: number) {
 
   const promises = new Set<Promise<void>>();
 
-  const delayedWebSocketAddEventListener = vi.spyOn(WebSocket.prototype, 'addEventListener').mockImplementationOnce(
-    /* istanbul ignore if -- @preserve
-     * This function may not be executed if tests do not way for the open event to be emitted. */
-    function (this: WebSocket, type, listener) {
+  const delayedWebSocketAddEventListener = vi
+    .spyOn(WebSocket.prototype, 'addEventListener')
+    .mockImplementationOnce(function (this: WebSocket, type, listener) {
       const promise = waitForDelay(delayDuration).then(() => {
         originalWebSocketAddEventListener.call(this, type, listener as () => void);
         promises.delete(promise);
@@ -17,8 +16,7 @@ export function delayWebSocketListenerTrigger(delayDuration: number) {
       promises.add(promise);
 
       return this;
-    },
-  );
+    });
 
   return {
     restore() {
