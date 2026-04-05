@@ -3,11 +3,14 @@ import { waitFor, waitForNot } from '@zimic/utils/time';
 import { createServer as createHttpServer, Server as HttpServer } from 'http';
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
+import { WebSocketCloseTimeoutError } from '@/errors/WebSocketCloseTimeoutError';
+import { WebSocketOpenTimeoutError } from '@/errors/WebSocketOpenTimeoutError';
 import { WebSocketServer } from '@/server';
 import { WebSocketSchema } from '@/types/schema';
 
 import { openWebSocketClient } from '../utils/lifecycle';
 import { WebSocketClient } from '../WebSocketClient';
+import { delayWebSocketClose, delayWebSocketListenerTrigger } from './utils';
 
 describe('WebSocketClient', () => {
   let httpServer: HttpServer;
@@ -96,7 +99,7 @@ describe('WebSocketClient', () => {
       );
     });
 
-    it('should support construction from an already-created native socket', async () => {
+    it('should support construction from a native socket', async () => {
       const protocols = ['protocol1'];
 
       const nativeWebSocketClient = new WebSocket(webSocketServer.baseURL, protocols);
@@ -120,6 +123,36 @@ describe('WebSocketClient', () => {
 
       webSocketClient.binaryType = 'arraybuffer';
       expect(nativeWebSocketClient.binaryType).toBe('arraybuffer');
+
+      await webSocketClient.close();
+
+      expect(nativeWebSocketClient.readyState).toBe(WebSocket.CLOSED);
+      expect(webSocketClient.readyState).toBe(WebSocket.CLOSED);
+    });
+
+    it('should be open if the native socket is already open when constructed', async () => {
+      const protocols = ['protocol1'];
+
+      const nativeWebSocketClient = new WebSocket(webSocketServer.baseURL, protocols);
+      await openWebSocketClient(nativeWebSocketClient);
+
+      expect(nativeWebSocketClient.readyState).toBe(WebSocket.OPEN);
+
+      webSocketClient = new WebSocketClient<Schema>(nativeWebSocketClient);
+
+      expect(webSocketClient.readyState).toBe(WebSocket.OPEN);
+      expect(webSocketClient.url).toBe(nativeWebSocketClient.url);
+      expect(webSocketClient.protocol).toBe(protocols[0]);
+
+      await webSocketClient.open();
+
+      expect(nativeWebSocketClient.readyState).toBe(WebSocket.OPEN);
+      expect(webSocketClient.readyState).toBe(WebSocket.OPEN);
+
+      await openWebSocketClient(nativeWebSocketClient);
+
+      expect(nativeWebSocketClient.readyState).toBe(WebSocket.OPEN);
+      expect(webSocketClient.readyState).toBe(WebSocket.OPEN);
 
       await webSocketClient.close();
 
@@ -535,6 +568,48 @@ describe('WebSocketClient', () => {
       expect(dispatched).toBe(true);
 
       expect(errorListener).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Timeouts', () => {
+    it('should throw an open timeout error if opening times out', async () => {
+      const delayedListenerTrigger = delayWebSocketListenerTrigger(100);
+
+      try {
+        webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+
+        const timeoutDuration = 5;
+
+        const openPromise = webSocketClient.open({ timeout: timeoutDuration });
+        await expect(openPromise).rejects.toThrow(new WebSocketOpenTimeoutError(timeoutDuration));
+
+        await delayedListenerTrigger.asPromise();
+
+        expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
+      } finally {
+        delayedListenerTrigger.restore();
+      }
+    });
+
+    it('should throw a close timeout error if closing times out', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+
+      await webSocketClient.open();
+
+      const delayedWebSocketClose = delayWebSocketClose(100);
+
+      try {
+        const timeoutDuration = 5;
+
+        const closePromise = webSocketClient.close(undefined, undefined, { timeout: timeoutDuration });
+        await expect(closePromise).rejects.toThrow(new WebSocketCloseTimeoutError(timeoutDuration));
+
+        await delayedWebSocketClose.toPromise();
+
+        expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
+      } finally {
+        delayedWebSocketClose.restore();
+      }
     });
   });
 });

@@ -2,6 +2,7 @@ import { Server as HttpServer } from 'http';
 import { Server as HttpsServer } from 'https';
 import { WebSocketServer as NodeWebSocketServer } from 'ws';
 
+import { DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } from '@/client/utils/lifecycle';
 import { WebSocketCloseTimeoutError } from '@/errors/WebSocketCloseTimeoutError';
 import { WebSocketOpenTimeoutError } from '@/errors/WebSocketOpenTimeoutError';
 
@@ -14,7 +15,7 @@ export async function openWebSocketServer(
   webSocketServer: NodeWebSocketServer,
   options: WebSocketServerOpenOptions = {},
 ) {
-  const { timeout: timeoutDuration } = options;
+  const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options;
 
   const isAlreadyOpen = httpServer.listening;
 
@@ -23,23 +24,25 @@ export async function openWebSocketServer(
   }
 
   await new Promise<void>((resolve, reject) => {
-    const openTimeout =
-      timeoutDuration === undefined
-        ? undefined
-        : setTimeout(() => {
-            const timeoutError = new WebSocketOpenTimeoutError(timeoutDuration);
-            reject(timeoutError);
-          }, timeoutDuration);
+    const openTimeout = setTimeout(() => {
+      const timeoutError = new WebSocketOpenTimeoutError(timeoutDuration);
+      reject(timeoutError);
+    }, timeoutDuration);
 
     webSocketServer.once('listening', () => {
       clearTimeout(openTimeout);
       resolve();
     });
 
-    webSocketServer.once('error', (error) => {
-      clearTimeout(openTimeout);
-      reject(error);
-    });
+    webSocketServer.once(
+      'error',
+      /* istanbul ignore next -- @preserve
+       * This is not expected since the server is not started unless it is not running. */
+      (error) => {
+        clearTimeout(openTimeout);
+        reject(error);
+      },
+    );
   });
 }
 
@@ -50,7 +53,7 @@ export async function closeWebSocketServer(
   webSocketServer: NodeWebSocketServer,
   options: WebSocketServerCloseOptions = {},
 ) {
-  const { timeout: timeoutDuration } = options;
+  const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options;
 
   const isAlreadyClosed = !httpServer.listening;
 
@@ -59,13 +62,10 @@ export async function closeWebSocketServer(
   }
 
   await new Promise<void>((resolve, reject) => {
-    const closeTimeout =
-      timeoutDuration === undefined
-        ? undefined
-        : setTimeout(() => {
-            const timeoutError = new WebSocketCloseTimeoutError(timeoutDuration);
-            reject(timeoutError);
-          }, timeoutDuration);
+    const closeTimeout = setTimeout(() => {
+      const timeoutError = new WebSocketCloseTimeoutError(timeoutDuration);
+      reject(timeoutError);
+    }, timeoutDuration);
 
     for (const client of webSocketServer.clients) {
       client.close();

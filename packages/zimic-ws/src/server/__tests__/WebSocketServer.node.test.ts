@@ -5,9 +5,12 @@ import { Socket } from 'net';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { WebSocketClient } from '@/client/WebSocketClient';
+import { WebSocketCloseTimeoutError } from '@/errors/WebSocketCloseTimeoutError';
+import { WebSocketOpenTimeoutError } from '@/errors/WebSocketOpenTimeoutError';
 
 import ClosedWebSocketServerError from '../errors/ClosedWebSocketServerError';
 import { WebSocketServer } from '../WebSocketServer';
+import { delayWebSocketServerClose } from './utils';
 
 describe('WebSocketServer', () => {
   let httpServer: HttpServer;
@@ -454,6 +457,48 @@ describe('WebSocketServer', () => {
 
       expect(connectionListener).toHaveBeenCalledTimes(2);
       expect(closeListener).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Timeouts', () => {
+    it('should throw an open timeout error if opening times out', async () => {
+      await stopHttpServer(httpServer);
+
+      webSocketServer = new WebSocketServer({ httpServer });
+
+      const timeoutDuration = 50;
+
+      await expect(
+        webSocketServer.open({
+          timeout: timeoutDuration,
+        }),
+      ).rejects.toThrow(new WebSocketOpenTimeoutError(timeoutDuration));
+
+      expect(webSocketServer.isOpen).toBe(false);
+    });
+
+    it('should throw a close timeout error if closing times out', async () => {
+      webSocketServer = new WebSocketServer({ httpServer });
+      await webSocketServer.open();
+
+      const delayedWebSocketServerClose = delayWebSocketServerClose(300);
+
+      try {
+        const timeoutDuration = 50;
+
+        await expect(
+          webSocketServer.close({
+            timeout: timeoutDuration,
+          }),
+        ).rejects.toThrow(new WebSocketCloseTimeoutError(timeoutDuration));
+
+        await delayedWebSocketServerClose.toPromise();
+
+        expect(webSocketServer.isOpen).toBe(true);
+      } finally {
+        delayedWebSocketServerClose.restore();
+        await webSocketServer.close();
+      }
     });
   });
 });

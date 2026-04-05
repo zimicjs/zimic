@@ -1,12 +1,14 @@
 import { WebSocketCloseTimeoutError } from '@/errors/WebSocketCloseTimeoutError';
 import { WebSocketOpenTimeoutError } from '@/errors/WebSocketOpenTimeoutError';
 
+export const DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT = 60 * 1000;
+
 export interface WebSocketClientOpenOptions {
   timeout?: number;
 }
 
 export async function openWebSocketClient(socket: WebSocket, options: WebSocketClientOpenOptions = {}) {
-  const { timeout: timeoutDuration } = options;
+  const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options;
 
   const isAlreadyOpen = socket.readyState === socket.OPEN;
 
@@ -26,13 +28,10 @@ export async function openWebSocketClient(socket: WebSocket, options: WebSocketC
       reject(error);
     }
 
-    const openTimeout =
-      timeoutDuration === undefined
-        ? undefined
-        : setTimeout(() => {
-            const timeoutError = new WebSocketOpenTimeoutError(timeoutDuration);
-            handleError(timeoutError);
-          }, timeoutDuration);
+    const openTimeout = setTimeout(() => {
+      const timeoutError = new WebSocketOpenTimeoutError(timeoutDuration);
+      handleError(timeoutError);
+    }, timeoutDuration);
 
     function handleOpenSuccess() {
       removeAllSocketListeners();
@@ -52,7 +51,7 @@ export async function closeWebSocketClient(
   socket: WebSocket,
   options: WebSocketClientCloseOptions & { code?: number; reason?: string },
 ) {
-  const { timeout: timeoutDuration } = options;
+  const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options;
 
   const isAlreadyClosed = socket.readyState === socket.CLOSED;
 
@@ -71,13 +70,10 @@ export async function closeWebSocketClient(
       reject(error);
     }
 
-    const closeTimeout =
-      timeoutDuration === undefined
-        ? undefined
-        : setTimeout(() => {
-            const timeoutError = new WebSocketCloseTimeoutError(timeoutDuration);
-            handleError(timeoutError);
-          }, timeoutDuration);
+    const closeTimeout = setTimeout(() => {
+      const timeoutError = new WebSocketCloseTimeoutError(timeoutDuration);
+      handleError(timeoutError);
+    }, timeoutDuration);
 
     function handleClose() {
       removeAllSocketListeners();
