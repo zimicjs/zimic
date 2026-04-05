@@ -2,7 +2,6 @@ import { HttpFormData, HttpSchema, StrictFormData, StrictHeaders } from '@zimic/
 import { joinURL } from '@zimic/utils/url';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import { importFile } from '@/utils/files';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { expectResponseStatus } from '@tests/utils/requests';
 
@@ -33,8 +32,6 @@ describe('FetchClient > Bodies > Form data', () => {
     }>;
 
     await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
-      const File = await importFile();
-
       const requestFormData = new HttpFormData<FormDataSchema>();
       requestFormData.append('title', 'request');
       requestFormData.append('file', new File(['request'], 'request.txt', { type: 'text/plain' }));
