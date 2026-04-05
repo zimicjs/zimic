@@ -151,7 +151,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
       expect(() => {
         interceptor.baseURL = newBaseURL;
-      }).toThrowError(
+      }).toThrow(
         new RunningHttpInterceptorError(
           'Did you forget to call `await interceptor.stop()` before changing the base URL?',
         ),
@@ -181,7 +181,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
     await expect(async () => {
       await usingHttpInterceptor({ ...interceptorOptions, baseURL: invalidURL }, handler);
-    }).rejects.toThrowError(/Invalid URL/);
+    }).rejects.toThrow(/Invalid URL/);
 
     expect(handler).not.toHaveBeenCalled();
   });
@@ -194,7 +194,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
         const handler = vi.fn();
 
         const interceptorPromise = usingHttpInterceptor({ ...interceptorOptions, baseURL: url }, handler);
-        await expect(interceptorPromise).resolves.not.toThrowError();
+        await expect(interceptorPromise).resolves.not.toThrow();
 
         expect(handler).toHaveBeenCalledTimes(1);
       },
@@ -211,7 +211,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
         const handler = vi.fn();
 
         const interceptorPromise = usingHttpInterceptor({ ...interceptorOptions, baseURL: url }, handler);
-        await expect(interceptorPromise).rejects.toThrowError(
+        await expect(interceptorPromise).rejects.toThrow(
           new UnsupportedURLProtocolError(unsupportedProtocol, SUPPORTED_BASE_URL_PROTOCOLS),
         );
 

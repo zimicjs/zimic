@@ -10,12 +10,13 @@ export type {
 } from './client/types/public';
 
 export { FetchRequest } from './client/request/FetchRequest';
-export type { FetchRequestInit, FetchRequestObject } from './client/request/types';
+export type { FetchRequestInit, FetchRequestObject, FetchRequestObjectOptions } from './client/request/types';
 
 export { FetchResponse } from './client/response/FetchResponse';
 export type { FetchResponsePerStatusCode } from './client/response/FetchResponse';
 export type {
   FetchResponseObject,
+  FetchResponseObjectOptions,
   FetchResponseConstructor,
   FetchResponseInit,
   FetchResponseStatusCode,

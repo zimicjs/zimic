@@ -187,7 +187,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         const interceptor = createDefaultHttpInterceptor();
         await expect(async () => {
           await worker.use(interceptor.client, method, '', spiedRequestHandler);
-        }).rejects.toThrowError(Error);
+        }).rejects.toThrow(Error);
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
@@ -383,7 +383,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         await expect(async () => {
           await worker.use(interceptor.client, method, '', spiedRequestHandler);
-        }).rejects.toThrowError(NotRunningHttpInterceptorError);
+        }).rejects.toThrow(NotRunningHttpInterceptorError);
       });
     });
   });

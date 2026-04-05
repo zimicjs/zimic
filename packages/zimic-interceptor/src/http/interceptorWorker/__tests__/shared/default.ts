@@ -134,7 +134,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
 
       await expect(async () => {
         await worker.clearHandlers();
-      }).rejects.toThrowError(new NotRunningHttpInterceptorError());
+      }).rejects.toThrow(new NotRunningHttpInterceptorError());
     });
   });
 
@@ -146,7 +146,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
 
       await expect(async () => {
         await worker.clearHandlers({ interceptor: interceptor.client });
-      }).rejects.toThrowError(new NotRunningHttpInterceptorError());
+      }).rejects.toThrow(new NotRunningHttpInterceptorError());
     });
   });
 
@@ -167,7 +167,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
         expect(worker.webSocketClient.isRunning).toBe(false);
 
         const clearPromise = worker.clearHandlers();
-        await expect(clearPromise).resolves.not.toThrowError();
+        await expect(clearPromise).resolves.not.toThrow();
       });
     });
 
@@ -189,7 +189,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
         const interceptor = createDefaultHttpInterceptor();
 
         const clearPromise = worker.clearHandlers({ interceptor: interceptor.client });
-        await expect(clearPromise).resolves.not.toThrowError();
+        await expect(clearPromise).resolves.not.toThrow();
       });
     });
   }
@@ -212,7 +212,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
 
       await usingIgnoredConsole(['error'], async (console) => {
         const interceptorStartPromise = interceptorWorker.start();
-        await expect(interceptorStartPromise).rejects.toThrowError(error);
+        await expect(interceptorStartPromise).rejects.toThrow(error);
 
         if (platform === 'browser') {
           expect(console.error).toHaveBeenCalledTimes(0);

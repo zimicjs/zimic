@@ -20,7 +20,7 @@ describe('Exports (Node.js)', () => {
   });
 
   it('exports all expected resources from @zimic/ws', () => {
-    expectTypeOf<WebSocketServer>().not.toBeAny();
+    expectTypeOf<WebSocketServer<never>>().not.toBeAny();
     expect(typeof WebSocketServer).toBe('function');
 
     expectTypeOf<WebSocketServerOptions>().not.toBeAny();

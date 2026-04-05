@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "0.1.1-canary.15",
+  "version": "0.1.2-canary.10",
   "homepage": "https://zimic.dev/docs/ws",
   "repository": {
     "type": "git",
@@ -35,7 +35,7 @@
     "provenance": true
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.4.0"
   },
   "license": "MIT",
   "files": [
@@ -84,28 +84,28 @@
     "deps:setup": "pnpm deps:setup-playwright"
   },
   "dependencies": {
-    "ws": "8.19.0"
+    "ws": "8.20.0"
   },
   "devDependencies": {
-    "@types/node": "^25.3.0",
+    "@types/node": "^25.5.2",
     "@types/ws": "^8.18.1",
-    "@vitest/browser": "^4.0.18",
-    "@vitest/browser-playwright": "^4.0.18",
-    "@vitest/coverage-istanbul": "^4.0.18",
+    "@vitest/browser": "^4.1.2",
+    "@vitest/browser-playwright": "^4.1.2",
+    "@vitest/coverage-istanbul": "^4.1.2",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^11.0.0",
-    "eslint": "^9.39.3",
-    "playwright": "^1.58.2",
-    "tsup": "^8.4.0",
-    "typescript": "6.0.0-beta",
-    "vitest": "^4.0.18"
+    "eslint": "^9.39.4",
+    "playwright": "^1.59.1",
+    "tsup": "^8.5.1",
+    "typescript": "6.0.2",
+    "vitest": "^4.1.2"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0 || ^6.0.0 || ^6.0.0-beta"
+    "typescript": "^5.0.0 || ^6.0.0"
   },
   "peerDependenciesMeta": {
     "typescript": {

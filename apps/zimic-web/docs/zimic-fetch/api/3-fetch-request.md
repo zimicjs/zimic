@@ -6,7 +6,7 @@ slug: /fetch/api/fetch-request
 
 # `FetchRequest`
 
-A type representing a typed fetch request, which inherits from the native
+A class representing a typed fetch request, which inherits from the native
 [Request](https://developer.mozilla.org/docs/Web/API/Request).
 
 On top of the properties available in native requests, `FetchRequest` instances have their URL automatically prefixed
@@ -15,9 +15,29 @@ applied, if present in the fetch instance.
 
 The path of the request is extracted from the URL, excluding the base URL, and is available in the `path` property.
 
+## `constructor()`
+
+Creates a new `FetchRequest` instance.
+
 ```ts
-type FetchRequest<Schema, Method, Path>;
+new FetchRequest<Schema, Method, Path>(fetch, input);
+new FetchRequest<Schema, Method, Path>(fetch, input, init);
 ```
+
+**Arguments**:
+
+1. **fetch**: `Fetch`
+
+   The [fetch instance](/docs/zimic-fetch/api/2-fetch.md) used as the source of defaults (such as `baseURL`, `headers`,
+   and other request options).
+
+2. **input**: `FetchInput<Schema, Method, Path>`
+
+   The request input. It can be a path string (e.g. `'/users'`), a `URL`, or another `FetchRequest` instance.
+
+3. **init**: `FetchRequestInit | undefined`
+
+   Optional request options. If provided, they override the defaults from `fetch`.
 
 **Type arguments**:
 
@@ -27,25 +47,15 @@ type FetchRequest<Schema, Method, Path>;
 
 2. **Method**: `string`
 
-   The HTTP method of the request that caused the error. Must be one of the methods of the path defined in the schema.
+   The HTTP method of the request. Must be one of the methods of the path defined in the schema.
 
 3. **Path**: `string`
 
-   The path of the request that caused the error. Must be one of the paths defined in the schema.
-
-4. **ErrorOnly**: `boolean`
-
-   If `true`, the response will only include the status codes that are considered errors (4XX or 5XX).
-
-5. **Redirect**: `RequestRedirect`
-
-   The redirect mode for the request, which can be one of `'follow'`, `'error'`, or `'manual'`. Defaults to `'follow'`.
-   If `follow` or `error`, the response will not include status codes that are considered redirects (300, 301, 302, 303,
-   307, and 308).
+   The path of the request. Must be one of the paths defined in the schema.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
-import { createFetch } from '@zimic/fetch';
+import { createFetch, FetchRequest } from '@zimic/fetch';
 
 interface User {
   id: string;
@@ -71,14 +81,12 @@ const fetch = createFetch<Schema>({
 });
 
 // highlight-start
-const request = new fetch.Request('/users', {
+const request = new FetchRequest(fetch, '/users', {
   method: 'POST',
   headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ username: 'me' }),
 });
 // highlight-end
-
-console.log(request); // FetchRequest<Schema, 'POST', '/users'>
 ```
 
 **Related**:
@@ -131,12 +139,12 @@ request.toObject(options);
 
 **Arguments**:
 
-1. `options`: `{ includeBody?: boolean | undefined }`
+1. `options`: `FetchRequestObjectOptions | undefined`
 
    The options for converting the request. By default, the body of the request will not be included.
    - `includeBody`: `boolean | undefined` (default `false`)
 
-     Whether to include the body of the request in the plain object.
+     Whether to include the body of the request.
 
 **Returns**: `FetchRequestObject`
 
@@ -153,12 +161,12 @@ const request = new fetch.Request('/users', {
 // highlight-next-line
 const requestObject = request.toObject();
 console.log(requestObject);
-// { url: '...', path: '/users', method: 'POST', headers: { ... }, ... }
+// { url: '...', path: '/users', method: 'POST', ... }
 
 // highlight-next-line
 const requestObjectWithBody = await request.toObject({ includeBody: true });
 console.log(requestObjectWithBody);
-// { url: '...', path: '/users', method: 'POST', headers: { ... }, body: { username: 'me' }, ... }
+// { url: '...', path: '/users', method: 'POST', body: { username: 'me' }, ... }
 ```
 
 If included, the body is parsed automatically based on the `content-type` header of the request.

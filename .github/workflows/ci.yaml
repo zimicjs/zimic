@@ -126,6 +126,7 @@ jobs:
           - 20
           - 22
           - 24
+          - 25
 
     env:
       NODE_VERSION: ${{ matrix.node-version }}
@@ -149,12 +150,24 @@ jobs:
 
       - name: Run tests
         run: |
+          extraTurboFilters=''
+
+          if [[ "$NODE_VERSION" -lt 22 ]]; then
+            # @zimic/ws requires Node.js >=22.
+            extraTurboFilters='--filter !@zimic/ws'
+          fi
+
           pnpm turbo \
             test:turbo \
             --continue \
             --concurrency 1 \
-            ${{ env.TURBO_FILTERS }}
+            ${{ env.TURBO_FILTERS }} $extraTurboFilters
         env:
+          # Our current MSW version is not compatible with Node.js 25 and needs the --no-experimental-webstorage flag to
+          # work. See https://github.com/mswjs/msw/issues/2624#issuecomment-3546368492.
+          # We still cannot upgrade MSW due to https://github.com/mswjs/msw/issues/2585 and
+          # https://github.com/mswjs/msw/issues/2597.
+          NODE_OPTIONS: ${{ matrix.node-version == 25 && '--no-experimental-webstorage' || '' }}
           PLAYWRIGHT_WORKERS: 2
 
       - name: Upload test results
@@ -196,7 +209,7 @@ jobs:
           - '5.7'
           - '5.8'
           - '5.9'
-          - '6.0.0-beta'
+          - '6.0'
 
     steps:
       - name: Checkout code
@@ -228,12 +241,18 @@ jobs:
       - name: Set TypeScript version
         if: ${{ steps.should-check-types.outputs.value == 'true' }}
         run: |
-          pnpm update \
+          # Allow scripts/postinstall.mjs to autofix pnpm-lock.yaml, in case projects stopped referencing @zimic/*
+          # packages using local links. pnpm sometimes removes links to local packages in favor of registry versions
+          # when installing or updating packages.
+          CI=false EXIT_ON_NON_LOCAL_PACKAGES=false pnpm update \
             typescript@${{ matrix.typescript-version }} \
             --recursive \
             --filter '!@zimic/*' \
             --filter '!zimic-web' \
             ${{ env.TURBO_FILTERS }}
+
+          echo 'Re-running `pnpm install` in case `pnpm-lock.yaml` was changed by scripts/postinstall.mjs...'
+          pnpm install --no-frozen-lockfile ${{ steps.zimic-setup.outputs.install-filters }}
 
       - name: Check types
         if: ${{ steps.should-check-types.outputs.value == 'true' }}

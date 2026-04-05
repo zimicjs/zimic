@@ -6,22 +6,35 @@ slug: /fetch/api/fetch-response
 
 # `FetchResponse`
 
-A type representing a typed fetch response, which inherits from the native
+A class representing a typed fetch response, which inherits from the native
 [Response](https://developer.mozilla.org/docs/Web/API/Response).
 
 On top of the properties available in native responses, `FetchResponse` instances have a reference to the originating
 request, accessible via the `request` property. If the response has a failure status code (4XX or 5XX), an error is
 available in the `error` property.
 
+## `constructor()`
+
+Creates a new `FetchResponse` instance.
+
 ```ts
-type FetchResponse<
-  Schema,
-  Method,
-  Path,
-  ErrorOnly = false,
-  Redirect = RequestRedirect
->;
+new FetchResponse<Schema, Method, Path, ErrorOnly, Redirect>(request, body);
+new FetchResponse<Schema, Method, Path, ErrorOnly, Redirect>(request, body, init);
 ```
+
+**Arguments**:
+
+1. **request**: `FetchRequest`
+
+   The [fetch request](/docs/zimic-fetch/api/3-fetch-request.md) that originated this response.
+
+2. **body**: `FetchResponseBodySchema | undefined`
+
+   The response body to create a response from when not providing `response`.
+
+3. **init**: `FetchResponseInit | undefined`
+
+   Optional response initialization options (for example `status` and `headers`) used with `body`.
 
 **Type arguments**:
 
@@ -31,15 +44,17 @@ type FetchResponse<
 
 2. **Method**: `string`
 
-   The HTTP method of the request that caused the error. Must be one of the methods of the path defined in the schema.
+   The HTTP method of the request that caused the response. Must be one of the methods of the path defined in the
+   schema.
 
 3. **Path**: `string`
 
-   The path of the request that caused the error. Must be one of the paths defined in the schema.
+   The path of the request that caused the response. Must be one of the paths defined in the schema.
 
 4. **ErrorOnly**: `boolean`
 
-   If `true`, the response will only include the status codes that are considered errors (4XX or 5XX).
+   If `true`, the response will only include the status codes that are considered errors (4XX or 5XX). This type
+   argument is deprecated and will be removed in @zimic/fetch@2.
 
 5. **Redirect**: `RequestRedirect`
 
@@ -47,9 +62,26 @@ type FetchResponse<
    If `follow` or `error`, the response will not include status codes that are considered redirects (300, 301, 302, 303,
    307, and 308).
 
+An alternative constructor receives a native `Response` object instead of a body and init. This is useful when you
+already have a response and want to convert it into a `FetchResponse` instance.
+
+```ts
+new FetchResponse<Schema, Method, Path, ErrorOnly, Redirect>(request, response);
+```
+
+**Arguments**:
+
+1. **request**: `FetchRequest`
+
+   The [fetch request](/docs/zimic-fetch/api/3-fetch-request.md) that originated this response.
+
+2. **response**: `Response | undefined`
+
+   The [response](https://developer.mozilla.org/docs/Web/API/Response) to create a `FetchResponse` from.
+
 ```ts
 import { HttpSchema } from '@zimic/http';
-import { createFetch } from '@zimic/fetch';
+import { createFetch, FetchResponse } from '@zimic/fetch';
 
 interface User {
   id: string;
@@ -71,13 +103,23 @@ const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 });
 
-//  highlight-start
-const response = await fetch(`/users/${userId}`, {
+const request = new fetch.Request(`/users/${userId}`, {
   method: 'GET',
 });
-//  highlight-end
 
-console.log(response); // FetchResponse<Schema, 'GET', '/users'>
+//  highlight-start
+const response = new FetchResponse(
+  request,
+  JSON.stringify({
+    id: crypto.randomUUID(),
+    username: 'me',
+  }),
+  {
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+  },
+);
+//  highlight-end
 ```
 
 **Related**:
@@ -132,12 +174,12 @@ response.toObject(options);
 
 **Arguments**:
 
-1. `options`: `{ includeBody?: boolean | undefined }`
+1. `options`: `FetchResponseObjectOptions | undefined`
 
    The options for converting the response. By default, the body of the response will not be included.
    - `includeBody`: `boolean | undefined` (default `false`)
 
-     Whether to include the body of the response in the plain object.
+     Whether to include the body of the response.
 
 **Returns**: `FetchResponseObject`
 
@@ -154,12 +196,12 @@ const response = await fetch('/users', {
 // highlight-next-line
 const responseObject = response.toObject();
 console.log(responseObject);
-// { url: '...', type: 'basic', status: 201, statusText: 'Created', ok: true, headers: { ... }, redirected: false }
+// { url: '...', status: 201, ok: true, ... }
 
 // highlight-next-line
 const responseObjectWithBody = await response.toObject({ includeBody: true });
 console.log(responseObjectWithBody);
-// { url: '...', type: 'basic', status: 201, statusText: 'Created', ok: true, headers: { ... }, redirected: false, body: { ... } }
+// { url: '...', status: 201, ok: true, body: { ... }, ... }
 ```
 
 If included, the body is parsed automatically based on the `content-type` header of the response.
