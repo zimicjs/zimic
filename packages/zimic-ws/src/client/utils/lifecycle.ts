@@ -17,14 +17,14 @@ export async function openWebSocketClient(socket: WebSocket, options: WebSocketC
   }
 
   await new Promise<void>((resolve, reject) => {
-    function removeAllSocketListeners() {
+    function removeListeners() {
       socket.removeEventListener('open', handleOpenSuccess); // eslint-disable-line @typescript-eslint/no-use-before-define
       socket.removeEventListener('error', handleError); // eslint-disable-line @typescript-eslint/no-use-before-define
       socket.removeEventListener('close', handleError); // eslint-disable-line @typescript-eslint/no-use-before-define
     }
 
     function handleError(error: unknown) {
-      removeAllSocketListeners();
+      removeListeners();
       reject(error);
     }
 
@@ -34,7 +34,7 @@ export async function openWebSocketClient(socket: WebSocket, options: WebSocketC
     }, timeoutDuration);
 
     function handleOpenSuccess() {
-      removeAllSocketListeners();
+      removeListeners();
       clearTimeout(openTimeout);
       resolve();
     }
@@ -60,13 +60,13 @@ export async function closeWebSocketClient(
   }
 
   await new Promise<void>((resolve, reject) => {
-    function removeAllSocketListeners() {
+    function removeListeners() {
       socket.removeEventListener('error', handleError); // eslint-disable-line @typescript-eslint/no-use-before-define
       socket.removeEventListener('close', handleClose); // eslint-disable-line @typescript-eslint/no-use-before-define
     }
 
     function handleError(error: unknown) {
-      removeAllSocketListeners();
+      removeListeners();
       reject(error);
     }
 
@@ -76,7 +76,7 @@ export async function closeWebSocketClient(
     }, timeoutDuration);
 
     function handleClose() {
-      removeAllSocketListeners();
+      removeListeners();
       clearTimeout(closeTimeout);
       resolve();
     }

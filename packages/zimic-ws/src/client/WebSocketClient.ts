@@ -177,13 +177,18 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
 
     const socket = new WebSocket(this.#url, this.#protocols);
 
-    if (socket.binaryType !== this.binaryType) {
-      socket.binaryType = this.binaryType;
+    try {
+      if (socket.binaryType !== this.binaryType) {
+        socket.binaryType = this.binaryType;
+      }
+
+      this.applyListeners(socket);
+
+      await openWebSocketClient(socket, options);
+    } catch (error) {
+      socket.close();
+      throw error;
     }
-
-    this.applyListeners(socket);
-
-    await openWebSocketClient(socket, options);
 
     this.socket = socket;
   }
