@@ -29,7 +29,7 @@ describe('CLI > Browser', () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'browser', '--help']);
 
     await usingIgnoredConsole(['log'], async (console) => {
-      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
+      await expect(runCLI()).rejects.toThrow('process.exit unexpectedly called with "0"');
 
       expect(console.log).toHaveBeenCalledTimes(1);
       expect(console.log).toHaveBeenCalledWith(browserHelpOutput);
@@ -40,7 +40,7 @@ describe('CLI > Browser', () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'browser']);
 
     await usingIgnoredConsole(['error'], async (console) => {
-      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
+      await expect(runCLI()).rejects.toThrow('process.exit unexpectedly called with "1"');
 
       expect(console.error).toHaveBeenCalledTimes(1);
       expect(console.error).toHaveBeenCalledWith('Not enough non-option arguments: got 0, need at least 1');

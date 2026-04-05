@@ -120,7 +120,7 @@ describe('Web socket client', async () => {
         client = new WebSocketClient({ url: `ws://localhost:${port}`, socketTimeout });
         expect(client.socketTimeout).toBe(socketTimeout);
 
-        await expect(client.start()).rejects.toThrowError(new WebSocketOpenTimeoutError(socketTimeout));
+        await expect(client.start()).rejects.toThrow(new WebSocketOpenTimeoutError(socketTimeout));
       } finally {
         delayedClientSocketAddEventListener.mockRestore();
       }
@@ -135,7 +135,7 @@ describe('Web socket client', async () => {
         expect(client.socketTimeout).toBe(socketTimeout);
         await client.start();
 
-        await expect(client.stop()).rejects.toThrowError(new WebSocketCloseTimeoutError(socketTimeout));
+        await expect(client.stop()).rejects.toThrow(new WebSocketCloseTimeoutError(socketTimeout));
       } finally {
         delayedClientSocketClose.mockRestore();
       }
@@ -146,7 +146,7 @@ describe('Web socket client', async () => {
 
       client = new WebSocketClient({ url: `ws://localhost:${port}` });
 
-      await expect(client.start()).rejects.toThrowError(/^(connect ECONNREFUSED .+)?$/);
+      await expect(client.start()).rejects.toThrow(/^(connect ECONNREFUSED .+)?$/);
     });
   });
 
@@ -267,7 +267,7 @@ describe('Web socket client', async () => {
       type RequestMessage = WebSocketEventMessage<Schema, 'with-reply'>;
       const requestMessage: RequestMessage['data'] = { question: 'test' };
 
-      await expect(client.request('with-reply', requestMessage)).rejects.toThrowError(
+      await expect(client.request('with-reply', requestMessage)).rejects.toThrow(
         new WebSocketMessageTimeoutError(messageTimeout),
       );
     });
@@ -607,7 +607,7 @@ describe('Web socket client', async () => {
 
       await expect(async () => {
         await client?.send('no-reply', { message: 'test' });
-      }).rejects.toThrowError(new NotRunningWebSocketHandlerError());
+      }).rejects.toThrow(new NotRunningWebSocketHandlerError());
     });
   });
 });

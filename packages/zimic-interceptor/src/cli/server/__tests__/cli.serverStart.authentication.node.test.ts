@@ -101,7 +101,7 @@ describe('CLI > Server start > Authentication', () => {
     });
 
     await usingIgnoredConsole(['error'], async (console) => {
-      await expect(interceptor.start()).rejects.toThrowError(UnauthorizedWebSocketConnectionError);
+      await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
 
       expect(interceptor.isRunning).toBe(false);
 
@@ -114,7 +114,7 @@ describe('CLI > Server start > Authentication', () => {
 
     await expect(async () => {
       await interceptor.get('/users').respond({ status: 204 });
-    }).rejects.toThrowError(new NotRunningHttpInterceptorError());
+    }).rejects.toThrow(new NotRunningHttpInterceptorError());
   });
 
   it('should allow an authenticated interceptor connection if using a token directory and a valid token', async () => {
@@ -213,7 +213,7 @@ describe('CLI > Server start > Authentication', () => {
         await removeInterceptorToken(token.id);
 
         await usingIgnoredConsole(['error'], async (console) => {
-          await expect(interceptor.start()).rejects.toThrowError(UnauthorizedWebSocketConnectionError);
+          await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
 
           expect(interceptor.isRunning).toBe(false);
 
@@ -281,7 +281,7 @@ describe('CLI > Server start > Authentication', () => {
       });
 
       await usingIgnoredConsole(['error'], async (console) => {
-        await expect(interceptor.start()).rejects.toThrowError(UnauthorizedWebSocketConnectionError);
+        await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
 
         expect(interceptor.isRunning).toBe(false);
 
@@ -295,7 +295,7 @@ describe('CLI > Server start > Authentication', () => {
 
       await expect(async () => {
         await interceptor.get('/users').respond({ status: 204 });
-      }).rejects.toThrowError(new NotRunningHttpInterceptorError());
+      }).rejects.toThrow(new NotRunningHttpInterceptorError());
     },
   );
 
@@ -339,7 +339,7 @@ describe('CLI > Server start > Authentication', () => {
 
     for (let retry = 0; retry < numberOfRetries; retry++) {
       await usingIgnoredConsole(['error'], async (console) => {
-        await expect(interceptor.start()).rejects.toThrowError(UnauthorizedWebSocketConnectionError);
+        await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
 
         expect(interceptor.isRunning).toBe(false);
 
@@ -350,7 +350,7 @@ describe('CLI > Server start > Authentication', () => {
 
       await expect(async () => {
         await interceptor.get('/users').respond({ status: 204 });
-      }).rejects.toThrowError(new NotRunningHttpInterceptorError());
+      }).rejects.toThrow(new NotRunningHttpInterceptorError());
     }
   });
 
@@ -393,7 +393,7 @@ describe('CLI > Server start > Authentication', () => {
     });
 
     await usingIgnoredConsole(['error'], async (console) => {
-      await expect(interceptor.start()).rejects.toThrowError(UnauthorizedWebSocketConnectionError);
+      await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
 
       expect(interceptor.isRunning).toBe(false);
 
@@ -404,7 +404,7 @@ describe('CLI > Server start > Authentication', () => {
 
     await expect(async () => {
       await interceptor.get('/users').respond({ status: 204 });
-    }).rejects.toThrowError(new NotRunningHttpInterceptorError());
+    }).rejects.toThrow(new NotRunningHttpInterceptorError());
   });
 
   it('should not allow an interceptor connection if using a token directory and an invalid token secret', async () => {
@@ -446,7 +446,7 @@ describe('CLI > Server start > Authentication', () => {
     });
 
     await usingIgnoredConsole(['error'], async (console) => {
-      await expect(interceptor.start()).rejects.toThrowError(UnauthorizedWebSocketConnectionError);
+      await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
 
       expect(interceptor.isRunning).toBe(false);
 
@@ -457,7 +457,7 @@ describe('CLI > Server start > Authentication', () => {
 
     await expect(async () => {
       await interceptor.get('/users').respond({ status: 204 });
-    }).rejects.toThrowError(new NotRunningHttpInterceptorError());
+    }).rejects.toThrow(new NotRunningHttpInterceptorError());
   });
 
   it('should not allow an interceptor connection if using a token directory and an invalid, too long token', async () => {
@@ -499,7 +499,7 @@ describe('CLI > Server start > Authentication', () => {
     });
 
     await usingIgnoredConsole(['error'], async (console) => {
-      await expect(interceptor.start()).rejects.toThrowError(UnauthorizedWebSocketConnectionError);
+      await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
 
       expect(interceptor.isRunning).toBe(false);
 
@@ -510,7 +510,7 @@ describe('CLI > Server start > Authentication', () => {
 
     await expect(async () => {
       await interceptor.get('/users').respond({ status: 204 });
-    }).rejects.toThrowError(new NotRunningHttpInterceptorError());
+    }).rejects.toThrow(new NotRunningHttpInterceptorError());
   });
 
   it('should not allow an interceptor connection if using a token directory and an invalid, too short token', async () => {
@@ -552,7 +552,7 @@ describe('CLI > Server start > Authentication', () => {
     });
 
     await usingIgnoredConsole(['error'], async (console) => {
-      await expect(interceptor.start()).rejects.toThrowError(UnauthorizedWebSocketConnectionError);
+      await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
 
       expect(interceptor.isRunning).toBe(false);
 
@@ -563,7 +563,7 @@ describe('CLI > Server start > Authentication', () => {
 
     await expect(async () => {
       await interceptor.get('/users').respond({ status: 204 });
-    }).rejects.toThrowError(new NotRunningHttpInterceptorError());
+    }).rejects.toThrow(new NotRunningHttpInterceptorError());
   });
 
   it('should not allow an interceptor connection if using a token directory and a removed token', async () => {
@@ -626,7 +626,7 @@ describe('CLI > Server start > Authentication', () => {
     });
 
     await usingIgnoredConsole(['error'], async (console) => {
-      await expect(interceptor.start()).rejects.toThrowError(UnauthorizedWebSocketConnectionError);
+      await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
 
       expect(interceptor.isRunning).toBe(false);
 
@@ -637,7 +637,7 @@ describe('CLI > Server start > Authentication', () => {
 
     await expect(async () => {
       await interceptor.get('/users').respond({ status: 204 });
-    }).rejects.toThrowError(new NotRunningHttpInterceptorError());
+    }).rejects.toThrow(new NotRunningHttpInterceptorError());
   });
 
   it('should show a warning if started in production without a token directory', async () => {

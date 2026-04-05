@@ -274,7 +274,7 @@ describe('Interceptor server', () => {
 
       expect(() => {
         server!.hostname = newHostname;
-      }).toThrowError(new RunningInterceptorServerError('Did you forget to stop it before changing the hostname?'));
+      }).toThrow(new RunningInterceptorServerError('Did you forget to stop it before changing the hostname?'));
 
       expect(server.hostname).toBe(DEFAULT_HOSTNAME);
       expect(server.hostname).not.toBe(newHostname);
@@ -361,7 +361,7 @@ describe('Interceptor server', () => {
 
       expect(() => {
         server!.port = newPort;
-      }).toThrowError(new RunningInterceptorServerError('Did you forget to stop it before changing the port?'));
+      }).toThrow(new RunningInterceptorServerError('Did you forget to stop it before changing the port?'));
 
       expect(server.port).toBe(5004);
       expect(server.port).not.toBe(newPort);

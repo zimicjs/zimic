@@ -41,7 +41,7 @@ describe('CLI', () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', unknownCommand]);
 
     await usingIgnoredConsole(['error'], async (console) => {
-      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
+      await expect(runCLI()).rejects.toThrow('process.exit unexpectedly called with "1"');
 
       expect(console.error).toHaveBeenCalledTimes(1);
       expect(console.error).toHaveBeenCalledWith(`Unknown argument: ${unknownCommand}`);
@@ -52,7 +52,7 @@ describe('CLI', () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', '--help']);
 
     await usingIgnoredConsole(['log'], async (console) => {
-      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
+      await expect(runCLI()).rejects.toThrow('process.exit unexpectedly called with "0"');
 
       expect(console.log).toHaveBeenCalledTimes(1);
       expect(console.log).toHaveBeenCalledWith(rootHelpOutput);
@@ -63,7 +63,7 @@ describe('CLI', () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', '--version']);
 
     await usingIgnoredConsole(['log'], async (console) => {
-      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
+      await expect(runCLI()).rejects.toThrow('process.exit unexpectedly called with "0"');
 
       expect(console.log).toHaveBeenCalledTimes(1);
       expect(console.log).toHaveBeenCalledWith(version);

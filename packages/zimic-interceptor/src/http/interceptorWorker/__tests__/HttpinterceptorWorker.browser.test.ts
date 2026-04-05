@@ -34,7 +34,7 @@ describe('HttpInterceptorWorker > Browser', () => {
       const interceptorStartPromise = interceptorWorker.start();
 
       const expectedError = new UnregisteredBrowserServiceWorkerError();
-      await expect(interceptorStartPromise).rejects.toThrowError(expectedError);
+      await expect(interceptorStartPromise).rejects.toThrow(expectedError);
 
       expect(console.error).toHaveBeenCalledTimes(0);
     });
