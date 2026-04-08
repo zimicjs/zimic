@@ -1,4 +1,4 @@
-class TimesDeclarationPointer extends Error {
+class HttpTimesDeclarationPointer extends Error {
   constructor(minNumberOfRequests: number, maxNumberOfRequests?: number) {
     super('declared at:');
     this.name = `handler.times(${minNumberOfRequests}${
@@ -7,4 +7,4 @@ class TimesDeclarationPointer extends Error {
   }
 }
 
-export default TimesDeclarationPointer;
+export default HttpTimesDeclarationPointer;

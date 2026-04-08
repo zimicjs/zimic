@@ -21,7 +21,9 @@ import { isClientSide } from '@/utils/environment';
 import { methodCanHaveResponseBody } from '@/utils/http';
 import { formatValueToLog, logger } from '@/utils/logging';
 
-import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
+import HttpInterceptorImplementation, {
+  AnyHttpInterceptorImplementation,
+} from '../interceptor/HttpInterceptorImplementation';
 import { HttpInterceptorPlatform, HttpInterceptorType, UnhandledRequestStrategy } from '../interceptor/types/options';
 import {
   UnhandledHttpInterceptorRequestPath,
@@ -48,7 +50,7 @@ abstract class HttpInterceptorWorker {
   private startingPromise?: Promise<void>;
   private stoppingPromise?: Promise<void>;
 
-  private runningInterceptors: AnyHttpInterceptorClient[] = [];
+  private runningInterceptors: AnyHttpInterceptorImplementation[] = [];
 
   abstract start(): Promise<void>;
 
@@ -100,7 +102,7 @@ abstract class HttpInterceptorWorker {
   }
 
   abstract use<Schema extends HttpSchema>(
-    interceptor: HttpInterceptorClient<Schema>,
+    interceptor: HttpInterceptorImplementation<Schema>,
     method: HttpMethod,
     path: string,
     createResponse: HttpResponseFactory,
@@ -161,11 +163,11 @@ abstract class HttpInterceptorWorker {
     }
   }
 
-  registerRunningInterceptor(interceptor: AnyHttpInterceptorClient) {
+  registerRunningInterceptor(interceptor: AnyHttpInterceptorImplementation) {
     this.runningInterceptors.push(interceptor);
   }
 
-  unregisterRunningInterceptor(interceptor: AnyHttpInterceptorClient) {
+  unregisterRunningInterceptor(interceptor: AnyHttpInterceptorImplementation) {
     removeArrayElement(this.runningInterceptors, interceptor);
   }
 
@@ -177,7 +179,10 @@ abstract class HttpInterceptorWorker {
     return interceptor;
   }
 
-  private async getInterceptorUnhandledRequestStrategy(request: Request, interceptor: AnyHttpInterceptorClient) {
+  private async getInterceptorUnhandledRequestStrategy(
+    request: Request,
+    interceptor: AnyHttpInterceptorImplementation,
+  ) {
     if (typeof interceptor.onUnhandledRequest === 'function') {
       const parsedRequest = await HttpInterceptorWorker.parseRawUnhandledRequest(request);
       return interceptor.onUnhandledRequest(parsedRequest);
@@ -187,10 +192,10 @@ abstract class HttpInterceptorWorker {
   }
 
   abstract clearHandlers<Schema extends HttpSchema>(options?: {
-    interceptor?: HttpInterceptorClient<Schema>;
+    interceptor?: HttpInterceptorImplementation<Schema>;
   }): PossiblePromise<void>;
 
-  abstract get interceptorsWithHandlers(): AnyHttpInterceptorClient[];
+  abstract get interceptorsWithHandlers(): AnyHttpInterceptorImplementation[];
 
   static setResponseAction(response: Response, action: UnhandledRequestStrategy.Action) {
     Object.defineProperty(response, RESPONSE_ACTION_SYMBOL, {

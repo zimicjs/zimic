@@ -2,14 +2,15 @@ import { HttpMethodSchema, HttpStatusCode } from '@zimic/http';
 import { PossiblePromise } from '@zimic/utils/types';
 import { expect } from 'vitest';
 
-import TimesCheckError from '../../errors/TimesCheckError';
-import TimesDeclarationPointer from '../../errors/TimesDeclarationPointer';
+import HttpTimesCheckError from '@/http/errors/HttpTimesCheckError';
+import HttpTimesDeclarationPointer from '@/http/errors/HttpTimesDeclarationPointer';
+
 import {
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerStatusResponseDeclaration,
 } from '../../types/requests';
 
-export async function expectTimesCheckError(
+export async function expectHttpTimesCheckError(
   callback: () => PossiblePromise<void>,
   options: {
     message: string;
@@ -18,7 +19,7 @@ export async function expectTimesCheckError(
 ) {
   const { message } = options;
 
-  let timesCheckError: TimesCheckError | undefined;
+  let timesCheckError: HttpTimesCheckError | undefined;
 
   await expect(async () => {
     try {
@@ -26,15 +27,15 @@ export async function expectTimesCheckError(
     } catch (error) {
       /* istanbul ignore else -- @preserve
        * A times check error is always expected here. */
-      if (error instanceof TimesCheckError) {
+      if (error instanceof HttpTimesCheckError) {
         timesCheckError = error;
       }
       throw error;
     }
-  }).rejects.toThrow(TimesCheckError);
+  }).rejects.toThrow(HttpTimesCheckError);
 
   expect(timesCheckError).toBeDefined();
-  expect(timesCheckError!.name).toBe('TimesCheckError');
+  expect(timesCheckError!.name).toBe('HttpTimesCheckError');
 
   const expectedMessage = [
     message,
@@ -44,8 +45,8 @@ export async function expectTimesCheckError(
 
   expect(timesCheckError!.message).toEqual(expectedMessage);
 
-  const timesDeclarationPointer = timesCheckError!.cause! as TimesDeclarationPointer;
-  expect(timesDeclarationPointer).toBeInstanceOf(TimesDeclarationPointer);
+  const timesDeclarationPointer = timesCheckError!.cause! as HttpTimesDeclarationPointer;
+  expect(timesDeclarationPointer).toBeInstanceOf(HttpTimesDeclarationPointer);
 
   if (typeof options.expectedNumberOfRequests === 'number') {
     expect(timesDeclarationPointer.name).toBe(`handler.times(${options.expectedNumberOfRequests})`);

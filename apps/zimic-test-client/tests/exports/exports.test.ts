@@ -113,6 +113,7 @@ import {
   InvalidJSONError as InterceptorInvalidJSONError,
   UnregisteredBrowserServiceWorkerError,
   DisabledRequestSavingError,
+  HttpTimesCheckError,
   TimesCheckError,
 } from '@zimic/interceptor/http';
 import {
@@ -347,7 +348,12 @@ describe('Exports', () => {
     expectTypeOf<DisabledRequestSavingError>().not.toBeAny();
     expect(typeof DisabledRequestSavingError).toBe('function');
 
+    expectTypeOf<HttpTimesCheckError>().not.toBeAny();
+    expect(typeof HttpTimesCheckError).toBe('function');
+
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     expectTypeOf<TimesCheckError>().not.toBeAny();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     expect(typeof TimesCheckError).toBe('function');
   });
 });
