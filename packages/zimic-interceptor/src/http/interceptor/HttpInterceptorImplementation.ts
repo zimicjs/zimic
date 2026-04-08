@@ -40,7 +40,7 @@ class HttpInterceptorImplementation<
   HandlerConstructor extends HttpRequestHandlerConstructor = HttpRequestHandlerConstructor,
 > {
   private store: HttpInterceptorStore;
-  private _baseURL!: URL;
+  #baseURL!: URL;
 
   private createWorker: () => HttpInterceptorWorker;
   private deleteWorker: () => void;
@@ -101,7 +101,7 @@ class HttpInterceptorImplementation<
   }
 
   get baseURL() {
-    return this._baseURL;
+    return this.#baseURL;
   }
 
   set baseURL(newBaseURL: URL) {
@@ -114,7 +114,7 @@ class HttpInterceptorImplementation<
     validateURLProtocol(newBaseURL, SUPPORTED_BASE_URL_PROTOCOLS);
     excludeNonPathParams(newBaseURL);
 
-    this._baseURL = newBaseURL;
+    this.#baseURL = newBaseURL;
   }
 
   get baseURLAsString() {

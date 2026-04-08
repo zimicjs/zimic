@@ -809,7 +809,7 @@ describe('CLI > Server start', async () => {
 
         // @ts-expect-error Force the internal web socket client to stop.
         // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-        await interceptor.client.worker.webSocketClient.stop();
+        await interceptor.implementation.worker.webSocketClient.stop();
 
         await responsePromise;
 

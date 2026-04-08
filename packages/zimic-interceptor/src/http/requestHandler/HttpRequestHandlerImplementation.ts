@@ -64,7 +64,11 @@ class HttpRequestHandlerImplementation<
 
   private numberOfMatchedRequests = 0;
   private unmatchedRequestGroups: UnmatchedHttpInterceptorRequestGroup[] = [];
-  private _requests: InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] = [];
+  private savedInterceptedRequests: InterceptedHttpInterceptorRequest<
+    Path,
+    Default<Schema[Path][Method]>,
+    StatusCode
+  >[] = [];
 
   private createResponseDeclaration?: HttpRequestHandlerResponseDeclarationFactory<
     Path,
@@ -448,13 +452,13 @@ class HttpRequestHandlerImplementation<
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
     const interceptedRequest = this.createInterceptedRequest(request, response);
-    this._requests.push(interceptedRequest);
+    this.savedInterceptedRequests.push(interceptedRequest);
     this.interceptor.incrementNumberOfSavedRequests(1);
   }
 
   private clearInterceptedRequests() {
-    this.interceptor.incrementNumberOfSavedRequests(-this._requests.length);
-    this._requests.length = 0;
+    this.interceptor.incrementNumberOfSavedRequests(-this.savedInterceptedRequests.length);
+    this.savedInterceptedRequests.length = 0;
   }
 
   private createInterceptedRequest(
@@ -481,8 +485,7 @@ class HttpRequestHandlerImplementation<
     if (!this.interceptor.requestSaving.enabled) {
       throw new DisabledRequestSavingError();
     }
-
-    return this._requests;
+    return this.savedInterceptedRequests;
   }
 }
 

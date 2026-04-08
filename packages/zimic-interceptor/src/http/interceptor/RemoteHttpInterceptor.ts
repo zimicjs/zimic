@@ -11,11 +11,10 @@ import { HttpInterceptorRequestSaving, RemoteHttpInterceptor as PublicRemoteHttp
 class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHttpInterceptor<Schema> {
   private store = new HttpInterceptorStore();
   implementation: HttpInterceptorImplementation<Schema, typeof RemoteHttpRequestHandler>;
-
-  private _auth?: RemoteHttpInterceptorOptions['auth'];
+  #auth?: RemoteHttpInterceptorOptions['auth'];
 
   constructor(options: RemoteHttpInterceptorOptions) {
-    this._auth = options.auth;
+    this.#auth = options.auth;
 
     const baseURL = new URL(options.baseURL);
 
@@ -25,7 +24,7 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
       createWorker: () => {
         return this.store.getOrCreateRemoteWorker({
           serverURL: baseURL,
-          auth: this._auth,
+          auth: this.#auth,
         });
       },
       deleteWorker: () => {
@@ -58,7 +57,7 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
   }
 
   get auth() {
-    return this._auth;
+    return this.#auth;
   }
 
   set auth(auth: RemoteHttpInterceptorOptions['auth'] | undefined) {
@@ -70,11 +69,11 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
     }
 
     if (!auth) {
-      this._auth = undefined;
+      this.#auth = undefined;
       return;
     }
 
-    this._auth = new Proxy(auth, {
+    this.#auth = new Proxy(auth, {
       set: (target, property, value) => {
         if (this.isRunning) {
           throw new RunningHttpInterceptorError(cannotChangeAuthWhileRunningMessage);

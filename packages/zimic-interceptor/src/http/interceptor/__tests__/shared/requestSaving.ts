@@ -78,7 +78,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
 
               // @ts-expect-error Checking that no intercepted requests are saved.
               // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-              expect(handler.client._requests).toHaveLength(0);
+              expect(handler.implementation.savedInterceptedRequests).toHaveLength(0);
 
               const numberOfRequests = 5;
 
@@ -94,7 +94,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
 
               // @ts-expect-error Checking that no intercepted requests are saved.
               // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-              expect(handler.client._requests).toHaveLength(0);
+              expect(handler.implementation.savedInterceptedRequests).toHaveLength(0);
             }
           });
         } finally {
@@ -144,7 +144,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
 
         // @ts-expect-error Checking that no intercepted requests are saved.
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(handler.client._requests).toHaveLength(0);
+        expect(handler.implementation.savedInterceptedRequests).toHaveLength(0);
 
         const numberOfRequests = 5;
 
@@ -160,7 +160,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
 
         // @ts-expect-error Checking that no intercepted requests are saved.
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(handler.client._requests).toHaveLength(0);
+        expect(handler.implementation.savedInterceptedRequests).toHaveLength(0);
       });
     });
   });
@@ -197,7 +197,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
 
           // @ts-expect-error Checking that no intercepted requests are saved.
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          expect(handler.client._requests).toHaveLength(0);
+          expect(handler.implementation.savedInterceptedRequests).toHaveLength(0);
 
           expect(console.warn).toHaveBeenCalledTimes(0);
         });
@@ -481,7 +481,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
 
       // @ts-expect-error Checking that no intercepted requests are saved.
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      expect(handler.client._requests).toHaveLength(0);
+      expect(handler.implementation.savedInterceptedRequests).toHaveLength(0);
 
       const numberOfRequests = 5;
 
@@ -497,7 +497,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
 
       // @ts-expect-error Checking that no intercepted requests are saved.
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      expect(handler.client._requests).toHaveLength(0);
+      expect(handler.implementation.savedInterceptedRequests).toHaveLength(0);
 
       expect(interceptor.requestSaving).toEqual<HttpInterceptorRequestSaving>({
         enabled: false,
