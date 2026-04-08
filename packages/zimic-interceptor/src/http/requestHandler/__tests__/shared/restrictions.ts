@@ -2,7 +2,7 @@ import { HttpHeaders, HttpSearchParams } from '@zimic/http';
 import { joinURL } from '@zimic/utils/url';
 import { expectTypeOf, expect, it, beforeAll, afterAll, describe, beforeEach, afterEach } from 'vitest';
 
-import { SharedHttpInterceptorClient } from '@/http/interceptor/HttpInterceptorImplementation';
+import { SharedHttpInterceptorImplementation } from '@/http/interceptor/HttpInterceptorImplementation';
 import LocalHttpInterceptor from '@/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/http/interceptor/RemoteHttpInterceptor';
 import { HttpInterceptorType } from '@/http/interceptor/types/options';
@@ -26,7 +26,7 @@ export function declareRestrictionHttpRequestHandlerTests(
   let baseURL: string;
 
   let interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
-  let interceptorClient: SharedHttpInterceptorClient<Schema>;
+  let interceptorImplementation: SharedHttpInterceptorImplementation<Schema>;
 
   beforeAll(async () => {
     if (type === 'remote') {
@@ -38,7 +38,7 @@ export function declareRestrictionHttpRequestHandlerTests(
     baseURL = await getBaseURL(type);
 
     interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL });
-    interceptorClient = interceptor.implementation as SharedHttpInterceptorClient<Schema>;
+    interceptorImplementation = interceptor.implementation as SharedHttpInterceptorImplementation<Schema>;
 
     await interceptor.start();
   });
@@ -59,7 +59,7 @@ export function declareRestrictionHttpRequestHandlerTests(
       async ({ exact }) => {
         const name = 'User';
 
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
           .with({
             searchParams: { name },
             exact,
@@ -107,7 +107,7 @@ export function declareRestrictionHttpRequestHandlerTests(
       async ({ exact }) => {
         const name = 'User';
 
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
           .with({
             searchParams: { name },
             exact,
@@ -156,7 +156,7 @@ export function declareRestrictionHttpRequestHandlerTests(
     it('should match only specific requests if contains a declared response and a computed search params restriction', async () => {
       const name = 'User';
 
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .with((request) => {
           expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<SearchParamsSchema>>();
           expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
@@ -206,7 +206,7 @@ export function declareRestrictionHttpRequestHandlerTests(
       async ({ exact }) => {
         const contentLanguage = 'en';
 
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
           .with({
             headers: { 'content-language': contentLanguage },
             exact,
@@ -254,7 +254,7 @@ export function declareRestrictionHttpRequestHandlerTests(
       async ({ exact }) => {
         const contentLanguage = 'en';
 
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
           .with({
             headers: { 'content-language': contentLanguage },
             exact,
@@ -303,7 +303,7 @@ export function declareRestrictionHttpRequestHandlerTests(
     it('should match only specific requests if contains a declared response and a computed header restriction', async () => {
       const contentLanguage = 'en';
 
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .with((request) => {
           expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<HeadersSchema>>();
           expect(request.headers).toBeInstanceOf(HttpHeaders);
@@ -353,7 +353,7 @@ export function declareRestrictionHttpRequestHandlerTests(
       async ({ exact }) => {
         const name = 'User';
 
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
           .with({
             body: { name },
             exact,
@@ -406,7 +406,7 @@ export function declareRestrictionHttpRequestHandlerTests(
       async ({ exact }) => {
         const name = 'User';
 
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
           .with({
             body: { name },
             exact,
@@ -457,7 +457,7 @@ export function declareRestrictionHttpRequestHandlerTests(
     it('should match only specific requests if contains a declared response and a computed body restriction', async () => {
       const name = 'User';
 
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .with((request) => {
           expectTypeOf(request.body).toEqualTypeOf<MethodSchema['request']['body']>();
 
@@ -510,7 +510,7 @@ export function declareRestrictionHttpRequestHandlerTests(
     const name = 'User';
     const contentLanguage = 'en';
 
-    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
       .with({
         headers: { 'content-language': contentLanguage },
         searchParams: { name },

@@ -221,7 +221,11 @@ class HttpInterceptorImplementation<
       throw new NotRunningHttpInterceptorError();
     }
 
-    const handler = new this.Handler<Schema, Method, Path>(this as SharedHttpInterceptorClient<Schema>, method, path);
+    const handler = new this.Handler<Schema, Method, Path>(
+      this as SharedHttpInterceptorImplementation<Schema>,
+      method,
+      path,
+    );
     this.registerRequestHandler(handler);
 
     return handler;
@@ -410,9 +414,9 @@ class HttpInterceptorImplementation<
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyHttpInterceptorClient = HttpInterceptorImplementation<any>;
+export type AnyHttpInterceptorImplementation = HttpInterceptorImplementation<any>;
 
-export type SharedHttpInterceptorClient<Schema extends HttpSchema> = HttpInterceptorImplementation<
+export type SharedHttpInterceptorImplementation<Schema extends HttpSchema> = HttpInterceptorImplementation<
   Schema,
   typeof LocalHttpRequestHandler
 > &

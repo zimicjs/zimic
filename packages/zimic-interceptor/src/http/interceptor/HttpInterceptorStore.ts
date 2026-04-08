@@ -5,7 +5,7 @@ import {
   LocalHttpInterceptorWorkerOptions,
   RemoteHttpInterceptorWorkerOptions,
 } from '../interceptorWorker/types/options';
-import { AnyHttpInterceptorClient } from './HttpInterceptorImplementation';
+import { AnyHttpInterceptorImplementation } from './HttpInterceptorImplementation';
 
 interface RemoteWorkerKeyOptions {
   auth: RemoteHttpInterceptorWorkerOptions['auth'];
@@ -13,10 +13,10 @@ interface RemoteWorkerKeyOptions {
 
 class HttpInterceptorStore {
   private static _localWorker?: LocalHttpInterceptorWorker;
-  private static runningLocalInterceptors = new Set<AnyHttpInterceptorClient>();
+  private static runningLocalInterceptors = new Set<AnyHttpInterceptorImplementation>();
 
   private static remoteWorkers = new Map<string, RemoteHttpInterceptorWorker>();
-  private static runningRemoteInterceptors = new Map<string, Set<AnyHttpInterceptorClient>>();
+  private static runningRemoteInterceptors = new Map<string, Set<AnyHttpInterceptorImplementation>>();
 
   private class = HttpInterceptorStore;
 
@@ -48,7 +48,7 @@ class HttpInterceptorStore {
     return runningInterceptors?.size ?? 0;
   }
 
-  markLocalInterceptorAsRunning(interceptor: AnyHttpInterceptorClient, isRunning: boolean) {
+  markLocalInterceptorAsRunning(interceptor: AnyHttpInterceptorImplementation, isRunning: boolean) {
     if (isRunning) {
       this.class.runningLocalInterceptors.add(interceptor);
     } else {
@@ -56,7 +56,7 @@ class HttpInterceptorStore {
     }
   }
 
-  markRemoteInterceptorAsRunning(interceptor: AnyHttpInterceptorClient, isRunning: boolean, baseURL: URL) {
+  markRemoteInterceptorAsRunning(interceptor: AnyHttpInterceptorImplementation, isRunning: boolean, baseURL: URL) {
     const runningInterceptors =
       this.class.runningRemoteInterceptors.get(baseURL.origin) ?? this.createRunningInterceptorsSet(baseURL);
 
@@ -68,7 +68,7 @@ class HttpInterceptorStore {
   }
 
   private createRunningInterceptorsSet(baseURL: URL) {
-    const runningInterceptors = new Set<AnyHttpInterceptorClient>();
+    const runningInterceptors = new Set<AnyHttpInterceptorImplementation>();
     this.class.runningRemoteInterceptors.set(baseURL.origin, runningInterceptors);
     return runningInterceptors;
   }

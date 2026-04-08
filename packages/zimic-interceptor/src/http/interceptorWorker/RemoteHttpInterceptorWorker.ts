@@ -14,7 +14,9 @@ import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
-import HttpInterceptorImplementation, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorImplementation';
+import HttpInterceptorImplementation, {
+  AnyHttpInterceptorImplementation,
+} from '../interceptor/HttpInterceptorImplementation';
 import { HttpInterceptorPlatform, UnhandledRequestStrategy } from '../interceptor/types/options';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { HttpResponseFactory, HttpResponseFactoryContext } from './types/http';
@@ -25,7 +27,7 @@ interface HttpHandler {
   baseURL: string;
   method: HttpMethod;
   path: string;
-  interceptor: AnyHttpInterceptorClient;
+  interceptor: AnyHttpInterceptorImplementation;
   createResponse: (context: HttpResponseFactoryContext) => PossiblePromise<Response | null>;
 }
 

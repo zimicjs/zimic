@@ -3,7 +3,7 @@ import { joinURL } from '@zimic/utils/url';
 import color from 'picocolors';
 import { expect, it, beforeAll, afterAll, describe, afterEach, beforeEach } from 'vitest';
 
-import { SharedHttpInterceptorClient } from '@/http/interceptor/HttpInterceptorImplementation';
+import { SharedHttpInterceptorImplementation } from '@/http/interceptor/HttpInterceptorImplementation';
 import LocalHttpInterceptor from '@/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/http/interceptor/RemoteHttpInterceptor';
 import { HttpInterceptorType } from '@/http/interceptor/types/options';
@@ -29,7 +29,7 @@ export function declareTimesHttpRequestHandlerTests(
   let baseURL: string;
 
   let interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
-  let interceptorClient: SharedHttpInterceptorClient<Schema>;
+  let interceptorImplementation: SharedHttpInterceptorImplementation<Schema>;
 
   beforeAll(async () => {
     if (type === 'remote') {
@@ -41,7 +41,7 @@ export function declareTimesHttpRequestHandlerTests(
     baseURL = await getBaseURL(type);
 
     interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL });
-    interceptorClient = interceptor.implementation as SharedHttpInterceptorClient<Schema>;
+    interceptorImplementation = interceptor.implementation as SharedHttpInterceptorImplementation<Schema>;
 
     await interceptor.start();
   });
@@ -58,7 +58,7 @@ export function declareTimesHttpRequestHandlerTests(
 
   describe('Exact number of requests', () => {
     it('should match an exact number of limited requests', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .respond({ status: 200, body: { success: true } })
         .times(1);
 
@@ -83,7 +83,7 @@ export function declareTimesHttpRequestHandlerTests(
     });
 
     it('should match less than an exact number of limited requests', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .respond({ status: 200, body: { success: true } })
         .times(2);
 
@@ -115,7 +115,7 @@ export function declareTimesHttpRequestHandlerTests(
     });
 
     it('should not match to more than an exact number of limited requests', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .respond({ status: 200, body: { success: true } })
         .times(1);
 
@@ -154,7 +154,7 @@ export function declareTimesHttpRequestHandlerTests(
 
   describe('Range number of requests', () => {
     it('should match the minimum number of requests limited in a range', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .respond({ status: 200, body: { success: true } })
         .times(0, 3);
 
@@ -174,7 +174,7 @@ export function declareTimesHttpRequestHandlerTests(
     });
 
     it('should match less than the minimum number of requests limited in a range', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .respond({ status: 200, body: { success: true } })
         .times(2, 3);
 
@@ -198,7 +198,7 @@ export function declareTimesHttpRequestHandlerTests(
     });
 
     it('should match the maximum number of requests limited in a range', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .respond({ status: 200, body: { success: true } })
         .times(2, 3);
 
@@ -212,7 +212,7 @@ export function declareTimesHttpRequestHandlerTests(
     });
 
     it('should not match to more than the maximum number of requests limited in a range', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .respond({ status: 200, body: { success: true } })
         .times(2, 3);
 
@@ -236,7 +236,7 @@ export function declareTimesHttpRequestHandlerTests(
     });
 
     it('should match the exact number of requests limited in a range including zero', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .respond({ status: 200, body: { success: true } })
         .times(0, 1);
 
@@ -260,7 +260,7 @@ export function declareTimesHttpRequestHandlerTests(
     });
 
     it('should match the exact number of requests limited in a unitary range', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .respond({ status: 200, body: { success: true } })
         .times(1, 1);
 
@@ -287,7 +287,7 @@ export function declareTimesHttpRequestHandlerTests(
     });
 
     it('should match the exact number of requests limited in a non-unitary range', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .respond({ status: 200, body: { success: true } })
         .times(2, 2);
 
@@ -331,9 +331,9 @@ export function declareTimesHttpRequestHandlerTests(
             requestSaving: { enabled: false },
           },
           async (interceptor) => {
-            const interceptorClient = interceptor.implementation as SharedHttpInterceptorClient<Schema>;
+            const interceptorImplementation = interceptor.implementation as SharedHttpInterceptorImplementation<Schema>;
 
-            const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+            const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
               .with((request) => typeof request.body === 'number')
               .respond({ status: 200, body: { success: true } })
               .times(1);
@@ -369,7 +369,7 @@ export function declareTimesHttpRequestHandlerTests(
       });
 
       it('should consider requests unmatched due to computed restrictions in times check errors', async () => {
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
           .with((request) => typeof request.body === 'number')
           .respond({ status: 200, body: { success: true } })
           .times(1);
@@ -407,7 +407,7 @@ export function declareTimesHttpRequestHandlerTests(
       });
 
       it('should consider requests unmatched due to headers restrictions in times check errors', async () => {
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
           .with({ headers: { accept: 'application/json' } })
           .respond({ status: 200, body: { success: true } })
           .times(1);
@@ -489,7 +489,7 @@ export function declareTimesHttpRequestHandlerTests(
       });
 
       it('should consider requests unmatched due to search params requests in times check errors', async () => {
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
           .with({ searchParams: { value: '1' } })
           .respond({ status: 200, body: { success: true } })
           .times(1);
@@ -569,7 +569,7 @@ export function declareTimesHttpRequestHandlerTests(
       });
 
       it('should consider requests unmatched due to JSON body requests in times check errors', async () => {
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
           .with({ body: { name: '1' } })
           .respond({ status: 200, body: { success: true } })
           .times(1);
@@ -654,7 +654,7 @@ export function declareTimesHttpRequestHandlerTests(
       it('should consider requests unmatched due to search params matched requests in times check errors', async () => {
         const restrictedSearchParams = new HttpSearchParams({ name: '1' });
 
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
           .with({ body: restrictedSearchParams })
           .respond({ status: 200, body: { success: true } })
           .times(1);
@@ -742,7 +742,7 @@ export function declareTimesHttpRequestHandlerTests(
         const formDataRestriction = new HttpFormData<{ name: string }>();
         formDataRestriction.append('name', '1');
 
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
           .with({ body: formDataRestriction })
           .respond({ status: 200, body: { success: true } })
           .times(1);
@@ -864,7 +864,7 @@ export function declareTimesHttpRequestHandlerTests(
       it('should consider requests unmatched due to blob body requests in times check errors', async () => {
         const restrictedBlob = new Blob(['1'], { type: 'application/octet-stream' });
 
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
           .with({ body: restrictedBlob })
           .respond({ status: 200, body: { success: true } })
           .times(1);
@@ -948,7 +948,7 @@ export function declareTimesHttpRequestHandlerTests(
       });
 
       it('should consider list unmatched due to plain-text matched requests in times check errors', async () => {
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
           .with({ body: 'example' })
           .respond({ status: 200, body: { success: true } })
           .times(1);
@@ -1033,7 +1033,7 @@ export function declareTimesHttpRequestHandlerTests(
 
     describe('Response declarations', () => {
       it('should consider requests unmatched due to missing a response declaration in times check errors', async () => {
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').times(1);
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users').times(1);
 
         await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: 'Expected exactly 1 request, but got 0.',
@@ -1062,7 +1062,7 @@ export function declareTimesHttpRequestHandlerTests(
       });
 
       it('should consider requests with restrictions unmatched due to missing a response declaration in times checks', async () => {
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
           .with({ searchParams: { value: '1' } })
           .times(1);
 
@@ -1138,7 +1138,7 @@ export function declareTimesHttpRequestHandlerTests(
     });
 
     it('should consider requests unmatched due to missing a response declaration when no requests are expected in times checks', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').times(0);
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users').times(0);
 
       await promiseIfRemote(handler.checkTimes(), handler);
 
@@ -1158,7 +1158,7 @@ export function declareTimesHttpRequestHandlerTests(
   });
 
   it('should reset the limits on the number of requests when cleared', async () => {
-    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
       .respond({ status: 200, body: { success: true } })
       .times(1);
 

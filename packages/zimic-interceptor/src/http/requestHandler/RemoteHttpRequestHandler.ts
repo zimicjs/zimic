@@ -47,14 +47,14 @@ class RemoteHttpRequestHandler<
   private createSyncedProxy() {
     return new Proxy(this, {
       has: (target, property) => {
-        if (this.isHiddenPropertyWhenSynced(property)) {
+        if (this.shouldBeHiddenPropertyWhenSynced(property)) {
           return false;
         }
         return Reflect.has(target, property);
       },
 
       get: (target, property) => {
-        if (this.isHiddenPropertyWhenSynced(property)) {
+        if (this.shouldBeHiddenPropertyWhenSynced(property)) {
           return undefined;
         }
         return Reflect.get(target, property);
@@ -62,7 +62,7 @@ class RemoteHttpRequestHandler<
     });
   }
 
-  private isHiddenPropertyWhenSynced(property: string | symbol) {
+  private shouldBeHiddenPropertyWhenSynced(property: string | symbol) {
     return UNSYNCED_PROPERTIES.has(property);
   }
 
