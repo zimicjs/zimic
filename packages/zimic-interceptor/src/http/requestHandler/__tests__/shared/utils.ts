@@ -2,7 +2,7 @@ import { HttpMethodSchema, HttpStatusCode } from '@zimic/http';
 import { PossiblePromise } from '@zimic/utils/types';
 import { expect } from 'vitest';
 
-import HttpTimesCheckError from '@/http/errors/HttpTimesCheckError';
+import HttpTimesCheckError, { TimesCheckError } from '@/http/errors/HttpTimesCheckError';
 import HttpTimesDeclarationPointer from '@/http/errors/HttpTimesDeclarationPointer';
 
 import {
@@ -35,6 +35,9 @@ export async function expectHttpTimesCheckError(
   }).rejects.toThrow(HttpTimesCheckError);
 
   expect(timesCheckError).toBeDefined();
+  expect(timesCheckError).toBeInstanceOf(HttpTimesCheckError);
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  expect(timesCheckError).toBeInstanceOf(TimesCheckError);
   expect(timesCheckError!.name).toBe('HttpTimesCheckError');
 
   const expectedMessage = [
