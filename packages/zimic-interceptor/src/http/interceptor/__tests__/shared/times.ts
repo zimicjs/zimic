@@ -40,7 +40,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         expect(handler.requests).toHaveLength(0);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -80,7 +80,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         expect(handler.requests).toHaveLength(0);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 2 requests, but got 0.',
           expectedNumberOfRequests: 2,
         });
@@ -90,7 +90,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         expect(handler.requests).toHaveLength(1);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 2 requests, but got 1.',
           expectedNumberOfRequests: 2,
         });
@@ -109,7 +109,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         expect(handler.requests).toHaveLength(3);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 4 requests, but got 3.',
           expectedNumberOfRequests: 4,
         });
@@ -124,7 +124,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         expect(handler.requests).toHaveLength(0);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -141,7 +141,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         expect(handler.requests).toHaveLength(1);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 request, but got 2.',
           expectedNumberOfRequests: 1,
         });
@@ -152,7 +152,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         expect(handler.requests).toHaveLength(1);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 request, but got 3.',
           expectedNumberOfRequests: 1,
         });
@@ -208,7 +208,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         expect(handler.requests).toHaveLength(0);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected at least 2 and at most 3 requests, but got 0.',
           expectedNumberOfRequests: { min: 2, max: 3 },
         });
@@ -218,7 +218,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         expect(handler.requests).toHaveLength(1);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected at least 2 and at most 3 requests, but got 1.',
           expectedNumberOfRequests: { min: 2, max: 3 },
         });
@@ -283,7 +283,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         expect(handler.requests).toHaveLength(3);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected at least 2 and at most 3 requests, but got 4.',
           expectedNumberOfRequests: { min: 2, max: 3 },
         });
@@ -299,7 +299,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
           interceptor,
         );
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 request, but got 0.',
           expectedNumberOfRequests: { min: 1, max: 1 },
         });
@@ -316,7 +316,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         expect(handler.requests).toHaveLength(1);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 request, but got 2.',
           expectedNumberOfRequests: { min: 1, max: 1 },
         });
@@ -335,20 +335,20 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
           promiseIfRemote(interceptor.get('/users').respond({ status: 204 }).times(2), interceptor),
         ]);
 
-        await expectTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
           message: 'Expected exactly 1 request, but got 0.',
           expectedNumberOfRequests: 1,
         });
-        await expectTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
           message: 'Expected at least 1 and at most 2 requests, but got 0.',
           expectedNumberOfRequests: { min: 1, max: 2 },
         });
-        await expectTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
           message: 'Expected exactly 2 requests, but got 0.',
           expectedNumberOfRequests: 2,
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -360,20 +360,20 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         expect(handlers[1].requests).toHaveLength(0);
         expect(handlers[2].requests).toHaveLength(1);
 
-        await expectTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
           message: 'Expected exactly 1 request, but got 0.',
           expectedNumberOfRequests: 1,
         });
-        await expectTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
           message: 'Expected at least 1 and at most 2 requests, but got 0.',
           expectedNumberOfRequests: { min: 1, max: 2 },
         });
-        await expectTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
           message: 'Expected exactly 2 requests, but got 1.',
           expectedNumberOfRequests: 2,
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -385,17 +385,17 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         expect(handlers[1].requests).toHaveLength(0);
         expect(handlers[2].requests).toHaveLength(2);
 
-        await expectTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
           message: 'Expected exactly 1 request, but got 0.',
           expectedNumberOfRequests: 1,
         });
-        await expectTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
           message: 'Expected at least 1 and at most 2 requests, but got 0.',
           expectedNumberOfRequests: { min: 1, max: 2 },
         });
         await promiseIfRemote(handlers[2].checkTimes(), handlers[2]);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -407,14 +407,14 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         expect(handlers[1].requests).toHaveLength(1);
         expect(handlers[2].requests).toHaveLength(2);
 
-        await expectTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
           message: 'Expected exactly 1 request, but got 0.',
           expectedNumberOfRequests: 1,
         });
         await promiseIfRemote(handlers[1].checkTimes(), handlers[1]);
         await promiseIfRemote(handlers[2].checkTimes(), handlers[2]);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -426,14 +426,14 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         expect(handlers[1].requests).toHaveLength(2);
         expect(handlers[2].requests).toHaveLength(2);
 
-        await expectTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
           message: 'Expected exactly 1 request, but got 0.',
           expectedNumberOfRequests: 1,
         });
         await promiseIfRemote(handlers[1].checkTimes(), handlers[1]);
         await promiseIfRemote(handlers[2].checkTimes(), handlers[2]);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -459,12 +459,12 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         await promiseIfRemote(handlers[0].checkTimes(), handlers[0]);
         await promiseIfRemote(handlers[1].checkTimes(), handlers[1]);
 
-        await expectTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
           message: 'Expected exactly 2 requests, but got 3.',
           expectedNumberOfRequests: 2,
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 2 requests, but got 3.',
           expectedNumberOfRequests: 2,
         });
@@ -502,20 +502,20 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
           ),
         ]);
 
-        await expectTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
           message: 'Expected exactly 1 matching request, but got 0.',
           expectedNumberOfRequests: 1,
         });
-        await expectTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
           message: 'Expected at least 1 and at most 2 matching requests, but got 0.',
           expectedNumberOfRequests: { min: 1, max: 2 },
         });
-        await expectTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
           message: 'Expected exactly 2 matching requests, but got 0.',
           expectedNumberOfRequests: 2,
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 matching request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -529,20 +529,20 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         expect(handlers[1].requests).toHaveLength(0);
         expect(handlers[2].requests).toHaveLength(1);
 
-        await expectTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[0].checkTimes(), handlers[0]), {
           message: 'Expected exactly 1 matching request, but got 0.',
           expectedNumberOfRequests: 1,
         });
-        await expectTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
           message: 'Expected at least 1 and at most 2 matching requests, but got 0.',
           expectedNumberOfRequests: { min: 1, max: 2 },
         });
-        await expectTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
           message: 'Expected exactly 2 matching requests, but got 1.',
           expectedNumberOfRequests: 2,
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 matching request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -557,16 +557,16 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         expect(handlers[2].requests).toHaveLength(1);
 
         await promiseIfRemote(handlers[0].checkTimes(), handlers[0]);
-        await expectTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
           message: 'Expected at least 1 and at most 2 matching requests, but got 0.',
           expectedNumberOfRequests: { min: 1, max: 2 },
         });
-        await expectTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
           message: 'Expected exactly 2 matching requests, but got 1.',
           expectedNumberOfRequests: 2,
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected at least 1 and at most 2 matching requests, but got 0.',
           expectedNumberOfRequests: { min: 1, max: 2 },
         });
@@ -581,7 +581,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         expect(handlers[2].requests).toHaveLength(1);
 
         await promiseIfRemote(handlers[0].checkTimes(), handlers[0]);
-        await expectTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
           message: [
             'Expected at least 1 and at most 2 matching requests, but got 0.',
             '',
@@ -597,7 +597,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
           ].join('\n'),
           expectedNumberOfRequests: { min: 1, max: 2 },
         });
-        await expectTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
           message: [
             'Expected exactly 2 matching requests, but got 1.',
             '',
@@ -614,7 +614,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
           expectedNumberOfRequests: 2,
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: [
             'Expected at least 1 and at most 2 matching requests, but got 0.',
             '',
@@ -641,7 +641,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         expect(handlers[2].requests).toHaveLength(2);
 
         await promiseIfRemote(handlers[0].checkTimes(), handlers[0]);
-        await expectTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[1].checkTimes(), handlers[1]), {
           message: [
             'Expected at least 1 and at most 2 matching requests, but got 0.',
             '',
@@ -659,7 +659,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         });
         await promiseIfRemote(handlers[2].checkTimes(), handlers[2]);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: [
             'Expected at least 1 and at most 2 matching requests, but got 0.',
             '',
@@ -711,7 +711,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         await promiseIfRemote(handlers[0].checkTimes(), handlers[0]);
         await promiseIfRemote(handlers[1].checkTimes(), handlers[1]);
-        await expectTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handlers[2].checkTimes(), handlers[2]), {
           message: [
             'Expected exactly 2 matching requests, but got 3.',
             '',
@@ -728,7 +728,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
           expectedNumberOfRequests: 2,
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: [
             'Expected exactly 2 matching requests, but got 3.',
             '',
@@ -764,7 +764,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         expect(handler.requests).toHaveLength(0);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 matching request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -788,7 +788,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
           `       ${color.red('+ {}')}`,
         ];
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: contentLines.join('\n'),
           expectedNumberOfRequests: 1,
         });
@@ -803,7 +803,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         expect(handler.requests).toHaveLength(0);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -820,7 +820,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         expect(handler.requests).toHaveLength(0);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 request, but got 2.',
           expectedNumberOfRequests: 1,
         });
@@ -841,7 +841,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         expect(handler.requests).toHaveLength(0);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 matching request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -865,7 +865,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
           `       ${color.red('+ {}')}`,
         ];
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: contentLines.join('\n'),
           expectedNumberOfRequests: 1,
         });
@@ -886,7 +886,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         contentLines[0] = 'Expected exactly 1 matching request, but got 2.';
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: contentLines.join('\n'),
           expectedNumberOfRequests: 1,
         });
@@ -908,7 +908,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         expect(handler.requests).toHaveLength(0);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 0 requests, but got 1.',
           expectedNumberOfRequests: 0,
         });
@@ -930,7 +930,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         expect(handler.requests).toHaveLength(0);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 matching request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -940,7 +940,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         expect(handler.requests).toHaveLength(0);
 
-        await expectTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 matching request, but got 0.',
           expectedNumberOfRequests: 1,
         });

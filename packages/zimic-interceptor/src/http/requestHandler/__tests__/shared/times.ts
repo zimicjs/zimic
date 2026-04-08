@@ -3,7 +3,7 @@ import { joinURL } from '@zimic/utils/url';
 import color from 'picocolors';
 import { expect, it, beforeAll, afterAll, describe, afterEach, beforeEach } from 'vitest';
 
-import { SharedHttpInterceptorClient } from '@/http/interceptor/HttpInterceptorClient';
+import { SharedHttpInterceptorClient } from '@/http/interceptor/HttpInterceptorImplementation';
 import LocalHttpInterceptor from '@/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/http/interceptor/RemoteHttpInterceptor';
 import { HttpInterceptorType } from '@/http/interceptor/types/options';
@@ -12,11 +12,11 @@ import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorke
 import { importFile, isGlobalFileAvailable } from '@/utils/files';
 import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpRequestHandlerRequestMatch } from '../../HttpRequestHandlerClient';
+import { HttpRequestHandlerRequestMatch } from '../../HttpRequestHandlerImplementation';
 import type LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
 import type RemoteHttpRequestHandler from '../../RemoteHttpRequestHandler';
 import { MethodSchema, Schema, SharedHttpRequestHandlerTestOptions } from './types';
-import { expectTimesCheckError } from './utils';
+import { expectHttpTimesCheckError } from './utils';
 
 export function declareTimesHttpRequestHandlerTests(
   options: SharedHttpRequestHandlerTestOptions & {
@@ -41,7 +41,7 @@ export function declareTimesHttpRequestHandlerTests(
     baseURL = await getBaseURL(type);
 
     interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL });
-    interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
+    interceptorClient = interceptor.implementation as SharedHttpInterceptorClient<Schema>;
 
     await interceptor.start();
   });
@@ -62,7 +62,7 @@ export function declareTimesHttpRequestHandlerTests(
         .respond({ status: 200, body: { success: true } })
         .times(1);
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 1 request, but got 0.',
         expectedNumberOfRequests: 1,
       });
@@ -87,7 +87,7 @@ export function declareTimesHttpRequestHandlerTests(
         .respond({ status: 200, body: { success: true } })
         .times(2);
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 2 requests, but got 0.',
         expectedNumberOfRequests: 2,
       });
@@ -97,7 +97,7 @@ export function declareTimesHttpRequestHandlerTests(
 
       expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 2 requests, but got 1.',
         expectedNumberOfRequests: 2,
       });
@@ -108,7 +108,7 @@ export function declareTimesHttpRequestHandlerTests(
       handler.times(4);
       expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 4 requests, but got 3.',
         expectedNumberOfRequests: 4,
       });
@@ -119,7 +119,7 @@ export function declareTimesHttpRequestHandlerTests(
         .respond({ status: 200, body: { success: true } })
         .times(1);
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 1 request, but got 0.',
         expectedNumberOfRequests: 1,
       });
@@ -135,7 +135,7 @@ export function declareTimesHttpRequestHandlerTests(
         cause: 'exceededNumberOfRequests',
       });
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 1 request, but got 2.',
         expectedNumberOfRequests: 1,
       });
@@ -145,7 +145,7 @@ export function declareTimesHttpRequestHandlerTests(
         cause: 'exceededNumberOfRequests',
       });
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 1 request, but got 3.',
         expectedNumberOfRequests: 1,
       });
@@ -178,7 +178,7 @@ export function declareTimesHttpRequestHandlerTests(
         .respond({ status: 200, body: { success: true } })
         .times(2, 3);
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected at least 2 and at most 3 requests, but got 0.',
         expectedNumberOfRequests: { min: 2, max: 3 },
       });
@@ -188,7 +188,7 @@ export function declareTimesHttpRequestHandlerTests(
 
       expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected at least 2 and at most 3 requests, but got 1.',
         expectedNumberOfRequests: { min: 2, max: 3 },
       });
@@ -229,7 +229,7 @@ export function declareTimesHttpRequestHandlerTests(
         cause: 'exceededNumberOfRequests',
       });
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected at least 2 and at most 3 requests, but got 4.',
         expectedNumberOfRequests: { min: 2, max: 3 },
       });
@@ -253,7 +253,7 @@ export function declareTimesHttpRequestHandlerTests(
         cause: 'exceededNumberOfRequests',
       });
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected at least 0 and at most 1 request, but got 2.',
         expectedNumberOfRequests: { min: 0, max: 1 },
       });
@@ -264,7 +264,7 @@ export function declareTimesHttpRequestHandlerTests(
         .respond({ status: 200, body: { success: true } })
         .times(1, 1);
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 1 request, but got 0.',
         expectedNumberOfRequests: { min: 1, max: 1 },
       });
@@ -280,7 +280,7 @@ export function declareTimesHttpRequestHandlerTests(
         cause: 'exceededNumberOfRequests',
       });
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 1 request, but got 2.',
         expectedNumberOfRequests: { min: 1, max: 1 },
       });
@@ -291,7 +291,7 @@ export function declareTimesHttpRequestHandlerTests(
         .respond({ status: 200, body: { success: true } })
         .times(2, 2);
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 2 requests, but got 0.',
         expectedNumberOfRequests: { min: 2, max: 2 },
       });
@@ -301,7 +301,7 @@ export function declareTimesHttpRequestHandlerTests(
 
       expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 2 requests, but got 1.',
         expectedNumberOfRequests: { min: 2, max: 2 },
       });
@@ -314,7 +314,7 @@ export function declareTimesHttpRequestHandlerTests(
         cause: 'exceededNumberOfRequests',
       });
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 2 requests, but got 3.',
         expectedNumberOfRequests: { min: 2, max: 2 },
       });
@@ -331,14 +331,14 @@ export function declareTimesHttpRequestHandlerTests(
             requestSaving: { enabled: false },
           },
           async (interceptor) => {
-            const interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
+            const interceptorClient = interceptor.implementation as SharedHttpInterceptorClient<Schema>;
 
             const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
               .with((request) => typeof request.body === 'number')
               .respond({ status: 200, body: { success: true } })
               .times(1);
 
-            await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+            await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
               message: [
                 'Expected exactly 1 matching request, but got 0.',
                 '',
@@ -356,7 +356,7 @@ export function declareTimesHttpRequestHandlerTests(
               diff: { computed: { expected: true, received: false } },
             });
 
-            await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+            await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
               message: [
                 'Expected exactly 1 matching request, but got 0.',
                 '',
@@ -374,7 +374,7 @@ export function declareTimesHttpRequestHandlerTests(
           .respond({ status: 200, body: { success: true } })
           .times(1);
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: 'Expected exactly 1 matching request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -388,7 +388,7 @@ export function declareTimesHttpRequestHandlerTests(
           diff: { computed: { expected: true, received: false } },
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
             'Expected exactly 1 matching request, but got 0.',
             '',
@@ -412,7 +412,7 @@ export function declareTimesHttpRequestHandlerTests(
           .respond({ status: 200, body: { success: true } })
           .times(1);
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: 'Expected exactly 1 matching request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -431,7 +431,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
             'Expected exactly 1 matching request, but got 0.',
             '',
@@ -465,7 +465,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
             'Expected exactly 1 matching request, but got 0.',
             '',
@@ -494,7 +494,7 @@ export function declareTimesHttpRequestHandlerTests(
           .respond({ status: 200, body: { success: true } })
           .times(1);
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: 'Expected exactly 1 matching request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -513,7 +513,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
             'Expected exactly 1 matching request, but got 0.',
             '',
@@ -545,7 +545,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
             'Expected exactly 1 matching request, but got 0.',
             '',
@@ -574,7 +574,7 @@ export function declareTimesHttpRequestHandlerTests(
           .respond({ status: 200, body: { success: true } })
           .times(1);
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: 'Expected exactly 1 matching request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -593,7 +593,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
             'Expected exactly 1 matching request, but got 0.',
             '',
@@ -628,7 +628,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
             'Expected exactly 1 matching request, but got 0.',
             '',
@@ -659,7 +659,7 @@ export function declareTimesHttpRequestHandlerTests(
           .respond({ status: 200, body: { success: true } })
           .times(1);
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: 'Expected exactly 1 matching request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -678,7 +678,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
             'Expected exactly 1 matching request, but got 0.',
             '',
@@ -715,7 +715,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
             'Expected exactly 1 matching request, but got 0.',
             '',
@@ -747,7 +747,7 @@ export function declareTimesHttpRequestHandlerTests(
           .respond({ status: 200, body: { success: true } })
           .times(1);
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: 'Expected exactly 1 matching request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -766,7 +766,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
             'Expected exactly 1 matching request, but got 0.',
             '',
@@ -824,7 +824,7 @@ export function declareTimesHttpRequestHandlerTests(
         const receivedFormData = requestMatch.diff.body!.received as typeof formData;
         expect(await formData.equals(receivedFormData)).toBe(true);
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
             'Expected exactly 1 matching request, but got 0.',
             '',
@@ -869,7 +869,7 @@ export function declareTimesHttpRequestHandlerTests(
           .respond({ status: 200, body: { success: true } })
           .times(1);
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: 'Expected exactly 1 matching request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -888,7 +888,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
             'Expected exactly 1 matching request, but got 0.',
             '',
@@ -924,7 +924,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
             'Expected exactly 1 matching request, but got 0.',
             '',
@@ -953,7 +953,7 @@ export function declareTimesHttpRequestHandlerTests(
           .respond({ status: 200, body: { success: true } })
           .times(1);
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: 'Expected exactly 1 matching request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -972,7 +972,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
             'Expected exactly 1 matching request, but got 0.',
             '',
@@ -1007,7 +1007,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
             'Expected exactly 1 matching request, but got 0.',
             '',
@@ -1035,7 +1035,7 @@ export function declareTimesHttpRequestHandlerTests(
       it('should consider requests unmatched due to missing a response declaration in times check errors', async () => {
         const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').times(1);
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: 'Expected exactly 1 request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -1055,7 +1055,7 @@ export function declareTimesHttpRequestHandlerTests(
           cause: 'missingResponseDeclaration',
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: 'Expected exactly 1 request, but got 2.',
           expectedNumberOfRequests: 1,
         });
@@ -1066,7 +1066,7 @@ export function declareTimesHttpRequestHandlerTests(
           .with({ searchParams: { value: '1' } })
           .times(1);
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: 'Expected exactly 1 matching request, but got 0.',
           expectedNumberOfRequests: 1,
         });
@@ -1085,7 +1085,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
             'Expected exactly 1 matching request, but got 0.',
             '',
@@ -1118,7 +1118,7 @@ export function declareTimesHttpRequestHandlerTests(
           cause: 'missingResponseDeclaration',
         });
 
-        await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
           message: [
             'Expected exactly 1 matching request, but got 2.',
             '',
@@ -1150,7 +1150,7 @@ export function declareTimesHttpRequestHandlerTests(
         cause: 'missingResponseDeclaration',
       });
 
-      await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 0 requests, but got 1.',
         expectedNumberOfRequests: 0,
       });
@@ -1162,7 +1162,7 @@ export function declareTimesHttpRequestHandlerTests(
       .respond({ status: 200, body: { success: true } })
       .times(1);
 
-    await expectTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+    await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
       message: 'Expected exactly 1 request, but got 0.',
       expectedNumberOfRequests: 1,
     });
