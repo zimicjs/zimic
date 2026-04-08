@@ -9,12 +9,12 @@ import { isClientSide, isServerSide } from '@/utils/environment';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
 import { methodCanHaveResponseBody } from '@/utils/http';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
-import { WebSocketEventMessage } from '@/webSocket/types';
-import WebSocketClient from '@/webSocket/WebSocketClient';
+import { WebSocketEventMessage } from '@/utils/webSocket/types';
+import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
-import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
+import HttpInterceptorImplementation, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorImplementation';
 import { HttpInterceptorPlatform, UnhandledRequestStrategy } from '../interceptor/types/options';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { HttpResponseFactory, HttpResponseFactoryContext } from './types/http';
@@ -137,7 +137,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   async use<Schema extends HttpSchema>(
-    interceptor: HttpInterceptorClient<Schema>,
+    interceptorImplementation: HttpInterceptorImplementation<Schema>,
     method: HttpMethod,
     path: string,
     createResponse: HttpResponseFactory,
@@ -152,10 +152,10 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     const handler: HttpHandler = {
       id: crypto.randomUUID(),
-      baseURL: interceptor.baseURLAsString,
+      baseURL: interceptorImplementation.baseURLAsString,
       method,
       path,
-      interceptor,
+      interceptor: interceptorImplementation,
       createResponse,
     };
 
@@ -190,7 +190,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async clearHandlers<Schema extends HttpSchema>(
     options: {
-      interceptor?: HttpInterceptorClient<Schema>;
+      interceptor?: HttpInterceptorImplementation<Schema>;
     } = {},
   ) {
     if (!this.isRunning) {
