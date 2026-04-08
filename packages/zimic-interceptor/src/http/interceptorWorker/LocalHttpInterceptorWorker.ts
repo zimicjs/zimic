@@ -9,7 +9,7 @@ import { isClientSide, isServerSide } from '@/utils/environment';
 
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
-import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
+import HttpInterceptorImplementation, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorImplementation';
 import { UnhandledRequestStrategy } from '../interceptor/types/options';
 import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
@@ -159,7 +159,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   use<Schema extends HttpSchema>(
-    interceptor: HttpInterceptorClient<Schema>,
+    interceptor: HttpInterceptorImplementation<Schema>,
     method: HttpMethod,
     path: string,
     createResponse: HttpResponseFactory,
@@ -277,7 +277,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   clearHandlers<Schema extends HttpSchema>(
     options: {
-      interceptor?: HttpInterceptorClient<Schema>;
+      interceptor?: HttpInterceptorImplementation<Schema>;
     } = {},
   ) {
     if (!this.isRunning) {

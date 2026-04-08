@@ -3,7 +3,7 @@ import { waitForDelay } from '@zimic/utils/time';
 import { joinURL } from '@zimic/utils/url';
 import { expectTypeOf, expect, vi, it, beforeAll, afterAll, describe, beforeEach, afterEach } from 'vitest';
 
-import { SharedHttpInterceptorClient } from '@/http/interceptor/HttpInterceptorClient';
+import { SharedHttpInterceptorClient } from '@/http/interceptor/HttpInterceptorImplementation';
 import LocalHttpInterceptor from '@/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/http/interceptor/RemoteHttpInterceptor';
 import { HttpInterceptorType } from '@/http/interceptor/types/options';
@@ -12,7 +12,7 @@ import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorke
 import LocalHttpInterceptorWorker from '@/http/interceptorWorker/LocalHttpInterceptorWorker';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpRequestHandlerRequestMatch } from '../../HttpRequestHandlerClient';
+import { HttpRequestHandlerRequestMatch } from '../../HttpRequestHandlerImplementation';
 import type LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '../../RemoteHttpRequestHandler';
 import {
@@ -46,7 +46,7 @@ export function declareDefaultHttpRequestHandlerTests(
     baseURL = await getBaseURL(type);
 
     interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL });
-    interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
+    interceptorClient = interceptor.implementation as SharedHttpInterceptorClient<Schema>;
 
     expect(interceptor.platform).toBe(null);
 

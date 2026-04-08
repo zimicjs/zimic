@@ -137,7 +137,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   async use<Schema extends HttpSchema>(
-    interceptorImplementation: HttpInterceptorImplementation<Schema>,
+    interceptor: HttpInterceptorImplementation<Schema>,
     method: HttpMethod,
     path: string,
     createResponse: HttpResponseFactory,
@@ -152,10 +152,10 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     const handler: HttpHandler = {
       id: crypto.randomUUID(),
-      baseURL: interceptorImplementation.baseURLAsString,
+      baseURL: interceptor.baseURLAsString,
       method,
       path,
-      interceptor: interceptorImplementation,
+      interceptor,
       createResponse,
     };
 

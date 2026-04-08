@@ -5,7 +5,7 @@ import {
   LocalHttpInterceptorWorkerOptions,
   RemoteHttpInterceptorWorkerOptions,
 } from '../interceptorWorker/types/options';
-import { AnyHttpInterceptorClient } from './HttpInterceptorClient';
+import { AnyHttpInterceptorClient } from './HttpInterceptorImplementation';
 
 interface RemoteWorkerKeyOptions {
   auth: RemoteHttpInterceptorWorkerOptions['auth'];

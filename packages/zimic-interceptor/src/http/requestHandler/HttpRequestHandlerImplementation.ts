@@ -16,10 +16,10 @@ import { Default, Range } from '@zimic/utils/types';
 import { convertArrayBufferToBlob, convertReadableStreamToBlob } from '@/utils/data';
 import { random } from '@/utils/numbers';
 
-import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
+import HttpTimesCheckError from '../errors/HttpTimesCheckError';
+import HttpTimesDeclarationPointer from '../errors/HttpTimesDeclarationPointer';
+import HttpInterceptorImplementation from '../interceptor/HttpInterceptorImplementation';
 import DisabledRequestSavingError from './errors/DisabledRequestSavingError';
-import TimesCheckError from './errors/TimesCheckError';
-import TimesDeclarationPointer from './errors/TimesDeclarationPointer';
 import { InternalHttpRequestHandler } from './types/public';
 import {
   HttpInterceptorRequest,
@@ -48,7 +48,7 @@ export type HttpRequestHandlerRequestMatch =
   | { success: false; cause: 'missingResponseDeclaration' | 'exceededNumberOfRequests' }
   | { success: false; cause: 'unmatchedRestrictions'; diff: RestrictionDiffs };
 
-class HttpRequestHandlerClient<
+class HttpRequestHandlerImplementation<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
@@ -60,7 +60,7 @@ class HttpRequestHandlerClient<
     numberOfRequests: DEFAULT_NUMBER_OF_REQUEST_LIMITS,
   };
 
-  private timesPointer?: TimesDeclarationPointer;
+  private timesPointer?: HttpTimesDeclarationPointer;
 
   private numberOfMatchedRequests = 0;
   private unmatchedRequestGroups: UnmatchedHttpInterceptorRequestGroup[] = [];
@@ -75,7 +75,7 @@ class HttpRequestHandlerClient<
   private createResponseDelay?: HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>;
 
   constructor(
-    private interceptor: HttpInterceptorClient<Schema>,
+    private interceptor: HttpInterceptorImplementation<Schema>,
     public method: Method,
     public path: Path,
     private handler: InternalHttpRequestHandler<Schema, Method, Path, StatusCode>,
@@ -112,8 +112,8 @@ class HttpRequestHandlerClient<
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
-  ): HttpRequestHandlerClient<Schema, Method, Path, NewStatusCode> {
-    const newThis = this as unknown as HttpRequestHandlerClient<Schema, Method, Path, NewStatusCode>;
+  ): HttpRequestHandlerImplementation<Schema, Method, Path, NewStatusCode> {
+    const newThis = this as unknown as HttpRequestHandlerImplementation<Schema, Method, Path, NewStatusCode>;
 
     newThis.createResponseDeclaration = this.isResponseDeclarationFactory(declaration)
       ? declaration
@@ -140,13 +140,13 @@ class HttpRequestHandlerClient<
   times(
     minNumberOfRequests: number,
     maxNumberOfRequests?: number,
-  ): HttpRequestHandlerClient<Schema, Method, Path, StatusCode> {
+  ): HttpRequestHandlerImplementation<Schema, Method, Path, StatusCode> {
     this.limits.numberOfRequests = {
       min: minNumberOfRequests,
       max: maxNumberOfRequests ?? minNumberOfRequests,
     };
 
-    this.timesPointer = new TimesDeclarationPointer(minNumberOfRequests, maxNumberOfRequests);
+    this.timesPointer = new HttpTimesDeclarationPointer(minNumberOfRequests, maxNumberOfRequests);
 
     return this;
   }
@@ -157,7 +157,7 @@ class HttpRequestHandlerClient<
       this.numberOfMatchedRequests <= this.limits.numberOfRequests.max;
 
     if (!isWithinLimits) {
-      throw new TimesCheckError({
+      throw new HttpTimesCheckError({
         requestLimits: this.limits.numberOfRequests,
         numberOfMatchedRequests: this.numberOfMatchedRequests,
         declarationPointer: this.timesPointer,
@@ -487,6 +487,6 @@ class HttpRequestHandlerClient<
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyHttpRequestHandlerClient = HttpRequestHandlerClient<any, any, any, any>;
+export type AnyHttpRequestHandlerImplementation = HttpRequestHandlerImplementation<any, any, any, any>;
 
-export default HttpRequestHandlerClient;
+export default HttpRequestHandlerImplementation;

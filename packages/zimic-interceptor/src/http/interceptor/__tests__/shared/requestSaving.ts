@@ -9,7 +9,7 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import RequestSavingSafeLimitExceededError from '../../errors/RequestSavingSafeLimitExceededError';
-import { DEFAULT_REQUEST_SAVING_SAFE_LIMIT } from '../../HttpInterceptorClient';
+import { DEFAULT_REQUEST_SAVING_SAFE_LIMIT } from '../../HttpInterceptorImplementation';
 import { HttpInterceptorOptions } from '../../types/options';
 import { HttpInterceptorRequestSaving } from '../../types/public';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';

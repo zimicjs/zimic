@@ -21,7 +21,7 @@ import { isClientSide } from '@/utils/environment';
 import { methodCanHaveResponseBody } from '@/utils/http';
 import { formatValueToLog, logger } from '@/utils/logging';
 
-import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
+import HttpInterceptorImplementation, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorImplementation';
 import { HttpInterceptorPlatform, HttpInterceptorType, UnhandledRequestStrategy } from '../interceptor/types/options';
 import {
   UnhandledHttpInterceptorRequestPath,
@@ -100,7 +100,7 @@ abstract class HttpInterceptorWorker {
   }
 
   abstract use<Schema extends HttpSchema>(
-    interceptor: HttpInterceptorClient<Schema>,
+    interceptor: HttpInterceptorImplementation<Schema>,
     method: HttpMethod,
     path: string,
     createResponse: HttpResponseFactory,
@@ -187,7 +187,7 @@ abstract class HttpInterceptorWorker {
   }
 
   abstract clearHandlers<Schema extends HttpSchema>(options?: {
-    interceptor?: HttpInterceptorClient<Schema>;
+    interceptor?: HttpInterceptorImplementation<Schema>;
   }): PossiblePromise<void>;
 
   abstract get interceptorsWithHandlers(): AnyHttpInterceptorClient[];

@@ -1,8 +1,8 @@
 import { HttpSchema, HttpSchemaMethod, HttpSchemaPath, HttpStatusCode } from '@zimic/http';
 import { Default } from '@zimic/utils/types';
 
-import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
-import HttpRequestHandlerClient from './HttpRequestHandlerClient';
+import HttpInterceptorImplementation from '../interceptor/HttpInterceptorImplementation';
+import HttpRequestHandlerImplementation from './HttpRequestHandlerImplementation';
 import { InternalHttpRequestHandler } from './types/public';
 import {
   HttpInterceptorRequest,
@@ -22,22 +22,22 @@ class LocalHttpRequestHandler<
 > implements InternalHttpRequestHandler<Schema, Method, Path, StatusCode> {
   readonly type = 'local';
 
-  client: HttpRequestHandlerClient<Schema, Method, Path, StatusCode>;
+  implementation: HttpRequestHandlerImplementation<Schema, Method, Path, StatusCode>;
 
-  constructor(interceptor: HttpInterceptorClient<Schema>, method: Method, path: Path) {
-    this.client = new HttpRequestHandlerClient(interceptor, method, path, this);
+  constructor(interceptor: HttpInterceptorImplementation<Schema>, method: Method, path: Path) {
+    this.implementation = new HttpRequestHandlerImplementation(interceptor, method, path, this);
   }
 
   get method() {
-    return this.client.method;
+    return this.implementation.method;
   }
 
   get path() {
-    return this.client.path;
+    return this.implementation.path;
   }
 
   with(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>): this {
-    this.client.with(restriction);
+    this.implementation.with(restriction);
     return this;
   }
 
@@ -45,7 +45,7 @@ class LocalHttpRequestHandler<
     minMilliseconds: number | HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>,
     maxMilliseconds?: number,
   ): this {
-    this.client.delay(minMilliseconds, maxMilliseconds);
+    this.implementation.delay(minMilliseconds, maxMilliseconds);
     return this;
   }
 
@@ -54,53 +54,53 @@ class LocalHttpRequestHandler<
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ): LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode> {
-    this.client.respond(declaration);
+    this.implementation.respond(declaration);
 
     const newThis = this as unknown as LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
     return newThis;
   }
 
   times(minNumberOfRequests: number, maxNumberOfRequests?: number): this {
-    this.client.times(minNumberOfRequests, maxNumberOfRequests);
+    this.implementation.times(minNumberOfRequests, maxNumberOfRequests);
     return this;
   }
 
   checkTimes() {
-    this.client.checkTimes();
+    this.implementation.checkTimes();
   }
 
   clear(): this {
-    this.client.clear();
+    this.implementation.clear();
     return this;
   }
 
   get requests(): readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
-    return this.client.requests;
+    return this.implementation.requests;
   }
 
   async matchesRequest(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) {
-    const requestMatch = await this.client.matchesRequest(request);
+    const requestMatch = await this.implementation.matchesRequest(request);
 
     if (requestMatch.success) {
-      this.client.markRequestAsMatched(request);
+      this.implementation.markRequestAsMatched(request);
     } else if (requestMatch.cause === 'unmatchedRestrictions') {
-      this.client.markRequestAsUnmatched(request, { diff: requestMatch.diff });
+      this.implementation.markRequestAsUnmatched(request, { diff: requestMatch.diff });
     } else {
-      this.client.markRequestAsMatched(request);
+      this.implementation.markRequestAsMatched(request);
     }
 
     return requestMatch;
   }
 
   async applyResponseDeclaration(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) {
-    return this.client.applyResponseDeclaration(request);
+    return this.implementation.applyResponseDeclaration(request);
   }
 
   saveInterceptedRequest(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
-    this.client.saveInterceptedRequest(request, response);
+    this.implementation.saveInterceptedRequest(request, response);
   }
 }
 

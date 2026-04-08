@@ -5,7 +5,7 @@ import color from 'picocolors';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import { expectTimesCheckError } from '@/http/requestHandler/__tests__/shared/utils';
+import { expectHttpTimesCheckError } from '@/http/requestHandler/__tests__/shared/utils';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';

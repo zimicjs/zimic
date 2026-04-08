@@ -1,8 +1,8 @@
 import { HttpSchema, HttpSchemaMethod, HttpSchemaPath, HttpStatusCode } from '@zimic/http';
 import { Default, PossiblePromise } from '@zimic/utils/types';
 
-import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
-import HttpRequestHandlerClient from './HttpRequestHandlerClient';
+import HttpInterceptorImplementation from '../interceptor/HttpInterceptorImplementation';
+import HttpRequestHandlerImplementation from './HttpRequestHandlerImplementation';
 import {
   InternalHttpRequestHandler,
   SyncedRemoteHttpRequestHandler as PublicSyncedRemoteHttpRequestHandler,
@@ -17,7 +17,7 @@ import {
 } from './types/requests';
 import { HttpRequestHandlerRestriction } from './types/restrictions';
 
-const PENDING_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Promise<unknown>)[]);
+const UNSYNCED_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Promise<unknown>)[]);
 
 class RemoteHttpRequestHandler<
   Schema extends HttpSchema,
@@ -27,15 +27,19 @@ class RemoteHttpRequestHandler<
 > implements InternalHttpRequestHandler<Schema, Method, Path, StatusCode> {
   readonly type = 'remote';
 
-  client: HttpRequestHandlerClient<Schema, Method, Path, StatusCode>;
+  implementation: HttpRequestHandlerImplementation<Schema, Method, Path, StatusCode>;
 
   private syncPromises: Promise<unknown>[] = [];
 
   private unsynced: this;
   private synced: this;
 
-  constructor(interceptor: HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>, method: Method, path: Path) {
-    this.client = new HttpRequestHandlerClient(interceptor, method, path, this);
+  constructor(
+    interceptor: HttpInterceptorImplementation<Schema, typeof RemoteHttpRequestHandler>,
+    method: Method,
+    path: Path,
+  ) {
+    this.implementation = new HttpRequestHandlerImplementation(interceptor, method, path, this);
     this.unsynced = this;
     this.synced = this.createSyncedProxy();
   }
@@ -59,19 +63,19 @@ class RemoteHttpRequestHandler<
   }
 
   private isHiddenPropertyWhenSynced(property: string | symbol) {
-    return PENDING_PROPERTIES.has(property);
+    return UNSYNCED_PROPERTIES.has(property);
   }
 
   get method() {
-    return this.client.method;
+    return this.implementation.method;
   }
 
   get path() {
-    return this.client.path;
+    return this.implementation.path;
   }
 
   with(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>): this {
-    this.client.with(restriction);
+    this.implementation.with(restriction);
     return this.unsynced;
   }
 
@@ -79,7 +83,7 @@ class RemoteHttpRequestHandler<
     minMilliseconds: number | HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>,
     maxMilliseconds?: number,
   ): this {
-    this.client.delay(minMilliseconds, maxMilliseconds);
+    this.implementation.delay(minMilliseconds, maxMilliseconds);
     return this.unsynced;
   }
 
@@ -89,19 +93,19 @@ class RemoteHttpRequestHandler<
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ): RemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode> {
     const newUnsyncedThis = this.unsynced as unknown as RemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
-    newUnsyncedThis.client.respond(declaration);
+    newUnsyncedThis.implementation.respond(declaration);
     return newUnsyncedThis;
   }
 
   times(minNumberOfRequests: number, maxNumberOfRequests?: number): this {
-    this.client.times(minNumberOfRequests, maxNumberOfRequests);
+    this.implementation.times(minNumberOfRequests, maxNumberOfRequests);
     return this;
   }
 
   async checkTimes() {
     return new Promise<void>((resolve, reject) => {
       try {
-        this.client.checkTimes();
+        this.implementation.checkTimes();
         resolve();
       } catch (error) {
         reject(error);
@@ -110,37 +114,37 @@ class RemoteHttpRequestHandler<
   }
 
   clear(): this {
-    this.client.clear();
+    this.implementation.clear();
     return this.unsynced;
   }
 
   get requests(): readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
-    return this.client.requests;
+    return this.implementation.requests;
   }
 
   async matchesRequest(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) {
-    const requestMatch = await this.client.matchesRequest(request);
+    const requestMatch = await this.implementation.matchesRequest(request);
 
     if (requestMatch.success) {
-      this.client.markRequestAsMatched(request);
+      this.implementation.markRequestAsMatched(request);
     } else if (requestMatch.cause === 'unmatchedRestrictions') {
-      this.client.markRequestAsUnmatched(request, { diff: requestMatch.diff });
+      this.implementation.markRequestAsUnmatched(request, { diff: requestMatch.diff });
     } else {
-      this.client.markRequestAsMatched(request);
+      this.implementation.markRequestAsMatched(request);
     }
 
     return requestMatch;
   }
 
   async applyResponseDeclaration(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) {
-    return this.client.applyResponseDeclaration(request);
+    return this.implementation.applyResponseDeclaration(request);
   }
 
   saveInterceptedRequest(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
-    this.client.saveInterceptedRequest(request, response);
+    this.implementation.saveInterceptedRequest(request, response);
   }
 
   registerSyncPromise(promise: Promise<unknown>) {

@@ -13,10 +13,10 @@ import { createRegexFromPath, excludeNonPathParams, validateURLProtocol } from '
 import { isServerSide } from '@/utils/environment';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
-import HttpRequestHandlerClient, {
-  AnyHttpRequestHandlerClient,
+import HttpRequestHandlerImplementation, {
+  AnyHttpRequestHandlerImplementation,
   HttpRequestHandlerRequestMatch,
-} from '../requestHandler/HttpRequestHandlerClient';
+} from '../requestHandler/HttpRequestHandlerImplementation';
 import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
 import { HttpRequestHandler, InternalHttpRequestHandler } from '../requestHandler/types/public';
@@ -33,7 +33,9 @@ export const SUPPORTED_BASE_URL_PROTOCOLS = Object.freeze(['http', 'https']);
 
 export const DEFAULT_REQUEST_SAVING_SAFE_LIMIT = 1000;
 
-class HttpInterceptorClient<
+export type HttpRequestHandlerConstructor = typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
+
+class HttpInterceptorImplementation<
   Schema extends HttpSchema,
   HandlerConstructor extends HttpRequestHandlerConstructor = HttpRequestHandlerConstructor,
 > {
@@ -56,7 +58,7 @@ class HttpInterceptorClient<
   private Handler: HandlerConstructor;
 
   private handlers: {
-    [Method in HttpMethod]: Map<string, AnyHttpRequestHandlerClient[]>;
+    [Method in HttpMethod]: Map<string, AnyHttpRequestHandlerImplementation[]>;
   } = {
     GET: new Map(),
     POST: new Map(),
@@ -232,13 +234,13 @@ class HttpInterceptorClient<
   >(handler: InternalHttpRequestHandler<Schema, Method, Path, StatusCode>) {
     const pathHandlers = this.handlers[handler.method].get(handler.path) ?? [];
 
-    const isAlreadyRegistered = pathHandlers.includes(handler.client);
+    const isAlreadyRegistered = pathHandlers.includes(handler.implementation);
 
     if (isAlreadyRegistered) {
       return;
     }
 
-    pathHandlers.push(handler.client);
+    pathHandlers.push(handler.implementation);
 
     const isFirstHandlerForMethodPath = pathHandlers.length === 1;
 
@@ -322,13 +324,13 @@ class HttpInterceptorClient<
     path: Path,
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): Promise<HttpRequestHandlerClient<Schema, Method, Path, any> | undefined> {
+  ): Promise<HttpRequestHandlerImplementation<Schema, Method, Path, any> | undefined> {
     /* istanbul ignore next -- @preserve
      * Ignoring because there will always be a handler for the given method and path at this point. */
     const pathHandlers = this.handlers[method].get(path) ?? [];
 
     const failedRequestMatches = new Map<
-      AnyHttpRequestHandlerClient,
+      AnyHttpRequestHandlerImplementation,
       Extract<HttpRequestHandlerRequestMatch, { success: false }>
     >();
 
@@ -377,7 +379,7 @@ class HttpInterceptorClient<
   }
 
   clear() {
-    const clearPromises: Promise<AnyHttpRequestHandlerClient | void>[] = [
+    const clearPromises: Promise<AnyHttpRequestHandlerImplementation | void>[] = [
       Promise.resolve(this.workerOrThrow.clearHandlers({ interceptor: this })),
     ];
 
@@ -395,7 +397,7 @@ class HttpInterceptorClient<
 
   private clearMethodHandlers(method: HttpMethod) {
     const pathHandlers = this.handlers[method];
-    const clearResults: PossiblePromise<AnyHttpRequestHandlerClient>[] = [];
+    const clearResults: PossiblePromise<AnyHttpRequestHandlerImplementation>[] = [];
 
     for (const handlers of pathHandlers.values()) {
       for (const handler of handlers) {
@@ -408,14 +410,12 @@ class HttpInterceptorClient<
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyHttpInterceptorClient = HttpInterceptorClient<any>;
+export type AnyHttpInterceptorClient = HttpInterceptorImplementation<any>;
 
-export type HttpRequestHandlerConstructor = typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
-
-export type SharedHttpInterceptorClient<Schema extends HttpSchema> = HttpInterceptorClient<
+export type SharedHttpInterceptorClient<Schema extends HttpSchema> = HttpInterceptorImplementation<
   Schema,
   typeof LocalHttpRequestHandler
 > &
-  HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>;
+  HttpInterceptorImplementation<Schema, typeof RemoteHttpRequestHandler>;
 
-export default HttpInterceptorClient;
+export default HttpInterceptorImplementation;
