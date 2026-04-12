@@ -1,7 +1,7 @@
 import { HttpMethod } from '@zimic/http';
 
 import { SerializedHttpRequest, SerializedResponse } from '@/utils/fetch';
-import { WebSocketSchema } from '@/webSocket/types';
+import { WebSocketSchema } from '@/utils/webSocket/types';
 
 export interface HttpHandlerCommit {
   id: string;

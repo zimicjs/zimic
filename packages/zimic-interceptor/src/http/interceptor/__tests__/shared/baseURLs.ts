@@ -7,7 +7,7 @@ import { expectBypassedResponse } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import RunningHttpInterceptorError from '../../errors/RunningHttpInterceptorError';
-import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../HttpInterceptorClient';
+import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../HttpInterceptorImplementation';
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 

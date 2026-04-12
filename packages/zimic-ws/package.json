@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "0.1.2-canary.11",
+  "version": "0.2.0-canary.1",
   "homepage": "https://zimic.dev/docs/ws",
   "repository": {
     "type": "git",
@@ -87,11 +87,11 @@
     "ws": "8.20.0"
   },
   "devDependencies": {
-    "@types/node": "^25.5.2",
+    "@types/node": "^25.6.0",
     "@types/ws": "^8.18.1",
-    "@vitest/browser": "^4.1.2",
-    "@vitest/browser-playwright": "^4.1.2",
-    "@vitest/coverage-istanbul": "^4.1.2",
+    "@vitest/browser": "^4.1.4",
+    "@vitest/browser-playwright": "^4.1.4",
+    "@vitest/coverage-istanbul": "^4.1.4",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
@@ -102,7 +102,7 @@
     "playwright": "^1.59.1",
     "tsup": "^8.5.1",
     "typescript": "6.0.2",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.4"
   },
   "peerDependencies": {
     "typescript": "^5.0.0 || ^6.0.0"

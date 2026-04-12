@@ -214,6 +214,7 @@ export interface GitHubComponents {
         reviewers?: {
           reviewer_id: number;
           reviewer_type: 'TEAM' | 'ROLE';
+          mode: 'ALWAYS' | 'EXEMPT';
         }[];
       };
     } | null;

@@ -37,13 +37,13 @@ runs:
   using: composite
   steps:
     - name: Install Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ inputs.node-version }}
         registry-url: ${{ inputs.node-registry-url }}
 
     - name: Install pnpm
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@v5
 
     - name: Get pnpm store directory
       id: pnpm-store
@@ -52,7 +52,7 @@ runs:
 
     - name: Restore pnpm cache
       id: pnpm-cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: ${{ steps.pnpm-store.outputs.path }}
         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -60,7 +60,7 @@ runs:
           ${{ runner.os }}-pnpm-store-
 
     - name: Restore turbo cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: .turbo/cache
         key: ${{ runner.os }}-turbo
@@ -125,7 +125,7 @@ runs:
 
     - name: Restore playwright cache
       id: playwright-cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: /home/runner/.cache/ms-playwright
         key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.versions }}
@@ -161,14 +161,14 @@ runs:
         TURBO_LOG_ORDER: stream
 
     - name: Save pnpm cache
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       if: ${{ steps.pnpm-cache.outputs.cache-hit != 'true' }}
       with:
         path: ${{ steps.pnpm-store.outputs.path }}
         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
 
     - name: Save playwright cache
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       if: ${{ steps.playwright-cache.outputs.cache-hit != 'true' }}
       with:
         path: /home/runner/.cache/ms-playwright

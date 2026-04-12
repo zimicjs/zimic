@@ -9,7 +9,9 @@ import { isClientSide, isServerSide } from '@/utils/environment';
 
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
-import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
+import HttpInterceptorImplementation, {
+  AnyHttpInterceptorImplementation,
+} from '../interceptor/HttpInterceptorImplementation';
 import { UnhandledRequestStrategy } from '../interceptor/types/options';
 import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
@@ -21,7 +23,7 @@ interface HttpHandler {
   baseURL: string;
   method: HttpMethod;
   pathRegex: RegExp;
-  interceptor: AnyHttpInterceptorClient;
+  interceptor: AnyHttpInterceptorImplementation;
   createResponse: (context: HttpResponseFactoryContext) => Promise<Response>;
 }
 
@@ -168,7 +170,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   use<Schema extends HttpSchema>(
-    interceptor: HttpInterceptorClient<Schema>,
+    interceptor: HttpInterceptorImplementation<Schema>,
     method: HttpMethod,
     path: string,
     createResponse: HttpResponseFactory,
@@ -286,7 +288,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   clearHandlers<Schema extends HttpSchema>(
     options: {
-      interceptor?: HttpInterceptorClient<Schema>;
+      interceptor?: HttpInterceptorImplementation<Schema>;
     } = {},
   ) {
     if (!this.isRunning) {
@@ -306,7 +308,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   get interceptorsWithHandlers() {
-    const interceptors = new Set<AnyHttpInterceptorClient>();
+    const interceptors = new Set<AnyHttpInterceptorImplementation>();
 
     for (const handlers of Object.values(this.httpHandlersByMethod)) {
       for (const handler of handlers) {
