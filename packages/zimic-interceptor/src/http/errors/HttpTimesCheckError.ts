@@ -5,13 +5,13 @@ import color from 'picocolors';
 import { HttpInterceptorRequestSaving } from '@/http/interceptor/types/public';
 import { stringifyValueToLog } from '@/utils/logging';
 
-import { UnmatchedHttpInterceptorRequestGroup } from '../types/restrictions';
-import TimesDeclarationPointer from './TimesDeclarationPointer';
+import { UnmatchedHttpInterceptorRequestGroup } from '../requestHandler/types/restrictions';
+import HttpTimesDeclarationPointer from './HttpTimesDeclarationPointer';
 
-interface TimesCheckErrorOptions {
+interface HttpTimesCheckErrorOptions {
   requestLimits: Range<number>;
   numberOfMatchedRequests: number;
-  declarationPointer: TimesDeclarationPointer | undefined;
+  declarationPointer: HttpTimesDeclarationPointer | undefined;
   unmatchedRequestGroups: UnmatchedHttpInterceptorRequestGroup[];
   hasRestrictions: boolean;
   requestSaving: HttpInterceptorRequestSaving;
@@ -22,7 +22,7 @@ function createMessageHeader({
   hasRestrictions,
   numberOfMatchedRequests,
   unmatchedRequestGroups,
-}: TimesCheckErrorOptions) {
+}: HttpTimesCheckErrorOptions) {
   const requestPrefix = hasRestrictions ? 'matching ' : '';
 
   return [
@@ -52,7 +52,7 @@ function createMessageHeader({
     .join('');
 }
 
-function createMessageDiffs({ requestSaving, unmatchedRequestGroups }: TimesCheckErrorOptions) {
+function createMessageDiffs({ requestSaving, unmatchedRequestGroups }: HttpTimesCheckErrorOptions) {
   if (!requestSaving.enabled) {
     return 'Tip: use `requestSaving.enabled: true` in your interceptor for more details about the unmatched requests.';
   }
@@ -116,7 +116,7 @@ function createMessageFooter() {
   return 'Learn more: https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes';
 }
 
-function createMessage(options: TimesCheckErrorOptions) {
+function createMessage(options: HttpTimesCheckErrorOptions) {
   const messageHeader = createMessageHeader(options);
   const messageDiffs = createMessageDiffs(options);
   const messageFooter = createMessageFooter();
@@ -124,8 +124,13 @@ function createMessage(options: TimesCheckErrorOptions) {
   return [messageHeader, messageDiffs, messageFooter].filter(isNonEmpty).join('\n\n');
 }
 
-class TimesCheckError extends TypeError {
-  constructor(options: TimesCheckErrorOptions) {
+/**
+ * Error thrown when the number of requests matched by a handler does not satisfy its `handler.times()` declaration.
+ *
+ * @deprecated `TimesCheckError` has been renamed to `HttpTimesCheckError`.
+ */
+export class TimesCheckError extends TypeError {
+  constructor(options: HttpTimesCheckErrorOptions) {
     const message = createMessage(options);
     super(message);
 
@@ -134,4 +139,15 @@ class TimesCheckError extends TypeError {
   }
 }
 
-export default TimesCheckError;
+/** Error thrown when the number of requests matched by a handler does not satisfy its `handler.times()` declaration. */
+// eslint-disable-next-line @typescript-eslint/no-deprecated
+class HttpTimesCheckError extends TimesCheckError {
+  constructor(options: HttpTimesCheckErrorOptions) {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    super(options);
+
+    this.name = 'HttpTimesCheckError';
+  }
+}
+
+export default HttpTimesCheckError;

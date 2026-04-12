@@ -8,12 +8,14 @@ import { isClientSide, isServerSide } from '@/utils/environment';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
 import { methodCanHaveResponseBody } from '@/utils/http';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
-import { WebSocketEventMessage } from '@/webSocket/types';
-import WebSocketClient from '@/webSocket/WebSocketClient';
+import { WebSocketEventMessage } from '@/utils/webSocket/types';
+import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
-import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
+import HttpInterceptorImplementation, {
+  AnyHttpInterceptorImplementation,
+} from '../interceptor/HttpInterceptorImplementation';
 import { HttpInterceptorPlatform, UnhandledRequestStrategy } from '../interceptor/types/options';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { HttpResponseFactory, HttpResponseFactoryContext } from './types/http';
@@ -24,7 +26,7 @@ interface HttpHandler {
   baseURL: string;
   method: HttpMethod;
   path: string;
-  interceptor: AnyHttpInterceptorClient;
+  interceptor: AnyHttpInterceptorImplementation;
   createResponse: (context: HttpResponseFactoryContext) => PossiblePromise<Response | null>;
 }
 
@@ -136,7 +138,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   async use<Schema extends HttpSchema>(
-    interceptor: HttpInterceptorClient<Schema>,
+    interceptor: HttpInterceptorImplementation<Schema>,
     method: HttpMethod,
     path: string,
     createResponse: HttpResponseFactory,
@@ -187,7 +189,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async clearHandlers<Schema extends HttpSchema>(
     options: {
-      interceptor?: HttpInterceptorClient<Schema>;
+      interceptor?: HttpInterceptorImplementation<Schema>;
     } = {},
   ) {
     if (!this.isRunning) {

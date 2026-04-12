@@ -3,7 +3,7 @@ import { waitForDelay } from '@zimic/utils/time';
 import { joinURL } from '@zimic/utils/url';
 import { expectTypeOf, expect, vi, it, beforeAll, afterAll, describe, beforeEach, afterEach } from 'vitest';
 
-import { SharedHttpInterceptorClient } from '@/http/interceptor/HttpInterceptorClient';
+import { SharedHttpInterceptorImplementation } from '@/http/interceptor/HttpInterceptorImplementation';
 import LocalHttpInterceptor from '@/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/http/interceptor/RemoteHttpInterceptor';
 import { HttpInterceptorType } from '@/http/interceptor/types/options';
@@ -12,7 +12,7 @@ import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorke
 import LocalHttpInterceptorWorker from '@/http/interceptorWorker/LocalHttpInterceptorWorker';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpRequestHandlerRequestMatch } from '../../HttpRequestHandlerClient';
+import { HttpRequestHandlerRequestMatch } from '../../HttpRequestHandlerImplementation';
 import type LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '../../RemoteHttpRequestHandler';
 import {
@@ -34,7 +34,7 @@ export function declareDefaultHttpRequestHandlerTests(
   let baseURL: string;
 
   let interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
-  let interceptorClient: SharedHttpInterceptorClient<Schema>;
+  let interceptorImplementation: SharedHttpInterceptorImplementation<Schema>;
 
   beforeAll(async () => {
     if (type === 'remote') {
@@ -46,7 +46,7 @@ export function declareDefaultHttpRequestHandlerTests(
     baseURL = await getBaseURL(type);
 
     interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL });
-    interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
+    interceptorImplementation = interceptor.implementation as SharedHttpInterceptorImplementation<Schema>;
 
     expect(interceptor.platform).toBe(null);
 
@@ -66,7 +66,7 @@ export function declareDefaultHttpRequestHandlerTests(
   });
 
   it('should provide access to the method and path', () => {
-    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users');
 
     expectTypeOf<typeof handler.method>().toEqualTypeOf<'POST'>();
     expect(handler.method).toBe('POST');
@@ -76,7 +76,7 @@ export function declareDefaultHttpRequestHandlerTests(
   });
 
   it('should not match any request if contains no declared response', async () => {
-    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users');
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
@@ -87,7 +87,7 @@ export function declareDefaultHttpRequestHandlerTests(
   });
 
   it('should match any request if contains a declared response and no restrictions', async () => {
-    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users').respond({
       status: 200,
       body: { success: true },
     });
@@ -102,7 +102,7 @@ export function declareDefaultHttpRequestHandlerTests(
   });
 
   it('should not match any request if cleared', async () => {
-    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users');
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
@@ -146,7 +146,7 @@ export function declareDefaultHttpRequestHandlerTests(
     const responseStatus = 200;
     const responseBody = { success: true } as const;
 
-    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users').respond({
       status: responseStatus,
       body: responseBody,
     });
@@ -170,7 +170,7 @@ export function declareDefaultHttpRequestHandlerTests(
         ({ status: responseStatus, body: responseBody }) as const,
     );
 
-    const handler = new Handler<Schema, 'POST', '/users', 200>(interceptorClient, 'POST', '/users');
+    const handler = new Handler<Schema, 'POST', '/users', 200>(interceptorImplementation, 'POST', '/users');
     await promiseIfRemote(handler.respond(responseFactory), interceptor);
 
     const request = new Request(baseURL);
@@ -188,7 +188,7 @@ export function declareDefaultHttpRequestHandlerTests(
   });
 
   it('should not throw an error if trying to create a response without a declared response', async () => {
-    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users');
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
@@ -198,7 +198,7 @@ export function declareDefaultHttpRequestHandlerTests(
   });
 
   it('should keep track of the intercepted requests and responses', async () => {
-    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users').respond({
       status: 200,
       body: { success: true },
     });
@@ -249,7 +249,7 @@ export function declareDefaultHttpRequestHandlerTests(
   });
 
   it('should clear the intercepted requests and responses after cleared', async () => {
-    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users').respond({
       status: 200,
       body: { success: true },
     });
@@ -281,7 +281,7 @@ export function declareDefaultHttpRequestHandlerTests(
   });
 
   it('should provide access to the raw intercepted requests and responses', async () => {
-    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users').respond({
       status: 200,
       body: { success: true },
     });
@@ -334,7 +334,7 @@ export function declareDefaultHttpRequestHandlerTests(
   });
 
   it('should provide no access to hidden properties in raw intercepted requests and responses', async () => {
-    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users').respond({
       status: 200,
       body: { success: true },
     });
@@ -370,7 +370,7 @@ export function declareDefaultHttpRequestHandlerTests(
   });
 
   it('should clear restrictions after cleared', async () => {
-    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users');
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
@@ -421,7 +421,7 @@ export function declareDefaultHttpRequestHandlerTests(
   if (Handler === RemoteHttpRequestHandler) {
     describe('Promise-like', () => {
       it('should be then-able', async () => {
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users').respond({
           status: 200,
           body: { success: true },
         });
@@ -459,7 +459,7 @@ export function declareDefaultHttpRequestHandlerTests(
       });
 
       it('should wait until synced before resolving, even if new sync promises were added while waiting', async () => {
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users').respond({
           status: 200,
           body: { success: true },
         });
@@ -499,7 +499,7 @@ export function declareDefaultHttpRequestHandlerTests(
       });
 
       it('should be catch-able', async () => {
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users').respond({
           status: 200,
           body: { success: true },
         });
@@ -522,7 +522,7 @@ export function declareDefaultHttpRequestHandlerTests(
       });
 
       it('should be finally-able', async () => {
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users').respond({
           status: 200,
           body: { success: true },
         });
