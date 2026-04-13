@@ -36,7 +36,7 @@ export default defineConfig({
           setupFiles: ['./tests/setup/browser.ts'],
           // We may need to retry browser tests on CI because browsers may retry failed requests, causing tests that
           // expect failures to be flaky.
-          retry: process.env.CI === 'true' ? 5 : 1,
+          retry: process.env.CI === 'true' ? 2 : 1,
           browser: {
             instances: [{ browser: 'chromium' }],
             provider: playwright(),
