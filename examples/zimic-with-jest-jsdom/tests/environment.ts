@@ -1,4 +1,4 @@
-import JSDOMEnvironment from 'jest-environment-jsdom';
+import { TestEnvironment } from 'jest-environment-jsdom';
 
 /**
  * We need this workaround because the global fetch API is not currently exposed by JSDOM.
@@ -6,8 +6,8 @@ import JSDOMEnvironment from 'jest-environment-jsdom';
  * @see https://github.com/jsdom/jsdom/issues/1724
  */
 
-class TestEnvironment extends JSDOMEnvironment {
-  constructor(...parameters: ConstructorParameters<typeof JSDOMEnvironment>) {
+class Environment extends TestEnvironment {
+  constructor(...parameters: ConstructorParameters<typeof TestEnvironment>) {
     super(...parameters);
 
     this.global.fetch = fetch;
@@ -19,7 +19,8 @@ class TestEnvironment extends JSDOMEnvironment {
     this.global.ReadableStream = ReadableStream;
     this.global.TransformStream = TransformStream;
     this.global.BroadcastChannel = BroadcastChannel;
+    this.global.WritableStream = WritableStream;
   }
 }
 
-export default TestEnvironment;
+export default Environment;
