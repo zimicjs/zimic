@@ -33,7 +33,6 @@ const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => {
   const entry = {
     server: 'src/server/index.ts',
     cli: 'src/cli/index.ts',
-    'scripts/postinstall': 'scripts/postinstall.ts',
   };
 
   const dtsEntry = {
