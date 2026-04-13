@@ -201,10 +201,10 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
       const error = new Error('Unknown error');
 
       if (platform === 'browser') {
-        const internalBrowserWorker = interceptorWorker.internalWorkerOrCreate as BrowserMSWWorker;
+        const internalBrowserWorker = (await interceptorWorker.getInternalWorkerOrCreate()) as BrowserMSWWorker;
         vi.spyOn(internalBrowserWorker, 'start').mockRejectedValueOnce(error);
       } else {
-        const internalNodeWorker = interceptorWorker.internalWorkerOrCreate as NodeMSWWorker;
+        const internalNodeWorker = (await interceptorWorker.getInternalWorkerOrCreate()) as NodeMSWWorker;
         vi.spyOn(internalNodeWorker, 'listen').mockImplementationOnce(() => {
           throw error;
         });

@@ -1,8 +1,7 @@
 import { HttpRequest, HttpResponse, HttpMethod, HttpSchema, HttpHeadersInit, HttpBody } from '@zimic/http';
+import { createCachedDynamicImport } from '@zimic/utils/import';
 import { createRegexFromPath, excludeNonPathParams, validatePathParams } from '@zimic/utils/url';
 import { SharedOptions as MSWWorkerSharedOptions, bypass, http, passthrough } from 'msw';
-import * as mswBrowser from 'msw/browser';
-import * as mswNode from 'msw/node';
 
 import { removeArrayIndex } from '@/utils/arrays';
 import { isClientSide, isServerSide } from '@/utils/environment';
@@ -18,6 +17,9 @@ import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { HttpResponseFactory, HttpResponseFactoryContext } from './types/http';
 import { BrowserMSWWorker, MSWWorker, NodeMSWWorker } from './types/msw';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
+
+const importMSWNode = createCachedDynamicImport(() => import('msw/node'));
+const importMSWBrowser = createCachedDynamicImport(() => import('msw/browser'));
 
 interface HttpHandler {
   baseURL: string;
@@ -66,26 +68,34 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     return this.internalWorker;
   }
 
-  get internalWorkerOrCreate() {
-    this.class.globalInternalWorker ??= this.createInternalWorker();
+  async getInternalWorkerOrCreate() {
+    this.class.globalInternalWorker ??= await this.createInternalWorker();
     this.internalWorker ??= this.class.globalInternalWorker;
     return this.internalWorker;
   }
 
-  private createInternalWorker() {
+  private async createInternalWorker() {
     const mswHttpHandler = http.all('*', async (context) => {
       const request = context.request satisfies Request as HttpRequest;
       const response = await this.createResponseForRequest(request);
       return response;
     });
 
-    if (isServerSide() && 'setupServer' in mswNode) {
-      return mswNode.setupServer(mswHttpHandler);
+    if (isServerSide()) {
+      const mswNode = await importMSWNode();
+
+      if ('setupServer' in mswNode) {
+        return mswNode.setupServer(mswHttpHandler);
+      }
     }
 
     /* istanbul ignore else -- @preserve */
-    if (isClientSide() && 'setupWorker' in mswBrowser) {
-      return mswBrowser.setupWorker(mswHttpHandler);
+    if (isClientSide()) {
+      const mswBrowser = await importMSWBrowser();
+
+      if ('setupWorker' in mswBrowser) {
+        return mswBrowser.setupWorker(mswHttpHandler);
+      }
     }
 
     /* istanbul ignore next -- @preserve
@@ -95,7 +105,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async start() {
     await super.sharedStart(async () => {
-      const internalWorker = this.internalWorkerOrCreate;
+      const internalWorker = await this.getInternalWorkerOrCreate();
 
       const sharedOptions: MSWWorkerSharedOptions = {
         onUnhandledRequest: 'bypass',
@@ -133,8 +143,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   async stop() {
-    await super.sharedStop(() => {
-      const internalWorker = this.internalWorkerOrCreate;
+    await super.sharedStop(async () => {
+      const internalWorker = await this.getInternalWorkerOrCreate();
 
       this.clearHandlers();
 
