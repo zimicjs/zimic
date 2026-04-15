@@ -69,23 +69,31 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   async getInternalWorkerOrCreate() {
+    if (this.internalWorker) {
+      return this.internalWorker;
+    }
+
     this.class.globalInternalWorker ??= await this.createInternalWorker();
-    this.internalWorker ??= this.class.globalInternalWorker;
+
+    this.class.globalInternalWorker.resetHandlers(
+      http.all('*', async (context) => {
+        const request = context.request satisfies Request as HttpRequest;
+        const response = await this.createResponseForRequest(request);
+        return response;
+      }),
+    );
+
+    this.internalWorker = this.class.globalInternalWorker;
+
     return this.internalWorker;
   }
 
   private async createInternalWorker() {
-    const mswHttpHandler = http.all('*', async (context) => {
-      const request = context.request satisfies Request as HttpRequest;
-      const response = await this.createResponseForRequest(request);
-      return response;
-    });
-
     if (isServerSide()) {
       const mswNode = await importMSWNode();
 
       if ('setupServer' in mswNode) {
-        return mswNode.setupServer(mswHttpHandler);
+        return mswNode.setupServer();
       }
     }
 
@@ -94,7 +102,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       const mswBrowser = await importMSWBrowser();
 
       if ('setupWorker' in mswBrowser) {
-        return mswBrowser.setupWorker(mswHttpHandler);
+        return mswBrowser.setupWorker();
       }
     }
 
@@ -256,6 +264,10 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private async createResponseForRequest(request: HttpRequest) {
+    if (!this.isRunning) {
+      return this.bypassOrRejectUnhandledRequest(request);
+    }
+
     const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
 
     const requestURL = excludeNonPathParams(new URL(request.url));
