@@ -166,8 +166,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/zimic-http
       dompurify:
-        specifier: ^3.3.3
-        version: 3.3.3
+        specifier: ^3.4.0
+        version: 3.4.0
       prism-react-renderer:
         specifier: ^2.4.1
         version: 2.4.1(react@19.2.5)
@@ -670,7 +670,7 @@ importers:
     dependencies:
       '@zimic/http':
         specifier: ^1.3.0 || workspace:*
-        version: link:../zimic-http
+        version: 1.3.13(typescript@6.0.2)
     devDependencies:
       '@types/node':
         specifier: ^25.6.0
@@ -801,7 +801,7 @@ importers:
         version: 0.10.18
       '@zimic/http':
         specifier: ^1.2.0 || workspace:*
-        version: link:../zimic-http
+        version: 1.3.13(typescript@6.0.2)
       isomorphic-ws:
         specifier: 5.0.0
         version: 5.0.0(ws@8.20.0(bufferutil@4.0.9))
@@ -4486,6 +4486,16 @@ packages:
   '@xtuc/long@4.2.2':
     resolution: {integrity: sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==}
 
+  '@zimic/http@1.3.13':
+    resolution: {integrity: sha512-zyhaZCkaSIsN0a4BEYsQXrGRHMQYJNPvJDpE6/8h9SbeKXlUqvkjcASopgoOdtGCaG/aIOAiKbnLRntDByR8VQ==}
+    engines: {node: '>=20.0.0'}
+    hasBin: true
+    peerDependencies:
+      typescript: ^5.0.0 || ^6.0.0
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   accepts@1.3.8:
     resolution: {integrity: sha512-PYAthTa2m2VKxuvSD3DPC/Gy+U+sOA1LAuT8mkmRuvw+NACSaeXEQ+NHcVF7rONl6qcaxV3Uuemwawk+7+SJLw==}
     engines: {node: '>= 0.6'}
@@ -5572,8 +5582,8 @@ packages:
     resolution: {integrity: sha512-cgwlv/1iFQiFnU96XXgROh8xTeetsnJiDsTc7TYCLFd9+/WNkIqPTxiM/8pSd8VIrhXGTf1Ny1q1hquVqDJB5w==}
     engines: {node: '>= 4'}
 
-  dompurify@3.3.3:
-    resolution: {integrity: sha512-Oj6pzI2+RqBfFG+qOaOLbFXLQ90ARpcGG6UePL82bJLtdsa6CYJD7nmiU8MW9nQNOtCHV3lZ/Bzq1X0QYbBZCA==}
+  dompurify@3.4.0:
+    resolution: {integrity: sha512-nolgK9JcaUXMSmW+j1yaSvaEaoXYHwWyGJlkoCTghc97KgGDDSnpoU/PlEnw63Ah+TGKFOyY+X5LnxaWbCSfXg==}
 
   domutils@2.8.0:
     resolution: {integrity: sha512-w96Cjofp72M5IIhpjgobBimYEfoPjx1Vx0BSX9P30WBdZW2WIKU0T1Bd0kz2eNZ9ikjKgHbEyKx8BB6H1L3h3A==}
@@ -14247,6 +14257,14 @@ snapshots:
 
   '@xtuc/long@4.2.2': {}
 
+  '@zimic/http@1.3.13(typescript@6.0.2)':
+    dependencies:
+      openapi-typescript: 7.13.0(typescript@6.0.2)
+      picocolors: 1.1.1
+      yargs: 18.0.0
+    optionalDependencies:
+      typescript: 6.0.2
+
   accepts@1.3.8:
     dependencies:
       mime-types: 2.1.35
@@ -15379,7 +15397,7 @@ snapshots:
     dependencies:
       domelementtype: 2.3.0
 
-  dompurify@3.3.3:
+  dompurify@3.4.0:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
 
