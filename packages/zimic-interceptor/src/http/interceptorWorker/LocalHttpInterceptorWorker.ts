@@ -33,6 +33,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   // Re-creating MSW workers may cause issues, so we should keep a single worker instance, even if all interceptor
   // workers are stopped. See https://github.com/mswjs/msw/issues/2585.
   private static globalInternalWorker?: MSWWorker;
+  static isGlobalInternalWorkerRunning = false;
+
   private internalWorker?: MSWWorker;
 
   private httpHandlersByMethod: {
@@ -121,7 +123,14 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
       if (this.isInternalBrowserWorker(internalWorker)) {
         this.platform = 'browser';
-        await this.startInBrowser(internalWorker, sharedOptions);
+
+        // Due to collateral effects from https://github.com/mswjs/msw/issues/2714, we can only start the global browser
+        // worker once and keep it running, even if all interceptor workers are stopped. Restarting the browser worker
+        // causes interception issues.
+        if (!this.class.isGlobalInternalWorkerRunning) {
+          await this.startInBrowser(internalWorker, sharedOptions);
+          this.class.isGlobalInternalWorkerRunning = true;
+        }
       } else {
         this.platform = 'node';
         this.startInNode(internalWorker, sharedOptions);
@@ -157,12 +166,15 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       this.clearHandlers();
 
       if (this.isInternalBrowserWorker(internalWorker)) {
-        this.stopInBrowser(internalWorker);
+        // Due to collateral effects from https://github.com/mswjs/msw/issues/2714, we cannot stop the browser worker
+        // because restarting it causes interception issues. Instead, we just reset its handlers and keep it running.
+        if (this.platform !== 'browser') {
+          this.stopInBrowser(internalWorker);
+        }
       } else {
         this.stopInNode(internalWorker);
       }
 
-      this.internalWorker = undefined;
       this.isRunning = false;
     });
   }
@@ -264,6 +276,9 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private async createResponseForRequest(request: HttpRequest) {
+    // Due to https://github.com/mswjs/msw/issues/2597, we cannot trust that MSW won't try to handle requests even if
+    // the internal worker is stopped. Because of that, we need to check if the worker is running ourselves and consider
+    // the request as unhandled.
     if (!this.isRunning) {
       return this.bypassOrRejectUnhandledRequest(request);
     }

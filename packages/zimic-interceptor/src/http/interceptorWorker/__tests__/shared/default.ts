@@ -212,11 +212,19 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
 
       await usingIgnoredConsole(['error'], async (console) => {
         const interceptorStartPromise = interceptorWorker.start();
-        await expect(interceptorStartPromise).rejects.toThrow(error);
 
         if (platform === 'browser') {
+          // Because we only start the singleton browser worker once, the mock rejection will only happen if the global
+          // worker is not yet running. If it is, the start will succeed because the worker won't be restarted.
+          if (LocalHttpInterceptorWorker.isGlobalInternalWorkerRunning) {
+            await expect(interceptorStartPromise).resolves.not.toThrow();
+          } else {
+            await expect(interceptorStartPromise).rejects.toThrow(error);
+          }
+
           expect(console.error).toHaveBeenCalledTimes(0);
         } else {
+          await expect(interceptorStartPromise).rejects.toThrow(error);
           expect(console.error).toHaveBeenCalledTimes(1);
           expect(console.error).toHaveBeenCalledWith(error);
         }
