@@ -94,6 +94,9 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     if (isServerSide()) {
       const mswNode = await importMSWNode();
 
+      /* istanbul ignore else -- @preserve
+       * We still check if we actually imported the server module in case our `isServerSide()` check returns true, but
+       * the environment actually resolves the browser module. */
       if ('setupServer' in mswNode) {
         return mswNode.setupServer();
       }
@@ -103,6 +106,9 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     if (isClientSide()) {
       const mswBrowser = await importMSWBrowser();
 
+      /* istanbul ignore else -- @preserve
+       * We still check if we actually imported the browser module in case our `isClientSide()` check returns true, but
+       * the environment actually resolves the server module. */
       if ('setupWorker' in mswBrowser) {
         return mswBrowser.setupWorker();
       }
@@ -124,9 +130,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       if (this.isInternalBrowserWorker(internalWorker)) {
         this.platform = 'browser';
 
-        // Due to collateral effects from https://github.com/mswjs/msw/issues/2714, we can only start the global browser
-        // worker once and keep it running, even if all interceptor workers are stopped. Restarting the browser worker
-        // causes interception issues.
+        // Even after https://github.com/mswjs/msw/issues/2714 was fixed, there are collateral effects preventing us
+        // from restarting the global browser worker even if unused. Restarting it causes interception issues in MSW.
         if (!this.class.isGlobalInternalWorkerRunning) {
           await this.startInBrowser(internalWorker, sharedOptions);
           this.class.isGlobalInternalWorkerRunning = true;
@@ -149,10 +154,13 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private handleBrowserWorkerStartError(error: unknown) {
+    /* istanbul ignore else -- @preserve
+     * Since we start the internal worker once and do not stop it, tests may not be able exercise this branch. */
     if (UnregisteredBrowserServiceWorkerError.matchesRawError(error)) {
       throw new UnregisteredBrowserServiceWorkerError();
+    } else {
+      throw error;
     }
-    throw error;
   }
 
   private startInNode(internalWorker: NodeMSWWorker, sharedOptions: MSWWorkerSharedOptions) {
@@ -166,21 +174,14 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       this.clearHandlers();
 
       if (this.isInternalBrowserWorker(internalWorker)) {
-        // Due to collateral effects from https://github.com/mswjs/msw/issues/2714, we cannot stop the browser worker
-        // because restarting it causes interception issues. Instead, we just reset its handlers and keep it running.
-        if (this.platform !== 'browser') {
-          this.stopInBrowser(internalWorker);
-        }
+        // Even after https://github.com/mswjs/msw/issues/2714 was fixed, there are collateral effects preventing us
+        // from restarting the global browser worker even if unused. Restarting it causes interception issues in MSW.
       } else {
         this.stopInNode(internalWorker);
       }
 
       this.isRunning = false;
     });
-  }
-
-  private stopInBrowser(internalWorker: BrowserMSWWorker) {
-    internalWorker.stop();
   }
 
   private stopInNode(internalWorker: NodeMSWWorker) {

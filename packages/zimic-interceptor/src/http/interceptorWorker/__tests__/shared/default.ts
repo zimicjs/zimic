@@ -214,8 +214,9 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
         const interceptorStartPromise = interceptorWorker.start();
 
         if (platform === 'browser') {
-          // Because we only start the singleton browser worker once, the mock rejection will only happen if the global
-          // worker is not yet running. If it is, the start will succeed because the worker won't be restarted.
+          /* istanbul ignore else -- @preserve
+           * Because we only start the singleton browser worker once, the mock rejection will only happen if the global
+           * worker is not yet running. If it is, the start will succeed because the worker won't be restarted. */
           if (LocalHttpInterceptorWorker.isGlobalInternalWorkerRunning) {
             await expect(interceptorStartPromise).resolves.not.toThrow();
           } else {
