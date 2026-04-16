@@ -519,7 +519,7 @@ export function declarePathParamsHttpInterceptorWorkerTests(options: SharedHttpI
   ])('should intercept requests with dynamic paths (path $path, input $input)', async (testCase) => {
     await usingHttpInterceptorWorker(workerOptions, async (worker) => {
       const interceptor = createDefaultHttpInterceptor();
-      await promiseIfRemote(worker.use(interceptor.client, 'GET', testCase.path, spiedRequestHandler), worker);
+      await promiseIfRemote(worker.use(interceptor.implementation, 'GET', testCase.path, spiedRequestHandler), worker);
 
       expect(spiedRequestHandler).not.toHaveBeenCalled();
 
@@ -570,7 +570,7 @@ export function declarePathParamsHttpInterceptorWorkerTests(options: SharedHttpI
         const interceptor = createDefaultHttpInterceptor();
 
         await expect(async () => {
-          await worker.use(interceptor.client, 'GET', testCase.path, spiedRequestHandler);
+          await worker.use(interceptor.implementation, 'GET', testCase.path, spiedRequestHandler);
         }).rejects.toThrow(new DuplicatedPathParamError(testCase.path, testCase.duplicatedParameter));
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();

@@ -12,7 +12,8 @@ export { default as RequestSavingSafeLimitExceededError } from './interceptor/er
 export { default as UnregisteredBrowserServiceWorkerError } from './interceptorWorker/errors/UnregisteredBrowserServiceWorkerError';
 
 export { default as DisabledRequestSavingError } from './requestHandler/errors/DisabledRequestSavingError';
-export { default as TimesCheckError } from './requestHandler/errors/TimesCheckError';
+// eslint-disable-next-line @typescript-eslint/no-deprecated
+export { default as HttpTimesCheckError, TimesCheckError } from './errors/HttpTimesCheckError';
 
 export type {
   HttpRequestHandlerResponseDeclaration,

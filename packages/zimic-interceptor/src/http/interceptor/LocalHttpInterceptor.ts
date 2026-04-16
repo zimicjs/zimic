@@ -1,7 +1,7 @@
 import { HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@zimic/http';
 
 import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
-import HttpInterceptorClient from './HttpInterceptorClient';
+import HttpInterceptorImplementation from './HttpInterceptorImplementation';
 import HttpInterceptorStore from './HttpInterceptorStore';
 import { SyncHttpInterceptorMethodHandler } from './types/handlers';
 import { LocalHttpInterceptorOptions, UnhandledRequestStrategy } from './types/options';
@@ -10,12 +10,12 @@ import { HttpInterceptorRequestSaving, LocalHttpInterceptor as PublicLocalHttpIn
 class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttpInterceptor<Schema> {
   private store = new HttpInterceptorStore();
 
-  client: HttpInterceptorClient<Schema, typeof LocalHttpRequestHandler>;
+  implementation: HttpInterceptorImplementation<Schema, typeof LocalHttpRequestHandler>;
 
   constructor(options: LocalHttpInterceptorOptions) {
     const baseURL = new URL(options.baseURL);
 
-    this.client = new HttpInterceptorClient<Schema, typeof LocalHttpRequestHandler>({
+    this.implementation = new HttpInterceptorImplementation<Schema, typeof LocalHttpRequestHandler>({
       store: this.store,
       baseURL,
       createWorker: () => {
@@ -35,35 +35,35 @@ class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttp
   }
 
   get baseURL() {
-    return this.client.baseURLAsString;
+    return this.implementation.baseURLAsString;
   }
 
   set baseURL(baseURL: LocalHttpInterceptorOptions['baseURL']) {
-    this.client.baseURL = new URL(baseURL);
+    this.implementation.baseURL = new URL(baseURL);
   }
 
   get requestSaving() {
-    return this.client.requestSaving;
+    return this.implementation.requestSaving;
   }
 
   set requestSaving(requestSaving: HttpInterceptorRequestSaving) {
-    this.client.requestSaving = requestSaving;
+    this.implementation.requestSaving = requestSaving;
   }
 
   get onUnhandledRequest() {
-    return this.client.onUnhandledRequest;
+    return this.implementation.onUnhandledRequest;
   }
 
   set onUnhandledRequest(onUnhandledRequest: UnhandledRequestStrategy.Local | undefined) {
-    this.client.onUnhandledRequest = onUnhandledRequest;
+    this.implementation.onUnhandledRequest = onUnhandledRequest;
   }
 
   get platform() {
-    return this.client.platform;
+    return this.implementation.platform;
   }
 
   get isRunning() {
-    return this.client.isRunning;
+    return this.implementation.isRunning;
   }
 
   async start() {
@@ -71,7 +71,7 @@ class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttp
       return;
     }
 
-    await this.client.start();
+    await this.implementation.start();
   }
 
   async stop() {
@@ -80,43 +80,43 @@ class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttp
     }
 
     this.clear();
-    await this.client.stop();
+    await this.implementation.stop();
   }
 
   get = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
-    return this.client.get(path);
+    return this.implementation.get(path);
   }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'GET'>;
 
   post = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
-    return this.client.post(path);
+    return this.implementation.post(path);
   }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'POST'>;
 
   patch = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
-    return this.client.patch(path);
+    return this.implementation.patch(path);
   }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;
 
   put = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
-    return this.client.put(path);
+    return this.implementation.put(path);
   }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'PUT'>;
 
   delete = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
-    return this.client.delete(path);
+    return this.implementation.delete(path);
   }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'DELETE'>;
 
   head = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
-    return this.client.head(path);
+    return this.implementation.head(path);
   }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'HEAD'>;
 
   options = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
-    return this.client.options(path);
+    return this.implementation.options(path);
   }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
   checkTimes() {
-    this.client.checkTimes();
+    this.implementation.checkTimes();
   }
 
   clear() {
-    void this.client.clear();
+    void this.implementation.clear();
   }
 }
 
