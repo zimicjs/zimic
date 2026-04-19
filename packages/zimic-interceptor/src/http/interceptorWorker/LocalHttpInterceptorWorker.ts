@@ -15,7 +15,7 @@ import { UnhandledRequestStrategy } from '../interceptor/types/options';
 import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { HttpResponseFactory, HttpResponseFactoryContext } from './types/http';
-import { BrowserMSWWorker, MSWWorker, NodeMSWWorker } from './types/msw';
+import { BrowserMSWWorker, MSWHttpHandler, MSWWorker, NodeMSWWorker } from './types/msw';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
 
 const importMSWNode = createCachedDynamicImport(() => import('msw/node'));
@@ -32,10 +32,10 @@ interface HttpHandler {
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   // Re-creating MSW workers may cause issues, so we should keep a single worker instance, even if all interceptor
   // workers are stopped. See https://github.com/mswjs/msw/issues/2585.
-  private static globalInternalWorker?: MSWWorker;
-  static isGlobalInternalWorkerRunning = false;
+  private static mswWorker?: MSWWorker;
+  static isMSWWorkerRunning = false;
 
-  private internalWorker?: MSWWorker;
+  private mswRequestHandler?: MSWHttpHandler;
 
   private httpHandlersByMethod: {
     [Method in HttpMethod]: HttpHandler[];
@@ -61,36 +61,21 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     return 'local' as const;
   }
 
-  get internalWorkerOrThrow() {
+  get mswWorkerOrThrow() {
     /* istanbul ignore if -- @preserve
      * Trying to access the internal worker when it does not exist should not happen. */
-    if (!this.internalWorker) {
+    if (!this.class.mswWorker) {
       throw new NotRunningHttpInterceptorError();
     }
-    return this.internalWorker;
+    return this.class.mswWorker;
   }
 
-  async getInternalWorkerOrCreate() {
-    if (this.internalWorker) {
-      return this.internalWorker;
-    }
-
-    this.class.globalInternalWorker ??= await this.createInternalWorker();
-
-    this.class.globalInternalWorker.resetHandlers(
-      http.all('*', async (context) => {
-        const request = context.request satisfies Request as HttpRequest;
-        const response = await this.createResponseForRequest(request);
-        return response;
-      }),
-    );
-
-    this.internalWorker = this.class.globalInternalWorker;
-
-    return this.internalWorker;
+  async getMSWWorkerOrCreate() {
+    this.class.mswWorker ??= await this.createMSWWorker();
+    return this.class.mswWorker;
   }
 
-  private async createInternalWorker() {
+  private async createMSWWorker() {
     if (isServerSide()) {
       const mswNode = await importMSWNode();
 
@@ -121,33 +106,42 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async start() {
     await super.sharedStart(async () => {
-      const internalWorker = await this.getInternalWorkerOrCreate();
+      const mswWorker = await this.getMSWWorkerOrCreate();
 
       const sharedOptions: MSWWorkerSharedOptions = {
         onUnhandledRequest: 'bypass',
       };
 
-      if (this.isInternalBrowserWorker(internalWorker)) {
+      this.mswRequestHandler = http.all('*', async (context) => {
+        const request = context.request satisfies Request as HttpRequest;
+        const response = await this.createResponseForRequest(request);
+        return response;
+      });
+
+      mswWorker.use(this.mswRequestHandler);
+
+      if (this.isInternalBrowserWorker(mswWorker)) {
         this.platform = 'browser';
 
         // Even after https://github.com/mswjs/msw/issues/2714 was fixed, there are collateral effects preventing us
         // from restarting the global browser worker even if unused. Restarting it causes interception issues in MSW.
-        if (!this.class.isGlobalInternalWorkerRunning) {
-          await this.startInBrowser(internalWorker, sharedOptions);
-          this.class.isGlobalInternalWorkerRunning = true;
+        if (!this.class.isMSWWorkerRunning) {
+          await this.startInBrowser(mswWorker, sharedOptions);
+          this.class.isMSWWorkerRunning = true;
         }
       } else {
         this.platform = 'node';
-        this.startInNode(internalWorker, sharedOptions);
+        this.startInNode(mswWorker, sharedOptions);
+        this.class.isMSWWorkerRunning = true;
       }
 
       this.isRunning = true;
     });
   }
 
-  private async startInBrowser(internalWorker: BrowserMSWWorker, sharedOptions: MSWWorkerSharedOptions) {
+  private async startInBrowser(mswWorker: BrowserMSWWorker, sharedOptions: MSWWorkerSharedOptions) {
     try {
-      await internalWorker.start({ ...sharedOptions, quiet: true });
+      await mswWorker.start({ ...sharedOptions, quiet: true });
     } catch (error) {
       this.handleBrowserWorkerStartError(error);
     }
@@ -163,29 +157,34 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     }
   }
 
-  private startInNode(internalWorker: NodeMSWWorker, sharedOptions: MSWWorkerSharedOptions) {
-    internalWorker.listen(sharedOptions);
+  private startInNode(mswWorker: NodeMSWWorker, sharedOptions: MSWWorkerSharedOptions) {
+    mswWorker.listen(sharedOptions);
   }
 
   async stop() {
     await super.sharedStop(async () => {
-      const internalWorker = await this.getInternalWorkerOrCreate();
+      const mswWorker = await this.getMSWWorkerOrCreate();
 
       this.clearHandlers();
 
-      if (this.isInternalBrowserWorker(internalWorker)) {
+      const newMSWWorkers = mswWorker.listHandlers().filter((handler) => handler !== this.mswRequestHandler);
+      mswWorker.resetHandlers(...newMSWWorkers);
+
+      if (this.isInternalBrowserWorker(mswWorker)) {
         // Even after https://github.com/mswjs/msw/issues/2714 was fixed, there are collateral effects preventing us
         // from restarting the global browser worker even if unused. Restarting it causes interception issues in MSW.
       } else {
-        this.stopInNode(internalWorker);
+        this.stopInNode(mswWorker);
+        this.class.isMSWWorkerRunning = false;
       }
 
+      this.mswRequestHandler = undefined;
       this.isRunning = false;
     });
   }
 
-  private stopInNode(internalWorker: NodeMSWWorker) {
-    internalWorker.close();
+  private stopInNode(mswWorker: NodeMSWWorker) {
+    mswWorker.close();
   }
 
   private isInternalBrowserWorker(worker: MSWWorker) {
@@ -193,7 +192,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   hasInternalBrowserWorker() {
-    return this.isInternalBrowserWorker(this.internalWorkerOrThrow);
+    return this.isInternalBrowserWorker(this.mswWorkerOrThrow);
   }
 
   hasInternalNodeWorker() {
@@ -277,13 +276,6 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private async createResponseForRequest(request: HttpRequest) {
-    // Due to https://github.com/mswjs/msw/issues/2597, we cannot trust that MSW won't try to handle requests even if
-    // the internal worker is stopped. Because of that, we need to check if the worker is running ourselves and consider
-    // the request as unhandled.
-    if (!this.isRunning) {
-      return this.bypassOrRejectUnhandledRequest(request);
-    }
-
     const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
 
     const requestURL = excludeNonPathParams(new URL(request.url));

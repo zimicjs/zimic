@@ -27,7 +27,7 @@ describe('HttpInterceptorWorker > Browser', () => {
       ].join('\n'),
     );
 
-    const mswWorker = (await interceptorWorker.getInternalWorkerOrCreate()) as BrowserMSWWorker;
+    const mswWorker = (await interceptorWorker.getMSWWorkerOrCreate()) as BrowserMSWWorker;
     vi.spyOn(mswWorker, 'start').mockRejectedValueOnce(unavailableMSWWorkerScriptError);
 
     await usingIgnoredConsole(['error'], async (console) => {

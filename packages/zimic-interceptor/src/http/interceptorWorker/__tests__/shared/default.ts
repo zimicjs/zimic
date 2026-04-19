@@ -201,10 +201,10 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
       const error = new Error('Unknown error');
 
       if (platform === 'browser') {
-        const internalBrowserWorker = (await interceptorWorker.getInternalWorkerOrCreate()) as BrowserMSWWorker;
+        const internalBrowserWorker = (await interceptorWorker.getMSWWorkerOrCreate()) as BrowserMSWWorker;
         vi.spyOn(internalBrowserWorker, 'start').mockRejectedValueOnce(error);
       } else {
-        const internalNodeWorker = (await interceptorWorker.getInternalWorkerOrCreate()) as NodeMSWWorker;
+        const internalNodeWorker = (await interceptorWorker.getMSWWorkerOrCreate()) as NodeMSWWorker;
         vi.spyOn(internalNodeWorker, 'listen').mockImplementationOnce(() => {
           throw error;
         });
@@ -217,7 +217,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
           /* istanbul ignore else -- @preserve
            * Because we only start the singleton browser worker once, the mock rejection will only happen if the global
            * worker is not yet running. If it is, the start will succeed because the worker won't be restarted. */
-          if (LocalHttpInterceptorWorker.isGlobalInternalWorkerRunning) {
+          if (LocalHttpInterceptorWorker.isMSWWorkerRunning) {
             await expect(interceptorStartPromise).resolves.not.toThrow();
           } else {
             await expect(interceptorStartPromise).rejects.toThrow(error);
