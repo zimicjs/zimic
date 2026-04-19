@@ -1,6 +1,6 @@
 {
   "name": "zimic-web",
-  "version": "0.3.59",
+  "version": "0.3.60",
   "private": true,
   "scripts": {
     "dev": "docusaurus start --host :: --no-open",
@@ -43,9 +43,9 @@
     "dotenv-cli": "^11.0.0",
     "esbuild-loader": "^4.4.3",
     "eslint": "^9.39.4",
-    "postcss": "^8.5.9",
+    "postcss": "^8.5.10",
     "sponsorkit": "^17.1.0",
     "tailwindcss": "^4.2.2",
-    "typescript": "6.0.2"
+    "typescript": "6.0.3"
   }
 }
