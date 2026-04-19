@@ -89,7 +89,7 @@
     "picocolors": "^1.1.1",
     "playwright": "^1.59.1",
     "tsup": "^8.5.1",
-    "typescript": "6.0.2",
+    "typescript": "6.0.3",
     "vitest": "^4.1.4"
   },
   "peerDependencies": {
