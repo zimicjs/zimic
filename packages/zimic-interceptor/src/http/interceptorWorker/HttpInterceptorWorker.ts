@@ -87,12 +87,16 @@ abstract class HttpInterceptorWorker {
     if (!this.isRunning) {
       return;
     }
+
     if (this.stoppingPromise) {
       return this.stoppingPromise;
     }
 
     const stoppingResult = internalStop();
 
+    /* istanbul ignore next -- @preserve
+     * This if statement only runs if concurrent calls to stop() are made, which is an edge case that is hard to
+     * reliably reproduce in tests. */
     if (stoppingResult instanceof Promise) {
       this.stoppingPromise = stoppingResult;
       await this.stoppingPromise;

@@ -1,6 +1,7 @@
 {
   "name": "zimic-example-with-jest-node",
   "version": "0.0.0",
+  "type": "module",
   "private": false,
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
