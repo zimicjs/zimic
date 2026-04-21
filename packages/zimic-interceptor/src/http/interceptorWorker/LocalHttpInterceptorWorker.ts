@@ -31,11 +31,11 @@ interface HttpHandler {
 
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   // Re-creating MSW workers may cause issues, so we should keep a single worker instance, even if all interceptor
-  // workers are stopped. See https://github.com/mswjs/msw/issues/2585.
+  // workers are stopped. See https://github.com/mswjs/msw/issues/2597.
   private static mswWorker?: MSWWorker;
   static isMSWWorkerRunning = false;
 
-  private mswRequestHandler?: MSWHttpHandler;
+  private mswHttpHandler?: MSWHttpHandler;
 
   private httpHandlersByMethod: {
     [Method in HttpMethod]: HttpHandler[];
@@ -112,13 +112,13 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
         onUnhandledRequest: 'bypass',
       };
 
-      this.mswRequestHandler = http.all('*', async (context) => {
+      this.mswHttpHandler = http.all('*', async (context) => {
         const request = context.request satisfies Request as HttpRequest;
         const response = await this.createResponseForRequest(request);
         return response;
       });
 
-      mswWorker.use(this.mswRequestHandler);
+      mswWorker.use(this.mswHttpHandler);
 
       if (this.isInternalBrowserWorker(mswWorker)) {
         this.platform = 'browser';
@@ -167,18 +167,18 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
       this.clearHandlers();
 
-      const newMSWWorkers = mswWorker.listHandlers().filter((handler) => handler !== this.mswRequestHandler);
-      mswWorker.resetHandlers(...newMSWWorkers);
+      const newMSWHandlers = mswWorker.listHandlers().filter((handler) => handler !== this.mswHttpHandler);
+      mswWorker.resetHandlers(...newMSWHandlers);
 
       if (this.isInternalBrowserWorker(mswWorker)) {
-        // Even after https://github.com/mswjs/msw/issues/2714 was fixed, there are collateral effects preventing us
-        // from restarting the global browser worker even if unused. Restarting it causes interception issues in MSW.
+        // Even after https://github.com/mswjs/msw/issues/2714 was fixed, restarting browser workers causes interception
+        // issues, so we keep it running and just remove our handlers.
       } else {
         this.stopInNode(mswWorker);
         this.class.isMSWWorkerRunning = false;
       }
 
-      this.mswRequestHandler = undefined;
+      this.mswHttpHandler = undefined;
       this.isRunning = false;
     });
   }
