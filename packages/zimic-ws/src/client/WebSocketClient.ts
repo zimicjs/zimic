@@ -161,7 +161,7 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
 
   get readyState(): WebSocketClient.ReadyState {
     const readyState = this.socket?.readyState ?? WebSocket.CLOSED;
-    return readyState as WebSocketClient.ReadyState;
+    return readyState;
   }
 
   get bufferedAmount() {

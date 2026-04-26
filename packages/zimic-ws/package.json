@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "0.2.0-canary.3",
+  "version": "0.2.0-canary.5",
   "homepage": "https://zimic.dev/docs/ws",
   "repository": {
     "type": "git",
