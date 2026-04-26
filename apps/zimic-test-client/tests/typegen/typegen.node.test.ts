@@ -76,10 +76,9 @@ describe('Typegen', () => {
         outputFileName: 'google-maps-3.0.openapi.ts',
       },
       {
-        input:
-          'https://docs-be.here.com/bundle/geocoding-and-search-api-v7-api-reference/page/open-search-v7-external-spec.json',
-        serviceName: 'HereSearch',
-        outputFileName: 'here-geocoding-search-3.0.openapi.ts',
+        input: 'https://router.hereapi.com/v8/openapi',
+        serviceName: 'HereRouting',
+        outputFileName: 'here-routing-3.0.openapi.ts',
       },
     ])(
       'should correctly generate types from $serviceName OpenAPI schema to $outputFileName',
