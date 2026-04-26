@@ -1,15 +1,16 @@
-module.exports = {
+export default {
   roots: ['<rootDir>'],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
 
   testEnvironment: '<rootDir>/tests/environment.ts',
-  resolver: `<rootDir>/tests/resolver.js`,
+  resolver: '<rootDir>/tests/resolver.js',
 
   testRegex: '\\.test\\.ts$',
 
   transform: {
     '^.+\\.(j|t)s$': ['@swc/jest'],
   },
+  extensionsToTreatAsEsm: ['.ts'],
 
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',

@@ -71,7 +71,6 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
       '/users': { GET: MethodSchema };
     }>(interceptorOptions, async (interceptor) => {
       const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
-
       expect(handler.requests).toHaveLength(0);
 
       const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
