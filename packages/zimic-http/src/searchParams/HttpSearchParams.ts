@@ -188,12 +188,12 @@ class HttpSearchParams<
         const existingParamValue = object[paramName] as SchemaValue[];
 
         if (Array.isArray<SchemaValue>(existingParamValue)) {
-          existingParamValue.push(paramValue as SchemaValue);
+          existingParamValue.push(paramValue);
         } else {
           object[paramName] = [existingParamValue, paramValue] as SchemaValue;
         }
       } else {
-        object[paramName] = paramValue as SchemaValue;
+        object[paramName] = paramValue;
       }
     }
 

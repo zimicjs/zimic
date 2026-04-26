@@ -145,7 +145,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
       const interceptor = createDefaultHttpInterceptor();
 
       await expect(async () => {
-        await worker.clearHandlers({ interceptor: interceptor.client });
+        await worker.clearHandlers({ interceptor: interceptor.implementation });
       }).rejects.toThrow(new NotRunningHttpInterceptorError());
     });
   });
@@ -188,7 +188,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
 
         const interceptor = createDefaultHttpInterceptor();
 
-        const clearPromise = worker.clearHandlers({ interceptor: interceptor.client });
+        const clearPromise = worker.clearHandlers({ interceptor: interceptor.implementation });
         await expect(clearPromise).resolves.not.toThrow();
       });
     });
@@ -201,10 +201,10 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
       const error = new Error('Unknown error');
 
       if (platform === 'browser') {
-        const internalBrowserWorker = interceptorWorker.internalWorkerOrCreate as BrowserMSWWorker;
+        const internalBrowserWorker = (await interceptorWorker.getMSWWorkerOrCreate()) as BrowserMSWWorker;
         vi.spyOn(internalBrowserWorker, 'start').mockRejectedValueOnce(error);
       } else {
-        const internalNodeWorker = interceptorWorker.internalWorkerOrCreate as NodeMSWWorker;
+        const internalNodeWorker = (await interceptorWorker.getMSWWorkerOrCreate()) as NodeMSWWorker;
         vi.spyOn(internalNodeWorker, 'listen').mockImplementationOnce(() => {
           throw error;
         });
@@ -212,11 +212,20 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
 
       await usingIgnoredConsole(['error'], async (console) => {
         const interceptorStartPromise = interceptorWorker.start();
-        await expect(interceptorStartPromise).rejects.toThrow(error);
 
         if (platform === 'browser') {
+          /* istanbul ignore else -- @preserve
+           * Because we only start the singleton browser worker once, the mock rejection will only happen if the global
+           * worker is not yet running. If it is, the start will succeed because the worker won't be restarted. */
+          if (LocalHttpInterceptorWorker.isMSWWorkerRunning) {
+            await expect(interceptorStartPromise).resolves.not.toThrow();
+          } else {
+            await expect(interceptorStartPromise).rejects.toThrow(error);
+          }
+
           expect(console.error).toHaveBeenCalledTimes(0);
         } else {
+          await expect(interceptorStartPromise).rejects.toThrow(error);
           expect(console.error).toHaveBeenCalledTimes(1);
           expect(console.error).toHaveBeenCalledWith(error);
         }
