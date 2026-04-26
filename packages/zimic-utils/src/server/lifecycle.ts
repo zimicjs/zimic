@@ -84,6 +84,16 @@ export async function stopHttpServer(server: HttpServer, options: { timeout?: nu
   });
 }
 
+export function getHttpServerHostname(server: HttpServer) {
+  const address = server.address();
+
+  if (typeof address === 'string') {
+    return undefined;
+  } else {
+    return address?.address;
+  }
+}
+
 export function getHttpServerPort(server: HttpServer) {
   const address = server.address();
 

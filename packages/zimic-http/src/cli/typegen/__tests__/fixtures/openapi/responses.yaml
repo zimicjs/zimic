@@ -47,6 +47,14 @@ paths:
         '400':
           $ref: '#/components/responses/error'
 
+  /users-with-multiple-reference-response-contents-having-component-headers:
+    post:
+      responses:
+        '200':
+          $ref: '#/components/responses/userCreatedMultipleContentsHavingComponentHeaders'
+        '400':
+          $ref: '#/components/responses/error'
+
   /users-with-multiple-literal-response-contents:
     post:
       responses:
@@ -161,6 +169,17 @@ components:
           type: string
           description: The date and time the user was last updated
 
+  headers:
+    X-Correlation-Id:
+      schema:
+        type: string
+        description: The correlation ID
+
+    X-Request-Id:
+      schema:
+        type: string
+        description: The request ID
+
   responses:
     userCreated:
       description: Success
@@ -191,6 +210,37 @@ components:
               type:
                 type: string
                 enum: [user-as-xml]
+                description: The type of the response
+              value:
+                $ref: '#/components/schemas/User'
+
+    userCreatedMultipleContentsHavingComponentHeaders:
+      description: Success
+      headers:
+        x-correlation-id:
+          $ref: '#/components/headers/X-Correlation-Id'
+        x-request-id:
+          $ref: '#/components/headers/X-Request-Id'
+      content:
+        application/x-yaml:
+          schema:
+            type: object
+            description: The created user as YAML
+            properties:
+              type:
+                type: string
+                enum: [user-as-application-x-yaml]
+                description: The type of the response
+              value:
+                $ref: '#/components/schemas/User'
+        text/x-yaml:
+          schema:
+            type: object
+            description: The created user as plain text YAML
+            properties:
+              type:
+                type: string
+                enum: [user-as-text-x-yaml]
                 description: The type of the response
               value:
                 $ref: '#/components/schemas/User'

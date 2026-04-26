@@ -1,4 +1,5 @@
 import { HttpSchema } from '@zimic/http';
+import { PossiblePromise } from '@zimic/utils/types';
 
 import { SyncHttpInterceptorMethodHandler, AsyncHttpInterceptorMethodHandler } from './handlers';
 import { HttpInterceptorPlatform, RemoteHttpInterceptorOptions, UnhandledRequestStrategy } from './options';
@@ -43,10 +44,10 @@ export interface HttpInterceptor<_Schema extends HttpSchema> {
   stop: () => Promise<void>;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptorchecktimes `interceptor.checkTimes()` API reference} */
-  checkTimes: (() => void) | (() => Promise<void>);
+  checkTimes: () => PossiblePromise<void>;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptorclear `interceptor.clear()` API reference} */
-  clear: (() => void) | (() => Promise<void>);
+  clear: () => PossiblePromise<void>;
 }
 
 /**
