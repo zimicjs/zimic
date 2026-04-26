@@ -145,8 +145,8 @@ jobs:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
           install: '"@zimic/*..." "zimic-*..."'
-          build: '"@zimic/*...[HEAD^1]" "zimic-*^...[HEAD^1]"'
-          setup: '"@zimic/*...[HEAD^1]" "zimic-*...[HEAD^1]"'
+          build: '"@zimic/*..." "zimic-*^..."'
+          setup: '"@zimic/*..." "zimic-*..."'
 
       - name: Run tests
         run: |
