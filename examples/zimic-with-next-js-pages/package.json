@@ -10,7 +10,7 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.99.2",
+    "@tanstack/react-query": "^5.96.2",
     "@zimic/fetch": "latest",
     "@zimic/http": "latest",
     "next": "^16.2.4",
