@@ -12,7 +12,7 @@
     "api",
     "static"
   ],
-  "version": "1.3.13-canary.9",
+  "version": "1.3.14-canary.6",
   "homepage": "https://zimic.dev/docs/http",
   "repository": {
     "type": "git",
@@ -92,11 +92,11 @@
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^25.5.2",
+    "@types/node": "^25.6.0",
     "@types/yargs": "^17.0.35",
-    "@vitest/browser": "^4.1.2",
-    "@vitest/browser-playwright": "^4.1.2",
-    "@vitest/coverage-istanbul": "^4.1.2",
+    "@vitest/browser": "^4.1.5",
+    "@vitest/browser-playwright": "^4.1.5",
+    "@vitest/coverage-istanbul": "^4.1.5",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
@@ -106,11 +106,11 @@
     "eslint": "^9.39.4",
     "js-yaml": "^4.1.1",
     "playwright": "^1.59.1",
-    "prettier": "^3.8.1",
+    "prettier": "^3.8.3",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
-    "typescript": "6.0.2",
-    "vitest": "^4.1.2"
+    "typescript": "6.0.3",
+    "vitest": "^4.1.5"
   },
   "peerDependencies": {
     "typescript": "^5.0.0 || ^6.0.0"

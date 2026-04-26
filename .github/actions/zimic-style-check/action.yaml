@@ -6,7 +6,7 @@ runs:
   steps:
     - name: Restore prettier cache
       id: prettier-cache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: node_modules/.cache/prettier
         key: ${{ runner.os }}-prettier-${{ github.sha }}
@@ -19,7 +19,7 @@ runs:
 
     - name: Save prettier cache
       if: ${{ steps.prettier-cache.outputs.cache-hit != 'true' }}
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: node_modules/.cache/prettier
         key: ${{ runner.os }}-prettier-${{ github.sha }}

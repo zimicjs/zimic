@@ -47,3 +47,6 @@ overrides:
   svgo@3: ^3.3.3
 
   webpack@5: ^5.104.1
+
+  # Temporary workaround for https://github.com/facebook/docusaurus/issues/11923.
+  webpackbar: ^7.0.0

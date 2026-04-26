@@ -16,17 +16,3 @@ export type WebSocketMessageData<Schema extends WebSocketSchema> = Schema extend
     : Schema extends string
       ? Schema
       : JSONStringified<Schema>;
-
-export interface WebSocketEventMap<Schema extends WebSocketSchema> {
-  open: Event;
-  message: MessageEvent<WebSocketMessageData<Schema>>;
-  close: CloseEvent;
-  error: Event;
-}
-
-export type WebSocketEventType<Schema extends WebSocketSchema = WebSocketSchema> = keyof WebSocketEventMap<Schema>;
-
-export type WebSocketEvent<
-  Schema extends WebSocketSchema = WebSocketSchema,
-  Type extends WebSocketEventType = WebSocketEventType,
-> = WebSocketEventMap<Schema>[Type];

@@ -60,6 +60,14 @@ export type MyServiceSchema = HttpSchema<{
       };
     };
   };
+  '/users-with-multiple-reference-response-contents-having-component-headers': {
+    POST: {
+      response: {
+        200: MyServiceComponents['responses']['userCreatedMultipleContentsHavingComponentHeaders'];
+        400: MyServiceComponents['responses']['error'];
+      };
+    };
+  };
   '/users-with-multiple-literal-response-contents': {
     POST: {
       response: {
@@ -204,6 +212,40 @@ export interface MyServiceComponents {
             value?: MyServiceComponents['schemas']['User'];
           };
         };
+    /** Success */
+    userCreatedMultipleContentsHavingComponentHeaders:
+      | {
+          headers: {
+            'content-type': 'application/x-yaml';
+            'x-correlation-id': MyServiceComponents['headers']['X-Correlation-Id'];
+            'x-request-id': MyServiceComponents['headers']['X-Request-Id'];
+          };
+          body: {
+            /**
+             * The type of the response
+             *
+             * @enum {string}
+             */
+            type?: 'user-as-application-x-yaml';
+            value?: MyServiceComponents['schemas']['User'];
+          };
+        }
+      | {
+          headers: {
+            'content-type': 'text/x-yaml';
+            'x-correlation-id': MyServiceComponents['headers']['X-Correlation-Id'];
+            'x-request-id': MyServiceComponents['headers']['X-Request-Id'];
+          };
+          body: {
+            /**
+             * The type of the response
+             *
+             * @enum {string}
+             */
+            type?: 'user-as-text-x-yaml';
+            value?: MyServiceComponents['schemas']['User'];
+          };
+        };
     /** Not Found */
     notFoundError: {
       headers: {
@@ -262,5 +304,9 @@ export interface MyServiceComponents {
         message: string;
       };
     };
+  };
+  headers: {
+    'X-Correlation-Id': string;
+    'X-Request-Id': string;
   };
 }

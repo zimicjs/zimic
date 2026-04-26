@@ -1,72 +1,77 @@
 import { Server as HttpServer } from 'http';
 import { Server as HttpsServer } from 'https';
+import { WebSocketServer as NodeWebSocketServer } from 'ws';
 
+import { DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } from '@/client/utils/lifecycle';
 import { WebSocketCloseTimeoutError } from '@/errors/WebSocketCloseTimeoutError';
 import { WebSocketOpenTimeoutError } from '@/errors/WebSocketOpenTimeoutError';
 
-import { ServerSocket } from '../ServerSocket';
+export interface WebSocketServerOpenOptions {
+  timeout?: number;
+}
 
-export async function openServerSocket(
-  server: HttpServer | HttpsServer,
-  socket: ServerSocket,
-  options: { timeout?: number } = {},
+export async function openWebSocketServer(
+  httpServer: HttpServer | HttpsServer,
+  webSocketServer: NodeWebSocketServer,
+  options: WebSocketServerOpenOptions = {},
 ) {
-  const { timeout: timeoutDuration } = options;
+  const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options;
 
-  const isAlreadyOpen = server.listening;
+  const isAlreadyOpen = httpServer.listening;
 
   if (isAlreadyOpen) {
     return;
   }
 
   await new Promise<void>((resolve, reject) => {
-    const openTimeout =
-      timeoutDuration === undefined
-        ? undefined
-        : setTimeout(() => {
-            const timeoutError = new WebSocketOpenTimeoutError(timeoutDuration);
-            reject(timeoutError);
-          }, timeoutDuration);
+    const openTimeout = setTimeout(() => {
+      const timeoutError = new WebSocketOpenTimeoutError(timeoutDuration);
+      reject(timeoutError);
+    }, timeoutDuration);
 
-    socket.once('listening', () => {
+    function removeListenersAndTimeout() {
       clearTimeout(openTimeout);
-      resolve();
-    });
 
-    socket.once('error', (error) => {
-      clearTimeout(openTimeout);
+      webSocketServer.off('listening', handleListening); // eslint-disable-line @typescript-eslint/no-use-before-define
+      webSocketServer.off('error', handleError); // eslint-disable-line @typescript-eslint/no-use-before-define
+    }
+
+    /* istanbul ignore next -- @preserve
+     * This is not expected since the server is not started unless it is not running. */
+    function handleError(error: unknown) {
+      removeListenersAndTimeout();
       reject(error);
-    });
+    }
+
+    function handleListening() {
+      removeListenersAndTimeout();
+      resolve();
+    }
+
+    webSocketServer.on('listening', handleListening);
+    webSocketServer.on('error', handleError);
   });
 }
 
-export async function closeServerSocket(
-  server: HttpServer | HttpsServer,
-  socket: ServerSocket,
-  options: { timeout?: number } = {},
+export type WebSocketServerCloseOptions = WebSocketServerOpenOptions;
+
+export async function closeWebSocketServer(
+  webSocketServer: NodeWebSocketServer,
+  options: WebSocketServerCloseOptions = {},
 ) {
-  const { timeout: timeoutDuration } = options;
-
-  const isAlreadyClosed = !server.listening;
-
-  if (isAlreadyClosed) {
-    return;
-  }
+  const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options;
 
   await new Promise<void>((resolve, reject) => {
-    const closeTimeout =
-      timeoutDuration === undefined
-        ? undefined
-        : setTimeout(() => {
-            const timeoutError = new WebSocketCloseTimeoutError(timeoutDuration);
-            reject(timeoutError);
-          }, timeoutDuration);
+    const closeTimeout = setTimeout(() => {
+      const timeoutError = new WebSocketCloseTimeoutError(timeoutDuration);
+      reject(timeoutError);
+    }, timeoutDuration);
 
-    for (const client of socket.clients) {
+    for (const client of webSocketServer.clients) {
       client.close();
     }
 
-    socket.close((error) => {
+    webSocketServer.close((error) => {
       clearTimeout(closeTimeout);
 
       /* istanbul ignore if -- @preserve

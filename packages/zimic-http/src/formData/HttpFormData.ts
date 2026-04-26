@@ -23,9 +23,9 @@ class HttpFormData<LooseSchema extends HttpFormDataSchema.Loose = HttpFormDataSc
     fileName?: string,
   ): void {
     if (fileName === undefined) {
-      super.set(name, blobOrValue as Blob);
+      super.set(name, blobOrValue);
     } else {
-      super.set(name, blobOrValue as Blob, fileName);
+      super.set(name, blobOrValue, fileName);
     }
   }
 
@@ -45,9 +45,9 @@ class HttpFormData<LooseSchema extends HttpFormDataSchema.Loose = HttpFormDataSc
     fileName?: string,
   ): void {
     if (fileName === undefined) {
-      super.append(name, blobOrValue as Blob);
+      super.append(name, blobOrValue);
     } else {
-      super.append(name, blobOrValue as Blob, fileName);
+      super.append(name, blobOrValue, fileName);
     }
   }
 
@@ -194,12 +194,12 @@ class HttpFormData<LooseSchema extends HttpFormDataSchema.Loose = HttpFormDataSc
         const existingFieldValue = object[fieldName] as SchemaValue[];
 
         if (Array.isArray<SchemaValue>(existingFieldValue)) {
-          existingFieldValue.push(fieldValue as SchemaValue);
+          existingFieldValue.push(fieldValue);
         } else {
           object[fieldName] = [existingFieldValue, fieldValue] as SchemaValue;
         }
       } else {
-        object[fieldName] = fieldValue as SchemaValue;
+        object[fieldName] = fieldValue;
       }
     }
 

@@ -7,7 +7,7 @@ import {
 } from '@zimic/http';
 import { Default, PossiblePromise } from '@zimic/utils/types';
 
-import HttpRequestHandlerClient from '../HttpRequestHandlerClient';
+import HttpRequestHandlerImplementation from '../HttpRequestHandlerImplementation';
 import {
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
@@ -41,7 +41,7 @@ export interface InternalHttpRequestHandler<
   Path extends HttpSchemaPath<Schema, Method>,
   StatusCode extends HttpStatusCode = never,
 > extends HttpRequestHandler<Schema, Method, Path> {
-  client: HttpRequestHandlerClient<Schema, Method, Path, StatusCode>;
+  implementation: HttpRequestHandlerImplementation<Schema, Method, Path, StatusCode>;
 }
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler `HttpRequestHandler` API reference} */

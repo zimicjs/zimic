@@ -9,8 +9,8 @@ import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorke
 import { removeArrayIndex } from '@/utils/arrays';
 import { deserializeResponse, SerializedHttpRequest, serializeRequest } from '@/utils/fetch';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
-import { WebSocketEventMessage } from '@/webSocket/types';
-import WebSocketServer, { WebSocketServerAuthenticate } from '@/webSocket/WebSocketServer';
+import { WebSocketEventMessage } from '@/utils/webSocket/types';
+import WebSocketServer, { WebSocketServerAuthenticate } from '@/utils/webSocket/WebSocketServer';
 
 import {
   DEFAULT_ACCESS_CONTROL_HEADERS,

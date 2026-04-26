@@ -5,7 +5,7 @@
  * @see https://github.com/mswjs/msw/issues/1786
  */
 
-module.exports = (path, options) => {
+export function sync(path, options) {
   if (/^(msw|@mswjs\/interceptors)(\/|$)/.test(path)) {
     return options.defaultResolver(path, {
       ...options,
@@ -14,4 +14,4 @@ module.exports = (path, options) => {
   }
 
   return options.defaultResolver(path, options);
-};
+}

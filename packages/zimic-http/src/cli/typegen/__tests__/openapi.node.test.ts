@@ -282,7 +282,7 @@ describe('Type generation (OpenAPI)', () => {
           ? joinURL(schemaInterceptor.baseURL, 'spec', fixtureName)
           : inputFilePath;
 
-        const inputFileBuffer = (await fs.promises.readFile(inputFilePath)) as Buffer<ArrayBuffer>;
+        const inputFileBuffer = await fs.promises.readFile(inputFilePath);
 
         schemaInterceptor
           .get(`/spec/${fixtureName}`)
