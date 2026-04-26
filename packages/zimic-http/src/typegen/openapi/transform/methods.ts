@@ -206,7 +206,7 @@ function normalizeRequestBodyMember(
   };
 }
 
-function normalizeHeaders(headers: ts.TypeLiteralNode) {
+function normalizeHeaders(headers: ts.TypeLiteralNode, context: TypeTransformContext) {
   const newHeaderMembers = headers.members.filter((header) => {
     if (ts.isIndexSignatureDeclaration(header)) {
       return false;
@@ -224,17 +224,23 @@ function normalizeHeaders(headers: ts.TypeLiteralNode) {
     return undefined;
   }
 
-  return ts.factory.updateTypeLiteralNode(headers, ts.factory.createNodeArray(newHeaderMembers));
+  return renameComponentReferences(
+    ts.factory.updateTypeLiteralNode(headers, ts.factory.createNodeArray(newHeaderMembers)),
+    context,
+  );
 }
 
-function normalizeRequestHeaders(requestHeader: ts.TypeElement): NormalizedRequestHeaders | undefined {
+function normalizeRequestHeaders(
+  requestHeader: ts.TypeElement,
+  context: TypeTransformContext,
+): NormalizedRequestHeaders | undefined {
   if (!isRequestHeaders(requestHeader)) {
     return undefined;
   }
 
-  const newType = normalizeHeaders(requestHeader.type);
+  const newType = normalizeHeaders(requestHeader.type, context);
 
-  if (!newType) {
+  if (!newType || !ts.isTypeLiteralNode(newType)) {
     return undefined;
   }
 
@@ -284,7 +290,7 @@ export function normalizeContentType(
     return contentType;
   }
 
-  const newHeader = contentType.members.map(normalizeRequestHeaders).find(isDefined);
+  const newHeader = contentType.members.map((member) => normalizeRequestHeaders(member, context)).find(isDefined);
 
   const newBodyMembers = contentType.members.flatMap((body) => {
     if (isContentPropertySignature(body)) {
