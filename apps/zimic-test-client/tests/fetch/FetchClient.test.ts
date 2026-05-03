@@ -14,16 +14,16 @@ import {
   UserUpdateInput,
   Notification,
 } from '@tests/types/schema/entities';
-import { AuthHttpSchema, NotificationHttpSchema } from '@tests/types/schema/http';
+import { UserHttpSchema, NotificationHttpSchema } from '@tests/types/schema/http';
 import { expectResponseStatus } from '@tests/utils/requests';
 
 describe('Fetch client', () => {
-  const authFetch = createFetch<AuthHttpSchema>({
+  const userFetch = createFetch<UserHttpSchema>({
     baseURL: 'http://localhost:4000',
   });
 
-  const authInterceptor = createHttpInterceptor<AuthHttpSchema>({
-    baseURL: authFetch.baseURL,
+  const userInterceptor = createHttpInterceptor<UserHttpSchema>({
+    baseURL: userFetch.baseURL,
     requestSaving: { enabled: true },
   });
 
@@ -36,7 +36,7 @@ describe('Fetch client', () => {
     requestSaving: { enabled: true },
   });
 
-  const interceptors = [authInterceptor, notificationInterceptor];
+  const interceptors = [userInterceptor, notificationInterceptor];
 
   beforeAll(async () => {
     await Promise.all(interceptors.map((interceptor) => interceptor.start()));
@@ -82,7 +82,7 @@ describe('Fetch client', () => {
       };
 
       async function createUser(input: UserCreationInput) {
-        const response = await authFetch('/users', {
+        const response = await userFetch('/users', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(input),
@@ -98,7 +98,7 @@ describe('Fetch client', () => {
       }
 
       it('should support creating users', async () => {
-        const creationHandler = authInterceptor
+        const creationHandler = userInterceptor
           .post('/users')
           .with({
             headers: { 'content-type': 'application/json' },
@@ -178,7 +178,7 @@ describe('Fetch client', () => {
           message: 'Invalid input',
         };
 
-        const creationHandler = authInterceptor
+        const creationHandler = userInterceptor
           .post('/users')
           .with({ body: invalidInput })
           .respond({ status: 400, body: validationError })
@@ -186,8 +186,8 @@ describe('Fetch client', () => {
 
         const error = await expectToThrow(
           createUser(invalidInput),
-          (error): error is FetchResponseError<AuthHttpSchema, 'POST', '/users'> =>
-            authFetch.isResponseError(error, 'POST', '/users'),
+          (error): error is FetchResponseError<UserHttpSchema, 'POST', '/users'> =>
+            userFetch.isResponseError(error, 'POST', '/users'),
         );
 
         expectTypeOf(error.response.status).toEqualTypeOf<201 | 400 | 409 | 500>();
@@ -231,7 +231,7 @@ describe('Fetch client', () => {
           message: 'User already exists',
         };
 
-        const creationHandler = authInterceptor
+        const creationHandler = userInterceptor
           .post('/users')
           .with({ body: conflictingInput })
           .respond({ status: 409, body: conflictError })
@@ -239,8 +239,8 @@ describe('Fetch client', () => {
 
         const error = await expectToThrow(
           createUser(conflictingInput),
-          (error): error is FetchResponseError<AuthHttpSchema, 'POST', '/users'> =>
-            authFetch.isResponseError(error, 'POST', '/users'),
+          (error): error is FetchResponseError<UserHttpSchema, 'POST', '/users'> =>
+            userFetch.isResponseError(error, 'POST', '/users'),
         );
 
         expectTypeOf(error.response.status).toEqualTypeOf<201 | 400 | 409 | 500>();
@@ -300,21 +300,21 @@ describe('Fetch client', () => {
       ];
 
       beforeEach(() => {
-        authInterceptor.get('/users').respond({
+        userInterceptor.get('/users').respond({
           status: 200,
           body: [],
         });
       });
 
       async function listUsers(filters: UserListSearchParams = {}) {
-        const request = new authFetch.Request('/users', {
+        const request = new userFetch.Request('/users', {
           method: 'GET',
           searchParams: filters,
         });
 
         expect(request).toBeInstanceOf(FetchRequest);
 
-        const response = await authFetch(request);
+        const response = await userFetch(request);
 
         if (!response.ok) {
           throw response.error;
@@ -324,7 +324,7 @@ describe('Fetch client', () => {
       }
 
       it('should list users', async () => {
-        const listHandler = authInterceptor
+        const listHandler = userInterceptor
           .get('/users')
           .respond({ status: 200, body: users.map(serializeUser) })
           .times(1);
@@ -366,7 +366,7 @@ describe('Fetch client', () => {
       it('should list users filtered by name', async () => {
         const user = users[0];
 
-        const listHandler = authInterceptor
+        const listHandler = userInterceptor
           .get('/users')
           .with({ searchParams: { name: user.name } })
           .respond({ status: 200, body: [serializeUser(user)] })
@@ -412,7 +412,7 @@ describe('Fetch client', () => {
           return otherUser.email.localeCompare(user.email);
         });
 
-        const listHandler = authInterceptor
+        const listHandler = userInterceptor
           .get('/users')
           .with({ searchParams: { orderBy: ['email.desc'] } })
           .respond({
@@ -463,7 +463,7 @@ describe('Fetch client', () => {
 
     describe('User get by id', () => {
       async function getUserById(userId: string) {
-        const response = await authFetch(`/users/${userId}`, { method: 'GET' });
+        const response = await userFetch(`/users/${userId}`, { method: 'GET' });
 
         if (!response.ok) {
           throw response.error;
@@ -473,7 +473,7 @@ describe('Fetch client', () => {
       }
 
       it('should support getting users by id', async () => {
-        const getHandler = authInterceptor
+        const getHandler = userInterceptor
           .get(`/users/${user.id}`)
           .respond({
             status: 200,
@@ -489,7 +489,7 @@ describe('Fetch client', () => {
         expect(returnedUsers).toEqual(serializeUser(user));
 
         expect(getHandler.requests).toHaveLength(1);
-        expect(getHandler.requests[0].url).toBe(`${authFetch.baseURL}/users/${user.id}`);
+        expect(getHandler.requests[0].url).toBe(`${userFetch.baseURL}/users/${user.id}`);
 
         expectTypeOf(getHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
@@ -521,7 +521,7 @@ describe('Fetch client', () => {
           message: 'User not found',
         };
 
-        const getHandler = authInterceptor
+        const getHandler = userInterceptor
           .get('/users/:userId')
           .respond({
             status: 404,
@@ -531,15 +531,15 @@ describe('Fetch client', () => {
 
         const error = await expectToThrow(
           getUserById(user.id),
-          (error): error is FetchResponseError<AuthHttpSchema, 'GET', '/users/:userId'> =>
-            authFetch.isResponseError(error, 'GET', '/users/:userId'),
+          (error): error is FetchResponseError<UserHttpSchema, 'GET', '/users/:userId'> =>
+            userFetch.isResponseError(error, 'GET', '/users/:userId'),
         );
 
         expectTypeOf(error.response.status).toEqualTypeOf<200 | 404 | 500>();
         expectResponseStatus(error.response, 404);
 
         expect(getHandler.requests).toHaveLength(1);
-        expect(getHandler.requests[0].url).toBe(`${authFetch.baseURL}/users/${user.id}`);
+        expect(getHandler.requests[0].url).toBe(`${userFetch.baseURL}/users/${user.id}`);
 
         expectTypeOf(getHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(getHandler.requests[0].pathParams).toEqual({ userId: user.id });
@@ -577,7 +577,7 @@ describe('Fetch client', () => {
       };
 
       async function updateUser(userId: string, input: Partial<UserCreationInput>) {
-        const response = await authFetch(`/users/${userId}`, {
+        const response = await userFetch(`/users/${userId}`, {
           method: 'PATCH',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(input),
@@ -591,7 +591,7 @@ describe('Fetch client', () => {
       }
 
       it('should support updating users', async () => {
-        const updateHandler = authInterceptor
+        const updateHandler = userInterceptor
           .patch(`/users/${user.id}`)
           .with({
             headers: { 'content-type': 'application/json' },
@@ -641,7 +641,7 @@ describe('Fetch client', () => {
           message: 'User not found',
         };
 
-        const updateHandler = authInterceptor
+        const updateHandler = userInterceptor
           .patch('/users/:userId')
           .with({ body: updateInput })
           .respond({ status: 404, body: notFoundError })
@@ -649,8 +649,8 @@ describe('Fetch client', () => {
 
         const error = await expectToThrow(
           updateUser(crypto.randomUUID(), updateInput),
-          (error): error is FetchResponseError<AuthHttpSchema, 'PATCH', '/users/:userId'> =>
-            authFetch.isResponseError(error, 'PATCH', '/users/:userId'),
+          (error): error is FetchResponseError<UserHttpSchema, 'PATCH', '/users/:userId'> =>
+            userFetch.isResponseError(error, 'PATCH', '/users/:userId'),
         );
 
         expectTypeOf(error.response.status).toEqualTypeOf<200 | 400 | 404 | 500>();
@@ -666,7 +666,7 @@ describe('Fetch client', () => {
           message: 'Invalid input',
         };
 
-        const updateHandler = authInterceptor
+        const updateHandler = userInterceptor
           .patch('/users/:userId')
           .with({ body: {} })
           .respond({ status: 400, body: validationError })
@@ -674,8 +674,8 @@ describe('Fetch client', () => {
 
         const error = await expectToThrow(
           updateUser(user.id, {}),
-          (error): error is FetchResponseError<AuthHttpSchema, 'PATCH', '/users/:userId'> =>
-            authFetch.isResponseError(error, 'PATCH', '/users/:userId'),
+          (error): error is FetchResponseError<UserHttpSchema, 'PATCH', '/users/:userId'> =>
+            userFetch.isResponseError(error, 'PATCH', '/users/:userId'),
         );
 
         expectTypeOf(error.response.status).toEqualTypeOf<200 | 400 | 404 | 500>();
@@ -688,8 +688,8 @@ describe('Fetch client', () => {
 
     describe('User deletion', () => {
       async function deleteUserById(userId: string) {
-        const request = new authFetch.Request(`/users/${userId}`, { method: 'DELETE' });
-        const response = await authFetch(request);
+        const request = new userFetch.Request(`/users/${userId}`, { method: 'DELETE' });
+        const response = await userFetch(request);
 
         if (!response.ok) {
           throw response.error;
@@ -699,14 +699,14 @@ describe('Fetch client', () => {
       }
 
       it('should support deleting users by id', async () => {
-        const deleteHandler = authInterceptor.delete(`/users/${user.id}`).respond({ status: 204 }).times(1);
+        const deleteHandler = userInterceptor.delete(`/users/${user.id}`).respond({ status: 204 }).times(1);
 
         const response = await deleteUserById(user.id);
         expectTypeOf(response.status).toEqualTypeOf<204>();
         expectResponseStatus(response, 204);
 
         expect(deleteHandler.requests).toHaveLength(1);
-        expect(deleteHandler.requests[0].url).toBe(`${authFetch.baseURL}/users/${user.id}`);
+        expect(deleteHandler.requests[0].url).toBe(`${userFetch.baseURL}/users/${user.id}`);
 
         expectTypeOf(deleteHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(deleteHandler.requests[0].pathParams).toEqual({});
@@ -738,22 +738,22 @@ describe('Fetch client', () => {
           code: 'not_found',
           message: 'User not found',
         };
-        const deleteHandler = authInterceptor
+        const deleteHandler = userInterceptor
           .delete('/users/:userId')
           .respond({ status: 404, body: notFoundError })
           .times(1);
 
         const error = await expectToThrow(
           deleteUserById(user.id),
-          (error): error is FetchResponseError<AuthHttpSchema, 'DELETE', '/users/:userId'> =>
-            authFetch.isResponseError(error, 'DELETE', '/users/:userId'),
+          (error): error is FetchResponseError<UserHttpSchema, 'DELETE', '/users/:userId'> =>
+            userFetch.isResponseError(error, 'DELETE', '/users/:userId'),
         );
 
         expectTypeOf(error.response.status).toEqualTypeOf<204 | 404 | 500>();
         expectResponseStatus(error.response, 404);
 
         expect(deleteHandler.requests).toHaveLength(1);
-        expect(deleteHandler.requests[0].url).toBe(`${authFetch.baseURL}/users/${user.id}`);
+        expect(deleteHandler.requests[0].url).toBe(`${userFetch.baseURL}/users/${user.id}`);
 
         expectTypeOf(deleteHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(deleteHandler.requests[0].pathParams).toEqual({ userId: user.id });

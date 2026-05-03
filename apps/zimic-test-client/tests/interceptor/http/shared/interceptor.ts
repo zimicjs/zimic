@@ -13,15 +13,15 @@ import {
   UserUpdateInput,
   Notification,
 } from '@tests/types/schema/entities';
-import { AuthHttpSchema, NotificationHttpSchema } from '@tests/types/schema/http';
+import { UserHttpSchema, NotificationHttpSchema } from '@tests/types/schema/http';
 import { serializeUser } from '@tests/utils/schema';
 
 import { ClientTestOptionsByWorkerType } from './client';
 
-function getAuthBaseURL(type: HttpInterceptorType) {
+function getUserBaseURL(type: HttpInterceptorType) {
   return type === 'local'
     ? 'http://localhost:4000'
-    : `http://localhost:${ZIMIC_SERVER_PORT}/auth-${crypto.randomUUID()}`;
+    : `http://localhost:${ZIMIC_SERVER_PORT}/user-${crypto.randomUUID()}`;
 }
 
 function getNotificationBaseURL(type: HttpInterceptorType) {
@@ -31,9 +31,9 @@ function getNotificationBaseURL(type: HttpInterceptorType) {
 }
 
 export function declareHttpInterceptorTests({ platform, type }: ClientTestOptionsByWorkerType) {
-  const authInterceptor = createHttpInterceptor<AuthHttpSchema>({
+  const userInterceptor = createHttpInterceptor<UserHttpSchema>({
     type,
-    baseURL: getAuthBaseURL(type),
+    baseURL: getUserBaseURL(type),
     requestSaving: { enabled: true },
   });
 
@@ -43,9 +43,9 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
     requestSaving: { enabled: true },
   });
 
-  const interceptors = [authInterceptor, notificationInterceptor];
+  const interceptors = [userInterceptor, notificationInterceptor];
 
-  const authBaseURL = authInterceptor.baseURL;
+  const userBaseURL = userInterceptor.baseURL;
   const notificationBaseURL = notificationInterceptor.baseURL;
 
   beforeAll(async () => {
@@ -100,7 +100,7 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
       };
 
       async function createUser(input: UserCreationInput) {
-        const request = new Request(`${authBaseURL}/users`, {
+        const request = new Request(`${userBaseURL}/users`, {
           method: 'POST',
           headers: {
             'content-type': 'application/json',
@@ -113,7 +113,7 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
       }
 
       it('should support creating users', async () => {
-        const creationHandler = await authInterceptor
+        const creationHandler = await userInterceptor
           .post('/users')
           .with({
             headers: { 'content-type': 'application/json' },
@@ -192,7 +192,7 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
           message: 'Invalid input',
         };
 
-        const creationHandler = await authInterceptor
+        const creationHandler = await userInterceptor
           .post('/users')
           .with({ body: invalidInput })
           .respond({ status: 400, body: validationError })
@@ -238,7 +238,7 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
           code: 'conflict',
           message: 'User already exists',
         };
-        const creationHandler = await authInterceptor
+        const creationHandler = await userInterceptor
           .post('/users')
           .with({ body: conflictingInput })
           .respond({ status: 409, body: conflictError })
@@ -301,7 +301,7 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
       ];
 
       beforeEach(async () => {
-        await authInterceptor.get('/users').respond({
+        await userInterceptor.get('/users').respond({
           status: 200,
           body: [],
         });
@@ -309,14 +309,14 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
 
       async function listUsers(filters: UserListSearchParams = {}) {
         const searchParams = new HttpSearchParams<UserListSearchParams>(filters);
-        const request = new Request(`${authBaseURL}/users?${searchParams.toString()}`, {
+        const request = new Request(`${userBaseURL}/users?${searchParams.toString()}`, {
           method: 'GET',
         });
         return fetch(request);
       }
 
       it('should list users', async () => {
-        const listHandler = await authInterceptor
+        const listHandler = await userInterceptor
           .get('/users')
           .respond({ status: 200, body: users.map(serializeUser) })
           .times(1);
@@ -357,7 +357,7 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
       it('should list users filtered by name', async () => {
         const user = users[0];
 
-        const listHandler = await authInterceptor
+        const listHandler = await userInterceptor
           .get('/users')
           .with({ searchParams: { name: user.name } })
           .respond({ status: 200, body: [serializeUser(user)] })
@@ -402,7 +402,7 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
           return otherUser.email.localeCompare(user.email);
         });
 
-        const listHandler = await authInterceptor
+        const listHandler = await userInterceptor
           .get('/users')
           .with({ searchParams: { orderBy: ['email.desc'] } })
           .respond({ status: 200, body: usersSortedByDescendingEmail.map(serializeUser) })
@@ -449,12 +449,12 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
 
     describe('User get by id', () => {
       async function getUserById(userId: string) {
-        const request = new Request(`${authBaseURL}/users/${userId}`, { method: 'GET' });
+        const request = new Request(`${userBaseURL}/users/${userId}`, { method: 'GET' });
         return fetch(request);
       }
 
       it('should support getting users by id', async () => {
-        const getHandler = await authInterceptor
+        const getHandler = await userInterceptor
           .get(`/users/${user.id}`)
           .respond({ status: 200, body: serializeUser(user) })
           .times(1);
@@ -466,7 +466,7 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
         expect(returnedUsers).toEqual(serializeUser(user));
 
         expect(getHandler.requests).toHaveLength(1);
-        expect(getHandler.requests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
+        expect(getHandler.requests[0].url).toBe(`${userBaseURL}/users/${user.id}`);
 
         expectTypeOf(getHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
@@ -498,7 +498,7 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
           message: 'User not found',
         };
 
-        const getHandler = await authInterceptor
+        const getHandler = await userInterceptor
           .get('/users/:userId')
           .respond({ status: 404, body: notFoundError })
           .times(1);
@@ -507,7 +507,7 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
         expect(response.status).toBe(404);
 
         expect(getHandler.requests).toHaveLength(1);
-        expect(getHandler.requests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
+        expect(getHandler.requests[0].url).toBe(`${userBaseURL}/users/${user.id}`);
 
         expectTypeOf(getHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(getHandler.requests[0].pathParams).toEqual({ userId: user.id });
@@ -545,7 +545,7 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
       };
 
       async function updateUser(userId: string, input: UserUpdateInput) {
-        const request = new Request(`${authBaseURL}/users/${userId}`, {
+        const request = new Request(`${userBaseURL}/users/${userId}`, {
           method: 'PATCH',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(input),
@@ -554,7 +554,7 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
       }
 
       it('should support updating users', async () => {
-        const updateHandler = await authInterceptor
+        const updateHandler = await userInterceptor
           .patch(`/users/${user.id}`)
           .with({
             headers: { 'content-type': 'application/json' },
@@ -605,7 +605,7 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
           message: 'User not found',
         };
 
-        const updateHandler = await authInterceptor
+        const updateHandler = await userInterceptor
           .patch('/users/:userId')
           .with({ body: updateInput })
           .respond({ status: 404, body: notFoundError })
@@ -633,7 +633,7 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
           invalid: 'invalid',
         };
 
-        const updateHandler = await authInterceptor
+        const updateHandler = await userInterceptor
           .patch('/users/:userId')
           .with({ body: invalidInput })
           .respond({ status: 400, body: validationError })
@@ -653,18 +653,18 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
 
     describe('User deletion', () => {
       async function deleteUserById(userId: string) {
-        const request = new Request(`${authBaseURL}/users/${userId}`, { method: 'DELETE' });
+        const request = new Request(`${userBaseURL}/users/${userId}`, { method: 'DELETE' });
         return fetch(request);
       }
 
       it('should support deleting users by id', async () => {
-        const deleteHandler = await authInterceptor.delete(`/users/${user.id}`).respond({ status: 204 }).times(1);
+        const deleteHandler = await userInterceptor.delete(`/users/${user.id}`).respond({ status: 204 }).times(1);
 
         const response = await deleteUserById(user.id);
         expect(response.status).toBe(204);
 
         expect(deleteHandler.requests).toHaveLength(1);
-        expect(deleteHandler.requests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
+        expect(deleteHandler.requests[0].url).toBe(`${userBaseURL}/users/${user.id}`);
 
         expectTypeOf(deleteHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(deleteHandler.requests[0].pathParams).toEqual({});
@@ -697,7 +697,7 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
           message: 'User not found',
         };
 
-        const deleteHandler = await authInterceptor
+        const deleteHandler = await userInterceptor
           .delete('/users/:userId')
           .respond({ status: 404, body: notFoundError })
           .times(1);
@@ -706,7 +706,7 @@ export function declareHttpInterceptorTests({ platform, type }: ClientTestOption
         expect(response.status).toBe(404);
 
         expect(deleteHandler.requests).toHaveLength(1);
-        expect(deleteHandler.requests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
+        expect(deleteHandler.requests[0].url).toBe(`${userBaseURL}/users/${user.id}`);
 
         expectTypeOf(deleteHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(deleteHandler.requests[0].pathParams).toEqual({ userId: user.id });
