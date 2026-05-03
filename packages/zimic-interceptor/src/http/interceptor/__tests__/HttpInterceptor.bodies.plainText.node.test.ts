@@ -6,7 +6,7 @@ import { createInternalInterceptorServer } from '@tests/utils/interceptorServers
 import { declarePlainTextBodyHttpInterceptorTests } from './shared/bodies/plainText';
 import testMatrix from './shared/matrix';
 
-describe.each(testMatrix)('HttpInterceptor (node, $type) > Bodies > Plain text', async ({ type }) => {
+describe.each(testMatrix)('HttpInterceptor (node, $type) > Bodies > Plain text', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   let baseURL: string;
@@ -15,7 +15,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Bodies > Plain text',
     if (type === 'remote') {
       await server.start();
     }
-    baseURL = await getNodeBaseURL(type, server);
+    baseURL = getNodeBaseURL(type, server);
   });
 
   afterAll(async () => {
@@ -24,7 +24,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Bodies > Plain text',
     }
   });
 
-  await declarePlainTextBodyHttpInterceptorTests({
+  declarePlainTextBodyHttpInterceptorTests({
     platform: 'node',
     type,
     getBaseURL: () => baseURL,

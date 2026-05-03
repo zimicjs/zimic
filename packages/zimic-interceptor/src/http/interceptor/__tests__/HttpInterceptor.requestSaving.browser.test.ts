@@ -8,8 +8,8 @@ import { declareRequestSavingHttpInterceptorTests } from './shared/requestSaving
 describe.each(testMatrix)('HttpInterceptor (browser, $type) > Request saving', ({ type }) => {
   let baseURL: string;
 
-  beforeAll(async () => {
-    baseURL = await getBrowserBaseURL(type);
+  beforeAll(() => {
+    baseURL = getBrowserBaseURL(type);
   });
 
   declareRequestSavingHttpInterceptorTests({

@@ -4,18 +4,14 @@ import color from 'picocolors';
 import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import { importCrypto } from '@/utils/crypto';
-import { importFile } from '@/utils/files';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../utils';
 
-export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+export function declareFormDataBodyHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { getBaseURL, getInterceptorOptions } = options;
-
-  const crypto = await importCrypto();
 
   interface User {
     id: string;
@@ -59,8 +55,6 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
     await usingHttpInterceptor<{
       '/users/:id': { POST: MethodSchema };
     }>(interceptorOptions, async (interceptor) => {
-      const File = await importFile();
-
       const responseFormData = new HttpFormData<UserFormDataSchema>();
       const responseTagFile = new File(['response'], 'tag.txt', { type: 'text/plain' });
       responseFormData.append('tag', responseTagFile);

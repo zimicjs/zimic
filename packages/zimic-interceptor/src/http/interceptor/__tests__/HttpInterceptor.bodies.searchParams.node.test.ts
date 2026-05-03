@@ -6,7 +6,7 @@ import { createInternalInterceptorServer } from '@tests/utils/interceptorServers
 import { declareSearchParamsBodyHttpInterceptorTests } from './shared/bodies/searchParams';
 import testMatrix from './shared/matrix';
 
-describe.each(testMatrix)('HttpInterceptor (node, $type) > Bodies > Search params', async ({ type }) => {
+describe.each(testMatrix)('HttpInterceptor (node, $type) > Bodies > Search params', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   let baseURL: string;
@@ -15,7 +15,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Bodies > Search param
     if (type === 'remote') {
       await server.start();
     }
-    baseURL = await getNodeBaseURL(type, server);
+    baseURL = getNodeBaseURL(type, server);
   });
 
   afterAll(async () => {
@@ -24,7 +24,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Bodies > Search param
     }
   });
 
-  await declareSearchParamsBodyHttpInterceptorTests({
+  declareSearchParamsBodyHttpInterceptorTests({
     platform: 'node',
     type,
     getBaseURL: () => baseURL,

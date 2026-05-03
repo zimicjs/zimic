@@ -5,7 +5,6 @@ import ClientSocket from 'isomorphic-ws';
 import { AddressInfo } from 'net';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { importCrypto } from '@/utils/crypto';
 import {
   closeClientSocket,
   waitForOpenClientSocket,
@@ -32,9 +31,7 @@ import {
   delayServerSocketClose,
 } from './utils';
 
-describe('Web socket server', async () => {
-  const crypto = await importCrypto();
-
+describe('Web socket server', () => {
   const httpServer = createServer();
   let port: number;
 
@@ -212,7 +209,7 @@ describe('Web socket server', async () => {
       });
 
       const eventMessage: EventMessage['data'] = { message: 'test' };
-      await server.send('no-reply', eventMessage);
+      server.send('no-reply', eventMessage);
 
       await waitFor(() => {
         expect(eventMessages).toHaveLength(1);
@@ -625,9 +622,9 @@ describe('Web socket server', async () => {
       server = new WebSocketServer({ httpServer });
       await server.stop();
 
-      await expect(async () => {
-        await server?.send('no-reply', { message: 'test' });
-      }).rejects.toThrow(new NotRunningWebSocketHandlerError());
+      expect(() => {
+        server!.send('no-reply', { message: 'test' });
+      }).toThrow(new NotRunningWebSocketHandlerError());
     });
   });
 });

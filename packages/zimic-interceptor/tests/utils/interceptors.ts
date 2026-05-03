@@ -22,28 +22,25 @@ import {
   RemoteHttpInterceptorWorkerOptions,
 } from '@/http/interceptorWorker/types/options';
 import InterceptorServer from '@/server/InterceptorServer';
-import { importCrypto } from '@/utils/crypto';
 import { GLOBAL_INTERCEPTOR_SERVER_HOSTNAME, GLOBAL_INTERCEPTOR_SERVER_PORT } from '@tests/setup/global/browser';
 import { GLOBAL_FALLBACK_SERVER_PORT } from '@tests/setup/global/shared';
 
-export async function getBrowserBaseURL(type: HttpInterceptorType) {
+export function getBrowserBaseURL(type: HttpInterceptorType) {
   if (type === 'local') {
     return `http://localhost:${GLOBAL_FALLBACK_SERVER_PORT}`;
   }
 
-  const crypto = await importCrypto();
   const pathPrefix = `path-${crypto.randomUUID()}`;
   return joinURL(`http://${GLOBAL_INTERCEPTOR_SERVER_HOSTNAME}:${GLOBAL_INTERCEPTOR_SERVER_PORT}`, pathPrefix);
 }
 
-export async function getNodeBaseURL(type: HttpInterceptorType, server: InterceptorServer) {
+export function getNodeBaseURL(type: HttpInterceptorType, server: InterceptorServer) {
   if (type === 'local') {
     return `http://localhost:${GLOBAL_FALLBACK_SERVER_PORT}`;
   }
 
   expect(server.port).not.toBe(null);
 
-  const crypto = await importCrypto();
   const pathPrefix = `path-${crypto.randomUUID()}`;
   return joinURL(`http://${server.hostname}:${server.port}`, pathPrefix);
 }

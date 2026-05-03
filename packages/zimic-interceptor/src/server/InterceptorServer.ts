@@ -289,7 +289,7 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private handleHttpRequest = async (nodeRequest: IncomingMessage, nodeResponse: ServerResponse) => {
-    const request = normalizeNodeRequest(nodeRequest, await getFetchAPI());
+    const request = normalizeNodeRequest(nodeRequest, getFetchAPI());
     const serializedRequest = await serializeRequest(request);
 
     try {

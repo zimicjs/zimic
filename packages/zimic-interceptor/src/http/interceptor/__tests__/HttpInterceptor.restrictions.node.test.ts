@@ -6,7 +6,7 @@ import { createInternalInterceptorServer } from '@tests/utils/interceptorServers
 import testMatrix from './shared/matrix';
 import { declareRestrictionsHttpInterceptorTests } from './shared/restrictions';
 
-describe.each(testMatrix)('HttpInterceptor (node, $type) > Restrictions', async ({ type }) => {
+describe.each(testMatrix)('HttpInterceptor (node, $type) > Restrictions', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   let baseURL: string;
@@ -15,7 +15,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Restrictions', async 
     if (type === 'remote') {
       await server.start();
     }
-    baseURL = await getNodeBaseURL(type, server);
+    baseURL = getNodeBaseURL(type, server);
   });
 
   afterAll(async () => {
@@ -24,7 +24,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Restrictions', async 
     }
   });
 
-  await declareRestrictionsHttpInterceptorTests({
+  declareRestrictionsHttpInterceptorTests({
     platform: 'node',
     type,
     getBaseURL: () => baseURL,

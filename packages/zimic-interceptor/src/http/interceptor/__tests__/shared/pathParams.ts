@@ -6,16 +6,13 @@ import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
-import { importCrypto } from '@/utils/crypto';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
-export async function declarePathParamsHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+export function declarePathParamsHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { type, getBaseURL, getInterceptorOptions } = options;
-
-  const crypto = await importCrypto();
 
   interface User {
     id: string;

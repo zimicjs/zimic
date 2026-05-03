@@ -13,7 +13,7 @@ TypeScript monorepo (pnpm + turborepo) providing HTTP integration libraries:
 - **Testing**: `apps/zimic-test-client` (verifies exports and build artifacts)
 - **Examples**: `examples/*` (integration demonstrations)
 
-**Targets**: Node >=20, modern browsers; dual ESM/CJS via `tsup` with explicit `exports` maps.
+**Targets**: Node >= 22, modern browsers; dual ESM/CJS via `tsup` with explicit `exports` maps.
 
 ## Key Architecture Constraints
 

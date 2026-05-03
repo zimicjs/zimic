@@ -5,7 +5,6 @@ import ClientSocket from 'isomorphic-ws';
 import { AddressInfo } from 'net';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { importCrypto } from '@/utils/crypto';
 import {
   closeServerSocket,
   WebSocketCloseTimeoutError,
@@ -28,9 +27,7 @@ import { delayClientSocketClose, delayClientSocketOpen } from './utils';
 
 const { WebSocketServer: ServerSocket } = ClientSocket;
 
-describe('Web socket client', async () => {
-  const crypto = await importCrypto();
-
+describe('Web socket client', () => {
   const httpServer = createServer();
   let port: number;
 
@@ -174,7 +171,7 @@ describe('Web socket client', async () => {
       });
 
       const eventMessage: EventMessage['data'] = { message: 'test' };
-      await client.send('no-reply', eventMessage);
+      client.send('no-reply', eventMessage);
 
       await waitFor(() => {
         expect(eventMessages).toHaveLength(1);
@@ -602,12 +599,12 @@ describe('Web socket client', async () => {
       });
     });
 
-    it('should throw an error if trying to send a message not running', async () => {
+    it('should throw an error if trying to send a message not running', () => {
       client = new WebSocketClient({ url: `ws://localhost:${port}` });
 
-      await expect(async () => {
-        await client?.send('no-reply', { message: 'test' });
-      }).rejects.toThrow(new NotRunningWebSocketHandlerError());
+      expect(() => {
+        client!.send('no-reply', { message: 'test' });
+      }).toThrow(new NotRunningWebSocketHandlerError());
     });
   });
 });
