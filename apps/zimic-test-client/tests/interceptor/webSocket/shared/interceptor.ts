@@ -1,65 +1,108 @@
-/*
-
-TODO: This file is partially commented while the WebSocket interceptor is still being implemented.
-
 import { JSONSerialized } from '@zimic/http';
-import { createWebSocketInterceptor, WebSocketInterceptorType } from '@zimic/interceptor/ws';
+import {
+  createWebSocketInterceptor,
+  InterceptedWebSocketInterceptorMessage,
+  WebSocketInterceptor,
+  WebSocketInterceptorClient,
+  WebSocketInterceptorType,
+} from '@zimic/interceptor/experimental/ws';
 import { WebSocketClient } from '@zimic/ws';
-import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf, afterEach } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { ZIMIC_SERVER_PORT } from '@tests/constants';
 import {
-  AuthWebSocketSchema,
   ConflictError,
+  Notification,
   NotFoundError,
-  NotificationWebSocketSchema,
   User,
-  UserCreationRequestBody,
-  UserListSearchParams,
-  UserUpdatePayload,
+  UserCreationInput,
+  UserUpdateInput,
   ValidationError,
-} from '@tests/types/schema';
-import { importCrypto, IsomorphicCrypto } from '@tests/utils/crypto';
+} from '@tests/types/schema/entities';
+import {
+  UserWebSocketSchema,
+  NotificationWebSocketSchema,
+  UserWebSocketMessage,
+  NotificationWebSocketMessage,
+} from '@tests/types/schema/webSocket';
 import { serializeUser } from '@tests/utils/schema';
 
-function getAuthBaseURL(type: WebSocketInterceptorType, crypto: IsomorphicCrypto) {
-  return type === 'local' ? 'ws://localhost:4000' : `ws://localhost:${ZIMIC_SERVER_PORT}/auth-${crypto.randomUUID()}`;
+import { ClientTestOptionsByWorkerType } from './client';
+
+function getUserBaseURL(type: WebSocketInterceptorType) {
+  return type === 'local' ? 'ws://localhost:4000' : `ws://localhost:${ZIMIC_SERVER_PORT}/user-${crypto.randomUUID()}`;
 }
 
-function getNotificationBaseURL(type: WebSocketInterceptorType, crypto: IsomorphicCrypto) {
+function getNotificationBaseURL(type: WebSocketInterceptorType) {
   return type === 'local'
     ? 'ws://localhost:4001'
     : `ws://localhost:${ZIMIC_SERVER_PORT}/notification-${crypto.randomUUID()}`;
 }
-*/
 
-import { ClientTestOptionsByWorkerType } from './client';
+async function waitForResponseMessage<
+  Schema extends UserWebSocketSchema | NotificationWebSocketSchema,
+  ResponseMessageType extends Schema['type'],
+>(socket: WebSocketClient<Schema>, responseMessageType: ResponseMessageType) {
+  return new Promise<Extract<Schema, { type: ResponseMessageType }>>((resolve, reject) => {
+    socket.addEventListener('message', (event) => {
+      try {
+        const message = JSON.parse(event.data);
 
-export async function declareWebSocketInterceptorTests(_options: ClientTestOptionsByWorkerType) {
-  /*
-  const { platform, type } = _options;
+        if (message.type === responseMessageType) {
+          resolve(message);
+        }
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+}
 
-  const crypto = await importCrypto();
-
-  const authInterceptor = createWebSocketInterceptor<AuthWebSocketSchema>({
-    type,
-    baseURL: getAuthBaseURL(type, crypto),
+export function declareWebSocketInterceptorTests({ platform, type }: ClientTestOptionsByWorkerType) {
+  const userInterceptor = createWebSocketInterceptor<UserWebSocketSchema>({
+    type: 'remote', // TODO: Use the matrix type and fix type errors resulting from it.
+    baseURL: getUserBaseURL(type),
     messageSaving: { enabled: true },
   });
 
   const notificationInterceptor = createWebSocketInterceptor<NotificationWebSocketSchema>({
-    type,
-    baseURL: getNotificationBaseURL(type, crypto),
+    type: 'remote', // TODO: Use the matrix type and fix type errors resulting from it.
+    baseURL: getNotificationBaseURL(type),
     messageSaving: { enabled: true },
   });
 
-  const interceptors = [authInterceptor, notificationInterceptor];
+  const interceptors = [userInterceptor, notificationInterceptor];
 
-  const authBaseURL = authInterceptor.baseURL;
-  const authSocket = new WebSocketClient<AuthWebSocketSchema>(authBaseURL);
+  const userSockets = [
+    new WebSocketClient<UserWebSocketSchema>(userInterceptor.baseURL),
+    new WebSocketClient<UserWebSocketSchema>(userInterceptor.baseURL),
+  ];
 
-  const notificationBaseURL = notificationInterceptor.baseURL;
-  const notificationSocket = new WebSocketClient<NotificationWebSocketSchema>(notificationBaseURL);
+  const notificationSockets = [
+    new WebSocketClient<NotificationWebSocketSchema>(notificationInterceptor.baseURL),
+    new WebSocketClient<NotificationWebSocketSchema>(notificationInterceptor.baseURL),
+  ];
+
+  const sockets = [...userSockets, ...notificationSockets];
+
+  function expectMessagedClients<Schema extends UserWebSocketSchema | NotificationWebSocketSchema>(
+    interceptor: WebSocketInterceptor<Schema>,
+    message: Schema,
+    notifiedClients: WebSocketInterceptorClient<Schema>[],
+  ) {
+    for (const client of interceptor.clients) {
+      if (notifiedClients.includes(client)) {
+        expect(client.messages).toHaveLength(1);
+        expect(client.messages[0]).toEqual<InterceptedWebSocketInterceptorMessage<Schema>>({
+          data: message,
+          sender: interceptor.server,
+          receiver: client,
+        });
+      } else {
+        expect(client.messages).toHaveLength(0);
+      }
+    }
+  }
 
   beforeAll(async () => {
     await Promise.all(
@@ -70,10 +113,10 @@ export async function declareWebSocketInterceptorTests(_options: ClientTestOptio
       }),
     );
 
-    await Promise.all([authSocket.open(), notificationSocket.open()]);
+    await Promise.all(sockets.map((socket) => socket.open()));
 
-    expect(authInterceptor.clients).toHaveLength(1);
-    expect(notificationInterceptor.clients).toHaveLength(1);
+    expect(userInterceptor.clients).toHaveLength(userSockets.length);
+    expect(notificationInterceptor.clients).toHaveLength(notificationSockets.length);
   });
 
   beforeEach(async () => {
@@ -93,9 +136,9 @@ export async function declareWebSocketInterceptorTests(_options: ClientTestOptio
   });
 
   afterAll(async () => {
-    await Promise.all([authSocket.close(), notificationSocket.close()]);
+    await Promise.all(sockets.map((socket) => socket.close()));
 
-    expect(authInterceptor.clients).toHaveLength(0);
+    expect(userInterceptor.clients).toHaveLength(0);
     expect(notificationInterceptor.clients).toHaveLength(0);
 
     await Promise.all(
@@ -115,647 +158,384 @@ export async function declareWebSocketInterceptorTests(_options: ClientTestOptio
     };
 
     describe('User creation', () => {
-      const creationPayload: UserCreationRequestBody = {
+      const creationInput: UserCreationInput = {
         name: user.name,
         email: user.email,
         password: crypto.randomUUID(),
         birthDate: new Date().toISOString(),
       };
 
-      function createUser(payload: UserCreationRequestBody) {
-        authSocket.send(
-          JSON.stringify({
-            type: 'user:create',
-            data: payload,
-          }),
-        );
+      async function createUser(input: UserCreationInput) {
+        const responsePromise = waitForResponseMessage(userSockets[0], 'user:create:success');
+
+        const message: UserWebSocketMessage<'user:create'> = {
+          type: 'user:create',
+          data: input,
+        };
+
+        userSockets[0].send(JSON.stringify(message));
+
+        return responsePromise;
       }
 
-      it('should support creating users', async () => {
-        const creationHandler = await authInterceptor
-          .message()
-          .from(authInterceptor.clients[0])
-          .with({
-            type: 'user:create',
-            data: creationPayload,
-          })
-          .run((message, { sender }) => {
-            if (message.type !== 'user:create') {
-              return;
-            }
+      async function createUserError(input: UserCreationInput) {
+        const responsePromise = waitForResponseMessage(userSockets[0], 'user:create:error');
 
-            const user: JSONSerialized<User> = {
+        const message: UserWebSocketMessage<'user:create'> = {
+          type: 'user:create',
+          data: input,
+        };
+
+        userSockets[0].send(JSON.stringify(message));
+
+        return responsePromise;
+      }
+
+      it('should support creating users notifying only the creator', async () => {
+        const creatorClient = userInterceptor.clients[0];
+
+        const creationHandler = await userInterceptor
+          .message()
+          .from(creatorClient)
+          .with({ type: 'user:create', data: creationInput })
+          .respond((message) => {
+            const createdUser: JSONSerialized<User> = {
               id: crypto.randomUUID(),
               name: message.data.name,
               email: message.data.email,
               birthDate: message.data.birthDate,
             };
 
-            sender.send(
-              JSON.stringify({
-                type: 'user:created',
-                data: user,
-              }),
-            );
+            return { type: 'user:create:success', data: createdUser };
           })
           .times(1);
 
-        const response = await createUser(creationPayload);
-        expect(response.status).toBe(201);
+        const response = await createUser(creationInput);
+        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:create:success'>>();
 
-        const createdUser = (await response.json()) as User;
-        expect(createdUser).toEqual<JSONSerialized<User>>({
+        expect(response.data).toEqual<JSONSerialized<User>>({
           id: expect.any(String) as string,
-          name: creationPayload.name,
-          email: creationPayload.email,
-          birthDate: creationPayload.birthDate,
+          name: creationInput.name,
+          email: creationInput.email,
+          birthDate: creationInput.birthDate,
         });
 
-        expect(creationHandler.requests).toHaveLength(1);
-
-        expectTypeOf(creationHandler.requests[0].headers).toEqualTypeOf<
-          WebSocketHeaders<{ 'content-type': 'application/json' }>
-        >();
-
-        expectTypeOf(creationHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<never>>();
-        expect(creationHandler.requests[0].searchParams.size).toBe(0);
-
-        expect(response.headers.get('x-user-id')).toBe(createdUser.id);
-        expect(creationHandler.requests[0].response.headers.get('x-user-id')).toBe(createdUser.id);
-
-        expectTypeOf(creationHandler.requests[0].body).toEqualTypeOf<UserCreationRequestBody>();
-        expect(creationHandler.requests[0].body).toEqual(creationPayload);
-
-        expectTypeOf(creationHandler.requests[0].raw).toEqualTypeOf<
-          WebSocketRequest<UserCreationRequestBody, { 'content-type': 'application/json' }>
-        >();
-        expect(creationHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(creationHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
-        expect(await creationHandler.requests[0].raw.json()).toEqual(creationPayload);
-
-        expectTypeOf(creationHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>>();
-        expect(creationHandler.requests[0].response.body).toEqual(createdUser);
-
-        expectTypeOf(creationHandler.requests[0].response.raw).branded.toEqualTypeOf<
-          WebSocketResponse<JSONSerialized<User>, { 'x-user-id': User['id']; 'content-type': 'application/json' }, 201>
-        >();
-        expect(creationHandler.requests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(creationHandler.requests[0].response.raw.json).toEqualTypeOf<
-          () => Promise<JSONSerialized<User>>
-        >();
-        expect(await creationHandler.requests[0].response.raw.json()).toEqual(createdUser);
+        expectMessagedClients(userInterceptor, response, [creatorClient]);
+        expect(creationHandler.messages).toEqual(
+          expect.arrayContaining(userInterceptor.clients.flatMap((client) => client.messages)),
+        );
       });
 
-      it('should return an error if the payload is not valid', async () => {
-        // @ts-expect-error Forcing an invalid payload
-        const invalidPayload: UserCreationRequestBody = {};
+      it('should support creating users notifying all users', async () => {
+        const creatorClient = userInterceptor.clients[0];
+
+        const creationHandler = await userInterceptor
+          .message()
+          .from(creatorClient)
+          .with({ type: 'user:create', data: creationInput })
+          .effect((message, { receiver }) => {
+            const createdUser: JSONSerialized<User> = {
+              id: crypto.randomUUID(),
+              name: message.data.name,
+              email: message.data.email,
+              birthDate: message.data.birthDate,
+            };
+            const response: UserWebSocketMessage<'user:create:success'> = {
+              type: 'user:create:success',
+              data: createdUser,
+            };
+
+            receiver.send(JSON.stringify(response));
+          })
+          .times(1);
+
+        const response = await createUser(creationInput);
+        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:create:success'>>();
+
+        expect(response.data).toEqual<JSONSerialized<User>>({
+          id: expect.any(String) as string,
+          name: creationInput.name,
+          email: creationInput.email,
+          birthDate: creationInput.birthDate,
+        });
+
+        expectMessagedClients(userInterceptor, response, userInterceptor.clients);
+        expect(creationHandler.messages).toEqual(
+          expect.arrayContaining(userInterceptor.clients.flatMap((client) => client.messages)),
+        );
+      });
+
+      it('should return an error if the input is not valid', async () => {
+        // @ts-expect-error Forcing an invalid input
+        const invalidInput: UserCreationInput = {};
+        const creatorClient = userInterceptor.clients[0];
 
         const validationError: ValidationError = {
           code: 'validation_error',
-          message: 'Invalid payload',
+          message: 'Invalid input',
         };
 
-        const creationHandler = await authInterceptor
-          .post('/users')
-          .with({ body: invalidPayload })
-          .respond({ status: 400, body: validationError })
+        const creationHandler = await userInterceptor
+          .message()
+          .from(creatorClient)
+          .with({ type: 'user:create', data: invalidInput })
+          .respond({ type: 'user:create:error', data: validationError })
           .times(1);
 
-        const response = await createUser(invalidPayload);
-        expect(response.status).toBe(400);
+        const response = await createUserError(invalidInput);
+        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:create:error'>>();
 
-        expect(creationHandler.requests).toHaveLength(1);
+        expect(response).toEqual({ type: 'user:create:error', data: validationError });
 
-        expectTypeOf(creationHandler.requests[0].headers).toEqualTypeOf<
-          WebSocketHeaders<{ 'content-type': 'application/json' }>
-        >();
-
-        expectTypeOf(creationHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<never>>();
-        expect(creationHandler.requests[0].searchParams.size).toBe(0);
-
-        expectTypeOf(creationHandler.requests[0].body).toEqualTypeOf<UserCreationRequestBody>();
-        expect(creationHandler.requests[0].body).toEqual(invalidPayload);
-
-        expectTypeOf(creationHandler.requests[0].raw).toEqualTypeOf<
-          WebSocketRequest<UserCreationRequestBody, { 'content-type': 'application/json' }>
-        >();
-        expect(creationHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(creationHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
-        expect(await creationHandler.requests[0].raw.json()).toEqual(invalidPayload);
-
-        expectTypeOf(creationHandler.requests[0].response.body).toEqualTypeOf<ValidationError>();
-        expect(creationHandler.requests[0].response.body).toEqual(validationError);
-
-        expectTypeOf(creationHandler.requests[0].response.raw).toEqualTypeOf<
-          WebSocketResponse<ValidationError, { 'content-type': 'application/json' }, 400>
-        >();
-        expect(creationHandler.requests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(creationHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<ValidationError>>();
-        expect(await creationHandler.requests[0].response.raw.json()).toEqual(validationError);
+        expectMessagedClients(userInterceptor, response, [creatorClient]);
+        expect(creationHandler.messages).toEqual(
+          expect.arrayContaining(userInterceptor.clients.flatMap((client) => client.messages)),
+        );
       });
 
-      it('should return an error if the payload is not valid', async () => {
-        const conflictingPayload: UserCreationRequestBody = creationPayload;
-
+      it('should return an error if the user already exists', async () => {
+        const creatorClient = userInterceptor.clients[0];
         const conflictError: ConflictError = {
           code: 'conflict',
           message: 'User already exists',
         };
-        const creationHandler = await authInterceptor
-          .post('/users')
-          .with({ body: conflictingPayload })
-          .respond({ status: 409, body: conflictError })
+
+        const creationHandler = await userInterceptor
+          .message()
+          .from(creatorClient)
+          .with({ type: 'user:create', data: creationInput })
+          .respond({ type: 'user:create:error', data: conflictError })
           .times(1);
 
-        const response = await createUser(conflictingPayload);
-        expect(response.status).toBe(409);
+        const response = await createUserError(creationInput);
+        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:create:error'>>();
 
-        expect(creationHandler.requests).toHaveLength(1);
+        expect(response).toEqual({ type: 'user:create:error', data: conflictError });
 
-        expectTypeOf(creationHandler.requests[0].headers).toEqualTypeOf<
-          WebSocketHeaders<{ 'content-type': 'application/json' }>
-        >();
-
-        expectTypeOf(creationHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<never>>();
-        expect(creationHandler.requests[0].searchParams.size).toBe(0);
-
-        expectTypeOf(creationHandler.requests[0].body).toEqualTypeOf<UserCreationRequestBody>();
-        expect(creationHandler.requests[0].body).toEqual(conflictingPayload);
-
-        expectTypeOf(creationHandler.requests[0].raw).toEqualTypeOf<
-          WebSocketRequest<UserCreationRequestBody, { 'content-type': 'application/json' }>
-        >();
-        expect(creationHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(creationHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
-        expect(await creationHandler.requests[0].raw.json()).toEqual(creationPayload);
-
-        expectTypeOf(creationHandler.requests[0].response.body).toEqualTypeOf<ConflictError>();
-        expect(creationHandler.requests[0].response.body).toEqual(conflictError);
-
-        expectTypeOf(creationHandler.requests[0].response.raw).toEqualTypeOf<
-          WebSocketResponse<ConflictError, { 'content-type': 'application/json' }, 409>
-        >();
-        expect(creationHandler.requests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(creationHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<ConflictError>>();
-        expect(await creationHandler.requests[0].response.raw.json()).toEqual(conflictError);
-      });
-    });
-
-    describe('User list', () => {
-      const users: User[] = [
-        {
-          id: crypto.randomUUID(),
-          name: 'Name 1',
-          email: 'email1@email.com',
-          birthDate: new Date(),
-        },
-        {
-          id: crypto.randomUUID(),
-          name: 'Name 2',
-          email: 'email2@email.com',
-          birthDate: new Date(),
-        },
-        {
-          id: crypto.randomUUID(),
-          name: 'Name3',
-          email: 'email3@email.com',
-          birthDate: new Date(),
-        },
-      ];
-
-      beforeEach(async () => {
-        await authInterceptor.get('/users').respond({
-          status: 200,
-          body: [],
-        });
-      });
-
-      async function listUsers(filters: UserListSearchParams = {}) {
-        const searchParams = new WebSocketSearchParams<UserListSearchParams>(filters);
-        const request = new Request(`${authBaseURL}/users?${searchParams.toString()}`, {
-          method: 'GET',
-        });
-        return fetch(request);
-      }
-
-      it('should list users', async () => {
-        const listHandler = await authInterceptor
-          .get('/users')
-          .respond({ status: 200, body: users.map(serializeUser) })
-          .times(1);
-
-        const response = await listUsers();
-        expect(response.status).toBe(200);
-
-        const returnedUsers = (await response.json()) as User[];
-        expect(returnedUsers).toEqual(users.map(serializeUser));
-
-        expect(listHandler.requests).toHaveLength(1);
-
-        expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<WebSocketHeaders<never>>();
-
-        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<UserListSearchParams>>();
-        expect(listHandler.requests[0].searchParams.get('name')).toBe(null);
-        expect(listHandler.requests[0].searchParams.getAll('orderBy')).toEqual([]);
-
-        expectTypeOf(listHandler.requests[0].body).toEqualTypeOf<null>();
-        expect(listHandler.requests[0].body).toBe(null);
-
-        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<WebSocketRequest<null, never>>();
-        expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
-        expect(await listHandler.requests[0].raw.text()).toBe('');
-
-        expectTypeOf(listHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>[]>();
-        expect(listHandler.requests[0].response.body).toEqual(users.map(serializeUser));
-
-        expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<
-          WebSocketResponse<JSONSerialized<User>[], { 'content-type': 'application/json' }, 200>
-        >();
-        expect(listHandler.requests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(listHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>[]>>();
-        expect(await listHandler.requests[0].response.raw.json()).toEqual(users.map(serializeUser));
-      });
-
-      it('should list users filtered by name', async () => {
-        const user = users[0];
-
-        const listHandler = await authInterceptor
-          .get('/users')
-          .with({ searchParams: { name: user.name } })
-          .respond({ status: 200, body: [serializeUser(user)] })
-          .times(1);
-
-        const response = await listUsers({ name: user.name });
-        expect(response.status).toBe(200);
-
-        const returnedUsers = (await response.json()) as User[];
-        expect(returnedUsers).toEqual([serializeUser(user)]);
-
-        expect(listHandler.requests).toHaveLength(1);
-
-        expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<WebSocketHeaders<never>>();
-
-        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<UserListSearchParams>>();
-        expect(listHandler.requests[0].searchParams.size).toBe(1);
-        expect(listHandler.requests[0].searchParams.get('name')).toBe(user.name);
-        expect(listHandler.requests[0].searchParams.getAll('orderBy')).toEqual([]);
-
-        expectTypeOf(listHandler.requests[0].body).toEqualTypeOf<null>();
-        expect(listHandler.requests[0].body).toBe(null);
-
-        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<WebSocketRequest<null, never>>();
-        expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
-        expect(await listHandler.requests[0].raw.text()).toBe('');
-
-        expectTypeOf(listHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>[]>();
-        expect(listHandler.requests[0].response.body).toEqual([serializeUser(user)]);
-
-        expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<
-          WebSocketResponse<JSONSerialized<User>[], { 'content-type': 'application/json' }, 200>
-        >();
-        expect(listHandler.requests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(listHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>[]>>();
-        expect(await listHandler.requests[0].response.raw.json()).toEqual([serializeUser(user)]);
-      });
-
-      it('should list users with ordering', async () => {
-        const usersSortedByDescendingEmail = [...users].sort((user, otherUser) => {
-          return otherUser.email.localeCompare(user.email);
-        });
-
-        const listHandler = await authInterceptor
-          .get('/users')
-          .with({ searchParams: { orderBy: ['email.desc'] } })
-          .respond({ status: 200, body: usersSortedByDescendingEmail.map(serializeUser) })
-          .times(1);
-
-        const response = await listUsers({
-          orderBy: ['email.desc'],
-        });
-        expect(response.status).toBe(200);
-
-        const returnedUsers = (await response.json()) as User[];
-        expect(returnedUsers).toEqual(usersSortedByDescendingEmail.map(serializeUser));
-
-        expect(listHandler.requests).toHaveLength(1);
-
-        expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<WebSocketHeaders<never>>();
-
-        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<UserListSearchParams>>();
-        expect(listHandler.requests[0].searchParams.size).toBe(1);
-        expect(listHandler.requests[0].searchParams.get('name')).toBe(null);
-        expect(listHandler.requests[0].searchParams.getAll('orderBy')).toEqual(['email.desc']);
-
-        expectTypeOf(listHandler.requests[0].body).toEqualTypeOf<null>();
-        expect(listHandler.requests[0].body).toBe(null);
-
-        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<WebSocketRequest<null, never>>();
-        expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
-        expect(await listHandler.requests[0].raw.text()).toBe('');
-
-        expectTypeOf(listHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>[]>();
-        expect(listHandler.requests[0].response.body).toEqual(usersSortedByDescendingEmail.map(serializeUser));
-
-        expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<
-          WebSocketResponse<JSONSerialized<User>[], { 'content-type': 'application/json' }, 200>
-        >();
-        expect(listHandler.requests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(listHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>[]>>();
-        expect(await listHandler.requests[0].response.raw.json()).toEqual(
-          usersSortedByDescendingEmail.map(serializeUser),
+        expectMessagedClients(userInterceptor, response, [creatorClient]);
+        expect(creationHandler.messages).toEqual(
+          expect.arrayContaining(userInterceptor.clients.flatMap((client) => client.messages)),
         );
       });
     });
 
-    describe('User get by id', () => {
-      async function getUserById(userId: string) {
-        const request = new Request(`${authBaseURL}/users/${userId}`, { method: 'GET' });
-        return fetch(request);
-      }
-
-      it('should support getting users by id', async () => {
-        const getHandler = await authInterceptor
-          .get(`/users/${user.id}`)
-          .respond({ status: 200, body: serializeUser(user) })
-          .times(1);
-
-        const response = await getUserById(user.id);
-        expect(response.status).toBe(200);
-
-        const returnedUsers = (await response.json()) as User[];
-        expect(returnedUsers).toEqual(serializeUser(user));
-
-        expect(getHandler.requests).toHaveLength(1);
-        expect(getHandler.requests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
-
-        expectTypeOf(getHandler.requests[0].headers).toEqualTypeOf<WebSocketHeaders<never>>();
-
-        expectTypeOf(getHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<never>>();
-        expect(getHandler.requests[0].searchParams.size).toBe(0);
-
-        expectTypeOf(getHandler.requests[0].body).toEqualTypeOf<null>();
-        expect(getHandler.requests[0].body).toBe(null);
-
-        expectTypeOf(getHandler.requests[0].raw).toEqualTypeOf<WebSocketRequest<null, never>>();
-        expect(getHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(getHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
-        expect(await getHandler.requests[0].raw.text()).toBe('');
-
-        expectTypeOf(getHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>>();
-        expect(getHandler.requests[0].response.body).toEqual(serializeUser(user));
-
-        expectTypeOf(getHandler.requests[0].response.raw).toEqualTypeOf<
-          WebSocketResponse<JSONSerialized<User>, { 'content-type': 'application/json' }, 200>
-        >();
-        expect(getHandler.requests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(getHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>>>();
-        expect(await getHandler.requests[0].response.raw.json()).toEqual(serializeUser(user));
-      });
-
-      it('should return an error if the user was not found', async () => {
-        const notFoundError: NotFoundError = {
-          code: 'not_found',
-          message: 'User not found',
-        };
-
-        const getHandler = await authInterceptor
-          .get('/users/:userId')
-          .respond({ status: 404, body: notFoundError })
-          .times(1);
-
-        const response = await getUserById(user.id);
-        expect(response.status).toBe(404);
-
-        expect(getHandler.requests).toHaveLength(1);
-        expect(getHandler.requests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
-
-        expectTypeOf(getHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
-        expect(getHandler.requests[0].pathParams).toEqual({ userId: user.id });
-
-        expectTypeOf(getHandler.requests[0].headers).toEqualTypeOf<WebSocketHeaders<never>>();
-
-        expectTypeOf(getHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<never>>();
-        expect(getHandler.requests[0].searchParams.size).toBe(0);
-
-        expectTypeOf(getHandler.requests[0].body).toEqualTypeOf<null>();
-        expect(getHandler.requests[0].body).toBe(null);
-
-        expectTypeOf(getHandler.requests[0].raw).toEqualTypeOf<WebSocketRequest<null, never>>();
-        expect(getHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(getHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
-        expect(await getHandler.requests[0].raw.text()).toBe('');
-
-        expectTypeOf(getHandler.requests[0].response.body).toEqualTypeOf<NotFoundError>();
-        expect(getHandler.requests[0].response.body).toEqual(notFoundError);
-
-        expectTypeOf(getHandler.requests[0].response.raw).toEqualTypeOf<
-          WebSocketResponse<NotFoundError, { 'content-type': 'application/json' }, 404>
-        >();
-        expect(getHandler.requests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(getHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<NotFoundError>>();
-        expect(await getHandler.requests[0].response.raw.json()).toEqual(notFoundError);
-      });
-    });
-
     describe('User update', () => {
-      const updatePayload: UserUpdatePayload = {
+      const updateInput: UserUpdateInput = {
         name: 'Updated Name',
         email: 'updated@email.com',
         birthDate: new Date().toISOString(),
       };
 
-      async function updateUser(userId: string, payload: UserUpdatePayload) {
-        const request = new Request(`${authBaseURL}/users/${userId}`, {
-          method: 'PATCH',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        return fetch(request);
+      async function updateUser(userId: string, input: UserUpdateInput) {
+        const responsePromise = waitForResponseMessage(userSockets[0], 'user:update:success');
+
+        const message: UserWebSocketMessage<'user:update'> = {
+          type: 'user:update',
+          data: { id: userId, ...input },
+        };
+
+        userSockets[0].send(JSON.stringify(message));
+
+        return responsePromise;
+      }
+
+      async function updateUserError(userId: string, input: UserUpdateInput) {
+        const responsePromise = waitForResponseMessage(userSockets[0], 'user:update:error');
+
+        const message: UserWebSocketMessage<'user:update'> = {
+          type: 'user:update',
+          data: { id: userId, ...input },
+        };
+
+        userSockets[0].send(JSON.stringify(message));
+
+        return responsePromise;
       }
 
       it('should support updating users', async () => {
-        const updateHandler = await authInterceptor
-          .patch(`/users/${user.id}`)
+        const creatorClient = userInterceptor.clients[0];
+
+        const updateHandler = await userInterceptor
+          .message()
+          .from(creatorClient)
           .with({
-            headers: { 'content-type': 'application/json' },
-            body: updatePayload,
+            type: 'user:update',
+            data: { id: user.id, ...updateInput },
           })
-          .respond((request) => {
+          .respond((message) => {
             const updatedUser: JSONSerialized<User> = {
               ...serializeUser(user),
-              ...request.body,
+              ...message.data,
             };
 
-            return {
-              status: 200,
-              body: updatedUser,
-            };
+            return { type: 'user:update:success', data: updatedUser };
           })
           .times(1);
 
-        const response = await updateUser(user.id, updatePayload);
-        expect(response.status).toBe(200);
+        const response = await updateUser(user.id, updateInput);
+        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:update:success'>>();
 
-        const updatedUser = (await response.json()) as JSONSerialized<User>;
-        expect(updatedUser).toEqual<JSONSerialized<User>>({
+        expect(response.data).toEqual<JSONSerialized<User>>({
           ...serializeUser(user),
-          ...updatePayload,
+          ...updateInput,
         });
 
-        expect(updateHandler.requests).toHaveLength(1);
-
-        expectTypeOf(updateHandler.requests[0].headers).branded.toEqualTypeOf<
-          WebSocketHeaders<{ 'content-type': string }>
-        >();
-
-        expectTypeOf(updateHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<never>>();
-        expect(updateHandler.requests[0].searchParams.size).toBe(0);
-
-        expectTypeOf(updateHandler.requests[0].body).toEqualTypeOf<UserUpdatePayload>();
-        expect(updateHandler.requests[0].body).toEqual(updatePayload);
-
-        expectTypeOf(updateHandler.requests[0].response.raw).toEqualTypeOf<
-          WebSocketResponse<JSONSerialized<User>, { 'content-type': 'application/json' }, 200>
-        >();
+        expectMessagedClients(userInterceptor, response, [creatorClient]);
+        expect(updateHandler.messages).toEqual(
+          expect.arrayContaining(userInterceptor.clients.flatMap((client) => client.messages)),
+        );
       });
 
       it('should return an error if user not found', async () => {
+        const creatorClient = userInterceptor.clients[0];
+
+        const unknownUserId = crypto.randomUUID();
+
         const notFoundError: NotFoundError = {
           code: 'not_found',
           message: 'User not found',
         };
 
-        const updateHandler = await authInterceptor
-          .patch('/users/:userId')
-          .with({ body: updatePayload })
-          .respond({ status: 404, body: notFoundError })
+        const updateHandler = await userInterceptor
+          .message()
+          .from(creatorClient)
+          .with({
+            type: 'user:update',
+            data: { id: unknownUserId, ...updateInput },
+          })
+          .respond({ type: 'user:update:error', data: notFoundError })
           .times(1);
 
-        const response = await updateUser(crypto.randomUUID(), updatePayload);
-        expect(response.status).toBe(404);
+        const response = await updateUserError(unknownUserId, updateInput);
+        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:update:error'>>();
 
-        expect(updateHandler.requests).toHaveLength(1);
-        expect(updateHandler.requests[0].response.body).toEqual(notFoundError);
+        expect(response).toEqual({ type: 'user:update:error', data: notFoundError });
 
-        expectTypeOf(updateHandler.requests[0].response.raw).toEqualTypeOf<
-          WebSocketResponse<NotFoundError, { 'content-type': 'application/json' }, 404>
-        >();
+        expectMessagedClients(userInterceptor, response, [creatorClient]);
+        expect(updateHandler.messages).toEqual(
+          expect.arrayContaining(userInterceptor.clients.flatMap((client) => client.messages)),
+        );
       });
 
-      it('should return an error if payload is invalid', async () => {
+      it('should return an error if input is invalid', async () => {
+        const creatorClient = userInterceptor.clients[0];
+
         const validationError: ValidationError = {
           code: 'validation_error',
-          message: 'Invalid payload',
+          message: 'Invalid input',
         };
 
-        const invalidPayload: UserUpdatePayload = {
-          // @ts-expect-error Forcing an invalid payload
+        const invalidInput: UserUpdateInput = {
+          // @ts-expect-error Forcing an invalid input
           invalid: 'invalid',
         };
 
-        const updateHandler = await authInterceptor
-          .patch('/users/:userId')
-          .with({ body: invalidPayload })
-          .respond({ status: 400, body: validationError })
+        const updateHandler = await userInterceptor
+          .message()
+          .from(creatorClient)
+          .with({
+            type: 'user:update',
+            data: { id: user.id, ...invalidInput },
+          })
+          .respond({ type: 'user:update:error', data: validationError })
           .times(1);
 
-        const response = await updateUser(user.id, invalidPayload);
-        expect(response.status).toBe(400);
+        const response = await updateUserError(user.id, invalidInput);
+        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:update:error'>>();
 
-        expect(updateHandler.requests).toHaveLength(1);
-        expect(updateHandler.requests[0].response.body).toEqual(validationError);
+        expect(response).toEqual({ type: 'user:update:error', data: validationError });
 
-        expectTypeOf(updateHandler.requests[0].response.raw).toEqualTypeOf<
-          WebSocketResponse<ValidationError, { 'content-type': 'application/json' }, 400>
-        >();
+        expectMessagedClients(userInterceptor, response, [creatorClient]);
+        expect(updateHandler.messages).toEqual(
+          expect.arrayContaining(userInterceptor.clients.flatMap((client) => client.messages)),
+        );
       });
     });
 
     describe('User deletion', () => {
       async function deleteUserById(userId: string) {
-        const request = new Request(`${authBaseURL}/users/${userId}`, { method: 'DELETE' });
-        return fetch(request);
+        const responsePromise = waitForResponseMessage(userSockets[0], 'user:delete:success');
+
+        const message: UserWebSocketMessage<'user:delete'> = {
+          type: 'user:delete',
+          data: { id: userId },
+        };
+
+        userSockets[0].send(JSON.stringify(message));
+
+        return responsePromise;
+      }
+
+      async function deleteUserByIdError(userId: string) {
+        const responsePromise = waitForResponseMessage(userSockets[0], 'user:delete:error');
+
+        const message: UserWebSocketMessage<'user:delete'> = {
+          type: 'user:delete',
+          data: { id: userId },
+        };
+
+        userSockets[0].send(JSON.stringify(message));
+
+        return responsePromise;
       }
 
       it('should support deleting users by id', async () => {
-        const deleteHandler = await authInterceptor.delete(`/users/${user.id}`).respond({ status: 204 }).times(1);
+        const creatorClient = userInterceptor.clients[0];
+
+        const deleteHandler = await userInterceptor
+          .message()
+          .from(creatorClient)
+          .with({
+            type: 'user:delete',
+            data: { id: user.id },
+          })
+          .respond({
+            type: 'user:delete:success',
+            data: { id: user.id },
+          })
+          .times(1);
 
         const response = await deleteUserById(user.id);
-        expect(response.status).toBe(204);
+        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:delete:success'>>();
 
-        expect(deleteHandler.requests).toHaveLength(1);
-        expect(deleteHandler.requests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
+        expect(response).toEqual({
+          type: 'user:delete:success',
+          data: { id: user.id },
+        });
 
-        expectTypeOf(deleteHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
-        expect(deleteHandler.requests[0].pathParams).toEqual({});
-
-        expectTypeOf(deleteHandler.requests[0].headers).toEqualTypeOf<WebSocketHeaders<never>>();
-
-        expectTypeOf(deleteHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<never>>();
-        expect(deleteHandler.requests[0].searchParams.size).toBe(0);
-
-        expectTypeOf(deleteHandler.requests[0].body).toEqualTypeOf<null>();
-        expect(deleteHandler.requests[0].body).toBe(null);
-
-        expectTypeOf(deleteHandler.requests[0].raw).toEqualTypeOf<WebSocketRequest<null, never>>();
-        expect(deleteHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(deleteHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
-        expect(await deleteHandler.requests[0].raw.text()).toBe('');
-
-        expectTypeOf(deleteHandler.requests[0].response.body).toEqualTypeOf<null>();
-        expect(deleteHandler.requests[0].response.body).toBe(null);
-
-        expectTypeOf(deleteHandler.requests[0].response.raw).toEqualTypeOf<WebSocketResponse<null, never, 204>>();
-        expect(deleteHandler.requests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(deleteHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<never>>();
-        expect(await deleteHandler.requests[0].response.raw.text()).toBe('');
+        expectMessagedClients(userInterceptor, response, [creatorClient]);
+        expect(deleteHandler.messages).toEqual(
+          expect.arrayContaining(userInterceptor.clients.flatMap((client) => client.messages)),
+        );
       });
 
       it('should return an error if the user was not found', async () => {
+        const creatorClient = userInterceptor.clients[0];
+
         const notFoundError: NotFoundError = {
           code: 'not_found',
           message: 'User not found',
         };
 
-        const deleteHandler = await authInterceptor
-          .delete('/users/:userId')
-          .respond({ status: 404, body: notFoundError })
+        const deleteHandler = await userInterceptor
+          .message()
+          .from(creatorClient)
+          .with({
+            type: 'user:delete',
+            data: { id: user.id },
+          })
+          .respond({ type: 'user:delete:error', data: notFoundError })
           .times(1);
 
-        const response = await deleteUserById(user.id);
-        expect(response.status).toBe(404);
+        const response = await deleteUserByIdError(user.id);
+        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:delete:error'>>();
 
-        expect(deleteHandler.requests).toHaveLength(1);
-        expect(deleteHandler.requests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
+        expect(response).toEqual({ type: 'user:delete:error', data: notFoundError });
 
-        expectTypeOf(deleteHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
-        expect(deleteHandler.requests[0].pathParams).toEqual({ userId: user.id });
-
-        expectTypeOf(deleteHandler.requests[0].headers).toEqualTypeOf<WebSocketHeaders<never>>();
-
-        expectTypeOf(deleteHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<never>>();
-        expect(deleteHandler.requests[0].searchParams.size).toBe(0);
-
-        expectTypeOf(deleteHandler.requests[0].body).toEqualTypeOf<null>();
-        expect(deleteHandler.requests[0].body).toBe(null);
-
-        expectTypeOf(deleteHandler.requests[0].raw).toEqualTypeOf<WebSocketRequest<null, never>>();
-        expect(deleteHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(deleteHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
-        expect(await deleteHandler.requests[0].raw.text()).toBe('');
-
-        expectTypeOf(deleteHandler.requests[0].response.body).toEqualTypeOf<NotFoundError>();
-        expect(deleteHandler.requests[0].response.body).toEqual(notFoundError);
-
-        expectTypeOf(deleteHandler.requests[0].response.raw).toEqualTypeOf<
-          WebSocketResponse<NotFoundError, { 'content-type': 'application/json' }, 404>
-        >();
-        expect(deleteHandler.requests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(deleteHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<NotFoundError>>();
-        expect(await deleteHandler.requests[0].response.raw.json()).toEqual(notFoundError);
+        expectMessagedClients(userInterceptor, response, [creatorClient]);
+        expect(deleteHandler.messages).toEqual(
+          expect.arrayContaining(userInterceptor.clients.flatMap((client) => client.messages)),
+        );
       });
     });
   });
@@ -765,75 +545,199 @@ export async function declareWebSocketInterceptorTests(_options: ClientTestOptio
       id: crypto.randomUUID(),
       userId: crypto.randomUUID(),
       content: 'Notification content',
+      readAt: null,
     };
 
-    describe('Notification list', () => {
-      beforeEach(async () => {
-        await notificationInterceptor.get('/notifications/:userId').respond({
-          status: 200,
-          body: [],
-        });
-      });
+    const updatedNotification: Notification = {
+      ...notification,
+      content: 'Updated notification content',
+    };
 
-      async function listNotifications(userId: string) {
-        const request = new Request(`${notificationBaseURL}/notifications/${encodeURIComponent(userId)}`, {
-          method: 'GET',
-        });
-        return fetch(request);
-      }
+    const readNotification: Notification = {
+      ...notification,
+      readAt: new Date().toISOString(),
+    };
 
-      it('should list notifications', async () => {
-        const listHandler = await notificationInterceptor
-          .get('/notifications/:userId')
-          .respond({ status: 200, body: [notification] })
-          .times(0, 1);
+    const unreadNotification: Notification = {
+      ...readNotification,
+      readAt: null,
+    };
 
-        let response = await listNotifications(notification.userId);
-        expect(response.status).toBe(200);
+    async function createNotification(socket: WebSocketClient<NotificationWebSocketSchema>) {
+      const responsePromise = waitForResponseMessage(socket, 'notification:create:success');
 
-        let returnedNotifications = (await response.json()) as Notification[];
-        expect(returnedNotifications).toEqual([notification]);
+      const message: NotificationWebSocketMessage<'notification:create:success'> = {
+        type: 'notification:create:success',
+        data: notification,
+      };
 
-        expect(listHandler.requests).toHaveLength(1);
-        expect(listHandler.requests[0].url).toBe(`${notificationBaseURL}/notifications/${notification.userId}`);
+      socket.send(JSON.stringify(message));
 
-        expectTypeOf(listHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
-        expect(listHandler.requests[0].pathParams).toEqual({ userId: notification.userId });
+      return responsePromise;
+    }
 
-        expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<WebSocketHeaders<never>>();
+    async function updateNotification(socket: WebSocketClient<NotificationWebSocketSchema>) {
+      const responsePromise = waitForResponseMessage(socket, 'notification:update:success');
 
-        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<WebSocketSearchParams<never>>();
-        expect(listHandler.requests[0].searchParams.size).toBe(0);
+      const message: NotificationWebSocketMessage<'notification:update:success'> = {
+        type: 'notification:update:success',
+        data: updatedNotification,
+      };
 
-        expectTypeOf(listHandler.requests[0].body).toEqualTypeOf<null>();
-        expect(listHandler.requests[0].body).toBe(null);
+      socket.send(JSON.stringify(message));
 
-        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<WebSocketRequest<null, never>>();
-        expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
-        expect(await listHandler.requests[0].raw.text()).toBe('');
+      return responsePromise;
+    }
 
-        expectTypeOf(listHandler.requests[0].response.body).toEqualTypeOf<Notification[]>();
-        expect(listHandler.requests[0].response.body).toEqual([notification]);
+    async function markNotificationAsRead(socket: WebSocketClient<NotificationWebSocketSchema>) {
+      const responsePromise = waitForResponseMessage(socket, 'notification:read:success');
+      const message: NotificationWebSocketMessage<'notification:read:success'> = {
+        type: 'notification:read:success',
+        data: readNotification,
+      };
 
-        expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<
-          WebSocketResponse<Notification[], { 'content-type': 'application/json' }, 200>
-        >();
-        expect(listHandler.requests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(listHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<Notification[]>>();
-        expect(await listHandler.requests[0].response.raw.json()).toEqual([notification]);
+      socket.send(JSON.stringify(message));
 
-        await listHandler.clear();
+      return responsePromise;
+    }
 
-        response = await listNotifications(notification.userId);
-        expect(response.status).toBe(200);
+    async function failToMarkNotificationAsRead(socket: WebSocketClient<NotificationWebSocketSchema>) {
+      const responsePromise = waitForResponseMessage(socket, 'notification:read:error');
+      const validationError: ValidationError = {
+        code: 'validation_error',
+        message: 'Invalid input',
+      };
+      const message: NotificationWebSocketMessage<'notification:read:error'> = {
+        type: 'notification:read:error',
+        data: validationError,
+      };
 
-        returnedNotifications = (await response.json()) as Notification[];
-        expect(returnedNotifications).toEqual([]);
+      socket.send(JSON.stringify(message));
 
-        expect(listHandler.requests).toHaveLength(0);
-      });
+      return responsePromise;
+    }
+
+    async function markNotificationAsUnread(socket: WebSocketClient<NotificationWebSocketSchema>) {
+      const responsePromise = waitForResponseMessage(socket, 'notification:unread:success');
+      const message: NotificationWebSocketMessage<'notification:unread:success'> = {
+        type: 'notification:unread:success',
+        data: unreadNotification,
+      };
+
+      socket.send(JSON.stringify(message));
+
+      return responsePromise;
+    }
+
+    it('should support creating notifications notifying all users', async () => {
+      const creatorClient = notificationInterceptor.clients[0];
+
+      const creationHandler = await notificationInterceptor
+        .message()
+        .from(creatorClient)
+        .with({ type: 'notification:create:success', data: notification })
+        .effect((message, { receiver }) => {
+          receiver.send(JSON.stringify(message));
+        })
+        .times(1);
+
+      const response = await createNotification(notificationSockets[0]);
+
+      expectTypeOf(response).toEqualTypeOf<NotificationWebSocketMessage<'notification:create:success'>>();
+      expect(response).toEqual({ type: 'notification:create:success', data: notification });
+
+      expectMessagedClients(notificationInterceptor, response, notificationInterceptor.clients);
+      expect(creationHandler.messages).toEqual(
+        expect.arrayContaining(notificationInterceptor.clients.flatMap((client) => client.messages)),
+      );
+    });
+
+    it('should support updating notifications notifying only the sender', async () => {
+      const creatorClient = notificationInterceptor.clients[1];
+
+      const updateHandler = await notificationInterceptor
+        .message()
+        .from(creatorClient)
+        .with({ type: 'notification:update:success', data: updatedNotification })
+        .respond({ type: 'notification:update:success', data: updatedNotification })
+        .times(1);
+
+      const response = await updateNotification(notificationSockets[1]);
+
+      expectTypeOf(response).toEqualTypeOf<NotificationWebSocketMessage<'notification:update:success'>>();
+      expect(response).toEqual({ type: 'notification:update:success', data: updatedNotification });
+
+      expectMessagedClients(notificationInterceptor, response, [creatorClient]);
+      expect(updateHandler.messages).toEqual(
+        expect.arrayContaining(notificationInterceptor.clients.flatMap((client) => client.messages)),
+      );
+    });
+
+    it('should support marking notifications as read', async () => {
+      const creatorClient = notificationInterceptor.clients[0];
+
+      const readHandler = await notificationInterceptor
+        .message()
+        .from(creatorClient)
+        .with({ type: 'notification:read:success', data: readNotification })
+        .respond({ type: 'notification:read:success', data: readNotification })
+        .times(1);
+
+      const response = await markNotificationAsRead(notificationSockets[0]);
+
+      expectTypeOf(response).toEqualTypeOf<NotificationWebSocketMessage<'notification:read:success'>>();
+      expect(response).toEqual({ type: 'notification:read:success', data: readNotification });
+
+      expectMessagedClients(notificationInterceptor, response, [creatorClient]);
+      expect(readHandler.messages).toEqual(
+        expect.arrayContaining(notificationInterceptor.clients.flatMap((client) => client.messages)),
+      );
+    });
+
+    it('should return an error if marking a notification as read fails', async () => {
+      const creatorClient = notificationInterceptor.clients[0];
+      const validationError: ValidationError = {
+        code: 'validation_error',
+        message: 'Invalid input',
+      };
+
+      const readHandler = await notificationInterceptor
+        .message()
+        .from(creatorClient)
+        .with({ type: 'notification:read:error', data: validationError })
+        .respond({ type: 'notification:read:error', data: validationError })
+        .times(1);
+
+      const response = await failToMarkNotificationAsRead(notificationSockets[0]);
+
+      expectTypeOf(response).toEqualTypeOf<NotificationWebSocketMessage<'notification:read:error'>>();
+      expect(response).toEqual({ type: 'notification:read:error', data: validationError });
+
+      expectMessagedClients(notificationInterceptor, response, [creatorClient]);
+      expect(readHandler.messages).toEqual(
+        expect.arrayContaining(notificationInterceptor.clients.flatMap((client) => client.messages)),
+      );
+    });
+
+    it('should support marking notifications as unread', async () => {
+      const creatorClient = notificationInterceptor.clients[1];
+
+      const unreadHandler = await notificationInterceptor
+        .message()
+        .from(creatorClient)
+        .with({ type: 'notification:unread:success', data: unreadNotification })
+        .respond({ type: 'notification:unread:success', data: unreadNotification })
+        .times(1);
+
+      const response = await markNotificationAsUnread(notificationSockets[1]);
+
+      expectTypeOf(response).toEqualTypeOf<NotificationWebSocketMessage<'notification:unread:success'>>();
+      expect(response).toEqual({ type: 'notification:unread:success', data: unreadNotification });
+
+      expectMessagedClients(notificationInterceptor, response, [creatorClient]);
+      expect(unreadHandler.messages).toEqual(
+        expect.arrayContaining(notificationInterceptor.clients.flatMap((client) => client.messages)),
+      );
     });
   });
-*/
 }

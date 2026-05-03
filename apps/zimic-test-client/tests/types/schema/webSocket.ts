@@ -1,81 +1,96 @@
 import { JSONSerialized } from '@zimic/http';
 import { WebSocketSchema } from '@zimic/ws';
 
-import { User, UserCreationRequestBody, UserUpdatePayload } from './entities';
+import {
+  ConflictError,
+  InternalServerError,
+  NotFoundError,
+  Notification,
+  User,
+  UserCreationInput,
+  UserUpdateInput,
+  ValidationError,
+} from './entities';
 
-type SessionWebSocketEvent = WebSocketSchema<
-  | {
-      type: 'session:login';
-      data: { email: string; password: string };
-    }
-  | {
-      type: 'session:loggedIn';
-      data: { userId: User['id'] };
-    }
-  | {
-      type: 'session:refresh';
-      data: { refreshToken: string };
-    }
-  | {
-      type: 'session:refreshed';
-      data: { userId: User['id'] };
-    }
-  | {
-      type: 'session:logout';
-      data: undefined;
-    }
-  | {
-      type: 'session:loggedOut';
-      data: { userId: User['id'] };
-    }
->;
-
-type UserWebSocketEvent = WebSocketSchema<
+export type UserWebSocketSchema = WebSocketSchema<
   | {
       type: 'user:create';
-      data: UserCreationRequestBody;
+      data: UserCreationInput;
     }
   | {
-      type: 'user:created';
+      type: 'user:create:success';
       data: JSONSerialized<User>;
+    }
+  | {
+      type: 'user:create:error';
+      data: ValidationError | ConflictError | InternalServerError;
     }
   | {
       type: 'user:update';
-      data: { id: User['id'] } & UserUpdatePayload;
+      data: { id: User['id'] } & UserUpdateInput;
     }
   | {
-      type: 'user:updated';
+      type: 'user:update:success';
       data: JSONSerialized<User>;
+    }
+  | {
+      type: 'user:update:error';
+      data: ValidationError | NotFoundError | InternalServerError;
     }
   | {
       type: 'user:delete';
       data: { id: User['id'] };
     }
   | {
-      type: 'user:deleted';
+      type: 'user:delete:success';
       data: { id: User['id'] };
     }
->;
-
-export type AuthWebSocketSchema = WebSocketSchema<SessionWebSocketEvent | UserWebSocketEvent>;
-
-type NotificationWebSocketEvent = WebSocketSchema<
   | {
-      type: 'notification:created';
-      data: JSONSerialized<Notification>;
-    }
-  | {
-      type: 'notification:updated';
-      data: JSONSerialized<Notification>;
-    }
-  | {
-      type: 'notification:read';
-      data: JSONSerialized<Notification>;
-    }
-  | {
-      type: 'notification:unread';
-      data: JSONSerialized<Notification>;
+      type: 'user:delete:error';
+      data: NotFoundError | InternalServerError;
     }
 >;
 
-export type NotificationWebSocketSchema = WebSocketSchema<NotificationWebSocketEvent>;
+export type UserWebSocketMessage<Type extends UserWebSocketSchema['type'] = UserWebSocketSchema['type']> = Extract<
+  UserWebSocketSchema,
+  { type: Type }
+>;
+
+export type NotificationWebSocketSchema = WebSocketSchema<
+  | {
+      type: 'notification:create:success';
+      data: JSONSerialized<Notification>;
+    }
+  | {
+      type: 'notification:create:error';
+      data: ValidationError | InternalServerError;
+    }
+  | {
+      type: 'notification:update:success';
+      data: JSONSerialized<Notification>;
+    }
+  | {
+      type: 'notification:update:error';
+      data: ValidationError | InternalServerError;
+    }
+  | {
+      type: 'notification:read:success';
+      data: JSONSerialized<Notification>;
+    }
+  | {
+      type: 'notification:read:error';
+      data: ValidationError | InternalServerError;
+    }
+  | {
+      type: 'notification:unread:success';
+      data: JSONSerialized<Notification>;
+    }
+  | {
+      type: 'notification:unread:error';
+      data: ValidationError | InternalServerError;
+    }
+>;
+
+export type NotificationWebSocketMessage<
+  Type extends NotificationWebSocketSchema['type'] = NotificationWebSocketSchema['type'],
+> = Extract<NotificationWebSocketSchema, { type: Type }>;
