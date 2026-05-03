@@ -5,8 +5,8 @@ import color from 'picocolors';
 import { HttpInterceptorRequestSaving } from '@/http/interceptor/types/public';
 import { stringifyValueToLog } from '@/utils/logging';
 
-import HttpTimesDeclarationPointer from './HttpTimesDeclarationPointer';
 import { UnmatchedHttpInterceptorRequestGroup } from '../requestHandler/types/restrictions';
+import HttpTimesDeclarationPointer from './HttpTimesDeclarationPointer';
 
 interface HttpTimesCheckErrorOptions {
   requestLimits: Range<number>;
