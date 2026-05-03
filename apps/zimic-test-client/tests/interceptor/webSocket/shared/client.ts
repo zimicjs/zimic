@@ -14,7 +14,7 @@ export interface ClientTestOptionsByWorkerType extends ClientTestOptions {
 export function declareClientTests(options: ClientTestOptions) {
   const interceptorTypes: HttpInterceptorType[] = ['local', 'remote'];
 
-  describe.each(interceptorTypes)("WebSocket interceptor (type '%s')", async (type) => {
-    await declareWebSocketInterceptorTests({ ...options, type });
+  describe.each(interceptorTypes)("WebSocket interceptor (type '%s')", (type) => {
+    declareWebSocketInterceptorTests({ ...options, type });
   });
 }
