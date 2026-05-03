@@ -4,17 +4,16 @@ import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf, af
 
 import { ZIMIC_SERVER_PORT } from '@tests/constants';
 import {
-  AuthHttpSchema,
-  NotificationHttpSchema,
   User,
-  UserCreationRequestBody,
+  UserCreationInput,
   ValidationError,
   ConflictError,
   UserListSearchParams,
   NotFoundError,
+  UserUpdateInput,
   Notification,
-  UserUpdatePayload,
-} from '@tests/types/schema';
+} from '@tests/types/schema/entities';
+import { AuthHttpSchema, NotificationHttpSchema } from '@tests/types/schema/http';
 import { serializeUser } from '@tests/utils/schema';
 
 import { ClientTestOptionsByWorkerType } from './client';
@@ -31,9 +30,7 @@ function getNotificationBaseURL(type: HttpInterceptorType) {
     : `http://localhost:${ZIMIC_SERVER_PORT}/notification-${crypto.randomUUID()}`;
 }
 
-export function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerType) {
-  const { platform, type } = options;
-
+export function declareHttpInterceptorTests({ platform, type }: ClientTestOptionsByWorkerType) {
   const authInterceptor = createHttpInterceptor<AuthHttpSchema>({
     type,
     baseURL: getAuthBaseURL(type),
@@ -95,21 +92,21 @@ export function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTy
     };
 
     describe('User creation', () => {
-      const creationPayload: UserCreationRequestBody = {
+      const creationInput: UserCreationInput = {
         name: user.name,
         email: user.email,
         password: crypto.randomUUID(),
         birthDate: new Date().toISOString(),
       };
 
-      async function createUser(payload: UserCreationRequestBody) {
+      async function createUser(input: UserCreationInput) {
         const request = new Request(`${authBaseURL}/users`, {
           method: 'POST',
           headers: {
             'content-type': 'application/json',
             accept: 'application/json',
           },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(input),
         });
 
         return fetch(request);
@@ -120,7 +117,7 @@ export function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTy
           .post('/users')
           .with({
             headers: { 'content-type': 'application/json' },
-            body: creationPayload,
+            body: creationInput,
           })
           .respond((request) => {
             expect(request.headers.get('content-type')).toBe('application/json');
@@ -140,15 +137,15 @@ export function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTy
           })
           .times(1);
 
-        const response = await createUser(creationPayload);
+        const response = await createUser(creationInput);
         expect(response.status).toBe(201);
 
         const createdUser = (await response.json()) as User;
         expect(createdUser).toEqual<JSONSerialized<User>>({
           id: expect.any(String) as string,
-          name: creationPayload.name,
-          email: creationPayload.email,
-          birthDate: creationPayload.birthDate,
+          name: creationInput.name,
+          email: creationInput.email,
+          birthDate: creationInput.birthDate,
         });
 
         expect(creationHandler.requests).toHaveLength(1);
@@ -163,15 +160,15 @@ export function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTy
         expect(response.headers.get('x-user-id')).toBe(createdUser.id);
         expect(creationHandler.requests[0].response.headers.get('x-user-id')).toBe(createdUser.id);
 
-        expectTypeOf(creationHandler.requests[0].body).toEqualTypeOf<UserCreationRequestBody>();
-        expect(creationHandler.requests[0].body).toEqual(creationPayload);
+        expectTypeOf(creationHandler.requests[0].body).toEqualTypeOf<UserCreationInput>();
+        expect(creationHandler.requests[0].body).toEqual(creationInput);
 
         expectTypeOf(creationHandler.requests[0].raw).toEqualTypeOf<
-          HttpRequest<UserCreationRequestBody, { 'content-type': 'application/json' }>
+          HttpRequest<UserCreationInput, { 'content-type': 'application/json' }>
         >();
         expect(creationHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(creationHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
-        expect(await creationHandler.requests[0].raw.json()).toEqual(creationPayload);
+        expectTypeOf(creationHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationInput>>();
+        expect(await creationHandler.requests[0].raw.json()).toEqual(creationInput);
 
         expectTypeOf(creationHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>>();
         expect(creationHandler.requests[0].response.body).toEqual(createdUser);
@@ -186,22 +183,22 @@ export function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTy
         expect(await creationHandler.requests[0].response.raw.json()).toEqual(createdUser);
       });
 
-      it('should return an error if the payload is not valid', async () => {
-        // @ts-expect-error Forcing an invalid payload
-        const invalidPayload: UserCreationRequestBody = {};
+      it('should return an error if the input is not valid', async () => {
+        // @ts-expect-error Forcing an invalid input
+        const invalidInput: UserCreationInput = {};
 
         const validationError: ValidationError = {
           code: 'validation_error',
-          message: 'Invalid payload',
+          message: 'Invalid input',
         };
 
         const creationHandler = await authInterceptor
           .post('/users')
-          .with({ body: invalidPayload })
+          .with({ body: invalidInput })
           .respond({ status: 400, body: validationError })
           .times(1);
 
-        const response = await createUser(invalidPayload);
+        const response = await createUser(invalidInput);
         expect(response.status).toBe(400);
 
         expect(creationHandler.requests).toHaveLength(1);
@@ -213,15 +210,15 @@ export function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTy
         expectTypeOf(creationHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
         expect(creationHandler.requests[0].searchParams.size).toBe(0);
 
-        expectTypeOf(creationHandler.requests[0].body).toEqualTypeOf<UserCreationRequestBody>();
-        expect(creationHandler.requests[0].body).toEqual(invalidPayload);
+        expectTypeOf(creationHandler.requests[0].body).toEqualTypeOf<UserCreationInput>();
+        expect(creationHandler.requests[0].body).toEqual(invalidInput);
 
         expectTypeOf(creationHandler.requests[0].raw).toEqualTypeOf<
-          HttpRequest<UserCreationRequestBody, { 'content-type': 'application/json' }>
+          HttpRequest<UserCreationInput, { 'content-type': 'application/json' }>
         >();
         expect(creationHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(creationHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
-        expect(await creationHandler.requests[0].raw.json()).toEqual(invalidPayload);
+        expectTypeOf(creationHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationInput>>();
+        expect(await creationHandler.requests[0].raw.json()).toEqual(invalidInput);
 
         expectTypeOf(creationHandler.requests[0].response.body).toEqualTypeOf<ValidationError>();
         expect(creationHandler.requests[0].response.body).toEqual(validationError);
@@ -234,8 +231,8 @@ export function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTy
         expect(await creationHandler.requests[0].response.raw.json()).toEqual(validationError);
       });
 
-      it('should return an error if the payload is not valid', async () => {
-        const conflictingPayload: UserCreationRequestBody = creationPayload;
+      it('should return an error if the input is not valid', async () => {
+        const conflictingInput: UserCreationInput = creationInput;
 
         const conflictError: ConflictError = {
           code: 'conflict',
@@ -243,11 +240,11 @@ export function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTy
         };
         const creationHandler = await authInterceptor
           .post('/users')
-          .with({ body: conflictingPayload })
+          .with({ body: conflictingInput })
           .respond({ status: 409, body: conflictError })
           .times(1);
 
-        const response = await createUser(conflictingPayload);
+        const response = await createUser(conflictingInput);
         expect(response.status).toBe(409);
 
         expect(creationHandler.requests).toHaveLength(1);
@@ -259,15 +256,15 @@ export function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTy
         expectTypeOf(creationHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
         expect(creationHandler.requests[0].searchParams.size).toBe(0);
 
-        expectTypeOf(creationHandler.requests[0].body).toEqualTypeOf<UserCreationRequestBody>();
-        expect(creationHandler.requests[0].body).toEqual(conflictingPayload);
+        expectTypeOf(creationHandler.requests[0].body).toEqualTypeOf<UserCreationInput>();
+        expect(creationHandler.requests[0].body).toEqual(conflictingInput);
 
         expectTypeOf(creationHandler.requests[0].raw).toEqualTypeOf<
-          HttpRequest<UserCreationRequestBody, { 'content-type': 'application/json' }>
+          HttpRequest<UserCreationInput, { 'content-type': 'application/json' }>
         >();
         expect(creationHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(creationHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
-        expect(await creationHandler.requests[0].raw.json()).toEqual(creationPayload);
+        expectTypeOf(creationHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationInput>>();
+        expect(await creationHandler.requests[0].raw.json()).toEqual(creationInput);
 
         expectTypeOf(creationHandler.requests[0].response.body).toEqualTypeOf<ConflictError>();
         expect(creationHandler.requests[0].response.body).toEqual(conflictError);
@@ -541,17 +538,17 @@ export function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTy
     });
 
     describe('User update', () => {
-      const updatePayload: UserUpdatePayload = {
+      const updateInput: UserUpdateInput = {
         name: 'Updated Name',
         email: 'updated@email.com',
         birthDate: new Date().toISOString(),
       };
 
-      async function updateUser(userId: string, payload: UserUpdatePayload) {
+      async function updateUser(userId: string, input: UserUpdateInput) {
         const request = new Request(`${authBaseURL}/users/${userId}`, {
           method: 'PATCH',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(input),
         });
         return fetch(request);
       }
@@ -561,7 +558,7 @@ export function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTy
           .patch(`/users/${user.id}`)
           .with({
             headers: { 'content-type': 'application/json' },
-            body: updatePayload,
+            body: updateInput,
           })
           .respond((request) => {
             const updatedUser: JSONSerialized<User> = {
@@ -576,13 +573,13 @@ export function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTy
           })
           .times(1);
 
-        const response = await updateUser(user.id, updatePayload);
+        const response = await updateUser(user.id, updateInput);
         expect(response.status).toBe(200);
 
         const updatedUser = (await response.json()) as JSONSerialized<User>;
         expect(updatedUser).toEqual<JSONSerialized<User>>({
           ...serializeUser(user),
-          ...updatePayload,
+          ...updateInput,
         });
 
         expect(updateHandler.requests).toHaveLength(1);
@@ -594,8 +591,8 @@ export function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTy
         expectTypeOf(updateHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
         expect(updateHandler.requests[0].searchParams.size).toBe(0);
 
-        expectTypeOf(updateHandler.requests[0].body).toEqualTypeOf<UserUpdatePayload>();
-        expect(updateHandler.requests[0].body).toEqual(updatePayload);
+        expectTypeOf(updateHandler.requests[0].body).toEqualTypeOf<UserUpdateInput>();
+        expect(updateHandler.requests[0].body).toEqual(updateInput);
 
         expectTypeOf(updateHandler.requests[0].response.raw).toEqualTypeOf<
           HttpResponse<JSONSerialized<User>, { 'content-type': 'application/json' }, 200>
@@ -610,11 +607,11 @@ export function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTy
 
         const updateHandler = await authInterceptor
           .patch('/users/:userId')
-          .with({ body: updatePayload })
+          .with({ body: updateInput })
           .respond({ status: 404, body: notFoundError })
           .times(1);
 
-        const response = await updateUser(crypto.randomUUID(), updatePayload);
+        const response = await updateUser(crypto.randomUUID(), updateInput);
         expect(response.status).toBe(404);
 
         expect(updateHandler.requests).toHaveLength(1);
@@ -625,24 +622,24 @@ export function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTy
         >();
       });
 
-      it('should return an error if payload is invalid', async () => {
+      it('should return an error if input is invalid', async () => {
         const validationError: ValidationError = {
           code: 'validation_error',
-          message: 'Invalid payload',
+          message: 'Invalid input',
         };
 
-        const invalidPayload: UserUpdatePayload = {
-          // @ts-expect-error Forcing an invalid payload
+        const invalidInput: UserUpdateInput = {
+          // @ts-expect-error Forcing an invalid input
           invalid: 'invalid',
         };
 
         const updateHandler = await authInterceptor
           .patch('/users/:userId')
-          .with({ body: invalidPayload })
+          .with({ body: invalidInput })
           .respond({ status: 400, body: validationError })
           .times(1);
 
-        const response = await updateUser(user.id, invalidPayload);
+        const response = await updateUser(user.id, invalidInput);
         expect(response.status).toBe(400);
 
         expect(updateHandler.requests).toHaveLength(1);
