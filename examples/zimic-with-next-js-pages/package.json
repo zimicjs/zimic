@@ -16,7 +16,7 @@
     "next": "^16.2.4",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "zod": "^4.3.6"
+    "zod": "^4.4.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
@@ -27,7 +27,7 @@
     "@zimic/interceptor": "latest",
     "concurrently": "^9.2.1",
     "dotenv-cli": "^11.0.0",
-    "postcss": "^8.5.10",
+    "postcss": "^8.5.13",
     "tailwindcss": "^4.2.4",
     "typescript": "6.0.3"
   }
