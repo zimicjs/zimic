@@ -14,8 +14,8 @@
   "devDependencies": {
     "@zimic/interceptor": "latest",
     "dotenv-cli": "^11.0.0",
-    "jsdom": "^29.0.2",
-    "typescript": "6.0.2",
-    "vitest": "^4.1.4"
+    "jsdom": "^29.1.1",
+    "typescript": "6.0.3",
+    "vitest": "^4.1.5"
   }
 }

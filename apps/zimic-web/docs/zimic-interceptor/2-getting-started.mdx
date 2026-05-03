@@ -30,25 +30,6 @@ different browsers.
 | ----------------------------- | --------- |
 | [Node.js](https://nodejs.org) | >= 22.0.0 |
 
-If you encounter the error `TypeError: localStorage.getItem is not a function` on Node.js >= 25, use the
-[`--no-experimental-webstorage`](https://nodejs.org/api/cli.html#no-experimental-webstorage) flag:
-
-```bash
-node --no-experimental-webstorage your-script.js
-```
-
-You can also apply this flag by setting the
-[`NODE_OPTIONS` environment variable](https://nodejs.org/api/cli.html#node-optionsoptions), in case you don't have
-control over the Node.js execution command:
-
-```bash
-# macOS/Linux:
-export NODE_OPTIONS='--no-experimental-webstorage'
-
-# Windows:
-set NODE_OPTIONS=--no-experimental-webstorage
-```
-
   </TabItem>
 </Tabs>
 

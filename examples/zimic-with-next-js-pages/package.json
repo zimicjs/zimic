@@ -10,25 +10,25 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.96.2",
+    "@tanstack/react-query": "^5.100.3",
     "@zimic/fetch": "latest",
     "@zimic/http": "latest",
-    "next": "^16.2.3",
+    "next": "^16.2.4",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "zod": "^4.3.6"
+    "zod": "^4.4.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
-    "@tailwindcss/postcss": "^4.2.2",
+    "@tailwindcss/postcss": "^4.2.4",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@zimic/interceptor": "latest",
     "concurrently": "^9.2.1",
     "dotenv-cli": "^11.0.0",
-    "postcss": "^8.5.9",
-    "tailwindcss": "^4.2.2",
-    "typescript": "6.0.2"
+    "postcss": "^8.5.13",
+    "tailwindcss": "^4.2.4",
+    "typescript": "6.0.3"
   }
 }

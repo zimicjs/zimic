@@ -239,6 +239,7 @@ export function renameComponentReferences(node: ts.TypeNode, context: TypeTransf
       const newObjectType = ts.factory.updateTypeReferenceNode(objectType, newIdentifier, objectType.typeArguments);
 
       const newComponentGroupName = normalizeComponentGroupName(componentGroupName);
+
       const newIndexType = ts.factory.updateLiteralTypeNode(
         indexType,
         ts.factory.createStringLiteral(newComponentGroupName),
