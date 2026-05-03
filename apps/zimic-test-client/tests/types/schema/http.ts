@@ -9,8 +9,6 @@ import {
   UserListSearchParams,
   NotFoundError,
   UserUpdateInput,
-  LoginOutput,
-  UnauthorizedError,
   Notification,
 } from './entities';
 
@@ -71,48 +69,7 @@ type UserByIdPaths = HttpSchema<{
   };
 }>;
 
-type SessionPaths = HttpSchema<{
-  '/session/login': {
-    POST: {
-      request: {
-        headers: { 'content-type': 'application/json' };
-        body: { email: string; password: string };
-      };
-      response: {
-        201: { body: LoginOutput };
-        400: { body: ValidationError };
-        401: { body: UnauthorizedError };
-        500: { body: InternalServerError };
-      };
-    };
-  };
-
-  '/session/refresh': {
-    POST: {
-      request: {
-        headers: { 'content-type': 'application/json' };
-        body: { refreshToken: string };
-      };
-      response: {
-        201: { body: LoginOutput };
-        401: { body: UnauthorizedError };
-        500: { body: InternalServerError };
-      };
-    };
-  };
-
-  '/session/logout': {
-    POST: {
-      response: {
-        204: { body: undefined };
-        401: { body: UnauthorizedError };
-        500: { body: InternalServerError };
-      };
-    };
-  };
-}>;
-
-export type AuthHttpSchema = UserPaths & UserByIdPaths & SessionPaths;
+export type UserHttpSchema = UserPaths & UserByIdPaths;
 
 export type NotificationHttpSchema = HttpSchema<{
   '/notifications/:userId': {

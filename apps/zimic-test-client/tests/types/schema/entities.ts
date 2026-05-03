@@ -15,11 +15,6 @@ export type UserCreationInput = Omit<JSONSerialized<UserWithPassword>, 'id'>;
 
 export type UserUpdateInput = Partial<JSONSerialized<User>>;
 
-export type LoginOutput = JSONValue<{
-  accessToken: string;
-  refreshToken: string;
-}>;
-
 export type RequestError = JSONValue<{
   code: string;
   message: string;
@@ -28,13 +23,6 @@ export type RequestError = JSONValue<{
 export type ValidationError = JSONValue<
   RequestError & {
     code: 'validation_error';
-    message: string;
-  }
->;
-
-export type UnauthorizedError = JSONValue<
-  RequestError & {
-    code: 'unauthorized';
     message: string;
   }
 >;
