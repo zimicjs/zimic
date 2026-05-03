@@ -132,7 +132,7 @@ describe('JSON types', () => {
   it('should convert types to their JSON-stringified versions', () => {
     expectTypeOf(JSON.stringify('')).toEqualTypeOf<JSONStringified<string>>();
     expectTypeOf(JSON.stringify(0)).toEqualTypeOf<JSONStringified<number>>();
-    expectTypeOf(JSON.stringify(true)).toEqualTypeOf<JSONStringified<boolean>>();
+    expectTypeOf(JSON.stringify(true)).toEqualTypeOf<JSONStringified<true> | JSONStringified<false>>();
     expectTypeOf(JSON.stringify(null)).toEqualTypeOf<JSONStringified<null>>();
     expectTypeOf(JSON.stringify(undefined)).toEqualTypeOf<JSONStringified<undefined>>();
     expectTypeOf(JSON.stringify(['a', 'b', 'c'])).toEqualTypeOf<JSONStringified<string[]>>();
