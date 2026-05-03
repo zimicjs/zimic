@@ -7,7 +7,8 @@ import { WebSocketMessageHandlerDelayFactory } from './types/messages';
 import {
   SyncedRemoteWebSocketMessageHandler as PublicSyncedRemoteWebSocketMessageHandler,
   PendingRemoteWebSocketMessageHandler as PublicPendingRemoteWebSocketMessageHandler,
-  WebSocketMessageInterceptedCallback,
+  WebSocketMessageHandlerMessageCallback,
+  WebSocketMessageHandlerMessageDeclaration,
 } from './types/public';
 import { WebSocketMessageHandlerRestriction } from './types/restrictions';
 import WebSocketMessageHandlerImplementation from './WebSocketMessageHandlerImplementation';
@@ -16,19 +17,22 @@ const UNSYNCED_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof P
 
 export class RemoteWebSocketMessageHandler<
   Schema extends WebSocketSchema,
-> implements PublicPendingRemoteWebSocketMessageHandler<Schema> {
+  RestrictedSchema extends Schema = Schema,
+> implements PublicPendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema> {
   readonly type = 'remote';
 
-  client: WebSocketMessageHandlerImplementation<Schema>;
+  implementation: WebSocketMessageHandlerImplementation<Schema, RestrictedSchema>;
 
   private syncPromises: Promise<unknown>[] = [];
 
-  private unsynced: this;
+  private pending: this;
   private synced: this;
 
   constructor(interceptorImplementation: WebSocketInterceptorImplementation<Schema>) {
-    this.client = new WebSocketMessageHandlerImplementation<Schema>(interceptorImplementation);
-    this.unsynced = this;
+    this.implementation = new WebSocketMessageHandlerImplementation<Schema, RestrictedSchema>(
+      interceptorImplementation,
+    );
+    this.pending = this;
     this.synced = this.createSyncedProxy();
   }
 
@@ -55,34 +59,40 @@ export class RemoteWebSocketMessageHandler<
   }
 
   from(sender: WebSocketInterceptorClient<Schema>) {
-    this.client.from(sender);
-    return this.unsynced;
+    this.implementation.from(sender);
+    return this.pending;
   }
 
-  with(restriction: WebSocketMessageHandlerRestriction<Schema>) {
-    this.client.with(restriction);
-    return this.unsynced;
+  with(restriction: WebSocketMessageHandlerRestriction<RestrictedSchema>) {
+    this.implementation.with(restriction);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
+    return this.pending as any; // TODO
   }
 
-  delay(minMilliseconds: number | WebSocketMessageHandlerDelayFactory<Schema>, maxMilliseconds?: number) {
-    this.client.delay(minMilliseconds, maxMilliseconds);
-    return this.unsynced;
+  delay(minMilliseconds: number | WebSocketMessageHandlerDelayFactory<RestrictedSchema>, maxMilliseconds?: number) {
+    this.implementation.delay(minMilliseconds, maxMilliseconds);
+    return this.pending;
   }
 
-  run(callback: WebSocketMessageInterceptedCallback<Schema>) {
-    this.client.run(callback);
-    return this.unsynced;
+  effect(callback: WebSocketMessageHandlerMessageCallback<Schema, RestrictedSchema>) {
+    this.implementation.effect(callback);
+    return this.pending;
+  }
+
+  respond(declaration: WebSocketMessageHandlerMessageDeclaration<Schema, RestrictedSchema>) {
+    this.implementation.respond(declaration);
+    return this.pending;
   }
 
   times(minNumberOfRequests: number, maxNumberOfRequests?: number) {
-    this.client.times(minNumberOfRequests, maxNumberOfRequests);
-    return this.unsynced;
+    this.implementation.times(minNumberOfRequests, maxNumberOfRequests);
+    return this.pending;
   }
 
   checkTimes() {
     return new Promise<void>((resolve, reject) => {
       try {
-        this.client.checkTimes();
+        this.implementation.checkTimes();
         resolve();
       } catch (error) {
         reject(error);
@@ -91,8 +101,12 @@ export class RemoteWebSocketMessageHandler<
   }
 
   clear() {
-    this.client.clear();
-    return this.unsynced;
+    this.implementation.clear();
+    return this.pending;
+  }
+
+  get messages() {
+    return this.implementation.messages;
   }
 
   registerSyncPromise(promise: Promise<unknown>) {
@@ -103,9 +117,11 @@ export class RemoteWebSocketMessageHandler<
     return this.syncPromises.length === 0;
   }
 
-  then<FulfilledResult = PublicSyncedRemoteWebSocketMessageHandler<Schema>, RejectedResult = never>(
+  then<FulfilledResult = PublicSyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema>, RejectedResult = never>(
     onFulfilled?:
-      | ((handler: PublicSyncedRemoteWebSocketMessageHandler<Schema>) => PossiblePromise<FulfilledResult>)
+      | ((
+          handler: PublicSyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema>,
+        ) => PossiblePromise<FulfilledResult>)
       | null,
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ): Promise<FulfilledResult | RejectedResult> {
@@ -115,18 +131,20 @@ export class RemoteWebSocketMessageHandler<
       .then(() => {
         this.syncPromises = this.syncPromises.filter((promise) => !promisesToWait.has(promise));
 
-        return this.isSynced ? this.synced : this.unsynced;
+        return this.isSynced ? this.synced : this.pending;
       })
       .then(onFulfilled, onRejected);
   }
 
   catch<RejectedResult = never>(
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
-  ): Promise<PublicSyncedRemoteWebSocketMessageHandler<Schema> | RejectedResult> {
+  ): Promise<PublicSyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema> | RejectedResult> {
     return this.then().catch(onRejected);
   }
 
-  finally(onFinally?: (() => void) | null): Promise<PublicSyncedRemoteWebSocketMessageHandler<Schema>> {
+  finally(
+    onFinally?: (() => void) | null,
+  ): Promise<PublicSyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema>> {
     return this.then().finally(onFinally);
   }
 }
