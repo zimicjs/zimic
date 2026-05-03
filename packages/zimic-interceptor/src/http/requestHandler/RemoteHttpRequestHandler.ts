@@ -11,7 +11,6 @@ import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
-  HttpRequestHandlerResponseDeclarationFactory,
   HttpRequestHandlerResponseDelayFactory,
   InterceptedHttpInterceptorRequest,
 } from './types/requests';
@@ -31,7 +30,7 @@ class RemoteHttpRequestHandler<
 
   private syncPromises: Promise<unknown>[] = [];
 
-  private unsynced: this;
+  private pending: this;
   private synced: this;
 
   constructor(
@@ -40,7 +39,7 @@ class RemoteHttpRequestHandler<
     path: Path,
   ) {
     this.implementation = new HttpRequestHandlerImplementation(interceptor, method, path, this);
-    this.unsynced = this;
+    this.pending = this;
     this.synced = this.createSyncedProxy();
   }
 
@@ -74,30 +73,28 @@ class RemoteHttpRequestHandler<
     return this.implementation.path;
   }
 
-  with(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>): this {
+  with(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>) {
     this.implementation.with(restriction);
-    return this.unsynced;
+    return this.pending;
   }
 
   delay(
     minMilliseconds: number | HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>,
     maxMilliseconds?: number,
-  ): this {
+  ) {
     this.implementation.delay(minMilliseconds, maxMilliseconds);
-    return this.unsynced;
+    return this.pending;
   }
 
   respond<NewStatusCode extends HttpStatusCode>(
-    declaration:
-      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
+    declaration: HttpRequestHandlerResponseDeclaration<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ): RemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode> {
-    const newUnsyncedThis = this.unsynced as unknown as RemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
+    const newUnsyncedThis = this.pending as unknown as RemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
     newUnsyncedThis.implementation.respond(declaration);
     return newUnsyncedThis;
   }
 
-  times(minNumberOfRequests: number, maxNumberOfRequests?: number): this {
+  times(minNumberOfRequests: number, maxNumberOfRequests?: number) {
     this.implementation.times(minNumberOfRequests, maxNumberOfRequests);
     return this;
   }
@@ -113,9 +110,9 @@ class RemoteHttpRequestHandler<
     });
   }
 
-  clear(): this {
+  clear() {
     this.implementation.clear();
-    return this.unsynced;
+    return this.pending;
   }
 
   get requests(): readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
@@ -172,7 +169,7 @@ class RemoteHttpRequestHandler<
       .then(() => {
         this.syncPromises = this.syncPromises.filter((promise) => !promisesToWait.has(promise));
 
-        return this.isSynced ? this.synced : this.unsynced;
+        return this.isSynced ? this.synced : this.pending;
       })
       .then(onFulfilled, onRejected);
   }

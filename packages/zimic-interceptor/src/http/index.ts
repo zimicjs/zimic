@@ -16,8 +16,12 @@ export { default as DisabledRequestSavingError } from './requestHandler/errors/D
 export { default as HttpTimesCheckError, TimesCheckError } from './errors/HttpTimesCheckError';
 
 export type {
-  HttpRequestHandlerResponseDeclaration,
-  HttpRequestHandlerResponseDeclarationFactory,
+  HttpRequestHandlerResponseStaticDeclaration,
+  /** @deprecated Use `HttpRequestHandlerResponseStaticDeclaration` instead. */
+  HttpRequestHandlerResponseStaticDeclaration as HttpRequestHandlerResponseDeclaration,
+  HttpRequestHandlerResponseComputedDeclaration,
+  /** @deprecated Use `HttpRequestHandlerResponseComputedDeclaration` instead. */
+  HttpRequestHandlerResponseComputedDeclaration as HttpRequestHandlerResponseDeclarationFactory,
   HttpRequestHandlerResponseDelayFactory,
   HttpInterceptorRequest,
   HttpInterceptorResponse,

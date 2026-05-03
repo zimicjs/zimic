@@ -6,7 +6,7 @@ import HttpTimesCheckError from '@/http/errors/HttpTimesCheckError';
 import HttpTimesDeclarationPointer from '@/http/errors/HttpTimesDeclarationPointer';
 
 import {
-  HttpRequestHandlerResponseDeclaration,
+  HttpRequestHandlerResponseStaticDeclaration,
   HttpRequestHandlerStatusResponseDeclaration,
 } from '../../types/requests';
 
@@ -63,7 +63,7 @@ export function expectStatusResponseDeclaration<
   MethodSchema extends HttpMethodSchema = HttpMethodSchema,
   StatusCode extends HttpStatusCode = HttpStatusCode,
 >(
-  declaration: HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>,
+  declaration: HttpRequestHandlerResponseStaticDeclaration<MethodSchema, StatusCode>,
 ): asserts declaration is HttpRequestHandlerStatusResponseDeclaration<MethodSchema, StatusCode> {
   expect(declaration).toHaveProperty('status');
   expect(declaration).not.toHaveProperty('action');
