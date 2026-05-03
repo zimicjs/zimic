@@ -62,19 +62,28 @@ export interface HttpRequestHandlerActionResponseDeclaration {
 }
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
-export type HttpRequestHandlerResponseDeclaration<
+export type HttpRequestHandlerResponseStaticDeclaration<
   MethodSchema extends HttpMethodSchema = HttpMethodSchema,
   StatusCode extends HttpStatusCode = HttpStatusCode,
 > = HttpRequestHandlerStatusResponseDeclaration<MethodSchema, StatusCode> | HttpRequestHandlerActionResponseDeclaration;
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
-export type HttpRequestHandlerResponseDeclarationFactory<
+export type HttpRequestHandlerResponseComputedDeclaration<
   Path extends string,
   MethodSchema extends HttpMethodSchema,
   StatusCode extends HttpStatusCode = HttpStatusCode,
 > = (
   request: Omit<HttpInterceptorRequest<Path, MethodSchema>, 'response'>,
-) => PossiblePromise<HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>>;
+) => PossiblePromise<HttpRequestHandlerResponseStaticDeclaration<MethodSchema, StatusCode>>;
+
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
+export type HttpRequestHandlerResponseDeclaration<
+  Path extends string,
+  MethodSchema extends HttpMethodSchema,
+  StatusCode extends HttpStatusCode = HttpStatusCode,
+> =
+  | HttpRequestHandlerResponseStaticDeclaration<MethodSchema, StatusCode>
+  | HttpRequestHandlerResponseComputedDeclaration<Path, MethodSchema, StatusCode>;
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerdelay `handler.delay()` API reference} */
 export type HttpRequestHandlerResponseDelayFactory<Path extends string, MethodSchema extends HttpMethodSchema> = (

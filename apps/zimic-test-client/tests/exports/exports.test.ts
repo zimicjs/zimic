@@ -124,7 +124,9 @@ import {
   type RemoteHttpRequestHandler,
   type SyncedRemoteHttpRequestHandler,
   type PendingRemoteHttpRequestHandler,
+  type HttpRequestHandlerResponseStaticDeclaration,
   type HttpRequestHandlerResponseDeclaration,
+  type HttpRequestHandlerResponseComputedDeclaration,
   type HttpRequestHandlerResponseDeclarationFactory,
   type HttpRequestHandlerResponseDelayFactory,
   type HttpRequestHandlerRestriction,
@@ -345,7 +347,9 @@ describe('Exports', () => {
     expectTypeOf<RemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
     expectTypeOf<SyncedRemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
     expectTypeOf<PendingRemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
+    expectTypeOf<HttpRequestHandlerResponseStaticDeclaration<never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestHandlerResponseDeclaration<never, never>>().not.toBeAny();
+    expectTypeOf<HttpRequestHandlerResponseComputedDeclaration<never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestHandlerResponseDeclarationFactory<never, never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestHandlerResponseDelayFactory<never, never>>().not.toBeAny();
 
