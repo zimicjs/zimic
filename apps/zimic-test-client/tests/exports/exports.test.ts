@@ -386,7 +386,7 @@ describe('Exports', () => {
     expect(typeof TimesCheckError).toBe('function');
   });
 
-  it('exports all expected resources from @zimic/interceptor/ws', () => {
+  it('exports all expected resources from @zimic/interceptor/experimental/ws', () => {
     expect(typeof createWebSocketInterceptor).toBe('function');
 
     expectTypeOf<WebSocketInterceptor<never>>().not.toBeAny();
