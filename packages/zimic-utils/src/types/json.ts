@@ -99,11 +99,11 @@ declare global {
     ): JSONStringified<Value>;
 
     // eslint-disable-next-line @typescript-eslint/method-signature-style
-    parse<Value>(
-      text: JSONStringified<Value>,
+    parse<StringifiedValue>(
+      text: StringifiedValue,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       reviver?: (this: any, key: string, value: any) => any,
-    ): JSONSerialized<Value>;
+    ): StringifiedValue extends JSONStringified<infer Value> ? JSONSerialized<Value> : never;
   }
 }
 
