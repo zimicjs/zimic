@@ -3,25 +3,29 @@ import { WebSocketSchema } from '@zimic/ws';
 import { WebSocketInterceptorClient } from '../interceptor/types/messages';
 import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
 import { WebSocketMessageHandlerDelayFactory } from './types/messages';
-import { WebSocketMessageInterceptedCallback } from './types/public';
+import { WebSocketMessageHandlerMessageCallback, WebSocketMessageHandlerMessageDeclaration } from './types/public';
 import { WebSocketMessageHandlerRestriction } from './types/restrictions';
 
-class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema> {
+class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, RestrictedSchema extends Schema = Schema> {
   constructor(private _interceptorImplementation: WebSocketInterceptorImplementation<Schema>) {}
 
   from(_sender: WebSocketInterceptorClient<Schema>) {
     // TODO
   }
 
-  with(_restriction: WebSocketMessageHandlerRestriction<Schema>) {
+  with(_restriction: WebSocketMessageHandlerRestriction<RestrictedSchema>) {
     // TODO
   }
 
-  delay(_minMilliseconds: number | WebSocketMessageHandlerDelayFactory<Schema>, _maxMilliseconds?: number) {
+  delay(_minMilliseconds: number | WebSocketMessageHandlerDelayFactory<RestrictedSchema>, _maxMilliseconds?: number) {
     // TODO
   }
 
-  run(_callback: WebSocketMessageInterceptedCallback<Schema>) {
+  effect(_callback: WebSocketMessageHandlerMessageCallback<Schema, RestrictedSchema>) {
+    // TODO
+  }
+
+  respond(_declaration: WebSocketMessageHandlerMessageDeclaration<Schema, RestrictedSchema>) {
     // TODO
   }
 
@@ -35,6 +39,11 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema> {
 
   clear() {
     // TODO
+  }
+
+  get messages() {
+    // TODO
+    return [];
   }
 }
 

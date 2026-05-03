@@ -5,53 +5,67 @@ import WebSocketInterceptorImplementation from '../interceptor/WebSocketIntercep
 import { WebSocketMessageHandlerDelayFactory } from './types/messages';
 import {
   LocalWebSocketMessageHandler as PublicLocalWebSocketMessageHandler,
-  WebSocketMessageInterceptedCallback,
+  WebSocketMessageHandlerMessageCallback,
+  WebSocketMessageHandlerMessageDeclaration,
 } from './types/public';
 import { WebSocketMessageHandlerRestriction } from './types/restrictions';
 import WebSocketMessageHandlerImplementation from './WebSocketMessageHandlerImplementation';
 
 export class LocalWebSocketMessageHandler<
   Schema extends WebSocketSchema,
-> implements PublicLocalWebSocketMessageHandler<Schema> {
+  RestrictedSchema extends Schema = Schema,
+> implements PublicLocalWebSocketMessageHandler<Schema, RestrictedSchema> {
   readonly type = 'local';
 
-  client: WebSocketMessageHandlerImplementation<Schema>;
+  implementation: WebSocketMessageHandlerImplementation<Schema, RestrictedSchema>;
 
   constructor(interceptorImplementation: WebSocketInterceptorImplementation<Schema>) {
-    this.client = new WebSocketMessageHandlerImplementation<Schema>(interceptorImplementation);
+    this.implementation = new WebSocketMessageHandlerImplementation<Schema, RestrictedSchema>(
+      interceptorImplementation,
+    );
   }
 
   from(sender: WebSocketInterceptorClient<Schema>) {
-    this.client.from(sender);
+    this.implementation.from(sender);
     return this;
   }
 
-  with(restriction: WebSocketMessageHandlerRestriction<Schema>) {
-    this.client.with(restriction);
+  with(restriction: WebSocketMessageHandlerRestriction<RestrictedSchema>) {
+    this.implementation.with(restriction);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
+    return this as any; // TODO
+  }
+
+  delay(minMilliseconds: number | WebSocketMessageHandlerDelayFactory<RestrictedSchema>, maxMilliseconds?: number) {
+    this.implementation.delay(minMilliseconds, maxMilliseconds);
     return this;
   }
 
-  delay(minMilliseconds: number | WebSocketMessageHandlerDelayFactory<Schema>, maxMilliseconds?: number) {
-    this.client.delay(minMilliseconds, maxMilliseconds);
+  effect(callback: WebSocketMessageHandlerMessageCallback<Schema, RestrictedSchema>) {
+    this.implementation.effect(callback);
     return this;
   }
 
-  run(callback: WebSocketMessageInterceptedCallback<Schema>) {
-    this.client.run(callback);
+  respond(declaration: WebSocketMessageHandlerMessageDeclaration<Schema, RestrictedSchema>) {
+    this.implementation.respond(declaration);
     return this;
   }
 
   times(minNumberOfRequests: number, maxNumberOfRequests?: number) {
-    this.client.times(minNumberOfRequests, maxNumberOfRequests);
+    this.implementation.times(minNumberOfRequests, maxNumberOfRequests);
     return this;
   }
 
   checkTimes() {
-    this.client.checkTimes();
+    this.implementation.checkTimes();
   }
 
   clear() {
-    this.client.clear();
+    this.implementation.clear();
     return this;
+  }
+
+  get messages() {
+    return this.implementation.messages;
   }
 }
