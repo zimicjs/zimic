@@ -15,10 +15,16 @@ import { delayWebSocketClose, delayWebSocketListenerTrigger } from './utils';
 describe('WebSocketClient', () => {
   let httpServer: HttpServer;
 
-  type Schema = WebSocketSchema<{
-    type: 'message';
-    data: string;
-  }>;
+  type Schema = WebSocketSchema<
+    | {
+        type: 'message';
+        data: string;
+      }
+    | {
+        type: 'count';
+        data: number;
+      }
+  >;
 
   let webSocketServer: WebSocketServer<Schema>;
   let webSocketClient: WebSocketClient<Schema> | undefined;
@@ -230,7 +236,12 @@ describe('WebSocketClient', () => {
       webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
         serverWebSocketClient.addEventListener('message', (event) => {
           const message = JSON.parse(event.data);
+
           expectTypeOf(message).toEqualTypeOf<Schema>();
+          expectTypeOf(message.type).toEqualTypeOf<'message' | 'count'>();
+          expectTypeOf(message.data).toEqualTypeOf<string | number>();
+
+          expect(message.type).toBe('message');
 
           serverWebSocketClient.send(
             JSON.stringify({
