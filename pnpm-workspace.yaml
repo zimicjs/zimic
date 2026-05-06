@@ -43,10 +43,17 @@ overrides:
   minimatch@5: ^5.1.7
   minimatch@9: ^9.0.6
 
-  serialize-javascript@7: ^7.0.3
+  postcss@8: ^8.5.13
+
+  serialize-javascript@6: ^7.0.5
+  serialize-javascript@7: ^7.0.5
   svgo@3: ^3.3.3
 
+  vite@7: ^7.3.2
+
   webpack@5: ^5.104.1
+
+  yaml@2: ^2.8.3
 
   # Temporary workaround for https://github.com/facebook/docusaurus/issues/11923.
   webpackbar: ^7.0.0
