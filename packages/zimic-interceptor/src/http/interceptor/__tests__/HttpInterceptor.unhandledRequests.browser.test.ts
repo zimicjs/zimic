@@ -9,8 +9,8 @@ import { declareUnhandledRequestLoggingHttpInterceptorTests } from './shared/unh
 describe.each(testMatrix)('HttpInterceptor (browser, $type) > Unhandled requests', ({ type }) => {
   let baseURL: string;
 
-  beforeAll(async () => {
-    baseURL = await getBrowserBaseURL(type);
+  beforeAll(() => {
+    baseURL = getBrowserBaseURL(type);
   });
 
   describe('Logging', () => {

@@ -5,14 +5,14 @@ import { getBrowserBaseURL } from '@tests/utils/interceptors';
 import { declareFormDataBodyHttpInterceptorTests } from './shared/bodies/formData';
 import testMatrix from './shared/matrix';
 
-describe.each(testMatrix)('HttpInterceptor (browser, $type) > Bodies > Form data', async ({ type }) => {
+describe.each(testMatrix)('HttpInterceptor (browser, $type) > Bodies > Form data', ({ type }) => {
   let baseURL: string;
 
-  beforeAll(async () => {
-    baseURL = await getBrowserBaseURL(type);
+  beforeAll(() => {
+    baseURL = getBrowserBaseURL(type);
   });
 
-  await declareFormDataBodyHttpInterceptorTests({
+  declareFormDataBodyHttpInterceptorTests({
     platform: 'browser',
     type,
     getBaseURL: () => baseURL,

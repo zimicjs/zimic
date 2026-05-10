@@ -15,7 +15,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Base URLs', ({ type }
     if (type === 'remote') {
       await server.start();
     }
-    baseURL = await getNodeBaseURL(type, server);
+    baseURL = getNodeBaseURL(type, server);
   });
 
   afterAll(async () => {
