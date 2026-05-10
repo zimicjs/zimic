@@ -1,100 +1,55 @@
-# AI Agent Instructions
+# Zimic - Agent Guide
 
-Guidelines for implementing changes that align with project architecture, conventions, and quality standards.
+## Project overview
 
-## Project Overview
+- TypeScript monorepo for HTTP and WebSocket tooling, including schema, fetch, interceptor, and utility packages.
+- Public APIs are published from package entry points and treated as stable contracts.
+- Documentation lives in the website app (`apps/zimic-web`), and runnable integrations live under `examples`.
 
-TypeScript monorepo (pnpm + turborepo) providing HTTP integration libraries:
+## Public API and packaging
 
-- **Core packages**: `@zimic/http` (HTTP schemas), `@zimic/fetch` (Fetch client), `@zimic/ws` (WebSocket client and
-  server), `@zimic/interceptor` (HTTP request mocking), `@zimic/utils` (shared utilities)
-- **Configuration**: `tsconfig`, `eslint-config`, `eslint-config-node`, `eslint-config-react`, `lint-staged-config`
-- **Documentation**: `apps/zimic-web` (Docusaurus + Tailwind CSS)
-- **Testing**: `apps/zimic-test-client` (verifies exports and build artifacts)
-- **Examples**: `examples/*` (integration demonstrations)
+- Treat package exports as part of the public contract. If a change adds, removes, or renames a public entry point, keep
+  the package `exports` map and consumer coverage aligned.
+- Preserve tree-shakeability. Avoid top-level side effects and do not weaken assumptions behind package
+  `sideEffects: false`.
+- In `@zimic/utils`, keep public utilities granular. Follow the existing one-entry-per-export structure instead of
+  folding new utilities into broad entry points.
 
-**Targets**: Node >= 22, modern browsers; dual ESM/CJS via `tsup` with explicit `exports` maps.
+## Runtime and behavior coverage
 
-## Key Architecture Constraints
+- Many packages are expected to work in both Node and browser environments. Keep changes runtime-safe unless the target
+  code is clearly environment-specific.
+- `@zimic/interceptor` has local and remote implementations behind shared APIs. Changes that affect shared behavior
+  should account for both modes.
+- Match the test dimensions already used by the target package. Cover every affected runtime or mode instead of testing
+  only the easiest path.
+- Do not weaken coverage expectations for core packages.
 
-- **Module resolution**: `moduleResolution: bundler`, strict mode, incremental builds
-- **Exports**: Explicit `exports` map required for all public APIs; update when adding resources
-- **Tree-shaking**: `sideEffects: false` must be respected; avoid top-level side effects
-- **Cross-platform**: Most code must work in Node.js and browser environments
-- **Interceptor duality**: Local and remote interceptors share APIs but differ in implementation; tests must verify both
-- **Bundle size**: Each `@zimic/utils` export is a separate file to minimize client bundles
+## Published artifacts
 
-## Development Workflow
+- Do not hand-edit generated declaration files, except top-level entry points that are intentionally kept in source
+  control.
+- Update docs and examples when a public API or documented behavior changes.
+- Treat breaking public API changes as intentional work. Keep code, tests, exports, and docs consistent.
 
-### Before Changes
+## Before finishing a change
 
-1. Identify target package
-2. Review existing tests and structure for patterns to reuse
-3. Check if cross-platform (Node + browser) or dual-mode (local + remote) support needed
+Run these in the relevant app or package, in this order:
 
-### During Implementation
+1. Type check
+2. Lint
+3. Test
 
-1. Write tests covering all branches, error paths, and edge cases
-2. Implement feature with clear, explicit naming (avoid abbreviations)
-3. Keep code simple; avoid premature optimization and unnecessary abstractions
-4. Never use `any`; leverage type inference
-5. Update `exports` map if adding new public API
-6. Update documentation (`apps/zimic-web/docs`) with examples
-7. Update relevant examples (`examples/*`) if needed
+Review the project scripts and documentation before running project-specific commands. Do not try to guess or run ad-hoc
+commands without context. If unclear, ask the user.
 
-### Verification
+Prefer targeted checks over full-workspace runs.
 
-After implementation, always verify your changes with the following commands:
+After editing a shared package, rebuild it before exercising services that depend on it. Never edit generated build
+output directly.
 
-1. `pnpm types:check`: Type check with `tsc`
-2. `pnpm lint`: Lint files or directories using `eslint`
-3. `pnpm build`: Build app/package, if the app/package has a build step
-4. `pnpm test <pattern>`: Run tests, if the app/package has any
+## Where to look first
 
-**CRITICAL**: execute these commands inside the target app/package directory; use `pnpm --dir <path>` if needed;
-
-### Critical Rules
-
-- **Coverage**: Maintain 100% for core packages; never lower thresholds
-- **Declarations**: Don't edit generated `.d.ts` files except top-level entry points
-- **Dependencies**: Avoid adding unless essential; prefer native modules; check bundle size and license
-- **Breaking changes**: Require version bump
-
-## Testing Standards
-
-**Runner**: Vitest with Node + `@vitest/browser` (Playwright/Chromium)
-
-**Structure**:
-
-- Location: `__tests__/` directories near source
-- Naming: `<resource>.test.ts` or `<resource>.<feature>.test.ts`
-- Test utilities: Keep in `__tests__/` or `tests/` only (never export in production)
-
-**Principles**:
-
-- Test public APIs, not internals
-- Avoid mocking; exercise real behavior
-- Use spies only for side-effect assertions
-- Ensure 100% coverage including edge cases and error paths
-- Support both Node + browser, local + remote where applicable
-
-## Code Quality Standards
-
-- **Naming**: Explicit and descriptive (prefer clarity over brevity)
-- **Architecture**: Composition over inheritance; minimal API surface
-- **Type Safety**: Strict TypeScript; avoid `any`; use inference
-- **Optimization**: Only when measured; avoid premature optimization
-- **CLI** (if applicable): Build to `dist/*.js` via `tsup`; use `yargs` with kebab-case options
-
-## Code Review Guidelines
-
-Focus reviews on relevance and quality:
-
-- **Scope**: Changes match specification; no unrelated modifications
-- **Quality**: Clear naming, simple implementation, proper abstractions
-- **Testing**: 100% coverage maintained; high-quality tests covering edge cases and error paths; cross-platform verified
-- **Compatibility**: Works in Node.js and browser; local + remote modes tested (interceptor)
-- **Security**: No hardcoded secrets; input validation; proper error handling; no vulnerable pathways
-- **Maintainability**: Documentation and examples updated; `exports` map current; breaking changes versioned
-- **Bundle**: No unnecessary dependencies; tree-shaking preserved; granular exports without test or internal code
-- **Build**: TypeScript strict compliance; no `any`; all verification steps pass (types, lint, tests, build)
+- General project structure and setup: root `README.md`, `CONTRIBUTING.md`, and workspace configuration.
+- App or package-specific conventions and commands: local `README.md` and package scripts.
+- Existing nearby tests and implementation patterns before introducing new helpers or abstractions.
