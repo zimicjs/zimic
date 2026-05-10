@@ -5,14 +5,14 @@ import { getBrowserBaseURL } from '@tests/utils/interceptors';
 import { declarePlainTextBodyHttpInterceptorTests } from './shared/bodies/plainText';
 import testMatrix from './shared/matrix';
 
-describe.each(testMatrix)('HttpInterceptor (browser, $type) > Bodies > Plain text', async ({ type }) => {
+describe.each(testMatrix)('HttpInterceptor (browser, $type) > Bodies > Plain text', ({ type }) => {
   let baseURL: string;
 
-  beforeAll(async () => {
-    baseURL = await getBrowserBaseURL(type);
+  beforeAll(() => {
+    baseURL = getBrowserBaseURL(type);
   });
 
-  await declarePlainTextBodyHttpInterceptorTests({
+  declarePlainTextBodyHttpInterceptorTests({
     platform: 'browser',
     type,
     getBaseURL: () => baseURL,

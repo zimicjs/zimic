@@ -12,7 +12,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { verifyUnhandledRequestMessage } from '@/http/interceptor/__tests__/shared/utils';
 import { createHttpInterceptor } from '@/http/interceptor/factory';
 import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/server/constants';
-import { importCrypto } from '@/utils/crypto';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 import WebSocketServer from '@/utils/webSocket/WebSocketServer';
 import { usingIgnoredConsole } from '@tests/utils/console';
@@ -22,9 +21,7 @@ import runCLI from '../../cli';
 import { serverSingleton as server } from '../start';
 import { delayHttpServerListenIndefinitely, delayHttpServerCloseIndefinitely } from './utils';
 
-describe('CLI > Server start', async () => {
-  const crypto = await importCrypto();
-
+describe('CLI > Server start', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
   const processOffSpy = vi.spyOn(process, 'off');
   const processExitSpy = vi.spyOn(process, 'exit').mockReturnValue(undefined as never);

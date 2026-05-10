@@ -5,14 +5,14 @@ import { getBrowserBaseURL } from '@tests/utils/interceptors';
 import testMatrix from './shared/matrix';
 import { declareRestrictionsHttpInterceptorTests } from './shared/restrictions';
 
-describe.each(testMatrix)('HttpInterceptor (browser, $type) > Restrictions', async ({ type }) => {
+describe.each(testMatrix)('HttpInterceptor (browser, $type) > Restrictions', ({ type }) => {
   let baseURL: string;
 
-  beforeAll(async () => {
-    baseURL = await getBrowserBaseURL(type);
+  beforeAll(() => {
+    baseURL = getBrowserBaseURL(type);
   });
 
-  await declareRestrictionsHttpInterceptorTests({
+  declareRestrictionsHttpInterceptorTests({
     platform: 'browser',
     type,
     getBaseURL: () => baseURL,
