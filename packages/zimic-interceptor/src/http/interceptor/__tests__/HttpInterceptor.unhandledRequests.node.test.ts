@@ -16,7 +16,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Unhandled requests', 
     if (type === 'remote') {
       await server.start();
     }
-    baseURL = await getNodeBaseURL(type, server);
+    baseURL = getNodeBaseURL(type, server);
   });
 
   afterAll(async () => {

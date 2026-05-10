@@ -7,7 +7,7 @@ export interface SharedHttpRequestHandlerTestOptions {
   platform: HttpInterceptorPlatform;
   startServer?: () => PossiblePromise<void>;
   stopServer?: () => PossiblePromise<void>;
-  getBaseURL: (type: HttpInterceptorType) => Promise<string>;
+  getBaseURL: (type: HttpInterceptorType) => PossiblePromise<string>;
 }
 
 export type HeadersSchema = HttpSchema.Headers<{
