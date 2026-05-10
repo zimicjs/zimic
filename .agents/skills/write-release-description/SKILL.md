@@ -43,7 +43,7 @@ Optional:
 
      ```bash
      gh release list --repo zimicjs/zimic --json tagName,name,isDraft,isPrerelease,publishedAt \
-       | jq -r --arg prefix '<package>@' 'map(select(.isDraft == false and (.tagName | startswith($prefix)))) | sort_by(.publishedAt) | last'
+       | jq -r --arg prefix '<package>@' 'map(select(.isDraft == false and .isPrerelease == false and (.tagName | startswith($prefix)))) | sort_by(.publishedAt) | last'
      ```
 
 5. Gather candidate pull requests from multiple signals:
