@@ -9,7 +9,6 @@ import RemoteHttpInterceptor from '@/http/interceptor/RemoteHttpInterceptor';
 import { HttpInterceptorType } from '@/http/interceptor/types/options';
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
-import { importFile, isGlobalFileAvailable } from '@/utils/files';
 import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpRequestHandlerRequestMatch } from '../../HttpRequestHandlerImplementation';
@@ -786,8 +785,6 @@ export function declareTimesHttpRequestHandlerTests(
         const formData = new HttpFormData<{ name: string; file: File; blob: Blob }>();
         formData.append('name', '2');
 
-        const File = await importFile();
-
         const blob = new Blob(['response'], { type: 'text/plain' });
         formData.append('blob', blob);
 
@@ -842,19 +839,7 @@ export function declareTimesHttpRequestHandlerTests(
             '     Body:',
             `       ${color.green('- FormData { "name": "1" }')}`,
             `       ${color.red(
-              `+ FormData { "name": "2", ${
-                /* istanbul ignore next -- @preserve
-                 * Ignoring as Node.js >=20 provides a global File and only one branch can be covered at a time. */
-                isGlobalFileAvailable()
-                  ? "\"blob\": File { name: 'blob', type: 'text/plain', size: 8 },"
-                  : '"blob": Blob { type: \'text/plain\', size: 8 },'
-              } ${
-                /* istanbul ignore next -- @preserve
-                 * Ignoring as Node.js >=20 provides a global File and only one branch can be covered at a time. */
-                isGlobalFileAvailable()
-                  ? "\"file\": File { name: 'tag.txt', type: 'text/plain', size: 8 }"
-                  : '"file": Blob { type: \'text/plain\', size: 8 }'
-              } }`,
+              '+ FormData { "name": "2", "blob": File { name: \'blob\', type: \'text/plain\', size: 8 }, "file": File { name: \'tag.txt\', type: \'text/plain\', size: 8 } }',
             )}`,
           ].join('\n'),
           expectedNumberOfRequests: 1,

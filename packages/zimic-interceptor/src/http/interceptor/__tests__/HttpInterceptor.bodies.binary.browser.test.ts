@@ -5,14 +5,14 @@ import { getBrowserBaseURL } from '@tests/utils/interceptors';
 import { declareBinaryBodyHttpInterceptorTests } from './shared/bodies/binary';
 import testMatrix from './shared/matrix';
 
-describe.each(testMatrix)('HttpInterceptor (browser, $type) > Bodies > Binary', async ({ type }) => {
+describe.each(testMatrix)('HttpInterceptor (browser, $type) > Bodies > Binary', ({ type }) => {
   let baseURL: string;
 
-  beforeAll(async () => {
-    baseURL = await getBrowserBaseURL(type);
+  beforeAll(() => {
+    baseURL = getBrowserBaseURL(type);
   });
 
-  await declareBinaryBodyHttpInterceptorTests({
+  declareBinaryBodyHttpInterceptorTests({
     platform: 'browser',
     type,
     getBaseURL: () => baseURL,

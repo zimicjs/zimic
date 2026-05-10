@@ -16,12 +16,9 @@ import {
   UserUpdatePayload,
   ValidationError,
 } from '@tests/types/schema';
-import { importCrypto } from '@tests/utils/crypto';
 import { expectResponseStatus } from '@tests/utils/requests';
 
-describe('Fetch client', async () => {
-  const crypto = await importCrypto();
-
+describe('Fetch client', () => {
   const authFetch = createFetch<AuthServiceSchema>({
     baseURL: 'http://localhost:4000',
   });
