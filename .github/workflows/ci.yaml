@@ -126,6 +126,7 @@ jobs:
           - 22
           - 24
           - 25
+          - 26
 
     env:
       NODE_VERSION: ${{ matrix.node-version }}
