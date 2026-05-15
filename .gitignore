@@ -25,9 +25,6 @@ node_modules
 **/fixtures/**/generated/*
 packages/zimic-http/**/fixtures/openapi/*.json
 
-# Environment variables
-.env*.local
-
 # Cache
 .turbo
 .cache
@@ -44,4 +41,5 @@ tsconfig.tsbuildinfo
 *.pem
 tmp/
 local/
+*.local*
 tracing/
