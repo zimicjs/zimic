@@ -43,20 +43,18 @@ runs:
 
         echo 'Bumping version...'
 
-        currentVersion=$(pnpm version --json | jq ".\"$projectName\"" -r)
+        currentVersion=$(jq '.version' -r package.json)
         stableCurrentVersion=$(echo "$currentVersion" | sed 's/-.*//')
 
-        bumpedVersion=$(
-          if [[ "$upgradeType" == 'stable' ]]; then
-            pnpm version "$stableCurrentVersion" --no-git-tag-version
-          elif [[ "$preReleaseId" == 'none' ]]; then
-            pnpm version "$upgradeType" --no-git-tag-version
-          else
-            pnpm version "pre${upgradeType#*pre}" --preid "$preReleaseId" --no-git-tag-version
-          fi
-        )
+        if [[ "$upgradeType" == 'stable' ]]; then
+          pnpm version "$stableCurrentVersion" --no-git-tag-version
+        elif [[ "$preReleaseId" == 'none' ]]; then
+          pnpm version "$upgradeType" --no-git-tag-version
+        else
+          pnpm version "pre${upgradeType#*pre}" --preid "$preReleaseId" --no-git-tag-version
+        fi
 
-        bumpedVersion=${bumpedVersion#*v}
+        bumpedVersion=$(jq '.version' -r package.json)
 
         echo "Project '$projectName' is now at $bumpedVersion"
         echo 'Committing changes...'
