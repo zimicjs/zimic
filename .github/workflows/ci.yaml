@@ -50,6 +50,7 @@ jobs:
           turbo-team: ${{ env.TURBO_TEAM }}
           install: '"@zimic/*..." "zimic-*..."'
           build: '"@zimic/*..." "zimic-*^..."'
+          setup: '"@zimic/*..." "zimic-*..."'
 
       - name: Check formatting style
         uses: ./.github/actions/zimic-style-check
