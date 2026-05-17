@@ -260,7 +260,6 @@ export default [
       '@typescript-eslint/no-unnecessary-type-constraint': 'warn',
       '@typescript-eslint/no-require-imports': 'warn',
       '@typescript-eslint/no-this-alias': 'warn',
-      '@typescript-eslint/no-unnecessary-type-arguments': 'warn',
       '@typescript-eslint/no-unnecessary-condition': ['warn', { allowConstantLoopConditions: true }],
       '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'warn',
       '@typescript-eslint/no-non-null-asserted-nullish-coalescing': 'warn',
