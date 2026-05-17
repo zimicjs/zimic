@@ -1,4 +1,9 @@
 minimumReleaseAge: 1440
+autoInstallPeers: true
+engineStrict: false
+sideEffectsCache: false
+ignoreWorkspaceCycles: true
+linkWorkspacePackages: true
 
 minimumReleaseAgeExclude:
   - '@zimic/*'
