@@ -675,7 +675,7 @@ importers:
   packages/zimic-fetch:
     dependencies:
       '@zimic/http':
-        specifier: ^1.3.0 || workspace:*
+        specifier: workspace:^1.3.0
         version: link:../zimic-http
     devDependencies:
       '@types/node':
@@ -806,7 +806,7 @@ importers:
         specifier: 0.10.18
         version: 0.10.18
       '@zimic/http':
-        specifier: ^1.2.0 || workspace:*
+        specifier: workspace:^1.2.0
         version: link:../zimic-http
       isomorphic-ws:
         specifier: 5.0.0
