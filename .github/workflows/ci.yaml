@@ -49,7 +49,7 @@ jobs:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
           install: '"@zimic/*..." "zimic-*..."'
-          build: '"@zimic/*...[HEAD^1]" "zimic-*^...[HEAD^1]" "zimic-example-with-openapi-typegen^..."'
+          build: '"@zimic/*..." "zimic-*^..."'
 
       - name: Check formatting style
         uses: ./.github/actions/zimic-style-check
