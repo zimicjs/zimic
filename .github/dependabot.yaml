@@ -4,10 +4,8 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
-      day: sunday
+      interval: monthly
       time: '00:00'
-      timezone: America/Sao_Paulo
     labels:
       - dependencies
     commit-message:
@@ -33,10 +31,8 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-      day: sunday
+      interval: monthly
       time: '00:00'
-      timezone: America/Sao_Paulo
     labels:
       - dependencies
     commit-message:
