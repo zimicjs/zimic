@@ -46,7 +46,12 @@ Optional:
        | jq -r --arg prefix '<package>@' 'map(select(.isDraft == false and .isPrerelease == false and (.tagName | startswith($prefix)))) | sort_by(.publishedAt) | last'
      ```
 
-5. Gather candidate pull requests from multiple signals:
+5. Gather candidate release-branch commits from `<previous-tag>...<release-branch>`, where `<release-branch>` is
+   `<package>@<major>` such as `@zimic/http@1`, then map those commits to pull requests. Always use the squash or merge
+   commits that are actually present in the release branch and map to their PRs, instead of using the commits from the
+   PR branches.
+
+6. Gather candidate pull requests:
    - PR URLs already present in the draft body.
    - The GitHub compare range between previous and target tags.
    - Conventional-commit scopes matching the package, such as `http`, `fetch`, `interceptor`, or `ws`.
@@ -54,31 +59,34 @@ Optional:
    - Shared/root changes that plausibly affect the package, especially dependencies, Node/TypeScript support, release
      tooling, and documentation.
 
-6. Show the likely PR list grouped as:
+7. Show the likely PR list grouped as:
    - Included with high confidence.
    - Ambiguous shared/root changes.
    - Excluded with reason, if useful.
 
-7. Ask the user to confirm the PR list and mention that they may add or remove PRs.
+8. Ask the user to confirm the PR list and mention that they may add or remove PRs.
 
-8. Draft the final release body from the confirmed PRs and the static format reference.
+9. Draft the final release body from the confirmed PRs and the static format reference.
 
-9. Show a concise preview summary plus the exact markdown body. Ask the user to confirm before editing GitHub.
+10. Show a concise preview summary plus the exact markdown body. Ask the user to confirm before editing GitHub.
 
-10. Write the body to a temporary local markdown file, such as `./tmp/zimic-release-notes-<package-name>-<version>.md`.
+11. Write the body to a temporary local markdown file, such as `./tmp/zimic-release-notes-<package-name>-<version>.md`.
 
-11. Update the draft without publishing:
+12. Update the draft without publishing:
 
     ```bash
     gh release edit '<tag>' --repo zimicjs/zimic --notes-file './tmp/zimic-release-notes-<package-name>-<version>.md'
     ```
 
-12. Fetch the release again and confirm the body was updated while still draft.
+13. Fetch the release again and confirm the body was updated while still draft.
 
 # Pull request filtering
 
 Prefer inclusion only when there is concrete evidence the PR affects the requested package. For package-scoped releases,
 do not include unrelated changes from other packages.
+
+Evaluate package scope, conventional-commit scopes, changed files, and shared/root impact from the release-branch
+squash/merge commits or the tag comparison.
 
 Treat shared/root changes as package-related when they affect consumers of the package or the package build/test/runtime
 environment. Dependency PRs commonly apply to many packages and may appear in multiple package releases.

@@ -76,18 +76,12 @@ runs:
     - name: Test released package
       shell: bash
       run: |
-        # Allow scripts/postinstall.mjs to autofix pnpm-lock.yaml, in case projects stopped referencing @zimic/*
-        # packages using local links. pnpm sometimes removes links to local packages in favor of registry versions after
-        # installing or updating packages.
         timeout 90s bash -c "
           until pnpm install --no-frozen-lockfile ${{ steps.zimic-setup.outputs.install-filters }}; do
             sleep 5
             echo 'Retrying...'
           done
         "
-
-        echo 'Re-running `pnpm install` in case `pnpm-lock.yaml` was changed by scripts/postinstall.mjs...'
-        pnpm install --no-frozen-lockfile ${{ steps.zimic-setup.outputs.install-filters }}
 
         # Return the package name back to the original for turbo tasks
         sed -i -E \
@@ -109,8 +103,6 @@ runs:
         TURBO_TOKEN: ${{ inputs.turbo-token }}
         TURBO_TEAM: ${{ inputs.turbo-team }}
         TURBO_LOG_ORDER: stream
-        ALLOWED_NON_LOCAL_PACKAGES: ${{ inputs.project-name }}
-        EXIT_ON_NON_LOCAL_PACKAGES: false
 
     - name: Save turbo cache
       if: ${{ always() }}
