@@ -46,6 +46,7 @@
     "!src/**/tests",
     "!src/**/__tests__",
     "!src/**/*.test.ts",
+    "bin",
     "dist",
     "index.d.ts",
     "http.d.ts",
@@ -56,7 +57,7 @@
   "module": "./dist/index.mjs",
   "types": "index.d.ts",
   "bin": {
-    "zimic-interceptor": "./dist/cli.js"
+    "zimic-interceptor": "./bin/zimic-interceptor.js"
   },
   "exports": {
     ".": {
