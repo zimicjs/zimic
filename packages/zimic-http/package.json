@@ -44,6 +44,7 @@
     "!src/**/tests",
     "!src/**/__tests__",
     "!src/**/*.test.ts",
+    "bin",
     "dist",
     "index.d.ts",
     "typegen.d.ts"
@@ -53,7 +54,7 @@
   "module": "./dist/index.mjs",
   "types": "index.d.ts",
   "bin": {
-    "zimic-http": "./dist/cli.js"
+    "zimic-http": "./bin/zimic-http.js"
   },
   "exports": {
     ".": {
