@@ -120,14 +120,9 @@ runs:
       shell: bash
       run: |
         targetPackageJsonPath="$PROJECT_DIRECTORY/package.json"
-        jq \
-          --arg version "$PROJECT_VERSION" '
-            .version = $version
-          ' "$targetPackageJsonPath" > "$targetPackageJsonPath.tmp"
-        mv "$targetPackageJsonPath.tmp" "$targetPackageJsonPath"
+        git checkout -- "$targetPackageJsonPath"
       env:
         PROJECT_DIRECTORY: ${{ inputs.project-directory }}
-        PROJECT_VERSION: ${{ steps.zimic-version.outputs.value }}
 
     - name: Save turbo cache
       if: ${{ always() }}
