@@ -432,9 +432,7 @@ export function normalizeResponses(responses: MethodMember, context: TypeTransfo
   const newIdentifier = ts.factory.createIdentifier('response');
   const newQuestionToken = undefined;
 
-  const newMembers = responses.type.members
-    .map((response) => normalizeResponse(response, context), context)
-    .filter(isDefined);
+  const newMembers = responses.type.members.map((response) => normalizeResponse(response, context)).filter(isDefined);
 
   const sortedNewMembers = Array.from(newMembers).sort((response, otherResponse) => {
     return response.statusCode.value.localeCompare(otherResponse.statusCode.value);
