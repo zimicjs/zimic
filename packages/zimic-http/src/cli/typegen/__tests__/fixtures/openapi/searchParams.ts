@@ -84,7 +84,7 @@ export type MyServiceSchema = HttpSchema<{
       response: {
         200: {
           headers: {
-            'content-type': 'x-www-form-urlencoded';
+            'content-type': 'application/x-www-form-urlencoded';
           };
           body: HttpSearchParams<{
             search: MyServiceComponents['schemas']['search'];
@@ -101,7 +101,7 @@ export type MyServiceSchema = HttpSchema<{
       response: {
         200: {
           headers: {
-            'content-type': 'x-www-form-urlencoded';
+            'content-type': 'application/x-www-form-urlencoded';
           };
           body: HttpSearchParams<{
             search?: (string | null) | string[];

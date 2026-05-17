@@ -190,7 +190,7 @@ function normalizeRequestBodyMember(
 
   if (contentType === 'multipart/form-data') {
     newType = wrapFormDataContentType(newType, context);
-  } else if (contentType === 'x-www-form-urlencoded') {
+  } else if (contentType === 'application/x-www-form-urlencoded') {
     newType = wrapURLEncodedContentType(newType, context);
   }
 
