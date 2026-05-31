@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "1.4.2-canary.0",
+  "version": "1.4.2-canary.2",
   "homepage": "https://zimic.dev/docs/interceptor",
   "repository": {
     "type": "git",
@@ -124,7 +124,7 @@
     "vitest": "^4.1.6"
   },
   "peerDependencies": {
-    "@zimic/http": "^1.2.0 || workspace:*",
+    "@zimic/http": "workspace:^1.2.0",
     "typescript": "^5.0.0 || ^6.0.0"
   },
   "peerDependenciesMeta": {
