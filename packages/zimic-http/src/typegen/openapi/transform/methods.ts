@@ -190,7 +190,7 @@ function normalizeRequestBodyMember(
 
   if (contentType === 'multipart/form-data') {
     newType = wrapFormDataContentType(newType, context);
-  } else if (contentType === 'x-www-form-urlencoded') {
+  } else if (contentType === 'application/x-www-form-urlencoded') {
     newType = wrapURLEncodedContentType(newType, context);
   }
 
@@ -432,9 +432,7 @@ export function normalizeResponses(responses: MethodMember, context: TypeTransfo
   const newIdentifier = ts.factory.createIdentifier('response');
   const newQuestionToken = undefined;
 
-  const newMembers = responses.type.members
-    .map((response) => normalizeResponse(response, context), context)
-    .filter(isDefined);
+  const newMembers = responses.type.members.map((response) => normalizeResponse(response, context)).filter(isDefined);
 
   const sortedNewMembers = Array.from(newMembers).sort((response, otherResponse) => {
     return response.statusCode.value.localeCompare(otherResponse.statusCode.value);
