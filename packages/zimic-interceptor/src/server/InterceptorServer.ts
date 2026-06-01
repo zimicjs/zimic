@@ -212,7 +212,6 @@ class InterceptorServer implements PublicInterceptorServer {
           return false;
         }
 
-        // TODO: create a test with two interceptors, one for each path,, and reset only one of them.
         const isHandlerStillCommitted = handlersToRecommit.some(
           /* istanbul ignore next -- @preserve
            * Ensuring this function is called in tests is difficult because it requires clearing or stopping a worker

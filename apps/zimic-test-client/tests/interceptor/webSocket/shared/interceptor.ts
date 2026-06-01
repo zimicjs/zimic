@@ -60,13 +60,13 @@ async function waitForResponseMessage<
 
 export function declareWebSocketInterceptorTests({ platform, type }: ClientTestOptionsByWorkerType) {
   const userInterceptor = createWebSocketInterceptor<UserWebSocketSchema>({
-    type: 'remote', // TODO: Use the matrix type and fix type errors resulting from it.
+    type,
     baseURL: getUserBaseURL(type),
     messageSaving: { enabled: true },
   });
 
   const notificationInterceptor = createWebSocketInterceptor<NotificationWebSocketSchema>({
-    type: 'remote', // TODO: Use the matrix type and fix type errors resulting from it.
+    type,
     baseURL: getNotificationBaseURL(type),
     messageSaving: { enabled: true },
   });

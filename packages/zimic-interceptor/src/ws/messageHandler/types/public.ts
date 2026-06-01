@@ -5,7 +5,11 @@ import { InterceptedWebSocketInterceptorMessage, WebSocketInterceptorClient } fr
 
 import WebSocketMessageHandlerImplementation from '../WebSocketMessageHandlerImplementation';
 import { WebSocketMessageHandlerDelayFactory } from './messages';
-import { WebSocketMessageHandlerComputedRestriction, WebSocketMessageHandlerStaticRestriction } from './restrictions';
+import {
+  WebSocketMessageHandlerComputedRestriction,
+  WebSocketMessageHandlerRestriction,
+  WebSocketMessageHandlerStaticRestriction,
+} from './restrictions';
 
 export interface InternalWebSocketMessageHandler<Schema extends WebSocketSchema> {
   client: WebSocketMessageHandlerImplementation<Schema>;
@@ -38,6 +42,13 @@ export type WebSocketMessageHandlerMessageDeclaration<
   | WebSocketMessageHandlerMessageStaticDeclaration<Schema>
   | WebSocketMessageHandlerMessageComputedDeclaration<Schema, RestrictedSchema>;
 
+type WebSocketMessageHandlerSchemaWithRestriction<Schema extends WebSocketSchema, Restriction> =
+  Restriction extends WebSocketMessageHandlerComputedRestriction<Schema, infer Predicate>
+    ? Extract<Schema, Predicate>
+    : Restriction extends WebSocketMessageHandlerStaticRestriction<Schema>
+      ? Extract<Schema, Restriction>
+      : never;
+
 /** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export interface LocalWebSocketMessageHandler<
   Schema extends WebSocketSchema,
@@ -47,15 +58,12 @@ export interface LocalWebSocketMessageHandler<
 
   from: (sender: WebSocketInterceptorClient<Schema>) => this;
 
-  with: (<Restriction extends WebSocketMessageHandlerStaticRestriction<RestrictedSchema>>(
+  with: <Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
     restriction: Restriction,
-  ) => LocalWebSocketMessageHandler<RestrictedSchema, Extract<RestrictedSchema, Restriction>>) &
-    (<
-      Restriction extends WebSocketMessageHandlerComputedRestriction<RestrictedSchema, Predicate>,
-      Predicate extends RestrictedSchema,
-    >(
-      restriction: Restriction,
-    ) => LocalWebSocketMessageHandler<RestrictedSchema, Extract<RestrictedSchema, Predicate>>);
+  ) => LocalWebSocketMessageHandler<
+    RestrictedSchema,
+    WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>
+  >;
 
   delay: ((milliseconds: number | WebSocketMessageHandlerDelayFactory<RestrictedSchema>) => this) &
     ((minMilliseconds: number, maxMilliseconds: number) => this);
@@ -82,15 +90,12 @@ export interface SyncedRemoteWebSocketMessageHandler<
 
   from: (sender: WebSocketInterceptorClient<Schema>) => PendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema>;
 
-  with: (<Restriction extends WebSocketMessageHandlerStaticRestriction<RestrictedSchema>>(
+  with: <Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
     restriction: Restriction,
-  ) => PendingRemoteWebSocketMessageHandler<RestrictedSchema, Extract<RestrictedSchema, Restriction>>) &
-    (<
-      Restriction extends WebSocketMessageHandlerComputedRestriction<RestrictedSchema, Predicate>,
-      Predicate extends RestrictedSchema,
-    >(
-      restriction: Restriction,
-    ) => PendingRemoteWebSocketMessageHandler<RestrictedSchema, Extract<RestrictedSchema, Predicate>>);
+  ) => PendingRemoteWebSocketMessageHandler<
+    RestrictedSchema,
+    WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>
+  >;
 
   delay: ((
     milliseconds: number | WebSocketMessageHandlerDelayFactory<RestrictedSchema>,
