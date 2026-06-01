@@ -167,7 +167,7 @@ describe('Web socket client', () => {
         if (typeof message.data !== 'string') {
           throw new Error('Unexpected message type');
         }
-        eventMessages.push(JSON.parse(message.data) as EventMessage);
+        eventMessages.push(JSON.parse(message.data));
       });
 
       const eventMessage: EventMessage['data'] = { message: 'test' };
@@ -224,7 +224,7 @@ describe('Web socket client', () => {
         if (typeof message.data !== 'string') {
           throw new Error('Unexpected message type');
         }
-        requestMessages.push(JSON.parse(message.data) as RequestMessage);
+        requestMessages.push(JSON.parse(message.data));
       });
 
       const requestMessage: RequestMessage['data'] = { question: 'test' };
@@ -443,7 +443,7 @@ describe('Web socket client', () => {
         if (typeof message.data !== 'string') {
           throw new Error('Unexpected message type');
         }
-        requestMessages.push(JSON.parse(message.data) as RequestMessage);
+        requestMessages.push(JSON.parse(message.data));
       });
 
       const requestMessage: RequestMessage['data'] = { question: 'test' };
@@ -501,7 +501,7 @@ describe('Web socket client', () => {
         if (typeof message.data !== 'string') {
           throw new Error('Unexpected message type');
         }
-        requestMessages.push(JSON.parse(message.data) as RequestMessage);
+        requestMessages.push(JSON.parse(message.data));
       });
 
       type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
