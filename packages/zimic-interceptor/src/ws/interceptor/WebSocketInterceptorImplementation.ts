@@ -11,6 +11,7 @@ import {
   WebSocketMessageHandlerApplyContext,
   WebSocketMessageHandlerMessageMatch,
 } from '../messageHandler/WebSocketMessageHandlerImplementation';
+import { normalizeWebSocketMessageData } from '../utils/messageData';
 import MessageSavingSafeLimitExceededError from './errors/MessageSavingSafeLimitExceededError';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
@@ -148,7 +149,11 @@ class WebSocketInterceptorImplementation<
     }
   }
 
-  async handleInterceptedMessage(message: Schema, context?: Partial<WebSocketMessageHandlerApplyContext<Schema>>) {
+  async handleInterceptedMessage(
+    data: WebSocketMessageData<Schema>,
+    context?: Partial<WebSocketMessageHandlerApplyContext<Schema>>,
+  ) {
+    const message = normalizeWebSocketMessageData(data);
     const completeContext = this.completeMessageContext(context);
     const matchedHandler = await this.findMatchedHandler(message, completeContext);
 
