@@ -31,6 +31,7 @@ export class RemoteWebSocketMessageHandler<
   constructor(interceptorImplementation: WebSocketInterceptorImplementation<Schema>) {
     this.implementation = new WebSocketMessageHandlerImplementation<Schema, RestrictedSchema>(
       interceptorImplementation,
+      this,
     );
     this.pending = this;
     this.synced = this.createSyncedProxy();
