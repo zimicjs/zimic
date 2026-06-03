@@ -9,6 +9,7 @@ import WebSocketTimesCheckError from '../errors/WebSocketTimesCheckError';
 import WebSocketTimesDeclarationPointer from '../errors/WebSocketTimesDeclarationPointer';
 import { InterceptedWebSocketInterceptorMessage, WebSocketInterceptorClient } from '../interceptor/types/messages';
 import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
+import { isWebSocketBinaryMessageData, normalizeWebSocketBinaryMessageData } from '../utils/messageData';
 import DisabledMessageSavingError from './errors/DisabledMessageSavingError';
 import { WebSocketMessageHandlerDelayFactory } from './types/messages';
 import {
@@ -221,7 +222,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
         continue;
       }
 
-      const matchesStaticRestriction = this.matchesStaticMessageRestriction(message, restriction);
+      const matchesStaticRestriction = await this.matchesStaticMessageRestriction(message, restriction);
 
       if (!matchesStaticRestriction) {
         return {
@@ -238,11 +239,37 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     return typeof restriction === 'function';
   }
 
-  private matchesStaticMessageRestriction(
+  private async matchesStaticMessageRestriction(
     message: Schema,
     restriction: WebSocketMessageHandlerStaticRestriction<RestrictedSchema>,
   ) {
+    if (isWebSocketBinaryMessageData(restriction)) {
+      if (!isWebSocketBinaryMessageData(message)) {
+        return false;
+      }
+
+      return this.binaryMessageDataEquals(message, restriction);
+    }
+
     return jsonContains(message as JSONValue, restriction as JSONValue);
+  }
+
+  private async binaryMessageDataEquals(actual: Blob | BufferSource, expected: Blob | BufferSource) {
+    const actualBuffer = normalizeWebSocketBinaryMessageData(actual);
+    const expectedBuffer = normalizeWebSocketBinaryMessageData(expected);
+
+    const actualBytes =
+      actualBuffer instanceof Blob ? new Uint8Array(await actualBuffer.arrayBuffer()) : new Uint8Array(actualBuffer);
+    const expectedBytes =
+      expectedBuffer instanceof Blob
+        ? new Uint8Array(await expectedBuffer.arrayBuffer())
+        : new Uint8Array(expectedBuffer);
+
+    if (actualBytes.byteLength !== expectedBytes.byteLength) {
+      return false;
+    }
+
+    return actualBytes.every((byte, index) => byte === expectedBytes[index]);
   }
 
   private assumeMessageMatchesRestrictions(message: Schema) {
