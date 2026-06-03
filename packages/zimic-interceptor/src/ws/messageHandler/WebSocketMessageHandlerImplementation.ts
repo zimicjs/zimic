@@ -1,7 +1,7 @@
 import { jsonContains } from '@zimic/utils/data';
 import { waitForDelay } from '@zimic/utils/time';
 import { JSONValue, Range } from '@zimic/utils/types';
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
 import { random } from '@/utils/numbers';
 
@@ -307,7 +307,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     const response = await this.createResponseDeclaration?.(restrictedMessage, context);
 
     if (response !== undefined) {
-      context.sender.send(response);
+      context.sender.send(response as WebSocketMessageData<Schema>); // TODO: Properly type this.
     }
   }
 

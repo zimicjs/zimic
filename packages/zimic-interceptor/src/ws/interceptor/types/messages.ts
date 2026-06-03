@@ -9,10 +9,6 @@ export interface InterceptedWebSocketInterceptorMessage<
   data: MessageSchema;
 }
 
-export interface WebSocketInterceptorClient<Schema extends WebSocketSchema> extends Omit<
-  WebSocketClient<Schema>,
-  'send'
-> {
+export interface WebSocketInterceptorClient<Schema extends WebSocketSchema> extends WebSocketClient<Schema> {
   messages: InterceptedWebSocketInterceptorMessage<Schema>[];
-  send: (data: Schema) => void;
 }
