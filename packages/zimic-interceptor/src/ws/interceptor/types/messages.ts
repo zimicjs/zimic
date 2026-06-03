@@ -1,11 +1,18 @@
 import { WebSocketSchema, WebSocketClient } from '@zimic/ws';
 
-export interface InterceptedWebSocketInterceptorMessage<Schema extends WebSocketSchema> {
-  sender: WebSocketInterceptorClient<Schema>;
-  receiver: WebSocketInterceptorClient<Schema>;
-  data: Schema;
+export interface InterceptedWebSocketInterceptorMessage<
+  MessageSchema extends WebSocketSchema,
+  ClientSchema extends WebSocketSchema = MessageSchema,
+> {
+  sender: WebSocketInterceptorClient<ClientSchema>;
+  receiver: WebSocketInterceptorClient<ClientSchema>;
+  data: MessageSchema;
 }
 
-export interface WebSocketInterceptorClient<Schema extends WebSocketSchema> extends WebSocketClient<Schema> {
+export interface WebSocketInterceptorClient<Schema extends WebSocketSchema> extends Omit<
+  WebSocketClient<Schema>,
+  'send'
+> {
   messages: InterceptedWebSocketInterceptorMessage<Schema>[];
+  send: (data: Schema) => void;
 }

@@ -18,3 +18,17 @@ export type WebSocketMessageHandlerComputedRestriction<
 export type WebSocketMessageHandlerRestriction<Schema extends WebSocketSchema> =
   | WebSocketMessageHandlerStaticRestriction<Schema>
   | WebSocketMessageHandlerComputedRestriction<Schema>;
+
+export interface WebSocketMessageHandlerRestrictionDiff<Schema extends WebSocketSchema = WebSocketSchema> {
+  expected: WebSocketMessageHandlerStaticRestriction<Schema> | true;
+  received: Schema | false;
+}
+
+export type WebSocketMessageHandlerRestrictionMatch =
+  | { success: true }
+  | { success: false; diff: WebSocketMessageHandlerRestrictionDiff };
+
+export interface UnmatchedWebSocketInterceptorMessageGroup<Schema extends WebSocketSchema = WebSocketSchema> {
+  message: Schema;
+  diff: WebSocketMessageHandlerRestrictionDiff<Schema>;
+}
