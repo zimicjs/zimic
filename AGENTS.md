@@ -25,6 +25,24 @@
   only the easiest path.
 - Do not weaken coverage expectations for core packages.
 
+## Implementation conventions
+
+- Before changing a module, review analogous modules in the same package and follow their structure, naming, data flow,
+  and error-handling patterns unless there is a clear reason to diverge.
+- Prefer type-safe designs over broad unions, loose public/internal type mixing, or casts. If narrowing is unavoidable,
+  keep it isolated behind a small, named boundary that reflects a real runtime guarantee.
+- Avoid reaching through public wrappers into internal implementation details from production code unless that is
+  already the established internal contract for the module.
+
+## Testing conventions
+
+- Write tests from the point of view of a user of the public API whenever possible. Avoid asserting implementation
+  details unless the nearby test suite already does so for that layer.
+- When adding tests for a module with a close analogue, mirror the analogue's test file split, shared test modules,
+  describe blocks, and test-case naming. Keep equivalent behaviors easy to compare across modules.
+- Avoid one-off test helper functions. Add a helper only when it matches an existing test pattern or removes meaningful
+  repeated setup without hiding the behavior under test.
+
 ## Published artifacts
 
 - Do not hand-edit generated declaration files, except top-level entry points that are intentionally kept in source
