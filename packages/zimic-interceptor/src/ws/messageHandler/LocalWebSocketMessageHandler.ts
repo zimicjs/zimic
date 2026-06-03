@@ -22,6 +22,7 @@ export class LocalWebSocketMessageHandler<
   constructor(interceptorImplementation: WebSocketInterceptorImplementation<Schema>) {
     this.implementation = new WebSocketMessageHandlerImplementation<Schema, RestrictedSchema>(
       interceptorImplementation,
+      this,
     );
   }
 

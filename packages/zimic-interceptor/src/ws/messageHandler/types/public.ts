@@ -11,8 +11,11 @@ import {
   WebSocketMessageHandlerStaticRestriction,
 } from './restrictions';
 
-export interface InternalWebSocketMessageHandler<Schema extends WebSocketSchema> {
-  client: WebSocketMessageHandlerImplementation<Schema>;
+export interface InternalWebSocketMessageHandler<
+  Schema extends WebSocketSchema,
+  RestrictedSchema extends Schema = Schema,
+> {
+  implementation: WebSocketMessageHandlerImplementation<Schema, RestrictedSchema>;
 }
 
 export interface WebSocketMessageHandlerMessageContext<Schema extends WebSocketSchema> {
@@ -78,7 +81,7 @@ export interface LocalWebSocketMessageHandler<
 
   clear: () => this;
 
-  get messages(): readonly InterceptedWebSocketInterceptorMessage<RestrictedSchema>[];
+  get messages(): readonly InterceptedWebSocketInterceptorMessage<RestrictedSchema, Schema>[];
 }
 
 /** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
@@ -123,7 +126,7 @@ export interface SyncedRemoteWebSocketMessageHandler<
 
   clear: () => PendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema>;
 
-  get messages(): readonly InterceptedWebSocketInterceptorMessage<RestrictedSchema>[];
+  get messages(): readonly InterceptedWebSocketInterceptorMessage<RestrictedSchema, Schema>[];
 }
 
 /** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */

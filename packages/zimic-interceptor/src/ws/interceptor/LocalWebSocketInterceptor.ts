@@ -14,6 +14,7 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
 
     this.implementation = new WebSocketInterceptorImplementation<Schema>({
       baseURL,
+      messageSaving: options.messageSaving,
       Handler: LocalWebSocketMessageHandler,
     });
   }
@@ -50,11 +51,13 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
     return this.implementation.message() as LocalWebSocketMessageHandler<Schema>;
   }
 
-  // TODO
-  server!: PublicWebSocketInterceptorClient<Schema>;
+  get server(): PublicWebSocketInterceptorClient<Schema> {
+    return this.implementation.server;
+  }
 
-  // TODO
-  clients!: PublicWebSocketInterceptorClient<Schema>[];
+  get clients(): PublicWebSocketInterceptorClient<Schema>[] {
+    return this.implementation.clients;
+  }
 
   async start() {
     if (this.isRunning) {

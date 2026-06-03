@@ -14,6 +14,7 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
 
     this.implementation = new WebSocketInterceptorImplementation<Schema>({
       baseURL,
+      messageSaving: options.messageSaving,
       Handler: RemoteWebSocketMessageHandler,
     });
   }
@@ -50,11 +51,13 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
     return this.implementation.message() as RemoteWebSocketMessageHandler<Schema>;
   }
 
-  // TODO
-  server!: PublicWebSocketInterceptorClient<Schema>;
+  get server(): PublicWebSocketInterceptorClient<Schema> {
+    return this.implementation.server;
+  }
 
-  // TODO
-  clients!: PublicWebSocketInterceptorClient<Schema>[];
+  get clients(): PublicWebSocketInterceptorClient<Schema>[] {
+    return this.implementation.clients;
+  }
 
   async start() {
     if (this.isRunning) {

@@ -2,6 +2,7 @@ import { isNonEmpty } from '@zimic/utils/data';
 import { Range } from '@zimic/utils/types';
 
 import { WebSocketInterceptorMessageSaving } from '../interceptor/types/options';
+import { UnmatchedWebSocketInterceptorMessageGroup } from '../messageHandler/types/restrictions';
 import HttpTimesDeclarationPointer from './WebSocketTimesDeclarationPointer';
 
 interface WebSocketTimesCheckErrorOptions {
@@ -10,6 +11,7 @@ interface WebSocketTimesCheckErrorOptions {
   declarationPointer: HttpTimesDeclarationPointer | undefined;
   hasRestrictions: boolean;
   messageSaving: WebSocketInterceptorMessageSaving;
+  unmatchedMessageGroups: UnmatchedWebSocketInterceptorMessageGroup[];
 }
 
 function createMessageHeader({
@@ -43,15 +45,31 @@ function createMessageHeader({
     .join('');
 }
 
+function createMessageUnmatchedMessageGroups(options: WebSocketTimesCheckErrorOptions) {
+  const shouldShowUnmatchedMessages =
+    options.messageSaving.enabled && options.hasRestrictions && options.unmatchedMessageGroups.length > 0;
+
+  if (!shouldShowUnmatchedMessages) {
+    return '';
+  }
+
+  const formattedGroups = options.unmatchedMessageGroups
+    .map((group) => `- ${JSON.stringify({ message: group.message, diff: group.diff })}`)
+    .join('\n');
+
+  return `Unmatched messages:\n\n${formattedGroups}`;
+}
+
 function createMessageFooter() {
   return 'Learn more: https://zimic.dev/docs/interceptor/api/http-message-handler#handlertimes';
 }
 
 function createMessage(options: WebSocketTimesCheckErrorOptions) {
   const messageHeader = createMessageHeader(options);
+  const messageUnmatchedMessageGroups = createMessageUnmatchedMessageGroups(options);
   const messageFooter = createMessageFooter();
 
-  return [messageHeader, messageFooter].filter(isNonEmpty).join('\n\n');
+  return [messageHeader, messageUnmatchedMessageGroups, messageFooter].filter(isNonEmpty).join('\n\n');
 }
 
 /** Error thrown when the number of messages matched by a handler does not satisfy its `handler.times()` declaration. */
