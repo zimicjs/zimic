@@ -1,4 +1,4 @@
-import { jsonContains } from '@zimic/utils/data';
+import { blobEquals, jsonContains } from '@zimic/utils/data';
 import { waitForDelay } from '@zimic/utils/time';
 import { JSONValue, Range } from '@zimic/utils/types';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
@@ -21,7 +21,7 @@ import {
 import {
   UnmatchedWebSocketInterceptorMessageGroup,
   WebSocketMessageHandlerRestriction,
-  WebSocketMessageHandlerRestrictionDiff,
+  WebSocketMessageHandlerRestrictionDiffs,
   WebSocketMessageHandlerRestrictionMatch,
   WebSocketMessageHandlerStaticRestriction,
 } from './types/restrictions';
@@ -34,7 +34,7 @@ const DEFAULT_NUMBER_OF_MESSAGE_LIMITS: Range<number> = Object.freeze({
 export type WebSocketMessageHandlerMessageMatch =
   | { success: true }
   | { success: false; cause: 'missingDeclaration' | 'exceededNumberOfMessages' }
-  | { success: false; cause: 'unmatchedRestrictions'; diff: WebSocketMessageHandlerRestrictionDiff<WebSocketSchema> };
+  | { success: false; cause: 'unmatchedRestrictions'; diff: WebSocketMessageHandlerRestrictionDiffs<WebSocketSchema> };
 
 export interface WebSocketMessageHandlerApplyContext<Schema extends WebSocketSchema> {
   sender: WebSocketInterceptorClient<Schema>;
@@ -204,7 +204,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     if (this.restrictedSender && context.sender !== this.restrictedSender) {
       return {
         success: false,
-        diff: { expected: true, received: false },
+        diff: { sender: { expected: true, received: false } },
       };
     }
 
@@ -215,7 +215,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
         if (!matchesComputedRestriction) {
           return {
             success: false,
-            diff: { expected: true, received: false },
+            diff: { computed: { expected: true, received: false } },
           };
         }
 
@@ -227,7 +227,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
       if (!matchesStaticRestriction) {
         return {
           success: false,
-          diff: { expected: restriction, received: message },
+          diff: { data: { expected: restriction, received: message } },
         };
       }
     }
@@ -255,21 +255,15 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
   }
 
   private async binaryMessageDataEquals(actual: Blob | BufferSource, expected: Blob | BufferSource) {
-    const actualBuffer = normalizeWebSocketBinaryMessageData(actual);
-    const expectedBuffer = normalizeWebSocketBinaryMessageData(expected);
+    const actualBlob = this.normalizeBinaryMessageDataToBlob(actual);
+    const expectedBlob = this.normalizeBinaryMessageDataToBlob(expected);
 
-    const actualBytes =
-      actualBuffer instanceof Blob ? new Uint8Array(await actualBuffer.arrayBuffer()) : new Uint8Array(actualBuffer);
-    const expectedBytes =
-      expectedBuffer instanceof Blob
-        ? new Uint8Array(await expectedBuffer.arrayBuffer())
-        : new Uint8Array(expectedBuffer);
+    return blobEquals(actualBlob, expectedBlob);
+  }
 
-    if (actualBytes.byteLength !== expectedBytes.byteLength) {
-      return false;
-    }
-
-    return actualBytes.every((byte, index) => byte === expectedBytes[index]);
+  private normalizeBinaryMessageDataToBlob(data: Blob | BufferSource) {
+    const normalizedData = normalizeWebSocketBinaryMessageData(data);
+    return normalizedData instanceof Blob ? normalizedData : new Blob([normalizedData]);
   }
 
   private assumeMessageMatchesRestrictions(message: Schema) {
@@ -280,7 +274,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     this.numberOfMatchedMessages++;
   }
 
-  markMessageAsUnmatched(message: Schema, options: { diff: WebSocketMessageHandlerRestrictionDiff<Schema> }) {
+  markMessageAsUnmatched(message: Schema, options: { diff: WebSocketMessageHandlerRestrictionDiffs<Schema> }) {
     const shouldSaveUnmatchedMessages =
       this.interceptor.messageSaving.enabled &&
       (this.restrictions.length > 0 || this.restrictedSender !== undefined) &&
