@@ -19,16 +19,22 @@ export type WebSocketMessageHandlerRestriction<Schema extends WebSocketSchema> =
   | WebSocketMessageHandlerStaticRestriction<Schema>
   | WebSocketMessageHandlerComputedRestriction<Schema>;
 
-export interface WebSocketMessageHandlerRestrictionDiff<Schema extends WebSocketSchema = WebSocketSchema> {
-  expected: WebSocketMessageHandlerStaticRestriction<Schema> | true;
-  received: Schema | false;
+export interface WebSocketMessageHandlerRestrictionDiff<Value> {
+  expected: Value;
+  received: Value;
+}
+
+export interface WebSocketMessageHandlerRestrictionDiffs<Schema extends WebSocketSchema = WebSocketSchema> {
+  sender?: WebSocketMessageHandlerRestrictionDiff<boolean>;
+  computed?: WebSocketMessageHandlerRestrictionDiff<boolean>;
+  data?: WebSocketMessageHandlerRestrictionDiff<WebSocketMessageHandlerStaticRestriction<Schema> | Schema>;
 }
 
 export type WebSocketMessageHandlerRestrictionMatch =
   | { success: true }
-  | { success: false; diff: WebSocketMessageHandlerRestrictionDiff };
+  | { success: false; diff: WebSocketMessageHandlerRestrictionDiffs };
 
 export interface UnmatchedWebSocketInterceptorMessageGroup<Schema extends WebSocketSchema = WebSocketSchema> {
   message: Schema;
-  diff: WebSocketMessageHandlerRestrictionDiff<Schema>;
+  diff: WebSocketMessageHandlerRestrictionDiffs<Schema>;
 }

@@ -193,6 +193,7 @@ class WebSocketInterceptorImplementation<
       Extract<WebSocketMessageHandlerMessageMatch, { success: false }>
     >();
 
+    // If we find a matching handler that can accept more messages, we return it immediately.
     for (let handlerIndex = this.handlers.length - 1; handlerIndex >= 0; handlerIndex--) {
       const handler = this.handlers[handlerIndex];
       const messageMatch = await handler.matchesMessage(message, context);
@@ -205,10 +206,14 @@ class WebSocketInterceptorImplementation<
       failedMessageMatches.set(handler, messageMatch);
     }
 
+    // If no handler matched or could accept more messages, we iterate again over the handlers to check which ones
+    // could have matched considering only restrictions.
     for (let handlerIndex = this.handlers.length - 1; handlerIndex >= 0; handlerIndex--) {
       const handler = this.handlers[handlerIndex];
       const messageMatch = failedMessageMatches.get(handler);
 
+      // Handlers that did not match due to anything other than restrictions are still marked as matched to trigger a
+      // times check error.
       if (messageMatch?.cause === 'unmatchedRestrictions') {
         handler.markMessageAsUnmatched(message, { diff: messageMatch.diff });
       } else {
