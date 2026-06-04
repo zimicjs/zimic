@@ -3,6 +3,7 @@ import { WebSocketClient, WebSocketMessageData, WebSocketSchema } from '@zimic/w
 
 import { isServerSide } from '@/utils/environment';
 
+import WebSocketInterceptorWorker from '../interceptorWorker/WebSocketInterceptorWorker';
 import { LocalWebSocketMessageHandler } from '../messageHandler/LocalWebSocketMessageHandler';
 import { RemoteWebSocketMessageHandler } from '../messageHandler/RemoteWebSocketMessageHandler';
 import { InternalWebSocketMessageHandler, WebSocketMessageHandler } from '../messageHandler/types/public';
@@ -29,10 +30,20 @@ class WebSocketInterceptorClientImplementation<Schema extends WebSocketSchema>
 {
   messages: InterceptedWebSocketInterceptorMessage<Schema>[] = [];
 
-  send(data: Schema): void;
-  send(data: WebSocketMessageData<Schema>): void;
-  send(_data: Schema | WebSocketMessageData<Schema>) {
-    // TODO: Connect to the WebSocket worker transport.
+  constructor(
+    url: string,
+    private sendMessage?: (data: WebSocketMessageData<Schema>) => void,
+  ) {
+    super(url);
+  }
+
+  send(data: WebSocketMessageData<Schema>) {
+    if (this.sendMessage) {
+      this.sendMessage(data);
+      return;
+    }
+
+    super.send(data);
   }
 }
 
@@ -53,11 +64,13 @@ class WebSocketInterceptorImplementation<
 
   private _server: WebSocketInterceptorClient<Schema>;
   private _clients: WebSocketInterceptorClient<Schema>[] = [];
+  private worker?: WebSocketInterceptorWorker;
 
   constructor(options: {
     baseURL: URL;
     messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
     Handler: HandlerConstructor;
+    worker?: WebSocketInterceptorWorker;
   }) {
     this.baseURL = options.baseURL;
 
@@ -67,7 +80,12 @@ class WebSocketInterceptorImplementation<
     };
 
     this.Handler = options.Handler;
-    this._server = this.createInMemoryClient(this.baseURLAsString);
+    this.worker = options.worker;
+    this._server = this.createClient(this.baseURLAsString, {
+      send: (data) => {
+        void this.worker?.sendToClients(this, data);
+      },
+    });
   }
 
   private getDefaultMessageSavingEnabled(): boolean {
@@ -102,14 +120,33 @@ class WebSocketInterceptorImplementation<
     return this.isRunning ? (isServerSide() ? 'node' : 'browser') : null;
   }
 
-  start() {
-    this.isRunning = true;
-    return Promise.resolve();
+  async start() {
+    if (this.isRunning) {
+      return;
+    }
+
+    try {
+      this.isRunning = true;
+
+      await this.worker?.start();
+      await this.worker?.use(this);
+      this.worker?.registerRunningInterceptor(this);
+    } catch (error) {
+      this.isRunning = false;
+      await this.worker?.stop();
+      throw error;
+    }
   }
 
-  stop() {
+  async stop() {
+    if (!this.isRunning) {
+      return;
+    }
+
+    this.worker?.unregisterRunningInterceptor(this);
+    await this.worker?.clearHandlers({ interceptor: this });
+    await this.worker?.stop();
     this.isRunning = false;
-    return Promise.resolve();
   }
 
   get numberOfRunningInterceptors() {
@@ -153,6 +190,10 @@ class WebSocketInterceptorImplementation<
     data: WebSocketMessageData<Schema>,
     context?: Partial<WebSocketMessageHandlerApplyContext<Schema>>,
   ) {
+    if (!this.isRunning) {
+      return false;
+    }
+
     const message = normalizeWebSocketMessageData(data);
     const completeContext = this.completeMessageContext(context);
     const matchedHandler = await this.findMatchedHandler(message, completeContext);
@@ -171,11 +212,9 @@ class WebSocketInterceptorImplementation<
   }
 
   private completeMessageContext(context?: Partial<WebSocketMessageHandlerApplyContext<Schema>>) {
-    const sender = context?.sender ?? this.createInMemoryClient(this.baseURLAsString);
+    const sender = context?.sender ?? this.createClient(this.baseURLAsString);
 
-    if (!this._clients.includes(sender)) {
-      this._clients.push(sender);
-    }
+    this.addClient(sender);
 
     return {
       sender,
@@ -183,8 +222,25 @@ class WebSocketInterceptorImplementation<
     };
   }
 
-  private createInMemoryClient(url: string): WebSocketInterceptorClient<Schema> {
-    return new WebSocketInterceptorClientImplementation<Schema>(url);
+  createClient(
+    url: string,
+    options: { send?: (data: WebSocketMessageData<Schema>) => void } = {},
+  ): WebSocketInterceptorClient<Schema> {
+    return new WebSocketInterceptorClientImplementation<Schema>(url, options.send);
+  }
+
+  addClient(client: WebSocketInterceptorClient<Schema>) {
+    if (!this._clients.includes(client)) {
+      this._clients.push(client);
+    }
+  }
+
+  removeClient(client: WebSocketInterceptorClient<Schema>) {
+    const clientIndex = this._clients.indexOf(client);
+
+    if (clientIndex >= 0) {
+      this._clients.splice(clientIndex, 1);
+    }
   }
 
   private async findMatchedHandler(message: Schema, context: WebSocketMessageHandlerApplyContext<Schema>) {
@@ -254,5 +310,10 @@ class WebSocketInterceptorImplementation<
     return Promise.resolve();
   }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyWebSocketInterceptorImplementation<Schema extends WebSocketSchema = any> =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  WebSocketInterceptorImplementation<Schema, any>;
 
 export default WebSocketInterceptorImplementation;
