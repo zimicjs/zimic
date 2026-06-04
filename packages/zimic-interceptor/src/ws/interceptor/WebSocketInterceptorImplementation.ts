@@ -306,6 +306,7 @@ class WebSocketInterceptorImplementation<
     this.handlers.length = 0;
     this._clients.length = 0;
     this._server.messages.length = 0;
+    this._numberOfSavedMessages = 0;
 
     return Promise.resolve();
   }
