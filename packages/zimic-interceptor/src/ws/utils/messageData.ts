@@ -61,6 +61,16 @@ export function normalizeWebSocketMessageData<Schema extends WebSocketSchema>(
   return data as Schema;
 }
 
+export function serializeRuntimeWebSocketMessageData<Schema extends WebSocketSchema>(
+  data: Schema | WebSocketMessageData<Schema>,
+): WebSocketMessageData<Schema> {
+  if (isWebSocketBinaryMessageData(data) || typeof data === 'string') {
+    return data as WebSocketMessageData<Schema>;
+  }
+
+  return JSON.stringify(data) as unknown as WebSocketMessageData<Schema>;
+}
+
 export async function serializeWebSocketMessageData<Schema extends WebSocketSchema>(
   data: Schema | WebSocketMessageData<Schema>,
 ): Promise<SerializedWebSocketMessageData<Schema>> {
