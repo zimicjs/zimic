@@ -1,5 +1,6 @@
 import { WebSocketSchema } from '@zimic/ws';
 
+import { createWebSocketInterceptorWorker } from '../interceptorWorker/factory';
 import { LocalWebSocketMessageHandler } from '../messageHandler/LocalWebSocketMessageHandler';
 import { WebSocketInterceptorClient as PublicWebSocketInterceptorClient } from './types/messages';
 import { LocalWebSocketInterceptorOptions, WebSocketInterceptorMessageSaving } from './types/options';
@@ -11,11 +12,13 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
 
   constructor(options: LocalWebSocketInterceptorOptions) {
     const baseURL = new URL(options.baseURL);
+    const worker = createWebSocketInterceptorWorker({ type: 'local' });
 
     this.implementation = new WebSocketInterceptorImplementation<Schema>({
       baseURL,
       messageSaving: options.messageSaving,
       Handler: LocalWebSocketMessageHandler,
+      worker,
     });
   }
 

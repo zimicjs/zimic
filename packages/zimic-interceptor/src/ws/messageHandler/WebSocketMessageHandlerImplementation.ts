@@ -1,7 +1,7 @@
 import { blobEquals, jsonContains } from '@zimic/utils/data';
 import { waitForDelay } from '@zimic/utils/time';
 import { JSONValue, Range } from '@zimic/utils/types';
-import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import { WebSocketSchema } from '@zimic/ws';
 
 import { random } from '@/utils/numbers';
 
@@ -9,7 +9,11 @@ import WebSocketTimesCheckError from '../errors/WebSocketTimesCheckError';
 import WebSocketTimesDeclarationPointer from '../errors/WebSocketTimesDeclarationPointer';
 import { InterceptedWebSocketInterceptorMessage, WebSocketInterceptorClient } from '../interceptor/types/messages';
 import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
-import { isWebSocketBinaryMessageData, normalizeWebSocketBinaryMessageData } from '../utils/messageData';
+import {
+  isWebSocketBinaryMessageData,
+  normalizeWebSocketBinaryMessageData,
+  serializeRuntimeWebSocketMessageData,
+} from '../utils/messageData';
 import DisabledMessageSavingError from './errors/DisabledMessageSavingError';
 import { WebSocketMessageHandlerDelayFactory } from './types/messages';
 import {
@@ -301,7 +305,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     const response = await this.createResponseDeclaration?.(restrictedMessage, context);
 
     if (response !== undefined) {
-      context.sender.send(response as WebSocketMessageData<Schema>); // TODO: Properly type this.
+      context.sender.send(serializeRuntimeWebSocketMessageData(response));
     }
   }
 
