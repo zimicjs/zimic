@@ -1,12 +1,12 @@
 import { afterEach, beforeAll, describe, expect, expectTypeOf, it } from 'vitest';
 
+import InterceptorStore from '@/interceptor/InterceptorStore';
 import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import NotRunningHttpInterceptorError from '../../errors/NotRunningHttpInterceptorError';
 import RunningHttpInterceptorError from '../../errors/RunningHttpInterceptorError';
 import UnknownHttpInterceptorTypeError from '../../errors/UnknownHttpInterceptorTypeError';
 import { createHttpInterceptor } from '../../factory';
-import HttpInterceptorStore from '../../HttpInterceptorStore';
 import LocalHttpInterceptor from '../../LocalHttpInterceptor';
 import RemoteHttpInterceptor from '../../RemoteHttpInterceptor';
 import { RemoteHttpInterceptorOptions } from '../../types/options';
@@ -19,7 +19,7 @@ import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
 
-  const store = new HttpInterceptorStore();
+  const store = new InterceptorStore();
 
   let baseURL: string;
   let serverURL: URL;
