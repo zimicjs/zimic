@@ -1,6 +1,8 @@
 import { WebSocketSchema } from '@zimic/ws';
 
-import { createWebSocketInterceptorWorker } from '../interceptorWorker/factory';
+import InterceptorStore from '@/interceptor/InterceptorStore';
+
+import LocalWebSocketInterceptorWorker from '../interceptorWorker/LocalWebSocketInterceptorWorker';
 import { LocalWebSocketMessageHandler } from '../messageHandler/LocalWebSocketMessageHandler';
 import { WebSocketInterceptorClient as PublicWebSocketInterceptorClient } from './types/messages';
 import { LocalWebSocketInterceptorOptions, WebSocketInterceptorMessageSaving } from './types/options';
@@ -8,11 +10,15 @@ import { LocalWebSocketInterceptor as PublicLocalWebSocketInterceptor } from './
 import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
 
 class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements PublicLocalWebSocketInterceptor<Schema> {
+  private store = new InterceptorStore();
+
   implementation: WebSocketInterceptorImplementation<Schema>;
 
   constructor(options: LocalWebSocketInterceptorOptions) {
     const baseURL = new URL(options.baseURL);
-    const worker = createWebSocketInterceptorWorker({ type: 'local' });
+    const worker = this.store.getOrCreateLocalWebSocketWorker({}, (workerOptions) => {
+      return new LocalWebSocketInterceptorWorker(workerOptions);
+    });
 
     this.implementation = new WebSocketInterceptorImplementation<Schema>({
       baseURL,

@@ -1,12 +1,30 @@
+import { HttpSchema } from '@zimic/http';
 import { waitFor, waitForNot } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { createHttpInterceptorWorker } from '@/http/interceptorWorker/factory';
+import { createWebSocketInterceptorWorker } from '@/ws/interceptorWorker/factory';
+import {
+  createInternalHttpInterceptor,
+  createInternalWebSocketInterceptor,
+  usingWebSocketInterceptor,
+} from '@tests/utils/interceptors';
 
 import { WebSocketInterceptorPlatform } from '../../../interceptor/types/options';
 
 type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
+type HttpSchemaWithUsers = HttpSchema<{
+  '/users': {
+    GET: HttpSchema.Method<{
+      response: {
+        200: {
+          body: { users: string[] };
+        };
+      };
+    }>;
+  };
+}>;
 
 interface LocalWebSocketInterceptorWorkerTestOptions {
   platform: WebSocketInterceptorPlatform;
@@ -29,10 +47,12 @@ export function declareLocalWebSocketInterceptorWorkerTests(options: LocalWebSoc
   const { platform, getBaseURL } = options;
 
   let baseURL: string;
+  let httpBaseURL: string;
   let clients: WebSocketClient<ChatMessage>[] = [];
 
   beforeEach(() => {
     baseURL = getBaseURL();
+    httpBaseURL = baseURL.replace(/^ws/, 'http');
     clients = [];
   });
 
@@ -53,6 +73,44 @@ export function declareLocalWebSocketInterceptorWorkerTests(options: LocalWebSoc
     await usingWebSocketInterceptor<ChatMessage>({ type: 'local', baseURL }, (interceptor) => {
       expect(interceptor.platform).toBe(platform);
     });
+  });
+
+  it('should share the MSW worker instance with HTTP interceptors', async () => {
+    const httpWorker = createHttpInterceptorWorker({ type: 'local' });
+    const webSocketWorker = createWebSocketInterceptorWorker({ type: 'local' });
+
+    try {
+      await httpWorker.start();
+      await webSocketWorker.start();
+
+      const httpMSWWorker = await httpWorker.getMSWWorkerOrCreate();
+      const webSocketMSWWorker = await webSocketWorker.getMSWWorkerOrCreate();
+
+      expect(webSocketMSWWorker).toBe(httpMSWWorker);
+    } finally {
+      await webSocketWorker.stop();
+      await httpWorker.stop();
+    }
+  });
+
+  it('should start the shared MSW worker only once when HTTP and WebSocket workers start concurrently', async () => {
+    const httpWorker = createHttpInterceptorWorker({ type: 'local' });
+    const webSocketWorker = createWebSocketInterceptorWorker({ type: 'local' });
+
+    const mswWorker = await httpWorker.getMSWWorkerOrCreate();
+    const startSpy = 'start' in mswWorker ? vi.spyOn(mswWorker, 'start') : vi.spyOn(mswWorker, 'listen');
+    const wasMSWWorkerRunning = httpWorker.class.isMSWWorkerRunning;
+
+    try {
+      await Promise.all([httpWorker.start(), webSocketWorker.start()]);
+
+      const webSocketMSWWorker = await webSocketWorker.getMSWWorkerOrCreate();
+      expect(webSocketMSWWorker).toBe(mswWorker);
+      expect(startSpy).toHaveBeenCalledTimes(wasMSWWorkerRunning ? 0 : 1);
+    } finally {
+      await webSocketWorker.stop();
+      await httpWorker.stop();
+    }
   });
 
   it('should track clients when they open and close', async () => {
@@ -162,6 +220,65 @@ export function declareLocalWebSocketInterceptorWorkerTests(options: LocalWebSoc
         handler.checkTimes();
       },
     );
+  });
+
+  it('should keep HTTP handlers running after stopping a WebSocket interceptor', async () => {
+    const httpInterceptor = createInternalHttpInterceptor<HttpSchemaWithUsers>({
+      type: 'local',
+      baseURL: httpBaseURL,
+    });
+    const webSocketInterceptor = createInternalWebSocketInterceptor<ChatMessage>({ type: 'local', baseURL });
+
+    try {
+      await httpInterceptor.start();
+      httpInterceptor.get('/users').respond({ status: 200, body: { users: ['one'] } });
+
+      await webSocketInterceptor.start();
+      webSocketInterceptor.message().respond({ type: 'server', text: 'one' });
+
+      const client = await createClient();
+      const messagePromise = waitForMessage(client);
+      client.send(JSON.stringify({ type: 'client', text: 'one' }));
+      await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'one' });
+
+      await webSocketInterceptor.stop();
+
+      const response = await fetch(`${httpBaseURL}/users`);
+      await expect(response.json()).resolves.toEqual({ users: ['one'] });
+    } finally {
+      await webSocketInterceptor.stop();
+      await httpInterceptor.stop();
+    }
+  });
+
+  it('should keep WebSocket handlers running after stopping an HTTP interceptor', async () => {
+    const httpInterceptor = createInternalHttpInterceptor<HttpSchemaWithUsers>({
+      type: 'local',
+      baseURL: httpBaseURL,
+    });
+    const webSocketInterceptor = createInternalWebSocketInterceptor<ChatMessage>({ type: 'local', baseURL });
+
+    try {
+      await httpInterceptor.start();
+      httpInterceptor.get('/users').respond({ status: 200, body: { users: ['one'] } });
+
+      await webSocketInterceptor.start();
+      webSocketInterceptor.message().respond((message) => ({ type: 'server', text: `received ${message.text}` }));
+
+      const response = await fetch(`${httpBaseURL}/users`);
+      await expect(response.json()).resolves.toEqual({ users: ['one'] });
+
+      await httpInterceptor.stop();
+
+      const client = await createClient();
+      const messagePromise = waitForMessage(client);
+      client.send(JSON.stringify({ type: 'client', text: 'one' }));
+
+      await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'received one' });
+    } finally {
+      await webSocketInterceptor.stop();
+      await httpInterceptor.stop();
+    }
   });
 
   it('should not reply to unmatched client messages', async () => {

@@ -1,23 +1,18 @@
-import { createCachedDynamicImport } from '@zimic/utils/import';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 import { SharedOptions as MSWWorkerSharedOptions, ws } from 'msw';
 
+import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
 import { removeArrayElement } from '@/utils/arrays';
-import { isClientSide, isServerSide } from '@/utils/environment';
 
-import UnregisteredBrowserServiceWorkerError from '../../http/interceptorWorker/errors/UnregisteredBrowserServiceWorkerError';
 import NotRunningWebSocketInterceptorError from '../interceptor/errors/NotRunningWebSocketInterceptorError';
 import UnknownWebSocketInterceptorPlatformError from '../interceptor/errors/UnknownWebSocketInterceptorPlatformError';
 import { WebSocketInterceptorClient } from '../interceptor/types/messages';
 import WebSocketInterceptorImplementation, {
   AnyWebSocketInterceptorImplementation,
 } from '../interceptor/WebSocketInterceptorImplementation';
-import { BrowserMSWWorker, MSWWebSocketHandler, MSWWorker, NodeMSWWorker } from './types/msw';
+import { MSWWebSocketHandler, MSWWorker } from './types/msw';
 import { LocalWebSocketInterceptorWorkerOptions } from './types/options';
 import WebSocketInterceptorWorker from './WebSocketInterceptorWorker';
-
-const importMSWNode = createCachedDynamicImport(() => import('msw/node'));
-const importMSWBrowser = createCachedDynamicImport(() => import('msw/browser'));
 
 interface LocalWebSocketClientConnection {
   url: URL;
@@ -49,9 +44,7 @@ interface WebSocketHandler {
 }
 
 class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
-  private static mswWorker?: MSWWorker;
-  static isMSWWorkerRunning = false;
-  private static numberOfRunningWorkers = 0;
+  private store = new LocalMSWWorkerStore();
 
   private webSocketHandlers: WebSocketHandler[] = [];
 
@@ -67,36 +60,21 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     return 'local' as const;
   }
 
+  static get isMSWWorkerRunning() {
+    return new LocalMSWWorkerStore().isMSWWorkerRunning();
+  }
+
   get mswWorkerOrThrow() {
-    if (!this.class.mswWorker) {
+    if (!this.store.mswWorker) {
       throw new NotRunningWebSocketInterceptorError();
     }
-    return this.class.mswWorker;
+    return this.store.mswWorker;
   }
 
   async getMSWWorkerOrCreate() {
-    this.class.mswWorker ??= await this.createMSWWorker();
-    return this.class.mswWorker;
-  }
-
-  private async createMSWWorker() {
-    if (isServerSide()) {
-      const mswNode = await importMSWNode();
-
-      if ('setupServer' in mswNode) {
-        return mswNode.setupServer();
-      }
-    }
-
-    if (isClientSide()) {
-      const mswBrowser = await importMSWBrowser();
-
-      if ('setupWorker' in mswBrowser) {
-        return mswBrowser.setupWorker();
-      }
-    }
-
-    throw new UnknownWebSocketInterceptorPlatformError();
+    return this.store.getMSWWorkerOrCreate({
+      createUnknownPlatformError: () => new UnknownWebSocketInterceptorPlatformError(),
+    });
   }
 
   async start() {
@@ -109,70 +87,32 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
       if (this.isInternalBrowserWorker(mswWorker)) {
         this.platform = 'browser';
-
-        if (!this.class.isMSWWorkerRunning) {
-          await this.startInBrowser(mswWorker, sharedOptions);
-          this.class.isMSWWorkerRunning = true;
-        }
       } else {
         this.platform = 'node';
-        this.startInNode(mswWorker, sharedOptions);
-        this.class.isMSWWorkerRunning = true;
       }
 
-      this.class.numberOfRunningWorkers++;
+      await this.store.startMSWWorker(mswWorker, sharedOptions);
       this.isRunning = true;
     });
-  }
-
-  private async startInBrowser(mswWorker: BrowserMSWWorker, sharedOptions: MSWWorkerSharedOptions) {
-    try {
-      await mswWorker.start({ ...sharedOptions, quiet: true });
-    } catch (error) {
-      this.handleBrowserWorkerStartError(error);
-    }
-  }
-
-  private handleBrowserWorkerStartError(error: unknown) {
-    if (UnregisteredBrowserServiceWorkerError.matchesRawError(error)) {
-      throw new UnregisteredBrowserServiceWorkerError();
-    } else {
-      throw error;
-    }
-  }
-
-  private startInNode(mswWorker: NodeMSWWorker, sharedOptions: MSWWorkerSharedOptions) {
-    mswWorker.listen(sharedOptions);
   }
 
   async stop() {
     await super.sharedStop(async () => {
       const mswWorker = await this.getMSWWorkerOrCreate();
 
-      this.clearHandlers();
-
-      this.class.numberOfRunningWorkers = Math.max(this.class.numberOfRunningWorkers - 1, 0);
-      this.isRunning = false;
-
-      if (this.class.numberOfRunningWorkers > 0) {
+      if (this.numberOfRunningInterceptors > 0) {
         return;
       }
 
-      if (this.isInternalBrowserWorker(mswWorker)) {
-        // Browser workers are kept running to match local HTTP worker behavior.
-      } else {
-        this.stopInNode(mswWorker);
-        this.class.isMSWWorkerRunning = false;
-      }
+      this.clearHandlers();
+
+      this.store.stopMSWWorker(mswWorker);
+      this.isRunning = false;
     });
   }
 
-  private stopInNode(mswWorker: NodeMSWWorker) {
-    mswWorker.close();
-  }
-
   private isInternalBrowserWorker(worker: MSWWorker) {
-    return 'start' in worker && 'stop' in worker;
+    return this.store.isInternalBrowserWorker(worker);
   }
 
   hasInternalBrowserWorker() {

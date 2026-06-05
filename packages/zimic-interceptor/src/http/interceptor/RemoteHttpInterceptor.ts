@@ -1,15 +1,15 @@
 import { HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@zimic/http';
 
+import InterceptorStore from '../../interceptor/InterceptorStore';
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
 import RunningHttpInterceptorError from './errors/RunningHttpInterceptorError';
 import HttpInterceptorImplementation from './HttpInterceptorImplementation';
-import HttpInterceptorStore from './HttpInterceptorStore';
 import { AsyncHttpInterceptorMethodHandler } from './types/handlers';
 import { RemoteHttpInterceptorOptions, UnhandledRequestStrategy } from './types/options';
 import { HttpInterceptorRequestSaving, RemoteHttpInterceptor as PublicRemoteHttpInterceptor } from './types/public';
 
 class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHttpInterceptor<Schema> {
-  private store = new HttpInterceptorStore();
+  private store = new InterceptorStore();
   implementation: HttpInterceptorImplementation<Schema, typeof RemoteHttpRequestHandler>;
   #auth?: RemoteHttpInterceptorOptions['auth'];
 
