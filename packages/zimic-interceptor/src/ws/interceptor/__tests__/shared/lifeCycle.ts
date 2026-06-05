@@ -1,7 +1,7 @@
-import { waitFor } from '@zimic/utils/time';
+import { waitFor, waitForNot } from '@zimic/utils/time';
 import { UnsupportedURLProtocolError, joinURL } from '@zimic/utils/url';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
-import { afterEach, beforeEach, expect, expectTypeOf, it } from 'vitest';
+import { afterEach, beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE } from '@/utils/webSocket/constants';
 import { usingIgnoredConsole } from '@tests/utils/console';
@@ -19,22 +19,24 @@ import {
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
+type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
+type TextMessage = WebSocketSchema<string>;
 
 export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
 
   let baseURL: string;
   let interceptorOptions: WebSocketInterceptorOptions;
-  let clients: WebSocketClient<MessageSchema>[];
+  let closeClients: (() => Promise<void>)[];
 
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
-    clients = [];
+    closeClients = [];
   });
 
   afterEach(async () => {
-    await Promise.all(clients.map((client) => client.close()));
+    await Promise.all(closeClients.map((closeClient) => closeClient()));
   });
 
   it('should initialize with the correct platform', async () => {
@@ -65,18 +67,30 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     expect(interceptor.isRunning).toBe(false);
   });
 
-  async function createClient(options: { timeout?: number } = {}) {
-    const client = new WebSocketClient<MessageSchema>(baseURL);
-    clients.push(client);
+  async function createClient<Schema extends WebSocketSchema = MessageSchema>(options: { timeout?: number } = {}) {
+    const client = new WebSocketClient<Schema>(baseURL);
+    closeClients.push(() => client.close());
 
     await client.open({ timeout: options.timeout });
 
     return client;
   }
 
+  async function waitForMessage<Schema extends WebSocketSchema>(client: WebSocketClient<Schema>) {
+    const event = await new Promise<WebSocketClient.MessageEvent<Schema>>((resolve) => {
+      client.addEventListener('message', resolve, { once: true });
+    });
+
+    if (typeof event.data === 'string' && /^[{[]/.test(event.data.trim())) {
+      return JSON.parse(event.data);
+    }
+
+    return event.data;
+  }
+
   async function expectClientToCloseAsUnhandled() {
     const client = new WebSocketClient<MessageSchema>(baseURL);
-    clients.push(client);
+    closeClients.push(() => client.close());
 
     const closeEventPromise = new Promise<WebSocketClient.CloseEvent<MessageSchema>>((resolve) => {
       client.addEventListener('close', resolve, { once: true });
@@ -238,6 +252,130 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
       } finally {
         await interceptor.stop();
       }
+    });
+
+    it('should track clients when they open and close', async () => {
+      await usingWebSocketInterceptor<ChatMessage>(interceptorOptions, async (interceptor) => {
+        await interceptor.message().respond({ type: 'server', text: 'connected' });
+        expect(interceptor.clients).toHaveLength(0);
+
+        const client = await createClient<ChatMessage>();
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+          expect(interceptor.clients[0].url).toBe(client.url);
+        });
+
+        await client.close();
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(0);
+        });
+      });
+    });
+
+    it('should forward client messages to handlers, reply only to the sender, and save messages', async () => {
+      await usingWebSocketInterceptor<ChatMessage>(
+        { ...interceptorOptions, messageSaving: { enabled: true } },
+        async (interceptor) => {
+          const handler = await interceptor
+            .message()
+            .with({ type: 'client' })
+            .respond((message) => ({ type: 'server', text: `received ${message.text}` }))
+            .times(1);
+
+          const firstClient = await createClient<ChatMessage>();
+          const secondClient = await createClient<ChatMessage>();
+          const firstMessagePromise = waitForMessage(firstClient);
+          const secondMessageListener = vi.fn();
+          secondClient.addEventListener('message', secondMessageListener);
+
+          firstClient.send(JSON.stringify({ type: 'client', text: 'one' }));
+
+          await expect(firstMessagePromise).resolves.toEqual({ type: 'server', text: 'received one' });
+          await waitForNot(() => {
+            expect(secondMessageListener).toHaveBeenCalled();
+          });
+
+          expect(handler.messages).toHaveLength(1);
+          expect(handler.messages[0].sender.url).toBe(firstClient.url);
+          expect(handler.messages[0].receiver).toBe(interceptor.server);
+          expect(handler.messages[0].data).toEqual({ type: 'client', text: 'one' });
+          expect(interceptor.clients[0].messages).toHaveLength(1);
+          expect(interceptor.server.messages).toHaveLength(1);
+
+          await handler.checkTimes();
+        },
+      );
+    });
+
+    it('should forward and save plain string messages', async () => {
+      await usingWebSocketInterceptor<TextMessage>(
+        { ...interceptorOptions, messageSaving: { enabled: true } },
+        async (interceptor) => {
+          const handler = await interceptor.message().with('ping').respond('pong').times(1);
+
+          const client = await createClient<TextMessage>();
+          const messagePromise = waitForMessage(client);
+
+          client.send('ping');
+
+          await expect(messagePromise).resolves.toBe('pong');
+          expect(handler.messages).toHaveLength(1);
+          expect(handler.messages[0].data).toBe('ping');
+          expect(interceptor.clients[0].messages[0].data).toBe('ping');
+
+          await handler.checkTimes();
+        },
+      );
+    });
+
+    it('should allow effects to broadcast through the receiver', async () => {
+      await usingWebSocketInterceptor<ChatMessage>(interceptorOptions, async (interceptor) => {
+        await interceptor.message().effect((message, { receiver }) => {
+          receiver.send(JSON.stringify({ type: 'server', text: `broadcast ${message.text}` }));
+        });
+
+        const firstClient = await createClient<ChatMessage>();
+        const secondClient = await createClient<ChatMessage>();
+        const firstMessagePromise = waitForMessage(firstClient);
+        const secondMessagePromise = waitForMessage(secondClient);
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(2);
+        });
+
+        firstClient.send(JSON.stringify({ type: 'client', text: 'one' }));
+
+        await expect(firstMessagePromise).resolves.toEqual({ type: 'server', text: 'broadcast one' });
+        await expect(secondMessagePromise).resolves.toEqual({ type: 'server', text: 'broadcast one' });
+      });
+    });
+
+    it('should allow effects to target clients through public handles', async () => {
+      await usingWebSocketInterceptor<ChatMessage>(interceptorOptions, async (interceptor) => {
+        await interceptor.message().effect((message) => {
+          const [, secondClient] = interceptor.clients;
+          secondClient.send(JSON.stringify({ type: 'server', text: `targeted ${message.text}` }));
+        });
+
+        const firstClient = await createClient<ChatMessage>();
+        const secondClient = await createClient<ChatMessage>();
+        const firstMessageListener = vi.fn();
+        const secondMessagePromise = waitForMessage(secondClient);
+        firstClient.addEventListener('message', firstMessageListener);
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(2);
+        });
+
+        firstClient.send(JSON.stringify({ type: 'client', text: 'one' }));
+
+        await expect(secondMessagePromise).resolves.toEqual({ type: 'server', text: 'targeted one' });
+        await waitForNot(() => {
+          expect(firstMessageListener).toHaveBeenCalled();
+        });
+      });
     });
   }
 
