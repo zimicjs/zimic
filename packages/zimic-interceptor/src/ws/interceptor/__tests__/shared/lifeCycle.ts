@@ -3,6 +3,7 @@ import { UnsupportedURLProtocolError, joinURL } from '@zimic/utils/url';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { afterEach, beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
+import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE } from '@/utils/webSocket/constants';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
@@ -21,6 +22,7 @@ import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
 type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
 type TextMessage = WebSocketSchema<string>;
+type BinaryMessage = WebSocketSchema<ArrayBuffer>;
 
 export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
@@ -86,6 +88,24 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     }
 
     return event.data;
+  }
+
+  async function readBytes(data: Blob | BufferSource) {
+    const arrayBuffer = data instanceof Blob ? await data.arrayBuffer() : data;
+
+    if (arrayBuffer instanceof ArrayBuffer) {
+      return Array.from(new Uint8Array(arrayBuffer));
+    }
+
+    return Array.from(new Uint8Array(arrayBuffer.buffer, arrayBuffer.byteOffset, arrayBuffer.byteLength));
+  }
+
+  function createBinaryMessage(firstByte: number, secondByte: number) {
+    const message = new ArrayBuffer(2);
+    const messageView = new Uint8Array(message);
+    messageView[0] = firstByte;
+    messageView[1] = secondByte;
+    return message as BinaryMessage;
   }
 
   async function expectClientToCloseAsUnhandled() {
@@ -278,11 +298,14 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
       await usingWebSocketInterceptor<ChatMessage>(
         { ...interceptorOptions, messageSaving: { enabled: true } },
         async (interceptor) => {
-          const handler = await interceptor
-            .message()
-            .with({ type: 'client' })
-            .respond((message) => ({ type: 'server', text: `received ${message.text}` }))
-            .times(1);
+          const handler = await promiseIfRemote(
+            interceptor
+              .message()
+              .with({ type: 'client' })
+              .respond((message) => ({ type: 'server', text: `received ${message.text}` }))
+              .times(1),
+            interceptor,
+          );
 
           const firstClient = await createClient<ChatMessage>();
           const secondClient = await createClient<ChatMessage>();
@@ -313,7 +336,10 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
       await usingWebSocketInterceptor<TextMessage>(
         { ...interceptorOptions, messageSaving: { enabled: true } },
         async (interceptor) => {
-          const handler = await interceptor.message().with('ping').respond('pong').times(1);
+          const handler = await promiseIfRemote(
+            interceptor.message().with('ping').respond('pong').times(1),
+            interceptor,
+          );
 
           const client = await createClient<TextMessage>();
           const messagePromise = waitForMessage(client);
@@ -332,9 +358,12 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
 
     it('should allow effects to broadcast through the receiver', async () => {
       await usingWebSocketInterceptor<ChatMessage>(interceptorOptions, async (interceptor) => {
-        await interceptor.message().effect((message, { receiver }) => {
-          receiver.send(JSON.stringify({ type: 'server', text: `broadcast ${message.text}` }));
-        });
+        await promiseIfRemote(
+          interceptor.message().effect((message, { receiver }) => {
+            receiver.send(JSON.stringify({ type: 'server', text: `broadcast ${message.text}` }));
+          }),
+          interceptor,
+        );
 
         const firstClient = await createClient<ChatMessage>();
         const secondClient = await createClient<ChatMessage>();
@@ -354,10 +383,13 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
 
     it('should allow effects to target clients through public handles', async () => {
       await usingWebSocketInterceptor<ChatMessage>(interceptorOptions, async (interceptor) => {
-        await interceptor.message().effect((message) => {
-          const [, secondClient] = interceptor.clients;
-          secondClient.send(JSON.stringify({ type: 'server', text: `targeted ${message.text}` }));
-        });
+        await promiseIfRemote(
+          interceptor.message().effect((message) => {
+            const [, secondClient] = interceptor.clients;
+            secondClient.send(JSON.stringify({ type: 'server', text: `targeted ${message.text}` }));
+          }),
+          interceptor,
+        );
 
         const firstClient = await createClient<ChatMessage>();
         const secondClient = await createClient<ChatMessage>();
@@ -375,6 +407,99 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
         await waitForNot(() => {
           expect(firstMessageListener).toHaveBeenCalled();
         });
+      });
+    });
+
+    it('should forward and save binary messages', async () => {
+      await usingWebSocketInterceptor<BinaryMessage>(
+        { ...interceptorOptions, messageSaving: { enabled: true } },
+        async (interceptor) => {
+          const requestMessage = createBinaryMessage(0xff, 0x00);
+          const responseMessage = createBinaryMessage(0x00, 0xff);
+
+          const handler = await promiseIfRemote(
+            interceptor.message().with(requestMessage).respond(responseMessage).times(1),
+            interceptor,
+          );
+
+          const client = await createClient<BinaryMessage>();
+          client.binaryType = 'arraybuffer';
+          const messagePromise = waitForMessage(client);
+
+          client.send(requestMessage);
+
+          const message = await messagePromise;
+          expect(await readBytes(message as Blob | BufferSource)).toEqual([0x00, 0xff]);
+
+          expect(handler.messages).toHaveLength(1);
+          expect(await readBytes(handler.messages[0].data)).toEqual([0xff, 0x00]);
+          expect(await readBytes(interceptor.clients[0].messages[0].data)).toEqual([0xff, 0x00]);
+
+          await handler.checkTimes();
+        },
+      );
+    });
+
+    it('should allow effects to target clients with binary messages', async () => {
+      await usingWebSocketInterceptor<BinaryMessage>(interceptorOptions, async (interceptor) => {
+        const responseMessage = createBinaryMessage(0x00, 0xff);
+
+        await promiseIfRemote(
+          interceptor.message().effect(() => {
+            const [, secondClient] = interceptor.clients;
+            secondClient.send(responseMessage);
+          }),
+          interceptor,
+        );
+
+        const firstClient = await createClient<BinaryMessage>();
+        const secondClient = await createClient<BinaryMessage>();
+        firstClient.binaryType = 'arraybuffer';
+        secondClient.binaryType = 'arraybuffer';
+        const firstMessageListener = vi.fn();
+        const secondMessagePromise = waitForMessage(secondClient);
+        firstClient.addEventListener('message', firstMessageListener);
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(2);
+        });
+
+        firstClient.send(createBinaryMessage(0xff, 0x00));
+
+        const message = await secondMessagePromise;
+        expect(await readBytes(message as Blob | BufferSource)).toEqual([0x00, 0xff]);
+        await waitForNot(() => {
+          expect(firstMessageListener).toHaveBeenCalled();
+        });
+      });
+    });
+
+    it('should broadcast binary messages from the server handle', async () => {
+      await usingWebSocketInterceptor<BinaryMessage>(interceptorOptions, async (interceptor) => {
+        await promiseIfRemote(
+          interceptor.message().effect(() => undefined),
+          interceptor,
+        );
+
+        const firstClient = await createClient<BinaryMessage>();
+        const secondClient = await createClient<BinaryMessage>();
+        firstClient.binaryType = 'arraybuffer';
+        secondClient.binaryType = 'arraybuffer';
+
+        const firstMessagePromise = waitForMessage(firstClient);
+        const secondMessagePromise = waitForMessage(secondClient);
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(2);
+        });
+
+        interceptor.server.send(createBinaryMessage(0x00, 0xff));
+
+        const firstMessage = await firstMessagePromise;
+        expect(await readBytes(firstMessage as Blob | BufferSource)).toEqual([0x00, 0xff]);
+
+        const secondMessage = await secondMessagePromise;
+        expect(await readBytes(secondMessage as Blob | BufferSource)).toEqual([0x00, 0xff]);
       });
     });
   }
