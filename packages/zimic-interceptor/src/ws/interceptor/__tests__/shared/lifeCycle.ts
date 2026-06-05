@@ -504,6 +504,161 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     });
   }
 
+  it('should passively accept, save, and count matching client messages without sending a response', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.message().with({ type: 'client' }).times(1), interceptor);
+
+        const client = await createClient();
+        const messageListener = vi.fn();
+        client.addEventListener('message', messageListener);
+
+        client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+        await waitFor(() => {
+          expect(handler.messages).toHaveLength(1);
+        });
+
+        await waitForNot(() => {
+          expect(messageListener).toHaveBeenCalled();
+        });
+
+        expect(handler.messages[0].sender.url).toBe(client.url);
+        expect(handler.messages[0].receiver).toBe(interceptor.server);
+        expect(handler.messages[0].data).toEqual({ type: 'client', index: 1 });
+        expect(interceptor.clients[0].messages).toHaveLength(1);
+        expect(interceptor.clients[0].messages[0].data).toEqual({ type: 'client', index: 1 });
+        expect(interceptor.server.messages).toHaveLength(1);
+        expect(interceptor.server.messages[0].data).toEqual({ type: 'client', index: 1 });
+
+        await handler.checkTimes();
+      },
+    );
+  });
+
+  it('should give declarationless handlers reverse priority and skip exhausted handlers', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const firstHandler = await promiseIfRemote(interceptor.message().times(1), interceptor);
+        const secondHandler = await promiseIfRemote(interceptor.message().times(1), interceptor);
+
+        const client = await createClient();
+        const messageListener = vi.fn();
+        client.addEventListener('message', messageListener);
+
+        client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+        await waitFor(() => {
+          expect(secondHandler.messages).toHaveLength(1);
+        });
+
+        client.send(JSON.stringify({ type: 'client', index: 2 }));
+
+        await waitFor(() => {
+          expect(firstHandler.messages).toHaveLength(1);
+        });
+
+        await waitForNot(() => {
+          expect(messageListener).toHaveBeenCalled();
+        });
+
+        expect(secondHandler.messages[0].data).toEqual({ type: 'client', index: 1 });
+        expect(firstHandler.messages[0].data).toEqual({ type: 'client', index: 2 });
+
+        await firstHandler.checkTimes();
+        await secondHandler.checkTimes();
+      },
+    );
+  });
+
+  it('should passively match messages from a restricted client without sending a response', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        await promiseIfRemote(interceptor.message().times(0), interceptor);
+
+        const firstClient = await createClient();
+        const secondClient = await createClient();
+        const firstMessageListener = vi.fn();
+        const secondMessageListener = vi.fn();
+        firstClient.addEventListener('message', firstMessageListener);
+        secondClient.addEventListener('message', secondMessageListener);
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(2);
+        });
+
+        const handler = await promiseIfRemote(interceptor.message().from(interceptor.clients[0]).times(1), interceptor);
+
+        secondClient.send(JSON.stringify({ type: 'client', index: 2 }));
+
+        await waitFor(async () => {
+          await expect(async () => {
+            await handler.checkTimes();
+          }).rejects.toThrow('Unmatched messages:');
+        });
+
+        firstClient.send(JSON.stringify({ type: 'client', index: 1 }));
+
+        await waitFor(() => {
+          expect(handler.messages).toHaveLength(1);
+        });
+
+        await waitForNot(() => {
+          expect(firstMessageListener).toHaveBeenCalled();
+          expect(secondMessageListener).toHaveBeenCalled();
+        });
+
+        expect(handler.messages[0].sender.url).toBe(firstClient.url);
+        expect(handler.messages[0].data).toEqual({ type: 'client', index: 1 });
+        expect(interceptor.clients[0].messages).toHaveLength(1);
+        expect(interceptor.clients[0].messages[0].data).toEqual({ type: 'client', index: 1 });
+        expect(interceptor.clients[1].messages).toHaveLength(0);
+        expect(interceptor.server.messages).toHaveLength(1);
+
+        await handler.checkTimes();
+      },
+    );
+  });
+
+  it('should include unmatched messages in declarationless times errors when message saving is enabled', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor.message().with({ type: 'client', index: 2 }).times(1),
+          interceptor,
+        );
+
+        const client = await createClient();
+
+        client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+        await waitFor(async () => {
+          await expect(async () => {
+            await handler.checkTimes();
+          }).rejects.toThrow('Unmatched messages:');
+        });
+
+        await expect(async () => {
+          await handler.checkTimes();
+        }).rejects.toThrow(
+          [
+            'Expected exactly 1 matching message, but got 0.',
+            '',
+            'Unmatched messages:',
+            '',
+            '- {"message":{"type":"client","index":1},"diff":{"data":{"expected":{"type":"client","index":2},"received":{"type":"client","index":1}}}}',
+            '',
+            'Learn more: https://zimic.dev/docs/interceptor/api/http-message-handler#handlertimes',
+          ].join('\n'),
+        );
+      },
+    );
+  });
+
   it('should have the correct default message saving configuration if none is provided', () => {
     const interceptor = createWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, messageSaving: undefined });
 
