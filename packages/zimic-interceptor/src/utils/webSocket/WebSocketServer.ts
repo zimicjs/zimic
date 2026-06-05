@@ -15,11 +15,17 @@ export type WebSocketServerAuthenticate = (
   request: IncomingMessage,
 ) => PossiblePromise<{ isValid: true } | { isValid: false; message: string }>;
 
+export type WebSocketServerConnectionHandler = (
+  socket: ClientSocket,
+  request: IncomingMessage,
+) => PossiblePromise<{ wasHandled: boolean }>;
+
 interface WebSocketServerOptions {
   httpServer: HttpServer;
   socketTimeout?: number;
   messageTimeout?: number;
   authenticate?: WebSocketServerAuthenticate;
+  handleConnection?: WebSocketServerConnectionHandler;
 }
 
 class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<Schema> {
@@ -27,6 +33,7 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
 
   private httpServer: HttpServer;
   private authenticate?: WebSocketServerOptions['authenticate'];
+  private handleConnection?: WebSocketServerOptions['handleConnection'];
 
   constructor(options: WebSocketServerOptions) {
     super({
@@ -36,6 +43,7 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
 
     this.httpServer = options.httpServer;
     this.authenticate = options.authenticate;
+    this.handleConnection = options.handleConnection;
   }
 
   get isRunning() {
@@ -64,6 +72,12 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
       }
 
       try {
+        const connectionResult = await this.handleConnection?.(socket, request);
+
+        if (connectionResult?.wasHandled) {
+          return;
+        }
+
         await super.registerSocket(socket);
         socket.send('socket:auth:valid' satisfies WebSocketControlMessage);
       } catch (error) {

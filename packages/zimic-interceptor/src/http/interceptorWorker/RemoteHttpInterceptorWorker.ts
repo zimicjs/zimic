@@ -2,6 +2,7 @@ import { HttpBody, HttpHeadersInit, HttpMethod, HttpRequest, HttpSchema } from '
 import { PossiblePromise } from '@zimic/utils/types';
 import { validatePathParams } from '@zimic/utils/url';
 
+import { INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER } from '@/server/constants';
 import UnsupportedResponseBypassError from '@/server/errors/UnsupportedResponseBypassError';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/types/schema';
 import { isClientSide, isServerSide } from '@/utils/environment';
@@ -62,7 +63,10 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       this.webSocketClient.onChannel('event', 'interceptors/responses/unhandled', this.handleUnhandledServerRequest);
 
       await this.webSocketClient.start({
-        parameters: this.auth ? { token: this.auth.token } : undefined,
+        parameters: {
+          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+          ...(this.auth ? { token: this.auth.token } : {}),
+        },
         waitForAuthentication: true,
       });
 
@@ -160,7 +164,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     this.httpHandlers.set(handler.id, handler);
 
-    await this.webSocketClient.request('interceptors/workers/commit', {
+    await this.webSocketClient.request('interceptors/http/workers/commit', {
       id: handler.id,
       baseURL: handler.baseURL,
       method: handler.method,
@@ -218,7 +222,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     }));
 
     try {
-      await this.webSocketClient.request('interceptors/workers/reset', handlersToRecommit);
+      await this.webSocketClient.request('interceptors/http/workers/reset', handlersToRecommit);
     } catch (error) {
       /* istanbul ignore next -- @preserve
        *
