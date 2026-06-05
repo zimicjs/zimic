@@ -2,6 +2,7 @@ import { HttpMethod } from '@zimic/http';
 
 import { SerializedHttpRequest, SerializedResponse } from '@/utils/fetch';
 import { WebSocketSchema } from '@/utils/webSocket/types';
+import { SerializedWebSocketMessageData } from '@/ws/interceptorWorker/types/messages';
 
 export interface HttpHandlerCommit {
   id: string;
@@ -26,17 +27,7 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
     reply: {};
   };
 
-  'interceptors/web-sockets/workers/commit': {
-    event: WebSocketHandlerCommit;
-    reply: {};
-  };
-
-  'interceptors/web-sockets/workers/reset': {
-    event: WebSocketHandlerCommit[];
-    reply: {};
-  };
-
-  'interceptors/responses/create': {
+  'interceptors/http/responses/create': {
     event: {
       handlerId: string;
       request: SerializedHttpRequest;
@@ -46,12 +37,54 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
     };
   };
 
-  'interceptors/responses/unhandled': {
+  'interceptors/http/responses/unhandled': {
     event: {
       request: SerializedHttpRequest;
     };
     reply: {
       wasLogged: boolean;
+    };
+  };
+
+  'interceptors/ws/workers/commit': {
+    event: WebSocketHandlerCommit;
+    reply: {};
+  };
+
+  'interceptors/ws/workers/reset': {
+    event: WebSocketHandlerCommit[];
+    reply: {};
+  };
+
+  'interceptors/ws/clients/connect': {
+    event: {
+      handlerId: string;
+      clientId: string;
+      url: string;
+    };
+    reply: {};
+  };
+
+  'interceptors/ws/clients/close': {
+    event: {
+      clientId: string;
+    };
+  };
+
+  'interceptors/ws/messages/handle': {
+    event: {
+      handlerId: string;
+      clientId: string;
+      data: SerializedWebSocketMessageData;
+    };
+    reply: {};
+  };
+
+  'interceptors/ws/messages/send': {
+    event: {
+      clientId?: string;
+      handlerId?: string;
+      data: SerializedWebSocketMessageData;
     };
   };
 }>;

@@ -82,7 +82,7 @@ describe('Interceptor server > Web sockets', () => {
 
     const baseURL = `ws://localhost:${server.port}/chat`;
 
-    await webSocketClient.request('interceptors/web-sockets/workers/commit', {
+    await webSocketClient.request('interceptors/ws/workers/commit', {
       id: crypto.randomUUID(),
       baseURL,
     });
@@ -121,7 +121,7 @@ describe('Interceptor server > Web sockets', () => {
 
     const baseURL = `ws://localhost:${server.port}/chat`;
 
-    await webSocketClient.request('interceptors/web-sockets/workers/commit', {
+    await webSocketClient.request('interceptors/ws/workers/commit', {
       id: crypto.randomUUID(),
       baseURL,
     });
@@ -149,7 +149,7 @@ describe('Interceptor server > Web sockets', () => {
       waitForAuthentication: true,
     });
 
-    await webSocketClient.request('interceptors/web-sockets/workers/commit', {
+    await webSocketClient.request('interceptors/ws/workers/commit', {
       id: crypto.randomUUID(),
       baseURL: `ws://localhost:${server.port}/chat`,
     });
