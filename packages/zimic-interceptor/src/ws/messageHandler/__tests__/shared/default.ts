@@ -34,7 +34,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
     }
   });
 
-  it('should not match any message if contains no declared response or effect', async () => {
+  it('should match any message if contains no declared response, effect, or restrictions', async () => {
     await usingWebSocketInterceptor<Schema>(
       {
         type,
@@ -64,7 +64,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
     );
   });
 
-  it('should not match any message if cleared', async () => {
+  it('should reset a message handler if cleared', async () => {
     await usingWebSocketInterceptor<Schema>(
       {
         type,
@@ -123,6 +123,30 @@ export function declareDefaultWebSocketMessageHandlerTests(
       },
       async (interceptor) => {
         const handler = interceptor.message();
+
+        await handler.checkTimes();
+      },
+    );
+  });
+
+  it('should support clearing a message handler without a declared response or effect', async () => {
+    await usingWebSocketInterceptor<Schema>(
+      {
+        type,
+        baseURL,
+      },
+      async (interceptor) => {
+        const handler = interceptor
+          .message()
+          .from(interceptor.server)
+          .with({ type: 'create', body: { text: 'hello' } })
+          .times(1);
+
+        await expect(async () => {
+          await handler.checkTimes();
+        }).rejects.toThrow('Expected exactly 1 matching message, but got 0.');
+
+        handler.clear();
 
         await handler.checkTimes();
       },
