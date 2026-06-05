@@ -154,7 +154,7 @@ describe('Interceptor server > Web sockets', () => {
       baseURL: `ws://localhost:${server.port}/chat`,
     });
 
-    const userSocket = new ClientSocket(`ws://localhost:${server.port}/chat`);
+    const userSocket = new ClientSocket(`ws://localhost:${server.port}/chat/other`);
     userSockets.push(userSocket);
 
     const closeEventPromise = new Promise<ClientSocket.CloseEvent>((resolve) => {

@@ -129,7 +129,9 @@ class WebSocketInterceptorImplementation<
       this.isRunning = true;
 
       await this.worker?.start();
-      await this.worker?.use(this);
+      if (this.worker?.type === 'local') {
+        await this.worker.use(this);
+      }
       this.worker?.registerRunningInterceptor(this);
     } catch (error) {
       this.isRunning = false;
@@ -183,6 +185,12 @@ class WebSocketInterceptorImplementation<
 
     if (!isAlreadyRegistered) {
       this.handlers.push(handler.implementation);
+
+      const registrationResult = this.worker?.type === 'remote' ? this.worker.use(this) : undefined;
+
+      if (handler instanceof RemoteWebSocketMessageHandler && registrationResult instanceof Promise) {
+        handler.registerSyncPromise(registrationResult);
+      }
     }
   }
 
@@ -299,6 +307,11 @@ class WebSocketInterceptorImplementation<
   }
 
   clear() {
+    const clearResult =
+      this.worker?.type === 'remote' && this.worker.isRunning
+        ? this.worker.clearHandlers({ interceptor: this })
+        : undefined;
+
     for (const handler of this.handlers) {
       handler.clear();
     }
@@ -308,7 +321,7 @@ class WebSocketInterceptorImplementation<
     this._server.messages.length = 0;
     this._numberOfSavedMessages = 0;
 
-    return Promise.resolve();
+    return Promise.resolve(clearResult);
   }
 }
 
