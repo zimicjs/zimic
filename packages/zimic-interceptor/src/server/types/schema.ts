@@ -10,14 +10,29 @@ export interface HttpHandlerCommit {
   path: string;
 }
 
+export interface WebSocketHandlerCommit {
+  id: string;
+  baseURL: string;
+}
+
 export type InterceptorServerWebSocketSchema = WebSocketSchema<{
-  'interceptors/workers/commit': {
+  'interceptors/http/workers/commit': {
     event: HttpHandlerCommit;
     reply: {};
   };
 
-  'interceptors/workers/reset': {
+  'interceptors/http/workers/reset': {
     event: HttpHandlerCommit[];
+    reply: {};
+  };
+
+  'interceptors/web-sockets/workers/commit': {
+    event: WebSocketHandlerCommit;
+    reply: {};
+  };
+
+  'interceptors/web-sockets/workers/reset': {
+    event: WebSocketHandlerCommit[];
     reply: {};
   };
 
