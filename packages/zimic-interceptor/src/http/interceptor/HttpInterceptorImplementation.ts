@@ -12,6 +12,7 @@ import { createRegexFromPath, excludeNonPathParams, validateURLProtocol } from '
 
 import { isServerSide } from '@/utils/environment';
 
+import InterceptorStore from '../../interceptor/InterceptorStore';
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
 import HttpRequestHandlerImplementation, {
   AnyHttpRequestHandlerImplementation,
@@ -24,7 +25,6 @@ import { HttpInterceptorRequest } from '../requestHandler/types/requests';
 import NotRunningHttpInterceptorError from './errors/NotRunningHttpInterceptorError';
 import RequestSavingSafeLimitExceededError from './errors/RequestSavingSafeLimitExceededError';
 import RunningHttpInterceptorError from './errors/RunningHttpInterceptorError';
-import HttpInterceptorStore from './HttpInterceptorStore';
 import { UnhandledRequestStrategy } from './types/options';
 import { HttpInterceptorRequestSaving } from './types/public';
 import { HttpInterceptorRequestContext } from './types/requests';
@@ -39,7 +39,7 @@ class HttpInterceptorImplementation<
   Schema extends HttpSchema,
   HandlerConstructor extends HttpRequestHandlerConstructor = HttpRequestHandlerConstructor,
 > {
-  private store: HttpInterceptorStore;
+  private store: InterceptorStore;
   #baseURL!: URL;
 
   private createWorker: () => HttpInterceptorWorker;
@@ -70,7 +70,7 @@ class HttpInterceptorImplementation<
   };
 
   constructor(options: {
-    store: HttpInterceptorStore;
+    store: InterceptorStore;
     baseURL: URL;
     createWorker: () => HttpInterceptorWorker;
     deleteWorker: () => void;
