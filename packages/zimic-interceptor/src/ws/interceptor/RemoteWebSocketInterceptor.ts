@@ -1,5 +1,6 @@
 import { WebSocketSchema } from '@zimic/ws';
 
+import { createWebSocketInterceptorWorker } from '../interceptorWorker/factory';
 import { RemoteWebSocketMessageHandler } from '../messageHandler/RemoteWebSocketMessageHandler';
 import { WebSocketInterceptorClient as PublicWebSocketInterceptorClient } from './types/messages';
 import { RemoteWebSocketInterceptorOptions, WebSocketInterceptorMessageSaving } from './types/options';
@@ -16,6 +17,11 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
       baseURL,
       messageSaving: options.messageSaving,
       Handler: RemoteWebSocketMessageHandler,
+      worker: createWebSocketInterceptorWorker({
+        type: 'remote',
+        serverURL: baseURL,
+        auth: options.auth,
+      }),
     });
   }
 

@@ -21,9 +21,15 @@ export interface LocalWebSocketInterceptorOptions extends SharedWebSocketInterce
   type?: 'local';
 }
 
+interface WebSocketInterceptorAuthOptions {
+  token: string;
+}
+
 /** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export interface RemoteWebSocketInterceptorOptions extends SharedWebSocketInterceptorOptions {
   type: 'remote';
+
+  auth?: WebSocketInterceptorAuthOptions;
 }
 
 /** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
