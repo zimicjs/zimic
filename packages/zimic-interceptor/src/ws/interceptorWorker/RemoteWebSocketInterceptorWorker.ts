@@ -217,10 +217,14 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       return {};
     }
 
-    await handler.interceptor.handleInterceptedMessage(deserializeWebSocketMessageData(message.data), {
-      sender: client,
-      receiver: handler.interceptor.server,
-    });
+    try {
+      await handler.interceptor.handleInterceptedMessage(deserializeWebSocketMessageData(message.data), {
+        sender: client,
+        receiver: handler.interceptor.server,
+      });
+    } catch (error) {
+      console.error(error);
+    }
 
     return {};
   };
