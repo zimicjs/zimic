@@ -6,8 +6,9 @@ import {
   WebSocketInterceptorClient,
   WebSocketInterceptorType,
 } from '@zimic/interceptor/experimental/ws';
+import { waitFor, waitForNot } from '@zimic/utils/time';
 import { WebSocketClient } from '@zimic/ws';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { ZIMIC_SERVER_PORT } from '@tests/constants';
 import {
@@ -85,19 +86,37 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
 
   const sockets = [...userSockets, ...notificationSockets];
 
+  function isNoUserMessage(message: UserWebSocketSchema): message is never {
+    void message;
+    return false;
+  }
+
+  function isNoNotificationMessage(message: NotificationWebSocketSchema): message is never {
+    void message;
+    return false;
+  }
+
   function expectMessagedClients<Schema extends UserWebSocketSchema | NotificationWebSocketSchema>(
     interceptor: WebSocketInterceptor<Schema>,
     message: Schema,
     notifiedClients: WebSocketInterceptorClient<Schema>[],
+    expectedClientMessage: Schema = message,
   ) {
     for (const client of interceptor.clients) {
       if (notifiedClients.includes(client)) {
         expect(client.messages).toHaveLength(1);
-        expect(client.messages[0]).toEqual<InterceptedWebSocketInterceptorMessage<Schema>>({
-          data: message,
-          sender: interceptor.server,
-          receiver: client,
-        });
+
+        if (client.messages[0].sender === interceptor.server) {
+          expect(client.messages[0]).toEqual<InterceptedWebSocketInterceptorMessage<Schema>>({
+            data: message,
+            sender: interceptor.server,
+            receiver: client,
+          });
+        } else {
+          expect(client.messages[0].data).toEqual(expectedClientMessage);
+          expect(client.messages[0].sender).toBe(client);
+          expect(client.messages[0].receiver).toBe(interceptor.server);
+        }
       } else {
         expect(client.messages).toHaveLength(0);
       }
@@ -112,32 +131,41 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
         expect(interceptor.platform).toBe(platform);
       }),
     );
-
-    await Promise.all(sockets.map((socket) => socket.open()));
-
-    expect(userInterceptor.clients).toHaveLength(userSockets.length);
-    expect(notificationInterceptor.clients).toHaveLength(notificationSockets.length);
   });
 
   beforeEach(async () => {
-    await Promise.all(
-      interceptors.map(async (interceptor) => {
-        await interceptor.clear();
-      }),
-    );
+    await Promise.resolve(userInterceptor.clear());
+    await Promise.resolve(notificationInterceptor.clear());
+
+    await Promise.resolve(userInterceptor.message().with(isNoUserMessage));
+    await Promise.resolve(notificationInterceptor.message().with(isNoNotificationMessage));
+
+    await Promise.all(sockets.map((socket) => socket.open()));
+
+    await waitFor(() => {
+      expect(userInterceptor.clients).toHaveLength(userSockets.length);
+      expect(notificationInterceptor.clients).toHaveLength(notificationSockets.length);
+    });
   });
 
   afterEach(async () => {
-    await Promise.all(
-      interceptors.map(async (interceptor) => {
-        await interceptor.checkTimes();
-      }),
-    );
+    try {
+      await Promise.all(
+        interceptors.map(async (interceptor) => {
+          await interceptor.checkTimes();
+        }),
+      );
+    } finally {
+      await Promise.all(sockets.map((socket) => socket.close()));
+
+      await waitFor(() => {
+        expect(userInterceptor.clients).toHaveLength(0);
+        expect(notificationInterceptor.clients).toHaveLength(0);
+      });
+    }
   });
 
   afterAll(async () => {
-    await Promise.all(sockets.map((socket) => socket.close()));
-
     expect(userInterceptor.clients).toHaveLength(0);
     expect(notificationInterceptor.clients).toHaveLength(0);
 
@@ -164,6 +192,41 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
         password: crypto.randomUUID(),
         birthDate: new Date().toISOString(),
       };
+
+      it('should support passively observing user creation messages', async () => {
+        const creatorClient = userInterceptor.clients[0];
+        const message: UserWebSocketMessage<'user:create'> = {
+          type: 'user:create',
+          data: creationInput,
+        };
+
+        const passiveHandler = await userInterceptor.message().from(creatorClient).with(message).times(1);
+
+        const responseListener = vi.fn();
+        userSockets[0].addEventListener('message', responseListener);
+
+        try {
+          userSockets[0].send(JSON.stringify(message));
+
+          await waitFor(() => {
+            expect(passiveHandler.messages).toHaveLength(1);
+          });
+
+          await waitForNot(() => {
+            expect(responseListener).toHaveBeenCalled();
+          });
+
+          expect(passiveHandler.messages[0]).toEqual<InterceptedWebSocketInterceptorMessage<UserWebSocketSchema>>({
+            data: message,
+            sender: creatorClient,
+            receiver: userInterceptor.server,
+          });
+          expect(creatorClient.messages).toEqual(passiveHandler.messages);
+          expect(userInterceptor.server.messages).toEqual(passiveHandler.messages);
+        } finally {
+          userSockets[0].removeEventListener('message', responseListener);
+        }
+      });
 
       async function createUser(input: UserCreationInput) {
         const responsePromise = waitForResponseMessage(userSockets[0], 'user:create:success');
@@ -220,10 +283,8 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
           birthDate: creationInput.birthDate,
         });
 
-        expectMessagedClients(userInterceptor, response, [creatorClient]);
-        expect(creationHandler.messages).toEqual(
-          expect.arrayContaining(userInterceptor.clients.flatMap((client) => client.messages)),
-        );
+        expectMessagedClients(userInterceptor, response, [creatorClient], { type: 'user:create', data: creationInput });
+        expect(creationHandler.messages).toHaveLength(1);
       });
 
       it('should support creating users notifying all users', async () => {
@@ -249,8 +310,22 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
           })
           .times(1);
 
-        const response = await createUser(creationInput);
+        const responsesPromise = Promise.all(
+          userSockets.map((socket) => waitForResponseMessage(socket, 'user:create:success')),
+        );
+
+        const message: UserWebSocketMessage<'user:create'> = {
+          type: 'user:create',
+          data: creationInput,
+        };
+
+        userSockets[0].send(JSON.stringify(message));
+
+        const responses = await responsesPromise;
+        const response = responses[0];
+
         expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:create:success'>>();
+        expect(responses).toEqual([response, response]);
 
         expect(response.data).toEqual<JSONSerialized<User>>({
           id: expect.any(String) as string,
@@ -259,10 +334,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
           birthDate: creationInput.birthDate,
         });
 
-        expectMessagedClients(userInterceptor, response, userInterceptor.clients);
-        expect(creationHandler.messages).toEqual(
-          expect.arrayContaining(userInterceptor.clients.flatMap((client) => client.messages)),
-        );
+        expect(creationHandler.messages).toHaveLength(1);
       });
 
       it('should return an error if the input is not valid', async () => {
@@ -287,10 +359,8 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
 
         expect(response).toEqual({ type: 'user:create:error', data: validationError });
 
-        expectMessagedClients(userInterceptor, response, [creatorClient]);
-        expect(creationHandler.messages).toEqual(
-          expect.arrayContaining(userInterceptor.clients.flatMap((client) => client.messages)),
-        );
+        expectMessagedClients(userInterceptor, response, [creatorClient], { type: 'user:create', data: invalidInput });
+        expect(creationHandler.messages).toHaveLength(1);
       });
 
       it('should return an error if the user already exists', async () => {
@@ -312,10 +382,8 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
 
         expect(response).toEqual({ type: 'user:create:error', data: conflictError });
 
-        expectMessagedClients(userInterceptor, response, [creatorClient]);
-        expect(creationHandler.messages).toEqual(
-          expect.arrayContaining(userInterceptor.clients.flatMap((client) => client.messages)),
-        );
+        expectMessagedClients(userInterceptor, response, [creatorClient], { type: 'user:create', data: creationInput });
+        expect(creationHandler.messages).toHaveLength(1);
       });
     });
 
@@ -380,10 +448,11 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
           ...updateInput,
         });
 
-        expectMessagedClients(userInterceptor, response, [creatorClient]);
-        expect(updateHandler.messages).toEqual(
-          expect.arrayContaining(userInterceptor.clients.flatMap((client) => client.messages)),
-        );
+        expectMessagedClients(userInterceptor, response, [creatorClient], {
+          type: 'user:update',
+          data: { id: user.id, ...updateInput },
+        });
+        expect(updateHandler.messages).toHaveLength(1);
       });
 
       it('should return an error if user not found', async () => {
@@ -411,10 +480,11 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
 
         expect(response).toEqual({ type: 'user:update:error', data: notFoundError });
 
-        expectMessagedClients(userInterceptor, response, [creatorClient]);
-        expect(updateHandler.messages).toEqual(
-          expect.arrayContaining(userInterceptor.clients.flatMap((client) => client.messages)),
-        );
+        expectMessagedClients(userInterceptor, response, [creatorClient], {
+          type: 'user:update',
+          data: { id: unknownUserId, ...updateInput },
+        });
+        expect(updateHandler.messages).toHaveLength(1);
       });
 
       it('should return an error if input is invalid', async () => {
@@ -445,10 +515,11 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
 
         expect(response).toEqual({ type: 'user:update:error', data: validationError });
 
-        expectMessagedClients(userInterceptor, response, [creatorClient]);
-        expect(updateHandler.messages).toEqual(
-          expect.arrayContaining(userInterceptor.clients.flatMap((client) => client.messages)),
-        );
+        expectMessagedClients(userInterceptor, response, [creatorClient], {
+          type: 'user:update',
+          data: { id: user.id, ...invalidInput },
+        });
+        expect(updateHandler.messages).toHaveLength(1);
       });
     });
 
@@ -503,10 +574,11 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
           data: { id: user.id },
         });
 
-        expectMessagedClients(userInterceptor, response, [creatorClient]);
-        expect(deleteHandler.messages).toEqual(
-          expect.arrayContaining(userInterceptor.clients.flatMap((client) => client.messages)),
-        );
+        expectMessagedClients(userInterceptor, response, [creatorClient], {
+          type: 'user:delete',
+          data: { id: user.id },
+        });
+        expect(deleteHandler.messages).toHaveLength(1);
       });
 
       it('should return an error if the user was not found', async () => {
@@ -532,10 +604,11 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
 
         expect(response).toEqual({ type: 'user:delete:error', data: notFoundError });
 
-        expectMessagedClients(userInterceptor, response, [creatorClient]);
-        expect(deleteHandler.messages).toEqual(
-          expect.arrayContaining(userInterceptor.clients.flatMap((client) => client.messages)),
-        );
+        expectMessagedClients(userInterceptor, response, [creatorClient], {
+          type: 'user:delete',
+          data: { id: user.id },
+        });
+        expect(deleteHandler.messages).toHaveLength(1);
       });
     });
   });
@@ -567,6 +640,14 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
       const serializedMessage = JSON.stringify(message);
 
       notificationInterceptor.server.send(serializedMessage);
+    }
+
+    function expectNoSavedServerSentNotificationMessages() {
+      expect(notificationInterceptor.server.messages).toHaveLength(0);
+
+      for (const client of notificationInterceptor.clients) {
+        expect(client.messages).toHaveLength(0);
+      }
     }
 
     function waitForNotificationCreation(socket: WebSocketClient<NotificationWebSocketSchema>) {
@@ -604,7 +685,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
       expectTypeOf(responses[0]).toEqualTypeOf<NotificationWebSocketMessage<'notification:create:success'>>();
       expect(responses).toEqual([message, message]);
 
-      expectMessagedClients(notificationInterceptor, message, notificationInterceptor.clients);
+      expectNoSavedServerSentNotificationMessages();
     });
 
     it('should support receiving notification update events started by the server', async () => {
@@ -622,7 +703,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
       expectTypeOf(responses[0]).toEqualTypeOf<NotificationWebSocketMessage<'notification:update:success'>>();
       expect(responses).toEqual([message, message]);
 
-      expectMessagedClients(notificationInterceptor, message, notificationInterceptor.clients);
+      expectNoSavedServerSentNotificationMessages();
     });
 
     it('should support receiving notification read events started by the server', async () => {
@@ -640,7 +721,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
       expectTypeOf(responses[0]).toEqualTypeOf<NotificationWebSocketMessage<'notification:read:success'>>();
       expect(responses).toEqual([message, message]);
 
-      expectMessagedClients(notificationInterceptor, message, notificationInterceptor.clients);
+      expectNoSavedServerSentNotificationMessages();
     });
 
     it('should support receiving notification read errors started by the server', async () => {
@@ -662,7 +743,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
       expectTypeOf(responses[0]).toEqualTypeOf<NotificationWebSocketMessage<'notification:read:error'>>();
       expect(responses).toEqual([message, message]);
 
-      expectMessagedClients(notificationInterceptor, message, notificationInterceptor.clients);
+      expectNoSavedServerSentNotificationMessages();
     });
 
     it('should support receiving notification unread events started by the server', async () => {
@@ -680,7 +761,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
       expectTypeOf(responses[0]).toEqualTypeOf<NotificationWebSocketMessage<'notification:unread:success'>>();
       expect(responses).toEqual([message, message]);
 
-      expectMessagedClients(notificationInterceptor, message, notificationInterceptor.clients);
+      expectNoSavedServerSentNotificationMessages();
     });
   });
 }
