@@ -659,6 +659,119 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     );
   });
 
+  it('should leave sockets open after unmatched messages', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+      await promiseIfRemote(
+        interceptor.message().with({ type: 'client', index: 2 }).respond({ type: 'server', index: 2 }),
+        interceptor,
+      );
+
+      const client = await createClient();
+      const messageListener = vi.fn();
+      client.addEventListener('message', messageListener);
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+        await waitForNot(() => {
+          expect(messageListener).toHaveBeenCalled();
+        });
+
+        expect(client.readyState).toBe(WebSocketClient.OPEN);
+        expect(console.error).not.toHaveBeenCalled();
+
+        const messagePromise = waitForMessage(client);
+        client.send(JSON.stringify({ type: 'client', index: 2 }));
+
+        await expect(messagePromise).resolves.toEqual({ type: 'server', index: 2 });
+        expect(client.readyState).toBe(WebSocketClient.OPEN);
+        expect(console.error).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  it('should log callback errors and leave sockets usable', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+      const error = new Error('Message effect failed.');
+
+      await promiseIfRemote(
+        interceptor
+          .message()
+          .with({ type: 'client', index: 1 })
+          .effect(() => {
+            throw error;
+          }),
+        interceptor,
+      );
+
+      await promiseIfRemote(
+        interceptor.message().with({ type: 'client', index: 2 }).respond({ type: 'server', index: 2 }),
+        interceptor,
+      );
+
+      const client = await createClient();
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+        await waitFor(() => {
+          expect(console.error).toHaveBeenCalledWith(error);
+        });
+
+        expect(client.readyState).toBe(WebSocketClient.OPEN);
+
+        const messagePromise = waitForMessage(client);
+        client.send(JSON.stringify({ type: 'client', index: 2 }));
+
+        await expect(messagePromise).resolves.toEqual({ type: 'server', index: 2 });
+        expect(client.readyState).toBe(WebSocketClient.OPEN);
+      });
+    });
+  });
+
+  it('should clear handlers, saved messages, clients, and server messages', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const firstHandler = await promiseIfRemote(
+          interceptor.message().respond({ type: 'server', index: 1 }).times(1),
+          interceptor,
+        );
+
+        const client = await createClient();
+        const firstMessagePromise = waitForMessage(client);
+
+        client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+        await expect(firstMessagePromise).resolves.toEqual({ type: 'server', index: 1 });
+        expect(firstHandler.messages).toHaveLength(1);
+        expect(interceptor.server.messages).toHaveLength(1);
+        expect(interceptor.clients).toHaveLength(1);
+
+        await interceptor.clear();
+
+        expect(firstHandler.messages).toHaveLength(0);
+        expect(interceptor.server.messages).toHaveLength(0);
+        expect(interceptor.clients).toHaveLength(0);
+        await interceptor.checkTimes();
+
+        const secondHandler = await promiseIfRemote(
+          interceptor.message().respond({ type: 'server', index: 2 }).times(1),
+          interceptor,
+        );
+
+        const secondClient = await createClient();
+        const secondMessagePromise = waitForMessage(secondClient);
+
+        secondClient.send(JSON.stringify({ type: 'client', index: 2 }));
+
+        await expect(secondMessagePromise).resolves.toEqual({ type: 'server', index: 2 });
+        expect(secondHandler.messages).toHaveLength(1);
+        await interceptor.checkTimes();
+      },
+    );
+  });
+
   it('should have the correct default message saving configuration if none is provided', () => {
     const interceptor = createWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, messageSaving: undefined });
 
@@ -668,68 +781,91 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     });
   });
 
-  if (type === 'local') {
-    it('should warn if saved messages exceed the safe limit', async () => {
-      const safeLimit = 2;
+  it('should not warn if saved messages reach the safe limit without exceeding it', async () => {
+    const safeLimit = 2;
 
-      await usingWebSocketInterceptor<MessageSchema>(
-        { type: 'local', baseURL, messageSaving: { enabled: true, safeLimit } },
-        async (interceptor) => {
-          const handler = interceptor.message().respond({ type: 'server', index: 1 });
-          const client = await createClient();
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true, safeLimit } },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+        const client = await createClient();
 
-          await usingIgnoredConsole(['warn'], async (console) => {
-            const numberOfMessages = safeLimit + 1;
+        await usingIgnoredConsole(['warn'], async (console) => {
+          for (let index = 0; index < safeLimit; index++) {
+            client.send(JSON.stringify({ type: 'client', index }));
+          }
 
-            for (let index = 0; index < numberOfMessages; index++) {
-              client.send(JSON.stringify({ type: 'client', index }));
-            }
-
-            await waitFor(() => {
-              expect(handler.messages).toHaveLength(numberOfMessages);
-            });
-
-            expect(console.warn).toHaveBeenCalledTimes(1);
-            expect(console.warn).toHaveBeenCalledWith(new MessageSavingSafeLimitExceededError(3, safeLimit));
+          await waitFor(() => {
+            expect(handler.messages).toHaveLength(safeLimit);
           });
-        },
-      );
-    });
 
-    it('should reset the saved message count after cleared', async () => {
-      const safeLimit = 1;
+          expect(console.warn).toHaveBeenCalledTimes(0);
+        });
+      },
+    );
+  });
 
-      await usingWebSocketInterceptor<MessageSchema>(
-        { type: 'local', baseURL, messageSaving: { enabled: true, safeLimit } },
-        async (interceptor) => {
-          const handler = interceptor.message().respond({ type: 'server', index: 1 });
-          const client = await createClient();
+  it('should warn if saved messages exceed the safe limit', async () => {
+    const safeLimit = 2;
 
-          await usingIgnoredConsole(['warn'], async (console) => {
-            for (let index = 0; index < 2; index++) {
-              client.send(JSON.stringify({ type: 'client', index }));
-            }
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true, safeLimit } },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+        const client = await createClient();
 
-            await waitFor(() => {
-              expect(handler.messages).toHaveLength(2);
-            });
+        await usingIgnoredConsole(['warn'], async (console) => {
+          const numberOfMessages = safeLimit + 1;
 
-            expect(console.warn).toHaveBeenCalledTimes(1);
+          for (let index = 0; index < numberOfMessages; index++) {
+            client.send(JSON.stringify({ type: 'client', index }));
+          }
 
-            interceptor.clear();
-            handler.respond({ type: 'server', index: 2 });
-            console.warn.mockClear();
-
-            client.send(JSON.stringify({ type: 'client', index: 2 }));
-
-            await waitFor(() => {
-              expect(handler.messages).toHaveLength(1);
-            });
-
-            expect(console.warn).toHaveBeenCalledTimes(0);
+          await waitFor(() => {
+            expect(handler.messages).toHaveLength(numberOfMessages);
           });
-        },
-      );
-    });
-  }
+
+          expect(console.warn).toHaveBeenCalledTimes(1);
+          expect(console.warn).toHaveBeenCalledWith(new MessageSavingSafeLimitExceededError(3, safeLimit));
+        });
+      },
+    );
+  });
+
+  it('should reset the saved message count after cleared', async () => {
+    const safeLimit = 1;
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true, safeLimit } },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+        const client = await createClient();
+
+        await usingIgnoredConsole(['warn'], async (console) => {
+          for (let index = 0; index < 2; index++) {
+            client.send(JSON.stringify({ type: 'client', index }));
+          }
+
+          await waitFor(() => {
+            expect(handler.messages).toHaveLength(2);
+          });
+
+          expect(console.warn).toHaveBeenCalledTimes(1);
+
+          await interceptor.clear();
+          await promiseIfRemote(handler.respond({ type: 'server', index: 2 }), interceptor);
+          console.warn.mockClear();
+
+          const nextClient = await createClient();
+          nextClient.send(JSON.stringify({ type: 'client', index: 2 }));
+
+          await waitFor(() => {
+            expect(handler.messages).toHaveLength(1);
+          });
+
+          expect(console.warn).toHaveBeenCalledTimes(0);
+        });
+      },
+    );
+  });
 }

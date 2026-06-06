@@ -3,7 +3,7 @@ import ClientSocket from 'isomorphic-ws';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { closeClientSocket, waitForOpenClientSocket } from '@/utils/webSocket';
-import { WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE } from '@/utils/webSocket/constants';
+import { WEB_SOCKET_NORMAL_CLOSE_CODE, WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE } from '@/utils/webSocket/constants';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
@@ -165,6 +165,54 @@ describe('Interceptor server > Web sockets', () => {
 
     expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
     expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
+  });
+
+  it('should clean up WebSocket handlers and user sockets when a worker disconnects', async () => {
+    server = createInternalInterceptorServer({ logUnhandledRequests: false });
+    await server.start();
+
+    webSocketClient = new WebSocketClient({
+      url: `ws://localhost:${server.port}`,
+    });
+
+    await webSocketClient.start({
+      parameters: {
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+      },
+      waitForAuthentication: true,
+    });
+
+    const baseURL = `ws://localhost:${server.port}/chat`;
+
+    await webSocketClient.request('interceptors/ws/workers/commit', {
+      id: crypto.randomUUID(),
+      baseURL,
+    });
+
+    const userSocket = new ClientSocket(baseURL);
+    userSockets.push(userSocket);
+
+    const userSocketCloseEventPromise = new Promise<ClientSocket.CloseEvent>((resolve) => {
+      userSocket.addEventListener('close', resolve);
+    });
+
+    await waitForOpenClientSocket(userSocket);
+
+    await webSocketClient.stop();
+    webSocketClient = undefined;
+
+    const userSocketCloseEvent = await userSocketCloseEventPromise;
+    expect(userSocketCloseEvent.code).toBe(WEB_SOCKET_NORMAL_CLOSE_CODE);
+
+    const nextUserSocket = new ClientSocket(baseURL);
+    userSockets.push(nextUserSocket);
+
+    const nextUserSocketCloseEvent = await new Promise<ClientSocket.CloseEvent>((resolve) => {
+      nextUserSocket.addEventListener('close', resolve);
+    });
+
+    expect(nextUserSocketCloseEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(nextUserSocketCloseEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
   });
 
   it('should close unmatched user socket upgrades deterministically', async () => {

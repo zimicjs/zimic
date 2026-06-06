@@ -138,12 +138,17 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
           send: (data) => client.send(data),
         });
 
-        function messageListener(event: MessageEvent<string | ArrayBufferLike | Blob | ArrayBufferView>) {
+        async function messageListener(event: MessageEvent<string | ArrayBufferLike | Blob | ArrayBufferView>) {
           event.preventDefault();
-          void interceptor.handleInterceptedMessage(event.data as WebSocketMessageData<Schema>, {
-            sender: interceptorClient,
-            receiver: interceptor.server,
-          });
+
+          try {
+            await interceptor.handleInterceptedMessage(event.data as WebSocketMessageData<Schema>, {
+              sender: interceptorClient,
+              receiver: interceptor.server,
+            });
+          } catch (error) {
+            console.error(error);
+          }
         }
 
         function closeListener() {
