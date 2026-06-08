@@ -7,7 +7,7 @@
 </h1>
 
 <p align="center">
-  Next-gen TypeScript-first HTTP intercepting and mocking
+  Next-gen TypeScript-first HTTP and WebSocket intercepting and mocking
 </p>
 
 <p align="center">
@@ -36,8 +36,8 @@
 
 ---
 
-`@zimic/interceptor` is a type-safe interceptor library for handling and mocking HTTP requests in development and
-testing.
+`@zimic/interceptor` is a type-safe interceptor library for handling and mocking HTTP requests and WebSocket messages in
+development and testing.
 
 ## Highlights
 
@@ -48,11 +48,18 @@ testing.
   [remote](https://zimic.dev/docs/interceptor/guides/http/remote-interceptors) HTTP interceptors. Mock external services
   and simulate success, loading, and error states with ease and type safety.
 
+- :zap: **WebSocket interceptors**
+
+  Use your `@zimic/ws` schema to declare
+  [experimental WebSocket interceptors](https://zimic.dev/docs/interceptor/guides/ws/interceptors). Mock typed message
+  flows, observe connected clients, send server messages, and verify expected messages in development and tests.
+
 - :link: **Network-level interception**
 
   `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and
-  [interceptor servers](https://zimic.dev/docs/interceptor/cli/server) to handle real HTTP requests. From you
-  application's point of view, the mocked responses are indistinguishable from the real ones.
+  [interceptor servers](https://zimic.dev/docs/interceptor/cli/server) to handle real HTTP requests and WebSocket
+  connections. From your application's point of view, the mocked responses and messages are indistinguishable from the
+  real ones.
 
 - :bulb: **Readability**
 
