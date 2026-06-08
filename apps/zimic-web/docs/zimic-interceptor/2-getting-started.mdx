@@ -9,7 +9,9 @@ import TabItem from '@theme/TabItem';
 
 # Getting started
 
-This guide will help you get started with `@zimic/interceptor`.
+This guide will help you get started with `@zimic/interceptor`. The quick start uses HTTP interceptors first. For
+WebSocket mocks, see the [WebSocket interceptor guide](/docs/zimic-interceptor/guides/ws/1-websocket-interceptors.md)
+and [API reference](/docs/interceptor/api).
 
 ## Requirements
 
@@ -194,21 +196,21 @@ TypeScript for improved type safety and developer experience.
   <TabItem value="npm" label="npm">
 
 ```bash
-npm install @zimic/http @zimic/interceptor --save-dev
+npm install @zimic/http @zimic/ws @zimic/interceptor --save-dev
 ```
 
   </TabItem>
   <TabItem value="pnpm" label="pnpm">
 
 ```bash
-pnpm add @zimic/http @zimic/interceptor --dev
+pnpm add @zimic/http @zimic/ws @zimic/interceptor --dev
 ```
 
   </TabItem>
   <TabItem value="yarn" label="yarn">
 
 ```bash
-yarn add @zimic/http @zimic/interceptor --dev
+yarn add @zimic/http @zimic/ws @zimic/interceptor --dev
 ```
 
   </TabItem>
@@ -216,9 +218,11 @@ yarn add @zimic/http @zimic/interceptor --dev
 
 :::info
 
-Note that [`@zimic/http`](/docs/zimic-http/1-index.md) is a peer dependency of `@zimic/interceptor`, so you need to
-install both packages. When upgrading `@zimic/interceptor` to a new version, consider upgrading `@zimic/http` as well to
-ensure that the versions are compatible.
+Note that [`@zimic/http`](/docs/zimic-http/1-index.md) and `@zimic/ws` are peer dependencies of `@zimic/interceptor`.
+Install each or both depending on your needs. HTTP examples use `@zimic/http` schemas, while
+[WebSocket examples](/docs/zimic-interceptor/guides/ws/1-websocket-interceptors.md) use `@zimic/ws` schemas. When
+upgrading `@zimic/interceptor` to a new version, consider upgrading both schema packages as well to ensure that the
+versions are compatible.
 
 :::
 
@@ -229,21 +233,21 @@ possibly unstable or breaking changes.
   <TabItem value="npm" label="npm">
 
 ```bash
-npm install @zimic/http@canary @zimic/interceptor@canary --save-dev
+npm install @zimic/http@canary @zimic/ws@canary @zimic/interceptor@canary --save-dev
 ```
 
   </TabItem>
   <TabItem value="pnpm" label="pnpm">
 
 ```bash
-pnpm add @zimic/http@canary @zimic/interceptor@canary --dev
+pnpm add @zimic/http@canary @zimic/ws@canary @zimic/interceptor@canary --dev
 ```
 
   </TabItem>
   <TabItem value="yarn" label="yarn">
 
 ```bash
-yarn add @zimic/http@canary @zimic/interceptor@canary --dev
+yarn add @zimic/http@canary @zimic/ws@canary @zimic/interceptor@canary --dev
 ```
 
   </TabItem>
@@ -644,10 +648,16 @@ libraries and frameworks.
 ### API reference
 
 Visit the [API reference](/docs/interceptor/api) for more details on the resources available in `@zimic/interceptor`.
+The WebSocket interceptor APIs are imported from `@zimic/interceptor/experimental/ws`; start with the
+[WebSocket interceptor guide](/docs/zimic-interceptor/guides/ws/1-websocket-interceptors.md) while the dedicated API
+pages are being added.
 
 ### Explore the ecosystem
 
 - Access the [`@zimic/http`](/docs/zimic-http/1-index.md) documentation to learn more about extending your HTTP schema.
+
+- Use the [WebSocket interceptor guide](/docs/zimic-interceptor/guides/ws/1-websocket-interceptors.md) when your tests
+  need to mock typed WebSocket message flows with `@zimic/ws`.
 
 - If you are interested in improving the type safety and development experience of your application code, check out
   [`@zimic/fetch`](/docs/zimic-fetch/1-index.md). Use the same schema as your interceptor to automatically type your
