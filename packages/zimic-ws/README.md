@@ -44,8 +44,63 @@
 
 ## Highlights
 
-🚧 TODO
+- :star: **WebSocket schemas**
+
+  Declare the messages exchanged by your WebSocket connection in a `WebSocketSchema` and use it to type clients,
+  servers, and WebSocket interceptors.
+
+- :zap: **Typed clients**
+
+  Use `WebSocketClient` to wrap native WebSocket connections with typed lifecycle methods, listeners, and `send()`
+  calls.
+
+- :satellite: **Typed servers**
+
+  Use `WebSocketServer` to attach typed WebSocket handling to an existing Node HTTP or HTTPS server.
+
+## Getting started
+
+```ts
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+
+type Schema = WebSocketSchema<
+  { type: 'message'; data: { text: string } } | { type: 'typing'; data: { username: string } }
+>;
+
+const client = new WebSocketClient<Schema>('ws://localhost:3000/chat');
+
+await client.open();
+client.send(JSON.stringify({ type: 'message', data: { text: 'Hello!' } }));
+await client.close();
+```
+
+In Node.js, use the server entry point:
+
+```ts
+import { createServer } from 'node:http';
+import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketServer } from '@zimic/ws/server';
+
+type Schema = WebSocketSchema<
+  { type: 'message'; data: { text: string } } | { type: 'typing'; data: { username: string } }
+>;
+
+const httpServer = createServer();
+const webSocketServer = new WebSocketServer<Schema>({ httpServer });
+
+webSocketServer.addEventListener('connection', (client) => {
+  client.addEventListener('message', (event) => {
+    client.send(event.data);
+  });
+});
+
+httpServer.listen(3000, '127.0.0.1');
+await webSocketServer.open();
+```
 
 **Learn more**:
 
-🚧 TODO
+- [`@zimic/ws` - Introduction](https://zimic.dev/docs/ws)
+- [`@zimic/ws` - Getting started](https://zimic.dev/docs/ws/getting-started)
+- [`@zimic/ws` - Schemas](https://zimic.dev/docs/ws/guides/schemas)
+- [`@zimic/ws` - API](https://zimic.dev/docs/ws/api)
