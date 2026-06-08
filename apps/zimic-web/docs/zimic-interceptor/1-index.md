@@ -6,8 +6,8 @@ slug: /interceptor
 
 # Introduction
 
-`@zimic/interceptor` is a type-safe interceptor library for handling and mocking HTTP requests in development and
-testing.
+`@zimic/interceptor` is a type-safe interceptor library for handling and mocking HTTP requests and WebSocket messages in
+development and testing.
 
 ## Highlights
 
@@ -18,11 +18,17 @@ testing.
   [remote](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md) HTTP interceptors. Mock external services
   and simulate success, loading, and error states with ease and type safety.
 
+- :zap: **WebSocket interceptors**
+
+  Use your `@zimic/ws` schema to declare
+  [experimental WebSocket interceptors](/docs/zimic-interceptor/guides/ws/1-websocket-interceptors.md). Mock typed
+  message flows, observe connected clients, send server messages, and verify expected messages in development and tests.
+
 - :link: **Network-level interception**
 
   `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and
-  [interceptor servers](/docs/zimic-interceptor/cli/1-server.md) to handle real HTTP requests. From your application's
-  point of view, the mocked responses are indistinguishable from the real ones.
+  [interceptor servers](/docs/zimic-interceptor/cli/1-server.md) to handle real HTTP requests and WebSocket connections.
+  From your application's point of view, the mocked responses and messages are indistinguishable from the real ones.
 
 - :bulb: **Readability**
 
