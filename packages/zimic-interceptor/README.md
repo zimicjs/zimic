@@ -51,8 +51,8 @@ development and testing.
 - :zap: **WebSocket interceptors**
 
   Use your `@zimic/ws` schema to declare
-  [experimental WebSocket interceptors](https://zimic.dev/docs/interceptor/guides/ws/interceptors). Mock typed message
-  flows, observe connected clients, send server messages, and verify expected messages in development and tests.
+  [experimental WebSocket interceptors](https://zimic.dev/docs/interceptor/guides/ws/local-interceptors). Mock typed
+  message flows, observe connected clients, send server messages, and verify expected messages in development and tests.
 
 - :link: **Network-level interception**
 
