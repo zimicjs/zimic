@@ -117,4 +117,4 @@ const interceptor = createWebSocketInterceptor<ChatSchema>({
 **Related**:
 
 - [API - `WebSocketSchema`](/docs/zimic-ws/api/1-websocket-schema.md)
-- [Interceptor guides - WebSocket interceptors](/docs/zimic-interceptor/guides/ws/1-websocket-interceptors.md)
+- [Interceptor guides - WebSocket interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md)
