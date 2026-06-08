@@ -1,0 +1,176 @@
+---
+title: Getting started | @zimic/ws
+sidebar_label: Getting started
+slug: /ws/getting-started
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Getting started
+
+This guide will help you get started with `@zimic/ws`.
+
+## Requirements
+
+### Supported environments
+
+<Tabs groupId="runtime-environments">
+  <TabItem value="client" label="Client side">
+
+`@zimic/ws` clients are designed to work in environments that support the
+[WebSocket API](https://developer.mozilla.org/docs/Web/API/WebSocket).
+
+  </TabItem>
+  <TabItem value="server" label="Server side">
+
+| Runtime                       | Version   |
+| ----------------------------- | --------- |
+| [Node.js](https://nodejs.org) | >= 22.4.0 |
+
+  </TabItem>
+</Tabs>
+
+### Supported languages
+
+#### TypeScript
+
+`@zimic/ws` requires [TypeScript](https://www.typescriptlang.org) >= 5.0, with `strict` mode enabled.
+
+#### JavaScript
+
+`@zimic/ws` is fully functional on JavaScript, although the type features will be disabled. Consider using TypeScript
+for improved type safety and developer experience.
+
+## Installation
+
+`@zimic/ws` is available as a library on [npm](https://www.npmjs.com/package/@zimic/ws).
+
+<Tabs groupId="package-managers">
+  <TabItem value="npm" label="npm">
+
+```bash
+npm install @zimic/ws --save
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm add @zimic/ws
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```bash
+yarn add @zimic/ws
+```
+
+  </TabItem>
+</Tabs>
+
+We also have canary releases under the tag `canary`. These have the latest code, including new features, bug fixes, and
+possibly unstable or breaking changes.
+
+<Tabs groupId="package-managers">
+  <TabItem value="npm" label="npm">
+
+```bash
+npm install @zimic/ws@canary --save
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm add @zimic/ws@canary
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```bash
+yarn add @zimic/ws@canary
+```
+
+  </TabItem>
+</Tabs>
+
+## Your first WebSocket schema
+
+Declare a [`WebSocketSchema`](/docs/zimic-ws/api/1-websocket-schema.md) with the messages your connection can exchange.
+
+```ts title='schema.ts'
+import { WebSocketSchema } from '@zimic/ws';
+
+type ChatMessage = { type: 'message'; data: { text: string } } | { type: 'typing'; data: { username: string } };
+
+export type ChatSchema = WebSocketSchema<ChatMessage>;
+```
+
+## Your first WebSocket client
+
+Create a [`WebSocketClient`](/docs/zimic-ws/api/2-websocket-client.mdx) with the schema as a type argument.
+
+```ts title='client.ts'
+import { WebSocketClient } from '@zimic/ws';
+
+import { ChatSchema } from './schema';
+
+const client = new WebSocketClient<ChatSchema>('ws://localhost:3000/chat');
+
+client.addEventListener('message', (event) => {
+  const message = JSON.parse(event.data);
+  console.log(message.type);
+});
+
+await client.open();
+
+client.send(JSON.stringify({ type: 'message', data: { text: 'Hello!' } }));
+await client.close();
+```
+
+## Your first WebSocket server
+
+In Node.js, attach a [`WebSocketServer`](/docs/zimic-ws/api/3-websocket-server.mdx) to an existing HTTP or HTTPS server.
+
+```ts title='server.ts'
+import { createServer } from 'node:http';
+import { WebSocketServer } from '@zimic/ws/server';
+
+import { ChatSchema } from './schema';
+
+const httpServer = createServer();
+const webSocketServer = new WebSocketServer<ChatSchema>({ httpServer });
+
+webSocketServer.addEventListener('connection', (client) => {
+  client.addEventListener('message', (event) => {
+    client.send(event.data);
+  });
+});
+
+httpServer.listen(3000, '127.0.0.1');
+await webSocketServer.open();
+
+console.log(webSocketServer.baseURL);
+```
+
+The underlying HTTP or HTTPS server should be listening before calling `webSocketServer.open()`.
+
+## Next steps
+
+### Guides
+
+Take a look at our [schemas guide](/docs/zimic-ws/guides/1-schemas.md) to learn how WebSocket message types are
+represented.
+
+### API reference
+
+Visit the [API reference](/docs/ws/api) for more details on the resources available in `@zimic/ws`.
+
+### Ecosystem
+
+[`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md) uses `@zimic/ws` schemas to type experimental WebSocket
+interceptors. See the [WebSocket interceptor guide](/docs/zimic-interceptor/guides/ws/1-websocket-interceptors.md) for
+details.

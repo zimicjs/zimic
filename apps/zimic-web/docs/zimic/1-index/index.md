@@ -154,6 +154,31 @@ A minimal (~2 kB minified gzipped) and type-safe `fetch`-like API client.
 - [`@zimic/fetch` - Getting started](/docs/zimic-fetch/2-getting-started.mdx)
 - [`@zimic/fetch` - Guides](/docs/fetch/guides)
 
+### `@zimic/ws`
+
+A minimal and type-safe WebSocket client and server.
+
+- :star: **WebSocket schemas**
+
+  Declare the structure of WebSocket messages in a [WebSocket schema](/docs/zimic-ws/guides/1-schemas.md) and use it to
+  type clients, servers, and WebSocket interceptors.
+
+- :zap: **Typed clients**
+
+  Use [`WebSocketClient`](/docs/zimic-ws/api/2-websocket-client.mdx) to open, close, listen to, and send typed messages
+  through native WebSocket connections.
+
+- :satellite: **Typed servers**
+
+  Use [`WebSocketServer`](/docs/zimic-ws/api/3-websocket-server.mdx) to attach typed WebSocket handling to a Node HTTP
+  or HTTPS server.
+
+**Learn more**:
+
+- [`@zimic/ws` - Introduction](/docs/zimic-ws/1-index.md)
+- [`@zimic/ws` - Getting started](/docs/zimic-ws/2-getting-started.mdx)
+- [`@zimic/ws` - Guides](/docs/ws/guides)
+
 ### `@zimic/interceptor`
 
 A type-safe interceptor library for handling and mocking HTTP requests in development and testing.

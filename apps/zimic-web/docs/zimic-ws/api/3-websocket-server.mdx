@@ -1,0 +1,139 @@
+---
+title: WebSocketServer | @zimic/ws
+sidebar_label: WebSocketServer
+slug: /ws/api/websocket-server
+---
+
+# `WebSocketServer`
+
+A typed WebSocket server attached to an existing Node HTTP or HTTPS server.
+
+```ts
+new WebSocketServer(options);
+```
+
+**Arguments**:
+
+1. **options**: `WebSocketServerOptions`
+   - **httpServer**: `http.Server | https.Server`
+
+     The HTTP or HTTPS server that should handle WebSocket upgrades.
+
+```ts
+import { createServer } from 'node:http';
+import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketServer } from '@zimic/ws/server';
+
+type Schema = WebSocketSchema<{ type: 'message'; data: { text: string } }>;
+
+const httpServer = createServer();
+const server = new WebSocketServer<Schema>({ httpServer });
+```
+
+## `server.open()`
+
+Opens the WebSocket server on the underlying HTTP or HTTPS server. The underlying server should already be listening. If
+the WebSocket server is already open, the method returns without reopening it.
+
+```ts
+server.open(options);
+```
+
+**Arguments**:
+
+1. **options**: `WebSocketServerOpenOptions | undefined`
+   - **timeout**: `number | undefined`
+
+     The maximum time, in milliseconds, to wait for the server to open. The default is `60000`.
+
+**Returns**: `Promise<void>`
+
+## `server.close()`
+
+Closes the WebSocket server and connected WebSocket clients. It does not close the underlying HTTP or HTTPS server.
+
+```ts
+server.close(options);
+```
+
+**Arguments**:
+
+1. **options**: `WebSocketServerCloseOptions | undefined`
+   - **timeout**: `number | undefined`
+
+     The maximum time, in milliseconds, to wait for the server to close. The default is `60000`.
+
+**Returns**: `Promise<void>`
+
+## Events
+
+`WebSocketServer` supports `listening`, `connection`, `error`, and `close` listeners.
+
+```ts
+server.addEventListener('connection', (client, request) => {
+  console.log(request.url);
+
+  client.addEventListener('message', (event) => {
+    client.send(event.data);
+  });
+});
+```
+
+### `server.addEventListener()`
+
+Adds a typed listener. Connection listeners receive connected clients as
+[`WebSocketClient`](/docs/zimic-ws/api/2-websocket-client.mdx) instances typed with the server schema.
+
+```ts
+server.addEventListener(type, listener);
+```
+
+### `server.removeEventListener()`
+
+Removes a typed listener.
+
+```ts
+server.removeEventListener(type, listener);
+```
+
+### `server.emit()`
+
+Emits an event on the open WebSocket server. If the server is not open, the stored listeners are called directly.
+
+```ts
+server.emit(type, ...parameters);
+```
+
+## Properties
+
+- **isOpen**: `boolean`
+
+  Whether the underlying HTTP or HTTPS server is listening and the WebSocket server is open.
+
+- **baseURL**: `string`
+
+  The server base URL, using `ws` for HTTP servers and `wss` for HTTPS servers.
+
+- **protocol**: `'ws' | 'wss'`
+
+  The WebSocket protocol inferred from the underlying server type.
+
+- **hostname**: `string`
+
+  The hostname of the open underlying server.
+
+- **port**: `number`
+
+  The port of the open underlying server.
+
+`baseURL`, `hostname`, and `port` throw when the WebSocket server is not open.
+
+## Errors
+
+`server.open()` can throw `WebSocketOpenTimeoutError` if the server does not open before the timeout. `server.close()`
+can throw `WebSocketCloseTimeoutError` if the server does not close before the timeout.
+
+**Related**:
+
+- [Guides - Declaring schemas](/docs/zimic-ws/guides/1-schemas.md)
+- [API - `WebSocketClient`](/docs/zimic-ws/api/2-websocket-client.mdx)
