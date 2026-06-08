@@ -1,0 +1,158 @@
+---
+title: WebSocketClient | @zimic/ws
+sidebar_label: WebSocketClient
+slug: /ws/api/websocket-client
+---
+
+# `WebSocketClient`
+
+A typed wrapper around a native [`WebSocket`](https://developer.mozilla.org/docs/Web/API/WebSocket).
+
+```ts
+new WebSocketClient(url, protocols);
+new WebSocketClient(socket);
+```
+
+**Arguments**:
+
+1. **url**: `string`
+
+   The WebSocket URL to connect to.
+
+2. **protocols**: `string | string[] | undefined`
+
+   Optional WebSocket protocols.
+
+3. **socket**: `WebSocket`
+
+   An existing native WebSocket to wrap.
+
+```ts
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+
+type Schema = WebSocketSchema<{ type: 'ping'; data: { id: string } }>;
+
+const client = new WebSocketClient<Schema>('ws://localhost:3000');
+```
+
+## `client.open()`
+
+Opens the WebSocket connection. If the connection is already open, the method returns without reconnecting.
+
+```ts
+client.open(options);
+```
+
+**Arguments**:
+
+1. **options**: `WebSocketClientOpenOptions | undefined`
+   - **timeout**: `number | undefined`
+
+     The maximum time, in milliseconds, to wait for the connection to open. The default is `60000`.
+
+**Returns**: `Promise<void>`
+
+## `client.close()`
+
+Closes the WebSocket connection. If the connection is already closed, the method returns without throwing.
+
+```ts
+client.close(code, reason, options);
+```
+
+**Arguments**:
+
+1. **code**: `number | undefined`
+
+   Optional close code.
+
+2. **reason**: `string | undefined`
+
+   Optional close reason.
+
+3. **options**: `WebSocketClientCloseOptions | undefined`
+   - **timeout**: `number | undefined`
+
+     The maximum time, in milliseconds, to wait for the connection to close. The default is `60000`.
+
+**Returns**: `Promise<void>`
+
+## `client.send()`
+
+Sends a message to the server. The data is typed with
+[`WebSocketMessageData`](/docs/zimic-ws/api/1-websocket-schema.md#websocketmessagedata).
+
+```ts
+client.send(data);
+```
+
+```ts
+client.send(JSON.stringify({ type: 'ping', data: { id: '1' } }));
+```
+
+## Events
+
+`WebSocketClient` supports `open`, `message`, `close`, and `error` listeners.
+
+```ts
+client.addEventListener('message', (event) => {
+  console.log(event.data);
+});
+
+client.onclose = (event) => {
+  console.log(event.code, event.reason);
+};
+```
+
+### `client.addEventListener()`
+
+Adds a typed listener to the current socket. Listeners are also kept and reapplied when `client.open()` creates a new
+socket.
+
+```ts
+client.addEventListener(type, listener, options);
+```
+
+### `client.removeEventListener()`
+
+Removes a typed listener.
+
+```ts
+client.removeEventListener(type, listener, options);
+```
+
+### `client.dispatchEvent()`
+
+Dispatches an event on the current socket, returning `false` when the client has no active socket.
+
+```ts
+client.dispatchEvent(event);
+```
+
+## Properties
+
+- **url**: `string`
+- **protocol**: `string`
+- **extensions**: `string`
+- **readyState**: `WebSocketClient.ReadyState`
+- **bufferedAmount**: `number`
+- **binaryType**: `'blob' | 'arraybuffer'`
+- **CONNECTING**: `number`
+- **OPEN**: `number`
+- **CLOSING**: `number`
+- **CLOSED**: `number`
+- **onopen**: `WebSocketClient.EventListener<Schema, 'open'> | null`
+- **onmessage**: `WebSocketClient.EventListener<Schema, 'message'> | null`
+- **onclose**: `WebSocketClient.EventListener<Schema, 'close'> | null`
+- **onerror**: `WebSocketClient.EventListener<Schema, 'error'> | null`
+
+## Errors
+
+`client.open()` can throw [`WebSocketOpenTimeoutError`](/docs/zimic-ws/api/2-websocket-client.mdx#errors) if the
+connection does not open before the timeout. `client.close()` can throw `WebSocketCloseTimeoutError` if the connection
+does not close before the timeout.
+
+**Related**:
+
+- [Guides - Declaring schemas](/docs/zimic-ws/guides/1-schemas.md)
+- [API - `WebSocketServer`](/docs/zimic-ws/api/3-websocket-server.mdx)
