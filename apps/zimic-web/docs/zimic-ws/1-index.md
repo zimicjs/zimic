@@ -8,7 +8,11 @@ slug: /ws
 
 `@zimic/ws` is a minimal and type-safe WebSocket client and server.
 
-> Status: alpha
+:::note ALPHA
+
+`@zimic/ws` is in alpha. Its API may change before becoming stable.
+
+:::
 
 ## Highlights
 
@@ -29,6 +33,6 @@ slug: /ws
 
 **Learn more**:
 
-- [`@zimic/ws` - Getting started](/docs/zimic-ws/2-getting-started.mdx)
+- [`@zimic/ws` - Getting started](/docs/ws/getting-started)
 - [`@zimic/ws` - Guides](/docs/ws/guides)
 - [`@zimic/ws` - API](/docs/ws/api)
