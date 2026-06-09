@@ -1,0 +1,366 @@
+---
+title: WebSocketMessageHandler | @zimic/interceptor
+sidebar_label: WebSocketMessageHandler
+slug: /interceptor/api/websocket-message-handler
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# `WebSocketMessageHandler`
+
+:::warning EXPERIMENTAL
+
+WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. Their API may change before becoming
+stable.
+
+:::
+
+A WebSocket message handler to observe client-to-server messages, run effects, and declare server responses. When
+multiple handlers of the same interceptor match the same message, the _last_ handler created with
+[`interceptor.message()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptormessage) will be used.
+
+:::tip TIP: <span>Awaiting remote `WebSocketMessageHandler` operations</span>
+
+If you are using a remote interceptor, make sure to `await` the handler before opening clients or sending messages. Many
+remote handler operations are asynchronous and require communication with the
+[interceptor server](/docs/zimic-interceptor/cli/1-server.md). A single `await` is enough, even if you are making
+multiple declarations, as `WebSocketMessageHandler` automatically batches changes.
+
+```ts
+const handler = await interceptor
+  .message()
+  .with({ type: 'message' })
+  .respond({ type: 'presence', data: { online: true } })
+  .times(1);
+```
+
+When using a local interceptor, you can safely skip awaiting the handler, as all operations are synchronous and
+immediate.
+
+:::
+
+## `handler.type`
+
+The type of the handler, either `local` or `remote`.
+
+**Type**: `'local' | 'remote'` (readonly)
+
+## `handler.from()`
+
+Restricts the handler to messages sent by a specific connected client.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+handler.from(client);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await handler.from(client);
+```
+
+  </TabItem>
+</Tabs>
+
+**Arguments**:
+
+1. **client**: `WebSocketInterceptorClient<Schema>`
+
+   The connected client that must send the message for this handler to match.
+
+**Returns**: `WebSocketMessageHandler<Schema>`
+
+## `handler.with()`
+
+Declares a restriction to intercepted message matches. If multiple restrictions are declared, all of them must be met,
+creating an AND condition.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+handler.with(restriction);
+handler.with((message) => matchesMessage);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await handler.with(restriction);
+await handler.with((message) => matchesMessage);
+```
+
+  </TabItem>
+</Tabs>
+
+**Arguments**:
+
+1. **restriction**: `WebSocketMessageHandlerRestriction<Schema>`
+
+   The restriction to match intercepted messages. It can be static, declared as a partial message object, or computed,
+   declared as a function returning whether the message matches. Static restrictions match messages that contain the
+   declared data.
+
+**Returns**: `WebSocketMessageHandler<Schema, RestrictedSchema>`
+
+The same handler, now considering the specified restriction. Static and computed restrictions can narrow the handler's
+message type for later operations.
+
+## `handler.delay()`
+
+Declares a delay to wait before running effects or responding to matched messages. This is useful for simulating network
+latency, server processing time, or testing loading states.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+handler.delay(milliseconds);
+handler.delay(minMilliseconds, maxMilliseconds);
+handler.delay((message) => milliseconds);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await handler.delay(milliseconds);
+await handler.delay(minMilliseconds, maxMilliseconds);
+await handler.delay((message) => milliseconds);
+```
+
+  </TabItem>
+</Tabs>
+
+**Arguments**:
+
+1. **milliseconds**: `number | WebSocketMessageHandlerDelayFactory<Schema>`
+
+   The delay to apply, in milliseconds. It can be an exact number or a function that returns the delay from the matched
+   message.
+
+2. **maxMilliseconds** (optional): `number`
+
+   If two arguments are provided, the first is the minimum delay and the second is the maximum delay, both in
+   milliseconds. Each matched message will use a random delay within this range.
+
+**Returns**: `WebSocketMessageHandler<Schema>`
+
+## `handler.effect()`
+
+Declares a side effect to run when the handler matches a message. Effects receive the matched message and a context with
+the sender and receiver client handles.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+handler.effect((message, context) => {
+  context.sender.send(JSON.stringify({ type: 'ack' }));
+});
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await handler.effect((message, context) => {
+  context.sender.send(JSON.stringify({ type: 'ack' }));
+});
+```
+
+  </TabItem>
+</Tabs>
+
+**Arguments**:
+
+1. **callback**: `WebSocketMessageHandlerMessageCallback<Schema, RestrictedSchema>`
+
+   The callback to run when the handler matches.
+
+**Returns**: `WebSocketMessageHandler<Schema>`
+
+Handlers with an effect and no response are valid. They can observe messages, save them when message saving is enabled,
+and count toward [`handler.times()`](#handlertimes).
+
+## `handler.respond()`
+
+Declares a server message to send when the handler matches a client-to-server message.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+handler.respond(declaration);
+handler.respond((message, context) => declaration);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await handler.respond(declaration);
+await handler.respond((message, context) => declaration);
+```
+
+  </TabItem>
+</Tabs>
+
+**Arguments**:
+
+1. **declaration**: `WebSocketMessageHandlerMessageDeclaration<Schema, RestrictedSchema>`
+
+   The server message declaration or a factory to create it from the matched message and context. Static and computed
+   declarations are typed against the interceptor schema.
+
+**Returns**: `WebSocketMessageHandler<Schema>`
+
+The declared response is sent to the client that sent the matched message.
+
+## `handler.times()`
+
+Declares a number of intercepted messages that the handler will be able to match.
+
+If only one argument is provided, the handler will match exactly that number of messages. With two arguments, the
+handler will consider an inclusive range, matching at least the minimum and at most the maximum number of messages. Once
+the handler receives more messages than the maximum declared, it stops matching and Zimic tries older handlers.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+handler.times(numberOfMessages);
+handler.times(minNumberOfMessages, maxNumberOfMessages);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await handler.times(numberOfMessages);
+await handler.times(minNumberOfMessages, maxNumberOfMessages);
+```
+
+  </TabItem>
+</Tabs>
+
+**Arguments**:
+
+1. **numberOfMessages**: `number`
+
+   If only one argument is provided, this is the exact number of messages to match. If two arguments are provided, this
+   is considered a minimum.
+
+2. **maxNumberOfMessages**: `number | undefined`
+
+   If two arguments are provided, this is the maximum number of messages to match.
+
+**Returns**: `WebSocketMessageHandler<Schema>`
+
+## `handler.checkTimes()`
+
+Checks if the handler has matched the expected number of messages declared with [`handler.times()`](#handlertimes).
+
+If the handler has matched fewer or more messages than expected, this method will throw a `WebSocketTimesCheckError`
+error pointing to the [`handler.times()`](#handlertimes) declaration that was not satisfied.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+handler.checkTimes();
+```
+
+**Returns**: `void`
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await handler.checkTimes();
+```
+
+**Returns**: `Promise<void>`
+
+  </TabItem>
+</Tabs>
+
+## `handler.clear()`
+
+Clears responses declared with [`handler.respond()`](#handlerrespond), effects declared with
+[`handler.effect()`](#handlereffect), restrictions declared with [`handler.with()`](#handlerwith) or
+[`handler.from()`](#handlerfrom), message count limits, and saved messages.
+
+To make the handler match messages again, register a new response or effect.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+handler.clear();
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await handler.clear();
+```
+
+  </TabItem>
+</Tabs>
+
+**Returns**: `WebSocketMessageHandler<Schema>`
+
+## `handler.messages`
+
+The client-to-server messages that matched this handler, along with sender and receiver handles. This is useful for
+additional validation in tests.
+
+**Type**: `readonly InterceptedWebSocketInterceptorMessage<RestrictedSchema, Schema>[]`
+
+:::info IMPORTANT: <span>`handler.messages` requires message saving to be enabled</span>
+
+This property can only be used if
+[`messageSaving.enabled`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptormessagesaving) is `true` in
+the interceptor.
+
+:::
+
+## Passive handlers
+
+Handlers without [`handler.respond()`](#handlerrespond) or [`handler.effect()`](#handlereffect) are valid passive
+handlers. They accept connections, observe matching messages, save them when message saving is enabled, and count toward
+[`handler.times()`](#handlertimes) without sending a response or running an effect.
+
+```ts
+const handler = interceptor.message().with({ type: 'typing' }).times(1);
+```
+
+:::info INFO: <span>WebSocket interceptor scope</span>
+
+WebSocket interceptors are designed for typed test and development mocks. They do not proxy unmatched WebSocket traffic
+to an upstream server, and they do not provide a general-purpose WebSocket gateway.
+
+:::
+
+**Related**:
+
+- [Using local WebSocket interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md)
+- [Using remote WebSocket interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md)
+- [`WebSocketInterceptor`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx)
+- [WebSocket schemas](/docs/zimic-ws/guides/1-schemas.md)
