@@ -21,7 +21,7 @@ In `@zimic/interceptor`, WebSocket interceptors are available in two types: `loc
 with type `remote` use a dedicated [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle WebSocket
 connections and messages. This opens up more possibilities for mocking than
 [local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md), such as handling connections
-from multiple applications.
+from multiple applications. Remote WebSocket interceptors require `type: 'remote'`.
 
 ## When to use remote WebSocket interceptors
 
@@ -161,9 +161,9 @@ messages.
 
 ### Clearing an interceptor
 
-When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another.
-This is performed with `interceptor.clear()`, which resets handlers, saved messages, connected clients, and server
-messages to their initial states.
+When using an interceptor in tests, it's important to clear it between tests to avoid one test affecting another. This
+is performed with `interceptor.clear()`, which resets handlers, saved messages, connected clients, and server messages
+to their initial states.
 
 ```ts
 beforeEach(async () => {
@@ -201,6 +201,10 @@ afterAll(async () => {
 You can now use the interceptor to handle client-to-server messages and send mock server responses. Message data,
 restrictions, responses, saved messages, connected clients, and server sends are typed by default based on the schema.
 
+Use `interceptor.message()` to create a message handler. Handlers can restrict matching messages with `.with(...)`,
+restrict messages to a known client with `.from(...)`, delay matching with `.delay(...)`, run side effects with
+`.effect(...)`, send server responses with `.respond(...)`, and declare expected message counts with `.times(...)`.
+
 ```ts
 test('example', async () => {
   // highlight-start
@@ -223,7 +227,8 @@ test('example', async () => {
 Many operations in remote WebSocket interceptors are **asynchronous** because they may involve communication with an
 interceptor server. This is different from
 [local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md), which have mostly
-**synchronous** operations.
+**synchronous** operations. Await remote handler chains that register or update handlers, such as `.respond(...)`,
+`.times(...)`, `.clear()`, and `.checkTimes()`.
 
 If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy rule is
 [`@typescript-eslint/no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises). It checks promises
@@ -232,6 +237,7 @@ appearing to be unhandled, which is helpful to indicate missing `await`'s in rem
 :::
 
 If you need to access the messages processed by the interceptor, enable message saving and use `handler.messages`.
+Message saving is disabled by default, so configure `messageSaving: { enabled: true }` when creating the interceptor.
 
 ```ts
 const handler = await interceptor
@@ -249,8 +255,9 @@ console.log(handler.messages[0].sender.url); // 'ws://localhost:3000/chat'
 
 ### Passive handlers
 
-Declarationless handlers are valid passive handlers. They accept connections, observe matching messages, save them when
-message saving is enabled, and count toward `.times()` without sending a response or running an effect.
+Handlers without `.respond(...)` or `.effect(...)` are valid passive handlers. They accept connections, observe matching
+messages, save them when message saving is enabled, and count toward `.times()` without sending a response or running an
+effect.
 
 ```ts
 const handler = await interceptor.message().with({ type: 'typing' }).times(1);
@@ -263,7 +270,8 @@ console.log(handler.messages.length); // 1
 ### Connected clients
 
 The interceptor tracks currently connected clients in `interceptor.clients`. Each client is a public handle that can
-send messages back to the real WebSocket connection.
+send messages back to the real WebSocket connection. You can use these handles in `.from(...)` restrictions or inside
+effects.
 
 ```ts
 await interceptor.message().effect((message) => {
