@@ -1,24 +1,19 @@
-import { beforeAll, afterAll, describe } from 'vitest';
+import { describe } from 'vitest';
 
-import InterceptorServer from '@/server/InterceptorServer';
 import { getNodeBaseURL } from '@tests/utils/interceptors';
+import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
-import { declareLocalWebSocketInterceptorWorkerTests } from './shared/local';
+import { declareDefaultWebSocketInterceptorWorkerTests } from './shared/default';
+import testMatrix from './shared/matrix';
 
-describe('WebSocketInterceptorWorker (node, local)', () => {
-  let server: InterceptorServer;
+describe.each(testMatrix)('WebSocketInterceptorWorker (node, $type)', (defaultWorkerOptions) => {
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
-  beforeAll(async () => {
-    server = new InterceptorServer({ hostname: 'localhost' });
-    await server.start();
-  });
-
-  afterAll(async () => {
-    await server.stop();
-  });
-
-  declareLocalWebSocketInterceptorWorkerTests({
+  declareDefaultWebSocketInterceptorWorkerTests({
     platform: 'node',
-    getBaseURL: () => getNodeBaseURL('local', server).replace(/^http/, 'ws'),
+    defaultWorkerOptions,
+    startServer: () => server.start(),
+    stopServer: () => server.stop(),
+    getBaseURL: (type) => getNodeBaseURL(type, server).replace(/^http/, 'ws'),
   });
 });

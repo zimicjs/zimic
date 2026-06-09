@@ -2,11 +2,13 @@ import { describe } from 'vitest';
 
 import { getBrowserBaseURL } from '@tests/utils/interceptors';
 
-import { declareLocalWebSocketInterceptorWorkerTests } from './shared/local';
+import { declareDefaultWebSocketInterceptorWorkerTests } from './shared/default';
+import testMatrix from './shared/matrix';
 
-describe('WebSocketInterceptorWorker (browser, local)', () => {
-  declareLocalWebSocketInterceptorWorkerTests({
+describe.each(testMatrix)('WebSocketInterceptorWorker (browser, $type)', (defaultWorkerOptions) => {
+  declareDefaultWebSocketInterceptorWorkerTests({
     platform: 'browser',
-    getBaseURL: () => getBrowserBaseURL('local').replace(/^http/, 'ws'),
+    defaultWorkerOptions,
+    getBaseURL: (type) => getBrowserBaseURL(type).replace(/^http/, 'ws'),
   });
 });
