@@ -11,6 +11,7 @@ import { removeArrayIndex } from '@/utils/arrays';
 import { deserializeResponse, SerializedHttpRequest, serializeRequest } from '@/utils/fetch';
 import { closeClientSocket, WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WEB_SOCKET_NORMAL_CLOSE_CODE, WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE } from '@/utils/webSocket/constants';
+import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
 import { WebSocketEventMessage } from '@/utils/webSocket/types';
 import WebSocketServer, {
   WebSocketServerAuthenticate,
@@ -252,6 +253,7 @@ class InterceptorServer implements PublicInterceptorServer {
     socket: Socket,
   ) => {
     const commit = message.data;
+    this.validateWebSocketHandlerCommit(commit);
 
     this.registerWebSocketHandler(commit, socket);
     this.registerWorkerSocketIfUnknown(socket);
@@ -266,6 +268,7 @@ class InterceptorServer implements PublicInterceptorServer {
     socket: Socket,
   ) => {
     this.registerWorkerSocketIfUnknown(socket);
+    this.validateWebSocketHandlerCommits(handlersToRecommit);
     this.removeWebSocketHandlersBySocket(socket);
 
     for (const handler of handlersToRecommit) {
@@ -493,6 +496,8 @@ class InterceptorServer implements PublicInterceptorServer {
   private sendWebSocketMessage = ({
     data: message,
   }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/messages/send'>) => {
+    this.validateWebSocketSendMessage(message);
+
     const targetSockets = Array.from(this.userWebSocketHandlers.entries()).filter(([, userHandler]) => {
       const matchesClient = message.clientId === undefined || userHandler.clientId === message.clientId;
       const matchesHandler = message.handlerId === undefined || userHandler.handler.id === message.handlerId;
@@ -508,6 +513,47 @@ class InterceptorServer implements PublicInterceptorServer {
       socket.send(runtimeMessageData);
     }
   };
+
+  private validateWebSocketHandlerCommit(commit: unknown): asserts commit is WebSocketHandlerCommit {
+    const isValid =
+      typeof commit === 'object' &&
+      commit !== null &&
+      'id' in commit &&
+      typeof commit.id === 'string' &&
+      'baseURL' in commit &&
+      typeof commit.baseURL === 'string';
+
+    if (!isValid) {
+      throw new InvalidWebSocketMessageError(JSON.stringify(commit));
+    }
+  }
+
+  private validateWebSocketHandlerCommits(commits: unknown): asserts commits is WebSocketHandlerCommit[] {
+    const isValid = Array.isArray(commits);
+
+    if (!isValid) {
+      throw new InvalidWebSocketMessageError(JSON.stringify(commits));
+    }
+
+    for (const commit of commits) {
+      this.validateWebSocketHandlerCommit(commit);
+    }
+  }
+
+  private validateWebSocketSendMessage(
+    message: unknown,
+  ): asserts message is InterceptorServerWebSocketSchema['interceptors/ws/messages/send']['event'] {
+    const isValid =
+      typeof message === 'object' &&
+      message !== null &&
+      (!('clientId' in message) || typeof message.clientId === 'string') &&
+      (!('handlerId' in message) || typeof message.handlerId === 'string') &&
+      'data' in message;
+
+    if (!isValid) {
+      throw new InvalidWebSocketMessageError(JSON.stringify(message));
+    }
+  }
 
   private findWebSocketHandlerByRequest(request: IncomingMessage) {
     const requestURLAsString = this.normalizeWebSocketBaseURL(this.getWebSocketRequestURL(request));
