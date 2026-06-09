@@ -54,7 +54,8 @@ type Schema = WebSocketSchema<ChatMessage>;
 
 With the schema defined, you can now create your interceptor with `createWebSocketInterceptor`. It takes the schema as a
 type parameter and returns an interceptor instance. The `baseURL` option represents the scope of the interceptor and
-points to the URL that your application will use to open WebSocket connections.
+points to the URL that your application will use to open WebSocket connections. Local WebSocket interceptors are the
+default, so `type: 'local'` is optional.
 
 ```ts
 import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
@@ -104,9 +105,9 @@ public directory before starting the interceptor.
 
 ### Clearing an interceptor
 
-When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another.
-This is done with `interceptor.clear()`, which resets handlers, saved messages, connected clients, and server messages
-to their initial states.
+When using an interceptor in tests, it's important to clear it between tests to avoid one test affecting another. This
+is done with `interceptor.clear()`, which resets handlers, saved messages, connected clients, and server messages to
+their initial states.
 
 ```ts
 beforeEach(() => {
@@ -144,6 +145,10 @@ afterAll(async () => {
 You can now use the interceptor to handle client-to-server messages and send mock server responses. Message data,
 restrictions, responses, saved messages, connected clients, and server sends are typed by default based on the schema.
 
+Use `interceptor.message()` to create a message handler. Handlers can restrict matching messages with `.with(...)`,
+restrict messages to a known client with `.from(...)`, delay matching with `.delay(...)`, run side effects with
+`.effect(...)`, send server responses with `.respond(...)`, and declare expected message counts with `.times(...)`.
+
 ```ts
 test('example', () => {
   // highlight-start
@@ -171,6 +176,7 @@ external server. This is different from
 :::
 
 If you need to access the messages processed by the interceptor, enable message saving and use `handler.messages`.
+Message saving is disabled by default, so configure `messageSaving: { enabled: true }` when creating the interceptor.
 
 ```ts
 const handler = interceptor
@@ -188,8 +194,9 @@ console.log(handler.messages[0].sender.url); // 'ws://localhost:3000/chat'
 
 ### Passive handlers
 
-Declarationless handlers are valid passive handlers. They accept connections, observe matching messages, save them when
-message saving is enabled, and count toward `.times()` without sending a response or running an effect.
+Handlers without `.respond(...)` or `.effect(...)` are valid passive handlers. They accept connections, observe matching
+messages, save them when message saving is enabled, and count toward `.times()` without sending a response or running an
+effect.
 
 ```ts
 const handler = interceptor.message().with({ type: 'typing' }).times(1);
@@ -202,7 +209,8 @@ console.log(handler.messages.length); // 1
 ### Connected clients
 
 The interceptor tracks currently connected clients in `interceptor.clients`. Each client is a public handle that can
-send messages back to the real WebSocket connection.
+send messages back to the real WebSocket connection. You can use these handles in `.from(...)` restrictions or inside
+effects.
 
 ```ts
 interceptor.message().effect((message) => {
