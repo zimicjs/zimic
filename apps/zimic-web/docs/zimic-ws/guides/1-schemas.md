@@ -29,8 +29,8 @@ export type ChatSchema = WebSocketSchema<ChatMessage>;
 - `Blob`
 - `BufferSource`
 
-JSON-compatible schemas are the most common choice when using Zimic with
-[`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md), because they let handlers type parsed message objects.
+JSON-compatible schemas are the most common choice when using Zimic with [`@zimic/interceptor`](/docs/interceptor),
+because they let handlers type parsed message objects.
 
 ```ts
 import { WebSocketSchema } from '@zimic/ws';
