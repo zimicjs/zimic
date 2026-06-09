@@ -2,8 +2,16 @@ import { JSONSerialized } from '@zimic/http';
 import {
   createWebSocketInterceptor,
   InterceptedWebSocketInterceptorMessage,
+  InferWebSocketInterceptorSchema,
+  LocalWebSocketInterceptor,
+  LocalWebSocketMessageHandler,
+  RemoteWebSocketInterceptor,
+  RemoteWebSocketMessageHandler,
   WebSocketInterceptor,
   WebSocketInterceptorClient,
+  WebSocketMessageHandlerComputedRestriction,
+  WebSocketMessageHandlerMessageCallback,
+  WebSocketMessageHandlerStaticRestriction,
   WebSocketInterceptorType,
 } from '@zimic/interceptor/experimental/ws';
 import { waitFor, waitForNot } from '@zimic/utils/time';
@@ -21,6 +29,7 @@ import {
   ValidationError,
 } from '@tests/types/schema/entities';
 import {
+  BinaryWebSocketSchema,
   UserWebSocketSchema,
   NotificationWebSocketSchema,
   UserWebSocketMessage,
@@ -38,6 +47,10 @@ function getNotificationBaseURL(type: WebSocketInterceptorType) {
   return type === 'local'
     ? 'ws://localhost:4001'
     : `ws://localhost:${ZIMIC_SERVER_PORT}/notification-${crypto.randomUUID()}`;
+}
+
+function getBinaryBaseURL(type: WebSocketInterceptorType) {
+  return type === 'local' ? 'ws://localhost:4002' : `ws://localhost:${ZIMIC_SERVER_PORT}/binary-${crypto.randomUUID()}`;
 }
 
 async function waitForResponseMessage<
@@ -59,6 +72,22 @@ async function waitForResponseMessage<
   });
 }
 
+async function waitForBinaryMessage(socket: WebSocketClient<BinaryWebSocketSchema>) {
+  return new Promise<Blob | BufferSource>((resolve) => {
+    socket.addEventListener('message', (event) => {
+      resolve(event.data);
+    });
+  });
+}
+
+async function readBytes(data: Blob | BufferSource) {
+  const arrayBuffer = data instanceof Blob ? await data.arrayBuffer() : data;
+  const uint8Array =
+    arrayBuffer instanceof ArrayBuffer ? new Uint8Array(arrayBuffer) : new Uint8Array(arrayBuffer.buffer);
+
+  return Array.from(uint8Array);
+}
+
 export function declareWebSocketInterceptorTests({ platform, type }: ClientTestOptionsByWorkerType) {
   const userInterceptor = createWebSocketInterceptor<UserWebSocketSchema>({
     type,
@@ -72,7 +101,13 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
     messageSaving: { enabled: true },
   });
 
-  const interceptors = [userInterceptor, notificationInterceptor];
+  const binaryInterceptor = createWebSocketInterceptor<BinaryWebSocketSchema>({
+    type,
+    baseURL: getBinaryBaseURL(type),
+    messageSaving: { enabled: true },
+  });
+
+  const interceptors = [userInterceptor, notificationInterceptor, binaryInterceptor];
 
   const userSockets = [
     new WebSocketClient<UserWebSocketSchema>(userInterceptor.baseURL),
@@ -84,7 +119,10 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
     new WebSocketClient<NotificationWebSocketSchema>(notificationInterceptor.baseURL),
   ];
 
-  const sockets = [...userSockets, ...notificationSockets];
+  const binarySocket = new WebSocketClient<BinaryWebSocketSchema>(binaryInterceptor.baseURL);
+  binarySocket.binaryType = 'arraybuffer';
+
+  const sockets = [...userSockets, ...notificationSockets, binarySocket];
 
   function isNoUserMessage(message: UserWebSocketSchema): message is never {
     void message;
@@ -92,6 +130,11 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
   }
 
   function isNoNotificationMessage(message: NotificationWebSocketSchema): message is never {
+    void message;
+    return false;
+  }
+
+  function isNoBinaryMessage(message: BinaryWebSocketSchema): message is never {
     void message;
     return false;
   }
@@ -136,15 +179,18 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
   beforeEach(async () => {
     await Promise.resolve(userInterceptor.clear());
     await Promise.resolve(notificationInterceptor.clear());
+    await Promise.resolve(binaryInterceptor.clear());
 
     await Promise.resolve(userInterceptor.message().with(isNoUserMessage));
     await Promise.resolve(notificationInterceptor.message().with(isNoNotificationMessage));
+    await Promise.resolve(binaryInterceptor.message().with(isNoBinaryMessage));
 
     await Promise.all(sockets.map((socket) => socket.open()));
 
     await waitFor(() => {
       expect(userInterceptor.clients).toHaveLength(userSockets.length);
       expect(notificationInterceptor.clients).toHaveLength(notificationSockets.length);
+      expect(binaryInterceptor.clients).toHaveLength(1);
     });
   });
 
@@ -161,6 +207,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
       await waitFor(() => {
         expect(userInterceptor.clients).toHaveLength(0);
         expect(notificationInterceptor.clients).toHaveLength(0);
+        expect(binaryInterceptor.clients).toHaveLength(0);
       });
     }
   });
@@ -168,6 +215,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
   afterAll(async () => {
     expect(userInterceptor.clients).toHaveLength(0);
     expect(notificationInterceptor.clients).toHaveLength(0);
+    expect(binaryInterceptor.clients).toHaveLength(0);
 
     await Promise.all(
       interceptors.map(async (interceptor) => {
@@ -613,6 +661,79 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
     });
   });
 
+  describe('Types', () => {
+    it('should expose installed WebSocket interceptor types to consumers', () => {
+      const localInterceptor = createWebSocketInterceptor<UserWebSocketSchema>({
+        type: 'local',
+        baseURL: getUserBaseURL('local'),
+      });
+      const remoteInterceptor = createWebSocketInterceptor<UserWebSocketSchema>({
+        type: 'remote',
+        baseURL: getUserBaseURL('remote'),
+      });
+
+      expectTypeOf(localInterceptor).toEqualTypeOf<LocalWebSocketInterceptor<UserWebSocketSchema>>();
+      expectTypeOf(remoteInterceptor).toEqualTypeOf<RemoteWebSocketInterceptor<UserWebSocketSchema>>();
+      expectTypeOf(localInterceptor.message).returns.toEqualTypeOf<LocalWebSocketMessageHandler<UserWebSocketSchema>>();
+      expectTypeOf(remoteInterceptor.message).returns.toEqualTypeOf<
+        RemoteWebSocketMessageHandler<UserWebSocketSchema>
+      >();
+
+      expectTypeOf<InferWebSocketInterceptorSchema<typeof localInterceptor>>().toEqualTypeOf<UserWebSocketSchema>();
+      expectTypeOf<InferWebSocketInterceptorSchema<typeof remoteInterceptor>>().toEqualTypeOf<UserWebSocketSchema>();
+
+      expectTypeOf<WebSocketMessageHandlerStaticRestriction<UserWebSocketSchema>>().not.toBeAny();
+      expectTypeOf<WebSocketMessageHandlerComputedRestriction<UserWebSocketSchema>>().parameters.toEqualTypeOf<
+        [message: UserWebSocketSchema]
+      >();
+      expectTypeOf<WebSocketMessageHandlerMessageCallback<UserWebSocketSchema>>().parameters.toEqualTypeOf<
+        [
+          message: UserWebSocketSchema,
+          context: {
+            sender: WebSocketInterceptorClient<UserWebSocketSchema>;
+            receiver: WebSocketInterceptorClient<UserWebSocketSchema>;
+          },
+        ]
+      >();
+    });
+
+    it('should narrow handler messages from installed schema restrictions', async () => {
+      const creatorClient = userInterceptor.clients[0];
+
+      const creationHandler = await userInterceptor.message().from(creatorClient).with({ type: 'user:create' });
+
+      expectTypeOf(creationHandler.messages).toEqualTypeOf<
+        readonly InterceptedWebSocketInterceptorMessage<UserWebSocketMessage<'user:create'>, UserWebSocketSchema>[]
+      >();
+
+      creationHandler.respond((message, context) => {
+        expectTypeOf(message).toEqualTypeOf<UserWebSocketMessage<'user:create'>>();
+        expectTypeOf(context.sender).toEqualTypeOf<WebSocketInterceptorClient<UserWebSocketSchema>>();
+        expectTypeOf(context.receiver).toEqualTypeOf<WebSocketInterceptorClient<UserWebSocketSchema>>();
+
+        return {
+          type: 'user:create:error',
+          data: { code: 'validation_error', message: message.data.name },
+        };
+      });
+    });
+
+    it('should reject invalid installed WebSocket declarations', () => {
+      function expectInvalidDeclarations(interceptor: LocalWebSocketInterceptor<UserWebSocketSchema>) {
+        // @ts-expect-error Invalid message type.
+        interceptor.message().with({ type: 'user:archive' });
+
+        // @ts-expect-error Invalid response type.
+        interceptor.message().respond({ type: 'user:archive:success' });
+
+        // @ts-expect-error Invalid response data shape.
+        interceptor.message().respond({ type: 'user:create:success', data: { id: crypto.randomUUID() } });
+      }
+
+      void expectInvalidDeclarations;
+    });
+  });
+
   describe('Notifications', () => {
     const notification: Notification = {
       id: crypto.randomUUID(),
@@ -762,6 +883,32 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
       expect(responses).toEqual([message, message]);
 
       expectNoSavedServerSentNotificationMessages();
+    });
+  });
+
+  describe('Binary messages', () => {
+    it('should support responding to binary messages', async () => {
+      const message = new Uint8Array([0x00, 0xff]).buffer;
+      const binaryClient = binaryInterceptor.clients[0];
+
+      const binaryHandler = await binaryInterceptor
+        .message()
+        .from(binaryClient)
+        .with(message)
+        .respond(message)
+        .times(1);
+
+      const responsePromise = waitForBinaryMessage(binarySocket);
+
+      binarySocket.send(message);
+
+      const response = await responsePromise;
+
+      expect(await readBytes(response)).toEqual([0x00, 0xff]);
+      expect(binaryHandler.messages).toHaveLength(1);
+      expect(await readBytes(binaryHandler.messages[0].data)).toEqual([0x00, 0xff]);
+      expect(binaryHandler.messages[0].sender).toBe(binaryClient);
+      expect(binaryHandler.messages[0].receiver).toBe(binaryInterceptor.server);
     });
   });
 }
