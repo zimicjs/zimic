@@ -3,6 +3,7 @@ import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { afterEach, beforeEach, expect, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
+import DisabledMessageSavingError from '@/ws/messageHandler/errors/DisabledMessageSavingError';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
@@ -10,7 +11,7 @@ import MessageSavingSafeLimitExceededError from '../../errors/MessageSavingSafeL
 import { createWebSocketInterceptor } from '../../factory';
 import { WebSocketInterceptorMessageSaving, WebSocketInterceptorOptions } from '../../types/options';
 import { DEFAULT_MESSAGE_SAVING_SAFE_LIMIT } from '../../WebSocketInterceptorImplementation';
-import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions, waitForWebSocketMessage } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
 
@@ -73,6 +74,40 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
     );
   });
 
+  it('should not save or warn if message saving is disabled', async () => {
+    const safeLimit = 2;
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: false, safeLimit } },
+      async (interceptor) => {
+        expect(interceptor.messageSaving.enabled).toBe(false);
+        expect(interceptor.messageSaving.safeLimit).toBe(safeLimit);
+
+        const handler = await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+        const client = await createClient();
+
+        await usingIgnoredConsole(['warn'], async (console) => {
+          const numberOfMessages = safeLimit + 1;
+
+          for (let index = 0; index < numberOfMessages; index++) {
+            const messagePromise = waitForWebSocketMessage(client);
+
+            client.send(JSON.stringify({ type: 'client', index }));
+
+            await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+          }
+
+          expect(() => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+            handler.messages;
+          }).toThrow(new DisabledMessageSavingError());
+
+          expect(console.warn).toHaveBeenCalledTimes(0);
+        });
+      },
+    );
+  });
+
   it('should warn if saved messages exceed the safe limit', async () => {
     const safeLimit = 2;
 
@@ -95,6 +130,40 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
 
           expect(console.warn).toHaveBeenCalledTimes(1);
           expect(console.warn).toHaveBeenCalledWith(new MessageSavingSafeLimitExceededError(3, safeLimit));
+        });
+      },
+    );
+  });
+
+  it('should warn if saved messages exceed the safe limit considering the sum of all handlers', async () => {
+    const safeLimit = 3;
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true, safeLimit } },
+      async (interceptor) => {
+        const firstHandler = await promiseIfRemote(
+          interceptor.message().with({ type: 'client', index: 1 }).respond({ type: 'server', index: 1 }),
+          interceptor,
+        );
+        const secondHandler = await promiseIfRemote(
+          interceptor.message().with({ type: 'client', index: 2 }).respond({ type: 'server', index: 2 }),
+          interceptor,
+        );
+        const client = await createClient();
+
+        await usingIgnoredConsole(['warn'], async (console) => {
+          client.send(JSON.stringify({ type: 'client', index: 1 }));
+          client.send(JSON.stringify({ type: 'client', index: 2 }));
+          client.send(JSON.stringify({ type: 'client', index: 1 }));
+          client.send(JSON.stringify({ type: 'client', index: 2 }));
+
+          await waitFor(() => {
+            expect(firstHandler.messages).toHaveLength(2);
+            expect(secondHandler.messages).toHaveLength(2);
+          });
+
+          expect(console.warn).toHaveBeenCalledTimes(1);
+          expect(console.warn).toHaveBeenCalledWith(new MessageSavingSafeLimitExceededError(4, safeLimit));
         });
       },
     );
