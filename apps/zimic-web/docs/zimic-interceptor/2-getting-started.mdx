@@ -219,11 +219,11 @@ yarn add @zimic/http @zimic/ws @zimic/interceptor --dev
 
 :::info
 
-Note that [`@zimic/http`](/docs/zimic-http/1-index.md) and `@zimic/ws` are peer dependencies of `@zimic/interceptor`.
-Install each or both depending on your needs. HTTP examples use `@zimic/http` schemas, while
-[WebSocket examples](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md) use `@zimic/ws` schemas. When
-upgrading `@zimic/interceptor` to a new version, consider upgrading both schema packages as well to ensure that the
-versions are compatible.
+Note that [`@zimic/http`](/docs/http) and [`@zimic/ws`](/docs/ws) are peer dependencies of `@zimic/interceptor`. Install
+each or both depending on your needs. HTTP examples use `@zimic/http` schemas, while
+[WebSocket examples](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md) use
+[`@zimic/ws` schemas](/docs/ws/guides/schemas). When upgrading `@zimic/interceptor` to a new version, consider upgrading
+both schema packages as well to ensure that the versions are compatible.
 
 :::
 
@@ -650,15 +650,15 @@ libraries and frameworks.
 
 Visit the [API reference](/docs/interceptor/api) for more details on the resources available in `@zimic/interceptor`.
 The WebSocket interceptor APIs are imported from `@zimic/interceptor/experimental/ws`; start with the
-[WebSocket interceptor guide](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md) while the dedicated
-API pages are being added.
+[WebSocket interceptor guide](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md) and the
+[WebSocket API reference](/docs/interceptor/api/create-websocket-interceptor).
 
 ### Explore the ecosystem
 
 - Access the [`@zimic/http`](/docs/zimic-http/1-index.md) documentation to learn more about extending your HTTP schema.
 
 - Use the [WebSocket interceptor guide](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md) when your
-  tests need to mock typed WebSocket message flows with `@zimic/ws`.
+  tests need to mock typed WebSocket message flows with [`@zimic/ws`](/docs/ws).
 
 - If you are interested in improving the type safety and development experience of your application code, check out
   [`@zimic/fetch`](/docs/zimic-fetch/1-index.md). Use the same schema as your interceptor to automatically type your
