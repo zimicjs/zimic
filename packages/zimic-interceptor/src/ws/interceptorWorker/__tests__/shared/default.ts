@@ -9,6 +9,7 @@ import { createWebSocketInterceptorWorker } from '@/ws/interceptorWorker/factory
 import LocalWebSocketInterceptorWorker from '@/ws/interceptorWorker/LocalWebSocketInterceptorWorker';
 import RemoteWebSocketInterceptorWorker from '@/ws/interceptorWorker/RemoteWebSocketInterceptorWorker';
 import WebSocketInterceptorWorker from '@/ws/interceptorWorker/WebSocketInterceptorWorker';
+import { usingIgnoredConsole } from '@tests/utils/console';
 import {
   createInternalHttpInterceptor,
   createInternalWebSocketInterceptor,
@@ -17,7 +18,7 @@ import {
 
 import NotRunningWebSocketInterceptorError from '../../../interceptor/errors/NotRunningWebSocketInterceptorError';
 import { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '../../../interceptor/types/options';
-import { WebSocketInterceptorWorkerOptions } from '../../types/options';
+import { RemoteWebSocketInterceptorWorkerOptions, WebSocketInterceptorWorkerOptions } from '../../types/options';
 
 type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
 type BinaryMessage = WebSocketSchema<ArrayBuffer>;
@@ -53,14 +54,9 @@ async function waitForMessage<Schema extends WebSocketSchema>(client: WebSocketC
   return event.data;
 }
 
-async function readBytes(data: Blob | BufferSource) {
+async function readBytes(data: Blob | ArrayBuffer) {
   const arrayBuffer = data instanceof Blob ? await data.arrayBuffer() : data;
-
-  if (arrayBuffer instanceof ArrayBuffer) {
-    return Array.from(new Uint8Array(arrayBuffer));
-  }
-
-  return Array.from(new Uint8Array(arrayBuffer.buffer, arrayBuffer.byteOffset, arrayBuffer.byteLength));
+  return Array.from(new Uint8Array(arrayBuffer));
 }
 
 function createBinaryMessage(firstByte: number, secondByte: number) {
@@ -284,7 +280,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
 
   it('should broadcast server messages to connected clients', async () => {
     await usingWebSocketInterceptor<ChatMessage>({ type: workerOptions.type, baseURL }, async (interceptor) => {
-      await interceptor.message().effect(() => undefined);
+      await interceptor.message().respond({ type: 'server', text: 'unused' });
 
       const firstClient = await createClient();
       const secondClient = await createClient();
@@ -345,7 +341,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         client.send(requestMessage);
 
         const message = await messagePromise;
-        expect(await readBytes(message as Blob | BufferSource)).toEqual([0x00, 0xff]);
+        expect(await readBytes(message as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
 
         expect(handler.messages).toHaveLength(1);
         expect(await readBytes(handler.messages[0].data)).toEqual([0xff, 0x00]);
@@ -357,7 +353,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
 
   it('should track clients when they open and close', async () => {
     await usingWebSocketInterceptor<ChatMessage>({ type: workerOptions.type, baseURL }, async (interceptor) => {
-      await interceptor.message().effect(() => undefined);
+      await interceptor.message().respond({ type: 'server', text: 'unused' });
       expect(interceptor.clients).toHaveLength(0);
 
       const client = await createClient();
@@ -452,8 +448,9 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
 
       await waitForNot(() => {
         expect(messageListener).toHaveBeenCalled();
-        expect(interceptor.clients).toHaveLength(1);
       });
+
+      expect(interceptor.clients).toHaveLength(0);
     } finally {
       await interceptor.stop();
     }
@@ -496,6 +493,145 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
   });
 
   if (defaultWorkerOptions.type === 'local') {
+    it('should stop and rethrow after a shared startup failure', async () => {
+      const error = new Error('Shared startup failed.');
+
+      class TestWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
+        get type() {
+          return 'local' as const;
+        }
+
+        start() {
+          return this.sharedStart(() => {
+            this.isRunning = true;
+            return Promise.reject(error);
+          });
+        }
+
+        stop = vi.fn(() =>
+          this.sharedStop(() => {
+            this.isRunning = false;
+          }),
+        );
+
+        use() {
+          return undefined;
+        }
+
+        sendToClient() {
+          return undefined;
+        }
+
+        sendToClients() {
+          return undefined;
+        }
+
+        clearHandlers() {
+          return undefined;
+        }
+      }
+
+      const worker = new TestWebSocketInterceptorWorker();
+      expect(worker.type).toBe('local');
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        await expect(worker.start()).rejects.toThrow(error);
+
+        if (platform === 'node') {
+          expect(console.error).toHaveBeenCalledWith(error);
+        } else {
+          expect(console.error).not.toHaveBeenCalled();
+        }
+      });
+
+      expect(worker.stop).toHaveBeenCalledTimes(1);
+      worker.use();
+      worker.sendToClient();
+      worker.sendToClients();
+      worker.clearHandlers();
+    });
+
+    it('should expose local worker internals consistently', () => {
+      const worker = createWebSocketInterceptorWorker({ type: 'local' });
+
+      expect(worker).toBeInstanceOf(LocalWebSocketInterceptorWorker);
+
+      const localWorker = worker;
+      expect(localWorker.class).toBe(LocalWebSocketInterceptorWorker);
+      expect(typeof localWorker.class.isMSWWorkerRunning).toBe('boolean');
+    });
+
+    it('should keep the shared worker running while another WebSocket interceptor is active', async () => {
+      const firstBaseURL = `${baseURL}/first`;
+      const secondBaseURL = `${baseURL}/second`;
+      const firstInterceptor = createInternalWebSocketInterceptor<ChatMessage>({
+        type: 'local',
+        baseURL: firstBaseURL,
+      });
+      const secondInterceptor = createInternalWebSocketInterceptor<ChatMessage>({
+        type: 'local',
+        baseURL: secondBaseURL,
+      });
+
+      try {
+        await Promise.all([firstInterceptor.start(), secondInterceptor.start()]);
+        firstInterceptor.message().respond({ type: 'server', text: 'first' });
+        secondInterceptor.message().respond({ type: 'server', text: 'second' });
+
+        await firstInterceptor.stop();
+
+        const secondClient = new WebSocketClient<ChatMessage>(secondBaseURL);
+        clients.push(secondClient);
+
+        await secondClient.open();
+        const messagePromise = waitForMessage(secondClient);
+        secondClient.send(JSON.stringify({ type: 'client', text: 'two' }));
+
+        await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'second' });
+      } finally {
+        await firstInterceptor.stop();
+        await secondInterceptor.stop();
+      }
+    });
+
+    it('should send messages to a targeted client through the local worker', async () => {
+      const worker = createWebSocketInterceptorWorker({ type: 'local' });
+      const interceptor = createDefaultWebSocketInterceptor();
+
+      try {
+        await worker.start();
+        worker.use(interceptor.implementation);
+
+        const client = await createClient();
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const messagePromise = waitForMessage(client);
+        worker.sendToClient(interceptor.clients[0], JSON.stringify({ type: 'server', text: 'targeted' }));
+
+        await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'targeted' });
+      } finally {
+        await worker.stop();
+      }
+    });
+
+    it('should ignore broadcasts through the local worker without a registered handler', async () => {
+      const worker = createWebSocketInterceptorWorker({ type: 'local' });
+      const interceptor = createDefaultWebSocketInterceptor();
+
+      try {
+        await worker.start();
+
+        expect(() => {
+          worker.sendToClients(interceptor.implementation, JSON.stringify({ type: 'server', text: 'ignored' }));
+        }).not.toThrow();
+      } finally {
+        await worker.stop();
+      }
+    });
+
     it('should share the MSW worker instance with HTTP interceptors', async () => {
       const httpWorker = createHttpInterceptorWorker({ type: 'local' });
       const webSocketWorker = createWebSocketInterceptorWorker({ type: 'local' });
@@ -595,6 +731,71 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
   }
 
   if (defaultWorkerOptions.type === 'remote') {
+    it('should start with authentication options', async () => {
+      const remoteWorkerOptions = workerOptions as RemoteWebSocketInterceptorWorkerOptions;
+      const worker = createWebSocketInterceptorWorker({
+        ...remoteWorkerOptions,
+        auth: { token: 'test-token' },
+      });
+
+      try {
+        await worker.start();
+
+        expect(worker.isRunning).toBe(true);
+      } finally {
+        await worker.stop();
+      }
+    });
+
+    it('should ignore sends without a registered remote client or handler', async () => {
+      const rawWorker = createWebSocketInterceptorWorker(workerOptions);
+
+      try {
+        await rawWorker.start();
+        const worker = rawWorker as RemoteWebSocketInterceptorWorker;
+        const interceptor = createDefaultWebSocketInterceptor();
+        const client = interceptor.implementation.createClient(baseURL);
+
+        await expect(
+          worker.sendToClient(client, JSON.stringify({ type: 'server', text: 'ignored client' })),
+        ).resolves.toBeUndefined();
+        await expect(
+          worker.sendToClients(interceptor.implementation, JSON.stringify({ type: 'server', text: 'ignored handler' })),
+        ).resolves.toBeUndefined();
+      } finally {
+        await rawWorker.stop();
+      }
+    });
+
+    it('should recommit remaining remote handlers after clearing one interceptor', async () => {
+      const rawWorker = createWebSocketInterceptorWorker(workerOptions);
+
+      try {
+        await rawWorker.start();
+        const worker = rawWorker as RemoteWebSocketInterceptorWorker;
+        const firstInterceptor = createInternalWebSocketInterceptor<ChatMessage>({
+          type: 'remote',
+          baseURL: `${baseURL}/first`,
+        });
+        const secondInterceptor = createInternalWebSocketInterceptor<ChatMessage>({
+          type: 'remote',
+          baseURL: `${baseURL}/second`,
+        });
+
+        await worker.use(firstInterceptor.implementation);
+        await worker.use(secondInterceptor.implementation);
+        await worker.clearHandlers({ interceptor: firstInterceptor.implementation });
+
+        const secondClient = new WebSocketClient<ChatMessage>(secondInterceptor.baseURL);
+        clients.push(secondClient);
+
+        await secondClient.open();
+        expect(secondClient.readyState).toBe(WebSocketClient.OPEN);
+      } finally {
+        await rawWorker.stop();
+      }
+    });
+
     it('should not throw an error if trying to clear handlers without a running web socket client', async () => {
       const rawWorker = createWebSocketInterceptorWorker(workerOptions);
 

@@ -1,5 +1,5 @@
 import { waitFor } from '@zimic/utils/time';
-import { beforeAll, beforeEach, afterAll, expect, it } from 'vitest';
+import { beforeAll, beforeEach, afterAll, expect, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
@@ -164,11 +164,20 @@ export function declareDefaultWebSocketMessageHandlerTests(
         baseURL,
       },
       async (interceptor) => {
-        const handler = interceptor
-          .message()
-          .respond((message) => ({ type: 'delete', id: message.type }))
-          .times(0);
+        const responseFactory = vi.fn((message: Schema) => ({ type: 'delete' as const, id: message.type }));
+        const handler = interceptor.message().respond(responseFactory).times(1);
 
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
+          const messagePromise = waitForWebSocketMessage(client);
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+          await expect(messagePromise).resolves.toEqual({ type: 'delete', id: 'create' });
+        });
+
+        expect(responseFactory).toHaveBeenCalledTimes(1);
+
+        handler.clear();
         await handler.checkTimes();
       },
     );
@@ -285,7 +294,6 @@ export function declareDefaultWebSocketMessageHandlerTests(
           .with({ type: 'create', body: { text: 'hello' } })
           .delay(1)
           .delay(1, 2)
-          .effect(() => undefined)
           .respond({ type: 'delete', id: '1' })
           .times(1);
 
@@ -307,7 +315,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
         baseURL,
       },
       (interceptor) => {
-        const handler = interceptor.message().effect(() => undefined);
+        const handler = interceptor.message();
 
         expect(() => handler.messages).toThrow(DisabledMessageSavingError);
       },

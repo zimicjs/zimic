@@ -6,11 +6,17 @@ import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promis
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
 import { WebSocketInterceptorOptions } from '../../types/options';
-import { RuntimeSharedWebSocketInterceptorTestsOptions, usingWebSocketClient, waitForWebSocketMessage } from './utils';
+import {
+  RuntimeSharedWebSocketInterceptorTestsOptions,
+  createBinaryMessage,
+  usingWebSocketClient,
+  waitForWebSocketMessage,
+} from './utils';
 
 type MessageSchema = WebSocketSchema<
   { type: 'create'; body: { text: string; priority?: number } } | { type: 'delete'; id: string }
 >;
+type BinarySchema = WebSocketSchema<Blob>;
 
 export function declareRestrictionWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { getBaseURL, getInterceptorOptions } = options;
@@ -164,6 +170,32 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
         });
 
         client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+        await waitFor(() => {
+          expect(effect).toHaveBeenCalledTimes(1);
+        });
+      });
+
+      await promiseIfRemote(interceptor.checkTimes(), interceptor);
+    });
+  });
+
+  it('should support intercepting binary blob messages having static restrictions', async () => {
+    await usingWebSocketInterceptor<BinarySchema>(interceptorOptions, async (interceptor) => {
+      const effect = vi.fn();
+
+      const binaryBlob = new Blob([createBinaryMessage(1, 2)]);
+
+      await promiseIfRemote(interceptor.message().with(binaryBlob).effect(effect).times(1), interceptor);
+
+      await usingWebSocketClient<BinarySchema>(baseURL, async (client) => {
+        client.send(new Blob([createBinaryMessage(3, 4)]));
+
+        await waitForNot(() => {
+          expect(effect).toHaveBeenCalled();
+        });
+
+        client.send(binaryBlob);
 
         await waitFor(() => {
           expect(effect).toHaveBeenCalledTimes(1);

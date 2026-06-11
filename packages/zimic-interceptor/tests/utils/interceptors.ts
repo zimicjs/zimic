@@ -163,26 +163,12 @@ export async function usingHttpInterceptor<Schema extends HttpSchema>(
 
 type UsingWebSocketInterceptorCallback<Interceptor> = (interceptor: Interceptor) => PossiblePromise<void>;
 
-interface UsingWebSocketInterceptorOptions {
-  start?: boolean;
-}
-
 export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
   interceptorOptions: LocalWebSocketInterceptorOptions,
   callback: UsingWebSocketInterceptorCallback<PublicLocalWebSocketInterceptor<Schema>>,
 ): Promise<void>;
 export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
-  interceptorOptions: LocalWebSocketInterceptorOptions,
-  options: UsingWebSocketInterceptorOptions,
-  callback: UsingWebSocketInterceptorCallback<PublicLocalWebSocketInterceptor<Schema>>,
-): Promise<void>;
-export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
   interceptorOptions: RemoteWebSocketInterceptorOptions,
-  callback: UsingWebSocketInterceptorCallback<PublicRemoteWebSocketInterceptor<Schema>>,
-): Promise<void>;
-export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
-  interceptorOptions: RemoteWebSocketInterceptorOptions,
-  options: UsingWebSocketInterceptorOptions,
   callback: UsingWebSocketInterceptorCallback<PublicRemoteWebSocketInterceptor<Schema>>,
 ): Promise<void>;
 export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
@@ -193,39 +179,22 @@ export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
 ): Promise<void>;
 export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
   interceptorOptions: WebSocketInterceptorOptions,
-  options: UsingWebSocketInterceptorOptions,
-  callback: UsingWebSocketInterceptorCallback<
-    PublicLocalWebSocketInterceptor<Schema> | PublicRemoteWebSocketInterceptor<Schema>
-  >,
-): Promise<void>;
-export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
-  interceptorOptions: WebSocketInterceptorOptions,
-  callbackOrOptions:
-    | UsingWebSocketInterceptorCallback<PublicLocalWebSocketInterceptor<Schema>>
-    | UsingWebSocketInterceptorCallback<PublicRemoteWebSocketInterceptor<Schema>>
-    | UsingWebSocketInterceptorCallback<
-        PublicLocalWebSocketInterceptor<Schema> | PublicRemoteWebSocketInterceptor<Schema>
-      >
-    | UsingWebSocketInterceptorOptions,
-  optionalCallback?:
+  callback:
     | UsingWebSocketInterceptorCallback<PublicLocalWebSocketInterceptor<Schema>>
     | UsingWebSocketInterceptorCallback<PublicRemoteWebSocketInterceptor<Schema>>
     | UsingWebSocketInterceptorCallback<
         PublicLocalWebSocketInterceptor<Schema> | PublicRemoteWebSocketInterceptor<Schema>
       >,
 ): Promise<void> {
-  const { start: shouldStartInterceptor = true } = typeof callbackOrOptions === 'function' ? {} : callbackOrOptions;
-  const callback = (optionalCallback ?? callbackOrOptions) as UsingWebSocketInterceptorCallback<
+  const runCallback = callback as UsingWebSocketInterceptorCallback<
     PublicLocalWebSocketInterceptor<Schema> | PublicRemoteWebSocketInterceptor<Schema>
   >;
 
   const interceptor = createInternalWebSocketInterceptor<Schema>(interceptorOptions);
 
   try {
-    if (shouldStartInterceptor) {
-      await interceptor.start();
-    }
-    await callback(interceptor);
+    await interceptor.start();
+    await runCallback(interceptor);
   } finally {
     await interceptor.stop();
   }

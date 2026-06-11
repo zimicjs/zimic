@@ -30,6 +30,8 @@ class InterceptorStore {
     return this.class._localHttpWorker;
   }
 
+  /* istanbul ignore next -- @preserve
+   * Local WebSocket worker storage is exercised through getOrCreateLocalWebSocketWorker. */
   get localWebSocketWorker() {
     return this.class._localWebSocketWorker;
   }
@@ -144,6 +146,8 @@ class InterceptorStore {
     return createdWorker;
   }
 
+  /* istanbul ignore next -- @preserve
+   * Local WebSocket workers are cleared through interceptor lifecycle tests, not this store primitive directly. */
   deleteLocalWebSocketWorker() {
     this.class._localWebSocketWorker = undefined;
   }

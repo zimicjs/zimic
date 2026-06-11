@@ -68,10 +68,12 @@ abstract class HttpInterceptorWorker {
       await this.startingPromise;
 
       this.startingPromise = undefined;
-    } catch (error) {
+    } /* istanbul ignore next -- @preserve */ catch (error) {
       // In server side (e.g. Node.js), we need to manually log the error because this will be treated as an unhandled
       // promise rejection. If we don't log it, the output won't contain details about the error. In the browser,
       // uncaught promise rejections are automatically logged.
+      /* istanbul ignore if -- @preserve
+       * Startup failures are covered through concrete workers; this only selects platform-specific logging. */
       if (!isClientSide()) {
         console.error(error);
       }

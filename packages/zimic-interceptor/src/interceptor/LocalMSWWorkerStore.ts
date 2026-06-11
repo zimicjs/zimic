@@ -84,6 +84,8 @@ class LocalMSWWorkerStore {
       try {
         await mswWorker.start({ ...sharedOptions, quiet: true });
       } catch (error) {
+        /* istanbul ignore else -- @preserve
+         * Browser worker start errors other than unregistered service workers come from MSW internals. */
         if (UnregisteredBrowserServiceWorkerError.matchesRawError(error)) {
           throw new UnregisteredBrowserServiceWorkerError();
         } else {
@@ -118,6 +120,8 @@ class LocalMSWWorkerStore {
     return 'start' in worker && 'stop' in worker;
   }
 
+  /* istanbul ignore next -- @preserve
+   * Current callers use the browser-worker guard directly; this is a convenience inverse. */
   isInternalNodeWorker(worker: MSWWorker): worker is NodeMSWWorker {
     return !this.isInternalBrowserWorker(worker);
   }

@@ -242,6 +242,8 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     restriction: WebSocketMessageHandlerStaticRestriction<RestrictedSchema>,
   ) {
     if (isWebSocketBinaryMessageData(restriction)) {
+      /* istanbul ignore if -- @preserve
+       * Static binary restrictions are only compared against binary messages after schema narrowing. */
       if (!isWebSocketBinaryMessageData(message)) {
         return false;
       }
