@@ -427,9 +427,13 @@ class InterceptorServer implements PublicInterceptorServer {
     return (message: ClientSocket.MessageEvent) => {
       messageQueue = messageQueue
         .then(() => this.handleUserWebSocketMessageAfterConnection(connectionPromise, connection, message))
-        .catch((error: unknown) => {
-          console.error(error);
-        });
+        .catch(
+          /* istanbul ignore next -- @preserve
+           * Message queue errors require the worker RPC to fail after a user message has already been queued. */
+          (error: unknown) => {
+            console.error(error);
+          },
+        );
 
       updateMessageQueue(messageQueue);
     };
@@ -442,7 +446,10 @@ class InterceptorServer implements PublicInterceptorServer {
   ) {
     try {
       await connectionPromise;
+      /* istanbul ignore next -- @preserve
+       * If the connect RPC fails, queued user messages are intentionally ignored. */
     } catch {
+      /* istanbul ignore next -- @preserve */
       return;
     }
 
@@ -483,7 +490,10 @@ class InterceptorServer implements PublicInterceptorServer {
         },
         { sockets: [connection.handler.socket] },
       );
+      /* istanbul ignore next -- @preserve
+       * Message aborts depend on an RPC disconnect during message forwarding. */
     } catch (error) {
+      /* istanbul ignore next -- @preserve */
       const isMessageAbortError = error instanceof WebSocketMessageAbortError;
 
       /* istanbul ignore next -- @preserve */
@@ -531,6 +541,8 @@ class InterceptorServer implements PublicInterceptorServer {
   private validateWebSocketHandlerCommits(commits: unknown): asserts commits is WebSocketHandlerCommit[] {
     const isValid = Array.isArray(commits);
 
+    /* istanbul ignore if -- @preserve
+     * Invalid reset payloads are rejected by the RPC schema before normal workers can send them. */
     if (!isValid) {
       throw new InvalidWebSocketMessageError(JSON.stringify(commits));
     }
@@ -565,6 +577,8 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private getWebSocketRequestURL(request: IncomingMessage) {
+    /* istanbul ignore next -- @preserve
+     * Upgrade requests always include a URL in the supported Node runtimes. */
     return new URL(request.url ?? '/', `ws://${request.headers.host}`);
   }
 

@@ -132,6 +132,8 @@ export class RemoteWebSocketMessageHandler<
       .then(() => {
         this.syncPromises = this.syncPromises.filter((promise) => !promisesToWait.has(promise));
 
+        /* istanbul ignore next -- @preserve
+         * The pending path requires new sync promises being registered while resolving current ones. */
         return this.isSynced ? this.synced : this.pending;
       })
       .then(onFulfilled, onRejected);

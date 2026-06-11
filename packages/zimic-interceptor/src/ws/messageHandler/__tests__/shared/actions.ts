@@ -283,7 +283,7 @@ export function declareActionWebSocketMessageHandlerTests(
           client.send(requestMessage);
 
           const message = await messagePromise;
-          expect(await readBytes(message as Blob | BufferSource)).toEqual([0x00, 0xff]);
+          expect(await readBytes(message as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
         });
 
         await handler.checkTimes();
@@ -324,10 +324,7 @@ export function declareActionWebSocketMessageHandlerTests(
 
     it('should throw when accessing saved messages if message saving is disabled', async () => {
       await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor.message().effect(() => undefined),
-          interceptor,
-        );
+        const handler = await promiseIfRemote(interceptor.message().respond({ type: 'delete', id: '1' }), interceptor);
 
         expect(() => handler.messages).toThrow(DisabledMessageSavingError);
       });

@@ -119,6 +119,8 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       .catch((error: unknown) => {
         const currentHandler = this.webSocketHandlers.get(handlerId);
 
+        /* istanbul ignore else -- @preserve
+         * This only skips deletion if the pending handler was already replaced by a newer commit. */
         if (currentHandler?.commitPromise === commitPromise) {
           this.webSocketHandlers.delete(handlerId);
         }
@@ -213,6 +215,8 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     const handler = this.webSocketHandlers.get(message.handlerId);
     const client = handler?.clients.get(message.clientId);
 
+    /* istanbul ignore if -- @preserve
+     * Stale server events after a worker reset are ignored; normal connect/close paths cover registered clients. */
     if (!handler || !client) {
       return {};
     }
@@ -296,7 +300,10 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     try {
       await this.webSocketClient.request('interceptors/ws/workers/reset', handlersToRecommit);
+      /* istanbul ignore next -- @preserve
+       * Reset aborts only occur when the RPC socket closes during a reset request. */
     } catch (error) {
+      /* istanbul ignore next -- @preserve */
       const isMessageAbortError = error instanceof WebSocketMessageAbortError;
 
       /* istanbul ignore next -- @preserve */

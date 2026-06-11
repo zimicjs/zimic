@@ -1,12 +1,14 @@
-import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
-import { afterEach, beforeEach, expect, expectTypeOf, it } from 'vitest';
+import { WebSocketClient, WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import { afterEach, beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE } from '@/utils/webSocket/constants';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
+import { LocalWebSocketMessageHandler } from '../../../messageHandler/LocalWebSocketMessageHandler';
 import NotRunningWebSocketInterceptorError from '../../errors/NotRunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
 import { WebSocketInterceptorOptions } from '../../types/options';
+import WebSocketInterceptorImplementation from '../../WebSocketInterceptorImplementation';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
@@ -54,6 +56,59 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     await interceptor.stop();
 
     expect(interceptor.isRunning).toBe(false);
+  });
+
+  it('should support updating message saving options', () => {
+    const interceptor = createWebSocketInterceptor<{}>(interceptorOptions);
+
+    interceptor.messageSaving = { enabled: false, safeLimit: 10 };
+
+    expect(interceptor.messageSaving).toEqual({ enabled: false, safeLimit: 10 });
+  });
+
+  it('should handle messages without an explicit sender or receiver context', async () => {
+    const interceptor = new WebSocketInterceptorImplementation<MessageSchema>({
+      baseURL: new URL(baseURL),
+      messageSaving: { enabled: true },
+      Handler: LocalWebSocketMessageHandler,
+    });
+
+    try {
+      await interceptor.start();
+
+      const effect = vi.fn();
+      const handler = interceptor.message().with({ type: 'client' }).effect(effect).times(1);
+
+      const wasHandled = await interceptor.handleInterceptedMessage(JSON.stringify({ type: 'client', index: 1 }));
+
+      expect(wasHandled).toBe(true);
+      expect(effect).toHaveBeenCalledTimes(1);
+      expect(handler.messages).toHaveLength(1);
+      expect(handler.messages[0].sender.url).toBe(interceptor.baseURLAsString);
+      expect(handler.messages[0].receiver).toBe(interceptor.server);
+
+      interceptor.checkTimes();
+    } finally {
+      await interceptor.stop();
+    }
+  });
+
+  it('should use the base WebSocket client transport for standalone clients', () => {
+    const interceptor = new WebSocketInterceptorImplementation<MessageSchema>({
+      baseURL: new URL(baseURL),
+      Handler: LocalWebSocketMessageHandler,
+    });
+    const client = interceptor.createClient(baseURL);
+    const rawSend = JSON.stringify({ type: 'client' as const, index: 1 }) as WebSocketMessageData<MessageSchema>;
+    const sendSpy = vi.spyOn(WebSocketClient.prototype, 'send').mockImplementation(() => undefined);
+
+    try {
+      client.send(rawSend);
+
+      expect(sendSpy).toHaveBeenCalledWith(rawSend);
+    } finally {
+      sendSpy.mockRestore();
+    }
   });
 
   async function createClient(options: { timeout?: number } = {}) {

@@ -51,14 +51,9 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
     return event.data;
   }
 
-  async function readBytes(data: Blob | BufferSource) {
+  async function readBytes(data: Blob | ArrayBuffer) {
     const arrayBuffer = data instanceof Blob ? await data.arrayBuffer() : data;
-
-    if (arrayBuffer instanceof ArrayBuffer) {
-      return Array.from(new Uint8Array(arrayBuffer));
-    }
-
-    return Array.from(new Uint8Array(arrayBuffer.buffer, arrayBuffer.byteOffset, arrayBuffer.byteLength));
+    return Array.from(new Uint8Array(arrayBuffer));
   }
 
   function createBinaryMessage(firstByte: number, secondByte: number) {
@@ -225,7 +220,7 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
           client.send(requestMessage);
 
           const message = await messagePromise;
-          expect(await readBytes(message as Blob | BufferSource)).toEqual([0x00, 0xff]);
+          expect(await readBytes(message as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
 
           expect(handler.messages).toHaveLength(1);
           expect(await readBytes(handler.messages[0].data)).toEqual([0xff, 0x00]);
@@ -263,7 +258,7 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
         firstClient.send(createBinaryMessage(0xff, 0x00));
 
         const message = await secondMessagePromise;
-        expect(await readBytes(message as Blob | BufferSource)).toEqual([0x00, 0xff]);
+        expect(await readBytes(message as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
         await waitForNot(() => {
           expect(firstMessageListener).toHaveBeenCalled();
         });
@@ -272,10 +267,8 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
 
     it('should broadcast binary messages from the server handle', async () => {
       await usingWebSocketInterceptor<BinaryMessage>(interceptorOptions, async (interceptor) => {
-        await promiseIfRemote(
-          interceptor.message().effect(() => undefined),
-          interceptor,
-        );
+        const responseMessage = createBinaryMessage(0x00, 0xff);
+        await promiseIfRemote(interceptor.message().respond(responseMessage), interceptor);
 
         const firstClient = await createClient<BinaryMessage>();
         const secondClient = await createClient<BinaryMessage>();
@@ -289,13 +282,13 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
           expect(interceptor.clients).toHaveLength(2);
         });
 
-        interceptor.server.send(createBinaryMessage(0x00, 0xff));
+        interceptor.server.send(responseMessage);
 
         const firstMessage = await firstMessagePromise;
-        expect(await readBytes(firstMessage as Blob | BufferSource)).toEqual([0x00, 0xff]);
+        expect(await readBytes(firstMessage as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
 
         const secondMessage = await secondMessagePromise;
-        expect(await readBytes(secondMessage as Blob | BufferSource)).toEqual([0x00, 0xff]);
+        expect(await readBytes(secondMessage as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
       });
     });
   }
@@ -404,8 +397,8 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
 
         await waitForNot(() => {
           expect(firstMessageListener).toHaveBeenCalled();
-          expect(secondMessageListener).toHaveBeenCalled();
         });
+        expect(secondMessageListener).not.toHaveBeenCalled();
 
         expect(handler.messages[0].sender.url).toBe(firstClient.url);
         expect(handler.messages[0].data).toEqual({ type: 'client', index: 1 });

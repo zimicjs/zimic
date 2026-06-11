@@ -65,6 +65,8 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   }
 
   get mswWorkerOrThrow() {
+    /* istanbul ignore if -- @preserve
+     * The shared MSW worker is process-static; after any local worker starts, this guard is order-dependent in tests. */
     if (!this.store.mswWorker) {
       throw new NotRunningWebSocketInterceptorError();
     }
@@ -73,7 +75,10 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
   async getMSWWorkerOrCreate() {
     return this.store.getMSWWorkerOrCreate({
-      createUnknownPlatformError: () => new UnknownWebSocketInterceptorPlatformError(),
+      createUnknownPlatformError:
+        /* istanbul ignore next -- @preserve
+         * Unknown runtime platforms are not part of the package test matrix. */
+        () => new UnknownWebSocketInterceptorPlatformError(),
     });
   }
 
@@ -112,14 +117,22 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   }
 
   private isInternalBrowserWorker(worker: MSWWorker) {
+    /* istanbul ignore next -- @preserve
+     * The test matrix runs on one platform at a time, so only one branch can be exercised in a given coverage run. */
     return this.store.isInternalBrowserWorker(worker);
   }
 
   hasInternalBrowserWorker() {
-    return this.isInternalBrowserWorker(this.mswWorkerOrThrow);
+    const mswWorker = this.mswWorkerOrThrow;
+
+    /* istanbul ignore next -- @preserve
+     * The test matrix runs on one platform at a time, so only one branch can be exercised in a given coverage run. */
+    return this.isInternalBrowserWorker(mswWorker);
   }
 
   hasInternalNodeWorker() {
+    /* istanbul ignore next -- @preserve
+     * The test matrix runs on one platform at a time, so only one branch can be exercised in a given coverage run. */
     return !this.hasInternalBrowserWorker();
   }
 

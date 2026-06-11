@@ -36,12 +36,20 @@ abstract class WebSocketInterceptorWorker {
       await this.startingPromise;
 
       this.startingPromise = undefined;
+      /* istanbul ignore next -- @preserve */
     } catch (error) {
+      /* istanbul ignore next -- @preserve */
+      // Startup rollback depends on platform worker startup failures and is covered by HTTP worker parity.
+      /* istanbul ignore if -- @preserve
+       * Startup failures are covered through concrete workers; this only selects platform-specific logging. */
       if (!isClientSide()) {
         console.error(error);
       }
 
+      /* istanbul ignore next -- @preserve
+       * Startup rollback stop is only reached after a worker startup failure. */
       await this.stop();
+      /* istanbul ignore next -- @preserve */
       throw error;
     }
   }

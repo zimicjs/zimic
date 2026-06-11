@@ -51,14 +51,9 @@ export async function waitForWebSocketMessage<Schema extends WebSocketSchema>(cl
   return event.data;
 }
 
-export async function readBytes(data: Blob | BufferSource) {
+export async function readBytes(data: Blob | ArrayBuffer) {
   const arrayBuffer = data instanceof Blob ? await data.arrayBuffer() : data;
-
-  if (arrayBuffer instanceof ArrayBuffer) {
-    return Array.from(new Uint8Array(arrayBuffer));
-  }
-
-  return Array.from(new Uint8Array(arrayBuffer.buffer, arrayBuffer.byteOffset, arrayBuffer.byteLength));
+  return Array.from(new Uint8Array(arrayBuffer));
 }
 
 export function createBinaryMessage(firstByte: number, secondByte: number) {
@@ -83,9 +78,7 @@ export async function expectWebSocketTimesCheckError(
     try {
       await callback();
     } catch (error) {
-      if (error instanceof WebSocketTimesCheckError) {
-        timesCheckError = error;
-      }
+      timesCheckError = error as WebSocketTimesCheckError;
       throw error;
     }
   }).rejects.toThrow(WebSocketTimesCheckError);

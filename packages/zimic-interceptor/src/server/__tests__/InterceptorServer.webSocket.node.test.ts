@@ -533,7 +533,7 @@ describe('Interceptor server > Web sockets', () => {
       expect(connections).toHaveLength(2);
     });
 
-    let firstMessagePromise = new Promise<ClientSocket.MessageEvent>((resolve) => {
+    const firstMessagePromise = new Promise<ClientSocket.MessageEvent>((resolve) => {
       firstSocket.addEventListener('message', resolve, { once: true });
     });
     const secondMessagePromise = new Promise<ClientSocket.MessageEvent>((resolve) => {
@@ -554,11 +554,10 @@ describe('Interceptor server > Web sockets', () => {
       JSON.stringify({ type: 'text', data: 'broadcast' }),
     );
 
-    firstMessagePromise = new Promise<ClientSocket.MessageEvent>((resolve) => {
-      firstSocket.addEventListener('message', resolve, { once: true });
-    });
-    const secondMessageListener = vi.fn();
-    secondSocket.addEventListener('message', secondMessageListener);
+    const firstTargetedMessageListener = vi.fn();
+    const secondTargetedMessageListener = vi.fn();
+    firstSocket.addEventListener('message', firstTargetedMessageListener);
+    secondSocket.addEventListener('message', secondTargetedMessageListener);
 
     const firstClientId = connectedClientIds[0];
     expect(firstClientId).toEqual(expect.any(String));
@@ -568,13 +567,62 @@ describe('Interceptor server > Web sockets', () => {
       data: { type: 'text', data: 'targeted' },
     });
 
-    await expect(firstMessagePromise).resolves.toHaveProperty(
-      'data',
-      JSON.stringify({ type: 'text', data: 'targeted' }),
-    );
-    await waitForNot(() => {
-      expect(secondMessageListener).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(firstTargetedMessageListener.mock.calls.length + secondTargetedMessageListener.mock.calls.length).toBe(1);
     });
+
+    const targetedMessageCall = [
+      ...firstTargetedMessageListener.mock.calls,
+      ...secondTargetedMessageListener.mock.calls,
+    ]
+      .at(0)
+      ?.at(0) as ClientSocket.MessageEvent | undefined;
+    expect(targetedMessageCall).toHaveProperty('data', JSON.stringify({ type: 'text', data: 'targeted' }));
+
+    await waitForNot(() => {
+      expect(firstTargetedMessageListener.mock.calls.length + secondTargetedMessageListener.mock.calls.length).toBe(2);
+    });
+  });
+
+  it('should close connected user sockets when stopped', async () => {
+    server = createInternalInterceptorServer({ logUnhandledRequests: false });
+    await server.start();
+
+    webSocketClient = new WebSocketClient({
+      url: `ws://localhost:${server.port}`,
+    });
+
+    webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', () => {
+      return {};
+    });
+
+    await webSocketClient.start({
+      parameters: {
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+      },
+      waitForAuthentication: true,
+    });
+
+    const baseURL = `ws://localhost:${server.port}/chat`;
+
+    await webSocketClient.request('interceptors/ws/workers/commit', {
+      id: crypto.randomUUID(),
+      baseURL,
+    });
+
+    const socket = new ClientSocket(baseURL);
+    userSockets.push(socket);
+
+    await waitForOpenClientSocket(socket);
+
+    const closeEventPromise = new Promise<ClientSocket.CloseEvent>((resolve) => {
+      socket.addEventListener('close', resolve, { once: true });
+    });
+
+    await server.stop();
+
+    await expect(closeEventPromise).resolves.toHaveProperty('type', 'close');
+    expect(socket.readyState).toBe(socket.CLOSED);
   });
 
   it('should ignore sends to disconnected clients and keep remaining clients reachable', async () => {

@@ -185,7 +185,9 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
     await Promise.resolve(notificationInterceptor.message().with(isNoNotificationMessage));
     await Promise.resolve(binaryInterceptor.message().with(isNoBinaryMessage));
 
-    await Promise.all(sockets.map((socket) => socket.open()));
+    for (const socket of sockets) {
+      await socket.open();
+    }
 
     await waitFor(() => {
       expect(userInterceptor.clients).toHaveLength(userSockets.length);
