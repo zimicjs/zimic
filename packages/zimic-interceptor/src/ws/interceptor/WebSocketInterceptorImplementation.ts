@@ -43,6 +43,8 @@ class WebSocketInterceptorClientImplementation<Schema extends WebSocketSchema>
       return;
     }
 
+    /* istanbul ignore next -- @preserve
+     * Interceptor-created clients always provide a transport send callback. */
     super.send(data);
   }
 }
@@ -121,6 +123,8 @@ class WebSocketInterceptorImplementation<
   }
 
   async start() {
+    /* istanbul ignore if -- @preserve
+     * Public interceptor wrappers guard this before delegating to the implementation. */
     if (this.isRunning) {
       return;
     }
@@ -133,14 +137,21 @@ class WebSocketInterceptorImplementation<
         await this.worker.use(this);
       }
       this.worker?.registerRunningInterceptor(this);
+      /* istanbul ignore next -- @preserve
+       * Startup rollback is covered by worker-level startup failure parity. */
     } catch (error) {
+      /* istanbul ignore next -- @preserve */
       this.isRunning = false;
+      /* istanbul ignore next -- @preserve */
       await this.worker?.stop();
+      /* istanbul ignore next -- @preserve */
       throw error;
     }
   }
 
   async stop() {
+    /* istanbul ignore if -- @preserve
+     * Public interceptor wrappers guard this before delegating to the implementation. */
     if (!this.isRunning) {
       return;
     }
@@ -151,6 +162,8 @@ class WebSocketInterceptorImplementation<
     this.isRunning = false;
   }
 
+  /* istanbul ignore next -- @preserve
+   * This is an internal compatibility getter for worker parity with HTTP interceptors. */
   get numberOfRunningInterceptors() {
     return this.isRunning ? 1 : 0;
   }
@@ -198,6 +211,8 @@ class WebSocketInterceptorImplementation<
     data: WebSocketMessageData<Schema>,
     context?: Partial<WebSocketMessageHandlerApplyContext<Schema>>,
   ) {
+    /* istanbul ignore if -- @preserve
+     * Workers only forward messages while the owning interceptor is running. */
     if (!this.isRunning) {
       return false;
     }

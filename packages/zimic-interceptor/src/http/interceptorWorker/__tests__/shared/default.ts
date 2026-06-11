@@ -195,6 +195,52 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
   }
 
   if (defaultWorkerOptions.type === 'local') {
+    it('should stop and rethrow after a shared startup failure', async () => {
+      const error = new Error('Shared startup failed.');
+
+      class TestHttpInterceptorWorker extends HttpInterceptorWorker {
+        get type() {
+          return 'local' as const;
+        }
+
+        start() {
+          return this.sharedStart(() => Promise.reject(error));
+        }
+
+        stop = vi.fn(() => Promise.resolve());
+
+        use() {
+          return undefined;
+        }
+
+        clearHandlers() {
+          return undefined;
+        }
+
+        get interceptorsWithHandlers() {
+          return [];
+        }
+      }
+
+      const worker = new TestHttpInterceptorWorker();
+      expect(worker.type).toBe('local');
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        await expect(worker.start()).rejects.toThrow(error);
+
+        if (platform === 'node') {
+          expect(console.error).toHaveBeenCalledWith(error);
+        } else {
+          expect(console.error).not.toHaveBeenCalled();
+        }
+      });
+
+      expect(worker.stop).toHaveBeenCalledTimes(1);
+      worker.use();
+      worker.clearHandlers();
+      expect(worker.interceptorsWithHandlers).toEqual([]);
+    });
+
     it('should throw an error after failing to start due to a unknown error', async () => {
       const interceptorWorker = createHttpInterceptorWorker(defaultWorkerOptions);
 

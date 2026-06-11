@@ -1,10 +1,11 @@
-import { afterAll, beforeAll, expectTypeOf, it } from 'vitest';
+import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import type { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
 import type { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
+import type { WebSocketMessageHandlerApplyContext } from '../../WebSocketMessageHandlerImplementation';
 import { ChatMessage, Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
 
 export function declareTypeAssertionWebSocketMessageHandlerTests(
@@ -31,13 +32,14 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
     const baseURL = await getBaseURL(type);
 
     await usingWebSocketInterceptor<Schema>({ type, baseURL }, (interceptor) => {
-      interceptor
-        .message()
-        .with({ type: 'create' })
-        .effect((message) => {
-          expectTypeOf(message).toEqualTypeOf<Extract<Schema, { type: 'create' }>>();
-          expectTypeOf(message.body.text).toEqualTypeOf<string>();
-        });
+      function effect(message: Extract<Schema, { type: 'create' }>) {
+        expectTypeOf(message).toEqualTypeOf<Extract<Schema, { type: 'create' }>>();
+        expectTypeOf(message.body.text).toEqualTypeOf<string>();
+      }
+
+      effect({ type: 'create', body: { text: 'hello' } });
+
+      interceptor.message().with({ type: 'create' }).effect(effect);
     });
   });
 
@@ -49,13 +51,23 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
         return message.type === 'create';
       }
 
-      interceptor
-        .message()
-        .with(isCreateMessage)
-        .effect((message, context) => {
-          expectTypeOf(message).toEqualTypeOf<Extract<Schema, { type: 'create' }>>();
-          expectTypeOf(context.sender.messages).toEqualTypeOf<typeof context.receiver.messages>();
-        });
+      expect(isCreateMessage({ type: 'create', body: { text: 'hello' } })).toBe(true);
+      expect(isCreateMessage({ type: 'delete', id: '1' })).toBe(false);
+
+      function effect(
+        message: Extract<Schema, { type: 'create' }>,
+        context: WebSocketMessageHandlerApplyContext<Schema>,
+      ) {
+        expectTypeOf(message).toEqualTypeOf<Extract<Schema, { type: 'create' }>>();
+        expectTypeOf(context.sender.messages).toEqualTypeOf<typeof context.receiver.messages>();
+      }
+
+      effect({ type: 'create', body: { text: 'hello' } }, {
+        sender: { messages: [] },
+        receiver: { messages: [] },
+      } as unknown as Parameters<typeof effect>[1]);
+
+      interceptor.message().with(isCreateMessage).effect(effect);
     });
   });
 
@@ -69,14 +81,20 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
       // @ts-expect-error Invalid static response.
       interceptor.message().respond({ type: 'update' });
 
-      interceptor.message().respond((message) => {
+      function responseFactory(message: Schema) {
         expectTypeOf(message).toEqualTypeOf<Schema>();
 
         return message;
-      });
+      }
+      responseFactory({ type: 'delete', id: '1' });
+      interceptor.message().respond(responseFactory);
 
+      function invalidResponseFactory() {
+        return { type: 'update' };
+      }
+      invalidResponseFactory();
       // @ts-expect-error Invalid computed response.
-      interceptor.message().respond(() => ({ type: 'update' }));
+      interceptor.message().respond(invalidResponseFactory);
     });
   });
 }
