@@ -13,7 +13,7 @@
     "@zimic/http": "latest"
   },
   "devDependencies": {
-    "@vitest/browser": "^4.1.6",
+    "@vitest/browser": "^4.1.9",
     "@vitest/browser-playwright": "^4.1.6",
     "@zimic/interceptor": "latest",
     "concurrently": "^9.2.1",

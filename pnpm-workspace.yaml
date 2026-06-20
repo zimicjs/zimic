@@ -1,9 +1,10 @@
-minimumReleaseAge: 1440
+minimumReleaseAge: 4320 # 3 days in minutes
 autoInstallPeers: true
 engineStrict: false
 sideEffectsCache: false
 ignoreWorkspaceCycles: true
 linkWorkspacePackages: true
+verifyDepsBeforeRun: false
 
 minimumReleaseAgeExclude:
   - '@zimic/*'

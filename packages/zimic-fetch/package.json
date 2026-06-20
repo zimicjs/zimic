@@ -13,7 +13,7 @@
     "api",
     "static"
   ],
-  "version": "1.5.4-canary.1",
+  "version": "1.5.4-canary.4",
   "homepage": "https://zimic.dev/docs/fetch",
   "repository": {
     "type": "git",
@@ -75,8 +75,8 @@
     "types:check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^25.8.0",
-    "@vitest/browser": "^4.1.6",
+    "@types/node": "^25.9.1",
+    "@vitest/browser": "^4.1.9",
     "@vitest/browser-playwright": "^4.1.6",
     "@vitest/coverage-istanbul": "^4.1.6",
     "@zimic/eslint-config-node": "workspace:*",
