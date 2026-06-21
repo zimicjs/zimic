@@ -53,7 +53,6 @@ overrides:
 
   joi@17: ^17.13.4
 
-  js-yaml@3: ^4.2.0
   js-yaml@4: ^4.2.0
 
   launch-editor@2: ^2.14.1
