@@ -31,6 +31,9 @@ Use emoji-prefixed bullets with bold, human-readable titles and source links:
   https://github.com/zimicjs/zimic/commit/<sha>)
 ```
 
+When linking to commits, use commits from the release branch compare range, such as squash or merge commits. Do not link
+to individual commits that exist only inside a PR branch.
+
 Preferred emoji by section:
 
 - Features: `:sparkles:`
@@ -52,7 +55,7 @@ Use:
 Huge thanks to @user for helping!
 ```
 
-Include all meaningful contributors from the confirmed PRs.
+Include all meaningful contributors from the confirmed PRs, excluding bots such as `dependabot`.
 
 ## Full changelog
 
