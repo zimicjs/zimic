@@ -17,7 +17,7 @@ packages:
   - docs/*
 
 overrides:
-  '@babel/core@7': ^7.29.6
+  '@babel/core@7': ^7.29.7
   '@babel/plugin-transform-modules-systemjs@7': ^7.29.4
 
   dompurify@3: ^3.4.11
@@ -48,8 +48,8 @@ overrides:
 
   postcss@8: ^8.5.13
 
-  http-proxy-middleware@2: ^3.0.6
-  http-proxy-middleware@3: ^3.0.6
+  http-proxy-middleware@2: ^3.0.7
+  http-proxy-middleware@3: ^3.0.7
 
   joi@17: ^17.13.4
 
