@@ -11,11 +11,11 @@ import {
   InterceptorTokenFileContent,
   listInterceptorTokens,
   PersistedInterceptorToken,
-  INTERCEPTOR_TOKEN_VALUE_HEX_LENGTH,
+  INTERCEPTOR_TOKEN_VALUE_BASE64URL_LENGTH,
   INTERCEPTOR_TOKEN_HASH_HEX_LENGTH,
   INTERCEPTOR_TOKEN_ID_HEX_LENGTH,
 } from '@/server/utils/auth';
-import { convertHexLengthToBase64urlLength, HEX_REGEX } from '@/utils/data';
+import { HEX_REGEX } from '@/utils/data';
 import { pathExists } from '@/utils/files';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
@@ -24,9 +24,11 @@ import { clearInterceptorTokens } from './utils';
 describe('CLI > Server token create', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
 
-  const numberOfColorCharactersInTokenValue = 10;
-  const expectedTokenBase64urlLength =
-    convertHexLengthToBase64urlLength(INTERCEPTOR_TOKEN_VALUE_HEX_LENGTH) + numberOfColorCharactersInTokenValue;
+  const ansiColorPattern = String.raw`\u001B\[[0-9;]*m`;
+
+  const tokenValueLineRegex = new RegExp(
+    `^(?:${ansiColorPattern})*[a-zA-Z0-9-_]{${INTERCEPTOR_TOKEN_VALUE_BASE64URL_LENGTH}}(?:${ansiColorPattern})*$`,
+  );
 
   const serverStartHelpOutput = [
     'zimic-interceptor server token create',
@@ -80,7 +82,7 @@ describe('CLI > Server token create', () => {
       expect(infoLines).toEqual([
         `${color.cyan('[@zimic/interceptor]')} ${color.green(color.bold('✔'))} Token created:`,
         '',
-        expect.stringMatching(new RegExp(`^.{${expectedTokenBase64urlLength}}$`)),
+        expect.stringMatching(tokenValueLineRegex),
         '',
         'Store this token securely. It cannot be retrieved later.',
         '',
@@ -254,7 +256,7 @@ describe('CLI > Server token create', () => {
         expect(infoLines).toEqual([
           `${color.cyan('[@zimic/interceptor]')} ${color.green(color.bold('✔'))} Token created:`,
           '',
-          expect.stringMatching(new RegExp(`^.{${expectedTokenBase64urlLength}}$`)),
+          expect.stringMatching(tokenValueLineRegex),
           '',
           'Store this token securely. It cannot be retrieved later.',
           '',
@@ -289,7 +291,7 @@ describe('CLI > Server token create', () => {
         expect(infoLines).toEqual([
           `${color.cyan('[@zimic/interceptor]')} ${color.green(color.bold('✔'))} Token ${color.green(customTokenName)} created:`,
           '',
-          expect.stringMatching(new RegExp(`^.{${expectedTokenBase64urlLength}}$`)),
+          expect.stringMatching(tokenValueLineRegex),
           '',
           'Store this token securely. It cannot be retrieved later.',
           '',

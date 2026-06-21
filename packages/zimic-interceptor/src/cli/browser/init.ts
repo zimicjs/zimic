@@ -6,8 +6,7 @@ import { logger } from '@/utils/logging';
 
 import { SERVICE_WORKER_FILE_NAME } from './shared/constants';
 
-const MSW_ROOT_PATH = path.join(require.resolve('msw'), '..', '..', '..');
-export const MOCK_SERVICE_WORKER_PATH = path.join(MSW_ROOT_PATH, 'lib', SERVICE_WORKER_FILE_NAME);
+export const MOCK_SERVICE_WORKER_PATH = require.resolve(`msw/${SERVICE_WORKER_FILE_NAME}`);
 
 interface BrowserServiceWorkerInitOptions {
   publicDirectory: string;

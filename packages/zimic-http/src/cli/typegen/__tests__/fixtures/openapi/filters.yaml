@@ -164,7 +164,7 @@ paths:
                 properties:
                   id:
                     type: string
-            x-www-form-urlencoded:
+            application/x-www-form-urlencoded:
               schema:
                 type: object
                 properties:

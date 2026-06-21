@@ -84,7 +84,7 @@ export type MyServiceSchema = HttpSchema<{
             }
           | {
               headers: {
-                'content-type': 'x-www-form-urlencoded';
+                'content-type': 'application/x-www-form-urlencoded';
                 'x-upload-id'?: string;
               };
               body: HttpSearchParams<{
