@@ -109,8 +109,8 @@
     "@types/ws": "^8.18.1",
     "@types/yargs": "^17.0.35",
     "@vitest/browser": "^4.1.9",
-    "@vitest/browser-playwright": "^4.1.6",
-    "@vitest/coverage-istanbul": "^4.1.6",
+    "@vitest/browser-playwright": "^4.1.9",
+    "@vitest/coverage-istanbul": "^4.1.9",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
@@ -121,7 +121,7 @@
     "playwright": "^1.61.0",
     "tsup": "^8.5.1",
     "typescript": "6.0.3",
-    "vitest": "^4.1.6"
+    "vitest": "^4.1.9"
   },
   "peerDependencies": {
     "@zimic/http": "workspace:^1.2.0",
