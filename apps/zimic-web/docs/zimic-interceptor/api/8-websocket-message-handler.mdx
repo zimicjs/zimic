@@ -106,13 +106,14 @@ await handler.with((message) => matchesMessage);
 1. **restriction**: `WebSocketMessageHandlerRestriction<Schema>`
 
    The restriction to match intercepted messages. It can be static, declared as a partial message object, or computed,
-   declared as a function returning whether the message matches. Static restrictions match messages that contain the
-   declared data.
+   declared as a boolean predicate or type guard returning whether the message matches. Static restrictions match
+   messages that contain the declared data.
 
 **Returns**: `WebSocketMessageHandler<Schema, RestrictedSchema>`
 
-The same handler, now considering the specified restriction. Static and computed restrictions can narrow the handler's
-message type for later operations.
+The same handler, now considering the specified restriction. Static restrictions and computed type-guard restrictions
+can narrow the handler's message type for later operations. Boolean predicate restrictions keep the current message
+type.
 
 ## `handler.delay()`
 
@@ -304,7 +305,8 @@ Clears responses declared with [`handler.respond()`](#handlerrespond), effects d
 [`handler.effect()`](#handlereffect), restrictions declared with [`handler.with()`](#handlerwith) or
 [`handler.from()`](#handlerfrom), message count limits, and saved messages.
 
-To make the handler match messages again, register a new response or effect.
+After being cleared, the handler remains registered as a passive handler and can match future messages without sending a
+response or running an effect.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">

@@ -52,8 +52,8 @@ export class LocalWebSocketMessageHandler<
     return this;
   }
 
-  times(minNumberOfRequests: number, maxNumberOfRequests?: number) {
-    this.implementation.times(minNumberOfRequests, maxNumberOfRequests);
+  times(minNumberOfMessages: number, maxNumberOfMessages?: number) {
+    this.implementation.times(minNumberOfMessages, maxNumberOfMessages);
     return this;
   }
 

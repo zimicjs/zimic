@@ -92,6 +92,10 @@ import {
   type RemoteWebSocketMessageHandler,
   type PendingRemoteWebSocketMessageHandler,
   type SyncedRemoteWebSocketMessageHandler,
+  type WebSocketInterceptorAuthOptions,
+  type WebSocketMessageHandlerMessageStaticDeclaration,
+  type WebSocketMessageHandlerMessageComputedDeclaration,
+  type WebSocketMessageHandlerMessageDeclaration,
   type WebSocketMessageHandlerMessageCallback,
   type WebSocketMessageHandlerMessageContext,
   type WebSocketMessageHandlerComputedRestriction,
@@ -409,6 +413,7 @@ describe('Exports', () => {
     expectTypeOf<WebSocketInterceptorType>().not.toBeAny();
     expectTypeOf<WebSocketInterceptorPlatform>().not.toBeAny();
     expectTypeOf<WebSocketInterceptorMessageSaving>().not.toBeAny();
+    expectTypeOf<WebSocketInterceptorAuthOptions>().not.toBeAny();
 
     expectTypeOf<WebSocketMessageHandler<never>>().not.toBeAny();
     expectTypeOf<LocalWebSocketMessageHandler<never>>().not.toBeAny();
@@ -416,6 +421,9 @@ describe('Exports', () => {
     expectTypeOf<PendingRemoteWebSocketMessageHandler<never>>().not.toBeAny();
     expectTypeOf<SyncedRemoteWebSocketMessageHandler<never>>().not.toBeAny();
 
+    expectTypeOf<WebSocketMessageHandlerMessageStaticDeclaration<never>>().not.toBeAny();
+    expectTypeOf<WebSocketMessageHandlerMessageComputedDeclaration<never, never>>().not.toBeAny();
+    expectTypeOf<WebSocketMessageHandlerMessageDeclaration<never, never>>().not.toBeAny();
     expectTypeOf<WebSocketMessageHandlerMessageCallback<never>>().not.toBeAny();
     expectTypeOf<WebSocketMessageHandlerMessageContext<never>>().not.toBeAny();
     expectTypeOf<WebSocketMessageHandlerComputedRestriction<never>>().not.toBeAny();

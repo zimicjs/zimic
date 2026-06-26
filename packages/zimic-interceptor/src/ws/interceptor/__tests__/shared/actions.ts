@@ -1,5 +1,5 @@
 import { waitFor, waitForNot } from '@zimic/utils/time';
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
@@ -254,7 +254,12 @@ export function declareActionWebSocketInterceptorTests(options: RuntimeSharedWeb
       });
     });
 
-    it('should support binary messages', async () => {
+    it.each([
+      ['ArrayBuffer', () => createBinaryMessage(0xff, 0x00)],
+      ['Blob', () => new Blob([createBinaryMessage(0xff, 0x00)])],
+      ['DataView', () => new DataView(createBinaryMessage(0xff, 0x00))],
+      ['typed array', () => new Uint8Array([0xff, 0x00])],
+    ])('should support %s binary messages', async (_name, createRequestMessage) => {
       await usingWebSocketInterceptor<BinarySchema>(interceptorOptions, async (interceptor) => {
         const requestMessage = createBinaryMessage(0xff, 0x00);
         const responseMessage = createBinaryMessage(0x00, 0xff);
@@ -268,10 +273,10 @@ export function declareActionWebSocketInterceptorTests(options: RuntimeSharedWeb
           client.binaryType = 'arraybuffer';
           const messagePromise = waitForWebSocketMessage(client);
 
-          client.send(requestMessage);
+          client.send(createRequestMessage() as unknown as WebSocketMessageData<BinarySchema>);
 
           const message = await messagePromise;
-          expect(await readBytes(message as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
+          expect(await readBytes(message as Blob | BufferSource)).toEqual([0x00, 0xff]);
         });
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);

@@ -6,7 +6,7 @@ import { InterceptedWebSocketInterceptorMessage, WebSocketInterceptorClient } fr
 import WebSocketMessageHandlerImplementation from '../WebSocketMessageHandlerImplementation';
 import { WebSocketMessageHandlerDelayFactory } from './messages';
 import {
-  WebSocketMessageHandlerComputedRestriction,
+  WebSocketMessageHandlerComputedTypeGuardRestriction,
   WebSocketMessageHandlerRestriction,
   WebSocketMessageHandlerStaticRestriction,
 } from './restrictions';
@@ -46,11 +46,13 @@ export type WebSocketMessageHandlerMessageDeclaration<
   | WebSocketMessageHandlerMessageComputedDeclaration<Schema, RestrictedSchema>;
 
 type WebSocketMessageHandlerSchemaWithRestriction<Schema extends WebSocketSchema, Restriction> =
-  Restriction extends WebSocketMessageHandlerComputedRestriction<Schema, infer Predicate>
-    ? Extract<Schema, Predicate>
+  Restriction extends WebSocketMessageHandlerComputedTypeGuardRestriction<Schema, infer Predicate>
+    ? [Predicate] extends [never]
+      ? Schema
+      : Extract<Schema, Predicate>
     : Restriction extends WebSocketMessageHandlerStaticRestriction<Schema>
       ? Extract<Schema, Restriction>
-      : never;
+      : Schema;
 
 /** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export interface LocalWebSocketMessageHandler<
@@ -116,10 +118,10 @@ export interface SyncedRemoteWebSocketMessageHandler<
     declaration: WebSocketMessageHandlerMessageDeclaration<Schema, RestrictedSchema>,
   ) => PendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema>;
 
-  times: ((numberOfRequests: number) => PendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema>) &
+  times: ((numberOfMessages: number) => PendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema>) &
     ((
-      minNumberOfRequests: number,
-      maxNumberOfRequests: number,
+      minNumberOfMessages: number,
+      maxNumberOfMessages: number,
     ) => PendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema>);
 
   checkTimes: () => Promise<void>;
@@ -134,14 +136,14 @@ export interface PendingRemoteWebSocketMessageHandler<
   Schema extends WebSocketSchema,
   RestrictedSchema extends Schema = Schema,
 > extends SyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema> {
-  then: <FulfilledResult = SyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema>, RejectedResult = Schema>(
+  then: <FulfilledResult = SyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema>, RejectedResult = never>(
     onFulfilled?:
       | ((handler: SyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema>) => PossiblePromise<FulfilledResult>)
       | null,
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ) => Promise<FulfilledResult | RejectedResult>;
 
-  catch: <RejectedResult = Schema>(
+  catch: <RejectedResult = never>(
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ) => Promise<SyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema> | RejectedResult>;
 

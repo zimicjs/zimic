@@ -10,6 +10,7 @@ import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
 type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
+type BinaryLikeJSONMessage = WebSocketSchema<{ type: 'binary'; data: string }>;
 type TextMessage = WebSocketSchema<string>;
 type BinaryMessage = WebSocketSchema<ArrayBuffer>;
 
@@ -145,6 +146,32 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
           await handler.checkTimes();
         },
       );
+    });
+
+    it('should preserve JSON messages shaped like binary envelopes', async () => {
+      await usingWebSocketInterceptor<BinaryLikeJSONMessage>(interceptorOptions, async (interceptor) => {
+        const responseMessage: BinaryLikeJSONMessage = { type: 'binary', data: 'response' };
+
+        await promiseIfRemote(
+          interceptor.message().with({ type: 'binary', data: 'request' }).respond(responseMessage).times(1),
+          interceptor,
+        );
+
+        const firstClient = await createClient<BinaryLikeJSONMessage>();
+        const secondClient = await createClient<BinaryLikeJSONMessage>();
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(2);
+        });
+
+        const firstMessagePromise = waitForMessage(firstClient);
+        firstClient.send(JSON.stringify({ type: 'binary', data: 'request' }));
+        await expect(firstMessagePromise).resolves.toEqual(responseMessage);
+
+        const secondMessagePromise = waitForMessage(secondClient);
+        interceptor.server.send(JSON.stringify({ type: 'binary', data: 'broadcast' }));
+        await expect(secondMessagePromise).resolves.toEqual({ type: 'binary', data: 'broadcast' });
+      });
     });
 
     it('should allow effects to broadcast through the receiver', async () => {
@@ -292,6 +319,59 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
       });
     });
   }
+
+  it('should preserve raw string messages that look like JSON', async () => {
+    await usingWebSocketInterceptor<TextMessage>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const requestMessage = '{"type":"binary","data":"AQID"}';
+        const handler = await promiseIfRemote(
+          interceptor.message().with(requestMessage).respond('pong').times(1),
+          interceptor,
+        );
+
+        const client = await createClient<TextMessage>();
+        const messagePromise = waitForMessage(client);
+
+        client.send(requestMessage);
+
+        await expect(messagePromise).resolves.toBe('pong');
+        expect(handler.messages).toHaveLength(1);
+        expect(handler.messages[0].data).toBe(requestMessage);
+        expect(interceptor.clients[0].messages[0].data).toBe(requestMessage);
+
+        await handler.checkTimes();
+      },
+    );
+  });
+
+  it('should preserve raw string messages that look like JSON for computed restrictions', async () => {
+    await usingWebSocketInterceptor<TextMessage>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const requestMessage = '{"type":"binary","data":"AQID"}';
+        const handler = await promiseIfRemote(
+          interceptor
+            .message()
+            .with((message) => message === requestMessage)
+            .times(1),
+          interceptor,
+        );
+
+        const client = await createClient<TextMessage>();
+        client.send(requestMessage);
+
+        await waitFor(() => {
+          expect(handler.messages).toHaveLength(1);
+        });
+
+        expect(handler.messages[0].data).toBe(requestMessage);
+        expect(interceptor.clients[0].messages[0].data).toBe(requestMessage);
+
+        await handler.checkTimes();
+      },
+    );
+  });
 
   it('should passively accept, save, and count matching client messages without sending a response', async () => {
     await usingWebSocketInterceptor<MessageSchema>(

@@ -21,7 +21,8 @@ export interface LocalWebSocketInterceptorOptions extends SharedWebSocketInterce
   type?: 'local';
 }
 
-interface WebSocketInterceptorAuthOptions {
+/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
+export interface WebSocketInterceptorAuthOptions {
   token: string;
 }
 

@@ -64,7 +64,7 @@ development and testing.
 - :bulb: **Readability**
 
   `@zimic/interceptor` was designed to encourage clarity and readability. Declare intuitive mocks, test with confidence,
-  and verify that your application is making the expected requests with
+  and verify that your application is making the expected HTTP requests or WebSocket messages with
   [declarative assertions](https://zimic.dev/docs/interceptor/guides/http/declarative-assertions).
 
 **Learn more**:

@@ -71,6 +71,18 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
     });
   });
 
+  it('should accept boolean computed restrictions without narrowing message schemas', async () => {
+    const baseURL = await getBaseURL(type);
+
+    await usingWebSocketInterceptor<Schema>({ type, baseURL }, (interceptor) => {
+      const handler = interceptor.message().with((message): boolean => message.type === 'create');
+
+      handler.effect((message) => {
+        expectTypeOf(message).toEqualTypeOf<Schema>();
+      });
+    });
+  });
+
   it('should reject invalid message declarations', async () => {
     const baseURL = await getBaseURL(type);
 
