@@ -28,7 +28,7 @@ function isRemoteWebSocketInterceptorOptions(
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * @see {@link webSockets://zimic.dev/docs/interceptor/api/create-webSocket-interceptor `createWebSocketInterceptor()` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference}
  */
 export function createWebSocketInterceptor<Schema extends WebSocketSchema>(
   options: LocalWebSocketInterceptorOptions,

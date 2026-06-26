@@ -4,15 +4,26 @@ import { WebSocketSchema } from '@zimic/ws';
 /** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export type WebSocketMessageHandlerStaticRestriction<Schema extends WebSocketSchema> = DeepPartial<Schema>;
 
+type WebSocketMessageHandlerComputedBooleanRestriction<Schema extends WebSocketSchema> = (
+  message: Schema,
+) => PossiblePromise<boolean>;
+
+export type WebSocketMessageHandlerComputedTypeGuardRestriction<
+  Schema extends WebSocketSchema,
+  PredicateSchema extends Schema = Schema,
+> = (message: Schema) => message is PredicateSchema;
+
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerwith `handler.with()` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
  */
 export type WebSocketMessageHandlerComputedRestriction<
   Schema extends WebSocketSchema,
   PredicateSchema extends Schema = Schema,
-> = ((message: Schema) => PossiblePromise<boolean>) & ((message: Schema) => message is PredicateSchema);
+> =
+  | WebSocketMessageHandlerComputedBooleanRestriction<Schema>
+  | WebSocketMessageHandlerComputedTypeGuardRestriction<Schema, PredicateSchema>;
 
 /** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export type WebSocketMessageHandlerRestriction<Schema extends WebSocketSchema> =

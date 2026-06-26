@@ -1,10 +1,11 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import type { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
 import type { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
+import type { SyncedRemoteWebSocketMessageHandler } from '../../types/public';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
 
 export function declarePromiseLikeWebSocketMessageHandlerTests(
@@ -34,6 +35,8 @@ export function declarePromiseLikeWebSocketMessageHandlerTests(
       await usingWebSocketInterceptor<Schema>({ type: 'remote', baseURL }, async (interceptor) => {
         const handler = interceptor.message().respond({ type: 'delete', id: '1' });
 
+        expectTypeOf(handler.then()).toEqualTypeOf<Promise<SyncedRemoteWebSocketMessageHandler<Schema>>>();
+
         expect(handler).toHaveProperty('then', expect.any(Function));
         expect(handler).toHaveProperty('catch', expect.any(Function));
         expect(handler).toHaveProperty('finally', expect.any(Function));
@@ -55,6 +58,8 @@ export function declarePromiseLikeWebSocketMessageHandlerTests(
       await usingWebSocketInterceptor<Schema>({ type: 'remote', baseURL }, async (interceptor) => {
         const handler = interceptor.message().respond({ type: 'delete', id: '1' });
         const rejectionListener = vi.fn();
+
+        expectTypeOf(handler.catch()).toEqualTypeOf<Promise<SyncedRemoteWebSocketMessageHandler<Schema>>>();
 
         await expect(handler.catch(rejectionListener)).resolves.toEqual(handler);
         expect(rejectionListener).not.toHaveBeenCalled();

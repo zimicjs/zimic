@@ -19,6 +19,7 @@ import WebSocketServer, {
 } from '@/utils/webSocket/WebSocketServer';
 import {
   deserializeWebSocketMessageData,
+  isSerializedWebSocketMessageData,
   serializeRuntimeWebSocketMessageData,
   serializeWebSocketMessageData,
 } from '@/ws/utils/messageData';
@@ -55,6 +56,9 @@ interface UserWebSocketHandler {
   clientId: string;
   handler: WebSocketHandler;
 }
+
+const WEB_SOCKET_CONNECTION_SETUP_FAILED_CLOSE_REASON = 'Could not connect to the WebSocket interceptor.';
+const WEB_SOCKET_CONNECTION_NOT_READY_CLOSE_REASON = 'WebSocket interceptor connection is not ready yet.';
 
 class InterceptorServer implements PublicInterceptorServer {
   private httpServer?: HttpServer;
@@ -386,8 +390,7 @@ class InterceptorServer implements PublicInterceptorServer {
     }
 
     const clientId = crypto.randomUUID();
-    this.userWebSocketHandlers.set(socket, { clientId, handler });
-
+    const connection = { clientId, handler };
     const connectionPromise = this.webSocketServerOrThrow.request(
       'interceptors/ws/clients/connect',
       {
@@ -398,38 +401,71 @@ class InterceptorServer implements PublicInterceptorServer {
       { sockets: [handler.socket] },
     );
 
-    const connection = { clientId, handler };
-    let messageQueue = Promise.resolve();
+    function earlyMessageListener() {
+      socket.close(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE, WEB_SOCKET_CONNECTION_NOT_READY_CLOSE_REASON);
+    }
 
-    const messageListener = this.createUserWebSocketMessageListener(connection, connectionPromise, (queuedMessage) => {
+    function earlyCloseListener() {
+      socket.removeEventListener('message', earlyMessageListener);
+    }
+
+    socket.addEventListener('message', earlyMessageListener);
+    socket.addEventListener('close', earlyCloseListener, { once: true });
+
+    try {
+      await connectionPromise;
+    } catch {
+      socket.removeEventListener('message', earlyMessageListener);
+      socket.removeEventListener('close', earlyCloseListener);
+      socket.close(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE, WEB_SOCKET_CONNECTION_SETUP_FAILED_CLOSE_REASON);
+      return { wasHandled: true };
+    }
+
+    socket.removeEventListener('message', earlyMessageListener);
+    socket.removeEventListener('close', earlyCloseListener);
+
+    if (socket.readyState !== ClientSocket.OPEN) {
+      this.notifyUserWebSocketClose(connection);
+      return { wasHandled: true };
+    }
+
+    this.userWebSocketHandlers.set(socket, connection);
+
+    let messageQueue = Promise.resolve();
+    const messageListener = this.createUserWebSocketMessageListener(connection, (queuedMessage) => {
       messageQueue = queuedMessage;
     });
 
     socket.addEventListener('close', () => {
       this.userWebSocketHandlers.delete(socket);
       socket.removeEventListener('message', messageListener);
-      void this.notifyUserWebSocketCloseAfterMessages(messageQueue, connectionPromise, connection);
+      void messageQueue
+        .then(() => this.notifyUserWebSocketClose(connection))
+        .catch(
+          /* istanbul ignore next -- @preserve
+           * Close notifications are best-effort if the worker disconnects while user messages are being forwarded. */
+          (error: unknown) => {
+            console.error(error);
+          },
+        );
     });
     socket.addEventListener('message', messageListener);
-
-    await connectionPromise;
 
     return { wasHandled: true };
   };
 
   private createUserWebSocketMessageListener(
     connection: UserWebSocketHandler,
-    connectionPromise: Promise<unknown>,
     updateMessageQueue: (queuedMessage: Promise<void>) => void,
   ) {
     let messageQueue = Promise.resolve();
 
     return (message: ClientSocket.MessageEvent) => {
       messageQueue = messageQueue
-        .then(() => this.handleUserWebSocketMessageAfterConnection(connectionPromise, connection, message))
+        .then(() => this.handleUserWebSocketMessage(connection, message))
         .catch(
           /* istanbul ignore next -- @preserve
-           * Message queue errors require the worker RPC to fail after a user message has already been queued. */
+           * Message queue errors require the worker RPC to fail after a user message has already been received. */
           (error: unknown) => {
             console.error(error);
           },
@@ -439,42 +475,14 @@ class InterceptorServer implements PublicInterceptorServer {
     };
   }
 
-  private async handleUserWebSocketMessageAfterConnection(
-    connectionPromise: Promise<unknown>,
-    connection: UserWebSocketHandler,
-    message: ClientSocket.MessageEvent,
-  ) {
-    try {
-      await connectionPromise;
-      /* istanbul ignore next -- @preserve
-       * If the connect RPC fails, queued user messages are intentionally ignored. */
-    } catch {
-      /* istanbul ignore next -- @preserve */
-      return;
-    }
-
-    await this.handleUserWebSocketMessage(connection, message);
-  }
-
-  private async notifyUserWebSocketCloseAfterMessages(
-    messageQueue: Promise<void>,
-    connectionPromise: Promise<unknown>,
-    connection: UserWebSocketHandler,
-  ) {
-    try {
-      await connectionPromise;
-      await messageQueue;
-
-      this.webSocketServerOrThrow.send(
-        'interceptors/ws/clients/close',
-        {
-          clientId: connection.clientId,
-        },
-        { sockets: [connection.handler.socket] },
-      );
-    } catch {
-      // If connecting the user socket to the remote worker failed, there is no remote client to close.
-    }
+  private notifyUserWebSocketClose(connection: UserWebSocketHandler) {
+    this.webSocketServerOrThrow.send(
+      'interceptors/ws/clients/close',
+      {
+        clientId: connection.clientId,
+      },
+      { sockets: [connection.handler.socket] },
+    );
   }
 
   private async handleUserWebSocketMessage(connection: UserWebSocketHandler, message: ClientSocket.MessageEvent) {
@@ -560,7 +568,8 @@ class InterceptorServer implements PublicInterceptorServer {
       message !== null &&
       (!('clientId' in message) || typeof message.clientId === 'string') &&
       (!('handlerId' in message) || typeof message.handlerId === 'string') &&
-      'data' in message;
+      'data' in message &&
+      isSerializedWebSocketMessageData(message.data);
 
     if (!isValid) {
       throw new InvalidWebSocketMessageError(JSON.stringify(message));

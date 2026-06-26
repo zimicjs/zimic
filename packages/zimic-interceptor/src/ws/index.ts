@@ -14,6 +14,9 @@ export type {
   RemoteWebSocketMessageHandler,
   WebSocketMessageHandlerMessageCallback,
   WebSocketMessageHandlerMessageContext,
+  WebSocketMessageHandlerMessageStaticDeclaration,
+  WebSocketMessageHandlerMessageComputedDeclaration,
+  WebSocketMessageHandlerMessageDeclaration,
   SyncedRemoteWebSocketMessageHandler,
   PendingRemoteWebSocketMessageHandler,
   WebSocketMessageHandler,
@@ -31,6 +34,7 @@ export type {
   LocalWebSocketInterceptorOptions,
   RemoteWebSocketInterceptorOptions,
   WebSocketInterceptorOptions,
+  WebSocketInterceptorAuthOptions,
   WebSocketInterceptorMessageSaving,
 } from './interceptor/types/options';
 

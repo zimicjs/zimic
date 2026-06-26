@@ -76,7 +76,7 @@ export function declareUnhandledMessageWebSocketInterceptorTests(
             '',
             '- {"message":{"type":"client","index":1},"diff":{"data":{"expected":{"type":"client","index":2},"received":{"type":"client","index":1}}}}',
             '',
-            'Learn more: https://zimic.dev/docs/interceptor/api/http-message-handler#handlertimes',
+            'Learn more: https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertimes',
           ].join('\n'),
         );
       },

@@ -32,7 +32,7 @@ Configures if intercepted messages are saved and how they are handled.
 
 **Type**: `WebSocketInterceptorMessageSaving`
 
-- **enabled**: `boolean` (default: `process.env.NODE_ENV === 'test'`)
+- **enabled**: `boolean` (default: `process.env.NODE_ENV === 'test'` in Node.js, `false` in browsers)
 
   Whether [message handlers](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx) should save their matched
   client-to-server messages in memory and make them accessible through

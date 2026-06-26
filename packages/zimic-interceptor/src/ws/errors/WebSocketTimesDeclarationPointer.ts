@@ -1,10 +1,10 @@
-class HttpTimesDeclarationPointer extends Error {
-  constructor(minNumberOfRequests: number, maxNumberOfRequests?: number) {
+class WebSocketTimesDeclarationPointer extends Error {
+  constructor(minNumberOfMessages: number, maxNumberOfMessages?: number) {
     super('declared at:');
-    this.name = `handler.times(${minNumberOfRequests}${
-      maxNumberOfRequests === undefined ? '' : `, ${maxNumberOfRequests}`
+    this.name = `handler.times(${minNumberOfMessages}${
+      maxNumberOfMessages === undefined ? '' : `, ${maxNumberOfMessages}`
     })`;
   }
 }
 
-export default HttpTimesDeclarationPointer;
+export default WebSocketTimesDeclarationPointer;
