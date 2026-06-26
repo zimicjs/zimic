@@ -511,16 +511,18 @@ class InterceptorServer implements PublicInterceptorServer {
     }
   }
 
-  private sendWebSocketMessage = ({
-    data: message,
-  }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/messages/send'>) => {
+  private sendWebSocketMessage = (
+    { data: message }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/messages/send'>,
+    workerSocket: Socket,
+  ) => {
     this.validateWebSocketSendMessage(message);
 
     const targetSockets = Array.from(this.userWebSocketHandlers.entries()).filter(([, userHandler]) => {
+      const isOwnedByWorker = userHandler.handler.socket === workerSocket;
       const matchesClient = message.clientId === undefined || userHandler.clientId === message.clientId;
       const matchesHandler = message.handlerId === undefined || userHandler.handler.id === message.handlerId;
 
-      return matchesClient && matchesHandler;
+      return isOwnedByWorker && matchesClient && matchesHandler;
     });
 
     const runtimeMessageData = serializeRuntimeWebSocketMessageData<WebSocketSchema>(
@@ -539,10 +541,20 @@ class InterceptorServer implements PublicInterceptorServer {
       'id' in commit &&
       typeof commit.id === 'string' &&
       'baseURL' in commit &&
-      typeof commit.baseURL === 'string';
+      typeof commit.baseURL === 'string' &&
+      this.isValidWebSocketHandlerBaseURL(commit.baseURL);
 
     if (!isValid) {
       throw new InvalidWebSocketMessageError(JSON.stringify(commit));
+    }
+  }
+
+  private isValidWebSocketHandlerBaseURL(baseURL: string) {
+    try {
+      const protocol = new URL(baseURL).protocol;
+      return protocol === 'ws:' || protocol === 'wss:';
+    } catch {
+      return false;
     }
   }
 
