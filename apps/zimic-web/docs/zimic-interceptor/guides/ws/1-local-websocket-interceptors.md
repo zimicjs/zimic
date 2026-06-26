@@ -176,7 +176,8 @@ external server. This is different from
 :::
 
 If you need to access the messages processed by the interceptor, enable message saving and use `handler.messages`.
-Message saving is disabled by default, so configure `messageSaving: { enabled: true }` when creating the interceptor.
+Message saving is enabled by default in Node.js when `process.env.NODE_ENV === 'test'` and disabled by default in
+browsers. Configure `messageSaving: { enabled: true }` when you need saved messages in every environment.
 
 ```ts
 const handler = interceptor

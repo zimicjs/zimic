@@ -45,7 +45,7 @@ createWebSocketInterceptor<Schema>(options);
    - **messageSaving**: `Partial<WebSocketInterceptorMessageSaving> | undefined`
 
      Configures if intercepted messages are saved and how they are handled.
-     - **enabled**: `boolean | undefined` (default: `process.env.NODE_ENV === 'test'`)
+     - **enabled**: `boolean | undefined` (default: `process.env.NODE_ENV === 'test'` in Node.js, `false` in browsers)
 
        Whether [message handlers](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx) should save their matched
        client-to-server messages in memory and make them accessible through

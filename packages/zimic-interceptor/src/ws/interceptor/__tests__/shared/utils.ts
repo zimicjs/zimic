@@ -51,9 +51,14 @@ export async function waitForWebSocketMessage<Schema extends WebSocketSchema>(cl
   return event.data;
 }
 
-export async function readBytes(data: Blob | ArrayBuffer) {
-  const arrayBuffer = data instanceof Blob ? await data.arrayBuffer() : data;
-  return Array.from(new Uint8Array(arrayBuffer));
+export async function readBytes(data: Blob | BufferSource) {
+  if (data instanceof Blob) {
+    return Array.from(new Uint8Array(await data.arrayBuffer()));
+  }
+
+  const bytes =
+    data instanceof ArrayBuffer ? new Uint8Array(data) : new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+  return Array.from(bytes);
 }
 
 export function createBinaryMessage(firstByte: number, secondByte: number) {
@@ -89,7 +94,7 @@ export async function expectWebSocketTimesCheckError(
   const expectedMessage = [
     options.message,
     options.unmatchedMessages && ['Unmatched messages:', '', options.unmatchedMessages].join('\n'),
-    'Learn more: https://zimic.dev/docs/interceptor/api/http-message-handler#handlertimes',
+    'Learn more: https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertimes',
   ]
     .filter(Boolean)
     .join('\n\n');

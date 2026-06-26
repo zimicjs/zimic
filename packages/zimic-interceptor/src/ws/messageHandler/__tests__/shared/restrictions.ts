@@ -113,6 +113,44 @@ export function declareRestrictionWebSocketMessageHandlerTests(
     );
   });
 
+  it('should match only specific messages if contains a declared response and boolean computed restrictions', async () => {
+    await usingWebSocketInterceptor<Schema>(
+      {
+        type,
+        baseURL,
+      },
+      async (interceptor) => {
+        const effect = vi.fn();
+
+        const handler = await promiseIfRemote(
+          interceptor
+            .message()
+            .with((message): boolean => message.type === 'create' && message.body.text.startsWith('hello'))
+            .effect(effect)
+            .times(1),
+          interceptor,
+        );
+
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
+          client.send(JSON.stringify({ type: 'delete', id: '1' }));
+          client.send(JSON.stringify({ type: 'create', body: { text: 'goodbye' } }));
+
+          await waitForNot(() => {
+            expect(effect).toHaveBeenCalled();
+          });
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+          await waitFor(() => {
+            expect(effect).toHaveBeenCalledTimes(1);
+          });
+        });
+
+        await handler.checkTimes();
+      },
+    );
+  });
+
   it('should match only messages from a restricted sender', async () => {
     await usingWebSocketInterceptor<Schema>(
       {

@@ -3,12 +3,12 @@ import { Range } from '@zimic/utils/types';
 
 import { WebSocketInterceptorMessageSaving } from '../interceptor/types/options';
 import { UnmatchedWebSocketInterceptorMessageGroup } from '../messageHandler/types/restrictions';
-import HttpTimesDeclarationPointer from './WebSocketTimesDeclarationPointer';
+import WebSocketTimesDeclarationPointer from './WebSocketTimesDeclarationPointer';
 
 interface WebSocketTimesCheckErrorOptions {
   messageLimits: Range<number>;
   numberOfMatchedMessages: number;
-  declarationPointer: HttpTimesDeclarationPointer | undefined;
+  declarationPointer: WebSocketTimesDeclarationPointer | undefined;
   hasRestrictions: boolean;
   messageSaving: WebSocketInterceptorMessageSaving;
   unmatchedMessageGroups: UnmatchedWebSocketInterceptorMessageGroup[];
@@ -61,7 +61,7 @@ function createMessageUnmatchedMessageGroups(options: WebSocketTimesCheckErrorOp
 }
 
 function createMessageFooter() {
-  return 'Learn more: https://zimic.dev/docs/interceptor/api/http-message-handler#handlertimes';
+  return 'Learn more: https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertimes';
 }
 
 function createMessage(options: WebSocketTimesCheckErrorOptions) {

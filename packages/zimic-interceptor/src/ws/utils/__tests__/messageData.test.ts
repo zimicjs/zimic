@@ -1,3 +1,4 @@
+import { WebSocketSchema } from '@zimic/ws';
 import { expect, it } from 'vitest';
 
 import {
@@ -16,9 +17,28 @@ it('should normalize text, JSON, object, and Blob WebSocket message data', async
   const blob = new Blob([new Uint8Array([1, 2, 3])]);
   expect(normalizeWebSocketMessageData(blob)).toBe(blob);
 
-  const serializedBlob = await serializeWebSocketMessageData(blob);
-  expect(serializedBlob).toEqual({ type: 'binary', data: 'AQID' });
-  expect(deserializeWebSocketMessageData(serializedBlob)).toEqual(new Uint8Array([1, 2, 3]).buffer);
+  await expect(serializeWebSocketMessageData('plain text')).resolves.toEqual({ type: 'text', data: 'plain text' });
+  await expect(serializeWebSocketMessageData({ type: 'message' })).resolves.toEqual({
+    type: 'json',
+    data: { type: 'message' },
+  });
+
+  const binaryInputs = [
+    blob,
+    new Uint8Array([1, 2, 3]),
+    new DataView(new Uint8Array([1, 2, 3]).buffer),
+    new Uint8Array([1, 2, 3]).buffer,
+  ];
+
+  for (const binaryInput of binaryInputs) {
+    const serializedBinaryInput = await serializeWebSocketMessageData<WebSocketSchema>(binaryInput);
+    expect(serializedBinaryInput).toEqual({ type: 'binary', data: 'AQID' });
+    expect(deserializeWebSocketMessageData(serializedBinaryInput)).toEqual(new Uint8Array([1, 2, 3]).buffer);
+  }
+
+  const serializedBinaryLikeJSON = await serializeWebSocketMessageData({ type: 'binary', data: 'AQID' });
+  expect(serializedBinaryLikeJSON).toEqual({ type: 'json', data: { type: 'binary', data: 'AQID' } });
+  expect(deserializeWebSocketMessageData(serializedBinaryLikeJSON)).toEqual({ type: 'binary', data: 'AQID' });
 
   expect(serializeRuntimeWebSocketMessageData({ type: 'message' })).toBe('{"type":"message"}');
 });

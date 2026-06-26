@@ -12,7 +12,6 @@ import {
   WebSocketMessageHandlerApplyContext,
   WebSocketMessageHandlerMessageMatch,
 } from '../messageHandler/WebSocketMessageHandlerImplementation';
-import { normalizeWebSocketMessageData } from '../utils/messageData';
 import MessageSavingSafeLimitExceededError from './errors/MessageSavingSafeLimitExceededError';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
@@ -217,7 +216,7 @@ class WebSocketInterceptorImplementation<
       return false;
     }
 
-    const message = normalizeWebSocketMessageData(data);
+    const message = data as Schema;
     const completeContext = this.completeMessageContext(context);
     const matchedHandler = await this.findMatchedHandler(message, completeContext);
 
@@ -225,10 +224,10 @@ class WebSocketInterceptorImplementation<
       return false;
     }
 
-    await matchedHandler.applyDeclarations(message, completeContext);
+    await matchedHandler.handler.applyDeclarations(matchedHandler.message, completeContext);
 
     if (this.messageSaving.enabled) {
-      matchedHandler.saveInterceptedMessage(message, completeContext);
+      matchedHandler.handler.saveInterceptedMessage(matchedHandler.message, completeContext);
     }
 
     return true;
@@ -278,8 +277,8 @@ class WebSocketInterceptorImplementation<
       const messageMatch = await handler.matchesMessage(message, context);
 
       if (messageMatch.success) {
-        handler.markMessageAsMatched(message);
-        return handler;
+        handler.markMessageAsMatched(messageMatch.message);
+        return { handler, message: messageMatch.message as Schema };
       }
 
       failedMessageMatches.set(handler, messageMatch);

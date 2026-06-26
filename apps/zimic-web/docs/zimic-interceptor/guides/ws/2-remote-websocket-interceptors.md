@@ -237,7 +237,8 @@ appearing to be unhandled, which is helpful to indicate missing `await`'s in rem
 :::
 
 If you need to access the messages processed by the interceptor, enable message saving and use `handler.messages`.
-Message saving is disabled by default, so configure `messageSaving: { enabled: true }` when creating the interceptor.
+Message saving is enabled by default in Node.js when `process.env.NODE_ENV === 'test'` and disabled by default in
+browsers. Configure `messageSaving: { enabled: true }` when you need saved messages in every environment.
 
 ```ts
 const handler = await interceptor
@@ -298,11 +299,29 @@ interceptor.server.send(JSON.stringify({ type: 'presence', data: { online: true 
 Server-originated sends are delivered to connected clients, but they are not added to handler or client saved message
 lists. Saved messages are produced by matched client-to-server messages.
 
+### Remote message transport
+
+Remote WebSocket interceptors preserve the frame kind of each message. Text frames remain text, JSON messages remain
+JSON, and binary frames remain binary when they pass through the interceptor server. Zimic uses an internal transport
+envelope for remote messages, so user payloads such as `{ type: 'binary', data: '...' }` are still treated as JSON when
+they were sent as JSON, not as transport metadata.
+
+Binary messages can be sent with `Blob`, `ArrayBuffer`, typed arrays, and `DataView` values. Raw text frames that look
+like JSON, such as `'{"type":"message"}'`, remain text when the schema expects strings.
+
+### Remote connection setup failures
+
+When a user WebSocket connects through the interceptor server, the server confirms the connection with the remote
+interceptor before retaining it as a connected client. If that setup cannot complete, or if the user socket sends a
+message before the remote interceptor has confirmed the connection, the server closes the user socket with a protocol
+error and removes any temporary connection state. This makes setup failures deterministic in tests instead of buffering
+early messages.
+
 ## Interceptor server authentication
 
 Interceptor servers can be configured to require interceptor authentication. This is **strongly recommended** if you are
 exposing the server **publicly**. Without authentication, the server is unprotected and any interceptor can connect to
-it and override the responses of any request or WebSocket message handled by the server.
+it and override the responses or messages handled by the server.
 
 To create an interceptor authentication token, use the
 [`zimic-interceptor server token create`](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-token-create)

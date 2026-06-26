@@ -85,8 +85,8 @@ export class RemoteWebSocketMessageHandler<
     return this.pending;
   }
 
-  times(minNumberOfRequests: number, maxNumberOfRequests?: number) {
-    this.implementation.times(minNumberOfRequests, maxNumberOfRequests);
+  times(minNumberOfMessages: number, maxNumberOfMessages?: number) {
+    this.implementation.times(minNumberOfMessages, maxNumberOfMessages);
     return this.pending;
   }
 

@@ -5,7 +5,17 @@ export interface SerializedWebSocketBinaryMessageData {
   data: string;
 }
 
+export interface SerializedWebSocketJSONMessageData<Schema extends WebSocketSchema = WebSocketSchema> {
+  type: 'json';
+  data: Schema;
+}
+
+export interface SerializedWebSocketTextMessageData {
+  type: 'text';
+  data: string;
+}
+
 export type SerializedWebSocketMessageData<Schema extends WebSocketSchema = WebSocketSchema> =
-  | Schema
-  | string
-  | SerializedWebSocketBinaryMessageData;
+  | SerializedWebSocketBinaryMessageData
+  | SerializedWebSocketJSONMessageData<Schema>
+  | SerializedWebSocketTextMessageData;
