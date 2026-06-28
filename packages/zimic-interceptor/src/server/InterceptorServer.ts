@@ -273,10 +273,26 @@ class InterceptorServer implements PublicInterceptorServer {
   ) => {
     this.registerWorkerSocketIfUnknown(socket);
     this.validateWebSocketHandlerCommits(handlersToRecommit);
-    this.removeWebSocketHandlersBySocket(socket);
 
-    for (const handler of handlersToRecommit) {
-      this.registerWebSocketHandler(handler, socket);
+    const existingHandlersById = new Map(
+      this.webSocketHandlers
+        .filter((handler) => handler.socket === socket)
+        .map((handler) => [handler.id, handler] as const),
+    );
+
+    for (const commit of handlersToRecommit) {
+      const existingHandler = existingHandlersById.get(commit.id);
+
+      if (existingHandler) {
+        existingHandler.baseURL = commit.baseURL;
+        existingHandlersById.delete(commit.id);
+      } else {
+        this.registerWebSocketHandler(commit, socket);
+      }
+    }
+
+    for (const removedHandler of existingHandlersById.values()) {
+      this.removeWebSocketHandler(removedHandler);
     }
 
     return {};
@@ -361,19 +377,22 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private removeWebSocketHandlersBySocket(socket: Socket) {
-    let handlerIndex = this.webSocketHandlers.findIndex((handler) => handler.socket === socket);
+    const handlersToRemove = this.webSocketHandlers.filter((handler) => handler.socket === socket);
 
-    while (handlerIndex >= 0) {
-      const [removedHandler] = this.webSocketHandlers.splice(handlerIndex, 1);
+    for (const handler of handlersToRemove) {
+      this.removeWebSocketHandler(handler);
+    }
+  }
 
-      for (const [userSocket, userHandler] of this.userWebSocketHandlers) {
-        if (userHandler.handler === removedHandler) {
-          this.userWebSocketHandlers.delete(userSocket);
-          userSocket.close(WEB_SOCKET_NORMAL_CLOSE_CODE);
-        }
+  private removeWebSocketHandler(handler: WebSocketHandler) {
+    const handlerIndex = this.webSocketHandlers.indexOf(handler);
+    removeArrayIndex(this.webSocketHandlers, handlerIndex);
+
+    for (const [userSocket, userHandler] of this.userWebSocketHandlers) {
+      if (userHandler.handler === handler) {
+        this.userWebSocketHandlers.delete(userSocket);
+        userSocket.close(WEB_SOCKET_NORMAL_CLOSE_CODE);
       }
-
-      handlerIndex = this.webSocketHandlers.findIndex((handler) => handler.socket === socket);
     }
   }
 

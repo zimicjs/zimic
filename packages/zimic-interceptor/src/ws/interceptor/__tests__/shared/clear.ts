@@ -1,7 +1,9 @@
+import { waitFor, waitForNot } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
-import { afterEach, beforeEach, expect, it } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
+import { WEB_SOCKET_NORMAL_CLOSE_CODE } from '@/utils/webSocket/constants';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
 import { WebSocketInterceptorOptions } from '../../types/options';
@@ -26,8 +28,8 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     await Promise.all(closeClients.map((closeClient) => closeClient()));
   });
 
-  async function createClient() {
-    const client = new WebSocketClient<MessageSchema>(baseURL);
+  async function createClient(url = baseURL) {
+    const client = new WebSocketClient<MessageSchema>(url);
     closeClients.push(() => client.close());
 
     await client.open();
@@ -66,6 +68,10 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         );
 
         const client = await createClient();
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
         const firstMessagePromise = waitForMessage(client);
 
         client.send(JSON.stringify({ type: 'client', index: 1 }));
@@ -75,12 +81,30 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         expect(interceptor.server.messages).toHaveLength(1);
         expect(interceptor.clients).toHaveLength(1);
 
+        const firstInterceptorClient = interceptor.clients[0];
+        let closeEvent: WebSocketClient.CloseEvent<MessageSchema> | undefined;
+        client.addEventListener('close', (event) => {
+          closeEvent = event;
+        });
+
         await interceptor.clear();
 
+        await waitFor(() => {
+          expect(closeEvent?.code).toBe(WEB_SOCKET_NORMAL_CLOSE_CODE);
+        });
         expect(firstHandler.messages).toHaveLength(0);
         expect(interceptor.server.messages).toHaveLength(0);
         expect(interceptor.clients).toHaveLength(0);
         await interceptor.checkTimes();
+
+        const staleMessageListener = vi.fn();
+        client.addEventListener('message', staleMessageListener);
+        firstInterceptorClient.send(JSON.stringify({ type: 'server', index: 1 }));
+        interceptor.server.send(JSON.stringify({ type: 'server', index: 1 }));
+
+        await waitForNot(() => {
+          expect(staleMessageListener).toHaveBeenCalled();
+        });
 
         const secondHandler = await promiseIfRemote(
           interceptor.message().respond({ type: 'server', index: 2 }).times(1),
@@ -88,6 +112,10 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         );
 
         const secondClient = await createClient();
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
         const secondMessagePromise = waitForMessage(secondClient);
 
         secondClient.send(JSON.stringify({ type: 'client', index: 2 }));
@@ -95,6 +123,48 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         await expect(secondMessagePromise).resolves.toEqual({ type: 'server', index: 2 });
         expect(secondHandler.messages).toHaveLength(1);
         await interceptor.checkTimes();
+      },
+    );
+  });
+
+  it('should clear only clients owned by the selected interceptor', async () => {
+    const firstBaseURL = `${baseURL}/first`;
+    const secondBaseURL = `${baseURL}/second`;
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, baseURL: firstBaseURL },
+      async (firstInterceptor) => {
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, baseURL: secondBaseURL },
+          async (secondInterceptor) => {
+            await promiseIfRemote(firstInterceptor.message().respond({ type: 'server', index: 1 }), firstInterceptor);
+            await promiseIfRemote(secondInterceptor.message().respond({ type: 'server', index: 2 }), secondInterceptor);
+
+            const firstClient = await createClient(firstBaseURL);
+            const secondClient = await createClient(secondBaseURL);
+
+            await waitFor(() => {
+              expect(firstInterceptor.clients).toHaveLength(1);
+              expect(secondInterceptor.clients).toHaveLength(1);
+            });
+
+            const firstCloseEventPromise = new Promise<WebSocketClient.CloseEvent<MessageSchema>>((resolve) => {
+              firstClient.addEventListener('close', resolve, { once: true });
+            });
+
+            await firstInterceptor.clear();
+
+            const firstCloseEvent = await firstCloseEventPromise;
+            expect(firstCloseEvent.code).toBe(WEB_SOCKET_NORMAL_CLOSE_CODE);
+            expect(firstInterceptor.clients).toHaveLength(0);
+            expect(secondInterceptor.clients).toHaveLength(1);
+            expect(secondClient.readyState).toBe(WebSocketClient.OPEN);
+
+            const secondMessagePromise = waitForMessage(secondClient);
+            secondClient.send(JSON.stringify({ type: 'client', index: 2 }));
+            await expect(secondMessagePromise).resolves.toEqual({ type: 'server', index: 2 });
+          },
+        );
       },
     );
   });
