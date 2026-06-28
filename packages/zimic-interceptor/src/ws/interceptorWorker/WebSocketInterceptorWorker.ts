@@ -103,6 +103,7 @@ abstract class WebSocketInterceptorWorker {
 
   abstract clearHandlers<Schema extends WebSocketSchema>(options?: {
     interceptor?: AnyWebSocketInterceptorImplementation<Schema>;
+    preserveInterceptorRegistration?: boolean;
   }): PossiblePromise<void>;
 }
 

@@ -321,10 +321,12 @@ class WebSocketInterceptorImplementation<
   }
 
   clear() {
-    const clearResult =
-      this.worker?.type === 'remote' && this.worker.isRunning
-        ? this.worker.clearHandlers({ interceptor: this })
-        : undefined;
+    const clearResult = this.worker?.isRunning
+      ? this.worker.clearHandlers({
+          interceptor: this,
+          preserveInterceptorRegistration: this.worker.type === 'local',
+        })
+      : undefined;
 
     for (const handler of this.handlers) {
       handler.clear();

@@ -3,6 +3,7 @@ import { SharedOptions as MSWWorkerSharedOptions, ws } from 'msw';
 
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
 import { removeArrayElement } from '@/utils/arrays';
+import { WEB_SOCKET_NORMAL_CLOSE_CODE } from '@/utils/webSocket/constants';
 
 import NotRunningWebSocketInterceptorError from '../interceptor/errors/NotRunningWebSocketInterceptorError';
 import UnknownWebSocketInterceptorPlatformError from '../interceptor/errors/UnknownWebSocketInterceptorPlatformError';
@@ -17,6 +18,7 @@ import WebSocketInterceptorWorker from './WebSocketInterceptorWorker';
 interface LocalWebSocketClientConnection {
   url: URL;
   send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => void;
+  close: (code?: number, reason?: string) => void;
   addEventListener: ((
     type: 'message',
     listener: (event: MessageEvent<string | ArrayBufferLike | Blob | ArrayBufferView>) => void,
@@ -219,28 +221,38 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
   clearHandlers<Schema extends WebSocketSchema>(options?: {
     interceptor?: WebSocketInterceptorImplementation<Schema>;
+    preserveInterceptorRegistration?: boolean;
   }) {
     if (!this.isRunning) {
       throw new NotRunningWebSocketInterceptorError();
     }
 
-    const removedHandlers = this.webSocketHandlers.filter((handler) => {
+    const selectedHandlers = this.webSocketHandlers.filter((handler) => {
       return options?.interceptor === undefined || handler.interceptor === options.interceptor;
     });
 
-    for (const handler of removedHandlers) {
+    for (const handler of selectedHandlers) {
       for (const [interceptorClient, registration] of handler.clients) {
         registration.connection.removeEventListener('message', registration.messageListener);
         registration.connection.removeEventListener('close', registration.closeListener);
         handler.interceptor.removeClient(interceptorClient);
+        registration.connection.close(WEB_SOCKET_NORMAL_CLOSE_CODE);
       }
 
+      handler.clients.clear();
+    }
+
+    if (options?.preserveInterceptorRegistration) {
+      return;
+    }
+
+    for (const handler of selectedHandlers) {
       removeArrayElement(this.webSocketHandlers, handler);
     }
 
     const mswWorker = this.mswWorkerOrThrow;
     const remainingHandlers = mswWorker.listHandlers().filter((handler) => {
-      return !removedHandlers.some((removedHandler) => removedHandler.mswHandler === handler);
+      return !selectedHandlers.some((selectedHandler) => selectedHandler.mswHandler === handler);
     });
 
     mswWorker.resetHandlers(...remainingHandlers);
