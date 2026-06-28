@@ -513,7 +513,7 @@ describe('Interceptor server > Web sockets', () => {
     expect(userSocket.readyState).toBe(userSocket.OPEN);
   });
 
-  it('should reset WebSocket handlers to the recommitted set', async () => {
+  it('should retain connected clients when recommitting a WebSocket handler with an updated base URL', async () => {
     server = createInternalInterceptorServer({ logUnhandledRequests: false });
     await server.start();
 
@@ -530,40 +530,184 @@ describe('Interceptor server > Web sockets', () => {
       waitForAuthentication: true,
     });
 
-    const keptBaseURL = `ws://localhost:${server.port}/kept`;
-    const removedBaseURL = `ws://localhost:${server.port}/removed`;
-
-    const keptHandler = {
+    const initialBaseURL = `ws://localhost:${server.port}/initial`;
+    const updatedBaseURL = `ws://localhost:${server.port}/updated`;
+    const handler = {
       id: crypto.randomUUID(),
-      baseURL: keptBaseURL,
+      baseURL: initialBaseURL,
     };
 
-    await webSocketClient.request('interceptors/ws/workers/commit', keptHandler);
-    await webSocketClient.request('interceptors/ws/workers/commit', {
-      id: crypto.randomUUID(),
-      baseURL: removedBaseURL,
-    });
+    await webSocketClient.request('interceptors/ws/workers/commit', handler);
 
-    await webSocketClient.request('interceptors/ws/workers/reset', [keptHandler]);
-
-    const keptSocket = new ClientSocket(keptBaseURL);
-    userSockets.push(keptSocket);
-    await waitForOpenClientSocket(keptSocket);
-    expect(keptSocket.readyState).toBe(keptSocket.OPEN);
+    const existingSocket = new ClientSocket(initialBaseURL);
+    userSockets.push(existingSocket);
+    await waitForOpenClientSocket(existingSocket);
 
     await waitFor(() => {
-      expectSingleConnectedWebSocketClient(connections, { handlerId: keptHandler.id, url: keptBaseURL });
+      expectSingleConnectedWebSocketClient(connections, { handlerId: handler.id, url: initialBaseURL });
     });
 
-    const removedSocket = new ClientSocket(removedBaseURL);
-    userSockets.push(removedSocket);
+    const closeListener = vi.fn();
+    existingSocket.addEventListener('close', closeListener);
+
+    await webSocketClient.request('interceptors/ws/workers/reset', [{ ...handler, baseURL: updatedBaseURL }]);
+
+    const messagePromise = new Promise<ClientSocket.MessageEvent>((resolve) => {
+      existingSocket.addEventListener('message', resolve, { once: true });
+    });
+    webSocketClient.send('interceptors/ws/messages/send', {
+      clientId: connections[0].clientId,
+      data: { type: 'text', data: 'retained' },
+    });
+
+    await expect(messagePromise).resolves.toHaveProperty('data', 'retained');
+    expect(closeListener).not.toHaveBeenCalled();
+
+    const updatedSocket = new ClientSocket(updatedBaseURL);
+    userSockets.push(updatedSocket);
+    await waitForOpenClientSocket(updatedSocket);
+
+    await waitFor(() => {
+      expect(connections).toHaveLength(2);
+      expect(connections[1]).toMatchObject({ handlerId: handler.id, url: updatedBaseURL });
+    });
+
+    const initialSocket = new ClientSocket(initialBaseURL);
+    userSockets.push(initialSocket);
 
     const closeEvent = await new Promise<ClientSocket.CloseEvent>((resolve) => {
-      removedSocket.addEventListener('close', resolve);
+      initialSocket.addEventListener('close', resolve);
     });
 
     expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
     expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
+  });
+
+  it('should close connected clients when their WebSocket handler is omitted from a reset', async () => {
+    server = createInternalInterceptorServer({ logUnhandledRequests: false });
+    await server.start();
+
+    webSocketClient = new WebSocketClient({
+      url: `ws://localhost:${server.port}`,
+    });
+
+    const connections = collectConnectedWebSocketClients(webSocketClient);
+    const closedClientIds: string[] = [];
+    webSocketClient.onChannel('event', 'interceptors/ws/clients/close', ({ data }) => {
+      closedClientIds.push(data.clientId);
+    });
+
+    await webSocketClient.start({
+      parameters: {
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+      },
+      waitForAuthentication: true,
+    });
+
+    const handler = {
+      id: crypto.randomUUID(),
+      baseURL: `ws://localhost:${server.port}/removed`,
+    };
+    await webSocketClient.request('interceptors/ws/workers/commit', handler);
+
+    const socket = new ClientSocket(handler.baseURL);
+    userSockets.push(socket);
+    await waitForOpenClientSocket(socket);
+
+    await waitFor(() => {
+      expectSingleConnectedWebSocketClient(connections, { handlerId: handler.id, url: handler.baseURL });
+    });
+
+    const closeEventPromise = new Promise<ClientSocket.CloseEvent>((resolve) => {
+      socket.addEventListener('close', resolve, { once: true });
+    });
+
+    await webSocketClient.request('interceptors/ws/workers/reset', []);
+
+    const closeEvent = await closeEventPromise;
+    expect(closeEvent.code).toBe(WEB_SOCKET_NORMAL_CLOSE_CODE);
+
+    await waitFor(() => {
+      expect(closedClientIds).toEqual([connections[0].clientId]);
+    });
+  });
+
+  it('should retain and remove the correct connected clients in a mixed WebSocket handler reset', async () => {
+    server = createInternalInterceptorServer({ logUnhandledRequests: false });
+    await server.start();
+
+    webSocketClient = new WebSocketClient({
+      url: `ws://localhost:${server.port}`,
+    });
+
+    const connections = collectConnectedWebSocketClients(webSocketClient);
+    const closedClientIds: string[] = [];
+    webSocketClient.onChannel('event', 'interceptors/ws/clients/close', ({ data }) => {
+      closedClientIds.push(data.clientId);
+    });
+
+    await webSocketClient.start({
+      parameters: {
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+      },
+      waitForAuthentication: true,
+    });
+
+    const retainedHandler = {
+      id: crypto.randomUUID(),
+      baseURL: `ws://localhost:${server.port}/retained`,
+    };
+    const removedHandler = {
+      id: crypto.randomUUID(),
+      baseURL: `ws://localhost:${server.port}/removed`,
+    };
+
+    await webSocketClient.request('interceptors/ws/workers/commit', retainedHandler);
+    await webSocketClient.request('interceptors/ws/workers/commit', removedHandler);
+
+    const retainedSocket = new ClientSocket(retainedHandler.baseURL);
+    const removedSocket = new ClientSocket(removedHandler.baseURL);
+    userSockets.push(retainedSocket, removedSocket);
+    await Promise.all([waitForOpenClientSocket(retainedSocket), waitForOpenClientSocket(removedSocket)]);
+
+    await waitFor(() => {
+      expect(connections).toHaveLength(2);
+    });
+
+    const retainedConnection = connections.find((connection) => connection.handlerId === retainedHandler.id);
+    const removedConnection = connections.find((connection) => connection.handlerId === removedHandler.id);
+    expect(retainedConnection).toBeDefined();
+    expect(removedConnection).toBeDefined();
+
+    if (!retainedConnection || !removedConnection) {
+      throw new Error('Expected retained and removed WebSocket client connections.');
+    }
+
+    const retainedCloseListener = vi.fn();
+    retainedSocket.addEventListener('close', retainedCloseListener);
+    const removedCloseEventPromise = new Promise<ClientSocket.CloseEvent>((resolve) => {
+      removedSocket.addEventListener('close', resolve, { once: true });
+    });
+
+    await webSocketClient.request('interceptors/ws/workers/reset', [retainedHandler]);
+
+    const removedCloseEvent = await removedCloseEventPromise;
+    expect(removedCloseEvent.code).toBe(WEB_SOCKET_NORMAL_CLOSE_CODE);
+
+    const messagePromise = new Promise<ClientSocket.MessageEvent>((resolve) => {
+      retainedSocket.addEventListener('message', resolve, { once: true });
+    });
+    webSocketClient.send('interceptors/ws/messages/send', {
+      clientId: retainedConnection.clientId,
+      data: { type: 'text', data: 'retained' },
+    });
+
+    await expect(messagePromise).resolves.toHaveProperty('data', 'retained');
+    expect(retainedCloseListener).not.toHaveBeenCalled();
+
+    await waitFor(() => {
+      expect(closedClientIds).toEqual([removedConnection.clientId]);
+    });
   });
 
   it('should preserve WebSocket handler registrations after rejecting an invalid reset batch', async () => {
