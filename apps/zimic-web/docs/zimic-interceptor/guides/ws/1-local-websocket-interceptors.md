@@ -237,3 +237,11 @@ interceptor.server.send(JSON.stringify({ type: 'presence', data: { online: true 
 
 Server-originated sends are delivered to connected clients, but they are not added to handler or client saved message
 lists. Saved messages are produced by matched client-to-server messages.
+
+### Incoming message parsing
+
+Message handlers automatically parse text frames containing valid JSON before matching restrictions, running callbacks,
+or saving messages. Non-JSON text and binary frames retain their original data.
+
+For string-based schemas, JSON-looking text such as `'{"type":"message"}'` is therefore exposed as parsed JSON rather
+than as a string. Avoid JSON-looking text when the message must remain a string.

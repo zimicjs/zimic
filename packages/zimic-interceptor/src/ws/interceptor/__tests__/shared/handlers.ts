@@ -136,6 +136,10 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
           const client = await createClient<TextMessage>();
           const messagePromise = waitForMessage(client);
 
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(1);
+          });
+
           client.send('ping');
 
           await expect(messagePromise).resolves.toBe('pong');
@@ -244,6 +248,10 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
           client.binaryType = 'arraybuffer';
           const messagePromise = waitForMessage(client);
 
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(1);
+          });
+
           client.send(requestMessage);
 
           const message = await messagePromise;
@@ -320,22 +328,55 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
     });
   }
 
-  it('should preserve raw string messages that look like JSON', async () => {
+  it('should parse JSON text before unrestricted handler callbacks', async () => {
+    await usingWebSocketInterceptor<ChatMessage>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const requestMessage: ChatMessage = { type: 'client', text: 'hello' };
+        const effect = vi.fn();
+        const handler = await promiseIfRemote(interceptor.message().effect(effect).times(1), interceptor);
+
+        const client = await createClient<ChatMessage>();
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        client.send(JSON.stringify(requestMessage));
+
+        await waitFor(() => {
+          expect(effect).toHaveBeenCalledWith(requestMessage, expect.any(Object));
+        });
+
+        expect(handler.messages).toHaveLength(1);
+        expect(handler.messages[0].data).toEqual(requestMessage);
+        expect(interceptor.clients[0].messages[0].data).toEqual(requestMessage);
+
+        await handler.checkTimes();
+      },
+    );
+  });
+
+  it('should preserve non-JSON text before unrestricted handler callbacks', async () => {
     await usingWebSocketInterceptor<TextMessage>(
       { ...interceptorOptions, messageSaving: { enabled: true } },
       async (interceptor) => {
-        const requestMessage = '{"type":"binary","data":"AQID"}';
-        const handler = await promiseIfRemote(
-          interceptor.message().with(requestMessage).respond('pong').times(1),
-          interceptor,
-        );
+        const requestMessage = 'plain text';
+        const effect = vi.fn();
+        const handler = await promiseIfRemote(interceptor.message().effect(effect).times(1), interceptor);
 
         const client = await createClient<TextMessage>();
-        const messagePromise = waitForMessage(client);
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
 
         client.send(requestMessage);
 
-        await expect(messagePromise).resolves.toBe('pong');
+        await waitFor(() => {
+          expect(effect).toHaveBeenCalledWith(requestMessage, expect.any(Object));
+        });
+
         expect(handler.messages).toHaveLength(1);
         expect(handler.messages[0].data).toBe(requestMessage);
         expect(interceptor.clients[0].messages[0].data).toBe(requestMessage);
@@ -345,28 +386,31 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
     );
   });
 
-  it('should preserve raw string messages that look like JSON for computed restrictions', async () => {
-    await usingWebSocketInterceptor<TextMessage>(
+  it('should preserve binary data before unrestricted handler callbacks', async () => {
+    await usingWebSocketInterceptor<BinaryMessage>(
       { ...interceptorOptions, messageSaving: { enabled: true } },
       async (interceptor) => {
-        const requestMessage = '{"type":"binary","data":"AQID"}';
-        const handler = await promiseIfRemote(
-          interceptor
-            .message()
-            .with((message) => message === requestMessage)
-            .times(1),
-          interceptor,
-        );
+        const requestMessage = createBinaryMessage(0xff, 0x00);
+        const effect = vi.fn();
+        const handler = await promiseIfRemote(interceptor.message().effect(effect).times(1), interceptor);
 
-        const client = await createClient<TextMessage>();
+        const client = await createClient<BinaryMessage>();
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
         client.send(requestMessage);
 
         await waitFor(() => {
-          expect(handler.messages).toHaveLength(1);
+          expect(effect).toHaveBeenCalledOnce();
         });
 
-        expect(handler.messages[0].data).toBe(requestMessage);
-        expect(interceptor.clients[0].messages[0].data).toBe(requestMessage);
+        const receivedMessage = effect.mock.calls[0][0] as Blob | ArrayBuffer;
+        expect(await readBytes(receivedMessage)).toEqual([0xff, 0x00]);
+        expect(handler.messages).toHaveLength(1);
+        expect(await readBytes(handler.messages[0].data)).toEqual([0xff, 0x00]);
+        expect(await readBytes(interceptor.clients[0].messages[0].data)).toEqual([0xff, 0x00]);
 
         await handler.checkTimes();
       },
@@ -382,6 +426,10 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
         const client = await createClient();
         const messageListener = vi.fn();
         client.addEventListener('message', messageListener);
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
 
         client.send(JSON.stringify({ type: 'client', index: 1 }));
 
@@ -416,6 +464,10 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
         const client = await createClient();
         const messageListener = vi.fn();
         client.addEventListener('message', messageListener);
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
 
         client.send(JSON.stringify({ type: 'client', index: 1 }));
 

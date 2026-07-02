@@ -11,7 +11,13 @@ import {
 it('should normalize text, JSON, object, and Blob WebSocket message data', async () => {
   expect(normalizeWebSocketMessageData('plain text')).toBe('plain text');
   expect(normalizeWebSocketMessageData('{invalid')).toBe('{invalid');
+  expect(normalizeWebSocketMessageData('[invalid')).toBe('[invalid');
   expect(normalizeWebSocketMessageData('{"type":"message"}')).toEqual({ type: 'message' });
+  expect(normalizeWebSocketMessageData('["message"]')).toEqual(['message']);
+  expect(normalizeWebSocketMessageData('"message"')).toBe('message');
+  expect(normalizeWebSocketMessageData('1')).toBe(1);
+  expect(normalizeWebSocketMessageData('true')).toBe(true);
+  expect(normalizeWebSocketMessageData('null')).toBe(null);
   expect(normalizeWebSocketMessageData({ type: 'message' })).toEqual({ type: 'message' });
 
   const blob = new Blob([new Uint8Array([1, 2, 3])]);

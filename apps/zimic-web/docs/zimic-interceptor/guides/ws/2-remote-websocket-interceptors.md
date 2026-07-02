@@ -306,8 +306,11 @@ JSON, and binary frames remain binary when they pass through the interceptor ser
 envelope for remote messages, so user payloads such as `{ type: 'binary', data: '...' }` are still treated as JSON when
 they were sent as JSON, not as transport metadata.
 
-Binary messages can be sent with `Blob`, `ArrayBuffer`, typed arrays, and `DataView` values. Raw text frames that look
-like JSON, such as `'{"type":"message"}'`, remain text when the schema expects strings.
+Before matching restrictions or running callbacks, handlers parse text frames containing valid JSON. Non-JSON text and
+binary frames retain their original data. For string-based schemas, JSON-looking text such as `'{"type":"message"}'` is
+therefore exposed as parsed JSON rather than as a string. Avoid JSON-looking text when the message must remain a string.
+
+Binary messages can be sent with `Blob`, `ArrayBuffer`, typed arrays, and `DataView` values.
 
 ### Remote connection setup failures
 

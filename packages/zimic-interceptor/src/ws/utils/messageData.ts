@@ -26,13 +26,6 @@ export function normalizeBufferSource(bufferSource: BufferSource): ArrayBuffer {
 }
 
 function tryParseJSONMessageData(data: string) {
-  const trimmedData = data.trim();
-  const couldBeJSONObject = trimmedData.startsWith('{') || trimmedData.startsWith('[');
-
-  if (!couldBeJSONObject) {
-    return data;
-  }
-
   try {
     return JSON.parse(data);
   } catch {

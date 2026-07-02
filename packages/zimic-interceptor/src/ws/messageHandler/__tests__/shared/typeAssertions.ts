@@ -2,11 +2,17 @@ import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
+import { InterceptedWebSocketInterceptorMessage } from '../../../interceptor/types/messages';
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import type { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
 import type { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
 import type { WebSocketMessageHandlerApplyContext } from '../../WebSocketMessageHandlerImplementation';
-import { ChatMessage, Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
+import { Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
+
+type CreateMessage = Extract<Schema, { type: 'create' }>;
+type PrioritizedCreateMessage = CreateMessage & {
+  body: CreateMessage['body'] & { priority: number };
+};
 
 export function declareTypeAssertionWebSocketMessageHandlerTests(
   options: SharedWebSocketMessageHandlerTestOptions & {
@@ -43,31 +49,48 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
     });
   });
 
-  it('should narrow message schemas through computed restrictions', async () => {
+  it('should preserve the root schema while chaining static and computed restrictions', async () => {
     const baseURL = await getBaseURL(type);
 
-    await usingWebSocketInterceptor<Schema>({ type, baseURL }, (interceptor) => {
-      function isCreateMessage(message: ChatMessage): message is Extract<ChatMessage, { type: 'create' }> {
-        return message.type === 'create';
+    await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+      function hasPriority(message: CreateMessage): message is PrioritizedCreateMessage {
+        return message.body.priority !== undefined;
       }
 
-      expect(isCreateMessage({ type: 'create', body: { text: 'hello' } })).toBe(true);
-      expect(isCreateMessage({ type: 'delete', id: '1' })).toBe(false);
+      expect(hasPriority({ type: 'create', body: { text: 'hello', priority: 1 } })).toBe(true);
+      expect(hasPriority({ type: 'create', body: { text: 'hello' } })).toBe(false);
 
-      function effect(
-        message: Extract<Schema, { type: 'create' }>,
-        context: WebSocketMessageHandlerApplyContext<Schema>,
-      ) {
-        expectTypeOf(message).toEqualTypeOf<Extract<Schema, { type: 'create' }>>();
+      const pendingHandler = interceptor.message().with({ type: 'create' });
+      const syncedHandler = await pendingHandler;
+      const handler = syncedHandler.with(hasPriority);
+
+      handler.delay((message) => {
+        expectTypeOf(message).toEqualTypeOf<PrioritizedCreateMessage>();
+        return message.body.priority;
+      });
+
+      handler.effect((message, context) => {
+        expectTypeOf(message).toEqualTypeOf<PrioritizedCreateMessage>();
+        expectTypeOf(context).toEqualTypeOf<WebSocketMessageHandlerApplyContext<Schema>>();
+
+        context.sender.send(JSON.stringify({ type: 'delete', id: message.body.text }));
+        context.receiver.send(JSON.stringify({ type: 'create', body: { text: 'response' } }));
+      });
+
+      handler.respond((message, context) => {
+        expectTypeOf(message).toEqualTypeOf<PrioritizedCreateMessage>();
         expectTypeOf(context.sender.messages).toEqualTypeOf<typeof context.receiver.messages>();
-      }
 
-      effect({ type: 'create', body: { text: 'hello' } }, {
-        sender: { messages: [] },
-        receiver: { messages: [] },
-      } as unknown as Parameters<typeof effect>[1]);
+        return { type: 'delete', id: message.body.text };
+      });
 
-      interceptor.message().with(isCreateMessage).effect(effect);
+      handler.respond({ type: 'delete', id: '1' });
+
+      expectTypeOf<typeof handler.messages>().toEqualTypeOf<
+        readonly InterceptedWebSocketInterceptorMessage<PrioritizedCreateMessage, Schema>[]
+      >();
+
+      await handler;
     });
   });
 
@@ -107,6 +130,21 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
       invalidResponseFactory();
       // @ts-expect-error Invalid computed response.
       interceptor.message().respond(invalidResponseFactory);
+
+      const restrictedHandler = interceptor
+        .message()
+        .with({ type: 'create' })
+        .with((message): message is CreateMessage => {
+          return message.body.text.length > 0;
+        });
+
+      restrictedHandler.respond({ type: 'delete', id: '1' });
+
+      // @ts-expect-error Invalid restriction after narrowing.
+      restrictedHandler.with({ type: 'delete' });
+
+      // @ts-expect-error Invalid response after narrowing.
+      restrictedHandler.respond({ type: 'update' });
     });
   });
 }

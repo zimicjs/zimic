@@ -702,22 +702,34 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
     it('should narrow handler messages from installed schema restrictions', async () => {
       const creatorClient = userInterceptor.clients[0];
 
-      const creationHandler = await userInterceptor.message().from(creatorClient).with({ type: 'user:create' });
+      const creationHandler = await userInterceptor
+        .message()
+        .from(creatorClient)
+        .with({ type: 'user:create' })
+        .with({ data: { email: 'email@example.com' } });
 
       expectTypeOf(creationHandler.messages).toEqualTypeOf<
         readonly InterceptedWebSocketInterceptorMessage<UserWebSocketMessage<'user:create'>, UserWebSocketSchema>[]
       >();
 
-      creationHandler.respond((message, context) => {
-        expectTypeOf(message).toEqualTypeOf<UserWebSocketMessage<'user:create'>>();
-        expectTypeOf(context.sender).toEqualTypeOf<WebSocketInterceptorClient<UserWebSocketSchema>>();
-        expectTypeOf(context.receiver).toEqualTypeOf<WebSocketInterceptorClient<UserWebSocketSchema>>();
+      await Promise.resolve(
+        creationHandler
+          .delay((message) => {
+            expectTypeOf(message).toEqualTypeOf<UserWebSocketMessage<'user:create'>>();
+            return message.data.name.length;
+          })
+          .effect((message, context) => {
+            expectTypeOf(message).toEqualTypeOf<UserWebSocketMessage<'user:create'>>();
+            expectTypeOf(context.sender).toEqualTypeOf<WebSocketInterceptorClient<UserWebSocketSchema>>();
+            expectTypeOf(context.receiver).toEqualTypeOf<WebSocketInterceptorClient<UserWebSocketSchema>>();
 
-        return {
-          type: 'user:create:error',
-          data: { code: 'validation_error', message: message.data.name },
-        };
-      });
+            context.receiver.send(JSON.stringify({ type: 'user:delete', data: { id: crypto.randomUUID() } }));
+          })
+          .respond((message) => ({
+            type: 'user:create:error',
+            data: { code: 'validation_error', message: message.data.name },
+          })),
+      );
     });
 
     it('should reject invalid installed WebSocket declarations', () => {

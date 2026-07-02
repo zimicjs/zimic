@@ -25,7 +25,6 @@ import {
 } from './types/public';
 import {
   UnmatchedWebSocketInterceptorMessageGroup,
-  WebSocketMessageHandlerComputedRestriction,
   WebSocketMessageHandlerRestriction,
   WebSocketMessageHandlerRestrictionDiffs,
   WebSocketMessageHandlerRestrictionMatch,
@@ -182,7 +181,8 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     message: Schema,
     context: WebSocketMessageHandlerApplyContext<Schema>,
   ): Promise<WebSocketMessageHandlerMessageMatch> {
-    const restrictionsMatch = await this.matchesRestrictions(message, context);
+    const normalizedMessage = normalizeWebSocketMessageData(message);
+    const restrictionsMatch = await this.matchesRestrictions(normalizedMessage, context);
 
     if (!restrictionsMatch.success) {
       return { success: false, cause: 'unmatchedRestrictions', diff: restrictionsMatch.diff };
@@ -194,13 +194,13 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
       return { success: false, cause: 'exceededNumberOfMessages' };
     }
 
-    return { success: true, message: restrictionsMatch.message ?? normalizeWebSocketMessageData(message) };
+    return { success: true, message: restrictionsMatch.message };
   }
 
   private async matchesRestrictions(
     message: Schema,
     context: WebSocketMessageHandlerApplyContext<Schema>,
-  ): Promise<WebSocketMessageHandlerRestrictionMatch & { message?: Schema }> {
+  ): Promise<WebSocketMessageHandlerRestrictionMatch<Schema>> {
     if (this.restrictedSender && context.sender !== this.restrictedSender) {
       return {
         success: false,
@@ -208,71 +208,36 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
       };
     }
 
-    let restrictedMessage = message;
+    const restrictedMessage = message;
 
     for (const restriction of this.restrictions) {
       if (this.isComputedMessageRestriction(restriction)) {
-        const computedRestrictionMessages = this.getComputedRestrictionMessageData(restrictedMessage);
-        const matchedRestrictionMessage = await this.findComputedRestrictionMatch(
-          restriction,
-          computedRestrictionMessages,
-        );
+        const matchesComputedRestriction = await restriction(this.assumeMessageMatchesRestrictions(restrictedMessage));
 
-        if (!matchedRestrictionMessage.success) {
+        if (!matchesComputedRestriction) {
           return {
             success: false,
             diff: { computed: { expected: true, received: false } },
           };
         }
-
-        restrictedMessage = matchedRestrictionMessage.message;
         continue;
       }
 
-      const restrictionMessage = this.getStaticRestrictionMessageData(restrictedMessage, restriction);
-      const matchesStaticRestriction = await this.matchesStaticMessageRestriction(restrictionMessage, restriction);
+      const matchesStaticRestriction = await this.matchesStaticMessageRestriction(restrictedMessage, restriction);
 
       if (!matchesStaticRestriction) {
         return {
           success: false,
-          diff: { data: { expected: restriction, received: restrictionMessage } },
+          diff: { data: { expected: restriction, received: restrictedMessage } },
         };
       }
-
-      restrictedMessage = restrictionMessage;
     }
 
-    return {
-      success: true,
-      message: this.restrictions.length > 0 ? restrictedMessage : normalizeWebSocketMessageData(message),
-    };
+    return { success: true, message: restrictedMessage };
   }
 
   private isComputedMessageRestriction(restriction: WebSocketMessageHandlerRestriction<RestrictedSchema>) {
     return typeof restriction === 'function';
-  }
-
-  private getComputedRestrictionMessageData(message: Schema) {
-    const normalizedMessage = normalizeWebSocketMessageData(message);
-
-    if (typeof message === 'string' && normalizedMessage !== message) {
-      return [message, normalizedMessage];
-    }
-
-    return [normalizedMessage];
-  }
-
-  private async findComputedRestrictionMatch(
-    restriction: WebSocketMessageHandlerComputedRestriction<RestrictedSchema>,
-    messages: Schema[],
-  ) {
-    for (const message of messages) {
-      if (await restriction(this.assumeMessageMatchesRestrictions(message))) {
-        return { success: true as const, message };
-      }
-    }
-
-    return { success: false as const };
   }
 
   private async matchesStaticMessageRestriction(
@@ -290,17 +255,6 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     }
 
     return jsonContains(message as JSONValue, restriction as JSONValue);
-  }
-
-  private getStaticRestrictionMessageData(
-    message: Schema,
-    restriction: WebSocketMessageHandlerStaticRestriction<RestrictedSchema>,
-  ) {
-    if (typeof restriction === 'string') {
-      return message;
-    }
-
-    return normalizeWebSocketMessageData(message);
   }
 
   private async binaryMessageDataEquals(actual: Blob | BufferSource, expected: Blob | BufferSource) {

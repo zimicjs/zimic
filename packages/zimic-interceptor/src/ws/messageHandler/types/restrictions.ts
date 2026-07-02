@@ -41,9 +41,9 @@ export interface WebSocketMessageHandlerRestrictionDiffs<Schema extends WebSocke
   data?: WebSocketMessageHandlerRestrictionDiff<WebSocketMessageHandlerStaticRestriction<Schema> | Schema>;
 }
 
-export type WebSocketMessageHandlerRestrictionMatch =
-  | { success: true }
-  | { success: false; diff: WebSocketMessageHandlerRestrictionDiffs };
+export type WebSocketMessageHandlerRestrictionMatch<Schema extends WebSocketSchema = WebSocketSchema> =
+  | { success: true; message: Schema }
+  | { success: false; diff: WebSocketMessageHandlerRestrictionDiffs<Schema> };
 
 export interface UnmatchedWebSocketInterceptorMessageGroup<Schema extends WebSocketSchema = WebSocketSchema> {
   message: Schema;
