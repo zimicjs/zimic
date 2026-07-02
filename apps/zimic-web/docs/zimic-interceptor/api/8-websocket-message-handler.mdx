@@ -20,6 +20,16 @@ A WebSocket message handler to observe client-to-server messages, run effects, a
 multiple handlers of the same interceptor match the same message, the _last_ handler created with
 [`interceptor.message()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptormessage) will be used.
 
+:::info INFO: <span>Incoming message parsing</span>
+
+Before matching restrictions or running callbacks, handlers parse text frames containing valid JSON. Other text and
+binary frames retain their original data.
+
+This means a text frame such as `'{"type":"message"}'` is exposed to handlers as `{ type: 'message' }`, including when
+the interceptor uses a string-based schema. Avoid JSON-looking text when the message must remain a string.
+
+:::
+
 :::tip TIP: <span>Awaiting remote `WebSocketMessageHandler` operations</span>
 
 If you are using a remote interceptor, make sure to `await` the handler before opening clients or sending messages. Many
@@ -112,8 +122,9 @@ await handler.with((message) => matchesMessage);
 **Returns**: `WebSocketMessageHandler<Schema, RestrictedSchema>`
 
 The same handler, now considering the specified restriction. Static restrictions and computed type-guard restrictions
-can narrow the handler's message type for later operations. Boolean predicate restrictions keep the current message
-type.
+can narrow the handler's message type for later operations. Chained restrictions continue narrowing the matched message
+without narrowing the interceptor schema used by responses or callback client handles. Boolean predicate restrictions
+keep the current message type.
 
 ## `handler.delay()`
 

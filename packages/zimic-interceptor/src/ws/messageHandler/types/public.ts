@@ -49,7 +49,7 @@ type WebSocketMessageHandlerSchemaWithRestriction<Schema extends WebSocketSchema
   Restriction extends WebSocketMessageHandlerComputedTypeGuardRestriction<Schema, infer Predicate>
     ? [Predicate] extends [never]
       ? Schema
-      : Extract<Schema, Predicate>
+      : Predicate
     : Restriction extends WebSocketMessageHandlerStaticRestriction<Schema>
       ? Extract<Schema, Restriction>
       : Schema;
@@ -66,7 +66,7 @@ export interface LocalWebSocketMessageHandler<
   with: <Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
     restriction: Restriction,
   ) => LocalWebSocketMessageHandler<
-    RestrictedSchema,
+    Schema,
     WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>
   >;
 
@@ -98,7 +98,7 @@ export interface SyncedRemoteWebSocketMessageHandler<
   with: <Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
     restriction: Restriction,
   ) => PendingRemoteWebSocketMessageHandler<
-    RestrictedSchema,
+    Schema,
     WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>
   >;
 
