@@ -8,6 +8,10 @@ import { random } from '@/utils/numbers';
 import WebSocketTimesCheckError from '../errors/WebSocketTimesCheckError';
 import WebSocketTimesDeclarationPointer from '../errors/WebSocketTimesDeclarationPointer';
 import { InterceptedWebSocketInterceptorMessage, WebSocketInterceptorClient } from '../interceptor/types/messages';
+import {
+  InternalWebSocketInterceptorClient,
+  InternalWebSocketInterceptorServer,
+} from '../interceptor/WebSocketInterceptorHandle';
 import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
 import {
   isWebSocketBinaryMessageData,
@@ -42,8 +46,8 @@ export type WebSocketMessageHandlerMessageMatch =
   | { success: false; cause: 'unmatchedRestrictions'; diff: WebSocketMessageHandlerRestrictionDiffs<WebSocketSchema> };
 
 export interface WebSocketMessageHandlerApplyContext<Schema extends WebSocketSchema> {
-  sender: WebSocketInterceptorClient<Schema>;
-  receiver: WebSocketInterceptorClient<Schema>;
+  sender: InternalWebSocketInterceptorClient<Schema>;
+  receiver: InternalWebSocketInterceptorServer<Schema>;
 }
 
 class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, RestrictedSchema extends Schema = Schema> {

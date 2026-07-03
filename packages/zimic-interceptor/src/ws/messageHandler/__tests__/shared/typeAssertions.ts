@@ -2,11 +2,14 @@ import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
-import { InterceptedWebSocketInterceptorMessage } from '../../../interceptor/types/messages';
+import {
+  InterceptedWebSocketInterceptorMessage,
+  WebSocketInterceptorClient,
+  WebSocketInterceptorServer,
+} from '../../../interceptor/types/messages';
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import type { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
 import type { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
-import type { WebSocketMessageHandlerApplyContext } from '../../WebSocketMessageHandlerImplementation';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
 
 type CreateMessage = Extract<Schema, { type: 'create' }>;
@@ -71,7 +74,8 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
 
       handler.effect((message, context) => {
         expectTypeOf(message).toEqualTypeOf<PrioritizedCreateMessage>();
-        expectTypeOf(context).toEqualTypeOf<WebSocketMessageHandlerApplyContext<Schema>>();
+        expectTypeOf(context.sender).toEqualTypeOf<WebSocketInterceptorClient<Schema>>();
+        expectTypeOf(context.receiver).toEqualTypeOf<WebSocketInterceptorServer<Schema>>();
 
         context.sender.send(JSON.stringify({ type: 'delete', id: message.body.text }));
         context.receiver.send(JSON.stringify({ type: 'create', body: { text: 'response' } }));
@@ -79,7 +83,8 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
 
       handler.respond((message, context) => {
         expectTypeOf(message).toEqualTypeOf<PrioritizedCreateMessage>();
-        expectTypeOf(context.sender.messages).toEqualTypeOf<typeof context.receiver.messages>();
+        expectTypeOf(context.sender).toEqualTypeOf<WebSocketInterceptorClient<Schema>>();
+        expectTypeOf(context.receiver).toEqualTypeOf<WebSocketInterceptorServer<Schema>>();
 
         return { type: 'delete', id: message.body.text };
       });

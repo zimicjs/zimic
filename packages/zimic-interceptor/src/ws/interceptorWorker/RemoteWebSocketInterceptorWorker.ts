@@ -9,8 +9,8 @@ import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 
 import NotRunningWebSocketInterceptorError from '../interceptor/errors/NotRunningWebSocketInterceptorError';
 import UnknownWebSocketInterceptorPlatformError from '../interceptor/errors/UnknownWebSocketInterceptorPlatformError';
-import { WebSocketInterceptorClient } from '../interceptor/types/messages';
 import { WebSocketInterceptorPlatform } from '../interceptor/types/options';
+import { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
 import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
 import { deserializeWebSocketMessageData, serializeWebSocketMessageData } from '../utils/messageData';
 import { RemoteWebSocketInterceptorWorkerOptions } from './types/options';
@@ -21,7 +21,8 @@ interface WebSocketHandler {
   baseURL: string;
   interceptor: AnyWebSocketInterceptorImplementation;
   commitPromise: Promise<void>;
-  clients: Map<string, WebSocketInterceptorClient<WebSocketSchema>>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  clients: Map<string, InternalWebSocketInterceptorClient<any>>;
 }
 
 class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
@@ -142,7 +143,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   }
 
   async sendToClient<Schema extends WebSocketSchema>(
-    client: WebSocketInterceptorClient<Schema>,
+    client: InternalWebSocketInterceptorClient<Schema>,
     data: WebSocketMessageData<Schema>,
   ) {
     const clientEntry = this.findClientEntry(client);
@@ -189,7 +190,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     });
 
     // The registry is intentionally schema-erased because one remote worker owns interceptors for any schema.
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     handler.clients.set(connection.clientId, client);
     handler.interceptor.addClient(client);
 
@@ -239,7 +239,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     return Array.from(this.webSocketHandlers.values()).find((handler) => handler.interceptor === interceptor);
   }
 
-  private findClientEntry<Schema extends WebSocketSchema>(client: WebSocketInterceptorClient<Schema>) {
+  private findClientEntry<Schema extends WebSocketSchema>(client: InternalWebSocketInterceptorClient<Schema>) {
     for (const handler of this.webSocketHandlers.values()) {
       for (const [clientId, handlerClient] of handler.clients) {
         if (handlerClient === client) {

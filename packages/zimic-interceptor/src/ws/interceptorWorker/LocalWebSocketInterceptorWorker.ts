@@ -7,7 +7,7 @@ import { WEB_SOCKET_NORMAL_CLOSE_CODE } from '@/utils/webSocket/constants';
 
 import NotRunningWebSocketInterceptorError from '../interceptor/errors/NotRunningWebSocketInterceptorError';
 import UnknownWebSocketInterceptorPlatformError from '../interceptor/errors/UnknownWebSocketInterceptorPlatformError';
-import { WebSocketInterceptorClient } from '../interceptor/types/messages';
+import { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
 import WebSocketInterceptorImplementation, {
   AnyWebSocketInterceptorImplementation,
 } from '../interceptor/WebSocketInterceptorImplementation';
@@ -42,7 +42,7 @@ interface WebSocketHandler {
   link: ReturnType<typeof ws.link>;
   mswHandler: MSWWebSocketHandler;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  clients: Map<WebSocketInterceptorClient<any>, WebSocketClientRegistration>;
+  clients: Map<InternalWebSocketInterceptorClient<any>, WebSocketClientRegistration>;
 }
 
 class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
@@ -191,7 +191,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   }
 
   sendToClient<Schema extends WebSocketSchema>(
-    client: WebSocketInterceptorClient<Schema>,
+    client: InternalWebSocketInterceptorClient<Schema>,
     data: WebSocketMessageData<Schema>,
   ) {
     const handler = this.findHandlerByClient(client);
@@ -209,7 +209,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
   }
 
-  private findHandlerByClient<Schema extends WebSocketSchema>(client: WebSocketInterceptorClient<Schema>) {
+  private findHandlerByClient<Schema extends WebSocketSchema>(client: InternalWebSocketInterceptorClient<Schema>) {
     return this.webSocketHandlers.find((handler) => handler.clients.has(client));
   }
 

@@ -9,6 +9,7 @@ import {
   RemoteWebSocketMessageHandler,
   WebSocketInterceptor,
   WebSocketInterceptorClient,
+  WebSocketInterceptorServer,
   WebSocketMessageHandlerComputedRestriction,
   WebSocketMessageHandlerMessageCallback,
   WebSocketMessageHandlerStaticRestriction,
@@ -148,18 +149,9 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
     for (const client of interceptor.clients) {
       if (notifiedClients.includes(client)) {
         expect(client.messages).toHaveLength(1);
-
-        if (client.messages[0].sender === interceptor.server) {
-          expect(client.messages[0]).toEqual<InterceptedWebSocketInterceptorMessage<Schema>>({
-            data: message,
-            sender: interceptor.server,
-            receiver: client,
-          });
-        } else {
-          expect(client.messages[0].data).toEqual(expectedClientMessage);
-          expect(client.messages[0].sender).toBe(client);
-          expect(client.messages[0].receiver).toBe(interceptor.server);
-        }
+        expect(client.messages[0].data).toEqual(expectedClientMessage);
+        expect(client.messages[0].sender).toBe(client);
+        expect(client.messages[0].receiver).toBe(interceptor.server);
       } else {
         expect(client.messages).toHaveLength(0);
       }
@@ -693,7 +685,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
           message: UserWebSocketSchema,
           context: {
             sender: WebSocketInterceptorClient<UserWebSocketSchema>;
-            receiver: WebSocketInterceptorClient<UserWebSocketSchema>;
+            receiver: WebSocketInterceptorServer<UserWebSocketSchema>;
           },
         ]
       >();
@@ -721,7 +713,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
           .effect((message, context) => {
             expectTypeOf(message).toEqualTypeOf<UserWebSocketMessage<'user:create'>>();
             expectTypeOf(context.sender).toEqualTypeOf<WebSocketInterceptorClient<UserWebSocketSchema>>();
-            expectTypeOf(context.receiver).toEqualTypeOf<WebSocketInterceptorClient<UserWebSocketSchema>>();
+            expectTypeOf(context.receiver).toEqualTypeOf<WebSocketInterceptorServer<UserWebSocketSchema>>();
 
             context.receiver.send(JSON.stringify({ type: 'user:delete', data: { id: crypto.randomUUID() } }));
           })

@@ -3,7 +3,7 @@ import { WebSocketSchema } from '@zimic/ws';
 
 import { LocalWebSocketMessageHandler, RemoteWebSocketMessageHandler } from '@/ws/messageHandler/types/public';
 
-import { WebSocketInterceptorClient } from './messages';
+import { WebSocketInterceptorClient, WebSocketInterceptorServer } from './messages';
 import {
   RemoteWebSocketInterceptorOptions,
   WebSocketInterceptorMessageSaving,
@@ -18,8 +18,8 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
   get platform(): WebSocketInterceptorPlatform | null;
   get isRunning(): boolean;
 
-  get server(): WebSocketInterceptorClient<Schema>;
-  get clients(): WebSocketInterceptorClient<Schema>[];
+  get server(): WebSocketInterceptorServer<Schema>;
+  get clients(): readonly WebSocketInterceptorClient<Schema>[];
 
   start: () => Promise<void>;
   stop: () => Promise<void>;

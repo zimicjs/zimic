@@ -206,7 +206,6 @@ export function declareDefaultWebSocketMessageHandlerTests(
       async (interceptor) => {
         const handler = interceptor
           .message()
-          .from(interceptor.server)
           .with({ type: 'create', body: { text: 'hello' } })
           .times(1);
 
@@ -290,7 +289,6 @@ export function declareDefaultWebSocketMessageHandlerTests(
       async (interceptor) => {
         const handler = interceptor
           .message()
-          .from(interceptor.server)
           .with({ type: 'create', body: { text: 'hello' } })
           .delay(1)
           .delay(1, 2)

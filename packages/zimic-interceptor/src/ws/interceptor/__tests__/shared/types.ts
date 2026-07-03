@@ -1,6 +1,11 @@
 import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
+import type {
+  InterceptedWebSocketInterceptorMessage,
+  WebSocketInterceptorClient,
+  WebSocketInterceptorServer,
+} from '@/ws/interceptor/types/messages';
 import type { LocalWebSocketMessageHandler, RemoteWebSocketMessageHandler } from '@/ws/messageHandler/types/public';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
@@ -57,8 +62,22 @@ export function declareTypeWebSocketInterceptorTests(
       expectTypeOf(interceptor).toExtend<WebSocketInterceptor<MessageSchema>>();
       expectTypeOf(interceptor.baseURL).toEqualTypeOf<string>();
       expectTypeOf(interceptor.messageSaving.enabled).toEqualTypeOf<boolean>();
-      expectTypeOf(interceptor.server.messages).toEqualTypeOf<(typeof interceptor.clients)[number]['messages']>();
-      expectTypeOf(interceptor.clients).toEqualTypeOf<(typeof interceptor.clients)[number][]>();
+      expectTypeOf(interceptor.server).toEqualTypeOf<WebSocketInterceptorServer<MessageSchema>>();
+      expectTypeOf(interceptor.clients).toEqualTypeOf<readonly WebSocketInterceptorClient<MessageSchema>[]>();
+      expectTypeOf(interceptor.server.messages).toEqualTypeOf<
+        readonly InterceptedWebSocketInterceptorMessage<MessageSchema>[]
+      >();
+      expectTypeOf(interceptor.server).not.toExtend<WebSocketInterceptorClient<MessageSchema>>();
+      expectTypeOf<(typeof interceptor.clients)[number]>().not.toExtend<WebSocketInterceptorServer<MessageSchema>>();
+
+      expect(interceptor.server).not.toHaveProperty('open');
+      expect(interceptor.server).not.toHaveProperty('close');
+      expect(interceptor.server).not.toHaveProperty('readyState');
+      expect(interceptor.server).not.toHaveProperty('addEventListener');
+      expectTypeOf(interceptor.message().from).parameter(0).toEqualTypeOf<WebSocketInterceptorClient<MessageSchema>>();
+
+      // @ts-expect-error Interceptor server handles cannot restrict client senders.
+      interceptor.message().from(interceptor.server);
     });
   });
 
@@ -92,7 +111,8 @@ export function declareTypeWebSocketInterceptorTests(
         .with({ type: 'create' })
         .respond((message, context) => {
           expectTypeOf(message).toEqualTypeOf<Extract<MessageSchema, { type: 'create' }>>();
-          expectTypeOf(context.sender.messages).toEqualTypeOf<typeof context.receiver.messages>();
+          expectTypeOf(context.sender).toEqualTypeOf<WebSocketInterceptorClient<MessageSchema>>();
+          expectTypeOf(context.receiver).toEqualTypeOf<WebSocketInterceptorServer<MessageSchema>>();
 
           return { type: 'delete', id: message.body.text };
         });
