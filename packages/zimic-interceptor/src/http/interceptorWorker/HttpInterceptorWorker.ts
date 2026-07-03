@@ -52,6 +52,10 @@ abstract class HttpInterceptorWorker {
 
   private runningInterceptors: AnyHttpInterceptorImplementation[] = [];
 
+  get numberOfRunningInterceptors() {
+    return this.runningInterceptors.length;
+  }
+
   abstract start(): Promise<void>;
 
   protected async sharedStart(internalStart: () => Promise<void>) {

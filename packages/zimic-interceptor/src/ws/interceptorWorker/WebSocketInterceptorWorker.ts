@@ -83,7 +83,7 @@ abstract class WebSocketInterceptorWorker {
     removeArrayElement(this.runningInterceptors, interceptor);
   }
 
-  protected get numberOfRunningInterceptors() {
+  get numberOfRunningInterceptors() {
     return this.runningInterceptors.length;
   }
 

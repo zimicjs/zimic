@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import InterceptorStore from '@/interceptor/InterceptorStore';
 import {
   createInterceptorToken,
   DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
@@ -9,9 +10,10 @@ import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/Unaut
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
-import { createWebSocketInterceptor } from '../factory';
+import { createHttpInterceptor } from '../factory';
 
-describe('WebSocketInterceptor (node, remote) > Authentication', () => {
+describe('HttpInterceptor (node, remote) > Authentication', () => {
+  const store = new InterceptorStore();
   const server = createInternalInterceptorServer({
     tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     logUnhandledRequests: false,
@@ -29,44 +31,12 @@ describe('WebSocketInterceptor (node, remote) > Authentication', () => {
     await removeInterceptorToken(token.id);
   });
 
-  it('should start with valid credentials', async () => {
-    const interceptor = createWebSocketInterceptor<{}>({
-      type: 'remote',
-      baseURL: `ws://localhost:${server.port}/chat`,
-      auth: { token: token.value },
-    });
-
-    try {
-      await expect(interceptor.start()).resolves.toBeUndefined();
-      expect(interceptor.isRunning).toBe(true);
-    } finally {
-      await interceptor.stop();
-    }
-  });
-
-  it.each([
-    { name: 'missing', auth: undefined },
-    { name: 'invalid', auth: { token: 'invalid-token' } },
-  ])('should reject $name credentials', async ({ auth }) => {
-    const interceptor = createWebSocketInterceptor<{}>({
-      type: 'remote',
-      baseURL: `ws://localhost:${server.port}/chat`,
-      auth,
-    });
-
-    await usingIgnoredConsole(['error'], async () => {
-      await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
-    });
-
-    expect(interceptor.isRunning).toBe(false);
-    expect(interceptor.platform).toBe(null);
-  });
-
   it('should create a fresh worker after an authentication failure', async () => {
+    const baseURL = `http://localhost:${server.port}/api`;
     const auth = { token: 'invalid-token' };
-    const interceptor = createWebSocketInterceptor<{}>({
+    const interceptor = createHttpInterceptor<{}>({
       type: 'remote',
-      baseURL: `ws://localhost:${server.port}/chat`,
+      baseURL,
       auth,
     });
 
@@ -76,6 +46,7 @@ describe('WebSocketInterceptor (node, remote) > Authentication', () => {
 
     expect(interceptor.isRunning).toBe(false);
     expect(interceptor.platform).toBe(null);
+    expect(store.remoteWorker(new URL(baseURL), { auth })).toBe(undefined);
 
     auth.token = token.value;
 
@@ -83,8 +54,11 @@ describe('WebSocketInterceptor (node, remote) > Authentication', () => {
       await expect(interceptor.start()).resolves.toBeUndefined();
       expect(interceptor.isRunning).toBe(true);
       expect(interceptor.platform).toBe('node');
+      expect(store.remoteWorker(new URL(baseURL), { auth })).toBeDefined();
     } finally {
       await interceptor.stop();
     }
+
+    expect(store.remoteWorker(new URL(baseURL), { auth })).toBe(undefined);
   });
 });

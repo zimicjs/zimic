@@ -15,6 +15,7 @@ export interface RuntimeSharedWebSocketInterceptorTestsOptions {
   platform: WebSocketInterceptorPlatform;
   type: WebSocketInterceptorType;
   getBaseURL: () => string;
+  getAlternativeBaseURL?: () => string;
   getInterceptorOptions: () => WebSocketInterceptorOptions;
 }
 

@@ -1,13 +1,14 @@
 import { WebSocketClient, WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
-import { afterEach, beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE } from '@/utils/webSocket/constants';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
 import { LocalWebSocketMessageHandler } from '../../../messageHandler/LocalWebSocketMessageHandler';
 import NotRunningWebSocketInterceptorError from '../../errors/NotRunningWebSocketInterceptorError';
+import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
-import { WebSocketInterceptorOptions } from '../../types/options';
+import { RemoteWebSocketInterceptorOptions, WebSocketInterceptorOptions } from '../../types/options';
 import WebSocketInterceptorImplementation from '../../WebSocketInterceptorImplementation';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
@@ -155,6 +156,79 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
   });
 
   if (type === 'remote') {
+    describe('Authentication', () => {
+      it('should support changing the authentication options while stopped', () => {
+        const interceptor = createWebSocketInterceptor<{}>({ type, baseURL });
+
+        expect(interceptor.auth).toBe(undefined);
+
+        const auth: RemoteWebSocketInterceptorOptions['auth'] = { token: 'token' };
+        interceptor.auth = auth;
+        expect(interceptor.auth).toEqual(auth);
+
+        auth.token = 'other-token';
+        expect(interceptor.auth).toEqual({ token: 'other-token' });
+
+        interceptor.auth = undefined;
+        expect(interceptor.auth).toBe(undefined);
+      });
+
+      it('should not support changing the authentication options while running', async () => {
+        const interceptor = createWebSocketInterceptor<{}>({ type, baseURL });
+
+        try {
+          await interceptor.start();
+
+          expect(() => {
+            interceptor.auth = { token: 'token' };
+          }).toThrow(
+            new RunningWebSocketInterceptorError(
+              'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',
+            ),
+          );
+
+          await interceptor.stop();
+
+          const auth: RemoteWebSocketInterceptorOptions['auth'] = { token: 'token' };
+          interceptor.auth = auth;
+          await interceptor.start();
+
+          expect(() => {
+            interceptor.auth!.token = 'other-token';
+          }).toThrow(
+            new RunningWebSocketInterceptorError(
+              'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',
+            ),
+          );
+
+          expect(interceptor.auth).toEqual({ token: 'token' });
+        } finally {
+          await interceptor.stop();
+        }
+      });
+
+      it('should guard constructor-provided authentication options while running', async () => {
+        const auth: RemoteWebSocketInterceptorOptions['auth'] = { token: 'token' };
+        const interceptor = createWebSocketInterceptor<{}>({ type, baseURL, auth });
+
+        try {
+          await interceptor.start();
+
+          expect(() => {
+            interceptor.auth!.token = 'other-token';
+          }).toThrow(
+            new RunningWebSocketInterceptorError(
+              'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',
+            ),
+          );
+
+          expect(interceptor.auth).toEqual({ token: 'token' });
+        } finally {
+          await interceptor.stop();
+        }
+      });
+    });
+
     it('should register handler base URLs and resolve pending handlers after the registration completes', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         await expectClientToCloseAsUnhandled();

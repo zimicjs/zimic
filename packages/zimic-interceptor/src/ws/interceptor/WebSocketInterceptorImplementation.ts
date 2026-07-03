@@ -32,8 +32,13 @@ class WebSocketInterceptorClientImplementation<Schema extends WebSocketSchema>
   constructor(
     url: string,
     private sendMessage?: (data: WebSocketMessageData<Schema>) => void,
+    private getCurrentURL?: () => string,
   ) {
     super(url);
+  }
+
+  get url() {
+    return this.getCurrentURL?.() ?? super.url;
   }
 
   send(data: WebSocketMessageData<Schema>) {
@@ -65,13 +70,17 @@ class WebSocketInterceptorImplementation<
 
   private _server: WebSocketInterceptorClient<Schema>;
   private _clients: WebSocketInterceptorClient<Schema>[] = [];
+
+  private createWorker?: () => WebSocketInterceptorWorker;
+  private releaseWorker?: (worker: WebSocketInterceptorWorker) => void;
   private worker?: WebSocketInterceptorWorker;
 
   constructor(options: {
     baseURL: URL;
     messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
     Handler: HandlerConstructor;
-    worker?: WebSocketInterceptorWorker;
+    createWorker?: () => WebSocketInterceptorWorker;
+    releaseWorker?: (worker: WebSocketInterceptorWorker) => void;
   }) {
     this.baseURL = options.baseURL;
 
@@ -81,12 +90,15 @@ class WebSocketInterceptorImplementation<
     };
 
     this.Handler = options.Handler;
-    this.worker = options.worker;
-    this._server = this.createClient(this.baseURLAsString, {
-      send: (data) => {
+    this.createWorker = options.createWorker;
+    this.releaseWorker = options.releaseWorker;
+    this._server = new WebSocketInterceptorClientImplementation(
+      this.baseURLAsString,
+      (data) => {
         void this.worker?.sendToClients(this, data);
       },
-    });
+      () => this.baseURLAsString,
+    );
   }
 
   private getDefaultMessageSavingEnabled(): boolean {
@@ -118,7 +130,7 @@ class WebSocketInterceptorImplementation<
   }
 
   get platform() {
-    return this.isRunning ? (isServerSide() ? 'node' : 'browser') : null;
+    return this.worker?.platform ?? null;
   }
 
   async start() {
@@ -129,21 +141,25 @@ class WebSocketInterceptorImplementation<
     }
 
     try {
-      this.isRunning = true;
+      this.worker = this.createWorker?.();
 
       await this.worker?.start();
       if (this.worker?.type === 'local') {
         await this.worker.use(this);
       }
       this.worker?.registerRunningInterceptor(this);
-      /* istanbul ignore next -- @preserve
-       * Startup rollback is covered by worker-level startup failure parity. */
+      this.isRunning = true;
     } catch (error) {
-      /* istanbul ignore next -- @preserve */
       this.isRunning = false;
-      /* istanbul ignore next -- @preserve */
+
+      this.worker?.unregisterRunningInterceptor(this);
       await this.worker?.stop();
-      /* istanbul ignore next -- @preserve */
+
+      if (this.worker) {
+        this.releaseWorker?.(this.worker);
+        this.worker = undefined;
+      }
+
       throw error;
     }
   }
@@ -155,16 +171,24 @@ class WebSocketInterceptorImplementation<
       return;
     }
 
-    this.worker?.unregisterRunningInterceptor(this);
-    await this.worker?.clearHandlers({ interceptor: this });
-    await this.worker?.stop();
+    const worker = this.worker;
+
+    worker?.unregisterRunningInterceptor(this);
+    await worker?.clearHandlers({ interceptor: this });
+    await worker?.stop();
+
     this.isRunning = false;
+    this.worker = undefined;
+
+    if (worker) {
+      this.releaseWorker?.(worker);
+    }
   }
 
   /* istanbul ignore next -- @preserve
    * This is an internal compatibility getter for worker parity with HTTP interceptors. */
   get numberOfRunningInterceptors() {
-    return this.isRunning ? 1 : 0;
+    return this.isRunning ? (this.worker?.numberOfRunningInterceptors ?? 0) : 0;
   }
 
   get server() {
