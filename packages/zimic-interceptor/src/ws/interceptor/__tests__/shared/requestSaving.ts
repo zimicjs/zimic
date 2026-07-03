@@ -1,6 +1,6 @@
 import { waitFor } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
-import { afterEach, beforeEach, expect, it } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import DisabledMessageSavingError from '@/ws/messageHandler/errors/DisabledMessageSavingError';
@@ -41,14 +41,26 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
     return client;
   }
 
-  it('should have the correct default message saving configuration if none is provided', () => {
-    const interceptor = createWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, messageSaving: undefined });
+  it.each([{ NODE_ENV: 'development' }, { NODE_ENV: 'test' }, { NODE_ENV: 'production' }])(
+    'should have the correct default message saving configuration if none is provided (NODE_ENV: $NODE_ENV)',
+    (environment) => {
+      const processEnvSpy = vi.spyOn(process, 'env', 'get').mockReturnValue(environment);
 
-    expect(interceptor.messageSaving).toEqual<WebSocketInterceptorMessageSaving>({
-      enabled: platform === 'node',
-      safeLimit: DEFAULT_MESSAGE_SAVING_SAFE_LIMIT,
-    });
-  });
+      try {
+        const interceptor = createWebSocketInterceptor<MessageSchema>({
+          ...interceptorOptions,
+          messageSaving: undefined,
+        });
+
+        expect(interceptor.messageSaving).toEqual<WebSocketInterceptorMessageSaving>({
+          enabled: platform === 'node' && environment.NODE_ENV === 'test',
+          safeLimit: DEFAULT_MESSAGE_SAVING_SAFE_LIMIT,
+        });
+      } finally {
+        processEnvSpy.mockRestore();
+      }
+    },
+  );
 
   it('should not warn if saved messages reach the safe limit without exceeding it', async () => {
     const safeLimit = 2;
@@ -169,7 +181,7 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
     );
   });
 
-  it('should reset the saved message count after cleared', async () => {
+  it('should reset retained messages after handler reconfiguration and warn when the safe limit is exceeded again', async () => {
     const safeLimit = 1;
 
     await usingWebSocketInterceptor<MessageSchema>(
@@ -189,18 +201,76 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
 
           expect(console.warn).toHaveBeenCalledTimes(1);
 
-          await interceptor.clear();
+          const handlerMessages = handler.messages;
+          const interceptorClient = interceptor.clients[0];
+          const clientMessages = interceptorClient.messages;
+          const serverMessages = interceptor.server.messages;
+
           await promiseIfRemote(handler.respond({ type: 'server', index: 2 }), interceptor);
+
+          expect(handler.messages).toBe(handlerMessages);
+          expect(handler.messages).toHaveLength(0);
+          expect(interceptorClient.messages).toBe(clientMessages);
+          expect(interceptorClient.messages).toHaveLength(0);
+          expect(interceptor.server.messages).toBe(serverMessages);
+          expect(interceptor.server.messages).toHaveLength(0);
+
           console.warn.mockClear();
 
-          const nextClient = await createClient();
-          nextClient.send(JSON.stringify({ type: 'client', index: 2 }));
+          for (let index = 0; index < 2; index++) {
+            client.send(JSON.stringify({ type: 'client', index }));
+          }
 
           await waitFor(() => {
-            expect(handler.messages).toHaveLength(1);
+            expect(handler.messages).toHaveLength(2);
           });
 
-          expect(console.warn).toHaveBeenCalledTimes(0);
+          expect(console.warn).toHaveBeenCalledTimes(1);
+          expect(console.warn).toHaveBeenCalledWith(new MessageSavingSafeLimitExceededError(2, safeLimit));
+        });
+      },
+    );
+  });
+
+  it('should retain disconnected client messages in safe-limit accounting', async () => {
+    const safeLimit = 1;
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true, safeLimit } },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+        const firstClient = await createClient();
+
+        firstClient.send(JSON.stringify({ type: 'client', index: 1 }));
+
+        await waitFor(() => {
+          expect(handler.messages).toHaveLength(1);
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const firstInterceptorClient = interceptor.clients[0];
+        const firstClientMessages = firstInterceptorClient.messages;
+
+        await firstClient.close();
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(0);
+        });
+
+        expect(firstInterceptorClient.messages).toBe(firstClientMessages);
+        expect(firstInterceptorClient.messages).toHaveLength(1);
+        expect(interceptor.server.messages).toHaveLength(1);
+
+        await usingIgnoredConsole(['warn'], async (console) => {
+          const secondClient = await createClient();
+          secondClient.send(JSON.stringify({ type: 'client', index: 2 }));
+
+          await waitFor(() => {
+            expect(handler.messages).toHaveLength(2);
+          });
+
+          expect(console.warn).toHaveBeenCalledTimes(1);
+          expect(console.warn).toHaveBeenCalledWith(new MessageSavingSafeLimitExceededError(2, safeLimit));
         });
       },
     );

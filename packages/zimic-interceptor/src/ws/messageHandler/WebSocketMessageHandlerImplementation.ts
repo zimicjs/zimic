@@ -63,7 +63,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
   private numberOfMatchedMessages = 0;
   private unmatchedMessageGroups: UnmatchedWebSocketInterceptorMessageGroup<Schema>[] = [];
-  private savedInterceptedMessages: InterceptedWebSocketInterceptorMessage<RestrictedSchema, Schema>[] = [];
+  private savedInterceptedMessages: InterceptedWebSocketInterceptorMessage<RestrictedSchema, Schema>[];
 
   private createResponseDeclaration?: WebSocketMessageHandlerMessageComputedDeclaration<Schema, RestrictedSchema>;
 
@@ -74,7 +74,9 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
   constructor(
     private interceptor: WebSocketInterceptorImplementation<Schema>,
     private handler: InternalWebSocketMessageHandler<Schema, RestrictedSchema>,
-  ) {}
+  ) {
+    this.savedInterceptedMessages = this.interceptor.messageStore.createHandlerMessages<RestrictedSchema>(this);
+  }
 
   from(sender: WebSocketInterceptorClient<Schema>) {
     this.restrictedSender = sender;
@@ -313,27 +315,11 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
   }
 
   saveInterceptedMessage(message: Schema, context: WebSocketMessageHandlerApplyContext<Schema>) {
-    const interceptedMessage: InterceptedWebSocketInterceptorMessage<RestrictedSchema, Schema> = {
-      sender: context.sender,
-      receiver: context.receiver,
-      data: this.assumeMessageMatchesRestrictions(message),
-    };
-
-    const interceptedClientMessage: InterceptedWebSocketInterceptorMessage<Schema> = {
-      sender: context.sender,
-      receiver: context.receiver,
-      data: message,
-    };
-
-    this.savedInterceptedMessages.push(interceptedMessage);
-    context.sender.messages.push(interceptedClientMessage);
-    context.receiver.messages.push(interceptedClientMessage);
-    this.interceptor.incrementNumberOfSavedMessages(1);
+    this.interceptor.messageStore.save(this, this.assumeMessageMatchesRestrictions(message), context);
   }
 
   private clearInterceptedMessages() {
-    this.interceptor.incrementNumberOfSavedMessages(-this.savedInterceptedMessages.length);
-    this.savedInterceptedMessages.length = 0;
+    this.interceptor.messageStore.clearHandler(this);
   }
 
   get messages() {

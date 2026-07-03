@@ -12,7 +12,6 @@ import {
   WebSocketMessageHandlerApplyContext,
   WebSocketMessageHandlerMessageMatch,
 } from '../messageHandler/WebSocketMessageHandlerImplementation';
-import MessageSavingSafeLimitExceededError from './errors/MessageSavingSafeLimitExceededError';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
 import { WebSocketInterceptorMessageSaving } from './types/options';
@@ -22,6 +21,7 @@ import {
   InternalWebSocketInterceptorClient,
   InternalWebSocketInterceptorServer,
 } from './WebSocketInterceptorHandle';
+import WebSocketInterceptorMessageStore from './WebSocketInterceptorMessageStore';
 
 export const SUPPORTED_BASE_URL_PROTOCOLS = Object.freeze(['ws', 'wss']);
 export const DEFAULT_MESSAGE_SAVING_SAFE_LIMIT = 1000;
@@ -35,7 +35,7 @@ class WebSocketInterceptorImplementation<
   private _baseURL!: URL;
 
   messageSaving: WebSocketInterceptorMessageSaving;
-  private _numberOfSavedMessages = 0;
+  readonly messageStore: WebSocketInterceptorMessageStore<Schema>;
 
   isRunning = false;
 
@@ -63,6 +63,7 @@ class WebSocketInterceptorImplementation<
       enabled: options.messageSaving?.enabled ?? this.getDefaultMessageSavingEnabled(),
       safeLimit: options.messageSaving?.safeLimit ?? DEFAULT_MESSAGE_SAVING_SAFE_LIMIT,
     };
+    this.messageStore = new WebSocketInterceptorMessageStore(() => this.messageSaving.safeLimit);
 
     this.Handler = options.Handler;
     this.createWorker = options.createWorker;
@@ -310,17 +311,6 @@ class WebSocketInterceptorImplementation<
     return undefined;
   }
 
-  incrementNumberOfSavedMessages(increment: number) {
-    this._numberOfSavedMessages = Math.max(this._numberOfSavedMessages + increment, 0);
-
-    const exceedsSafeLimit = this._numberOfSavedMessages > this.messageSaving.safeLimit;
-
-    if (increment > 0 && exceedsSafeLimit) {
-      const error = new MessageSavingSafeLimitExceededError(this._numberOfSavedMessages, this.messageSaving.safeLimit);
-      console.warn(error);
-    }
-  }
-
   checkTimes() {
     for (const handler of this.handlers) {
       handler.checkTimes();
@@ -339,10 +329,9 @@ class WebSocketInterceptorImplementation<
       handler.clear();
     }
 
+    this.messageStore.clear();
     this.handlers.length = 0;
     this._clients.length = 0;
-    this._server.messages.length = 0;
-    this._numberOfSavedMessages = 0;
 
     return Promise.resolve(clearResult);
   }
