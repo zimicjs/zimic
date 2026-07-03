@@ -62,10 +62,13 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
     });
 
     webSocketServer.on('connection', async (socket, request) => {
+      socket.pause();
+
       if (this.authenticate) {
         const result = await this.authenticate(socket, request);
 
         if (!result.isValid) {
+          socket.resume();
           socket.close(1008, result.message);
           return;
         }
@@ -79,8 +82,10 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
         }
 
         await super.registerSocket(socket);
+        socket.resume();
         socket.send('socket:auth:valid' satisfies WebSocketControlMessage);
       } catch (error) {
+        socket.resume();
         webSocketServer.emit('error', error);
       }
     });

@@ -62,7 +62,9 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
       clientId: string;
       url: string;
     };
-    reply: {};
+    reply: {
+      accepted: boolean;
+    };
   };
 
   'interceptors/ws/clients/close': {

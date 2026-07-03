@@ -7,6 +7,7 @@ import { WEB_SOCKET_NORMAL_CLOSE_CODE, WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE } fr
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
 import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
+import WebSocketServer from '@/utils/webSocket/WebSocketServer';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
@@ -54,7 +55,7 @@ describe('Interceptor server > Web sockets', () => {
 
     client.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => {
       connections.push(data);
-      return {};
+      return { accepted: true };
     });
 
     return connections;
@@ -490,6 +491,9 @@ describe('Interceptor server > Web sockets', () => {
     webSocketClient = new WebSocketClient({
       url: `ws://localhost:${server.port}`,
     });
+    webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', () => {
+      return { accepted: true };
+    });
 
     await webSocketClient.start({
       parameters: {
@@ -785,7 +789,7 @@ describe('Interceptor server > Web sockets', () => {
     webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => {
       connections.push(data);
       connectedClientIds.push(data.clientId);
-      return {};
+      return { accepted: true };
     });
 
     await webSocketClient.start({
@@ -1034,7 +1038,176 @@ describe('Interceptor server > Web sockets', () => {
     expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
   });
 
-  it('should close user sockets that send messages before worker connection confirmation', async () => {
+  it('should close user sockets if the worker rejects the connection', async () => {
+    server = createInternalInterceptorServer({ logUnhandledRequests: false });
+    await server.start();
+
+    webSocketClient = new WebSocketClient({
+      url: `ws://localhost:${server.port}`,
+    });
+    webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', () => {
+      return { accepted: false };
+    });
+
+    await webSocketClient.start({
+      parameters: {
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+      },
+      waitForAuthentication: true,
+    });
+
+    const baseURL = `ws://localhost:${server.port}/chat`;
+    await webSocketClient.request('interceptors/ws/workers/commit', {
+      id: crypto.randomUUID(),
+      baseURL,
+    });
+
+    const userSocket = new ClientSocket(baseURL);
+    userSockets.push(userSocket);
+
+    const closeEvent = await new Promise<ClientSocket.CloseEvent>((resolve) => {
+      userSocket.addEventListener('close', resolve, { once: true });
+    });
+
+    expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
+  });
+
+  it('should close accepted user sockets if worker ownership changed before activation', async () => {
+    server = createInternalInterceptorServer({ logUnhandledRequests: false });
+    await server.start();
+
+    webSocketClient = new WebSocketClient({
+      url: `ws://localhost:${server.port}`,
+    });
+    let connectedClient: ConnectedWebSocketClient | undefined;
+    const closedClientIds: string[] = [];
+    webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => {
+      connectedClient = data;
+      return { accepted: true };
+    });
+    webSocketClient.onChannel('event', 'interceptors/ws/clients/close', ({ data }) => {
+      closedClientIds.push(data.clientId);
+    });
+
+    await webSocketClient.start({
+      parameters: {
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+      },
+      waitForAuthentication: true,
+    });
+
+    const baseURL = `ws://localhost:${server.port}/chat`;
+    await webSocketClient.request('interceptors/ws/workers/commit', {
+      id: crypto.randomUUID(),
+      baseURL,
+    });
+
+    const internalServer = server as unknown as {
+      knownWorkerSockets: Set<unknown>;
+      pendingUserWebSocketHandlers: Map<unknown, unknown>;
+      activeUserWebSocketHandlers: Map<unknown, unknown>;
+    };
+    internalServer.knownWorkerSockets.clear();
+
+    const userSocket = new ClientSocket(baseURL);
+    userSockets.push(userSocket);
+    const closeEvent = await new Promise<ClientSocket.CloseEvent>((resolve) => {
+      userSocket.addEventListener('close', resolve, { once: true });
+    });
+
+    expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
+    expect(internalServer.pendingUserWebSocketHandlers).toHaveProperty('size', 0);
+    expect(internalServer.activeUserWebSocketHandlers).toHaveProperty('size', 0);
+
+    await waitFor(() => {
+      expect(closedClientIds).toEqual([connectedClient?.clientId]);
+    });
+  });
+
+  it('should close pending user sockets if the connect RPC rejects', async () => {
+    server = createInternalInterceptorServer({ logUnhandledRequests: false });
+    await server.start();
+
+    webSocketClient = new WebSocketClient({
+      url: `ws://localhost:${server.port}`,
+    });
+    await webSocketClient.start({
+      parameters: {
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+      },
+      waitForAuthentication: true,
+    });
+
+    const baseURL = `ws://localhost:${server.port}/chat`;
+    await webSocketClient.request('interceptors/ws/workers/commit', {
+      id: crypto.randomUUID(),
+      baseURL,
+    });
+
+    const internalServer = server as unknown as {
+      webSocketServer: WebSocketServer<InterceptorServerWebSocketSchema>;
+    };
+    const requestSpy = vi
+      .spyOn(internalServer.webSocketServer, 'request')
+      .mockRejectedValueOnce(new Error('Connection rejected'));
+
+    const userSocket = new ClientSocket(baseURL);
+    userSockets.push(userSocket);
+
+    const closeEvent = await new Promise<ClientSocket.CloseEvent>((resolve) => {
+      userSocket.addEventListener('close', resolve, { once: true });
+    });
+
+    expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
+    requestSpy.mockRestore();
+  });
+
+  it('should close pending user sockets after a worker connection timeout', async () => {
+    server = createInternalInterceptorServer({ logUnhandledRequests: false });
+    await server.start();
+
+    const internalServer = server as unknown as {
+      webSocketServer: WebSocketServer<InterceptorServerWebSocketSchema>;
+    };
+    internalServer.webSocketServer.messageTimeout = 50;
+
+    webSocketClient = new WebSocketClient({
+      url: `ws://localhost:${server.port}`,
+    });
+    webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', () => {
+      return new Promise<never>(() => {
+        // Keep the connection RPC pending until it reaches the server timeout.
+      });
+    });
+
+    await webSocketClient.start({
+      parameters: {
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+      },
+      waitForAuthentication: true,
+    });
+
+    const baseURL = `ws://localhost:${server.port}/chat`;
+    await webSocketClient.request('interceptors/ws/workers/commit', {
+      id: crypto.randomUUID(),
+      baseURL,
+    });
+
+    const userSocket = new ClientSocket(baseURL);
+    userSockets.push(userSocket);
+
+    const closeEvent = await new Promise<ClientSocket.CloseEvent>((resolve) => {
+      userSocket.addEventListener('close', resolve, { once: true });
+    });
+
+    expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
+  });
+
+  it('should close pending user sockets when their handler is reset', async () => {
     server = createInternalInterceptorServer({ logUnhandledRequests: false });
     await server.start();
 
@@ -1042,19 +1215,148 @@ describe('Interceptor server > Web sockets', () => {
       url: `ws://localhost:${server.port}`,
     });
 
-    let resolveConnection!: (value: {}) => void;
-    const connectionPromise = new Promise<{}>((resolve) => {
+    let resolveConnection!: (value: { accepted: true }) => void;
+    const connectionPromise = new Promise<{ accepted: true }>((resolve) => {
       resolveConnection = resolve;
     });
-    const handledMessageListener = vi.fn();
-    const closedClientIds: string[] = [];
+    let resolveConnectionReceived!: () => void;
+    const connectionReceivedPromise = new Promise<void>((resolve) => {
+      resolveConnectionReceived = resolve;
+    });
 
     webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', () => {
+      resolveConnectionReceived();
       return connectionPromise;
     });
-    webSocketClient.onChannel('event', 'interceptors/ws/messages/handle', handledMessageListener);
+
+    await webSocketClient.start({
+      parameters: {
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+      },
+      waitForAuthentication: true,
+    });
+
+    const baseURL = `ws://localhost:${server.port}/chat`;
+    await webSocketClient.request('interceptors/ws/workers/commit', {
+      id: crypto.randomUUID(),
+      baseURL,
+    });
+
+    const userSocket = new ClientSocket(baseURL);
+    userSockets.push(userSocket);
+    const closeEventPromise = new Promise<ClientSocket.CloseEvent>((resolve) => {
+      userSocket.addEventListener('close', resolve, { once: true });
+    });
+
+    await connectionReceivedPromise;
+    await webSocketClient.request('interceptors/ws/workers/reset', []);
+
+    const closeEvent = await closeEventPromise;
+    expect(closeEvent.code).toBe(WEB_SOCKET_NORMAL_CLOSE_CODE);
+
+    resolveConnection({ accepted: true });
+
+    const nextUserSocket = new ClientSocket(baseURL);
+    userSockets.push(nextUserSocket);
+    const nextCloseEvent = await new Promise<ClientSocket.CloseEvent>((resolve) => {
+      nextUserSocket.addEventListener('close', resolve, { once: true });
+    });
+
+    expect(nextCloseEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(nextCloseEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
+  });
+
+  it('should remove user sockets closed while worker connection confirmation is pending', async () => {
+    server = createInternalInterceptorServer({ logUnhandledRequests: false });
+    await server.start();
+
+    webSocketClient = new WebSocketClient({
+      url: `ws://localhost:${server.port}`,
+    });
+
+    let resolveConnection!: (value: { accepted: true }) => void;
+    const connectionPromise = new Promise<{ accepted: true }>((resolve) => {
+      resolveConnection = resolve;
+    });
+    let connectedClient: ConnectedWebSocketClient | undefined;
+    let resolveConnectionReceived!: () => void;
+    const connectionReceivedPromise = new Promise<void>((resolve) => {
+      resolveConnectionReceived = resolve;
+    });
+    const closedClientIds: string[] = [];
+
+    webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => {
+      connectedClient = data;
+      resolveConnectionReceived();
+      return connectionPromise;
+    });
     webSocketClient.onChannel('event', 'interceptors/ws/clients/close', ({ data }) => {
       closedClientIds.push(data.clientId);
+    });
+
+    await webSocketClient.start({
+      parameters: {
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+      },
+      waitForAuthentication: true,
+    });
+
+    const baseURL = `ws://localhost:${server.port}/chat`;
+    await webSocketClient.request('interceptors/ws/workers/commit', {
+      id: crypto.randomUUID(),
+      baseURL,
+    });
+
+    const userSocket = new ClientSocket(baseURL);
+    userSockets.push(userSocket);
+    await waitForOpenClientSocket(userSocket);
+    await connectionReceivedPromise;
+
+    const closeEventPromise = new Promise<ClientSocket.CloseEvent>((resolve) => {
+      userSocket.addEventListener('close', resolve, { once: true });
+    });
+    userSocket.terminate();
+    await closeEventPromise;
+
+    const internalServer = server as unknown as {
+      pendingUserWebSocketHandlers: Map<unknown, unknown>;
+    };
+    await waitFor(() => {
+      expect(internalServer.pendingUserWebSocketHandlers).toHaveProperty('size', 0);
+    });
+
+    resolveConnection({ accepted: true });
+
+    await waitFor(() => {
+      expect(closedClientIds).toEqual([connectedClient?.clientId]);
+    });
+  });
+
+  it('should preserve messages sent while worker connection confirmation is pending', async () => {
+    server = createInternalInterceptorServer({ logUnhandledRequests: false });
+    await server.start();
+
+    webSocketClient = new WebSocketClient({
+      url: `ws://localhost:${server.port}`,
+    });
+
+    let resolveConnection!: (value: { accepted: true }) => void;
+    const connectionPromise = new Promise<{ accepted: true }>((resolve) => {
+      resolveConnection = resolve;
+    });
+    let resolveConnectionReceived!: () => void;
+    const connectionReceivedPromise = new Promise<void>((resolve) => {
+      resolveConnectionReceived = resolve;
+    });
+    const handledMessages: string[] = [];
+
+    webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', () => {
+      resolveConnectionReceived();
+      return connectionPromise;
+    });
+    webSocketClient.onChannel('event', 'interceptors/ws/messages/handle', ({ data }) => {
+      handledMessages.push(data.data.data as string);
+      return {};
     });
 
     await webSocketClient.start({
@@ -1074,24 +1376,30 @@ describe('Interceptor server > Web sockets', () => {
     const userSocket = new ClientSocket(baseURL);
     userSockets.push(userSocket);
 
-    const closeEventPromise = new Promise<ClientSocket.CloseEvent>((resolve) => {
-      userSocket.addEventListener('close', resolve);
+    await waitForOpenClientSocket(userSocket);
+    userSocket.send('first');
+    userSocket.send('second');
+    await connectionReceivedPromise;
+
+    const internalServer = server as unknown as {
+      pendingUserWebSocketHandlers: Map<unknown, unknown>;
+      activeUserWebSocketHandlers: Map<unknown, unknown>;
+    };
+    expect(internalServer.pendingUserWebSocketHandlers).toHaveProperty('size', 1);
+    expect(internalServer.activeUserWebSocketHandlers).toHaveProperty('size', 0);
+
+    await waitForNot(() => {
+      expect(handledMessages).not.toHaveLength(0);
     });
 
-    await waitForOpenClientSocket(userSocket);
-    userSocket.send(JSON.stringify({ type: 'client', index: 1 }));
-
-    const closeEvent = await closeEventPromise;
-
-    expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
-    expect(closeEvent.reason).toBe('WebSocket interceptor connection is not ready yet.');
-    expect(handledMessageListener).not.toHaveBeenCalled();
-
-    resolveConnection({});
+    resolveConnection({ accepted: true });
 
     await waitFor(() => {
-      expect(closedClientIds).toHaveLength(1);
+      expect(handledMessages).toEqual(['first', 'second']);
     });
+    expect(internalServer.pendingUserWebSocketHandlers).toHaveProperty('size', 0);
+    expect(internalServer.activeUserWebSocketHandlers).toHaveProperty('size', 1);
+    expect(userSocket.readyState).toBe(ClientSocket.OPEN);
   });
 
   it('should close connected user sockets when stopped', async () => {
@@ -1145,7 +1453,7 @@ describe('Interceptor server > Web sockets', () => {
     webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => {
       connections.push(data);
       connectedClientIds.push(data.clientId);
-      return {};
+      return { accepted: true };
     });
     webSocketClient.onChannel('event', 'interceptors/ws/clients/close', ({ data }) => {
       closedClientIds.push(data.clientId);
@@ -1305,7 +1613,7 @@ describe('Interceptor server > Web sockets', () => {
 
     webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', () => {
       setTimeout(resolveConnectionConfirmed);
-      return {};
+      return { accepted: true };
     });
 
     await webSocketClient.start({
