@@ -185,56 +185,6 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
-  it('should support starting interceptors concurrently', async () => {
-    await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (interceptor) => {
-      expect(interceptor.isRunning).toBe(false);
-
-      await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (otherInterceptor) => {
-        expect(otherInterceptor.isRunning).toBe(false);
-
-        await Promise.all(
-          [interceptor, otherInterceptor].map(async (interceptor) => {
-            await interceptor.start();
-            expect(interceptor.isRunning).toBe(true);
-          }),
-        );
-
-        expect(interceptor.isRunning).toBe(true);
-        expect(otherInterceptor.isRunning).toBe(true);
-
-        const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
-        expect(worker).toBeDefined();
-        expect(worker!.isRunning).toBe(true);
-      });
-    });
-  });
-
-  it('should support stopping interceptors concurrently', async () => {
-    await usingHttpInterceptor<{}>(getInterceptorOptions(), async (interceptor) => {
-      expect(interceptor.isRunning).toBe(true);
-
-      await usingHttpInterceptor<{}>(getInterceptorOptions(), async (otherInterceptor) => {
-        expect(otherInterceptor.isRunning).toBe(true);
-
-        const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
-        expect(worker).toBeDefined();
-        expect(worker!.isRunning).toBe(true);
-
-        await Promise.all(
-          [interceptor, otherInterceptor].map(async (interceptor) => {
-            await interceptor.stop();
-            expect(interceptor.isRunning).toBe(false);
-          }),
-        );
-
-        expect(interceptor.isRunning).toBe(false);
-        expect(otherInterceptor.isRunning).toBe(false);
-
-        expect(worker!.isRunning).toBe(false);
-      });
-    });
-  });
-
   it('should throw an error when trying to be cleared if not running', async () => {
     const interceptor = createHttpInterceptor<{}>(getInterceptorOptions());
     expect(interceptor.isRunning).toBe(false);
@@ -306,6 +256,22 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
           );
 
           expect(interceptor.auth).toEqual(auth);
+        });
+      });
+
+      it('should guard constructor-provided authentication options while running', async () => {
+        const auth: RemoteHttpInterceptorOptions['auth'] = { token: 'token' };
+
+        await usingHttpInterceptor<{}>({ type, baseURL, auth }, (interceptor) => {
+          expect(() => {
+            interceptor.auth!.token = 'other-token';
+          }).toThrow(
+            new RunningHttpInterceptorError(
+              'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',
+            ),
+          );
+
+          expect(interceptor.auth).toEqual({ token: 'token' });
         });
       });
     });

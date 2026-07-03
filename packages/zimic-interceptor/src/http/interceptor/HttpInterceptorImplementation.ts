@@ -152,8 +152,7 @@ class HttpInterceptorImplementation<
   async stop() {
     this.worker?.unregisterRunningInterceptor(this);
 
-    // The number of interceptors will be 0 if the first client could not start due to an error.
-    const isLastRunningInterceptor = this.numberOfRunningInterceptors === 0 || this.numberOfRunningInterceptors === 1;
+    const isLastRunningInterceptor = this.worker?.numberOfRunningInterceptors === 0;
 
     if (isLastRunningInterceptor) {
       await this.worker?.stop();
@@ -178,11 +177,7 @@ class HttpInterceptorImplementation<
       return 0;
     }
 
-    if (this.workerOrThrow.type === 'local') {
-      return this.store.numberOfRunningLocalInterceptors;
-    } else {
-      return this.store.numberOfRunningRemoteInterceptors(this.baseURL);
-    }
+    return this.workerOrThrow.numberOfRunningInterceptors;
   }
 
   get(path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) {

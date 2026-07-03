@@ -16,15 +16,21 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
 
   constructor(options: LocalWebSocketInterceptorOptions) {
     const baseURL = new URL(options.baseURL);
-    const worker = this.store.getOrCreateLocalWebSocketWorker({}, (workerOptions) => {
-      return new LocalWebSocketInterceptorWorker(workerOptions);
-    });
 
     this.implementation = new WebSocketInterceptorImplementation<Schema>({
       baseURL,
       messageSaving: options.messageSaving,
       Handler: LocalWebSocketMessageHandler,
-      worker,
+      createWorker: () => {
+        return this.store.getOrCreateLocalWebSocketWorker({}, (workerOptions) => {
+          return new LocalWebSocketInterceptorWorker(workerOptions);
+        });
+      },
+      releaseWorker: (worker) => {
+        if (!worker.isRunning) {
+          this.store.deleteLocalWebSocketWorker();
+        }
+      },
     });
   }
 

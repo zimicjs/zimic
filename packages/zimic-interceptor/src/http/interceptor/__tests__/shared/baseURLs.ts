@@ -7,12 +7,13 @@ import { expectBypassedResponse } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import RunningHttpInterceptorError from '../../errors/RunningHttpInterceptorError';
+import { createHttpInterceptor } from '../../factory';
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../HttpInterceptorImplementation';
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { type, getBaseURL, getInterceptorOptions } = options;
+  const { type, getBaseURL, getAlternativeBaseURL, getInterceptorOptions } = options;
 
   let defaultBaseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
@@ -88,7 +89,8 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
       expect(handler.requests).toHaveLength(1);
 
-      const newBaseURL = joinURL(baseURL, 'new');
+      const newBaseURL =
+        type === 'remote' ? (getAlternativeBaseURL?.() ?? joinURL(baseURL, 'new')) : joinURL(baseURL, 'new');
       expect(newBaseURL).not.toBe(interceptor.baseURL);
 
       await interceptor.stop();
@@ -119,6 +121,27 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
       expect(handler.requests).toHaveLength(1);
     });
+  });
+
+  it('should support changing every base URL component while stopped', () => {
+    const interceptor = createHttpInterceptor<{}>(interceptorOptions);
+    const initialBaseURL = new URL(defaultBaseURL);
+
+    const changedBaseURLs = [
+      new URL('/other-path', initialBaseURL),
+      new URL(initialBaseURL),
+      new URL(initialBaseURL),
+      new URL(initialBaseURL),
+    ];
+
+    changedBaseURLs[1].hostname = initialBaseURL.hostname === 'localhost' ? '127.0.0.1' : 'localhost';
+    changedBaseURLs[2].protocol = initialBaseURL.protocol === 'http:' ? 'https:' : 'http:';
+    changedBaseURLs[3].port = initialBaseURL.port === '43210' ? '43211' : '43210';
+
+    for (const changedBaseURL of changedBaseURLs) {
+      interceptor.baseURL = changedBaseURL.href;
+      expect(interceptor.baseURL).toBe(changedBaseURL.href.replace(/\/$/, ''));
+    }
   });
 
   it('should not support changing the base URL if the interceptor is running', async () => {

@@ -4,7 +4,11 @@ import { WebSocketSchema } from '@zimic/ws';
 import { LocalWebSocketMessageHandler, RemoteWebSocketMessageHandler } from '@/ws/messageHandler/types/public';
 
 import { WebSocketInterceptorClient } from './messages';
-import { WebSocketInterceptorMessageSaving, WebSocketInterceptorPlatform } from './options';
+import {
+  RemoteWebSocketInterceptorOptions,
+  WebSocketInterceptorMessageSaving,
+  WebSocketInterceptorPlatform,
+} from './options';
 
 /** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
@@ -37,6 +41,8 @@ export interface LocalWebSocketInterceptor<Schema extends WebSocketSchema> exten
 /** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export interface RemoteWebSocketInterceptor<Schema extends WebSocketSchema> extends WebSocketInterceptor<Schema> {
   get type(): 'remote';
+
+  auth?: RemoteWebSocketInterceptorOptions['auth'];
 
   message: () => RemoteWebSocketMessageHandler<Schema>;
 

@@ -14,8 +14,6 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
   #auth?: RemoteHttpInterceptorOptions['auth'];
 
   constructor(options: RemoteHttpInterceptorOptions) {
-    this.#auth = options.auth;
-
     const baseURL = new URL(options.baseURL);
 
     this.implementation = new HttpInterceptorImplementation<Schema, typeof RemoteHttpRequestHandler>({
@@ -23,17 +21,19 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
       baseURL,
       createWorker: () => {
         return this.store.getOrCreateRemoteWorker({
-          serverURL: baseURL,
+          serverURL: this.implementation.baseURL,
           auth: this.#auth,
         });
       },
       deleteWorker: () => {
-        this.store.deleteRemoteWorker(baseURL, { auth: options.auth });
+        this.store.deleteRemoteWorker(this.implementation.baseURL, { auth: this.#auth });
       },
       Handler: RemoteHttpRequestHandler,
       onUnhandledRequest: options.onUnhandledRequest,
       requestSaving: options.requestSaving,
     });
+
+    this.auth = options.auth;
   }
 
   get type() {
