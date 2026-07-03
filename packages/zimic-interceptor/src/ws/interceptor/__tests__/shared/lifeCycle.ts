@@ -94,22 +94,18 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     }
   });
 
-  it('should use the base WebSocket client transport for standalone clients', () => {
+  it('should use the injected transport for interceptor clients', () => {
     const interceptor = new WebSocketInterceptorImplementation<MessageSchema>({
       baseURL: new URL(baseURL),
       Handler: LocalWebSocketMessageHandler,
     });
-    const client = interceptor.createClient(baseURL);
     const rawSend = JSON.stringify({ type: 'client' as const, index: 1 }) as WebSocketMessageData<MessageSchema>;
-    const sendSpy = vi.spyOn(WebSocketClient.prototype, 'send').mockImplementation(() => undefined);
+    const send = vi.fn();
+    const client = interceptor.createClient(baseURL, { send });
 
-    try {
-      client.send(rawSend);
+    client.send(rawSend);
 
-      expect(sendSpy).toHaveBeenCalledWith(rawSend);
-    } finally {
-      sendSpy.mockRestore();
-    }
+    expect(send).toHaveBeenCalledWith(rawSend);
   });
 
   async function createClient(options: { timeout?: number } = {}) {

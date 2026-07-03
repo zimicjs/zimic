@@ -69,11 +69,13 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
     it('should track clients when they open and close', async () => {
       await usingWebSocketInterceptor<ChatMessage>(interceptorOptions, async (interceptor) => {
         await interceptor.message().respond({ type: 'server', text: 'connected' });
+        const clients = interceptor.clients;
         expect(interceptor.clients).toHaveLength(0);
 
         const client = await createClient<ChatMessage>();
 
         await waitFor(() => {
+          expect(interceptor.clients).toBe(clients);
           expect(interceptor.clients).toHaveLength(1);
           expect(interceptor.clients[0].url).toBe(client.url);
         });
@@ -81,6 +83,7 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
         await client.close();
 
         await waitFor(() => {
+          expect(interceptor.clients).toBe(clients);
           expect(interceptor.clients).toHaveLength(0);
         });
       });
@@ -105,6 +108,10 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
           const secondMessageListener = vi.fn();
           secondClient.addEventListener('message', secondMessageListener);
 
+          const serverMessages = interceptor.server.messages;
+          const firstInterceptorClient = interceptor.clients[0];
+          const firstClientMessages = firstInterceptorClient.messages;
+
           firstClient.send(JSON.stringify({ type: 'client', text: 'one' }));
 
           await expect(firstMessagePromise).resolves.toEqual({ type: 'server', text: 'received one' });
@@ -116,7 +123,10 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
           expect(handler.messages[0].sender.url).toBe(firstClient.url);
           expect(handler.messages[0].receiver).toBe(interceptor.server);
           expect(handler.messages[0].data).toEqual({ type: 'client', text: 'one' });
+          expect(interceptor.server.messages).toBe(serverMessages);
           expect(interceptor.clients[0].messages).toHaveLength(1);
+          expect(interceptor.clients[0]).toBe(firstInterceptorClient);
+          expect(interceptor.clients[0].messages).toBe(firstClientMessages);
           expect(interceptor.server.messages).toHaveLength(1);
 
           await handler.checkTimes();

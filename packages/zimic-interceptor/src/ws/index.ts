@@ -39,7 +39,11 @@ export type {
 } from './interceptor/types/options';
 
 export type { InferWebSocketInterceptorSchema } from './interceptor/types/schema';
-export type { InterceptedWebSocketInterceptorMessage, WebSocketInterceptorClient } from './interceptor/types/messages';
+export type {
+  InterceptedWebSocketInterceptorMessage,
+  WebSocketInterceptorClient,
+  WebSocketInterceptorServer,
+} from './interceptor/types/messages';
 
 export type {
   LocalWebSocketInterceptor,

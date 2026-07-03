@@ -1,7 +1,11 @@
 import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
-import { InterceptedWebSocketInterceptorMessage, WebSocketInterceptorClient } from '@/ws/interceptor/types/messages';
+import {
+  InterceptedWebSocketInterceptorMessage,
+  WebSocketInterceptorClient,
+  WebSocketInterceptorServer,
+} from '@/ws/interceptor/types/messages';
 
 import WebSocketMessageHandlerImplementation from '../WebSocketMessageHandlerImplementation';
 import { WebSocketMessageHandlerDelayFactory } from './messages';
@@ -20,7 +24,7 @@ export interface InternalWebSocketMessageHandler<
 
 export interface WebSocketMessageHandlerMessageContext<Schema extends WebSocketSchema> {
   sender: WebSocketInterceptorClient<Schema>;
-  receiver: WebSocketInterceptorClient<Schema>;
+  receiver: WebSocketInterceptorServer<Schema>;
 }
 
 export type WebSocketMessageHandlerMessageCallback<

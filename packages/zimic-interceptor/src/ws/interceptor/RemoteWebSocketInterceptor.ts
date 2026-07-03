@@ -3,7 +3,10 @@ import { WebSocketSchema } from '@zimic/ws';
 import { createWebSocketInterceptorWorker } from '../interceptorWorker/factory';
 import { RemoteWebSocketMessageHandler } from '../messageHandler/RemoteWebSocketMessageHandler';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
-import { WebSocketInterceptorClient as PublicWebSocketInterceptorClient } from './types/messages';
+import {
+  WebSocketInterceptorClient as PublicWebSocketInterceptorClient,
+  WebSocketInterceptorServer as PublicWebSocketInterceptorServer,
+} from './types/messages';
 import { RemoteWebSocketInterceptorOptions, WebSocketInterceptorMessageSaving } from './types/options';
 import { RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor } from './types/public';
 import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
@@ -90,11 +93,11 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
     return this.implementation.message() as RemoteWebSocketMessageHandler<Schema>;
   }
 
-  get server(): PublicWebSocketInterceptorClient<Schema> {
+  get server(): PublicWebSocketInterceptorServer<Schema> {
     return this.implementation.server;
   }
 
-  get clients(): PublicWebSocketInterceptorClient<Schema>[] {
+  get clients(): readonly PublicWebSocketInterceptorClient<Schema>[] {
     return this.implementation.clients;
   }
 

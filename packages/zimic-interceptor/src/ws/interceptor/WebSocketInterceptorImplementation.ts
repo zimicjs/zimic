@@ -1,5 +1,5 @@
 import { excludeNonPathParams, validateURLProtocol } from '@zimic/utils/url';
-import { WebSocketClient, WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
 import { isServerSide } from '@/utils/environment';
 
@@ -15,43 +15,18 @@ import {
 import MessageSavingSafeLimitExceededError from './errors/MessageSavingSafeLimitExceededError';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
-import { InterceptedWebSocketInterceptorMessage, WebSocketInterceptorClient } from './types/messages';
 import { WebSocketInterceptorMessageSaving } from './types/options';
+import {
+  createWebSocketInterceptorClient,
+  createWebSocketInterceptorServer,
+  InternalWebSocketInterceptorClient,
+  InternalWebSocketInterceptorServer,
+} from './WebSocketInterceptorHandle';
 
 export const SUPPORTED_BASE_URL_PROTOCOLS = Object.freeze(['ws', 'wss']);
 export const DEFAULT_MESSAGE_SAVING_SAFE_LIMIT = 1000;
 
 export type WebSocketHandlerConstructor = typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
-
-class WebSocketInterceptorClientImplementation<Schema extends WebSocketSchema>
-  extends WebSocketClient<Schema>
-  implements WebSocketInterceptorClient<Schema>
-{
-  messages: InterceptedWebSocketInterceptorMessage<Schema>[] = [];
-
-  constructor(
-    url: string,
-    private sendMessage?: (data: WebSocketMessageData<Schema>) => void,
-    private getCurrentURL?: () => string,
-  ) {
-    super(url);
-  }
-
-  get url() {
-    return this.getCurrentURL?.() ?? super.url;
-  }
-
-  send(data: WebSocketMessageData<Schema>) {
-    if (this.sendMessage) {
-      this.sendMessage(data);
-      return;
-    }
-
-    /* istanbul ignore next -- @preserve
-     * Interceptor-created clients always provide a transport send callback. */
-    super.send(data);
-  }
-}
 
 class WebSocketInterceptorImplementation<
   Schema extends WebSocketSchema,
@@ -68,8 +43,8 @@ class WebSocketInterceptorImplementation<
 
   private handlers: AnyWebSocketMessageHandlerImplementation[] = [];
 
-  private _server: WebSocketInterceptorClient<Schema>;
-  private _clients: WebSocketInterceptorClient<Schema>[] = [];
+  private _server: InternalWebSocketInterceptorServer<Schema>;
+  private _clients: InternalWebSocketInterceptorClient<Schema>[] = [];
 
   private createWorker?: () => WebSocketInterceptorWorker;
   private releaseWorker?: (worker: WebSocketInterceptorWorker) => void;
@@ -92,12 +67,11 @@ class WebSocketInterceptorImplementation<
     this.Handler = options.Handler;
     this.createWorker = options.createWorker;
     this.releaseWorker = options.releaseWorker;
-    this._server = new WebSocketInterceptorClientImplementation(
-      this.baseURLAsString,
+    this._server = createWebSocketInterceptorServer(
+      () => this.baseURLAsString,
       (data) => {
         void this.worker?.sendToClients(this, data);
       },
-      () => this.baseURLAsString,
     );
   }
 
@@ -258,7 +232,16 @@ class WebSocketInterceptorImplementation<
   }
 
   private completeMessageContext(context?: Partial<WebSocketMessageHandlerApplyContext<Schema>>) {
-    const sender = context?.sender ?? this.createClient(this.baseURLAsString);
+    let sender = context?.sender;
+
+    if (!sender) {
+      const createdSender = this.createClient(this.baseURLAsString, {
+        send: (data) => {
+          void this.worker?.sendToClient(createdSender, data);
+        },
+      });
+      sender = createdSender;
+    }
 
     this.addClient(sender);
 
@@ -270,18 +253,18 @@ class WebSocketInterceptorImplementation<
 
   createClient(
     url: string,
-    options: { send?: (data: WebSocketMessageData<Schema>) => void } = {},
-  ): WebSocketInterceptorClient<Schema> {
-    return new WebSocketInterceptorClientImplementation<Schema>(url, options.send);
+    options: { send: (data: WebSocketMessageData<Schema>) => void },
+  ): InternalWebSocketInterceptorClient<Schema> {
+    return createWebSocketInterceptorClient(url, options.send);
   }
 
-  addClient(client: WebSocketInterceptorClient<Schema>) {
+  addClient(client: InternalWebSocketInterceptorClient<Schema>) {
     if (!this._clients.includes(client)) {
       this._clients.push(client);
     }
   }
 
-  removeClient(client: WebSocketInterceptorClient<Schema>) {
+  removeClient(client: InternalWebSocketInterceptorClient<Schema>) {
     const clientIndex = this._clients.indexOf(client);
 
     if (clientIndex >= 0) {

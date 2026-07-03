@@ -609,7 +609,10 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         });
 
         const messagePromise = waitForMessage(client);
-        worker.sendToClient(interceptor.clients[0], JSON.stringify({ type: 'server', text: 'targeted' }));
+        worker.sendToClient(
+          interceptor.implementation.clients[0],
+          JSON.stringify({ type: 'server', text: 'targeted' }),
+        );
 
         await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'targeted' });
       } finally {
@@ -754,7 +757,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         await rawWorker.start();
         const worker = rawWorker as RemoteWebSocketInterceptorWorker;
         const interceptor = createDefaultWebSocketInterceptor();
-        const client = interceptor.implementation.createClient(baseURL);
+        const client = interceptor.implementation.createClient(baseURL, { send: () => undefined });
 
         await expect(
           worker.sendToClient(client, JSON.stringify({ type: 'server', text: 'ignored client' })),

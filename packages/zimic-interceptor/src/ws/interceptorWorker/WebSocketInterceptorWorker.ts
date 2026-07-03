@@ -4,8 +4,8 @@ import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 import { removeArrayElement } from '@/utils/arrays';
 import { isClientSide } from '@/utils/environment';
 
-import { WebSocketInterceptorClient } from '../interceptor/types/messages';
 import { WebSocketInterceptorPlatform } from '../interceptor/types/options';
+import { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
 import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
 import { WebSocketInterceptorWorkerType } from './types/options';
 
@@ -92,7 +92,7 @@ abstract class WebSocketInterceptorWorker {
   ): PossiblePromise<void>;
 
   abstract sendToClient<Schema extends WebSocketSchema>(
-    client: WebSocketInterceptorClient<Schema>,
+    client: InternalWebSocketInterceptorClient<Schema>,
     data: WebSocketMessageData<Schema>,
   ): PossiblePromise<void>;
 
