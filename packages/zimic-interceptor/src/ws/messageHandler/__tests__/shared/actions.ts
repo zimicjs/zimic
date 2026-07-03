@@ -311,13 +311,13 @@ export function declareActionWebSocketMessageHandlerTests(
               expect(handler.messages).toHaveLength(1);
             });
 
-            expect(interceptor.clients[0].messages[0]).toEqual(handler.messages[0]);
+            expect(interceptor.clients[0].messages[0]).toBe(handler.messages[0]);
           });
 
           expect(handler.messages[0].sender.url).toBe(new URL(baseURL).href);
           expect(handler.messages[0].receiver).toBe(interceptor.server);
           expect(handler.messages[0].data).toEqual({ type: 'create', body: { text: 'hello' } });
-          expect(interceptor.server.messages[0]).toEqual(handler.messages[0]);
+          expect(interceptor.server.messages[0]).toBe(handler.messages[0]);
         },
       );
     });

@@ -66,6 +66,9 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
           interceptor.message().respond({ type: 'server', index: 1 }).times(1),
           interceptor,
         );
+        const interceptorClients = interceptor.clients;
+        const firstHandlerMessages = firstHandler.messages;
+        const serverMessages = interceptor.server.messages;
 
         const client = await createClient();
         await waitFor(() => {
@@ -82,6 +85,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         expect(interceptor.clients).toHaveLength(1);
 
         const firstInterceptorClient = interceptor.clients[0];
+        const firstClientMessages = firstInterceptorClient.messages;
         let closeEvent: WebSocketClient.CloseEvent<MessageSchema> | undefined;
         client.addEventListener('close', (event) => {
           closeEvent = event;
@@ -92,8 +96,13 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         await waitFor(() => {
           expect(closeEvent?.code).toBe(WEB_SOCKET_NORMAL_CLOSE_CODE);
         });
+        expect(interceptor.clients).toBe(interceptorClients);
         expect(firstHandler.messages).toHaveLength(0);
+        expect(firstHandler.messages).toBe(firstHandlerMessages);
+        expect(firstInterceptorClient.messages).toBe(firstClientMessages);
+        expect(firstInterceptorClient.messages).toHaveLength(0);
         expect(interceptor.server.messages).toHaveLength(0);
+        expect(interceptor.server.messages).toBe(serverMessages);
         expect(interceptor.clients).toHaveLength(0);
         await interceptor.checkTimes();
 
@@ -115,6 +124,8 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         await waitFor(() => {
           expect(interceptor.clients).toHaveLength(1);
         });
+        expect(interceptor.clients).toBe(interceptorClients);
+        expect(interceptor.server.messages).toBe(serverMessages);
 
         const secondMessagePromise = waitForMessage(secondClient);
 
