@@ -180,7 +180,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     const handler = this.webSocketHandlers.get(connection.handlerId);
 
     if (!handler) {
-      return {};
+      return { accepted: false };
     }
 
     const client = handler.interceptor.createClient(connection.url, {
@@ -193,7 +193,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     handler.clients.set(connection.clientId, client);
     handler.interceptor.addClient(client);
 
-    return {};
+    return { accepted: true };
   };
 
   private closeClient = ({

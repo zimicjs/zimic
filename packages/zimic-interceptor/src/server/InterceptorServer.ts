@@ -57,8 +57,11 @@ interface UserWebSocketHandler {
   handler: WebSocketHandler;
 }
 
+interface PendingUserWebSocketHandler extends UserWebSocketHandler {
+  closeListener: () => void;
+}
+
 const WEB_SOCKET_CONNECTION_SETUP_FAILED_CLOSE_REASON = 'Could not connect to the WebSocket interceptor.';
-const WEB_SOCKET_CONNECTION_NOT_READY_CLOSE_REASON = 'WebSocket interceptor connection is not ready yet.';
 
 class InterceptorServer implements PublicInterceptorServer {
   private httpServer?: HttpServer;
@@ -83,7 +86,8 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private knownWorkerSockets = new Set<Socket>();
   private webSocketHandlers: WebSocketHandler[] = [];
-  private userWebSocketHandlers = new Map<Socket, UserWebSocketHandler>();
+  private pendingUserWebSocketHandlers = new Map<Socket, PendingUserWebSocketHandler>();
+  private activeUserWebSocketHandlers = new Map<Socket, UserWebSocketHandler>();
 
   constructor(options: InterceptorServerOptions) {
     this._hostname = options.hostname ?? DEFAULT_HOSTNAME;
@@ -362,7 +366,10 @@ class InterceptorServer implements PublicInterceptorServer {
 
     socket.addEventListener('close', () => {
       this.removeHttpHandlersBySocket(socket);
-      this.removeWebSocketHandlersBySocket(socket);
+      this.removeWebSocketHandlersBySocket(socket, {
+        pendingCloseCode: WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE,
+        pendingCloseReason: WEB_SOCKET_CONNECTION_SETUP_FAILED_CLOSE_REASON,
+      });
       this.knownWorkerSockets.delete(socket);
     });
 
@@ -376,21 +383,45 @@ class InterceptorServer implements PublicInterceptorServer {
     }
   }
 
-  private removeWebSocketHandlersBySocket(socket: Socket) {
+  private removeWebSocketHandlersBySocket(
+    socket: Socket,
+    options: {
+      pendingCloseCode?: number;
+      pendingCloseReason?: string;
+    } = {},
+  ) {
     const handlersToRemove = this.webSocketHandlers.filter((handler) => handler.socket === socket);
 
     for (const handler of handlersToRemove) {
-      this.removeWebSocketHandler(handler);
+      this.removeWebSocketHandler(handler, options);
     }
   }
 
-  private removeWebSocketHandler(handler: WebSocketHandler) {
+  private removeWebSocketHandler(
+    handler: WebSocketHandler,
+    options: {
+      pendingCloseCode?: number;
+      pendingCloseReason?: string;
+    } = {},
+  ) {
     const handlerIndex = this.webSocketHandlers.indexOf(handler);
     removeArrayIndex(this.webSocketHandlers, handlerIndex);
 
-    for (const [userSocket, userHandler] of this.userWebSocketHandlers) {
+    this.webSocketServerOrThrow.emitSocket('abortRequests', handler.socket, {
+      shouldAbortRequest: (request) =>
+        this.webSocketServerOrThrow.isChannelEvent(request, 'interceptors/ws/clients/connect') &&
+        request.data.handlerId === handler.id,
+    });
+
+    for (const [userSocket, userHandler] of this.pendingUserWebSocketHandlers) {
       if (userHandler.handler === handler) {
-        this.userWebSocketHandlers.delete(userSocket);
+        this.closePendingUserWebSocketConnection(userSocket, userHandler, options);
+      }
+    }
+
+    for (const [userSocket, userHandler] of this.activeUserWebSocketHandlers) {
+      if (userHandler.handler === handler) {
+        this.activeUserWebSocketHandlers.delete(userSocket);
         userSocket.close(WEB_SOCKET_NORMAL_CLOSE_CODE);
       }
     }
@@ -404,51 +435,60 @@ class InterceptorServer implements PublicInterceptorServer {
     const handler = this.findWebSocketHandlerByRequest(request);
 
     if (!handler) {
+      socket.resume();
       socket.close(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE, 'No WebSocket interceptor is registered for this URL.');
       return { wasHandled: true };
     }
 
     const clientId = crypto.randomUUID();
-    const connection = { clientId, handler };
-    const connectionPromise = this.webSocketServerOrThrow.request(
-      'interceptors/ws/clients/connect',
-      {
-        handlerId: handler.id,
-        clientId,
-        url: this.getWebSocketRequestURL(request).href,
+    const connection: PendingUserWebSocketHandler = {
+      clientId,
+      handler,
+      closeListener: () => {
+        this.removePendingUserWebSocketConnection(socket, connection);
       },
-      { sockets: [handler.socket] },
-    );
+    };
 
-    function earlyMessageListener() {
-      socket.close(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE, WEB_SOCKET_CONNECTION_NOT_READY_CLOSE_REASON);
-    }
+    socket.pause();
+    socket.addEventListener('close', connection.closeListener, { once: true });
+    this.pendingUserWebSocketHandlers.set(socket, connection);
 
-    function earlyCloseListener() {
-      socket.removeEventListener('message', earlyMessageListener);
-    }
-
-    socket.addEventListener('message', earlyMessageListener);
-    socket.addEventListener('close', earlyCloseListener, { once: true });
-
+    let accepted: boolean;
     try {
-      await connectionPromise;
+      const reply = await this.webSocketServerOrThrow.request(
+        'interceptors/ws/clients/connect',
+        {
+          handlerId: handler.id,
+          clientId,
+          url: this.getWebSocketRequestURL(request).href,
+        },
+        { sockets: [handler.socket] },
+      );
+      accepted = reply.accepted;
     } catch {
-      socket.removeEventListener('message', earlyMessageListener);
-      socket.removeEventListener('close', earlyCloseListener);
-      socket.close(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE, WEB_SOCKET_CONNECTION_SETUP_FAILED_CLOSE_REASON);
+      this.closePendingUserWebSocketConnection(socket, connection, {
+        pendingCloseCode: WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE,
+        pendingCloseReason: WEB_SOCKET_CONNECTION_SETUP_FAILED_CLOSE_REASON,
+      });
       return { wasHandled: true };
     }
 
-    socket.removeEventListener('message', earlyMessageListener);
-    socket.removeEventListener('close', earlyCloseListener);
+    if (!accepted) {
+      this.closePendingUserWebSocketConnection(socket, connection, {
+        pendingCloseCode: WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE,
+        pendingCloseReason: WEB_SOCKET_CONNECTION_SETUP_FAILED_CLOSE_REASON,
+      });
+      return { wasHandled: true };
+    }
 
-    if (socket.readyState !== ClientSocket.OPEN) {
+    if (!this.canActivatePendingUserWebSocketConnection(socket, connection)) {
+      this.closePendingUserWebSocketConnection(socket, connection, {
+        pendingCloseCode: WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE,
+        pendingCloseReason: WEB_SOCKET_CONNECTION_SETUP_FAILED_CLOSE_REASON,
+      });
       this.notifyUserWebSocketClose(connection);
       return { wasHandled: true };
     }
-
-    this.userWebSocketHandlers.set(socket, connection);
 
     let messageQueue = Promise.resolve();
     const messageListener = this.createUserWebSocketMessageListener(connection, (queuedMessage) => {
@@ -456,7 +496,7 @@ class InterceptorServer implements PublicInterceptorServer {
     });
 
     socket.addEventListener('close', () => {
-      this.userWebSocketHandlers.delete(socket);
+      this.activeUserWebSocketHandlers.delete(socket);
       socket.removeEventListener('message', messageListener);
       void messageQueue
         .then(() => this.notifyUserWebSocketClose(connection))
@@ -470,8 +510,48 @@ class InterceptorServer implements PublicInterceptorServer {
     });
     socket.addEventListener('message', messageListener);
 
+    this.activeUserWebSocketHandlers.set(socket, connection);
+    this.removePendingUserWebSocketConnection(socket, connection);
+    socket.resume();
+
     return { wasHandled: true };
   };
+
+  private canActivatePendingUserWebSocketConnection(socket: Socket, connection: PendingUserWebSocketHandler) {
+    return (
+      this.pendingUserWebSocketHandlers.get(socket) === connection &&
+      this.webSocketHandlers.includes(connection.handler) &&
+      this.knownWorkerSockets.has(connection.handler.socket) &&
+      connection.handler.socket.readyState === ClientSocket.OPEN &&
+      socket.readyState === ClientSocket.OPEN
+    );
+  }
+
+  private removePendingUserWebSocketConnection(socket: Socket, connection: PendingUserWebSocketHandler) {
+    if (this.pendingUserWebSocketHandlers.get(socket) !== connection) {
+      return false;
+    }
+
+    this.pendingUserWebSocketHandlers.delete(socket);
+    socket.removeEventListener('close', connection.closeListener);
+    return true;
+  }
+
+  private closePendingUserWebSocketConnection(
+    socket: Socket,
+    connection: PendingUserWebSocketHandler,
+    options: {
+      pendingCloseCode?: number;
+      pendingCloseReason?: string;
+    } = {},
+  ) {
+    if (!this.removePendingUserWebSocketConnection(socket, connection)) {
+      return;
+    }
+
+    socket.resume();
+    socket.close(options.pendingCloseCode ?? WEB_SOCKET_NORMAL_CLOSE_CODE, options.pendingCloseReason);
+  }
 
   private createUserWebSocketMessageListener(
     connection: UserWebSocketHandler,
@@ -495,6 +575,10 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private notifyUserWebSocketClose(connection: UserWebSocketHandler) {
+    if (connection.handler.socket.readyState !== ClientSocket.OPEN) {
+      return;
+    }
+
     this.webSocketServerOrThrow.send(
       'interceptors/ws/clients/close',
       {
@@ -536,7 +620,7 @@ class InterceptorServer implements PublicInterceptorServer {
   ) => {
     this.validateWebSocketSendMessage(message);
 
-    const targetSockets = Array.from(this.userWebSocketHandlers.entries()).filter(([, userHandler]) => {
+    const targetSockets = Array.from(this.activeUserWebSocketHandlers.entries()).filter(([, userHandler]) => {
       const isOwnedByWorker = userHandler.handler.socket === workerSocket;
       const matchesClient = message.clientId === undefined || userHandler.clientId === message.clientId;
       const matchesHandler = message.handlerId === undefined || userHandler.handler.id === message.handlerId;
@@ -657,12 +741,21 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private async closeUserWebSocketConnections() {
-    const closingPromises = Array.from(this.userWebSocketHandlers.keys(), (socket) =>
+    for (const socket of this.pendingUserWebSocketHandlers.keys()) {
+      socket.resume();
+    }
+
+    const userSockets = new Set([
+      ...this.pendingUserWebSocketHandlers.keys(),
+      ...this.activeUserWebSocketHandlers.keys(),
+    ]);
+    const closingPromises = Array.from(userSockets, (socket) =>
       closeClientSocket(socket, { timeout: this.webSocketServerOrThrow.socketTimeout }),
     );
 
     await Promise.all(closingPromises);
-    this.userWebSocketHandlers.clear();
+    this.pendingUserWebSocketHandlers.clear();
+    this.activeUserWebSocketHandlers.clear();
   }
 
   private handleHttpRequest = async (nodeRequest: IncomingMessage, nodeResponse: ServerResponse) => {

@@ -5,6 +5,7 @@ import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
 import { createHttpInterceptorWorker } from '@/http/interceptorWorker/factory';
+import { WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE } from '@/utils/webSocket/constants';
 import { createWebSocketInterceptorWorker } from '@/ws/interceptorWorker/factory';
 import LocalWebSocketInterceptorWorker from '@/ws/interceptorWorker/LocalWebSocketInterceptorWorker';
 import RemoteWebSocketInterceptorWorker from '@/ws/interceptorWorker/RemoteWebSocketInterceptorWorker';
@@ -734,6 +735,62 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
   }
 
   if (defaultWorkerOptions.type === 'remote') {
+    it('should reject remote clients if the referenced handler no longer exists', async () => {
+      const rawWorker = createWebSocketInterceptorWorker(workerOptions);
+
+      try {
+        await rawWorker.start();
+        const worker = rawWorker as RemoteWebSocketInterceptorWorker;
+        const interceptor = createDefaultWebSocketInterceptor();
+        await worker.use(interceptor.implementation);
+
+        const resetRequestSpy = vi.spyOn(worker.webSocketClient, 'request').mockResolvedValueOnce({});
+        await worker.clearHandlers({ interceptor: interceptor.implementation });
+        resetRequestSpy.mockRestore();
+
+        const client = new WebSocketClient<ChatMessage>(baseURL);
+        clients.push(client);
+        const closeEventPromise = new Promise<WebSocketClient.CloseEvent<ChatMessage>>((resolve) => {
+          client.addEventListener('close', resolve, { once: true });
+        });
+
+        await client.open();
+
+        const closeEvent = await closeEventPromise;
+        expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+        expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
+      } finally {
+        await rawWorker.stop();
+      }
+    });
+
+    it('should handle messages sent immediately after a remote client opens', async () => {
+      await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
+        const handledMessages: ChatMessage[] = [];
+        const handler = interceptor
+          .message()
+          .effect((message) => {
+            handledMessages.push(message);
+          })
+          .times(2);
+        await handler;
+
+        const client = new WebSocketClient<ChatMessage>(baseURL);
+        clients.push(client);
+
+        await client.open();
+        client.send(JSON.stringify({ type: 'client', text: 'first' }));
+        client.send(JSON.stringify({ type: 'client', text: 'second' }));
+
+        await waitFor(() => {
+          expect(handledMessages).toEqual([
+            { type: 'client', text: 'first' },
+            { type: 'client', text: 'second' },
+          ]);
+        });
+      });
+    });
+
     it('should start with authentication options', async () => {
       const remoteWorkerOptions = workerOptions as RemoteWebSocketInterceptorWorkerOptions;
       const worker = createWebSocketInterceptorWorker({
