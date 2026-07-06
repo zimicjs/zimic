@@ -1,3 +1,4 @@
+import type { HttpSchema } from '@zimic/http';
 import { waitFor, waitForNot } from '@zimic/utils/time';
 import ClientSocket from 'isomorphic-ws';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -86,6 +87,15 @@ describe('Interceptor server > Web sockets', () => {
   }
 
   it('should keep authenticated remote HTTP worker RPC working with the internal marker', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        GET: { response: { 204: {} } };
+      };
+      '/projects': {
+        GET: { response: { 204: {} } };
+      };
+    }>;
+
     const token = await createInterceptorToken();
     tokenIds.push(token.id);
 
@@ -95,22 +105,37 @@ describe('Interceptor server > Web sockets', () => {
     });
 
     await server.start();
+    expect((server as unknown as { httpRuntime?: unknown }).httpRuntime).toBeUndefined();
 
-    await usingHttpInterceptor<{
-      '/users': {
-        GET: { response: { 204: {} } };
-      };
-    }>(
+    await usingHttpInterceptor<Schema>(
       {
         type: 'remote',
         baseURL: `http://localhost:${server.port}`,
         auth: { token: token.value },
       },
       async (interceptor) => {
-        await interceptor.get('/users').respond({ status: 204 });
+        interceptor.get('/users').respond({ status: 204 });
 
         const response = await fetch(`http://localhost:${server!.port}/users`);
         expect(response.status).toBe(204);
+
+        const httpRuntime = (server as unknown as { httpRuntime?: unknown }).httpRuntime;
+        expect(httpRuntime).toBeDefined();
+
+        await usingHttpInterceptor<Schema>(
+          {
+            type: 'remote',
+            baseURL: `http://localhost:${server!.port}`,
+            auth: { token: token.value },
+          },
+          async (secondInterceptor) => {
+            secondInterceptor.get('/projects').respond({ status: 204 });
+
+            const secondResponse = await fetch(`http://localhost:${server!.port}/projects`);
+            expect(secondResponse.status).toBe(204);
+            expect((server as unknown as { httpRuntime?: unknown }).httpRuntime).toBe(httpRuntime);
+          },
+        );
       },
     );
   });
@@ -133,12 +158,13 @@ describe('Interceptor server > Web sockets', () => {
     await expect(
       webSocketClient.start({
         parameters: {
-          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
           token: token.value,
         },
         waitForAuthentication: true,
       }),
     ).resolves.toBeUndefined();
+    expect((server as unknown as { httpRuntime?: unknown }).httpRuntime).toBeUndefined();
 
     await expect(
       webSocketClient.request('interceptors/ws/workers/commit', {
@@ -146,6 +172,75 @@ describe('Interceptor server > Web sockets', () => {
         baseURL: `ws://localhost:${server.port}/chat`,
       }),
     ).resolves.toEqual({});
+  });
+
+  it.each(['', 'invalid'])('should reject remote workers with an invalid protocol role (%s)', async (protocol) => {
+    server = createInternalInterceptorServer({ logUnhandledRequests: false });
+    await server.start();
+
+    webSocketClient = new WebSocketClient({
+      url: `ws://localhost:${server.port}`,
+    });
+
+    await expect(
+      webSocketClient.start({
+        parameters: {
+          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: protocol,
+        },
+        waitForAuthentication: true,
+      }),
+    ).rejects.toThrow('Invalid interceptor worker protocol. (code 1008)');
+
+    expect((server as unknown as { workerProtocols: Map<unknown, unknown> }).workerProtocols.size).toBe(0);
+    expect((server as unknown as { httpRuntime?: unknown }).httpRuntime).toBeUndefined();
+  });
+
+  it('should restrict worker RPC channels to their authenticated protocol role', async () => {
+    server = createInternalInterceptorServer({ logUnhandledRequests: false });
+    await server.start();
+
+    webSocketClient = new WebSocketClient({
+      url: `ws://localhost:${server.port}`,
+      messageTimeout: 50,
+    });
+    const httpWorker = new WebSocketClient<InterceptorServerWebSocketSchema>({
+      url: `ws://localhost:${server.port}`,
+      messageTimeout: 50,
+    });
+    additionalWebSocketClients.push(httpWorker);
+
+    await webSocketClient.start({
+      parameters: {
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
+      },
+      waitForAuthentication: true,
+    });
+    await httpWorker.start({
+      parameters: {
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http',
+      },
+      waitForAuthentication: true,
+    });
+
+    await usingIgnoredConsole(['error'], async () => {
+      await expect(
+        webSocketClient!.request('interceptors/http/workers/commit', {
+          id: crypto.randomUUID(),
+          baseURL: `http://localhost:${server!.port}`,
+          method: 'GET',
+          path: '/',
+        }),
+      ).rejects.toThrow(new WebSocketMessageTimeoutError(50));
+
+      await expect(
+        httpWorker.request('interceptors/ws/workers/commit', {
+          id: crypto.randomUUID(),
+          baseURL: `ws://localhost:${server!.port}/chat`,
+        }),
+      ).rejects.toThrow(new WebSocketMessageTimeoutError(50));
+    });
+
+    expect((server as unknown as { workerProtocols: Map<unknown, unknown> }).workerProtocols.size).toBe(2);
   });
 
   it('should reject remote WebSocket worker RPC without a required token', async () => {
@@ -163,7 +258,7 @@ describe('Interceptor server > Web sockets', () => {
     await expect(
       webSocketClient.start({
         parameters: {
-          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
         },
         waitForAuthentication: true,
       }),
@@ -185,7 +280,7 @@ describe('Interceptor server > Web sockets', () => {
     await expect(
       webSocketClient.start({
         parameters: {
-          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
           token: 'invalid-token',
         },
         waitForAuthentication: true,
@@ -205,7 +300,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -269,7 +364,7 @@ describe('Interceptor server > Web sockets', () => {
     await server.start();
 
     const rawWorkerSocket = new ClientSocket(`ws://localhost:${server.port}`, [
-      encodeURIComponent(`${INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER}=`),
+      encodeURIComponent(`${INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER}=ws`),
     ]);
     userSockets.push(rawWorkerSocket);
 
@@ -290,7 +385,7 @@ describe('Interceptor server > Web sockets', () => {
     await server.start();
 
     const rawWorkerSocket = new ClientSocket(`ws://localhost:${server.port}`, [
-      encodeURIComponent(`${INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER}=`),
+      encodeURIComponent(`${INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER}=ws`),
     ]);
     userSockets.push(rawWorkerSocket);
 
@@ -317,7 +412,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -341,7 +436,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -372,7 +467,7 @@ describe('Interceptor server > Web sockets', () => {
 
       await webSocketClient.start({
         parameters: {
-          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
         },
         waitForAuthentication: true,
       });
@@ -417,7 +512,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -441,7 +536,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -468,7 +563,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -497,7 +592,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -529,7 +624,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -603,7 +698,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -652,7 +747,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -727,7 +822,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -794,7 +889,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -880,13 +975,13 @@ describe('Interceptor server > Web sockets', () => {
     await Promise.all([
       webSocketClient.start({
         parameters: {
-          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
         },
         waitForAuthentication: true,
       }),
       secondWebSocketClient.start({
         parameters: {
-          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
         },
         waitForAuthentication: true,
       }),
@@ -1009,7 +1104,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -1051,7 +1146,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -1092,7 +1187,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -1104,11 +1199,11 @@ describe('Interceptor server > Web sockets', () => {
     });
 
     const internalServer = server as unknown as {
-      knownWorkerSockets: Set<unknown>;
+      workerProtocols: Map<unknown, unknown>;
       pendingUserWebSocketHandlers: Map<unknown, unknown>;
       activeUserWebSocketHandlers: Map<unknown, unknown>;
     };
-    internalServer.knownWorkerSockets.clear();
+    internalServer.workerProtocols.clear();
 
     const userSocket = new ClientSocket(baseURL);
     userSockets.push(userSocket);
@@ -1135,7 +1230,7 @@ describe('Interceptor server > Web sockets', () => {
     });
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -1185,7 +1280,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -1231,7 +1326,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -1296,7 +1391,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -1361,7 +1456,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -1412,7 +1507,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -1461,7 +1556,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -1524,7 +1619,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -1560,7 +1655,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });
@@ -1618,7 +1713,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await webSocketClient.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
       },
       waitForAuthentication: true,
     });

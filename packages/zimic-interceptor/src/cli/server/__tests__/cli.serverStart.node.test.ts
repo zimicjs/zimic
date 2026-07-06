@@ -560,7 +560,7 @@ describe('CLI > Server start', () => {
       try {
         await webSocketClient.start({
           parameters: {
-            [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+            [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http',
           },
         });
         expect(webSocketClient.isRunning).toBe(true);
