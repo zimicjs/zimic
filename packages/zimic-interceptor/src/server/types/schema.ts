@@ -1,4 +1,4 @@
-import { HttpMethod } from '@zimic/http';
+import type { HttpMethod } from '@zimic/http';
 
 import { SerializedHttpRequest, SerializedResponse } from '@/utils/fetch';
 import { WebSocketSchema } from '@/utils/webSocket/types';

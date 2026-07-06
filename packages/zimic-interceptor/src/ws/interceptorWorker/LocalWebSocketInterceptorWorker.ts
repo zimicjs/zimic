@@ -11,7 +11,7 @@ import { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInte
 import WebSocketInterceptorImplementation, {
   AnyWebSocketInterceptorImplementation,
 } from '../interceptor/WebSocketInterceptorImplementation';
-import { MSWWebSocketHandler, MSWWorker } from './types/msw';
+import type { MSWWebSocketHandler, MSWWorker } from './types/msw';
 import { LocalWebSocketInterceptorWorkerOptions } from './types/options';
 import WebSocketInterceptorWorker from './WebSocketInterceptorWorker';
 

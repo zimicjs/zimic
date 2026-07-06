@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import InterceptorStore from '@/interceptor/InterceptorStore';
+import HttpInterceptorStore from '@/http/interceptor/HttpInterceptorStore';
 import {
   createInterceptorToken,
   DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
@@ -13,7 +13,7 @@ import { createInternalInterceptorServer } from '@tests/utils/interceptorServers
 import { createHttpInterceptor } from '../factory';
 
 describe('HttpInterceptor (node, remote) > Authentication', () => {
-  const store = new InterceptorStore();
+  const store = new HttpInterceptorStore();
   const server = createInternalInterceptorServer({
     tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     logUnhandledRequests: false,

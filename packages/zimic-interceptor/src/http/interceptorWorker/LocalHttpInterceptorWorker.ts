@@ -13,7 +13,7 @@ import HttpInterceptorImplementation, {
 import { UnhandledRequestStrategy } from '../interceptor/types/options';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { HttpResponseFactory, HttpResponseFactoryContext } from './types/http';
-import { MSWHttpHandler, MSWWorker } from './types/msw';
+import type { MSWHttpHandler, MSWWorker } from './types/msw';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
 
 interface HttpHandler {

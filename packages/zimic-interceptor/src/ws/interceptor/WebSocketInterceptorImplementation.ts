@@ -49,6 +49,7 @@ class WebSocketInterceptorImplementation<
   private createWorker?: () => WebSocketInterceptorWorker;
   private releaseWorker?: (worker: WebSocketInterceptorWorker) => void;
   private worker?: WebSocketInterceptorWorker;
+  private startingPromise?: Promise<void>;
 
   constructor(options: {
     baseURL: URL;
@@ -115,6 +116,20 @@ class WebSocketInterceptorImplementation<
       return;
     }
 
+    if (this.startingPromise) {
+      return this.startingPromise;
+    }
+
+    this.startingPromise = this.startOnce();
+
+    try {
+      await this.startingPromise;
+    } finally {
+      this.startingPromise = undefined;
+    }
+  }
+
+  private async startOnce() {
     try {
       this.worker = this.createWorker?.();
 

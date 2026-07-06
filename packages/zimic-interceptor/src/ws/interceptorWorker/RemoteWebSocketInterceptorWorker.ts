@@ -1,6 +1,6 @@
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
-import { INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER } from '@/server/constants';
+import { INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER } from '@/interceptor/constants';
 import { InterceptorServerWebSocketSchema, WebSocketHandlerCommit } from '@/server/types/schema';
 import { isClientSide, isServerSide } from '@/utils/environment';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
