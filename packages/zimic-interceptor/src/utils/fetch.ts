@@ -1,6 +1,6 @@
-import { JSONValue } from '@zimic/http';
+import type { JSONValue } from '@zimic/utils/types';
 
-import { UnhandledRequestStrategy } from '@/http';
+import type { UnhandledRequestStrategy } from '@/http';
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
 
 import { convertArrayBufferToBase64, convertBase64ToArrayBuffer } from './data';

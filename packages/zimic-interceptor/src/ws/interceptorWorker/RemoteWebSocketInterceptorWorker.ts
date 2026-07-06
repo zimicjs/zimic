@@ -1,4 +1,4 @@
-import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import type { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
 import { INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER } from '@/interceptor/constants';
 import { InterceptorServerWebSocketSchema, WebSocketHandlerCommit } from '@/server/types/schema';
@@ -59,7 +59,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     await super.sharedStart(async () => {
       await this.webSocketClient.start({
         parameters: {
-          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
           ...(this.auth ? { token: this.auth.token } : {}),
         },
         waitForAuthentication: true,

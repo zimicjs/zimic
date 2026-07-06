@@ -1,5 +1,5 @@
-import { HttpBody, HttpHeadersInit, HttpMethod, HttpRequest, HttpSchema } from '@zimic/http';
-import { PossiblePromise } from '@zimic/utils/types';
+import type { HttpBody, HttpHeadersInit, HttpMethod, HttpRequest, HttpSchema } from '@zimic/http';
+import type { PossiblePromise } from '@zimic/utils/types';
 import { validatePathParams } from '@zimic/utils/url';
 
 import { INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER } from '@/interceptor/constants';
@@ -68,7 +68,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
       await this.webSocketClient.start({
         parameters: {
-          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: '',
+          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http',
           ...(this.auth ? { token: this.auth.token } : {}),
         },
         waitForAuthentication: true,

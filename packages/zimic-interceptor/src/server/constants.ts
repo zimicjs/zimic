@@ -1,4 +1,3 @@
-import { HTTP_METHODS, HttpSchema } from '@zimic/http';
 import { DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT } from '@zimic/utils/server';
 
 import { DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT } from '@/utils/webSocket';
@@ -8,15 +7,15 @@ export { INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER } from '@/interceptor/const
 export const DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT = DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT;
 export const DEFAULT_SERVER_RPC_TIMEOUT = DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT;
 
-const ALLOWED_ACCESS_CONTROL_HTTP_METHODS = HTTP_METHODS.join(',');
+const ALLOWED_ACCESS_CONTROL_HTTP_METHODS = 'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS';
 
-export type AccessControlHeaders = HttpSchema.Headers<{
+export interface AccessControlHeaders {
   'access-control-allow-origin': string;
   'access-control-allow-methods': string;
   'access-control-allow-headers': string;
   'access-control-expose-headers': string;
   'access-control-max-age'?: string;
-}>;
+}
 
 /** The default access control headers for the server. */
 export const DEFAULT_ACCESS_CONTROL_HEADERS = Object.freeze({
