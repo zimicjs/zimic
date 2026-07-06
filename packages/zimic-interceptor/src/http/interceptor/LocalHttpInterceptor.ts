@@ -1,14 +1,14 @@
 import { HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@zimic/http';
 
-import InterceptorStore from '../../interceptor/InterceptorStore';
 import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
 import HttpInterceptorImplementation from './HttpInterceptorImplementation';
+import HttpInterceptorStore from './HttpInterceptorStore';
 import { SyncHttpInterceptorMethodHandler } from './types/handlers';
 import { LocalHttpInterceptorOptions, UnhandledRequestStrategy } from './types/options';
 import { HttpInterceptorRequestSaving, LocalHttpInterceptor as PublicLocalHttpInterceptor } from './types/public';
 
 class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttpInterceptor<Schema> {
-  private store = new InterceptorStore();
+  private store = new HttpInterceptorStore();
 
   implementation: HttpInterceptorImplementation<Schema, typeof LocalHttpRequestHandler>;
 

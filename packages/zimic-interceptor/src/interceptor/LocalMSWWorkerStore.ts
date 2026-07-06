@@ -1,10 +1,10 @@
 import { createCachedDynamicImport } from '@zimic/utils/import';
-import { SharedOptions as MSWWorkerSharedOptions } from 'msw';
+import type { SharedOptions as MSWWorkerSharedOptions } from 'msw';
 
 import { isClientSide, isServerSide } from '@/utils/environment';
 
-import UnregisteredBrowserServiceWorkerError from '../http/interceptorWorker/errors/UnregisteredBrowserServiceWorkerError';
-import { BrowserMSWWorker, MSWWorker, NodeMSWWorker } from '../http/interceptorWorker/types/msw';
+import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
+import type { BrowserMSWWorker, MSWWorker, NodeMSWWorker } from './types/msw';
 
 const importMSWNode = createCachedDynamicImport(() => import('msw/node'));
 const importMSWBrowser = createCachedDynamicImport(() => import('msw/browser'));

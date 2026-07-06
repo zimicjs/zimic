@@ -2,7 +2,7 @@ import { HttpBody, HttpHeadersInit, HttpMethod, HttpRequest, HttpSchema } from '
 import { PossiblePromise } from '@zimic/utils/types';
 import { validatePathParams } from '@zimic/utils/url';
 
-import { INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER } from '@/server/constants';
+import { INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER } from '@/interceptor/constants';
 import UnsupportedResponseBypassError from '@/server/errors/UnsupportedResponseBypassError';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/types/schema';
 import { isClientSide, isServerSide } from '@/utils/environment';

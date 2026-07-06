@@ -1,8 +1,5 @@
 import { WebSocketSchema } from '@zimic/ws';
 
-import InterceptorStore from '@/interceptor/InterceptorStore';
-
-import LocalWebSocketInterceptorWorker from '../interceptorWorker/LocalWebSocketInterceptorWorker';
 import { LocalWebSocketMessageHandler } from '../messageHandler/LocalWebSocketMessageHandler';
 import {
   WebSocketInterceptorClient as PublicWebSocketInterceptorClient,
@@ -11,9 +8,10 @@ import {
 import { LocalWebSocketInterceptorOptions, WebSocketInterceptorMessageSaving } from './types/options';
 import { LocalWebSocketInterceptor as PublicLocalWebSocketInterceptor } from './types/public';
 import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
+import WebSocketInterceptorStore from './WebSocketInterceptorStore';
 
 class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements PublicLocalWebSocketInterceptor<Schema> {
-  private store = new InterceptorStore();
+  private store = new WebSocketInterceptorStore();
 
   implementation: WebSocketInterceptorImplementation<Schema>;
 
@@ -24,14 +22,10 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
       baseURL,
       messageSaving: options.messageSaving,
       Handler: LocalWebSocketMessageHandler,
-      createWorker: () => {
-        return this.store.getOrCreateLocalWebSocketWorker({}, (workerOptions) => {
-          return new LocalWebSocketInterceptorWorker(workerOptions);
-        });
-      },
+      createWorker: () => this.store.getOrCreateLocalWorker({}),
       releaseWorker: (worker) => {
         if (!worker.isRunning) {
-          this.store.deleteLocalWebSocketWorker();
+          this.store.deleteLocalWorker();
         }
       },
     });

@@ -636,23 +636,31 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       }
     });
 
-    it('should share the MSW worker instance with HTTP interceptors', async () => {
-      const httpWorker = createHttpInterceptorWorker({ type: 'local' });
-      const webSocketWorker = createWebSocketInterceptorWorker({ type: 'local' });
+    it.each(['http-first', 'webSocket-first'] as const)(
+      'should share the MSW worker instance with HTTP interceptors when started %s',
+      async (startOrder) => {
+        const httpWorker = createHttpInterceptorWorker({ type: 'local' });
+        const webSocketWorker = createWebSocketInterceptorWorker({ type: 'local' });
 
-      try {
-        await httpWorker.start();
-        await webSocketWorker.start();
+        try {
+          if (startOrder === 'http-first') {
+            await httpWorker.start();
+            await webSocketWorker.start();
+          } else {
+            await webSocketWorker.start();
+            await httpWorker.start();
+          }
 
-        const httpMSWWorker = await httpWorker.getMSWWorkerOrCreate();
-        const webSocketMSWWorker = await webSocketWorker.getMSWWorkerOrCreate();
+          const httpMSWWorker = await httpWorker.getMSWWorkerOrCreate();
+          const webSocketMSWWorker = await webSocketWorker.getMSWWorkerOrCreate();
 
-        expect(webSocketMSWWorker).toBe(httpMSWWorker);
-      } finally {
-        await webSocketWorker.stop();
-        await httpWorker.stop();
-      }
-    });
+          expect(webSocketMSWWorker).toBe(httpMSWWorker);
+        } finally {
+          await webSocketWorker.stop();
+          await httpWorker.stop();
+        }
+      },
+    );
 
     it('should start the shared MSW worker only once when HTTP and WebSocket workers start concurrently', async () => {
       const httpWorker = createHttpInterceptorWorker({ type: 'local' });
@@ -666,11 +674,129 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         await Promise.all([httpWorker.start(), webSocketWorker.start()]);
 
         const webSocketMSWWorker = await webSocketWorker.getMSWWorkerOrCreate();
+
         expect(webSocketMSWWorker).toBe(mswWorker);
         expect(startSpy).toHaveBeenCalledTimes(wasMSWWorkerRunning ? 0 : 1);
       } finally {
         await webSocketWorker.stop();
         await httpWorker.stop();
+      }
+    });
+
+    it('should clean up the shared MSW worker only after the final protocol worker stops', async () => {
+      const httpWorker = createHttpInterceptorWorker({ type: 'local' });
+      const webSocketWorker = createWebSocketInterceptorWorker({ type: 'local' });
+
+      const mswWorker = await httpWorker.getMSWWorkerOrCreate();
+      const cleanupSpy = 'stop' in mswWorker ? vi.spyOn(mswWorker, 'stop') : vi.spyOn(mswWorker, 'close');
+
+      try {
+        await httpWorker.start();
+        await webSocketWorker.start();
+
+        await httpWorker.stop();
+
+        expect(cleanupSpy).not.toHaveBeenCalled();
+        expect(httpWorker.class.isMSWWorkerRunning).toBe(true);
+
+        await webSocketWorker.stop();
+
+        expect(cleanupSpy).toHaveBeenCalledTimes(platform === 'node' ? 1 : 0);
+        expect(httpWorker.class.isMSWWorkerRunning).toBe(platform === 'browser');
+      } finally {
+        await webSocketWorker.stop();
+        await httpWorker.stop();
+      }
+    });
+
+    it('should not duplicate handlers when an interceptor is started concurrently', async () => {
+      const interceptor = createInternalWebSocketInterceptor<ChatMessage>({ type: 'local', baseURL });
+
+      try {
+        await Promise.all([interceptor.start(), interceptor.start(), interceptor.start()]);
+
+        interceptor.message().respond({ type: 'server', text: 'one' });
+
+        const client = await createClient();
+        const messageListener = vi.fn();
+        client.addEventListener('message', messageListener);
+
+        client.send(JSON.stringify({ type: 'client', text: 'one' }));
+
+        await waitFor(() => {
+          expect(messageListener).toHaveBeenCalledTimes(1);
+        });
+      } finally {
+        await interceptor.stop();
+      }
+    });
+
+    it('should not reply to unmatched client messages', async () => {
+      await usingWebSocketInterceptor<ChatMessage>({ type: 'local', baseURL }, async (interceptor) => {
+        interceptor.message().with({ type: 'server' }).respond({ type: 'server', text: 'unmatched' });
+
+        const client = await createClient();
+        const messageListener = vi.fn();
+        client.addEventListener('message', messageListener);
+
+        client.send(JSON.stringify({ type: 'client', text: 'one' }));
+
+        await waitForNot(() => {
+          expect(messageListener).toHaveBeenCalled();
+        });
+      });
+    });
+
+    it('should keep HTTP handlers running after clearing a WebSocket interceptor', async () => {
+      const httpInterceptor = createInternalHttpInterceptor<HttpSchemaWithUsers>({
+        type: 'local',
+        baseURL: httpBaseURL,
+      });
+      const webSocketInterceptor = createInternalWebSocketInterceptor<ChatMessage>({ type: 'local', baseURL });
+
+      try {
+        await httpInterceptor.start();
+        httpInterceptor.get('/users').respond({ status: 200, body: { users: ['one'] } });
+
+        await webSocketInterceptor.start();
+        webSocketInterceptor.message().respond({ type: 'server', text: 'one' });
+
+        webSocketInterceptor.clear();
+
+        const response = await fetch(`${httpBaseURL}/users`);
+        await expect(response.json()).resolves.toEqual({ users: ['one'] });
+        expect(LocalWebSocketInterceptorWorker.isMSWWorkerRunning).toBe(true);
+      } finally {
+        await webSocketInterceptor.stop();
+        await httpInterceptor.stop();
+      }
+    });
+
+    it('should keep WebSocket handlers running after clearing an HTTP interceptor', async () => {
+      const httpInterceptor = createInternalHttpInterceptor<HttpSchemaWithUsers>({
+        type: 'local',
+        baseURL: httpBaseURL,
+      });
+      const webSocketInterceptor = createInternalWebSocketInterceptor<ChatMessage>({ type: 'local', baseURL });
+
+      try {
+        await httpInterceptor.start();
+        httpInterceptor.get('/users').respond({ status: 200, body: { users: ['one'] } });
+
+        await webSocketInterceptor.start();
+        webSocketInterceptor.message().respond((message) => ({ type: 'server', text: `received ${message.text}` }));
+
+        httpInterceptor.clear();
+
+        const client = await createClient();
+        const messagePromise = waitForMessage(client);
+        client.send(JSON.stringify({ type: 'client', text: 'one' }));
+
+        await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'received one' });
+        expect(LocalWebSocketInterceptorWorker.isMSWWorkerRunning).toBe(true);
+      } finally {
+        await webSocketInterceptor.stop();
+        await httpInterceptor.stop();
       }
     });
 
@@ -697,6 +823,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
 
         const response = await fetch(`${httpBaseURL}/users`);
         await expect(response.json()).resolves.toEqual({ users: ['one'] });
+        expect(LocalWebSocketInterceptorWorker.isMSWWorkerRunning).toBe(true);
       } finally {
         await webSocketInterceptor.stop();
         await httpInterceptor.stop();
@@ -727,6 +854,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         client.send(JSON.stringify({ type: 'client', text: 'one' }));
 
         await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'received one' });
+        expect(LocalWebSocketInterceptorWorker.isMSWWorkerRunning).toBe(true);
       } finally {
         await webSocketInterceptor.stop();
         await httpInterceptor.stop();
