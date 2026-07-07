@@ -1,35 +1,23 @@
 import { PossiblePromise } from '@zimic/utils/types';
-import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
-import { expect } from 'vitest';
+import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import { expect, vi } from 'vitest';
+
+import { createInternalWebSocketInterceptor } from '@tests/utils/interceptors';
 
 import WebSocketTimesCheckError from '../../../errors/WebSocketTimesCheckError';
 import WebSocketTimesDeclarationPointer from '../../../errors/WebSocketTimesDeclarationPointer';
+import { WebSocketInterceptorMessageSaving, WebSocketInterceptorType } from '../../../interceptor/types/options';
+import {
+  InternalWebSocketInterceptorClient,
+  InternalWebSocketInterceptorServer,
+} from '../../../interceptor/WebSocketInterceptorHandle';
+import { WebSocketHandlerConstructor } from '../../../interceptor/WebSocketInterceptorImplementation';
+import type { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
+import type { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
 
-export async function usingWebSocketClient<Schema extends WebSocketSchema>(
-  baseURL: string,
-  callback: (client: WebSocketClient<Schema>) => PossiblePromise<void>,
-) {
-  const client = new WebSocketClient<Schema>(baseURL);
-
-  try {
-    await client.open();
-    await callback(client);
-  } finally {
-    await client.close();
-  }
-}
-
-export async function waitForWebSocketMessage<Schema extends WebSocketSchema>(client: WebSocketClient<Schema>) {
-  const event = await new Promise<WebSocketClient.MessageEvent<Schema>>((resolve) => {
-    client.addEventListener('message', resolve, { once: true });
-  });
-
-  if (typeof event.data === 'string' && /^[{[]/.test(event.data.trim())) {
-    return JSON.parse(event.data);
-  }
-
-  return event.data;
-}
+type DirectWebSocketMessageHandler<Schema extends WebSocketSchema> =
+  | LocalWebSocketMessageHandler<Schema>
+  | RemoteWebSocketMessageHandler<Schema>;
 
 export async function readBytes(data: Blob | ArrayBuffer) {
   const arrayBuffer = data instanceof Blob ? await data.arrayBuffer() : data;
@@ -42,6 +30,83 @@ export function createBinaryMessage(firstByte: number, secondByte: number) {
   messageView[0] = firstByte;
   messageView[1] = secondByte;
   return message;
+}
+
+export interface DirectWebSocketPeer<Schema extends WebSocketSchema> {
+  handle: InternalWebSocketInterceptorClient<Schema>;
+  sentMessages: WebSocketMessageData<Schema>[];
+}
+
+export interface DirectWebSocketMessageHandlerContext<Schema extends WebSocketSchema> {
+  baseURL: string;
+  interceptor: ReturnType<typeof createInternalWebSocketInterceptor<Schema>>;
+  handler: DirectWebSocketMessageHandler<Schema>;
+  sender: DirectWebSocketPeer<Schema>;
+  receiver: InternalWebSocketInterceptorServer<Schema>;
+  receivedMessages: WebSocketMessageData<Schema>[];
+  createSender: (url?: string) => DirectWebSocketPeer<Schema>;
+  handleMessage: (
+    message: Schema,
+    options?: { sender?: InternalWebSocketInterceptorClient<Schema> },
+  ) => Promise<boolean>;
+}
+
+export async function usingDirectWebSocketMessageHandler<Schema extends WebSocketSchema>(
+  options: {
+    type: WebSocketInterceptorType;
+    baseURL: string;
+    Handler: WebSocketHandlerConstructor;
+    messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
+  },
+  callback: (context: DirectWebSocketMessageHandlerContext<Schema>) => PossiblePromise<void>,
+) {
+  const interceptor = createInternalWebSocketInterceptor<Schema>({
+    type: options.type,
+    baseURL: options.baseURL,
+    ...(options.messageSaving ? { messageSaving: options.messageSaving } : {}),
+  });
+  interceptor.implementation.isRunning = true;
+
+  const handler = new options.Handler<Schema>(interceptor.implementation) as DirectWebSocketMessageHandler<Schema>;
+  interceptor.implementation.registerMessageHandler(handler);
+
+  function createSender(url = options.baseURL) {
+    const sentMessages: WebSocketMessageData<Schema>[] = [];
+    const handle = interceptor.implementation.createClient(url, {
+      send: vi.fn((data: WebSocketMessageData<Schema>) => {
+        sentMessages.push(data);
+      }),
+    });
+    interceptor.implementation.addClient(handle);
+    return { handle, sentMessages };
+  }
+
+  const sender = createSender();
+  const receivedMessages: WebSocketMessageData<Schema>[] = [];
+  const receiver: InternalWebSocketInterceptorServer<Schema> = interceptor.implementation.server;
+  vi.spyOn(receiver, 'send').mockImplementation((data: WebSocketMessageData<Schema>) => {
+    receivedMessages.push(data);
+  });
+
+  try {
+    await callback({
+      baseURL: options.baseURL,
+      interceptor,
+      handler,
+      sender,
+      receiver,
+      receivedMessages,
+      createSender,
+      handleMessage: (message, handleOptions = {}) =>
+        interceptor.implementation.handleInterceptedMessage(message as WebSocketMessageData<Schema>, {
+          sender: handleOptions.sender ?? sender.handle,
+          receiver,
+        }),
+    });
+  } finally {
+    await interceptor.implementation.clear();
+    interceptor.implementation.isRunning = false;
+  }
 }
 
 export async function expectWebSocketTimesCheckError(

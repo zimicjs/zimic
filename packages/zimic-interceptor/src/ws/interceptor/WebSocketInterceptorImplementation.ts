@@ -215,8 +215,21 @@ class WebSocketInterceptorImplementation<
       const registrationResult = this.worker?.type === 'remote' ? this.worker.use(this) : undefined;
 
       if (handler instanceof RemoteWebSocketMessageHandler && registrationResult instanceof Promise) {
-        handler.registerSyncPromise(registrationResult);
+        const registrationPromise = registrationResult.catch((error: unknown) => {
+          this.unregisterMessageHandler(handler.implementation);
+          throw error;
+        });
+
+        handler.registerSyncPromise(registrationPromise);
       }
+    }
+  }
+
+  private unregisterMessageHandler(handler: AnyWebSocketMessageHandlerImplementation) {
+    const handlerIndex = this.handlers.indexOf(handler);
+
+    if (handlerIndex >= 0) {
+      this.handlers.splice(handlerIndex, 1);
     }
   }
 
@@ -316,7 +329,7 @@ class WebSocketInterceptorImplementation<
       // Handlers that did not match due to anything other than restrictions are still marked as matched to trigger a
       // times check error.
       if (messageMatch?.cause === 'unmatchedRestrictions') {
-        handler.markMessageAsUnmatched(message, { diff: messageMatch.diff });
+        handler.markMessageAsUnmatched(messageMatch.message, { diff: messageMatch.diff });
       } else {
         handler.markMessageAsMatched(message);
         break;

@@ -170,7 +170,7 @@ await handler.delay((message) => milliseconds);
 ## `handler.effect()`
 
 Declares a side effect to run when the handler matches a message. Effects receive the matched message and a context with
-the sender and receiver client handles.
+the sender client handle and receiver server handle.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -345,6 +345,10 @@ The client-to-server messages that matched this handler, along with sender and r
 additional validation in tests.
 
 **Type**: `readonly InterceptedWebSocketInterceptorMessage<RestrictedSchema, Schema>[]`
+
+This array is readonly and keeps the same reference for the handler lifetime. Clearing or reconfiguring the handler
+empties this array in place and removes the same saved messages from the sender client, receiver server, and interceptor
+safe-limit accounting.
 
 :::info IMPORTANT: <span>`handler.messages` requires message saving to be enabled</span>
 

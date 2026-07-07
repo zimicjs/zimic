@@ -108,8 +108,12 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
           const secondMessageListener = vi.fn();
           secondClient.addEventListener('message', secondMessageListener);
 
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(2);
+          });
+
           const serverMessages = interceptor.server.messages;
-          const firstInterceptorClient = interceptor.clients[0];
+          const firstInterceptorClient = interceptor.clients.find((client) => client.url === firstClient.url)!;
           const firstClientMessages = firstInterceptorClient.messages;
 
           firstClient.send(JSON.stringify({ type: 'client', text: 'one' }));
@@ -124,9 +128,8 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
           expect(handler.messages[0].receiver).toBe(interceptor.server);
           expect(handler.messages[0].data).toEqual({ type: 'client', text: 'one' });
           expect(interceptor.server.messages).toBe(serverMessages);
-          expect(interceptor.clients[0].messages).toHaveLength(1);
-          expect(interceptor.clients[0]).toBe(firstInterceptorClient);
-          expect(interceptor.clients[0].messages).toBe(firstClientMessages);
+          expect(firstInterceptorClient.messages).toHaveLength(1);
+          expect(firstInterceptorClient.messages).toBe(firstClientMessages);
           expect(interceptor.server.messages).toHaveLength(1);
 
           await handler.checkTimes();

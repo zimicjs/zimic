@@ -177,7 +177,10 @@ external server. This is different from
 
 If you need to access the messages processed by the interceptor, enable message saving and use `handler.messages`.
 Message saving is enabled by default in Node.js when `process.env.NODE_ENV === 'test'` and disabled by default in
-browsers. Configure `messageSaving: { enabled: true }` when you need saved messages in every environment.
+browsers. Configure `messageSaving: { enabled: true }` when you need saved messages in every environment. Saved message
+arrays are readonly and keep stable references. Calling `handler.clear()` removes that handler's saved messages from the
+handler, sender client, and server arrays in place; calling `interceptor.clear()` clears all saved message arrays and
+resets safe-limit accounting.
 
 ```ts
 const handler = interceptor

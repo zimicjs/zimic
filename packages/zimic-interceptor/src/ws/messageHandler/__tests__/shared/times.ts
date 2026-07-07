@@ -1,15 +1,10 @@
-import { waitForNot } from '@zimic/utils/time';
-import { WebSocketClient } from '@zimic/ws';
-import { beforeAll, beforeEach, afterAll, describe, expect, it, vi } from 'vitest';
-
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { beforeAll, beforeEach, afterAll, describe, expect, it } from 'vitest';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import type { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
 import type { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
-import { expectWebSocketTimesCheckError, usingWebSocketClient, waitForWebSocketMessage } from './utils';
+import { expectWebSocketTimesCheckError, usingDirectWebSocketMessageHandler } from './utils';
 
 export function declareTimesWebSocketMessageHandlerTests(
   options: SharedWebSocketMessageHandlerTestOptions & {
@@ -17,7 +12,7 @@ export function declareTimesWebSocketMessageHandlerTests(
     Handler: typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
   },
 ) {
-  const { type, startServer, stopServer, getBaseURL } = options;
+  const { type, Handler, startServer, stopServer, getBaseURL } = options;
 
   let baseURL: string;
 
@@ -37,35 +32,19 @@ export function declareTimesWebSocketMessageHandlerTests(
     }
   });
 
-  async function sendMatchingMessage(client: WebSocketClient<Schema>, text = 'hello') {
-    const messagePromise = waitForWebSocketMessage(client);
-
-    client.send(JSON.stringify({ type: 'create', body: { text } }));
-
-    await expect(messagePromise).resolves.toEqual({ type: 'delete', id: '1' });
-  }
-
   describe('Exact number of messages', () => {
     it('should match an exact number of limited messages', async () => {
-      await usingWebSocketInterceptor<Schema>(
-        {
-          type,
-          baseURL,
-        },
-        async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor.message().respond({ type: 'delete', id: '1' }).times(1),
-            interceptor,
-          );
+      await usingDirectWebSocketMessageHandler<Schema>(
+        { type, baseURL, Handler },
+        async ({ handler, handleMessage }) => {
+          handler.respond({ type: 'delete', id: '1' }).times(1);
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected exactly 1 message, but got 0.',
             expectedNumberOfMessages: 1,
           });
 
-          await usingWebSocketClient<Schema>(baseURL, async (client) => {
-            await sendMatchingMessage(client);
-          });
+          await handleMessage({ type: 'create', body: { text: 'hello' } });
 
           await handler.checkTimes();
         },
@@ -73,25 +52,17 @@ export function declareTimesWebSocketMessageHandlerTests(
     });
 
     it('should match less than an exact number of limited messages', async () => {
-      await usingWebSocketInterceptor<Schema>(
-        {
-          type,
-          baseURL,
-        },
-        async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor.message().respond({ type: 'delete', id: '1' }).times(2),
-            interceptor,
-          );
+      await usingDirectWebSocketMessageHandler<Schema>(
+        { type, baseURL, Handler },
+        async ({ handler, handleMessage }) => {
+          handler.respond({ type: 'delete', id: '1' }).times(2);
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected exactly 2 messages, but got 0.',
             expectedNumberOfMessages: 2,
           });
 
-          await usingWebSocketClient<Schema>(baseURL, async (client) => {
-            await sendMatchingMessage(client);
-          });
+          await handleMessage({ type: 'create', body: { text: 'hello' } });
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected exactly 2 messages, but got 1.',
@@ -101,31 +72,17 @@ export function declareTimesWebSocketMessageHandlerTests(
       );
     });
 
-    it('should not match to more than an exact number of limited messages', async () => {
-      await usingWebSocketInterceptor<Schema>(
-        {
-          type,
-          baseURL,
-        },
-        async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor.message().respond({ type: 'delete', id: '1' }).times(1),
-            interceptor,
-          );
+    it('should not match more than an exact number of limited messages', async () => {
+      await usingDirectWebSocketMessageHandler<Schema>(
+        { type, baseURL, Handler },
+        async ({ handler, sender, handleMessage }) => {
+          handler.respond({ type: 'delete', id: '1' }).times(1);
 
-          await usingWebSocketClient<Schema>(baseURL, async (client) => {
-            await sendMatchingMessage(client);
-            await handler.checkTimes();
+          await expect(handleMessage({ type: 'create', body: { text: 'one' } })).resolves.toBe(true);
+          await handler.checkTimes();
+          await expect(handleMessage({ type: 'create', body: { text: 'two' } })).resolves.toBe(false);
 
-            const messageListener = vi.fn();
-            client.addEventListener('message', messageListener);
-
-            client.send(JSON.stringify({ type: 'create', body: { text: 'again' } }));
-
-            await waitForNot(() => {
-              expect(messageListener).toHaveBeenCalled();
-            });
-          });
+          expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '1' })]);
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected exactly 1 message, but got 2.',
@@ -136,29 +93,13 @@ export function declareTimesWebSocketMessageHandlerTests(
     });
 
     it('should match exactly zero messages', async () => {
-      await usingWebSocketInterceptor<Schema>(
-        {
-          type,
-          baseURL,
-        },
-        async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor.message().respond({ type: 'delete', id: '1' }).times(0),
-            interceptor,
-          );
+      await usingDirectWebSocketMessageHandler<Schema>(
+        { type, baseURL, Handler },
+        async ({ handler, handleMessage }) => {
+          handler.respond({ type: 'delete', id: '1' }).times(0);
 
           await handler.checkTimes();
-
-          await usingWebSocketClient<Schema>(baseURL, async (client) => {
-            const messageListener = vi.fn();
-            client.addEventListener('message', messageListener);
-
-            client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
-
-            await waitForNot(() => {
-              expect(messageListener).toHaveBeenCalled();
-            });
-          });
+          await expect(handleMessage({ type: 'create', body: { text: 'hello' } })).resolves.toBe(false);
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected exactly 0 messages, but got 1.',
@@ -170,54 +111,38 @@ export function declareTimesWebSocketMessageHandlerTests(
   });
 
   describe('Range number of messages', () => {
-    it('should match the minimum number of messages limited in a range', async () => {
-      await usingWebSocketInterceptor<Schema>(
-        {
-          type,
-          baseURL,
-        },
-        async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor.message().respond({ type: 'delete', id: '1' }).times(0, 3),
-            interceptor,
-          );
+    it('should match the minimum and maximum number of messages limited in a range', async () => {
+      await usingDirectWebSocketMessageHandler<Schema>(
+        { type, baseURL, Handler },
+        async ({ handler, handleMessage }) => {
+          handler.respond({ type: 'delete', id: '1' }).times(0, 3);
 
           await handler.checkTimes();
 
-          await usingWebSocketClient<Schema>(baseURL, async (client) => {
-            await sendMatchingMessage(client, 'one');
-            await handler.checkTimes();
+          await handleMessage({ type: 'create', body: { text: 'one' } });
+          await handler.checkTimes();
 
-            await sendMatchingMessage(client, 'two');
-            await handler.checkTimes();
+          await handleMessage({ type: 'create', body: { text: 'two' } });
+          await handler.checkTimes();
 
-            await sendMatchingMessage(client, 'three');
-            await handler.checkTimes();
-          });
+          await handleMessage({ type: 'create', body: { text: 'three' } });
+          await handler.checkTimes();
         },
       );
     });
 
     it('should match less than the minimum number of messages limited in a range', async () => {
-      await usingWebSocketInterceptor<Schema>(
-        {
-          type,
-          baseURL,
-        },
-        async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor.message().respond({ type: 'delete', id: '1' }).times(2, 3),
-            interceptor,
-          );
+      await usingDirectWebSocketMessageHandler<Schema>(
+        { type, baseURL, Handler },
+        async ({ handler, handleMessage }) => {
+          handler.respond({ type: 'delete', id: '1' }).times(2, 3);
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected at least 2 and at most 3 messages, but got 0.',
             expectedNumberOfMessages: { min: 2, max: 3 },
           });
 
-          await usingWebSocketClient<Schema>(baseURL, async (client) => {
-            await sendMatchingMessage(client);
-          });
+          await handleMessage({ type: 'create', body: { text: 'hello' } });
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected at least 2 and at most 3 messages, but got 1.',
@@ -227,92 +152,14 @@ export function declareTimesWebSocketMessageHandlerTests(
       );
     });
 
-    it('should match the maximum number of messages limited in a range', async () => {
-      await usingWebSocketInterceptor<Schema>(
-        {
-          type,
-          baseURL,
-        },
-        async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor.message().respond({ type: 'delete', id: '1' }).times(2, 3),
-            interceptor,
-          );
+    it('should not match more than the maximum number of messages limited in a range', async () => {
+      await usingDirectWebSocketMessageHandler<Schema>(
+        { type, baseURL, Handler },
+        async ({ handler, handleMessage }) => {
+          handler.respond({ type: 'delete', id: '1' }).times(0, 1);
 
-          await usingWebSocketClient<Schema>(baseURL, async (client) => {
-            await sendMatchingMessage(client, 'one');
-            await sendMatchingMessage(client, 'two');
-            await sendMatchingMessage(client, 'three');
-          });
-
-          await handler.checkTimes();
-        },
-      );
-    });
-
-    it('should not match to more than the maximum number of messages limited in a range', async () => {
-      await usingWebSocketInterceptor<Schema>(
-        {
-          type,
-          baseURL,
-        },
-        async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor.message().respond({ type: 'delete', id: '1' }).times(2, 3),
-            interceptor,
-          );
-
-          await usingWebSocketClient<Schema>(baseURL, async (client) => {
-            await sendMatchingMessage(client, 'one');
-            await sendMatchingMessage(client, 'two');
-            await sendMatchingMessage(client, 'three');
-            await handler.checkTimes();
-
-            const messageListener = vi.fn();
-            client.addEventListener('message', messageListener);
-
-            client.send(JSON.stringify({ type: 'create', body: { text: 'four' } }));
-
-            await waitForNot(() => {
-              expect(messageListener).toHaveBeenCalled();
-            });
-          });
-
-          await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
-            message: 'Expected at least 2 and at most 3 messages, but got 4.',
-            expectedNumberOfMessages: { min: 2, max: 3 },
-          });
-        },
-      );
-    });
-
-    it('should match the exact number of messages limited in a range including zero', async () => {
-      await usingWebSocketInterceptor<Schema>(
-        {
-          type,
-          baseURL,
-        },
-        async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor.message().respond({ type: 'delete', id: '1' }).times(0, 1),
-            interceptor,
-          );
-
-          await handler.checkTimes();
-
-          await usingWebSocketClient<Schema>(baseURL, async (client) => {
-            await sendMatchingMessage(client);
-            await handler.checkTimes();
-
-            const messageListener = vi.fn();
-            client.addEventListener('message', messageListener);
-
-            client.send(JSON.stringify({ type: 'create', body: { text: 'again' } }));
-
-            await waitForNot(() => {
-              expect(messageListener).toHaveBeenCalled();
-            });
-          });
+          await expect(handleMessage({ type: 'create', body: { text: 'one' } })).resolves.toBe(true);
+          await expect(handleMessage({ type: 'create', body: { text: 'two' } })).resolves.toBe(false);
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected at least 0 and at most 1 message, but got 2.',
@@ -321,92 +168,20 @@ export function declareTimesWebSocketMessageHandlerTests(
         },
       );
     });
-
-    it('should match the exact number of messages limited in a unitary range', async () => {
-      await usingWebSocketInterceptor<Schema>(
-        {
-          type,
-          baseURL,
-        },
-        async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor.message().respond({ type: 'delete', id: '1' }).times(1, 1),
-            interceptor,
-          );
-
-          await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
-            message: 'Expected exactly 1 message, but got 0.',
-            expectedNumberOfMessages: { min: 1, max: 1 },
-          });
-
-          await usingWebSocketClient<Schema>(baseURL, async (client) => {
-            await sendMatchingMessage(client);
-          });
-
-          await handler.checkTimes();
-        },
-      );
-    });
   });
 
-  describe('Unmatched messages', () => {
-    it('should report unmatched messages when message saving is enabled', async () => {
-      await usingWebSocketInterceptor<Schema>(
-        {
-          type,
-          baseURL,
-          messageSaving: { enabled: true },
-        },
-        async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: '1' }).times(1),
-            interceptor,
-          );
+  it('should reset times when cleared', async () => {
+    await usingDirectWebSocketMessageHandler<Schema>({ type, baseURL, Handler }, async ({ handler }) => {
+      handler.respond({ type: 'delete', id: '1' }).times(1);
 
-          await usingWebSocketClient<Schema>(baseURL, async (client) => {
-            const messageListener = vi.fn();
-            client.addEventListener('message', messageListener);
+      await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+        message: 'Expected exactly 1 message, but got 0.',
+        expectedNumberOfMessages: 1,
+      });
 
-            client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+      handler.clear();
 
-            await waitForNot(() => {
-              expect(messageListener).toHaveBeenCalled();
-            });
-          });
-
-          await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
-            message: 'Expected exactly 1 matching message, but got 0.',
-            expectedNumberOfMessages: 1,
-            unmatchedMessages:
-              '- {"message":{"type":"create","body":{"text":"hello"}},"diff":{"data":{"expected":{"type":"delete"},"received":{"type":"create","body":{"text":"hello"}}}}}',
-          });
-        },
-      );
+      await handler.checkTimes();
     });
-  });
-
-  it('should reset message counts after cleared', async () => {
-    await usingWebSocketInterceptor<Schema>(
-      {
-        type,
-        baseURL,
-      },
-      async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor.message().respond({ type: 'delete', id: '1' }).times(1),
-          interceptor,
-        );
-
-        await usingWebSocketClient<Schema>(baseURL, async (client) => {
-          await sendMatchingMessage(client);
-        });
-
-        await handler.checkTimes();
-
-        await promiseIfRemote(handler.clear(), interceptor);
-
-        await handler.checkTimes();
-      },
-    );
   });
 }

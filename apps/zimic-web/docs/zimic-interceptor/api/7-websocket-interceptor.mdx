@@ -26,6 +26,20 @@ The base URL used by the interceptor.
 
 **Type**: `string`
 
+Stopped interceptors can be pointed to another valid `ws:` or `wss:` URL, including changes to the protocol, host, port,
+and path. Running interceptors reject `baseURL` changes; stop the interceptor before changing it.
+
+For remote interceptors, the next `start()` uses the current `baseURL` and authentication options.
+
+## `interceptor.auth`
+
+The authentication options used by a remote interceptor when connecting to an interceptor server.
+
+**Type**: `WebSocketInterceptorAuthOptions | undefined`
+
+This property is available only on remote interceptors. Replacing the auth object or mutating `auth.token` is allowed
+while stopped and rejected while running.
+
 ## `interceptor.messageSaving`
 
 Configures if intercepted messages are saved and how they are handled.
@@ -69,13 +83,14 @@ Whether the interceptor is currently running and ready to use.
 
 A synthetic server handle that can send messages to currently connected clients.
 
-**Type**: `WebSocketInterceptorClient<Schema>` (readonly)
+**Type**: `WebSocketInterceptorServer<Schema>` (readonly)
 
 ```ts
 interceptor.server.send(JSON.stringify({ type: 'presence', data: { online: true } }));
 ```
 
 When message saving is enabled, matched client-to-server messages are available through `interceptor.server.messages`.
+The array is readonly and keeps the same reference for the lifetime of the interceptor.
 
 Messages sent with `interceptor.server.send(...)` are delivered to connected clients, but they are not added to handler
 or client saved message lists. Saved messages are produced by matched client-to-server messages.
@@ -84,10 +99,11 @@ or client saved message lists. Saved messages are produced by matched client-to-
 
 The currently connected client handles.
 
-**Type**: `WebSocketInterceptorClient<Schema>[]` (readonly)
+**Type**: `readonly WebSocketInterceptorClient<Schema>[]`
 
 Each client can send messages back to its real WebSocket connection and exposes its saved matched messages through
-`client.messages`.
+`client.messages`. Client and server handles are distinct roles; `handler.from(...)` accepts client handles, not the
+server handle. Saved message arrays are readonly and keep stable references while the handle exists.
 
 ## `interceptor.start()`
 
@@ -197,6 +213,9 @@ await interceptor.checkTimes();
 Clears the interceptor and all of its
 [`WebSocketMessageHandler`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx) instances, including their
 registered responses, effects, restrictions, connected clients, and saved messages.
+
+Saved messages are centrally owned by the interceptor. Clearing the interceptor empties handler, client, and server
+message arrays in place and resets message-saving safe-limit accounting.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
