@@ -129,13 +129,19 @@ export class RemoteWebSocketMessageHandler<
     const promisesToWait = new Set(this.syncPromises);
 
     return Promise.all(promisesToWait)
-      .then(() => {
-        this.syncPromises = this.syncPromises.filter((promise) => !promisesToWait.has(promise));
+      .then(
+        () => {
+          this.syncPromises = this.syncPromises.filter((promise) => !promisesToWait.has(promise));
 
-        /* istanbul ignore next -- @preserve
-         * The pending path requires new sync promises being registered while resolving current ones. */
-        return this.isSynced ? this.synced : this.pending;
-      })
+          /* istanbul ignore next -- @preserve
+           * The pending path requires new sync promises being registered while resolving current ones. */
+          return this.isSynced ? this.synced : this.pending;
+        },
+        (error: unknown) => {
+          this.syncPromises = this.syncPromises.filter((promise) => !promisesToWait.has(promise));
+          throw error;
+        },
+      )
       .then(onFulfilled, onRejected);
   }
 

@@ -1,14 +1,10 @@
-import { waitFor, waitForNot } from '@zimic/utils/time';
 import { beforeAll, beforeEach, afterAll, expect, expectTypeOf, it, vi } from 'vitest';
-
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import type { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
 import type { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
 import { ChatMessage, Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
-import { usingWebSocketClient, waitForWebSocketMessage } from './utils';
+import { usingDirectWebSocketMessageHandler } from './utils';
 
 export function declareRestrictionWebSocketMessageHandlerTests(
   options: SharedWebSocketMessageHandlerTestOptions & {
@@ -16,7 +12,7 @@ export function declareRestrictionWebSocketMessageHandlerTests(
     Handler: typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
   },
 ) {
-  const { type, startServer, stopServer, getBaseURL } = options;
+  const { type, Handler, startServer, stopServer, getBaseURL } = options;
 
   let baseURL: string;
 
@@ -36,239 +32,125 @@ export function declareRestrictionWebSocketMessageHandlerTests(
     }
   });
 
-  it('should match only specific messages if contains a declared response and static restrictions', async () => {
-    await usingWebSocketInterceptor<Schema>(
-      {
-        type,
-        baseURL,
-      },
-      async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor
-            .message()
-            .with({ type: 'create', body: { text: 'hello' } })
-            .respond({ type: 'delete', id: '1' })
-            .times(1),
-          interceptor,
-        );
-        await usingWebSocketClient<Schema>(baseURL, async (client) => {
-          const unmatchedMessageListener = vi.fn();
-          client.addEventListener('message', unmatchedMessageListener);
+  it('should match only specific messages if contains static restrictions', async () => {
+    await usingDirectWebSocketMessageHandler<Schema>(
+      { type, baseURL, Handler },
+      async ({ handler, sender, handleMessage }) => {
+        handler.with({ type: 'create', body: { text: 'hello' } });
+        handler.respond({ type: 'delete', id: '1' });
+        handler.times(1);
 
-          client.send(JSON.stringify({ type: 'delete', id: '1' }));
+        await expect(handleMessage({ type: 'delete', id: '1' })).resolves.toBe(false);
+        await expect(handleMessage({ type: 'create', body: { text: 'hello' } })).resolves.toBe(true);
 
-          await waitForNot(() => {
-            expect(unmatchedMessageListener).toHaveBeenCalled();
-          });
-
-          client.removeEventListener('message', unmatchedMessageListener);
-
-          const messagePromise = waitForWebSocketMessage(client);
-          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
-
-          await expect(messagePromise).resolves.toEqual({ type: 'delete', id: '1' });
-        });
-
+        expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '1' })]);
         await handler.checkTimes();
       },
     );
   });
 
-  it('should match only specific messages if contains a declared response and computed restrictions', async () => {
-    await usingWebSocketInterceptor<Schema>(
-      {
-        type,
-        baseURL,
-      },
-      async (interceptor) => {
-        function isCreateMessage(message: ChatMessage): message is Extract<ChatMessage, { type: 'create' }> {
-          return message.type === 'create';
-        }
+  it('should match only specific messages if contains computed restrictions', async () => {
+    await usingDirectWebSocketMessageHandler<Schema>({ type, baseURL, Handler }, async ({ handler, handleMessage }) => {
+      function isCreateMessage(message: ChatMessage): message is Extract<ChatMessage, { type: 'create' }> {
+        return message.type === 'create';
+      }
 
-        const effect = vi.fn((message: Extract<ChatMessage, { type: 'create' }>) => {
+      const effect = vi.fn((message: Schema) => {
+        if (message.type === 'create') {
           expectTypeOf(message.body.priority).toEqualTypeOf<number | undefined>();
-        });
+        }
+      });
 
-        const handler = await promiseIfRemote(
-          interceptor.message().with(isCreateMessage).effect(effect).times(1),
-          interceptor,
-        );
+      handler.with(isCreateMessage);
+      handler.effect(effect);
+      handler.times(1);
 
-        await usingWebSocketClient<Schema>(baseURL, async (client) => {
-          client.send(JSON.stringify({ type: 'delete', id: '1' }));
+      await expect(handleMessage({ type: 'delete', id: '1' })).resolves.toBe(false);
+      await expect(handleMessage({ type: 'create', body: { text: 'hello' } })).resolves.toBe(true);
 
-          await waitForNot(() => {
-            expect(effect).toHaveBeenCalled();
-          });
-
-          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
-
-          await waitFor(() => {
-            expect(effect).toHaveBeenCalledTimes(1);
-          });
-        });
-
-        await handler.checkTimes();
-      },
-    );
+      expect(effect).toHaveBeenCalledTimes(1);
+      await handler.checkTimes();
+    });
   });
 
-  it('should match only specific messages if contains a declared response and boolean computed restrictions', async () => {
-    await usingWebSocketInterceptor<Schema>(
-      {
-        type,
-        baseURL,
-      },
-      async (interceptor) => {
-        const effect = vi.fn();
+  it('should match only specific messages if contains boolean computed restrictions', async () => {
+    await usingDirectWebSocketMessageHandler<Schema>({ type, baseURL, Handler }, async ({ handler, handleMessage }) => {
+      const effect = vi.fn();
 
-        const handler = await promiseIfRemote(
-          interceptor
-            .message()
-            .with((message): boolean => message.type === 'create' && message.body.text.startsWith('hello'))
-            .effect(effect)
-            .times(1),
-          interceptor,
-        );
+      handler.with((message: Schema): boolean => message.type === 'create' && message.body.text.startsWith('hello'));
+      handler.effect(effect);
+      handler.times(1);
 
-        await usingWebSocketClient<Schema>(baseURL, async (client) => {
-          client.send(JSON.stringify({ type: 'delete', id: '1' }));
-          client.send(JSON.stringify({ type: 'create', body: { text: 'goodbye' } }));
+      await expect(handleMessage({ type: 'delete', id: '1' })).resolves.toBe(false);
+      await expect(handleMessage({ type: 'create', body: { text: 'goodbye' } })).resolves.toBe(false);
+      await expect(handleMessage({ type: 'create', body: { text: 'hello' } })).resolves.toBe(true);
 
-          await waitForNot(() => {
-            expect(effect).toHaveBeenCalled();
-          });
-
-          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
-
-          await waitFor(() => {
-            expect(effect).toHaveBeenCalledTimes(1);
-          });
-        });
-
-        await handler.checkTimes();
-      },
-    );
+      expect(effect).toHaveBeenCalledTimes(1);
+      await handler.checkTimes();
+    });
   });
 
   it('should match only messages from a restricted sender', async () => {
-    await usingWebSocketInterceptor<Schema>(
-      {
-        type,
-        baseURL,
-        messageSaving: { enabled: true },
-      },
-      async (interceptor) => {
-        await promiseIfRemote(interceptor.message().times(0), interceptor);
+    await usingDirectWebSocketMessageHandler<Schema>(
+      { type, baseURL, Handler, messageSaving: { enabled: true } },
+      async ({ handler, sender, createSender, handleMessage }) => {
+        const otherSender = createSender(`${baseURL}/other`);
 
-        await usingWebSocketClient<Schema>(baseURL, async (firstClient) => {
-          await usingWebSocketClient<Schema>(baseURL, async (secondClient) => {
-            await waitFor(() => {
-              expect(interceptor.clients).toHaveLength(2);
-            });
+        handler.from(sender.handle);
+        handler.respond({ type: 'delete', id: '1' });
+        handler.times(1);
 
-            const handler = await promiseIfRemote(
-              interceptor.message().from(interceptor.clients[0]).respond({ type: 'delete', id: '1' }).times(1),
-              interceptor,
-            );
+        await expect(
+          handleMessage({ type: 'create', body: { text: 'other' } }, { sender: otherSender.handle }),
+        ).resolves.toBe(false);
+        await expect(handleMessage({ type: 'create', body: { text: 'restricted' } })).resolves.toBe(true);
 
-            const secondMessageListener = vi.fn();
-            secondClient.addEventListener('message', secondMessageListener);
+        expect(handler.messages).toHaveLength(1);
+        expect(handler.messages[0].sender).toBe(sender.handle);
+        expect(handler.messages[0].data).toEqual({ type: 'create', body: { text: 'restricted' } });
+        expect(otherSender.sentMessages).toEqual([]);
 
-            secondClient.send(JSON.stringify({ type: 'create', body: { text: 'other' } }));
-
-            await waitForNot(() => {
-              expect(secondMessageListener).toHaveBeenCalled();
-            });
-
-            const firstMessagePromise = waitForWebSocketMessage(firstClient);
-            firstClient.send(JSON.stringify({ type: 'create', body: { text: 'restricted' } }));
-
-            await expect(firstMessagePromise).resolves.toEqual({ type: 'delete', id: '1' });
-
-            await waitFor(() => {
-              expect(handler.messages).toHaveLength(1);
-            });
-
-            expect(handler.messages[0].sender).toBe(interceptor.clients[0]);
-            expect(handler.messages[0].data).toEqual({ type: 'create', body: { text: 'restricted' } });
-
-            await handler.checkTimes();
-          });
-        });
+        await handler.checkTimes();
       },
     );
   });
 
   it('should match only messages satisfying multiple restrictions', async () => {
-    await usingWebSocketInterceptor<Schema>(
-      {
-        type,
-        baseURL,
-      },
-      async (interceptor) => {
-        const effect = vi.fn();
+    await usingDirectWebSocketMessageHandler<Schema>({ type, baseURL, Handler }, async ({ handler, handleMessage }) => {
+      const effect = vi.fn();
 
-        const handler = await promiseIfRemote(
-          interceptor
-            .message()
-            .with({ type: 'create' })
-            .with((message): message is Extract<Schema, { type: 'create' }> => message.body.text.startsWith('hello'))
-            .effect(effect)
-            .times(1),
-          interceptor,
-        );
-        await usingWebSocketClient<Schema>(baseURL, async (client) => {
-          client.send(JSON.stringify({ type: 'create', body: { text: 'goodbye' } }));
+      handler.with({ type: 'create' });
+      handler.with(
+        (message: Schema): message is Extract<Schema, { type: 'create' }> =>
+          message.type === 'create' && message.body.text.startsWith('hello'),
+      );
+      handler.effect(effect);
+      handler.times(1);
 
-          await waitForNot(() => {
-            expect(effect).toHaveBeenCalled();
-          });
+      await expect(handleMessage({ type: 'create', body: { text: 'goodbye' } })).resolves.toBe(false);
+      await expect(handleMessage({ type: 'create', body: { text: 'hello' } })).resolves.toBe(true);
 
-          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
-
-          await waitFor(() => {
-            expect(effect).toHaveBeenCalledTimes(1);
-          });
-        });
-
-        await handler.checkTimes();
-      },
-    );
+      expect(effect).toHaveBeenCalledTimes(1);
+      await handler.checkTimes();
+    });
   });
 
   it('should clear restrictions after cleared', async () => {
-    await usingWebSocketInterceptor<Schema>(
-      {
-        type,
-        baseURL,
-      },
-      async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: '1' }).times(1),
-          interceptor,
-        );
-        await usingWebSocketClient<Schema>(baseURL, async (client) => {
-          const unmatchedMessageListener = vi.fn();
-          client.addEventListener('message', unmatchedMessageListener);
+    await usingDirectWebSocketMessageHandler<Schema>(
+      { type, baseURL, Handler },
+      async ({ handler, sender, handleMessage }) => {
+        handler.with({ type: 'delete' });
+        handler.respond({ type: 'delete', id: '1' });
+        handler.times(1);
 
-          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+        await expect(handleMessage({ type: 'create', body: { text: 'hello' } })).resolves.toBe(false);
 
-          await waitForNot(() => {
-            expect(unmatchedMessageListener).toHaveBeenCalled();
-          });
+        handler.clear().respond({ type: 'delete', id: '2' }).times(1);
 
-          client.removeEventListener('message', unmatchedMessageListener);
+        await expect(handleMessage({ type: 'create', body: { text: 'hello' } })).resolves.toBe(true);
 
-          await promiseIfRemote(handler.clear().respond({ type: 'delete', id: '2' }).times(1), interceptor);
-
-          const messagePromise = waitForWebSocketMessage(client);
-          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
-
-          await expect(messagePromise).resolves.toEqual({ type: 'delete', id: '2' });
-
-          await handler.checkTimes();
-        });
+        expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '2' })]);
+        await handler.checkTimes();
       },
     );
   });

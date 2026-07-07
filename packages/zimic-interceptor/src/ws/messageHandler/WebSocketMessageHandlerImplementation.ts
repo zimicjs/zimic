@@ -43,7 +43,12 @@ const DEFAULT_NUMBER_OF_MESSAGE_LIMITS: Range<number> = Object.freeze({
 export type WebSocketMessageHandlerMessageMatch =
   | { success: true; message: WebSocketSchema }
   | { success: false; cause: 'exceededNumberOfMessages' }
-  | { success: false; cause: 'unmatchedRestrictions'; diff: WebSocketMessageHandlerRestrictionDiffs<WebSocketSchema> };
+  | {
+      success: false;
+      cause: 'unmatchedRestrictions';
+      message: WebSocketSchema;
+      diff: WebSocketMessageHandlerRestrictionDiffs<WebSocketSchema>;
+    };
 
 export interface WebSocketMessageHandlerApplyContext<Schema extends WebSocketSchema> {
   sender: InternalWebSocketInterceptorClient<Schema>;
@@ -191,7 +196,12 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     const restrictionsMatch = await this.matchesRestrictions(normalizedMessage, context);
 
     if (!restrictionsMatch.success) {
-      return { success: false, cause: 'unmatchedRestrictions', diff: restrictionsMatch.diff };
+      return {
+        success: false,
+        cause: 'unmatchedRestrictions',
+        message: normalizedMessage,
+        diff: restrictionsMatch.diff,
+      };
     }
 
     const canAcceptMoreMessages = this.numberOfMatchedMessages < this.limits.numberOfMessages.max;

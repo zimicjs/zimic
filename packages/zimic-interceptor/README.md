@@ -39,6 +39,10 @@
 `@zimic/interceptor` is a type-safe interceptor library for handling and mocking HTTP requests and WebSocket messages in
 development and testing.
 
+`@zimic/http` and `@zimic/ws` are optional peer dependencies. Install the schema package for the protocol you use, or
+both if your project uses HTTP and WebSocket interceptors. Dedicated single-protocol examples will provide empirical
+package-isolation validation in a future release.
+
 ## Highlights
 
 - :globe_with_meridians: **HTTP interceptors**

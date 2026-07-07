@@ -238,7 +238,10 @@ appearing to be unhandled, which is helpful to indicate missing `await`'s in rem
 
 If you need to access the messages processed by the interceptor, enable message saving and use `handler.messages`.
 Message saving is enabled by default in Node.js when `process.env.NODE_ENV === 'test'` and disabled by default in
-browsers. Configure `messageSaving: { enabled: true }` when you need saved messages in every environment.
+browsers. Configure `messageSaving: { enabled: true }` when you need saved messages in every environment. Saved message
+arrays are readonly and keep stable references. Calling `handler.clear()` removes that handler's saved messages from the
+handler, sender client, and server arrays in place; calling `interceptor.clear()` clears all saved message arrays and
+resets safe-limit accounting.
 
 ```ts
 const handler = await interceptor
@@ -315,10 +318,10 @@ Binary messages can be sent with `Blob`, `ArrayBuffer`, typed arrays, and `DataV
 ### Remote connection setup failures
 
 When a user WebSocket connects through the interceptor server, the server confirms the connection with the remote
-interceptor before retaining it as a connected client. If that setup cannot complete, or if the user socket sends a
-message before the remote interceptor has confirmed the connection, the server closes the user socket with a protocol
-error and removes any temporary connection state. This makes setup failures deterministic in tests instead of buffering
-early messages.
+interceptor before retaining it as a connected client. While confirmation is pending, the server pauses the socket and
+resumes it after normal message listeners are attached. Standards-valid frames sent immediately after the user observes
+`open` are preserved and processed in order. If setup cannot complete, the server closes the user socket and removes any
+temporary connection state.
 
 ## Interceptor server authentication
 

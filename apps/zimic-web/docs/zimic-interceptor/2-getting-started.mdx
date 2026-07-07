@@ -225,6 +225,9 @@ each or both depending on your needs. HTTP examples use `@zimic/http` schemas, w
 [`@zimic/ws` schemas](/docs/ws/guides/schemas). When upgrading `@zimic/interceptor` to a new version, consider upgrading
 both schema packages as well to ensure that the versions are compatible.
 
+The protocol peers are optional so single-protocol projects can install only the schema package they use. Dedicated
+single-protocol examples will provide empirical package-isolation validation in a future release.
+
 :::
 
 We also have canary releases under the tag `canary`. These have the latest code, including new features, bug fixes, and

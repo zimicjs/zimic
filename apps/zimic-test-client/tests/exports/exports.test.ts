@@ -408,6 +408,12 @@ describe('Exports', () => {
     expectTypeOf<WebSocketInterceptorClient<never>>().not.toBeAny();
     expectTypeOf<WebSocketInterceptorServer<never>>().not.toBeAny();
     expectTypeOf<InterceptedWebSocketInterceptorMessage<never>>().not.toBeAny();
+    expectTypeOf<WebSocketInterceptorClient<never>>().not.toExtend<WebSocketInterceptorServer<never>>();
+    expectTypeOf<WebSocketInterceptorServer<never>>().not.toExtend<WebSocketInterceptorClient<never>>();
+    expectTypeOf<WebSocketInterceptor<never>['server']>().toEqualTypeOf<WebSocketInterceptorServer<never>>();
+    expectTypeOf<WebSocketInterceptor<never>['clients']>().toEqualTypeOf<
+      readonly WebSocketInterceptorClient<never>[]
+    >();
 
     expectTypeOf<WebSocketInterceptorOptions>().not.toBeAny();
     expectTypeOf<LocalWebSocketInterceptorOptions>().not.toBeAny();
@@ -416,6 +422,12 @@ describe('Exports', () => {
     expectTypeOf<WebSocketInterceptorPlatform>().not.toBeAny();
     expectTypeOf<WebSocketInterceptorMessageSaving>().not.toBeAny();
     expectTypeOf<WebSocketInterceptorAuthOptions>().not.toBeAny();
+    expectTypeOf<RemoteWebSocketInterceptorOptions['auth']>().toEqualTypeOf<
+      WebSocketInterceptorAuthOptions | undefined
+    >();
+    expectTypeOf<RemoteWebSocketInterceptor<never>['auth']>().toEqualTypeOf<
+      WebSocketInterceptorAuthOptions | undefined
+    >();
 
     expectTypeOf<WebSocketMessageHandler<never>>().not.toBeAny();
     expectTypeOf<LocalWebSocketMessageHandler<never>>().not.toBeAny();
@@ -432,6 +444,9 @@ describe('Exports', () => {
     expectTypeOf<WebSocketMessageHandlerDelayFactory<never>>().not.toBeAny();
     expectTypeOf<WebSocketMessageHandlerRestriction<never>>().not.toBeAny();
     expectTypeOf<WebSocketMessageHandlerStaticRestriction<never>>().not.toBeAny();
+    expectTypeOf<WebSocketMessageHandler<never>['from']>()
+      .parameter(0)
+      .toEqualTypeOf<WebSocketInterceptorClient<never>>();
 
     expectTypeOf<InferWebSocketInterceptorSchema<never>>().not.toBeAny();
 

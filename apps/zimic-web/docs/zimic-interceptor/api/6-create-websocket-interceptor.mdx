@@ -41,6 +41,8 @@ createWebSocketInterceptor<Schema>(options);
      [remote interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md), this base URL should
      point to an [interceptor server](/docs/zimic-interceptor/cli/1-server.md), optionally including
      [path discriminators](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md#path-discriminators).
+     Stopped interceptors can later change to another valid `ws:` or `wss:` URL, including a different protocol,
+     hostname, port, or path. Running interceptors reject `baseURL` changes.
 
    - **messageSaving**: `Partial<WebSocketInterceptorMessageSaving> | undefined`
 
@@ -79,7 +81,9 @@ createWebSocketInterceptor<Schema>(options);
      [authenticate a remote interceptor](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md#interceptor-server-authentication)
      when connecting to an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is required if the
      interceptor server was started with the
-     [`--tokens-dir` option](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-start).
+     [`--tokens-dir` option](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-start). Remote WebSocket
+     auth follows the same mutation rules as remote HTTP auth: replacing the auth object or mutating `auth.token` is
+     allowed while stopped and rejected while running.
      - **token**: `string`
 
        The authentication token to use.
