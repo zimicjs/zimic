@@ -80,7 +80,7 @@ client.close(code, reason, options);
 ## `client.send()`
 
 Sends a message to the server. The data is typed with
-[`WebSocketMessageData`](/docs/zimic-ws/api/1-websocket-schema.md#websocketmessagedata).
+[`WebSocketMessageData`](/docs/ws/api/websocket-schema#websocketmessagedata).
 
 ```ts
 client.send(data);
@@ -148,11 +148,10 @@ client.dispatchEvent(event);
 
 ## Errors
 
-`client.open()` can throw [`WebSocketOpenTimeoutError`](/docs/zimic-ws/api/2-websocket-client.mdx#errors) if the
-connection does not open before the timeout. `client.close()` can throw `WebSocketCloseTimeoutError` if the connection
-does not close before the timeout.
+`client.open()` can throw [`WebSocketOpenTimeoutError`](#errors) if the connection does not open before the timeout.
+`client.close()` can throw `WebSocketCloseTimeoutError` if the connection does not close before the timeout.
 
 **Related**:
 
-- [Guides - Declaring schemas](/docs/zimic-ws/guides/1-schemas.md)
-- [API - `WebSocketServer`](/docs/zimic-ws/api/3-websocket-server.mdx)
+- [Guides - Declaring schemas](/docs/ws/guides/schemas)
+- [API - `WebSocketServer`](/docs/ws/api/websocket-server)

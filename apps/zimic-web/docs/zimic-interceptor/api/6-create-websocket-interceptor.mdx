@@ -17,7 +17,7 @@ stable.
 :::
 
 Creates a WebSocket interceptor. Client and server messages are typed by default with a
-[WebSocket schema](/docs/zimic-ws/guides/1-schemas.md).
+[WebSocket schema](/docs/ws/guides/schemas).
 
 ```ts
 createWebSocketInterceptor<Schema>(options);
@@ -27,43 +27,40 @@ createWebSocketInterceptor<Schema>(options);
 
 1. **options**: `WebSocketInterceptorOptions`
 
-   The options to create a [WebSocket interceptor](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx).
+   The options to create a [WebSocket interceptor](/docs/interceptor/api/websocket-interceptor).
    - **type**: `'local' | 'remote' | undefined` (default: `'local'`)
 
-     The type of the WebSocket interceptor, either
-     [local](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md) or
-     [remote](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md).
+     The type of the WebSocket interceptor, either [local](/docs/interceptor/guides/ws/local-interceptors) or
+     [remote](/docs/interceptor/guides/ws/remote-interceptors).
 
    - **baseURL**: `string`
 
      Represents the URL that should be matched by the interceptor. WebSocket connections opened to this URL can be
-     handled by matching [message handlers](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx). For
-     [remote interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md), this base URL should
-     point to an [interceptor server](/docs/zimic-interceptor/cli/1-server.md), optionally including
-     [path discriminators](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md#path-discriminators).
-     Stopped interceptors can later change to another valid `ws:` or `wss:` URL, including a different protocol,
-     hostname, port, or path. Running interceptors reject `baseURL` changes.
+     handled by matching [message handlers](/docs/interceptor/api/websocket-message-handler). For
+     [remote interceptors](/docs/interceptor/guides/ws/remote-interceptors), this base URL should point to an
+     [interceptor server](/docs/interceptor/cli/server), optionally including
+     [path discriminators](/docs/interceptor/guides/ws/remote-interceptors#path-discriminators). Stopped interceptors
+     can later change to another valid `ws:` or `wss:` URL, including a different protocol, hostname, port, or path.
+     Running interceptors reject `baseURL` changes.
 
    - **messageSaving**: `Partial<WebSocketInterceptorMessageSaving> | undefined`
 
      Configures if intercepted messages are saved and how they are handled.
      - **enabled**: `boolean | undefined` (default: `process.env.NODE_ENV === 'test'` in Node.js, `false` in browsers)
 
-       Whether [message handlers](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx) should save their matched
+       Whether [message handlers](/docs/interceptor/api/websocket-message-handler) should save their matched
        client-to-server messages in memory and make them accessible through
-       [`handler.messages`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlermessages).
+       [`handler.messages`](/docs/interceptor/api/websocket-message-handler#handlermessages).
 
-       If you are using
-       [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes) or
-       [`handler.checkTimes()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerchecktimes) during
-       tests, consider enabling this option to get more detailed information in `WebSocketTimesCheckError` errors.
+       If you are using [`interceptor.checkTimes()`](/docs/interceptor/api/websocket-interceptor#interceptorchecktimes)
+       or [`handler.checkTimes()`](/docs/interceptor/api/websocket-message-handler#handlerchecktimes) during tests,
+       consider enabling this option to get more detailed information in `WebSocketTimesCheckError` errors.
 
        :::info INFO: <span>Clearing the interceptor when saving messages</span>
 
        If message saving is enabled, make sure to regularly clear the interceptor to avoid messages accumulating in
        memory. A common practice is to call
-       [`interceptor.clear()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclear) after each
-       test.
+       [`interceptor.clear()`](/docs/interceptor/api/websocket-interceptor#interceptorclear) after each test.
 
        :::
 
@@ -71,19 +68,18 @@ createWebSocketInterceptor<Schema>(options);
 
        The safe number of messages to save in memory before logging warnings in the console. If `messageSaving.enabled`
        is `true` and the interceptor is not regularly cleared with
-       [`interceptor.clear()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclear), the messages
-       may accumulate in memory and cause performance issues. This option does not limit the number of messages saved in
+       [`interceptor.clear()`](/docs/interceptor/api/websocket-interceptor#interceptorclear), the messages may
+       accumulate in memory and cause performance issues. This option does not limit the number of messages saved in
        memory, only when to log warnings.
 
    - **auth**: `WebSocketInterceptorAuthOptions | undefined`
 
      The options to
-     [authenticate a remote interceptor](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md#interceptor-server-authentication)
-     when connecting to an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is required if the
-     interceptor server was started with the
-     [`--tokens-dir` option](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-start). Remote WebSocket
-     auth follows the same mutation rules as remote HTTP auth: replacing the auth object or mutating `auth.token` is
-     allowed while stopped and rejected while running.
+     [authenticate a remote interceptor](/docs/interceptor/guides/ws/remote-interceptors#interceptor-server-authentication)
+     when connecting to an [interceptor server](/docs/interceptor/cli/server). This is required if the interceptor
+     server was started with the [`--tokens-dir` option](/docs/interceptor/cli/server#zimic-interceptor-server-start).
+     Remote WebSocket auth follows the same mutation rules as remote HTTP auth: replacing the auth object or mutating
+     `auth.token` is allowed while stopped and rejected while running.
      - **token**: `string`
 
        The authentication token to use.
@@ -92,7 +88,7 @@ createWebSocketInterceptor<Schema>(options);
 
 1. **Schema**: `WebSocketSchema`
 
-   The [WebSocket schema](/docs/zimic-ws/api/1-websocket-schema.md) to use for the interceptor.
+   The [WebSocket schema](/docs/ws/api/websocket-schema) to use for the interceptor.
 
 **Returns**:
 
@@ -154,6 +150,6 @@ to an upstream server, and they do not provide a general-purpose WebSocket gatew
 
 **Related**:
 
-- [Using local WebSocket interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md)
-- [Using remote WebSocket interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md)
-- [WebSocket schemas](/docs/zimic-ws/guides/1-schemas.md)
+- [Using local WebSocket interceptors](/docs/interceptor/guides/ws/local-interceptors)
+- [Using remote WebSocket interceptors](/docs/interceptor/guides/ws/remote-interceptors)
+- [WebSocket schemas](/docs/ws/guides/schemas)

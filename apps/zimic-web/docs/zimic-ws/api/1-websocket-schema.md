@@ -24,7 +24,7 @@ type Schema = WebSocketSchema<
 
 **Related**:
 
-- [Guides - Declaring schemas](/docs/zimic-ws/guides/1-schemas.md)
+- [Guides - Declaring schemas](/docs/ws/guides/schemas)
 
 ## `WebSocketMessageData`
 

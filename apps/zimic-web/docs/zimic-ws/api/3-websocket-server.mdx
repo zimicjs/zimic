@@ -82,7 +82,7 @@ server.addEventListener('connection', (client, request) => {
 ### `server.addEventListener()`
 
 Adds a typed listener. Connection listeners receive connected clients as
-[`WebSocketClient`](/docs/zimic-ws/api/2-websocket-client.mdx) instances typed with the server schema.
+[`WebSocketClient`](/docs/ws/api/websocket-client) instances typed with the server schema.
 
 ```ts
 server.addEventListener(type, listener);
@@ -135,5 +135,5 @@ can throw `WebSocketCloseTimeoutError` if the server does not close before the t
 
 **Related**:
 
-- [Guides - Declaring schemas](/docs/zimic-ws/guides/1-schemas.md)
-- [API - `WebSocketClient`](/docs/zimic-ws/api/2-websocket-client.mdx)
+- [Guides - Declaring schemas](/docs/ws/guides/schemas)
+- [API - `WebSocketClient`](/docs/ws/api/websocket-client)

@@ -37,9 +37,8 @@ simplest way to start mocking WebSocket messages and does not require any interc
 
 ## Creating a local WebSocket interceptor
 
-To start using a WebSocket interceptor, declare a WebSocket schema using
-[`@zimic/ws`](/docs/zimic-ws/guides/1-schemas.md). The schema represents the message data sent and received by your
-WebSocket clients and servers.
+To start using a WebSocket interceptor, declare a WebSocket schema using [`@zimic/ws`](/docs/ws/guides/schemas). The
+schema represents the message data sent and received by your WebSocket clients and servers.
 
 ```ts title='schema.ts'
 import { WebSocketSchema } from '@zimic/ws';
@@ -98,8 +97,8 @@ interception for the interceptor `baseURL`.
 :::info INFO: <span>Local interceptors in browsers</span>
 
 If you are using a local WebSocket interceptor in a **browser** environment, you must first
-[initialize a mock service worker](/docs/zimic-interceptor/cli/2-browser.md#zimic-interceptor-browser-init) in your
-public directory before starting the interceptor.
+[initialize a mock service worker](/docs/interceptor/cli/browser#zimic-interceptor-browser-init) in your public
+directory before starting the interceptor.
 
 :::
 
@@ -169,9 +168,8 @@ test('example', () => {
 :::info INFO: <span>Local WebSocket interceptors are synchronous</span>
 
 Many operations in local WebSocket interceptors are **synchronous** because they do not involve communication with an
-external server. This is different from
-[remote interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md), which communicate with an
-[interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle messages and return responses.
+external server. This is different from [remote interceptors](/docs/interceptor/guides/ws/remote-interceptors), which
+communicate with an [interceptor server](/docs/interceptor/cli/server) to handle messages and return responses.
 
 :::
 

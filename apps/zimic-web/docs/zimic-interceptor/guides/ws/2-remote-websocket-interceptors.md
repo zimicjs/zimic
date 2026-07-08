@@ -18,10 +18,10 @@ WebSocket flows in development or testing environments, especially when the back
 control connection and message scenarios.
 
 In `@zimic/interceptor`, WebSocket interceptors are available in two types: `local` (default) and `remote`. Interceptors
-with type `remote` use a dedicated [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle WebSocket
-connections and messages. This opens up more possibilities for mocking than
-[local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md), such as handling connections
-from multiple applications. Remote WebSocket interceptors require `type: 'remote'`.
+with type `remote` use a dedicated [interceptor server](/docs/interceptor/cli/server) to handle WebSocket connections
+and messages. This opens up more possibilities for mocking than
+[local interceptors](/docs/interceptor/guides/ws/local-interceptors), such as handling connections from multiple
+applications. Remote WebSocket interceptors require `type: 'remote'`.
 
 ## When to use remote WebSocket interceptors
 
@@ -40,9 +40,8 @@ from multiple applications. Remote WebSocket interceptors require `type: 'remote
 
 ## Creating a remote WebSocket interceptor
 
-To start using a WebSocket interceptor, declare a WebSocket schema using
-[`@zimic/ws`](/docs/zimic-ws/guides/1-schemas.md). The schema represents the message data sent and received by your
-WebSocket clients and servers.
+To start using a WebSocket interceptor, declare a WebSocket schema using [`@zimic/ws`](/docs/ws/guides/schemas). The
+schema represents the message data sent and received by your WebSocket clients and servers.
 
 ```ts title='schema.ts'
 import { WebSocketSchema } from '@zimic/ws';
@@ -60,8 +59,8 @@ type parameter and returns an interceptor instance. The `baseURL` option represe
 points to the URL that your application will use to open WebSocket connections.
 
 In the case of a remote interceptor, the `baseURL` should point to an
-[interceptor server](/docs/zimic-interceptor/cli/1-server.md), which is configured by the interceptor to handle
-connections and messages.
+[interceptor server](/docs/interceptor/cli/server), which is configured by the interceptor to handle connections and
+messages.
 
 ```ts
 import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
@@ -123,8 +122,8 @@ process.env.NOTIFICATION_SOCKET_URL = notificationInterceptor.baseURL;
 ### Starting an interceptor
 
 To intercept connections and messages, start the interceptor server using the
-[`zimic-interceptor server start`](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-start) CLI. It can
-run as a standalone server:
+[`zimic-interceptor server start`](/docs/interceptor/cli/server#zimic-interceptor-server-start) CLI. It can run as a
+standalone server:
 
 ```bash
 zimic-interceptor server start --port 3000
@@ -225,10 +224,9 @@ test('example', async () => {
 :::info INFO: <span>Remote WebSocket interceptors are asynchronous</span>
 
 Many operations in remote WebSocket interceptors are **asynchronous** because they may involve communication with an
-interceptor server. This is different from
-[local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md), which have mostly
-**synchronous** operations. Await remote handler chains that register or update handlers, such as `.respond(...)`,
-`.times(...)`, `.clear()`, and `.checkTimes()`.
+interceptor server. This is different from [local interceptors](/docs/interceptor/guides/ws/local-interceptors), which
+have mostly **synchronous** operations. Await remote handler chains that register or update handlers, such as
+`.respond(...)`, `.times(...)`, `.clear()`, and `.checkTimes()`.
 
 If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy rule is
 [`@typescript-eslint/no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises). It checks promises
@@ -330,8 +328,7 @@ exposing the server **publicly**. Without authentication, the server is unprotec
 it and override the responses or messages handled by the server.
 
 To create an interceptor authentication token, use the
-[`zimic-interceptor server token create`](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-token-create)
-CLI:
+[`zimic-interceptor server token create`](/docs/interceptor/cli/server#zimic-interceptor-server-token-create) CLI:
 
 ```bash
 zimic-interceptor server token create \

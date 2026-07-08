@@ -10,8 +10,7 @@ import TabItem from '@theme/TabItem';
 # Getting started
 
 This guide will help you get started with `@zimic/interceptor`. The quick start uses HTTP interceptors first. For
-WebSocket mocks, see the
-[WebSocket interceptor guide](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md) and
+WebSocket mocks, see the [WebSocket interceptor guide](/docs/interceptor/guides/ws/local-interceptors) and
 [API reference](/docs/interceptor/api).
 
 ## Requirements
@@ -221,12 +220,12 @@ yarn add @zimic/http @zimic/ws @zimic/interceptor --dev
 
 Note that [`@zimic/http`](/docs/http) and [`@zimic/ws`](/docs/ws) are peer dependencies of `@zimic/interceptor`. Install
 each or both depending on your needs. HTTP examples use `@zimic/http` schemas, while
-[WebSocket examples](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md) use
-[`@zimic/ws` schemas](/docs/ws/guides/schemas). When upgrading `@zimic/interceptor` to a new version, consider upgrading
-both schema packages as well to ensure that the versions are compatible.
+[WebSocket examples](/docs/interceptor/guides/ws/local-interceptors) use [`@zimic/ws` schemas](/docs/ws/guides/schemas).
+When upgrading `@zimic/interceptor` to a new version, consider upgrading both schema packages as well to ensure that the
+versions are compatible.
 
-The protocol peers are optional so single-protocol projects can install only the schema package they use. Dedicated
-single-protocol examples will provide empirical package-isolation validation in a future release.
+The protocol peers are optional, so single-protocol projects can install only the schema package they use: `@zimic/http`
+for HTTP interceptors, `@zimic/ws` for WebSocket interceptors, or both when a project uses both protocols.
 
 :::
 
@@ -328,12 +327,12 @@ type Schema = HttpSchema<{
 
 ### Creating an HTTP interceptor
 
-With the schema defined, you can now create an [HTTP interceptor](/docs/zimic-interceptor/api/2-http-interceptor.mdx).
+With the schema defined, you can now create an [HTTP interceptor](/docs/interceptor/api/http-interceptor).
 
-`@zimic/interceptor` provides a [`createHttpInterceptor`](/docs/zimic-interceptor/api/1-create-http-interceptor.mdx)
-function that takes the schema as a type parameter and returns an interceptor instance. It allows you to intercept HTTP
-requests, validate their contents, and return mock responses, all automatically typed based on the schema. The `baseURL`
-option represents the scope of the interceptor and points to the URL that your application will use to make requests.
+`@zimic/interceptor` provides a [`createHttpInterceptor`](/docs/interceptor/api/create-http-interceptor) function that
+takes the schema as a type parameter and returns an interceptor instance. It allows you to intercept HTTP requests,
+validate their contents, and return mock responses, all automatically typed based on the schema. The `baseURL` option
+represents the scope of the interceptor and points to the URL that your application will use to make requests.
 
 ```ts
 import { createHttpInterceptor } from '@zimic/interceptor/http';
@@ -344,7 +343,7 @@ const interceptor = createHttpInterceptor<Schema>({
 ```
 
 You can also set other options, such as the interceptor type and how unhandled requests should be treated. Refer to the
-[`createHttpInterceptor` API reference](/docs/zimic-interceptor/api/1-create-http-interceptor.mdx) for more details.
+[`createHttpInterceptor` API reference](/docs/interceptor/api/create-http-interceptor) for more details.
 
 :::info INFO: <span>Choosing your interceptor type</span>
 
@@ -383,14 +382,14 @@ const interceptor = createHttpInterceptor<Schema>({
 When an interceptor is `local`, Zimic uses [MSW](https://github.com/mswjs/msw) to intercept requests _in the same
 process_ as your application. This is the simplest way to start mocking requests and does not require any server setup.
 
-Interceptors with type `remote` use a dedicated [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle
-requests. This opens up more possibilities for mocking, such as handling requests from multiple applications. It is also
-more robust because it uses a regular HTTP server and does not depend on local interception algorithms.
+Interceptors with type `remote` use a dedicated [interceptor server](/docs/interceptor/cli/server) to handle requests.
+This opens up more possibilities for mocking, such as handling requests from multiple applications. It is also more
+robust because it uses a regular HTTP server and does not depend on local interception algorithms.
 
-Learn more about [local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) and
-[remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md) to see which one fits your
-needs. We recommend starting with local interceptors, as they are easier to get started with, and moving to remote
-interceptors if your use case is best served by them.
+Learn more about [local interceptors](/docs/interceptor/guides/http/local-interceptors) and
+[remote interceptors](/docs/interceptor/guides/http/remote-interceptors) to see which one fits your needs. We recommend
+starting with local interceptors, as they are easier to get started with, and moving to remote interceptors if your use
+case is best served by them.
 
 :::
 
@@ -399,8 +398,8 @@ interceptors if your use case is best served by them.
 ### Starting an interceptor
 
 To intercept requests, an interceptor must be started with
-[`interceptor.start()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorstart). This is usually done in a
-`beforeAll` hook in your test suite.
+[`interceptor.start()`](/docs/interceptor/api/http-interceptor#interceptorstart). This is usually done in a `beforeAll`
+hook in your test suite.
 
 ```ts
 beforeAll(async () => {
@@ -411,27 +410,26 @@ beforeAll(async () => {
 
 :::info INFO: <span>Local interceptors in browsers</span>
 
-If you are using a [local interceptor](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) in a
-**browser** environment, you must first
-[initialize a mock service worker](/docs/zimic-interceptor/cli/2-browser.md#zimic-interceptor-browser-init) in your
+If you are using a [local interceptor](/docs/interceptor/guides/http/local-interceptors) in a **browser** environment,
+you must first [initialize a mock service worker](/docs/interceptor/cli/browser#zimic-interceptor-browser-init) in your
 public directory before starting the interceptor.
 
 :::
 
 :::info INFO: <span>Remote interceptors and interceptor servers</span>
 
-If you are using a [remote interceptor](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md), the
-`baseURL` should point to a running [interceptor server](/docs/zimic-interceptor/cli/1-server.md), which is configured
-by the interceptor to handle requests. Learn more about
-[starting remote HTTP interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#starting-an-interceptor).
+If you are using a [remote interceptor](/docs/interceptor/guides/http/remote-interceptors), the `baseURL` should point
+to a running [interceptor server](/docs/interceptor/cli/server), which is configured by the interceptor to handle
+requests. Learn more about
+[starting remote HTTP interceptors](/docs/interceptor/guides/http/remote-interceptors#starting-an-interceptor).
 
 :::
 
 ### Clearing an interceptor
 
 When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another.
-This is performed with [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorclear),
-which resets the interceptor and handlers to their initial states.
+This is performed with [`interceptor.clear()`](/docs/interceptor/api/http-interceptor#interceptorclear), which resets
+the interceptor and handlers to their initial states.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -460,9 +458,9 @@ beforeEach(async () => {
 ### Checking expectations
 
 After each test, you can check if your application has made all of the expected requests with
-[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes). Learn more about
-how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) to
-keep your tests clean and readable.
+[`interceptor.checkTimes()`](/docs/interceptor/api/http-interceptor#interceptorchecktimes). Learn more about how
+interceptors support [declarative assertions](/docs/interceptor/guides/http/declarative-assertions) to keep your tests
+clean and readable.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -491,7 +489,7 @@ afterEach(async () => {
 ### Stopping an interceptor
 
 After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with
-[`interceptor.stop()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorstop).
+[`interceptor.stop()`](/docs/interceptor/api/http-interceptor#interceptorstop).
 
 ```ts
 afterAll(async () => {
@@ -560,16 +558,14 @@ test('example', () => {
 
 :::info INFO: <span>Remote interceptors are asynchronous</span>
 
-Many operations in [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md) are
-**asynchronous** because they may involve communication with an
-[interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is different from
-[local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md), which have mostly
-**synchronous** operations.
+Many operations in [remote interceptors](/docs/interceptor/guides/http/remote-interceptors) are **asynchronous** because
+they may involve communication with an [interceptor server](/docs/interceptor/cli/server). This is different from
+[local interceptors](/docs/interceptor/guides/http/local-interceptors), which have mostly **synchronous** operations.
 
 :::
 
 If you need to access the requests processed by the interceptor, use
-[`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrequests).
+[`handler.requests`](/docs/interceptor/api/http-request-handler#handlerrequests).
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -653,15 +649,15 @@ libraries and frameworks.
 
 Visit the [API reference](/docs/interceptor/api) for more details on the resources available in `@zimic/interceptor`.
 The WebSocket interceptor APIs are imported from `@zimic/interceptor/experimental/ws`; start with the
-[WebSocket interceptor guide](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md) and the
+[WebSocket interceptor guide](/docs/interceptor/guides/ws/local-interceptors) and the
 [WebSocket API reference](/docs/interceptor/api/create-websocket-interceptor).
 
 ### Explore the ecosystem
 
 - Access the [`@zimic/http`](/docs/zimic-http/1-index.md) documentation to learn more about extending your HTTP schema.
 
-- Use the [WebSocket interceptor guide](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md) when your
-  tests need to mock typed WebSocket message flows with [`@zimic/ws`](/docs/ws).
+- Use the [WebSocket interceptor guide](/docs/interceptor/guides/ws/local-interceptors) when your tests need to mock
+  typed WebSocket message flows with [`@zimic/ws`](/docs/ws).
 
 - If you are interested in improving the type safety and development experience of your application code, check out
   [`@zimic/fetch`](/docs/zimic-fetch/1-index.md). Use the same schema as your interceptor to automatically type your
