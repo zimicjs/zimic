@@ -111,6 +111,7 @@ import {
   UnknownWebSocketInterceptorPlatformError,
   UnknownWebSocketInterceptorTypeError,
   DisabledMessageSavingError,
+  UnregisteredBrowserServiceWorkerError as WebSocketUnregisteredBrowserServiceWorkerError,
 } from '@zimic/interceptor/experimental/ws';
 import {
   createHttpInterceptor,
@@ -151,7 +152,7 @@ import {
   RequestSavingSafeLimitExceededError,
   InvalidFormDataError as InterceptorInvalidFormDataError,
   InvalidJSONError as InterceptorInvalidJSONError,
-  UnregisteredBrowserServiceWorkerError,
+  UnregisteredBrowserServiceWorkerError as HttpUnregisteredBrowserServiceWorkerError,
   DisabledRequestSavingError,
   HttpTimesCheckError,
   TimesCheckError,
@@ -384,8 +385,8 @@ describe('Exports', () => {
     expectTypeOf<RequestSavingSafeLimitExceededError>().not.toBeAny();
     expect(typeof RequestSavingSafeLimitExceededError).toBe('function');
 
-    expectTypeOf<UnregisteredBrowserServiceWorkerError>().not.toBeAny();
-    expect(typeof UnregisteredBrowserServiceWorkerError).toBe('function');
+    expectTypeOf<HttpUnregisteredBrowserServiceWorkerError>().not.toBeAny();
+    expect(typeof HttpUnregisteredBrowserServiceWorkerError).toBe('function');
 
     expectTypeOf<DisabledRequestSavingError>().not.toBeAny();
     expect(typeof DisabledRequestSavingError).toBe('function');
@@ -461,6 +462,9 @@ describe('Exports', () => {
 
     expectTypeOf<WebSocketTimesCheckError>().not.toBeAny();
     expect(typeof WebSocketTimesCheckError).toBe('function');
+
+    expectTypeOf<WebSocketUnregisteredBrowserServiceWorkerError>().not.toBeAny();
+    expect(typeof WebSocketUnregisteredBrowserServiceWorkerError).toBe('function');
 
     expectTypeOf<UnknownWebSocketInterceptorPlatformError>().not.toBeAny();
     expect(typeof UnknownWebSocketInterceptorPlatformError).toBe('function');
