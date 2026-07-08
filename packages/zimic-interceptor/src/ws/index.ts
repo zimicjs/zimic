@@ -3,6 +3,7 @@ export { default as NotRunningWebSocketInterceptorError } from './interceptor/er
 export { default as UnknownWebSocketInterceptorPlatformError } from './interceptor/errors/UnknownWebSocketInterceptorPlatformError';
 export { default as UnknownWebSocketInterceptorTypeError } from './interceptor/errors/UnknownWebSocketInterceptorTypeError';
 export { default as MessageSavingSafeLimitExceededError } from './interceptor/errors/MessageSavingSafeLimitExceededError';
+export { default as UnregisteredBrowserServiceWorkerError } from './interceptorWorker/errors/UnregisteredBrowserServiceWorkerError';
 
 export { default as DisabledMessageSavingError } from './messageHandler/errors/DisabledMessageSavingError';
 export { default as WebSocketTimesCheckError } from './errors/WebSocketTimesCheckError';
