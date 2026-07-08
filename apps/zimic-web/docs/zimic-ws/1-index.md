@@ -19,17 +19,17 @@ slug: /ws
 - :star: **WebSocket schemas**
 
   Declare the structure of the messages exchanged by your WebSocket connection in a
-  [WebSocket schema](/docs/zimic-ws/guides/1-schemas.md) and use it to type client and server messages.
+  [WebSocket schema](/docs/ws/guides/schemas) and use it to type client and server messages.
 
 - :zap: **Typed clients**
 
-  Use [`WebSocketClient`](/docs/zimic-ws/api/2-websocket-client.mdx) to wrap a native `WebSocket` with typed lifecycle
-  methods, listeners, and `send()` calls.
+  Use [`WebSocketClient`](/docs/ws/api/websocket-client) to wrap a native `WebSocket` with typed lifecycle methods,
+  listeners, and `send()` calls.
 
 - :satellite: **Typed servers**
 
-  Use [`WebSocketServer`](/docs/zimic-ws/api/3-websocket-server.mdx) to attach WebSocket handling to a Node HTTP or
-  HTTPS server and receive typed connected clients.
+  Use [`WebSocketServer`](/docs/ws/api/websocket-server) to attach WebSocket handling to a Node HTTP or HTTPS server and
+  receive typed connected clients.
 
 **Learn more**:
 

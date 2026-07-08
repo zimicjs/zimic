@@ -18,7 +18,7 @@ stable.
 
 A WebSocket message handler to observe client-to-server messages, run effects, and declare server responses. When
 multiple handlers of the same interceptor match the same message, the _last_ handler created with
-[`interceptor.message()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptormessage) will be used.
+[`interceptor.message()`](/docs/interceptor/api/websocket-interceptor#interceptormessage) will be used.
 
 :::info INFO: <span>Incoming message parsing</span>
 
@@ -34,8 +34,8 @@ the interceptor uses a string-based schema. Avoid JSON-looking text when the mes
 
 If you are using a remote interceptor, make sure to `await` the handler before opening clients or sending messages. Many
 remote handler operations are asynchronous and require communication with the
-[interceptor server](/docs/zimic-interceptor/cli/1-server.md). A single `await` is enough, even if you are making
-multiple declarations, as `WebSocketMessageHandler` automatically batches changes.
+[interceptor server](/docs/interceptor/cli/server). A single `await` is enough, even if you are making multiple
+declarations, as `WebSocketMessageHandler` automatically batches changes.
 
 ```ts
 const handler = await interceptor
@@ -353,8 +353,8 @@ safe-limit accounting.
 :::info IMPORTANT: <span>`handler.messages` requires message saving to be enabled</span>
 
 This property can only be used if
-[`messageSaving.enabled`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptormessagesaving) is `true` in
-the interceptor.
+[`messageSaving.enabled`](/docs/interceptor/api/websocket-interceptor#interceptormessagesaving) is `true` in the
+interceptor.
 
 :::
 
@@ -377,7 +377,7 @@ to an upstream server, and they do not provide a general-purpose WebSocket gatew
 
 **Related**:
 
-- [Using local WebSocket interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md)
-- [Using remote WebSocket interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md)
-- [`WebSocketInterceptor`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx)
-- [WebSocket schemas](/docs/zimic-ws/guides/1-schemas.md)
+- [Using local WebSocket interceptors](/docs/interceptor/guides/ws/local-interceptors)
+- [Using remote WebSocket interceptors](/docs/interceptor/guides/ws/remote-interceptors)
+- [`WebSocketInterceptor`](/docs/interceptor/api/websocket-interceptor)
+- [WebSocket schemas](/docs/ws/guides/schemas)

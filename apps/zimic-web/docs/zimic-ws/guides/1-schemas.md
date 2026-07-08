@@ -7,7 +7,7 @@ slug: /ws/guides/schemas
 # Declaring schemas
 
 WebSocket schemas describe the message data your WebSocket connection can send and receive. They are declared with the
-[`WebSocketSchema`](/docs/zimic-ws/api/1-websocket-schema.md) type exported by `@zimic/ws`.
+[`WebSocketSchema`](/docs/ws/api/websocket-schema) type exported by `@zimic/ws`.
 
 ```ts title='schema.ts'
 import { WebSocketSchema } from '@zimic/ws';
@@ -46,8 +46,8 @@ type NotificationSchema = WebSocketSchema<{
 
 ## `WebSocketMessageData`
 
-[`WebSocketMessageData`](/docs/zimic-ws/api/1-websocket-schema.md#websocketmessagedata) represents the data passed to
-`send()` and received in message events for a schema.
+[`WebSocketMessageData`](/docs/ws/api/websocket-schema#websocketmessagedata) represents the data passed to `send()` and
+received in message events for a schema.
 
 For JSON-compatible schemas, the message data is the stringified representation of the schema. For `string`, `Blob`, and
 `BufferSource` schemas, the data keeps the same type.
@@ -65,7 +65,7 @@ const message: WebSocketMessageData<Schema> = JSON.stringify({
 
 ## Using schemas with clients
 
-Pass the schema as a type argument when creating a [`WebSocketClient`](/docs/zimic-ws/api/2-websocket-client.mdx).
+Pass the schema as a type argument when creating a [`WebSocketClient`](/docs/ws/api/websocket-client).
 
 ```ts
 import { WebSocketClient } from '@zimic/ws';
@@ -79,8 +79,7 @@ client.send(JSON.stringify({ type: 'typing', data: { username: 'diego' } }));
 
 ## Using schemas with servers
 
-Pass the same schema to [`WebSocketServer`](/docs/zimic-ws/api/3-websocket-server.mdx) to type clients accepted by the
-server.
+Pass the same schema to [`WebSocketServer`](/docs/ws/api/websocket-server) to type clients accepted by the server.
 
 ```ts
 import { createServer } from 'node:http';
@@ -116,5 +115,5 @@ const interceptor = createWebSocketInterceptor<ChatSchema>({
 
 **Related**:
 
-- [API - `WebSocketSchema`](/docs/zimic-ws/api/1-websocket-schema.md)
-- [Interceptor guides - WebSocket interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md)
+- [API - `WebSocketSchema`](/docs/ws/api/websocket-schema)
+- [Interceptor guides - WebSocket interceptors](/docs/interceptor/guides/ws/local-interceptors)
