@@ -7,9 +7,11 @@ import { WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE } from '@/utils/webSocket/constant
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../WebSocketInterceptorImplementation';
-import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions, waitForWebSocketMessage } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
+
+const WEB_SOCKET_ABNORMAL_CLOSE_CODE = 1006;
 
 export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { type, getBaseURL, getAlternativeBaseURL, getInterceptorOptions } = options;
@@ -77,6 +79,65 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
       expect(server.url).toBe(interceptor.baseURL);
     }
   });
+
+  if (type === 'local') {
+    it('should use a new local base URL after stopped and restarted', async () => {
+      const baseURL = getBaseURL();
+      const interceptor = createWebSocketInterceptor<MessageSchema>(getInterceptorOptions());
+      const newBaseURL = joinURL(baseURL, 'new').replace(/\/$/, '');
+
+      try {
+        await interceptor.start();
+        await interceptor.message().respond({ type: 'server', index: 1 });
+
+        const initialClient = new WebSocketClient<MessageSchema>(baseURL);
+        try {
+          await initialClient.open();
+
+          const messagePromise = waitForWebSocketMessage(initialClient);
+          initialClient.send(JSON.stringify({ type: 'client', index: 1 }));
+
+          await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+        } finally {
+          await initialClient.close();
+        }
+
+        await interceptor.stop();
+
+        interceptor.baseURL = newBaseURL;
+        await interceptor.start();
+        await interceptor.message().respond({ type: 'server', index: 2 });
+
+        const oldBaseURLClient = new WebSocketClient<MessageSchema>(baseURL);
+        try {
+          const closeEventPromise = new Promise<WebSocketClient.CloseEvent<MessageSchema>>((resolve) => {
+            oldBaseURLClient.addEventListener('close', resolve, { once: true });
+          });
+
+          await oldBaseURLClient.open({ timeout: 500 });
+
+          const closeEvent = await closeEventPromise;
+          expect(closeEvent.code).toBe(WEB_SOCKET_ABNORMAL_CLOSE_CODE);
+        } finally {
+          await oldBaseURLClient.close();
+        }
+
+        const newBaseURLClient = new WebSocketClient<MessageSchema>(newBaseURL);
+        try {
+          await newBaseURLClient.open();
+
+          const messagePromise = waitForWebSocketMessage(newBaseURLClient);
+          newBaseURLClient.send(JSON.stringify({ type: 'client', index: 2 }));
+
+          await expect(messagePromise).resolves.toEqual({ type: 'server', index: 2 });
+        } finally {
+          await newBaseURLClient.close();
+        }
+      } finally {
+        await interceptor.stop();
+      }
+    });
+  }
 
   if (type === 'remote' && getAlternativeBaseURL) {
     it('should use a new server origin after the base URL changes', async () => {
