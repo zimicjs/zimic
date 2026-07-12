@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "1.4.2",
+  "version": "1.5.0-canary.0",
   "homepage": "https://zimic.dev/docs/interceptor",
   "repository": {
     "type": "git",
@@ -108,6 +108,7 @@
     "@types/node": "^25.9.1",
     "@types/ws": "^8.18.1",
     "@types/yargs": "^17.0.35",
+    "@typescript/native": "npm:typescript@^7.0.2",
     "@vitest/browser": "^4.1.9",
     "@vitest/browser-playwright": "^4.1.9",
     "@vitest/coverage-istanbul": "^4.1.9",
@@ -121,7 +122,6 @@
     "playwright": "^1.61.0",
     "tsup": "^8.5.1",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "@typescript/native": "npm:typescript@^7.0.2",
     "vitest": "^4.1.9"
   },
   "peerDependencies": {
