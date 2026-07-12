@@ -205,6 +205,14 @@ jobs:
           - '5.8'
           - '5.9'
           - '6.0'
+          # TypeScript 7.0 does not yet provide a programmatic API, which is used by @zimic/http. The API is expected
+          # only in TypeScript 7.1. For now, let's skip TypeScript 7.0 in the matrix. The Zimic monorepo already uses
+          # 7.0 for `tsc` with a compatibility layer to the programmatic API of TypeScript 6.0.
+          #
+          # See https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0.
+          #
+          # Uncomment the following line when TypeScript 7.1 is released and @zimic/http is updated to support it.
+          # - '7.1'
 
     steps:
       - name: Checkout code
@@ -236,6 +244,14 @@ jobs:
       - name: Set TypeScript version
         if: ${{ steps.should-check-types.outputs.value == 'true' }}
         run: |
+          # Use the matrix compiler instead of the TypeScript 7 compiler used by the regular CI jobs.
+          pnpm remove \
+            @typescript/native \
+            --recursive \
+            --filter '!@zimic/*' \
+            --filter '!zimic-web' \
+            ${{ env.TURBO_FILTERS }}
+
           pnpm update \
             typescript@${{ matrix.typescript-version }} \
             --recursive \
