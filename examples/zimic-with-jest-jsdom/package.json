@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "@jest/globals": "^30.4.1",
-    "@swc/core": "^1.15.40",
+    "@swc/core": "^1.15.43",
     "@swc/jest": "^0.2.39",
     "@zimic/interceptor": "latest",
     "dotenv-cli": "^11.0.0",

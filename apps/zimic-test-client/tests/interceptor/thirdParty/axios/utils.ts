@@ -25,9 +25,7 @@ export async function axiosAsFetch(request: Request, options: { adapter?: 'fetch
 
     /* istanbul ignore else -- @preserve
      * Ignoring as a safeguard that is not expected to be covered. */
-    if (error instanceof Error && error.cause instanceof AxiosError) {
-      axiosError = error.cause;
-    } else if (error instanceof AxiosError) {
+    if (error instanceof AxiosError) {
       axiosError = error;
     }
 

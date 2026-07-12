@@ -2,7 +2,7 @@ import { createHttpInterceptor } from '@zimic/interceptor/http';
 import { isDefined } from '@zimic/utils/data';
 import { joinURL } from '@zimic/utils/url';
 import fs from 'fs';
-import yaml from 'js-yaml';
+import { load as parseYaml } from 'js-yaml';
 import path from 'path';
 import color from 'picocolors';
 import prettier, { Options } from 'prettier';
@@ -26,7 +26,7 @@ async function generateJSONSchemas(yamlSchemaFileNames: string[]) {
     const yamlFileContent = await fs.promises.readFile(yamlFilePath, 'utf-8');
 
     const jsonFilePath = replaceFileExtension(yamlFilePath, 'json');
-    const jsonFileContent = JSON.stringify(yaml.load(yamlFileContent), null, 2);
+    const jsonFileContent = JSON.stringify(parseYaml(yamlFileContent), null, 2);
 
     await fs.promises.writeFile(jsonFilePath, jsonFileContent);
   });
