@@ -244,6 +244,14 @@ jobs:
       - name: Set TypeScript version
         if: ${{ steps.should-check-types.outputs.value == 'true' }}
         run: |
+          # Use the matrix compiler instead of the TypeScript 7 compiler used by the regular CI jobs.
+          pnpm remove \
+            @typescript/native \
+            --recursive \
+            --filter '!@zimic/*' \
+            --filter '!zimic-web' \
+            ${{ env.TURBO_FILTERS }}
+
           pnpm update \
             typescript@${{ matrix.typescript-version }} \
             --recursive \
