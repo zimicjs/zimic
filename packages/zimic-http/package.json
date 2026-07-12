@@ -110,11 +110,12 @@
     "prettier": "^3.8.3",
     "tsup": "^8.5.1",
     "tsx": "^4.22.0",
-    "typescript": "6.0.3",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "@typescript/native": "npm:typescript@^7.0.2",
     "vitest": "^4.1.9"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0 || ^6.0.0"
+    "typescript": "^5.0.0 || ^6.0.0 || ^7.0.0"
   },
   "peerDependenciesMeta": {
     "typescript": {
