@@ -73,9 +73,9 @@
   },
   "scripts": {
     "setup": "playwright install chromium",
-    "dev": "tsup --watch",
+    "dev": "tsdown --watch",
     "cli": "node --enable-source-maps ./dist/cli.js",
-    "build": "tsup",
+    "build": "tsdown",
     "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
@@ -109,7 +109,7 @@
     "js-yaml": "^5.2.1",
     "playwright": "^1.61.1",
     "prettier": "^3.8.3",
-    "tsup": "^8.5.1",
+    "tsdown": "^0.22.4",
     "tsx": "^4.23.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vitest": "^4.1.10"

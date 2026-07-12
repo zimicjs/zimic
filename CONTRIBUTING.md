@@ -41,7 +41,7 @@ The following are the main tools we use to develop Zimic:
 | [Vitest](https://vitest.dev)                 | Test runner               |
 | [pnpm](https://pnpm.io)                      | Package manager           |
 | [Turborepo](https://turbo.build/repo/docs)   | Monorepo manager          |
-| [tsup](https://tsup.egoist.dev)              | Package bundler           |
+| [tsdown](https://tsdown.dev)                 | Package bundler           |
 | [ESLint](https://eslint.org)                 | Code linter               |
 | [Prettier](https://prettier.io)              | Code formatter            |
 
@@ -269,8 +269,8 @@ tests will run as part of our [CI pipeline](./.github/workflows/ci.yaml).
 
 ## Building
 
-Zimic uses [tsup](https://tsup.egoist.dev) for builds and [Turborepo](https://turbo.build/repo/docs) to manage each
-package dependencies and cache the results.
+Zimic uses [tsdown](https://tsdown.dev) for builds and [Turborepo](https://turbo.build/repo/docs) to manage each package
+dependencies and cache the results.
 
 ```bash
 # build all packages
@@ -282,7 +282,7 @@ pnpm turbo build --filter @zimic/interceptor
 
 The build outputs of any package are stored in the `dist` directory, such as `packages/zimic-interceptor/dist`.
 
-For more information about using tsup and Turborepo, please refer to their documentation.
+For more information about using tsdown and Turborepo, please refer to their documentation.
 
 ## Checking types
 

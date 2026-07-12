@@ -1,16 +1,16 @@
-import { Options, defineConfig } from 'tsup';
+import { defineConfig, type UserConfig } from 'tsdown';
 
-const sharedConfig: Options = {
-  bundle: true,
-  splitting: true,
+const sharedConfig: UserConfig = {
   sourcemap: true,
   treeshake: true,
   minify: false,
-  keepNames: false,
-  external: [/.*vitest.*/],
+  target: false,
+  deps: {
+    neverBundle: [/.*vitest.*/],
+  },
 };
 
-const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
+const neutralConfig = (['cjs', 'esm'] as const).map<UserConfig>((format) => ({
   ...sharedConfig,
   name: `neutral-${format}`,
   platform: 'neutral',
@@ -28,7 +28,7 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   },
 }));
 
-const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
+const nodeConfig = (['cjs', 'esm'] as const).map<UserConfig>((format) => ({
   ...sharedConfig,
   name: `node-${format}`,
   platform: 'node',
@@ -40,13 +40,13 @@ const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   },
 }));
 
-const configs: Options[] = [...neutralConfig, ...nodeConfig];
+const configs: UserConfig[] = [...neutralConfig, ...nodeConfig];
 
 export default defineConfig(
   configs.map((config, index) => ({
     ...config,
-    // Builds performed by tsup face concurrency problems when generating .d.ts files with multiple configs.
-    // To workaround this, we only clean the dist folder on the last build.
+    // Builds with multiple configs face concurrency problems when generating .d.ts files.
+    // To work around this, only clean the dist folder on the last build.
     clean: index === configs.length - 1,
   })),
 );

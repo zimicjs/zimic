@@ -63,8 +63,8 @@
   },
   "scripts": {
     "setup": "playwright install chromium",
-    "dev": "tsup --watch",
-    "build": "tsup",
+    "dev": "tsdown --watch",
+    "build": "tsdown",
     "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
@@ -89,7 +89,7 @@
     "eslint": "^9.39.4",
     "picocolors": "^1.1.1",
     "playwright": "^1.61.1",
-    "tsup": "^8.5.1",
+    "tsdown": "^0.22.4",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vitest": "^4.1.10"
   },

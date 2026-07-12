@@ -60,7 +60,7 @@ export default defineConfig({
         '**/.lintstagedrc.js',
         '**/eslint.config.mjs',
         '**/vitest.{config,workspace}.*',
-        '**/tsup.config.*',
+        '**/tsdown.config.*',
       ],
     },
   },
