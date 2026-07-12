@@ -23,29 +23,29 @@
     "@docusaurus/theme-classic": "^3.10.1",
     "@docusaurus/theme-search-algolia": "^3.10.1",
     "@mdx-js/react": "^3.1.1",
-    "@tanstack/react-query": "^5.100.14",
+    "@tanstack/react-query": "^5.101.2",
     "@zimic/fetch": "workspace:*",
     "@zimic/http": "workspace:*",
     "dompurify": "^3.4.11",
     "prism-react-renderer": "^2.4.1",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "3.10.1",
     "@docusaurus/types": "3.10.1",
-    "@tailwindcss/postcss": "^4.3.0",
-    "@types/node": "^25.9.1",
-    "@types/react": "^19.2.15",
+    "@tailwindcss/postcss": "^4.3.2",
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
     "@zimic/eslint-config-react": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^11.0.0",
-    "esbuild-loader": "^4.4.3",
+    "esbuild-loader": "^4.5.0",
     "eslint": "^9.39.4",
     "postcss": "^8.5.15",
     "sponsorkit": "^17.1.1",
-    "tailwindcss": "^4.3.0",
-    "typescript": "6.0.3"
+    "tailwindcss": "^4.3.2",
+    "typescript": "7.0.2"
   }
 }
