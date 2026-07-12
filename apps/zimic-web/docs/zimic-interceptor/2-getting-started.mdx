@@ -29,7 +29,7 @@ different browsers.
 
 `@zimic/interceptor` requires [TypeScript](https://www.typescriptlang.org) >= 5.0, with the following configuration:
 
-<Tabs groupId="runtime-environments">
+<Tabs groupId="typescript-version">
   <TabItem value="typescript-5" label="TypeScript 5">
 
 ```json title='tsconfig.json'
@@ -110,7 +110,7 @@ for more information.
 
 `@zimic/interceptor` requires [TypeScript](https://www.typescriptlang.org) >= 5.0, with the following configuration:
 
-<Tabs groupId="runtime-environments">
+<Tabs groupId="typescript-version">
   <TabItem value="typescript-5" label="TypeScript 5">
 
 ```json title='tsconfig.json'
@@ -258,7 +258,7 @@ The schema represents the structure of your API, including the paths, methods, r
 
 :::tip TIP: <span>OpenAPI Typegen</span>
 
-For APIs with an [OpenAPI documentation](https://www.openapis.org(e.g. [Swagger](https://swagger.io)), the
+For APIs with an [OpenAPI documentation](https://www.openapis.org) (e.g. [Swagger](https://swagger.io)), the
 [`zimic-http typegen` CLI](/docs/zimic-http/guides/2-typegen.mdx) can automatically infer the types and generate the
 schema for you. This is a great way to keep your schema up to date and save time on manual type definitions.
 
@@ -340,7 +340,7 @@ You can also set other options, such as the interceptor type and how unhandled r
 
 :::info INFO: <span>Choosing your interceptor type</span>
 
-HTTP interceptors are available in two types: `local(default) and `remote`.
+HTTP interceptors are available in two types: `local` (default) and `remote`.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -395,7 +395,7 @@ To intercept requests, an interceptor must be started with
 `beforeAll` hook in your test suite.
 
 ```ts
-beforeAll(() => {
+beforeAll(async () => {
   // highlight-next-line
   await interceptor.start();
 });
@@ -440,7 +440,7 @@ beforeEach(() => {
   <TabItem value="remote" label="Remote interceptor">
 
 ```ts
-beforeEach(() => {
+beforeEach(async () => {
   // highlight-next-line
   await interceptor.clear();
 });
@@ -471,7 +471,7 @@ afterEach(() => {
   <TabItem value="remote" label="Remote interceptor">
 
 ```ts
-afterEach(() => {
+afterEach(async () => {
   // highlight-next-line
   await interceptor.checkTimes();
 });
@@ -486,7 +486,7 @@ After the interceptor is no longer needed, such as at the end of your test suite
 [`interceptor.stop()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorstop).
 
 ```ts
-afterAll(() => {
+afterAll(async () => {
   await interceptor.stop();
 });
 ```
