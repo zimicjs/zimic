@@ -4,7 +4,7 @@ import {
   type WebSocketInterceptorType,
 } from '@zimic/interceptor/experimental/ws';
 import { waitFor } from '@zimic/utils/time';
-import { afterAll, afterEach, beforeAll, describe, expect, expectTypeOf, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { ZIMIC_SERVER_PORT } from '@tests/constants';
 import type { UserWebSocketMessage, UserWebSocketSchema } from '@tests/types/schema/webSocket';
@@ -60,18 +60,21 @@ export async function closeNativeWebSocket(socket: WebSocket) {
 
 async function waitForNativeUserCreationResponse(socket: WebSocket) {
   return new Promise<UserWebSocketMessage<'user:create:success'>>((resolve, reject) => {
-    socket.addEventListener(
-      'message',
-      (event) => {
-        try {
-          const message = JSON.parse(event.data as string) as UserWebSocketMessage<'user:create:success'>;
+    function messageListener(event: MessageEvent) {
+      try {
+        const message = JSON.parse(event.data as string) as UserWebSocketMessage;
+
+        if (message.type === 'user:create:success') {
+          socket.removeEventListener('message', messageListener);
           resolve(message);
-        } catch (error) {
-          reject(error);
         }
-      },
-      { once: true },
-    );
+      } catch (error) {
+        socket.removeEventListener('message', messageListener);
+        reject(error);
+      }
+    }
+
+    socket.addEventListener('message', messageListener);
   });
 }
 
@@ -141,7 +144,15 @@ export function declareNativeWebSocketClientTests(options: ClientTestOptions) {
           expect(interceptor.clients).toHaveLength(1);
         });
 
+        const removeEventListener = vi.spyOn(socket, 'removeEventListener');
         const responsePromise = waitForNativeUserCreationResponse(socket);
+
+        socket.dispatchEvent(
+          new MessageEvent('message', {
+            data: JSON.stringify({ type: 'user:delete:success', data: { id: crypto.randomUUID() } }),
+          }),
+        );
+        expect(removeEventListener).not.toHaveBeenCalled();
 
         socket.send(JSON.stringify(requestMessage));
 
@@ -155,9 +166,27 @@ export function declareNativeWebSocketClientTests(options: ClientTestOptions) {
             birthDate: creationInput.birthDate,
           },
         });
+        expect(removeEventListener).toHaveBeenCalledWith('message', expect.any(Function));
 
         expect(creationHandler.messages).toHaveLength(1);
         expect(creationHandler.messages[0].data).toEqual(requestMessage);
+      } finally {
+        await closeNativeWebSocket(socket);
+      }
+    });
+
+    it('should remove the response listener after a terminal parsing failure', async () => {
+      const socket = new WebSocket(interceptor.baseURL);
+
+      try {
+        await openNativeWebSocket(socket);
+
+        const removeEventListener = vi.spyOn(socket, 'removeEventListener');
+        const responsePromise = waitForNativeUserCreationResponse(socket);
+        socket.dispatchEvent(new MessageEvent('message', { data: '{' }));
+
+        await expect(responsePromise).rejects.toBeInstanceOf(SyntaxError);
+        expect(removeEventListener).toHaveBeenCalledWith('message', expect.any(Function));
       } finally {
         await closeNativeWebSocket(socket);
       }

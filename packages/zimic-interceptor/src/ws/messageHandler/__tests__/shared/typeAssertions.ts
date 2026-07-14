@@ -1,3 +1,4 @@
+import { WebSocketSchema } from '@zimic/ws';
 import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
@@ -10,12 +11,35 @@ import {
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import type { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
 import type { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
+import type {
+  LocalWebSocketMessageHandler as PublicLocalWebSocketMessageHandler,
+  PendingRemoteWebSocketMessageHandler,
+  SyncedRemoteWebSocketMessageHandler,
+} from '../../types/public';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
 
 type CreateMessage = Extract<Schema, { type: 'create' }>;
 type PrioritizedCreateMessage = CreateMessage & {
   body: CreateMessage['body'] & { priority: number };
 };
+
+type NestedSchema = WebSocketSchema<
+  | {
+      type: 'create';
+      body: {
+        text: string;
+        details?: { priority: number };
+      };
+    }
+  | {
+      type: 'create';
+      body: {
+        count: number;
+        details?: { label: string };
+      };
+    }
+  | { type: 'delete'; id: string }
+>;
 
 export function declareTypeAssertionWebSocketMessageHandlerTests(
   options: SharedWebSocketMessageHandlerTestOptions & {
@@ -50,6 +74,100 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
 
       interceptor.message().with({ type: 'create' }).effect(effect);
     });
+  });
+
+  it('should narrow compatible union members through partial static restrictions', async () => {
+    const baseURL = await getBaseURL(type);
+
+    await usingWebSocketInterceptor<NestedSchema>({ type, baseURL }, async (interceptor) => {
+      const nestedHandler = interceptor.message().with({ body: { text: 'hello' } });
+
+      nestedHandler.effect(
+        /* istanbul ignore next -- @preserve
+         * This callback exists only to assert its inferred parameter type. */
+        (message) => {
+          expectTypeOf(message).toEqualTypeOf<Extract<NestedSchema, { body: { text: string } }>>();
+        },
+      );
+
+      const optionalHandler = interceptor.message().with({ body: { details: { priority: 1 } } });
+
+      optionalHandler.effect(
+        /* istanbul ignore next -- @preserve
+         * This callback exists only to assert its inferred parameter type. */
+        (message) => {
+          expectTypeOf(message).toEqualTypeOf<Extract<NestedSchema, { body: { text: string } }>>();
+        },
+      );
+
+      const chainedHandler = interceptor
+        .message()
+        .with({ type: 'create' })
+        .with({ body: { count: 1 } });
+
+      chainedHandler.effect(
+        /* istanbul ignore next -- @preserve
+         * This callback exists only to assert its inferred parameter type. */
+        (message) => {
+          expectTypeOf(message).toEqualTypeOf<Extract<NestedSchema, { body: { count: number } }>>();
+        },
+      );
+
+      await Promise.all([nestedHandler, optionalHandler, chainedHandler]);
+    });
+  });
+
+  it('should reset cleared handler return types to the root schema', () => {
+    /* istanbul ignore next -- @preserve
+     * This declaration exists only for compile-time assertions and cannot run without mutating a live handler. */
+    function declareLocalClear(handler: PublicLocalWebSocketMessageHandler<Schema, CreateMessage>) {
+      const clearedHandler = handler.clear();
+      expectTypeOf(clearedHandler).toEqualTypeOf<PublicLocalWebSocketMessageHandler<Schema, Schema>>();
+
+      clearedHandler
+        .with({ type: 'delete' })
+        .delay(
+          /* istanbul ignore next -- @preserve
+           * This callback belongs to a compile-only handler declaration. */
+          (message) => message.id.length,
+        )
+        .effect(
+          /* istanbul ignore next -- @preserve
+           * This callback belongs to a compile-only handler declaration. */
+          (message) => {
+            expectTypeOf(message).toEqualTypeOf<Extract<Schema, { type: 'delete' }>>();
+          },
+        )
+        .respond({ type: 'create', body: { text: 'response' } })
+        .times(1);
+    }
+
+    /* istanbul ignore next -- @preserve
+     * This declaration exists only for compile-time assertions and cannot run without mutating a live handler. */
+    function declarePendingRemoteClear(handler: PendingRemoteWebSocketMessageHandler<Schema, CreateMessage>) {
+      const clearedHandler = handler.clear();
+      expectTypeOf(clearedHandler).toEqualTypeOf<PendingRemoteWebSocketMessageHandler<Schema, Schema>>();
+      clearedHandler.respond({ type: 'delete', id: '1' }).effect(
+        /* istanbul ignore next -- @preserve
+         * This callback belongs to a compile-only handler declaration. */
+        (message) => {
+          expectTypeOf(message).toEqualTypeOf<Schema>();
+        },
+      );
+    }
+
+    /* istanbul ignore next -- @preserve
+     * This declaration exists only for compile-time assertions and cannot run without mutating a live handler. */
+    async function declareSyncedRemoteClear(handler: SyncedRemoteWebSocketMessageHandler<Schema, CreateMessage>) {
+      const clearedHandler = handler.clear();
+      expectTypeOf(clearedHandler).toEqualTypeOf<PendingRemoteWebSocketMessageHandler<Schema, Schema>>();
+      const syncedHandler = await clearedHandler;
+      expectTypeOf(syncedHandler).toEqualTypeOf<SyncedRemoteWebSocketMessageHandler<Schema, Schema>>();
+    }
+
+    expectTypeOf(declareLocalClear).toBeFunction();
+    expectTypeOf(declarePendingRemoteClear).toBeFunction();
+    expectTypeOf(declareSyncedRemoteClear).toBeFunction();
   });
 
   it('should preserve the root schema while chaining static and computed restrictions', async () => {
@@ -115,12 +233,6 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
     const baseURL = await getBaseURL(type);
 
     await usingWebSocketInterceptor<Schema>({ type, baseURL }, (interceptor) => {
-      // @ts-expect-error Invalid static restriction.
-      interceptor.message().with({ type: 'update' });
-
-      // @ts-expect-error Invalid static response.
-      interceptor.message().respond({ type: 'update' });
-
       function responseFactory(message: Schema) {
         expectTypeOf(message).toEqualTypeOf<Schema>();
 
@@ -129,12 +241,17 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
       responseFactory({ type: 'delete', id: '1' });
       interceptor.message().respond(responseFactory);
 
+      /* istanbul ignore next -- @preserve
+       * Invalid declarations must remain compile-only to avoid registering them on a live remote interceptor. */
       function invalidResponseFactory() {
         return { type: 'update' };
       }
-      invalidResponseFactory();
-      // @ts-expect-error Invalid computed response.
-      interceptor.message().respond(invalidResponseFactory);
+      /* istanbul ignore next -- @preserve
+       * Invalid declarations must remain compile-only to avoid registering them on a live remote interceptor. */
+      function declareInvalidResponseFactory() {
+        // @ts-expect-error Invalid computed response.
+        interceptor.message().respond(invalidResponseFactory);
+      }
 
       const restrictedHandler = interceptor
         .message()
@@ -145,11 +262,24 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
 
       restrictedHandler.respond({ type: 'delete', id: '1' });
 
-      // @ts-expect-error Invalid restriction after narrowing.
-      restrictedHandler.with({ type: 'delete' });
+      /* istanbul ignore next -- @preserve
+       * Invalid declarations must remain compile-only to avoid registering them on a live remote interceptor. */
+      function declareInvalidMessages() {
+        // @ts-expect-error Invalid static restriction.
+        interceptor.message().with({ type: 'update' });
 
-      // @ts-expect-error Invalid response after narrowing.
-      restrictedHandler.respond({ type: 'update' });
+        // @ts-expect-error Invalid static response.
+        interceptor.message().respond({ type: 'update' });
+
+        // @ts-expect-error Invalid restriction after narrowing.
+        restrictedHandler.with({ type: 'delete' });
+
+        // @ts-expect-error Invalid response after narrowing.
+        restrictedHandler.respond({ type: 'update' });
+      }
+
+      expectTypeOf(declareInvalidMessages).toBeFunction();
+      expectTypeOf(declareInvalidResponseFactory).toBeFunction();
     });
   });
 }

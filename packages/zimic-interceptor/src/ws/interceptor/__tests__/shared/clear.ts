@@ -58,6 +58,31 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     });
   });
 
+  it('should support reusing previous handlers after cleared', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.message(), interceptor);
+
+        await promiseIfRemote(handler.respond({ type: 'server', index: 1 }), interceptor);
+        await interceptor.clear();
+
+        const reusedHandler = await promiseIfRemote(
+          handler.respond({ type: 'server', index: 2 }).times(1),
+          interceptor,
+        );
+
+        const client = await createClient();
+        const messagePromise = waitForMessage(client);
+        client.send(JSON.stringify({ type: 'client', index: 2 }));
+
+        await expect(messagePromise).resolves.toEqual({ type: 'server', index: 2 });
+        expect(reusedHandler.messages).toHaveLength(1);
+        await interceptor.checkTimes();
+      },
+    );
+  });
+
   it('should clear handlers, saved messages, clients, and server messages', async () => {
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, messageSaving: { enabled: true } },

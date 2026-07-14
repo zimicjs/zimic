@@ -23,6 +23,13 @@ and messages. This opens up more possibilities for mocking than
 [local interceptors](/docs/interceptor/guides/ws/local-interceptors), such as handling connections from multiple
 applications. Remote WebSocket interceptors require `type: 'remote'`.
 
+Application clients must provide a native or polyfilled
+[WebSocket API](https://developer.mozilla.org/docs/Web/API/WebSocket). Browsers normally provide it natively; Node.js
+clients must expose the native `WebSocket` or a compatible polyfill. Node.js projects consuming the WebSocket
+interceptor packages require Node.js 22.4 or later. This includes the process declaring the remote interceptor and the
+separately running interceptor server, which accepts application WebSocket connections and relays messages between the
+clients and interceptor.
+
 ## When to use remote WebSocket interceptors
 
 - **Development**
@@ -228,6 +235,10 @@ interceptor server. This is different from [local interceptors](/docs/intercepto
 have mostly **synchronous** operations. Await remote handler chains that register or update handlers, such as
 `.respond(...)`, `.times(...)`, `.clear()`, and `.checkTimes()`.
 
+WebSocket frames arrive in transport order, but Zimic handles messages independently. Asynchronous restrictions,
+effects, delays, and responses can overlap and complete in any order. Do not rely on handler-completion or response
+order.
+
 If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy rule is
 [`@typescript-eslint/no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises). It checks promises
 appearing to be unhandled, which is helpful to indicate missing `await`'s in remote interceptor operations.
@@ -240,6 +251,17 @@ browsers. Configure `messageSaving: { enabled: true }` when you need saved messa
 arrays are readonly and keep stable references. Calling `handler.clear()` removes that handler's saved messages from the
 handler, sender client, and server arrays in place; calling `interceptor.clear()` clears all saved message arrays and
 resets safe-limit accounting.
+
+`handler.clear()` returns the same handler reset to the root message schema. Continue configuration from that returned
+handler when a previous `.with(...)` narrowed its message type. An older narrowed alias does not retain sound narrowing
+after either the handler or interceptor is cleared.
+
+```ts
+const narrowedHandler = await interceptor.message().with({ type: 'typing' });
+const rootHandler = await narrowedHandler.clear();
+
+await rootHandler.respond({ type: 'presence', data: { online: true } });
+```
 
 ```ts
 const handler = await interceptor
@@ -355,13 +377,15 @@ container is removed or recreated.
 Once the server is running, remote interceptors can use the `auth.token` option to provide a token.
 
 ```ts
-import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
+import { createWebSocketInterceptor, type WebSocketInterceptorAuthOptions } from '@zimic/interceptor/experimental/ws';
+
+const auth: WebSocketInterceptorAuthOptions = {
+  token: '<token>',
+};
 
 const interceptor = createWebSocketInterceptor<Schema>({
   type: 'remote',
   baseURL: 'ws://localhost:3000/chat',
-  auth: {
-    token: process.env.ZIMIC_INTERCEPTOR_TOKEN,
-  },
+  auth,
 });
 ```

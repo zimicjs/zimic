@@ -121,6 +121,7 @@ import {
   type HttpInterceptorPlatform,
   type HttpInterceptorType,
   type HttpInterceptorOptions,
+  type HttpInterceptorAuthOptions,
   type LocalHttpInterceptorOptions,
   type RemoteHttpInterceptorOptions,
   type UnhandledRequestStrategy,
@@ -344,8 +345,10 @@ describe('Exports', () => {
     expectTypeOf<HttpInterceptorPlatform>().not.toBeAny();
     expectTypeOf<HttpInterceptorType>().not.toBeAny();
     expectTypeOf<HttpInterceptorOptions>().not.toBeAny();
+    expectTypeOf<HttpInterceptorAuthOptions>().not.toBeAny();
     expectTypeOf<LocalHttpInterceptorOptions>().not.toBeAny();
     expectTypeOf<RemoteHttpInterceptorOptions>().not.toBeAny();
+    expectTypeOf<RemoteHttpInterceptorOptions['auth']>().toEqualTypeOf<HttpInterceptorAuthOptions | undefined>();
     expectTypeOf<InferHttpInterceptorSchema<never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorRequest<never, never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorResponse<never, never>>().not.toBeAny();

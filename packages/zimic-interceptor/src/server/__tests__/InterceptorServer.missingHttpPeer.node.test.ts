@@ -33,6 +33,8 @@ it('should isolate a missing HTTP peer from authenticated WebSocket workers', as
   try {
     await server.start();
 
+    await expect(fetch(`http://localhost:${server.port}/before-http-worker`)).rejects.toThrow();
+
     const serverURL = `ws://localhost:${server.port}`;
     const webSocketWorker = new WebSocketClient<InterceptorServerWebSocketSchema>({ url: serverURL });
     const unauthenticatedHttpWorker = new WebSocketClient<InterceptorServerWebSocketSchema>({ url: serverURL });

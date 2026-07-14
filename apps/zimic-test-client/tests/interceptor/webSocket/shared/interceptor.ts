@@ -59,25 +59,32 @@ async function waitForResponseMessage<
   ResponseMessageType extends Schema['type'],
 >(socket: WebSocketClient<Schema>, responseMessageType: ResponseMessageType) {
   return new Promise<Extract<Schema, { type: ResponseMessageType }>>((resolve, reject) => {
-    socket.addEventListener('message', (event) => {
+    function messageListener(event: WebSocketClient.MessageEvent<Schema>) {
       try {
         const message = JSON.parse(event.data);
 
         if (message.type === responseMessageType) {
+          socket.removeEventListener('message', messageListener);
           resolve(message);
         }
       } catch (error) {
+        socket.removeEventListener('message', messageListener);
         reject(error);
       }
-    });
+    }
+
+    socket.addEventListener('message', messageListener);
   });
 }
 
 async function waitForBinaryMessage(socket: WebSocketClient<BinaryWebSocketSchema>) {
   return new Promise<Blob | BufferSource>((resolve) => {
-    socket.addEventListener('message', (event) => {
+    function messageListener(event: WebSocketClient.MessageEvent<BinaryWebSocketSchema>) {
+      socket.removeEventListener('message', messageListener);
       resolve(event.data);
-    });
+    }
+
+    socket.addEventListener('message', messageListener);
   });
 }
 
@@ -217,6 +224,46 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
         expect(interceptor.isRunning).toBe(false);
       }),
     );
+  });
+
+  describe('Response waiting', () => {
+    it('should keep waiting after unrelated messages and remove the listener after the expected response', async () => {
+      const socket = userSockets[0];
+      const removeEventListener = vi.spyOn(socket, 'removeEventListener');
+      const responsePromise = waitForResponseMessage(socket, 'user:create:success');
+
+      socket.dispatchEvent(
+        new MessageEvent('message', {
+          data: JSON.stringify({ type: 'user:delete:success', data: {} }),
+        }),
+      );
+      expect(removeEventListener).not.toHaveBeenCalled();
+
+      const expectedResponse: UserWebSocketMessage<'user:create:success'> = {
+        type: 'user:create:success',
+        data: {
+          id: crypto.randomUUID(),
+          name: 'Name',
+          email: 'email@email.com',
+          birthDate: new Date().toISOString(),
+        },
+      };
+      socket.dispatchEvent(new MessageEvent('message', { data: JSON.stringify(expectedResponse) }));
+
+      await expect(responsePromise).resolves.toEqual(expectedResponse);
+      expect(removeEventListener).toHaveBeenCalledOnce();
+    });
+
+    it('should remove the listener after a terminal parsing failure', async () => {
+      const socket = userSockets[0];
+      const removeEventListener = vi.spyOn(socket, 'removeEventListener');
+      const responsePromise = waitForResponseMessage(socket, 'user:create:success');
+
+      socket.dispatchEvent(new MessageEvent('message', { data: '{' }));
+
+      await expect(responsePromise).rejects.toBeInstanceOf(SyntaxError);
+      expect(removeEventListener).toHaveBeenCalledOnce();
+    });
   });
 
   describe('Users', () => {
@@ -902,19 +949,27 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
         .from(binaryClient)
         .with(message)
         .respond(message)
-        .times(1);
+        .times(2);
 
-      const responsePromise = waitForBinaryMessage(binarySocket);
+      const removeEventListener = vi.spyOn(binarySocket, 'removeEventListener');
 
-      binarySocket.send(message);
+      for (let index = 0; index < 2; index++) {
+        const responsePromise = waitForBinaryMessage(binarySocket);
 
-      const response = await responsePromise;
+        binarySocket.send(message);
 
-      expect(await readBytes(response)).toEqual([0x00, 0xff]);
-      expect(binaryHandler.messages).toHaveLength(1);
+        const response = await responsePromise;
+        expect(await readBytes(response)).toEqual([0x00, 0xff]);
+        expect(removeEventListener).toHaveBeenCalledTimes(index + 1);
+      }
+
+      expect(binaryHandler.messages).toHaveLength(2);
       expect(await readBytes(binaryHandler.messages[0].data)).toEqual([0x00, 0xff]);
       expect(binaryHandler.messages[0].sender).toBe(binaryClient);
       expect(binaryHandler.messages[0].receiver).toBe(binaryInterceptor.server);
+      expect(await readBytes(binaryHandler.messages[1].data)).toEqual([0x00, 0xff]);
+      expect(binaryHandler.messages[1].sender).toBe(binaryClient);
+      expect(binaryHandler.messages[1].receiver).toBe(binaryInterceptor.server);
     });
   });
 }

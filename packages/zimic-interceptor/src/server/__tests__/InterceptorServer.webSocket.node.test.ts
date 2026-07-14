@@ -635,6 +635,10 @@ describe('Interceptor server > Web sockets', () => {
       id: crypto.randomUUID(),
       baseURL: initialBaseURL,
     };
+    const additionalHandler = {
+      id: crypto.randomUUID(),
+      baseURL: `ws://localhost:${server.port}/additional`,
+    };
 
     await webSocketClient.request('interceptors/ws/workers/commit', handler);
 
@@ -649,7 +653,10 @@ describe('Interceptor server > Web sockets', () => {
     const closeListener = vi.fn();
     existingSocket.addEventListener('close', closeListener);
 
-    await webSocketClient.request('interceptors/ws/workers/reset', [{ ...handler, baseURL: updatedBaseURL }]);
+    await webSocketClient.request('interceptors/ws/workers/reset', [
+      { ...handler, baseURL: updatedBaseURL },
+      additionalHandler,
+    ]);
 
     const messagePromise = new Promise<ClientSocket.MessageEvent>((resolve) => {
       existingSocket.addEventListener('message', resolve, { once: true });
@@ -669,6 +676,18 @@ describe('Interceptor server > Web sockets', () => {
     await waitFor(() => {
       expect(connections).toHaveLength(2);
       expect(connections[1]).toMatchObject({ handlerId: handler.id, url: updatedBaseURL });
+    });
+
+    const additionalSocket = new ClientSocket(additionalHandler.baseURL);
+    userSockets.push(additionalSocket);
+    await waitForOpenClientSocket(additionalSocket);
+
+    await waitFor(() => {
+      expect(connections).toHaveLength(3);
+      expect(connections[2]).toMatchObject({
+        handlerId: additionalHandler.id,
+        url: additionalHandler.baseURL,
+      });
     });
 
     const initialSocket = new ClientSocket(initialBaseURL);
@@ -1495,6 +1514,256 @@ describe('Interceptor server > Web sockets', () => {
     expect(internalServer.pendingUserWebSocketHandlers).toHaveProperty('size', 0);
     expect(internalServer.activeUserWebSocketHandlers).toHaveProperty('size', 1);
     expect(userSocket.readyState).toBe(ClientSocket.OPEN);
+  });
+
+  it('should dispatch messages from one user socket independently', async () => {
+    server = createInternalInterceptorServer({ logUnhandledRequests: false });
+    await server.start();
+
+    webSocketClient = new WebSocketClient({
+      url: `ws://localhost:${server.port}`,
+    });
+
+    const connections = collectConnectedWebSocketClients(webSocketClient);
+    const handledMessages: unknown[] = [];
+    const completedMessages: unknown[] = [];
+    const finishHandling: (() => void)[] = [];
+    webSocketClient.onChannel('event', 'interceptors/ws/messages/handle', async ({ data }) => {
+      handledMessages.push(data.data);
+      await new Promise<void>((resolve) => {
+        finishHandling.push(resolve);
+      });
+      completedMessages.push(data.data);
+      return {};
+    });
+
+    await webSocketClient.start({
+      parameters: {
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
+      },
+      waitForAuthentication: true,
+    });
+
+    const baseURL = `ws://localhost:${server.port}/chat`;
+    await webSocketClient.request('interceptors/ws/workers/commit', {
+      id: crypto.randomUUID(),
+      baseURL,
+    });
+
+    const socket = new ClientSocket(baseURL);
+    userSockets.push(socket);
+    await waitForOpenClientSocket(socket);
+    await waitFor(() => {
+      expect(connections).toHaveLength(1);
+    });
+
+    socket.send('first');
+    socket.send('second');
+
+    await waitFor(() => {
+      expect(handledMessages).toEqual([
+        { type: 'text', data: 'first' },
+        { type: 'text', data: 'second' },
+      ]);
+    });
+
+    for (const finish of finishHandling) {
+      finish();
+    }
+
+    await waitFor(() => {
+      expect(completedMessages).toHaveLength(2);
+      expect(completedMessages).toEqual(
+        expect.arrayContaining([
+          { type: 'text', data: 'first' },
+          { type: 'text', data: 'second' },
+        ]),
+      );
+    });
+  });
+
+  it('should observe a failed message task without blocking a later message', async () => {
+    server = createInternalInterceptorServer({ logUnhandledRequests: false });
+    await server.start();
+
+    webSocketClient = new WebSocketClient({
+      url: `ws://localhost:${server.port}`,
+    });
+    const connections = collectConnectedWebSocketClients(webSocketClient);
+
+    await webSocketClient.start({
+      parameters: {
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
+      },
+      waitForAuthentication: true,
+    });
+
+    const baseURL = `ws://localhost:${server.port}/chat`;
+    await webSocketClient.request('interceptors/ws/workers/commit', {
+      id: crypto.randomUUID(),
+      baseURL,
+    });
+
+    const socket = new ClientSocket(baseURL);
+    userSockets.push(socket);
+    await waitForOpenClientSocket(socket);
+    await waitFor(() => {
+      expect(connections).toHaveLength(1);
+    });
+
+    const error = new Error('Message handling failed.');
+    const internalServer = server as unknown as {
+      handleUserWebSocketMessage: (connection: unknown, message: unknown) => Promise<void>;
+    };
+    const handleMessageSpy = vi
+      .spyOn(internalServer, 'handleUserWebSocketMessage')
+      .mockRejectedValueOnce(error)
+      .mockResolvedValueOnce();
+
+    await usingIgnoredConsole(['error'], async (console) => {
+      socket.send('first');
+      socket.send('second');
+
+      await waitFor(() => {
+        expect(handleMessageSpy).toHaveBeenCalledTimes(2);
+        expect(console.error).toHaveBeenCalledWith(error);
+      });
+    });
+
+    handleMessageSpy.mockRestore();
+  });
+
+  it('should notify a user close without waiting for in-flight messages and discard late sends', async () => {
+    server = createInternalInterceptorServer({ logUnhandledRequests: false });
+    await server.start();
+
+    webSocketClient = new WebSocketClient({
+      url: `ws://localhost:${server.port}`,
+    });
+
+    const connections = collectConnectedWebSocketClients(webSocketClient);
+    const closedClientIds: string[] = [];
+    let finishHandling!: () => void;
+    const messageStartedPromise = new Promise<void>((resolveStarted) => {
+      webSocketClient!.onChannel('event', 'interceptors/ws/messages/handle', async () => {
+        resolveStarted();
+        await new Promise<void>((resolve) => {
+          finishHandling = resolve;
+        });
+        return {};
+      });
+    });
+    webSocketClient.onChannel('event', 'interceptors/ws/clients/close', ({ data }) => {
+      closedClientIds.push(data.clientId);
+    });
+
+    await webSocketClient.start({
+      parameters: {
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
+      },
+      waitForAuthentication: true,
+    });
+
+    const handlerId = crypto.randomUUID();
+    const baseURL = `ws://localhost:${server.port}/chat`;
+    await webSocketClient.request('interceptors/ws/workers/commit', { id: handlerId, baseURL });
+
+    const socket = new ClientSocket(baseURL);
+    userSockets.push(socket);
+    await waitForOpenClientSocket(socket);
+    await waitFor(() => {
+      expect(connections).toHaveLength(1);
+    });
+
+    const handleMessageSpy = vi.spyOn(
+      server as unknown as {
+        handleUserWebSocketMessage: (connection: unknown, message: unknown) => Promise<void>;
+      },
+      'handleUserWebSocketMessage',
+    );
+    socket.send('in-flight');
+    await messageStartedPromise;
+    await closeClientSocket(socket);
+    userSockets.splice(userSockets.indexOf(socket), 1);
+
+    await waitFor(() => {
+      expect(closedClientIds).toEqual([connections[0].clientId]);
+    });
+
+    const internalServer = server as unknown as {
+      activeUserWebSocketHandlers: Map<unknown, unknown>;
+    };
+    expect(internalServer.activeUserWebSocketHandlers).toHaveProperty('size', 0);
+
+    await usingIgnoredConsole(['error'], async (console) => {
+      webSocketClient!.send('interceptors/ws/messages/send', {
+        handlerId,
+        clientId: connections[0].clientId,
+        data: { type: 'text', data: 'late' },
+      });
+      finishHandling();
+
+      const originalMessageTask = handleMessageSpy.mock.results[0]?.value as Promise<void> | undefined;
+      expect(originalMessageTask).toBeDefined();
+      await originalMessageTask;
+
+      await waitForNot(() => {
+        expect(internalServer.activeUserWebSocketHandlers.size).toBeGreaterThan(0);
+      });
+      expect(console.error).not.toHaveBeenCalled();
+    });
+    handleMessageSpy.mockRestore();
+  });
+
+  it('should observe close notification errors during worker disconnect races', async () => {
+    server = createInternalInterceptorServer({ logUnhandledRequests: false });
+    await server.start();
+
+    webSocketClient = new WebSocketClient({
+      url: `ws://localhost:${server.port}`,
+    });
+    const connections = collectConnectedWebSocketClients(webSocketClient);
+
+    await webSocketClient.start({
+      parameters: {
+        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
+      },
+      waitForAuthentication: true,
+    });
+
+    const baseURL = `ws://localhost:${server.port}/chat`;
+    await webSocketClient.request('interceptors/ws/workers/commit', {
+      id: crypto.randomUUID(),
+      baseURL,
+    });
+
+    const socket = new ClientSocket(baseURL);
+    userSockets.push(socket);
+    await waitForOpenClientSocket(socket);
+    await waitFor(() => {
+      expect(connections).toHaveLength(1);
+    });
+
+    const error = new Error('Worker disconnected before close notification.');
+    const internalServer = server as unknown as {
+      webSocketServer: WebSocketServer<InterceptorServerWebSocketSchema>;
+      activeUserWebSocketHandlers: Map<unknown, unknown>;
+    };
+    const sendSpy = vi.spyOn(internalServer.webSocketServer, 'send').mockImplementationOnce(() => {
+      throw error;
+    });
+
+    await usingIgnoredConsole(['error'], async (console) => {
+      await closeClientSocket(socket);
+      userSockets.splice(userSockets.indexOf(socket), 1);
+
+      await waitFor(() => {
+        expect(internalServer.activeUserWebSocketHandlers).toHaveProperty('size', 0);
+        expect(console.error).toHaveBeenCalledWith(error);
+      });
+    });
+
+    sendSpy.mockRestore();
   });
 
   it('should close connected user sockets when stopped', async () => {

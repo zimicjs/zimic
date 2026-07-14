@@ -15,15 +15,23 @@ WebSocket mocks, see the [WebSocket interceptor guide](/docs/interceptor/guides/
 
 ## Requirements
 
+HTTP interception requires the [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). Browser clients must
+provide Fetch natively or through a polyfill. Server-side HTTP interception requires Node.js 22 or later.
+
+WebSocket interception requires a native or polyfilled
+[WebSocket API](https://developer.mozilla.org/docs/Web/API/WebSocket) in every client runtime. Browsers normally provide
+it natively; Node.js clients must expose the native `WebSocket` or a compatible polyfill. Node.js projects consuming the
+WebSocket interceptor packages, including interceptor servers, require Node.js 22.4 or later.
+
 ### Supported environments
 
 <Tabs groupId="runtime-environments">
   <TabItem value="client" label="Client side">
 
-`@zimic/interceptor` is designed to work in any environment that supports the
-[Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). This includes any relatively modern browser.
-[Can I Use](https://caniuse.com/?search=fetch) is a great resource to check the compatibility of specific features with
-different browsers.
+`@zimic/interceptor` supports HTTP clients with Fetch and WebSocket clients with a native or polyfilled `WebSocket`.
+This includes relatively modern browsers. Local browser interceptors also require an initialized mock service worker;
+the protocol guides describe that setup. [Can I Use](https://caniuse.com/?search=fetch) is a great resource to check the
+compatibility of specific features with different browsers.
 
 ### Supported languages
 
@@ -102,9 +110,9 @@ for more information.
   </TabItem>
   <TabItem value="server" label="Server side">
 
-| Runtime                       | Version   |
-| ----------------------------- | --------- |
-| [Node.js](https://nodejs.org) | >= 22.0.0 |
+| Runtime                       | HTTP interception | Experimental WebSocket interception |
+| ----------------------------- | ----------------- | ----------------------------------- |
+| [Node.js](https://nodejs.org) | >= 22.0.0         | >= 22.4.0                           |
 
 ### Supported languages
 
@@ -190,33 +198,62 @@ TypeScript for improved type safety and developer experience.
 
 ## Installation
 
-`@zimic/interceptor` is available as a library on [npm](https://www.npmjs.com/package/@zimic/interceptor).
+`@zimic/interceptor` is available on [npm](https://www.npmjs.com/package/@zimic/interceptor). Install the optional
+schema peer for each protocol the project intercepts.
+
+### HTTP interception
 
 <Tabs groupId="package-managers">
   <TabItem value="npm" label="npm">
 
 ```bash
-npm install @zimic/http @zimic/ws @zimic/interceptor --save-dev
+npm install @zimic/http @zimic/interceptor --save-dev
 ```
 
   </TabItem>
   <TabItem value="pnpm" label="pnpm">
 
 ```bash
-pnpm add @zimic/http @zimic/ws @zimic/interceptor --dev
+pnpm add @zimic/http @zimic/interceptor --dev
 ```
 
   </TabItem>
   <TabItem value="yarn" label="yarn">
 
 ```bash
-yarn add @zimic/http @zimic/ws @zimic/interceptor --dev
+yarn add @zimic/http @zimic/interceptor --dev
 ```
 
   </TabItem>
 </Tabs>
 
-:::info
+### Experimental WebSocket interception
+
+<Tabs groupId="package-managers">
+  <TabItem value="npm" label="npm">
+
+```bash
+npm install @zimic/ws @zimic/interceptor --save-dev
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm add @zimic/ws @zimic/interceptor --dev
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```bash
+yarn add @zimic/ws @zimic/interceptor --dev
+```
+
+  </TabItem>
+</Tabs>
+
+:::info INFO: <span>Optional protocol peers</span>
 
 Note that [`@zimic/http`](/docs/http) and [`@zimic/ws`](/docs/ws) are peer dependencies of `@zimic/interceptor`. Install
 each or both depending on your needs. HTTP examples use `@zimic/http` schemas, while
@@ -230,31 +267,33 @@ for HTTP interceptors, `@zimic/ws` for WebSocket interceptors, or both when a pr
 :::
 
 We also have canary releases under the tag `canary`. These have the latest code, including new features, bug fixes, and
-possibly unstable or breaking changes.
+possibly unstable or breaking changes. Install the same protocol-specific package set with the canary tag:
 
 <Tabs groupId="package-managers">
   <TabItem value="npm" label="npm">
 
 ```bash
-npm install @zimic/http@canary @zimic/ws@canary @zimic/interceptor@canary --save-dev
+npm install @zimic/http@canary @zimic/interceptor@canary --save-dev
 ```
 
   </TabItem>
   <TabItem value="pnpm" label="pnpm">
 
 ```bash
-pnpm add @zimic/http@canary @zimic/ws@canary @zimic/interceptor@canary --dev
+pnpm add @zimic/http@canary @zimic/interceptor@canary --dev
 ```
 
   </TabItem>
   <TabItem value="yarn" label="yarn">
 
 ```bash
-yarn add @zimic/http@canary @zimic/ws@canary @zimic/interceptor@canary --dev
+yarn add @zimic/http@canary @zimic/interceptor@canary --dev
 ```
 
   </TabItem>
 </Tabs>
+
+For experimental WebSocket interception, replace `@zimic/http@canary` with `@zimic/ws@canary` in the command above.
 
 ## Your first HTTP interceptor
 

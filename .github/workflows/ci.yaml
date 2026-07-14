@@ -51,6 +51,9 @@ jobs:
           install: '"@zimic/*..." "zimic-*..."'
           build: '"@zimic/*...[HEAD^1]" "zimic-*^...[HEAD^1]" "zimic-example-with-openapi-typegen^..."'
 
+      - name: Check packed interceptor optional peers
+        run: bash scripts/check-packed-optional-peers.sh
+
       - name: Check formatting style
         uses: ./.github/actions/zimic-style-check
 

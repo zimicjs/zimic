@@ -145,7 +145,9 @@ export function declareRestrictionWebSocketMessageHandlerTests(
 
         await expect(handleMessage({ type: 'create', body: { text: 'hello' } })).resolves.toBe(false);
 
-        handler.clear().respond({ type: 'delete', id: '2' }).times(1);
+        const clearedHandler = handler.clear();
+        expect(clearedHandler).toBe(handler);
+        clearedHandler.respond({ type: 'delete', id: '2' }).times(1);
 
         await expect(handleMessage({ type: 'create', body: { text: 'hello' } })).resolves.toBe(true);
 

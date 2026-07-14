@@ -489,23 +489,12 @@ class InterceptorServer implements PublicInterceptorServer {
       return { wasHandled: true };
     }
 
-    let messageQueue = Promise.resolve();
-    const messageListener = this.createUserWebSocketMessageListener(connection, (queuedMessage) => {
-      messageQueue = queuedMessage;
-    });
+    const messageListener = this.createUserWebSocketMessageListener(connection);
 
     socket.addEventListener('close', () => {
       this.activeUserWebSocketHandlers.delete(socket);
       socket.removeEventListener('message', messageListener);
-      void messageQueue
-        .then(() => this.notifyUserWebSocketClose(connection))
-        .catch(
-          /* istanbul ignore next -- @preserve
-           * Close notifications are best-effort if the worker disconnects while user messages are being forwarded. */
-          (error: unknown) => {
-            console.error(error);
-          },
-        );
+      this.notifyUserWebSocketClose(connection);
     });
     socket.addEventListener('message', messageListener);
 
@@ -552,24 +541,15 @@ class InterceptorServer implements PublicInterceptorServer {
     socket.close(options.pendingCloseCode ?? WEB_SOCKET_NORMAL_CLOSE_CODE, options.pendingCloseReason);
   }
 
-  private createUserWebSocketMessageListener(
-    connection: UserWebSocketHandler,
-    updateMessageQueue: (queuedMessage: Promise<void>) => void,
-  ) {
-    let messageQueue = Promise.resolve();
-
+  private createUserWebSocketMessageListener(connection: UserWebSocketHandler) {
     return (message: ClientSocket.MessageEvent) => {
-      messageQueue = messageQueue
-        .then(() => this.handleUserWebSocketMessage(connection, message))
-        .catch(
-          /* istanbul ignore next -- @preserve
-           * Message queue errors require the worker RPC to fail after a user message has already been received. */
-          (error: unknown) => {
-            console.error(error);
-          },
-        );
-
-      updateMessageQueue(messageQueue);
+      void this.handleUserWebSocketMessage(connection, message).catch(
+        /* istanbul ignore next -- @preserve
+         * Message errors require the worker RPC to fail after a user message has already been received. */
+        (error: unknown) => {
+          console.error(error);
+        },
+      );
     };
   }
 
@@ -578,13 +558,17 @@ class InterceptorServer implements PublicInterceptorServer {
       return;
     }
 
-    this.webSocketServerOrThrow.send(
-      'interceptors/ws/clients/close',
-      {
-        clientId: connection.clientId,
-      },
-      { sockets: [connection.handler.socket] },
-    );
+    try {
+      this.webSocketServerOrThrow.send(
+        'interceptors/ws/clients/close',
+        {
+          clientId: connection.clientId,
+        },
+        { sockets: [connection.handler.socket] },
+      );
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   private async handleUserWebSocketMessage(connection: UserWebSocketHandler, message: ClientSocket.MessageEvent) {
