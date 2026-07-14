@@ -27,8 +27,7 @@ export type WebSocketMessageHandlerComputedRestriction<
 
 /** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export type WebSocketMessageHandlerRestriction<Schema extends WebSocketSchema> =
-  | WebSocketMessageHandlerStaticRestriction<Schema>
-  | WebSocketMessageHandlerComputedRestriction<Schema>;
+  WebSocketMessageHandlerStaticRestriction<Schema> | WebSocketMessageHandlerComputedRestriction<Schema>;
 
 export interface WebSocketMessageHandlerRestrictionDiff<Value> {
   expected: Value;
@@ -42,8 +41,7 @@ export interface WebSocketMessageHandlerRestrictionDiffs<Schema extends WebSocke
 }
 
 export type WebSocketMessageHandlerRestrictionMatch<Schema extends WebSocketSchema = WebSocketSchema> =
-  | { success: true; message: Schema }
-  | { success: false; diff: WebSocketMessageHandlerRestrictionDiffs<Schema> };
+  { success: true; message: Schema } | { success: false; diff: WebSocketMessageHandlerRestrictionDiffs<Schema> };
 
 export interface UnmatchedWebSocketInterceptorMessageGroup<Schema extends WebSocketSchema = WebSocketSchema> {
   message: Schema;

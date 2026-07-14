@@ -47,6 +47,7 @@ export type {
 export type {
   HttpInterceptorType,
   HttpInterceptorPlatform,
+  HttpInterceptorAuthOptions,
   LocalHttpInterceptorOptions,
   RemoteHttpInterceptorOptions,
   HttpInterceptorOptions,

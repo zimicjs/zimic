@@ -76,8 +76,12 @@ export function declareTypeWebSocketInterceptorTests(
       expect(interceptor.server).not.toHaveProperty('addEventListener');
       expectTypeOf(interceptor.message().from).parameter(0).toEqualTypeOf<WebSocketInterceptorClient<MessageSchema>>();
 
-      // @ts-expect-error Interceptor server handles cannot restrict client senders.
-      interceptor.message().from(interceptor.server);
+      function declareInvalidSender() {
+        // @ts-expect-error Interceptor server handles cannot restrict client senders.
+        interceptor.message().from(interceptor.server);
+      }
+
+      expectTypeOf(declareInvalidSender).toBeFunction();
     });
   });
 
@@ -122,11 +126,15 @@ export function declareTypeWebSocketInterceptorTests(
         expectTypeOf(context.receiver.send).toEqualTypeOf<typeof context.sender.send>();
       });
 
-      // @ts-expect-error Invalid static restriction.
-      interceptor.message().with({ type: 'update' });
+      function declareInvalidMessages() {
+        // @ts-expect-error Invalid static restriction.
+        interceptor.message().with({ type: 'update' });
 
-      // @ts-expect-error Invalid static response.
-      interceptor.message().respond({ type: 'update' });
+        // @ts-expect-error Invalid static response.
+        interceptor.message().respond({ type: 'update' });
+      }
+
+      expectTypeOf(declareInvalidMessages).toBeFunction();
     });
   });
 }

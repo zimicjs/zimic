@@ -151,6 +151,51 @@ export function declareActionWebSocketInterceptorTests(options: RuntimeSharedWeb
   });
 
   describe('Effects', () => {
+    it('should handle asynchronous effects concurrently', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const startedMessages: MessageSchema[] = [];
+        const completedMessages: MessageSchema[] = [];
+        const finishEffects: (() => void)[] = [];
+
+        await promiseIfRemote(
+          interceptor.message().effect(async (message) => {
+            startedMessages.push(message);
+            await new Promise<void>((resolve) => {
+              finishEffects.push(resolve);
+            });
+            completedMessages.push(message);
+          }),
+          interceptor,
+        );
+
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          client.send(JSON.stringify({ type: 'create', body: { text: 'first' } }));
+          client.send(JSON.stringify({ type: 'create', body: { text: 'second' } }));
+
+          await waitFor(() => {
+            expect(startedMessages).toEqual([
+              { type: 'create', body: { text: 'first' } },
+              { type: 'create', body: { text: 'second' } },
+            ]);
+          });
+
+          for (const finish of finishEffects) {
+            finish();
+          }
+
+          await waitFor(() => {
+            expect(completedMessages).toHaveLength(2);
+            expect(completedMessages).toEqual(
+              expect.arrayContaining([
+                { type: 'create', body: { text: 'first' } },
+                { type: 'create', body: { text: 'second' } },
+              ]),
+            );
+          });
+        });
+      });
+    });
+
     it('should run side effects without responses', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         const effect = vi.fn();

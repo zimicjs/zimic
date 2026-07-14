@@ -42,6 +42,34 @@ development and testing.
 `@zimic/http` and `@zimic/ws` are optional peer dependencies. Install only the schema package for the protocol you use:
 `@zimic/http` for HTTP interceptors, `@zimic/ws` for WebSocket interceptors, or both if your project uses both.
 
+## Installation
+
+For HTTP interception, install the stable HTTP schema package and interceptor entry point:
+
+```bash
+pnpm add @zimic/http @zimic/interceptor --dev
+```
+
+For experimental WebSocket interception, install the WebSocket schema package instead:
+
+```bash
+pnpm add @zimic/ws @zimic/interceptor --dev
+```
+
+Install both schema packages only when the project intercepts both protocols.
+
+## Runtime requirements
+
+HTTP interception requires the [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). Browsers must provide
+Fetch natively or through a polyfill. Server-side interception requires Node.js 22 or later.
+
+WebSocket interception requires a native or polyfilled
+[WebSocket API](https://developer.mozilla.org/docs/Web/API/WebSocket) in the client runtime. Browsers normally provide
+it natively; Node.js clients must expose the native `WebSocket` or a compatible polyfill. Every Node.js project
+consuming the WebSocket interceptor packages requires Node.js 22.4 or later, including processes declaring local or
+remote interceptors and interceptor servers. Local browser interception also requires an
+[initialized mock service worker](https://zimic.dev/docs/interceptor/cli/browser#zimic-interceptor-browser-init).
+
 ## Highlights
 
 - :globe_with_meridians: **HTTP interceptors**

@@ -1,4 +1,4 @@
-import { waitForNot } from '@zimic/utils/time';
+import { waitFor, waitForNot } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -35,6 +35,51 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
   }
 
   describe('Exact number of messages', () => {
+    it('should keep maximum matching best-effort under concurrency', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const restrictionStarted: MessageSchema[] = [];
+        const finishRestrictions: (() => void)[] = [];
+        const effect = vi.fn();
+
+        await promiseIfRemote(
+          interceptor
+            .message()
+            .with(async (message) => {
+              restrictionStarted.push(message);
+              await new Promise<void>((resolve) => {
+                finishRestrictions.push(resolve);
+              });
+              return true;
+            })
+            .effect(effect)
+            .times(1),
+          interceptor,
+        );
+
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          client.send(JSON.stringify({ type: 'create', body: { text: 'first' } }));
+          client.send(JSON.stringify({ type: 'create', body: { text: 'second' } }));
+
+          await waitFor(() => {
+            expect(restrictionStarted).toHaveLength(2);
+          });
+
+          for (const finish of finishRestrictions) {
+            finish();
+          }
+
+          await waitFor(() => {
+            expect(effect).toHaveBeenCalledTimes(2);
+          });
+        });
+
+        await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 1 matching message, but got 2.',
+          expectedNumberOfMessages: 1,
+        });
+      });
+    });
+
     it('should match an exact number of limited messages', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         await promiseIfRemote(interceptor.message().respond({ type: 'delete', id: '1' }).times(1), interceptor);

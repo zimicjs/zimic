@@ -21,6 +21,12 @@ In `@zimic/interceptor`, WebSocket interceptors are available in two types: `loc
 interceptor is `local`, Zimic intercepts WebSocket connections _in the same process_ as your application. This is the
 simplest way to start mocking WebSocket messages and does not require any interceptor server setup.
 
+WebSocket clients must provide a native or polyfilled
+[WebSocket API](https://developer.mozilla.org/docs/Web/API/WebSocket). Browsers normally provide it natively; Node.js
+interception requires Node.js 22.4 or later, and the client must expose the native `WebSocket` or a compatible polyfill.
+Local browser interception also requires an initialized mock service worker, as described in
+[Starting an interceptor](#starting-an-interceptor).
+
 ## When to use local WebSocket interceptors
 
 - **Development**
@@ -171,6 +177,10 @@ Many operations in local WebSocket interceptors are **synchronous** because they
 external server. This is different from [remote interceptors](/docs/interceptor/guides/ws/remote-interceptors), which
 communicate with an [interceptor server](/docs/interceptor/cli/server) to handle messages and return responses.
 
+WebSocket frames arrive in transport order, but Zimic handles messages independently. Asynchronous restrictions,
+effects, delays, and responses can overlap and complete in any order. Do not rely on handler-completion or response
+order.
+
 :::
 
 If you need to access the messages processed by the interceptor, enable message saving and use `handler.messages`.
@@ -179,6 +189,17 @@ browsers. Configure `messageSaving: { enabled: true }` when you need saved messa
 arrays are readonly and keep stable references. Calling `handler.clear()` removes that handler's saved messages from the
 handler, sender client, and server arrays in place; calling `interceptor.clear()` clears all saved message arrays and
 resets safe-limit accounting.
+
+`handler.clear()` returns the same handler reset to the root message schema. Continue configuration from that returned
+handler when a previous `.with(...)` narrowed its message type. An older narrowed alias does not retain sound narrowing
+after either the handler or interceptor is cleared.
+
+```ts
+const narrowedHandler = interceptor.message().with({ type: 'typing' });
+const rootHandler = narrowedHandler.clear();
+
+rootHandler.respond({ type: 'presence', data: { online: true } });
+```
 
 ```ts
 const handler = interceptor

@@ -1,5 +1,6 @@
 import { createWebSocketInterceptor, type WebSocketInterceptorType } from '@zimic/interceptor/experimental/ws';
 import { waitFor } from '@zimic/utils/time';
+import { EventEmitter } from 'node:events';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import NodeWebSocket, { type RawData } from 'ws';
 
@@ -74,24 +75,32 @@ describe('ws client (Node.js)', () => {
 
     function waitForWsUserCreationResponse(socket: WSClient) {
       if (!isNodeWebSocket(socket)) {
+        const nativeSocket = socket;
+
         return new Promise<UserWebSocketMessage<'user:create:success'>>((resolve, reject) => {
-          socket.addEventListener(
-            'message',
-            (event) => {
-              try {
-                const message = JSON.parse(event.data as string) as UserWebSocketMessage<'user:create:success'>;
+          function messageListener(event: Event) {
+            try {
+              const messageEvent = event as MessageEvent;
+              const message = JSON.parse(messageEvent.data as string) as UserWebSocketMessage;
+
+              if (message.type === 'user:create:success') {
+                nativeSocket.removeEventListener('message', messageListener);
                 resolve(message);
-              } catch (error) {
-                reject(error);
               }
-            },
-            { once: true },
-          );
+            } catch (error) {
+              nativeSocket.removeEventListener('message', messageListener);
+              reject(error);
+            }
+          }
+
+          nativeSocket.addEventListener('message', messageListener);
         });
       }
 
+      const nodeSocket = socket;
+
       return new Promise<UserWebSocketMessage<'user:create:success'>>((resolve, reject) => {
-        socket.once('message', (data: RawData) => {
+        function messageListener(data: RawData) {
           try {
             const dataBuffer = Array.isArray(data)
               ? Buffer.concat(data)
@@ -99,12 +108,19 @@ describe('ws client (Node.js)', () => {
                 ? Buffer.from(data)
                 : data;
             const stringifiedData = dataBuffer.toString();
-            const message = JSON.parse(stringifiedData) as UserWebSocketMessage<'user:create:success'>;
-            resolve(message);
+            const message = JSON.parse(stringifiedData) as UserWebSocketMessage;
+
+            if (message.type === 'user:create:success') {
+              nodeSocket.off('message', messageListener);
+              resolve(message);
+            }
           } catch (error) {
+            nodeSocket.off('message', messageListener);
             reject(error);
           }
-        });
+        }
+
+        nodeSocket.on('message', messageListener);
       });
     }
 
@@ -153,7 +169,7 @@ describe('ws client (Node.js)', () => {
             birthDate: message.data.birthDate,
           },
         }))
-        .times(1);
+        .times(2);
 
       const socket =
         type === 'local' ? new globalThis.WebSocket(interceptor.baseURL) : new NodeWebSocket(interceptor.baseURL);
@@ -165,25 +181,53 @@ describe('ws client (Node.js)', () => {
           expect(interceptor.clients).toHaveLength(1);
         });
 
-        const responsePromise = waitForWsUserCreationResponse(socket);
+        const initialMessageListenerCount = isNodeWebSocket(socket) ? socket.listenerCount('message') : undefined;
 
-        socket.send(JSON.stringify(requestMessage));
+        for (let index = 0; index < 2; index++) {
+          const responsePromise = waitForWsUserCreationResponse(socket);
 
-        const response = await responsePromise;
-        expect(response).toMatchObject({
-          type: 'user:create:success',
-          data: {
-            name: creationInput.name,
-            email: creationInput.email,
-            birthDate: creationInput.birthDate,
-          },
-        });
+          if (isNodeWebSocket(socket)) {
+            socket.emit(
+              'message',
+              Buffer.from(JSON.stringify({ type: 'user:delete:success', data: { id: crypto.randomUUID() } })),
+              false,
+            );
+            expect(socket.listenerCount('message')).toBe((initialMessageListenerCount ?? 0) + 1);
+          }
 
-        expect(creationHandler.messages).toHaveLength(1);
+          socket.send(JSON.stringify(requestMessage));
+
+          const response = await responsePromise;
+          expect(response).toMatchObject({
+            type: 'user:create:success',
+            data: {
+              name: creationInput.name,
+              email: creationInput.email,
+              birthDate: creationInput.birthDate,
+            },
+          });
+
+          if (isNodeWebSocket(socket)) {
+            expect(socket.listenerCount('message')).toBe(initialMessageListenerCount);
+          }
+        }
+
+        expect(creationHandler.messages).toHaveLength(2);
         expect(creationHandler.messages[0].data).toEqual(requestMessage);
+        expect(creationHandler.messages[1].data).toEqual(requestMessage);
       } finally {
         await closeWs(socket);
       }
+    });
+
+    it('should remove the response listener after a terminal parsing failure', async () => {
+      const socket = new EventEmitter() as NodeWebSocket;
+      const initialMessageListenerCount = socket.listenerCount('message');
+      const responsePromise = waitForWsUserCreationResponse(socket);
+      socket.emit('message', Buffer.from('{'), false);
+
+      await expect(responsePromise).rejects.toBeInstanceOf(SyntaxError);
+      expect(socket.listenerCount('message')).toBe(initialMessageListenerCount);
     });
   });
 });

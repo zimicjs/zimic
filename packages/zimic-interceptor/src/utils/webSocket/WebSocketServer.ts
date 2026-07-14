@@ -4,7 +4,7 @@ import ClientSocket from 'isomorphic-ws';
 
 import { closeServerSocket } from '@/utils/webSocket';
 
-import { WebSocketControlMessage } from './constants';
+import { WEB_SOCKET_INTERNAL_ERROR_CLOSE_CODE, WebSocketControlMessage } from './constants';
 import { WebSocketSchema } from './types';
 import WebSocketHandler from './WebSocketHandler';
 
@@ -64,17 +64,17 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
     webSocketServer.on('connection', async (socket, request) => {
       socket.pause();
 
-      if (this.authenticate) {
-        const result = await this.authenticate(socket, request);
-
-        if (!result.isValid) {
-          socket.resume();
-          socket.close(1008, result.message);
-          return;
-        }
-      }
-
       try {
+        if (this.authenticate) {
+          const result = await this.authenticate(socket, request);
+
+          if (!result.isValid) {
+            socket.resume();
+            socket.close(1008, result.message);
+            return;
+          }
+        }
+
         const connectionResult = await this.handleConnection?.(socket, request);
 
         if (connectionResult?.wasHandled) {
@@ -87,6 +87,7 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
       } catch (error) {
         socket.resume();
         webSocketServer.emit('error', error);
+        socket.close(WEB_SOCKET_INTERNAL_ERROR_CLOSE_CODE);
       }
     });
 

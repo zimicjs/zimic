@@ -14,6 +14,10 @@ In `@zimic/interceptor`, HTTP interceptors are available in two types: `local` (
 interceptor is `local`, Zimic uses [MSW](https://github.com/mswjs/msw) to intercept requests _in the same process_ as
 your application. This is the simplest way to start mocking requests and does not require any server setup.
 
+HTTP clients must provide the [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API), either natively or
+through a polyfill. Node.js interception requires Node.js 22 or later. Local browser interception additionally requires
+an initialized mock service worker, as described in [Starting an interceptor](#starting-an-interceptor).
+
 ## When to use local HTTP interceptors
 
 - **Development**

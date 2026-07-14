@@ -42,12 +42,20 @@ export type WebSocketMessageHandlerMessageComputedDeclaration<
   context: WebSocketMessageHandlerMessageContext<Schema>,
 ) => PossiblePromise<WebSocketMessageHandlerMessageStaticDeclaration<Schema>>;
 
-export type WebSocketMessageHandlerMessageDeclaration<
-  Schema extends WebSocketSchema,
-  RestrictedSchema extends Schema,
-> =
+export type WebSocketMessageHandlerMessageDeclaration<Schema extends WebSocketSchema, RestrictedSchema extends Schema> =
   | WebSocketMessageHandlerMessageStaticDeclaration<Schema>
   | WebSocketMessageHandlerMessageComputedDeclaration<Schema, RestrictedSchema>;
+
+type WebSocketMessageHandlerSchemaCompatibleWithStaticRestriction<
+  Schema extends WebSocketSchema,
+  Restriction,
+> = Schema extends unknown
+  ? Schema extends Restriction
+    ? Schema
+    : Restriction extends WebSocketMessageHandlerStaticRestriction<Schema>
+      ? Schema
+      : never
+  : never;
 
 type WebSocketMessageHandlerSchemaWithRestriction<Schema extends WebSocketSchema, Restriction> =
   Restriction extends WebSocketMessageHandlerComputedTypeGuardRestriction<Schema, infer Predicate>
@@ -55,7 +63,7 @@ type WebSocketMessageHandlerSchemaWithRestriction<Schema extends WebSocketSchema
       ? Schema
       : Predicate
     : Restriction extends WebSocketMessageHandlerStaticRestriction<Schema>
-      ? Extract<Schema, Restriction>
+      ? WebSocketMessageHandlerSchemaCompatibleWithStaticRestriction<Schema, Restriction>
       : Schema;
 
 /** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
@@ -85,7 +93,7 @@ export interface LocalWebSocketMessageHandler<
 
   checkTimes: () => void;
 
-  clear: () => this;
+  clear: () => LocalWebSocketMessageHandler<Schema, Schema>;
 
   get messages(): readonly InterceptedWebSocketInterceptorMessage<RestrictedSchema, Schema>[];
 }
@@ -130,7 +138,7 @@ export interface SyncedRemoteWebSocketMessageHandler<
 
   checkTimes: () => Promise<void>;
 
-  clear: () => PendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema>;
+  clear: () => PendingRemoteWebSocketMessageHandler<Schema, Schema>;
 
   get messages(): readonly InterceptedWebSocketInterceptorMessage<RestrictedSchema, Schema>[];
 }
@@ -162,5 +170,4 @@ export type RemoteWebSocketMessageHandler<
 
 /** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export type WebSocketMessageHandler<Schema extends WebSocketSchema, RestrictedSchema extends Schema = Schema> =
-  | LocalWebSocketMessageHandler<Schema, RestrictedSchema>
-  | RemoteWebSocketMessageHandler<Schema, RestrictedSchema>;
+  LocalWebSocketMessageHandler<Schema, RestrictedSchema> | RemoteWebSocketMessageHandler<Schema, RestrictedSchema>;

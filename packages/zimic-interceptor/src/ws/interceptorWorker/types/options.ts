@@ -11,5 +11,4 @@ export interface RemoteWebSocketInterceptorWorkerOptions {
 }
 
 export type WebSocketInterceptorWorkerOptions =
-  | LocalWebSocketInterceptorWorkerOptions
-  | RemoteWebSocketInterceptorWorkerOptions;
+  LocalWebSocketInterceptorWorkerOptions | RemoteWebSocketInterceptorWorkerOptions;

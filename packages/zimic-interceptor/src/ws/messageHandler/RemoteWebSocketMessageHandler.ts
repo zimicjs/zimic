@@ -101,9 +101,9 @@ export class RemoteWebSocketMessageHandler<
     });
   }
 
-  clear() {
+  clear(): PublicPendingRemoteWebSocketMessageHandler<Schema, Schema> {
     this.implementation.clear();
-    return this.pending;
+    return this.pending as unknown as PublicPendingRemoteWebSocketMessageHandler<Schema, Schema>;
   }
 
   get messages() {

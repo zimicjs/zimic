@@ -143,7 +143,19 @@ describe('Web socket client', () => {
 
       client = new WebSocketClient({ url: `ws://localhost:${port}` });
 
-      await expect(client.start()).rejects.toThrow(/^(connect ECONNREFUSED .+)?$/);
+      const addEventListenerSpy = vi.spyOn(ClientSocket.prototype, 'addEventListener');
+      const removeEventListenerSpy = vi.spyOn(ClientSocket.prototype, 'removeEventListener');
+
+      try {
+        await expect(client.start()).rejects.toThrow(/^(connect ECONNREFUSED .+)?$/);
+
+        const messageListener = addEventListenerSpy.mock.calls.find(([type]) => type === 'message')?.[1];
+        expect(messageListener).toBeDefined();
+        expect(removeEventListenerSpy).toHaveBeenCalledWith('message', messageListener);
+      } finally {
+        addEventListenerSpy.mockRestore();
+        removeEventListenerSpy.mockRestore();
+      }
     });
   });
 

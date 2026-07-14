@@ -16,8 +16,7 @@ import type { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHa
 import type { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
 
 type DirectWebSocketMessageHandler<Schema extends WebSocketSchema> =
-  | LocalWebSocketMessageHandler<Schema>
-  | RemoteWebSocketMessageHandler<Schema>;
+  LocalWebSocketMessageHandler<Schema> | RemoteWebSocketMessageHandler<Schema>;
 
 export async function readBytes(data: Blob | ArrayBuffer) {
   const arrayBuffer = data instanceof Blob ? await data.arrayBuffer() : data;

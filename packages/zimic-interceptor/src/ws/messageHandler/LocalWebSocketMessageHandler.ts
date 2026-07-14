@@ -61,9 +61,9 @@ export class LocalWebSocketMessageHandler<
     this.implementation.checkTimes();
   }
 
-  clear() {
+  clear(): PublicLocalWebSocketMessageHandler<Schema, Schema> {
     this.implementation.clear();
-    return this;
+    return this as unknown as PublicLocalWebSocketMessageHandler<Schema, Schema>;
   }
 
   get messages() {
