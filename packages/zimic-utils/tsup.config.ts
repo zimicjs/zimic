@@ -25,6 +25,7 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
     logging: 'src/logging/index.ts',
     time: 'src/time/index.ts',
     url: 'src/url/index.ts',
+    validation: 'src/validation/index.ts',
   },
 }));
 
