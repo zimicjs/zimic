@@ -81,6 +81,8 @@ overrides:
   # Temporary workaround for https://github.com/facebook/docusaurus/issues/11923.
   webpackbar: ^7.0.0
 
+  websocket-driver: ^0.7.5
+
 allowBuilds:
   '@swc/core': true
   '@zimic/interceptor': true
