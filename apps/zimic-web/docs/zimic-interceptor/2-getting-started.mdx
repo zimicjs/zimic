@@ -23,24 +23,14 @@ This guide will help you get started with `@zimic/interceptor`.
 [Can I Use](https://caniuse.com/?search=fetch) is a great resource to check the compatibility of specific features with
 different browsers.
 
-  </TabItem>
-  <TabItem value="server" label="Server side">
-
-| Runtime                       | Version   |
-| ----------------------------- | --------- |
-| [Node.js](https://nodejs.org) | >= 22.0.0 |
-
-  </TabItem>
-</Tabs>
-
 ### Supported languages
 
 #### TypeScript
 
 `@zimic/interceptor` requires [TypeScript](https://www.typescriptlang.org) >= 5.0, with the following configuration:
 
-<Tabs groupId="runtime-environments">
-  <TabItem value="client-typescript-5" label="Client (TypeScript 5)">
+<Tabs groupId="typescript-version">
+  <TabItem value="typescript-5" label="TypeScript 5">
 
 ```json title='tsconfig.json'
 {
@@ -54,7 +44,7 @@ different browsers.
 ```
 
   </TabItem>
-  <TabItem value="client-typescript-6" label="Client (TypeScript 6)">
+  <TabItem value="typescript-6" label="TypeScript 6">
 
 ```json title='tsconfig.json'
 {
@@ -68,7 +58,60 @@ different browsers.
 ```
 
   </TabItem>
-  <TabItem value="server-typescript-5" label="Server (TypeScript 5)">
+  <TabItem value="typescript-7" label="TypeScript 7">
+
+```json title='tsconfig.json'
+{
+  "compilerOptions": {
+    // highlight-start
+    "strict": true,
+    "lib": ["esnext", "dom"]
+    // highlight-end
+  }
+}
+```
+
+:::info INFO: <span>Using TypeScript 7</span>
+
+TypeScript 7.0 does not yet provide a programmatic API, which `@zimic/http` requires, so you still need TypeScript 6
+alongside TypeScript 7.
+
+```json title='package.json'
+{
+  "devDependencies": {
+    // highlight-start
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "@typescript/native": "npm:typescript@^7.0.2"
+    // highlight-end
+  }
+}
+```
+
+With this setup, type-checking uses the native TypeScript 7 compiler, while tools that use the programmatic API fall
+back to TypeScript 6. See the
+[official TypeScript 7 announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0)
+for more information.
+
+:::
+
+  </TabItem>
+</Tabs>
+
+  </TabItem>
+  <TabItem value="server" label="Server side">
+
+| Runtime                       | Version   |
+| ----------------------------- | --------- |
+| [Node.js](https://nodejs.org) | >= 22.0.0 |
+
+### Supported languages
+
+#### TypeScript
+
+`@zimic/interceptor` requires [TypeScript](https://www.typescriptlang.org) >= 5.0, with the following configuration:
+
+<Tabs groupId="typescript-version">
+  <TabItem value="typescript-5" label="TypeScript 5">
 
 ```json title='tsconfig.json'
 {
@@ -82,7 +125,7 @@ different browsers.
 ```
 
   </TabItem>
-  <TabItem value="server-typescript-6" label="Server (TypeScript 6)">
+  <TabItem value="typescript-6" label="TypeScript 6">
 
 ```json title='tsconfig.json'
 {
@@ -94,6 +137,46 @@ different browsers.
   }
 }
 ```
+
+  </TabItem>
+  <TabItem value="typescript-7" label="TypeScript 7">
+
+```json title='tsconfig.json'
+{
+  "compilerOptions": {
+    // highlight-start
+    "strict": true,
+    "lib": ["esnext", "webworker"]
+    // highlight-end
+  }
+}
+```
+
+:::info INFO: <span>Using TypeScript 7</span>
+
+TypeScript 7.0 does not yet provide a programmatic API, which `@zimic/http` requires, so you still need TypeScript 6
+alongside TypeScript 7.
+
+```json title='package.json'
+{
+  "devDependencies": {
+    // highlight-start
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "@typescript/native": "npm:typescript@^7.0.2"
+    // highlight-end
+  }
+}
+```
+
+With this setup, type-checking uses the native TypeScript 7 compiler, while tools that use the programmatic API fall
+back to TypeScript 6. See the
+[official TypeScript 7 announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0)
+for more information.
+
+:::
+
+  </TabItem>
+</Tabs>
 
   </TabItem>
 </Tabs>
@@ -417,7 +500,7 @@ and responses are typed by default based on the schema.
   <TabItem value="local" label="Local interceptor">
 
 ```ts
-test('example', async () => {
+test('example', () => {
   const users: User[] = [{ username: 'me' }];
 
   //  highlight-start
@@ -443,7 +526,7 @@ test('example', async () => {
   <TabItem value="remote" label="Remote interceptor">
 
 ```ts
-test('example', async () => {
+test('example', () => {
   const users: User[] = [{ username: 'me' }];
 
   //  highlight-start
