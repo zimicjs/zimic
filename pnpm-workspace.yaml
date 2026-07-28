@@ -22,7 +22,11 @@ overrides:
 
   body-parser@1: ^1.20.6
 
-  brace-expansion: ^5.0.8
+  brace-expansion@1: ^5.0.8
+  brace-expansion@2: ^5.0.8
+  brace-expansion@3: ^5.0.8
+  brace-expansion@4: ^5.0.8
+  brace-expansion@5: ^5.0.8
 
   dompurify@3: ^3.4.11
 
@@ -66,7 +70,7 @@ overrides:
 
   shell-quote@1: ^1.8.4
 
-  sharp: ^0.35.0
+  sharp@0: ^0.35.0
 
   svgo@3: ^3.3.4
 
@@ -84,7 +88,7 @@ overrides:
 
   yaml@2: ^2.8.3
 
-  websocket-driver: ^0.7.5
+  websocket-driver@0: ^0.7.5
 
 allowBuilds:
   '@swc/core': true
