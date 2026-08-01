@@ -75,7 +75,7 @@
     "types:check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.1.2",
     "@typescript/native": "npm:typescript@^7.0.2",
     "@vitest/browser": "^4.1.10",
     "@vitest/browser-playwright": "^4.1.10",
@@ -86,9 +86,9 @@
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^11.0.0",
-    "eslint": "^9.39.4",
+    "eslint": "^9.39.5",
     "picocolors": "^1.1.1",
-    "playwright": "^1.61.1",
+    "playwright": "^1.62.0",
     "tsup": "^8.5.1",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vitest": "^4.1.10"
