@@ -90,8 +90,7 @@ class HttpInterceptorImplementation<
     };
 
     this.onUnhandledRequest = options.onUnhandledRequest satisfies
-      | UnhandledRequestStrategy
-      | undefined as this['onUnhandledRequest'];
+      UnhandledRequestStrategy | undefined as this['onUnhandledRequest'];
 
     this.Handler = options.Handler;
   }
