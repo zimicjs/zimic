@@ -249,8 +249,7 @@ abstract class HttpInterceptorWorker {
   createResponseFromDeclaration(
     request: HttpRequest,
     declaration:
-      | { status: number; headers?: HttpHeadersInit; body?: HttpBody }
-      | { action: UnhandledRequestStrategy.Action },
+      { status: number; headers?: HttpHeadersInit; body?: HttpBody } | { action: UnhandledRequestStrategy.Action },
   ): PossiblePromise<HttpResponse | null> {
     if ('action' in declaration) {
       if (declaration.action === 'bypass') {
