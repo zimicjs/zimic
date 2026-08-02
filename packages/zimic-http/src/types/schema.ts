@@ -282,7 +282,7 @@ type RecursiveInferPathParams<Path extends string> = Path extends `${infer Prefi
 /** @see {@link https://zimic.dev/docs/http/api/http-schema#inferpathparams `InferPathParams` API reference} */
 export type InferPathParams<
   PathOrSchema extends string | HttpSchema,
-  OptionalPath extends PathOrSchema extends HttpSchema ? HttpSchemaPath.Literal<PathOrSchema> : never = never,
+  OptionalPath extends (PathOrSchema extends HttpSchema ? HttpSchemaPath.Literal<PathOrSchema> : never) = never,
 > = Prettify<
   RecursiveInferPathParams<
     PathOrSchema extends HttpSchema ? OptionalPath : PathOrSchema extends string ? PathOrSchema : never
