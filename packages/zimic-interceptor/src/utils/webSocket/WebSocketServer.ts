@@ -4,7 +4,7 @@ import ClientSocket from 'isomorphic-ws';
 
 import { closeServerSocket } from '@/utils/webSocket';
 
-import { WebSocketControlMessage } from './constants';
+import { WEB_SOCKET_INTERNAL_ERROR_CLOSE_CODE, WebSocketControlMessage } from './constants';
 import { WebSocketSchema } from './types';
 import WebSocketHandler from './WebSocketHandler';
 
@@ -15,11 +15,17 @@ export type WebSocketServerAuthenticate = (
   request: IncomingMessage,
 ) => PossiblePromise<{ isValid: true } | { isValid: false; message: string }>;
 
+export type WebSocketServerConnectionHandler = (
+  socket: ClientSocket,
+  request: IncomingMessage,
+) => PossiblePromise<{ wasHandled: boolean }>;
+
 interface WebSocketServerOptions {
   httpServer: HttpServer;
   socketTimeout?: number;
   messageTimeout?: number;
   authenticate?: WebSocketServerAuthenticate;
+  handleConnection?: WebSocketServerConnectionHandler;
 }
 
 class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<Schema> {
@@ -27,6 +33,7 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
 
   private httpServer: HttpServer;
   private authenticate?: WebSocketServerOptions['authenticate'];
+  private handleConnection?: WebSocketServerOptions['handleConnection'];
 
   constructor(options: WebSocketServerOptions) {
     super({
@@ -36,6 +43,7 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
 
     this.httpServer = options.httpServer;
     this.authenticate = options.authenticate;
+    this.handleConnection = options.handleConnection;
   }
 
   get isRunning() {
@@ -54,20 +62,32 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
     });
 
     webSocketServer.on('connection', async (socket, request) => {
-      if (this.authenticate) {
-        const result = await this.authenticate(socket, request);
-
-        if (!result.isValid) {
-          socket.close(1008, result.message);
-          return;
-        }
-      }
+      socket.pause();
 
       try {
+        if (this.authenticate) {
+          const result = await this.authenticate(socket, request);
+
+          if (!result.isValid) {
+            socket.resume();
+            socket.close(1008, result.message);
+            return;
+          }
+        }
+
+        const connectionResult = await this.handleConnection?.(socket, request);
+
+        if (connectionResult?.wasHandled) {
+          return;
+        }
+
         await super.registerSocket(socket);
+        socket.resume();
         socket.send('socket:auth:valid' satisfies WebSocketControlMessage);
       } catch (error) {
+        socket.resume();
         webSocketServer.emit('error', error);
+        socket.close(WEB_SOCKET_INTERNAL_ERROR_CLOSE_CODE);
       }
     });
 
