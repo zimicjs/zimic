@@ -16,6 +16,7 @@
   "devDependencies": {
     "@types/node": "^26.6.3",
     "@types/superagent": "^8.1.11",
+    "@types/ws": "^8.18.1",
     "@vitest/browser": "^5.0.2",
     "@vitest/browser-playwright": "^5.0.2",
     "@vitest/coverage-istanbul": "^5.0.2",
@@ -36,6 +37,7 @@
     "superagent": "^10.4.1",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "@typescript/native": "npm:typescript@^7.0.2",
-    "vitest": "^5.0.2"
+    "vitest": "^5.0.2",
+    "ws": "^8.21.3"
   }
 }
