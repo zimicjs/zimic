@@ -4,9 +4,9 @@ import { joinURL } from '@zimic/utils/url';
 import color from 'picocolors';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { expectHttpTimesCheckError } from '@/http/requestHandler/__tests__/shared/utils';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';

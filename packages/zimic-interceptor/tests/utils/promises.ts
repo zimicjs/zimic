@@ -20,3 +20,12 @@ export function expectPossiblePromise<FulfilledResult>(
 
   return value;
 }
+
+export function promiseIfRemote<FulfilledResult>(
+  value: FulfilledResult,
+  comparisonEntity: { type: 'local' | 'remote' },
+): FulfilledResult {
+  return expectPossiblePromise(value, {
+    shouldBePromise: comparisonEntity.type === 'remote',
+  });
+}

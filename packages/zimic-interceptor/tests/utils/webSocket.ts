@@ -1,4 +1,19 @@
+import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+
+export async function usingWebSocketClient<Schema extends WebSocketSchema>(
+  url: string,
+  callback: (client: WebSocketClient<Schema>) => PossiblePromise<void>,
+) {
+  const client = new WebSocketClient<Schema>(url);
+
+  try {
+    await client.open();
+    await callback(client);
+  } finally {
+    await client.close();
+  }
+}
 
 export function waitForWebSocketClientMessage<Schema extends WebSocketSchema>(client: WebSocketClient<Schema>) {
   return new Promise<WebSocketClient.MessageEvent<Schema>['data']>((resolve) => {

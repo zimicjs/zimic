@@ -7,8 +7,12 @@ import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { collectWebSocketClientMessages, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
-import { Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
-import { createBinaryMessage, expectWebSocketTimesCheckError } from './utils';
+import {
+  createBinaryMessage,
+  expectWebSocketTimesCheckError,
+  Schema,
+  SharedWebSocketMessageHandlerTestOptions,
+} from './utils';
 
 export function declareTimesWebSocketMessageHandlerTests(
   options: SharedWebSocketMessageHandlerTestOptions & {
@@ -296,6 +300,43 @@ export function declareTimesWebSocketMessageHandlerTests(
         }
       });
     });
+
+    it('should match the exact number of messages limited in a unitary range', async () => {
+      await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+        await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' });
+
+        const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(1, 1);
+
+        await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+          message: 'Expected exactly 1 message, but got 0.',
+          expectedNumberOfMessages: { min: 1, max: 1 },
+        });
+
+        const client = new WebSocketClient<Schema>(baseURL);
+
+        try {
+          await client.open();
+
+          const response = waitForWebSocketClientMessage(client);
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'one' } }));
+          expect(await response).toBe(JSON.stringify({ type: 'delete', id: '1' }));
+
+          await handler.checkTimes();
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'two' } }));
+
+          const probeResponse = waitForWebSocketClientMessage(client);
+
+          client.send(JSON.stringify({ type: 'delete', id: 'unmatched' }));
+
+          // The next message received is the probe response, so the over-limit message got no response.
+          expect(await probeResponse).toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
+        } finally {
+          await client.close();
+        }
+      });
+    });
   });
 
   describe('Unmatched messages', () => {
@@ -405,7 +446,7 @@ export function declareTimesWebSocketMessageHandlerTests(
     });
   });
 
-  it('should reset times when cleared', async () => {
+  it('should reset the limits on the number of messages when cleared', async () => {
     await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
       const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(1);
 

@@ -13,7 +13,9 @@ describe.each(testMatrix)('WebSocketInterceptor (browser, $type) > Times', ({ ty
   });
 
   declareTimesWebSocketInterceptorTests({
+    platform: 'browser',
     type,
     getBaseURL: () => baseURL,
+    getInterceptorOptions: () => ({ type, baseURL }),
   });
 });

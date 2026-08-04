@@ -928,7 +928,8 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       await usingWebSocketInterceptorWorker(workerOptions, async (rawWorker) => {
         const worker = rawWorker as RemoteWebSocketInterceptorWorker;
         const interceptor = createDefaultWebSocketInterceptor();
-        const client = createWebSocketInterceptorClient(baseURL, () => undefined);
+        const send = vi.fn();
+        const client = createWebSocketInterceptorClient(baseURL, send);
 
         await expect(
           worker.sendToClient(client, JSON.stringify({ type: 'server', text: 'ignored client' })),
@@ -937,6 +938,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         await expect(
           worker.sendToClients(interceptor.implementation, JSON.stringify({ type: 'server', text: 'ignored handler' })),
         ).resolves.toBeUndefined();
+        expect(send).not.toHaveBeenCalled();
       });
     });
 
@@ -977,6 +979,26 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         } finally {
           await secondInterceptor.stop();
         }
+      });
+    });
+
+    it('should reject remote clients after clearing the handlers of all interceptors', async () => {
+      await usingWebSocketInterceptorWorker(workerOptions, async (rawWorker) => {
+        const worker = rawWorker as RemoteWebSocketInterceptorWorker;
+        const interceptor = createDefaultWebSocketInterceptor();
+        await worker.use(interceptor.implementation);
+
+        await worker.clearHandlers();
+
+        const client = new WebSocketClient<ChatMessage>(baseURL);
+        clients.push(client);
+        const closeEventPromise = waitForWebSocketClientClose(client);
+
+        await client.open();
+
+        const closeEvent = await closeEventPromise;
+        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
+        expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
       });
     });
 

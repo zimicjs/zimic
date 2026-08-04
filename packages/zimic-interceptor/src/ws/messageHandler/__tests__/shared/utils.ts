@@ -1,13 +1,29 @@
 import { PossiblePromise } from '@zimic/utils/types';
+import { WebSocketSchema } from '@zimic/ws';
 import { expect } from 'vitest';
 
 import WebSocketTimesCheckError from '../../../errors/WebSocketTimesCheckError';
 import WebSocketTimesDeclarationPointer from '../../../errors/WebSocketTimesDeclarationPointer';
+import { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '../../../interceptor/types/options';
 
-export async function readBytes(data: Blob | ArrayBuffer) {
-  const arrayBuffer = data instanceof Blob ? await data.arrayBuffer() : data;
-  return Array.from(new Uint8Array(arrayBuffer));
+export interface SharedWebSocketMessageHandlerTestOptions {
+  platform: WebSocketInterceptorPlatform;
+  startServer?: () => PossiblePromise<void>;
+  stopServer?: () => PossiblePromise<void>;
+  getBaseURL: (type: WebSocketInterceptorType) => PossiblePromise<string>;
 }
+
+export type ChatMessage =
+  | {
+      type: 'create';
+      body: { text: string; priority?: number };
+    }
+  | {
+      type: 'delete';
+      id: string;
+    };
+
+export type Schema = WebSocketSchema<ChatMessage>;
 
 export function createBinaryMessage(firstByte: number, secondByte: number) {
   const message = new ArrayBuffer(2);
