@@ -6,7 +6,7 @@ slug: /interceptor
 
 # Introduction
 
-`@zimic/interceptor` is a type-safe interceptor library for handling and mocking HTTP requests in development and testing.
+`@zimic/interceptor` is a type-safe interceptor library for handling and mocking HTTP requests and WebSocket messages in development and testing.
 
 ## Highlights
 
@@ -14,9 +14,13 @@ slug: /interceptor
 
   Use your [`@zimic/http` schema](/docs/zimic-http/guides/1-schemas.md) to declare [local](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) and [remote](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md) HTTP interceptors. Mock external services and simulate success, loading, and error states with ease and type safety.
 
+- :zap: **WebSocket interceptors**
+
+  Use your [`@zimic/ws` schema](/docs/ws/guides/schemas) to declare [experimental WebSocket interceptors](/docs/interceptor/guides/ws/local-interceptors). Mock typed message flows, observe connected clients, send server messages, and verify expected messages in development and tests.
+
 - :link: **Network-level interception**
 
-  `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and [interceptor servers](/docs/zimic-interceptor/cli/1-server.md) to handle real HTTP requests. From your application's point of view, the mocked responses are indistinguishable from the real ones.
+  `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and [interceptor servers](/docs/zimic-interceptor/cli/1-server.md) to handle real HTTP requests and WebSocket connections. From your application's point of view, the mocked responses and messages are indistinguishable from the real ones.
 
 - :bulb: **Readability**
 
@@ -24,7 +28,7 @@ slug: /interceptor
 
 **Learn more**:
 
-- [`@zimic/interceptor` - Getting started](/docs/zimic-interceptor/2-getting-started.mdx)
+- [`@zimic/interceptor` - Getting started](/docs/interceptor/getting-started)
 - [`@zimic/interceptor` - Guides](/docs/interceptor/guides)
 - [`@zimic/interceptor` - API](/docs/interceptor/api)
 - [`@zimic/interceptor` - CLI](/docs/interceptor/cli)
