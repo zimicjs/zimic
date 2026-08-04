@@ -65,13 +65,16 @@ function createMessageUnmatchedMessageGroups(options: WebSocketTimesCheckErrorOp
 function createMessage(options: WebSocketTimesCheckErrorOptions) {
   const messageHeader = createMessageHeader(options);
   const messageUnmatchedMessageGroups = createMessageUnmatchedMessageGroups(options);
-  return [messageHeader, messageUnmatchedMessageGroups].filter(isNonEmpty).join('\n\n');
+  const messageFooter = 'Learn more: https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertimes';
+  return [messageHeader, messageUnmatchedMessageGroups, messageFooter].filter(isNonEmpty).join('\n\n');
 }
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * Error thrown when the number of messages matched by a handler does not satisfy its `handler.times()` declaration.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerchecktimes `handler.checkTimes()` API reference}
  */
 class WebSocketTimesCheckError extends TypeError {
   constructor(options: WebSocketTimesCheckErrorOptions) {
