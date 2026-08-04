@@ -6,7 +6,7 @@ slug: /
 
 # Introduction
 
-Zimic is a collection of TypeScript-first HTTP integration libraries. It provides type-safe utilities to make, receive, and mock HTTP requests and responses. Zimic is designed to be lightweight and easy to use, with built-in type inference and validation.
+Zimic is a collection of TypeScript-first HTTP and WebSocket integration libraries. It provides type-safe utilities to make, receive, and mock HTTP requests and responses, and WebSocket connections and messages. Zimic is designed to be lightweight and easy to use, with built-in type inference and validation.
 
 ## Motivation
 
@@ -54,7 +54,7 @@ Zimic was designed to minimize these problems by providing a type-safe and ergon
 
 With Zimic, all requests, paths, parameters, and responses are type-checked using the schema, so that you can be confident that your code is communicating with the API correctly. This makes it easy to catch errors early in the development process without manually casting or checking types.
 
-Since the schema is centralized and easy to understand, migrating to a new API version can be as simple as updating it and refactoring which parts of the codebase start reporting type errors. The schema can also type and validate your [network mocks](/docs/zimic-interceptor/1-index.md) during testing, ensuring that your application, your tests, and your mocks are fully typed _by default_ and in sync with the API.
+Since the schema is centralized and easy to understand, migrating to a new API version can be as simple as updating it and refactoring which parts of the codebase start reporting type errors. The schema can also type and validate your [network mocks](/docs/interceptor) during testing, ensuring that your application, your tests, and your mocks are fully typed _by default_ and in sync with the API.
 
 ## Highlights
 
@@ -120,26 +120,52 @@ A minimal (~2 kB minified gzipped) and type-safe `fetch`-like API client.
 - [`@zimic/fetch` - Getting started](/docs/zimic-fetch/2-getting-started.mdx)
 - [`@zimic/fetch` - Guides](/docs/fetch/guides)
 
-### `@zimic/interceptor`
+### `@zimic/ws`
 
-A type-safe interceptor library for handling and mocking HTTP requests in development and testing.
+A minimal and type-safe WebSocket client and server.
 
-- :globe_with_meridians: **HTTP interceptors**
+- :star: **WebSocket schemas**
 
-  Use your [`@zimic/http` schema](/docs/zimic-http/guides/1-schemas.md) to declare [local](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) and [remote](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md) HTTP interceptors. Mock external services and simulate success, loading, and error states with ease and type safety.
+  Declare the structure of WebSocket messages in a [WebSocket schema](/docs/ws/guides/schemas) and use it to type clients, servers, and WebSocket interceptors.
 
-- :link: **Network-level interception**
+- :zap: **Typed clients**
 
-  `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and [interceptor servers](/docs/zimic-interceptor/cli/1-server.md) to handle real HTTP requests. From your application's point of view, the mocked responses are indistinguishable from the real ones.
+  Use [`WebSocketClient`](/docs/ws/api/websocket-client) to open, close, listen to, and send typed messages through native WebSocket connections.
 
-- :bulb: **Readability**
+- :satellite: **Typed servers**
 
-  `@zimic/interceptor` was designed to encourage clarity and readability in your mocks. Use [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) to verify that your application is making the expected requests and test with confidence.
+  Use [`WebSocketServer`](/docs/ws/api/websocket-server) to attach typed WebSocket handling to a Node HTTP or HTTPS server.
 
 **Learn more**:
 
-- [`@zimic/interceptor` - Introduction](/docs/zimic-interceptor/1-index.md)
-- [`@zimic/interceptor` - Getting started](/docs/zimic-interceptor/2-getting-started.mdx)
+- [`@zimic/ws` - Introduction](/docs/ws)
+- [`@zimic/ws` - Getting started](/docs/ws/getting-started)
+- [`@zimic/ws` - Guides](/docs/ws/guides)
+
+### `@zimic/interceptor`
+
+A type-safe interceptor library for handling and mocking HTTP requests and WebSocket messages in development and testing.
+
+- :globe_with_meridians: **HTTP interceptors**
+
+  Use your [`@zimic/http` schema](/docs/zimic-http/guides/1-schemas.md) to declare [local](/docs/interceptor/guides/http/local-interceptors) and [remote](/docs/interceptor/guides/http/remote-interceptors) HTTP interceptors. Mock external services and simulate success, loading, and error states with ease and type safety.
+
+- :zap: **WebSocket interceptors**
+
+  Use your [`@zimic/ws` schema](/docs/ws/guides/schemas) to declare [experimental WebSocket interceptors](/docs/interceptor/guides/ws/local-interceptors). Mock typed message flows, observe connected clients, send server messages, and verify expected messages in development and tests.
+
+- :link: **Network-level interception**
+
+  `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and [interceptor servers](/docs/interceptor/cli/server) to handle real HTTP requests and WebSocket connections. From your application's point of view, the mocked responses and messages are indistinguishable from the real ones.
+
+- :bulb: **Readability**
+
+  `@zimic/interceptor` was designed to encourage clarity and readability. Declare intuitive mocks, test with confidence, and verify that your application is making the expected HTTP requests or WebSocket messages with [declarative assertions](/docs/interceptor/guides/http/declarative-assertions).
+
+**Learn more**:
+
+- [`@zimic/interceptor` - Introduction](/docs/interceptor)
+- [`@zimic/interceptor` - Getting started](/docs/interceptor/getting-started)
 - [`@zimic/interceptor` - Guides](/docs/interceptor/guides)
 
 :::tip TIP: <span>`@zimic/fetch` and `@zimic/interceptor` work best together</span>
