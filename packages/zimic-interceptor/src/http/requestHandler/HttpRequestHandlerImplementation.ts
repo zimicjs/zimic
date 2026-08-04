@@ -24,10 +24,10 @@ import { InternalHttpRequestHandler } from './types/public';
 import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
-  HttpRequestHandlerResponseDeclaration,
-  HttpRequestHandlerResponseDeclarationFactory,
+  HttpRequestHandlerResponseComputedDeclaration,
   HttpRequestHandlerResponseDelayFactory,
   InterceptedHttpInterceptorRequest,
+  HttpRequestHandlerResponseDeclaration,
 } from './types/requests';
 import {
   HttpRequestHandlerRestriction,
@@ -70,7 +70,7 @@ class HttpRequestHandlerImplementation<
     StatusCode
   >[] = [];
 
-  private createResponseDeclaration?: HttpRequestHandlerResponseDeclarationFactory<
+  private createResponseDeclaration?: HttpRequestHandlerResponseComputedDeclaration<
     Path,
     Default<Schema[Path][Method]>,
     StatusCode
@@ -113,9 +113,7 @@ class HttpRequestHandlerImplementation<
   }
 
   respond<NewStatusCode extends HttpStatusCode>(
-    declaration:
-      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
+    declaration: HttpRequestHandlerResponseDeclaration<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ): HttpRequestHandlerImplementation<Schema, Method, Path, NewStatusCode> {
     const newThis = this as unknown as HttpRequestHandlerImplementation<Schema, Method, Path, NewStatusCode>;
 
@@ -134,9 +132,7 @@ class HttpRequestHandlerImplementation<
   }
 
   private isResponseDeclarationFactory(
-    declaration:
-      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>>
-      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>>,
+    declaration: HttpRequestHandlerResponseDeclaration<Path, Default<Schema[Path][Method]>>,
   ) {
     return typeof declaration === 'function';
   }

@@ -1,27 +1,25 @@
-import { createHttpInterceptorWorker } from '../interceptorWorker/factory';
 import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
 import RemoteHttpInterceptorWorker from '../interceptorWorker/RemoteHttpInterceptorWorker';
-import {
+import type {
   LocalHttpInterceptorWorkerOptions,
   RemoteHttpInterceptorWorkerOptions,
 } from '../interceptorWorker/types/options';
-import { AnyHttpInterceptorImplementation } from './HttpInterceptorImplementation';
+import type { AnyHttpInterceptorImplementation } from './HttpInterceptorImplementation';
 
 interface RemoteWorkerKeyOptions {
   auth: RemoteHttpInterceptorWorkerOptions['auth'];
 }
 
 class HttpInterceptorStore {
-  private static _localWorker?: LocalHttpInterceptorWorker;
-  private static runningLocalInterceptors = new Set<AnyHttpInterceptorImplementation>();
-
+  private static localWorker?: LocalHttpInterceptorWorker;
   private static remoteWorkers = new Map<string, RemoteHttpInterceptorWorker>();
+  private static runningLocalInterceptors = new Set<AnyHttpInterceptorImplementation>();
   private static runningRemoteInterceptors = new Map<string, Set<AnyHttpInterceptorImplementation>>();
 
   private class = HttpInterceptorStore;
 
   get localWorker() {
-    return this.class._localWorker;
+    return this.class.localWorker;
   }
 
   private getRemoteWorkerKey(baseURL: URL, options: RemoteWorkerKeyOptions) {
@@ -74,20 +72,20 @@ class HttpInterceptorStore {
   }
 
   getOrCreateLocalWorker(workerOptions: Omit<LocalHttpInterceptorWorkerOptions, 'type'>) {
-    const existingWorker = this.class._localWorker;
+    const existingWorker = this.class.localWorker;
 
     if (existingWorker) {
       return existingWorker;
     }
 
-    const createdWorker = createHttpInterceptorWorker({ ...workerOptions, type: 'local' });
-    this.class._localWorker = createdWorker;
+    const createdWorker = new LocalHttpInterceptorWorker({ ...workerOptions, type: 'local' });
+    this.class.localWorker = createdWorker;
 
     return createdWorker;
   }
 
   deleteLocalWorker() {
-    this.class._localWorker = undefined;
+    this.class.localWorker = undefined;
   }
 
   getOrCreateRemoteWorker(workerOptions: Omit<RemoteHttpInterceptorWorkerOptions, 'type'>) {
@@ -98,7 +96,7 @@ class HttpInterceptorStore {
       return existingWorker;
     }
 
-    const createdWorker = createHttpInterceptorWorker({ ...workerOptions, type: 'remote' });
+    const createdWorker = new RemoteHttpInterceptorWorker({ ...workerOptions, type: 'remote' });
     this.class.remoteWorkers.set(remoteWorkerKey, createdWorker);
 
     return createdWorker;

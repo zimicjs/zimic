@@ -10,7 +10,6 @@ import { Default, PossiblePromise } from '@zimic/utils/types';
 import HttpRequestHandlerImplementation from '../HttpRequestHandlerImplementation';
 import {
   HttpRequestHandlerResponseDeclaration,
-  HttpRequestHandlerResponseDeclarationFactory,
   HttpRequestHandlerResponseDelayFactory,
   InterceptedHttpInterceptorRequest,
 } from './requests';
@@ -65,9 +64,7 @@ export interface LocalHttpRequestHandler<
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
   respond: <NewStatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
-    declaration:
-      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
+    declaration: HttpRequestHandlerResponseDeclaration<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ) => LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes `handler.times()` API reference} */
@@ -117,9 +114,7 @@ export interface SyncedRemoteHttpRequestHandler<
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
   respond: <NewStatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
-    declaration:
-      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
+    declaration: HttpRequestHandlerResponseDeclaration<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes `handler.times()` API reference} */

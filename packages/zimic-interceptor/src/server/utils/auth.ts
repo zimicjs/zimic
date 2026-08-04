@@ -162,7 +162,7 @@ export async function readInterceptorTokenFromFile(
 
   const tokenFileContentAsString = await fs.promises.readFile(tokenFilePath, { encoding: 'utf-8' });
 
-  const validation = interceptorTokenFileContentSchema.safeParse(JSON.parse(tokenFileContentAsString) as unknown);
+  const validation = interceptorTokenFileContentSchema.safeParse(JSON.parse(tokenFileContentAsString));
 
   if (!validation.success) {
     throw new InvalidInterceptorTokenFileError(tokenFilePath, validation.error.message);

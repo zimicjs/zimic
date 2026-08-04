@@ -3,7 +3,7 @@ import { Range } from '@zimic/utils/types';
 import color from 'picocolors';
 
 import { HttpInterceptorRequestSaving } from '@/http/interceptor/types/public';
-import { stringifyValueToLog } from '@/utils/logging';
+import { stringifyValueToLog } from '@/http/utils/logging';
 
 import { UnmatchedHttpInterceptorRequestGroup } from '../requestHandler/types/restrictions';
 import HttpTimesDeclarationPointer from './HttpTimesDeclarationPointer';
