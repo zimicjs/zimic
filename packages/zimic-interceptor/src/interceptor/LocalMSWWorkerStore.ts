@@ -1,3 +1,4 @@
+import { createCachedDynamicImport } from '@zimic/utils/import';
 import type { SharedOptions as MSWWorkerSharedOptions } from 'msw';
 
 import { isClientSide, isServerSide } from '@/utils/environment';
@@ -5,15 +6,8 @@ import { isClientSide, isServerSide } from '@/utils/environment';
 import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
 import type { BrowserMSWWorker, MSWWorker } from './types/msw';
 
-// The MSW modules are imported by each caller instead of this store, which is shared across package entry points.
-// Vitest browser mode keeps MSW external when pre-bundling dependencies with Vite, and Vite resolves external imports
-// in shared chunks from the consumer root, where MSW may not be installed. Only imports in entry-specific modules are
-// resolved from this package.
-interface MSWWorkerCreationOptions {
-  importMSWNode: () => Promise<typeof import('msw/node')>;
-  importMSWBrowser: () => Promise<typeof import('msw/browser')>;
-  createUnknownPlatformError: () => Error;
-}
+const importMSWNode = createCachedDynamicImport(() => import('msw/node'));
+const importMSWBrowser = createCachedDynamicImport(() => import('msw/browser'));
 
 class LocalMSWWorkerStore {
   private static mswWorker?: MSWWorker;
@@ -31,7 +25,7 @@ class LocalMSWWorkerStore {
     return this.class.mswWorker;
   }
 
-  async getMSWWorkerOrCreate(options: MSWWorkerCreationOptions) {
+  async getMSWWorkerOrCreate(options: { createUnknownPlatformError: () => Error }) {
     if (this.class.mswWorker) {
       return this.class.mswWorker;
     }
@@ -48,9 +42,9 @@ class LocalMSWWorkerStore {
     return this.class.creatingMSWWorkerPromise;
   }
 
-  private async createMSWWorker(options: MSWWorkerCreationOptions) {
+  private async createMSWWorker(options: { createUnknownPlatformError: () => Error }) {
     if (isServerSide()) {
-      const mswNode = await options.importMSWNode();
+      const mswNode = await importMSWNode();
 
       /* istanbul ignore else -- @preserve */
       if ('setupServer' in mswNode) {
@@ -60,7 +54,7 @@ class LocalMSWWorkerStore {
 
     /* istanbul ignore else -- @preserve */
     if (isClientSide()) {
-      const mswBrowser = await options.importMSWBrowser();
+      const mswBrowser = await importMSWBrowser();
 
       /* istanbul ignore else -- @preserve */
       if ('setupWorker' in mswBrowser) {
