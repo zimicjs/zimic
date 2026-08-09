@@ -203,7 +203,7 @@ While working, commit and push your changes frequently. This avoids losing work 
 
 ### Pull requests
 
-When you've finished your work and pushed your changes, [open a pull request](https://github.com/zimicjs/zimic/pulls) against the `canary` branch on [@zimicjs/zimic](https://github.com/zimicjs/zimic). If the related issue already contains a thorough description of the changes, the pull request description may just reference it with "Closes #<issue-number>.". If you added additional changes not described in the issue, we recommend detailing them in the pull request description.
+When you've finished your work and pushed your changes, [open a pull request](https://github.com/zimicjs/zimic/pulls) against the `canary` branch on [@zimicjs/zimic](https://github.com/zimicjs/zimic). Follow the [pull request template](./.github/pull_request_template.md) when writing its description.
 
 In the pull request title, follow the same guidelines as the [commit messages](#committing). Differently from commits though, suffix the title with the issue number (e.g. `(#123)`) to make it easier to understand which issue the pull request is related to.
 
