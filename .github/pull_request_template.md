@@ -8,9 +8,9 @@
 
 -
 
-### Checklist
+### Checks
 
-<!-- Review and check every item. A checked item confirms that you followed the requirement or verified that it does not apply to this pull request. -->
+<!-- Review and check every item. A checked item confirms that you followed the requirement or verified that it does not apply to this pull request. DO NOT remove this section or any checklist items. -->
 
 - [ ] **Validation**: I have run the project type-check, lint, and test scripts related to my changes, or confirmed that none apply.
 - [ ] **Tests**: I have created or updated tests to cover my changes, or confirmed that this pull request does not require test changes.
