@@ -12,9 +12,7 @@ slug: /fetch
 
 - :zap: **Type-safe `fetch`**
 
-  Use your [`@zimic/http` schema](/docs/zimic-http/guides/1-schemas.md) to create a type-safe
-  [`fetch`-like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client and have your requests and responses
-  fully typed by default.
+  Use your [`@zimic/http` schema](/docs/zimic-http/guides/1-schemas.md) to create a type-safe [`fetch`-like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client and have your requests and responses fully typed by default.
 
 - :sparkles: **Zero dependencies**
 
@@ -22,9 +20,7 @@ slug: /fetch
 
 - :muscle: **Developer experience**
 
-  Define default options to apply to your requests, such as a base URL, headers, search parameters, and more. Inspect
-  and modify requests and responses using [`onRequest`](/docs/zimic-fetch/api/2-fetch.md#fetchonrequest) and
-  [`onResponse`](/docs/zimic-fetch/api/2-fetch.md#fetchonresponse) listeners.
+  Define default options to apply to your requests, such as a base URL, headers, search parameters, and more. Inspect and modify requests and responses using [`onRequest`](/docs/zimic-fetch/api/2-fetch.md#fetchonrequest) and [`onResponse`](/docs/zimic-fetch/api/2-fetch.md#fetchonresponse) listeners.
 
 **Learn more**:
 

@@ -16,8 +16,7 @@ This example uses Zimic with [Playwright](https://playwright.dev) in end-to-end 
 
 ## Application
 
-The tested application is a simple [Next.js](https://nextjs.org) project, fetching repositories from the
-[GitHub API](https://docs.github.com/en/rest).
+The tested application is a simple [Next.js](https://nextjs.org) project, fetching repositories from the [GitHub API](https://docs.github.com/en/rest).
 
 - Application: [`src/app/page.tsx`](./src/app/page.tsx)
 - GitHub fetch: [`src/clients/github.ts`](./src/clients/github.ts)
@@ -26,8 +25,7 @@ A `postinstall` script in [`package.json`](./package.json) is used to install Pl
 
 ## Testing
 
-`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked
-with `@zimic/interceptor`.
+`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked with `@zimic/interceptor`.
 
 ### `@zimic/interceptor`
 
@@ -41,11 +39,7 @@ with `@zimic/interceptor`.
 
 > [!NOTE]
 >
-> In the Playwright configuration, one instance of the application is started for each test worker, pointing to a
-> [dedicated build directory](./next.config.ts#L6). The number of workers is defined in the environment variable
-> `PLAYWRIGHT_WORKERS` (see [.env.test](./.env.test)). Each instance uses a different `GITHUB_API_BASE_URL` value, with
-> the worker index as suffix. This allows the tests to run in parallel without the interceptors interfering with each
-> other.
+> In the Playwright configuration, one instance of the application is started for each test worker, pointing to a [dedicated build directory](./next.config.ts#L6). The number of workers is defined in the environment variable `PLAYWRIGHT_WORKERS` (see [.env.test](./.env.test)). Each instance uses a different `GITHUB_API_BASE_URL` value, with the worker index as suffix. This allows the tests to run in parallel without the interceptors interfering with each other.
 
 ## Try it
 
@@ -86,8 +80,7 @@ rm -rf ../zimic-tmp
 
 > [!TIP]
 >
-> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as
-> `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
+> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
 
 ## Running
 

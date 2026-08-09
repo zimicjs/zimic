@@ -17,14 +17,12 @@ This example uses Zimic with [Next.js](https://nextjs.org).
 
 ## Application
 
-The application is a simple [Next.js](https://nextjs.org) project using the [App Router](https://nextjs.org/docs/app).
-It fetches repositories from the [GitHub API](https://docs.github.com/en/rest).
+The application is a simple [Next.js](https://nextjs.org) project using the [App Router](https://nextjs.org/docs/app). It fetches repositories from the [GitHub API](https://docs.github.com/en/rest).
 
 - Application: [`src/app/page.tsx`](./src/app/page.tsx)
 - GitHub fetch: [`src/clients/github.ts`](./src/clients/github.ts)
 
-`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked
-with `@zimic/interceptor`.
+`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked with `@zimic/interceptor`.
 
 A `postinstall` script in [`package.json`](./package.json) is used to install Playwright's browsers.
 
@@ -38,8 +36,7 @@ This project uses [Playwright](https://playwright.dev) to test the application.
 
 #### Loading mocks
 
-The script [`tests/interceptors/scripts/load.ts`](./tests/interceptors/scripts/load.ts) start the GitHub interceptor and
-apply the default mocks before the application is started during tests.
+The script [`tests/interceptors/scripts/load.ts`](./tests/interceptors/scripts/load.ts) start the GitHub interceptor and apply the default mocks before the application is started during tests.
 
 ### Configuration
 
@@ -85,8 +82,7 @@ rm -rf ../zimic-tmp
 
 > [!TIP]
 >
-> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as
-> `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
+> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
 
 ## Running
 

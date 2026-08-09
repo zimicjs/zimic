@@ -6,11 +6,7 @@ slug: /interceptor/api/interceptor-server
 
 # `InterceptorServer`
 
-An interceptor server can be used to handle requests and return mock responses in combination with
-[remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md), which declare the responses
-the server should return for a given request. Interceptor servers and remote interceptors communicate with
-[remote-procedure calls](https://en.wikipedia.org/wiki/Remote_procedure_call) (RPC) over
-[WebSocket](https://developer.mozilla.org/docs/Web/API/WebSockets_API).
+An interceptor server can be used to handle requests and return mock responses in combination with [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md), which declare the responses the server should return for a given request. Interceptor servers and remote interceptors communicate with [remote-procedure calls](https://en.wikipedia.org/wiki/Remote_procedure_call) (RPC) over [WebSocket](https://developer.mozilla.org/docs/Web/API/WebSockets_API).
 
 **Related**:
 
@@ -25,9 +21,7 @@ The hostname of the server. It can be reassigned to a new value if the server is
 
 ## `server.port`
 
-The port of the server. It can be reassigned to a new value if the server is not running. If not provided, it will be
-`undefined` until the server is started, at which point the server will use a random available port and this property
-will be updated accordingly.
+The port of the server. It can be reassigned to a new value if the server is not running. If not provided, it will be `undefined` until the server is started, at which point the server will use a random available port and this property will be updated accordingly.
 
 **Type**: `number | undefined`
 
@@ -39,9 +33,7 @@ Whether to log warnings about unhandled requests to the console. It can be reass
 
 ## `server.tokensDirectory`
 
-The directory where the authorized interceptor authentication tokens are saved. If provided, only remote interceptors
-bearing a valid token will be accepted. This option is essential if you are exposing your interceptor server publicly.
-For local development and testing, though, a tokens directory is optional.
+The directory where the authorized interceptor authentication tokens are saved. If provided, only remote interceptors bearing a valid token will be accepted. This option is essential if you are exposing your interceptor server publicly. For local development and testing, though, a tokens directory is optional.
 
 **Type**: `string | undefined`
 
@@ -57,8 +49,7 @@ Whether the server is running.
 
 ## `server.start()`
 
-Starts the server. It will automatically stop if a process exit event is detected, such as SIGINT, SIGTERM, or an
-uncaught exception.
+Starts the server. It will automatically stop if a process exit event is detected, such as SIGINT, SIGTERM, or an uncaught exception.
 
 ```ts
 await server.start();

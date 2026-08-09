@@ -9,15 +9,11 @@ import TabItem from '@theme/TabItem';
 
 # Using search params (query)
 
-[URL search parameters](https://developer.mozilla.org/docs/Web/API/URLSearchParams), also known as query parameters, are
-a way to provide additional information to a request. They are encoded in the query string of a URL in key-value pairs.
-Search params are typically used in [GET requests](https://developer.mozilla.org/docs/Web/HTTP/Reference/Methods/GET) to
-filter, sort, or paginate data.
+[URL search parameters](https://developer.mozilla.org/docs/Web/API/URLSearchParams), also known as query parameters, are a way to provide additional information to a request. They are encoded in the query string of a URL in key-value pairs. Search params are typically used in [GET requests](https://developer.mozilla.org/docs/Web/HTTP/Reference/Methods/GET) to filter, sort, or paginate data.
 
 ## Using request search params
 
-To use search params in your intercepted requests, declare their types in your
-[schema](/docs/zimic-http/guides/1-schemas.md).
+To use search params in your intercepted requests, declare their types in your [schema](/docs/zimic-http/guides/1-schemas.md).
 
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
@@ -48,11 +44,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-Then, the request search params will be available in the `searchParams` property, such as in
-[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith),
-[computed responses](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrespond), and
-[`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrequests). The search params are
-typed and validated according to your schema, providing type safety and autocompletion.
+Then, the request search params will be available in the `searchParams` property, such as in [`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith), [computed responses](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrespond), and [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrequests). The search params are typed and validated according to your schema, providing type safety and autocompletion.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
