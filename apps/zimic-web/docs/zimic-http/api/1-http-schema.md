@@ -138,8 +138,7 @@ type Schema = HttpSchema<{
 
 ## `MergeHttpResponsesByStatusCode`
 
-Merges multiple HTTP response schemas by status code into a single schema. When there are duplicate status codes, the
-first declaration takes precedence.
+Merges multiple HTTP response schemas by status code into a single schema. When there are duplicate status codes, the first declaration takes precedence.
 
 ```ts
 type MergeHttpResponsesByStatusCode<ResponseSchemas>
@@ -344,9 +343,7 @@ type UserByIdPathParams = HttpSchema.PathParams<{
 
 ## `HttpSchemaPath`
 
-Extracts the [literal](#httpschemapathliteral) and [non-literal](#httpschemapathnonliteral) paths from an HTTP service
-schema. Optionally receives a second argument with one or more methods to filter the paths with. Only the methods
-defined in the schema are allowed.
+Extracts the [literal](#httpschemapathliteral) and [non-literal](#httpschemapathnonliteral) paths from an HTTP service schema. Optionally receives a second argument with one or more methods to filter the paths with. Only the methods defined in the schema are allowed.
 
 ```ts
 type HttpSchemaPath<Schema>
@@ -378,8 +375,7 @@ type GetPath = HttpSchemaPath<Schema, 'GET'>;
 
 ### `HttpSchemaPath.Literal`
 
-Extracts the literal paths from an HTTP service schema. Optionally receives a second argument with one or more methods
-to filter the paths with. Only the methods defined in the schema are allowed.
+Extracts the literal paths from an HTTP service schema. Optionally receives a second argument with one or more methods to filter the paths with. Only the methods defined in the schema are allowed.
 
 ```ts
 type HttpSchemaPath.Literal<Schema>
@@ -411,8 +407,7 @@ type LiteralGetPath = LiteralHttpSchemaPath<Schema, 'GET'>;
 
 ### `HttpSchemaPath.NonLiteral`
 
-Extracts the non-literal paths from an HTTP service schema. Optionally receives a second argument with one or more
-methods to filter the paths with. Only the methods defined in the schema are allowed.
+Extracts the non-literal paths from an HTTP service schema. Optionally receives a second argument with one or more methods to filter the paths with. Only the methods defined in the schema are allowed.
 
 ```ts
 type HttpSchemaPath.NonLiteral<Schema>
@@ -444,9 +439,7 @@ type NonLiteralGetPath = NonLiteralHttpSchemaPath<Schema, 'GET'>;
 
 ## `InferPathParams`
 
-Infers the path params schema from a path string. If the first argument is a schema, the second argument should be a
-valid path in that schema. See [Declaring paths](/docs/zimic-http/guides/1-schemas.md#declaring-paths) for more details
-on how to declare required, optional, and repeating path params.
+Infers the path params schema from a path string. If the first argument is a schema, the second argument should be a valid path in that schema. See [Declaring paths](/docs/zimic-http/guides/1-schemas.md#declaring-paths) for more details on how to declare required, optional, and repeating path params.
 
 ```ts
 type InferPathParams<Path>

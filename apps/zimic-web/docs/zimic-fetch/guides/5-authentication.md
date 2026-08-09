@@ -6,12 +6,9 @@ slug: /fetch/guides/authentication
 
 # Authentication
 
-[Authentication](https://developer.mozilla.org/docs/Web/HTTP/Guides/Authentication) is a process of verifying the
-identity of a user or system. When using a web API, authentication is often required to ensure that only authorized
-users can access certain resources or perform specific actions.
+[Authentication](https://developer.mozilla.org/docs/Web/HTTP/Guides/Authentication) is a process of verifying the identity of a user or system. When using a web API, authentication is often required to ensure that only authorized users can access certain resources or perform specific actions.
 
-Servers may require authentication in different ways, such as using an API key, a token, a cookie, or username and
-password.
+Servers may require authentication in different ways, such as using an API key, a token, a cookie, or username and password.
 
 ## Authentication with headers
 
@@ -36,9 +33,7 @@ Learn more about [using request headers](/docs/zimic-fetch/guides/1-headers.md#u
 
 ### Using defaults
 
-A fetch instance can have [default options](/docs/zimic-fetch/api/2-fetch.md#fetch-defaults). These are useful for
-configuring common headers and other options to authenticate all requests, without having to manually set them for each
-request.
+A fetch instance can have [default options](/docs/zimic-fetch/api/2-fetch.md#fetch-defaults). These are useful for configuring common headers and other options to authenticate all requests, without having to manually set them for each request.
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -51,14 +46,11 @@ const fetch = createFetch<Schema>({
 fetch.headers.authorization = `Bearer ${accessToken}`;
 ```
 
-Learn more about
-[setting default request headers](/docs/zimic-fetch/guides/1-headers.md#setting-default-request-headers).
+Learn more about [setting default request headers](/docs/zimic-fetch/guides/1-headers.md#setting-default-request-headers).
 
 ### Using listeners
 
-You can also use the [`onRequest`](/docs/zimic-fetch/api/2-fetch.md#fetchonrequest) listener to set headers for specific
-requests. The listener is called before every request is sent, so you can use it to include or modify authentication
-options.
+You can also use the [`onRequest`](/docs/zimic-fetch/api/2-fetch.md#fetchonrequest) listener to set headers for specific requests. The listener is called before every request is sent, so you can use it to include or modify authentication options.
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -76,9 +68,7 @@ const fetch = createFetch<Schema>({
 
 ### Handling errors
 
-If a request fails due to authentication, you can handle the error in the
-[`onResponse`](/docs/zimic-fetch/api/2-fetch.md#fetchonresponse) listener. A common use case is to refresh the access
-token and retry the request with the new credentials.
+If a request fails due to authentication, you can handle the error in the [`onResponse`](/docs/zimic-fetch/api/2-fetch.md#fetchonresponse) listener. A common use case is to refresh the access token and retry the request with the new credentials.
 
 As an example, consider the following [schema](/docs/zimic-http/guides/1-schemas.md):
 
@@ -129,8 +119,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-We can declare a fetch instance with an `onResponse` listener that handles authentication errors. If the request fails
-with an access token expired error, the instance will try to refresh the token and retry the request.
+We can declare a fetch instance with an `onResponse` listener that handles authentication errors. If the request fails with an access token expired error, the instance will try to refresh the token and retry the request.
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -171,12 +160,9 @@ const fetch = createFetch<Schema>({
 });
 ```
 
-[`fetch.loose`](/docs/zimic-fetch/api/2-fetch.md#fetchloose) is useful here because it is a less strict version of
-[`fetch`](/docs/zimic-fetch/api/2-fetch.md). It allows us to retry the failed request without knowing which specific
-endpoint and method it was made with.
+[`fetch.loose`](/docs/zimic-fetch/api/2-fetch.md#fetchloose) is useful here because it is a less strict version of [`fetch`](/docs/zimic-fetch/api/2-fetch.md). It allows us to retry the failed request without knowing which specific endpoint and method it was made with.
 
-With this setup, we can make authenticated requests to the API and access tokens will be automatically refreshed when
-they expire.
+With this setup, we can make authenticated requests to the API and access tokens will be automatically refreshed when they expire.
 
 ```ts
 // Authenticate
@@ -204,7 +190,6 @@ const response = await fetch('/users', {
 
 :::tip NOTE
 
-The examples in this section are simplified for demonstration purposes. In a real-world application, you should tailor
-your code to the behavior of your API, such as error codes, response formats, and authentication methods.
+The examples in this section are simplified for demonstration purposes. In a real-world application, you should tailor your code to the behavior of your API, such as error codes, response formats, and authentication methods.
 
 :::

@@ -6,8 +6,7 @@ slug: /interceptor/cli/server
 
 # `zimic-interceptor server`
 
-`zimic-interceptor server` contains commands to manage
-[interceptor servers](/docs/zimic-interceptor/api/5-interceptor-server.md).
+`zimic-interceptor server` contains commands to manage [interceptor servers](/docs/zimic-interceptor/api/5-interceptor-server.md).
 
 ```
 zimic-interceptor server
@@ -59,9 +58,7 @@ Options:
 
 :::info IMPORTANT: <span>Interceptor server authentication</span>
 
-If you are exposing the server publicly, consider
-[enabling authentication](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#interceptor-server-authentication)
-in the interceptor server.
+If you are exposing the server publicly, consider [enabling authentication](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#interceptor-server-authentication) in the interceptor server.
 
 :::
 
@@ -111,8 +108,7 @@ Options:
 
 ### `zimic-interceptor server token rm`
 
-Remove (invalidate) an interceptor token. Existing connections will not be affected, so restarting the server is
-recommended to disconnect all interceptors.
+Remove (invalidate) an interceptor token. Existing connections will not be affected, so restarting the server is recommended to disconnect all interceptors.
 
 ```
 zimic-interceptor server token rm <tokenId>
