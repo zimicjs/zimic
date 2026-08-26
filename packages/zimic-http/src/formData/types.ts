@@ -95,10 +95,8 @@ export type HttpFormDataSerialized<Type> = [Type] extends [never]
     ? Type
     : Type extends object
       ? {
-          [Key in keyof Type as IfNever<
-            PrimitiveHttpFormDataSerialized<Type[Key]>,
-            never,
-            Key
-          >]: PrimitiveHttpFormDataSerialized<Type[Key]>;
+          [
+            Key in keyof Type as IfNever<PrimitiveHttpFormDataSerialized<Type[Key]>, never, Key>
+          ]: PrimitiveHttpFormDataSerialized<Type[Key]>;
         }
       : never;

@@ -22,17 +22,9 @@
 
 <div align="center">
 
-[![CI](https://github.com/zimicjs/zimic/actions/workflows/ci.yaml/badge.svg?branch=canary)](https://github.com/zimicjs/zimic/actions/workflows/ci.yaml)&nbsp;
-[![Coverage](https://img.shields.io/badge/Coverage-100%25-31C654?labelColor=353C43)](https://github.com/zimicjs/zimic/actions)&nbsp;
-[![License](https://img.shields.io/github/license/zimicjs/zimic?color=0E69BE&label=License&labelColor=353C43)](https://github.com/zimicjs/zimic/blob/canary/LICENSE.md)&nbsp;
-[![Stars](https://img.shields.io/github/stars/zimicjs/zimic)](https://github.com/zimicjs/zimic)
+[![CI](https://github.com/zimicjs/zimic/actions/workflows/ci.yaml/badge.svg?branch=canary)](https://github.com/zimicjs/zimic/actions/workflows/ci.yaml)&nbsp; [![Coverage](https://img.shields.io/badge/Coverage-100%25-31C654?labelColor=353C43)](https://github.com/zimicjs/zimic/actions)&nbsp; [![License](https://img.shields.io/github/license/zimicjs/zimic?color=0E69BE&label=License&labelColor=353C43)](https://github.com/zimicjs/zimic/blob/canary/LICENSE.md)&nbsp; [![Stars](https://img.shields.io/github/stars/zimicjs/zimic)](https://github.com/zimicjs/zimic)
 
-[![NPM Downloads - @zimic/http](https://img.shields.io/npm/dm/@zimic/http?style=flat&logo=npm&color=0E69BE&label=%20%40zimic%2Fhttp&labelColor=353C43)](https://www.npmjs.com/package/@zimic/http)&nbsp;
-[![Bundle size - @zimic/http](https://badgen.net/bundlephobia/minzip/@zimic/http?color=0E69BE&labelColor=353C43&label=@zimic/http%20min%20gzip)](https://bundlephobia.com/package/@zimic/http)<br />
-[![NPM Downloads - @zimic/fetch](https://img.shields.io/npm/dm/@zimic/fetch?style=flat&logo=npm&color=0E69BE&label=%20%40zimic%2Ffetch&labelColor=353C43)](https://www.npmjs.com/package/@zimic/fetch)&nbsp;
-[![Bundle size - @zimic/fetch](https://badgen.net/bundlephobia/minzip/@zimic/fetch?color=0E69BE&labelColor=353C43&label=@zimic/fetch%20min%20gzip)](https://bundlephobia.com/package/@zimic/fetch)<br />
-[![NPM Downloads - @zimic/interceptor](https://img.shields.io/npm/dm/@zimic/interceptor?style=flat&logo=npm&color=0E69BE&label=%20%40zimic%2Finterceptor&labelColor=353C43)](https://www.npmjs.com/package/@zimic/interceptor)&nbsp;
-[![Bundle size - @zimic/interceptor](https://badgen.net/bundlephobia/minzip/@zimic/interceptor?color=0E69BE&labelColor=353C43&label=@zimic/interceptor%20min%20gzip)](https://bundlephobia.com/package/@zimic/interceptor)&nbsp;
+[![NPM Downloads - @zimic/http](https://img.shields.io/npm/dm/@zimic/http?style=flat&logo=npm&color=0E69BE&label=%20%40zimic%2Fhttp&labelColor=353C43)](https://www.npmjs.com/package/@zimic/http)&nbsp; [![Bundle size - @zimic/http](https://badgen.net/bundlephobia/minzip/@zimic/http?color=0E69BE&labelColor=353C43&label=@zimic/http%20min%20gzip)](https://bundlephobia.com/package/@zimic/http)<br /> [![NPM Downloads - @zimic/fetch](https://img.shields.io/npm/dm/@zimic/fetch?style=flat&logo=npm&color=0E69BE&label=%20%40zimic%2Ffetch&labelColor=353C43)](https://www.npmjs.com/package/@zimic/fetch)&nbsp; [![Bundle size - @zimic/fetch](https://badgen.net/bundlephobia/minzip/@zimic/fetch?color=0E69BE&labelColor=353C43&label=@zimic/fetch%20min%20gzip)](https://bundlephobia.com/package/@zimic/fetch)<br /> [![NPM Downloads - @zimic/interceptor](https://img.shields.io/npm/dm/@zimic/interceptor?style=flat&logo=npm&color=0E69BE&label=%20%40zimic%2Finterceptor&labelColor=353C43)](https://www.npmjs.com/package/@zimic/interceptor)&nbsp; [![Bundle size - @zimic/interceptor](https://badgen.net/bundlephobia/minzip/@zimic/interceptor?color=0E69BE&labelColor=353C43&label=@zimic/interceptor%20min%20gzip)](https://bundlephobia.com/package/@zimic/interceptor)&nbsp;
 
 </div>
 
@@ -44,23 +36,19 @@ Zimic is a collection of TypeScript-first HTTP integration libraries.
 
 - ⚙️ **TypeScript-first**
 
-  Zimic has **first-class TypeScript support**, providing type safety, inference, validation, and autocompletion out of
-  the box. "Typed by default" is one of the core principles of Zimic.
+  Zimic has **first-class TypeScript support**, providing type safety, inference, validation, and autocompletion out of the box. "Typed by default" is one of the core principles of Zimic.
 
 - ⚡ **Lightweight**
 
-  The Zimic libraries are designed with minimal bundle sizes and few external dependencies in mind, making them perfect
-  for both client and server-side applications.
+  The Zimic libraries are designed with minimal bundle sizes and few external dependencies in mind, making them perfect for both client and server-side applications.
 
 - 📦 **Developer friendly**
 
-  We believe that developer experience is key to building great applications. The Zimic API strives to be as simple and
-  intuitive as possible, and we're always looking for ways to improve it.
+  We believe that developer experience is key to building great applications. The Zimic API strives to be as simple and intuitive as possible, and we're always looking for ways to improve it.
 
 - 🧪 **Thoroughly tested**
 
-  Zimic has a comprehensive test suite and high code coverage. Testing is a main part of our development process, and we
-  take reliability and developer confidence very seriously.
+  Zimic has a comprehensive test suite and high code coverage. Testing is a main part of our development process, and we take reliability and developer confidence very seriously.
 
 ## Ecosystem
 
@@ -70,19 +58,15 @@ Type-safe utilities to handle HTTP requests and responses, including headers, se
 
 - :star: **HTTP schemas**
 
-  Declare the structure of your endpoints in an [HTTP schema](https://zimic.dev/docs/http/guides/schemas) and use it to
-  type your HTTP requests and responses.
+  Declare the structure of your endpoints in an [HTTP schema](https://zimic.dev/docs/http/guides/schemas) and use it to type your HTTP requests and responses.
 
 - :bulb: **Type generation**
 
-  Infer types from [OpenAPI](https://www.openapis.org) documentation and generate ready-to-use HTTP schemas with our
-  [typegen CLI](https://zimic.dev/docs/http/guides/typegen).
+  Infer types from [OpenAPI](https://www.openapis.org) documentation and generate ready-to-use HTTP schemas with our [typegen CLI](https://zimic.dev/docs/http/guides/typegen).
 
 - :pushpin: **Type-safe APIs**
 
-  Declare typed [`Headers`](https://zimic.dev/docs/http/api/http-headers),
-  [`URLSearchParams`](https://zimic.dev/docs/http/api/http-search-params), and
-  [`FormData`](https://zimic.dev/docs/http/api/http-form-data) objects, fully compatible with their native counterparts.
+  Declare typed [`Headers`](https://zimic.dev/docs/http/api/http-headers), [`URLSearchParams`](https://zimic.dev/docs/http/api/http-search-params), and [`FormData`](https://zimic.dev/docs/http/api/http-form-data) objects, fully compatible with their native counterparts.
 
 **Learn more**:
 
@@ -96,9 +80,7 @@ A minimal (~2 kB minified gzipped) and type-safe `fetch`-like API client.
 
 - :zap: **Type-safe `fetch`**
 
-  Use your [`@zimic/http` schema](https://zimic.dev/docs/http/guides/schemas) to create a type-safe
-  [`fetch`-like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client and have your requests and responses
-  fully typed by default.
+  Use your [`@zimic/http` schema](https://zimic.dev/docs/http/guides/schemas) to create a type-safe [`fetch`-like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client and have your requests and responses fully typed by default.
 
 - :sparkles: **Zero dependencies**
 
@@ -106,9 +88,7 @@ A minimal (~2 kB minified gzipped) and type-safe `fetch`-like API client.
 
 - :muscle: **Developer experience**
 
-  Define default options to apply to your requests, such as a base URL, headers, search parameters, and more. Inspect
-  and modify requests and responses using [`onRequest`](https://zimic.dev/docs/fetch/api/fetch#fetchonrequest) and
-  [`onResponse`](https://zimic.dev/docs/fetch/api/fetch#fetchonresponse) listeners.
+  Define default options to apply to your requests, such as a base URL, headers, search parameters, and more. Inspect and modify requests and responses using [`onRequest`](https://zimic.dev/docs/fetch/api/fetch#fetchonrequest) and [`onResponse`](https://zimic.dev/docs/fetch/api/fetch#fetchonresponse) listeners.
 
 **Learn more**:
 
@@ -122,22 +102,15 @@ A type-safe interceptor library for handling and mocking HTTP requests in develo
 
 - :globe_with_meridians: **HTTP interceptors**
 
-  Use your [`@zimic/http` schema](https://zimic.dev/docs/http/guides/schemas) to declare
-  [local](https://zimic.dev/docs/interceptor/guides/http/local-interceptors) and
-  [remote](https://zimic.dev/docs/interceptor/guides/http/remote-interceptors) HTTP interceptors. Mock external services
-  and simulate success, loading, and error states with ease and type safety.
+  Use your [`@zimic/http` schema](https://zimic.dev/docs/http/guides/schemas) to declare [local](https://zimic.dev/docs/interceptor/guides/http/local-interceptors) and [remote](https://zimic.dev/docs/interceptor/guides/http/remote-interceptors) HTTP interceptors. Mock external services and simulate success, loading, and error states with ease and type safety.
 
 - :link: **Network-level interception**
 
-  `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and
-  [interceptor servers](https://zimic.dev/docs/interceptor/cli/server) to handle real HTTP requests. From you
-  application's point of view, the mocked responses are indistinguishable from the real ones.
+  `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and [interceptor servers](https://zimic.dev/docs/interceptor/cli/server) to handle real HTTP requests. From you application's point of view, the mocked responses are indistinguishable from the real ones.
 
 - :bulb: **Readability**
 
-  `@zimic/interceptor` was designed to encourage clarity and readability in your mocks. Use
-  [declarative assertions](https://zimic.dev/docs/interceptor/guides/http/declarative-assertions) to verify that your
-  application is making the expected requests and test with confidence.
+  `@zimic/interceptor` was designed to encourage clarity and readability in your mocks. Use [declarative assertions](https://zimic.dev/docs/interceptor/guides/http/declarative-assertions) to verify that your application is making the expected requests and test with confidence.
 
 **Learn more**:
 
@@ -147,15 +120,11 @@ A type-safe interceptor library for handling and mocking HTTP requests in develo
 
 > [!TIP]
 >
-> `@zimic/fetch` and `@zimic/interceptor` work best together, providing a seamless and type-safe experience for making
-> and mocking HTTP requests. With that in mind, it's perfectly possible to use `@zimic/interceptor` with any HTTP client
-> implementation, or `@zimic/fetch` with any HTTP mocking library. See our
-> [`@zimic/fetch` testing guide](https://zimic.dev/docs/fetch/guides/testing#zimicinterceptor) for more information.
+> `@zimic/fetch` and `@zimic/interceptor` work best together, providing a seamless and type-safe experience for making and mocking HTTP requests. With that in mind, it's perfectly possible to use `@zimic/interceptor` with any HTTP client implementation, or `@zimic/fetch` with any HTTP mocking library. See our [`@zimic/fetch` testing guide](https://zimic.dev/docs/fetch/guides/testing#zimicinterceptor) for more information.
 
 ## Examples
 
-Visit our [examples](https://zimic.dev/docs/examples) to see how to use Zimic with popular frameworks, libraries, and
-use cases.
+Visit our [examples](https://zimic.dev/docs/examples) to see how to use Zimic with popular frameworks, libraries, and use cases.
 
 ## Sponsors
 

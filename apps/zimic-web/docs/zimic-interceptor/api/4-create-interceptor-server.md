@@ -6,10 +6,7 @@ slug: /interceptor/api/create-interceptor-server
 
 # `createInterceptorServer`
 
-Creates an [interceptor server](/docs/zimic-interceptor/api/5-interceptor-server.md). This function is an alternative to
-the [`zimic-interceptor server` CLI command](/docs/zimic-interceptor/cli/1-server.md) and can be used to
-programmatically manage an interceptor server in your code. We recommend using the CLI command for most use cases, but
-`createInterceptorServer` is useful for more advanced scenarios.
+Creates an [interceptor server](/docs/zimic-interceptor/api/5-interceptor-server.md) for development or testing. This function is an alternative to the [`zimic-interceptor server` CLI command](/docs/zimic-interceptor/cli/1-server.md) and can be used to programmatically manage an interceptor server in your code. We recommend using the CLI command for most use cases, but `createInterceptorServer` is useful for more advanced scenarios.
 
 ```ts
 createInterceptorServer(options);
@@ -34,14 +31,17 @@ createInterceptorServer(options);
 
    - **tokensDirectory**: `string | undefined` (default: `undefined`)
 
-     The directory where the authorized interceptor authentication tokens are saved. If provided, only remote
-     interceptors bearing a valid token will be accepted. This option is essential if you are exposing your interceptor
-     server publicly. For local development and testing, though, `--tokens-dir` is optional.
+     The directory where the authorized interceptor authentication tokens are saved.
+
+     Although this option is optional for private development servers, we strongly recommend configuring [interceptor server authentication](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#interceptor-server-authentication) when the server is not bound to `localhost`, `127.0.0.1`, or `::1`, or when it is shared over a network. Every remote interceptor must then provide a valid token through [`auth.token`](/docs/zimic-interceptor/api/1-create-http-interceptor.mdx), which prevents unauthorized interceptors from connecting to the server.
+
+     Without a tokens directory, browser remote interceptors can connect only when both the server and the web application use a loopback hostname. Starting an unauthenticated server logs a warning when it uses a non-loopback hostname or runs with `NODE_ENV=production`. See [interceptor server authentication](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#interceptor-server-authentication) for details.
+
+     In `@zimic/interceptor` v2, an unauthenticated server will refuse to start on a non-loopback hostname.
 
 **Returns**: `InterceptorServer`
 
-An [interceptor server](/docs/zimic-interceptor/api/5-interceptor-server.md) which can be used to connect
-[remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md).
+An [interceptor server](/docs/zimic-interceptor/api/5-interceptor-server.md) which can be used to connect [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md).
 
 ```ts
 import { spawn, SpawnOptions } from 'child_process';

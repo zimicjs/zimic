@@ -6,11 +6,9 @@ slug: /fetch/api/fetch
 
 # `fetch`
 
-The result of [`createFetch`](/docs/zimic-fetch/api/1-create-fetch.md) is a fetch instance typed with an HTTP schema,
-mostly compatible with the native [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API).
+The result of [`createFetch`](/docs/zimic-fetch/api/1-create-fetch.md) is a fetch instance typed with an HTTP schema, mostly compatible with the native [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API).
 
-Requests sent by the fetch instance have their URL automatically prefixed with the base URL of the instance.
-[Default options](#fetch-defaults) are also applied to the requests, if provided.
+Requests sent by the fetch instance have their URL automatically prefixed with the base URL of the instance. [Default options](#fetch-defaults) are also applied to the requests, if provided.
 
 ```ts
 fetch(input);
@@ -21,21 +19,14 @@ fetch(input, init);
 
 1. **input**: `string | URL | FetchRequest`
 
-   The resource to fetch, either a path, a URL, or another [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md)
-   request. If a path is provided, it is automatically prefixed with the base URL of the fetch instance when the request
-   is sent. If a URL or a request is provided, it is used as is.
+   The resource to fetch, either a path, a URL, or another [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md) request. If a path is provided, it is automatically prefixed with the base URL of the fetch instance when the request is sent. If a URL or a request is provided, it is used as is.
 
 2. **init**: `FetchRequestInit`
 
-   The options to use for the request. If a path or a URL is provided as the first argument, this argument is required
-   and should contain at least the method of the request. If the first argument is a
-   [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md), this argument is optional. The options inherit from the
-   native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) interface, with the following
-   additional properties:
+   The options to use for the request. If a path or a URL is provided as the first argument, this argument is required and should contain at least the method of the request. If the first argument is a [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md), this argument is optional. The options inherit from the native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) interface, with the following additional properties:
    - **method**: `string`
 
-     The HTTP method to use for the request. Differently from the native Fetch API, this is required to ensure that
-     requests are typed correctly.
+     The HTTP method to use for the request. Differently from the native Fetch API, this is required to ensure that requests are typed correctly.
 
    - **baseURL**: `string | undefined`
 
@@ -43,18 +34,15 @@ fetch(input, init);
 
    - **searchParams**: `HttpSearchParamsSchema.Loose | undefined`
 
-     The search parameters to be sent with the request. If provided, it will have preference over the default search
-     parameters of the fetch instance.
+     The search parameters to be sent with the request. If provided, it will have preference over the default search parameters of the fetch instance.
 
    - **duplex**: `'half' | undefined`
 
-     The duplex mode for the request. If set to `'half'`, the request body will be streamed. See
-     [Request streaming](/docs/zimic-fetch/guides/4-bodies.md#request-streaming) for more details.
+     The duplex mode for the request. If set to `'half'`, the request body will be streamed. See [Request streaming](/docs/zimic-fetch/guides/4-bodies.md#request-streaming) for more details.
 
 **Returns**: `Promise<FetchResponse>`
 
-A promise that resolves to a [`FetchResponse`](/docs/zimic-fetch/api/4-fetch-response.md), which is typed with the
-schema of the fetch instance.
+A promise that resolves to a [`FetchResponse`](/docs/zimic-fetch/api/4-fetch-response.md), which is typed with the schema of the fetch instance.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
@@ -106,9 +94,7 @@ return users; // User[]
 
 ## `fetch` defaults
 
-Fetch instances inherit from the native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit)
-interface and can have default options applied to all requests made through them. On top of the native properties in
-`RequestInit`, fetch instances also accept:
+Fetch instances inherit from the native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) interface and can have default options applied to all requests made through them. On top of the native properties in `RequestInit`, fetch instances also accept:
 
 - **baseURL**: `string`
 
@@ -128,8 +114,7 @@ interface and can have default options applied to all requests made through them
 
 - **duplex**: `'half' | undefined`
 
-  The duplex mode for the fetch instance. If set to `'half'`, the request body will be streamed. See
-  [Request streaming](/docs/zimic-fetch/guides/4-bodies.md#request-streaming) for more details.
+  The duplex mode for the fetch instance. If set to `'half'`, the request body will be streamed. See [Request streaming](/docs/zimic-fetch/guides/4-bodies.md#request-streaming) for more details.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
@@ -176,11 +161,9 @@ fetch.headers.authorization = `Bearer ${accessToken}`;
 
 :::info INFO: <span>Setting defaults before `@zimic/fetch@1.2.0`</span>
 
-Up to `@zimic/fetch@1.1.x`, the default options were available under the `fetch.defaults` property. Starting from 1.2.0,
-you can access them directly on the fetch instance (e.g., `fetch.headers` instead of `fetch.defaults.headers`).
+Up to `@zimic/fetch@1.1.x`, the default options were available under the `fetch.defaults` property. Starting from 1.2.0, you can access them directly on the fetch instance (e.g., `fetch.headers` instead of `fetch.defaults.headers`).
 
-`fetch.defaults` is still available for backward compatibility, but it is deprecated and will be removed in the next
-major release.
+`fetch.defaults` is still available for backward compatibility, but it is deprecated and will be removed in the next major release.
 
 :::
 
@@ -313,8 +296,7 @@ fetch.onResponse = (response) => {
 
 ## `fetch.loose`
 
-A loosely-typed version of `fetch`. This can be useful to make requests with fewer type constraints, such as in
-[`onRequest`](#fetchonrequest) and [`onResponse`](#fetchonrequest) listeners.
+A loosely-typed version of `fetch`. This can be useful to make requests with fewer type constraints, such as in [`onRequest`](#fetchonrequest) and [`onResponse`](#fetchonrequest) listeners.
 
 ```ts
 fetch.loose(input);
@@ -325,17 +307,11 @@ fetch.loose(input, init);
 
 1. **input**: `string | URL | FetchRequest`
 
-   The resource to fetch, either a path, a URL, or another [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md)
-   request. If a path is provided, it is automatically prefixed with the base URL of the fetch instance when the request
-   is sent. If a URL or a request is provided, it is used as is.
+   The resource to fetch, either a path, a URL, or another [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md) request. If a path is provided, it is automatically prefixed with the base URL of the fetch instance when the request is sent. If a URL or a request is provided, it is used as is.
 
 2. **init**: `FetchRequestInit`
 
-   The options to use for the request. If a path or a URL is provided as the first argument, this argument is required
-   and should contain at least the method of the request. If the first argument is a
-   [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md), this argument is optional. The options inherit from the
-   native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) interface, with the following
-   additional properties:
+   The options to use for the request. If a path or a URL is provided as the first argument, this argument is required and should contain at least the method of the request. If the first argument is a [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md), this argument is optional. The options inherit from the native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) interface, with the following additional properties:
    - **method**: `string | undefined`
 
      The HTTP method to use for the request.
@@ -346,21 +322,17 @@ fetch.loose(input, init);
 
    - **searchParams**: `HttpSearchParamsSchema.Loose | undefined`
 
-     The search parameters to be sent with the request. If provided, it will have preference over the default search
-     parameters of the fetch instance.
+     The search parameters to be sent with the request. If provided, it will have preference over the default search parameters of the fetch instance.
 
    - **duplex**: `'half' | undefined`
 
-     The duplex mode for the request. If set to `'half'`, the request body will be streamed. See
-     [Request streaming](/docs/zimic-fetch/guides/4-bodies.md#request-streaming) for more details.
+     The duplex mode for the request. If set to `'half'`, the request body will be streamed. See [Request streaming](/docs/zimic-fetch/guides/4-bodies.md#request-streaming) for more details.
 
-See our [authentication guide](/docs/zimic-fetch/guides/5-authentication.md#handling-errors) for an example of how to
-use `fetch.loose`.
+See our [authentication guide](/docs/zimic-fetch/guides/5-authentication.md#handling-errors) for an example of how to use `fetch.loose`.
 
 ## `fetch.Request`
 
-A constructor for creating a [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md) instance, which inherits from
-the native [Request](https://developer.mozilla.org/docs/Web/API/Request) and receives the same arguments as `fetch`.
+A constructor for creating a [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md) instance, which inherits from the native [Request](https://developer.mozilla.org/docs/Web/API/Request) and receives the same arguments as `fetch`.
 
 ```ts
 new fetch.Request(input);
@@ -371,17 +343,11 @@ new fetch.Request(input, init);
 
 1. **input**: `string | URL | FetchRequest`
 
-   The resource to fetch, either a path, a URL, or another [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md)
-   request. If a path is provided, it is automatically prefixed with the base URL of the fetch instance when the request
-   is sent. If a URL or a request is provided, it is used as is.
+   The resource to fetch, either a path, a URL, or another [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md) request. If a path is provided, it is automatically prefixed with the base URL of the fetch instance when the request is sent. If a URL or a request is provided, it is used as is.
 
 2. **init**: `FetchRequestInit | undefined`
 
-   The options to use for the request. If a path or a URL is provided as the first argument, this argument is required
-   and should contain at least the method of the request. If the first argument is a
-   [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md), this argument is optional. The options inherit from the
-   native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) interface, with the following
-   additional properties:
+   The options to use for the request. If a path or a URL is provided as the first argument, this argument is required and should contain at least the method of the request. If the first argument is a [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md), this argument is optional. The options inherit from the native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) interface, with the following additional properties:
    - **method**: `string`
 
      The HTTP method to use for the request.
@@ -392,13 +358,11 @@ new fetch.Request(input, init);
 
    - **searchParams**: `HttpSearchParamsSchema.Loose | undefined`
 
-     The search parameters to be sent with the request. If provided, it will have preference over the default search
-     parameters of the fetch instance.
+     The search parameters to be sent with the request. If provided, it will have preference over the default search parameters of the fetch instance.
 
    - **duplex**: `'half' | undefined`
 
-     The duplex mode for the request. If set to `'half'`, the request body will be streamed. See
-     [Request streaming](/docs/zimic-fetch/guides/4-bodies.md#request-streaming) for more details.
+     The duplex mode for the request. If set to `'half'`, the request body will be streamed. See [Request streaming](/docs/zimic-fetch/guides/4-bodies.md#request-streaming) for more details.
 
 **Related**:
 
@@ -406,9 +370,7 @@ new fetch.Request(input, init);
 
 ## `fetch.isRequest`
 
-A type guard that checks if a request is a [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md), was created by
-the fetch instance, and has a specific method and path. This is useful to narrow down the type of a request before using
-it.
+A type guard that checks if a request is a [`FetchRequest`](/docs/zimic-fetch/api/3-fetch-request.md), was created by the fetch instance, and has a specific method and path. This is useful to narrow down the type of a request before using it.
 
 ```ts
 fetch.isRequest(request, method, path);
@@ -477,9 +439,7 @@ if (fetch.isRequest(request, 'POST', '/users')) {
 
 ## `fetch.isResponse`
 
-A type guard that checks if a response is a [`FetchResponse`](/docs/zimic-fetch/api/4-fetch-response.md), was received
-by the fetch instance, and has a specific method and path. This is useful to narrow down the type of a response before
-using it.
+A type guard that checks if a response is a [`FetchResponse`](/docs/zimic-fetch/api/4-fetch-response.md), was received by the fetch instance, and has a specific method and path. This is useful to narrow down the type of a response before using it.
 
 ```ts
 fetch.isResponse(response, method, path);
@@ -546,9 +506,7 @@ if (fetch.isResponse(response, 'GET', '/users')) {
 
 ## `fetch.isResponseError`
 
-A type guard that checks if an error is a [`FetchResponseError`](/docs/zimic-fetch/api/4-fetch-response.md) related to a
-[`FetchResponse`](/docs/zimic-fetch/api/4-fetch-response.md) received by the fetch instance with a specific method and
-path. This is useful to narrow down the type of an error before handling it.
+A type guard that checks if an error is a [`FetchResponseError`](/docs/zimic-fetch/api/4-fetch-response.md) related to a [`FetchResponse`](/docs/zimic-fetch/api/4-fetch-response.md) received by the fetch instance with a specific method and path. This is useful to narrow down the type of an error before handling it.
 
 ```ts
 fetch.isResponseError(error, method, path);
@@ -570,8 +528,7 @@ fetch.isResponseError(error, method, path);
 
 **Returns**: `boolean`
 
-`true` if the error is a response error received by the fetch instance and has the specified method and path; `false`
-otherwise.
+`true` if the error is a response error received by the fetch instance and has the specified method and path; `false` otherwise.
 
 ```ts
 import { HttpSchema } from '@zimic/http';

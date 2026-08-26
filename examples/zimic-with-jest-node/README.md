@@ -2,8 +2,7 @@
   Zimic + Jest + Node.js
 </h1>
 
-This example uses Zimic with [Jest](https://jestjs.io) in a server-side environment. [Node.js](https://nodejs.org) is
-used in this example, but other runtimes should be similar, such as [Deno](https://deno.com) and [Bun](https://bun.sh).
+This example uses Zimic with [Jest](https://jestjs.io) in a server-side environment. [Node.js](https://nodejs.org) is used in this example, but other runtimes should be similar, such as [Deno](https://deno.com) and [Bun](https://bun.sh).
 
 - [Testing](#testing)
   - [`@zimic/interceptor`](#zimicinterceptor)
@@ -16,8 +15,7 @@ used in this example, but other runtimes should be similar, such as [Deno](https
 
 ## Testing
 
-`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked
-with `@zimic/interceptor`.
+`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked with `@zimic/interceptor`.
 
 ### `@zimic/interceptor`
 
@@ -31,8 +29,7 @@ with `@zimic/interceptor`.
 
 > [!IMPORTANT]
 >
-> The flag `--experimental-vm-modules`, present in the command `test` in the [`package.json`](./package.json), is
-> required by Jest because Zimic uses dynamic imports internally.
+> The flag `--experimental-vm-modules`, present in the command `test` in the [`package.json`](./package.json), is required by Jest because Zimic uses dynamic imports internally.
 
 ## Try it
 
@@ -73,8 +70,7 @@ rm -rf ../zimic-tmp
 
 > [!TIP]
 >
-> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as
-> `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
+> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
 
 ## Running
 

@@ -21,10 +21,7 @@ export type HttpHeadersSchemaTuple<Schema extends HttpHeadersSchema.Loose = Http
 
 /** An initialization value for {@link https://zimic.dev/docs/http/api/http-headers `HttpHeaders`}. */
 export type HttpHeadersInit<Schema extends HttpHeadersSchema.Loose = HttpHeadersSchema.Loose> =
-  | Headers
-  | Schema
-  | HttpHeaders<Schema>
-  | HttpHeadersSchemaTuple<Schema>[];
+  Headers | Schema | HttpHeaders<Schema> | HttpHeadersSchemaTuple<Schema>[];
 
 /**
  * Extracts the names of the headers defined in a {@link HttpHeadersSchema}. Each key is considered a header name.

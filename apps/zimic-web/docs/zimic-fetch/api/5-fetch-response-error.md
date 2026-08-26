@@ -98,9 +98,7 @@ error.toObject(options);
 
 **Returns**: `FetchResponseErrorObject`
 
-A plain object representing this error. If `options.includeRequestBody` or `options.includeResponseBody` is `true`, the
-body of the request and response will be included, respectively, and the return is a `Promise`. Otherwise, the return is
-the plain object itself without the bodies.
+A plain object representing this error. If `options.includeRequestBody` or `options.includeResponseBody` is `true`, the body of the request and response will be included, respectively, and the return is a `Promise`. Otherwise, the return is the plain object itself without the bodies.
 
 ```ts
 const fetch = createFetch<Schema>({
@@ -127,18 +125,11 @@ if (!response.ok) {
 }
 ```
 
-If included, the bodies are parsed automatically as in
-[`request.toObject()`](/docs/zimic-fetch/api/3-fetch-request.md#requesttoobject) and
-[`response.toObject()`](/docs/zimic-fetch/api/4-fetch-response.md#responsetoobject).
+If included, the bodies are parsed automatically as in [`request.toObject()`](/docs/zimic-fetch/api/3-fetch-request.md#requesttoobject) and [`response.toObject()`](/docs/zimic-fetch/api/4-fetch-response.md#responsetoobject).
 
 :::tip NOTE: <span>Already used bodies</span>
 
-If the body of the request or response has already been used (e.g., read with
-[`response.json()`](https://developer.mozilla.org/docs/Web/API/Response/json)), it will not be included in the plain
-object, even if `options.includeRequestBody` or `options.includeResponseBody` is `true`. See
-[`request.toObject()`](/docs/zimic-fetch/api/3-fetch-request.md#requesttoobject) and
-[`response.toObject()`](/docs/zimic-fetch/api/4-fetch-response.md#responsetoobject) for more details on this behavior
-and alternative implementations.
+If the body of the request or response has already been used (e.g., read with [`response.json()`](https://developer.mozilla.org/docs/Web/API/Response/json)), it will not be included in the plain object, even if `options.includeRequestBody` or `options.includeResponseBody` is `true`. See [`request.toObject()`](/docs/zimic-fetch/api/3-fetch-request.md#requesttoobject) and [`response.toObject()`](/docs/zimic-fetch/api/4-fetch-response.md#responsetoobject) for more details on this behavior and alternative implementations.
 
 :::
 

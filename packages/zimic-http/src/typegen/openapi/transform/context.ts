@@ -14,11 +14,7 @@ export interface TypePathFilters {
 }
 
 type HttpTypeImportName =
-  | 'HttpSchema'
-  | 'HttpFormData'
-  | 'HttpSearchParams'
-  | 'HttpStatusCode'
-  | 'MergeHttpResponsesByStatusCode';
+  'HttpSchema' | 'HttpFormData' | 'HttpSearchParams' | 'HttpStatusCode' | 'MergeHttpResponsesByStatusCode';
 
 type OperationName = string;
 export type OperationPath = OperationName;

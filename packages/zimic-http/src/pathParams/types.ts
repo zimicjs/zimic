@@ -47,10 +47,8 @@ export type HttpPathParamsSerialized<Type> = [Type] extends [never]
     ? Type
     : Type extends object
       ? {
-          [Key in keyof Type as IfNever<
-            PrimitiveHttpPathParamsSerialized<Type[Key]>,
-            never,
-            Key
-          >]: PrimitiveHttpPathParamsSerialized<Type[Key]>;
+          [
+            Key in keyof Type as IfNever<PrimitiveHttpPathParamsSerialized<Type[Key]>, never, Key>
+          ]: PrimitiveHttpPathParamsSerialized<Type[Key]>;
         }
       : never;
