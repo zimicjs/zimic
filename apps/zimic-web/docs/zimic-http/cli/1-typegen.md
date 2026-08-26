@@ -6,8 +6,7 @@ slug: /http/cli/typegen
 
 # `zimic-http typegen`
 
-`zimic-http typegen` contains commands to generate types from schema sources. This is useful to save development time,
-avoid errors and keep your types consistent with specifications, such as [OpenAPI](https://swagger.io/specification).
+`zimic-http typegen` contains commands to generate types from schema sources. This is useful to save development time, avoid errors and keep your types consistent with specifications, such as [OpenAPI](https://swagger.io/specification).
 
 ```
 zimic-http typegen
@@ -84,14 +83,11 @@ zimic-http typegen openapi https://example.com/api/openapi.yaml \
   --service-name MyService
 ```
 
-Our [OpenAPI typegen example](https://github.com/zimicjs/zimic/tree/main/examples/zimic-with-openapi-typegen#readme)
-demonstrates how to use `zimic-http typegen openapi` to generate types and use them in your application and
-interceptors.
+Our [OpenAPI typegen example](https://github.com/zimicjs/zimic/tree/main/examples/zimic-with-openapi-typegen#readme) demonstrates how to use `zimic-http typegen openapi` to generate types and use them in your application and interceptors.
 
 ### OpenAPI comments
 
-By default, descriptions in the OpenAPI schema are included as comments in the generated types. You can omit them using
-`--no-comments` or `--comments false`.
+By default, descriptions in the OpenAPI schema are included as comments in the generated types. You can omit them using `--no-comments` or `--comments false`.
 
 ```bash
 zimic-http typegen openapi ./schema.yaml \
@@ -102,8 +98,7 @@ zimic-http typegen openapi ./schema.yaml \
 
 ### OpenAPI pruning
 
-By default, pruning is enabled, meaning that unused types are not generated. If you want all types declared in the
-schema to be generated, use `--no-prune` or `--prune false`.
+By default, pruning is enabled, meaning that unused types are not generated. If you want all types declared in the schema to be generated, use `--no-prune` or `--prune false`.
 
 ```bash
 zimic-http typegen openapi ./schema.yaml \
@@ -114,8 +109,7 @@ zimic-http typegen openapi ./schema.yaml \
 
 ### OpenAPI filtering
 
-You can also filter a subset of paths to generate types for. Combined with [pruning](#openapi-pruning), this is useful
-to reduce the size of the output file and only generate the types you need.
+You can also filter a subset of paths to generate types for. Combined with [pruning](#openapi-pruning), this is useful to reduce the size of the output file and only generate the types you need.
 
 ```bash
 zimic-http typegen openapi ./schema.yaml \
@@ -124,8 +118,7 @@ zimic-http typegen openapi ./schema.yaml \
   --filter 'GET /users**'
 ```
 
-When many filters are used, a filter file can be provided, where each line represents a filter expression and comments
-are marked with `#`:
+When many filters are used, a filter file can be provided, where each line represents a filter expression and comments are marked with `#`:
 
 ```txt title='filters.txt'
 # Include any endpoint starting with /users and having any HTTP method

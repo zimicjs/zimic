@@ -42,6 +42,7 @@ async function startInterceptorServer({
     }
 
     const exitCode = exitEvent ? PROCESS_EXIT_CODE_BY_EXIT_EVENT[exitEvent] : undefined;
+
     if (exitCode !== undefined) {
       process.exit(exitCode);
     }
@@ -63,18 +64,6 @@ async function startInterceptorServer({
   logger.info(
     `${ephemeral ? 'Ephemeral s' : 'S'}erver is running on ${color.yellow(`${server.hostname}:${server.port}`)}`,
   );
-
-  const isDangerouslyUnprotected = !tokensDirectory && process.env.NODE_ENV === 'production';
-
-  if (isDangerouslyUnprotected) {
-    logger.warn(
-      [
-        `Attention: this interceptor server is ${color.bold(color.red('unprotected'))}. Do not expose it publicly without authentication.`,
-        '',
-        'Learn more: https://zimic.dev/docs/interceptor/guides/http/remote-interceptors#interceptor-server-authentication',
-      ].join('\n'),
-    );
-  }
 
   if (onReady) {
     try {

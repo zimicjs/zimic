@@ -2,8 +2,7 @@
   Zimic + Vitest + Browser Mode
 </h1>
 
-This example uses Zimic with [Vitest](https://vitest.dev) with [Browser Mode](https://vitest.dev/guide/browser) enabled.
-It uses [Playwright](https://playwright.dev) as the browser provider for Vitest.
+This example uses Zimic with [Vitest](https://vitest.dev) with [Browser Mode](https://vitest.dev/guide/browser) enabled. It uses [Playwright](https://playwright.dev) as the browser provider for Vitest.
 
 - [Application](#application)
   - [`@zimic/interceptor`](#zimicinterceptor)
@@ -16,12 +15,9 @@ It uses [Playwright](https://playwright.dev) as the browser provider for Vitest.
 
 ## Application
 
-A `postinstall` script in [`package.json`](./package.json) is used to install Playwright's browsers and initialize
-Zimic's mock service worker to the `./public` directory. The mock service worker at `./public/mockServiceWorker.js` is
-ignored in the [`.gitignore`](./.gitignore) file.
+A `postinstall` script in [`package.json`](./package.json) is used to install Playwright's browsers and initialize Zimic's mock service worker to the `./public` directory. The mock service worker at `./public/mockServiceWorker.js` is ignored in the [`.gitignore`](./.gitignore) file.
 
-`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked
-with `@zimic/interceptor`.
+`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked with `@zimic/interceptor`.
 
 ### `@zimic/interceptor`
 
@@ -72,8 +68,7 @@ rm -rf ../zimic-tmp
 
 > [!TIP]
 >
-> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as
-> `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
+> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
 
 ## Running
 

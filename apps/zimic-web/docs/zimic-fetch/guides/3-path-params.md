@@ -6,16 +6,11 @@ slug: /fetch/guides/path-params
 
 # Using path params
 
-Path parameters are a way to include dynamic values in the URL path of a request. They are typically used to identify a
-resource being accessed or modified. For example, in the URL `/users/:userId`, `:userId` represents a path parameter
-that can be replaced with a specific user identifier when making a request.
+Path parameters are a way to include dynamic values in the URL path of a request. They are typically used to identify a resource being accessed or modified. For example, in the URL `/users/:userId`, `:userId` represents a path parameter that can be replaced with a specific user identifier when making a request.
 
 ## Using request path params
 
-Path params are automatically inferred from the paths in your [schema](/docs/zimic-http/guides/1-schemas.md). To define
-a path param, prefix it with a colon (`:`) in the path string. See
-[Declaring paths](/docs/zimic-http/guides/1-schemas.md#declaring-paths) for more details on how to declare required,
-optional, and repeating path params.
+Path params are automatically inferred from the paths in your [schema](/docs/zimic-http/guides/1-schemas.md). To define a path param, prefix it with a colon (`:`) in the path string. See [Declaring paths](/docs/zimic-http/guides/1-schemas.md#declaring-paths) for more details on how to declare required, optional, and repeating path params.
 
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';

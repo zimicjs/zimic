@@ -8,6 +8,14 @@
   "bracketSpacing": true,
   "arrowParens": "always",
   "endOfLine": "lf",
-  "proseWrap": "always",
-  "plugins": ["prettier-plugin-sh", "prettier-plugin-jsdoc", "prettier-plugin-tailwindcss"]
+  "proseWrap": "never",
+  "plugins": ["prettier-plugin-sh", "prettier-plugin-jsdoc", "prettier-plugin-tailwindcss"],
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx", "*.mts", "*.cts"],
+      "options": {
+        "proseWrap": "always"
+      }
+    }
+  ]
 }
