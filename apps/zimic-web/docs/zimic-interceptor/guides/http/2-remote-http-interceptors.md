@@ -116,9 +116,15 @@ zimic-interceptor server start --port 3000 --ephemeral -- npm run test
 
 The command after `--` will be executed when the server is ready. The flag `--ephemeral` indicates that the server should automatically stop after the command `npm run test` finishes.
 
+:::info NOTE: <span>Interceptor servers in development and testing</span>
+
+Interceptor servers are development and test tools. Do not use them as production application servers.
+
+:::
+
 :::info IMPORTANT: <span>Interceptor server authentication</span>
 
-If you are exposing the server publicly, consider [enabling authentication](#interceptor-server-authentication) in the interceptor server.
+Although authentication is optional for private development servers, we strongly recommend [enabling it](#interceptor-server-authentication) when the server is not bound to `localhost`, `127.0.0.1`, or `::1`, or when it is shared over a network. Authentication prevents unauthorized remote interceptors from connecting to the server.
 
 :::
 
@@ -230,7 +236,13 @@ console.log(handler.requests[0].body); // null
 
 ## Interceptor server authentication
 
-Interceptor servers can be configured to require interceptor authentication. This is **strongly recommended** if you are exposing the server **publicly**. Without authentication, the server is unprotected and any interceptor can connect to it and override the responses of any request.
+While authentication is optional for private development servers, we strongly recommend enabling authentication when the server is not bound to one of those loopback hostnames or is shared over a network. Authentication prevents unauthorized remote interceptors from connecting to the server.
+
+Without authentication, browser remote interceptors can connect only when both the interceptor server and the web application use a loopback hostname: `localhost`, `127.0.0.1`, or `::1`. Configure authentication if either one uses another hostname. This restriction does not apply to remote interceptors running outside a browser.
+
+Starting an unauthenticated server through the CLI or [`createInterceptorServer`](/docs/zimic-interceptor/api/4-create-interceptor-server.md) logs a warning when the server uses a non-loopback hostname or runs with `NODE_ENV=production`. The warning does not stop the server in v1.
+
+In `@zimic/interceptor` v2, unauthenticated servers will refuse to start on non-loopback hostnames.
 
 To create an interceptor authentication token, use the [`zimic-interceptor server token create`](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-token-create) CLI:
 
@@ -239,7 +251,7 @@ zimic-interceptor server token create \
   --name <token-name>
 ```
 
-Then, start the server using the `--tokens-dir` option pointing to the directory where the tokens are saved. The server will only accept remote interceptors bearing a valid token.
+Then, start the server using the `--tokens-dir` option pointing to the directory where the tokens are saved. The server will only accept remote interceptors bearing a valid token, regardless of where they run.
 
 ```bash
 zimic-interceptor server start --port 3000 \

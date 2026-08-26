@@ -50,15 +50,26 @@ Options:
   -t, --tokens-dir              The directory where the authorized interceptor
                                 authentication tokens are saved. If provided,
                                 only remote interceptors bearing a valid token
-                                will be accepted. This option is essential if
-                                you are exposing your interceptor server
-                                publicly. For local development and testing,
-                                though, `--tokens-dir` is optional.     [string]
+                                will be accepted. While authentication is
+                                optional for private development servers, it is
+                                strongly recommended when the server is not
+                                bound to localhost, 127.0.0.1, or ::1, or when
+                                it is shared over a network.            [string]
 ```
+
+:::info NOTE: <span>Interceptor servers in development and testing</span>
+
+Interceptor servers are development and test tools. Do not use them as production application servers.
+
+:::
 
 :::info IMPORTANT: <span>Interceptor server authentication</span>
 
-If you are exposing the server publicly, consider [enabling authentication](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#interceptor-server-authentication) in the interceptor server.
+Although `--tokens-dir` is optional for private development servers, we strongly recommend setting `--tokens-dir` when the server is not bound to `localhost`, `127.0.0.1`, or `::1`, or when it is shared over a network. Authentication prevents unauthorized remote interceptors from connecting to the server. Use [`server token create`](#zimic-interceptor-server-token-create) to protect your interceptor server with a token, then configure each remote interceptor with [`auth.token`](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#interceptor-server-authentication).
+
+Without `--tokens-dir`, browser remote interceptors can connect only when both the server and the web application use a loopback hostname. Starting an unauthenticated server logs a warning when it uses a non-loopback hostname or runs with `NODE_ENV=production`. See [interceptor server authentication](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#interceptor-server-authentication) for details.
+
+In `@zimic/interceptor` v2, an unauthenticated server will refuse to start on a non-loopback hostname.
 
 :::
 
