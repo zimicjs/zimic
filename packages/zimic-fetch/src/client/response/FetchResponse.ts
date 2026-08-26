@@ -122,8 +122,7 @@ function createFetchResponseClass() {
   >(
     fetchRequest: FetchRequest<Schema, Method, Path>,
     responseOrBody?:
-      | Response
-      | FetchResponseBodySchema<Default<Default<Default<Schema[Path][Method]>['response']>[StatusCode]>>,
+      Response | FetchResponseBodySchema<Default<Default<Default<Schema[Path][Method]>['response']>[StatusCode]>>,
     init?: FetchResponseInit<Schema, Method, Path, ErrorOnly, Redirect, StatusCode>,
   ): FetchResponse<Schema, Method, Path, ErrorOnly, Redirect, StatusCode> {
     const response =

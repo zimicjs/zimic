@@ -2,9 +2,7 @@
   Zimic + OpenAPI typegen
 </h1>
 
-This example uses Zimic and the `zimic-http typegen` CLI to generate types from the GitHub API.
-[Node.js](https://nodejs.org) and [Vitest](https://vitest.dev) are used in this example, but other frameworks and
-runtimes should be similar, such as [Deno](https://deno.com), [Bun](https://bun.sh), and [Jest](https://jestjs.io).
+This example uses Zimic and the `zimic-http typegen` CLI to generate types from the GitHub API. [Node.js](https://nodejs.org) and [Vitest](https://vitest.dev) are used in this example, but other frameworks and runtimes should be similar, such as [Deno](https://deno.com), [Bun](https://bun.sh), and [Jest](https://jestjs.io).
 
 - [Application](#application)
 - [Testing](#testing)
@@ -18,10 +16,7 @@ runtimes should be similar, such as [Deno](https://deno.com), [Bun](https://bun.
 
 ## Application
 
-`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose types are generated
-automatically from
-[their official OpenAPI documentation](https://github.com/github/rest-api-description/tree/main/descriptions-next/api.github.com).
-A `typegen:github` script is declared in [`package.json`](./package.json) and can be used as follows:
+`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose types are generated automatically from [their official OpenAPI documentation](https://github.com/github/rest-api-description/tree/main/descriptions-next/api.github.com). A `typegen:github` script is declared in [`package.json`](./package.json) and can be used as follows:
 
 ```bash
 pnpm typegen:github
@@ -32,13 +27,11 @@ pnpm typegen:github
 
 > [!TIP]
 >
-> Typegen filters are useful to select only a subset of the available endpoints. The GitHub's API is large and we only
-> need to generate the types used by this project.
+> Typegen filters are useful to select only a subset of the available endpoints. The GitHub's API is large and we only need to generate the types used by this project.
 >
 > Learn more: https://zimic.dev/docs/http/cli/typegen#openapi-filtering
 
-`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked
-with `@zimic/interceptor`.
+`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked with `@zimic/interceptor`.
 
 ## Testing
 
@@ -93,8 +86,7 @@ rm -rf ../zimic-tmp
 
 > [!TIP]
 >
-> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as
-> `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
+> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
 
 ## Running
 

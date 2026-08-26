@@ -6,10 +6,7 @@ slug: /fetch/api/create-fetch
 
 # `createFetch`
 
-Creates a [`fetch`](/docs/zimic-fetch/api/2-fetch.md) instance typed with an HTTP schema, mostly compatible with the
-native [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). All requests and responses are typed by
-default with a [schema](/docs/zimic-http/guides/1-schemas.md), including methods, paths, status codes, arguments, and
-bodies.
+Creates a [`fetch`](/docs/zimic-fetch/api/2-fetch.md) instance typed with an HTTP schema, mostly compatible with the native [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). All requests and responses are typed by default with a [schema](/docs/zimic-http/guides/1-schemas.md), including methods, paths, status codes, arguments, and bodies.
 
 ```ts
 createFetch<Schema>(options);
@@ -19,9 +16,7 @@ createFetch<Schema>(options);
 
 1. **options**: `FetchOptions`
 
-   The options to create a [fetch instance](/docs/zimic-fetch/api/2-fetch.md) and use as defaults. They inherit from the
-   native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) interface, with the following
-   additional properties:
+   The options to create a [fetch instance](/docs/zimic-fetch/api/2-fetch.md) and use as defaults. They inherit from the native [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) interface, with the following additional properties:
    - **baseURL**: `string`
 
      The base URL for the fetch instance, which will be prepended to all request URLs.
@@ -40,8 +35,7 @@ createFetch<Schema>(options);
 
    - **duplex**: `'half' | undefined`
 
-     The duplex mode for the fetch instance. If set to `'half'`, request bodies will be streamed. See
-     [Request streaming](/docs/zimic-fetch/guides/4-bodies.md#request-streaming) for more details.
+     The duplex mode for the fetch instance. If set to `'half'`, request bodies will be streamed. See [Request streaming](/docs/zimic-fetch/guides/4-bodies.md#request-streaming) for more details.
 
 **Type arguments**:
 

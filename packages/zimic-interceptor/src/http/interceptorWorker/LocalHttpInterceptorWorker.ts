@@ -252,8 +252,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   async createResponseFromDeclaration(
     request: HttpRequest,
     declaration:
-      | { status: number; headers?: HttpHeadersInit; body?: HttpBody }
-      | { action: UnhandledRequestStrategy.Action },
+      { status: number; headers?: HttpHeadersInit; body?: HttpBody } | { action: UnhandledRequestStrategy.Action },
   ) {
     const requestClone = request.clone();
     const response = await super.createResponseFromDeclaration(request, declaration);

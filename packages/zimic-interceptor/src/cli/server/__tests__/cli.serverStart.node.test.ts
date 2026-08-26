@@ -57,10 +57,11 @@ describe('CLI > Server start', () => {
     '  -t, --tokens-dir              The directory where the authorized interceptor',
     '                                authentication tokens are saved. If provided,',
     '                                only remote interceptors bearing a valid token',
-    '                                will be accepted. This option is essential if',
-    '                                you are exposing your interceptor server',
-    '                                publicly. For local development and testing,',
-    '                                though, `--tokens-dir` is optional.     [string]',
+    '                                will be accepted. While authentication is',
+    '                                optional for private development servers, it is',
+    '                                strongly recommended when the server is not',
+    '                                bound to localhost, 127.0.0.1, or ::1, or when',
+    '                                it is shared over a network.            [string]',
   ].join('\n');
 
   function watchExitEventListeners(exitEvent: (typeof PROCESS_EXIT_EVENTS)[number]) {
