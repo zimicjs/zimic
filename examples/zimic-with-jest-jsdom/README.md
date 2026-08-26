@@ -15,8 +15,7 @@ This example uses Zimic with [Jest](https://jestjs.io) and [JSDOM](https://githu
 
 ## Testing
 
-`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked
-with `@zimic/interceptor`.
+`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked with `@zimic/interceptor`.
 
 ### `@zimic/interceptor`
 
@@ -32,18 +31,15 @@ with `@zimic/interceptor`.
 
 > [!IMPORTANT]
 >
-> The flag `--experimental-vm-modules`, present in the command `test` in the [`package.json`](./package.json), is
-> required by Jest because `@zimic/interceptor` uses dynamic imports internally.
+> The flag `--experimental-vm-modules`, present in the command `test` in the [`package.json`](./package.json), is required by Jest because `@zimic/interceptor` uses dynamic imports internally.
 
 > [!IMPORTANT]
 >
-> This custom environment is necessary to expose the Global Fetch API resources, such as `fetch`, to the test context.
-> [JSDOM currently does not expose them](https://github.com/jsdom/jsdom/issues/1724).
+> This custom environment is necessary to expose the Global Fetch API resources, such as `fetch`, to the test context. [JSDOM currently does not expose them](https://github.com/jsdom/jsdom/issues/1724).
 
 > [!IMPORTANT]
 >
-> JSDOM runs on Node.js, but uses browser imports when present. Therefore, this resolver is necessary to remove the
-> [browser condition of MSW-related imports](https://github.com/mswjs/msw/issues/1786) to prevent test runtime errors."
+> JSDOM runs on Node.js, but uses browser imports when present. Therefore, this resolver is necessary to remove the [browser condition of MSW-related imports](https://github.com/mswjs/msw/issues/1786) to prevent test runtime errors."
 
 ## Try it
 
@@ -84,8 +80,7 @@ rm -rf ../zimic-tmp
 
 > [!TIP]
 >
-> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as
-> `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
+> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
 
 ## Running
 

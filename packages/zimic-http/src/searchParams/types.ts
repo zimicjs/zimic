@@ -20,11 +20,7 @@ export type HttpSearchParamsSchemaTuple<Schema extends HttpSearchParamsSchema.Lo
 
 /** An initialization value for {@link https://zimic.dev/docs/http/api/http-search-params `HttpSearchParams`}. */
 export type HttpSearchParamsInit<Schema extends HttpSearchParamsSchema.Loose = HttpSearchParamsSchema.Loose> =
-  | string
-  | URLSearchParams
-  | Schema
-  | HttpSearchParams<Schema>
-  | HttpSearchParamsSchemaTuple<Schema>[];
+  string | URLSearchParams | Schema | HttpSearchParams<Schema> | HttpSearchParamsSchemaTuple<Schema>[];
 
 export namespace HttpSearchParamsSchemaName {
   /** Extracts the names of the search params defined in a {@link HttpSearchParamsSchema} that are arrays. */
@@ -115,10 +111,8 @@ export type HttpSearchParamsSerialized<Type> = [Type] extends [never]
     ? Type
     : Type extends object
       ? {
-          [Key in keyof Type as IfNever<
-            PrimitiveHttpSearchParamsSerialized<Type[Key]>,
-            never,
-            Key
-          >]: PrimitiveHttpSearchParamsSerialized<Type[Key]>;
+          [
+            Key in keyof Type as IfNever<PrimitiveHttpSearchParamsSerialized<Type[Key]>, never, Key>
+          ]: PrimitiveHttpSearchParamsSerialized<Type[Key]>;
         }
       : never;

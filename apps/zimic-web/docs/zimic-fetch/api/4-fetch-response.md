@@ -6,12 +6,9 @@ slug: /fetch/api/fetch-response
 
 # `FetchResponse`
 
-A class representing a typed fetch response, which inherits from the native
-[Response](https://developer.mozilla.org/docs/Web/API/Response).
+A class representing a typed fetch response, which inherits from the native [Response](https://developer.mozilla.org/docs/Web/API/Response).
 
-On top of the properties available in native responses, `FetchResponse` instances have a reference to the originating
-request, accessible via the `request` property. If the response has a failure status code (4XX or 5XX), an error is
-available in the `error` property.
+On top of the properties available in native responses, `FetchResponse` instances have a reference to the originating request, accessible via the `request` property. If the response has a failure status code (4XX or 5XX), an error is available in the `error` property.
 
 ## `constructor()`
 
@@ -44,8 +41,7 @@ new FetchResponse<Schema, Method, Path, ErrorOnly, Redirect>(request, body, init
 
 2. **Method**: `string`
 
-   The HTTP method of the request that caused the response. Must be one of the methods of the path defined in the
-   schema.
+   The HTTP method of the request that caused the response. Must be one of the methods of the path defined in the schema.
 
 3. **Path**: `string`
 
@@ -53,17 +49,13 @@ new FetchResponse<Schema, Method, Path, ErrorOnly, Redirect>(request, body, init
 
 4. **ErrorOnly**: `boolean`
 
-   If `true`, the response will only include the status codes that are considered errors (4XX or 5XX). This type
-   argument is deprecated and will be removed in @zimic/fetch@2.
+   If `true`, the response will only include the status codes that are considered errors (4XX or 5XX). This type argument is deprecated and will be removed in @zimic/fetch@2.
 
 5. **Redirect**: `RequestRedirect`
 
-   The redirect mode for the request, which can be one of `'follow'`, `'error'`, or `'manual'`. Defaults to `'follow'`.
-   If `follow` or `error`, the response will not include status codes that are considered redirects (300, 301, 302, 303,
-   307, and 308).
+   The redirect mode for the request, which can be one of `'follow'`, `'error'`, or `'manual'`. Defaults to `'follow'`. If `follow` or `error`, the response will not include status codes that are considered redirects (300, 301, 302, 303, 307, and 308).
 
-An alternative constructor receives a native `Response` object instead of a body and init. This is useful when you
-already have a response and want to convert it into a `FetchResponse` instance.
+An alternative constructor receives a native `Response` object instead of a body and init. This is useful when you already have a response and want to convert it into a `FetchResponse` instance.
 
 ```ts
 new FetchResponse<Schema, Method, Path, ErrorOnly, Redirect>(request, response);
@@ -144,10 +136,7 @@ console.log(response.request); // FetchRequest<Schema, 'POST', '/users'>
 
 ## `response.error`
 
-An [error](/docs/zimic-fetch/api/5-fetch-response-error.md) associated with the response, if you need to throw it to be
-handled elsewhere. `response.error` is always available, even if the response has a `2XX` or `3XX` status code. Some
-noncompliant APIs may return failure responses with status codes other than `4XX` or `5XX`, or may have different
-meanings for certain status codes, so your application can handle those cases as response errors as needed.
+An [error](/docs/zimic-fetch/api/5-fetch-response-error.md) associated with the response, if you need to throw it to be handled elsewhere. `response.error` is always available, even if the response has a `2XX` or `3XX` status code. Some noncompliant APIs may return failure responses with status codes other than `4XX` or `5XX`, or may have different meanings for certain status codes, so your application can handle those cases as response errors as needed.
 
 **Type**: `FetchResponseError<Schema, Method, Path>`
 
@@ -183,8 +172,7 @@ response.toObject(options);
 
 **Returns**: `FetchResponseObject`
 
-A plain object representing this response. If `options.includeBody` is `true`, the body will be included and the return
-is a `Promise`. Otherwise, the return is the plain object itself without the body.
+A plain object representing this response. If `options.includeBody` is `true`, the body will be included and the return is a `Promise`. Otherwise, the return is the plain object itself without the body.
 
 ```ts
 const response = await fetch('/users', {
@@ -223,12 +211,9 @@ If included, the body is parsed automatically based on the `content-type` header
 
 :::tip NOTE: <span>Already used body</span>
 
-If the body of the response has already been used (e.g., read with
-[`response.json()`](https://developer.mozilla.org/docs/Web/API/Response/json)), it will not be included in the plain
-object, even if `options.includeBody` is `true`. This will be flagged with a warning in the console.
+If the body of the response has already been used (e.g., read with [`response.json()`](https://developer.mozilla.org/docs/Web/API/Response/json)), it will not be included in the plain object, even if `options.includeBody` is `true`. This will be flagged with a warning in the console.
 
-If you access the body before calling `response.toObject()`, consider reading it from a cloned response with
-[`response.clone()`](https://developer.mozilla.org/docs/Web/API/Response/clone).
+If you access the body before calling `response.toObject()`, consider reading it from a cloned response with [`response.clone()`](https://developer.mozilla.org/docs/Web/API/Response/clone).
 
 ```ts
 const response = await fetch('/users', {
@@ -246,8 +231,7 @@ const responseObject = await response.toObject({ includeBody: true });
 console.log(responseObject);
 ```
 
-Alternatively, you can disable the warning by including the body conditionally based on
-[`response.bodyUsed`](https://developer.mozilla.org/docs/Web/API/Response/bodyUsed).
+Alternatively, you can disable the warning by including the body conditionally based on [`response.bodyUsed`](https://developer.mozilla.org/docs/Web/API/Response/bodyUsed).
 
 ```ts
 // Include the body only if available:

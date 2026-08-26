@@ -6,9 +6,7 @@ slug: /http/api/typegen
 
 # Typegen
 
-`@zimic/http/typegen` exports resources to generate types programmatically. We recommend using the
-[`zimic-http typegen` CLI](/docs/zimic-http/cli/1-typegen.md), but this is still a valid alternative for more advanced
-use cases.
+`@zimic/http/typegen` exports resources to generate types programmatically. We recommend using the [`zimic-http typegen` CLI](/docs/zimic-http/cli/1-typegen.md), but this is still a valid alternative for more advanced use cases.
 
 **Related**:
 
@@ -44,28 +42,19 @@ await generateTypesFromOpenAPI(options);
 
    5. **prune**: `boolean | undefined` (default: `true`)
 
-      Whether to remove unused operations and components from the generated types. This is useful for reducing the size
-      of the output file.
+      Whether to remove unused operations and components from the generated types. This is useful for reducing the size of the output file.
 
    6. **filters**: `string[] | undefined`
 
-      One or more expressions filtering which endpoints to include. Filters must follow the format `<method> <path>`,
-      where:
+      One or more expressions filtering which endpoints to include. Filters must follow the format `<method> <path>`, where:
       - `<method>`: one HTTP method, a list of HTTP methods separated by commas, or `*` to match any HTTP method;
-      - `<path>`: a literal path or a glob. `*` matches zero or more characters in a segment (except `/`), while `**`
-        matches zero or more characters across segments (may include `/`). For example, `GET /users` matches a single
-        method and path, while `* /users` matches any method to the `/users` path; `GET /users*` matches any `GET`
-        request whose path starts with `/users`, and `GET /users/**/*` matches any `GET` request to any sub-path of
-        `/users`.
+      - `<path>`: a literal path or a glob. `*` matches zero or more characters in a segment (except `/`), while `**` matches zero or more characters across segments (may include `/`). For example, `GET /users` matches a single method and path, while `* /users` matches any method to the `/users` path; `GET /users*` matches any `GET` request whose path starts with `/users`, and `GET /users/**/*` matches any `GET` request to any sub-path of `/users`.
 
-      Negative filters can be created by prefixing the expression with `!`. For example, `!GET /users` will exclude
-      paths matching `GET /users`.
+      Negative filters can be created by prefixing the expression with `!`. For example, `!GET /users` will exclude paths matching `GET /users`.
 
    7. **filterFile**: `string | undefined`
 
-      A path to a file containing filter expressions. One expression is expected per line and the format is the same as
-      used in a `--filter` option. Comments are prefixed with `#`. A filter file can be used alongside additional
-      `--filter` expressions.
+      A path to a file containing filter expressions. One expression is expected per line and the format is the same as used in a `--filter` option. Comments are prefixed with `#`. A filter file can be used alongside additional `--filter` expressions.
 
 ```ts
 import { generateTypesFromOpenAPI } from '@zimic/http/typegen';

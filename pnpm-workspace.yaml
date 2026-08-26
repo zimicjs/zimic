@@ -20,11 +20,19 @@ overrides:
   '@babel/core@7': ^7.29.7
   '@babel/plugin-transform-modules-systemjs@7': ^7.29.4
 
+  body-parser@1: ^1.20.6
+
+  brace-expansion@1: ^5.0.8
+  brace-expansion@2: ^5.0.8
+  brace-expansion@3: ^5.0.8
+  brace-expansion@4: ^5.0.8
+  brace-expansion@5: ^5.0.8
+
   dompurify@3: ^3.4.11
 
   esbuild@0: ^0.28.1
 
-  fast-uri@3: ^3.1.2
+  fast-uri@3: ^3.1.4
 
   form-data@4: ^4.0.6
 
@@ -46,14 +54,14 @@ overrides:
   minimatch@5: ^5.1.7
   minimatch@9: ^9.0.6
 
-  postcss@8: ^8.5.13
+  postcss@8: ^8.5.18
 
   http-proxy-middleware@2: ^3.0.7
   http-proxy-middleware@3: ^3.0.7
 
   joi@17: ^17.13.4
 
-  js-yaml@4: ^4.2.0
+  js-yaml@4: ^4.3.0
 
   launch-editor@2: ^2.14.1
 
@@ -62,7 +70,9 @@ overrides:
 
   shell-quote@1: ^1.8.4
 
-  svgo@3: ^3.3.3
+  sharp@0: ^0.35.0
+
+  svgo@3: ^3.3.4
 
   undici@7: ^7.28.0
 
@@ -73,12 +83,12 @@ overrides:
 
   vite@7: ^7.3.5
 
-  webpack-dev-server@5: ^5.2.5
+  webpack-dev-server@5: ^5.2.6
   webpack@5: ^5.104.1
 
   yaml@2: ^2.8.3
 
-  websocket-driver: ^0.7.5
+  websocket-driver@0: ^0.7.5
 
 allowBuilds:
   '@swc/core': true

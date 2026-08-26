@@ -6,34 +6,19 @@ slug: /fetch/guides/errors
 
 # Handling errors
 
-`@zimic/fetch` fully types the requests and responses based on your [schema](/docs/zimic-http/guides/1-schemas.md). If a
-response fails with a status code in the `4XX` or `5XX` ranges, the
-[`response.ok`](https://developer.mozilla.org/docs/Web/API/Response/ok) property will be `false`.
+`@zimic/fetch` fully types the requests and responses based on your [schema](/docs/zimic-http/guides/1-schemas.md). If a response fails with a status code in the `4XX` or `5XX` ranges, the [`response.ok`](https://developer.mozilla.org/docs/Web/API/Response/ok) property will be `false`.
 
 ## Handling response errors
 
-To handle response errors, check the `response.status` or the `response.ok` properties to determine if the request was
-successful or not. In case you need to handle a response as an error higher up in the call stack, you can throw the
-[`response.error`](/docs/zimic-fetch/api/4-fetch-response.md#responseerror) property. `response.error` is always
-available, even if the response has a `2XX` or `3XX` status code. Some noncompliant APIs may return failure responses
-with status codes other than `4XX` or `5XX`, or may have different meanings for certain status codes, so your
-application can handle those cases as response errors as needed.
+To handle response errors, check the `response.status` or the `response.ok` properties to determine if the request was successful or not. In case you need to handle a response as an error higher up in the call stack, you can throw the [`response.error`](/docs/zimic-fetch/api/4-fetch-response.md#responseerror) property. `response.error` is always available, even if the response has a `2XX` or `3XX` status code. Some noncompliant APIs may return failure responses with status codes other than `4XX` or `5XX`, or may have different meanings for certain status codes, so your application can handle those cases as response errors as needed.
 
 :::important IMPORTANT: <span>Handling network errors</span>
 
-Some network errors, such as DNS resolution failures, CORS errors, or request timeouts, may not return a valid HTTP
-response. In these cases, `@zimic/fetch` will throw a native
-[`TypeError`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/TypeError) instead of resolving
-with a response, which is the default behavior of the [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API).
-Make sure to handle these errors as necessary in your application.
+Some network errors, such as DNS resolution failures, CORS errors, or request timeouts, may not return a valid HTTP response. In these cases, `@zimic/fetch` will throw a native [`TypeError`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/TypeError) instead of resolving with a response, which is the default behavior of the [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). Make sure to handle these errors as necessary in your application.
 
 :::
 
-The [`onResponse`](/docs/zimic-fetch/api/2-fetch.md#fetchonresponse) listener can be a good strategy if you want to
-handle errors transparently. The listener can automatically retry the request without bubbling the error up to the
-caller. This is useful for recoverable errors, such as
-[expired tokens](/docs/zimic-fetch/guides/5-authentication.md#handling-errors), network errors, or temporarily
-unavailable services. You can also use it to [log errors](#logging-response-errors).
+The [`onResponse`](/docs/zimic-fetch/api/2-fetch.md#fetchonresponse) listener can be a good strategy if you want to handle errors transparently. The listener can automatically retry the request without bubbling the error up to the caller. This is useful for recoverable errors, such as [expired tokens](/docs/zimic-fetch/guides/5-authentication.md#handling-errors), network errors, or temporarily unavailable services. You can also use it to [log errors](#logging-response-errors).
 
 As an example, consider the following schema:
 
@@ -66,8 +51,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-A GET request to `/users/:userId` may be successful with a `200` status code, or it may fail with a `401`, `403`, `404`,
-`500`, or `503`. After receiving the response, we can check the status code and handle errors accordingly.
+A GET request to `/users/:userId` may be successful with a `200` status code, or it may fail with a `401`, `403`, `404`, `500`, or `503`. After receiving the response, we can check the status code and handle errors accordingly.
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -105,9 +89,7 @@ async function fetchUser(userId: string) {
 
 :::tip TIP: <span>Throwing unknown errors</span>
 
-Depending on your application, checking the `response.ok` and `response.status` properties can be a good practice to
-handle errors. A common strategy is to first check status codes that require specific logic, if any, and throwing
-`response.error` for all other errors to be handled elsewhere.
+Depending on your application, checking the `response.ok` and `response.status` properties can be a good practice to handle errors. A common strategy is to first check status codes that require specific logic, if any, and throwing `response.error` for all other errors to be handled elsewhere.
 
 ```ts
 if (response.status === 401) {
@@ -138,8 +120,7 @@ if (!response.ok) {
 
 ## Logging response errors
 
-[`response.error.toObject()`](/docs/zimic-fetch/api/5-fetch-response-error.md#errortoobject) returns a plain object
-representation of the error, making it easier to log, inspect, and debug.
+[`response.error.toObject()`](/docs/zimic-fetch/api/5-fetch-response-error.md#errortoobject) returns a plain object representation of the error, making it easier to log, inspect, and debug.
 
 ```ts
 import { FetchResponseError } from '@zimic/fetch';
@@ -150,8 +131,7 @@ if (error instanceof FetchResponseError) {
 }
 ```
 
-Request and response bodies are not included by default in the result of `toObject()`. If you want to see them, use
-`includeRequestBody` and `includeResponseBody`. Note that the result will be a `Promise` that needs to be awaited.
+Request and response bodies are not included by default in the result of `toObject()`. If you want to see them, use `includeRequestBody` and `includeResponseBody`. Note that the result will be a `Promise` that needs to be awaited.
 
 ```ts
 import { FetchResponseError } from '@zimic/fetch';
@@ -169,19 +149,13 @@ if (error instanceof FetchResponseError) {
 
 #### Logging response errors with `pino`
 
-If you are using [`pino`](https://www.npmjs.com/package/pino), a custom serializer may be useful to automatically call
-[`response.error.toObject()`](/docs/zimic-fetch/api/5-fetch-response-error.md#errortoobject).
+If you are using [`pino`](https://www.npmjs.com/package/pino), a custom serializer may be useful to automatically call [`response.error.toObject()`](/docs/zimic-fetch/api/5-fetch-response-error.md#errortoobject).
 
-In the following example, we create a `logger.errorAsync` method to include the request and response bodies, if
-available, as structured data in the log output. The default `logger.error` method can still be used to log errors
-without the bodies.
+In the following example, we create a `logger.errorAsync` method to include the request and response bodies, if available, as structured data in the log output. The default `logger.error` method can still be used to log errors without the bodies.
 
 :::tip NOTE: <span>Redacting sensitive information</span>
 
-Logging response errors can be useful for debugging purposes, but be careful to avoid including sensitive information,
-such as authentication tokens, personally identifiable information, or any other confidential data. See Pino's
-[redaction guide](https://getpino.io/#/docs/redaction) for more information on how to redact sensitive data from your
-logs.
+Logging response errors can be useful for debugging purposes, but be careful to avoid including sensitive information, such as authentication tokens, personally identifiable information, or any other confidential data. See Pino's [redaction guide](https://getpino.io/#/docs/redaction) for more information on how to redact sensitive data from your logs.
 
 :::
 

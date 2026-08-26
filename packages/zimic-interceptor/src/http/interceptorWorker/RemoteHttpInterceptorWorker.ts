@@ -171,8 +171,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   async createResponseFromDeclaration(
     request: HttpRequest,
     declaration:
-      | { status: number; headers?: HttpHeadersInit; body?: HttpBody }
-      | { action: UnhandledRequestStrategy.Action },
+      { status: number; headers?: HttpHeadersInit; body?: HttpBody } | { action: UnhandledRequestStrategy.Action },
   ) {
     const response = await super.createResponseFromDeclaration(request, declaration);
 

@@ -6,8 +6,7 @@ slug: /http/api/http-search-params
 
 # `HttpSearchParams`
 
-An extended HTTP search params object with a strictly-typed schema. Fully compatible with the built-in
-[`URLSearchParams`](https://developer.mozilla.org/docs/Web/API/URLSearchParams) class.
+An extended HTTP search params object with a strictly-typed schema. Fully compatible with the built-in [`URLSearchParams`](https://developer.mozilla.org/docs/Web/API/URLSearchParams) class.
 
 ```ts
 import { HttpSearchParams } from '@zimic/http';
@@ -40,15 +39,13 @@ new HttpSearchParams<Schema>(init);
 
 1.  **init**: `HttpSearchParamsInit | undefined`
 
-    A URL search params string, a plain object, another search params instance, or an array of tuples with (name, value)
-    pairs to initialize the search params with. If not provided, the created search params will be empty.
+    A URL search params string, a plain object, another search params instance, or an array of tuples with (name, value) pairs to initialize the search params with. If not provided, the created search params will be empty.
 
 **Type arguments**:
 
 1. **Schema**: `HttpSearchParamsSchema.Loose`
 
-   An object type whose keys are the search param names and values are the expected types of those params. This schema
-   is used to enforce type safety when using the search params instance.
+   An object type whose keys are the search param names and values are the expected types of those params. This schema is used to enforce type safety when using the search params instance.
 
 ## `searchParams.set()`
 
@@ -96,8 +93,7 @@ searchParams.append(name, value);
 
 ## `searchParams.get()`
 
-Retrieves the value of a given search parameter. If the value of the key is an array in the schema, use
-[`searchParams.getAll()`](#searchparamsgetall) instead.
+Retrieves the value of a given search parameter. If the value of the key is an array in the schema, use [`searchParams.getAll()`](#searchparamsgetall) instead.
 
 ```ts
 searchParams.get(name);
@@ -119,8 +115,7 @@ The value of the search parameter, or `null` if it does not exist.
 
 ## `searchParams.getAll()`
 
-Retrieves all values of a given search parameter. If the value of the key is not an array in the schema, use
-[`searchParams.get()`](#searchparamsget) instead.
+Retrieves all values of a given search parameter. If the value of the key is not an array in the schema, use [`searchParams.get()`](#searchparamsget) instead.
 
 ```ts
 searchParams.getAll(name);
@@ -257,8 +252,7 @@ An iterator over all search parameter (`name`, `value`) pairs.
 
 ## `searchParams.equals()`
 
-Compares an `HttpSearchParams` instance with another to check if they are equal. Equality is defined as having the same
-keys and values, regardless of the order of the keys.
+Compares an `HttpSearchParams` instance with another to check if they are equal. Equality is defined as having the same keys and values, regardless of the order of the keys.
 
 ```ts
 searchParams.equals(otherSearchParams);
@@ -294,9 +288,7 @@ searchParams.contains(otherSearchParams);
 
 ## `searchParams.assign()`
 
-Assigns another `HttpSearchParams` instance to the current instance, similarly to
-[`Object.assign()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object/assign). Only the
-instance where this method is called will be modified.
+Assigns another `HttpSearchParams` instance to the current instance, similarly to [`Object.assign()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object/assign). Only the instance where this method is called will be modified.
 
 ```ts
 searchParams.assign(otherSearchParams);
@@ -322,8 +314,7 @@ console.log(searchParams.get('page')); // '1'
 
 ## `searchParams.toObject()`
 
-Converts the `HttpSearchParams` instance to a plain object. This method is useful for serialization and debugging
-purposes.
+Converts the `HttpSearchParams` instance to a plain object. This method is useful for serialization and debugging purposes.
 
 ```ts
 searchParams.toObject();
@@ -331,9 +322,7 @@ searchParams.toObject();
 
 **Returns**: `Record<string, string | string[]>`
 
-A plain object representation of the search parameters. If a key has multiple values, the object will contain an array
-of values for that key. If the key has only one value, the object will contain its value directly, without an array,
-regardless of how the value was initialized when creating the search params object.
+A plain object representation of the search parameters. If a key has multiple values, the object will contain an array of values for that key. If the key has only one value, the object will contain its value directly, without an array, regardless of how the value was initialized when creating the search params object.
 
 ```ts
 const searchParams = new HttpSearchParams({

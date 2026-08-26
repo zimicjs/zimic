@@ -6,10 +6,7 @@ slug: /fetch/guides/bodies
 
 # Using bodies
 
-[Bodies](https://developer.mozilla.org/docs/Web/HTTP/Guides/Messages#request_body) are used to send data in a request
-and receive data in a response. Request bodies are commonly used to include a payload of data that the server will
-process, whereas response bodies may contain the result returned by the server. A body can contain various types of
-data, such as JSON, XML, and binary data such as images and files.
+[Bodies](https://developer.mozilla.org/docs/Web/HTTP/Guides/Messages#request_body) are used to send data in a request and receive data in a response. Request bodies are commonly used to include a payload of data that the server will process, whereas response bodies may contain the result returned by the server. A body can contain various types of data, such as JSON, XML, and binary data such as images and files.
 
 ## Using request bodies
 
@@ -17,8 +14,7 @@ Request bodies are declared in your [schema](/docs/zimic-http/guides/1-schemas.m
 
 ### JSON request body
 
-JSON bodies are one of the most common ways to send data in requests. To use a JSON body in a request, declare its type
-in your [schema](/docs/zimic-http/guides/1-schemas.md).
+JSON bodies are one of the most common ways to send data in requests. To use a JSON body in a request, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md).
 
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
@@ -43,11 +39,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-Then, use the `body` option to send the data in your fetch request. Note that you should set the `content-type` header
-to `application/json` to indicate that the body is in JSON format, otherwise it may be interpreted as a plain text.
-Also, serialize the body with
-[`JSON.stringify()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify) before
-sending it.
+Then, use the `body` option to send the data in your fetch request. Note that you should set the `content-type` header to `application/json` to indicate that the body is in JSON format, otherwise it may be interpreted as a plain text. Also, serialize the body with [`JSON.stringify()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify) before sending it.
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -67,8 +59,7 @@ const response = await fetch('/users', {
 
 :::tip TIP: <span>`content-type` header inference</span>
 
-`@zimic/http` automatically infers the type of the `content-type` header as `application/json` if the request body is a
-JSON type. You can override this behavior by explicitly setting a different type in your schema.
+`@zimic/http` automatically infers the type of the `content-type` header as `application/json` if the request body is a JSON type. You can override this behavior by explicitly setting a different type in your schema.
 
 ```ts title='schema.ts'
 type Schema = HttpSchema<{
@@ -89,18 +80,15 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-The inference is limited to typing, so you still need to set the header when making requests with JSON bodies. This
-follows behavior of the [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API/Using_Fetch#headers).
+The inference is limited to typing, so you still need to set the header when making requests with JSON bodies. This follows behavior of the [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API/Using_Fetch#headers).
 
 :::
 
 ### `FormData` request body
 
-[`FormData`](https://developer.mozilla.org/docs/Web/API/FormData) is a special type of body to construct a set of
-key-value pairs with variable types of data. A common use case is to upload files to a server.
+[`FormData`](https://developer.mozilla.org/docs/Web/API/FormData) is a special type of body to construct a set of key-value pairs with variable types of data. A common use case is to upload files to a server.
 
-To send a `FormData` body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md). Use the
-[`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md) to indicate that the body is a `FormData` type.
+To send a `FormData` body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md). Use the [`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md) to indicate that the body is a `FormData` type.
 
 ```ts
 import { HttpFormData, HttpSchema } from '@zimic/http';
@@ -126,9 +114,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-After that, create an `HttpFormData` instance and add the data using
-[`set`](https://developer.mozilla.org/docs/Web/API/FormData/set) or
-[`append`](https://developer.mozilla.org/docs/Web/API/FormData/append).
+After that, create an `HttpFormData` instance and add the data using [`set`](https://developer.mozilla.org/docs/Web/API/FormData/set) or [`append`](https://developer.mozilla.org/docs/Web/API/FormData/append).
 
 ```ts
 import { HttpFormData } from '@zimic/http';
@@ -154,8 +140,7 @@ const response = await fetch(`/users/${userId}/avatar`, {
 });
 ```
 
-Depending on your runtime, the `content-type` header may be set automatically when using a `FormData` body. In that
-case, you don't need to set it manually.
+Depending on your runtime, the `content-type` header may be set automatically when using a `FormData` body. In that case, you don't need to set it manually.
 
 ```ts
 const response = await fetch(`/users/${userId}/avatar`, {
@@ -167,10 +152,7 @@ const response = await fetch(`/users/${userId}/avatar`, {
 
 ### Binary request body
 
-Binary bodies are used to send raw binary data in requests. To send a binary body, declare its type in your
-[schema](/docs/zimic-http/guides/1-schemas.md). [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob),
-[`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), and
-[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) are common types for binary data.
+Binary bodies are used to send raw binary data in requests. To send a binary body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md). [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob), [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), and [`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) are common types for binary data.
 
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
@@ -197,10 +179,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-Then, use the `body` option to send the data in your fetch request. Make sure to set the `content-type` header, such as
-`video/mp4`, `image/png`, or `application/octet-stream` for generic binary data. Learn more about
-[MIME types](https://developer.mozilla.org/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types) to use in your
-requests.
+Then, use the `body` option to send the data in your fetch request. Make sure to set the `content-type` header, such as `video/mp4`, `image/png`, or `application/octet-stream` for generic binary data. Learn more about [MIME types](https://developer.mozilla.org/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types) to use in your requests.
 
 ```ts
 import fs from 'fs';
@@ -225,9 +204,7 @@ const response = await fetch('/upload', {
 
 #### Request streaming
 
-When working with large files or chunked data, you can use
-[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) and `duplex: 'half'` to stream the request
-body. This allows you to send data in smaller parts, which can be more efficient and reduce memory usage.
+When working with large files or chunked data, you can use [`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) and `duplex: 'half'` to stream the request body. This allows you to send data in smaller parts, which can be more efficient and reduce memory usage.
 
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
@@ -334,8 +311,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-Then, use the `body` option to send the data in your fetch request. The `HttpSearchParams` type will be automatically
-serialized to a URL-encoded string, and the `content-type` header will be set to `application/x-www-form-urlencoded`.
+Then, use the `body` option to send the data in your fetch request. The `HttpSearchParams` type will be automatically serialized to a URL-encoded string, and the `content-type` header will be set to `application/x-www-form-urlencoded`.
 
 ```ts
 import { HttpSearchParams } from '@zimic/http';
@@ -358,8 +334,7 @@ const response = await fetch('/users', {
 
 ## Using response bodies
 
-Response bodies are declared in your [schema](/docs/zimic-http/guides/1-schemas.md) using the `response.<status>.body`
-property.
+Response bodies are declared in your [schema](/docs/zimic-http/guides/1-schemas.md) using the `response.<status>.body` property.
 
 ### JSON response body
 
@@ -387,8 +362,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-Then, use [`response.json()`](https://developer.mozilla.org/docs/Web/API/Response/json) to parse the response body as
-JSON. The result is automatically typed according to your schema.
+Then, use [`response.json()`](https://developer.mozilla.org/docs/Web/API/Response/json) to parse the response body as JSON. The result is automatically typed according to your schema.
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -407,8 +381,7 @@ const user = await response.json();
 
 ### `FormData` response body
 
-To receive a `FormData` response body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md). Use the
-[`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md) to indicate that the body is a `FormData` type.
+To receive a `FormData` response body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md). Use the [`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md) to indicate that the body is a `FormData` type.
 
 ```ts title='schema.ts'
 import { HttpFormData, HttpSchema } from '@zimic/http';
@@ -433,8 +406,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-Then, use [`response.formData()`](https://developer.mozilla.org/docs/Web/API/Response/formData) to parse the response
-body as `FormData`. The result is automatically typed according to your schema.
+Then, use [`response.formData()`](https://developer.mozilla.org/docs/Web/API/Response/formData) to parse the response body as `FormData`. The result is automatically typed according to your schema.
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -479,9 +451,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-Then, use [`response.blob()`](https://developer.mozilla.org/docs/Web/API/Response/blob) or
-[`response.arrayBuffer()`](https://developer.mozilla.org/docs/Web/API/Response/arrayBuffer) to parse the response body
-as binary data.
+Then, use [`response.blob()`](https://developer.mozilla.org/docs/Web/API/Response/blob) or [`response.arrayBuffer()`](https://developer.mozilla.org/docs/Web/API/Response/arrayBuffer) to parse the response body as binary data.
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -500,9 +470,7 @@ const videoBlob = await response.blob();
 
 #### Response streaming
 
-Similarly to [request streaming](#request-streaming), you can stream the response body using
-[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream). This allows you to receive large files or
-chunked data in smaller parts, which can reduce memory usage and improve performance.
+Similarly to [request streaming](#request-streaming), you can stream the response body using [`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream). This allows you to receive large files or chunked data in smaller parts, which can reduce memory usage and improve performance.
 
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
@@ -561,8 +529,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-Then, use [`response.text()`](https://developer.mozilla.org/docs/Web/API/Response/text) to parse the response body as
-plain text.
+Then, use [`response.text()`](https://developer.mozilla.org/docs/Web/API/Response/text) to parse the response body as plain text.
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -581,8 +548,7 @@ const content = await response.text();
 
 ### URL-encoded response body
 
-To receive a URL-encoded response body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md). Use the
-[`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md) to indicate that the body is a URL-encoded type.
+To receive a URL-encoded response body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md). Use the [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md) to indicate that the body is a URL-encoded type.
 
 ```ts title='schema.ts'
 import { HttpSchema, HttpSearchParams } from '@zimic/http';
@@ -603,8 +569,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-Then, use [`response.formData()`](https://developer.mozilla.org/docs/Web/API/Response/formData) to parse the response
-body as URL-encoded data. The result is automatically typed according to your schema.
+Then, use [`response.formData()`](https://developer.mozilla.org/docs/Web/API/Response/formData) to parse the response body as URL-encoded data. The result is automatically typed according to your schema.
 
 ```ts
 import { createFetch } from '@zimic/fetch';

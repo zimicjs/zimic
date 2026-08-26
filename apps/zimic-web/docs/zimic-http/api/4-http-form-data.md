@@ -6,8 +6,7 @@ slug: /http/api/http-form-data
 
 # `HttpFormData`
 
-An extended HTTP form data object with a strictly-typed schema. Fully compatible with the built-in
-[`FormData`](https://developer.mozilla.org/docs/Web/API/FormData) class.
+An extended HTTP form data object with a strictly-typed schema. Fully compatible with the built-in [`FormData`](https://developer.mozilla.org/docs/Web/API/FormData) class.
 
 ```ts
 import { HttpFormData } from '@zimic/http';
@@ -39,8 +38,7 @@ new HttpFormData<Schema>();
 
 1. **Schema**: `HttpFormDataSchema.Loose`
 
-   An object type whose keys are the form data fields and values are the expected types of those fields. This schema is
-   used to enforce type safety when using the form data instance.
+   An object type whose keys are the form data fields and values are the expected types of those fields. This schema is used to enforce type safety when using the form data instance.
 
 ## `formData.set()`
 
@@ -98,8 +96,7 @@ formData.append(name, value, fileName);
 
 ## `formData.get()`
 
-Retrieves the value of a given form data field. If the value of the key is an array in the schema, use
-[`formData.getAll()`](#formdatagetall) instead.
+Retrieves the value of a given form data field. If the value of the key is an array in the schema, use [`formData.getAll()`](#formdatagetall) instead.
 
 ```ts
 formData.get(name);
@@ -121,8 +118,7 @@ The value of the form data field, or `null` if it does not exist.
 
 ## `formData.getAll()`
 
-Retrieves all values of a given form data field. If the value of the key is not an array in the schema, use
-[`formData.get()`](#formdataget) instead.
+Retrieves all values of a given form data field. If the value of the key is not an array in the schema, use [`formData.get()`](#formdataget) instead.
 
 ```ts
 formData.getAll(name);
@@ -249,8 +245,7 @@ An iterator over all form data (`name`, `value`) pairs.
 
 ## `formData.equals()`
 
-Compares an `HttpFormData` instance with another to check if they are equal. Equality is defined as having the same keys
-and values, regardless of the order of the keys.
+Compares an `HttpFormData` instance with another to check if they are equal. Equality is defined as having the same keys and values, regardless of the order of the keys.
 
 ```ts
 formData.equals(otherFormData);
@@ -286,9 +281,7 @@ formData.contains(otherFormData);
 
 ## `formData.assign()`
 
-Assigns another `HttpFormData` instance to the current instance, similarly to
-[`Object.assign()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object/assign). Only the
-instance where this method is called will be modified.
+Assigns another `HttpFormData` instance to the current instance, similarly to [`Object.assign()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object/assign). Only the instance where this method is called will be modified.
 
 ```ts
 formData.assign(otherFormData);
@@ -325,9 +318,7 @@ formData.toObject();
 
 **Returns**: `Record<string, string | File | (string | File)[]>`
 
-A plain object representation of the form data. If a key has multiple values, the object will contain an array of values
-for that key. If the key has only one value, the object will contain its value directly, without an array, regardless of
-how the value was initialized when creating the form data object.
+A plain object representation of the form data. If a key has multiple values, the object will contain an array of values for that key. If the key has only one value, the object will contain its value directly, without an array, regardless of how the value was initialized when creating the form data object.
 
 ```ts
 const formData = new HttpFormData<{

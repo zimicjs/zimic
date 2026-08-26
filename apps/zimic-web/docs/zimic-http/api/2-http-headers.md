@@ -6,8 +6,7 @@ slug: /http/api/http-headers
 
 # `HttpHeaders`
 
-An extended HTTP headers object with a strictly-typed schema. Fully compatible with the built-in
-[`Headers`](https://developer.mozilla.org/docs/Web/API/Headers) class.
+An extended HTTP headers object with a strictly-typed schema. Fully compatible with the built-in [`Headers`](https://developer.mozilla.org/docs/Web/API/Headers) class.
 
 ```ts
 import { HttpHeaders } from '@zimic/http';
@@ -37,15 +36,13 @@ new HttpHeaders<Schema>(init);
 
 1. **init**: `HttpHeadersInit | undefined`
 
-   A plain object, another headers instance, or an array of tuples with (name, value) pairs to initialize the headers
-   with. If not provided, the created headers will be empty.
+   A plain object, another headers instance, or an array of tuples with (name, value) pairs to initialize the headers with. If not provided, the created headers will be empty.
 
 **Type arguments**:
 
 1. **Schema**: `HttpHeadersSchema.Loose`
 
-   An object type whose keys are the header names and values are the expected types of those headers. This schema is
-   used to enforce type safety when using the headers instance.
+   An object type whose keys are the header names and values are the expected types of those headers. This schema is used to enforce type safety when using the headers instance.
 
 ## `headers.set()`
 
@@ -236,8 +233,7 @@ An iterator over all header (name, value) pairs.
 
 ## `headers.equals()`
 
-Compares an `HttpHeaders` instance with another to check if they are equal. Equality is defined as having the same keys
-and values, regardless of the order of the keys.
+Compares an `HttpHeaders` instance with another to check if they are equal. Equality is defined as having the same keys and values, regardless of the order of the keys.
 
 ```ts
 headers.equals(otherHeaders);
@@ -255,9 +251,7 @@ headers.equals(otherHeaders);
 
 ## `headers.contains()`
 
-Checks if an `HttpHeaders` instance contains all headers from another `HttpHeaders` instance. This method is less strict
-than [headers.equals()](#headersequals) and only requires that the current headers contain all keys and values from the
-other headers.
+Checks if an `HttpHeaders` instance contains all headers from another `HttpHeaders` instance. This method is less strict than [headers.equals()](#headersequals) and only requires that the current headers contain all keys and values from the other headers.
 
 ```ts
 headers.contains(otherHeaders);
@@ -275,9 +269,7 @@ headers.contains(otherHeaders);
 
 ## `headers.assign()`
 
-Assigns another `HttpHeaders` instance to the current instance, similarly to
-[`Object.assign()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object/assign). Only the
-instance where this method is called will be modified.
+Assigns another `HttpHeaders` instance to the current instance, similarly to [`Object.assign()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object/assign). Only the instance where this method is called will be modified.
 
 ```ts
 headers.assign(otherHeaders);

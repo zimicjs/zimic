@@ -4,10 +4,13 @@ import { startHttpServer, stopHttpServer, getHttpServerPort } from '@zimic/utils
 import { createRegexFromPath, excludeNonPathParams } from '@zimic/utils/url';
 import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
+import color from 'picocolors';
 
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
 import { removeArrayIndex } from '@/utils/arrays';
 import { deserializeResponse, SerializedHttpRequest, serializeRequest } from '@/utils/fetch';
+import { isLoopbackHostname } from '@/utils/http';
+import { logger } from '@/utils/logging';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocketEventMessage } from '@/utils/webSocket/types';
 import WebSocketServer, { WebSocketServerAuthenticate } from '@/utils/webSocket/WebSocketServer';
@@ -124,11 +127,58 @@ class InterceptorServer implements PublicInterceptorServer {
     });
 
     this.startWebSocketServer();
+
+    const isDangerouslyUnprotected =
+      !this.tokensDirectory && (process.env.NODE_ENV === 'production' || !isLoopbackHostname(this.hostname));
+
+    if (isDangerouslyUnprotected) {
+      logger.warn(
+        [
+          `Attention: this interceptor server is ${color.bold(
+            color.red('unprotected'),
+          )}. Do not expose it publicly without authentication.`,
+          '',
+          'For your safety, this server will reject remote browser interceptors until authentication is configured.',
+          '',
+          'In @zimic/interceptor v2, interceptor servers running on non-loopback hostnames will require ' +
+            'authentication and refuse to start without a tokens directory.',
+          '',
+          'Learn more: https://zimic.dev/docs/interceptor/guides/http/remote-interceptors#interceptor-server-authentication',
+        ].join('\n'),
+      );
+    }
   }
 
   private authenticateWebSocketConnection: WebSocketServerAuthenticate = async (_socket, request) => {
     if (!this.tokensDirectory) {
-      return { isValid: true };
+      // Requests without an origin header are allowed when the interceptor server is not configured to require token
+      // authentication. They are typically made by non-browser clients.
+      if (request.headers.origin === undefined) {
+        return { isValid: true };
+      }
+
+      try {
+        const originURL = new URL(request.headers.origin);
+        const originHostname = originURL.hostname === '[::1]' ? '::1' : originURL.hostname;
+
+        const originMatchesServerLoopback =
+          originURL.origin === request.headers.origin &&
+          isLoopbackHostname(this.hostname) &&
+          isLoopbackHostname(originHostname);
+
+        if (originMatchesServerLoopback) {
+          return { isValid: true };
+        }
+      } catch (error) {
+        console.error(error);
+      }
+
+      return {
+        isValid: false,
+        message:
+          'Unauthenticated browser connections are only allowed from loopback origins. ' +
+          'Configure token authentication.',
+      };
     }
 
     const tokenValue = this.getWebSocketRequestTokenValue(request);
