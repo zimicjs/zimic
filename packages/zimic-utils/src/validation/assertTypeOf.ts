@@ -1,15 +1,16 @@
 import ValidationError from './ValidationError';
 
-export type TypeOfResult = 'undefined' | 'boolean' | 'number' | 'bigint' | 'string' | 'object';
-
 export interface ExpectedTypeByTypeOfResult {
   undefined: undefined;
   boolean: boolean;
   number: number;
   bigint: bigint;
   string: string;
+  function: (...parameters: never[]) => unknown;
   object: object | null;
 }
+
+export type TypeOfResult = keyof ExpectedTypeByTypeOfResult;
 
 export type AssertedType<
   Value,
