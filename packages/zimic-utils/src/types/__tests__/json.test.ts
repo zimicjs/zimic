@@ -160,6 +160,8 @@ describe('JSON types', () => {
   });
 
   it('should parse JSON-stringified types to their JSON-serialized versions', () => {
+    expectTypeOf(JSON.parse('""')).toBeAny();
+
     expectTypeOf(JSON.parse(JSON.stringify(''))).toEqualTypeOf<string>();
     expectTypeOf(JSON.parse(JSON.stringify(0))).toEqualTypeOf<number>();
     expectTypeOf(JSON.parse(JSON.stringify(true))).toEqualTypeOf<boolean>();
