@@ -10,7 +10,6 @@ describe('assertTypeOf', () => {
     { value: 1, expectedType: 'number' },
     { value: 1n, expectedType: 'bigint' },
     { value: 'value', expectedType: 'string' },
-    { value: Symbol('value'), expectedType: 'symbol' },
     { value: () => undefined, expectedType: 'function' },
     { value: {}, expectedType: 'object' },
     { value: null, expectedType: 'object' },

@@ -1,6 +1,6 @@
 import ValidationError from './ValidationError';
 
-export type TypeOfResult = 'undefined' | 'boolean' | 'number' | 'bigint' | 'string' | 'symbol' | 'function' | 'object';
+export type TypeOfResult = 'undefined' | 'boolean' | 'number' | 'bigint' | 'string' | 'object';
 
 export interface ExpectedTypeByTypeOfResult {
   undefined: undefined;
@@ -8,8 +8,6 @@ export interface ExpectedTypeByTypeOfResult {
   number: number;
   bigint: bigint;
   string: string;
-  symbol: symbol;
-  function: (...parameters: never[]) => unknown;
   object: object | null;
 }
 
