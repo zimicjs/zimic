@@ -73,7 +73,7 @@ describe('assertTypeOf', () => {
     }).toThrow(new ValidationError('Expected field to be string, but got number.'));
   });
 
-  describe('types', () => {
+  describe('Types', () => {
     // The values under test are received as parameters so that TypeScript cannot narrow them from an initializer. A
     // `const value: string | null = 'example'` would already have the flow type `string` before any assertion, making
     // these type assertions vacuous.
