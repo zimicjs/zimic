@@ -86,6 +86,12 @@
       "require": "./dist/url.js",
       "default": "./dist/url.js"
     },
+    "./validation": {
+      "types": "./validation.d.ts",
+      "import": "./dist/validation.mjs",
+      "require": "./dist/validation.js",
+      "default": "./dist/validation.js"
+    },
     "./process": {
       "types": "./process.d.ts",
       "import": "./dist/process.mjs",
