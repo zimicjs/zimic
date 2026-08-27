@@ -16,7 +16,7 @@ import {
 } from './types/requests';
 import { HttpRequestHandlerRestriction } from './types/restrictions';
 
-const UNSYNCED_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Promise<unknown>)[]);
+const PENDING_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Promise<unknown>)[]);
 
 class RemoteHttpRequestHandler<
   Schema extends HttpSchema,
@@ -62,7 +62,7 @@ class RemoteHttpRequestHandler<
   }
 
   private shouldBeHiddenPropertyWhenSynced(property: string | symbol) {
-    return UNSYNCED_PROPERTIES.has(property);
+    return PENDING_PROPERTIES.has(property);
   }
 
   get method() {
@@ -89,9 +89,9 @@ class RemoteHttpRequestHandler<
   respond<NewStatusCode extends HttpStatusCode>(
     declaration: HttpRequestHandlerResponseDeclaration<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ): RemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode> {
-    const newUnsyncedThis = this.pending as unknown as RemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
-    newUnsyncedThis.implementation.respond(declaration);
-    return newUnsyncedThis;
+    const pending = this.pending as unknown as RemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
+    pending.implementation.respond(declaration);
+    return pending;
   }
 
   times(minNumberOfRequests: number, maxNumberOfRequests?: number) {
