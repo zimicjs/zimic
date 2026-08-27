@@ -28,15 +28,11 @@ Positionals:
                                                              [string] [required]
 ```
 
-This command is necessary to use [local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md)
-in a browser environment. It creates a `mockServiceWorker.js` file in the provided public directory, which is used to
-intercept requests and mock responses.
+This command is necessary to use [local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) in a browser environment. It creates a `mockServiceWorker.js` file in the provided public directory, which is used to intercept requests and mock responses.
 
 :::tip TIP: <span>Keeping your service worker up to date</span>
 
-If you are using `@zimic/interceptor` mainly in tests, we recommend adding the `mockServiceWorker.js` to your
-`.gitignore` and adding this command to a `postinstall` scripts in your `package.json`. This ensures that the latest
-service worker script is being used after installing and upgrading `@zimic/interceptor`.
+If you are using `@zimic/interceptor` mainly in tests, we recommend adding the `mockServiceWorker.js` to your `.gitignore` and adding this command to a `postinstall` scripts in your `package.json`. This ensures that the latest service worker script is being used after installing and upgrading `@zimic/interceptor`.
 
 ```json title='package.json'
 {

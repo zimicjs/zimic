@@ -15,8 +15,7 @@ This example uses Zimic with [Vitest](https://vitest.dev), and [JSDOM](https://g
 
 ## Testing
 
-`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked
-with `@zimic/interceptor`.
+`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked with `@zimic/interceptor`.
 
 ### `@zimic/interceptor`
 
@@ -67,8 +66,7 @@ rm -rf ../zimic-tmp
 
 > [!TIP]
 >
-> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as
-> `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
+> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
 
 ## Running
 

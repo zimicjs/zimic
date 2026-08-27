@@ -9,20 +9,13 @@ import TabItem from '@theme/TabItem';
 
 # `HttpRequestHandler`
 
-An HTTP request handler to declare responses for intercepted requests. When multiple handlers of the same interceptor
-match the same method and path, the _last_ handler created with
-[`interceptor.<method>(path)`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#declaring-request-handlers) will be
-used.
+An HTTP request handler to declare responses for intercepted requests. When multiple handlers of the same interceptor match the same method and path, the _last_ handler created with [`interceptor.<method>(path)`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#declaring-request-handlers) will be used.
 
 :::tip TIP: <span>Awaiting remote `HttpRequestHandler` operations</span>
 
-If you are using a remote interceptor, make sure to `await` the handler before making requests. This is because many
-remote handler operations are asynchronous and require communication with the
-[interceptor server](/docs/zimic-interceptor/cli/1-server.md).
+If you are using a remote interceptor, make sure to `await` the handler before making requests. This is because many remote handler operations are asynchronous and require communication with the [interceptor server](/docs/zimic-interceptor/cli/1-server.md).
 
-If you don't await the handler, your declarations may not be committed to the server before the requests are made,
-leading to non-deterministic behavior. A single `await` is enough, even if you are making multiple declarations, as
-`HttpRequestHandler` automatically batches all changes.
+If you don't await the handler, your declarations may not be committed to the server before the requests are made, leading to non-deterministic behavior. A single `await` is enough, even if you are making multiple declarations, as `HttpRequestHandler` automatically batches all changes.
 
 ```ts
 // Instead of awaiting each operation separately:
@@ -41,8 +34,7 @@ const handler = await interceptor
   .times(1);
 ```
 
-When using a local interceptor, you can safely skip awaiting the handler, as all operations are synchronous and
-immediate.
+When using a local interceptor, you can safely skip awaiting the handler, as all operations are synchronous and immediate.
 
 :::
 
@@ -54,21 +46,15 @@ The method that matches this handler.
 
 ## `handler.path`
 
-The path that matches this handler. The base URL of the interceptor is not included, but it is used when matching
-requests.
+The path that matches this handler. The base URL of the interceptor is not included, but it is used when matching requests.
 
 **Type**: `string` (readonly)
 
 ## `handler.with()`
 
-Declares a restriction to intercepted request matches. `headers`, `searchParams`, and `body` are supported to limit
-which requests will match the handler and receive the mock response. If multiple restrictions are declared, either in a
-single object or with multiple calls to `handler.with()`, all of them must be met, essentially creating an AND
-condition.
+Declares a restriction to intercepted request matches. `headers`, `searchParams`, and `body` are supported to limit which requests will match the handler and receive the mock response. If multiple restrictions are declared, either in a single object or with multiple calls to `handler.with()`, all of them must be met, essentially creating an AND condition.
 
-By default, restrictions use `exact: false`, meaning that any request **containing** the declared restrictions will
-match the handler, regardless of having more properties or values. If you want to match only requests with the exact
-values declared, use `exact: true`.
+By default, restrictions use `exact: false`, meaning that any request **containing** the declared restrictions will match the handler, regardless of having more properties or values. If you want to match only requests with the exact values declared, use `exact: true`.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -94,32 +80,24 @@ await handler.with((request) => matchesRequest);
 
 1. **restriction**: `HttpRequestHandlerRestriction<Schema, Method, Path>`
 
-   The restriction to match intercepted requests. It can be
-   [static](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#static-restrictions), defined as an object
-   with the following properties:
+   The restriction to match intercepted requests. It can be [static](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#static-restrictions), defined as an object with the following properties:
    - **headers**: `HttpRequestHandlerHeadersStaticRestriction<Schema, Method, Path> | undefined`
 
-     A set of headers that the intercepted request must contain to match the handler. If exact is `true`, the request
-     must contain exactly these headers and no others.
+     A set of headers that the intercepted request must contain to match the handler. If exact is `true`, the request must contain exactly these headers and no others.
 
    - **searchParams**: `HttpRequestHandlerSearchParamsStaticRestriction<Schema, Method, Path> | undefined`
 
-     A set of search params that the intercepted request must contain to match the handler. If exact is `true`, the
-     request must contain exactly these search params and no others.
+     A set of search params that the intercepted request must contain to match the handler. If exact is `true`, the request must contain exactly these search params and no others.
 
    - **body**: `HttpRequestHandlerBodyStaticRestriction<Schema, Method, Path> | undefined`
 
-     The body that the intercepted request must contain to match the handler. If exact is `true`, the request must
-     contain exactly this body and no other.
+     The body that the intercepted request must contain to match the handler. If exact is `true`, the request must contain exactly this body and no other.
 
    - **exact**: `boolean | undefined` (default: `false`)
 
-     If `true`, the request must contain **exactly** the headers, search params, and body declared in this restriction.
-     Otherwise, the request must contain **at least** them.
+     If `true`, the request must contain **exactly** the headers, search params, and body declared in this restriction. Otherwise, the request must contain **at least** them.
 
-   Restrictions can also be
-   [computed](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#computed-restrictions), declared as a
-   function to dynamically decide how to check the request:
+   Restrictions can also be [computed](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#computed-restrictions), declared as a function to dynamically decide how to check the request:
 
    **Arguments**:
    1. **request**: `HttpInterceptorRequest<Path, MethodSchema>`
@@ -134,9 +112,7 @@ await handler.with((request) => matchesRequest);
 
 The same handler, now considering the specified restriction.
 
-If the interceptor is local, the restriction is immediately applied to the handler. If the interceptor is remote, the
-restriction is asynchronously sent to the [interceptor server](/docs/zimic-interceptor/cli/1-server.md). Because of the
-asynchronous nature of remote interceptors, make sure to await the handler before making requests.
+If the interceptor is local, the restriction is immediately applied to the handler. If the interceptor is remote, the restriction is asynchronously sent to the [interceptor server](/docs/zimic-interceptor/cli/1-server.md). Because of the asynchronous nature of remote interceptors, make sure to await the handler before making requests.
 
 **Related**:
 
@@ -144,8 +120,7 @@ asynchronous nature of remote interceptors, make sure to await the handler befor
 
 ## `handler.delay()`
 
-Declares a delay to wait before responding to requests. This is useful for simulating network latency, server processing
-time, or testing loading states in your application, for example.
+Declares a delay to wait before responding to requests. This is useful for simulating network latency, server processing time, or testing loading states in your application, for example.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -179,9 +154,7 @@ await handler.delay((request) => milliseconds);
 
 2. **maxMilliseconds** (optional): `number`
 
-   If two arguments are provided, the first is considered the minimum delay and the second the maximum delay, both in
-   milliseconds. Each response will have a random delay within this range, calculated using
-   [`Math.random()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Math/random).
+   If two arguments are provided, the first is considered the minimum delay and the second the maximum delay, both in milliseconds. Each response will have a random delay within this range, calculated using [`Math.random()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Math/random).
 
 **Returns**: `HttpRequestHandler<Method, Path, StatusCode>`
 
@@ -195,8 +168,7 @@ The same handler, now including the configured delay.
 
 Declares a response to return for matched intercepted requests.
 
-When the handler matches a request, it will respond with the given declaration. The response type is statically
-validated against the schema of the interceptor.
+When the handler matches a request, it will respond with the given declaration. The response type is statically validated against the schema of the interceptor.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -220,8 +192,7 @@ await handler.respond((request) => declaration);
 
 **Arguments**:
 
-1. **declaration**:
-   `HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode> | HttpRequestHandlerResponseDeclarationFactory<MethodSchema, StatusCode>`
+1. **declaration**: `HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode> | HttpRequestHandlerResponseDeclarationFactory<MethodSchema, StatusCode>`
 
    The response declaration or a factory to create it.
 
@@ -238,13 +209,10 @@ await handler.respond((request) => declaration);
 
      The body to include in the response.
 
-   If you need to bypass or reject the request instead of responding with a mock response, you can use the special
-   `action` property:
+   If you need to bypass or reject the request instead of responding with a mock response, you can use the special `action` property:
    - **action** (optional): `'bypass' | 'reject'`
 
-     If set to `'bypass'`, the request will be sent to the actual server instead of being mocked. On the other hand,
-     setting it to `'reject'` will make the request fail with a network error. This behavior is similar to
-     [unhandled request actions](/docs/zimic-interceptor/guides/http/9-unhandled-requests.md).
+     If set to `'bypass'`, the request will be sent to the actual server instead of being mocked. On the other hand, setting it to `'reject'` will make the request fail with a network error. This behavior is similar to [unhandled request actions](/docs/zimic-interceptor/guides/http/9-unhandled-requests.md).
 
      `reject` is supported by both local and remote interceptors. However, only local interceptors can bypass requests.
 
@@ -255,28 +223,21 @@ await handler.respond((request) => declaration);
 
       The intercepted request to respond to.
 
-   **Returns**:
-   `Promise<HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>> | HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>`
+   **Returns**: `Promise<HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>> | HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>`
 
 **Returns**: `HttpRequestHandler<Method, Path, StatusCode>`
 
 The same handler, now including type information about the response declaration.
 
-If the interceptor is local, the response declaration is immediately applied to the handler. If the interceptor is
-remote, the declaration is asynchronously sent to the [interceptor server](/docs/zimic-interceptor/cli/1-server.md).
-Because of the asynchronous nature of remote interceptors, make sure to await the handler before making requests.
+If the interceptor is local, the response declaration is immediately applied to the handler. If the interceptor is remote, the declaration is asynchronously sent to the [interceptor server](/docs/zimic-interceptor/cli/1-server.md). Because of the asynchronous nature of remote interceptors, make sure to await the handler before making requests.
 
 ## `handler.times()`
 
 Declares a number of intercepted requests that the handler will be able to match and return its response.
 
-If only one argument is provided, the handler will match exactly that number of requests. In case of two arguments, the
-handler will consider an inclusive range, matching at least the minimum (first argument) and at most the maximum (second
-argument) number of requests.
+If only one argument is provided, the handler will match exactly that number of requests. In case of two arguments, the handler will consider an inclusive range, matching at least the minimum (first argument) and at most the maximum (second argument) number of requests.
 
-Once the handler receives more requests than the maximum number declared, it will stop matching requests and returning
-its response. In this case, Zimic will try other handlers until one eligible is found; otherwise the request will be
-either bypassed or rejected.
+Once the handler receives more requests than the maximum number declared, it will stop matching requests and returning its response. In this case, Zimic will try other handlers until one eligible is found; otherwise the request will be either bypassed or rejected.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -302,8 +263,7 @@ await handler.times(minNumberOfRequests, maxNumberOfRequests);
 
 1. **numberOfRequests**: `number`
 
-   If only one argument is provided, this is the exact number of requests to match. If two arguments are provided, this
-   is considered a minimum.
+   If only one argument is provided, this is the exact number of requests to match. If two arguments are provided, this is considered a minimum.
 
 2. **maxNumberOfRequests**: `number | undefined`
 
@@ -315,11 +275,7 @@ The same handler, now considering the specified number of requests.
 
 :::info IMPORTANT: <span>Checking the number of requests</span>
 
-To make sure that all expected requests were made, use
-[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes) or
-[`handler.checkTimes()`](#handlerchecktimes).
-[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes) is generally
-preferred, as it checks all handlers created by the interceptor with a single call.
+To make sure that all expected requests were made, use [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes) or [`handler.checkTimes()`](#handlerchecktimes). [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes) is generally preferred, as it checks all handlers created by the interceptor with a single call.
 
 :::
 
@@ -331,17 +287,11 @@ preferred, as it checks all handlers created by the interceptor with a single ca
 
 Checks if the handler has matched the expected number of requests declared with [`handler.times()`](#handlertimes).
 
-If the handler has matched fewer or more requests than expected, this method will throw a `TimesCheckError` error
-pointing to the [`handler.times()` API reference](#handlertimes) that was not satisfied.
+If the handler has matched fewer or more requests than expected, this method will throw a `TimesCheckError` error pointing to the [`handler.times()` API reference](#handlertimes) that was not satisfied.
 
-This is useful at the end of a test to ensure that all expected requests were made. If you are calling
-[`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes) after each test,
-you can skip this call, as it will be called automatically for all handlers created by the interceptor.
+This is useful at the end of a test to ensure that all expected requests were made. If you are calling [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes) after each test, you can skip this call, as it will be called automatically for all handlers created by the interceptor.
 
-When [`requestSaving.enabled`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorrequestsaving) is `true` in
-your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the expected and
-received data. This is useful for debugging requests that did not match a handler with
-[`handler.with` restrictions](#handlerwith).
+When [`requestSaving.enabled`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorrequestsaving) is `true` in your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the expected and received data. This is useful for debugging requests that did not match a handler with [`handler.with` restrictions](#handlerwith).
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -367,10 +317,7 @@ await handler.checkTimes();
 
 ## `handler.clear()`
 
-Clears any response declared with [`handler.respond()`](#handlerrespond), restrictions declared with
-[`handler.with()`](#handlerwith), and intercepted requests, making the handler stop matching requests. The next handler,
-created before this one, that matches the same method and path will be used if present. If not, the requests of the
-method and path will not be intercepted.
+Clears any response declared with [`handler.respond()`](#handlerrespond), restrictions declared with [`handler.with()`](#handlerwith), and intercepted requests, making the handler stop matching requests. The next handler, created before this one, that matches the same method and path will be used if present. If not, the requests of the method and path will not be intercepted.
 
 To make the handler match requests again, register a new response with [`handler.respond()`](#handlerrespond).
 
@@ -398,17 +345,12 @@ The same handler, now cleared of any response, restrictions, and intercepted req
 
 ## `handler.requests`
 
-The intercepted requests that matched this handler, along with the responses returned to each of them. This is useful to
-allow additional validation in tests, if you are not using
-[declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) or you need more advanced
-checks.
+The intercepted requests that matched this handler, along with the responses returned to each of them. This is useful to allow additional validation in tests, if you are not using [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) or you need more advanced checks.
 
 **Type**: `InterceptedHttpInterceptorRequest<Path, MethodSchema, StatusCode>[]`
 
 :::info IMPORTANT: <span>`handler.requests` requires request saving to be enabled</span>
 
-This method can only be used if
-[`requestSaving.enabled`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorrequestsaving) is `true` in the
-interceptor.
+This method can only be used if [`requestSaving.enabled`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorrequestsaving) is `true` in the interceptor.
 
 :::

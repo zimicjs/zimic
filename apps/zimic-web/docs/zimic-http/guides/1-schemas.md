@@ -6,16 +6,11 @@ slug: /http/guides/schemas
 
 # Declaring schemas
 
-A central part of `@zimic/http` is an HTTP schema, which is a TypeScript type describing the structure of an API. The
-schema serves as a centralized source of truth about paths, parameters, and returns of the service, and can be used to
-automatically type your requests and responses with [`@zimic/fetch`](/docs/zimic-fetch/1-index.md) and
-[`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md).
+A central part of `@zimic/http` is an HTTP schema, which is a TypeScript type describing the structure of an API. The schema serves as a centralized source of truth about paths, parameters, and returns of the service, and can be used to automatically type your requests and responses with [`@zimic/fetch`](/docs/zimic-fetch/1-index.md) and [`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md).
 
 :::tip TIP: <span>OpenAPI Typegen</span>
 
-For APIs with an [OpenAPI documentation](https://www.openapis.org) (e.g. [Swagger](https://swagger.io)), the
-[`zimic-http typegen` CLI](/docs/zimic-http/guides/2-typegen.mdx) can automatically infer the types and generate the
-schema for you. This is a great way to keep your schema up to date and save time on manual type definitions.
+For APIs with an [OpenAPI documentation](https://www.openapis.org) (e.g. [Swagger](https://swagger.io)), the [`zimic-http typegen` CLI](/docs/zimic-http/guides/2-typegen.mdx) can automatically infer the types and generate the schema for you. This is a great way to keep your schema up to date and save time on manual type definitions.
 
 :::
 
@@ -85,24 +80,17 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-This example contains three endpoints, `POST /users`, `GET /users`, and `GET /users/:id`, each with their own request
-and response types. `GET /users` and `GET /users/:userId` require authentication via the `authorization` header.
-`POST /users` receive a body with some data, while `GET /users` accepts search parameters to filter the results. All
-three endpoints have successful and error responses, detailed with their respective status codes and body types.
+This example contains three endpoints, `POST /users`, `GET /users`, and `GET /users/:id`, each with their own request and response types. `GET /users` and `GET /users/:userId` require authentication via the `authorization` header. `POST /users` receive a body with some data, while `GET /users` accepts search parameters to filter the results. All three endpoints have successful and error responses, detailed with their respective status codes and body types.
 
 ## Declaring paths
 
 At the root of the schema, you declare the paths of the API as keys.
 
-Path parameters start with a colon (`:`) followed by an identifier, such as `:id`. You can make a path parameter
-optional by suffixing it with a question mark (`?`), as in `:id?`.
+Path parameters start with a colon (`:`) followed by an identifier, such as `:id`. You can make a path parameter optional by suffixing it with a question mark (`?`), as in `:id?`.
 
-By default, path parameters match a single segment, not including slashes (`/`). By using a plus sign (`+`) as suffix,
-such as `:id+`, you can create repeating path parameters, which accept one or more segments. If the parameter is
-repeating and optional, matching zero or more segments, suffix it with an asterisk (`*`) instead of `+`, like `:id*`.
+By default, path parameters match a single segment, not including slashes (`/`). By using a plus sign (`+`) as suffix, such as `:id+`, you can create repeating path parameters, which accept one or more segments. If the parameter is repeating and optional, matching zero or more segments, suffix it with an asterisk (`*`) instead of `+`, like `:id*`.
 
-All path parameters are typed as strings, even if they match multiple segments. Optional parameters can also be
-`undefined`.
+All path parameters are typed as strings, even if they match multiple segments. Optional parameters can also be `undefined`.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
@@ -153,8 +141,7 @@ In actual requests, do not include the backslashes. They are only used to escape
 
 ## Declaring methods
 
-Each path can have one or more HTTP methods (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, and `OPTIONS`). The method
-names are case-sensitive and must be in uppercase.
+Each path can have one or more HTTP methods (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, and `OPTIONS`). The method names are case-sensitive and must be in uppercase.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
@@ -254,10 +241,7 @@ type Schema = HttpSchema<{
 
 #### Declaring requests with binary body
 
-[`Blob`](https://developer.mozilla.org/docs/Web/API/Blob),
-[`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), and
-[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) are common types for binary data. Use one
-of these types to declare a binary body.
+[`Blob`](https://developer.mozilla.org/docs/Web/API/Blob), [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), and [`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) are common types for binary data. Use one of these types to declare a binary body.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
@@ -317,8 +301,7 @@ type Schema = HttpSchema<{
 
 ## Declaring responses
 
-Each method can also have a `response`, which defines the schema of the results returned by the server. The status codes
-are used as keys.
+Each method can also have a `response`, which defines the schema of the results returned by the server. The status codes are used as keys.
 
 ### Declaring responses with body
 
@@ -378,10 +361,7 @@ type Schema = HttpSchema<{
 
 #### Declaring responses with binary body
 
-To define a response with binary data, use [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob),
-[`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), or
-[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream), similar to how you would declare a
-request with binary data.
+To define a response with binary data, use [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob), [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), or [`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream), similar to how you would declare a request with binary data.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
@@ -446,8 +426,7 @@ type Schema = HttpSchema<{
 
 ### Declaring responses with status code ranges
 
-Sometimes, endpoints can return a range of status codes, such as `5XX`, meaning any status greater than or equal to 500.
-In these cases, you can use the `HttpStatusCode` type, which contains all standard HTTP status codes:
+Sometimes, endpoints can return a range of status codes, such as `5XX`, meaning any status greater than or equal to 500. In these cases, you can use the `HttpStatusCode` type, which contains all standard HTTP status codes:
 
 | Type                         | Range                                                                              |
 | ---------------------------- | ---------------------------------------------------------------------------------- |
@@ -488,5 +467,4 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-In this example, `GET /users` may return a successful response with a `200` status code, or any status code in the `4XX`
-(`HttpStatusCode.ClientError`) or `5XX` (`HttpStatusCode.ServerError`) ranges.
+In this example, `GET /users` may return a successful response with a `200` status code, or any status code in the `4XX` (`HttpStatusCode.ClientError`) or `5XX` (`HttpStatusCode.ServerError`) ranges.

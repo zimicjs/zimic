@@ -18,10 +18,7 @@ This guide will help you get started with `@zimic/fetch`.
 <Tabs groupId="runtime-environments">
   <TabItem value="client" label="Client side">
 
-`@zimic/fetch` is designed to work in any environment that supports the
-[Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). This includes any relatively modern browser.
-[Can I Use](https://caniuse.com/?search=fetch) is a great resource to check the compatibility of specific features with
-different browsers.
+`@zimic/fetch` is designed to work in any environment that supports the [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). This includes any relatively modern browser. [Can I Use](https://caniuse.com/?search=fetch) is a great resource to check the compatibility of specific features with different browsers.
 
 ### Supported languages
 
@@ -73,8 +70,7 @@ different browsers.
 
 :::info INFO: <span>Using TypeScript 7</span>
 
-TypeScript 7.0 does not yet provide a programmatic API, which `@zimic/http` requires, so you still need TypeScript 6
-alongside TypeScript 7.
+TypeScript 7.0 does not yet provide a programmatic API, which `@zimic/http` requires, so you still need TypeScript 6 alongside TypeScript 7.
 
 ```json title='package.json'
 {
@@ -87,10 +83,7 @@ alongside TypeScript 7.
 }
 ```
 
-With this setup, type-checking uses the native TypeScript 7 compiler, while tools that use the programmatic API fall
-back to TypeScript 6. See the
-[official TypeScript 7 announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0)
-for more information.
+With this setup, type-checking uses the native TypeScript 7 compiler, while tools that use the programmatic API fall back to TypeScript 6. See the [official TypeScript 7 announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0) for more information.
 
 :::
 
@@ -154,8 +147,7 @@ for more information.
 
 :::info INFO: <span>Using TypeScript 7</span>
 
-TypeScript 7.0 does not yet provide a programmatic API, which `@zimic/http` requires, so you still need TypeScript 6
-alongside TypeScript 7.
+TypeScript 7.0 does not yet provide a programmatic API, which `@zimic/http` requires, so you still need TypeScript 6 alongside TypeScript 7.
 
 ```json title='package.json'
 {
@@ -168,10 +160,7 @@ alongside TypeScript 7.
 }
 ```
 
-With this setup, type-checking uses the native TypeScript 7 compiler, while tools that use the programmatic API fall
-back to TypeScript 6. See the
-[official TypeScript 7 announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0)
-for more information.
+With this setup, type-checking uses the native TypeScript 7 compiler, while tools that use the programmatic API fall back to TypeScript 6. See the [official TypeScript 7 announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0) for more information.
 
 :::
 
@@ -183,8 +172,7 @@ for more information.
 
 #### JavaScript
 
-`@zimic/fetch` is fully functional on JavaScript, although the type features will be disabled. Consider using TypeScript
-for improved type safety and developer experience.
+`@zimic/fetch` is fully functional on JavaScript, although the type features will be disabled. Consider using TypeScript for improved type safety and developer experience.
 
 ## Installation
 
@@ -216,14 +204,11 @@ yarn add @zimic/http @zimic/fetch
 
 :::info
 
-Note that [`@zimic/http`](/docs/zimic-http/1-index.md) is a peer dependency of `@zimic/fetch`, so you need to install
-both packages. When upgrading `@zimic/fetch` to a new version, consider upgrading `@zimic/http` as well to ensure that
-the versions are compatible.
+Note that [`@zimic/http`](/docs/zimic-http/1-index.md) is a peer dependency of `@zimic/fetch`, so you need to install both packages. When upgrading `@zimic/fetch` to a new version, consider upgrading `@zimic/http` as well to ensure that the versions are compatible.
 
 :::
 
-We also have canary releases under the tag `canary`. These have the latest code, including new features, bug fixes, and
-possibly unstable or breaking changes.
+We also have canary releases under the tag `canary`. These have the latest code, including new features, bug fixes, and possibly unstable or breaking changes.
 
 <Tabs groupId="package-managers">
   <TabItem value="npm" label="npm">
@@ -259,9 +244,7 @@ The schema represents the structure of your API, including the paths, methods, r
 
 :::tip TIP: <span>OpenAPI Typegen</span>
 
-For APIs with an [OpenAPI documentation](https://www.openapis.org) (e.g. [Swagger](https://swagger.io)), the
-[`zimic-http typegen` CLI](/docs/zimic-http/guides/2-typegen.mdx) can automatically infer the types and generate the
-schema for you. This is a great way to keep your schema up to date and save time on manual type definitions.
+For APIs with an [OpenAPI documentation](https://www.openapis.org) (e.g. [Swagger](https://swagger.io)), the [`zimic-http typegen` CLI](/docs/zimic-http/guides/2-typegen.mdx) can automatically infer the types and generate the schema for you. This is a great way to keep your schema up to date and save time on manual type definitions.
 
 :::
 
@@ -323,10 +306,7 @@ type Schema = HttpSchema<{
 
 With the schema defined, you can now create a [fetch instance](/docs/zimic-fetch/api/2-fetch.md).
 
-`@zimic/fetch` provides a [`createFetch`](/docs/zimic-fetch/api/1-create-fetch.md) function that takes the schema as a
-type parameter and returns a thin wrapper around the native
-[Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). It adds type safety for making requests and handling
-responses, all automatically typed based on the schema.
+`@zimic/fetch` provides a [`createFetch`](/docs/zimic-fetch/api/1-create-fetch.md) function that takes the schema as a type parameter and returns a thin wrapper around the native [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). It adds type safety for making requests and handling responses, all automatically typed based on the schema.
 
 ```ts
 import { createFetch } from '@zimic/fetch';
@@ -338,13 +318,11 @@ const fetch = createFetch<Schema>({
 
 Set the `baseURL` option to the base URL of your API. It will be prepended to all requests made with this instance.
 
-You can also set other options, such as default headers, credentials, parameters, and more. Refer to the
-[`createFetch` API reference](/docs/zimic-fetch/api/1-create-fetch.md) for more details.
+You can also set other options, such as default headers, credentials, parameters, and more. Refer to the [`createFetch` API reference](/docs/zimic-fetch/api/1-create-fetch.md) for more details.
 
 ### Making requests
 
-You can now use the `fetch` instance to make requests to your API. All paths, methods, parameters, requests, and
-responses are typed by default based on the schema.
+You can now use the `fetch` instance to make requests to your API. All paths, methods, parameters, requests, and responses are typed by default based on the schema.
 
 ```ts
 const response = await fetch('/users', {
@@ -375,8 +353,7 @@ Take a look at our [guides](/docs/fetch/guides) for more information on how to u
 
 ### Examples
 
-Try our [examples](/docs/zimic/2-examples/index.md) for more practical use cases of `@zimic/fetch` with popular
-libraries and frameworks.
+Try our [examples](/docs/zimic/2-examples/index.md) for more practical use cases of `@zimic/fetch` with popular libraries and frameworks.
 
 ### API reference
 
@@ -386,7 +363,4 @@ Visit the [API reference](/docs/fetch/api) for more details on the resources ava
 
 - Access the [`@zimic/http`](/docs/zimic-http/1-index.md) documentation to learn more about extending your HTTP schema.
 
-- If you are interested in mocking your requests in development and testing, check out
-  [`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md). Declare realistic HTTP mocks validated with the same
-  schema as your fetch client, and verify that your application interacts as expected, without needing to access the
-  actual API.
+- If you are interested in mocking your requests in development and testing, check out [`@zimic/interceptor`](/docs/zimic-interceptor/1-index.md). Declare realistic HTTP mocks validated with the same schema as your fetch client, and verify that your application interacts as expected, without needing to access the actual API.

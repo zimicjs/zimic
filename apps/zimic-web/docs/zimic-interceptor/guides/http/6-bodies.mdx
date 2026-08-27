@@ -9,10 +9,7 @@ import TabItem from '@theme/TabItem';
 
 # Using bodies
 
-[Bodies](https://developer.mozilla.org/docs/Web/HTTP/Guides/Messages#request_body) are used to send data in a request
-and receive data in a response. Request bodies are commonly used to include a payload of data that the server will
-process, whereas response bodies may contain the result returned by the server. A body can contain various types of
-data, such as JSON, XML, and binary data such as images and files.
+[Bodies](https://developer.mozilla.org/docs/Web/HTTP/Guides/Messages#request_body) are used to send data in a request and receive data in a response. Request bodies are commonly used to include a payload of data that the server will process, whereas response bodies may contain the result returned by the server. A body can contain various types of data, such as JSON, XML, and binary data such as images and files.
 
 ## Default body parsing
 
@@ -35,16 +32,11 @@ data, such as JSON, XML, and binary data such as images and files.
 
 ## Using request bodies
 
-Request bodies can be declared in your [schema](/docs/zimic-http/guides/1-schemas.md) using the `request.body` property.
-Then, they will be available in the `body` property, such as in
-[`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith),
-[computed responses](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrespond), and
-[`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrequests).
+Request bodies can be declared in your [schema](/docs/zimic-http/guides/1-schemas.md) using the `request.body` property. Then, they will be available in the `body` property, such as in [`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith), [computed responses](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrespond), and [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrequests).
 
 ### JSON request body
 
-JSON bodies are one of the most common ways to send data in requests. To use a JSON body in a request, declare its type
-in your [schema](/docs/zimic-http/guides/1-schemas.md).
+JSON bodies are one of the most common ways to send data in requests. To use a JSON body in a request, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md).
 
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
@@ -109,8 +101,7 @@ await interceptor
 
 :::tip TIP: <span>`content-type` header inference</span>
 
-`@zimic/http` automatically infers the type of the `content-type` header as `application/json` if the request body is a
-JSON type. You can override this behavior by explicitly setting a different type in your schema.
+`@zimic/http` automatically infers the type of the `content-type` header as `application/json` if the request body is a JSON type. You can override this behavior by explicitly setting a different type in your schema.
 
 ```ts title='schema.ts'
 type Schema = HttpSchema<{
@@ -135,11 +126,9 @@ type Schema = HttpSchema<{
 
 ### `FormData` request body
 
-[`FormData`](https://developer.mozilla.org/docs/Web/API/FormData) is a special type of body to construct a set of
-key-value pairs with variable types of data. A common use case is to upload files to a server.
+[`FormData`](https://developer.mozilla.org/docs/Web/API/FormData) is a special type of body to construct a set of key-value pairs with variable types of data. A common use case is to upload files to a server.
 
-To send a `FormData` body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md). Use the
-[`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md) to indicate that the body is a `FormData` type.
+To send a `FormData` body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md). Use the [`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md) to indicate that the body is a `FormData` type.
 
 ```ts
 import { HttpFormData, HttpSchema } from '@zimic/http';
@@ -227,10 +216,7 @@ await interceptor
 
 ### Binary request body
 
-Binary bodies are used to send raw binary data in requests. To send a binary body, declare its type in your
-[schema](/docs/zimic-http/guides/1-schemas.md). [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob),
-[`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), and
-[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) are common types for binary data.
+Binary bodies are used to send raw binary data in requests. To send a binary body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md). [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob), [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), and [`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) are common types for binary data.
 
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
@@ -309,8 +295,7 @@ await interceptor
 
 #### Request streaming
 
-When working with large files or chunked data, you can use
-[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) to handle streamed request bodies.
+When working with large files or chunked data, you can use [`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream) to handle streamed request bodies.
 
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
@@ -524,11 +509,9 @@ await interceptor
 
 ## Using response bodies
 
-Response bodies are declared in your [schema](/docs/zimic-http/guides/1-schemas.md) using the `response.<status>.body`
-property.
+Response bodies are declared in your [schema](/docs/zimic-http/guides/1-schemas.md) using the `response.<status>.body` property.
 
-Then, they will be available in the `body` property, such as in
-[`handler.respond()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrespond).
+Then, they will be available in the `body` property, such as in [`handler.respond()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrespond).
 
 ### JSON response body
 
@@ -590,8 +573,7 @@ await interceptor
 
 ### `FormData` response body
 
-To use a `FormData` response body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md) using the
-[`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md).
+To use a `FormData` response body, declare its type in your [schema](/docs/zimic-http/guides/1-schemas.md) using the [`HttpFormData`](/docs/zimic-http/api/4-http-form-data.md).
 
 ```ts title='schema.ts'
 import { HttpFormData, HttpSchema } from '@zimic/http';
@@ -660,9 +642,7 @@ await interceptor
 
 ### Binary response body
 
-Binary response bodies can be declared with types such as [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob),
-[`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), and
-[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream).
+Binary response bodies can be declared with types such as [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob), [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), and [`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream).
 
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';
@@ -736,8 +716,7 @@ await interceptor
 
 #### Response streaming
 
-Similarly to [request streaming](#request-streaming), you can stream response bodies using
-[`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream).
+Similarly to [request streaming](#request-streaming), you can stream response bodies using [`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream).
 
 ```ts title='schema.ts'
 import { HttpSchema } from '@zimic/http';

@@ -1,8 +1,6 @@
 ---
 name: write-release-description
-description:
-  Create or update the description of a draft release with the GitHub CLI. Use when preparing release notes for an
-  existing draft release.
+description: Create or update the description of a draft release with the GitHub CLI. Use when preparing release notes for an existing draft release.
 ---
 
 # Overview
@@ -22,8 +20,7 @@ Required:
 
 Optional:
 
-- Previous version. If omitted, infer it from the latest published GitHub release for the same package before the target
-  version.
+- Previous version. If omitted, infer it from the latest published GitHub release for the same package before the target version.
 
 # Workflow
 
@@ -46,18 +43,14 @@ Optional:
        | jq -r --arg prefix '<package>@' 'map(select(.isDraft == false and .isPrerelease == false and (.tagName | startswith($prefix)))) | sort_by(.publishedAt) | last'
      ```
 
-5. Gather candidate release-branch commits from `<previous-tag>...<release-branch>`, where `<release-branch>` is
-   `<package>@<major>` such as `@zimic/http@1`, then map those commits to pull requests. Always use the squash or merge
-   commits that are actually present in the release branch and map to their PRs, instead of using the commits from the
-   PR branches.
+5. Gather candidate release-branch commits from `<previous-tag>...<release-branch>`, where `<release-branch>` is `<package>@<major>` such as `@zimic/http@1`, then map those commits to pull requests. Always use the squash or merge commits that are actually present in the release branch and map to their PRs, instead of using the commits from the PR branches.
 
 6. Gather candidate pull requests:
    - PR URLs already present in the draft body.
    - The GitHub compare range between previous and target tags.
    - Conventional-commit scopes matching the package, such as `http`, `fetch`, `interceptor`, or `ws`.
    - Changed files under the package directory, for example `packages/zimic-http`.
-   - Shared/root changes that plausibly affect the package, especially dependencies, Node/TypeScript support, release
-     tooling, and documentation.
+   - Shared/root changes that plausibly affect the package, especially dependencies, Node/TypeScript support, release tooling, and documentation.
 
 7. Show the likely PR list grouped as:
    - Included with high confidence.
@@ -82,14 +75,10 @@ Optional:
 
 # Pull request filtering
 
-Prefer inclusion only when there is concrete evidence the PR affects the requested package. For package-scoped releases,
-do not include unrelated changes from other packages.
+Prefer inclusion only when there is concrete evidence the PR affects the requested package. For package-scoped releases, do not include unrelated changes from other packages.
 
-Evaluate package scope, conventional-commit scopes, changed files, and shared/root impact from the release-branch
-squash/merge commits or the tag comparison.
+Evaluate package scope, conventional-commit scopes, changed files, and shared/root impact from the release-branch squash/merge commits or the tag comparison.
 
-Treat shared/root changes as package-related when they affect consumers of the package or the package build/test/runtime
-environment. Dependency PRs commonly apply to many packages and may appear in multiple package releases.
+Treat shared/root changes as package-related when they affect consumers of the package or the package build/test/runtime environment. Dependency PRs commonly apply to many packages and may appear in multiple package releases.
 
-Keep the release PR itself in `Full Changelog` if it is present in the draft or compare range, matching existing Zimic
-releases.
+Keep the release PR itself in `Full Changelog` if it is present in the draft or compare range, matching existing Zimic releases.

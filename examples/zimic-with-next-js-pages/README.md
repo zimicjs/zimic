@@ -16,22 +16,16 @@ This example uses Zimic with [Next.js](https://nextjs.org).
 
 ## Application
 
-The application is a simple [Next.js](https://nextjs.org) project using the
-[Pages Router](https://nextjs.org/docs/pages). It fetches repositories from the
-[GitHub API](https://docs.github.com/en/rest).
+The application is a simple [Next.js](https://nextjs.org) project using the [Pages Router](https://nextjs.org/docs/pages). It fetches repositories from the [GitHub API](https://docs.github.com/en/rest).
 
 - Application: [`src/pages/index.page.tsx`](./src/pages/index.page.tsx)
 - GitHub fetch: [`src/clients/github.ts`](./src/clients/github.ts)
 
-The file [`_app.page.tsx`](./src/pages/_app.page.tsx) loads the interceptors and mocks before the rest of the
-application is rendered in development.
+The file [`_app.page.tsx`](./src/pages/_app.page.tsx) loads the interceptors and mocks before the rest of the application is rendered in development.
 
-`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked
-with `@zimic/interceptor`.
+`@zimic/fetch` is used to make requests to the [GitHub API](https://docs.github.com/rest), whose responses are mocked with `@zimic/interceptor`.
 
-A `postinstall` script in [`package.json`](./package.json) is used to install Playwright's browsers and initialize
-Zimic's mock service worker to the `./public` directory. The mock service worker at `./public/mockServiceWorker.js` is
-ignored in the [`.gitignore`](./.gitignore) file.
+A `postinstall` script in [`package.json`](./package.json) is used to install Playwright's browsers and initialize Zimic's mock service worker to the `./public` directory. The mock service worker at `./public/mockServiceWorker.js` is ignored in the [`.gitignore`](./.gitignore) file.
 
 ## Testing
 
@@ -85,8 +79,7 @@ rm -rf ../zimic-tmp
 
 > [!TIP]
 >
-> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as
-> `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
+> If you'd like to clone the example of a specific version, replace `main` with the desired branch or tag, such as `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
 
 ## Running
 

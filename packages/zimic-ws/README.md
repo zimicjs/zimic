@@ -24,13 +24,9 @@
 
 <div align="center">
 
-[![CI](https://github.com/zimicjs/zimic/actions/workflows/ci.yaml/badge.svg?branch=canary)](https://github.com/zimicjs/zimic/actions/workflows/ci.yaml)&nbsp;
-[![Coverage](https://img.shields.io/badge/Coverage-100%25-31C654?labelColor=353C43)](https://github.com/zimicjs/zimic/actions)&nbsp;
-[![License](https://img.shields.io/github/license/zimicjs/zimic?color=0E69BE&label=License&labelColor=353C43)](https://github.com/zimicjs/zimic/blob/canary/LICENSE.md)&nbsp;
-[![Stars](https://img.shields.io/github/stars/zimicjs/zimic)](https://github.com/zimicjs/zimic)
+[![CI](https://github.com/zimicjs/zimic/actions/workflows/ci.yaml/badge.svg?branch=canary)](https://github.com/zimicjs/zimic/actions/workflows/ci.yaml)&nbsp; [![Coverage](https://img.shields.io/badge/Coverage-100%25-31C654?labelColor=353C43)](https://github.com/zimicjs/zimic/actions)&nbsp; [![License](https://img.shields.io/github/license/zimicjs/zimic?color=0E69BE&label=License&labelColor=353C43)](https://github.com/zimicjs/zimic/blob/canary/LICENSE.md)&nbsp; [![Stars](https://img.shields.io/github/stars/zimicjs/zimic)](https://github.com/zimicjs/zimic)
 
-[![NPM Downloads - @zimic/ws](https://img.shields.io/npm/dm/@zimic/ws?style=flat&logo=npm&color=0E69BE&label=%20%40zimic%2Fws&labelColor=353C43)](https://www.npmjs.com/package/@zimic/ws)&nbsp;
-[![Bundle size - @zimic/ws](https://badgen.net/bundlephobia/minzip/@zimic/ws?color=0E69BE&labelColor=353C43&label=@zimic/ws%20min%20gzip)](https://bundlephobia.com/package/@zimic/ws)<br />
+[![NPM Downloads - @zimic/ws](https://img.shields.io/npm/dm/@zimic/ws?style=flat&logo=npm&color=0E69BE&label=%20%40zimic%2Fws&labelColor=353C43)](https://www.npmjs.com/package/@zimic/ws)&nbsp; [![Bundle size - @zimic/ws](https://badgen.net/bundlephobia/minzip/@zimic/ws?color=0E69BE&labelColor=353C43&label=@zimic/ws%20min%20gzip)](https://bundlephobia.com/package/@zimic/ws)<br />
 
 </div>
 
