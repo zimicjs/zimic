@@ -1,0 +1,55 @@
+import ValidationError from './ValidationError';
+
+export interface ExpectedTypeByTypeOfResult {
+  undefined: undefined;
+  boolean: boolean;
+  number: number;
+  bigint: bigint;
+  string: string;
+  function: (...parameters: never[]) => unknown;
+  object: object | null;
+}
+
+export type TypeOfResult = keyof ExpectedTypeByTypeOfResult;
+
+export type AssertedType<
+  Value,
+  ExpectedType extends TypeOfResult,
+  Nullable extends boolean = false,
+  Optional extends boolean = false,
+> = Value &
+  (
+    | ExpectedTypeByTypeOfResult[ExpectedType]
+    | (Nullable extends true ? null : never)
+    | (Optional extends true ? undefined : never)
+  );
+
+export interface AssertTypeOfOptions<Nullable extends boolean = false, Optional extends boolean = false> {
+  nullable?: Nullable;
+  optional?: Optional;
+}
+
+function assertTypeOf<
+  Value,
+  ExpectedType extends TypeOfResult,
+  Nullable extends boolean = false,
+  Optional extends boolean = false,
+>(
+  field: string,
+  value: Value,
+  expectedType: ExpectedType,
+  options?: AssertTypeOfOptions<Nullable, Optional>,
+): asserts value is AssertedType<Value, ExpectedType, Nullable, Optional> {
+  const actualType = typeof value;
+
+  if (
+    actualType !== expectedType &&
+    !(options?.nullable && value === null) &&
+    !(options?.optional && value === undefined)
+  ) {
+    const receivedType = value === null ? 'null' : actualType;
+    throw new ValidationError(`Expected ${field} to be ${expectedType}, but got ${receivedType}.`);
+  }
+}
+
+export default assertTypeOf;

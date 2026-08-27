@@ -54,6 +54,9 @@ export default defineConfig({
         'src/data/jsonContains.ts',
         'src/url/createRegexFromPath.ts',
         'src/url/createWildcardRegexFromPath.ts',
+        'src/validation/ValidationError.ts',
+        'src/validation/assertTypeOf.ts',
+        'src/validation/assertEnum.ts',
       ],
       exclude: [
         '**/node_modules/**',

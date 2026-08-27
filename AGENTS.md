@@ -3,14 +3,14 @@
 ## Project overview
 
 - TypeScript monorepo for HTTP and WebSocket tooling, including schema, fetch, interceptor, and utility packages.
-- Public APIs are published from package entry points and treated as stable contracts.
+- APIs from packages intended for direct external use are stable contracts. Internal packages such as `@zimic/utils` may evolve with their consumers.
 - Documentation lives in the website app (`apps/zimic-web`), and runnable integrations live under `examples`.
 
 ## Public API and packaging
 
-- Treat package exports as part of the public contract. If a change adds, removes, or renames a public entry point, keep the package `exports` map and consumer coverage aligned.
+- For packages intended for direct external use, treat package exports as part of the public contract. Keep the `exports` map and consumer coverage aligned when adding, removing, or renaming an entry point. Do not require public compatibility or consumer export tests for internal packages such as `@zimic/utils`.
 - Preserve tree-shakeability. Avoid top-level side effects and do not weaken assumptions behind package `sideEffects: false`.
-- In `@zimic/utils`, keep public utilities granular. Follow the existing one-entry-per-export structure instead of folding new utilities into broad entry points.
+- In `@zimic/utils`, group related utilities into cohesive, tree-shakeable module entry points. Prefer an existing module when it fits and create a new entry point for a distinct concern.
 
 ## Runtime and behavior coverage
 
@@ -34,7 +34,7 @@
 ## Published artifacts
 
 - Do not hand-edit generated declaration files, except top-level entry points that are intentionally kept in source control.
-- Update docs and examples when a public API or documented behavior changes.
+- Update docs and examples when a user-facing public API or documented behavior changes.
 - Treat breaking public API changes as intentional work. Keep code, tests, exports, and docs consistent.
 
 ## Before finishing a change

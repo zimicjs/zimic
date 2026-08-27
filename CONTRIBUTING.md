@@ -86,7 +86,7 @@ Zimic is a monorepo managed with [pnpm](https://pnpm.io) and [Turborepo](https:/
   - `zimic-http`: Implementation of the package `@zimic/http`, a collection of type-safe utilities to handle HTTP requests and responses, including headers, search params, and form data;
   - `zimic-fetch`: Implementation of the package `@zimic/fetch`, a minimal (~2 kB minified gzipped) and type-safe `fetch`-like API client;
   - `zimic-interceptor`: Implementation of the package `@zimic/interceptor`, a type-safe interceptor library for handling and mocking HTTP requests in development and testing;
-  - `zimic-utils`: Shared primitives (data comparison, URL building, wait utilities, logging, type helpers); each exported resource is exported as a single file to keep bundles small and help clients import only what they need;
+  - `zimic-utils`: Shared primitives (data comparison, URL building, validation, wait utilities, logging, type helpers), grouped into cohesive module entry points and tree-shaken by consuming packages;
   - `tsconfig`: Shared TypeScript configuration;
   - `eslint-config`: General ESLint configuration;
   - `eslint-config-node`: Node.js-specific ESLint configuration;
