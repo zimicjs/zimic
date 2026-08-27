@@ -48,7 +48,7 @@ describe('assertTypeOf', () => {
     (nullable) => {
       expect(() => {
         assertTypeOf('field', null, 'string', { nullable });
-      }).toThrow(new ValidationError('Expected field to be string, but got object.'));
+      }).toThrow(new ValidationError('Expected field to be string, but got null.'));
     },
   );
 

@@ -47,7 +47,8 @@ function assertTypeOf<
     !(options?.nullable && value === null) &&
     !(options?.optional && value === undefined)
   ) {
-    throw new ValidationError(`Expected ${field} to be ${expectedType}, but got ${actualType}.`);
+    const receivedType = value === null ? 'null' : actualType;
+    throw new ValidationError(`Expected ${field} to be ${expectedType}, but got ${receivedType}.`);
   }
 }
 
