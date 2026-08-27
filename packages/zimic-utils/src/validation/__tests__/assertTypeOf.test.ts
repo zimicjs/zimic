@@ -11,6 +11,7 @@ describe('assertTypeOf', () => {
     { value: 1n, expectedType: 'bigint' },
     { value: 'value', expectedType: 'string' },
     { value: () => undefined, expectedType: 'function' },
+    { value: class Example {}, expectedType: 'function' },
     { value: {}, expectedType: 'object' },
     { value: null, expectedType: 'object' },
   ];
