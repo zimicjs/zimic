@@ -1,5 +1,6 @@
 import { startHttpServer, stopHttpServer } from '@zimic/utils/server';
 import { waitFor, waitForNot } from '@zimic/utils/time';
+import { JSONStringified } from '@zimic/utils/types';
 import { createServer } from 'http';
 import ClientSocket from 'isomorphic-ws';
 import { AddressInfo } from 'net';
@@ -167,7 +168,7 @@ describe('Web socket client', () => {
         if (typeof message.data !== 'string') {
           throw new Error('Unexpected message type');
         }
-        eventMessages.push(JSON.parse(message.data) as EventMessage);
+        eventMessages.push(JSON.parse(message.data as JSONStringified<EventMessage>));
       });
 
       const eventMessage: EventMessage['data'] = { message: 'test' };
@@ -224,7 +225,7 @@ describe('Web socket client', () => {
         if (typeof message.data !== 'string') {
           throw new Error('Unexpected message type');
         }
-        requestMessages.push(JSON.parse(message.data) as RequestMessage);
+        requestMessages.push(JSON.parse(message.data as JSONStringified<RequestMessage>));
       });
 
       const requestMessage: RequestMessage['data'] = { question: 'test' };
@@ -443,7 +444,7 @@ describe('Web socket client', () => {
         if (typeof message.data !== 'string') {
           throw new Error('Unexpected message type');
         }
-        requestMessages.push(JSON.parse(message.data) as RequestMessage);
+        requestMessages.push(JSON.parse(message.data as JSONStringified<RequestMessage>));
       });
 
       const requestMessage: RequestMessage['data'] = { question: 'test' };
@@ -501,7 +502,7 @@ describe('Web socket client', () => {
         if (typeof message.data !== 'string') {
           throw new Error('Unexpected message type');
         }
-        requestMessages.push(JSON.parse(message.data) as RequestMessage);
+        requestMessages.push(JSON.parse(message.data as JSONStringified<RequestMessage>));
       });
 
       type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
