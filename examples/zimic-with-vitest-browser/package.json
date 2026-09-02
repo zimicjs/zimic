@@ -13,14 +13,14 @@
     "@zimic/http": "latest"
   },
   "devDependencies": {
-    "@vitest/browser": "^4.1.10",
-    "@vitest/browser-playwright": "^4.1.10",
+    "@vitest/browser": "^4.1.11",
+    "@vitest/browser-playwright": "^4.1.11",
     "@zimic/interceptor": "latest",
-    "concurrently": "^10.0.4",
+    "concurrently": "^10.0.5",
     "dotenv-cli": "^11.0.0",
-    "playwright": "^1.62.0",
+    "playwright": "^1.62.1",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "@typescript/native": "npm:typescript@^7.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   }
 }
