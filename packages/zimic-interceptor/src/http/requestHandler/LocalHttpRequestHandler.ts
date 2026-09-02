@@ -8,7 +8,6 @@ import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
-  HttpRequestHandlerResponseDeclarationFactory,
   HttpRequestHandlerResponseDelayFactory,
   InterceptedHttpInterceptorRequest,
 } from './types/requests';
@@ -50,9 +49,7 @@ class LocalHttpRequestHandler<
   }
 
   respond<NewStatusCode extends HttpStatusCode>(
-    declaration:
-      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
+    declaration: HttpRequestHandlerResponseDeclaration<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ): LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode> {
     this.implementation.respond(declaration);
 

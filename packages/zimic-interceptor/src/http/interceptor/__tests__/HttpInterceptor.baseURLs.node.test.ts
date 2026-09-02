@@ -8,19 +8,22 @@ import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Base URLs', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
+  const alternativeServer = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   let baseURL: string;
+  let alternativeBaseURL: string;
 
   beforeAll(async () => {
     if (type === 'remote') {
-      await server.start();
+      await Promise.all([server.start(), alternativeServer.start()]);
     }
     baseURL = getNodeBaseURL(type, server);
+    alternativeBaseURL = getNodeBaseURL(type, alternativeServer);
   });
 
   afterAll(async () => {
     if (type === 'remote') {
-      await server.stop();
+      await Promise.all([server.stop(), alternativeServer.stop()]);
     }
   });
 
@@ -28,6 +31,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Base URLs', ({ type }
     platform: 'node',
     type,
     getBaseURL: () => baseURL,
+    getAlternativeBaseURL: () => alternativeBaseURL,
     getInterceptorOptions: () => ({ type, baseURL }),
   });
 });
