@@ -390,9 +390,6 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.5
         version: 19.2.5(@types/react@19.2.18)
-      '@typescript/native':
-        specifier: npm:typescript@^7.0.2
-        version: typescript@7.0.2
       '@zimic/interceptor':
         specifier: latest
         version: link:../../packages/zimic-interceptor
@@ -409,8 +406,8 @@ importers:
         specifier: ^4.23.12
         version: 4.23.12
       typescript:
-        specifier: npm:@typescript/typescript6@^6.0.2
-        version: '@typescript/typescript6@6.0.2'
+        specifier: ^7.0.2
+        version: 7.0.2
 
   examples/zimic-with-next-js-pages:
     dependencies:
@@ -451,9 +448,6 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.5
         version: 19.2.5(@types/react@19.2.18)
-      '@typescript/native':
-        specifier: npm:typescript@^7.0.2
-        version: typescript@7.0.2
       '@zimic/interceptor':
         specifier: latest
         version: link:../../packages/zimic-interceptor
@@ -470,8 +464,8 @@ importers:
         specifier: ^4.3.3
         version: 4.3.3
       typescript:
-        specifier: npm:@typescript/typescript6@^6.0.2
-        version: '@typescript/typescript6@6.0.2'
+        specifier: ^7.0.2
+        version: 7.0.2
 
   examples/zimic-with-openapi-typegen:
     dependencies:
@@ -534,9 +528,6 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.5
         version: 19.2.5(@types/react@19.2.18)
-      '@typescript/native':
-        specifier: npm:typescript@^7.0.2
-        version: typescript@7.0.2
       '@zimic/interceptor':
         specifier: latest
         version: link:../../packages/zimic-interceptor
@@ -553,8 +544,8 @@ importers:
         specifier: ^4.23.12
         version: 4.23.12
       typescript:
-        specifier: npm:@typescript/typescript6@^6.0.2
-        version: '@typescript/typescript6@6.0.2'
+        specifier: ^7.0.2
+        version: 7.0.2
 
   examples/zimic-with-vitest-browser:
     dependencies:
