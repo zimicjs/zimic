@@ -1,4 +1,5 @@
 import { HttpSchema } from '@zimic/http';
+import { assertTypeOf } from '@zimic/utils/validation';
 
 import UnknownHttpInterceptorTypeError from './errors/UnknownHttpInterceptorTypeError';
 import LocalHttpInterceptor from './LocalHttpInterceptor';
@@ -30,6 +31,8 @@ export function createHttpInterceptor<Schema extends HttpSchema>(
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: HttpInterceptorOptions,
 ): PublicLocalHttpInterceptor<Schema> | PublicRemoteHttpInterceptor<Schema> {
+  assertTypeOf('options.baseURL', options.baseURL, 'string');
+
   const type = options.type;
 
   if (isLocalHttpInterceptorOptions(options)) {
