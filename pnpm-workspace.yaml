@@ -91,6 +91,7 @@ overrides:
   websocket-driver@0: ^0.7.5
 
 allowBuilds:
+  '@parcel/watcher': false
   '@swc/core': true
   '@zimic/interceptor': true
   bufferutil: true
