@@ -42,7 +42,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
       client.addEventListener('message', resolve, { once: true });
     });
 
-    return JSON.parse(event.data as string);
+    return JSON.parse(event.data as string) as unknown;
   }
 
   it('should clear handler state', async () => {
