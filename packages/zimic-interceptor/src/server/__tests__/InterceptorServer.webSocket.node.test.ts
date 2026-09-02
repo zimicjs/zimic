@@ -4,7 +4,7 @@ import ClientSocket from 'isomorphic-ws';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { closeClientSocket, waitForOpenClientSocket, WebSocketMessageTimeoutError } from '@/utils/webSocket';
-import { WEB_SOCKET_NORMAL_CLOSE_CODE, WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE } from '@/utils/webSocket/constants';
+import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
 import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
@@ -343,7 +343,7 @@ describe('Interceptor server > Web sockets', () => {
 
     await expect(webSocketClient.start({ waitForAuthentication: true })).rejects.toHaveProperty(
       'code',
-      WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE,
+      WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR,
     );
 
     const userSocket = new ClientSocket(`ws://localhost:${server.port}/chat`);
@@ -355,7 +355,7 @@ describe('Interceptor server > Web sockets', () => {
 
     const closeEvent = await closeEventPromise;
 
-    expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
     expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
   });
 
@@ -697,7 +697,7 @@ describe('Interceptor server > Web sockets', () => {
       initialSocket.addEventListener('close', resolve);
     });
 
-    expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
     expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
   });
 
@@ -743,7 +743,7 @@ describe('Interceptor server > Web sockets', () => {
     await webSocketClient.request('interceptors/ws/workers/reset', []);
 
     const closeEvent = await closeEventPromise;
-    expect(closeEvent.code).toBe(WEB_SOCKET_NORMAL_CLOSE_CODE);
+    expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
 
     await waitFor(() => {
       expect(closedClientIds).toEqual([connections[0].clientId]);
@@ -810,7 +810,7 @@ describe('Interceptor server > Web sockets', () => {
     await webSocketClient.request('interceptors/ws/workers/reset', [retainedHandler]);
 
     const removedCloseEvent = await removedCloseEventPromise;
-    expect(removedCloseEvent.code).toBe(WEB_SOCKET_NORMAL_CLOSE_CODE);
+    expect(removedCloseEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
 
     const messagePromise = new Promise<ClientSocket.MessageEvent>((resolve) => {
       retainedSocket.addEventListener('message', resolve, { once: true });
@@ -886,7 +886,7 @@ describe('Interceptor server > Web sockets', () => {
       unregisteredSocket.addEventListener('close', resolve);
     });
 
-    expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
     expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
   });
 
@@ -1148,7 +1148,7 @@ describe('Interceptor server > Web sockets', () => {
 
     const closeEvent = await closeEventPromise;
 
-    expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
     expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
   });
 
@@ -1183,7 +1183,7 @@ describe('Interceptor server > Web sockets', () => {
       userSocket.addEventListener('close', resolve, { once: true });
     });
 
-    expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
     expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
   });
 
@@ -1230,7 +1230,7 @@ describe('Interceptor server > Web sockets', () => {
       userSocket.addEventListener('close', resolve, { once: true });
     });
 
-    expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
     expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
     expect(internalServer.pendingUserWebSocketHandlers).toHaveProperty('size', 0);
     expect(internalServer.activeUserWebSocketHandlers).toHaveProperty('size', 0);
@@ -1274,7 +1274,7 @@ describe('Interceptor server > Web sockets', () => {
       userSocket.addEventListener('close', resolve, { once: true });
     });
 
-    expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
     expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
     requestSpy.mockRestore();
   });
@@ -1317,7 +1317,7 @@ describe('Interceptor server > Web sockets', () => {
       userSocket.addEventListener('close', resolve, { once: true });
     });
 
-    expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
     expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
   });
 
@@ -1366,7 +1366,7 @@ describe('Interceptor server > Web sockets', () => {
     await webSocketClient.request('interceptors/ws/workers/reset', []);
 
     const closeEvent = await closeEventPromise;
-    expect(closeEvent.code).toBe(WEB_SOCKET_NORMAL_CLOSE_CODE);
+    expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
 
     resolveConnection({ accepted: true });
 
@@ -1376,7 +1376,7 @@ describe('Interceptor server > Web sockets', () => {
       nextUserSocket.addEventListener('close', resolve, { once: true });
     });
 
-    expect(nextCloseEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(nextCloseEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
     expect(nextCloseEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
   });
 
@@ -1469,7 +1469,7 @@ describe('Interceptor server > Web sockets', () => {
       return connectionPromise;
     });
     webSocketClient.onChannel('event', 'interceptors/ws/messages/handle', ({ data }) => {
-      handledMessages.push(data.data.data as string);
+      handledMessages.push(data.data.data);
       return {};
     });
 
@@ -1907,7 +1907,7 @@ describe('Interceptor server > Web sockets', () => {
 
     const closeEvent = await closeEventPromise;
 
-    expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
     expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
   });
 
@@ -2018,7 +2018,7 @@ describe('Interceptor server > Web sockets', () => {
     webSocketClient = undefined;
 
     const userSocketCloseEvent = await userSocketCloseEventPromise;
-    expect(userSocketCloseEvent.code).toBe(WEB_SOCKET_NORMAL_CLOSE_CODE);
+    expect(userSocketCloseEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
 
     const nextUserSocket = new ClientSocket(baseURL);
     userSockets.push(nextUserSocket);
@@ -2027,7 +2027,7 @@ describe('Interceptor server > Web sockets', () => {
       nextUserSocket.addEventListener('close', resolve);
     });
 
-    expect(nextUserSocketCloseEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(nextUserSocketCloseEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
     expect(nextUserSocketCloseEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
   });
 
@@ -2044,7 +2044,7 @@ describe('Interceptor server > Web sockets', () => {
 
     const closeEvent = await closeEventPromise;
 
-    expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
     expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
   });
 });

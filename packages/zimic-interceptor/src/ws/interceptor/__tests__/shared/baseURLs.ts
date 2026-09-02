@@ -2,7 +2,7 @@ import { UnsupportedURLProtocolError, joinURL } from '@zimic/utils/url';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { expect, it } from 'vitest';
 
-import { WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE } from '@/utils/webSocket/constants';
+import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
@@ -165,7 +165,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
 
         await oldOriginClient.open();
         const closeEvent = await closeEventPromise;
-        expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
         expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
 
         const alternativeClient = new WebSocketClient<MessageSchema>(alternativeBaseURL);

@@ -3,7 +3,7 @@ import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import { WEB_SOCKET_NORMAL_CLOSE_CODE } from '@/utils/webSocket/constants';
+import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
 import { WebSocketInterceptorOptions } from '../../types/options';
@@ -42,7 +42,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
       client.addEventListener('message', resolve, { once: true });
     });
 
-    return JSON.parse(event.data as string);
+    return JSON.parse(event.data as string) as unknown;
   }
 
   it('should clear handler state', async () => {
@@ -119,7 +119,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         await interceptor.clear();
 
         await waitFor(() => {
-          expect(closeEvent?.code).toBe(WEB_SOCKET_NORMAL_CLOSE_CODE);
+          expect(closeEvent?.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
         });
         expect(interceptor.clients).toBe(interceptorClients);
         expect(firstHandler.messages).toHaveLength(0);
@@ -191,7 +191,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
             await firstInterceptor.clear();
 
             const firstCloseEvent = await firstCloseEventPromise;
-            expect(firstCloseEvent.code).toBe(WEB_SOCKET_NORMAL_CLOSE_CODE);
+            expect(firstCloseEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
             expect(firstInterceptor.clients).toHaveLength(0);
             expect(secondInterceptor.clients).toHaveLength(1);
             expect(secondClient.readyState).toBe(WebSocketClient.OPEN);

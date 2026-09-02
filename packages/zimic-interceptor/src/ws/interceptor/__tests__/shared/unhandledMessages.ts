@@ -44,7 +44,7 @@ export function declareUnhandledMessageWebSocketInterceptorTests(
       client.addEventListener('message', resolve, { once: true });
     });
 
-    return JSON.parse(event.data as string);
+    return JSON.parse(event.data as string) as unknown;
   }
 
   it('should include unmatched messages in declarationless times errors when message saving is enabled', async () => {

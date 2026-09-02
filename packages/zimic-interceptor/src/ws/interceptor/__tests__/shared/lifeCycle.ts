@@ -1,7 +1,7 @@
 import { WebSocketClient, WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
-import { WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE } from '@/utils/webSocket/constants';
+import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
 import { LocalWebSocketMessageHandler } from '../../../messageHandler/LocalWebSocketMessageHandler';
@@ -128,7 +128,7 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     await client.open({ timeout: 500 });
 
     const closeEvent = await closeEventPromise;
-    expect(closeEvent.code).toBe(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE);
+    expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
     expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
   }
 
