@@ -198,14 +198,16 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
   if (defaultWorkerOptions.type === 'local') {
     it('should throw an error after failing to start due to a unknown error', async () => {
       const interceptorWorker = createHttpInterceptorWorker(defaultWorkerOptions);
+      const mswWorker = await interceptorWorker.getMSWWorkerOrCreate();
+      const numberOfHandlersBeforeStart = mswWorker.listHandlers().length;
 
       const error = new Error('Unknown error');
 
       if (platform === 'browser') {
-        const internalBrowserWorker = (await interceptorWorker.getMSWWorkerOrCreate()) as BrowserMSWWorker;
+        const internalBrowserWorker = mswWorker as BrowserMSWWorker;
         vi.spyOn(internalBrowserWorker, 'start').mockRejectedValueOnce(error);
       } else {
-        const internalNodeWorker = (await interceptorWorker.getMSWWorkerOrCreate()) as NodeMSWWorker;
+        const internalNodeWorker = mswWorker as NodeMSWWorker;
         vi.spyOn(internalNodeWorker, 'listen').mockImplementationOnce(() => {
           throw error;
         });
@@ -232,6 +234,9 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
         }
       });
 
+      if (!interceptorWorker.isRunning) {
+        expect(mswWorker.listHandlers()).toHaveLength(numberOfHandlersBeforeStart);
+      }
       expect(interceptorWorker.platform).toBe(platform);
     });
   }

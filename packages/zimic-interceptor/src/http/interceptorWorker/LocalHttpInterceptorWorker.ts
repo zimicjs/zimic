@@ -93,7 +93,14 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
         this.platform = 'node';
       }
 
-      await this.store.startMSWWorker(mswWorker, sharedOptions);
+      try {
+        await this.store.startMSWWorker(mswWorker, sharedOptions);
+      } catch (error) {
+        const newMSWHandlers = mswWorker.listHandlers().filter((handler) => handler !== this.mswHttpHandler);
+        mswWorker.resetHandlers(...newMSWHandlers);
+        this.mswHttpHandler = undefined;
+        throw error;
+      }
 
       this.isRunning = true;
     });

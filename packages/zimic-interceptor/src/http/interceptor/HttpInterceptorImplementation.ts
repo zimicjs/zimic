@@ -45,8 +45,8 @@ class HttpInterceptorImplementation<
   private createWorker: () => HttpInterceptorWorker;
   private deleteWorker: () => void;
   private worker?: HttpInterceptorWorker;
-  private startingPromise?: Promise<void>;
-  private stoppingPromise?: Promise<void>;
+  private lifecyclePromise: Promise<void> = Promise.resolve();
+  private numberOfPendingStarts = 0;
 
   requestSaving: HttpInterceptorRequestSaving;
   private numberOfSavedRequests = 0;
@@ -137,20 +137,20 @@ class HttpInterceptorImplementation<
   }
 
   async start() {
-    if (this.stoppingPromise) {
-      await this.stoppingPromise;
-    }
-
-    this.startingPromise ??= this.startOnce();
+    this.numberOfPendingStarts++;
 
     try {
-      await this.startingPromise;
+      await this.enqueueLifecycleOperation(() => this.startOnce());
     } finally {
-      this.startingPromise = undefined;
+      this.numberOfPendingStarts--;
     }
   }
 
   private async startOnce() {
+    if (this.isRunning) {
+      return;
+    }
+
     try {
       this.worker = this.createWorker();
       this.worker.registerRunningInterceptor(this);
@@ -165,27 +165,15 @@ class HttpInterceptorImplementation<
   }
 
   get isStarting() {
-    return this.startingPromise !== undefined;
-  }
-
-  get isStopping() {
-    return this.stoppingPromise !== undefined;
+    return this.numberOfPendingStarts > 0;
   }
 
   async stop(beforeStop?: () => PossiblePromise<void>) {
-    this.stoppingPromise ??= this.stopOnce(beforeStop);
-
-    try {
-      await this.stoppingPromise;
-    } finally {
-      this.stoppingPromise = undefined;
-    }
+    await this.enqueueLifecycleOperation(() => this.stopOnce(beforeStop));
   }
 
   private async stopOnce(beforeStop?: () => PossiblePromise<void>) {
-    try {
-      await this.startingPromise;
-    } catch {
+    if (!this.isRunning) {
       return;
     }
 
@@ -200,11 +188,20 @@ class HttpInterceptorImplementation<
 
     if (isLastRunningInterceptor) {
       await this.worker?.stop();
-      this.deleteWorker();
+
+      if (this.worker?.numberOfRunningInterceptors === 0) {
+        this.deleteWorker();
+      }
     }
 
     this.markAsRunning(false);
     this.worker = undefined;
+  }
+
+  private enqueueLifecycleOperation(operation: () => Promise<void>) {
+    const result = this.lifecyclePromise.then(operation);
+    this.lifecyclePromise = result.catch(() => undefined);
+    return result;
   }
 
   private markAsRunning(isRunning: boolean) {
