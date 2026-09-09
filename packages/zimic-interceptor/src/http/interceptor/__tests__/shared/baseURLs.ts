@@ -1,5 +1,6 @@
 import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL, UnsupportedURLProtocolError } from '@zimic/utils/url';
+import { ValidationError } from '@zimic/utils/validation';
 import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
@@ -185,6 +186,32 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
     expect(handler).not.toHaveBeenCalled();
   });
+
+  const invalidBaseURLs = [
+    { label: 'undefined', value: undefined, expectedType: 'undefined' },
+    { label: 'null', value: null, expectedType: 'null' },
+    { label: 'a number', value: 5, expectedType: 'number' },
+    { label: 'a boolean', value: true, expectedType: 'boolean' },
+    { label: 'an object', value: {}, expectedType: 'object' },
+    { label: 'an array', value: [], expectedType: 'object' },
+    { label: 'a URL', value: new URL('http://localhost:3000'), expectedType: 'object' },
+  ];
+
+  it.each(invalidBaseURLs)(
+    'should throw an error if provided a base URL that is not a string ($label)',
+    async ({ value, expectedType }) => {
+      const handler = vi.fn();
+
+      // @ts-expect-error Forcing an invalid base URL type.
+      const invalidBaseURL: string = value;
+
+      await expect(async () => {
+        await usingHttpInterceptor({ ...interceptorOptions, baseURL: invalidBaseURL }, handler);
+      }).rejects.toThrow(new ValidationError(`Expected options.baseURL to be string, but got ${expectedType}.`));
+
+      expect(handler).not.toHaveBeenCalled();
+    },
+  );
 
   if (type === 'local') {
     it.each(SUPPORTED_BASE_URL_PROTOCOLS)(
