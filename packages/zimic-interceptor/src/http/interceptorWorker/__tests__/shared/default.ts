@@ -224,19 +224,18 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
             await expect(interceptorStartPromise).resolves.not.toThrow();
           } else {
             await expect(interceptorStartPromise).rejects.toThrow(error);
+            expect(mswWorker.listHandlers()).toHaveLength(numberOfHandlersBeforeStart);
           }
 
           expect(console.error).toHaveBeenCalledTimes(0);
         } else {
           await expect(interceptorStartPromise).rejects.toThrow(error);
+          expect(mswWorker.listHandlers()).toHaveLength(numberOfHandlersBeforeStart);
           expect(console.error).toHaveBeenCalledTimes(1);
           expect(console.error).toHaveBeenCalledWith(error);
         }
       });
 
-      if (!interceptorWorker.isRunning) {
-        expect(mswWorker.listHandlers()).toHaveLength(numberOfHandlersBeforeStart);
-      }
       expect(interceptorWorker.platform).toBe(platform);
     });
   }
