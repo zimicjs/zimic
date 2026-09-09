@@ -17,8 +17,10 @@ export { default as HttpTimesCheckError, TimesCheckError } from './errors/HttpTi
 
 export type {
   HttpRequestHandlerResponseStaticDeclaration,
+  /** @deprecated Use `HttpRequestHandlerResponseStaticDeclaration` instead. */
   HttpRequestHandlerResponseStaticDeclaration as HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseComputedDeclaration,
+  /** @deprecated Use `HttpRequestHandlerResponseComputedDeclaration` instead. */
   HttpRequestHandlerResponseComputedDeclaration as HttpRequestHandlerResponseDeclarationFactory,
   HttpRequestHandlerResponseDelayFactory,
   HttpInterceptorRequest,
