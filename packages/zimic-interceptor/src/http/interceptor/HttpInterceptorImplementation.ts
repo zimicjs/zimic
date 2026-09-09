@@ -45,9 +45,9 @@ class HttpInterceptorImplementation<
   private createWorker: () => HttpInterceptorWorker;
   private deleteWorker: () => void;
   private worker?: HttpInterceptorWorker;
-  private lifecyclePromise: Promise<void> = Promise.resolve();
-  private pendingStartPromise?: Promise<void>;
-  private numberOfPendingStarts = 0;
+
+  private startPromise?: Promise<void>;
+  private lifecycleQueue: Promise<void> = Promise.resolve();
 
   requestSaving: HttpInterceptorRequestSaving;
   private numberOfSavedRequests = 0;
@@ -138,20 +138,20 @@ class HttpInterceptorImplementation<
   }
 
   start() {
-    if (this.pendingStartPromise) {
-      return this.pendingStartPromise;
+    if (this.startPromise) {
+      return this.startPromise;
     }
 
-    this.numberOfPendingStarts++;
-
     const startPromise = this.enqueueLifecycleOperation(() => this.startOnce()).finally(() => {
-      this.numberOfPendingStarts--;
-      if (this.pendingStartPromise === startPromise) {
-        this.pendingStartPromise = undefined;
+      const isLastStartPromise = this.startPromise === startPromise;
+
+      if (isLastStartPromise) {
+        this.startPromise = undefined;
       }
     });
 
-    this.pendingStartPromise = startPromise;
+    this.startPromise = startPromise;
+
     return startPromise;
   }
 
@@ -174,20 +174,21 @@ class HttpInterceptorImplementation<
   }
 
   get isStarting() {
-    return this.numberOfPendingStarts > 0;
+    return this.startPromise !== undefined;
   }
 
-  async stop(beforeStop?: () => PossiblePromise<void>) {
-    this.pendingStartPromise = undefined;
-    await this.enqueueLifecycleOperation(() => this.stopOnce(beforeStop));
+  async stop(options?: { beforeStop?: () => PossiblePromise<void> }) {
+    this.startPromise = undefined;
+    await this.enqueueLifecycleOperation(() => this.stopOnce(options));
   }
 
-  private async stopOnce(beforeStop?: () => PossiblePromise<void>) {
+  private async stopOnce(options: { beforeStop?: () => PossiblePromise<void> } = {}) {
     if (!this.isRunning) {
       return;
     }
 
-    await beforeStop?.();
+    await options.beforeStop?.();
+
     await this.stopWorker();
   }
 
@@ -199,7 +200,11 @@ class HttpInterceptorImplementation<
     if (isLastRunningInterceptor) {
       await this.worker?.stop();
 
-      if (this.worker?.numberOfRunningInterceptors === 0) {
+      // Stopping is asynchronous, so we need to check again if we are still the last before deleting the worker.
+      // Another interceptor might have started in the meantime and the worker should not be deleted if so.
+      const isStillLastRunningInterceptor = this.worker?.numberOfRunningInterceptors === 0;
+
+      if (isStillLastRunningInterceptor) {
         this.deleteWorker();
       }
     }
@@ -209,9 +214,13 @@ class HttpInterceptorImplementation<
   }
 
   private enqueueLifecycleOperation(operation: () => Promise<void>) {
-    const result = this.lifecyclePromise.then(operation);
-    this.lifecyclePromise = result.catch(() => undefined);
-    return result;
+    const operationPromise = this.lifecycleQueue.then(operation);
+
+    this.lifecycleQueue = operationPromise
+      // Ensure the queue continues even if the operation fails
+      .catch(() => undefined);
+
+    return operationPromise;
   }
 
   private markAsRunning(isRunning: boolean) {

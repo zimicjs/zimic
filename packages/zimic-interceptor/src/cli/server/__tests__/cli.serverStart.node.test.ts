@@ -134,7 +134,7 @@ describe('CLI > Server start', () => {
       '5000',
     ]);
 
-    await usingIgnoredConsole(['log'], async (console) => {
+    await usingIgnoredConsole(['log', 'warn'], async (console) => {
       await runCLI();
 
       expect(server).toBeDefined();
@@ -198,7 +198,7 @@ describe('CLI > Server start', () => {
       '5001',
     ]);
 
-    await usingIgnoredConsole(['log', 'error'], async (console) => {
+    await usingIgnoredConsole(['log', 'warn', 'error'], async (console) => {
       await runCLI();
 
       const initialServer = server;

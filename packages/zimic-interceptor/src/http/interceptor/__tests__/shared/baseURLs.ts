@@ -89,7 +89,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
       expect(handler.requests).toHaveLength(1);
 
-      const newBaseURL = getOtherBaseURL?.() ?? joinURL(baseURL, 'new');
+      const newBaseURL = joinURL(baseURL, 'new');
       expect(newBaseURL).not.toBe(interceptor.baseURL);
 
       await interceptor.stop();
@@ -135,6 +135,8 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
       );
 
       await startPromise;
+
+      expect(interceptor.baseURL).toBe(interceptorOptions.baseURL);
     });
   });
 

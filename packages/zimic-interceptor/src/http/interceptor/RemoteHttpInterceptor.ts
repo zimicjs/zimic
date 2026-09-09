@@ -74,7 +74,7 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
     }
 
     this.#auth = new Proxy(
-      { ...auth },
+      { ...auth }, // Copy object to ensure it's not mutated later without going though the proxy.
       {
         set: (target, property, value) => {
           if (this.isRunning || this.implementation.isStarting) {
@@ -107,7 +107,7 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
   }
 
   async stop() {
-    await this.implementation.stop(() => this.clear());
+    await this.implementation.stop({ beforeStop: () => this.clear() });
   }
 
   get = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {

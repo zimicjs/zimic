@@ -815,7 +815,7 @@ describe('CLI > Server start > Authentication', () => {
             DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
           ]);
 
-          await usingIgnoredConsole(['log'], async () => {
+          await usingIgnoredConsole(['log', 'warn'], async () => {
             await runCLI();
           });
 
@@ -917,7 +917,7 @@ describe('CLI > Server start > Authentication', () => {
           DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
         ]);
 
-        await usingIgnoredConsole(['log'], async () => {
+        await usingIgnoredConsole(['log', 'warn'], async () => {
           await runCLI();
         });
 
@@ -1060,7 +1060,7 @@ describe('CLI > Server start > Authentication', () => {
     it('should allow no-origin clients on unauthenticated non-loopback servers', async () => {
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--hostname', '0.0.0.0']);
 
-      await usingIgnoredConsole(['log'], async () => {
+      await usingIgnoredConsole(['log', 'warn'], async () => {
         await runCLI();
       });
 
@@ -1090,7 +1090,7 @@ describe('CLI > Server start > Authentication', () => {
       async (origin) => {
         processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--hostname', '0.0.0.0']);
 
-        await usingIgnoredConsole(['log'], async () => {
+        await usingIgnoredConsole(['log', 'warn'], async () => {
           await runCLI();
         });
 

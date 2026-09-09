@@ -31,7 +31,7 @@ describe('HttpInterceptor (node, remote) > Authentication', () => {
     await removeInterceptorToken(token.id);
   });
 
-  it('should start after correcting invalid authentication', async () => {
+  it('should be able to start after correcting invalid authentication', async () => {
     const invalidToken = 'invalid-token';
     expect(invalidToken).not.toBe(token.value);
 
@@ -39,6 +39,31 @@ describe('HttpInterceptor (node, remote) > Authentication', () => {
       type: 'remote',
       baseURL: `http://localhost:${server.port}`,
       auth: { token: invalidToken },
+    });
+
+    await usingIgnoredConsole(['error'], async () => {
+      await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
+    });
+
+    expect(interceptor.isRunning).toBe(false);
+    expect(interceptor.platform).toBe(null);
+
+    interceptor.auth!.token = token.value;
+
+    try {
+      await expect(interceptor.start()).resolves.toBeUndefined();
+      expect(interceptor.isRunning).toBe(true);
+      expect(interceptor.platform).toBe('node');
+    } finally {
+      await interceptor.stop();
+    }
+  });
+
+  it('should share a failed startup between concurrent calls', async () => {
+    const interceptor = createHttpInterceptor<{}>({
+      type: 'remote',
+      baseURL: `http://localhost:${server.port}`,
+      auth: { token: 'invalid-token' },
     });
 
     await usingIgnoredConsole(['error'], async () => {
@@ -57,16 +82,6 @@ describe('HttpInterceptor (node, remote) > Authentication', () => {
 
     expect(interceptor.isRunning).toBe(false);
     expect(interceptor.platform).toBe(null);
-
-    interceptor.auth!.token = token.value;
-
-    try {
-      await expect(interceptor.start()).resolves.toBeUndefined();
-      expect(interceptor.isRunning).toBe(true);
-      expect(interceptor.platform).toBe('node');
-    } finally {
-      await interceptor.stop();
-    }
   });
 
   it('should not support changing authentication while starting', async () => {
@@ -88,24 +103,30 @@ describe('HttpInterceptor (node, remote) > Authentication', () => {
       );
 
       await startPromise;
+
+      expect(interceptor.auth?.token).toBe(token.value);
     } finally {
       await interceptor.stop();
     }
   });
 
-  it('should copy authentication when created', async () => {
-    const auth = { token: token.value };
+  it('should not change authentication if the original options object is mutated while starting', async () => {
+    const authOptions = { token: token.value };
+
     const interceptor = createHttpInterceptor<{}>({
       type: 'remote',
       baseURL: `http://localhost:${server.port}`,
-      auth,
+      auth: authOptions,
     });
+
+    expect(interceptor.auth).not.toBe(authOptions);
 
     try {
       const startPromise = interceptor.start();
-      auth.token = 'other-token';
+      authOptions.token = 'other-token';
 
       await startPromise;
+
       expect(interceptor.auth).toEqual({ token: token.value });
     } finally {
       await interceptor.stop();
