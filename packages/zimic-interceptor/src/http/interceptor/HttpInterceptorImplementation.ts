@@ -46,6 +46,7 @@ class HttpInterceptorImplementation<
   private deleteWorker: () => void;
   private worker?: HttpInterceptorWorker;
   private startingPromise?: Promise<void>;
+  private stoppingPromise?: Promise<void>;
 
   requestSaving: HttpInterceptorRequestSaving;
   private numberOfSavedRequests = 0;
@@ -164,6 +165,16 @@ class HttpInterceptorImplementation<
   }
 
   async stop() {
+    this.stoppingPromise ??= this.stopOnce();
+
+    try {
+      await this.stoppingPromise;
+    } finally {
+      this.stoppingPromise = undefined;
+    }
+  }
+
+  private async stopOnce() {
     this.worker?.unregisterRunningInterceptor(this);
 
     const isLastRunningInterceptor = this.worker?.numberOfRunningInterceptors === 0;
