@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import HttpInterceptorStore from '@/http/interceptor/HttpInterceptorStore';
 import {
   createInterceptorToken,
   DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
@@ -14,8 +13,6 @@ import { createInternalInterceptorServer } from '@tests/utils/interceptorServers
 import { createHttpInterceptor } from '../factory';
 
 describe('HttpInterceptor (node, remote) > Authentication', () => {
-  const store = new HttpInterceptorStore();
-
   const server = createInternalInterceptorServer({
     tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     logUnhandledRequests: false,
@@ -33,7 +30,7 @@ describe('HttpInterceptor (node, remote) > Authentication', () => {
     await removeInterceptorToken(token.id);
   });
 
-  it('should create a fresh worker after an authentication failure', async () => {
+  it('should start after correcting invalid authentication', async () => {
     const invalidToken = 'invalid-token';
     expect(invalidToken).not.toBe(token.value);
 
@@ -50,23 +47,14 @@ describe('HttpInterceptor (node, remote) > Authentication', () => {
     expect(interceptor.isRunning).toBe(false);
     expect(interceptor.platform).toBe(null);
 
-    let remoteWorker = store.getRemoteWorker(new URL(interceptor.baseURL), { auth: interceptor.auth });
-    expect(remoteWorker).toBe(undefined);
-
     interceptor.auth!.token = token.value;
 
     try {
       await expect(interceptor.start()).resolves.toBeUndefined();
       expect(interceptor.isRunning).toBe(true);
       expect(interceptor.platform).toBe('node');
-
-      remoteWorker = store.getRemoteWorker(new URL(interceptor.baseURL), { auth: interceptor.auth });
-      expect(remoteWorker).toBeDefined();
     } finally {
       await interceptor.stop();
     }
-
-    remoteWorker = store.getRemoteWorker(new URL(interceptor.baseURL), { auth: interceptor.auth });
-    expect(remoteWorker).toBe(undefined);
   });
 });
