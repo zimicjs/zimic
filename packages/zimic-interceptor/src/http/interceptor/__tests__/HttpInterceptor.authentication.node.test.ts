@@ -4,6 +4,7 @@ import HttpInterceptorStore from '@/http/interceptor/HttpInterceptorStore';
 import {
   createInterceptorToken,
   DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
+  InterceptorToken,
   removeInterceptorToken,
 } from '@/server/utils/auth';
 import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
@@ -14,12 +15,13 @@ import { createHttpInterceptor } from '../factory';
 
 describe('HttpInterceptor (node, remote) > Authentication', () => {
   const store = new HttpInterceptorStore();
+
   const server = createInternalInterceptorServer({
     tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     logUnhandledRequests: false,
   });
 
-  let token: Awaited<ReturnType<typeof createInterceptorToken>>;
+  let token: InterceptorToken;
 
   beforeEach(async () => {
     token = await createInterceptorToken();
@@ -32,12 +34,13 @@ describe('HttpInterceptor (node, remote) > Authentication', () => {
   });
 
   it('should create a fresh worker after an authentication failure', async () => {
-    const baseURL = `http://localhost:${server.port}/api`;
-    const auth = { token: 'invalid-token' };
+    const invalidToken = 'invalid-token';
+    expect(invalidToken).not.toBe(token.value);
+
     const interceptor = createHttpInterceptor<{}>({
       type: 'remote',
-      baseURL,
-      auth,
+      baseURL: `http://localhost:${server.port}`,
+      auth: { token: invalidToken },
     });
 
     await usingIgnoredConsole(['error'], async () => {
@@ -46,19 +49,24 @@ describe('HttpInterceptor (node, remote) > Authentication', () => {
 
     expect(interceptor.isRunning).toBe(false);
     expect(interceptor.platform).toBe(null);
-    expect(store.remoteWorker(new URL(baseURL), { auth })).toBe(undefined);
 
-    auth.token = token.value;
+    let remoteWorker = store.getRemoteWorker(new URL(interceptor.baseURL), { auth: interceptor.auth });
+    expect(remoteWorker).toBe(undefined);
+
+    interceptor.auth!.token = token.value;
 
     try {
       await expect(interceptor.start()).resolves.toBeUndefined();
       expect(interceptor.isRunning).toBe(true);
       expect(interceptor.platform).toBe('node');
-      expect(store.remoteWorker(new URL(baseURL), { auth })).toBeDefined();
+
+      remoteWorker = store.getRemoteWorker(new URL(interceptor.baseURL), { auth: interceptor.auth });
+      expect(remoteWorker).toBeDefined();
     } finally {
       await interceptor.stop();
     }
 
-    expect(store.remoteWorker(new URL(baseURL), { auth })).toBe(undefined);
+    remoteWorker = store.getRemoteWorker(new URL(interceptor.baseURL), { auth: interceptor.auth });
+    expect(remoteWorker).toBe(undefined);
   });
 });

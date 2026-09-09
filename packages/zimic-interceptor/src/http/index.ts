@@ -9,7 +9,7 @@ export { default as UnknownHttpInterceptorPlatformError } from './interceptor/er
 export { default as UnknownHttpInterceptorTypeError } from './interceptor/errors/UnknownHttpInterceptorTypeError';
 export { default as RequestSavingSafeLimitExceededError } from './interceptor/errors/RequestSavingSafeLimitExceededError';
 
-export { default as UnregisteredBrowserServiceWorkerError } from './interceptorWorker/errors/UnregisteredBrowserServiceWorkerError';
+export { default as UnregisteredBrowserServiceWorkerError } from '@/interceptor/errors/UnregisteredBrowserServiceWorkerError';
 
 export { default as DisabledRequestSavingError } from './requestHandler/errors/DisabledRequestSavingError';
 // eslint-disable-next-line @typescript-eslint/no-deprecated

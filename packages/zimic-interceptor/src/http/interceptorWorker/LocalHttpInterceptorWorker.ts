@@ -1,8 +1,9 @@
 import { HttpRequest, HttpResponse, HttpMethod, HttpSchema, HttpHeadersInit, HttpBody } from '@zimic/http';
 import { createRegexFromPath, excludeNonPathParams, validatePathParams } from '@zimic/utils/url';
-import { SharedOptions as MSWWorkerSharedOptions, bypass, http, passthrough } from 'msw';
+import { SharedOptions as MSWWorkerSharedOptions, HttpHandler as MSWHttpHandler, bypass, http, passthrough } from 'msw';
 
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
+import { MSWWorker } from '@/interceptor/types/msw';
 import { removeArrayIndex } from '@/utils/arrays';
 
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
@@ -13,7 +14,6 @@ import HttpInterceptorImplementation, {
 import { UnhandledRequestStrategy } from '../interceptor/types/options';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { HttpResponseFactory, HttpResponseFactoryContext } from './types/http';
-import type { MSWHttpHandler, MSWWorker } from './types/msw';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
 
 interface HttpHandler {
@@ -47,10 +47,6 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   get class() {
     return LocalHttpInterceptorWorker;
-  }
-
-  static get isMSWWorkerRunning() {
-    return new LocalMSWWorkerStore().isMSWWorkerRunning();
   }
 
   get type() {
@@ -98,6 +94,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       }
 
       await this.store.startMSWWorker(mswWorker, sharedOptions);
+
       this.isRunning = true;
     });
   }

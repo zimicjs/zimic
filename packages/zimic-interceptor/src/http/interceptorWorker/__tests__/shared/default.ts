@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
 import NotRunningHttpInterceptorError from '@/http/interceptor/errors/NotRunningHttpInterceptorError';
+import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
+import { BrowserMSWWorker, NodeMSWWorker } from '@/interceptor/types/msw';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { createInternalHttpInterceptor, usingHttpInterceptorWorker } from '@tests/utils/interceptors';
 
@@ -8,7 +10,6 @@ import { createHttpInterceptorWorker } from '../../factory';
 import HttpInterceptorWorker from '../../HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '../../LocalHttpInterceptorWorker';
 import RemoteHttpInterceptorWorker from '../../RemoteHttpInterceptorWorker';
-import { BrowserMSWWorker, NodeMSWWorker } from '../../types/msw';
 import { LocalHttpInterceptorWorkerOptions, RemoteHttpInterceptorWorkerOptions } from '../../types/options';
 import { SharedHttpInterceptorWorkerTestOptions } from './types';
 
@@ -263,7 +264,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
           /* istanbul ignore else -- @preserve
            * Because we only start the singleton browser worker once, the mock rejection will only happen if the global
            * worker is not yet running. If it is, the start will succeed because the worker won't be restarted. */
-          if (LocalHttpInterceptorWorker.isMSWWorkerRunning) {
+          if (LocalMSWWorkerStore.isMSWWorkerRunning) {
             await expect(interceptorStartPromise).resolves.not.toThrow();
           } else {
             await expect(interceptorStartPromise).rejects.toThrow(error);

@@ -32,7 +32,7 @@ class HttpInterceptorStore {
     return key.join(':');
   }
 
-  remoteWorker(baseURL: URL, options: RemoteWorkerKeyOptions) {
+  getRemoteWorker(baseURL: URL, options: RemoteWorkerKeyOptions) {
     const remoteWorkerKey = this.getRemoteWorkerKey(baseURL, options);
     return this.class.remoteWorkers.get(remoteWorkerKey);
   }

@@ -12,7 +12,7 @@ const importMSWBrowser = createCachedDynamicImport(() => import('msw/browser'));
 class LocalMSWWorkerStore {
   private static mswWorker?: MSWWorker;
   private static creatingMSWWorkerPromise?: Promise<MSWWorker>;
-  private static isMSWWorkerRunning = false;
+  static isMSWWorkerRunning = false;
   private static startingMSWWorkerPromise?: Promise<void>;
   private static numberOfRunningWorkers = 0;
 
@@ -110,10 +110,6 @@ class LocalMSWWorkerStore {
       mswWorker.close();
       this.class.isMSWWorkerRunning = false;
     }
-  }
-
-  isMSWWorkerRunning() {
-    return this.class.isMSWWorkerRunning;
   }
 
   isInternalBrowserWorker(worker: MSWWorker): worker is BrowserMSWWorker {

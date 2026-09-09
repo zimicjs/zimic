@@ -28,7 +28,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     baseURL = getBaseURL();
     serverURL = new URL(baseURL);
 
-    const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
+    const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
     expect(worker).toBe(undefined);
 
     expect(store.numberOfRunningLocalInterceptors).toBe(0);
@@ -36,7 +36,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
   });
 
   afterEach(() => {
-    const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
+    const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
     expect(worker).toBe(undefined);
 
     expect(store.numberOfRunningLocalInterceptors).toBe(0);
@@ -87,7 +87,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     await usingHttpInterceptor<{}>(getInterceptorOptions(), (interceptor) => {
       expect(interceptor.platform).toBe(platform);
 
-      const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
+      const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
       expect(worker!.platform).toBe(platform);
     });
   });
@@ -141,7 +141,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
         await interceptor.start();
         expect(interceptor.isRunning).toBe(true);
 
-        const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
+        const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
         expect(worker).toBeDefined();
         expect(worker!.isRunning).toBe(true);
 
@@ -163,7 +163,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
         await interceptor.start();
         expect(interceptor.isRunning).toBe(true);
 
-        const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
+        const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
         expect(worker).toBeDefined();
         expect(worker!.isRunning).toBe(true);
 
