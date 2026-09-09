@@ -46,6 +46,7 @@ class HttpInterceptorImplementation<
   private deleteWorker: () => void;
   private worker?: HttpInterceptorWorker;
   private lifecyclePromise: Promise<void> = Promise.resolve();
+  private pendingStartPromise?: Promise<void>;
   private numberOfPendingStarts = 0;
 
   requestSaving: HttpInterceptorRequestSaving;
@@ -136,14 +137,22 @@ class HttpInterceptorImplementation<
     return this.worker?.platform ?? null;
   }
 
-  async start() {
+  start() {
+    if (this.pendingStartPromise) {
+      return this.pendingStartPromise;
+    }
+
     this.numberOfPendingStarts++;
 
-    try {
-      await this.enqueueLifecycleOperation(() => this.startOnce());
-    } finally {
+    const startPromise = this.enqueueLifecycleOperation(() => this.startOnce()).finally(() => {
       this.numberOfPendingStarts--;
-    }
+      if (this.pendingStartPromise === startPromise) {
+        this.pendingStartPromise = undefined;
+      }
+    });
+
+    this.pendingStartPromise = startPromise;
+    return startPromise;
   }
 
   private async startOnce() {
@@ -169,6 +178,7 @@ class HttpInterceptorImplementation<
   }
 
   async stop(beforeStop?: () => PossiblePromise<void>) {
+    this.pendingStartPromise = undefined;
     await this.enqueueLifecycleOperation(() => this.stopOnce(beforeStop));
   }
 

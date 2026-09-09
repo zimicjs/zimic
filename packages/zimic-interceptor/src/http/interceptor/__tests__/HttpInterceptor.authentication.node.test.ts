@@ -42,7 +42,17 @@ describe('HttpInterceptor (node, remote) > Authentication', () => {
     });
 
     await usingIgnoredConsole(['error'], async () => {
-      await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
+      const [firstStartResult, secondStartResult] = await Promise.allSettled([
+        interceptor.start(),
+        interceptor.start(),
+      ]);
+
+      if (firstStartResult.status !== 'rejected' || secondStartResult.status !== 'rejected') {
+        throw new Error('Expected both interceptor starts to reject.');
+      }
+
+      expect(firstStartResult.reason).toBeInstanceOf(UnauthorizedWebSocketConnectionError);
+      expect(secondStartResult.reason).toBe(firstStartResult.reason);
     });
 
     expect(interceptor.isRunning).toBe(false);
