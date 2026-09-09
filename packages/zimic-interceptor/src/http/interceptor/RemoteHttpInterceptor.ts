@@ -14,8 +14,6 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
   #auth?: RemoteHttpInterceptorOptions['auth'];
 
   constructor(options: RemoteHttpInterceptorOptions) {
-    this.auth = options.auth;
-
     const baseURL = new URL(options.baseURL);
 
     this.implementation = new HttpInterceptorImplementation<Schema, typeof RemoteHttpRequestHandler>({
@@ -34,6 +32,8 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
       onUnhandledRequest: options.onUnhandledRequest,
       requestSaving: options.requestSaving,
     });
+
+    this.auth = options.auth;
   }
 
   get type() {
@@ -64,7 +64,7 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
     const cannotChangeAuthWhileRunningMessage =
       'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?';
 
-    if (this.isRunning) {
+    if (this.isRunning || this.implementation.isStarting) {
       throw new RunningHttpInterceptorError(cannotChangeAuthWhileRunningMessage);
     }
 
@@ -75,7 +75,7 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
 
     this.#auth = new Proxy(auth, {
       set: (target, property, value) => {
-        if (this.isRunning) {
+        if (this.isRunning || this.implementation.isStarting) {
           throw new RunningHttpInterceptorError(cannotChangeAuthWhileRunningMessage);
         }
         return Reflect.set(target, property, value);

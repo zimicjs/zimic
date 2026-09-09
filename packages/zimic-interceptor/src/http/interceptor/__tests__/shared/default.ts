@@ -92,7 +92,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
-  it('should now throw an error if started multiple times', async () => {
+  it('should not throw an error if started multiple times', async () => {
     await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (interceptor) => {
       expect(interceptor.isRunning).toBe(false);
 
@@ -108,6 +108,19 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
       expect(interceptor.isRunning).toBe(true);
       await interceptor.start();
       expect(interceptor.isRunning).toBe(true);
+    });
+  });
+
+  it('should support starting and stopping the same interceptor concurrently', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (interceptor) => {
+      await Promise.all([interceptor.start(), interceptor.start()]);
+      expect(interceptor.isRunning).toBe(true);
+
+      await Promise.all([interceptor.stop(), interceptor.stop()]);
+      expect(interceptor.isRunning).toBe(false);
+
+      const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+      expect(worker).toBe(undefined);
     });
   });
 
@@ -180,6 +193,36 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
         await otherInterceptor.stop();
         expect(otherInterceptor.isRunning).toBe(false);
 
+        expect(worker!.isRunning).toBe(false);
+      });
+    });
+  });
+
+  it('should support starting interceptors concurrently', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (interceptor) => {
+      await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (otherInterceptor) => {
+        await Promise.all([interceptor.start(), otherInterceptor.start()]);
+
+        expect(interceptor.isRunning).toBe(true);
+        expect(otherInterceptor.isRunning).toBe(true);
+
+        const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+        expect(worker).toBeDefined();
+        expect(worker!.isRunning).toBe(true);
+      });
+    });
+  });
+
+  it('should support stopping interceptors concurrently', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), async (interceptor) => {
+      await usingHttpInterceptor<{}>(getInterceptorOptions(), async (otherInterceptor) => {
+        const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+        expect(worker).toBeDefined();
+
+        await Promise.all([interceptor.stop(), otherInterceptor.stop()]);
+
+        expect(interceptor.isRunning).toBe(false);
+        expect(otherInterceptor.isRunning).toBe(false);
         expect(worker!.isRunning).toBe(false);
       });
     });

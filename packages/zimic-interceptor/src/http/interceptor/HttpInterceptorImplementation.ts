@@ -45,6 +45,7 @@ class HttpInterceptorImplementation<
   private createWorker: () => HttpInterceptorWorker;
   private deleteWorker: () => void;
   private worker?: HttpInterceptorWorker;
+  private startingPromise?: Promise<void>;
 
   requestSaving: HttpInterceptorRequestSaving;
   private numberOfSavedRequests = 0;
@@ -104,7 +105,7 @@ class HttpInterceptorImplementation<
   }
 
   set baseURL(newBaseURL: URL) {
-    if (this.isRunning) {
+    if (this.isRunning || this.isStarting) {
       throw new RunningHttpInterceptorError(
         'Did you forget to call `await interceptor.stop()` before changing the base URL?',
       );
@@ -135,6 +136,16 @@ class HttpInterceptorImplementation<
   }
 
   async start() {
+    this.startingPromise ??= this.startOnce();
+
+    try {
+      await this.startingPromise;
+    } finally {
+      this.startingPromise = undefined;
+    }
+  }
+
+  private async startOnce() {
     try {
       this.worker = this.createWorker();
 
@@ -146,6 +157,10 @@ class HttpInterceptorImplementation<
       await this.stop();
       throw error;
     }
+  }
+
+  get isStarting() {
+    return this.startingPromise !== undefined;
   }
 
   async stop() {

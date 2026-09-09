@@ -10,6 +10,7 @@ import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/Unaut
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
+import RunningHttpInterceptorError from '../errors/RunningHttpInterceptorError';
 import { createHttpInterceptor } from '../factory';
 
 describe('HttpInterceptor (node, remote) > Authentication', () => {
@@ -56,5 +57,26 @@ describe('HttpInterceptor (node, remote) > Authentication', () => {
     } finally {
       await interceptor.stop();
     }
+  });
+
+  it('should not support changing authentication while starting', async () => {
+    const interceptor = createHttpInterceptor<{}>({
+      type: 'remote',
+      baseURL: `http://localhost:${server.port}`,
+      auth: { token: token.value },
+    });
+
+    const startPromise = interceptor.start();
+
+    expect(() => {
+      interceptor.auth!.token = 'other-token';
+    }).toThrow(
+      new RunningHttpInterceptorError(
+        'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',
+      ),
+    );
+
+    await startPromise;
+    await interceptor.stop();
   });
 });
