@@ -192,9 +192,11 @@ await handler.respond((request) => declaration);
 
 **Arguments**:
 
-1. **declaration**: `HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode> | HttpRequestHandlerResponseDeclarationFactory<MethodSchema, StatusCode>`
+1. **declaration**: `HttpRequestHandlerResponseStaticDeclaration<MethodSchema, StatusCode> | HttpRequestHandlerResponseComputedDeclaration<Path, MethodSchema, StatusCode>`
 
    The response declaration or a factory to create it.
+
+   `HttpRequestHandlerResponseDeclaration` was renamed to `HttpRequestHandlerResponseStaticDeclaration`, and `HttpRequestHandlerResponseDeclarationFactory` was renamed to `HttpRequestHandlerResponseComputedDeclaration`. The previous names remain available as aliases and are not deprecated.
 
    If declared as a static object, the declaration can have the following properties:
    - **status**: `HttpStatusCode`
@@ -223,7 +225,7 @@ await handler.respond((request) => declaration);
 
       The intercepted request to respond to.
 
-   **Returns**: `Promise<HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>> | HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>`
+   **Returns**: `Promise<HttpRequestHandlerResponseStaticDeclaration<MethodSchema, StatusCode>> | HttpRequestHandlerResponseStaticDeclaration<MethodSchema, StatusCode>`
 
 **Returns**: `HttpRequestHandler<Method, Path, StatusCode>`
 
