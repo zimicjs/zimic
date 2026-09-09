@@ -96,8 +96,8 @@ import {
   type RemoteHttpRequestHandler,
   type SyncedRemoteHttpRequestHandler,
   type PendingRemoteHttpRequestHandler,
-  type HttpRequestHandlerResponseStaticDeclaration,
   type HttpRequestHandlerResponseDeclaration,
+  type HttpRequestHandlerResponseStaticDeclaration,
   type HttpRequestHandlerResponseComputedDeclaration,
   type HttpRequestHandlerResponseDeclarationFactory,
   type HttpRequestHandlerResponseDelayFactory,
@@ -320,9 +320,10 @@ describe('Exports', () => {
     expectTypeOf<RemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
     expectTypeOf<SyncedRemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
     expectTypeOf<PendingRemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
-    expectTypeOf<HttpRequestHandlerResponseStaticDeclaration<never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestHandlerResponseDeclaration<never, never>>().not.toBeAny();
+    expectTypeOf<HttpRequestHandlerResponseStaticDeclaration<never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestHandlerResponseComputedDeclaration<never, never, never>>().not.toBeAny();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     expectTypeOf<HttpRequestHandlerResponseDeclarationFactory<never, never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestHandlerResponseDelayFactory<never, never>>().not.toBeAny();
 

@@ -76,6 +76,16 @@ export type HttpRequestHandlerResponseComputedDeclaration<
   request: Omit<HttpInterceptorRequest<Path, MethodSchema>, 'response'>,
 ) => PossiblePromise<HttpRequestHandlerResponseStaticDeclaration<MethodSchema, StatusCode>>;
 
+/**
+ * @deprecated Use `HttpRequestHandlerResponseComputedDeclaration` instead.
+ * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference}
+ */
+export type HttpRequestHandlerResponseDeclarationFactory<
+  Path extends string,
+  MethodSchema extends HttpMethodSchema,
+  StatusCode extends HttpStatusCode = HttpStatusCode,
+> = HttpRequestHandlerResponseComputedDeclaration<Path, MethodSchema, StatusCode>;
+
 /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
 export type HttpRequestHandlerResponseDeclaration<
   Path extends string,
