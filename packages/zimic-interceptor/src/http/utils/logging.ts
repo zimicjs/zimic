@@ -1,11 +1,11 @@
 import { HttpFormData, HttpHeaders, HttpSearchParams } from '@zimic/http';
 
-function stringifyJSONToLog(value: unknown): string {
+function stringifyHttpJSONToLog(value: unknown): string {
   return JSON.stringify(
     value,
     (_key, value) => {
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      return stringifyValueToLog(value, {
+      return stringifyHttpValueToLog(value, {
         fallback: (value) => value as string,
       });
     },
@@ -16,30 +16,30 @@ function stringifyJSONToLog(value: unknown): string {
     .replace(/"(Blob { type: '.*?', size: \d*? })"/g, '$1');
 }
 
-export function stringifyValueToLog(
+export function stringifyHttpValueToLog(
   value: unknown,
   options: {
     fallback?: (value: unknown) => string;
     includeClassName?: { searchParams?: boolean };
   } = {},
 ): string {
-  const { fallback = stringifyJSONToLog, includeClassName } = options;
+  const { fallback = stringifyHttpJSONToLog, includeClassName } = options;
 
   if (value === null || value === undefined || typeof value !== 'object') {
     return String(value);
   }
 
   if (value instanceof HttpHeaders) {
-    return stringifyValueToLog(value.toObject());
+    return stringifyHttpValueToLog(value.toObject());
   }
 
   if (value instanceof HttpSearchParams) {
     const prefix = (includeClassName?.searchParams ?? false) ? 'URLSearchParams ' : '';
-    return `${prefix}${stringifyValueToLog(value.toObject())}`;
+    return `${prefix}${stringifyHttpValueToLog(value.toObject())}`;
   }
 
   if (value instanceof HttpFormData) {
-    return `FormData ${stringifyValueToLog(value.toObject())}`;
+    return `FormData ${stringifyHttpValueToLog(value.toObject())}`;
   }
 
   if (value instanceof File) {

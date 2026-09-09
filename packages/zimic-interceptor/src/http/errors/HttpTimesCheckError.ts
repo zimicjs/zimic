@@ -3,7 +3,7 @@ import { Range } from '@zimic/utils/types';
 import color from 'picocolors';
 
 import { HttpInterceptorRequestSaving } from '@/http/interceptor/types/public';
-import { stringifyValueToLog } from '@/http/utils/logging';
+import { stringifyHttpValueToLog } from '@/http/utils/logging';
 
 import { UnmatchedHttpInterceptorRequestGroup } from '../requestHandler/types/restrictions';
 import HttpTimesDeclarationPointer from './HttpTimesDeclarationPointer';
@@ -66,8 +66,8 @@ function createMessageDiffs({ requestSaving, unmatchedRequestGroups }: HttpTimes
       if (diff.computed) {
         messageParts.push('Computed restriction:');
 
-        const stringifiedExpected = stringifyValueToLog(diff.computed.expected);
-        const stringifiedReceived = stringifyValueToLog(diff.computed.received);
+        const stringifiedExpected = stringifyHttpValueToLog(diff.computed.expected);
+        const stringifiedReceived = stringifyHttpValueToLog(diff.computed.received);
 
         messageParts.push(`  ${color.green(`- return ${stringifiedExpected}`)}`);
         messageParts.push(`  ${color.red(`+ return ${stringifiedReceived}`)}`);
@@ -76,8 +76,8 @@ function createMessageDiffs({ requestSaving, unmatchedRequestGroups }: HttpTimes
       if (diff.headers) {
         messageParts.push('Headers:');
 
-        const stringifiedExpected = stringifyValueToLog(diff.headers.expected);
-        const stringifiedReceived = stringifyValueToLog(diff.headers.received);
+        const stringifiedExpected = stringifyHttpValueToLog(diff.headers.expected);
+        const stringifiedReceived = stringifyHttpValueToLog(diff.headers.received);
 
         messageParts.push(`  ${color.green(`- ${stringifiedExpected}`)}`);
         messageParts.push(`  ${color.red(`+ ${stringifiedReceived}`)}`);
@@ -86,8 +86,8 @@ function createMessageDiffs({ requestSaving, unmatchedRequestGroups }: HttpTimes
       if (diff.searchParams) {
         messageParts.push('Search params:');
 
-        const stringifiedExpected = stringifyValueToLog(diff.searchParams.expected);
-        const stringifiedReceived = stringifyValueToLog(diff.searchParams.received);
+        const stringifiedExpected = stringifyHttpValueToLog(diff.searchParams.expected);
+        const stringifiedReceived = stringifyHttpValueToLog(diff.searchParams.received);
 
         messageParts.push(`  ${color.green(`- ${stringifiedExpected}`)}`);
         messageParts.push(`  ${color.red(`+ ${stringifiedReceived}`)}`);
@@ -96,10 +96,10 @@ function createMessageDiffs({ requestSaving, unmatchedRequestGroups }: HttpTimes
       if (diff.body) {
         messageParts.push('Body:');
 
-        const stringifiedExpected = stringifyValueToLog(diff.body.expected, {
+        const stringifiedExpected = stringifyHttpValueToLog(diff.body.expected, {
           includeClassName: { searchParams: true },
         });
-        const stringifiedReceived = stringifyValueToLog(diff.body.received, {
+        const stringifiedReceived = stringifyHttpValueToLog(diff.body.received, {
           includeClassName: { searchParams: true },
         });
 
