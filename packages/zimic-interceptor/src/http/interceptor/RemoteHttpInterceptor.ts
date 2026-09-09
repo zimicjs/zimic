@@ -73,14 +73,17 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
       return;
     }
 
-    this.#auth = new Proxy(auth, {
-      set: (target, property, value) => {
-        if (this.isRunning || this.implementation.isStarting) {
-          throw new RunningHttpInterceptorError(cannotChangeAuthWhileRunningMessage);
-        }
-        return Reflect.set(target, property, value);
+    this.#auth = new Proxy(
+      { ...auth },
+      {
+        set: (target, property, value) => {
+          if (this.isRunning || this.implementation.isStarting) {
+            throw new RunningHttpInterceptorError(cannotChangeAuthWhileRunningMessage);
+          }
+          return Reflect.set(target, property, value);
+        },
       },
-    });
+    );
   }
 
   get onUnhandledRequest() {
@@ -100,7 +103,7 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
   }
 
   async start() {
-    if (this.isRunning) {
+    if (this.isRunning && !this.implementation.isStopping) {
       return;
     }
 
@@ -108,12 +111,11 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
   }
 
   async stop() {
-    if (!this.isRunning) {
+    if (!this.isRunning && !this.implementation.isStarting) {
       return;
     }
 
-    await this.clear();
-    await this.implementation.stop();
+    await this.implementation.stop(() => this.clear());
   }
 
   get = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {

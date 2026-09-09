@@ -124,6 +124,29 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
+  it('should support stopping while starting', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (interceptor) => {
+      await Promise.all([interceptor.start(), interceptor.stop()]);
+
+      expect(interceptor.isRunning).toBe(false);
+
+      const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+      expect(worker).toBe(undefined);
+    });
+  });
+
+  it('should support starting while stopping', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), async (interceptor) => {
+      await Promise.all([interceptor.stop(), interceptor.start()]);
+
+      expect(interceptor.isRunning).toBe(true);
+
+      const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+      expect(worker).toBeDefined();
+      expect(worker!.isRunning).toBe(true);
+    });
+  });
+
   it('should not throw an error if stopped multiple times', async () => {
     await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (interceptor) => {
       expect(interceptor.isRunning).toBe(false);

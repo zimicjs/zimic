@@ -137,6 +137,10 @@ class HttpInterceptorImplementation<
   }
 
   async start() {
+    if (this.stoppingPromise) {
+      await this.stoppingPromise;
+    }
+
     this.startingPromise ??= this.startOnce();
 
     try {
@@ -149,13 +153,13 @@ class HttpInterceptorImplementation<
   private async startOnce() {
     try {
       this.worker = this.createWorker();
+      this.worker.registerRunningInterceptor(this);
 
       await this.worker.start();
-      this.worker.registerRunningInterceptor(this);
 
       this.markAsRunning(true);
     } catch (error) {
-      await this.stop();
+      await this.stopWorker();
       throw error;
     }
   }
@@ -164,8 +168,12 @@ class HttpInterceptorImplementation<
     return this.startingPromise !== undefined;
   }
 
-  async stop() {
-    this.stoppingPromise ??= this.stopOnce();
+  get isStopping() {
+    return this.stoppingPromise !== undefined;
+  }
+
+  async stop(beforeStop?: () => PossiblePromise<void>) {
+    this.stoppingPromise ??= this.stopOnce(beforeStop);
 
     try {
       await this.stoppingPromise;
@@ -174,7 +182,18 @@ class HttpInterceptorImplementation<
     }
   }
 
-  private async stopOnce() {
+  private async stopOnce(beforeStop?: () => PossiblePromise<void>) {
+    try {
+      await this.startingPromise;
+    } catch {
+      return;
+    }
+
+    await beforeStop?.();
+    await this.stopWorker();
+  }
+
+  private async stopWorker() {
     this.worker?.unregisterRunningInterceptor(this);
 
     const isLastRunningInterceptor = this.worker?.numberOfRunningInterceptors === 0;

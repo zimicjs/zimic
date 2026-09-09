@@ -82,4 +82,23 @@ describe('HttpInterceptor (node, remote) > Authentication', () => {
       await interceptor.stop();
     }
   });
+
+  it('should copy authentication when created', async () => {
+    const auth = { token: token.value };
+    const interceptor = createHttpInterceptor<{}>({
+      type: 'remote',
+      baseURL: `http://localhost:${server.port}`,
+      auth,
+    });
+
+    try {
+      const startPromise = interceptor.start();
+      auth.token = 'other-token';
+
+      await startPromise;
+      expect(interceptor.auth).toEqual({ token: token.value });
+    } finally {
+      await interceptor.stop();
+    }
+  });
 });
