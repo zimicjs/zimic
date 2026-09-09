@@ -31,7 +31,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Base URLs', ({ type }
     platform: 'node',
     type,
     getBaseURL: () => baseURL,
-    getOtherBaseURL: () => otherBaseURL,
+    getOtherBaseURL: type === 'remote' ? () => otherBaseURL : undefined,
     getInterceptorOptions: () => ({ type, baseURL }),
   });
 });
