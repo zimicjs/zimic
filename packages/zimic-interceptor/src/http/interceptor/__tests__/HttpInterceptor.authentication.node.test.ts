@@ -66,17 +66,20 @@ describe('HttpInterceptor (node, remote) > Authentication', () => {
       auth: { token: token.value },
     });
 
-    const startPromise = interceptor.start();
+    try {
+      const startPromise = interceptor.start();
 
-    expect(() => {
-      interceptor.auth!.token = 'other-token';
-    }).toThrow(
-      new RunningHttpInterceptorError(
-        'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',
-      ),
-    );
+      expect(() => {
+        interceptor.auth!.token = 'other-token';
+      }).toThrow(
+        new RunningHttpInterceptorError(
+          'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',
+        ),
+      );
 
-    await startPromise;
-    await interceptor.stop();
+      await startPromise;
+    } finally {
+      await interceptor.stop();
+    }
   });
 });
