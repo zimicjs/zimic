@@ -14,7 +14,7 @@ import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { type, getBaseURL, getAlternativeBaseURL, getInterceptorOptions } = options;
+  const { type, getBaseURL, getOtherBaseURL, getInterceptorOptions } = options;
 
   let defaultBaseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
@@ -90,8 +90,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
       expect(handler.requests).toHaveLength(1);
 
-      const newBaseURL =
-        type === 'remote' ? (getAlternativeBaseURL?.() ?? joinURL(baseURL, 'new')) : joinURL(baseURL, 'new');
+      const newBaseURL = getOtherBaseURL?.() ?? joinURL(baseURL, 'new');
       expect(newBaseURL).not.toBe(interceptor.baseURL);
 
       await interceptor.stop();
