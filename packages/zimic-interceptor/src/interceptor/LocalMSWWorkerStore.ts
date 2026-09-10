@@ -4,17 +4,20 @@ import type { SharedOptions as MSWWorkerSharedOptions } from 'msw';
 import { isClientSide, isServerSide } from '@/utils/environment';
 
 import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
-import type { BrowserMSWWorker, MSWWorker, NodeMSWWorker } from './types/msw';
+import type { BrowserMSWWorker, MSWWorker } from './types/msw';
 
 const importMSWNode = createCachedDynamicImport(() => import('msw/node'));
 const importMSWBrowser = createCachedDynamicImport(() => import('msw/browser'));
 
 class LocalMSWWorkerStore {
   private static mswWorker?: MSWWorker;
+
   private static creatingMSWWorkerPromise?: Promise<MSWWorker>;
-  static isMSWWorkerRunning = false;
   private static startingMSWWorkerPromise?: Promise<void>;
+
   private static numberOfRunningWorkers = 0;
+
+  static isMSWWorkerRunning = false;
 
   private class = LocalMSWWorkerStore;
 
@@ -114,12 +117,6 @@ class LocalMSWWorkerStore {
 
   isInternalBrowserWorker(worker: MSWWorker): worker is BrowserMSWWorker {
     return 'start' in worker && 'stop' in worker;
-  }
-
-  /* istanbul ignore next -- @preserve
-   * Current callers use the browser-worker guard directly; this is a convenience inverse. */
-  isInternalNodeWorker(worker: MSWWorker): worker is NodeMSWWorker {
-    return !this.isInternalBrowserWorker(worker);
   }
 }
 

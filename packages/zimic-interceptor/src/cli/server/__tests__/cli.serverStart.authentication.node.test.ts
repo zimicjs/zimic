@@ -4,7 +4,7 @@ import color from 'picocolors';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
 
-import { NotRunningHttpInterceptorError, RemoteHttpInterceptorOptions } from '@/http';
+import { NotRunningHttpInterceptorError } from '@/http';
 import { createHttpInterceptor } from '@/http/interceptor/factory';
 import InvalidInterceptorTokenValueError from '@/server/errors/InvalidInterceptorTokenValueError';
 import {
@@ -189,80 +189,6 @@ describe('CLI > Server start > Authentication', () => {
     );
   });
 
-  it('should allow an authenticated interceptor connection if using a token directory and changing valid tokens', async () => {
-    processArgvSpy.mockReturnValue([
-      'node',
-      './dist/cli.js',
-      'server',
-      'start',
-      '--tokens-dir',
-      DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
-    ]);
-
-    const token = await createInterceptorToken();
-    const otherToken = await createInterceptorToken();
-
-    const tokens = await listInterceptorTokens();
-    expect(tokens).toHaveLength(2);
-    expect(tokens[0].id).toBe(token.id);
-    expect(tokens[1].id).toBe(otherToken.id);
-
-    await usingIgnoredConsole(['log'], async () => {
-      await runCLI();
-    });
-
-    expect(server).toBeDefined();
-    expect(server!.isRunning).toBe(true);
-    expect(server!.tokensDirectory).toBe(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
-
-    await usingHttpInterceptor<{
-      '/users': {
-        GET: { response: { 204: {} } };
-      };
-    }>(
-      {
-        type: 'remote',
-        baseURL: `http://localhost:${server!.port}`,
-        auth: { token: token.value },
-      },
-      async (interceptor) => {
-        expect(interceptor.auth).toEqual<RemoteHttpInterceptorOptions['auth']>({ token: token.value });
-        expect(interceptor.isRunning).toBe(true);
-
-        await interceptor.get('/users').respond({ status: 204 });
-
-        let response = await fetch(`http://localhost:${server!.port}/users`);
-        expect(response.status).toBe(204);
-
-        await interceptor.stop();
-        expect(interceptor.isRunning).toBe(false);
-
-        await removeInterceptorToken(token.id);
-
-        await usingIgnoredConsole(['error'], async (console) => {
-          await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
-
-          expect(interceptor.isRunning).toBe(false);
-
-          expect(console.error).toHaveBeenCalledTimes(2);
-          expect(console.error).toHaveBeenNthCalledWith(1, new InvalidInterceptorTokenValueError(token.value));
-          expect(console.error).toHaveBeenNthCalledWith(2, expect.any(UnauthorizedWebSocketConnectionError));
-        });
-
-        interceptor.auth = { token: otherToken.value };
-        expect(interceptor.auth).toEqual<RemoteHttpInterceptorOptions['auth']>({ token: otherToken.value });
-
-        await interceptor.start();
-        expect(interceptor.isRunning).toBe(true);
-
-        await interceptor.get('/users').respond({ status: 204 });
-
-        response = await fetch(`http://localhost:${server!.port}/users`);
-        expect(response.status).toBe(204);
-      },
-    );
-  });
-
   it.each([
     'invalid',
     'c70ccbce',
@@ -325,61 +251,6 @@ describe('CLI > Server start > Authentication', () => {
       }).rejects.toThrow(new NotRunningHttpInterceptorError());
     },
   );
-
-  it('should not allow an interceptor connection if using a token directory and an invalid token more than once', async () => {
-    processArgvSpy.mockReturnValue([
-      'node',
-      './dist/cli.js',
-      'server',
-      'start',
-      '--tokens-dir',
-      DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
-    ]);
-
-    const token = await createInterceptorToken();
-
-    const tokens = await listInterceptorTokens();
-    expect(tokens).toHaveLength(1);
-    expect(tokens[0].id).toBe(token.id);
-
-    await usingIgnoredConsole(['log'], async () => {
-      await runCLI();
-    });
-
-    expect(server).toBeDefined();
-    expect(server!.isRunning).toBe(true);
-    expect(server!.tokensDirectory).toBe(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
-
-    const invalidTokenValue = 'invalid';
-
-    const interceptor = createHttpInterceptor<{
-      '/users': {
-        GET: { response: { 204: {} } };
-      };
-    }>({
-      type: 'remote',
-      baseURL: `http://localhost:${server!.port}`,
-      auth: { token: invalidTokenValue },
-    });
-
-    const numberOfRetries = 3;
-
-    for (let retry = 0; retry < numberOfRetries; retry++) {
-      await usingIgnoredConsole(['error'], async (console) => {
-        await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
-
-        expect(interceptor.isRunning).toBe(false);
-
-        expect(console.error).toHaveBeenCalledTimes(2);
-        expect(console.error).toHaveBeenNthCalledWith(1, new InvalidInterceptorTokenValueError(invalidTokenValue));
-        expect(console.error).toHaveBeenNthCalledWith(2, expect.any(UnauthorizedWebSocketConnectionError));
-      });
-
-      await expect(async () => {
-        await interceptor.get('/users').respond({ status: 204 });
-      }).rejects.toThrow(new NotRunningHttpInterceptorError());
-    }
-  });
 
   it('should not allow an interceptor connection if using a token directory and a token with incorrect secret', async () => {
     processArgvSpy.mockReturnValue([

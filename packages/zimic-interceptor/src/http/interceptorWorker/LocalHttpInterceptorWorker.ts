@@ -61,6 +61,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   async getMSWWorkerOrCreate() {
     return this.store.getMSWWorkerOrCreate({
       createUnknownPlatformError:
+        // The unknown platform error is created here to prevent the store from relying on HTTP-specific resources.
         /* istanbul ignore next -- @preserve
          * Unknown runtime platforms are not part of the package test matrix. */
         () => new UnknownHttpInterceptorPlatformError(),

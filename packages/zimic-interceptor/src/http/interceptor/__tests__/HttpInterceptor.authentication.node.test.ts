@@ -8,6 +8,7 @@ import {
 } from '@/server/utils/auth';
 import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
 import { usingIgnoredConsole } from '@tests/utils/console';
+import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
 import RunningHttpInterceptorError from '../errors/RunningHttpInterceptorError';
@@ -29,6 +30,41 @@ describe('HttpInterceptor (node, remote) > Authentication', () => {
   afterEach(async () => {
     await server.stop();
     await removeInterceptorToken(token.id);
+  });
+
+  it('should allow starting with valid authentication', async () => {
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: { response: { 204: {} } };
+      };
+    }>(
+      {
+        type: 'remote',
+        baseURL: `http://localhost:${server.port}`,
+        auth: { token: token.value },
+      },
+      async (interceptor) => {
+        const handler = await interceptor.get('/users').respond({ status: 204 });
+        const response = await fetch(`${interceptor.baseURL}/users`);
+
+        expect(response.status).toBe(204);
+        expect(handler.requests).toHaveLength(1);
+      },
+    );
+  });
+
+  it('should not allow starting without authentication if the interceptor server requires it', async () => {
+    const interceptor = createHttpInterceptor<{}>({
+      type: 'remote',
+      baseURL: `http://localhost:${server.port}`,
+    });
+
+    await usingIgnoredConsole(['error'], async () => {
+      await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
+    });
+
+    expect(interceptor.isRunning).toBe(false);
+    expect(interceptor.platform).toBe(null);
   });
 
   it('should be able to start after correcting invalid authentication', async () => {
@@ -95,12 +131,24 @@ describe('HttpInterceptor (node, remote) > Authentication', () => {
       const startPromise = interceptor.start();
 
       expect(() => {
+        interceptor.auth = { token: 'other-token' };
+      }).toThrow(
+        new RunningHttpInterceptorError(
+          'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',
+        ),
+      );
+
+      expect(interceptor.auth?.token).toBe(token.value);
+
+      expect(() => {
         interceptor.auth!.token = 'other-token';
       }).toThrow(
         new RunningHttpInterceptorError(
           'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',
         ),
       );
+
+      expect(interceptor.auth?.token).toBe(token.value);
 
       await startPromise;
 
