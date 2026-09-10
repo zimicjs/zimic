@@ -129,6 +129,14 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
     });
   });
 
+  it('should support being started while stopping', async () => {
+    await usingHttpInterceptorWorker(workerOptions, async (worker) => {
+      await Promise.all([worker.stop(), worker.start()]);
+
+      expect(worker.isRunning).toBe(true);
+    });
+  });
+
   it('should throw an error if trying to clear handlers without a running worker', async () => {
     await usingHttpInterceptorWorker(workerOptions, { start: false }, async (worker) => {
       expect(worker.isRunning).toBe(false);
@@ -196,6 +204,18 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
   }
 
   if (defaultWorkerOptions.type === 'local') {
+    it('should keep the shared MSW worker running after one of multiple local workers stops', async () => {
+      await usingHttpInterceptorWorker(workerOptions, async (worker) => {
+        await usingHttpInterceptorWorker(workerOptions, async (otherWorker) => {
+          await worker.stop();
+
+          expect(worker.isRunning).toBe(false);
+          expect(otherWorker.isRunning).toBe(true);
+          expect(LocalMSWWorkerStore.isMSWWorkerRunning).toBe(true);
+        });
+      });
+    });
+
     it('should throw an error after failing to start due to a unknown error', async () => {
       const interceptorWorker = createHttpInterceptorWorker(defaultWorkerOptions);
       const mswWorker = await interceptorWorker.getMSWWorkerOrCreate();

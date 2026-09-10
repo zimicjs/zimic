@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, expectTypeOf, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import HttpInterceptorStore from '@/http/interceptor/HttpInterceptorStore';
 import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -265,14 +265,30 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
   it('should support stopping the last interceptor while another starts', async () => {
     await usingHttpInterceptor<{}>(getInterceptorOptions(), async (interceptor) => {
       await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (otherInterceptor) => {
-        await Promise.all([interceptor.stop(), otherInterceptor.start()]);
+        const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+        expect(worker).toBeDefined();
+
+        const originalWorkerStop = worker!.stop.bind(worker);
+        const { promise: workerStopStartedPromise, resolve: markWorkerStopAsStarted } = Promise.withResolvers<void>();
+
+        // We need to inspect the worker stop method to be able to start another interceptor right after it is called.
+        vi.spyOn(worker!, 'stop').mockImplementationOnce(async () => {
+          markWorkerStopAsStarted();
+          await originalWorkerStop();
+        });
+
+        const stopPromise = interceptor.stop();
+        await workerStopStartedPromise;
+        await otherInterceptor.start();
+        await stopPromise;
 
         expect(interceptor.isRunning).toBe(false);
         expect(otherInterceptor.isRunning).toBe(true);
 
-        const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
-        expect(worker).toBeDefined();
-        expect(worker!.isRunning).toBe(true);
+        const runningWorker =
+          type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+        expect(runningWorker).toBe(worker);
+        expect(runningWorker!.isRunning).toBe(true);
       });
     });
   });

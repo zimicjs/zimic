@@ -177,12 +177,12 @@ class HttpInterceptorImplementation<
     return this.startPromise !== undefined;
   }
 
-  async stop(options?: { beforeStop?: () => PossiblePromise<void> }) {
+  async stop(options: { beforeStop?: () => PossiblePromise<void> }) {
     this.startPromise = undefined;
     await this.enqueueLifecycleOperation(() => this.stopOnce(options));
   }
 
-  private async stopOnce(options: { beforeStop?: () => PossiblePromise<void> } = {}) {
+  private async stopOnce(options: { beforeStop?: () => PossiblePromise<void> }) {
     if (!this.isRunning) {
       return;
     }
