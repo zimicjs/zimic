@@ -16,6 +16,7 @@ export { default as DisabledRequestSavingError } from './requestHandler/errors/D
 export { default as HttpTimesCheckError, TimesCheckError } from './errors/HttpTimesCheckError';
 
 export type {
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseStaticDeclaration,
   HttpRequestHandlerResponseComputedDeclaration,

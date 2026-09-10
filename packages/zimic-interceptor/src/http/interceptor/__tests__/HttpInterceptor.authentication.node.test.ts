@@ -110,6 +110,32 @@ describe('HttpInterceptor (node, remote) > Authentication', () => {
     }
   });
 
+  it('should not support changing authentication while stopping during startup', async () => {
+    const interceptor = createHttpInterceptor<{}>({
+      type: 'remote',
+      baseURL: `http://localhost:${server.port}`,
+      auth: { token: token.value },
+    });
+
+    const otherToken = 'other-token';
+    expect(otherToken).not.toBe(interceptor.auth?.token);
+
+    const startPromise = interceptor.start();
+    const stopPromise = interceptor.stop();
+
+    expect(() => {
+      interceptor.auth!.token = otherToken;
+    }).toThrow(
+      new RunningHttpInterceptorError(
+        'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',
+      ),
+    );
+
+    await Promise.all([startPromise, stopPromise]);
+
+    expect(interceptor.auth?.token).toBe(token.value);
+  });
+
   it('should not change authentication if the original options object is mutated while starting', async () => {
     const authOptions = { token: token.value };
 

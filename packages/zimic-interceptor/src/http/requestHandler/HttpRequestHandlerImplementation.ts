@@ -27,7 +27,7 @@ import {
   HttpRequestHandlerResponseComputedDeclaration,
   HttpRequestHandlerResponseDelayFactory,
   InterceptedHttpInterceptorRequest,
-  HttpRequestHandlerResponseDeclaration,
+  HttpRequestHandlerResponseDeclarationInput,
 } from './types/requests';
 import {
   HttpRequestHandlerRestriction,
@@ -113,7 +113,7 @@ class HttpRequestHandlerImplementation<
   }
 
   respond<NewStatusCode extends HttpStatusCode>(
-    declaration: HttpRequestHandlerResponseDeclaration<Path, Default<Schema[Path][Method]>, NewStatusCode>,
+    declaration: HttpRequestHandlerResponseDeclarationInput<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ): HttpRequestHandlerImplementation<Schema, Method, Path, NewStatusCode> {
     const newThis = this as unknown as HttpRequestHandlerImplementation<Schema, Method, Path, NewStatusCode>;
 
@@ -132,7 +132,7 @@ class HttpRequestHandlerImplementation<
   }
 
   private isResponseDeclarationFactory(
-    declaration: HttpRequestHandlerResponseDeclaration<Path, Default<Schema[Path][Method]>>,
+    declaration: HttpRequestHandlerResponseDeclarationInput<Path, Default<Schema[Path][Method]>>,
   ) {
     return typeof declaration === 'function';
   }

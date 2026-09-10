@@ -10,7 +10,7 @@ import {
 import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
-  HttpRequestHandlerResponseDeclaration,
+  HttpRequestHandlerResponseDeclarationInput,
   HttpRequestHandlerResponseDelayFactory,
   InterceptedHttpInterceptorRequest,
 } from './types/requests';
@@ -87,7 +87,7 @@ class RemoteHttpRequestHandler<
   }
 
   respond<NewStatusCode extends HttpStatusCode>(
-    declaration: HttpRequestHandlerResponseDeclaration<Path, Default<Schema[Path][Method]>, NewStatusCode>,
+    declaration: HttpRequestHandlerResponseDeclarationInput<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ): RemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode> {
     const pending = this.pending as unknown as RemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
     pending.implementation.respond(declaration);

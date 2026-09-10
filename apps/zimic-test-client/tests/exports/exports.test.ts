@@ -320,6 +320,7 @@ describe('Exports', () => {
     expectTypeOf<RemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
     expectTypeOf<SyncedRemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
     expectTypeOf<PendingRemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     expectTypeOf<HttpRequestHandlerResponseDeclaration<never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestHandlerResponseStaticDeclaration<never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestHandlerResponseComputedDeclaration<never, never, never>>().not.toBeAny();

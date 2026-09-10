@@ -140,6 +140,28 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
+  it('should not support changing the base URL while stopping during startup', async () => {
+    await usingHttpInterceptor<{}>(interceptorOptions, { start: false }, async (interceptor) => {
+      const otherBaseURL = getOtherBaseURL?.() ?? joinURL(defaultBaseURL, 'new');
+      expect(otherBaseURL).not.toBe(interceptor.baseURL);
+
+      const startPromise = interceptor.start();
+      const stopPromise = interceptor.stop();
+
+      expect(() => {
+        interceptor.baseURL = otherBaseURL;
+      }).toThrow(
+        new RunningHttpInterceptorError(
+          'Did you forget to call `await interceptor.stop()` before changing the base URL?',
+        ),
+      );
+
+      await Promise.all([startPromise, stopPromise]);
+
+      expect(interceptor.baseURL).toBe(interceptorOptions.baseURL);
+    });
+  });
+
   it('should not support changing the base URL if the interceptor is running', async () => {
     const baseURL = defaultBaseURL.toString();
 

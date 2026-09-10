@@ -47,6 +47,7 @@ class HttpInterceptorImplementation<
   private worker?: HttpInterceptorWorker;
 
   private startPromise?: Promise<void>;
+  private numberOfPendingStarts = 0;
   private lifecycleQueue: Promise<void> = Promise.resolve();
 
   requestSaving: HttpInterceptorRequestSaving;
@@ -142,7 +143,11 @@ class HttpInterceptorImplementation<
       return this.startPromise;
     }
 
+    this.numberOfPendingStarts++;
+
     const startPromise = this.enqueueLifecycleOperation(() => this.startOnce()).finally(() => {
+      this.numberOfPendingStarts--;
+
       const isLastStartPromise = this.startPromise === startPromise;
 
       if (isLastStartPromise) {
@@ -174,7 +179,7 @@ class HttpInterceptorImplementation<
   }
 
   get isStarting() {
-    return this.startPromise !== undefined;
+    return this.numberOfPendingStarts > 0;
   }
 
   async stop(options: { beforeStop?: () => PossiblePromise<void> }) {

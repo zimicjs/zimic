@@ -67,6 +67,15 @@ export type HttpRequestHandlerResponseStaticDeclaration<
   StatusCode extends HttpStatusCode = HttpStatusCode,
 > = HttpRequestHandlerStatusResponseDeclaration<MethodSchema, StatusCode> | HttpRequestHandlerActionResponseDeclaration;
 
+/**
+ * @deprecated Use `HttpRequestHandlerResponseStaticDeclaration` instead.
+ * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference}
+ */
+export type HttpRequestHandlerResponseDeclaration<
+  MethodSchema extends HttpMethodSchema = HttpMethodSchema,
+  StatusCode extends HttpStatusCode = HttpStatusCode,
+> = HttpRequestHandlerResponseStaticDeclaration<MethodSchema, StatusCode>;
+
 /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
 export type HttpRequestHandlerResponseComputedDeclaration<
   Path extends string,
@@ -87,7 +96,7 @@ export type HttpRequestHandlerResponseDeclarationFactory<
 > = HttpRequestHandlerResponseComputedDeclaration<Path, MethodSchema, StatusCode>;
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
-export type HttpRequestHandlerResponseDeclaration<
+export type HttpRequestHandlerResponseDeclarationInput<
   Path extends string,
   MethodSchema extends HttpMethodSchema,
   StatusCode extends HttpStatusCode = HttpStatusCode,
