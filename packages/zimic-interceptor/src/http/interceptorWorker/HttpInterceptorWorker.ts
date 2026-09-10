@@ -107,10 +107,13 @@ abstract class HttpInterceptorWorker {
      * reliably reproduce in tests. */
     if (stoppingResult instanceof Promise) {
       this.stoppingPromise = stoppingResult;
-      await this.stoppingPromise;
-    }
 
-    this.stoppingPromise = undefined;
+      try {
+        await this.stoppingPromise;
+      } finally {
+        this.stoppingPromise = undefined;
+      }
+    }
   }
 
   abstract use<Schema extends HttpSchema>(

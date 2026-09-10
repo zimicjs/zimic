@@ -51,7 +51,7 @@ describe('HttpInterceptor (node, remote) > Authentication', () => {
     interceptor.auth!.token = token.value;
 
     try {
-      await expect(interceptor.start()).resolves.toBeUndefined();
+      await interceptor.start();
       expect(interceptor.isRunning).toBe(true);
       expect(interceptor.platform).toBe('node');
     } finally {

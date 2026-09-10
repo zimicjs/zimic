@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import HttpInterceptorStore from '@/http/interceptor/HttpInterceptorStore';
+import LocalHttpInterceptorWorker from '@/http/interceptorWorker/LocalHttpInterceptorWorker';
 import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import NotRunningHttpInterceptorError from '../../errors/NotRunningHttpInterceptorError';
@@ -229,6 +230,36 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
 
         expect(worker!.isRunning).toBe(false);
       });
+    });
+  });
+
+  it('should still stop the shared worker when the last interceptor fails to stop once and retries', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), async (interceptor) => {
+      const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+      expect(worker).toBeDefined();
+      expect(worker!.isRunning).toBe(true);
+
+      const error = new Error('Unknown error');
+
+      // Stopping normally does not fail. To simulate a failure, we need to mock the stop method to throw an error.
+      if (worker instanceof LocalHttpInterceptorWorker) {
+        vi.spyOn(worker, 'getMSWWorkerOrCreate').mockRejectedValueOnce(error);
+      } else {
+        vi.spyOn(worker!.webSocketClient, 'stop').mockRejectedValueOnce(error);
+      }
+
+      await expect(interceptor.stop()).rejects.toThrow(error);
+      await interceptor.stop();
+
+      expect(interceptor.isRunning).toBe(false);
+      expect(worker!.isRunning).toBe(false);
+
+      const stoppedWorker =
+        type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+      expect(stoppedWorker).toBeUndefined();
+
+      await interceptor.start();
+      expect(interceptor.isRunning).toBe(true);
     });
   });
 

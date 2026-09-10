@@ -129,6 +129,26 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
     });
   });
 
+  it('should support retrying after failing to stop', async () => {
+    await usingHttpInterceptorWorker(workerOptions, async (worker) => {
+      expect(worker.isRunning).toBe(true);
+
+      const error = new Error('Unknown error');
+
+      // Stopping normally does not fail. To simulate a failure, we need to mock the stop method to throw an error.
+      if (worker instanceof LocalHttpInterceptorWorker) {
+        vi.spyOn(worker, 'getMSWWorkerOrCreate').mockRejectedValueOnce(error);
+      } else {
+        vi.spyOn(worker.webSocketClient, 'stop').mockRejectedValueOnce(error);
+      }
+
+      await expect(worker.stop()).rejects.toThrow(error);
+      await worker.stop();
+
+      expect(worker.isRunning).toBe(false);
+    });
+  });
+
   it('should support being started while stopping', async () => {
     await usingHttpInterceptorWorker(workerOptions, async (worker) => {
       await Promise.all([worker.stop(), worker.start()]);
