@@ -45,10 +45,6 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     super();
   }
 
-  get class() {
-    return LocalHttpInterceptorWorker;
-  }
-
   get type() {
     return 'local' as const;
   }

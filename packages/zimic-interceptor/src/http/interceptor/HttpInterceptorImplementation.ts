@@ -232,14 +232,6 @@ class HttpInterceptorImplementation<
     this.isRunning = isRunning;
   }
 
-  get numberOfRunningInterceptors() {
-    if (!this.isRunning) {
-      return 0;
-    }
-
-    return this.workerOrThrow.numberOfRunningInterceptors;
-  }
-
   get(path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) {
     return this.createHttpRequestHandler('GET' as HttpSchemaMethod<Schema>, path);
   }
