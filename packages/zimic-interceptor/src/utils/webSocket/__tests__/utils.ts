@@ -31,7 +31,10 @@ export function delayServerSocketConnection() {
     originalServerSocketOn.call(this, type, (...parameters) => {
       if (type === 'connection') {
         const socket = parameters[0] as ClientSocket;
-        vi.spyOn(socket, 'readyState', 'get').mockReturnValueOnce(ClientSocket.CONNECTING);
+        vi.spyOn(socket, 'readyState', 'get')
+          .mockReturnValueOnce(ClientSocket.OPEN)
+          .mockReturnValueOnce(ClientSocket.OPEN)
+          .mockReturnValueOnce(ClientSocket.CONNECTING);
       }
 
       listener.apply(this, parameters);
