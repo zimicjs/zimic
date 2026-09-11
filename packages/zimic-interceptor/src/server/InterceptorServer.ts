@@ -1,63 +1,99 @@
-import { normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
-import { HttpRequest, HttpMethod } from '@zimic/http';
+import { createCachedDynamicImport } from '@zimic/utils/import';
 import { startHttpServer, stopHttpServer, getHttpServerPort } from '@zimic/utils/server';
-import { createRegexFromPath, excludeNonPathParams } from '@zimic/utils/url';
-import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
+import { excludeNonPathParams } from '@zimic/utils/url';
+import type { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import { IncomingMessage, Server as HttpServer, createServer, ServerResponse } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
 import color from 'picocolors';
+import { WebSocket as ClientSocket } from 'ws';
 
-import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
+import type { InterceptorServerRPCProtocol } from '@/interceptor/constants';
 import { removeArrayIndex } from '@/utils/arrays';
-import { deserializeResponse, SerializedHttpRequest, serializeRequest } from '@/utils/fetch';
 import { isLoopbackHostname } from '@/utils/http';
 import { logger } from '@/utils/logging';
-import { WebSocketMessageAbortError } from '@/utils/webSocket';
-import { WebSocketEventMessage } from '@/utils/webSocket/types';
-import WebSocketServer, { WebSocketServerAuthenticate } from '@/utils/webSocket/WebSocketServer';
+import { closeClientSocket, WebSocketMessageAbortError } from '@/utils/webSocket';
+import { WEB_SOCKET_NORMAL_CLOSE_CODE, WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE } from '@/utils/webSocket/constants';
+import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
+import type { WebSocketEventMessage } from '@/utils/webSocket/types';
+import WebSocketServer, {
+  type WebSocketServerAuthenticate,
+  type WebSocketServerConnectionHandler,
+} from '@/utils/webSocket/WebSocketServer';
+import {
+  deserializeWebSocketMessageData,
+  isSerializedWebSocketMessageData,
+  serializeRuntimeWebSocketMessageData,
+  serializeWebSocketMessageData,
+} from '@/ws/utils/messageData';
 
 import {
-  DEFAULT_ACCESS_CONTROL_HEADERS,
-  DEFAULT_PREFLIGHT_STATUS_CODE,
   DEFAULT_LOG_UNHANDLED_REQUESTS,
   DEFAULT_HOSTNAME,
+  INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER,
 } from './constants';
 import NotRunningInterceptorServerError from './errors/NotRunningInterceptorServerError';
 import RunningInterceptorServerError from './errors/RunningInterceptorServerError';
-import { InterceptorServerOptions } from './types/options';
-import { InterceptorServer as PublicInterceptorServer } from './types/public';
-import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from './types/schema';
+import type HttpInterceptorServerRuntime from './http/HttpInterceptorServerRuntime';
+import type { InterceptorServerOptions } from './types/options';
+import type { InterceptorServer as PublicInterceptorServer } from './types/public';
+import type { InterceptorServerWebSocketSchema, WebSocketHandlerCommit } from './types/schema';
 import { validateInterceptorToken } from './utils/auth';
-import { getFetchAPI } from './utils/fetch';
 
-interface HttpHandler {
+const importHttpInterceptorServerRuntime = createCachedDynamicImport(
+  () => import('./http/HttpInterceptorServerRuntime'),
+);
+
+interface WebSocketHandler {
   id: string;
   baseURL: string;
-  pathRegex: RegExp;
   socket: Socket;
+}
+
+interface UserWebSocketHandler {
+  clientId: string;
+  handler: WebSocketHandler;
+}
+
+interface PendingUserWebSocketHandler extends UserWebSocketHandler {
+  closeListener: () => void;
+}
+
+const WEB_SOCKET_CONNECTION_SETUP_FAILED_CLOSE_REASON = 'Could not connect to the WebSocket interceptor.';
+const WORKER_REJECTION_CLOSE_CODE = 1008;
+const INVALID_WORKER_PROTOCOL_CLOSE_REASON = 'Invalid interceptor worker protocol.';
+const MISSING_HTTP_PEER_CLOSE_REASON =
+  'The optional peer dependency "@zimic/http" is required for HTTP interceptor workers.';
+const HTTP_RUNTIME_LOAD_FAILED_CLOSE_REASON = 'Could not load the HTTP interceptor runtime.';
+
+class StaleHttpRuntimeLoadError extends Error {}
+
+function isMissingHttpPeerError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const code = 'code' in error && typeof error.code === 'string' ? error.code : undefined;
+  const isModuleNotFoundError = code === 'ERR_MODULE_NOT_FOUND' || code === 'MODULE_NOT_FOUND';
+
+  return (isModuleNotFoundError && error.message.includes('@zimic/http')) || isMissingHttpPeerError(error.cause);
 }
 
 class InterceptorServer implements PublicInterceptorServer {
   private httpServer?: HttpServer;
   private webSocketServer?: WebSocketServer<InterceptorServerWebSocketSchema>;
+  private httpRuntime?: HttpInterceptorServerRuntime;
+  private httpRuntimeLoadingPromise?: Promise<HttpInterceptorServerRuntime>;
+  private serverGeneration = 0;
 
   _hostname: string;
   _port: number | undefined;
   logUnhandledRequests: boolean;
   tokensDirectory?: string;
 
-  private httpHandlersByMethod: {
-    [Method in HttpMethod]: HttpHandler[];
-  } = {
-    GET: [],
-    POST: [],
-    PATCH: [],
-    PUT: [],
-    DELETE: [],
-    HEAD: [],
-    OPTIONS: [],
-  };
-
-  private knownWorkerSockets = new Set<Socket>();
+  private workerProtocols = new Map<Socket, InterceptorServerRPCProtocol>();
+  private webSocketHandlers: WebSocketHandler[] = [];
+  private pendingUserWebSocketHandlers = new Map<Socket, PendingUserWebSocketHandler>();
+  private activeUserWebSocketHandlers = new Map<Socket, UserWebSocketHandler>();
 
   constructor(options: InterceptorServerOptions) {
     this._hostname = options.hostname ?? DEFAULT_HOSTNAME;
@@ -115,6 +151,7 @@ class InterceptorServer implements PublicInterceptorServer {
       return;
     }
 
+    this.serverGeneration++;
     this.httpServer = createServer({
       keepAlive: true,
       joinDuplicateHeaders: true,
@@ -124,6 +161,7 @@ class InterceptorServer implements PublicInterceptorServer {
     this.webSocketServer = new WebSocketServer({
       httpServer: this.httpServer,
       authenticate: this.authenticateWebSocketConnection,
+      handleConnection: this.handleWebSocketConnection,
     });
 
     this.startWebSocketServer();
@@ -150,6 +188,10 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private authenticateWebSocketConnection: WebSocketServerAuthenticate = async (_socket, request) => {
+    if (!this.isWebSocketRpcRequest(request)) {
+      return { isValid: true };
+    }
+
     if (!this.tokensDirectory) {
       // Requests without an origin header are allowed when the interceptor server is not configured to require token
       // authentication. They are typically made by non-browser clients.
@@ -197,8 +239,7 @@ class InterceptorServer implements PublicInterceptorServer {
   };
 
   private getWebSocketRequestTokenValue(request: IncomingMessage) {
-    const protocols = request.headers['sec-websocket-protocol'] ?? '';
-    const parametersAsString = decodeURIComponent(protocols).split(', ');
+    const parametersAsString = this.getWebSocketRequestParameters(request);
 
     for (const parameterAsString of parametersAsString) {
       const tokenValueMatch = /^token=(?<tokenValue>.+?)$/.exec(parameterAsString);
@@ -210,6 +251,39 @@ class InterceptorServer implements PublicInterceptorServer {
     }
 
     return undefined;
+  }
+
+  private isWebSocketRpcRequest(request: IncomingMessage) {
+    return this.getWebSocketRequestParameters(request).some(
+      (parameter) =>
+        parameter === INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER ||
+        parameter.startsWith(`${INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER}=`),
+    );
+  }
+
+  private getWebSocketRPCProtocol(request: IncomingMessage): InterceptorServerRPCProtocol | undefined {
+    const protocolParameterPrefix = `${INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER}=`;
+    const protocol = this.getWebSocketRequestParameters(request)
+      .find((parameter) => parameter.startsWith(protocolParameterPrefix))
+      ?.slice(protocolParameterPrefix.length);
+
+    return protocol === 'http' || protocol === 'ws' ? protocol : undefined;
+  }
+
+  private getWebSocketRequestParameters(request: IncomingMessage) {
+    const protocols = request.headers['sec-websocket-protocol'] ?? '';
+    return protocols
+      .split(/,\s*/)
+      .filter(Boolean)
+      .map((parameter) => this.decodeWebSocketRequestParameter(parameter));
+  }
+
+  private decodeWebSocketRequestParameter(parameter: string) {
+    try {
+      return decodeURIComponent(parameter);
+    } catch {
+      return parameter;
+    }
   }
 
   private async startHttpServer() {
@@ -224,94 +298,452 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private startWebSocketServer() {
-    this.webSocketServerOrThrow.onChannel('event', 'interceptors/workers/commit', this.commitWorker);
-    this.webSocketServerOrThrow.onChannel('event', 'interceptors/workers/reset', this.resetWorker);
+    this.webSocketServerOrThrow.onChannel('event', 'interceptors/ws/workers/commit', this.commitWebSocketWorker);
+    this.webSocketServerOrThrow.onChannel('event', 'interceptors/ws/workers/reset', this.resetWebSocketWorker);
+    this.webSocketServerOrThrow.onChannel('event', 'interceptors/ws/messages/send', this.sendWebSocketMessage);
 
     this.webSocketServerOrThrow.start();
   }
 
-  private commitWorker = (
-    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/workers/commit'>,
+  private commitWebSocketWorker = (
+    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/workers/commit'>,
     socket: Socket,
   ) => {
+    this.assertWebSocketWorkerSocket(socket);
+
     const commit = message.data;
+    this.validateWebSocketHandlerCommit(commit);
 
-    this.registerHttpHandler(commit, socket);
-    this.registerWorkerSocketIfUnknown(socket);
-
+    this.registerWebSocketHandler(commit, socket);
     return {};
   };
 
-  private resetWorker = (
-    { data: handlersToRecommit }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/workers/reset'>,
+  private resetWebSocketWorker = (
+    {
+      data: handlersToRecommit,
+    }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/workers/reset'>,
     socket: Socket,
   ) => {
-    this.registerWorkerSocketIfUnknown(socket);
+    this.assertWebSocketWorkerSocket(socket);
+    this.validateWebSocketHandlerCommits(handlersToRecommit);
 
-    this.webSocketServerOrThrow.emitSocket('abortRequests', socket, {
-      shouldAbortRequest: (request) => {
-        const isResponseCreationRequest = this.webSocketServerOrThrow.isChannelEvent(
-          request,
-          'interceptors/responses/create',
-        );
+    const existingHandlersById = new Map(
+      this.webSocketHandlers
+        .filter((handler) => handler.socket === socket)
+        .map((handler) => [handler.id, handler] as const),
+    );
 
-        /* istanbul ignore if -- @preserve
-         * While resetting a worker, there could be other types of requests in progress. These are not guaranteed to
-         * exist and are not related to handler resets, so we let them continue. */
-        if (!isResponseCreationRequest) {
-          return false;
-        }
+    for (const commit of handlersToRecommit) {
+      const existingHandler = existingHandlersById.get(commit.id);
 
-        // TODO: create a test with two interceptors, one for each path,, and reset only one of them.
-        const isHandlerStillCommitted = handlersToRecommit.some(
-          /* istanbul ignore next -- @preserve
-           * Ensuring this function is called in tests is difficult because it requires clearing or stopping a worker
-           * at the exact moment a request is being handled, in a scenario when there are other handlers still
-           * committed. */
-          (handler) => request.data.handlerId === handler.id,
-        );
-        return !isHandlerStillCommitted;
-      },
-    });
+      if (existingHandler) {
+        existingHandler.baseURL = commit.baseURL;
+        existingHandlersById.delete(commit.id);
+      } else {
+        this.registerWebSocketHandler(commit, socket);
+      }
+    }
 
-    this.removeHttpHandlersBySocket(socket);
-
-    for (const handler of handlersToRecommit) {
-      this.registerHttpHandler(handler, socket);
+    for (const removedHandler of existingHandlersById.values()) {
+      this.removeWebSocketHandler(removedHandler);
     }
 
     return {};
   };
 
-  private registerHttpHandler({ id, baseURL, method, path }: HttpHandlerCommit, socket: Socket) {
-    const handlerGroups = this.httpHandlersByMethod[method];
+  private assertWebSocketWorkerSocket(socket: Socket) {
+    if (this.workerProtocols.get(socket) !== 'ws') {
+      throw new InvalidWebSocketMessageError('WebSocket RPC received from a non-WebSocket worker.');
+    }
+  }
 
-    handlerGroups.push({
-      id,
-      baseURL,
-      pathRegex: createRegexFromPath(path),
-      socket,
+  private registerWebSocketHandler({ id, baseURL }: WebSocketHandlerCommit, socket: Socket) {
+    this.webSocketHandlers.push({ id, baseURL, socket });
+  }
+
+  private registerWorkerSocket(socket: Socket, protocol: InterceptorServerRPCProtocol) {
+    this.workerProtocols.set(socket, protocol);
+    socket.addEventListener('close', () => {
+      if (protocol === 'http') {
+        this.httpRuntime?.removeHandlersBySocket(socket);
+      } else {
+        this.removeWebSocketHandlersBySocket(socket, {
+          pendingCloseCode: WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE,
+          pendingCloseReason: WEB_SOCKET_CONNECTION_SETUP_FAILED_CLOSE_REASON,
+        });
+      }
+
+      this.workerProtocols.delete(socket);
     });
   }
 
-  private registerWorkerSocketIfUnknown(socket: Socket) {
-    if (this.knownWorkerSockets.has(socket)) {
+  private removeWebSocketHandlersBySocket(
+    socket: Socket,
+    options: {
+      pendingCloseCode?: number;
+      pendingCloseReason?: string;
+    } = {},
+  ) {
+    const handlersToRemove = this.webSocketHandlers.filter((handler) => handler.socket === socket);
+
+    for (const handler of handlersToRemove) {
+      this.removeWebSocketHandler(handler, options);
+    }
+  }
+
+  private removeWebSocketHandler(
+    handler: WebSocketHandler,
+    options: {
+      pendingCloseCode?: number;
+      pendingCloseReason?: string;
+    } = {},
+  ) {
+    const handlerIndex = this.webSocketHandlers.indexOf(handler);
+    removeArrayIndex(this.webSocketHandlers, handlerIndex);
+
+    this.webSocketServerOrThrow.emitSocket('abortRequests', handler.socket, {
+      shouldAbortRequest: (request) =>
+        this.webSocketServerOrThrow.isChannelEvent(request, 'interceptors/ws/clients/connect') &&
+        request.data.handlerId === handler.id,
+    });
+
+    for (const [userSocket, userHandler] of this.pendingUserWebSocketHandlers) {
+      if (userHandler.handler === handler) {
+        this.closePendingUserWebSocketConnection(userSocket, userHandler, options);
+      }
+    }
+
+    for (const [userSocket, userHandler] of this.activeUserWebSocketHandlers) {
+      if (userHandler.handler === handler) {
+        this.activeUserWebSocketHandlers.delete(userSocket);
+        userSocket.close(WEB_SOCKET_NORMAL_CLOSE_CODE);
+      }
+    }
+  }
+
+  private async loadHttpRuntime() {
+    if (this.httpRuntime) {
+      return this.httpRuntime;
+    }
+
+    const serverGeneration = this.serverGeneration;
+    const loadingPromise =
+      this.httpRuntimeLoadingPromise ??
+      importHttpInterceptorServerRuntime().then(({ default: Runtime }) => {
+        if (serverGeneration !== this.serverGeneration || !this.webSocketServer?.isRunning) {
+          throw new StaleHttpRuntimeLoadError();
+        }
+
+        const runtime = new Runtime({
+          webSocketServer: this.webSocketServerOrThrow,
+          isHttpWorkerSocket: (socket) => this.workerProtocols.get(socket) === 'http',
+          shouldLogUnhandledRequests: () => this.logUnhandledRequests,
+        });
+
+        this.httpRuntime = runtime;
+        return runtime;
+      });
+    this.httpRuntimeLoadingPromise = loadingPromise;
+
+    try {
+      return await loadingPromise;
+    } finally {
+      if (this.httpRuntimeLoadingPromise === loadingPromise) {
+        this.httpRuntimeLoadingPromise = undefined;
+      }
+    }
+  }
+
+  private handleWebSocketConnection: WebSocketServerConnectionHandler = async (socket, request) => {
+    if (this.isWebSocketRpcRequest(request)) {
+      const protocol = this.getWebSocketRPCProtocol(request);
+
+      if (!protocol) {
+        socket.resume();
+        socket.close(WORKER_REJECTION_CLOSE_CODE, INVALID_WORKER_PROTOCOL_CLOSE_REASON);
+        return { wasHandled: true };
+      }
+
+      if (protocol === 'http') {
+        try {
+          await this.loadHttpRuntime();
+        } catch (error) {
+          console.error(error);
+          socket.resume();
+          socket.close(
+            WORKER_REJECTION_CLOSE_CODE,
+            isMissingHttpPeerError(error) ? MISSING_HTTP_PEER_CLOSE_REASON : HTTP_RUNTIME_LOAD_FAILED_CLOSE_REASON,
+          );
+          return { wasHandled: true };
+        }
+      }
+
+      this.registerWorkerSocket(socket, protocol);
+      return { wasHandled: false };
+    }
+
+    const handler = this.findWebSocketHandlerByRequest(request);
+
+    if (!handler) {
+      socket.resume();
+      socket.close(WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE, 'No WebSocket interceptor is registered for this URL.');
+      return { wasHandled: true };
+    }
+
+    const clientId = crypto.randomUUID();
+    const connection: PendingUserWebSocketHandler = {
+      clientId,
+      handler,
+      closeListener: () => {
+        this.removePendingUserWebSocketConnection(socket, connection);
+      },
+    };
+
+    socket.pause();
+    socket.addEventListener('close', connection.closeListener, { once: true });
+    this.pendingUserWebSocketHandlers.set(socket, connection);
+
+    let accepted: boolean;
+    try {
+      const reply = await this.webSocketServerOrThrow.request(
+        'interceptors/ws/clients/connect',
+        {
+          handlerId: handler.id,
+          clientId,
+          url: this.getWebSocketRequestURL(request).href,
+        },
+        { sockets: [handler.socket] },
+      );
+      accepted = reply.accepted;
+    } catch {
+      this.closePendingUserWebSocketConnection(socket, connection, {
+        pendingCloseCode: WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE,
+        pendingCloseReason: WEB_SOCKET_CONNECTION_SETUP_FAILED_CLOSE_REASON,
+      });
+      return { wasHandled: true };
+    }
+
+    if (!accepted) {
+      this.closePendingUserWebSocketConnection(socket, connection, {
+        pendingCloseCode: WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE,
+        pendingCloseReason: WEB_SOCKET_CONNECTION_SETUP_FAILED_CLOSE_REASON,
+      });
+      return { wasHandled: true };
+    }
+
+    if (!this.canActivatePendingUserWebSocketConnection(socket, connection)) {
+      this.closePendingUserWebSocketConnection(socket, connection, {
+        pendingCloseCode: WEB_SOCKET_PROTOCOL_ERROR_CLOSE_CODE,
+        pendingCloseReason: WEB_SOCKET_CONNECTION_SETUP_FAILED_CLOSE_REASON,
+      });
+      this.notifyUserWebSocketClose(connection);
+      return { wasHandled: true };
+    }
+
+    const messageListener = this.createUserWebSocketMessageListener(connection);
+
+    socket.addEventListener('close', () => {
+      this.activeUserWebSocketHandlers.delete(socket);
+      socket.removeEventListener('message', messageListener);
+      this.notifyUserWebSocketClose(connection);
+    });
+    socket.addEventListener('message', messageListener);
+
+    this.activeUserWebSocketHandlers.set(socket, connection);
+    this.removePendingUserWebSocketConnection(socket, connection);
+    socket.resume();
+
+    return { wasHandled: true };
+  };
+
+  private canActivatePendingUserWebSocketConnection(socket: Socket, connection: PendingUserWebSocketHandler) {
+    return (
+      this.pendingUserWebSocketHandlers.get(socket) === connection &&
+      this.webSocketHandlers.includes(connection.handler) &&
+      this.workerProtocols.get(connection.handler.socket) === 'ws' &&
+      connection.handler.socket.readyState === ClientSocket.OPEN &&
+      socket.readyState === ClientSocket.OPEN
+    );
+  }
+
+  private removePendingUserWebSocketConnection(socket: Socket, connection: PendingUserWebSocketHandler) {
+    if (this.pendingUserWebSocketHandlers.get(socket) !== connection) {
+      return false;
+    }
+
+    this.pendingUserWebSocketHandlers.delete(socket);
+    socket.removeEventListener('close', connection.closeListener);
+    return true;
+  }
+
+  private closePendingUserWebSocketConnection(
+    socket: Socket,
+    connection: PendingUserWebSocketHandler,
+    options: {
+      pendingCloseCode?: number;
+      pendingCloseReason?: string;
+    } = {},
+  ) {
+    if (!this.removePendingUserWebSocketConnection(socket, connection)) {
       return;
     }
 
-    socket.addEventListener('close', () => {
-      this.removeHttpHandlersBySocket(socket);
-      this.knownWorkerSockets.delete(socket);
-    });
-
-    this.knownWorkerSockets.add(socket);
+    socket.resume();
+    socket.close(options.pendingCloseCode ?? WEB_SOCKET_NORMAL_CLOSE_CODE, options.pendingCloseReason);
   }
 
-  private removeHttpHandlersBySocket(socket: Socket) {
-    for (const handlerGroups of Object.values(this.httpHandlersByMethod)) {
-      const socketIndex = handlerGroups.findIndex((handlerGroup) => handlerGroup.socket === socket);
-      removeArrayIndex(handlerGroups, socketIndex);
+  private createUserWebSocketMessageListener(connection: UserWebSocketHandler) {
+    return (message: ClientSocket.MessageEvent) => {
+      void this.handleUserWebSocketMessage(connection, message).catch(
+        /* istanbul ignore next -- @preserve
+         * Message errors require the worker RPC to fail after a user message has already been received. */
+        (error: unknown) => {
+          console.error(error);
+        },
+      );
+    };
+  }
+
+  private notifyUserWebSocketClose(connection: UserWebSocketHandler) {
+    if (connection.handler.socket.readyState !== ClientSocket.OPEN) {
+      return;
     }
+
+    try {
+      this.webSocketServerOrThrow.send(
+        'interceptors/ws/clients/close',
+        {
+          clientId: connection.clientId,
+        },
+        { sockets: [connection.handler.socket] },
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  private async handleUserWebSocketMessage(connection: UserWebSocketHandler, message: ClientSocket.MessageEvent) {
+    try {
+      await this.webSocketServerOrThrow.request(
+        'interceptors/ws/messages/handle',
+        {
+          handlerId: connection.handler.id,
+          clientId: connection.clientId,
+          data: await serializeWebSocketMessageData<WebSocketSchema>(
+            message.data as WebSocketMessageData<WebSocketSchema>,
+          ),
+        },
+        { sockets: [connection.handler.socket] },
+      );
+      /* istanbul ignore next -- @preserve
+       * Message aborts depend on an RPC disconnect during message forwarding. */
+    } catch (error) {
+      /* istanbul ignore next -- @preserve */
+      const isMessageAbortError = error instanceof WebSocketMessageAbortError;
+
+      /* istanbul ignore next -- @preserve */
+      if (!isMessageAbortError) {
+        throw error;
+      }
+    }
+  }
+
+  private sendWebSocketMessage = (
+    { data: message }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/messages/send'>,
+    workerSocket: Socket,
+  ) => {
+    this.assertWebSocketWorkerSocket(workerSocket);
+    this.validateWebSocketSendMessage(message);
+
+    const targetSockets = Array.from(this.activeUserWebSocketHandlers.entries()).filter(([, userHandler]) => {
+      const isOwnedByWorker = userHandler.handler.socket === workerSocket;
+      const matchesClient = message.clientId === undefined || userHandler.clientId === message.clientId;
+      const matchesHandler = message.handlerId === undefined || userHandler.handler.id === message.handlerId;
+
+      return isOwnedByWorker && matchesClient && matchesHandler;
+    });
+
+    const runtimeMessageData = serializeRuntimeWebSocketMessageData<WebSocketSchema>(
+      deserializeWebSocketMessageData(message.data),
+    );
+
+    for (const [socket] of targetSockets) {
+      socket.send(runtimeMessageData);
+    }
+  };
+
+  private validateWebSocketHandlerCommit(commit: unknown): asserts commit is WebSocketHandlerCommit {
+    const isValid =
+      typeof commit === 'object' &&
+      commit !== null &&
+      'id' in commit &&
+      typeof commit.id === 'string' &&
+      'baseURL' in commit &&
+      typeof commit.baseURL === 'string' &&
+      this.isValidWebSocketHandlerBaseURL(commit.baseURL);
+
+    if (!isValid) {
+      throw new InvalidWebSocketMessageError(JSON.stringify(commit));
+    }
+  }
+
+  private isValidWebSocketHandlerBaseURL(baseURL: string) {
+    try {
+      const protocol = new URL(baseURL).protocol;
+      return protocol === 'ws:' || protocol === 'wss:';
+    } catch {
+      return false;
+    }
+  }
+
+  private validateWebSocketHandlerCommits(commits: unknown): asserts commits is WebSocketHandlerCommit[] {
+    const isValid = Array.isArray(commits);
+
+    /* istanbul ignore if -- @preserve
+     * Invalid reset payloads are rejected by the RPC schema before normal workers can send them. */
+    if (!isValid) {
+      throw new InvalidWebSocketMessageError(JSON.stringify(commits));
+    }
+
+    for (const commit of commits) {
+      this.validateWebSocketHandlerCommit(commit);
+    }
+  }
+
+  private validateWebSocketSendMessage(
+    message: unknown,
+  ): asserts message is InterceptorServerWebSocketSchema['interceptors/ws/messages/send']['event'] {
+    const isValid =
+      typeof message === 'object' &&
+      message !== null &&
+      (!('clientId' in message) || typeof message.clientId === 'string') &&
+      (!('handlerId' in message) || typeof message.handlerId === 'string') &&
+      'data' in message &&
+      isSerializedWebSocketMessageData(message.data);
+
+    if (!isValid) {
+      throw new InvalidWebSocketMessageError(JSON.stringify(message));
+    }
+  }
+
+  private findWebSocketHandlerByRequest(request: IncomingMessage) {
+    const requestURLAsString = this.normalizeWebSocketBaseURL(this.getWebSocketRequestURL(request));
+
+    const handler = this.webSocketHandlers.findLast(
+      (handler) => requestURLAsString === this.normalizeWebSocketBaseURL(handler.baseURL),
+    );
+    return handler;
+  }
+
+  private getWebSocketRequestURL(request: IncomingMessage) {
+    /* istanbul ignore next -- @preserve
+     * Upgrade requests always include a URL in the supported Node runtimes. */
+    return new URL(request.url ?? '/', `ws://${request.headers.host}`);
+  }
+
+  private normalizeWebSocketBaseURL(url: string | URL) {
+    const normalizedURL = excludeNonPathParams(new URL(url));
+    return normalizedURL.href === `${normalizedURL.origin}/` ? normalizedURL.origin : normalizedURL.href;
   }
 
   async stop() {
@@ -319,6 +751,8 @@ class InterceptorServer implements PublicInterceptorServer {
       return;
     }
 
+    this.serverGeneration++;
+    this.httpRuntimeLoadingPromise = undefined;
     await this.stopWebSocketServer();
     await this.stopHttpServer();
   }
@@ -330,166 +764,47 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private async stopWebSocketServer() {
-    this.webSocketServerOrThrow.offChannel('event', 'interceptors/workers/commit', this.commitWorker);
-    this.webSocketServerOrThrow.offChannel('event', 'interceptors/workers/reset', this.resetWorker);
+    this.httpRuntime?.stop();
+    this.httpRuntime = undefined;
+
+    this.webSocketServerOrThrow.offChannel('event', 'interceptors/ws/workers/commit', this.commitWebSocketWorker);
+    this.webSocketServerOrThrow.offChannel('event', 'interceptors/ws/workers/reset', this.resetWebSocketWorker);
+    this.webSocketServerOrThrow.offChannel('event', 'interceptors/ws/messages/send', this.sendWebSocketMessage);
+
+    await this.closeUserWebSocketConnections();
 
     await this.webSocketServerOrThrow.stop();
 
+    this.workerProtocols.clear();
     this.webSocketServer = undefined;
   }
 
-  private handleHttpRequest = async (nodeRequest: IncomingMessage, nodeResponse: ServerResponse) => {
-    const request = normalizeNodeRequest(nodeRequest, getFetchAPI());
-    const serializedRequest = await serializeRequest(request);
-
-    try {
-      const { response, matchedSomeInterceptor } = await this.createResponseForRequest(serializedRequest);
-
-      if (response) {
-        if (HttpInterceptorWorker.isRejectedResponse(response)) {
-          nodeResponse.destroy();
-        } else {
-          this.setDefaultAccessControlHeaders(response, [
-            'access-control-allow-origin',
-            'access-control-expose-headers',
-          ]);
-
-          await sendNodeResponse(response, nodeResponse, nodeRequest, true);
-        }
-
-        return;
-      }
-
-      const isUnhandledPreflightResponse = request.method === 'OPTIONS';
-
-      if (isUnhandledPreflightResponse) {
-        const defaultPreflightResponse = new Response(null, { status: DEFAULT_PREFLIGHT_STATUS_CODE });
-        this.setDefaultAccessControlHeaders(defaultPreflightResponse);
-        await sendNodeResponse(defaultPreflightResponse, nodeResponse, nodeRequest, true);
-      }
-
-      const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse && !matchedSomeInterceptor;
-
-      if (shouldWarnUnhandledRequest) {
-        await this.logUnhandledRequestIfNecessary(request, serializedRequest);
-      }
-
-      nodeResponse.destroy();
-    } catch (error) {
-      const isMessageAbortError = error instanceof WebSocketMessageAbortError;
-
-      if (!isMessageAbortError) {
-        console.error(error);
-        await this.logUnhandledRequestIfNecessary(request, serializedRequest);
-      }
-
-      nodeResponse.destroy();
-    }
-  };
-
-  private async createResponseForRequest(request: SerializedHttpRequest) {
-    const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
-
-    const requestURL = excludeNonPathParams(new URL(request.url));
-    const requestURLAsString = requestURL.href === `${requestURL.origin}/` ? requestURL.origin : requestURL.href;
-
-    let matchedSomeInterceptor = false;
-
-    for (let handlerIndex = methodHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
-      const handler = methodHandlers[handlerIndex];
-      const matchesBaseURL = requestURLAsString.startsWith(handler.baseURL);
-
-      if (!matchesBaseURL) {
-        continue;
-      }
-
-      const requestPath = requestURLAsString.replace(handler.baseURL, '');
-      const matchesPath = handler.pathRegex.test(requestPath);
-
-      if (!matchesPath) {
-        continue;
-      }
-
-      matchedSomeInterceptor = true;
-
-      const { response: serializedResponse } = await this.webSocketServerOrThrow.request(
-        'interceptors/responses/create',
-        { handlerId: handler.id, request },
-        { sockets: [handler.socket] },
-      );
-
-      if (serializedResponse) {
-        const response = deserializeResponse(serializedResponse);
-        return { response, matchedSomeInterceptor };
-      }
+  private async closeUserWebSocketConnections() {
+    for (const socket of this.pendingUserWebSocketHandlers.keys()) {
+      socket.resume();
     }
 
-    return { response: null, matchedSomeInterceptor };
+    const userSockets = new Set([
+      ...this.pendingUserWebSocketHandlers.keys(),
+      ...this.activeUserWebSocketHandlers.keys(),
+    ]);
+    const closingPromises = Array.from(userSockets, (socket) =>
+      closeClientSocket(socket, { timeout: this.webSocketServerOrThrow.socketTimeout }),
+    );
+
+    await Promise.all(closingPromises);
+    this.pendingUserWebSocketHandlers.clear();
+    this.activeUserWebSocketHandlers.clear();
   }
 
-  private setDefaultAccessControlHeaders(
-    response: Response,
-    headersToSet = Object.keys(DEFAULT_ACCESS_CONTROL_HEADERS),
-  ) {
-    for (const key of headersToSet) {
-      if (response.headers.has(key)) {
-        continue;
-      }
-
-      const value = DEFAULT_ACCESS_CONTROL_HEADERS[key];
-      /* istanbul ignore else -- @preserve
-       * This is always true during tests because we force max-age=0 to disable CORS caching. */
-      if (value) {
-        response.headers.set(key, value);
-      }
-    }
-  }
-
-  private async logUnhandledRequestIfNecessary(request: HttpRequest, serializedRequest: SerializedHttpRequest) {
-    const handler = this.findHttpHandlerByRequestBaseURL(request);
-
-    if (handler) {
-      try {
-        const { wasLogged: wasRequestLoggedByRemoteInterceptor } = await this.webSocketServerOrThrow.request(
-          'interceptors/responses/unhandled',
-          { request: serializedRequest },
-          { sockets: [handler.socket] },
-        );
-
-        if (wasRequestLoggedByRemoteInterceptor) {
-          return;
-        }
-      } catch (error) {
-        /* istanbul ignore next -- @preserve
-         *
-         * If the socket is closed before receiving a response, the message is aborted with an error. This can happen if
-         * we send a request message and the interceptor worker closes the socket before sending a response. In this
-         * case, we can safely ignore the error because we know that the worker is shutting down and won't handle
-         * any more requests.
-         *
-         * Due to the rare nature of this edge case, we can't reliably reproduce it in tests. */
-        const isMessageAbortError = error instanceof WebSocketMessageAbortError;
-
-        /* istanbul ignore next -- @preserve */
-        if (!isMessageAbortError) {
-          throw error;
-        }
-      }
-    }
-
-    if (!this.logUnhandledRequests) {
+  private handleHttpRequest = (nodeRequest: IncomingMessage, nodeResponse: ServerResponse) => {
+    if (!this.httpRuntime) {
+      nodeResponse.destroy();
       return;
     }
 
-    await HttpInterceptorWorker.logUnhandledRequestWarning(request, 'reject');
-  }
-
-  private findHttpHandlerByRequestBaseURL(request: HttpRequest) {
-    const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
-
-    const handler = methodHandlers.findLast((handler) => request.url.startsWith(handler.baseURL));
-    return handler;
-  }
+    return this.httpRuntime.handleRequest(nodeRequest, nodeResponse);
+  };
 }
 
 export default InterceptorServer;
