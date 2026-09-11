@@ -96,12 +96,13 @@ export function declareAuthenticationHttpInterceptorTests(options: SharedAuthent
         interceptor.start(),
       ]);
 
-      if (firstStartResult.status !== 'rejected' || secondStartResult.status !== 'rejected') {
-        throw new Error('Expected both interceptor starts to reject.');
-      }
+      const firstStartRejection = firstStartResult as PromiseRejectedResult;
+      expect(firstStartRejection.status).toBe('rejected');
+      expect(firstStartRejection.reason).toBeInstanceOf(UnauthorizedWebSocketConnectionError);
 
-      expect(firstStartResult.reason).toBeInstanceOf(UnauthorizedWebSocketConnectionError);
-      expect(secondStartResult.reason).toBe(firstStartResult.reason);
+      const secondStartRejection = secondStartResult as PromiseRejectedResult;
+      expect(secondStartRejection.status).toBe('rejected');
+      expect(secondStartRejection.reason).toBe(firstStartRejection.reason);
     });
 
     expect(interceptor.isRunning).toBe(false);
