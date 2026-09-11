@@ -13,7 +13,7 @@ import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { type, getBaseURL, getInterceptorOptions } = options;
+  const { type, getBaseURL, getOtherBaseURL, getInterceptorOptions } = options;
 
   let defaultBaseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
@@ -119,6 +119,46 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
       expect(response.status).toBe(200);
 
       expect(handler.requests).toHaveLength(1);
+    });
+  });
+
+  it('should not support changing the base URL while starting', async () => {
+    await usingHttpInterceptor<{}>(interceptorOptions, { start: false }, async (interceptor) => {
+      const startPromise = interceptor.start();
+
+      expect(() => {
+        interceptor.baseURL = getOtherBaseURL?.() ?? joinURL(defaultBaseURL, 'new');
+      }).toThrow(
+        new RunningHttpInterceptorError(
+          'Did you forget to call `await interceptor.stop()` before changing the base URL?',
+        ),
+      );
+
+      await startPromise;
+
+      expect(interceptor.baseURL).toBe(interceptorOptions.baseURL);
+    });
+  });
+
+  it('should not support changing the base URL while stopping during startup', async () => {
+    await usingHttpInterceptor<{}>(interceptorOptions, { start: false }, async (interceptor) => {
+      const otherBaseURL = getOtherBaseURL?.() ?? joinURL(defaultBaseURL, 'new');
+      expect(otherBaseURL).not.toBe(interceptor.baseURL);
+
+      const startPromise = interceptor.start();
+      const stopPromise = interceptor.stop();
+
+      expect(() => {
+        interceptor.baseURL = otherBaseURL;
+      }).toThrow(
+        new RunningHttpInterceptorError(
+          'Did you forget to call `await interceptor.stop()` before changing the base URL?',
+        ),
+      );
+
+      await Promise.all([startPromise, stopPromise]);
+
+      expect(interceptor.baseURL).toBe(interceptorOptions.baseURL);
     });
   });
 

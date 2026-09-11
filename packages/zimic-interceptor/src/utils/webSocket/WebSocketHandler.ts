@@ -123,7 +123,7 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     let parsedMessage: unknown;
 
     try {
-      parsedMessage = JSON.parse(stringifiedMessage) as unknown;
+      parsedMessage = JSON.parse(stringifiedMessage);
     } catch {
       throw new InvalidWebSocketMessageError(stringifiedMessage);
     }

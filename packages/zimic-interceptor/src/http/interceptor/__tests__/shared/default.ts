@@ -1,12 +1,13 @@
-import { afterEach, beforeAll, describe, expect, expectTypeOf, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
+import HttpInterceptorStore from '@/http/interceptor/HttpInterceptorStore';
+import LocalHttpInterceptorWorker from '@/http/interceptorWorker/LocalHttpInterceptorWorker';
 import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import NotRunningHttpInterceptorError from '../../errors/NotRunningHttpInterceptorError';
 import RunningHttpInterceptorError from '../../errors/RunningHttpInterceptorError';
 import UnknownHttpInterceptorTypeError from '../../errors/UnknownHttpInterceptorTypeError';
 import { createHttpInterceptor } from '../../factory';
-import HttpInterceptorStore from '../../HttpInterceptorStore';
 import LocalHttpInterceptor from '../../LocalHttpInterceptor';
 import RemoteHttpInterceptor from '../../RemoteHttpInterceptor';
 import { RemoteHttpInterceptorOptions } from '../../types/options';
@@ -28,7 +29,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     baseURL = getBaseURL();
     serverURL = new URL(baseURL);
 
-    const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
+    const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
     expect(worker).toBe(undefined);
 
     expect(store.numberOfRunningLocalInterceptors).toBe(0);
@@ -36,7 +37,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
   });
 
   afterEach(() => {
-    const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
+    const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
     expect(worker).toBe(undefined);
 
     expect(store.numberOfRunningLocalInterceptors).toBe(0);
@@ -87,12 +88,12 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     await usingHttpInterceptor<{}>(getInterceptorOptions(), (interceptor) => {
       expect(interceptor.platform).toBe(platform);
 
-      const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
+      const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
       expect(worker!.platform).toBe(platform);
     });
   });
 
-  it('should now throw an error if started multiple times', async () => {
+  it('should not throw an error if started multiple times', async () => {
     await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (interceptor) => {
       expect(interceptor.isRunning).toBe(false);
 
@@ -108,6 +109,53 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
       expect(interceptor.isRunning).toBe(true);
       await interceptor.start();
       expect(interceptor.isRunning).toBe(true);
+    });
+  });
+
+  it('should support starting and stopping the same interceptor concurrently', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (interceptor) => {
+      await Promise.all([interceptor.start(), interceptor.start()]);
+      expect(interceptor.isRunning).toBe(true);
+
+      await Promise.all([interceptor.stop(), interceptor.stop()]);
+      expect(interceptor.isRunning).toBe(false);
+
+      const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+      expect(worker).toBe(undefined);
+    });
+  });
+
+  it('should support stopping while starting', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (interceptor) => {
+      await Promise.all([interceptor.start(), interceptor.stop()]);
+
+      expect(interceptor.isRunning).toBe(false);
+
+      const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+      expect(worker).toBe(undefined);
+    });
+  });
+
+  it('should support starting while stopping', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), async (interceptor) => {
+      await Promise.all([interceptor.stop(), interceptor.start()]);
+
+      expect(interceptor.isRunning).toBe(true);
+
+      const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+      expect(worker).toBeDefined();
+      expect(worker!.isRunning).toBe(true);
+    });
+  });
+
+  it('should process lifecycle operations in call order', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), async (interceptor) => {
+      await Promise.all([interceptor.stop(), interceptor.start(), interceptor.stop()]);
+
+      expect(interceptor.isRunning).toBe(false);
+
+      const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+      expect(worker).toBe(undefined);
     });
   });
 
@@ -141,7 +189,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
         await interceptor.start();
         expect(interceptor.isRunning).toBe(true);
 
-        const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
+        const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
         expect(worker).toBeDefined();
         expect(worker!.isRunning).toBe(true);
 
@@ -163,7 +211,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
         await interceptor.start();
         expect(interceptor.isRunning).toBe(true);
 
-        const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
+        const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
         expect(worker).toBeDefined();
         expect(worker!.isRunning).toBe(true);
 
@@ -185,6 +233,36 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
+  it('should still stop the shared worker when the last interceptor fails to stop once and retries', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), async (interceptor) => {
+      const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+      expect(worker).toBeDefined();
+      expect(worker!.isRunning).toBe(true);
+
+      const error = new Error('Unknown error');
+
+      // Stopping normally does not fail. To simulate a failure, we need to mock the stop method to throw an error.
+      if (worker instanceof LocalHttpInterceptorWorker) {
+        vi.spyOn(worker, 'getMSWWorkerOrCreate').mockRejectedValueOnce(error);
+      } else {
+        vi.spyOn(worker!.webSocketClient, 'stop').mockRejectedValueOnce(error);
+      }
+
+      await expect(interceptor.stop()).rejects.toThrow(error);
+      await interceptor.stop();
+
+      expect(interceptor.isRunning).toBe(false);
+      expect(worker!.isRunning).toBe(false);
+
+      const stoppedWorker =
+        type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+      expect(stoppedWorker).toBeUndefined();
+
+      await interceptor.start();
+      expect(interceptor.isRunning).toBe(true);
+    });
+  });
+
   it('should support starting interceptors concurrently', async () => {
     await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (interceptor) => {
       expect(interceptor.isRunning).toBe(false);
@@ -192,17 +270,12 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
       await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (otherInterceptor) => {
         expect(otherInterceptor.isRunning).toBe(false);
 
-        await Promise.all(
-          [interceptor, otherInterceptor].map(async (interceptor) => {
-            await interceptor.start();
-            expect(interceptor.isRunning).toBe(true);
-          }),
-        );
+        await Promise.all([interceptor.start(), otherInterceptor.start()]);
 
         expect(interceptor.isRunning).toBe(true);
         expect(otherInterceptor.isRunning).toBe(true);
 
-        const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
+        const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
         expect(worker).toBeDefined();
         expect(worker!.isRunning).toBe(true);
       });
@@ -216,21 +289,47 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
       await usingHttpInterceptor<{}>(getInterceptorOptions(), async (otherInterceptor) => {
         expect(otherInterceptor.isRunning).toBe(true);
 
-        const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
+        const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
         expect(worker).toBeDefined();
         expect(worker!.isRunning).toBe(true);
 
-        await Promise.all(
-          [interceptor, otherInterceptor].map(async (interceptor) => {
-            await interceptor.stop();
-            expect(interceptor.isRunning).toBe(false);
-          }),
-        );
+        await Promise.all([interceptor.stop(), otherInterceptor.stop()]);
 
         expect(interceptor.isRunning).toBe(false);
         expect(otherInterceptor.isRunning).toBe(false);
 
         expect(worker!.isRunning).toBe(false);
+      });
+    });
+  });
+
+  it('should keep the shared worker running if the last interceptor is stopping at the same time as another is starting', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), async (interceptor) => {
+      await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (otherInterceptor) => {
+        const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+        expect(worker).toBeDefined();
+
+        const originalWorkerStop = worker!.stop.bind(worker);
+        const { promise: workerStopStartedPromise, resolve: markWorkerStopAsStarted } = Promise.withResolvers<void>();
+
+        // We need to inspect the worker stop method to be able to start another interceptor right after it is called.
+        vi.spyOn(worker!, 'stop').mockImplementationOnce(async () => {
+          markWorkerStopAsStarted();
+          await originalWorkerStop();
+        });
+
+        const stopPromise = interceptor.stop();
+        await workerStopStartedPromise;
+        await otherInterceptor.start();
+        await stopPromise;
+
+        expect(interceptor.isRunning).toBe(false);
+        expect(otherInterceptor.isRunning).toBe(true);
+
+        const runningWorker =
+          type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+        expect(runningWorker).toBe(worker);
+        expect(runningWorker!.isRunning).toBe(true);
       });
     });
   });

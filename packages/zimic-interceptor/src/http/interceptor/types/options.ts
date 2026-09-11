@@ -77,7 +77,7 @@ export interface LocalHttpInterceptorOptions extends SharedHttpInterceptorOption
   onUnhandledRequest?: UnhandledRequestStrategy.Local;
 }
 
-interface HttpInterceptorAuthOptions {
+export interface HttpInterceptorAuthOptions {
   /** @see {@link https://zimic.dev/docs/interceptor/guides/http/remote-interceptors#interceptor-server-authentication Interceptor server authentication} */
   token: string;
 }

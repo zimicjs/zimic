@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { UnregisteredBrowserServiceWorkerError } from '@/http';
+import { BrowserMSWWorker } from '@/interceptor/types/msw';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { getBrowserBaseURL } from '@tests/utils/interceptors';
 
 import { HttpInterceptorPlatform } from '../../interceptor/types/options';
-import UnregisteredBrowserServiceWorkerError from '../errors/UnregisteredBrowserServiceWorkerError';
 import { createHttpInterceptorWorker } from '../factory';
-import { BrowserMSWWorker } from '../types/msw';
 import { declareDefaultHttpInterceptorWorkerTests } from './shared/default';
 import testMatrix from './shared/matrix';
 

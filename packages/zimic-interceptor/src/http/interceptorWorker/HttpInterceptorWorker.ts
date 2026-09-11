@@ -52,9 +52,17 @@ abstract class HttpInterceptorWorker {
 
   private runningInterceptors: AnyHttpInterceptorImplementation[] = [];
 
+  get numberOfRunningInterceptors() {
+    return this.runningInterceptors.length;
+  }
+
   abstract start(): Promise<void>;
 
   protected async sharedStart(internalStart: () => Promise<void>) {
+    if (this.stoppingPromise) {
+      await this.stoppingPromise;
+    }
+
     if (this.isRunning) {
       return;
     }
@@ -99,10 +107,13 @@ abstract class HttpInterceptorWorker {
      * reliably reproduce in tests. */
     if (stoppingResult instanceof Promise) {
       this.stoppingPromise = stoppingResult;
-      await this.stoppingPromise;
-    }
 
-    this.stoppingPromise = undefined;
+      try {
+        await this.stoppingPromise;
+      } finally {
+        this.stoppingPromise = undefined;
+      }
+    }
   }
 
   abstract use<Schema extends HttpSchema>(

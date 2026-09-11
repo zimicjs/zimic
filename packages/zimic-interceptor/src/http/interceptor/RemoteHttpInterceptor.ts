@@ -14,8 +14,6 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
   #auth?: RemoteHttpInterceptorOptions['auth'];
 
   constructor(options: RemoteHttpInterceptorOptions) {
-    this.#auth = options.auth;
-
     const baseURL = new URL(options.baseURL);
 
     this.implementation = new HttpInterceptorImplementation<Schema, typeof RemoteHttpRequestHandler>({
@@ -23,17 +21,19 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
       baseURL,
       createWorker: () => {
         return this.store.getOrCreateRemoteWorker({
-          serverURL: baseURL,
+          serverURL: this.implementation.baseURL,
           auth: this.#auth,
         });
       },
       deleteWorker: () => {
-        this.store.deleteRemoteWorker(baseURL, { auth: options.auth });
+        this.store.deleteRemoteWorker(this.implementation.baseURL, { auth: this.#auth });
       },
       Handler: RemoteHttpRequestHandler,
       onUnhandledRequest: options.onUnhandledRequest,
       requestSaving: options.requestSaving,
     });
+
+    this.auth = options.auth;
   }
 
   get type() {
@@ -64,7 +64,7 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
     const cannotChangeAuthWhileRunningMessage =
       'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?';
 
-    if (this.isRunning) {
+    if (this.isRunning || this.implementation.isStarting) {
       throw new RunningHttpInterceptorError(cannotChangeAuthWhileRunningMessage);
     }
 
@@ -73,14 +73,17 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
       return;
     }
 
-    this.#auth = new Proxy(auth, {
-      set: (target, property, value) => {
-        if (this.isRunning) {
-          throw new RunningHttpInterceptorError(cannotChangeAuthWhileRunningMessage);
-        }
-        return Reflect.set(target, property, value);
+    this.#auth = new Proxy(
+      { ...auth }, // Copy object to ensure it's not mutated later without going though the proxy.
+      {
+        set: (target, property, value) => {
+          if (this.isRunning || this.implementation.isStarting) {
+            throw new RunningHttpInterceptorError(cannotChangeAuthWhileRunningMessage);
+          }
+          return Reflect.set(target, property, value);
+        },
       },
-    });
+    );
   }
 
   get onUnhandledRequest() {
@@ -100,20 +103,11 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
   }
 
   async start() {
-    if (this.isRunning) {
-      return;
-    }
-
     await this.implementation.start();
   }
 
   async stop() {
-    if (!this.isRunning) {
-      return;
-    }
-
-    await this.clear();
-    await this.implementation.stop();
+    await this.implementation.stop({ beforeStop: () => this.clear() });
   }
 
   get = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {

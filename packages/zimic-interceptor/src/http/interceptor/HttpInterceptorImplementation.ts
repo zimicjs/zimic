@@ -24,7 +24,7 @@ import { HttpInterceptorRequest } from '../requestHandler/types/requests';
 import NotRunningHttpInterceptorError from './errors/NotRunningHttpInterceptorError';
 import RequestSavingSafeLimitExceededError from './errors/RequestSavingSafeLimitExceededError';
 import RunningHttpInterceptorError from './errors/RunningHttpInterceptorError';
-import HttpInterceptorStore from './HttpInterceptorStore';
+import type HttpInterceptorStore from './HttpInterceptorStore';
 import { UnhandledRequestStrategy } from './types/options';
 import { HttpInterceptorRequestSaving } from './types/public';
 import { HttpInterceptorRequestContext } from './types/requests';
@@ -45,6 +45,10 @@ class HttpInterceptorImplementation<
   private createWorker: () => HttpInterceptorWorker;
   private deleteWorker: () => void;
   private worker?: HttpInterceptorWorker;
+
+  private startPromise?: Promise<void>;
+  private numberOfPendingStarts = 0;
+  private lifecycleQueue: Promise<void> = Promise.resolve();
 
   requestSaving: HttpInterceptorRequestSaving;
   private numberOfSavedRequests = 0;
@@ -104,7 +108,7 @@ class HttpInterceptorImplementation<
   }
 
   set baseURL(newBaseURL: URL) {
-    if (this.isRunning) {
+    if (this.isRunning || this.isStarting) {
       throw new RunningHttpInterceptorError(
         'Did you forget to call `await interceptor.stop()` before changing the base URL?',
       );
@@ -134,33 +138,94 @@ class HttpInterceptorImplementation<
     return this.worker?.platform ?? null;
   }
 
-  async start() {
+  start() {
+    if (this.startPromise) {
+      return this.startPromise;
+    }
+
+    this.numberOfPendingStarts++;
+
+    const startPromise = this.enqueueLifecycleOperation(() => this.startOnce()).finally(() => {
+      this.numberOfPendingStarts--;
+
+      const isLastStartPromise = this.startPromise === startPromise;
+
+      if (isLastStartPromise) {
+        this.startPromise = undefined;
+      }
+    });
+
+    this.startPromise = startPromise;
+
+    return startPromise;
+  }
+
+  private async startOnce() {
+    if (this.isRunning) {
+      return;
+    }
+
     try {
       this.worker = this.createWorker();
+      this.worker.registerRunningInterceptor(this);
 
       await this.worker.start();
-      this.worker.registerRunningInterceptor(this);
 
       this.markAsRunning(true);
     } catch (error) {
-      await this.stop();
+      await this.stopWorker();
       throw error;
     }
   }
 
-  async stop() {
+  get isStarting() {
+    return this.numberOfPendingStarts > 0;
+  }
+
+  async stop(options: { beforeStop?: () => PossiblePromise<void> }) {
+    this.startPromise = undefined;
+    await this.enqueueLifecycleOperation(() => this.stopOnce(options));
+  }
+
+  private async stopOnce(options: { beforeStop?: () => PossiblePromise<void> }) {
+    if (!this.isRunning) {
+      return;
+    }
+
+    await options.beforeStop?.();
+
+    await this.stopWorker();
+  }
+
+  private async stopWorker() {
     this.worker?.unregisterRunningInterceptor(this);
 
-    // The number of interceptors will be 0 if the first client could not start due to an error.
-    const isLastRunningInterceptor = this.numberOfRunningInterceptors === 0 || this.numberOfRunningInterceptors === 1;
+    const isLastRunningInterceptor = this.worker?.numberOfRunningInterceptors === 0;
 
     if (isLastRunningInterceptor) {
       await this.worker?.stop();
-      this.deleteWorker();
+
+      // Stopping is asynchronous, so we need to check again if we are still the last before deleting the worker.
+      // Another interceptor might have started in the meantime and the worker should not be deleted if so.
+      const isStillLastRunningInterceptor = this.worker?.numberOfRunningInterceptors === 0;
+
+      if (isStillLastRunningInterceptor) {
+        this.deleteWorker();
+      }
     }
 
     this.markAsRunning(false);
     this.worker = undefined;
+  }
+
+  private enqueueLifecycleOperation(operation: () => Promise<void>) {
+    const operationPromise = this.lifecycleQueue.then(operation);
+
+    this.lifecycleQueue = operationPromise
+      // Ensure the queue continues even if the operation fails
+      .catch(() => undefined);
+
+    return operationPromise;
   }
 
   private markAsRunning(isRunning: boolean) {
@@ -170,18 +235,6 @@ class HttpInterceptorImplementation<
       this.store.markRemoteInterceptorAsRunning(this, isRunning, this.baseURL);
     }
     this.isRunning = isRunning;
-  }
-
-  get numberOfRunningInterceptors() {
-    if (!this.isRunning) {
-      return 0;
-    }
-
-    if (this.workerOrThrow.type === 'local') {
-      return this.store.numberOfRunningLocalInterceptors;
-    } else {
-      return this.store.numberOfRunningRemoteInterceptors(this.baseURL);
-    }
   }
 
   get(path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) {

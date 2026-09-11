@@ -1,7 +1,7 @@
 import { HttpSchema, HttpMethod } from '@zimic/http';
 import { PossiblePromise } from '@zimic/utils/types';
 import { joinURL } from '@zimic/utils/url';
-import { expect } from 'vitest';
+import { expect, inject } from 'vitest';
 
 import { createHttpInterceptor } from '@/http';
 import LocalHttpInterceptor from '@/http/interceptor/LocalHttpInterceptor';
@@ -22,7 +22,6 @@ import {
   RemoteHttpInterceptorWorkerOptions,
 } from '@/http/interceptorWorker/types/options';
 import InterceptorServer from '@/server/InterceptorServer';
-import { GLOBAL_INTERCEPTOR_SERVER_HOSTNAME, GLOBAL_INTERCEPTOR_SERVER_PORT } from '@tests/setup/global/browser';
 import { GLOBAL_FALLBACK_SERVER_PORT } from '@tests/setup/global/shared';
 
 export function getBrowserBaseURL(type: HttpInterceptorType) {
@@ -31,7 +30,7 @@ export function getBrowserBaseURL(type: HttpInterceptorType) {
   }
 
   const pathPrefix = `path-${crypto.randomUUID()}`;
-  return joinURL(`http://${GLOBAL_INTERCEPTOR_SERVER_HOSTNAME}:${GLOBAL_INTERCEPTOR_SERVER_PORT}`, pathPrefix);
+  return joinURL(inject('interceptorServer').url, pathPrefix);
 }
 
 export function getNodeBaseURL(type: HttpInterceptorType, server: InterceptorServer) {

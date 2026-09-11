@@ -63,20 +63,11 @@ class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttp
   }
 
   async start() {
-    if (this.isRunning) {
-      return;
-    }
-
     await this.implementation.start();
   }
 
   async stop() {
-    if (!this.isRunning) {
-      return;
-    }
-
-    this.clear();
-    await this.implementation.stop();
+    await this.implementation.stop({ beforeStop: () => this.clear() });
   }
 
   get = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
