@@ -218,6 +218,11 @@ const config: Docusaurus.Config = {
               sidebarId: 'fetch',
             },
             {
+              label: '@zimic/ws',
+              type: 'docSidebar',
+              sidebarId: 'ws',
+            },
+            {
               label: '@zimic/interceptor',
               type: 'docSidebar',
               sidebarId: 'interceptor',
@@ -303,6 +308,10 @@ const config: Docusaurus.Config = {
             {
               label: '@zimic/fetch',
               to: 'docs/fetch',
+            },
+            {
+              label: '@zimic/ws',
+              to: 'docs/ws',
             },
             {
               label: '@zimic/interceptor',
