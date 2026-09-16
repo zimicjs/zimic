@@ -92,6 +92,8 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     socket.addEventListener('close', handleSocketClose);
 
     this.sockets.add(socket);
+
+    return handleSocketClose;
   }
 
   private handleSocketMessage = async (socket: ClientSocket, rawMessage: ClientSocket.MessageEvent) => {

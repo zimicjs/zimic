@@ -168,6 +168,94 @@ describe('Web socket server', () => {
       });
     });
 
+    it('should not finish pending connection setup while stopping', async () => {
+      const connectionResult = Promise.withResolvers<{ handled: boolean }>();
+      let sendSpy: MockInstance<ClientSocket['send']> | undefined;
+
+      server = new WebSocketServer({
+        httpServer,
+        handleConnection: (socket) => {
+          sendSpy = vi.spyOn(socket, 'send');
+          return connectionResult.promise;
+        },
+      });
+      server.start();
+
+      try {
+        rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+        await waitFor(() => {
+          expect(sendSpy).toBeDefined();
+        });
+
+        connectionResult.resolve({ handled: false });
+        await server.stop();
+
+        expect(sendSpy).not.toHaveBeenCalledWith('socket:auth:valid');
+      } finally {
+        sendSpy?.mockRestore();
+      }
+    });
+
+    it('should stop pending authentication when stopping', async () => {
+      const authenticationResult = Promise.withResolvers<{ isValid: true }>();
+      const authenticate = vi.fn(() => authenticationResult.promise);
+
+      server = new WebSocketServer({ httpServer, authenticate });
+      server.start();
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+        await waitFor(() => {
+          expect(authenticate).toHaveBeenCalledOnce();
+        });
+
+        await server!.stop();
+
+        vi.useFakeTimers();
+
+        try {
+          authenticationResult.resolve({ isValid: true });
+          await vi.advanceTimersByTimeAsync(server!.socketTimeout);
+
+          expect(console.error).not.toHaveBeenCalled();
+        } finally {
+          vi.useRealTimers();
+        }
+      });
+    });
+
+    it('should not register connections handled during setup', async () => {
+      const handleConnection = vi.fn((socket: ClientSocket) => {
+        socket.resume();
+        return { handled: true };
+      });
+
+      server = new WebSocketServer({ httpServer, handleConnection });
+      server.start();
+
+      rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+      const receivedMessages: ClientSocket.MessageEvent[] = [];
+
+      rawClient.addEventListener('message', (message) => {
+        receivedMessages.push(message);
+      });
+
+      await waitForOpenClientSocket(rawClient);
+
+      await waitFor(() => {
+        expect(handleConnection).toHaveBeenCalledOnce();
+      });
+
+      server.send('no-reply', { message: 'test' });
+
+      await waitForNot(() => {
+        expect(receivedMessages.length).toBeGreaterThan(0);
+      });
+    });
+
     it('should throw an error if a client socket close timeout is reached', async () => {
       const delayedClientSocketClose = delayClientSocketClose(300);
 

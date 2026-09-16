@@ -10,6 +10,10 @@ import WebSocketHandler from './WebSocketHandler';
 
 const { WebSocketServer: ServerSocket } = ClientSocket;
 
+function isSocketOpen(socket: ClientSocket) {
+  return socket.readyState === socket.OPEN;
+}
+
 export type WebSocketServerAuthenticate = (
   socket: ClientSocket,
   request: IncomingMessage,
@@ -30,6 +34,7 @@ interface WebSocketServerOptions {
 
 class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<Schema> {
   private webSocketServer?: InstanceType<typeof ServerSocket>;
+  private isStopping = false;
 
   private httpServer: HttpServer;
   private authenticate?: WebSocketServerOptions['authenticate'];
@@ -68,7 +73,7 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
         if (this.authenticate) {
           const result = await this.authenticate(socket, request);
 
-          if (socket.readyState !== socket.OPEN) {
+          if (!isSocketOpen(socket)) {
             return;
           }
 
@@ -81,7 +86,7 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
 
         const connectionResult = await this.handleConnection?.(socket, request);
 
-        if (socket.readyState !== socket.OPEN) {
+        if (!isSocketOpen(socket)) {
           return;
         }
 
@@ -89,7 +94,12 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
           return;
         }
 
-        await super.registerSocket(socket);
+        const unregisterSocket = await super.registerSocket(socket);
+
+        if (this.isStopping || !isSocketOpen(socket)) {
+          unregisterSocket();
+          return;
+        }
 
         socket.resume();
         socket.send('socket:auth:valid' satisfies WebSocketControlMessage);
@@ -109,12 +119,18 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
       return;
     }
 
-    super.offAny();
-    await super.closeClientSockets();
+    this.isStopping = true;
 
-    await closeServerSocket(this.webSocketServer, { timeout: this.socketTimeout });
+    try {
+      super.offAny();
+      await super.closeClientSockets();
 
-    this.webSocketServer = undefined;
+      await closeServerSocket(this.webSocketServer, { timeout: this.socketTimeout });
+
+      this.webSocketServer = undefined;
+    } finally {
+      this.isStopping = false;
+    }
   }
 }
 
