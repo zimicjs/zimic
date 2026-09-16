@@ -34,6 +34,7 @@ export function delayServerSocketConnection() {
         vi.spyOn(socket, 'readyState', 'get')
           .mockReturnValueOnce(ClientSocket.OPEN)
           .mockReturnValueOnce(ClientSocket.OPEN)
+          .mockReturnValueOnce(ClientSocket.OPEN)
           .mockReturnValueOnce(ClientSocket.CONNECTING);
       }
 

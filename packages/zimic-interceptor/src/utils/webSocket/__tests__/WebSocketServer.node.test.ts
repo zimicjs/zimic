@@ -146,6 +146,35 @@ describe('Web socket server', () => {
       });
     });
 
+    it('should stop pending connection setup when stopping', async () => {
+      const connectionResult = Promise.withResolvers<{ wasHandled: boolean }>();
+      const handleConnection = vi.fn(() => connectionResult.promise);
+
+      server = new WebSocketServer({ httpServer, handleConnection });
+      server.start();
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+        await waitFor(() => {
+          expect(handleConnection).toHaveBeenCalledOnce();
+        });
+
+        await server!.stop();
+
+        vi.useFakeTimers();
+
+        try {
+          connectionResult.resolve({ wasHandled: false });
+          await vi.advanceTimersByTimeAsync(server!.socketTimeout);
+
+          expect(console.error).not.toHaveBeenCalled();
+        } finally {
+          vi.useRealTimers();
+        }
+      });
+    });
+
     it('should log an error if a client socket open timeout is reached', async () => {
       const delayedClientSocketAddEventListener = delayClientSocketOpen(300);
       const delayedServerSocketOn = delayServerSocketConnection();

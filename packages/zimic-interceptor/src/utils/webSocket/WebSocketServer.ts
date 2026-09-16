@@ -68,6 +68,10 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
         if (this.authenticate) {
           const result = await this.authenticate(socket, request);
 
+          if (socket.readyState !== socket.OPEN) {
+            return;
+          }
+
           if (!result.isValid) {
             socket.resume();
             socket.close(1008, result.message);
@@ -76,6 +80,10 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
         }
 
         const connectionResult = await this.handleConnection?.(socket, request);
+
+        if (socket.readyState !== socket.OPEN) {
+          return;
+        }
 
         if (connectionResult?.wasHandled) {
           return;
