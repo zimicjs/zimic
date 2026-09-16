@@ -4,7 +4,7 @@ import ClientSocket from 'isomorphic-ws';
 
 import { closeServerSocket } from '@/utils/webSocket';
 
-import { WEB_SOCKET_INTERNAL_ERROR_CLOSE_CODE, WebSocketControlMessage } from './constants';
+import { WEB_SOCKET_CLOSE_CODES, WebSocketControlMessage } from './constants';
 import { WebSocketSchema } from './types';
 import WebSocketHandler from './WebSocketHandler';
 
@@ -18,7 +18,7 @@ export type WebSocketServerAuthenticate = (
 export type WebSocketServerConnectionHandler = (
   socket: ClientSocket,
   request: IncomingMessage,
-) => PossiblePromise<{ wasHandled: boolean }>;
+) => PossiblePromise<{ handled: boolean }>;
 
 interface WebSocketServerOptions {
   httpServer: HttpServer;
@@ -74,7 +74,7 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
 
           if (!result.isValid) {
             socket.resume();
-            socket.close(1008, result.message);
+            socket.close(WEB_SOCKET_CLOSE_CODES.POLICY_VIOLATION, result.message);
             return;
           }
         }
@@ -85,17 +85,19 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
           return;
         }
 
-        if (connectionResult?.wasHandled) {
+        if (connectionResult?.handled) {
           return;
         }
 
         await super.registerSocket(socket);
+
         socket.resume();
         socket.send('socket:auth:valid' satisfies WebSocketControlMessage);
       } catch (error) {
         socket.resume();
+        socket.close(WEB_SOCKET_CLOSE_CODES.INTERNAL_ERROR);
+
         webSocketServer.emit('error', error);
-        socket.close(WEB_SOCKET_INTERNAL_ERROR_CLOSE_CODE);
       }
     });
 

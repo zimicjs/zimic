@@ -12,7 +12,7 @@ import {
   WebSocketMessageTimeoutError,
   WebSocketOpenTimeoutError,
 } from '@/utils/webSocket';
-import { WEB_SOCKET_INTERNAL_ERROR_CLOSE_CODE } from '@/utils/webSocket/constants';
+import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
 import InvalidWebSocketMessageError from '../errors/InvalidWebSocketMessageError';
@@ -147,7 +147,7 @@ describe('Web socket server', () => {
     });
 
     it('should stop pending connection setup when stopping', async () => {
-      const connectionResult = Promise.withResolvers<{ wasHandled: boolean }>();
+      const connectionResult = Promise.withResolvers<{ handled: boolean }>();
       const handleConnection = vi.fn(() => connectionResult.promise);
 
       server = new WebSocketServer({ httpServer, handleConnection });
@@ -165,7 +165,7 @@ describe('Web socket server', () => {
         vi.useFakeTimers();
 
         try {
-          connectionResult.resolve({ wasHandled: false });
+          connectionResult.resolve({ handled: false });
           await vi.advanceTimersByTimeAsync(server!.socketTimeout);
 
           expect(console.error).not.toHaveBeenCalled();
@@ -603,25 +603,30 @@ describe('Web socket server', () => {
   });
 
   describe('Error handling', () => {
-    it('should keep authentication rejections as policy violations', async () => {
+    it('should close connection with a policy violation code if authentication is rejected', async () => {
+      const rejectionMessage = 'Rejected.';
+
       server = new WebSocketServer({
         httpServer,
-        authenticate: () => ({ isValid: false, message: 'Rejected.' }),
+        authenticate: () => ({ isValid: false, message: rejectionMessage }),
       });
       server.start();
 
       rawClient = new ClientSocket(`ws://localhost:${port}`);
+
       const closeEvent = await new Promise<ClientSocket.CloseEvent>((resolve) => {
         rawClient!.addEventListener('close', resolve, { once: true });
       });
 
-      expect(closeEvent.code).toBe(1008);
-      expect(closeEvent.reason).toBe('Rejected.');
+      expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.POLICY_VIOLATION);
+      expect(closeEvent.reason).toBe(rejectionMessage);
     });
 
     it('should log thrown authentication failures and close the socket as an internal error', async () => {
       const error = new Error('Authentication failed.');
+
       const resumeSpy = vi.spyOn(ClientSocket.prototype, 'resume');
+
       const registerSocketSpy = vi.spyOn(
         WebSocketHandler.prototype as unknown as {
           registerSocket: (socket: ClientSocket) => Promise<void>;
@@ -643,7 +648,7 @@ describe('Web socket server', () => {
             rawClient!.addEventListener('close', resolve, { once: true });
           });
 
-          expect(closeEvent.code).toBe(WEB_SOCKET_INTERNAL_ERROR_CLOSE_CODE);
+          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.INTERNAL_ERROR);
           expect(resumeSpy).toHaveBeenCalled();
           expect(registerSocketSpy).not.toHaveBeenCalled();
           expect(server as unknown as { sockets: Set<unknown> }).toHaveProperty('sockets.size', 0);
@@ -679,7 +684,7 @@ describe('Web socket server', () => {
             rawClient!.addEventListener('close', resolve, { once: true });
           });
 
-          expect(closeEvent.code).toBe(WEB_SOCKET_INTERNAL_ERROR_CLOSE_CODE);
+          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.INTERNAL_ERROR);
           expect(resumeSpy).toHaveBeenCalled();
           expect(registerSocketSpy).not.toHaveBeenCalled();
           expect(server as unknown as { sockets: Set<unknown> }).toHaveProperty('sockets.size', 0);
@@ -710,7 +715,7 @@ describe('Web socket server', () => {
               close: socket.listenerCount('close'),
               error: socket.listenerCount('error'),
             };
-            return { wasHandled: false };
+            return { handled: false };
           },
         });
         server.start();
@@ -721,7 +726,7 @@ describe('Web socket server', () => {
             rawClient!.addEventListener('close', resolve, { once: true });
           });
 
-          expect(closeEvent.code).toBe(WEB_SOCKET_INTERNAL_ERROR_CLOSE_CODE);
+          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.INTERNAL_ERROR);
           expect(sendSpy).toHaveBeenCalledWith('socket:auth:valid');
           expect(resumeSpy).toHaveBeenCalled();
           await waitFor(() => {
