@@ -3,7 +3,7 @@
   "extends": ["//"],
   "tasks": {
     "build": {
-      "dependsOn": ["^build", "@zimic/http#build"],
+      "dependsOn": ["^build", "@zimic/http#build", "@zimic/ws#build"],
       "inputs": [
         "{src,scripts}/**/*.{ts,json}",
         "{package,tsconfig}.json",
@@ -16,7 +16,7 @@
     },
 
     "test:turbo": {
-      "dependsOn": ["^build", "@zimic/http#build"],
+      "dependsOn": ["^build", "@zimic/http#build", "@zimic/ws#build"],
       "inputs": ["{src,tests,scripts}/**/*.{ts,json}", "{package,tsconfig}.json", "vitest.config.mts"]
     },
 
@@ -25,7 +25,7 @@
     },
 
     "types:check": {
-      "dependsOn": ["^build", "@zimic/http#build"],
+      "dependsOn": ["^build", "@zimic/http#build", "@zimic/ws#build"],
       "inputs": ["{src,tests,scripts}/**/*.{ts,json}", "{package,tsconfig}.json"]
     }
   }
