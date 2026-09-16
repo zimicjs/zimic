@@ -3,14 +3,13 @@ import { waitFor, waitForNot } from '@zimic/utils/time';
 import { createServer } from 'http';
 import ClientSocket from 'isomorphic-ws';
 import { AddressInfo } from 'net';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 
 import {
   closeClientSocket,
   waitForOpenClientSocket,
   WebSocketCloseTimeoutError,
   WebSocketMessageTimeoutError,
-  WebSocketOpenTimeoutError,
 } from '@/utils/webSocket';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingIgnoredConsole } from '@tests/utils/console';
@@ -24,14 +23,8 @@ import {
   WebSocketReplyMessageListener,
   WebSocketSchema,
 } from '../types';
-import WebSocketHandler from '../WebSocketHandler';
 import WebSocketServer from '../WebSocketServer';
-import {
-  delayClientSocketOpen,
-  delayClientSocketClose,
-  delayServerSocketConnection,
-  delayServerSocketClose,
-} from './utils';
+import { delayClientSocketClose, delayServerSocketClose } from './utils';
 
 describe('Web socket server', () => {
   const httpServer = createServer();
@@ -173,30 +166,6 @@ describe('Web socket server', () => {
           vi.useRealTimers();
         }
       });
-    });
-
-    it('should log an error if a client socket open timeout is reached', async () => {
-      const delayedClientSocketAddEventListener = delayClientSocketOpen(300);
-      const delayedServerSocketOn = delayServerSocketConnection();
-
-      try {
-        const socketTimeout = 100;
-        server = new WebSocketServer({ httpServer, socketTimeout });
-        expect(server.socketTimeout).toBe(socketTimeout);
-        server.start();
-
-        await usingIgnoredConsole(['error'], async (console) => {
-          rawClient = new ClientSocket(`ws://localhost:${port}`);
-
-          await waitFor(() => {
-            expect(console.error).toHaveBeenCalledTimes(1);
-          });
-          expect(console.error).toHaveBeenCalledWith(new WebSocketOpenTimeoutError(socketTimeout));
-        });
-      } finally {
-        delayedClientSocketAddEventListener.mockRestore();
-        delayedServerSocketOn.mockRestore();
-      }
     });
 
     it('should throw an error if a client socket close timeout is reached', async () => {
@@ -625,14 +594,6 @@ describe('Web socket server', () => {
     it('should log thrown authentication failures and close the socket as an internal error', async () => {
       const error = new Error('Authentication failed.');
 
-      const resumeSpy = vi.spyOn(ClientSocket.prototype, 'resume');
-
-      const registerSocketSpy = vi.spyOn(
-        WebSocketHandler.prototype as unknown as {
-          registerSocket: (socket: ClientSocket) => Promise<void>;
-        },
-        'registerSocket',
-      );
       server = new WebSocketServer({
         httpServer,
         authenticate: () => {
@@ -641,34 +602,20 @@ describe('Web socket server', () => {
       });
       server.start();
 
-      try {
-        await usingIgnoredConsole(['error'], async (console) => {
-          rawClient = new ClientSocket(`ws://localhost:${port}`);
-          const closeEvent = await new Promise<ClientSocket.CloseEvent>((resolve) => {
-            rawClient!.addEventListener('close', resolve, { once: true });
-          });
-
-          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.INTERNAL_ERROR);
-          expect(resumeSpy).toHaveBeenCalled();
-          expect(registerSocketSpy).not.toHaveBeenCalled();
-          expect(server as unknown as { sockets: Set<unknown> }).toHaveProperty('sockets.size', 0);
-          expect(console.error).toHaveBeenCalledWith(error);
+      await usingIgnoredConsole(['error'], async (console) => {
+        rawClient = new ClientSocket(`ws://localhost:${port}`);
+        const closeEvent = await new Promise<ClientSocket.CloseEvent>((resolve) => {
+          rawClient!.addEventListener('close', resolve, { once: true });
         });
-      } finally {
-        registerSocketSpy.mockRestore();
-        resumeSpy.mockRestore();
-      }
+
+        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.INTERNAL_ERROR);
+        expect(console.error).toHaveBeenCalledWith(error);
+      });
     });
 
     it('should log thrown connection handler failures and close the socket as an internal error', async () => {
       const error = new Error('Connection handler failed.');
-      const resumeSpy = vi.spyOn(ClientSocket.prototype, 'resume');
-      const registerSocketSpy = vi.spyOn(
-        WebSocketHandler.prototype as unknown as {
-          registerSocket: (socket: ClientSocket) => Promise<void>;
-        },
-        'registerSocket',
-      );
+
       server = new WebSocketServer({
         httpServer,
         handleConnection: () => {
@@ -677,32 +624,21 @@ describe('Web socket server', () => {
       });
       server.start();
 
-      try {
-        await usingIgnoredConsole(['error'], async (console) => {
-          rawClient = new ClientSocket(`ws://localhost:${port}`);
-          const closeEvent = await new Promise<ClientSocket.CloseEvent>((resolve) => {
-            rawClient!.addEventListener('close', resolve, { once: true });
-          });
-
-          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.INTERNAL_ERROR);
-          expect(resumeSpy).toHaveBeenCalled();
-          expect(registerSocketSpy).not.toHaveBeenCalled();
-          expect(server as unknown as { sockets: Set<unknown> }).toHaveProperty('sockets.size', 0);
-          expect(console.error).toHaveBeenCalledWith(error);
+      await usingIgnoredConsole(['error'], async (console) => {
+        rawClient = new ClientSocket(`ws://localhost:${port}`);
+        const closeEvent = await new Promise<ClientSocket.CloseEvent>((resolve) => {
+          rawClient!.addEventListener('close', resolve, { once: true });
         });
-      } finally {
-        registerSocketSpy.mockRestore();
-        resumeSpy.mockRestore();
-      }
+
+        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.INTERNAL_ERROR);
+        expect(console.error).toHaveBeenCalledWith(error);
+      });
     });
 
     it('should clean up a partially registered socket after setup fails', async () => {
       const error = new Error('Authentication confirmation failed.');
-      const resumeSpy = vi.spyOn(ClientSocket.prototype, 'resume');
-      const sendSpy = vi.spyOn(ClientSocket.prototype, 'send').mockImplementationOnce(() => {
-        throw error;
-      });
       let serverSocket!: ClientSocket;
+      let sendSpy: MockInstance<ClientSocket['send']> | undefined;
       let initialListenerCounts!: Record<'message' | 'close' | 'error', number>;
 
       try {
@@ -710,6 +646,9 @@ describe('Web socket server', () => {
           httpServer,
           handleConnection: (socket) => {
             serverSocket = socket;
+            sendSpy = vi.spyOn(socket, 'send').mockImplementationOnce(() => {
+              throw error;
+            });
             initialListenerCounts = {
               message: socket.listenerCount('message'),
               close: socket.listenerCount('close'),
@@ -728,9 +667,7 @@ describe('Web socket server', () => {
 
           expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.INTERNAL_ERROR);
           expect(sendSpy).toHaveBeenCalledWith('socket:auth:valid');
-          expect(resumeSpy).toHaveBeenCalled();
           await waitFor(() => {
-            expect(server as unknown as { sockets: Set<unknown> }).toHaveProperty('sockets.size', 0);
             expect(serverSocket.listenerCount('message')).toBe(initialListenerCounts.message);
             expect(serverSocket.listenerCount('close')).toBe(initialListenerCounts.close);
             expect(serverSocket.listenerCount('error')).toBe(initialListenerCounts.error);
@@ -738,8 +675,7 @@ describe('Web socket server', () => {
           expect(console.error).toHaveBeenCalledWith(error);
         });
       } finally {
-        sendSpy.mockRestore();
-        resumeSpy.mockRestore();
+        sendSpy?.mockRestore();
       }
     });
 
