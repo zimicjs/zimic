@@ -64,7 +64,12 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     };
     socket.addEventListener('message', handleSocketMessage);
 
-    await openPromise;
+    try {
+      await openPromise;
+    } catch (error) {
+      socket.removeEventListener('message', handleSocketMessage);
+      throw error;
+    }
 
     /* istanbul ignore next -- @preserve
      * It is difficult to reliably simulate socket errors in tests. */
@@ -87,6 +92,8 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     socket.addEventListener('close', handleSocketClose);
 
     this.sockets.add(socket);
+
+    return handleSocketClose;
   }
 
   private handleSocketMessage = async (socket: ClientSocket, rawMessage: ClientSocket.MessageEvent) => {

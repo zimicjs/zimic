@@ -1,5 +1,4 @@
-import { JSONValue } from '@zimic/http';
-import { PossiblePromise } from '@zimic/utils/types';
+import type { JSONValue, PossiblePromise } from '@zimic/utils/types';
 import type { WebSocket as ClientSocket } from 'isomorphic-ws';
 
 export interface WebSocketChannelFrame<Channel extends string> {

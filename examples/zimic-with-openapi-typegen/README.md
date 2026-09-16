@@ -22,8 +22,8 @@ This example uses Zimic and the `zimic-http typegen` CLI to generate types from 
 pnpm typegen:github
 ```
 
-- Generated types: [`src/types/github/typegen/generated.ts`](./src/types/github/typegen/generated.ts)
-- Typegen filters: [`src/types/github/typegen/filters.txt`](./src/types/github/typegen/filters.txt)
+- Generated types: [`src/clients/github/typegen/generated.ts`](./src/clients/github/typegen/generated.ts)
+- Typegen filters: [`src/clients/github/typegen/filters.txt`](./src/clients/github/typegen/filters.txt)
 
 > [!TIP]
 >

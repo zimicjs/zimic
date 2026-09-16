@@ -1,6 +1,6 @@
 import ClientSocket, { type WebSocketServer as ServerSocket } from 'isomorphic-ws';
 
-import { WebSocketControlMessage } from '@/utils/webSocket/constants';
+import { WEB_SOCKET_CLOSE_CODES, WebSocketControlMessage } from '@/utils/webSocket/constants';
 import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
 
 class WebSocketTimeoutError extends Error {}
@@ -65,7 +65,7 @@ export async function waitForOpenClientSocket(
     }
 
     function handleClose(event: ClientSocket.CloseEvent) {
-      const isUnauthorized = event.code === 1008;
+      const isUnauthorized = event.code === WEB_SOCKET_CLOSE_CODES.POLICY_VIOLATION;
 
       /* istanbul ignore else -- @preserve
        * An unauthorized close event is the only one we expect to happen here. */

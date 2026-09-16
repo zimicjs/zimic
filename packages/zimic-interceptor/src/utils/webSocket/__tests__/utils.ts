@@ -20,29 +20,6 @@ export function delayClientSocketOpen(delayDuration: number) {
   return delayedClientSocketAddEventListener;
 }
 
-export function delayServerSocketConnection() {
-  const originalServerSocketOn = ServerSocket.prototype.on;
-
-  const delayedServerSocketOnSpy = vi.spyOn(ServerSocket.prototype, 'on').mockImplementation(function (
-    this: InstanceType<typeof ServerSocket>,
-    type,
-    listener,
-  ) {
-    originalServerSocketOn.call(this, type, (...parameters) => {
-      if (type === 'connection') {
-        const socket = parameters[0] as ClientSocket;
-        vi.spyOn(socket, 'readyState', 'get').mockReturnValueOnce(ClientSocket.CONNECTING);
-      }
-
-      listener.apply(this, parameters);
-    });
-
-    return this;
-  });
-
-  return delayedServerSocketOnSpy;
-}
-
 export function delayClientSocketClose(delayDuration: number) {
   const originalClientSocketClose = ClientSocket.prototype.close;
 
