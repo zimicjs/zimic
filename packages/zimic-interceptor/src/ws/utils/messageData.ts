@@ -1,3 +1,4 @@
+import { assertTypeOf, ValidationError } from '@zimic/utils/validation';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
 import { convertArrayBufferToBase64, convertBase64ToArrayBuffer } from '@/utils/data';
@@ -25,14 +26,6 @@ export function normalizeBufferSource(bufferSource: BufferSource): ArrayBuffer {
   return normalizedBytes.buffer;
 }
 
-function tryParseJSONMessageData(data: string) {
-  try {
-    return JSON.parse(data) as unknown;
-  } catch {
-    return data;
-  }
-}
-
 export function normalizeWebSocketBinaryMessageData(data: Blob | BufferSource): ArrayBuffer | Blob {
   if (data instanceof Blob) {
     return data;
@@ -43,11 +36,6 @@ export function normalizeWebSocketBinaryMessageData(data: Blob | BufferSource): 
 export function normalizeWebSocketMessageData<Schema extends WebSocketSchema>(
   data: Schema | WebSocketMessageData<Schema>,
 ): Schema {
-  if (typeof data === 'string') {
-    const normalizedStringData = tryParseJSONMessageData(data);
-    return normalizedStringData as Schema;
-  }
-
   if (isWebSocketBinaryMessageData(data)) {
     const normalizedBinaryData = normalizeWebSocketBinaryMessageData(data);
     return normalizedBinaryData as Schema;
@@ -57,18 +45,24 @@ export function normalizeWebSocketMessageData<Schema extends WebSocketSchema>(
 }
 
 export function serializeRuntimeWebSocketMessageData<Schema extends WebSocketSchema>(
-  data: Schema | WebSocketMessageData<Schema>,
+  data: Schema | WebSocketMessageData<Schema> | undefined,
 ): WebSocketMessageData<Schema> {
   if (isWebSocketBinaryMessageData(data) || typeof data === 'string') {
     return data as WebSocketMessageData<Schema>;
   }
 
-  return JSON.stringify(data) as unknown as WebSocketMessageData<Schema>;
+  const serializedData = JSON.stringify(data);
+  assertTypeOf('serialized WebSocket message data', serializedData, 'string');
+  return serializedData as unknown as WebSocketMessageData<Schema>;
 }
 
 export async function serializeWebSocketMessageData<Schema extends WebSocketSchema>(
-  data: Schema | WebSocketMessageData<Schema>,
+  data: Schema | WebSocketMessageData<Schema> | undefined,
 ): Promise<SerializedWebSocketMessageData<Schema>> {
+  if (data === undefined) {
+    throw new ValidationError('WebSocket message data must not be undefined.');
+  }
+
   if (isWebSocketBinaryMessageData(data)) {
     const normalizedData = normalizeWebSocketBinaryMessageData(data);
     const arrayBuffer = normalizedData instanceof Blob ? await normalizedData.arrayBuffer() : normalizedData;
