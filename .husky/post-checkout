@@ -1,0 +1,18 @@
+# `git worktree add` reaches this hook with a null previous HEAD.
+if [ "$1" != "0000000000000000000000000000000000000000" ]; then
+  exit 0
+fi
+
+# Skip the main checkout, including a fresh clone.
+if [ "$(git rev-parse --git-common-dir)" = "$(git rev-parse --git-dir)" ]; then
+  exit 0
+fi
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+if pnpm run setup; then
+  printf 'worktree setup: %s is ready\n' "$PWD"
+else
+  printf 'worktree setup: setup failed; the worktree remains at %s. Run `pnpm run setup` there to retry.\n' "$PWD" >&2
+  exit 1
+fi
