@@ -5,7 +5,6 @@ import { convertArrayBufferToBase64, convertBase64ToArrayBuffer } from '@/utils/
 
 import {
   SerializedWebSocketBinaryMessageData,
-  SerializedWebSocketJSONMessageData,
   SerializedWebSocketMessageData,
   SerializedWebSocketTextMessageData,
 } from '../interceptorWorker/types/messages';
@@ -26,6 +25,14 @@ export function normalizeBufferSource(bufferSource: BufferSource): ArrayBuffer {
   return normalizedBytes.buffer;
 }
 
+function tryParseJSONMessageData(data: string): unknown {
+  try {
+    return JSON.parse(data);
+  } catch {
+    return data;
+  }
+}
+
 export function normalizeWebSocketBinaryMessageData(data: Blob | BufferSource): ArrayBuffer | Blob {
   if (data instanceof Blob) {
     return data;
@@ -36,9 +43,9 @@ export function normalizeWebSocketBinaryMessageData(data: Blob | BufferSource): 
 export function normalizeWebSocketMessageData<Schema extends WebSocketSchema>(
   data: Schema | WebSocketMessageData<Schema>,
 ): Schema {
-  if (isWebSocketBinaryMessageData(data)) {
-    const normalizedBinaryData = normalizeWebSocketBinaryMessageData(data);
-    return normalizedBinaryData as Schema;
+  if (typeof data === 'string') {
+    const normalizedStringData = tryParseJSONMessageData(data);
+    return normalizedStringData as Schema;
   }
 
   return data as Schema;
@@ -56,9 +63,9 @@ export function serializeRuntimeWebSocketMessageData<Schema extends WebSocketSch
   return serializedData as unknown as WebSocketMessageData<Schema>;
 }
 
-export async function serializeWebSocketMessageData<Schema extends WebSocketSchema>(
-  data: Schema | WebSocketMessageData<Schema> | undefined,
-): Promise<SerializedWebSocketMessageData<Schema>> {
+export async function serializeWebSocketMessageData(
+  data: WebSocketMessageData<WebSocketSchema> | undefined,
+): Promise<SerializedWebSocketMessageData> {
   if (data === undefined) {
     throw new ValidationError('WebSocket message data must not be undefined.');
   }
@@ -73,17 +80,9 @@ export async function serializeWebSocketMessageData<Schema extends WebSocketSche
     };
   }
 
-  if (typeof data === 'string') {
-    return {
-      type: 'text',
-      data,
-    };
-  }
+  assertTypeOf('WebSocket message data', data, 'string');
 
-  return {
-    type: 'json',
-    data: data as Schema,
-  };
+  return { type: 'text', data };
 }
 
 export function isSerializedWebSocketBinaryMessageData(data: unknown): data is SerializedWebSocketBinaryMessageData {
@@ -97,12 +96,6 @@ export function isSerializedWebSocketBinaryMessageData(data: unknown): data is S
   );
 }
 
-export function isSerializedWebSocketJSONMessageData<Schema extends WebSocketSchema>(
-  data: unknown,
-): data is SerializedWebSocketJSONMessageData<Schema> {
-  return typeof data === 'object' && data !== null && 'type' in data && data.type === 'json' && 'data' in data;
-}
-
 export function isSerializedWebSocketTextMessageData(data: unknown): data is SerializedWebSocketTextMessageData {
   return (
     typeof data === 'object' &&
@@ -114,28 +107,14 @@ export function isSerializedWebSocketTextMessageData(data: unknown): data is Ser
   );
 }
 
-export function isSerializedWebSocketMessageData<Schema extends WebSocketSchema>(
-  data: unknown,
-): data is SerializedWebSocketMessageData<Schema> {
-  return (
-    isSerializedWebSocketBinaryMessageData(data) ||
-    isSerializedWebSocketJSONMessageData<Schema>(data) ||
-    isSerializedWebSocketTextMessageData(data)
-  );
+export function isSerializedWebSocketMessageData(data: unknown): data is SerializedWebSocketMessageData {
+  return isSerializedWebSocketBinaryMessageData(data) || isSerializedWebSocketTextMessageData(data);
 }
 
-export function deserializeWebSocketMessageData<Schema extends WebSocketSchema>(
-  data: SerializedWebSocketMessageData<Schema>,
-): Schema | string | ArrayBuffer {
+export function deserializeWebSocketMessageData(data: SerializedWebSocketMessageData): string | ArrayBuffer {
   if (isSerializedWebSocketBinaryMessageData(data)) {
     return normalizeBufferSource(convertBase64ToArrayBuffer(data.data));
   }
 
-  if (isSerializedWebSocketJSONMessageData<Schema>(data) || isSerializedWebSocketTextMessageData(data)) {
-    return data.data;
-  }
-
-  /* istanbul ignore next -- @preserve
-   * Serialized WebSocket data is validated before reaching this helper. */
-  return data;
+  return data.data;
 }

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   deserializeWebSocketMessageData,
+  isSerializedWebSocketMessageData,
   normalizeWebSocketMessageData,
   serializeRuntimeWebSocketMessageData,
   serializeWebSocketMessageData,
@@ -22,8 +23,19 @@ const textMessageDataCases = [
 ];
 
 describe('normalizeWebSocketMessageData', () => {
-  it.each(textMessageDataCases)('should preserve text message data %s', (data) => {
+  it.each(['plain text', '{invalid', '[invalid'])('should preserve non-JSON text message data %s', (data) => {
     expect(normalizeWebSocketMessageData(data)).toBe(data);
+  });
+
+  it.each([
+    { data: '{"type":"message"}', expected: { type: 'message' } },
+    { data: '["message"]', expected: ['message'] },
+    { data: '"message"', expected: 'message' },
+    { data: '1', expected: 1 },
+    { data: 'true', expected: true },
+    { data: 'null', expected: null },
+  ])('should parse JSON message data $data', ({ data, expected }) => {
+    expect(normalizeWebSocketMessageData(data)).toEqual(expected);
   });
 
   it('should preserve JSON message data', () => {
@@ -31,9 +43,13 @@ describe('normalizeWebSocketMessageData', () => {
     expect(normalizeWebSocketMessageData(data)).toEqual(data);
   });
 
-  it('should preserve Blob message data', () => {
-    const data = new Blob([new Uint8Array([1, 2, 3])]);
-    expect(normalizeWebSocketMessageData(data)).toBe(data);
+  it.each([
+    { type: 'Blob', data: new Blob([new Uint8Array([1, 2, 3])]) },
+    { type: 'ArrayBuffer', data: new Uint8Array([1, 2, 3]).buffer },
+    { type: 'Uint8Array', data: new Uint8Array([0, 1, 2, 3, 0]).subarray(1, 4) },
+    { type: 'DataView', data: new DataView(new Uint8Array([0, 1, 2, 3, 0]).buffer, 1, 3) },
+  ])('should preserve $type message data', ({ data }) => {
+    expect(normalizeWebSocketMessageData<WebSocketSchema<typeof data>>(data)).toBe(data);
   });
 });
 
@@ -63,26 +79,18 @@ describe('serializeWebSocketMessageData', () => {
     await expect(serializeWebSocketMessageData(data)).resolves.toEqual({ type: 'text', data });
   });
 
-  it('should serialize JSON message data', async () => {
-    const data = { type: 'message' };
-    await expect(serializeWebSocketMessageData(data)).resolves.toEqual({ type: 'json', data });
-  });
-
   it.each([
     { type: 'Blob', data: new Blob([new Uint8Array([1, 2, 3])]) },
     { type: 'Uint8Array', data: new Uint8Array([1, 2, 3]) },
     { type: 'DataView', data: new DataView(new Uint8Array([1, 2, 3]).buffer) },
     { type: 'ArrayBuffer', data: new Uint8Array([1, 2, 3]).buffer },
+    { type: 'Uint8Array with offset', data: new Uint8Array([0, 1, 2, 3, 0]).subarray(1, 4) },
+    { type: 'DataView with offset', data: new DataView(new Uint8Array([0, 1, 2, 3, 0]).buffer, 1, 3) },
   ])('should serialize $type message data', async ({ data }) => {
-    await expect(serializeWebSocketMessageData<WebSocketSchema>(data)).resolves.toEqual({
+    await expect(serializeWebSocketMessageData(data)).resolves.toEqual({
       type: 'binary',
       data: 'AQID',
     });
-  });
-
-  it('should serialize binary-like JSON as JSON message data', async () => {
-    const data = { type: 'binary', data: 'AQID' };
-    await expect(serializeWebSocketMessageData(data)).resolves.toEqual({ type: 'json', data });
   });
 
   it('should reject undefined message data', async () => {
@@ -90,10 +98,25 @@ describe('serializeWebSocketMessageData', () => {
       new ValidationError('WebSocket message data must not be undefined.'),
     );
   });
+});
 
-  it('should serialize nested undefined message data', async () => {
-    const data = { value: undefined, values: [undefined] };
-    await expect(serializeWebSocketMessageData(data)).resolves.toEqual({ type: 'json', data });
+describe('isSerializedWebSocketMessageData', () => {
+  it.each([
+    { type: 'text', data: '{"type":"message"}' },
+    { type: 'binary', data: 'AQID' },
+  ])('should accept $type message data', (data) => {
+    expect(isSerializedWebSocketMessageData(data)).toBe(true);
+  });
+
+  it.each([
+    { type: 'json', data: { type: 'message' } },
+    { type: 'text', data: 1 },
+    { type: 'binary', data: 1 },
+    { type: 'unknown', data: 'message' },
+    null,
+    undefined,
+  ])('should reject invalid message data %j', (data) => {
+    expect(isSerializedWebSocketMessageData(data)).toBe(false);
   });
 });
 
@@ -102,17 +125,20 @@ describe('deserializeWebSocketMessageData', () => {
     expect(deserializeWebSocketMessageData({ type: 'text', data })).toBe(data);
   });
 
-  it('should deserialize JSON message data', () => {
-    const data = { type: 'message' };
-    expect(deserializeWebSocketMessageData({ type: 'json', data })).toEqual(data);
-  });
-
   it('should deserialize binary message data', () => {
     expect(deserializeWebSocketMessageData({ type: 'binary', data: 'AQID' })).toEqual(new Uint8Array([1, 2, 3]).buffer);
   });
 
-  it('should deserialize binary-like JSON as JSON message data', () => {
-    const data = { type: 'binary', data: 'AQID' };
-    expect(deserializeWebSocketMessageData({ type: 'json', data })).toEqual(data);
+  it.each(textMessageDataCases)('should round-trip text message data %s', async (data) => {
+    const serializedData = await serializeWebSocketMessageData(data);
+
+    expect(deserializeWebSocketMessageData(serializedData)).toBe(data);
+  });
+
+  it('should round-trip binary view message data with an offset', async () => {
+    const data = new Uint8Array([0, 1, 2, 3, 0]).subarray(1, 4);
+    const serializedData = await serializeWebSocketMessageData(data);
+
+    expect(deserializeWebSocketMessageData(serializedData)).toEqual(new Uint8Array([1, 2, 3]).buffer);
   });
 });
