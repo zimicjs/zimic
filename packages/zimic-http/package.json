@@ -106,7 +106,7 @@
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.5",
-    "js-yaml": "^5.4.1",
+    "js-yaml": "^5.4.2",
     "playwright": "^1.62.1",
     "prettier": "^3.9.6",
     "tsup": "^8.5.1",
