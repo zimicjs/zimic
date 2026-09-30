@@ -3,11 +3,11 @@ import { WebSocketSchema } from '@zimic/ws';
 import { describe, expect, it } from 'vitest';
 
 import {
-  deserializeWebSocketMessageData,
+  deserializeWebSocketMessageDataFromTransport,
   isSerializedWebSocketMessageData,
   normalizeWebSocketMessageData,
-  serializeRuntimeWebSocketMessageData,
-  serializeWebSocketMessageData,
+  serializeWebSocketMessageDataForSocket,
+  serializeWebSocketMessageDataForTransport,
 } from '../messageData';
 
 const textMessageDataCases = [
@@ -53,30 +53,30 @@ describe('normalizeWebSocketMessageData', () => {
   });
 });
 
-describe('serializeRuntimeWebSocketMessageData', () => {
+describe('serializeWebSocketMessageDataForSocket', () => {
   it.each(textMessageDataCases)('should preserve text message data %s', (data) => {
-    expect(serializeRuntimeWebSocketMessageData(data)).toBe(data);
+    expect(serializeWebSocketMessageDataForSocket(data)).toBe(data);
   });
 
   it('should stringify JSON message data', () => {
-    expect(serializeRuntimeWebSocketMessageData({ type: 'message' })).toBe('{"type":"message"}');
+    expect(serializeWebSocketMessageDataForSocket({ type: 'message' })).toBe('{"type":"message"}');
   });
 
   it('should reject undefined message data', () => {
-    expect(() => serializeRuntimeWebSocketMessageData(undefined)).toThrow(
+    expect(() => serializeWebSocketMessageDataForSocket(undefined)).toThrow(
       new ValidationError('Expected serialized WebSocket message data to be string, but got undefined.'),
     );
   });
 
   it('should stringify nested undefined message data', () => {
     const data = { value: undefined, values: [undefined] };
-    expect(serializeRuntimeWebSocketMessageData(data)).toBe('{"values":[null]}');
+    expect(serializeWebSocketMessageDataForSocket(data)).toBe('{"values":[null]}');
   });
 });
 
-describe('serializeWebSocketMessageData', () => {
+describe('serializeWebSocketMessageDataForTransport', () => {
   it.each(textMessageDataCases)('should serialize text message data %s', async (data) => {
-    await expect(serializeWebSocketMessageData(data)).resolves.toEqual({ type: 'text', data });
+    await expect(serializeWebSocketMessageDataForTransport(data)).resolves.toEqual({ type: 'text', data });
   });
 
   it.each([
@@ -87,14 +87,14 @@ describe('serializeWebSocketMessageData', () => {
     { type: 'Uint8Array with offset', data: new Uint8Array([0, 1, 2, 3, 0]).subarray(1, 4) },
     { type: 'DataView with offset', data: new DataView(new Uint8Array([0, 1, 2, 3, 0]).buffer, 1, 3) },
   ])('should serialize $type message data', async ({ data }) => {
-    await expect(serializeWebSocketMessageData(data)).resolves.toEqual({
+    await expect(serializeWebSocketMessageDataForTransport(data)).resolves.toEqual({
       type: 'binary',
       data: 'AQID',
     });
   });
 
   it('should reject undefined message data', async () => {
-    await expect(serializeWebSocketMessageData(undefined)).rejects.toThrow(
+    await expect(serializeWebSocketMessageDataForTransport(undefined)).rejects.toThrow(
       new ValidationError('WebSocket message data must not be undefined.'),
     );
   });
@@ -120,25 +120,30 @@ describe('isSerializedWebSocketMessageData', () => {
   });
 });
 
-describe('deserializeWebSocketMessageData', () => {
+describe('deserializeWebSocketMessageDataFromTransport', () => {
   it.each(textMessageDataCases)('should deserialize text message data %s', (data) => {
-    expect(deserializeWebSocketMessageData({ type: 'text', data })).toBe(data);
+    expect(deserializeWebSocketMessageDataFromTransport({ type: 'text', data })).toBe(data);
   });
 
   it('should deserialize binary message data', () => {
-    expect(deserializeWebSocketMessageData({ type: 'binary', data: 'AQID' })).toEqual(new Uint8Array([1, 2, 3]).buffer);
+    expect(deserializeWebSocketMessageDataFromTransport({ type: 'binary', data: 'AQID' })).toEqual(
+      new Uint8Array([1, 2, 3]).buffer,
+    );
   });
 
-  it.each(textMessageDataCases)('should round-trip text message data %s', async (data) => {
-    const serializedData = await serializeWebSocketMessageData(data);
+  it.each(textMessageDataCases)(
+    'should preserve text message data %s when serializing and deserializing for transport',
+    async (data) => {
+      const serializedData = await serializeWebSocketMessageDataForTransport(data);
 
-    expect(deserializeWebSocketMessageData(serializedData)).toBe(data);
-  });
+      expect(deserializeWebSocketMessageDataFromTransport(serializedData)).toBe(data);
+    },
+  );
 
-  it('should round-trip binary view message data with an offset', async () => {
+  it('should preserve binary view bytes with an offset when serializing and deserializing for transport', async () => {
     const data = new Uint8Array([0, 1, 2, 3, 0]).subarray(1, 4);
-    const serializedData = await serializeWebSocketMessageData(data);
+    const serializedData = await serializeWebSocketMessageDataForTransport(data);
 
-    expect(deserializeWebSocketMessageData(serializedData)).toEqual(new Uint8Array([1, 2, 3]).buffer);
+    expect(deserializeWebSocketMessageDataFromTransport(serializedData)).toEqual(new Uint8Array([1, 2, 3]).buffer);
   });
 });

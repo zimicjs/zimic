@@ -51,7 +51,7 @@ export function normalizeWebSocketMessageData<Schema extends WebSocketSchema>(
   return data as Schema;
 }
 
-export function serializeRuntimeWebSocketMessageData<Schema extends WebSocketSchema>(
+export function serializeWebSocketMessageDataForSocket<Schema extends WebSocketSchema>(
   data: Schema | WebSocketMessageData<Schema> | undefined,
 ): WebSocketMessageData<Schema> {
   if (isWebSocketBinaryMessageData(data) || typeof data === 'string') {
@@ -63,7 +63,7 @@ export function serializeRuntimeWebSocketMessageData<Schema extends WebSocketSch
   return serializedData as unknown as WebSocketMessageData<Schema>;
 }
 
-export async function serializeWebSocketMessageData(
+export async function serializeWebSocketMessageDataForTransport(
   data: WebSocketMessageData<WebSocketSchema> | undefined,
 ): Promise<SerializedWebSocketMessageData> {
   if (data === undefined) {
@@ -111,7 +111,9 @@ export function isSerializedWebSocketMessageData(data: unknown): data is Seriali
   return isSerializedWebSocketBinaryMessageData(data) || isSerializedWebSocketTextMessageData(data);
 }
 
-export function deserializeWebSocketMessageData(data: SerializedWebSocketMessageData): string | ArrayBuffer {
+export function deserializeWebSocketMessageDataFromTransport(
+  data: SerializedWebSocketMessageData,
+): string | ArrayBuffer {
   if (isSerializedWebSocketBinaryMessageData(data)) {
     return normalizeBufferSource(convertBase64ToArrayBuffer(data.data));
   }
