@@ -80,6 +80,9 @@
     },
     "./package.json": "./package.json"
   },
+  "browser": {
+    "msw/node": "msw/browser"
+  },
   "scripts": {
     "setup": "concurrently --names playwright,msw 'playwright install chromium' 'msw init ./public --no-save'",
     "dev": "tsup --watch",
