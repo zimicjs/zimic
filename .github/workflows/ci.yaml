@@ -32,7 +32,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 2
 
@@ -102,7 +102,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ always() }}
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@v6.1.0
         with:
           path: .turbo/cache
           key: ${{ runner.os }}-turbo
@@ -127,7 +127,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 2
 
@@ -160,7 +160,7 @@ jobs:
           PLAYWRIGHT_WORKERS: 2
 
       - name: Upload test results
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.1
         if: ${{ always() }}
         with:
           name: test-results-node-${{ matrix.node-version }}
@@ -173,7 +173,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ always() }}
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@v6.1.0
         with:
           path: .turbo/cache
           key: ${{ runner.os }}-turbo
@@ -210,7 +210,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 2
 
@@ -274,7 +274,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ always() }}
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@v6.1.0
         with:
           path: .turbo/cache
           key: ${{ runner.os }}-turbo
