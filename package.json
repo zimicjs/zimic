@@ -24,7 +24,7 @@
     "types:check": "turbo types:check --continue --concurrency 50%",
     "pre:commit": "lint-staged",
     "pre:push": "concurrently --names style,lint 'pnpm style:check .' 'turbo types:check lint:turbo --filter ...[${PARENT_REF:-origin/canary}...HEAD] --concurrency 50% --continue'",
-    "prepare": "husky && if [ \"$HUSKY\" != \"0\" ]; then git config core.hooksPath \"$(dirname \"$(git rev-parse --path-format=absolute --git-common-dir)\")/.husky/_\"; fi"
+    "prepare": "sh scripts/prepare.sh"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
