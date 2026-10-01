@@ -62,7 +62,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "setup": "playwright install chromium",
+    "setup": "playwright install chromium && zimic-interceptor browser init ./public",
     "dev": "tsup --watch",
     "build": "tsup",
     "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
