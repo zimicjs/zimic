@@ -55,7 +55,7 @@ runs:
 
     - name: Save turbo cache
       if: ${{ always() }}
-      uses: actions/cache/save@v5
+      uses: actions/cache/save@v6.1.0
       with:
         path: .turbo/cache
         key: ${{ runner.os }}-turbo

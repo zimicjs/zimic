@@ -29,7 +29,9 @@ updates:
           - version-update:semver-major
 
   - package-ecosystem: github-actions
-    directory: /
+    directories:
+      - /
+      - /.github/actions/*
     schedule:
       interval: monthly
       time: '00:00'
