@@ -14,11 +14,11 @@
     "types:check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^26.4.0",
+    "@types/node": "^26.6.3",
     "@types/superagent": "^8.1.11",
-    "@vitest/browser": "^4.1.11",
-    "@vitest/browser-playwright": "^4.1.11",
-    "@vitest/coverage-istanbul": "^4.1.11",
+    "@vitest/browser": "^5.0.2",
+    "@vitest/browser-playwright": "^5.0.2",
+    "@vitest/coverage-istanbul": "^5.0.2",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/fetch": "workspace:*",
     "@zimic/http": "workspace:*",
@@ -32,10 +32,10 @@
     "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.5",
     "node-fetch": "^3.3.2",
-    "playwright": "^1.62.1",
-    "superagent": "^10.3.0",
+    "playwright": "^1.63.0",
+    "superagent": "^10.4.1",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "@typescript/native": "npm:typescript@^7.0.2",
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.2"
   }
 }

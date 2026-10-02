@@ -22,11 +22,10 @@ import {
   RemoteHttpInterceptorWorkerOptions,
 } from '@/http/interceptorWorker/types/options';
 import InterceptorServer from '@/server/InterceptorServer';
-import { GLOBAL_FALLBACK_SERVER_PORT } from '@tests/setup/global/shared';
 
 export function getBrowserBaseURL(type: HttpInterceptorType) {
   if (type === 'local') {
-    return `http://localhost:${GLOBAL_FALLBACK_SERVER_PORT}`;
+    return inject('fallbackServer').url;
   }
 
   const pathPrefix = `path-${crypto.randomUUID()}`;
@@ -35,7 +34,7 @@ export function getBrowserBaseURL(type: HttpInterceptorType) {
 
 export function getNodeBaseURL(type: HttpInterceptorType, server: InterceptorServer) {
   if (type === 'local') {
-    return `http://localhost:${GLOBAL_FALLBACK_SERVER_PORT}`;
+    return inject('fallbackServer').url;
   }
 
   expect(server.port).not.toBe(null);

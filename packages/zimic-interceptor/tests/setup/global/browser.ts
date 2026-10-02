@@ -29,7 +29,7 @@ const INTERCEPTOR_SERVER_HOSTNAME = 'localhost';
 // server before the browser tests. The server will be reused across all of them.
 
 export async function setup(project: TestProject) {
-  await sharedSetup();
+  await sharedSetup(project);
 
   interceptorServer = createInterceptorServer({
     hostname: INTERCEPTOR_SERVER_HOSTNAME,
