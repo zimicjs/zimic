@@ -1,7 +1,6 @@
-import { HttpSchema, HttpHeaders, HttpSearchParams, HttpFormData, InvalidFormDataError } from '@zimic/http';
+import { HttpSchema, HttpHeaders, HttpSearchParams, HttpFormData } from '@zimic/http';
 import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
-import color from 'picocolors';
 import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
@@ -12,7 +11,7 @@ import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { platform, getBaseURL, getInterceptorOptions } = options;
+  const { getBaseURL, getInterceptorOptions } = options;
 
   let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
@@ -397,16 +396,7 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
 
           expect(handler.requests).toHaveLength(1);
 
-          if (body && !body.has('tag') && platform === 'browser') {
-            expect(console.error).toHaveBeenCalledTimes(1);
-            expect(console.error).toHaveBeenCalledWith(
-              color.cyan('[@zimic/interceptor]'),
-              'Failed to parse request body:',
-              expect.any(InvalidFormDataError),
-            );
-          } else {
-            expect(console.error).toHaveBeenCalledTimes(0);
-          }
+          expect(console.error).toHaveBeenCalledTimes(0);
         });
       }
     });
@@ -471,16 +461,7 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
 
           expect(handler.requests).toHaveLength(1);
 
-          if (body && !body.has('tag') && platform === 'browser') {
-            expect(console.error).toHaveBeenCalledTimes(1);
-            expect(console.error).toHaveBeenCalledWith(
-              color.cyan('[@zimic/interceptor]'),
-              'Failed to parse request body:',
-              expect.any(InvalidFormDataError),
-            );
-          } else {
-            expect(console.error).toHaveBeenCalledTimes(0);
-          }
+          expect(console.error).toHaveBeenCalledTimes(0);
         });
       }
     });
