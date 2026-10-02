@@ -16,6 +16,10 @@ updates:
         patterns:
           - '*'
     ignore:
+      # MSW 3 misses requests on Node connections opened before interception starts.
+      - dependency-name: msw
+        update-types:
+          - version-update:semver-major
       # Blocked by https://github.com/hosseinmd/prettier-plugin-jsdoc/issues/254.
       - dependency-name: prettier-plugin-jsdoc
         update-types:
