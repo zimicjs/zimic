@@ -14,14 +14,28 @@ export function declareTimesWebSocketMessageHandlerTests(
 ) {
   const { type, Handler, startServer, stopServer, getBaseURL } = options;
 
-  it.each([
-    { type: 'local', Handler: LocalWebSocketMessageHandler },
-    { type: 'remote', Handler: RemoteWebSocketMessageHandler },
-  ] as const)(
-    'should reserve a message limit before overlapping restrictions finish ($type)',
-    async ({ type: handlerType, Handler: TestHandler }) => {
+  let baseURL: string;
+
+  beforeAll(async () => {
+    if (type === 'remote') {
+      await startServer?.();
+    }
+  });
+
+  beforeEach(async () => {
+    baseURL = await getBaseURL(type);
+  });
+
+  afterAll(async () => {
+    if (type === 'remote') {
+      await stopServer?.();
+    }
+  });
+
+  describe('Exact number of messages', () => {
+    it('should not match more than an exact number of limited messages when messages are handled concurrently', async () => {
       await usingDirectWebSocketMessageHandler<Schema>(
-        { type: handlerType, baseURL: 'ws://localhost', Handler: TestHandler },
+        { type, baseURL, Handler },
         async ({ interceptor, handler, handleMessage }) => {
           let limitedResponses = 0;
           let fallbackResponses = 0;
@@ -29,7 +43,7 @@ export function declareTimesWebSocketMessageHandlerTests(
             fallbackResponses++;
           });
 
-          const limitedHandler = new TestHandler<Schema>(interceptor.implementation);
+          const limitedHandler = new Handler<Schema>(interceptor.implementation);
           interceptor.implementation.registerMessageHandler(limitedHandler);
           let numberOfEvaluatedMessages = 0;
           const restrictionsReady = Promise.withResolvers<void>();
@@ -54,31 +68,11 @@ export function declareTimesWebSocketMessageHandlerTests(
           expect(await messageResultsPromise).toEqual([true, true]);
           expect(limitedResponses).toBe(1);
           expect(fallbackResponses).toBe(1);
-          await expect(Promise.resolve().then(() => limitedHandler.checkTimes())).resolves.toBeUndefined();
+          await limitedHandler.checkTimes();
         },
       );
-    },
-  );
+    });
 
-  let baseURL: string;
-
-  beforeAll(async () => {
-    if (type === 'remote') {
-      await startServer?.();
-    }
-  });
-
-  beforeEach(async () => {
-    baseURL = await getBaseURL(type);
-  });
-
-  afterAll(async () => {
-    if (type === 'remote') {
-      await stopServer?.();
-    }
-  });
-
-  describe('Exact number of messages', () => {
     it('should match an exact number of limited messages', async () => {
       await usingDirectWebSocketMessageHandler<Schema>(
         { type, baseURL, Handler },

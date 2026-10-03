@@ -1,7 +1,11 @@
 import { describe } from 'vitest';
 
-import { declareWebSocketInterceptorClearTests } from './shared/clear';
+import testMatrix from '../../messageHandler/__tests__/shared/matrix';
+import { declareClearWebSocketInterceptorTests } from './shared/clear';
 
-describe('WebSocketInterceptor (node) > Clear', () => {
-  declareWebSocketInterceptorClearTests();
+describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Clear', ({ type, Handler }) => {
+  declareClearWebSocketInterceptorTests({
+    type,
+    Handler,
+  });
 });
