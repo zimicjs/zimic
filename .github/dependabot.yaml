@@ -16,10 +16,6 @@ updates:
         patterns:
           - '*'
     ignore:
-      # MSW 3 misses requests on Node connections opened before interception starts.
-      - dependency-name: msw
-        update-types:
-          - version-update:semver-major
       # Blocked by https://github.com/hosseinmd/prettier-plugin-jsdoc/issues/254.
       - dependency-name: prettier-plugin-jsdoc
         update-types:
@@ -29,6 +25,10 @@ updates:
       # Blocked by https://github.com/jsx-eslint/eslint-plugin-react/issues/3977.
       # Remember to re-enable @typescript-eslint/only-throw-error on packages/eslint-config/index.js after resolved.
       - dependency-name: eslint
+        update-types:
+          - version-update:semver-major
+      # Blocked by https://github.com/zimicjs/zimic/issues/1366.
+      - dependency-name: msw
         update-types:
           - version-update:semver-major
 
