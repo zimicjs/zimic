@@ -1,7 +1,9 @@
+import { expectFetchError } from '@zimic/utils/fetch';
 import { afterEach, beforeAll, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import HttpInterceptorStore from '@/http/interceptor/HttpInterceptorStore';
 import LocalHttpInterceptorWorker from '@/http/interceptorWorker/LocalHttpInterceptorWorker';
+import { expectBypassedResponse } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import NotRunningHttpInterceptorError from '../../errors/NotRunningHttpInterceptorError';
@@ -112,46 +114,6 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
-  it('should intercept requests after repeated stops and restarts', async () => {
-    await usingHttpInterceptor<{
-      '/restart': { GET: { response: { 204: {} } } };
-    }>(getInterceptorOptions(), { start: false }, async (interceptor) => {
-      if (type === 'local') {
-        const bypassedResponse = await fetch(`${baseURL}/restart`);
-        expect(bypassedResponse.status).toBe(200);
-      }
-
-      for (let cycle = 0; cycle < 5; cycle++) {
-        await interceptor.start();
-        await interceptor.get('/restart').respond({ status: 204 });
-
-        const response = await fetch(`${baseURL}/restart`);
-        expect(response.status).toBe(204);
-
-        await interceptor.stop();
-
-        if (type === 'local') {
-          const bypassedResponse = await fetch(`${baseURL}/restart`);
-          expect(bypassedResponse.status).toBe(200);
-        }
-      }
-    });
-  });
-
-  it('should intercept requests when another interceptor starts while the last one stops', async () => {
-    await usingHttpInterceptor<{}>(getInterceptorOptions(), async (interceptor) => {
-      await usingHttpInterceptor<{
-        '/restart': { GET: { response: { 204: {} } } };
-      }>(getInterceptorOptions(), { start: false }, async (otherInterceptor) => {
-        await Promise.all([interceptor.stop(), otherInterceptor.start()]);
-        await otherInterceptor.get('/restart').respond({ status: 204 });
-
-        const response = await fetch(`${baseURL}/restart`);
-        expect(response.status).toBe(204);
-      });
-    });
-  });
-
   it('should support starting and stopping the same interceptor concurrently', async () => {
     await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (interceptor) => {
       await Promise.all([interceptor.start(), interceptor.start()]);
@@ -162,6 +124,30 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
 
       const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
       expect(worker).toBe(undefined);
+    });
+  });
+
+  it('should intercept requests after repeated stops and restarts', async () => {
+    await usingHttpInterceptor<{
+      '/restart': { GET: { response: { 204: {} } } };
+    }>(getInterceptorOptions(), { start: false }, async (interceptor) => {
+      for (let cycle = 0; cycle < 5; cycle++) {
+        await interceptor.start();
+        await interceptor.get('/restart').respond({ status: 204 });
+
+        const response = await fetch(`${baseURL}/restart`);
+        expect(response.status).toBe(204);
+
+        await interceptor.stop();
+
+        const responsePromise = fetch(`${baseURL}/restart`);
+
+        if (type === 'local') {
+          await expectBypassedResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise);
+        }
+      }
     });
   });
 
@@ -185,6 +171,21 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
       const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
       expect(worker).toBeDefined();
       expect(worker!.isRunning).toBe(true);
+    });
+  });
+
+  it('should intercept requests when another interceptor starts while the last one stops', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), async (interceptor) => {
+      await usingHttpInterceptor<{
+        '/restart': { GET: { response: { 204: {} } } };
+      }>(getInterceptorOptions(), { start: false }, async (otherInterceptor) => {
+        await Promise.all([interceptor.stop(), otherInterceptor.start()]);
+
+        await otherInterceptor.get('/restart').respond({ status: 204 });
+
+        const response = await fetch(`${baseURL}/restart`);
+        expect(response.status).toBe(204);
+      });
     });
   });
 
