@@ -16,11 +16,6 @@ updates:
         patterns:
           - '*'
     ignore:
-      # Blocked by https://github.com/jsx-eslint/eslint-plugin-react/issues/3977.
-      # Remember to re-enable @typescript-eslint/only-throw-error on packages/eslint-config/index.js after resolved.
-      - dependency-name: eslint
-        update-types:
-          - version-update:semver-major
       # Blocked by https://github.com/zimicjs/zimic/issues/1366.
       - dependency-name: msw
         update-types:

@@ -86,7 +86,7 @@
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^11.0.0",
-    "eslint": "^9.39.5",
+    "eslint": "^10.11.0",
     "picocolors": "^1.1.1",
     "playwright": "^1.63.0",
     "tsup": "^8.5.1",
