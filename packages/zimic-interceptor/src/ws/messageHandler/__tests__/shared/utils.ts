@@ -45,7 +45,7 @@ export interface DirectWebSocketMessageHandlerContext<Schema extends WebSocketSc
   receivedMessages: WebSocketMessageData<Schema>[];
   createSender: (url?: string) => DirectWebSocketPeer<Schema>;
   handleMessage: (
-    message: Schema,
+    message: Schema | WebSocketMessageData<Schema>,
     options?: { sender?: InternalWebSocketInterceptorClient<Schema> },
   ) => Promise<boolean>;
 }

@@ -1,8 +1,8 @@
 import { beforeAll, beforeEach, afterAll, describe, expect, it } from 'vitest';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
-import type { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
-import type { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
+import { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
+import { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
 import { expectWebSocketTimesCheckError, usingDirectWebSocketMessageHandler } from './utils';
 
@@ -13,6 +13,52 @@ export function declareTimesWebSocketMessageHandlerTests(
   },
 ) {
   const { type, Handler, startServer, stopServer, getBaseURL } = options;
+
+  it.each([
+    { type: 'local', Handler: LocalWebSocketMessageHandler },
+    { type: 'remote', Handler: RemoteWebSocketMessageHandler },
+  ] as const)(
+    'should reserve a message limit before overlapping restrictions finish ($type)',
+    async ({ type: handlerType, Handler: TestHandler }) => {
+      await usingDirectWebSocketMessageHandler<Schema>(
+        { type: handlerType, baseURL: 'ws://localhost', Handler: TestHandler },
+        async ({ interceptor, handler, handleMessage }) => {
+          let limitedResponses = 0;
+          let fallbackResponses = 0;
+          handler.effect(() => {
+            fallbackResponses++;
+          });
+
+          const limitedHandler = new TestHandler<Schema>(interceptor.implementation);
+          interceptor.implementation.registerMessageHandler(limitedHandler);
+          let numberOfEvaluatedMessages = 0;
+          const restrictionsReady = Promise.withResolvers<void>();
+
+          limitedHandler.with(async () => {
+            numberOfEvaluatedMessages++;
+            if (numberOfEvaluatedMessages === 2) {
+              restrictionsReady.resolve();
+            }
+            await restrictionsReady.promise;
+            return true;
+          });
+          limitedHandler.effect(() => {
+            limitedResponses++;
+          });
+          limitedHandler.times(1);
+
+          const message: Schema = { type: 'create', body: { text: 'overlap' } };
+          const messageResultsPromise = Promise.all([handleMessage(message), handleMessage(message)]);
+
+          await restrictionsReady.promise;
+          expect(await messageResultsPromise).toEqual([true, true]);
+          expect(limitedResponses).toBe(1);
+          expect(fallbackResponses).toBe(1);
+          await expect(Promise.resolve().then(() => limitedHandler.checkTimes())).resolves.toBeUndefined();
+        },
+      );
+    },
+  );
 
   let baseURL: string;
 

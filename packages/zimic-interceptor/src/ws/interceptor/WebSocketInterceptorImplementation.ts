@@ -12,6 +12,7 @@ import {
   WebSocketMessageHandlerApplyContext,
   WebSocketMessageHandlerMessageMatch,
 } from '../messageHandler/WebSocketMessageHandlerImplementation';
+import { normalizeWebSocketMessageData } from '../utils/messageData';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
 import { WebSocketInterceptorMessageSaving } from './types/options';
@@ -50,6 +51,9 @@ class WebSocketInterceptorImplementation<
   private releaseWorker?: (worker: WebSocketInterceptorWorker) => void;
   private worker?: WebSocketInterceptorWorker;
   private startingPromise?: Promise<void>;
+  private numberOfPendingStarts = 0;
+  private lifecycleQueue: Promise<void> = Promise.resolve();
+  private messageSavingGeneration = 0;
 
   constructor(options: {
     baseURL: URL;
@@ -110,26 +114,28 @@ class WebSocketInterceptorImplementation<
   }
 
   async start() {
-    /* istanbul ignore if -- @preserve
-     * Public interceptor wrappers guard this before delegating to the implementation. */
-    if (this.isRunning) {
-      return;
-    }
-
     if (this.startingPromise) {
       return this.startingPromise;
     }
 
-    this.startingPromise = this.startOnce();
+    this.numberOfPendingStarts++;
+    const startPromise = this.enqueueLifecycleOperation(() => this.startOnce()).finally(() => {
+      this.numberOfPendingStarts--;
 
-    try {
-      await this.startingPromise;
-    } finally {
-      this.startingPromise = undefined;
-    }
+      if (this.startingPromise === startPromise) {
+        this.startingPromise = undefined;
+      }
+    });
+    this.startingPromise = startPromise;
+
+    await startPromise;
   }
 
   private async startOnce() {
+    if (this.isRunning) {
+      return;
+    }
+
     try {
       this.worker = this.createWorker?.();
 
@@ -154,25 +160,38 @@ class WebSocketInterceptorImplementation<
     }
   }
 
-  async stop() {
-    /* istanbul ignore if -- @preserve
-     * Public interceptor wrappers guard this before delegating to the implementation. */
-    if (!this.isRunning) {
-      return;
-    }
+  async stop(options: { beforeStop?: () => Promise<void> } = {}) {
+    this.startingPromise = undefined;
 
-    const worker = this.worker;
+    await this.enqueueLifecycleOperation(async () => {
+      if (!this.isRunning) {
+        return;
+      }
 
-    worker?.unregisterRunningInterceptor(this);
-    await worker?.clearHandlers({ interceptor: this });
-    await worker?.stop();
+      await options.beforeStop?.();
 
-    this.isRunning = false;
-    this.worker = undefined;
+      const worker = this.worker;
+      worker?.unregisterRunningInterceptor(this);
+      await worker?.clearHandlers({ interceptor: this });
+      await worker?.stop();
 
-    if (worker) {
-      this.releaseWorker?.(worker);
-    }
+      this.isRunning = false;
+      this.worker = undefined;
+
+      if (worker) {
+        this.releaseWorker?.(worker);
+      }
+    });
+  }
+
+  get isStarting() {
+    return this.numberOfPendingStarts > 0;
+  }
+
+  private enqueueLifecycleOperation(operation: () => Promise<void>) {
+    const operationPromise = this.lifecycleQueue.then(operation);
+    this.lifecycleQueue = operationPromise.catch(() => undefined);
+    return operationPromise;
   }
 
   /* istanbul ignore next -- @preserve
@@ -243,8 +262,9 @@ class WebSocketInterceptorImplementation<
       return false;
     }
 
-    const message = data as Schema;
+    const message = normalizeWebSocketMessageData(data);
     const completeContext = this.completeMessageContext(context);
+    const messageSavingGeneration = this.messageSavingGeneration;
     const matchedHandler = await this.findMatchedHandler(message, completeContext);
 
     if (!matchedHandler) {
@@ -253,7 +273,7 @@ class WebSocketInterceptorImplementation<
 
     await matchedHandler.handler.applyDeclarations(matchedHandler.message, completeContext);
 
-    if (this.messageSaving.enabled) {
+    if (this.messageSaving.enabled && messageSavingGeneration === this.messageSavingGeneration) {
       matchedHandler.handler.saveInterceptedMessage(matchedHandler.message, completeContext);
     }
 
@@ -313,7 +333,6 @@ class WebSocketInterceptorImplementation<
       const messageMatch = await handler.matchesMessage(message, context);
 
       if (messageMatch.success) {
-        handler.markMessageAsMatched(messageMatch.message);
         return { handler, message: messageMatch.message as Schema };
       }
 
@@ -346,6 +365,8 @@ class WebSocketInterceptorImplementation<
   }
 
   clear() {
+    this.messageSavingGeneration++;
+
     const clearResult = this.worker?.isRunning
       ? this.worker.clearHandlers({
           interceptor: this,

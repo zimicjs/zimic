@@ -15,7 +15,6 @@ import {
 import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
 import {
   isWebSocketBinaryMessageData,
-  normalizeWebSocketMessageData,
   normalizeWebSocketBinaryMessageData,
   serializeWebSocketMessageDataForSocket,
 } from '../utils/messageData';
@@ -192,14 +191,13 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     message: Schema,
     context: WebSocketMessageHandlerApplyContext<Schema>,
   ): Promise<WebSocketMessageHandlerMessageMatch> {
-    const normalizedMessage = normalizeWebSocketMessageData(message);
-    const restrictionsMatch = await this.matchesRestrictions(normalizedMessage, context);
+    const restrictionsMatch = await this.matchesRestrictions(message, context);
 
     if (!restrictionsMatch.success) {
       return {
         success: false,
         cause: 'unmatchedRestrictions',
-        message: normalizedMessage,
+        message,
         diff: restrictionsMatch.diff,
       };
     }
@@ -210,6 +208,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
       return { success: false, cause: 'exceededNumberOfMessages' };
     }
 
+    this.numberOfMatchedMessages++;
     return { success: true, message: restrictionsMatch.message };
   }
 
