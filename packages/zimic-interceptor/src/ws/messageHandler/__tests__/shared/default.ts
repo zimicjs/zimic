@@ -1,11 +1,14 @@
-import { beforeAll, beforeEach, afterAll, expect, it, vi } from 'vitest';
+import { WebSocketSchema } from '@zimic/ws';
+import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import DisabledMessageSavingError from '../../errors/DisabledMessageSavingError';
-import type { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
-import type { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
+import { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
+import { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
 import { usingDirectWebSocketMessageHandler } from './utils';
+
+type SerializedMessageSchema = WebSocketSchema<{ type: 'create'; body: { text: string } }>;
 
 export function declareDefaultWebSocketMessageHandlerTests(
   options: SharedWebSocketMessageHandlerTestOptions & {
@@ -26,6 +29,41 @@ export function declareDefaultWebSocketMessageHandlerTests(
   beforeEach(async () => {
     baseURL = await getBaseURL(type);
   });
+
+  it.each([
+    { type: 'local', Handler: LocalWebSocketMessageHandler },
+    { type: 'remote', Handler: RemoteWebSocketMessageHandler },
+  ] as const)(
+    'should normalize incoming text frames before restrictions and saving ($type)',
+    async ({ type: handlerType, Handler: TestHandler }) => {
+      await usingDirectWebSocketMessageHandler<SerializedMessageSchema>(
+        { type: handlerType, baseURL: 'ws://localhost', Handler: TestHandler, messageSaving: { enabled: true } },
+        async ({ interceptor, handler, sender, receiver, handleMessage }) => {
+          let effectMessage: SerializedMessageSchema | undefined;
+          handler.effect((message) => {
+            effectMessage = message;
+          });
+          const firstRestriction = vi.fn((_message: SerializedMessageSchema) => true);
+          handler.with(firstRestriction);
+
+          const secondHandler = new TestHandler<SerializedMessageSchema>(interceptor.implementation);
+          const secondRestriction = vi.fn((_message: SerializedMessageSchema) => false);
+          secondHandler.with(secondRestriction);
+          interceptor.implementation.registerMessageHandler(secondHandler);
+
+          await handleMessage(JSON.stringify({ type: 'create', body: { text: 'serialized' } }));
+
+          const normalizedMessage = firstRestriction.mock.calls[0][0];
+          expect(normalizedMessage).toEqual({ type: 'create', body: { text: 'serialized' } });
+          expect(secondRestriction.mock.calls[0][0]).toBe(normalizedMessage);
+          expect(effectMessage).toBe(normalizedMessage);
+          expect(handler.messages[0].data).toBe(normalizedMessage);
+          expect(sender.handle.messages).toHaveLength(1);
+          expect(receiver.messages).toHaveLength(1);
+        },
+      );
+    },
+  );
 
   afterAll(async () => {
     if (type === 'remote') {

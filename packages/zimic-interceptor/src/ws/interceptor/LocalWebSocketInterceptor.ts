@@ -72,20 +72,11 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
   }
 
   async start() {
-    if (this.isRunning) {
-      return;
-    }
-
     await this.implementation.start();
   }
 
   async stop() {
-    if (!this.isRunning) {
-      return;
-    }
-
-    this.clear();
-    await this.implementation.stop();
+    await this.implementation.stop({ beforeStop: () => this.implementation.clear() });
   }
 
   checkTimes() {

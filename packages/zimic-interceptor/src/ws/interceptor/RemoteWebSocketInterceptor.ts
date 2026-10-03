@@ -54,7 +54,7 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
     const cannotChangeAuthWhileRunningMessage =
       'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?';
 
-    if (this.isRunning) {
+    if (this.isRunning || this.implementation.isStarting) {
       throw new RunningWebSocketInterceptorError(cannotChangeAuthWhileRunningMessage);
     }
 
@@ -63,14 +63,17 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
       return;
     }
 
-    this.#auth = new Proxy(auth, {
-      set: (target, property, value) => {
-        if (this.isRunning) {
-          throw new RunningWebSocketInterceptorError(cannotChangeAuthWhileRunningMessage);
-        }
-        return Reflect.set(target, property, value);
+    this.#auth = new Proxy(
+      { ...auth },
+      {
+        set: (target, property, value) => {
+          if (this.isRunning || this.implementation.isStarting) {
+            throw new RunningWebSocketInterceptorError(cannotChangeAuthWhileRunningMessage);
+          }
+          return Reflect.set(target, property, value);
+        },
       },
-    });
+    );
   }
 
   get platform() {
@@ -102,20 +105,11 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
   }
 
   async start() {
-    if (this.isRunning) {
-      return;
-    }
-
     await this.implementation.start();
   }
 
   async stop() {
-    if (!this.isRunning) {
-      return;
-    }
-
-    await this.clear();
-    await this.implementation.stop();
+    await this.implementation.stop({ beforeStop: () => this.clear() });
   }
 
   checkTimes() {
