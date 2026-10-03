@@ -80,14 +80,14 @@ importers:
         specifier: 3.9.9
         version: 3.9.9
       prettier-plugin-jsdoc:
-        specifier: 1.5.0
-        version: 1.5.0(prettier@3.9.9)
+        specifier: 1.8.1
+        version: 1.8.1(prettier@3.9.9)
       prettier-plugin-sh:
         specifier: 0.20.2
         version: 0.20.2(prettier@3.9.9)
       prettier-plugin-tailwindcss:
         specifier: 0.8.1
-        version: 0.8.1(prettier-plugin-jsdoc@1.5.0(prettier@3.9.9))(prettier@3.9.9)
+        version: 0.8.1(prettier-plugin-jsdoc@1.8.1(prettier@3.9.9))(prettier@3.9.9)
       turbo:
         specifier: ^2.11.5
         version: 2.11.5
@@ -9218,8 +9218,8 @@ packages:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
 
-  prettier-plugin-jsdoc@1.5.0:
-    resolution: {integrity: sha512-Fehp5qkFQhNFcxUilDPEcqHX8AdP6oGyCRLatqRc0gLXv3qOtndTnnUxfHCYc26I4Lc1A4lVozAtWEE8o7ubUA==}
+  prettier-plugin-jsdoc@1.8.1:
+    resolution: {integrity: sha512-XuMqBWTc3b/8eCOe+OlZlFy9Z413a7WOmF4i5hDGtjbtIFOdvRrVtGjXR2Feye3TrLWhkkkHheNXPTyYKxw3nA==}
     engines: {node: '>=14.13.1 || >=16.0.0'}
     peerDependencies:
       prettier: ^3.0.0
@@ -20467,7 +20467,7 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier-plugin-jsdoc@1.5.0(prettier@3.9.9):
+  prettier-plugin-jsdoc@1.8.1(prettier@3.9.9):
     dependencies:
       binary-searching: 2.0.5
       comment-parser: 1.4.6
@@ -20482,11 +20482,11 @@ snapshots:
       prettier: 3.9.9
       sh-syntax: 0.7.0
 
-  prettier-plugin-tailwindcss@0.8.1(prettier-plugin-jsdoc@1.5.0(prettier@3.9.9))(prettier@3.9.9):
+  prettier-plugin-tailwindcss@0.8.1(prettier-plugin-jsdoc@1.8.1(prettier@3.9.9))(prettier@3.9.9):
     dependencies:
       prettier: 3.9.9
     optionalDependencies:
-      prettier-plugin-jsdoc: 1.5.0(prettier@3.9.9)
+      prettier-plugin-jsdoc: 1.8.1(prettier@3.9.9)
 
   prettier@3.9.9: {}
 
