@@ -1,6 +1,6 @@
 {
   "name": "zimic-web",
-  "version": "0.3.68-canary.0",
+  "version": "0.3.68-canary.2",
   "private": true,
   "scripts": {
     "dev": "docusaurus start --host :: --no-open",

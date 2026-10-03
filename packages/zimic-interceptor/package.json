@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "1.5.2-canary.2",
+  "version": "1.5.2-canary.4",
   "homepage": "https://zimic.dev/docs/interceptor",
   "repository": {
     "type": "git",
