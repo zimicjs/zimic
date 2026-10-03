@@ -24,7 +24,7 @@ import { clearInterceptorTokens } from './utils';
 describe('CLI > Server token create', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
 
-  const ansiColorPattern = String.raw`\u001B\[[0-9;]*m`;
+  const ansiColorPattern = '\\u001B\\[[0-9;]*m';
 
   const tokenValueLineRegex = new RegExp(
     `^(?:${ansiColorPattern})*[a-zA-Z0-9-_]{${INTERCEPTOR_TOKEN_VALUE_BASE64URL_LENGTH}}(?:${ansiColorPattern})*$`,
