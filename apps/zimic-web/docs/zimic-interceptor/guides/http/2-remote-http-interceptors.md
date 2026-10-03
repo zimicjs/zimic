@@ -10,6 +10,8 @@ HTTP interceptors allow you to handle requests and return custom responses. Thei
 
 In `@zimic/interceptor`, HTTP interceptors are available in two types: `local` (default) and `remote`. Interceptors with type `remote` use a dedicated [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle requests. This opens up more possibilities for mocking than [local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md), such as handling requests from multiple applications. It is also more robust because it uses a regular HTTP server and does not depend on local interception algorithms.
 
+Application clients must provide the [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API), either natively or through a polyfill. The process declaring the remote interceptor communicates with a separately running interceptor server. The interceptor server accepts application requests and requires Node.js 22 or later; application clients may run in a browser or Node.js.
+
 ## When to use remote HTTP interceptors
 
 - **Development**
@@ -269,13 +271,15 @@ Make sure to keep the tokens directory private. Do not commit it to version cont
 Once the server is running, remote interceptors can use the `auth.token` option to provide a token.
 
 ```ts
-import { createHttpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor, type HttpInterceptorAuthOptions } from '@zimic/interceptor/http';
+
+const auth: HttpInterceptorAuthOptions = { token: '<token>' };
 
 const interceptor = createHttpInterceptor<Schema>({
   type: 'remote',
   baseURL: 'http://localhost:3000',
   // highlight-next-line
-  auth: { token: '<token>' },
+  auth,
 });
 ```
 
