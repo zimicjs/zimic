@@ -7,6 +7,9 @@ interface TestMatrixCase {
   Handler: typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
 }
 
-const testMatrix: TestMatrixCase[] = [{ type: 'local', Handler: LocalWebSocketMessageHandler }];
+const testMatrix: TestMatrixCase[] = [
+  { type: 'local', Handler: LocalWebSocketMessageHandler },
+  { type: 'remote', Handler: RemoteWebSocketMessageHandler },
+];
 
 export default testMatrix;

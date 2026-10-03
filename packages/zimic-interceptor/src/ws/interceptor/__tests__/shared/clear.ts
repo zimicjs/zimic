@@ -4,12 +4,17 @@ import type { Schema } from '../../../messageHandler/__tests__/shared/types';
 import { usingDirectWebSocketMessageHandler } from '../../../messageHandler/__tests__/shared/utils';
 import { LocalWebSocketMessageHandler } from '../../../messageHandler/LocalWebSocketMessageHandler';
 import { RemoteWebSocketMessageHandler } from '../../../messageHandler/RemoteWebSocketMessageHandler';
+import type { WebSocketInterceptorType } from '../../types/options';
 
-export function declareWebSocketInterceptorClearTests() {
-  it.each([
-    { type: 'local', Handler: LocalWebSocketMessageHandler },
-    { type: 'remote', Handler: RemoteWebSocketMessageHandler },
-  ] as const)('should keep pre-clear dispatches out of all histories ($type)', async ({ type, Handler }) => {
+interface SharedWebSocketInterceptorClearTestsOptions {
+  type: WebSocketInterceptorType;
+  Handler: typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
+}
+
+export function declareClearWebSocketInterceptorTests(options: SharedWebSocketInterceptorClearTestsOptions) {
+  const { type, Handler } = options;
+
+  it('should not save intercepted messages after cleared while a message is being handled', async () => {
     await usingDirectWebSocketMessageHandler<Schema>(
       { type, baseURL: 'ws://localhost', Handler, messageSaving: { enabled: true } },
       async ({ interceptor, handler, sender, receiver, handleMessage }) => {
