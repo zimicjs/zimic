@@ -21,9 +21,6 @@ export default defineConfig({
           exclude: ['**/*.browser.test.ts'],
           globalSetup: './tests/setup/global/node.ts',
         },
-        define: {
-          'process.env.GLOBAL_FALLBACK_SERVER_PORT': "'3002'",
-        },
       },
       {
         extends: true,
@@ -44,9 +41,6 @@ export default defineConfig({
             headless: true,
             screenshotFailures: false,
           },
-        },
-        define: {
-          'process.env.GLOBAL_FALLBACK_SERVER_PORT': "'3003'",
         },
       },
     ],

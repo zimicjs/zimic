@@ -16,15 +16,8 @@ updates:
         patterns:
           - '*'
     ignore:
-      # Blocked by https://github.com/hosseinmd/prettier-plugin-jsdoc/issues/254.
-      - dependency-name: prettier-plugin-jsdoc
-        update-types:
-          - version-update:semver-major
-          - version-update:semver-minor
-          - version-update:semver-patch
-      # Blocked by https://github.com/jsx-eslint/eslint-plugin-react/issues/3977.
-      # Remember to re-enable @typescript-eslint/only-throw-error on packages/eslint-config/index.js after resolved.
-      - dependency-name: eslint
+      # Blocked by https://github.com/zimicjs/zimic/issues/1366.
+      - dependency-name: msw
         update-types:
           - version-update:semver-major
 

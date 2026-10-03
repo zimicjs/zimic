@@ -2,6 +2,10 @@
   "$schema": "https://turbo.build/schema.json",
   "extends": ["//"],
   "tasks": {
+    "setup": {
+      "dependsOn": ["@zimic/interceptor#build"]
+    },
+
     "build": {
       "dependsOn": ["^build", "@zimic/http#build"],
       "inputs": [

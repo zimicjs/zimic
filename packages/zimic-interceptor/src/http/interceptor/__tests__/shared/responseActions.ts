@@ -1,16 +1,12 @@
 import { HttpSchema, HttpSearchParams } from '@zimic/http';
 import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, inject, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import UnsupportedResponseBypassError from '@/server/errors/UnsupportedResponseBypassError';
 import { usingElapsedTime } from '@/utils/time';
-import {
-  GLOBAL_FALLBACK_SERVER_RESPONSE_STATUS,
-  GLOBAL_FALLBACK_SERVER_HEADERS,
-  GLOBAL_FALLBACK_SERVER_PORT,
-} from '@tests/setup/global/shared';
+import { GLOBAL_FALLBACK_SERVER_RESPONSE_STATUS, GLOBAL_FALLBACK_SERVER_HEADERS } from '@tests/setup/global/shared';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectBypassedResponse } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -168,7 +164,7 @@ export function declareResponseActionsHttpInterceptorTests(options: RuntimeShare
   if (type === 'local') {
     it('should consider failed bypassed requests as unhandled', async () => {
       const unusedPort = 9999;
-      expect(unusedPort).not.toBe(GLOBAL_FALLBACK_SERVER_PORT);
+      expect(unusedPort).not.toBe(inject('fallbackServer').port);
 
       baseURL = `http://localhost:${unusedPort}`;
 

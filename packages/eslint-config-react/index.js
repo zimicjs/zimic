@@ -9,7 +9,7 @@ export default [
   ...defaultConfig,
   {
     plugins: {
-      react: reactPlugin,
+      react: fixupPluginRules(reactPlugin),
       'react-hooks': fixupPluginRules(reactHooksPlugin),
       'jsx-a11y': jsxAccessibilityYPlugin,
       import: fixupPluginRules(importPlugin),
