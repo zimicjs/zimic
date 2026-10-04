@@ -4,10 +4,7 @@ import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
 import messageHandlerTestMatrix from '../../messageHandler/__tests__/shared/matrix';
-import {
-  declareClearWebSocketInterceptorTests,
-  declareDirectWebSocketMessageHandlerClearTests,
-} from './shared/clear';
+import { declareClearWebSocketInterceptorTests, declareDirectWebSocketMessageHandlerClearTests } from './shared/clear';
 import interceptorTestMatrix from './shared/matrix';
 
 describe.each(interceptorTestMatrix)('WebSocketInterceptor (node, $type) > Clear', ({ type }) => {
