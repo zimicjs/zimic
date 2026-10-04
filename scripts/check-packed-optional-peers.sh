@@ -175,7 +175,7 @@ EOF
     test ! -e "$consumerDirectory/node_modules/@zimic/http"
   fi
 
-  pnpm exec tsc --project "$consumerDirectory/tsconfig.json"
+  pnpm --dir "$repositoryDirectory/packages/zimic-interceptor" exec tsc --project "$consumerDirectory/tsconfig.json"
   node "$consumerDirectory/smoke.mjs"
   node "$consumerDirectory/smoke.cjs"
 }
