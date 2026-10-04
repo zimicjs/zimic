@@ -1,7 +1,5 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import { HttpSchema } from '@/types/schema';
-
 import HttpHeaders from '../HttpHeaders';
 import { HttpHeadersSerialized } from '../types';
 
@@ -643,11 +641,11 @@ describe('HttpHeaders', () => {
 
   describe('Object conversion', () => {
     it('should support being converted to an object', () => {
-      type Schema = HttpSchema.Headers<{
+      interface Schema {
         accept: string;
         other: string;
         'content-type'?: `application/${string}`;
-      }>;
+      }
 
       const headers = new HttpHeaders<Schema>({
         accept: '*/*',

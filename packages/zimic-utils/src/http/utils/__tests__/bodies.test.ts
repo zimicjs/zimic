@@ -1,9 +1,9 @@
-import { fileEquals } from '@zimic/utils/data';
-import { JSONValue } from '@zimic/utils/types';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import HttpFormData from '@/formData/HttpFormData';
-import HttpSearchParams from '@/searchParams/HttpSearchParams';
+import fileEquals from '@/data/fileEquals';
+import HttpFormData from '@/http/formData/HttpFormData';
+import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import { JSONValue } from '@/types';
 
 import { InvalidFormDataError, InvalidJSONError, parseHttpBody } from '../bodies';
 

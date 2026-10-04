@@ -1,9 +1,16 @@
 import { HttpSchema } from '@zimic/http';
 import { expectFetchError } from '@zimic/utils/fetch';
+import { waitFor } from '@zimic/utils/time';
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+import { once } from 'events';
+import { connect } from 'net';
 import path from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
+import { verifyUnhandledRequestMessage } from '@/http/interceptor/__tests__/shared/utils';
+import { formatValueToLog } from '@/utils/logging';
+import { usingIgnoredConsole } from '@tests/utils/console';
+import { createInternalHttpInterceptor, createInternalWebSocketInterceptor } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
 import { DEFAULT_HOSTNAME, DEFAULT_LOG_UNHANDLED_REQUESTS } from '../constants';
@@ -244,6 +251,48 @@ describe('Interceptor server', () => {
         await Promise.all([removedWorker.stop(), remainingWorker.stop()]);
       }
     });
+
+    it('should close connected WebSocket clients when their handler is cleared', async () => {
+      server = createInternalInterceptorServer();
+      await server.start();
+
+      type Schema = WebSocketSchema<{ message: string }>;
+      const baseURL = `ws://${server.hostname}:${server.port}/chat`;
+      const otherBaseURL = `ws://${server.hostname}:${server.port}/other-chat`;
+      const interceptor = createInternalWebSocketInterceptor<Schema>({ type: 'remote', baseURL });
+      const otherInterceptor = createInternalWebSocketInterceptor<Schema>({ type: 'remote', baseURL: otherBaseURL });
+
+      try {
+        await Promise.all([interceptor.start(), otherInterceptor.start()]);
+        await interceptor.message().respond({ message: 'unused' });
+        await otherInterceptor.message().respond({ message: 'unused' });
+
+        const client = new WebSocketClient<Schema>(baseURL);
+        const otherClient = new WebSocketClient<Schema>(otherBaseURL);
+        const clientClosed = new Promise<WebSocketClient.CloseEvent<Schema>>((resolve) => {
+          client.addEventListener('close', resolve, { once: true });
+        });
+        const otherClientClosed = new Promise<WebSocketClient.CloseEvent<Schema>>((resolve) => {
+          otherClient.addEventListener('close', resolve, { once: true });
+        });
+
+        await Promise.all([client.open(), otherClient.open()]);
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+          expect(otherInterceptor.clients).toHaveLength(1);
+        });
+
+        await interceptor.clear();
+
+        await expect(clientClosed).resolves.toMatchObject({ code: 1000 });
+        expect(otherClient.readyState).toBe(WebSocketClient.OPEN);
+
+        await otherInterceptor.stop();
+        await expect(otherClientClosed).resolves.toMatchObject({ code: 1000 });
+      } finally {
+        await Promise.all([interceptor.stop(), otherInterceptor.stop()]);
+      }
+    });
   });
 
   describe('HTTP requests before the HTTP runtime loads', () => {
@@ -257,6 +306,193 @@ describe('Interceptor server', () => {
       expect(response.headers.get('access-control-allow-origin')).toBe('*');
       expect(response.headers.get('access-control-allow-methods')).toBe('GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS');
       expect(response.headers.get('access-control-allow-headers')).toBe('*');
+    });
+
+    it('should reject requests before an HTTP worker connects when unhandled request logging is disabled', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+      await server.start();
+
+      await expectFetchError(fetch(`http://${server.hostname}:${server.port}/resource`));
+    });
+
+    it('should log and reject an unhandled request with a body and repeated search params before an HTTP worker connects', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: true });
+      await server.start();
+
+      const request = new Request(`http://${server.hostname}:${server.port}/resource?tag=first&tag=second&page=1`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ message: 'hello' }),
+      });
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        await expectFetchError(fetch(request.clone()));
+
+        expect(console.error).toHaveBeenCalledTimes(1);
+        await verifyUnhandledRequestMessage(console.error.mock.calls[0].join(' '), {
+          request,
+          platform: 'node',
+          type: 'reject',
+        });
+      });
+    });
+
+    it('should log a body read error and close the connection before an HTTP worker connects', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: true });
+      await server.start();
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        const socket = connect({ host: server!.hostname, port: server!.port! });
+        const socketClosed = once(socket, 'close');
+
+        try {
+          await once(socket, 'connect');
+          socket.resume();
+          socket.end(
+            [
+              'POST /resource HTTP/1.1',
+              `Host: ${server!.hostname}:${server!.port}`,
+              'Content-Type: text/plain',
+              'Content-Length: 20',
+              '',
+              'partial',
+            ].join('\r\n'),
+          );
+          await socketClosed;
+
+          await waitFor(() => {
+            expect(console.error).toHaveBeenCalledTimes(2);
+          });
+          expect(console.error.mock.calls[0][1]).toContain('Failed to parse request body:');
+          expect(console.error.mock.calls[0][2]).toBeInstanceOf(Error);
+          const rejectionMessage = console.error.mock.calls[1].join(' ');
+          expect(rejectionMessage).toContain('Request was not handled and was');
+          expect(rejectionMessage).toContain('rejected');
+          expect(rejectionMessage).toContain(`Body: ${await formatValueToLog(null)}`);
+          expect(socket.destroyed).toBe(true);
+        } finally {
+          socket.destroy();
+        }
+      });
+    });
+
+    it('should log an invalid request URL and close the connection before an HTTP worker connects', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: true });
+      await server.start();
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        const socket = connect({ host: server!.hostname, port: server!.port! });
+        const socketClosed = once(socket, 'close');
+
+        try {
+          await once(socket, 'connect');
+          socket.resume();
+          socket.end('GET /resource HTTP/1.1\r\nHost: [invalid\r\n\r\n');
+          await socketClosed;
+
+          await waitFor(() => {
+            expect(console.error).toHaveBeenCalledTimes(1);
+          });
+          expect(console.error.mock.calls[0][0]).toBeInstanceOf(TypeError);
+          expect(socket.destroyed).toBe(true);
+        } finally {
+          socket.destroy();
+        }
+      });
+    });
+  });
+
+  describe('HTTP requests after the HTTP runtime loads', () => {
+    it('should intercept a root request at the server origin', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+      await server.start();
+
+      type Schema = HttpSchema<{
+        '/': {
+          GET: {
+            response: { 204: {} };
+          };
+        };
+      }>;
+      const baseURL = `http://${server.hostname}:${server.port}`;
+      const interceptor = createInternalHttpInterceptor<Schema>({ type: 'remote', baseURL });
+
+      try {
+        await interceptor.start();
+        await interceptor.get('/').respond({ status: 204 });
+
+        const response = await fetch(baseURL);
+
+        expect(response.status).toBe(204);
+      } finally {
+        await interceptor.stop();
+      }
+    });
+
+    it('should log unhandled requests rejected by the runtime', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: true });
+      await server.start();
+
+      type Schema = HttpSchema<{
+        '/handled': {
+          GET: {
+            response: { 204: {} };
+          };
+        };
+      }>;
+      const interceptor = createInternalHttpInterceptor<Schema>({
+        type: 'remote',
+        baseURL: `http://${server.hostname}:${server.port}/handled-base`,
+      });
+
+      try {
+        await interceptor.start();
+        await interceptor.get('/handled').respond({ status: 204 });
+
+        const request = new Request(`http://${server.hostname}:${server.port}/unhandled`);
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          await expectFetchError(fetch(request.clone()));
+
+          expect(console.error).toHaveBeenCalledTimes(1);
+          await verifyUnhandledRequestMessage(console.error.mock.calls[0].join(' '), {
+            request,
+            platform: 'node',
+            type: 'reject',
+          });
+        });
+      } finally {
+        await interceptor.stop();
+      }
+    });
+
+    it('should reject unhandled requests without logging when runtime logging is disabled', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+      await server.start();
+
+      type Schema = HttpSchema<{
+        '/handled': {
+          GET: {
+            response: { 204: {} };
+          };
+        };
+      }>;
+      const interceptor = createInternalHttpInterceptor<Schema>({
+        type: 'remote',
+        baseURL: `http://${server.hostname}:${server.port}/handled-base`,
+      });
+
+      try {
+        await interceptor.start();
+        await interceptor.get('/handled').respond({ status: 204 });
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          await expectFetchError(fetch(`http://${server!.hostname}:${server!.port}/unhandled`));
+          expect(console.error).not.toHaveBeenCalled();
+        });
+      } finally {
+        await interceptor.stop();
+      }
     });
   });
 

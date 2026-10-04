@@ -321,7 +321,7 @@ export function declareActionWebSocketInterceptorTests(options: RuntimeSharedWeb
           client.send(createRequestMessage() as unknown as WebSocketMessageData<BinarySchema>);
 
           const message = await messagePromise;
-          expect(await readBytes(message as Blob | BufferSource)).toEqual([0x00, 0xff]);
+          expect(await readBytes(message as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
         });
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);

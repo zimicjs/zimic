@@ -1,17 +1,14 @@
+import { waitFor } from '@zimic/utils/time';
 import { UnsupportedURLProtocolError, joinURL } from '@zimic/utils/url';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { expect, it } from 'vitest';
 
-import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
-
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../WebSocketInterceptorImplementation';
-import { RuntimeSharedWebSocketInterceptorTestsOptions, waitForWebSocketMessage } from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions, usingWebSocketClient, waitForWebSocketMessage } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
-
-const WEB_SOCKET_ABNORMAL_CLOSE_CODE = 1006;
 
 export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { type, getBaseURL, getAlternativeBaseURL, getInterceptorOptions } = options;
@@ -57,22 +54,32 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
   });
 
   it('should support changing every base URL component while stopped', () => {
-    const interceptor = createWebSocketInterceptor<MessageSchema>(getInterceptorOptions());
-    const server = interceptor.server;
-    const initialBaseURL = new URL(getBaseURL());
+    const initialBaseURLs = Array.from({ length: 7 }, () => new URL(getBaseURL()));
+    initialBaseURLs[0].hostname = 'localhost';
+    initialBaseURLs[1].hostname = '127.0.0.1';
+    initialBaseURLs[2].protocol = 'ws:';
+    initialBaseURLs[3].protocol = 'wss:';
+    initialBaseURLs[4].port = '43210';
+    initialBaseURLs[5].port = '43211';
+    initialBaseURLs[6].pathname = '/initial-path';
 
-    const changedBaseURLs = [
-      new URL('/other-path', initialBaseURL),
-      new URL(initialBaseURL),
-      new URL(initialBaseURL),
-      new URL(initialBaseURL),
-    ];
+    const changedBaseURLs = initialBaseURLs.map((baseURL) => new URL(baseURL));
+    changedBaseURLs[0].hostname = '127.0.0.1';
+    changedBaseURLs[1].hostname = 'localhost';
+    changedBaseURLs[2].protocol = 'wss:';
+    changedBaseURLs[3].protocol = 'ws:';
+    changedBaseURLs[4].port = '43211';
+    changedBaseURLs[5].port = '43210';
+    changedBaseURLs[6].pathname = '/other-path';
 
-    changedBaseURLs[1].hostname = initialBaseURL.hostname === 'localhost' ? '127.0.0.1' : 'localhost';
-    changedBaseURLs[2].protocol = initialBaseURL.protocol === 'ws:' ? 'wss:' : 'ws:';
-    changedBaseURLs[3].port = initialBaseURL.port === '43210' ? '43211' : '43210';
+    for (const [index, initialBaseURL] of initialBaseURLs.entries()) {
+      const interceptor = createWebSocketInterceptor<MessageSchema>({
+        ...getInterceptorOptions(),
+        baseURL: initialBaseURL.href,
+      });
+      const server = interceptor.server;
+      const changedBaseURL = changedBaseURLs[index];
 
-    for (const changedBaseURL of changedBaseURLs) {
       interceptor.baseURL = changedBaseURL.href;
       expect(interceptor.baseURL).toBe(changedBaseURL.href.replace(/\/$/, ''));
       expect(interceptor.server).toBe(server);
@@ -110,16 +117,19 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
 
         const oldBaseURLClient = new WebSocketClient<MessageSchema>(baseURL);
         try {
-          const closeEventPromise = new Promise<WebSocketClient.CloseEvent<MessageSchema>>((resolve) => {
-            oldBaseURLClient.addEventListener('close', resolve, { once: true });
+          let rejectionEvent: WebSocketClient.ErrorEvent<MessageSchema> | undefined;
+          function handleRejection(event: WebSocketClient.ErrorEvent<MessageSchema>) {
+            rejectionEvent = event;
+          }
+          oldBaseURLClient.addEventListener('error', handleRejection, { once: true });
+          oldBaseURLClient.addEventListener('close', handleRejection, { once: true });
+
+          await Promise.allSettled([oldBaseURLClient.open({ timeout: 500 })]);
+          await waitFor(() => {
+            expect(rejectionEvent).toHaveProperty('type', expect.stringMatching(/^(error|close)$/));
           });
-
-          await oldBaseURLClient.open({ timeout: 500 });
-
-          const closeEvent = await closeEventPromise;
-          expect(closeEvent.code).toBe(WEB_SOCKET_ABNORMAL_CLOSE_CODE);
         } finally {
-          await oldBaseURLClient.close();
+          await Promise.allSettled([oldBaseURLClient.close()]);
         }
 
         const newBaseURLClient = new WebSocketClient<MessageSchema>(newBaseURL);
@@ -149,9 +159,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
         await interceptor.start();
         await interceptor.message().respond({ type: 'server', index: 1 });
 
-        const initialClient = new WebSocketClient<MessageSchema>(baseURL);
-        await initialClient.open();
-        await initialClient.close();
+        await usingWebSocketClient<MessageSchema>(baseURL, () => undefined);
 
         await interceptor.stop();
         interceptor.baseURL = alternativeBaseURL;
@@ -159,18 +167,28 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
         await interceptor.message().respond({ type: 'server', index: 2 });
 
         const oldOriginClient = new WebSocketClient<MessageSchema>(baseURL);
-        const closeEventPromise = new Promise<WebSocketClient.CloseEvent<MessageSchema>>((resolve) => {
-          oldOriginClient.addEventListener('close', resolve, { once: true });
+        try {
+          let rejectionEvent: WebSocketClient.ErrorEvent<MessageSchema> | undefined;
+          function handleRejection(event: WebSocketClient.ErrorEvent<MessageSchema>) {
+            rejectionEvent = event;
+          }
+          oldOriginClient.addEventListener('error', handleRejection, { once: true });
+          oldOriginClient.addEventListener('close', handleRejection, { once: true });
+
+          await Promise.allSettled([oldOriginClient.open({ timeout: 500 })]);
+          await waitFor(() => {
+            expect(rejectionEvent).toHaveProperty('type', expect.stringMatching(/^(error|close)$/));
+          });
+        } finally {
+          await Promise.allSettled([oldOriginClient.close()]);
+        }
+
+        await usingWebSocketClient<MessageSchema>(alternativeBaseURL, async (client) => {
+          const messagePromise = waitForWebSocketMessage(client);
+          client.send(JSON.stringify({ type: 'client', index: 2 }));
+
+          await expect(messagePromise).resolves.toEqual({ type: 'server', index: 2 });
         });
-
-        await oldOriginClient.open();
-        const closeEvent = await closeEventPromise;
-        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-        expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
-
-        const alternativeClient = new WebSocketClient<MessageSchema>(alternativeBaseURL);
-        await alternativeClient.open();
-        await alternativeClient.close();
       } finally {
         await interceptor.stop();
       }

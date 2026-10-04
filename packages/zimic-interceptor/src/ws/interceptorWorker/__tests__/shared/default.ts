@@ -942,7 +942,8 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         await rawWorker.start();
         const worker = rawWorker as RemoteWebSocketInterceptorWorker;
         const interceptor = createDefaultWebSocketInterceptor();
-        const client = interceptor.implementation.createClient(baseURL, { send: () => undefined });
+        const send = vi.fn();
+        const client = interceptor.implementation.createClient(baseURL, { send });
 
         await expect(
           worker.sendToClient(client, JSON.stringify({ type: 'server', text: 'ignored client' })),
@@ -950,6 +951,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         await expect(
           worker.sendToClients(interceptor.implementation, JSON.stringify({ type: 'server', text: 'ignored handler' })),
         ).resolves.toBeUndefined();
+        expect(send).not.toHaveBeenCalled();
       } finally {
         await rawWorker.stop();
       }
