@@ -75,6 +75,8 @@ A synthetic server handle that can send messages to currently connected clients.
 
 **Type**: `WebSocketInterceptorServer<Schema>` (readonly)
 
+`interceptor.server.url` is the interceptor's current `baseURL`. Its type is `string` and it is readonly.
+
 ```ts
 interceptor.server.send(JSON.stringify({ type: 'presence', data: { online: true } }));
 ```
@@ -88,6 +90,8 @@ Messages sent with `interceptor.server.send(...)` are delivered to connected cli
 The currently connected client handles.
 
 **Type**: `readonly WebSocketInterceptorClient<Schema>[]`
+
+Each `client.url` is the URL used to open that client's WebSocket connection. Its type is `string` and it is readonly.
 
 Each client can send messages back to its real WebSocket connection and exposes its saved matched messages through `client.messages`. Client and server handles are distinct roles; `handler.from(...)` accepts client handles, not the server handle. Saved message arrays are readonly and keep stable references while the handle exists.
 

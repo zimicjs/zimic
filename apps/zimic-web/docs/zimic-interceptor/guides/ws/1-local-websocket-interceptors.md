@@ -77,7 +77,7 @@ beforeAll(async () => {
 });
 ```
 
-Start the interceptor before declaring handlers or opening clients. Creating a `message()` handler activates interception for the interceptor `baseURL`.
+Starting the interceptor activates interception for its `baseURL`. Start it before declaring handlers or opening clients. Calling `message()` creates and registers a message handler.
 
 :::info INFO: <span>Local interceptors in browsers</span>
 

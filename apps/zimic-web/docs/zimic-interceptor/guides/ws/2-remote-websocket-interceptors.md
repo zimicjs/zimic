@@ -16,7 +16,7 @@ WebSocket interceptors allow you to handle client messages and send custom serve
 
 In `@zimic/interceptor`, WebSocket interceptors are available in two types: `local` (default) and `remote`. Interceptors with type `remote` use a dedicated [interceptor server](/docs/interceptor/cli/server) to handle WebSocket connections and messages. This opens up more possibilities for mocking than [local interceptors](/docs/interceptor/guides/ws/local-interceptors), such as handling connections from multiple applications. Remote WebSocket interceptors require `type: 'remote'`.
 
-Application clients must provide a native or polyfilled [WebSocket API](https://developer.mozilla.org/docs/Web/API/WebSocket). Browsers normally provide it natively; Node.js clients must expose the native `WebSocket` or a compatible polyfill. Node.js projects consuming the WebSocket interceptor packages require Node.js 22.4 or later. This includes the process declaring the remote interceptor and the separately running interceptor server, which accepts application WebSocket connections and relays messages between the clients and interceptor.
+Application clients must provide a native or polyfilled [WebSocket API](https://developer.mozilla.org/docs/Web/API/WebSocket). Browsers normally provide it natively; Node.js clients must expose the native `WebSocket` or a compatible polyfill. Projects consuming `@zimic/ws` require Node.js 22.4 or later. The separately running interceptor server requires Node.js 22 or later; it accepts application WebSocket connections and relays messages between the clients and interceptor.
 
 ## When to use remote WebSocket interceptors
 

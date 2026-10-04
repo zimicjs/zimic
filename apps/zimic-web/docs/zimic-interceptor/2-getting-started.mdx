@@ -15,7 +15,7 @@ This guide will help you get started with `@zimic/interceptor`. The quick start 
 
 HTTP interception requires the [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). Browser clients must provide Fetch natively or through a polyfill. Server-side HTTP interception requires Node.js 22 or later.
 
-WebSocket interception requires a native or polyfilled [WebSocket API](https://developer.mozilla.org/docs/Web/API/WebSocket) in every client runtime. Browsers normally provide it natively; Node.js clients must expose the native `WebSocket` or a compatible polyfill. Node.js projects consuming the WebSocket interceptor packages, including interceptor servers, require Node.js 22.4 or later.
+WebSocket interception requires a native or polyfilled [WebSocket API](https://developer.mozilla.org/docs/Web/API/WebSocket) in every client runtime. Browsers normally provide it natively; Node.js clients must expose the native `WebSocket` or a compatible polyfill. `@zimic/interceptor`, including interceptor servers, requires Node.js 22 or later. Projects consuming the optional `@zimic/ws` package require Node.js 22.4 or later.
 
 ### Supported environments
 
@@ -97,9 +97,9 @@ With this setup, type-checking uses the native TypeScript 7 compiler, while tool
   </TabItem>
   <TabItem value="server" label="Server side">
 
-| Runtime                       | HTTP interception | Experimental WebSocket interception |
-| ----------------------------- | ----------------- | ----------------------------------- |
-| [Node.js](https://nodejs.org) | >= 22.0.0         | >= 22.4.0                           |
+| Runtime                       | `@zimic/interceptor`, including interceptor servers | `@zimic/ws` |
+| ----------------------------- | --------------------------------------------------- | ----------- |
+| [Node.js](https://nodejs.org) | >= 22.0.0                                           | >= 22.4.0   |
 
 ### Supported languages
 

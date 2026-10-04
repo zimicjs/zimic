@@ -56,7 +56,7 @@ Install both schema packages only when the project intercepts both protocols.
 
 HTTP interception requires the [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). Browsers must provide Fetch natively or through a polyfill. Server-side interception requires Node.js 22 or later.
 
-WebSocket interception requires a native or polyfilled [WebSocket API](https://developer.mozilla.org/docs/Web/API/WebSocket) in the client runtime. Browsers normally provide it natively; Node.js clients must expose the native `WebSocket` or a compatible polyfill. Every Node.js project consuming the WebSocket interceptor packages requires Node.js 22.4 or later, including processes declaring local or remote interceptors and interceptor servers. Local browser interception also requires an [initialized mock service worker](https://zimic.dev/docs/interceptor/cli/browser#zimic-interceptor-browser-init).
+WebSocket interception requires a native or polyfilled [WebSocket API](https://developer.mozilla.org/docs/Web/API/WebSocket) in the client runtime. Browsers normally provide it natively; Node.js clients must expose the native `WebSocket` or a compatible polyfill. `@zimic/interceptor`, including interceptor servers, requires Node.js 22 or later. Projects consuming the optional `@zimic/ws` package require Node.js 22.4 or later. Local browser interception also requires an [initialized mock service worker](https://zimic.dev/docs/interceptor/cli/browser#zimic-interceptor-browser-init).
 
 ## Highlights
 
