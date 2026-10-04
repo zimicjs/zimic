@@ -1,9 +1,9 @@
-import { beforeAll, beforeEach, afterAll, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import DisabledMessageSavingError from '../../errors/DisabledMessageSavingError';
-import type { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
-import type { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
+import { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
+import { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
 import { usingDirectWebSocketMessageHandler } from './utils';
 
@@ -31,6 +31,35 @@ export function declareDefaultWebSocketMessageHandlerTests(
     if (type === 'remote') {
       await stopServer?.();
     }
+  });
+
+  it('should normalize incoming text messages before matching handlers and saving intercepted messages', async () => {
+    await usingDirectWebSocketMessageHandler<Schema>(
+      { type, baseURL, Handler, messageSaving: { enabled: true } },
+      async ({ interceptor, handler, sender, receiver, handleMessage }) => {
+        let effectMessage: Schema | undefined;
+        handler.effect((message) => {
+          effectMessage = message;
+        });
+        const firstRestriction = vi.fn((_message: Schema) => true);
+        handler.with(firstRestriction);
+
+        const secondHandler = new Handler<Schema>(interceptor.implementation);
+        const secondRestriction = vi.fn((_message: Schema) => false);
+        secondHandler.with(secondRestriction);
+        interceptor.implementation.registerMessageHandler(secondHandler);
+
+        await handleMessage(JSON.stringify({ type: 'create', body: { text: 'serialized' } }));
+
+        const normalizedMessage = firstRestriction.mock.calls[0][0];
+        expect(normalizedMessage).toEqual({ type: 'create', body: { text: 'serialized' } });
+        expect(secondRestriction.mock.calls[0][0]).toBe(normalizedMessage);
+        expect(effectMessage).toBe(normalizedMessage);
+        expect(handler.messages[0].data).toBe(normalizedMessage);
+        expect(sender.handle.messages).toHaveLength(1);
+        expect(receiver.messages).toHaveLength(1);
+      },
+    );
   });
 
   it('should match any message without a declared response, effect, or restrictions', async () => {

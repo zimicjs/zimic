@@ -1970,13 +1970,7 @@ describe('Interceptor server > Web sockets', () => {
       url: `ws://localhost:${server.port}`,
     });
 
-    let resolveConnectionConfirmed!: () => void;
-    const connectionConfirmedPromise = new Promise<void>((resolve) => {
-      resolveConnectionConfirmed = resolve;
-    });
-
     webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', () => {
-      setTimeout(resolveConnectionConfirmed);
       return { accepted: true };
     });
 
@@ -2002,7 +1996,13 @@ describe('Interceptor server > Web sockets', () => {
     });
 
     await waitForOpenClientSocket(userSocket);
-    await connectionConfirmedPromise;
+
+    const internalServer = server as unknown as {
+      activeUserWebSocketHandlers: Map<unknown, unknown>;
+    };
+    await waitFor(() => {
+      expect(internalServer.activeUserWebSocketHandlers).toHaveProperty('size', 1);
+    });
 
     const messagePromise = new Promise<ClientSocket.MessageEvent>((resolve) => {
       userSocket.addEventListener('message', resolve, { once: true });

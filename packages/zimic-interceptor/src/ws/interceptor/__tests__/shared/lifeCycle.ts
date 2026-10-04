@@ -31,6 +31,32 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     await Promise.all(closeClients.map((closeClient) => closeClient()));
   });
 
+  it('should stop when called while starting', async () => {
+    const interceptor = createWebSocketInterceptor<MessageSchema>({ type, baseURL });
+
+    try {
+      await Promise.all([interceptor.start(), interceptor.stop()]);
+
+      expect(interceptor.isRunning).toBe(false);
+      expect(interceptor.platform).toBe(null);
+    } finally {
+      await interceptor.stop();
+    }
+  });
+
+  it('should start when called after stopping while starting', async () => {
+    const interceptor = createWebSocketInterceptor<MessageSchema>({ type, baseURL });
+
+    try {
+      await Promise.all([interceptor.start(), interceptor.stop(), interceptor.start()]);
+
+      expect(interceptor.isRunning).toBe(true);
+      expect(interceptor.platform).toBe(platform);
+    } finally {
+      await interceptor.stop();
+    }
+  });
+
   it('should initialize with the correct platform', async () => {
     const interceptor = createWebSocketInterceptor<{}>(interceptorOptions);
 
@@ -162,7 +188,7 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
         interceptor.auth = auth;
         expect(interceptor.auth).toEqual(auth);
 
-        auth.token = 'other-token';
+        interceptor.auth.token = 'other-token';
         expect(interceptor.auth).toEqual({ token: 'other-token' });
 
         interceptor.auth = undefined;

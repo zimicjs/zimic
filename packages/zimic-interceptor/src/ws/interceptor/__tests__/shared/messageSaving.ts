@@ -109,10 +109,7 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
             await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
           }
 
-          expect(() => {
-            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-            handler.messages;
-          }).toThrow(new DisabledMessageSavingError());
+          expect(() => handler.messages).toThrow(new DisabledMessageSavingError());
 
           expect(console.warn).toHaveBeenCalledTimes(0);
         });

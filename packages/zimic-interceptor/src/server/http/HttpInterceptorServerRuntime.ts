@@ -5,7 +5,6 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
 
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
-import { removeArrayIndex } from '@/utils/arrays';
 import { deserializeResponse, type SerializedHttpRequest, serializeRequest } from '@/utils/fetch';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
@@ -124,9 +123,8 @@ class HttpInterceptorServerRuntime {
   }
 
   removeHandlersBySocket(socket: Socket) {
-    for (const handlerGroups of Object.values(this.httpHandlersByMethod)) {
-      const socketIndex = handlerGroups.findIndex((handlerGroup) => handlerGroup.socket === socket);
-      removeArrayIndex(handlerGroups, socketIndex);
+    for (const [method, handlers] of Object.entries(this.httpHandlersByMethod)) {
+      this.httpHandlersByMethod[method] = handlers.filter((handler) => handler.socket !== socket);
     }
   }
 
