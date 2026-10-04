@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import HttpFormData from '../HttpFormData';
+import HttpFormData from '@/http/formData/HttpFormData';
+
 import { HttpFormDataSerialized } from '../types';
 
 describe('HttpFormData', () => {

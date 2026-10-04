@@ -62,6 +62,12 @@
       "require": "./dist/fetch.js",
       "default": "./dist/fetch.js"
     },
+    "./http": {
+      "types": "./http.d.ts",
+      "import": "./dist/http.mjs",
+      "require": "./dist/http.js",
+      "default": "./dist/http.js"
+    },
     "./import": {
       "types": "./import.d.ts",
       "import": "./dist/import.mjs",
