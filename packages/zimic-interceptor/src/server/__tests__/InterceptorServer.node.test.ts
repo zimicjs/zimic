@@ -192,6 +192,72 @@ describe('Interceptor server', () => {
         }
       }
     });
+
+    it('should remove all HTTP handlers when a worker socket closes and preserve other workers', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+
+      await server.start();
+
+      type RemovedWorkerSchema = HttpSchema<{
+        '/first': { GET: { response: { 204: {} } } };
+        '/second': { GET: { response: { 204: {} } } };
+        '/third': { GET: { response: { 204: {} } } };
+      }>;
+      type RemainingWorkerSchema = HttpSchema<{
+        '/removed/first': { GET: { response: { 201: {} } } };
+        '/removed/second': { GET: { response: { 201: {} } } };
+        '/removed/third': { GET: { response: { 201: {} } } };
+      }>;
+
+      const removedWorker = createInternalHttpInterceptor<RemovedWorkerSchema>({
+        type: 'remote',
+        baseURL: `http://${server.hostname}:${server.port}/removed`,
+      });
+      const remainingWorker = createInternalHttpInterceptor<RemainingWorkerSchema>({
+        type: 'remote',
+        baseURL: `http://${server.hostname}:${server.port}`,
+      });
+
+      try {
+        await Promise.all([removedWorker.start(), remainingWorker.start()]);
+
+        await Promise.all([
+          remainingWorker.get('/removed/first').respond({ status: 201 }),
+          remainingWorker.get('/removed/second').respond({ status: 201 }),
+          remainingWorker.get('/removed/third').respond({ status: 201 }),
+        ]);
+
+        await Promise.all([
+          removedWorker.get('/first').respond({ status: 204 }),
+          removedWorker.get('/second').respond({ status: 204 }),
+          removedWorker.get('/third').respond({ status: 204 }),
+        ]);
+
+        expect((await fetch(`${removedWorker.baseURL}/third`)).status).toBe(204);
+
+        await removedWorker.stop();
+
+        expect((await fetch(`${removedWorker.baseURL}/first`)).status).toBe(201);
+        expect((await fetch(`${removedWorker.baseURL}/second`)).status).toBe(201);
+        expect((await fetch(`${removedWorker.baseURL}/third`)).status).toBe(201);
+      } finally {
+        await Promise.all([removedWorker.stop(), remainingWorker.stop()]);
+      }
+    });
+  });
+
+  describe('HTTP requests before the HTTP runtime loads', () => {
+    it('should return the default CORS preflight response before an HTTP worker connects', async () => {
+      server = createInternalInterceptorServer();
+      await server.start();
+
+      const response = await fetch(`http://${server.hostname}:${server.port}/resource`, { method: 'OPTIONS' });
+
+      expect(response.status).toBe(204);
+      expect(response.headers.get('access-control-allow-origin')).toBe('*');
+      expect(response.headers.get('access-control-allow-methods')).toBe('GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS');
+      expect(response.headers.get('access-control-allow-headers')).toBe('*');
+    });
   });
 
   describe('Hostname', () => {
