@@ -57,22 +57,32 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
   });
 
   it('should support changing every base URL component while stopped', () => {
-    const interceptor = createWebSocketInterceptor<MessageSchema>(getInterceptorOptions());
-    const server = interceptor.server;
-    const initialBaseURL = new URL(getBaseURL());
+    const initialBaseURLs = Array.from({ length: 7 }, () => new URL(getBaseURL()));
+    initialBaseURLs[0].hostname = 'localhost';
+    initialBaseURLs[1].hostname = '127.0.0.1';
+    initialBaseURLs[2].protocol = 'ws:';
+    initialBaseURLs[3].protocol = 'wss:';
+    initialBaseURLs[4].port = '43210';
+    initialBaseURLs[5].port = '43211';
+    initialBaseURLs[6].pathname = '/initial-path';
 
-    const changedBaseURLs = [
-      new URL('/other-path', initialBaseURL),
-      new URL(initialBaseURL),
-      new URL(initialBaseURL),
-      new URL(initialBaseURL),
-    ];
+    const changedBaseURLs = initialBaseURLs.map((baseURL) => new URL(baseURL));
+    changedBaseURLs[0].hostname = '127.0.0.1';
+    changedBaseURLs[1].hostname = 'localhost';
+    changedBaseURLs[2].protocol = 'wss:';
+    changedBaseURLs[3].protocol = 'ws:';
+    changedBaseURLs[4].port = '43211';
+    changedBaseURLs[5].port = '43210';
+    changedBaseURLs[6].pathname = '/other-path';
 
-    changedBaseURLs[1].hostname = initialBaseURL.hostname === 'localhost' ? '127.0.0.1' : 'localhost';
-    changedBaseURLs[2].protocol = initialBaseURL.protocol === 'ws:' ? 'wss:' : 'ws:';
-    changedBaseURLs[3].port = initialBaseURL.port === '43210' ? '43211' : '43210';
+    for (const [index, initialBaseURL] of initialBaseURLs.entries()) {
+      const interceptor = createWebSocketInterceptor<MessageSchema>({
+        ...getInterceptorOptions(),
+        baseURL: initialBaseURL.href,
+      });
+      const server = interceptor.server;
+      const changedBaseURL = changedBaseURLs[index];
 
-    for (const changedBaseURL of changedBaseURLs) {
       interceptor.baseURL = changedBaseURL.href;
       expect(interceptor.baseURL).toBe(changedBaseURL.href.replace(/\/$/, ''));
       expect(interceptor.server).toBe(server);

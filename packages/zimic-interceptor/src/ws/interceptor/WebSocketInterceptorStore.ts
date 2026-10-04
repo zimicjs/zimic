@@ -6,10 +6,6 @@ class WebSocketInterceptorStore {
 
   private class = WebSocketInterceptorStore;
 
-  get localWorker() {
-    return this.class.localWorker;
-  }
-
   getOrCreateLocalWorker(workerOptions: Omit<LocalWebSocketInterceptorWorkerOptions, 'type'>) {
     const existingWorker = this.class.localWorker;
 

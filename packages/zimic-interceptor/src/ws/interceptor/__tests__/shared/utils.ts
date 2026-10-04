@@ -52,13 +52,8 @@ export async function waitForWebSocketMessage<Schema extends WebSocketSchema>(cl
   return event.data;
 }
 
-export async function readBytes(data: Blob | BufferSource) {
-  if (data instanceof Blob) {
-    return Array.from(new Uint8Array(await data.arrayBuffer()));
-  }
-
-  const bytes =
-    data instanceof ArrayBuffer ? new Uint8Array(data) : new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+export async function readBytes(data: Blob | ArrayBuffer) {
+  const bytes = data instanceof Blob ? new Uint8Array(await data.arrayBuffer()) : new Uint8Array(data);
   return Array.from(bytes);
 }
 

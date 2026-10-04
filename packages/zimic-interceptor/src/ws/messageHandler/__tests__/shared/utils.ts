@@ -18,9 +18,8 @@ import type { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessage
 type DirectWebSocketMessageHandler<Schema extends WebSocketSchema> =
   LocalWebSocketMessageHandler<Schema> | RemoteWebSocketMessageHandler<Schema>;
 
-export async function readBytes(data: Blob | ArrayBuffer) {
-  const arrayBuffer = data instanceof Blob ? await data.arrayBuffer() : data;
-  return Array.from(new Uint8Array(arrayBuffer));
+export function readBytes(data: ArrayBuffer) {
+  return Array.from(new Uint8Array(data));
 }
 
 export function createBinaryMessage(firstByte: number, secondByte: number) {
@@ -113,7 +112,6 @@ export async function expectWebSocketTimesCheckError(
   options: {
     message: string;
     expectedNumberOfMessages: number | { min: number; max: number };
-    unmatchedMessages?: string;
   },
 ) {
   let timesCheckError: WebSocketTimesCheckError | undefined;
@@ -130,14 +128,7 @@ export async function expectWebSocketTimesCheckError(
   expect(timesCheckError).toBeDefined();
   expect(timesCheckError!.name).toBe('WebSocketTimesCheckError');
 
-  const expectedMessage = [
-    options.message,
-    options.unmatchedMessages && ['Unmatched messages:', '', options.unmatchedMessages].join('\n'),
-  ]
-    .filter(Boolean)
-    .join('\n\n');
-
-  expect(timesCheckError!.message).toEqual(expectedMessage);
+  expect(timesCheckError!.message).toEqual(options.message);
 
   const timesDeclarationPointer = timesCheckError!.cause! as WebSocketTimesDeclarationPointer;
   expect(timesDeclarationPointer).toBeInstanceOf(WebSocketTimesDeclarationPointer);
