@@ -1,3 +1,4 @@
+import { normalizeNodeRequest } from '@whatwg-node/server';
 import { createCachedDynamicImport } from '@zimic/utils/import';
 import { startHttpServer, stopHttpServer, getHttpServerPort } from '@zimic/utils/server';
 import { excludeNonPathParams } from '@zimic/utils/url';
@@ -11,7 +12,7 @@ import { WebSocket as ClientSocket } from 'ws';
 import type { InterceptorServerRPCProtocol } from '@/interceptor/constants';
 import { removeArrayIndex } from '@/utils/arrays';
 import { isLoopbackHostname } from '@/utils/http';
-import { logger } from '@/utils/logging';
+import { logger, logUnhandledRequestWarning } from '@/utils/logging';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
@@ -40,6 +41,7 @@ import type { InterceptorServerOptions } from './types/options';
 import type { InterceptorServer as PublicInterceptorServer } from './types/public';
 import type { InterceptorServerWebSocketSchema, WebSocketHandlerCommit } from './types/schema';
 import { validateInterceptorToken } from './utils/auth';
+import { getFetchAPI } from './utils/fetch';
 import { rejectNodeResponse } from './utils/http';
 
 const importHttpInterceptorServerRuntime = createCachedDynamicImport(
@@ -811,12 +813,27 @@ class InterceptorServer implements PublicInterceptorServer {
         return;
       }
 
+      if (this.logUnhandledRequests) {
+        return this.logUnhandledRequestWithoutRuntime(nodeRequest, nodeResponse);
+      }
+
       rejectNodeResponse(nodeResponse);
       return;
     }
 
     return this.httpRuntime.handleRequest(nodeRequest, nodeResponse);
   };
+
+  private async logUnhandledRequestWithoutRuntime(nodeRequest: IncomingMessage, nodeResponse: ServerResponse) {
+    try {
+      const request = normalizeNodeRequest(nodeRequest, getFetchAPI());
+      await logUnhandledRequestWarning(request, 'reject');
+    } catch (error) {
+      console.error(error);
+    } finally {
+      rejectNodeResponse(nodeResponse);
+    }
+  }
 }
 
 export default InterceptorServer;

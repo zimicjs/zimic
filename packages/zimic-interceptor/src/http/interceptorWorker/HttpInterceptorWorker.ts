@@ -14,12 +14,11 @@ import {
 } from '@zimic/http';
 import { isDefined } from '@zimic/utils/data';
 import { Default, PossiblePromise } from '@zimic/utils/types';
-import color from 'picocolors';
 
 import { removeArrayElement } from '@/utils/arrays';
 import { isClientSide } from '@/utils/environment';
 import { methodCanHaveResponseBody } from '@/utils/http';
-import { formatValueToLog, logger } from '@/utils/logging';
+import { logUnhandledRequestWarning, logger } from '@/utils/logging';
 
 import HttpInterceptorImplementation, {
   AnyHttpInterceptorImplementation,
@@ -458,26 +457,7 @@ abstract class HttpInterceptorWorker {
   }
 
   static async logUnhandledRequestWarning(rawRequest: Request, action: UnhandledRequestStrategy.Action) {
-    const request = await this.parseRawRequest(rawRequest);
-
-    const [formattedHeaders, formattedSearchParams, formattedBody] = await Promise.all([
-      formatValueToLog(request.headers.toObject()),
-      formatValueToLog(request.searchParams.toObject()),
-      formatValueToLog(request.body),
-    ]);
-
-    logger[action === 'bypass' ? 'warn' : 'error'](
-      `${action === 'bypass' ? 'Warning:' : 'Error:'} Request was not handled and was ` +
-        `${action === 'bypass' ? color.yellow('bypassed') : color.red('rejected')}.\n\n `,
-      `${request.method} ${request.url}`,
-      '\n    Headers:',
-      formattedHeaders,
-      '\n    Search params:',
-      formattedSearchParams,
-      '\n    Body:',
-      formattedBody,
-      '\n\nLearn more: https://zimic.dev/docs/interceptor/guides/http/unhandled-requests',
-    );
+    await logUnhandledRequestWarning(rawRequest, action);
   }
 }
 
