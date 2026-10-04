@@ -859,6 +859,31 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
       expectNoSavedServerSentNotificationMessages();
     });
 
+    it('should support sending notification creation events to a selected client', async () => {
+      const message: NotificationWebSocketMessage<'notification:create:success'> = {
+        type: 'notification:create:success',
+        data: notification,
+      };
+
+      const responsePromise = waitForNotificationCreation(notificationSockets[0]);
+      const otherClientMessageListener = vi.fn();
+      notificationSockets[1].addEventListener('message', otherClientMessageListener);
+
+      try {
+        notificationInterceptor.clients[0].send(JSON.stringify(message));
+
+        expect(await responsePromise).toEqual(message);
+
+        await waitForNot(() => {
+          expect(otherClientMessageListener).toHaveBeenCalled();
+        });
+
+        expectNoSavedServerSentNotificationMessages();
+      } finally {
+        notificationSockets[1].removeEventListener('message', otherClientMessageListener);
+      }
+    });
+
     it('should support receiving notification update events started by the server', async () => {
       const message: NotificationWebSocketMessage<'notification:update:success'> = {
         type: 'notification:update:success',

@@ -30,7 +30,7 @@ function getNotificationBaseURL(type: HttpInterceptorType) {
     : `http://localhost:${ZIMIC_SERVER_PORT}/notification-${crypto.randomUUID()}`;
 }
 
-export function declareHttpInterceptorTests({ platform, type }: ClientTestOptionsByWorkerType) {
+export function declareHttpInterceptorTests({ platform, type, fetch }: ClientTestOptionsByWorkerType) {
   const userInterceptor = createHttpInterceptor<UserHttpSchema>({
     type,
     baseURL: getUserBaseURL(type),
