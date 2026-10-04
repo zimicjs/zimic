@@ -1321,7 +1321,7 @@ describe('Interceptor server > Web sockets', () => {
     expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
   });
 
-  it('should close pending user sockets when their handler is reset', async () => {
+  it('should close only pending user sockets whose handlers are reset', async () => {
     server = createInternalInterceptorServer({ logUnhandledRequests: false });
     await server.start();
 
@@ -1329,18 +1329,21 @@ describe('Interceptor server > Web sockets', () => {
       url: `ws://localhost:${server.port}`,
     });
 
-    let resolveConnection!: (value: { accepted: true }) => void;
-    const connectionPromise = new Promise<{ accepted: true }>((resolve) => {
-      resolveConnection = resolve;
-    });
-    let resolveConnectionReceived!: () => void;
-    const connectionReceivedPromise = new Promise<void>((resolve) => {
-      resolveConnectionReceived = resolve;
-    });
+    const firstConnection = Promise.withResolvers<{ accepted: true }>();
+    const secondConnection = Promise.withResolvers<{ accepted: true }>();
+    const firstConnectionReceived = Promise.withResolvers<void>();
+    const secondConnectionReceived = Promise.withResolvers<void>();
 
-    webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', () => {
-      resolveConnectionReceived();
-      return connectionPromise;
+    const baseURL = `ws://localhost:${server.port}/chat`;
+    const otherBaseURL = `ws://localhost:${server.port}/other-chat`;
+    webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => {
+      if (data.url === baseURL) {
+        firstConnectionReceived.resolve();
+        return firstConnection.promise;
+      }
+
+      secondConnectionReceived.resolve();
+      return secondConnection.promise;
     });
 
     await webSocketClient.start({
@@ -1350,34 +1353,38 @@ describe('Interceptor server > Web sockets', () => {
       waitForAuthentication: true,
     });
 
-    const baseURL = `ws://localhost:${server.port}/chat`;
+    const handlerId = crypto.randomUUID();
+    const otherHandlerId = crypto.randomUUID();
     await webSocketClient.request('interceptors/ws/workers/commit', {
-      id: crypto.randomUUID(),
+      id: handlerId,
       baseURL,
+    });
+    await webSocketClient.request('interceptors/ws/workers/commit', {
+      id: otherHandlerId,
+      baseURL: otherBaseURL,
     });
 
     const userSocket = new ClientSocket(baseURL);
-    userSockets.push(userSocket);
+    const otherUserSocket = new ClientSocket(otherBaseURL);
+    userSockets.push(userSocket, otherUserSocket);
     const closeEventPromise = new Promise<ClientSocket.CloseEvent>((resolve) => {
       userSocket.addEventListener('close', resolve, { once: true });
     });
+    try {
+      await Promise.all([firstConnectionReceived.promise, secondConnectionReceived.promise]);
+      await webSocketClient.request('interceptors/ws/workers/reset', [{ id: otherHandlerId, baseURL: otherBaseURL }]);
 
-    await connectionReceivedPromise;
-    await webSocketClient.request('interceptors/ws/workers/reset', []);
+      const closeEvent = await closeEventPromise;
+      expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
 
-    const closeEvent = await closeEventPromise;
-    expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
-
-    resolveConnection({ accepted: true });
-
-    const nextUserSocket = new ClientSocket(baseURL);
-    userSockets.push(nextUserSocket);
-    const nextCloseEvent = await new Promise<ClientSocket.CloseEvent>((resolve) => {
-      nextUserSocket.addEventListener('close', resolve, { once: true });
-    });
-
-    expect(nextCloseEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-    expect(nextCloseEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
+      firstConnection.resolve({ accepted: true });
+      secondConnection.resolve({ accepted: true });
+      await waitForOpenClientSocket(otherUserSocket);
+      expect(otherUserSocket.readyState).toBe(otherUserSocket.OPEN);
+    } finally {
+      firstConnection.resolve({ accepted: true });
+      secondConnection.resolve({ accepted: true });
+    }
   });
 
   it('should remove user sockets closed while worker connection confirmation is pending', async () => {
