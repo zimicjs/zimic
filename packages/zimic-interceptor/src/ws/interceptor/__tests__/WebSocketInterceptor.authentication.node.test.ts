@@ -1,15 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe } from 'vitest';
 
 import {
   createInterceptorToken,
   DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
   removeInterceptorToken,
 } from '@/server/utils/auth';
-import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
-import { usingIgnoredConsole } from '@tests/utils/console';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
-import { createWebSocketInterceptor } from '../factory';
+import { declareAuthenticationWebSocketInterceptorTests } from './shared/authentication';
 
 describe('WebSocketInterceptor (node, remote) > Authentication', () => {
   const server = createInternalInterceptorServer({
@@ -29,62 +27,9 @@ describe('WebSocketInterceptor (node, remote) > Authentication', () => {
     await removeInterceptorToken(token.id);
   });
 
-  it('should start with valid credentials', async () => {
-    const interceptor = createWebSocketInterceptor<{}>({
-      type: 'remote',
-      baseURL: `ws://localhost:${server.port}/chat`,
-      auth: { token: token.value },
-    });
-
-    try {
-      await expect(interceptor.start()).resolves.toBeUndefined();
-      expect(interceptor.isRunning).toBe(true);
-    } finally {
-      await interceptor.stop();
-    }
-  });
-
-  it.each([
-    { name: 'missing', auth: undefined },
-    { name: 'invalid', auth: { token: 'invalid-token' } },
-  ])('should reject $name credentials', async ({ auth }) => {
-    const interceptor = createWebSocketInterceptor<{}>({
-      type: 'remote',
-      baseURL: `ws://localhost:${server.port}/chat`,
-      auth,
-    });
-
-    await usingIgnoredConsole(['error'], async () => {
-      await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
-    });
-
-    expect(interceptor.isRunning).toBe(false);
-    expect(interceptor.platform).toBe(null);
-  });
-
-  it('should create a fresh worker after an authentication failure', async () => {
-    const auth = { token: 'invalid-token' };
-    const interceptor = createWebSocketInterceptor<{}>({
-      type: 'remote',
-      baseURL: `ws://localhost:${server.port}/chat`,
-      auth,
-    });
-
-    await usingIgnoredConsole(['error'], async () => {
-      await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
-    });
-
-    expect(interceptor.isRunning).toBe(false);
-    expect(interceptor.platform).toBe(null);
-
-    auth.token = token.value;
-
-    try {
-      await expect(interceptor.start()).resolves.toBeUndefined();
-      expect(interceptor.isRunning).toBe(true);
-      expect(interceptor.platform).toBe('node');
-    } finally {
-      await interceptor.stop();
-    }
+  declareAuthenticationWebSocketInterceptorTests({
+    platform: 'node',
+    getBaseURL: () => `ws://localhost:${server.port}/chat`,
+    getValidToken: () => token.value,
   });
 });
