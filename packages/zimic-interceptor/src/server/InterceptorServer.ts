@@ -26,8 +26,10 @@ import {
 } from '@/ws/utils/messageData';
 
 import {
+  DEFAULT_ACCESS_CONTROL_HEADERS,
   DEFAULT_LOG_UNHANDLED_REQUESTS,
   DEFAULT_HOSTNAME,
+  DEFAULT_PREFLIGHT_STATUS_CODE,
   INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER,
 } from './constants';
 import NotRunningInterceptorServerError from './errors/NotRunningInterceptorServerError';
@@ -794,6 +796,19 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private handleHttpRequest = (nodeRequest: IncomingMessage, nodeResponse: ServerResponse) => {
     if (!this.httpRuntime) {
+      if (nodeRequest.method === 'OPTIONS') {
+        nodeResponse.statusCode = DEFAULT_PREFLIGHT_STATUS_CODE;
+
+        for (const [header, value] of Object.entries(DEFAULT_ACCESS_CONTROL_HEADERS)) {
+          if (value) {
+            nodeResponse.setHeader(header, value);
+          }
+        }
+
+        nodeResponse.end();
+        return;
+      }
+
       nodeResponse.destroy();
       return;
     }

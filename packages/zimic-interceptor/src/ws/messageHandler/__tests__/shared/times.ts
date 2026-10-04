@@ -1,8 +1,8 @@
 import { beforeAll, beforeEach, afterAll, describe, expect, it } from 'vitest';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
-import type { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
-import type { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
+import { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
+import { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
 import { expectWebSocketTimesCheckError, usingDirectWebSocketMessageHandler } from './utils';
 
@@ -33,6 +33,46 @@ export function declareTimesWebSocketMessageHandlerTests(
   });
 
   describe('Exact number of messages', () => {
+    it('should not match more than an exact number of limited messages when messages are handled concurrently', async () => {
+      await usingDirectWebSocketMessageHandler<Schema>(
+        { type, baseURL, Handler },
+        async ({ interceptor, handler, handleMessage }) => {
+          let limitedResponses = 0;
+          let fallbackResponses = 0;
+          handler.effect(() => {
+            fallbackResponses++;
+          });
+
+          const limitedHandler = new Handler<Schema>(interceptor.implementation);
+          interceptor.implementation.registerMessageHandler(limitedHandler);
+          let numberOfEvaluatedMessages = 0;
+          const restrictionsReady = Promise.withResolvers<void>();
+
+          limitedHandler.with(async () => {
+            numberOfEvaluatedMessages++;
+            if (numberOfEvaluatedMessages === 2) {
+              restrictionsReady.resolve();
+            }
+            await restrictionsReady.promise;
+            return true;
+          });
+          limitedHandler.effect(() => {
+            limitedResponses++;
+          });
+          limitedHandler.times(1);
+
+          const message: Schema = { type: 'create', body: { text: 'overlap' } };
+          const messageResultsPromise = Promise.all([handleMessage(message), handleMessage(message)]);
+
+          await restrictionsReady.promise;
+          expect(await messageResultsPromise).toEqual([true, true]);
+          expect(limitedResponses).toBe(1);
+          expect(fallbackResponses).toBe(1);
+          await limitedHandler.checkTimes();
+        },
+      );
+    });
+
     it('should match an exact number of limited messages', async () => {
       await usingDirectWebSocketMessageHandler<Schema>(
         { type, baseURL, Handler },
