@@ -13,11 +13,7 @@ export type WebSocketMessageHandlerComputedTypeGuardRestriction<
   PredicateSchema extends Schema = Schema,
 > = (message: Schema) => message is PredicateSchema;
 
-/**
- * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
- *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
- */
+/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export type WebSocketMessageHandlerComputedRestriction<
   Schema extends WebSocketSchema,
   PredicateSchema extends Schema = Schema,

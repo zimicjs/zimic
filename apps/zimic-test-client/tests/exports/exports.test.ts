@@ -260,6 +260,40 @@ describe('Exports', () => {
     expect(typeof HttpInvalidFormDataError).toBe('function');
   });
 
+  it('should parse URL-encoded bodies using the exported HttpSearchParams constructor', async () => {
+    const request = new Request('http://localhost/resource', {
+      method: 'POST',
+      body: new URLSearchParams('tag=first&tag=second'),
+    });
+
+    const body = await parseHttpBody(request);
+
+    expect(body).toBeInstanceOf(HttpSearchParams);
+  });
+
+  it('should parse multipart bodies using the exported HttpFormData constructor', async () => {
+    const formData = new FormData();
+    formData.append('message', 'hello');
+    const request = new Request('http://localhost/resource', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const body = await parseHttpBody(request);
+
+    expect(body).toBeInstanceOf(HttpFormData);
+  });
+
+  it('should reject invalid JSON using the exported InvalidJSONError constructor', async () => {
+    const request = new Request('http://localhost/resource', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{invalid}',
+    });
+
+    await expect(parseHttpBody(request)).rejects.toBeInstanceOf(HttpInvalidJSONError);
+  });
+
   it('exports all expected resources from @zimic/fetch', () => {
     expect(typeof createFetch).toBe('function');
     expectTypeOf<Fetch<never>>().not.toBeAny();

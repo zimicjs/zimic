@@ -11,7 +11,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { verifyUnhandledRequestMessage } from '@/http/interceptor/__tests__/shared/utils';
 import { createHttpInterceptor } from '@/http/interceptor/factory';
-import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT, INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER } from '@/server/constants';
+import { INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER } from '@/interceptor/constants';
+import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/server/constants';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 import WebSocketServer from '@/utils/webSocket/WebSocketServer';
 import { usingIgnoredConsole } from '@tests/utils/console';
@@ -560,9 +561,7 @@ describe('CLI > Server start', () => {
 
       try {
         await webSocketClient.start({
-          parameters: {
-            [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http',
-          },
+          parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http' },
           waitForAuthentication: true,
         });
         expect(webSocketClient.isRunning).toBe(true);
@@ -606,36 +605,21 @@ describe('CLI > Server start', () => {
           `Server is running on ${color.yellow(`localhost:${server!.port}`)}`,
         );
 
-        const webSocketClient = new WebSocketClient({
-          url: `ws://localhost:${server!.port}`,
+        const request = new Request(`http://localhost:${server!.port}`);
+
+        const response = fetch(request);
+        await expectFetchError(response);
+
+        expect(console.log).toHaveBeenCalledTimes(1);
+        expect(console.warn).toHaveBeenCalledTimes(0);
+        expect(console.error).toHaveBeenCalledTimes(1);
+
+        const errorMessage = console.error.mock.calls[0].join(' ');
+        await verifyUnhandledRequestMessage(errorMessage, {
+          request,
+          platform: 'node',
+          type: 'reject',
         });
-
-        try {
-          await webSocketClient.start({
-            parameters: {
-              [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http',
-            },
-            waitForAuthentication: true,
-          });
-
-          const request = new Request(`http://localhost:${server!.port}`);
-
-          const response = fetch(request);
-          await expectFetchError(response);
-
-          expect(console.log).toHaveBeenCalledTimes(1);
-          expect(console.warn).toHaveBeenCalledTimes(0);
-          expect(console.error).toHaveBeenCalledTimes(1);
-
-          const errorMessage = console.error.mock.calls[0].join(' ');
-          await verifyUnhandledRequestMessage(errorMessage, {
-            request,
-            platform: 'node',
-            type: 'reject',
-          });
-        } finally {
-          await webSocketClient.stop();
-        }
       });
     },
   );
@@ -670,29 +654,14 @@ describe('CLI > Server start', () => {
           `Server is running on ${color.yellow(`localhost:${server!.port}`)}`,
         );
 
-        const webSocketClient = new WebSocketClient({
-          url: `ws://localhost:${server!.port}`,
-        });
+        const request = new Request(`http://localhost:${server!.port}`);
 
-        try {
-          await webSocketClient.start({
-            parameters: {
-              [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http',
-            },
-            waitForAuthentication: true,
-          });
+        const response = fetch(request);
+        await expectFetchError(response);
 
-          const request = new Request(`http://localhost:${server!.port}`);
-
-          const response = fetch(request);
-          await expectFetchError(response);
-
-          expect(console.log).toHaveBeenCalledTimes(1);
-          expect(console.warn).toHaveBeenCalledTimes(0);
-          expect(console.error).toHaveBeenCalledTimes(0);
-        } finally {
-          await webSocketClient.stop();
-        }
+        expect(console.log).toHaveBeenCalledTimes(1);
+        expect(console.warn).toHaveBeenCalledTimes(0);
+        expect(console.error).toHaveBeenCalledTimes(0);
       });
     },
   );
