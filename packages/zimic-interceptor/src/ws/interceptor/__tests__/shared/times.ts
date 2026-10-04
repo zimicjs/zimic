@@ -35,7 +35,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
   }
 
   describe('Exact number of messages', () => {
-    it('should keep maximum matching best-effort under concurrency', async () => {
+    it('should limit effects under concurrency while counting all matching messages', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         const restrictionStarted: MessageSchema[] = [];
         const finishRestrictions: (() => void)[] = [];
@@ -69,7 +69,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           }
 
           await waitFor(() => {
-            expect(effect).toHaveBeenCalledTimes(2);
+            expect(effect).toHaveBeenCalledTimes(1);
           });
         });
 

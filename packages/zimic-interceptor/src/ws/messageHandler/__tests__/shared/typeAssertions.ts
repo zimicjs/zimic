@@ -1,8 +1,10 @@
+import { waitFor } from '@zimic/utils/time';
 import { WebSocketSchema } from '@zimic/ws';
 import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
+import { usingWebSocketClient } from '../../../interceptor/__tests__/shared/utils';
 import {
   InterceptedWebSocketInterceptorMessage,
   WebSocketInterceptorClient,
@@ -184,6 +186,7 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
       const pendingHandler = interceptor.message().with({ type: 'create' });
       const syncedHandler = await pendingHandler;
       const handler = syncedHandler.with(hasPriority);
+      let responseMessage: PrioritizedCreateMessage | undefined;
 
       handler.delay((message) => {
         expectTypeOf(message).toEqualTypeOf<PrioritizedCreateMessage>();
@@ -203,28 +206,48 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
         expectTypeOf(message).toEqualTypeOf<PrioritizedCreateMessage>();
         expectTypeOf(context.sender).toEqualTypeOf<WebSocketInterceptorClient<Schema>>();
         expectTypeOf(context.receiver).toEqualTypeOf<WebSocketInterceptorServer<Schema>>();
+        responseMessage = message;
 
         return { type: 'delete', id: message.body.text };
       });
-
-      handler.respond({ type: 'delete', id: '1' });
 
       expectTypeOf<typeof handler.messages>().toEqualTypeOf<
         readonly InterceptedWebSocketInterceptorMessage<PrioritizedCreateMessage, Schema>[]
       >();
 
       await handler;
+
+      await usingWebSocketClient<Schema>(baseURL, async (client) => {
+        const message: PrioritizedCreateMessage = { type: 'create', body: { text: 'hello', priority: 1 } };
+        client.send(JSON.stringify(message));
+        await waitFor(() => {
+          expect(responseMessage).toEqual(message);
+        });
+      });
+
+      handler.respond({ type: 'delete', id: '1' });
     });
   });
 
   it('should accept boolean computed restrictions without narrowing message schemas', async () => {
     const baseURL = await getBaseURL(type);
 
-    await usingWebSocketInterceptor<Schema>({ type, baseURL }, (interceptor) => {
+    await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
       const handler = interceptor.message().with((message): boolean => message.type === 'create');
+      let effectMessage: Schema | undefined;
 
       handler.effect((message) => {
         expectTypeOf(message).toEqualTypeOf<Schema>();
+        effectMessage = message;
+      });
+
+      await handler;
+      await usingWebSocketClient<Schema>(baseURL, async (client) => {
+        const message: Schema = { type: 'create', body: { text: 'hello' } };
+        client.send(JSON.stringify(message));
+        await waitFor(() => {
+          expect(effectMessage).toEqual(message);
+        });
       });
     });
   });
@@ -232,7 +255,7 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
   it('should reject invalid message declarations', async () => {
     const baseURL = await getBaseURL(type);
 
-    await usingWebSocketInterceptor<Schema>({ type, baseURL }, (interceptor) => {
+    await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
       function responseFactory(message: Schema) {
         expectTypeOf(message).toEqualTypeOf<Schema>();
 
@@ -261,6 +284,14 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
         });
 
       restrictedHandler.respond({ type: 'delete', id: '1' });
+      await restrictedHandler;
+      await usingWebSocketClient<Schema>(baseURL, async (client) => {
+        const response = new Promise((resolve) => {
+          client.addEventListener('message', resolve, { once: true });
+        });
+        client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+        await response;
+      });
 
       /* istanbul ignore next -- @preserve
        * Invalid declarations must remain compile-only to avoid registering them on a live remote interceptor. */
