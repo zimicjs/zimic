@@ -132,23 +132,28 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
 
   const sockets = [...userSockets, ...notificationSockets, binarySocket];
 
+  /* istanbul ignore next -- @preserve
+   * This restriction only narrows the idle handler's message type. */
   function isNoUserMessage(_message: UserWebSocketSchema): _message is never {
     return false;
   }
 
+  /* istanbul ignore next -- @preserve
+   * This restriction only narrows the idle handler's message type. */
   function isNoNotificationMessage(_message: NotificationWebSocketSchema): _message is never {
     return false;
   }
 
+  /* istanbul ignore next -- @preserve
+   * This restriction only narrows the idle handler's message type. */
   function isNoBinaryMessage(_message: BinaryWebSocketSchema): _message is never {
     return false;
   }
 
   function expectMessagedClients<Schema extends UserWebSocketSchema | NotificationWebSocketSchema>(
     interceptor: WebSocketInterceptor<Schema>,
-    message: Schema,
     notifiedClients: WebSocketInterceptorClient<Schema>[],
-    expectedClientMessage: Schema = message,
+    expectedClientMessage: Schema,
   ) {
     for (const client of interceptor.clients) {
       if (notifiedClients.includes(client)) {
@@ -369,7 +374,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
           birthDate: creationInput.birthDate,
         });
 
-        expectMessagedClients(userInterceptor, response, [creatorClient], { type: 'user:create', data: creationInput });
+        expectMessagedClients(userInterceptor, [creatorClient], { type: 'user:create', data: creationInput });
         expect(creationHandler.messages).toHaveLength(1);
       });
 
@@ -445,7 +450,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
 
         expect(response).toEqual({ type: 'user:create:error', data: validationError });
 
-        expectMessagedClients(userInterceptor, response, [creatorClient], { type: 'user:create', data: invalidInput });
+        expectMessagedClients(userInterceptor, [creatorClient], { type: 'user:create', data: invalidInput });
         expect(creationHandler.messages).toHaveLength(1);
       });
 
@@ -468,7 +473,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
 
         expect(response).toEqual({ type: 'user:create:error', data: conflictError });
 
-        expectMessagedClients(userInterceptor, response, [creatorClient], { type: 'user:create', data: creationInput });
+        expectMessagedClients(userInterceptor, [creatorClient], { type: 'user:create', data: creationInput });
         expect(creationHandler.messages).toHaveLength(1);
       });
     });
@@ -534,7 +539,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
           ...updateInput,
         });
 
-        expectMessagedClients(userInterceptor, response, [creatorClient], {
+        expectMessagedClients(userInterceptor, [creatorClient], {
           type: 'user:update',
           data: { id: user.id, ...updateInput },
         });
@@ -566,7 +571,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
 
         expect(response).toEqual({ type: 'user:update:error', data: notFoundError });
 
-        expectMessagedClients(userInterceptor, response, [creatorClient], {
+        expectMessagedClients(userInterceptor, [creatorClient], {
           type: 'user:update',
           data: { id: unknownUserId, ...updateInput },
         });
@@ -601,7 +606,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
 
         expect(response).toEqual({ type: 'user:update:error', data: validationError });
 
-        expectMessagedClients(userInterceptor, response, [creatorClient], {
+        expectMessagedClients(userInterceptor, [creatorClient], {
           type: 'user:update',
           data: { id: user.id, ...invalidInput },
         });
@@ -660,7 +665,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
           data: { id: user.id },
         });
 
-        expectMessagedClients(userInterceptor, response, [creatorClient], {
+        expectMessagedClients(userInterceptor, [creatorClient], {
           type: 'user:delete',
           data: { id: user.id },
         });
@@ -690,7 +695,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
 
         expect(response).toEqual({ type: 'user:delete:error', data: notFoundError });
 
-        expectMessagedClients(userInterceptor, response, [creatorClient], {
+        expectMessagedClients(userInterceptor, [creatorClient], {
           type: 'user:delete',
           data: { id: user.id },
         });
@@ -737,6 +742,16 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
 
     it('should narrow handler messages from installed schema restrictions', async () => {
       const creatorClient = userInterceptor.clients[0];
+      const message: UserWebSocketMessage<'user:create'> = {
+        type: 'user:create',
+        data: {
+          name: 'Name',
+          email: 'email@example.com',
+          password: crypto.randomUUID(),
+          birthDate: new Date().toISOString(),
+        },
+      };
+      const effectListener = vi.fn();
 
       const creationHandler = await userInterceptor
         .message()
@@ -758,17 +773,30 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
             expectTypeOf(message).toEqualTypeOf<UserWebSocketMessage<'user:create'>>();
             expectTypeOf(context.sender).toEqualTypeOf<WebSocketInterceptorClient<UserWebSocketSchema>>();
             expectTypeOf(context.receiver).toEqualTypeOf<WebSocketInterceptorServer<UserWebSocketSchema>>();
-
-            context.receiver.send(JSON.stringify({ type: 'user:delete', data: { id: crypto.randomUUID() } }));
+            effectListener(message, context);
           })
           .respond((message) => ({
             type: 'user:create:error',
             data: { code: 'validation_error', message: message.data.name },
           })),
       );
+
+      const responsePromise = waitForResponseMessage(userSockets[0], 'user:create:error');
+      userSockets[0].send(JSON.stringify(message));
+
+      await expect(responsePromise).resolves.toEqual({
+        type: 'user:create:error',
+        data: { code: 'validation_error', message: message.data.name },
+      });
+      expect(effectListener).toHaveBeenCalledExactlyOnceWith(message, {
+        sender: creatorClient,
+        receiver: userInterceptor.server,
+      });
     });
 
     it('should reject invalid installed WebSocket declarations', () => {
+      /* istanbul ignore next -- @preserve
+       * Invalid declarations are checked by TypeScript and must not run. */
       function expectInvalidDeclarations(interceptor: LocalWebSocketInterceptor<UserWebSocketSchema>) {
         // @ts-expect-error Invalid message type.
         interceptor.message().with({ type: 'user:archive' });
@@ -962,6 +990,14 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
   });
 
   describe('Binary messages', () => {
+    it.each([
+      new Blob([new Uint8Array([0x00, 0xff])]),
+      new Uint8Array([0x00, 0xff]),
+      new Uint8Array([0x00, 0xff]).buffer,
+    ])('should read binary message bytes from supported representations', async (data) => {
+      expect(await readBytes(data)).toEqual([0x00, 0xff]);
+    });
+
     it('should support responding to binary messages', async () => {
       const message = new Uint8Array([0x00, 0xff]).buffer;
       const binaryClient = binaryInterceptor.clients[0];
