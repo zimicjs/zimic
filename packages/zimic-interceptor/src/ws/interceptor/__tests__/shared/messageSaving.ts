@@ -13,10 +13,12 @@ import { WebSocketInterceptorMessageSaving, WebSocketInterceptorOptions } from '
 import { DEFAULT_MESSAGE_SAVING_SAFE_LIMIT } from '../../WebSocketInterceptorImplementation';
 import { RuntimeSharedWebSocketInterceptorTestsOptions, waitForWebSocketMessage } from './utils';
 
+type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
+
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
 
 export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
-  const { platform, getBaseURL, getInterceptorOptions } = options;
+  const { platform, type, getBaseURL, getInterceptorOptions } = options;
 
   let baseURL: string;
   let interceptorOptions: WebSocketInterceptorOptions;
@@ -269,6 +271,63 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
           expect(console.warn).toHaveBeenCalledTimes(1);
           expect(console.warn).toHaveBeenCalledWith(new MessageSavingSafeLimitExceededError(2, safeLimit));
         });
+      },
+    );
+  });
+  it('should reset the saved message count and warning threshold after clearing', async () => {
+    const safeLimit = 2;
+
+    await usingWebSocketInterceptor<ChatMessage>(
+      { type, baseURL, messageSaving: { enabled: true, safeLimit } },
+      async (interceptor) => {
+        const handler = await interceptor.message().respond({ type: 'server', text: 'ack' });
+        let client = new WebSocketClient<ChatMessage>(baseURL);
+
+        try {
+          await client.open();
+
+          await usingIgnoredConsole(['warn'], async (console) => {
+            for (let index = 0; index < safeLimit + 1; index++) {
+              const responsePromise = new Promise<string>((resolve) => {
+                client.addEventListener('message', (event) => resolve(String(event.data)), { once: true });
+              });
+
+              client.send(JSON.stringify({ type: 'client', text: `before clear ${index}` }));
+              await responsePromise;
+              await waitFor(() => {
+                expect(handler.messages).toHaveLength(index + 1);
+                expect(console.warn).toHaveBeenCalledTimes(index < safeLimit ? 0 : 1);
+              });
+            }
+
+            expect(handler.messages).toHaveLength(safeLimit + 1);
+            expect(console.warn).toHaveBeenCalledTimes(1);
+
+            await interceptor.clear();
+            expect(handler.messages).toHaveLength(0);
+
+            const nextHandler = await interceptor.message().respond({ type: 'server', text: 'ack' });
+            await client.close();
+            client = new WebSocketClient<ChatMessage>(baseURL);
+            await client.open();
+
+            for (let index = 0; index < safeLimit; index++) {
+              const responsePromise = new Promise<string>((resolve) => {
+                client.addEventListener('message', (event) => resolve(String(event.data)), { once: true });
+              });
+
+              client.send(JSON.stringify({ type: 'client', text: `after clear ${index}` }));
+              await responsePromise;
+            }
+
+            await waitFor(() => {
+              expect(nextHandler.messages).toHaveLength(safeLimit);
+            });
+            expect(console.warn).toHaveBeenCalledTimes(1);
+          });
+        } finally {
+          await client.close();
+        }
       },
     );
   });
