@@ -6,7 +6,10 @@ import {
   WebSocketInterceptorServer as PublicWebSocketInterceptorServer,
 } from './types/messages';
 import { LocalWebSocketInterceptorOptions, WebSocketInterceptorMessageSaving } from './types/options';
-import { LocalWebSocketInterceptor as PublicLocalWebSocketInterceptor } from './types/public';
+import {
+  LocalWebSocketInterceptor as PublicLocalWebSocketInterceptor,
+  type WebSocketInterceptorConnectionListener,
+} from './types/public';
 import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
 import WebSocketInterceptorStore from './WebSocketInterceptorStore';
 
@@ -69,6 +72,18 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
 
   get clients(): readonly PublicWebSocketInterceptorClient<Schema>[] {
     return this.implementation.clients;
+  }
+
+  on(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
+    this.implementation.on('connection', listener);
+  }
+
+  off(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
+    this.implementation.off('connection', listener);
+  }
+
+  once(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
+    this.implementation.once('connection', listener);
   }
 
   async start() {

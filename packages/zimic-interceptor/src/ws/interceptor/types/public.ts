@@ -10,6 +10,10 @@ import {
   WebSocketInterceptorPlatform,
 } from './options';
 
+export type WebSocketInterceptorConnectionListener<Schema extends WebSocketSchema> = (
+  client: WebSocketInterceptorClient<Schema>,
+) => void;
+
 /** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
 export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
   baseURL: string;
@@ -20,6 +24,10 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
 
   get server(): WebSocketInterceptorServer<Schema>;
   get clients(): readonly WebSocketInterceptorClient<Schema>[];
+
+  on: (event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) => void;
+  off: (event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) => void;
+  once: (event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) => void;
 
   start: () => Promise<void>;
   stop: () => Promise<void>;

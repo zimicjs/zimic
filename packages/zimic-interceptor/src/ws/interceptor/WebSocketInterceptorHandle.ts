@@ -4,6 +4,7 @@ import type {
   InterceptedWebSocketInterceptorMessage,
   WebSocketInterceptorClient,
   WebSocketInterceptorServer,
+  WebSocketInterceptorServerSendOptions,
   webSocketInterceptorClientRole,
   webSocketInterceptorServerRole,
 } from './types/messages';
@@ -45,13 +46,16 @@ class WebSocketInterceptorServerImplementation<
   Schema extends WebSocketSchema,
 > implements InternalWebSocketInterceptorServer<Schema> {
   #getURL: () => string;
-  #sendMessage: (data: WebSocketMessageData<Schema>) => void;
+  #sendMessage: (data: WebSocketMessageData<Schema>, options?: WebSocketInterceptorServerSendOptions<Schema>) => void;
 
   declare readonly [webSocketInterceptorServerRole]: true;
 
   readonly messages: InterceptedWebSocketInterceptorMessage<Schema>[] = [];
 
-  constructor(getURL: () => string, sendMessage: (data: WebSocketMessageData<Schema>) => void) {
+  constructor(
+    getURL: () => string,
+    sendMessage: (data: WebSocketMessageData<Schema>, options?: WebSocketInterceptorServerSendOptions<Schema>) => void,
+  ) {
     this.#getURL = getURL;
     this.#sendMessage = sendMessage;
   }
@@ -60,8 +64,8 @@ class WebSocketInterceptorServerImplementation<
     return this.#getURL();
   }
 
-  send(data: WebSocketMessageData<Schema>) {
-    this.#sendMessage(data);
+  send(data: WebSocketMessageData<Schema>, options?: WebSocketInterceptorServerSendOptions<Schema>) {
+    this.#sendMessage(data, options);
   }
 }
 
@@ -74,7 +78,7 @@ export function createWebSocketInterceptorClient<Schema extends WebSocketSchema>
 
 export function createWebSocketInterceptorServer<Schema extends WebSocketSchema>(
   getURL: () => string,
-  send: (data: WebSocketMessageData<Schema>) => void,
+  send: (data: WebSocketMessageData<Schema>, options?: WebSocketInterceptorServerSendOptions<Schema>) => void,
 ) {
   return new WebSocketInterceptorServerImplementation(getURL, send);
 }

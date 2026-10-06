@@ -8,7 +8,10 @@ import {
   WebSocketInterceptorServer as PublicWebSocketInterceptorServer,
 } from './types/messages';
 import { RemoteWebSocketInterceptorOptions, WebSocketInterceptorMessageSaving } from './types/options';
-import { RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor } from './types/public';
+import {
+  RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor,
+  type WebSocketInterceptorConnectionListener,
+} from './types/public';
 import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
 
 class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements PublicRemoteWebSocketInterceptor<Schema> {
@@ -102,6 +105,18 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
 
   get clients(): readonly PublicWebSocketInterceptorClient<Schema>[] {
     return this.implementation.clients;
+  }
+
+  on(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
+    this.implementation.on('connection', listener);
+  }
+
+  off(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
+    this.implementation.off('connection', listener);
+  }
+
+  once(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
+    this.implementation.once('connection', listener);
   }
 
   async start() {
