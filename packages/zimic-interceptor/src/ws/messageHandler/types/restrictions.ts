@@ -1,7 +1,11 @@
 import { DeepPartial, PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
-/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
+ */
 export type WebSocketMessageHandlerStaticRestriction<Schema extends WebSocketSchema> = DeepPartial<Schema>;
 
 type WebSocketMessageHandlerComputedBooleanRestriction<Schema extends WebSocketSchema> = (
@@ -13,7 +17,11 @@ export type WebSocketMessageHandlerComputedTypeGuardRestriction<
   PredicateSchema extends Schema = Schema,
 > = (message: Schema) => message is PredicateSchema;
 
-/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
+ */
 export type WebSocketMessageHandlerComputedRestriction<
   Schema extends WebSocketSchema,
   PredicateSchema extends Schema = Schema,
@@ -21,7 +29,11 @@ export type WebSocketMessageHandlerComputedRestriction<
   | WebSocketMessageHandlerComputedBooleanRestriction<Schema>
   | WebSocketMessageHandlerComputedTypeGuardRestriction<Schema, PredicateSchema>;
 
-/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
+ */
 export type WebSocketMessageHandlerRestriction<Schema extends WebSocketSchema> =
   WebSocketMessageHandlerStaticRestriction<Schema> | WebSocketMessageHandlerComputedRestriction<Schema>;
 
