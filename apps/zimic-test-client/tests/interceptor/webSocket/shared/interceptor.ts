@@ -228,6 +228,91 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
     );
   });
 
+  describe('Connection listeners', () => {
+    it('should notify a listener once per connection with the connected client', async () => {
+      await Promise.all(userSockets.map((socket) => socket.close()));
+      await waitFor(() => expect(userInterceptor.clients).toHaveLength(0));
+
+      const listener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
+      userInterceptor.on('connection', listener);
+
+      try {
+        for (const [index, socket] of userSockets.entries()) {
+          await socket.open();
+          await waitFor(() => expect(listener).toHaveBeenCalledTimes(index + 1));
+          expect(listener).toHaveBeenNthCalledWith(index + 1, userInterceptor.clients[index]);
+        }
+
+        const userId = crypto.randomUUID();
+        const response: UserWebSocketMessage<'user:delete:success'> = {
+          type: 'user:delete:success',
+          data: { id: userId },
+        };
+        await userInterceptor.message().with({ type: 'user:delete' }).respond(response).times(userSockets.length);
+
+        for (const socket of userSockets) {
+          const responsePromise = waitForResponseMessage(socket, 'user:delete:success');
+          socket.send(JSON.stringify({ type: 'user:delete', data: { id: userId } }));
+          expect(await responsePromise).toEqual(response);
+        }
+
+        expect(listener).toHaveBeenCalledTimes(userSockets.length);
+      } finally {
+        userInterceptor.off('connection', listener);
+      }
+    });
+
+    it('should stop notifying a connection listener after it is removed', async () => {
+      await Promise.all(userSockets.map((socket) => socket.close()));
+      await waitFor(() => expect(userInterceptor.clients).toHaveLength(0));
+
+      const listener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
+      const remainingListener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
+      userInterceptor.on('connection', listener);
+      userInterceptor.on('connection', remainingListener);
+
+      try {
+        await userSockets[0].open();
+        await waitFor(() => expect(remainingListener).toHaveBeenCalledOnce());
+        expect(listener).toHaveBeenCalledExactlyOnceWith(userInterceptor.clients[0]);
+
+        userInterceptor.off('connection', listener);
+
+        await userSockets[1].open();
+        await waitFor(() => expect(remainingListener).toHaveBeenCalledTimes(2));
+        expect(listener).toHaveBeenCalledOnce();
+        expect(remainingListener).toHaveBeenLastCalledWith(userInterceptor.clients[1]);
+      } finally {
+        userInterceptor.off('connection', listener);
+        userInterceptor.off('connection', remainingListener);
+      }
+    });
+
+    it('should notify a one-time listener only for the first connection', async () => {
+      await Promise.all(userSockets.map((socket) => socket.close()));
+      await waitFor(() => expect(userInterceptor.clients).toHaveLength(0));
+
+      const listener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
+      const remainingListener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
+      userInterceptor.once('connection', listener);
+      userInterceptor.on('connection', remainingListener);
+
+      try {
+        await userSockets[0].open();
+        await waitFor(() => expect(remainingListener).toHaveBeenCalledOnce());
+        expect(listener).toHaveBeenCalledExactlyOnceWith(userInterceptor.clients[0]);
+
+        await userSockets[1].open();
+        await waitFor(() => expect(remainingListener).toHaveBeenCalledTimes(2));
+        expect(listener).toHaveBeenCalledOnce();
+        expect(remainingListener).toHaveBeenLastCalledWith(userInterceptor.clients[1]);
+      } finally {
+        userInterceptor.off('connection', listener);
+        userInterceptor.off('connection', remainingListener);
+      }
+    });
+  });
+
   describe('Response waiting', () => {
     it('should keep waiting after unrelated messages and remove the listener after the expected response', async () => {
       const socket = userSockets[0];
@@ -911,6 +996,55 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
         notificationSockets[1].removeEventListener('message', otherClientMessageListener);
       }
     });
+
+    it.each(['single client', 'client array'] as const)(
+      'should target server notifications to a %s and preserve broadcasts',
+      async (target) => {
+        const thirdSocket = new WebSocketClient<NotificationWebSocketSchema>(notificationInterceptor.baseURL);
+        const sockets = [...notificationSockets, thirdSocket];
+        const messageListeners = sockets.map(() =>
+          vi.fn<(event: WebSocketClient.MessageEvent<NotificationWebSocketSchema>) => void>(),
+        );
+        const message: NotificationWebSocketMessage<'notification:create:success'> = {
+          type: 'notification:create:success',
+          data: notification,
+        };
+        const broadcast: NotificationWebSocketMessage<'notification:update:success'> = {
+          type: 'notification:update:success',
+          data: updatedNotification,
+        };
+
+        try {
+          await thirdSocket.open();
+          await waitFor(() => expect(notificationInterceptor.clients).toHaveLength(sockets.length));
+
+          for (const [index, socket] of sockets.entries()) {
+            socket.addEventListener('message', messageListeners[index]);
+          }
+
+          const broadcastsPromise = Promise.all(sockets.map((socket) => waitForNotificationUpdate(socket)));
+          const [firstClient, , thirdClient] = notificationInterceptor.clients;
+          const recipients = target === 'single client' ? firstClient : ([firstClient, thirdClient] as const);
+
+          notificationInterceptor.server.send(JSON.stringify(message), { to: recipients });
+          notificationInterceptor.server.send(JSON.stringify(broadcast));
+
+          expect(await broadcastsPromise).toEqual([broadcast, broadcast, broadcast]);
+          expect(messageListeners[0].mock.calls.map(([event]) => JSON.parse(event.data))).toEqual([message, broadcast]);
+          expect(messageListeners[1].mock.calls.map(([event]) => JSON.parse(event.data))).toEqual([broadcast]);
+          expect(messageListeners[2].mock.calls.map(([event]) => JSON.parse(event.data))).toEqual(
+            target === 'single client' ? [broadcast] : [message, broadcast],
+          );
+
+          expectNoSavedServerSentNotificationMessages();
+        } finally {
+          for (const [index, socket] of sockets.entries()) {
+            socket.removeEventListener('message', messageListeners[index]);
+          }
+          await thirdSocket.close();
+        }
+      },
+    );
 
     it('should support receiving notification update events started by the server', async () => {
       const message: NotificationWebSocketMessage<'notification:update:success'> = {
