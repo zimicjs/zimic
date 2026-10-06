@@ -656,7 +656,10 @@ class InterceptorServer implements PublicInterceptorServer {
     this.assertWebSocketWorkerSocket(workerSocket);
     this.validateWebSocketSendMessage(message);
 
-    const targetSockets = Array.from(this.activeUserWebSocketHandlers.entries()).filter(([, userHandler]) => {
+    const targetSockets = [
+      ...this.activeUserWebSocketHandlers.entries(),
+      ...this.pendingUserWebSocketHandlers.entries(),
+    ].filter(([, userHandler]) => {
       const isOwnedByWorker = userHandler.handler.socket === workerSocket;
       const matchesClient = message.clientId === undefined || userHandler.clientId === message.clientId;
       const matchesHandler = message.handlerId === undefined || userHandler.handler.id === message.handlerId;
