@@ -81,6 +81,26 @@ A synthetic server handle that can send messages to currently connected clients.
 interceptor.server.send(JSON.stringify({ type: 'presence', data: { online: true } }));
 ```
 
+Omitting the second argument broadcasts to all currently connected clients. To send to a selected subset, pass their client handles in `options.to`:
+
+```ts
+interceptor.server.send(JSON.stringify({ type: 'presence', data: { online: true } }), {
+  to: interceptor.clients.slice(0, 2),
+});
+```
+
+**Arguments**:
+
+1. **data**: `WebSocketMessageData<Schema>`
+
+   The message data to send, such as JSON-serialized text or binary data.
+
+2. **options.to** (optional): `readonly WebSocketInterceptorClient<Schema>[]`
+
+   The connected clients that should receive the message. Omitting `to` broadcasts to all connected clients.
+
+**Returns**: `void`
+
 When message saving is enabled, matched client-to-server messages are available through `interceptor.server.messages`. The array is readonly and keeps the same reference for the lifetime of the interceptor.
 
 Messages sent with `interceptor.server.send(...)` are delivered to connected clients, but they are not added to handler or client saved message lists. Saved messages are produced by matched client-to-server messages.
@@ -94,6 +114,57 @@ The currently connected client handles.
 Each `client.url` is the URL used to open that client's WebSocket connection. Its type is `string` and it is readonly.
 
 Each client can send messages back to its real WebSocket connection and exposes its saved matched messages through `client.messages`. Client and server handles are distinct roles; `handler.from(...)` accepts client handles, not the server handle. Saved message arrays are readonly and keep stable references while the handle exists.
+
+## `interceptor.on()`
+
+Registers a listener for new client connections. The listener receives the typed `WebSocketInterceptorClient<Schema>` handle and can send a greeting before the client sends any messages.
+
+```ts
+interceptor.on('connection', (client) => {
+  client.send(JSON.stringify({ type: 'presence', data: { online: true } }));
+});
+```
+
+**Arguments**:
+
+1. **event**: `'connection'`
+
+   The event to observe.
+
+2. **listener**: `(client: WebSocketInterceptorClient<Schema>) => void`
+
+   The callback called once for each new client connection. Register it before opening application clients. Existing connections are not replayed.
+
+**Returns**: The same interceptor.
+
+Registration is synchronous for both local and remote interceptors. Calling [`interceptor.clear()`](#interceptorclear) or [`interceptor.stop()`](#interceptorstop) removes connection listeners. Register them again after clearing or restarting the interceptor.
+
+## `interceptor.off()`
+
+Removes a connection listener. Pass the same callback reference used to register it.
+
+```ts
+import type { WebSocketInterceptorClient } from '@zimic/interceptor/experimental/ws';
+
+const onConnection = (client: WebSocketInterceptorClient<Schema>) => {
+  client.send(JSON.stringify({ type: 'presence', data: { online: true } }));
+};
+
+interceptor.on('connection', onConnection);
+interceptor.off('connection', onConnection);
+```
+
+**Arguments**:
+
+1. **event**: `'connection'`
+
+   The event whose listener should be removed.
+
+2. **listener**: `(client: WebSocketInterceptorClient<Schema>) => void`
+
+   The previously registered callback.
+
+**Returns**: The same interceptor.
 
 ## `interceptor.start()`
 
@@ -188,6 +259,8 @@ await interceptor.checkTimes();
 ## `interceptor.clear()`
 
 Clears the interceptor and all of its [`WebSocketMessageHandler`](/docs/interceptor/api/websocket-message-handler) instances, including their registered responses, effects, restrictions, connected clients, and saved messages.
+
+Connection listeners registered with [`interceptor.on()`](#interceptoron) are also removed.
 
 Saved messages are centrally owned by the interceptor. Clearing the interceptor empties handler, client, and server message arrays in place and resets message-saving safe-limit accounting.
 

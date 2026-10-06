@@ -188,6 +188,16 @@ console.log(handler.messages.length); // 1
 
 ### Connected clients
 
+Use [`interceptor.on('connection', listener)`](/docs/interceptor/api/websocket-interceptor#interceptoron) to run code when a client first connects, before it sends any messages. The callback receives the typed client handle:
+
+```ts
+interceptor.on('connection', (client) => {
+  client.send(JSON.stringify({ type: 'presence', data: { online: true } }));
+});
+```
+
+Register the listener before opening application clients. Existing connections are not replayed. Remove a listener with `interceptor.off('connection', listener)`, passing the same callback reference. `interceptor.clear()` and `interceptor.stop()` also remove listeners, so register them again after clearing or restarting the interceptor.
+
 The interceptor tracks currently connected clients in `interceptor.clients`. Each client is a public handle that can send messages back to the real WebSocket connection. You can use these handles in `.from(...)` restrictions or inside effects.
 
 ```ts
@@ -209,6 +219,14 @@ The interceptor also exposes a synthetic server handle. Calling `interceptor.ser
 
 ```ts
 interceptor.server.send(JSON.stringify({ type: 'presence', data: { online: true } }));
+```
+
+To send to a selected subset of connected clients, pass their handles in `options.to`. Omitting `to` retains broadcast behavior.
+
+```ts
+interceptor.server.send(JSON.stringify({ type: 'presence', data: { online: true } }), {
+  to: interceptor.clients.slice(0, 2),
+});
 ```
 
 Server-originated sends are delivered to connected clients, but they are not added to handler or client saved message lists. Saved messages are produced by matched client-to-server messages.

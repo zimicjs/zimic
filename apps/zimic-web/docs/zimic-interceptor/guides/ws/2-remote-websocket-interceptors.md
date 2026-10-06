@@ -115,7 +115,7 @@ The command after `--` will be executed when the server is ready. The flag `--ep
 
 :::info IMPORTANT: <span>Interceptor server authentication</span>
 
-If you are exposing the server publicly, consider [enabling authentication](#interceptor-server-authentication) in the interceptor server.
+Although authentication is optional for private development servers, we strongly recommend [enabling it](#interceptor-server-authentication) when the server is not bound to `localhost`, `127.0.0.1`, or `::1`, or when it is shared over a network. Authentication prevents unauthorized remote interceptors from connecting to the server.
 
 :::
 
@@ -235,6 +235,16 @@ console.log(handler.messages.length); // 1
 
 ### Connected clients
 
+Use [`interceptor.on('connection', listener)`](/docs/interceptor/api/websocket-interceptor#interceptoron) to run code when a client first connects, before it sends any messages. The callback receives the typed client handle:
+
+```ts
+interceptor.on('connection', (client) => {
+  client.send(JSON.stringify({ type: 'presence', data: { online: true } }));
+});
+```
+
+Registration is synchronous, including for remote interceptors. Register the listener before opening application clients. Existing connections are not replayed. Remove a listener with `interceptor.off('connection', listener)`, passing the same callback reference. `interceptor.clear()` and `interceptor.stop()` also remove listeners, so register them again after clearing or restarting the interceptor.
+
 The interceptor tracks currently connected clients in `interceptor.clients`. Each client is a public handle that can send messages back to the real WebSocket connection. You can use these handles in `.from(...)` restrictions or inside effects.
 
 ```ts
@@ -258,6 +268,14 @@ The interceptor also exposes a synthetic server handle. Calling `interceptor.ser
 interceptor.server.send(JSON.stringify({ type: 'presence', data: { online: true } }));
 ```
 
+To send to a selected subset of connected clients, pass their handles in `options.to`. Omitting `to` retains broadcast behavior.
+
+```ts
+interceptor.server.send(JSON.stringify({ type: 'presence', data: { online: true } }), {
+  to: interceptor.clients.slice(0, 2),
+});
+```
+
 Server-originated sends are delivered to connected clients, but they are not added to handler or client saved message lists. Saved messages are produced by matched client-to-server messages.
 
 ### Remote message transport
@@ -274,7 +292,9 @@ When a user WebSocket connects through the interceptor server, the server confir
 
 ## Interceptor server authentication
 
-Interceptor servers can be configured to require interceptor authentication. This is **strongly recommended** if you are exposing the server **publicly**. Without authentication, the server is unprotected and any interceptor can connect to it and override the responses or messages handled by the server.
+While authentication is optional for private development servers, we strongly recommend enabling authentication when the server is not bound to `localhost`, `127.0.0.1`, or `::1`, or is shared over a network. Authentication prevents unauthorized remote interceptors from connecting to the server.
+
+Without authentication, browser remote interceptors can connect only when both the interceptor server and the web application use a loopback hostname: `localhost`, `127.0.0.1`, or `::1`. Configure authentication if either one uses another hostname. This restriction does not apply to remote interceptors running outside a browser.
 
 To create an interceptor authentication token, use the [`zimic-interceptor server token create`](/docs/interceptor/cli/server#zimic-interceptor-server-token-create) CLI:
 
