@@ -165,7 +165,7 @@ EOF
 EOF
 
   pnpm --dir "$consumerDirectory" install \
-    --offline \
+    --prefer-offline \
     --ignore-scripts \
     --store-dir "$pnpmStoreDirectory"
 
