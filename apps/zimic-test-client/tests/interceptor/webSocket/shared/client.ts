@@ -139,6 +139,7 @@ export function declareNativeWebSocketClientTests(options: ClientTestOptions) {
 
       try {
         await openNativeWebSocket(socket);
+        await openNativeWebSocket(socket);
 
         await waitFor(() => {
           expect(interceptor.clients).toHaveLength(1);
@@ -171,6 +172,7 @@ export function declareNativeWebSocketClientTests(options: ClientTestOptions) {
         expect(creationHandler.messages).toHaveLength(1);
         expect(creationHandler.messages[0].data).toEqual(requestMessage);
       } finally {
+        await closeNativeWebSocket(socket);
         await closeNativeWebSocket(socket);
       }
     });

@@ -151,6 +151,70 @@ export function declareActionWebSocketInterceptorTests(options: RuntimeSharedWeb
   });
 
   describe('Effects', () => {
+    it.each(['single client', 'client subset', 'empty recipients', 'broadcast'] as const)(
+      'should send server messages to %s',
+      async (target) => {
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+          await promiseIfRemote(interceptor.message(), interceptor);
+
+          await usingWebSocketClient<MessageSchema>(baseURL, async (firstClient) => {
+            await waitFor(() => {
+              expect(interceptor.clients).toHaveLength(1);
+            });
+            const firstInterceptorClient = interceptor.clients[0];
+
+            await usingWebSocketClient<MessageSchema>(baseURL, async (secondClient) => {
+              await waitFor(() => {
+                expect(interceptor.clients).toHaveLength(2);
+              });
+              const secondInterceptorClient = interceptor.clients[1];
+
+              await usingWebSocketClient<MessageSchema>(baseURL, async (thirdClient) => {
+                await waitFor(() => {
+                  expect(interceptor.clients).toHaveLength(3);
+                });
+
+                const receivedMessages: string[][] = [[], [], []];
+                for (const [index, client] of [firstClient, secondClient, thirdClient].entries()) {
+                  client.addEventListener('message', (event) => {
+                    receivedMessages[index].push(String(event.data));
+                  });
+                }
+
+                const message = { type: 'delete' as const, id: 'targeted' };
+                const data = JSON.stringify(message);
+
+                if (target === 'single client') {
+                  interceptor.server.send(data, { to: firstInterceptorClient });
+                } else if (target === 'client subset') {
+                  interceptor.server.send(data, { to: [firstInterceptorClient, secondInterceptorClient] });
+                } else if (target === 'empty recipients') {
+                  interceptor.server.send(data, { to: [] });
+                } else {
+                  interceptor.server.send(data);
+                }
+
+                const marker = JSON.stringify({ type: 'delete' as const, id: 'marker' });
+                interceptor.server.send(marker);
+
+                await waitFor(() => {
+                  for (const messages of receivedMessages) {
+                    expect(messages).toContainEqual(marker);
+                  }
+                });
+
+                expect(receivedMessages).toEqual([
+                  target === 'empty recipients' ? [marker] : [data, marker],
+                  target === 'client subset' || target === 'broadcast' ? [data, marker] : [marker],
+                  target === 'broadcast' ? [data, marker] : [marker],
+                ]);
+              });
+            });
+          });
+        });
+      },
+    );
+
     it('should handle asynchronous effects concurrently', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         const startedMessages: MessageSchema[] = [];

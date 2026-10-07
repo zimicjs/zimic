@@ -15,7 +15,9 @@ import {
 import { normalizeWebSocketMessageData } from '../utils/messageData';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
+import type { WebSocketInterceptorClient, WebSocketInterceptorServerSendOptions } from './types/messages';
 import { WebSocketInterceptorMessageSaving } from './types/options';
+import type { WebSocketInterceptorConnectionListener } from './types/public';
 import {
   createWebSocketInterceptorClient,
   createWebSocketInterceptorServer,
@@ -26,6 +28,12 @@ import WebSocketInterceptorMessageStore from './WebSocketInterceptorMessageStore
 
 export const SUPPORTED_BASE_URL_PROTOCOLS = Object.freeze(['ws', 'wss']);
 export const DEFAULT_MESSAGE_SAVING_SAFE_LIMIT = 1000;
+
+function isWebSocketInterceptorClientArray<Schema extends WebSocketSchema>(
+  clients: WebSocketInterceptorServerSendOptions<Schema>['to'],
+): clients is readonly WebSocketInterceptorClient<Schema>[] {
+  return Array.isArray(clients);
+}
 
 export type WebSocketHandlerConstructor = typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
 
@@ -46,6 +54,10 @@ class WebSocketInterceptorImplementation<
 
   private _server: InternalWebSocketInterceptorServer<Schema>;
   private _clients: InternalWebSocketInterceptorClient<Schema>[] = [];
+  private connectionListeners: {
+    listener: WebSocketInterceptorConnectionListener<Schema>;
+    once: boolean;
+  }[] = [];
 
   private createWorker?: () => WebSocketInterceptorWorker;
   private releaseWorker?: (worker: WebSocketInterceptorWorker) => void;
@@ -75,8 +87,19 @@ class WebSocketInterceptorImplementation<
     this.releaseWorker = options.releaseWorker;
     this._server = createWebSocketInterceptorServer(
       () => this.baseURLAsString,
-      (data) => {
-        void this.worker?.sendToClients(this, data);
+      (data, options) => {
+        if (options?.to === undefined) {
+          void this.worker?.sendToClients(this, data);
+          return;
+        }
+
+        const clients = isWebSocketInterceptorClientArray(options.to) ? options.to : [options.to];
+
+        for (const client of this._clients) {
+          if (clients.includes(client)) {
+            void this.worker?.sendToClient(client, data);
+          }
+        }
       },
     );
   }
@@ -90,7 +113,7 @@ class WebSocketInterceptorImplementation<
   }
 
   set baseURL(newBaseURL: URL) {
-    if (this.isRunning) {
+    if (this.isRunning || this.isStarting) {
       throw new RunningWebSocketInterceptorError(
         'Did you forget to call `await interceptor.stop()` before changing the base URL?',
       );
@@ -208,6 +231,18 @@ class WebSocketInterceptorImplementation<
     return this._clients;
   }
 
+  on(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
+    this.connectionListeners.push({ listener, once: false });
+  }
+
+  off(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
+    this.connectionListeners = this.connectionListeners.filter((entry) => entry.listener !== listener);
+  }
+
+  once(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
+    this.connectionListeners.push({ listener, once: true });
+  }
+
   message() {
     return this.createWebSocketMessageHandler();
   }
@@ -310,6 +345,25 @@ class WebSocketInterceptorImplementation<
   addClient(client: InternalWebSocketInterceptorClient<Schema>) {
     if (!this._clients.includes(client)) {
       this._clients.push(client);
+
+      for (const entry of [...this.connectionListeners]) {
+        const listenerIndex = this.connectionListeners.indexOf(entry);
+
+        if (listenerIndex < 0) {
+          continue;
+        }
+
+        if (entry.once) {
+          this.connectionListeners.splice(listenerIndex, 1);
+        }
+
+        try {
+          const { listener } = entry;
+          listener(client);
+        } catch (error) {
+          console.error(error);
+        }
+      }
     }
   }
 
