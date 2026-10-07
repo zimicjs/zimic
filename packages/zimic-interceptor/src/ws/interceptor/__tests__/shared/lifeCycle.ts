@@ -423,7 +423,7 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
   it('should not support changing the base URL while starting', async () => {
     const interceptor = createWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() });
     const baseURL = interceptor.baseURL;
-    let startPromise: Promise<void> | undefined;
+    let startPromise = Promise.resolve();
 
     try {
       startPromise = interceptor.start();
@@ -439,7 +439,7 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
       await startPromise;
       expect(interceptor.baseURL).toBe(baseURL);
     } finally {
-      await Promise.allSettled(startPromise ? [startPromise] : []);
+      await Promise.allSettled([startPromise]);
       await interceptor.stop();
     }
   });

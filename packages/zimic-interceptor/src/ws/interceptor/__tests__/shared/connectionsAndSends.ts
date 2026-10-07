@@ -1,6 +1,6 @@
 import { waitFor } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
@@ -51,6 +51,30 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
     });
   });
 
+  it.each(['on', 'once'] as const)('should skip %s listeners removed during connection delivery', async (method) => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await interceptor.message();
+
+      const client = new WebSocketClient<ChatMessage>(baseURL);
+      const removedListener = vi.fn();
+      const retainedListener = vi.fn();
+      interceptor.once('connection', () => interceptor.off('connection', removedListener));
+      interceptor[method]('connection', removedListener);
+      interceptor.on('connection', retainedListener);
+
+      try {
+        await client.open();
+        await waitFor(() => expect(retainedListener).toHaveBeenCalledWith(interceptor.clients[0]));
+
+        expect(removedListener).not.toHaveBeenCalled();
+      } finally {
+        await client.close();
+      }
+    });
+  });
+
   it('should allow a connection listener to send an immediate welcome message', async () => {
     const baseURL = getBaseURL();
 
@@ -89,7 +113,7 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
         if (connectionCount === 1) {
           interceptor.once('connection', listener);
           firstConnection.resolve();
-        } else if (connectionCount === 2) {
+        } else {
           secondConnection.resolve();
         }
       }
@@ -275,27 +299,21 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
         } satisfies ChatMessage);
         const broadcastMessage = JSON.stringify({ type: 'server', text: 'broadcast' } satisfies ChatMessage);
         const messages: string[][] = [[], []];
-        const allBroadcastsReceived = Promise.withResolvers<void>();
-        let numberOfBroadcastsReceived = 0;
 
         for (const [index, client] of clients.entries()) {
           client.addEventListener('message', ({ data }) => {
             messages[index].push(data);
-
-            if (data === broadcastMessage) {
-              numberOfBroadcastsReceived++;
-
-              if (numberOfBroadcastsReceived === clients.length) {
-                allBroadcastsReceived.resolve();
-              }
-            }
           });
         }
 
         interceptor.server.send(emptyRecipientMessage, { to: [] });
         interceptor.server.send(broadcastMessage);
 
-        await allBroadcastsReceived.promise;
+        await waitFor(() => {
+          for (const clientMessages of messages) {
+            expect(clientMessages).toContain(broadcastMessage);
+          }
+        });
         expect(messages).toEqual([[broadcastMessage], [broadcastMessage]]);
       } finally {
         await Promise.all(clients.map((client) => client.close()));
