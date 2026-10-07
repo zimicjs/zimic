@@ -154,14 +154,16 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
+          await waitFor(() =>
+            expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+              message: 'Expected exactly 0 messages, but got 1.',
+              expectedNumberOfMessages: 0,
+            }),
+          );
+
           await waitForNot(() => {
             expect(messageListener).toHaveBeenCalled();
           });
-        });
-
-        await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-          message: 'Expected exactly 0 messages, but got 1.',
-          expectedNumberOfMessages: 0,
         });
       });
     });

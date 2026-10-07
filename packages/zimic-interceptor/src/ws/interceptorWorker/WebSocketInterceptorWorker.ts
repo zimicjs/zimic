@@ -23,6 +23,10 @@ abstract class WebSocketInterceptorWorker {
   abstract start(): Promise<void>;
 
   protected async sharedStart(internalStart: () => Promise<void>) {
+    if (this.stoppingPromise) {
+      await this.stoppingPromise;
+    }
+
     if (this.isRunning) {
       return;
     }

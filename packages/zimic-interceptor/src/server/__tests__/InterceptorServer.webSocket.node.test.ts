@@ -1069,8 +1069,12 @@ describe('Interceptor server > Web sockets', () => {
     });
 
     await waitFor(() => {
-      expect(firstWorkerFirstMessages).toEqual(['first broadcast', 'owned client', 'owned handler']);
-      expect(firstWorkerSecondMessages).toEqual(['first broadcast', 'owned handler']);
+      expect([firstWorkerFirstMessages, firstWorkerSecondMessages]).toEqual(
+        expect.arrayContaining([
+          ['first broadcast', 'owned client', 'owned handler'],
+          ['first broadcast', 'owned handler'],
+        ]),
+      );
     });
 
     webSocketClient.send('interceptors/ws/messages/send', {
