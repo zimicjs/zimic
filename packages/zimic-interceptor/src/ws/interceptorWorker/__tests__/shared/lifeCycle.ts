@@ -1,11 +1,9 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 
 import WebSocketInterceptorWorker from '../../WebSocketInterceptorWorker';
 
 class TestWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
-  get type() {
-    return 'local' as const;
-  }
+  readonly type = 'local' as const;
 
   numberOfStarts = 0;
 
@@ -48,21 +46,13 @@ class TestWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     };
   }
 
-  use() {
-    return undefined;
-  }
+  use = vi.fn();
 
-  sendToClient() {
-    return undefined;
-  }
+  sendToClient = vi.fn();
 
-  sendToClients() {
-    return undefined;
-  }
+  sendToClients = vi.fn();
 
-  clearHandlers() {
-    return undefined;
-  }
+  clearHandlers = vi.fn();
 }
 
 export function declareLifeCycleWebSocketInterceptorWorkerTests() {
@@ -72,7 +62,7 @@ export function declareLifeCycleWebSocketInterceptorWorkerTests() {
 
     const stopping = worker.pauseNextStop();
     const stopPromise = worker.stop();
-    let startPromise: Promise<void> | undefined;
+    let startPromise = Promise.resolve();
 
     try {
       await stopping.started;
@@ -86,7 +76,7 @@ export function declareLifeCycleWebSocketInterceptorWorkerTests() {
       expect(worker.isRunning).toBe(true);
     } finally {
       stopping.finish();
-      await Promise.allSettled([stopPromise, ...(startPromise ? [startPromise] : [])]);
+      await Promise.allSettled([stopPromise, startPromise]);
       await worker.stop();
     }
   });
