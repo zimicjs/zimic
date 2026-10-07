@@ -1,0 +1,875 @@
+.page {
+  --surface: #f0f5fd;
+  --panel: #fff;
+  --border: #cbd9ed;
+  --muted: #526581;
+  --accent: #2167ed;
+  --cyan: #087b99;
+  background: var(--ifm-background-color);
+  color: var(--ifm-font-color-base);
+  overflow: hidden;
+}
+
+:global([data-theme='dark']) .page {
+  --surface: #071f36;
+  --panel: #031b2e;
+  --border: #203c56;
+  --muted: #a3b7cc;
+  --accent: #78adff;
+  --cyan: #54d4ed;
+}
+
+.container {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 48px;
+}
+.page h1,
+.page h2,
+.page h3 {
+  letter-spacing: -0.045em;
+}
+.page h2 {
+  font-size: clamp(2rem, 3.7vw, 3.2rem);
+  line-height: 1.15;
+  margin-bottom: 22px;
+}
+.page p {
+  line-height: 1.75;
+}
+.page a {
+  text-decoration: none;
+}
+.page a:hover {
+  text-decoration: underline;
+}
+.page button,
+.page a {
+  -webkit-tap-highlight-color: transparent;
+}
+.page button:focus-visible,
+.page a:focus-visible {
+  outline: 3px solid var(--cyan);
+  outline-offset: 5px;
+}
+.labBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 25px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.labBar > span {
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  font-family: monospace;
+}
+.hero {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  align-items: center;
+  gap: 60px;
+  padding: 84px 0 80px;
+}
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: monospace;
+  color: var(--cyan);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  margin-bottom: 25px;
+}
+.dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--cyan);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.hero h1 {
+  font-size: clamp(3.4rem, 5.6vw, 5rem);
+  line-height: 1.04;
+  margin-bottom: 26px;
+  font-weight: 700;
+}
+.hero h1 > span {
+  color: var(--accent);
+}
+.lead {
+  max-width: 460px;
+  color: var(--muted);
+  font-size: 19px;
+}
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 28px;
+}
+.primaryButton,
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 13px 20px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.primaryButton {
+  background: #2a72fa;
+  color: #fff;
+  border: 1px solid #2a72fa;
+}
+.primaryButton:hover {
+  background: #185be0;
+  color: #fff;
+}
+.secondaryButton {
+  color: var(--ifm-font-color-base);
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+.heroNote {
+  font-size: 12px;
+  margin-top: 22px;
+  color: var(--muted);
+}
+.heroDiagram {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 26px;
+  box-shadow: 0 20px 90px #2a72fa12;
+  position: relative;
+}
+.heroDiagram::before {
+  content: '';
+  position: absolute;
+  inset: -26px;
+  z-index: 0;
+  border: 1px dashed var(--border);
+  border-radius: 18px;
+  pointer-events: none;
+}
+.diagramTop,
+.diagramBottom,
+.nodeFile,
+.diagramPair code,
+.requestLine,
+.responseLine small,
+.typeBadge {
+  font-family: monospace;
+}
+.diagramTop {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  margin-bottom: 34px;
+}
+.schemaNode {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  border: 1px solid var(--accent);
+  background: var(--panel);
+  border-radius: 6px;
+  padding: 18px;
+}
+.nodeIcon {
+  display: grid;
+  place-items: center;
+  background: #2a72fa;
+  color: #fff;
+  font-weight: 700;
+  width: 42px;
+  height: 42px;
+  border-radius: 4px;
+}
+.schemaNode small,
+.schemaNode strong,
+.diagramPair small,
+.diagramPair strong {
+  display: block;
+}
+.schemaNode small,
+.diagramPair small {
+  font: 11px monospace;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.schemaNode strong {
+  font-size: 19px;
+}
+.nodeFile {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--muted);
+}
+.connector {
+  height: 63px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.connector::before {
+  content: '';
+  position: absolute;
+  width: 1px;
+  height: 100%;
+  background: var(--border);
+}
+.connector span {
+  background: var(--surface);
+  color: var(--muted);
+  z-index: 1;
+  padding: 4px 10px;
+  font: 10px monospace;
+}
+.diagramPair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.diagramPair > div {
+  border: 1px solid var(--border);
+  padding: 17px 13px;
+  border-radius: 6px;
+  background: var(--panel);
+}
+.diagramPair strong {
+  font-size: 12px;
+  margin-bottom: 13px;
+}
+.diagramPair code {
+  font-size: 11px;
+  background: transparent;
+  padding: 0;
+  border: 0;
+  color: var(--muted);
+}
+.requestLine {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+.requestLine > span {
+  color: var(--cyan);
+}
+.requestLine > span:last-child {
+  margin-left: auto;
+}
+.requestLine code {
+  border: 0;
+  background: transparent;
+  font-size: inherit;
+  padding: 0;
+}
+.responseLine {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 19px 0;
+}
+.responseAvatar {
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+}
+.responseLine strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+.responseLine small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+}
+.typeBadge {
+  margin-left: auto;
+  color: var(--cyan);
+  font-size: 10px;
+}
+.diagramBottom {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  color: var(--muted);
+  font-size: 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.packageStrip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.packageStrip a {
+  display: grid;
+  grid-template-columns: 25px 1fr;
+  column-gap: 12px;
+  padding: 25px;
+  color: inherit;
+}
+.packageStrip a + a {
+  border-left: 1px solid var(--border);
+}
+.packageStrip span {
+  color: var(--cyan);
+  font: 11px monospace;
+  grid-row: span 2;
+  margin-top: 4px;
+}
+.packageStrip strong {
+  font: 600 15px monospace;
+  margin-bottom: 8px;
+}
+.packageStrip small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.section {
+  padding: 100px 0 0;
+  scroll-margin-top: 90px;
+}
+.sectionIntro {
+  max-width: 600px;
+  margin-bottom: 38px;
+}
+.sectionIntro > p:last-child {
+  color: var(--muted);
+  max-width: 500px;
+}
+.sectionIntro .eyebrow {
+  margin-bottom: 19px;
+}
+.workbench {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  overflow: hidden;
+  background: var(--panel);
+}
+.editorToolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface);
+  padding: 15px 21px;
+  font: 11px monospace;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.editorToolbar > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.fileTabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  overflow-x: auto;
+}
+.fileTabs button {
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-top: 2px solid transparent;
+  padding: 17px 25px;
+  font: 12px monospace;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.fileTabs button span {
+  color: var(--accent);
+  font-size: 10px;
+}
+.fileTabs button[aria-pressed='true'] {
+  border-top-color: var(--accent);
+  background: var(--panel);
+  color: var(--ifm-font-color-base);
+}
+.fileTabs button:hover,
+.scenarioButtons button:hover {
+  color: var(--accent);
+}
+.editorBody {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  min-height: 510px;
+}
+.codePane {
+  min-width: 0;
+  padding: 18px 10px;
+}
+.codePane > div {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.fileExplanation {
+  border-left: 1px solid var(--border);
+  padding: 35px;
+  background: var(--surface);
+}
+.stepNumber {
+  display: block;
+  font: 36px monospace;
+  color: var(--border);
+  margin-bottom: 25px;
+}
+.packageName {
+  font: 12px monospace;
+  color: var(--accent);
+}
+.fileExplanation h3 {
+  font-size: 27px;
+  line-height: 1.25;
+}
+.fileExplanation > p:not(.packageName),
+.fileDetail {
+  font-size: 14px;
+  color: var(--muted);
+}
+.fileDetail {
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+  margin: 22px 0;
+  line-height: 1.7;
+}
+.fileExplanation a {
+  font-size: 12px;
+  font-weight: 600;
+}
+.typeNote {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-top: 22px;
+}
+.editorStatus {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 13px 22px;
+  font: 11px monospace;
+  background: var(--surface);
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+}
+.statusIcon {
+  color: var(--cyan);
+  font-size: 19px;
+}
+.scenarioSection {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 75px;
+  align-items: center;
+  padding: 110px 0 0;
+}
+.scenarioIntro > p:not(.eyebrow) {
+  color: var(--muted);
+  font-size: 15px;
+}
+.scenarioIntro > a {
+  font-size: 13px;
+  font-weight: 600;
+}
+.scenarioButtons {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin: 26px 0;
+}
+.scenarioButtons button {
+  cursor: pointer;
+  padding: 10px 13px;
+  background: var(--panel);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font: 11px monospace;
+}
+.scenarioButtons button[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--accent) 10%, var(--panel));
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.scenarioPanel {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.previewHeader {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font: 10px monospace;
+  padding: 18px;
+  color: var(--muted);
+}
+.previewHeader > span:last-child {
+  color: var(--cyan);
+}
+.scenarioPanel > div:nth-child(2) {
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+}
+.previewLabel {
+  font: 10px monospace;
+  color: var(--muted);
+  margin: 21px 24px 12px;
+  letter-spacing: 0.1em;
+}
+.previewApp {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  margin: 0 24px 24px;
+}
+.previewAppHeader {
+  display: flex;
+  justify-content: space-between;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.previewAppHeader span {
+  color: var(--muted);
+  font: 10px monospace;
+}
+.previewContent {
+  min-height: 173px;
+  padding: 22px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 7px;
+  text-align: center;
+}
+.previewSymbol {
+  border: 1px solid var(--border);
+  color: var(--accent);
+  background: var(--surface);
+  border-radius: 50%;
+  width: 39px;
+  height: 39px;
+  display: grid;
+  place-items: center;
+  font: 14px monospace;
+  margin-bottom: 4px;
+}
+.previewContent strong {
+  font-size: 14px;
+}
+.previewContent > span:last-child {
+  font-size: 11px;
+  color: var(--muted);
+}
+.benefitGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.benefitGrid article {
+  padding: 36px;
+}
+.benefitGrid article:nth-child(even) {
+  border-left: 1px solid var(--border);
+}
+.benefitGrid article:nth-child(n + 3) {
+  border-top: 1px solid var(--border);
+}
+.benefitNumber {
+  display: block;
+  font: 10px monospace;
+  letter-spacing: 0.08em;
+  color: var(--cyan);
+  margin-bottom: 26px;
+}
+.benefitGrid h3 {
+  font-size: 24px;
+}
+.benefitGrid p {
+  color: var(--muted);
+  font-size: 14px;
+  max-width: 460px;
+}
+.benefitGrid a {
+  font-size: 12px;
+  font-weight: 600;
+}
+.adoption {
+  margin-top: 100px;
+  padding: 45px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 90px;
+  align-items: center;
+}
+.adoption h2 {
+  font-size: 32px;
+}
+.adoption .eyebrow {
+  margin-bottom: 18px;
+}
+.adoption p:last-child {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 0;
+}
+.adoptionLinks a {
+  display: block;
+  padding: 22px 0;
+  color: inherit;
+}
+.adoptionLinks a + a {
+  border-top: 1px solid var(--border);
+}
+.adoptionLinks span {
+  display: block;
+  color: var(--muted);
+  font: 11px monospace;
+  margin-bottom: 9px;
+}
+.adoptionLinks strong {
+  font-size: 15px;
+  color: var(--accent);
+}
+.finalCta {
+  text-align: center;
+  padding: 105px 0;
+}
+.finalCta .eyebrow,
+.finalCta .actions {
+  justify-content: center;
+}
+.finalCta h2 {
+  font-size: clamp(2.6rem, 4.5vw, 4rem);
+}
+.install {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 30px auto;
+  padding: 16px 22px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 5px;
+  text-align: left;
+}
+.install > span {
+  color: var(--cyan);
+}
+.install code {
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  white-space: normal;
+}
+
+@media (max-width: 1050px) {
+  .hero {
+    gap: 40px;
+  }
+  .container {
+    padding: 0 32px;
+  }
+  .heroDiagram {
+    padding: 18px;
+  }
+  .heroDiagram::before {
+    inset: -13px;
+  }
+  .diagramPair {
+    gap: 7px;
+  }
+  .diagramPair > div {
+    padding: 14px 9px;
+  }
+  .scenarioSection {
+    gap: 35px;
+  }
+  .fileExplanation {
+    padding: 26px;
+  }
+  .packageStrip a {
+    padding: 22px 13px;
+  }
+}
+
+@media (max-width: 800px) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 50px;
+    padding: 60px 0;
+  }
+  .hero h1 {
+    font-size: clamp(3.5rem, 9vw, 5rem);
+  }
+  .heroDiagram {
+    max-width: 550px;
+    width: 100%;
+    margin: 0 auto 10px;
+    padding: 25px;
+  }
+  .heroDiagram::before {
+    display: none;
+  }
+  .packageStrip {
+    grid-template-columns: 1fr;
+  }
+  .packageStrip a {
+    grid-template-columns: 25px 1fr 1fr;
+    padding: 20px 10px;
+    align-items: center;
+  }
+  .packageStrip span {
+    grid-row: auto;
+    margin: 0;
+  }
+  .packageStrip strong {
+    margin: 0;
+  }
+  .packageStrip small {
+    text-align: right;
+  }
+  .packageStrip a + a {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+  .editorBody {
+    grid-template-columns: 1fr;
+  }
+  .fileExplanation {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+  .stepNumber {
+    display: none;
+  }
+  .codePane {
+    overflow: hidden;
+  }
+  .scenarioSection,
+  .adoption {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .section,
+  .scenarioSection {
+    padding-top: 75px;
+  }
+  .adoption {
+    margin-top: 75px;
+  }
+  .benefitGrid article {
+    padding: 26px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 20px;
+  }
+  .labBar > span {
+    font-size: 9px;
+    letter-spacing: 0.02em;
+  }
+  .hero {
+    padding-top: 45px;
+  }
+  .hero h1 {
+    font-size: 3.4rem;
+  }
+  .lead {
+    font-size: 17px;
+  }
+  .heroDiagram {
+    padding: 16px;
+  }
+  .diagramPair small {
+    font-size: 10px;
+  }
+  .diagramPair strong {
+    font-size: 11px;
+  }
+  .nodeFile {
+    display: none;
+  }
+  .packageStrip a {
+    grid-template-columns: 18px 1fr;
+  }
+  .packageStrip small {
+    grid-column: 2;
+    text-align: left;
+    margin-top: 6px;
+  }
+  .fileTabs button {
+    padding: 15px 13px;
+    font-size: 11px;
+  }
+  .fileTabs button span {
+    display: none;
+  }
+  .editorStatus {
+    font-size: 10px;
+    line-height: 1.7;
+  }
+  .benefitGrid {
+    grid-template-columns: 1fr;
+  }
+  .benefitGrid article:nth-child(even) {
+    border-left: 0;
+  }
+  .benefitGrid article + article {
+    border-top: 1px solid var(--border);
+  }
+  .finalCta {
+    padding: 80px 0;
+  }
+  .finalCta .actions {
+    flex-direction: column;
+  }
+}
