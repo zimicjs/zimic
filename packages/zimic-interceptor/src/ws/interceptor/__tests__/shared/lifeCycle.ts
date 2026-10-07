@@ -1,6 +1,8 @@
+import { waitFor } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
+import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
@@ -9,6 +11,7 @@ import NotRunningWebSocketInterceptorError from '../../errors/NotRunningWebSocke
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
 import { RemoteWebSocketInterceptorOptions, WebSocketInterceptorOptions } from '../../types/options';
+import { WebSocketInterceptorConnectionListener } from '../../types/public';
 import WebSocketInterceptorImplementation from '../../WebSocketInterceptorImplementation';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
@@ -157,6 +160,123 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
     expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
   }
+
+  describe('Connection listeners', () => {
+    it('should deliver the connected client once per connection', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const listener = vi.fn<WebSocketInterceptorConnectionListener<MessageSchema>>();
+        const effect = vi.fn();
+        interceptor.on('connection', listener);
+        await promiseIfRemote(interceptor.message().effect(effect), interceptor);
+
+        const firstClient = await createClient();
+        await waitFor(() => {
+          expect(listener).toHaveBeenCalledTimes(1);
+        });
+        const firstInterceptorClient = listener.mock.calls[0][0];
+        expect(firstInterceptorClient).toBe(interceptor.clients[0]);
+        expect(firstInterceptorClient.url).toBe(firstClient.url);
+
+        firstClient.send(JSON.stringify({ type: 'client', index: 1 }));
+        firstClient.send(JSON.stringify({ type: 'client', index: 2 }));
+        await waitFor(() => {
+          expect(effect).toHaveBeenCalledTimes(2);
+        });
+        expect(listener).toHaveBeenCalledTimes(1);
+
+        await createClient();
+        await waitFor(() => {
+          expect(listener).toHaveBeenCalledTimes(2);
+        });
+        expect(listener.mock.calls[1][0]).toBe(interceptor.clients[1]);
+        expect(listener.mock.calls[1][0]).not.toBe(firstInterceptorClient);
+      });
+    });
+
+    it.each(['on', 'once'] as const)('should remove listeners registered with %s', async (method) => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const listener = vi.fn();
+        const retainedListener = vi.fn();
+        interceptor[method]('connection', listener);
+        interceptor.on('connection', retainedListener);
+        interceptor.off('connection', listener);
+        await promiseIfRemote(interceptor.message(), interceptor);
+
+        await createClient();
+        await waitFor(() => {
+          expect(retainedListener).toHaveBeenCalledTimes(1);
+        });
+        expect(listener).not.toHaveBeenCalled();
+      });
+    });
+
+    it('should retain connection listeners across clear, stop, and restart until removed', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const listener = vi.fn();
+        interceptor.on('connection', listener);
+        await promiseIfRemote(interceptor.message(), interceptor);
+
+        const firstClient = await createClient();
+        await waitFor(() => {
+          expect(listener).toHaveBeenCalledTimes(1);
+        });
+        await firstClient.close();
+        await promiseIfRemote(interceptor.clear(), interceptor);
+        await promiseIfRemote(interceptor.message(), interceptor);
+
+        const secondClient = await createClient();
+        await waitFor(() => {
+          expect(listener).toHaveBeenCalledTimes(2);
+        });
+        await secondClient.close();
+        await interceptor.stop();
+        await interceptor.start();
+        await promiseIfRemote(interceptor.message(), interceptor);
+
+        const thirdClient = await createClient();
+        await waitFor(() => {
+          expect(listener).toHaveBeenCalledTimes(3);
+        });
+        await thirdClient.close();
+        interceptor.off('connection', listener);
+
+        const retainedListener = vi.fn();
+        interceptor.on('connection', retainedListener);
+        await createClient();
+        await waitFor(() => {
+          expect(retainedListener).toHaveBeenCalledTimes(1);
+        });
+        expect(listener).toHaveBeenCalledTimes(3);
+      });
+    });
+
+    it('should retain one-time listeners across clear, stop, and restart and deliver only once', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const listener = vi.fn();
+        const retainedListener = vi.fn();
+        interceptor.once('connection', listener);
+        interceptor.on('connection', retainedListener);
+
+        await promiseIfRemote(interceptor.clear(), interceptor);
+        await interceptor.stop();
+        await interceptor.start();
+        await promiseIfRemote(interceptor.message(), interceptor);
+
+        await createClient();
+        await waitFor(() => {
+          expect(retainedListener).toHaveBeenCalledTimes(1);
+        });
+        expect(listener).toHaveBeenCalledTimes(1);
+        expect(listener).toHaveBeenCalledWith(interceptor.clients[0]);
+
+        await createClient();
+        await waitFor(() => {
+          expect(retainedListener).toHaveBeenCalledTimes(2);
+        });
+        expect(listener).toHaveBeenCalledTimes(1);
+      });
+    });
+  });
 
   if (type === 'local') {
     it('should create a typed local interceptor by default', () => {

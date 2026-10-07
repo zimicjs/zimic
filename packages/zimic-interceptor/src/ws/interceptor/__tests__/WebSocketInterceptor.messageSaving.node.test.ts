@@ -1,4 +1,4 @@
-import { beforeAll, afterAll, describe } from 'vitest';
+import { afterAll, beforeAll, describe } from 'vitest';
 
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';

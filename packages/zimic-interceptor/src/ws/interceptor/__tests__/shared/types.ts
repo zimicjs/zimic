@@ -128,6 +128,8 @@ export function declareTypeWebSocketInterceptorTests(
         expectTypeOf(context.receiver.send)
           .parameter(1)
           .toEqualTypeOf<WebSocketInterceptorServerSendOptions<MessageSchema> | undefined>();
+        expectTypeOf(context.receiver.send).toEqualTypeOf<WebSocketInterceptorServer<MessageSchema>['send']>();
+        expectTypeOf(context.sender.send).toEqualTypeOf<WebSocketInterceptorClient<MessageSchema>['send']>();
       });
 
       function declareInvalidMessages() {
