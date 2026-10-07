@@ -19,9 +19,13 @@ export interface WebSocketInterceptorClient<Schema extends WebSocketSchema> {
   send: (data: WebSocketMessageData<Schema>) => void;
 }
 
+export interface WebSocketInterceptorServerSendOptions<Schema extends WebSocketSchema> {
+  to?: WebSocketInterceptorClient<Schema> | readonly WebSocketInterceptorClient<Schema>[];
+}
+
 export interface WebSocketInterceptorServer<Schema extends WebSocketSchema> {
   readonly [webSocketInterceptorServerRole]: true;
   readonly url: string;
   readonly messages: readonly InterceptedWebSocketInterceptorMessage<Schema>[];
-  send: (data: WebSocketMessageData<Schema>) => void;
+  send: (data: WebSocketMessageData<Schema>, options?: WebSocketInterceptorServerSendOptions<Schema>) => void;
 }

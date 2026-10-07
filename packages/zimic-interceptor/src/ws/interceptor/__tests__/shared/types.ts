@@ -123,7 +123,8 @@ export function declareTypeWebSocketInterceptorTests(
 
       interceptor.message().effect((message, context) => {
         expectTypeOf(message).toEqualTypeOf<MessageSchema>();
-        expectTypeOf(context.receiver.send).toEqualTypeOf<typeof context.sender.send>();
+        expectTypeOf(context.receiver.send).toEqualTypeOf<WebSocketInterceptorServer<MessageSchema>['send']>();
+        expectTypeOf(context.sender.send).toEqualTypeOf<WebSocketInterceptorClient<MessageSchema>['send']>();
       });
 
       function declareInvalidMessages() {
