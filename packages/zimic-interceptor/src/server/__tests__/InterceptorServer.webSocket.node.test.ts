@@ -1021,9 +1021,13 @@ describe('Interceptor server > Web sockets', () => {
     ]);
 
     const firstWorkerFirstSocket = new ClientSocket(firstHandler.baseURL);
+    userSockets.push(firstWorkerFirstSocket);
+    await waitForOpenClientSocket(firstWorkerFirstSocket);
+    await waitFor(() => expect(firstWorkerConnections).toHaveLength(1));
+
     const firstWorkerSecondSocket = new ClientSocket(firstHandler.baseURL);
     const secondWorkerSocket = new ClientSocket(secondHandler.baseURL);
-    userSockets.push(firstWorkerFirstSocket, firstWorkerSecondSocket, secondWorkerSocket);
+    userSockets.push(firstWorkerSecondSocket, secondWorkerSocket);
 
     const firstWorkerFirstMessages: string[] = [];
     const firstWorkerSecondMessages: string[] = [];
@@ -1032,11 +1036,7 @@ describe('Interceptor server > Web sockets', () => {
     firstWorkerSecondSocket.addEventListener('message', ({ data }) => firstWorkerSecondMessages.push(data as string));
     secondWorkerSocket.addEventListener('message', ({ data }) => secondWorkerMessages.push(data as string));
 
-    await Promise.all([
-      waitForOpenClientSocket(firstWorkerFirstSocket),
-      waitForOpenClientSocket(firstWorkerSecondSocket),
-      waitForOpenClientSocket(secondWorkerSocket),
-    ]);
+    await Promise.all([waitForOpenClientSocket(firstWorkerSecondSocket), waitForOpenClientSocket(secondWorkerSocket)]);
 
     await waitFor(() => {
       expect(firstWorkerConnections).toHaveLength(2);
