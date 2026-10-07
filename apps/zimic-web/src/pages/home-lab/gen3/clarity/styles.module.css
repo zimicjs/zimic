@@ -1,0 +1,265 @@
+.page {
+  --clarity-muted: #526578;
+  --clarity-line: #d6e1ed;
+  --clarity-tint: #f3f7fc;
+  --clarity-surface: #fff;
+  overflow: hidden;
+  color: var(--ifm-font-color-base);
+}
+
+:global([data-theme='dark']) .page {
+  --clarity-muted: #afc2d5;
+  --clarity-line: #234158;
+  --clarity-tint: #071e33;
+  --clarity-surface: #0a2136;
+}
+
+.container {
+  width: min(1160px, calc(100% - 80px));
+  margin: 0 auto;
+}
+
+.hero {
+  position: relative;
+  padding: 30px 0 82px;
+  background: radial-gradient(ellipse at 50% 46%, #dceaff 0%, transparent 68%);
+}
+
+:global([data-theme='dark']) .hero {
+  background: radial-gradient(ellipse at 50% 46%, #102e60 0%, transparent 68%);
+}
+
+.heroGlow {
+  position: absolute;
+  top: 50px;
+  left: 25%;
+  width: 50%;
+  height: 430px;
+  background: radial-gradient(ellipse at center, #36badf1c, transparent 68%);
+  pointer-events: none;
+}
+
+.backLink {
+  position: relative;
+  color: var(--clarity-muted);
+  font-size: 13px;
+}
+
+.heroContent {
+  position: relative;
+  max-width: 850px;
+  margin: 42px auto 0;
+  text-align: center;
+}
+
+.logo {
+  width: 62px;
+  height: 62px;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 0 28px #3097ec44);
+}
+
+.hero h1 {
+  margin: 0 0 22px;
+  font-size: clamp(2.8rem, 6.4vw, 5.6rem);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.065em;
+}
+
+.hero h1 span {
+  background: linear-gradient(105deg, var(--color-primary-700), var(--color-highlight-300) 72%);
+  background-clip: text;
+  color: transparent;
+}
+
+:global([data-theme='dark']) .hero h1 span {
+  background-image: linear-gradient(105deg, var(--color-primary-300), var(--color-highlight-200) 72%);
+}
+
+.heroContent > p {
+  max-width: 680px;
+  margin: 0 auto 27px;
+  color: var(--clarity-muted);
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.heroNote {
+  display: block;
+  margin-top: 18px;
+  color: var(--clarity-muted);
+  font-size: 12px;
+}
+
+.showcase {
+  padding: 86px 0;
+  scroll-margin-top: 80px;
+}
+
+.tinted {
+  border-block: 1px solid var(--clarity-line);
+  background: var(--clarity-tint);
+}
+
+.showcaseGrid {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  align-items: center;
+  gap: 72px;
+}
+
+.reverse {
+  grid-template-columns: 1.1fr 0.9fr;
+}
+
+.reverse .copy {
+  order: 2;
+}
+
+.copy {
+  min-width: 0;
+}
+
+.packageName {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ifm-color-primary);
+  font-size: 14px;
+}
+
+.copy h2 {
+  max-width: 480px;
+  margin: 0 0 19px;
+  font-size: clamp(2.1rem, 3.7vw, 3.3rem);
+  line-height: 1.13;
+  letter-spacing: -0.055em;
+}
+
+.copy > p {
+  color: var(--clarity-muted);
+  line-height: 1.8;
+}
+
+.copy ul {
+  display: grid;
+  gap: 13px;
+  padding: 0;
+  margin: 25px 0 27px;
+  list-style: none;
+  font-size: 13px;
+}
+
+.copy li {
+  display: flex;
+  gap: 11px;
+}
+
+.copy li::before {
+  content: '↗';
+  color: var(--ifm-color-primary);
+}
+
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ifm-color-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.editor {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--clarity-line);
+  border-radius: 12px;
+  background: var(--clarity-surface);
+  box-shadow: 0 18px 48px #0116270c;
+}
+
+.editorHeader {
+  padding: 15px 19px;
+  border-bottom: 1px solid var(--clarity-line);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 12px;
+}
+
+.codeSnippet {
+  border: 0;
+  border-radius: 0;
+  font-size: 0.8125rem;
+}
+
+.caption {
+  padding: 12px 19px;
+  margin: 0;
+  border-top: 1px solid var(--clarity-line);
+  color: var(--clarity-muted);
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.page a:focus-visible {
+  outline: 3px solid var(--color-highlight-300);
+  outline-offset: 5px;
+}
+
+@media (max-width: 900px) {
+  .container {
+    width: calc(100% - 56px);
+  }
+
+  .showcaseGrid,
+  .reverse {
+    gap: 38px;
+  }
+}
+
+@media (max-width: 700px) {
+  .container {
+    width: calc(100% - 40px);
+  }
+
+  .hero {
+    padding: 24px 0 58px;
+  }
+
+  .heroContent {
+    margin-top: 40px;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.45rem, 9vw, 3.7rem);
+  }
+
+  .heroContent > p {
+    font-size: 16px;
+  }
+
+  .showcase {
+    padding: 58px 0;
+  }
+
+  .showcaseGrid,
+  .reverse {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+
+  .reverse .copy {
+    order: 0;
+  }
+
+  .copy > p {
+    font-size: 15px;
+  }
+
+  .editorHeader,
+  .caption {
+    padding-inline: 15px;
+  }
+}

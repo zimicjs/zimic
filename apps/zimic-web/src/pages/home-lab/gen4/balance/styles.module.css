@@ -1,0 +1,265 @@
+.page {
+  --page-muted: #53677a;
+  --page-border: #dce5ee;
+  color: var(--ifm-font-color-base);
+}
+
+:global([data-theme='dark']) .page {
+  --page-muted: #b0c2d3;
+  --page-border: #243a4d;
+}
+
+.container {
+  width: min(1240px, calc(100% - 64px));
+  margin: 0 auto;
+}
+
+.header {
+  width: min(1240px, calc(100% - 64px));
+  margin: 0 auto;
+  padding-top: 26px;
+}
+
+.backLink {
+  color: var(--page-muted);
+  font-size: 0.875rem;
+}
+
+.backLink:hover,
+.textLink:hover {
+  color: var(--color-highlight-200);
+}
+
+.hero {
+  padding: 80px 0 88px;
+  text-align: center;
+}
+
+.hero .container {
+  max-width: 850px;
+}
+
+.logo {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 0 24px #3097ec38);
+}
+
+.hero h1 {
+  max-width: 780px;
+  margin: 0 auto 20px;
+  font-size: clamp(2.5rem, 4.8vw, 4rem);
+  line-height: 1.08;
+  letter-spacing: -0.055em;
+}
+
+.hero > .container > p {
+  max-width: 700px;
+  margin: 0 auto 28px;
+  color: var(--page-muted);
+  font-size: 1.125rem;
+  line-height: 1.7;
+}
+
+.actionWrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.introduction {
+  padding: 54px 0 60px;
+  border-top: 1px solid var(--page-border);
+  border-bottom: 1px solid var(--page-border);
+}
+
+.introductionGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: start;
+  gap: clamp(44px, 8vw, 100px);
+}
+
+.introductionCopy h2 {
+  max-width: 520px;
+  margin: 0 0 18px;
+  font-size: clamp(1.9rem, 3vw, 2.55rem);
+  line-height: 1.16;
+  letter-spacing: -0.045em;
+}
+
+.introductionCopy p {
+  max-width: 490px;
+  margin: 0;
+  color: var(--page-muted);
+  font-size: 1.05rem;
+  line-height: 1.75;
+}
+
+.benefits {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 28px;
+  row-gap: 28px;
+}
+
+.benefit {
+  padding-top: 14px;
+  border-top: 2px solid var(--ifm-color-primary);
+}
+
+.benefit h3 {
+  margin: 0 0 8px;
+  font-size: 1.02rem;
+  line-height: 1.4;
+}
+
+.benefit p {
+  margin: 0;
+  color: var(--page-muted);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+.productSection {
+  padding: 76px 0;
+  border-bottom: 1px solid var(--page-border);
+}
+
+.productGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(40px, 6vw, 76px);
+}
+
+.reverse .productCopy {
+  order: 2;
+}
+
+.reverse .codeColumn {
+  order: 1;
+}
+
+.productCopy {
+  min-width: 0;
+}
+
+.packageName {
+  margin: 0 0 18px;
+  color: var(--ifm-color-primary);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.95rem;
+}
+
+.productCopy h2 {
+  margin: 0 0 18px;
+  font-size: clamp(1.9rem, 3vw, 2.65rem);
+  line-height: 1.16;
+  letter-spacing: -0.045em;
+}
+
+.productCopy > p:not(.packageName) {
+  margin: 0 0 22px;
+  color: var(--page-muted);
+  line-height: 1.75;
+}
+
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.codeColumn {
+  min-width: 0;
+}
+
+.codeHeader {
+  padding: 0 0 10px 2px;
+  color: var(--page-muted);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.8125rem;
+}
+
+.codeSnippet {
+  box-shadow: 0 12px 40px #10243a0b;
+}
+
+:global([data-theme='dark']) .codeSnippet {
+  box-shadow: 0 12px 40px #00000020;
+}
+
+.closingCta {
+  width: 100%;
+  margin-top: 0;
+  border-top: 1px solid var(--page-border);
+  border-bottom: 1px solid var(--page-border);
+}
+
+.sponsors {
+  margin-top: 0;
+}
+
+.sponsorButton {
+  margin: 0 auto 3rem;
+  text-decoration: none;
+}
+
+@media (max-width: 800px) {
+  .hero {
+    padding: 66px 0 70px;
+  }
+
+  .productSection {
+    padding: 58px 0;
+  }
+
+  .productGrid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .introductionGrid {
+    grid-template-columns: 1fr;
+    gap: 34px;
+  }
+
+  .reverse .productCopy,
+  .reverse .codeColumn {
+    order: initial;
+  }
+}
+
+@media (max-width: 560px) {
+  .container,
+  .header {
+    width: calc(100% - 40px);
+  }
+
+  .header {
+    padding-top: 20px;
+  }
+
+  .hero {
+    padding: 58px 0 62px;
+  }
+
+  .hero > .container > p {
+    font-size: 1rem;
+  }
+
+  .introduction {
+    padding: 42px 0 46px;
+  }
+
+  .benefits {
+    grid-template-columns: 1fr;
+    row-gap: 20px;
+  }
+
+  .productSection {
+    padding: 48px 0;
+  }
+}

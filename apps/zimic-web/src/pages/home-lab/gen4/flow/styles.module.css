@@ -1,0 +1,276 @@
+.page {
+  --flow-muted: #526578;
+  --flow-line: #d6e1ed;
+  --flow-surface: #fff;
+  overflow: hidden;
+  color: var(--ifm-font-color-base);
+}
+
+:global([data-theme='dark']) .page {
+  --flow-muted: #afc2d5;
+  --flow-line: #234158;
+  --flow-surface: #0a2136;
+}
+
+.container {
+  width: min(1240px, calc(100% - 96px));
+  margin: 0 auto;
+}
+
+.hero {
+  padding: 32px 0 78px;
+}
+
+.heroTopline {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.logo {
+  width: 42px;
+  height: 42px;
+}
+
+.heroTopline a {
+  color: var(--flow-muted);
+  font-size: 13px;
+}
+
+.heroContent {
+  max-width: 920px;
+  margin: 74px auto 0;
+  text-align: center;
+}
+
+.hero h1 {
+  margin: 0 0 24px;
+  color: var(--ifm-font-color-base);
+  font-size: clamp(3rem, 6.5vw, 6rem);
+  line-height: 1.04;
+  letter-spacing: -0.068em;
+}
+
+.heroContent > p {
+  max-width: 740px;
+  margin: 0 auto 28px;
+  color: var(--flow-muted);
+  font-size: 19px;
+  line-height: 1.7;
+}
+
+.buttonRow {
+  display: flex;
+  justify-content: center;
+}
+
+.intro {
+  padding: 8px 0 56px;
+}
+
+.introCopy {
+  max-width: 760px;
+  margin: 0 auto 42px;
+  text-align: center;
+}
+
+.introCopy h2 {
+  margin: 0 0 16px;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.16;
+  letter-spacing: -0.045em;
+}
+
+.introCopy p {
+  margin: 0;
+  color: var(--flow-muted);
+  font-size: 17px;
+  line-height: 1.75;
+}
+
+.benefits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 48px;
+}
+
+.benefits h3 {
+  margin: 0 0 10px;
+  font-size: 19px;
+  letter-spacing: -0.025em;
+}
+
+.benefits p {
+  margin: 0;
+  color: var(--flow-muted);
+  line-height: 1.7;
+}
+
+.flow {
+  padding: 0 0 32px;
+}
+
+.showcase {
+  padding: 58px 0;
+  scroll-margin-top: 80px;
+}
+
+.showcase + .showcase {
+  border-top: 1px solid var(--flow-line);
+}
+
+.showcaseGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  align-items: center;
+  gap: 74px;
+}
+
+.copy {
+  min-width: 0;
+}
+
+.packageName {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ifm-color-primary);
+  font-size: 14px;
+}
+
+.copy h2 {
+  margin: 0 0 17px;
+  font-size: clamp(2rem, 3.3vw, 3.3rem);
+  line-height: 1.12;
+  letter-spacing: -0.055em;
+}
+
+.copy p {
+  margin: 0 0 22px;
+  color: var(--flow-muted);
+  line-height: 1.8;
+}
+
+.copy a {
+  color: var(--ifm-color-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.codePanel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--flow-line);
+  border-radius: 10px;
+  background: var(--flow-surface);
+}
+
+.fileName {
+  padding: 15px 19px;
+  border-bottom: 1px solid var(--flow-line);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 12px;
+}
+
+.codePanel > div:nth-child(2) {
+  border: 0;
+  border-radius: 0;
+}
+
+.caption {
+  padding: 12px 19px;
+  margin: 0;
+  border-top: 1px solid var(--flow-line);
+  color: var(--flow-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.features {
+  padding-block: 30px;
+}
+
+.closingCta {
+  border-block: 1px solid var(--flow-line);
+  background: #f3f7fc;
+}
+
+:global([data-theme='dark']) .closingCta {
+  background: #071e33;
+}
+
+.page a:focus-visible {
+  outline: 3px solid var(--color-highlight-200);
+  outline-offset: 5px;
+}
+
+@media (max-width: 1000px) {
+  .container {
+    width: calc(100% - 64px);
+  }
+
+  .showcaseGrid {
+    gap: 46px;
+  }
+}
+
+@media (max-width: 760px) {
+  .container {
+    width: calc(100% - 40px);
+  }
+
+  .hero {
+    padding-bottom: 52px;
+  }
+
+  .heroContent {
+    margin-top: 56px;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.6rem, 9vw, 4rem);
+  }
+
+  .heroContent > p {
+    font-size: 16px;
+  }
+
+  .showcase {
+    padding: 48px 0;
+  }
+
+  .showcaseGrid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+
+  .copy h2 {
+    font-size: clamp(2rem, 8vw, 2.7rem);
+  }
+
+  .intro {
+    padding: 8px 0 42px;
+  }
+
+  .introCopy {
+    margin-bottom: 32px;
+  }
+
+  .introCopy p {
+    font-size: 15px;
+  }
+
+  .benefits {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .fileName,
+  .caption {
+    padding-inline: 15px;
+  }
+}
