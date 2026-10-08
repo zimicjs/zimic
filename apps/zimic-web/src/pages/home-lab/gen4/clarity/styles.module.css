@@ -1,0 +1,292 @@
+.page {
+  --clarity-muted: #526578;
+  --clarity-line: #d6e1ed;
+  --clarity-tint: #f3f7fc;
+  --clarity-surface: #fff;
+  overflow: hidden;
+  color: var(--ifm-font-color-base);
+  font-family: var(--ifm-font-family-base);
+}
+
+:global([data-theme='dark']) .page {
+  --clarity-muted: #afc2d5;
+  --clarity-line: #234158;
+  --clarity-tint: #071e33;
+  --clarity-surface: #0a2136;
+}
+
+.container {
+  width: min(1160px, calc(100% - 80px));
+  margin: 0 auto;
+}
+
+.hero {
+  padding: 92px 0 96px;
+}
+
+.heroContent {
+  max-width: 850px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.logo {
+  width: 72px;
+  height: 72px;
+  margin-bottom: 25px;
+}
+
+.hero h1 {
+  max-width: 860px;
+  margin: 0 auto 22px;
+  font-size: clamp(2.8rem, 5.7vw, 4.75rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.045em;
+}
+
+.heroContent > p {
+  max-width: 680px;
+  margin: 0 auto 27px;
+  color: var(--clarity-muted);
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.buttonRow {
+  display: flex;
+  justify-content: center;
+}
+
+.intro {
+  padding: 68px 0 82px;
+}
+
+.introCopy {
+  max-width: 790px;
+  margin: 0 auto 48px;
+  text-align: center;
+}
+
+.introCopy h2 {
+  margin: 0 0 18px;
+  font-size: clamp(1.9rem, 3.4vw, 2.7rem);
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+
+.introCopy p {
+  margin: 0;
+  color: var(--clarity-muted);
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.benefits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 48px;
+}
+
+.benefits article {
+  min-width: 0;
+}
+
+.benefits h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+
+.benefits p {
+  margin: 0;
+  color: var(--clarity-muted);
+  line-height: 1.75;
+}
+
+.showcase {
+  padding: 78px 0;
+  scroll-margin-top: 80px;
+}
+
+.tinted {
+  background: var(--clarity-tint);
+}
+
+.showcaseGrid {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  align-items: center;
+  gap: 72px;
+}
+
+.reverse {
+  grid-template-columns: 1.1fr 0.9fr;
+}
+
+.reverse .copy {
+  order: 2;
+}
+
+.copy {
+  min-width: 0;
+}
+
+.packageName {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ifm-color-primary);
+  font-size: 14px;
+}
+
+.copy h2 {
+  max-width: 480px;
+  margin: 0 0 19px;
+  font-size: clamp(2.1rem, 3.7vw, 3.3rem);
+  line-height: 1.13;
+  letter-spacing: -0.055em;
+}
+
+.copy > p {
+  color: var(--clarity-muted);
+  line-height: 1.8;
+}
+
+.copy ul {
+  display: grid;
+  gap: 13px;
+  padding: 0;
+  margin: 25px 0 27px;
+  list-style: none;
+  font-size: 13px;
+}
+
+.copy li {
+  display: flex;
+  gap: 11px;
+}
+
+.copy li::before {
+  content: '↗';
+  color: var(--ifm-color-primary);
+}
+
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ifm-color-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.editor {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--clarity-line);
+  border-radius: 8px;
+  background: var(--clarity-surface);
+}
+
+.editorHeader {
+  padding: 15px 19px;
+  border-bottom: 1px solid var(--clarity-line);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 12px;
+}
+
+.codeSnippet {
+  border: 0;
+  border-radius: 0;
+  font-size: 0.8125rem;
+}
+
+.caption {
+  padding: 12px 19px;
+  margin: 0;
+  border-top: 1px solid var(--clarity-line);
+  color: var(--clarity-muted);
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.closingCta {
+  background: var(--clarity-tint);
+}
+
+.page a:focus-visible {
+  outline: 3px solid var(--color-highlight-300);
+  outline-offset: 5px;
+}
+
+@media (max-width: 900px) {
+  .container {
+    width: calc(100% - 56px);
+  }
+
+  .showcaseGrid,
+  .reverse {
+    gap: 38px;
+  }
+}
+
+@media (max-width: 700px) {
+  .container {
+    width: calc(100% - 40px);
+  }
+
+  .hero {
+    padding: 62px 0 68px;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.4rem, 8.5vw, 3.65rem);
+  }
+
+  .heroContent > p {
+    font-size: 16px;
+  }
+
+  .intro {
+    padding: 52px 0 60px;
+  }
+
+  .introCopy {
+    margin-bottom: 34px;
+  }
+
+  .introCopy p {
+    font-size: 15px;
+  }
+
+  .benefits {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .showcase {
+    padding: 54px 0;
+  }
+
+  .showcaseGrid,
+  .reverse {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+
+  .reverse .copy {
+    order: 0;
+  }
+
+  .copy > p {
+    font-size: 15px;
+  }
+
+  .editorHeader,
+  .caption {
+    padding-inline: 15px;
+  }
+}
