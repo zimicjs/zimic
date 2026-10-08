@@ -8,6 +8,7 @@ import { declareMessageSavingWebSocketInterceptorTests } from './shared/messageS
 
 describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Message saving', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
+
   let baseURL: string;
 
   beforeAll(async () => {
@@ -24,7 +25,9 @@ describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Message saving',
   });
 
   declareMessageSavingWebSocketInterceptorTests({
+    platform: 'node',
     type,
     getBaseURL: () => baseURL,
+    getInterceptorOptions: () => ({ type, baseURL }),
   });
 });

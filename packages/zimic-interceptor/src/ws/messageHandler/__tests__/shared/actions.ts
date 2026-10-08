@@ -208,7 +208,7 @@ export function declareActionWebSocketMessageHandlerTests(
 
         await handleMessage(createBinaryMessage(3, 4));
 
-        expect(await readBytes(sender.sentMessages[0] as ArrayBuffer)).toEqual([1, 2]);
+        expect(readBytes(sender.sentMessages[0] as ArrayBuffer)).toEqual([1, 2]);
       },
     );
   });

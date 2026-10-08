@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe } from 'vitest';
 import {
   createInterceptorToken,
   DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
-  InterceptorToken,
   removeInterceptorToken,
 } from '@/server/utils/auth';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
@@ -15,7 +14,8 @@ describe('WebSocketInterceptor (node, remote) > Authentication', () => {
     tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     logUnhandledRequests: false,
   });
-  let token: InterceptorToken;
+
+  let token: Awaited<ReturnType<typeof createInterceptorToken>>;
 
   beforeEach(async () => {
     token = await createInterceptorToken();
@@ -29,7 +29,7 @@ describe('WebSocketInterceptor (node, remote) > Authentication', () => {
 
   declareAuthenticationWebSocketInterceptorTests({
     platform: 'node',
-    getBaseURL: () => `ws://localhost:${server.port}`,
+    getBaseURL: () => `ws://localhost:${server.port}/chat`,
     getValidToken: () => token.value,
   });
 });

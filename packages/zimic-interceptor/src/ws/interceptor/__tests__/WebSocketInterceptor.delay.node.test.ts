@@ -1,12 +1,18 @@
-import { beforeAll, afterAll, describe } from 'vitest';
+import * as waitForDelayModule from '@zimic/utils/time';
+import { beforeAll, afterAll, describe, vi } from 'vitest';
 
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
-import { declareLifeCycleWebSocketInterceptorTests } from './shared/lifeCycle';
+import { declareDelayWebSocketInterceptorTests } from './shared/delay';
 import testMatrix from './shared/matrix';
 
-describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Life cycle', ({ type }) => {
+vi.mock('@zimic/utils/time', async (importActual) => {
+  const actualModule = await importActual<typeof waitForDelayModule>();
+  return { ...actualModule, waitForDelay: vi.fn(actualModule.waitForDelay) };
+});
+
+describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Delay', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   let baseURL: string;
@@ -24,7 +30,7 @@ describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Life cycle', ({ 
     }
   });
 
-  declareLifeCycleWebSocketInterceptorTests({
+  declareDelayWebSocketInterceptorTests({
     platform: 'node',
     type,
     getBaseURL: () => baseURL,

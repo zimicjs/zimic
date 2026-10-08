@@ -1,4 +1,4 @@
-import type { WebSocketInterceptorType } from '../../types/options';
+import { WebSocketInterceptorType } from '../../types/options';
 
 interface TestMatrixCase {
   type: WebSocketInterceptorType;

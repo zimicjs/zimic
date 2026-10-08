@@ -13,7 +13,9 @@ describe.each(testMatrix)('WebSocketInterceptor (browser, $type) > Message savin
   });
 
   declareMessageSavingWebSocketInterceptorTests({
+    platform: 'browser',
     type,
     getBaseURL: () => baseURL,
+    getInterceptorOptions: () => ({ type, baseURL }),
   });
 });

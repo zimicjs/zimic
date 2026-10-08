@@ -385,7 +385,7 @@ class InterceptorServer implements PublicInterceptorServer {
     options: {
       pendingCloseCode?: number;
       pendingCloseReason?: string;
-    } = {},
+    },
   ) {
     const handlersToRemove = this.webSocketHandlers.filter((handler) => handler.socket === socket);
 
@@ -585,7 +585,7 @@ class InterceptorServer implements PublicInterceptorServer {
     options: {
       pendingCloseCode?: number;
       pendingCloseReason?: string;
-    } = {},
+    },
   ) {
     if (!this.removePendingUserWebSocketConnection(socket, connection)) {
       return;

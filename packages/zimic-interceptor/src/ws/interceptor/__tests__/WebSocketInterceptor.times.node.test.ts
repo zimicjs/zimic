@@ -3,11 +3,10 @@ import { beforeAll, afterAll, describe } from 'vitest';
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
-import messageHandlerTestMatrix from '../../messageHandler/__tests__/shared/matrix';
-import { declareClearWebSocketInterceptorTests, declareDirectWebSocketMessageHandlerClearTests } from './shared/clear';
-import interceptorTestMatrix from './shared/matrix';
+import testMatrix from './shared/matrix';
+import { declareTimesWebSocketInterceptorTests } from './shared/times';
 
-describe.each(interceptorTestMatrix)('WebSocketInterceptor (node, $type) > Clear', ({ type }) => {
+describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Times', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   let baseURL: string;
@@ -25,20 +24,10 @@ describe.each(interceptorTestMatrix)('WebSocketInterceptor (node, $type) > Clear
     }
   });
 
-  declareClearWebSocketInterceptorTests({
+  declareTimesWebSocketInterceptorTests({
     platform: 'node',
     type,
     getBaseURL: () => baseURL,
     getInterceptorOptions: () => ({ type, baseURL }),
   });
 });
-
-describe.each(messageHandlerTestMatrix)(
-  'WebSocketMessageHandler (node, $type) > Clear while handling',
-  ({ type, Handler }) => {
-    declareDirectWebSocketMessageHandlerClearTests({
-      type,
-      Handler,
-    });
-  },
-);

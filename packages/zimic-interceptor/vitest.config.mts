@@ -49,32 +49,10 @@ export default defineConfig({
       reporter: ['text', 'html'],
       reportsDirectory: './tests/coverage',
       thresholds: {
-        '!({src/ws/**,src/server/InterceptorServer.ts,src/server/http/HttpInterceptorServerRuntime.ts})': {
-          functions: 100,
-          lines: 100,
-          statements: 100,
-          branches: 100,
-        },
-        // Temporarily reduced for Part 6 because the remaining tests are in Part 7 (#1339).
-        // Restore the global 100% minimums and remove these overrides in Part 7.
-        'src/ws/**': {
-          functions: 94.37,
-          lines: 96.9,
-          statements: 96.88,
-          branches: 92.16,
-        },
-        'src/server/InterceptorServer.ts': {
-          functions: 93.84,
-          lines: 90.54,
-          statements: 90.23,
-          branches: 80,
-        },
-        'src/server/http/HttpInterceptorServerRuntime.ts': {
-          functions: 100,
-          lines: 97.84,
-          statements: 97.91,
-          branches: 90.62,
-        },
+        functions: 100,
+        lines: 100,
+        statements: 100,
+        branches: 100,
       },
       exclude: [
         '**/node_modules/**',

@@ -55,10 +55,10 @@ export function declareRestrictionWebSocketMessageHandlerTests(
         return message.type === 'create';
       }
 
-      const effect = vi.fn((message: Schema) => {
-        if (message.type === 'create') {
-          expectTypeOf(message.body.priority).toEqualTypeOf<number | undefined>();
-        }
+      const effect = vi.fn((_message: Schema) => {
+        expectTypeOf<Extract<typeof _message, { type: 'create' }>['body']['priority']>().toEqualTypeOf<
+          number | undefined
+        >();
       });
 
       handler.with(isCreateMessage);
