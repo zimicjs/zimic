@@ -1,6 +1,6 @@
 {
   "name": "@zimic/interceptor",
-  "description": "Next-gen TypeScript-first HTTP intercepting and mocking",
+  "description": "Next-gen TypeScript-first HTTP and WebSocket intercepting and mocking",
   "keywords": [
     "zimic",
     "typescript",
@@ -9,6 +9,8 @@
     "validation",
     "inference",
     "http",
+    "websocket",
+    "ws",
     "interceptor",
     "mock",
     "api",
@@ -48,6 +50,7 @@
     "!src/**/*.test.ts",
     "bin",
     "dist",
+    "experimental",
     "index.d.ts",
     "http.d.ts",
     "server.d.ts"
@@ -71,6 +74,12 @@
       "import": "./dist/http.mjs",
       "require": "./dist/http.js",
       "default": "./dist/http.js"
+    },
+    "./experimental/ws": {
+      "types": "./experimental/ws.d.ts",
+      "import": "./dist/experimental/ws.mjs",
+      "require": "./dist/experimental/ws.js",
+      "default": "./dist/experimental/ws.js"
     },
     "./server": {
       "types": "./server.d.ts",
