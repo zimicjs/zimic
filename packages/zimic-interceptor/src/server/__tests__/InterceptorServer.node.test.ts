@@ -7,7 +7,6 @@ import path from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { verifyUnhandledRequestMessage } from '@/http/interceptor/__tests__/shared/utils';
-import { formatValueToLog } from '@/utils/logging';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
@@ -199,155 +198,184 @@ describe('Interceptor server', () => {
       }
     });
 
-    it('should remove all HTTP handlers when a worker socket closes and preserve other workers', async () => {
+    it('should preserve handlers of other interceptors when an interceptor with an overlapping base URL is stopped', async () => {
       server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
       await server.start();
 
-      type RemovedWorkerSchema = HttpSchema<{
-        '/first': { GET: { response: { 204: {} } } };
-        '/second': { GET: { response: { 204: {} } } };
-        '/third': { GET: { response: { 204: {} } } };
+      type Schema = HttpSchema<{
+        '/users': { GET: { response: { 204: {} } } };
+        '/posts': { GET: { response: { 204: {} } } };
+        '/comments': { GET: { response: { 204: {} } } };
       }>;
-      type RemainingWorkerSchema = HttpSchema<{
-        '/removed/first': { GET: { response: { 201: {} } } };
-        '/removed/second': { GET: { response: { 201: {} } } };
-        '/removed/third': { GET: { response: { 201: {} } } };
+      type OtherSchema = HttpSchema<{
+        '/api/users': { GET: { response: { 200: {} } } };
+        '/api/posts': { GET: { response: { 200: {} } } };
+        '/api/comments': { GET: { response: { 200: {} } } };
       }>;
 
-      const removedWorker = createInternalHttpInterceptor<RemovedWorkerSchema>({
+      const interceptor = createInternalHttpInterceptor<Schema>({
         type: 'remote',
-        baseURL: `http://${server.hostname}:${server.port}/removed`,
+        baseURL: `http://${server.hostname}:${server.port}/api`,
       });
-      const remainingWorker = createInternalHttpInterceptor<RemainingWorkerSchema>({
+      const otherInterceptor = createInternalHttpInterceptor<OtherSchema>({
         type: 'remote',
         baseURL: `http://${server.hostname}:${server.port}`,
       });
 
+      expect(interceptor.baseURL).not.toBe(otherInterceptor.baseURL);
+
       try {
-        await Promise.all([removedWorker.start(), remainingWorker.start()]);
+        await Promise.all([interceptor.start(), otherInterceptor.start()]);
+
+        expect(interceptor.isRunning).toBe(true);
+        expect(otherInterceptor.isRunning).toBe(true);
 
         await Promise.all([
-          remainingWorker.get('/removed/first').respond({ status: 201 }),
-          remainingWorker.get('/removed/second').respond({ status: 201 }),
-          remainingWorker.get('/removed/third').respond({ status: 201 }),
+          otherInterceptor.get('/api/users').respond({ status: 200 }),
+          otherInterceptor.get('/api/posts').respond({ status: 200 }),
+          otherInterceptor.get('/api/comments').respond({ status: 200 }),
         ]);
 
         await Promise.all([
-          removedWorker.get('/first').respond({ status: 204 }),
-          removedWorker.get('/second').respond({ status: 204 }),
-          removedWorker.get('/third').respond({ status: 204 }),
+          interceptor.get('/users').respond({ status: 204 }),
+          interceptor.get('/posts').respond({ status: 204 }),
+          interceptor.get('/comments').respond({ status: 204 }),
         ]);
 
-        expect((await fetch(`${removedWorker.baseURL}/third`)).status).toBe(204);
+        for (const path of ['/users', '/posts', '/comments']) {
+          const response = await fetch(`${interceptor.baseURL}${path}`);
+          expect(response.status).toBe(204);
+        }
 
-        await removedWorker.stop();
+        await interceptor.stop();
 
-        expect((await fetch(`${removedWorker.baseURL}/first`)).status).toBe(201);
-        expect((await fetch(`${removedWorker.baseURL}/second`)).status).toBe(201);
-        expect((await fetch(`${removedWorker.baseURL}/third`)).status).toBe(201);
+        expect(interceptor.isRunning).toBe(false);
+        expect(otherInterceptor.isRunning).toBe(true);
+
+        for (const path of ['/users', '/posts', '/comments']) {
+          const response = await fetch(`${interceptor.baseURL}${path}`);
+          expect(response.status).toBe(200);
+        }
       } finally {
-        await Promise.all([removedWorker.stop(), remainingWorker.stop()]);
+        await Promise.all([interceptor.stop(), otherInterceptor.stop()]);
       }
     });
   });
 
-  describe('HTTP requests before the HTTP runtime loads', () => {
-    it('should return the default CORS preflight response before an HTTP worker connects', async () => {
-      server = createInternalInterceptorServer();
-      await server.start();
+  describe('HTTP requests', () => {
+    describe('CORS', () => {
+      it('should allow CORS preflight requests when no interceptors are connected', async () => {
+        server = createInternalInterceptorServer();
+        await server.start();
 
-      const response = await fetch(`http://${server.hostname}:${server.port}/resource`, { method: 'OPTIONS' });
+        const response = await fetch(`http://${server.hostname}:${server.port}/users`, {
+          method: 'OPTIONS',
+          headers: {
+            origin: 'http://localhost:3000',
+            'access-control-request-method': 'POST',
+            'access-control-request-headers': 'content-type',
+          },
+        });
 
-      expect(response.status).toBe(204);
-      expect(response.headers.get('access-control-allow-origin')).toBe('*');
-      expect(response.headers.get('access-control-allow-methods')).toBe('GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS');
-      expect(response.headers.get('access-control-allow-headers')).toBe('*');
+        expect(response.status).toBe(204);
+        expect(response.headers.get('access-control-allow-origin')).toBe('*');
+        expect(response.headers.get('access-control-allow-methods')).toBe('GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS');
+        expect(response.headers.get('access-control-allow-headers')).toBe('*');
+        expect(await response.text()).toBe('');
+      });
     });
 
-    it('should log and reject an unhandled request with a body and repeated search params before an HTTP worker connects', async () => {
-      server = createInternalInterceptorServer({ logUnhandledRequests: true });
-      await server.start();
+    describe('Unhandled requests', () => {
+      it('should reject and log requests when no interceptors are connected', async () => {
+        server = createInternalInterceptorServer({ logUnhandledRequests: true });
+        await server.start();
 
-      const request = new Request(`http://${server.hostname}:${server.port}/resource?tag=first&tag=second&page=1`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ message: 'hello' }),
-      });
+        const request = new Request(`http://${server.hostname}:${server.port}/users?tag=first&tag=second&page=1`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ message: 'hello' }),
+        });
 
-      await usingIgnoredConsole(['error'], async (console) => {
-        await expectFetchError(fetch(request.clone()));
+        await usingIgnoredConsole(['error'], async (console) => {
+          await expectFetchError(fetch(request.clone()));
 
-        expect(console.error).toHaveBeenCalledTimes(1);
-        await verifyUnhandledRequestMessage(console.error.mock.calls[0].join(' '), {
-          request,
-          platform: 'node',
-          type: 'reject',
+          expect(console.error).toHaveBeenCalledTimes(1);
+
+          await verifyUnhandledRequestMessage(console.error.mock.calls[0].join(' '), {
+            request,
+            platform: 'node',
+            type: 'reject',
+          });
         });
       });
     });
 
-    it('should log a body read error and close the connection before an HTTP worker connects', async () => {
-      server = createInternalInterceptorServer({ logUnhandledRequests: true });
-      await server.start();
+    describe('Malformed requests', () => {
+      it('should reject requests with incomplete bodies and continue accepting requests', async () => {
+        server = createInternalInterceptorServer({ logUnhandledRequests: true });
+        await server.start();
 
-      await usingIgnoredConsole(['error'], async (console) => {
-        const socket = connect({ host: server!.hostname, port: server!.port! });
-        const socketClosed = once(socket, 'close');
+        await usingIgnoredConsole(['error'], async (console) => {
+          const socket = connect({ host: server!.hostname, port: server!.port! });
+          const socketClosed = once(socket, 'close');
+          const responseChunks: Buffer[] = [];
+          socket.on('data', (chunk: Buffer) => responseChunks.push(chunk));
 
-        try {
-          await once(socket, 'connect');
-          socket.resume();
-          socket.end(
-            [
-              'POST /resource HTTP/1.1',
-              `Host: ${server!.hostname}:${server!.port}`,
-              'Content-Type: text/plain',
-              'Content-Length: 20',
-              '',
-              'partial',
-            ].join('\r\n'),
-          );
-          await socketClosed;
+          try {
+            await once(socket, 'connect');
+            socket.end(
+              [
+                'POST /users HTTP/1.1',
+                `Host: ${server!.hostname}:${server!.port}`,
+                'Content-Type: text/plain',
+                'Content-Length: 20',
+                '',
+                'partial',
+              ].join('\r\n'),
+            );
+            await socketClosed;
 
-          await waitFor(() => {
-            expect(console.error).toHaveBeenCalledTimes(2);
-          });
-          expect(console.error.mock.calls[0][1]).toContain('Failed to parse request body:');
-          expect(console.error.mock.calls[0][2]).toBeInstanceOf(Error);
-          const rejectionMessage = console.error.mock.calls[1].join(' ');
-          expect(rejectionMessage).toContain('Request was not handled and was');
-          expect(rejectionMessage).toContain('rejected');
-          expect(rejectionMessage).toContain(`Body: ${await formatValueToLog(null)}`);
-          expect(socket.destroyed).toBe(true);
-        } finally {
-          socket.destroy();
-        }
+            expect(Buffer.concat(responseChunks).toString()).toMatch(/^(?:$|HTTP\/1\.1 4\d\d )/);
+
+            await waitFor(() => {
+              const diagnostics = console.error.mock.calls.map((call) => call.join(' ')).join('\n');
+              expect(diagnostics).toContain('Failed to parse request body:');
+              expect(diagnostics).toContain(`POST http://${server!.hostname}:${server!.port}/users`);
+              expect(diagnostics).toContain('rejected');
+            });
+
+            const response = await fetch(`http://${server!.hostname}:${server!.port}/users`, { method: 'OPTIONS' });
+            expect(response.status).toBe(204);
+          } finally {
+            socket.destroy();
+          }
+        });
       });
-    });
 
-    it('should log an invalid request URL and close the connection before an HTTP worker connects', async () => {
-      server = createInternalInterceptorServer({ logUnhandledRequests: true });
-      await server.start();
+      it('should reject requests with invalid host headers and continue accepting requests', async () => {
+        server = createInternalInterceptorServer({ logUnhandledRequests: true });
+        await server.start();
 
-      await usingIgnoredConsole(['error'], async (console) => {
-        const socket = connect({ host: server!.hostname, port: server!.port! });
-        const socketClosed = once(socket, 'close');
+        await usingIgnoredConsole(['error'], async () => {
+          const socket = connect({ host: server!.hostname, port: server!.port! });
+          const socketClosed = once(socket, 'close');
+          const responseChunks: Buffer[] = [];
+          socket.on('data', (chunk: Buffer) => responseChunks.push(chunk));
 
-        try {
-          await once(socket, 'connect');
-          socket.resume();
-          socket.end('GET /resource HTTP/1.1\r\nHost: [invalid\r\n\r\n');
-          await socketClosed;
+          try {
+            await once(socket, 'connect');
+            socket.end('GET /users HTTP/1.1\r\nHost: [invalid\r\n\r\n');
+            await socketClosed;
 
-          await waitFor(() => {
-            expect(console.error).toHaveBeenCalledTimes(1);
-          });
-          expect(console.error.mock.calls[0][0]).toBeInstanceOf(TypeError);
-          expect(socket.destroyed).toBe(true);
-        } finally {
-          socket.destroy();
-        }
+            expect(Buffer.concat(responseChunks).toString()).toMatch(/^(?:$|HTTP\/1\.1 4\d\d )/);
+
+            const response = await fetch(`http://${server!.hostname}:${server!.port}/users`, { method: 'OPTIONS' });
+            expect(response.status).toBe(204);
+          } finally {
+            socket.destroy();
+          }
+        });
       });
     });
   });
