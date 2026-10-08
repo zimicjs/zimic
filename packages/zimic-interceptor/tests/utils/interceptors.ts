@@ -23,6 +23,7 @@ import {
   RemoteHttpInterceptorWorkerOptions,
 } from '@/http/interceptorWorker/types/options';
 import InterceptorServer from '@/server/InterceptorServer';
+import { createWebSocketInterceptor } from '@/ws/interceptor/factory';
 import LocalWebSocketInterceptor from '@/ws/interceptor/LocalWebSocketInterceptor';
 import RemoteWebSocketInterceptor from '@/ws/interceptor/RemoteWebSocketInterceptor';
 import {
@@ -33,6 +34,7 @@ import {
 import {
   LocalWebSocketInterceptor as PublicLocalWebSocketInterceptor,
   RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor,
+  WebSocketInterceptor,
 } from '@/ws/interceptor/types/public';
 
 export function getBrowserBaseURL(type: HttpInterceptorType) {
@@ -84,15 +86,10 @@ export function createInternalWebSocketInterceptor<Schema extends WebSocketSchem
 export function createInternalWebSocketInterceptor<Schema extends WebSocketSchema>(
   options: WebSocketInterceptorOptions,
 ) {
-  return options.type === 'remote'
-    ? new RemoteWebSocketInterceptor<Schema>({
-        messageSaving: { enabled: false },
-        ...options,
-      })
-    : new LocalWebSocketInterceptor<Schema>({
-        messageSaving: { enabled: false },
-        ...options,
-      });
+  return createWebSocketInterceptor<Schema>({
+    messageSaving: { enabled: false },
+    ...options,
+  }) satisfies WebSocketInterceptor<Schema> as LocalWebSocketInterceptor<Schema> | RemoteWebSocketInterceptor<Schema>;
 }
 
 type UsingInterceptorCallback<Interceptor extends HttpInterceptor<never>> = (
