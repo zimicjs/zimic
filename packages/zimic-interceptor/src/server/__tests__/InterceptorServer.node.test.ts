@@ -1,8 +1,14 @@
 import { HttpSchema } from '@zimic/http';
 import { expectFetchError } from '@zimic/utils/fetch';
+import { waitFor } from '@zimic/utils/time';
+import { once } from 'events';
+import { connect } from 'net';
 import path from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { verifyUnhandledRequestMessage } from '@/http/interceptor/__tests__/shared/utils';
+import { formatValueToLog } from '@/utils/logging';
+import { usingIgnoredConsole } from '@tests/utils/console';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
@@ -191,6 +197,158 @@ describe('Interceptor server', () => {
           expect(interceptor.isRunning).toBe(false);
         }
       }
+    });
+
+    it('should remove all HTTP handlers when a worker socket closes and preserve other workers', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+
+      await server.start();
+
+      type RemovedWorkerSchema = HttpSchema<{
+        '/first': { GET: { response: { 204: {} } } };
+        '/second': { GET: { response: { 204: {} } } };
+        '/third': { GET: { response: { 204: {} } } };
+      }>;
+      type RemainingWorkerSchema = HttpSchema<{
+        '/removed/first': { GET: { response: { 201: {} } } };
+        '/removed/second': { GET: { response: { 201: {} } } };
+        '/removed/third': { GET: { response: { 201: {} } } };
+      }>;
+
+      const removedWorker = createInternalHttpInterceptor<RemovedWorkerSchema>({
+        type: 'remote',
+        baseURL: `http://${server.hostname}:${server.port}/removed`,
+      });
+      const remainingWorker = createInternalHttpInterceptor<RemainingWorkerSchema>({
+        type: 'remote',
+        baseURL: `http://${server.hostname}:${server.port}`,
+      });
+
+      try {
+        await Promise.all([removedWorker.start(), remainingWorker.start()]);
+
+        await Promise.all([
+          remainingWorker.get('/removed/first').respond({ status: 201 }),
+          remainingWorker.get('/removed/second').respond({ status: 201 }),
+          remainingWorker.get('/removed/third').respond({ status: 201 }),
+        ]);
+
+        await Promise.all([
+          removedWorker.get('/first').respond({ status: 204 }),
+          removedWorker.get('/second').respond({ status: 204 }),
+          removedWorker.get('/third').respond({ status: 204 }),
+        ]);
+
+        expect((await fetch(`${removedWorker.baseURL}/third`)).status).toBe(204);
+
+        await removedWorker.stop();
+
+        expect((await fetch(`${removedWorker.baseURL}/first`)).status).toBe(201);
+        expect((await fetch(`${removedWorker.baseURL}/second`)).status).toBe(201);
+        expect((await fetch(`${removedWorker.baseURL}/third`)).status).toBe(201);
+      } finally {
+        await Promise.all([removedWorker.stop(), remainingWorker.stop()]);
+      }
+    });
+  });
+
+  describe('HTTP requests before the HTTP runtime loads', () => {
+    it('should return the default CORS preflight response before an HTTP worker connects', async () => {
+      server = createInternalInterceptorServer();
+      await server.start();
+
+      const response = await fetch(`http://${server.hostname}:${server.port}/resource`, { method: 'OPTIONS' });
+
+      expect(response.status).toBe(204);
+      expect(response.headers.get('access-control-allow-origin')).toBe('*');
+      expect(response.headers.get('access-control-allow-methods')).toBe('GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS');
+      expect(response.headers.get('access-control-allow-headers')).toBe('*');
+    });
+
+    it('should log and reject an unhandled request with a body and repeated search params before an HTTP worker connects', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: true });
+      await server.start();
+
+      const request = new Request(`http://${server.hostname}:${server.port}/resource?tag=first&tag=second&page=1`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ message: 'hello' }),
+      });
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        await expectFetchError(fetch(request.clone()));
+
+        expect(console.error).toHaveBeenCalledTimes(1);
+        await verifyUnhandledRequestMessage(console.error.mock.calls[0].join(' '), {
+          request,
+          platform: 'node',
+          type: 'reject',
+        });
+      });
+    });
+
+    it('should log a body read error and close the connection before an HTTP worker connects', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: true });
+      await server.start();
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        const socket = connect({ host: server!.hostname, port: server!.port! });
+        const socketClosed = once(socket, 'close');
+
+        try {
+          await once(socket, 'connect');
+          socket.resume();
+          socket.end(
+            [
+              'POST /resource HTTP/1.1',
+              `Host: ${server!.hostname}:${server!.port}`,
+              'Content-Type: text/plain',
+              'Content-Length: 20',
+              '',
+              'partial',
+            ].join('\r\n'),
+          );
+          await socketClosed;
+
+          await waitFor(() => {
+            expect(console.error).toHaveBeenCalledTimes(2);
+          });
+          expect(console.error.mock.calls[0][1]).toContain('Failed to parse request body:');
+          expect(console.error.mock.calls[0][2]).toBeInstanceOf(Error);
+          const rejectionMessage = console.error.mock.calls[1].join(' ');
+          expect(rejectionMessage).toContain('Request was not handled and was');
+          expect(rejectionMessage).toContain('rejected');
+          expect(rejectionMessage).toContain(`Body: ${await formatValueToLog(null)}`);
+          expect(socket.destroyed).toBe(true);
+        } finally {
+          socket.destroy();
+        }
+      });
+    });
+
+    it('should log an invalid request URL and close the connection before an HTTP worker connects', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: true });
+      await server.start();
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        const socket = connect({ host: server!.hostname, port: server!.port! });
+        const socketClosed = once(socket, 'close');
+
+        try {
+          await once(socket, 'connect');
+          socket.resume();
+          socket.end('GET /resource HTTP/1.1\r\nHost: [invalid\r\n\r\n');
+          await socketClosed;
+
+          await waitFor(() => {
+            expect(console.error).toHaveBeenCalledTimes(1);
+          });
+          expect(console.error.mock.calls[0][0]).toBeInstanceOf(TypeError);
+          expect(socket.destroyed).toBe(true);
+        } finally {
+          socket.destroy();
+        }
+      });
     });
   });
 
