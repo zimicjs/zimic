@@ -35,6 +35,7 @@ import {
 } from './constants';
 import NotRunningInterceptorServerError from './errors/NotRunningInterceptorServerError';
 import RunningInterceptorServerError from './errors/RunningInterceptorServerError';
+import StaleHttpRuntimeLoadError from './errors/StaleHttpRuntimeLoadError';
 import type HttpInterceptorServerRuntime from './http/HttpInterceptorServerRuntime';
 import type { InterceptorServerOptions } from './types/options';
 import type { InterceptorServer as PublicInterceptorServer } from './types/public';
@@ -61,14 +62,13 @@ interface PendingUserWebSocketHandler extends UserWebSocketHandler {
   closeListener: () => void;
 }
 
-const WEB_SOCKET_CONNECTION_SETUP_FAILED_CLOSE_REASON = 'Could not connect to the WebSocket interceptor.';
-const WORKER_REJECTION_CLOSE_CODE = 1008;
-const INVALID_WORKER_PROTOCOL_CLOSE_REASON = 'Invalid interceptor worker protocol.';
-const MISSING_HTTP_PEER_CLOSE_REASON =
-  'The optional peer dependency "@zimic/http" is required for HTTP interceptor workers.';
-const HTTP_RUNTIME_LOAD_FAILED_CLOSE_REASON = 'Could not load the HTTP interceptor runtime.';
-
-class StaleHttpRuntimeLoadError extends Error {}
+const WEB_SOCKET_CLOSE_REASONS = Object.freeze({
+  CONNECTION_SETUP_FAILED: 'Could not connect to the WebSocket interceptor.',
+  INVALID_WORKER_PROTOCOL: 'Invalid interceptor worker protocol.',
+  MISSING_HTTP_PEER: 'The optional peer dependency "@zimic/http" is required for HTTP interceptor workers.',
+  HTTP_RUNTIME_LOAD_FAILED: 'Could not load the HTTP interceptor runtime.',
+  NO_REGISTERED_INTERCEPTOR: 'No WebSocket interceptor is registered for this URL.',
+} as const);
 
 function isMissingHttpPeerError(error: unknown): boolean {
   if (!(error instanceof Error)) {
@@ -86,7 +86,6 @@ class InterceptorServer implements PublicInterceptorServer {
   private webSocketServer?: WebSocketServer<InterceptorServerWebSocketSchema>;
   private httpRuntime?: HttpInterceptorServerRuntime;
   private httpRuntimeLoadingPromise?: Promise<HttpInterceptorServerRuntime>;
-  private serverGeneration = 0;
 
   _hostname: string;
   _port: number | undefined;
@@ -154,7 +153,6 @@ class InterceptorServer implements PublicInterceptorServer {
       return;
     }
 
-    this.serverGeneration++;
     this.httpServer = createServer({
       keepAlive: true,
       joinDuplicateHeaders: true,
@@ -191,7 +189,7 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private authenticateWebSocketConnection: WebSocketServerAuthenticate = async (_socket, request) => {
-    if (!this.isWebSocketRpcRequest(request)) {
+    if (!this.isWebSocketRPCRequest(request)) {
       return { isValid: true };
     }
 
@@ -256,7 +254,7 @@ class InterceptorServer implements PublicInterceptorServer {
     return undefined;
   }
 
-  private isWebSocketRpcRequest(request: IncomingMessage) {
+  private isWebSocketRPCRequest(request: IncomingMessage) {
     return this.getWebSocketRequestParameters(request).some(
       (parameter) =>
         parameter === INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER ||
@@ -266,6 +264,7 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private getWebSocketRPCProtocol(request: IncomingMessage): InterceptorServerRPCProtocol | undefined {
     const protocolParameterPrefix = `${INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER}=`;
+
     const protocol = this.getWebSocketRequestParameters(request)
       .find((parameter) => parameter.startsWith(protocolParameterPrefix))
       ?.slice(protocolParameterPrefix.length);
@@ -275,6 +274,7 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private getWebSocketRequestParameters(request: IncomingMessage) {
     const protocols = request.headers['sec-websocket-protocol'] ?? '';
+
     return protocols
       .split(/,\s*/)
       .filter(Boolean)
@@ -366,13 +366,14 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private registerWorkerSocket(socket: Socket, protocol: InterceptorServerRPCProtocol) {
     this.workerProtocols.set(socket, protocol);
+
     socket.addEventListener('close', () => {
       if (protocol === 'http') {
         this.httpRuntime?.removeHandlersBySocket(socket);
       } else {
         this.removeWebSocketHandlersBySocket(socket, {
           pendingCloseCode: WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR,
-          pendingCloseReason: WEB_SOCKET_CONNECTION_SETUP_FAILED_CLOSE_REASON,
+          pendingCloseReason: WEB_SOCKET_CLOSE_REASONS.CONNECTION_SETUP_FAILED,
         });
       }
 
@@ -429,11 +430,10 @@ class InterceptorServer implements PublicInterceptorServer {
       return this.httpRuntime;
     }
 
-    const serverGeneration = this.serverGeneration;
-    const loadingPromise =
+    const loadingPromise: Promise<HttpInterceptorServerRuntime> =
       this.httpRuntimeLoadingPromise ??
       importHttpInterceptorServerRuntime().then(({ default: Runtime }) => {
-        if (serverGeneration !== this.serverGeneration || !this.webSocketServer?.isRunning) {
+        if (this.httpRuntimeLoadingPromise !== loadingPromise || !this.webSocketServer?.isRunning) {
           throw new StaleHttpRuntimeLoadError();
         }
 
@@ -446,6 +446,7 @@ class InterceptorServer implements PublicInterceptorServer {
         this.httpRuntime = runtime;
         return runtime;
       });
+
     this.httpRuntimeLoadingPromise = loadingPromise;
 
     try {
@@ -458,12 +459,12 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private handleWebSocketConnection: WebSocketServerConnectionHandler = async (socket, request) => {
-    if (this.isWebSocketRpcRequest(request)) {
+    if (this.isWebSocketRPCRequest(request)) {
       const protocol = this.getWebSocketRPCProtocol(request);
 
       if (!protocol) {
         socket.resume();
-        socket.close(WORKER_REJECTION_CLOSE_CODE, INVALID_WORKER_PROTOCOL_CLOSE_REASON);
+        socket.close(WEB_SOCKET_CLOSE_CODES.POLICY_VIOLATION, WEB_SOCKET_CLOSE_REASONS.INVALID_WORKER_PROTOCOL);
         return { handled: true };
       }
 
@@ -472,16 +473,21 @@ class InterceptorServer implements PublicInterceptorServer {
           await this.loadHttpRuntime();
         } catch (error) {
           console.error(error);
+
           socket.resume();
           socket.close(
-            WORKER_REJECTION_CLOSE_CODE,
-            isMissingHttpPeerError(error) ? MISSING_HTTP_PEER_CLOSE_REASON : HTTP_RUNTIME_LOAD_FAILED_CLOSE_REASON,
+            WEB_SOCKET_CLOSE_CODES.POLICY_VIOLATION,
+            isMissingHttpPeerError(error)
+              ? WEB_SOCKET_CLOSE_REASONS.MISSING_HTTP_PEER
+              : WEB_SOCKET_CLOSE_REASONS.HTTP_RUNTIME_LOAD_FAILED,
           );
+
           return { handled: true };
         }
       }
 
       this.registerWorkerSocket(socket, protocol);
+
       return { handled: false };
     }
 
@@ -489,11 +495,13 @@ class InterceptorServer implements PublicInterceptorServer {
 
     if (!handler) {
       socket.resume();
-      socket.close(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR, 'No WebSocket interceptor is registered for this URL.');
+      socket.close(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR, WEB_SOCKET_CLOSE_REASONS.NO_REGISTERED_INTERCEPTOR);
+
       return { handled: true };
     }
 
     const clientId = crypto.randomUUID();
+
     const connection: PendingUserWebSocketHandler = {
       clientId,
       handler,
@@ -504,9 +512,11 @@ class InterceptorServer implements PublicInterceptorServer {
 
     socket.pause();
     socket.addEventListener('close', connection.closeListener, { once: true });
+
     this.pendingUserWebSocketHandlers.set(socket, connection);
 
     let accepted: boolean;
+
     try {
       const reply = await this.webSocketServerOrThrow.request(
         'interceptors/ws/clients/connect',
@@ -517,29 +527,34 @@ class InterceptorServer implements PublicInterceptorServer {
         },
         { sockets: [handler.socket] },
       );
+
       accepted = reply.accepted;
     } catch {
       this.closePendingUserWebSocketConnection(socket, connection, {
         pendingCloseCode: WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR,
-        pendingCloseReason: WEB_SOCKET_CONNECTION_SETUP_FAILED_CLOSE_REASON,
+        pendingCloseReason: WEB_SOCKET_CLOSE_REASONS.CONNECTION_SETUP_FAILED,
       });
+
       return { handled: true };
     }
 
     if (!accepted) {
       this.closePendingUserWebSocketConnection(socket, connection, {
         pendingCloseCode: WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR,
-        pendingCloseReason: WEB_SOCKET_CONNECTION_SETUP_FAILED_CLOSE_REASON,
+        pendingCloseReason: WEB_SOCKET_CLOSE_REASONS.CONNECTION_SETUP_FAILED,
       });
+
       return { handled: true };
     }
 
     if (!this.canActivatePendingUserWebSocketConnection(socket, connection)) {
       this.closePendingUserWebSocketConnection(socket, connection, {
         pendingCloseCode: WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR,
-        pendingCloseReason: WEB_SOCKET_CONNECTION_SETUP_FAILED_CLOSE_REASON,
+        pendingCloseReason: WEB_SOCKET_CLOSE_REASONS.CONNECTION_SETUP_FAILED,
       });
+
       this.notifyUserWebSocketClose(connection);
+
       return { handled: true };
     }
 
@@ -550,10 +565,12 @@ class InterceptorServer implements PublicInterceptorServer {
       socket.removeEventListener('message', messageListener);
       this.notifyUserWebSocketClose(connection);
     });
+
     socket.addEventListener('message', messageListener);
 
     this.activeUserWebSocketHandlers.set(socket, connection);
     this.removePendingUserWebSocketConnection(socket, connection);
+
     socket.resume();
 
     return { handled: true };
@@ -576,6 +593,7 @@ class InterceptorServer implements PublicInterceptorServer {
 
     this.pendingUserWebSocketHandlers.delete(socket);
     socket.removeEventListener('close', connection.closeListener);
+
     return true;
   }
 
@@ -615,9 +633,7 @@ class InterceptorServer implements PublicInterceptorServer {
     try {
       this.webSocketServerOrThrow.send(
         'interceptors/ws/clients/close',
-        {
-          clientId: connection.clientId,
-        },
+        { clientId: connection.clientId },
         { sockets: [connection.handler.socket] },
       );
     } catch (error) {
@@ -753,7 +769,6 @@ class InterceptorServer implements PublicInterceptorServer {
       return;
     }
 
-    this.serverGeneration++;
     this.httpRuntimeLoadingPromise = undefined;
     await this.stopWebSocketServer();
     await this.stopHttpServer();
@@ -790,6 +805,7 @@ class InterceptorServer implements PublicInterceptorServer {
       ...this.pendingUserWebSocketHandlers.keys(),
       ...this.activeUserWebSocketHandlers.keys(),
     ]);
+
     const closingPromises = Array.from(userSockets, (socket) =>
       closeClientSocket(socket, { timeout: this.webSocketServerOrThrow.socketTimeout }),
     );

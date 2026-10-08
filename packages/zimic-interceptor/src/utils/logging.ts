@@ -36,6 +36,7 @@ export async function logUnhandledRequestWarning(request: Request, action: 'bypa
     logger.error('Failed to parse request body:', error);
     return null;
   });
+
   const headers = new HttpHeaders(request.headers);
   const searchParams = new HttpSearchParams(new URL(request.url).searchParams);
 

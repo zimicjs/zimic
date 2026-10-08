@@ -127,7 +127,7 @@ abstract class HttpInterceptorWorker {
     strategy: UnhandledRequestStrategy.Declaration | null,
   ) {
     if (strategy?.log) {
-      await HttpInterceptorWorker.logUnhandledRequestWarning(request, strategy.action);
+      await logUnhandledRequestWarning(request, strategy.action);
       return { wasLogged: true };
     }
     return { wasLogged: false };
@@ -454,10 +454,6 @@ abstract class HttpInterceptorWorker {
     }
 
     return params as InferPathParams<Path>;
-  }
-
-  static async logUnhandledRequestWarning(rawRequest: Request, action: UnhandledRequestStrategy.Action) {
-    await logUnhandledRequestWarning(rawRequest, action);
   }
 }
 
