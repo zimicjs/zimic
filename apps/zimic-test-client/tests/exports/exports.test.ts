@@ -128,274 +128,280 @@ import {
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 describe('Exports', () => {
-  it('exports all expected resources from @zimic/http', () => {
-    expectTypeOf<JSONValue>().not.toBeAny();
-    expectTypeOf<JSONValue<never>>().not.toBeAny();
-    expectTypeOf<JSONSerialized<never>>().not.toBeAny();
-    expectTypeOf<HttpHeadersSerialized<never>>().not.toBeAny();
-    expectTypeOf<HttpSearchParamsSerialized<never>>().not.toBeAny();
+  describe('@zimic/http', () => {
+    it('exports all expected resources from @zimic/http', () => {
+      expectTypeOf<JSONValue>().not.toBeAny();
+      expectTypeOf<JSONValue<never>>().not.toBeAny();
+      expectTypeOf<JSONSerialized<never>>().not.toBeAny();
+      expectTypeOf<HttpHeadersSerialized<never>>().not.toBeAny();
+      expectTypeOf<HttpSearchParamsSerialized<never>>().not.toBeAny();
 
-    expectTypeOf<HttpBody>().not.toBeAny();
-    expectTypeOf<HttpBody.Loose>().not.toBeAny();
-    expectTypeOf<HttpRequest>().not.toBeAny();
-    expectTypeOf<HttpResponse>().not.toBeAny();
+      expectTypeOf<HttpBody>().not.toBeAny();
+      expectTypeOf<HttpBody.Loose>().not.toBeAny();
+      expectTypeOf<HttpRequest>().not.toBeAny();
+      expectTypeOf<HttpResponse>().not.toBeAny();
 
-    expectTypeOf<HttpPathParamsSchema>().not.toBeAny();
-    expectTypeOf<HttpPathParamsSerialized<never>>().not.toBeAny();
+      expectTypeOf<HttpPathParamsSchema>().not.toBeAny();
+      expectTypeOf<HttpPathParamsSerialized<never>>().not.toBeAny();
 
-    expectTypeOf<HttpHeaders>().not.toBeAny();
-    expect(new HttpHeaders()).toBeInstanceOf(Headers);
-    expectTypeOf<HttpHeadersInit<never>>().not.toBeAny();
-    expectTypeOf<HttpHeadersSchema>().not.toBeAny();
-    expectTypeOf<HttpHeadersSchemaTuple<never>>().not.toBeAny();
-    expectTypeOf<HttpHeadersSchemaName<never>>().not.toBeAny();
-    expectTypeOf<HttpHeadersSerialized<never>>().not.toBeAny();
-    expectTypeOf<StrictHeaders<never>>().not.toBeAny();
+      expectTypeOf<HttpHeaders>().not.toBeAny();
+      expect(new HttpHeaders()).toBeInstanceOf(Headers);
+      expectTypeOf<HttpHeadersInit<never>>().not.toBeAny();
+      expectTypeOf<HttpHeadersSchema>().not.toBeAny();
+      expectTypeOf<HttpHeadersSchemaTuple<never>>().not.toBeAny();
+      expectTypeOf<HttpHeadersSchemaName<never>>().not.toBeAny();
+      expectTypeOf<HttpHeadersSerialized<never>>().not.toBeAny();
+      expectTypeOf<StrictHeaders<never>>().not.toBeAny();
 
-    expectTypeOf<HttpSearchParams>().not.toBeAny();
-    expect(new HttpSearchParams()).toBeInstanceOf(URLSearchParams);
-    expectTypeOf<HttpSearchParamsInit<never>>().not.toBeAny();
-    expectTypeOf<HttpSearchParamsSchema>().not.toBeAny();
-    expectTypeOf<HttpSearchParamsSchemaTuple<never>>().not.toBeAny();
-    expectTypeOf<HttpSearchParamsSchemaName<never>>().not.toBeAny();
-    expectTypeOf<HttpSearchParamsSchemaName.Array<never>>().not.toBeAny();
-    expectTypeOf<HttpSearchParamsSchemaName.NonArray<never>>().not.toBeAny();
-    expectTypeOf<HttpSearchParamsSerialized<never>>().not.toBeAny();
-    expectTypeOf<StrictURLSearchParams<never>>().not.toBeAny();
+      expectTypeOf<HttpSearchParams>().not.toBeAny();
+      expect(new HttpSearchParams()).toBeInstanceOf(URLSearchParams);
+      expectTypeOf<HttpSearchParamsInit<never>>().not.toBeAny();
+      expectTypeOf<HttpSearchParamsSchema>().not.toBeAny();
+      expectTypeOf<HttpSearchParamsSchemaTuple<never>>().not.toBeAny();
+      expectTypeOf<HttpSearchParamsSchemaName<never>>().not.toBeAny();
+      expectTypeOf<HttpSearchParamsSchemaName.Array<never>>().not.toBeAny();
+      expectTypeOf<HttpSearchParamsSchemaName.NonArray<never>>().not.toBeAny();
+      expectTypeOf<HttpSearchParamsSerialized<never>>().not.toBeAny();
+      expectTypeOf<StrictURLSearchParams<never>>().not.toBeAny();
 
-    expectTypeOf<HttpFormData>().not.toBeAny();
-    expect(new HttpFormData()).toBeInstanceOf(FormData);
-    expectTypeOf<HttpFormDataSchema>().not.toBeAny();
-    expectTypeOf<HttpFormDataSchemaName<never>>().not.toBeAny();
-    expectTypeOf<HttpFormDataSerialized<never>>().not.toBeAny();
-    expectTypeOf<StrictFormData<never>>().not.toBeAny();
+      expectTypeOf<HttpFormData>().not.toBeAny();
+      expect(new HttpFormData()).toBeInstanceOf(FormData);
+      expectTypeOf<HttpFormDataSchema>().not.toBeAny();
+      expectTypeOf<HttpFormDataSchemaName<never>>().not.toBeAny();
+      expectTypeOf<HttpFormDataSerialized<never>>().not.toBeAny();
+      expectTypeOf<StrictFormData<never>>().not.toBeAny();
 
-    expectTypeOf<HttpSchema<never>>().not.toBeAny();
-    expectTypeOf<HttpSchema.Methods<never>>().not.toBeAny();
-    expectTypeOf<HttpSchema.Method<never>>().not.toBeAny();
-    expectTypeOf<HttpSchema.Request<never>>().not.toBeAny();
-    expectTypeOf<HttpSchema.ResponseByStatusCode<never>>().not.toBeAny();
-    expectTypeOf<HttpSchema.Response<never>>().not.toBeAny();
-    expectTypeOf<HttpSchema.Headers<never>>().not.toBeAny();
-    expectTypeOf<HttpSchema.Body<never>>().not.toBeAny();
-    expectTypeOf<HttpSchema.SearchParams<never>>().not.toBeAny();
-    expectTypeOf<HttpSchema.PathParams<never>>().not.toBeAny();
-    expectTypeOf<HttpSchema.FormData<never>>().not.toBeAny();
+      expectTypeOf<HttpSchema<never>>().not.toBeAny();
+      expectTypeOf<HttpSchema.Methods<never>>().not.toBeAny();
+      expectTypeOf<HttpSchema.Method<never>>().not.toBeAny();
+      expectTypeOf<HttpSchema.Request<never>>().not.toBeAny();
+      expectTypeOf<HttpSchema.ResponseByStatusCode<never>>().not.toBeAny();
+      expectTypeOf<HttpSchema.Response<never>>().not.toBeAny();
+      expectTypeOf<HttpSchema.Headers<never>>().not.toBeAny();
+      expectTypeOf<HttpSchema.Body<never>>().not.toBeAny();
+      expectTypeOf<HttpSchema.SearchParams<never>>().not.toBeAny();
+      expectTypeOf<HttpSchema.PathParams<never>>().not.toBeAny();
+      expectTypeOf<HttpSchema.FormData<never>>().not.toBeAny();
 
-    expectTypeOf<HttpMethod>().not.toBeAny();
-    expectTypeOf<HttpStatusCode>().not.toBeAny();
-    expectTypeOf<HttpStatusCode.Information>().not.toBeAny();
-    expectTypeOf<HttpStatusCode.Success>().not.toBeAny();
-    expectTypeOf<HttpStatusCode.Redirection>().not.toBeAny();
-    expectTypeOf<HttpStatusCode.ClientError>().not.toBeAny();
-    expectTypeOf<HttpStatusCode.ServerError>().not.toBeAny();
-    expectTypeOf<HttpMethodsSchema>().not.toBeAny();
-    expectTypeOf<HttpMethodSchema>().not.toBeAny();
-    expectTypeOf<HttpRequestSchema>().not.toBeAny();
-    expectTypeOf<HttpResponseSchemaByStatusCode>().not.toBeAny();
-    expectTypeOf<HttpResponseSchema>().not.toBeAny();
-    expectTypeOf<HttpResponseSchemaStatusCode<never>>().not.toBeAny();
+      expectTypeOf<HttpMethod>().not.toBeAny();
+      expectTypeOf<HttpStatusCode>().not.toBeAny();
+      expectTypeOf<HttpStatusCode.Information>().not.toBeAny();
+      expectTypeOf<HttpStatusCode.Success>().not.toBeAny();
+      expectTypeOf<HttpStatusCode.Redirection>().not.toBeAny();
+      expectTypeOf<HttpStatusCode.ClientError>().not.toBeAny();
+      expectTypeOf<HttpStatusCode.ServerError>().not.toBeAny();
+      expectTypeOf<HttpMethodsSchema>().not.toBeAny();
+      expectTypeOf<HttpMethodSchema>().not.toBeAny();
+      expectTypeOf<HttpRequestSchema>().not.toBeAny();
+      expectTypeOf<HttpResponseSchemaByStatusCode>().not.toBeAny();
+      expectTypeOf<HttpResponseSchema>().not.toBeAny();
+      expectTypeOf<HttpResponseSchemaStatusCode<never>>().not.toBeAny();
 
-    expectTypeOf<HttpSchemaMethod<never>>().not.toBeAny();
-    expectTypeOf<HttpSchemaPath<never, never>>().not.toBeAny();
-    expectTypeOf<HttpSchemaPath.Literal<never, never>>().not.toBeAny();
-    expectTypeOf<HttpSchemaPath.NonLiteral<never, never>>().not.toBeAny();
-    expectTypeOf<InferPathParams<never>>().not.toBeAny();
-    expectTypeOf<MergeHttpResponsesByStatusCode<never>>().not.toBeAny();
-    expectTypeOf<AllowAnyStringInPathParams<never>>().not.toBeAny();
-    expect(Array.isArray(HTTP_METHODS)).toBe(true);
-    expectTypeOf<HttpRequestBodySchema<never>>().not.toBeAny();
-    expectTypeOf<HttpRequestHeadersSchema<never>>().not.toBeAny();
-    expectTypeOf<HttpRequestSearchParamsSchema<never>>().not.toBeAny();
-    expectTypeOf<HttpResponseBodySchema<never, never>>().not.toBeAny();
-    expectTypeOf<HttpResponseHeadersSchema<never, never>>().not.toBeAny();
-    expectTypeOf<LiteralHttpSchemaPathFromNonLiteral<never, never, never>>().not.toBeAny();
+      expectTypeOf<HttpSchemaMethod<never>>().not.toBeAny();
+      expectTypeOf<HttpSchemaPath<never, never>>().not.toBeAny();
+      expectTypeOf<HttpSchemaPath.Literal<never, never>>().not.toBeAny();
+      expectTypeOf<HttpSchemaPath.NonLiteral<never, never>>().not.toBeAny();
+      expectTypeOf<InferPathParams<never>>().not.toBeAny();
+      expectTypeOf<MergeHttpResponsesByStatusCode<never>>().not.toBeAny();
+      expectTypeOf<AllowAnyStringInPathParams<never>>().not.toBeAny();
+      expect(Array.isArray(HTTP_METHODS)).toBe(true);
+      expectTypeOf<HttpRequestBodySchema<never>>().not.toBeAny();
+      expectTypeOf<HttpRequestHeadersSchema<never>>().not.toBeAny();
+      expectTypeOf<HttpRequestSearchParamsSchema<never>>().not.toBeAny();
+      expectTypeOf<HttpResponseBodySchema<never, never>>().not.toBeAny();
+      expectTypeOf<HttpResponseHeadersSchema<never, never>>().not.toBeAny();
+      expectTypeOf<LiteralHttpSchemaPathFromNonLiteral<never, never, never>>().not.toBeAny();
 
-    expectTypeOf(parseHttpBody).not.toBeAny();
-    expect(typeof parseHttpBody).toBe('function');
+      expectTypeOf(parseHttpBody).not.toBeAny();
+      expect(typeof parseHttpBody).toBe('function');
 
-    expectTypeOf<HttpInvalidJSONError>().not.toBeAny();
-    expect(typeof HttpInvalidJSONError).toBe('function');
+      expectTypeOf<HttpInvalidJSONError>().not.toBeAny();
+      expect(typeof HttpInvalidJSONError).toBe('function');
 
-    expectTypeOf<HttpInvalidFormDataError>().not.toBeAny();
-    expect(typeof HttpInvalidFormDataError).toBe('function');
-  });
-
-  it('should parse URL-encoded bodies using the exported HttpSearchParams constructor', async () => {
-    const request = new Request('http://localhost/resource', {
-      method: 'POST',
-      body: new URLSearchParams('tag=first&tag=second'),
+      expectTypeOf<HttpInvalidFormDataError>().not.toBeAny();
+      expect(typeof HttpInvalidFormDataError).toBe('function');
     });
 
-    const body = await parseHttpBody(request);
+    it('should return an HttpSearchParams instance when parsing URL-encoded bodies', async () => {
+      const request = new Request('http://localhost/resource', {
+        method: 'POST',
+        body: new URLSearchParams('tag=first&tag=second'),
+      });
 
-    expect(body).toBeInstanceOf(HttpSearchParams);
-  });
-
-  it('should parse multipart bodies using the exported HttpFormData constructor', async () => {
-    const formData = new FormData();
-    formData.append('message', 'hello');
-    const request = new Request('http://localhost/resource', {
-      method: 'POST',
-      body: formData,
+      const body = await parseHttpBody(request);
+      expect(body).toBeInstanceOf(HttpSearchParams);
     });
 
-    const body = await parseHttpBody(request);
+    it('should return an HttpFormData instance when parsing multipart bodies', async () => {
+      const formData = new FormData();
+      formData.append('message', 'hello');
+      const request = new Request('http://localhost/resource', {
+        method: 'POST',
+        body: formData,
+      });
 
-    expect(body).toBeInstanceOf(HttpFormData);
-  });
-
-  it('should reject invalid JSON using the exported InvalidJSONError constructor', async () => {
-    const request = new Request('http://localhost/resource', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: '{invalid}',
+      const body = await parseHttpBody(request);
+      expect(body).toBeInstanceOf(HttpFormData);
     });
 
-    await expect(parseHttpBody(request)).rejects.toBeInstanceOf(HttpInvalidJSONError);
+    it('should reject invalid JSON with an HttpInvalidJSONError', async () => {
+      const request = new Request('http://localhost/resource', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{invalid}',
+      });
+
+      await expect(parseHttpBody(request)).rejects.toBeInstanceOf(HttpInvalidJSONError);
+    });
   });
 
-  it('exports all expected resources from @zimic/fetch', () => {
-    expect(typeof createFetch).toBe('function');
-    expectTypeOf<Fetch<never>>().not.toBeAny();
-    expectTypeOf<Fetch.Loose>().not.toBeAny();
-    expectTypeOf<FetchOptions<never>>().not.toBeAny();
-    expectTypeOf<FetchDefaults<never>>().not.toBeAny();
-    expectTypeOf<InferFetchSchema<never>>().not.toBeAny();
-    expectTypeOf<FetchInput<never, never, never>>().not.toBeAny();
-    expectTypeOf<FetchRequest<never, never, never>>().not.toBeAny();
-    expect(typeof FetchRequest).toBe('function');
-    expectTypeOf<FetchRequestObject>().not.toBeAny();
-    expectTypeOf<FetchRequestObjectOptions>().not.toBeAny();
-    expectTypeOf<FetchRequestObjectOptions.WithBody>().not.toBeAny();
-    expectTypeOf<FetchRequestObjectOptions.WithoutBody>().not.toBeAny();
-    expectTypeOf<FetchRequestConstructor<never>>().not.toBeAny();
-    expectTypeOf<FetchRequestInit<never, never, never>>().not.toBeAny();
-    expectTypeOf<FetchRequestInit.Defaults<never>>().not.toBeAny();
-    expectTypeOf<FetchRequestInit.DefaultHeaders<never>>().not.toBeAny();
-    expectTypeOf<FetchRequestInit.DefaultSearchParams<never>>().not.toBeAny();
-    expectTypeOf<FetchRequestInit.DefaultBody<never>>().not.toBeAny();
-    expectTypeOf<FetchRequestInit.Loose>().not.toBeAny();
-    expectTypeOf<FetchResponse<never, never, never>>().not.toBeAny();
-    expect(typeof FetchResponse).toBe('function');
-    expectTypeOf<FetchResponseConstructor>().not.toBeAny();
-    expectTypeOf<FetchResponseInit<never, never, never>>().not.toBeAny();
-    expectTypeOf<FetchResponseStatusCode<never, never, never>>().not.toBeAny();
-    expectTypeOf<FetchResponsePerStatusCode<never, never, never, never>>().not.toBeAny();
-    expectTypeOf<FetchResponseObject>().not.toBeAny();
-    expectTypeOf<FetchResponseObjectOptions>().not.toBeAny();
-    expectTypeOf<FetchResponseObjectOptions.WithBody>().not.toBeAny();
-    expectTypeOf<FetchResponseObjectOptions.WithoutBody>().not.toBeAny();
-    expectTypeOf<FetchResponseError<never, never, never>>().not.toBeAny();
-    expect(typeof FetchResponseError).toBe('function');
-    expectTypeOf<FetchResponseErrorObject>().not.toBeAny();
-    expectTypeOf<FetchResponseErrorObjectOptions>().not.toBeAny();
-    expectTypeOf<FetchResponseErrorObjectOptions.WithBody>().not.toBeAny();
-    expectTypeOf<FetchResponseErrorObjectOptions.WithoutBody>().not.toBeAny();
-    expectTypeOf<JSONStringified<never>>().not.toBeAny();
+  describe('@zimic/fetch', () => {
+    it('exports all expected resources from @zimic/fetch', () => {
+      expect(typeof createFetch).toBe('function');
+      expectTypeOf<Fetch<never>>().not.toBeAny();
+      expectTypeOf<Fetch.Loose>().not.toBeAny();
+      expectTypeOf<FetchOptions<never>>().not.toBeAny();
+      expectTypeOf<FetchDefaults<never>>().not.toBeAny();
+      expectTypeOf<InferFetchSchema<never>>().not.toBeAny();
+      expectTypeOf<FetchInput<never, never, never>>().not.toBeAny();
+      expectTypeOf<FetchRequest<never, never, never>>().not.toBeAny();
+      expect(typeof FetchRequest).toBe('function');
+      expectTypeOf<FetchRequestObject>().not.toBeAny();
+      expectTypeOf<FetchRequestObjectOptions>().not.toBeAny();
+      expectTypeOf<FetchRequestObjectOptions.WithBody>().not.toBeAny();
+      expectTypeOf<FetchRequestObjectOptions.WithoutBody>().not.toBeAny();
+      expectTypeOf<FetchRequestConstructor<never>>().not.toBeAny();
+      expectTypeOf<FetchRequestInit<never, never, never>>().not.toBeAny();
+      expectTypeOf<FetchRequestInit.Defaults<never>>().not.toBeAny();
+      expectTypeOf<FetchRequestInit.DefaultHeaders<never>>().not.toBeAny();
+      expectTypeOf<FetchRequestInit.DefaultSearchParams<never>>().not.toBeAny();
+      expectTypeOf<FetchRequestInit.DefaultBody<never>>().not.toBeAny();
+      expectTypeOf<FetchRequestInit.Loose>().not.toBeAny();
+      expectTypeOf<FetchResponse<never, never, never>>().not.toBeAny();
+      expect(typeof FetchResponse).toBe('function');
+      expectTypeOf<FetchResponseConstructor>().not.toBeAny();
+      expectTypeOf<FetchResponseInit<never, never, never>>().not.toBeAny();
+      expectTypeOf<FetchResponseStatusCode<never, never, never>>().not.toBeAny();
+      expectTypeOf<FetchResponsePerStatusCode<never, never, never, never>>().not.toBeAny();
+      expectTypeOf<FetchResponseObject>().not.toBeAny();
+      expectTypeOf<FetchResponseObjectOptions>().not.toBeAny();
+      expectTypeOf<FetchResponseObjectOptions.WithBody>().not.toBeAny();
+      expectTypeOf<FetchResponseObjectOptions.WithoutBody>().not.toBeAny();
+      expectTypeOf<FetchResponseError<never, never, never>>().not.toBeAny();
+      expect(typeof FetchResponseError).toBe('function');
+      expectTypeOf<FetchResponseErrorObject>().not.toBeAny();
+      expectTypeOf<FetchResponseErrorObjectOptions>().not.toBeAny();
+      expectTypeOf<FetchResponseErrorObjectOptions.WithBody>().not.toBeAny();
+      expectTypeOf<FetchResponseErrorObjectOptions.WithoutBody>().not.toBeAny();
+      expectTypeOf<JSONStringified<never>>().not.toBeAny();
+    });
   });
 
-  it('exports all expected resources from @zimic/ws', () => {
-    expectTypeOf<WebSocketClient<never>>().not.toBeAny();
-    expect(typeof WebSocketClient).toBe('function');
+  describe('@zimic/ws', () => {
+    it('exports all expected resources from @zimic/ws', () => {
+      expectTypeOf<WebSocketClient<never>>().not.toBeAny();
+      expect(typeof WebSocketClient).toBe('function');
 
-    expectTypeOf<WebSocketTimeoutError>().not.toBeAny();
-    expect(typeof WebSocketTimeoutError).toBe('function');
+      expectTypeOf<WebSocketTimeoutError>().not.toBeAny();
+      expect(typeof WebSocketTimeoutError).toBe('function');
 
-    expectTypeOf<WebSocketOpenTimeoutError>().not.toBeAny();
-    expect(typeof WebSocketOpenTimeoutError).toBe('function');
+      expectTypeOf<WebSocketOpenTimeoutError>().not.toBeAny();
+      expect(typeof WebSocketOpenTimeoutError).toBe('function');
 
-    expectTypeOf<WebSocketCloseTimeoutError>().not.toBeAny();
-    expect(typeof WebSocketCloseTimeoutError).toBe('function');
+      expectTypeOf<WebSocketCloseTimeoutError>().not.toBeAny();
+      expect(typeof WebSocketCloseTimeoutError).toBe('function');
+    });
   });
 
-  it('exports all expected resources from @zimic/interceptor', () => {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    expectTypeOf<InterceptorInvalidJSONError>().not.toBeAny();
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    expect(typeof InterceptorInvalidJSONError).toBe('function');
+  describe('@zimic/interceptor', () => {
+    it('exports all expected resources from @zimic/interceptor', () => {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      expectTypeOf<InterceptorInvalidJSONError>().not.toBeAny();
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      expect(typeof InterceptorInvalidJSONError).toBe('function');
 
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    expectTypeOf<InterceptorInvalidFormDataError>().not.toBeAny();
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    expect(typeof InterceptorInvalidFormDataError).toBe('function');
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      expectTypeOf<InterceptorInvalidFormDataError>().not.toBeAny();
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      expect(typeof InterceptorInvalidFormDataError).toBe('function');
 
-    expectTypeOf(createHttpInterceptor).not.toBeAny();
-    expect(typeof createHttpInterceptor).toBe('function');
+      expectTypeOf(createHttpInterceptor).not.toBeAny();
+      expect(typeof createHttpInterceptor).toBe('function');
 
-    expectTypeOf<UnhandledRequestStrategy>().not.toBeAny();
-    expectTypeOf<UnhandledRequestStrategy.Action>().not.toBeAny();
-    expectTypeOf<UnhandledRequestStrategy.Declaration>().not.toBeAny();
-    expectTypeOf<UnhandledRequestStrategy.DeclarationFactory>().not.toBeAny();
-    expectTypeOf<UnhandledRequestStrategy.Local>().not.toBeAny();
-    expectTypeOf<UnhandledRequestStrategy.LocalDeclaration>().not.toBeAny();
-    expectTypeOf<UnhandledRequestStrategy.LocalDeclarationFactory>().not.toBeAny();
-    expectTypeOf<UnhandledRequestStrategy.Remote>().not.toBeAny();
-    expectTypeOf<UnhandledRequestStrategy.RemoteDeclaration>().not.toBeAny();
-    expectTypeOf<UnhandledRequestStrategy.RemoteDeclarationFactory>().not.toBeAny();
+      expectTypeOf<UnhandledRequestStrategy>().not.toBeAny();
+      expectTypeOf<UnhandledRequestStrategy.Action>().not.toBeAny();
+      expectTypeOf<UnhandledRequestStrategy.Declaration>().not.toBeAny();
+      expectTypeOf<UnhandledRequestStrategy.DeclarationFactory>().not.toBeAny();
+      expectTypeOf<UnhandledRequestStrategy.Local>().not.toBeAny();
+      expectTypeOf<UnhandledRequestStrategy.LocalDeclaration>().not.toBeAny();
+      expectTypeOf<UnhandledRequestStrategy.LocalDeclarationFactory>().not.toBeAny();
+      expectTypeOf<UnhandledRequestStrategy.Remote>().not.toBeAny();
+      expectTypeOf<UnhandledRequestStrategy.RemoteDeclaration>().not.toBeAny();
+      expectTypeOf<UnhandledRequestStrategy.RemoteDeclarationFactory>().not.toBeAny();
 
-    expectTypeOf<HttpInterceptor<never>>().not.toBeAny();
-    expectTypeOf<LocalHttpInterceptor<never>>().not.toBeAny();
-    expectTypeOf<RemoteHttpInterceptor<never>>().not.toBeAny();
-    expectTypeOf<HttpInterceptorPlatform>().not.toBeAny();
-    expectTypeOf<HttpInterceptorType>().not.toBeAny();
-    expectTypeOf<HttpInterceptorAuthOptions>().not.toBeAny();
-    expectTypeOf<HttpInterceptorOptions>().not.toBeAny();
-    expectTypeOf<LocalHttpInterceptorOptions>().not.toBeAny();
-    expectTypeOf<RemoteHttpInterceptorOptions>().not.toBeAny();
-    expectTypeOf<InferHttpInterceptorSchema<never>>().not.toBeAny();
-    expectTypeOf<HttpInterceptorRequest<never, never>>().not.toBeAny();
-    expectTypeOf<HttpInterceptorResponse<never, never>>().not.toBeAny();
-    expectTypeOf<InterceptedHttpInterceptorRequest<never, never>>().not.toBeAny();
-    expectTypeOf<UnhandledHttpInterceptorRequest>().not.toBeAny();
+      expectTypeOf<HttpInterceptor<never>>().not.toBeAny();
+      expectTypeOf<LocalHttpInterceptor<never>>().not.toBeAny();
+      expectTypeOf<RemoteHttpInterceptor<never>>().not.toBeAny();
+      expectTypeOf<HttpInterceptorPlatform>().not.toBeAny();
+      expectTypeOf<HttpInterceptorType>().not.toBeAny();
+      expectTypeOf<HttpInterceptorAuthOptions>().not.toBeAny();
+      expectTypeOf<HttpInterceptorOptions>().not.toBeAny();
+      expectTypeOf<LocalHttpInterceptorOptions>().not.toBeAny();
+      expectTypeOf<RemoteHttpInterceptorOptions>().not.toBeAny();
+      expectTypeOf<InferHttpInterceptorSchema<never>>().not.toBeAny();
+      expectTypeOf<HttpInterceptorRequest<never, never>>().not.toBeAny();
+      expectTypeOf<HttpInterceptorResponse<never, never>>().not.toBeAny();
+      expectTypeOf<InterceptedHttpInterceptorRequest<never, never>>().not.toBeAny();
+      expectTypeOf<UnhandledHttpInterceptorRequest>().not.toBeAny();
 
-    expectTypeOf<HttpRequestHandler<never, never, never>>().not.toBeAny();
-    expectTypeOf<LocalHttpRequestHandler<never, never, never>>().not.toBeAny();
-    expectTypeOf<RemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
-    expectTypeOf<SyncedRemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
-    expectTypeOf<PendingRemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    expectTypeOf<HttpRequestHandlerResponseDeclaration<never, never>>().not.toBeAny();
-    expectTypeOf<HttpRequestHandlerResponseStaticDeclaration<never, never>>().not.toBeAny();
-    expectTypeOf<HttpRequestHandlerResponseComputedDeclaration<never, never, never>>().not.toBeAny();
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    expectTypeOf<HttpRequestHandlerResponseDeclarationFactory<never, never, never>>().not.toBeAny();
-    expectTypeOf<HttpRequestHandlerResponseDelayFactory<never, never>>().not.toBeAny();
+      expectTypeOf<HttpRequestHandler<never, never, never>>().not.toBeAny();
+      expectTypeOf<LocalHttpRequestHandler<never, never, never>>().not.toBeAny();
+      expectTypeOf<RemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
+      expectTypeOf<SyncedRemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
+      expectTypeOf<PendingRemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      expectTypeOf<HttpRequestHandlerResponseDeclaration<never, never>>().not.toBeAny();
+      expectTypeOf<HttpRequestHandlerResponseStaticDeclaration<never, never>>().not.toBeAny();
+      expectTypeOf<HttpRequestHandlerResponseComputedDeclaration<never, never, never>>().not.toBeAny();
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      expectTypeOf<HttpRequestHandlerResponseDeclarationFactory<never, never, never>>().not.toBeAny();
+      expectTypeOf<HttpRequestHandlerResponseDelayFactory<never, never>>().not.toBeAny();
 
-    expectTypeOf<HttpRequestHandlerRestriction<never, never, never>>().not.toBeAny();
-    expectTypeOf<HttpRequestHandlerComputedRestriction<never, never, never>>().not.toBeAny();
-    expectTypeOf<HttpRequestHandlerHeadersStaticRestriction<never, never, never>>().not.toBeAny();
-    expectTypeOf<HttpRequestHandlerSearchParamsStaticRestriction<never, never, never>>().not.toBeAny();
-    expectTypeOf<HttpRequestHandlerStaticRestriction<never, never, never>>().not.toBeAny();
-    expectTypeOf<HttpRequestHandlerBodyStaticRestriction<never, never, never>>().not.toBeAny();
+      expectTypeOf<HttpRequestHandlerRestriction<never, never, never>>().not.toBeAny();
+      expectTypeOf<HttpRequestHandlerComputedRestriction<never, never, never>>().not.toBeAny();
+      expectTypeOf<HttpRequestHandlerHeadersStaticRestriction<never, never, never>>().not.toBeAny();
+      expectTypeOf<HttpRequestHandlerSearchParamsStaticRestriction<never, never, never>>().not.toBeAny();
+      expectTypeOf<HttpRequestHandlerStaticRestriction<never, never, never>>().not.toBeAny();
+      expectTypeOf<HttpRequestHandlerBodyStaticRestriction<never, never, never>>().not.toBeAny();
 
-    expectTypeOf<RunningHttpInterceptorError>().not.toBeAny();
-    expect(typeof RunningHttpInterceptorError).toBe('function');
+      expectTypeOf<RunningHttpInterceptorError>().not.toBeAny();
+      expect(typeof RunningHttpInterceptorError).toBe('function');
 
-    expectTypeOf<NotRunningHttpInterceptorError>().not.toBeAny();
-    expect(typeof NotRunningHttpInterceptorError).toBe('function');
+      expectTypeOf<NotRunningHttpInterceptorError>().not.toBeAny();
+      expect(typeof NotRunningHttpInterceptorError).toBe('function');
 
-    expectTypeOf<UnknownHttpInterceptorPlatformError>().not.toBeAny();
-    expect(typeof UnknownHttpInterceptorPlatformError).toBe('function');
+      expectTypeOf<UnknownHttpInterceptorPlatformError>().not.toBeAny();
+      expect(typeof UnknownHttpInterceptorPlatformError).toBe('function');
 
-    expectTypeOf<UnknownHttpInterceptorTypeError>().not.toBeAny();
-    expect(typeof UnknownHttpInterceptorTypeError).toBe('function');
+      expectTypeOf<UnknownHttpInterceptorTypeError>().not.toBeAny();
+      expect(typeof UnknownHttpInterceptorTypeError).toBe('function');
 
-    expectTypeOf<RequestSavingSafeLimitExceededError>().not.toBeAny();
-    expect(typeof RequestSavingSafeLimitExceededError).toBe('function');
+      expectTypeOf<RequestSavingSafeLimitExceededError>().not.toBeAny();
+      expect(typeof RequestSavingSafeLimitExceededError).toBe('function');
 
-    expectTypeOf<UnregisteredBrowserServiceWorkerError>().not.toBeAny();
-    expect(typeof UnregisteredBrowserServiceWorkerError).toBe('function');
+      expectTypeOf<UnregisteredBrowserServiceWorkerError>().not.toBeAny();
+      expect(typeof UnregisteredBrowserServiceWorkerError).toBe('function');
 
-    expectTypeOf<DisabledRequestSavingError>().not.toBeAny();
-    expect(typeof DisabledRequestSavingError).toBe('function');
+      expectTypeOf<DisabledRequestSavingError>().not.toBeAny();
+      expect(typeof DisabledRequestSavingError).toBe('function');
 
-    expectTypeOf<HttpTimesCheckError>().not.toBeAny();
-    expect(typeof HttpTimesCheckError).toBe('function');
+      expectTypeOf<HttpTimesCheckError>().not.toBeAny();
+      expect(typeof HttpTimesCheckError).toBe('function');
 
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    expectTypeOf<TimesCheckError>().not.toBeAny();
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    expect(typeof TimesCheckError).toBe('function');
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      expectTypeOf<TimesCheckError>().not.toBeAny();
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      expect(typeof TimesCheckError).toBe('function');
+    });
   });
 });
