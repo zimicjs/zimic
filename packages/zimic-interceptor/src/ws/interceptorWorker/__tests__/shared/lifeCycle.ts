@@ -3,7 +3,7 @@ import { expect, it, vi } from 'vitest';
 import WebSocketInterceptorWorker from '../../WebSocketInterceptorWorker';
 
 class TestWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
-  readonly type = 'local' as const;
+  readonly type = 'local';
 
   numberOfStarts = 0;
 
@@ -47,11 +47,8 @@ class TestWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   }
 
   use = vi.fn();
-
   sendToClient = vi.fn();
-
   sendToClients = vi.fn();
-
   clearHandlers = vi.fn();
 }
 

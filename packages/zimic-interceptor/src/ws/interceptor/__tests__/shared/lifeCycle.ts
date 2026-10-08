@@ -6,7 +6,6 @@ import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promis
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
-import type { Schema } from '../../../messageHandler/__tests__/shared/types';
 import { LocalWebSocketMessageHandler } from '../../../messageHandler/LocalWebSocketMessageHandler';
 import NotRunningWebSocketInterceptorError from '../../errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
@@ -421,7 +420,7 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
   }
 
   it('should not support changing the base URL while starting', async () => {
-    const interceptor = createWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() });
+    const interceptor = createWebSocketInterceptor<MessageSchema>({ type, baseURL: getBaseURL() });
     const baseURL = interceptor.baseURL;
     let startPromise = Promise.resolve();
 
@@ -445,7 +444,7 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
   });
 
   it('should not support changing the base URL while stopping during startup', async () => {
-    const interceptor = createWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() });
+    const interceptor = createWebSocketInterceptor<MessageSchema>({ type, baseURL: getBaseURL() });
     const baseURL = interceptor.baseURL;
     const otherBaseURL = new URL('new', baseURL).toString();
 

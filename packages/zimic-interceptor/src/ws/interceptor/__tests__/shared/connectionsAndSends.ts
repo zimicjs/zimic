@@ -51,6 +51,33 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
     });
   });
 
+  it('should skip a connection listener removed by an earlier listener', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await interceptor.message();
+
+      const client = new WebSocketClient<ChatMessage>(baseURL);
+      const removedListener = vi.fn();
+      const connection = Promise.withResolvers<void>();
+      interceptor.on('connection', () => {
+        interceptor.off('connection', removedListener);
+      });
+      interceptor.on('connection', removedListener);
+      interceptor.once('connection', () => connection.resolve());
+
+      try {
+        await client.open();
+        await connection.promise;
+
+        expect(interceptor.clients).toHaveLength(1);
+        expect(removedListener).not.toHaveBeenCalled();
+      } finally {
+        await client.close();
+      }
+    });
+  });
+
   it.each(['on', 'once'] as const)('should skip %s listeners removed during connection delivery', async (method) => {
     const baseURL = getBaseURL();
 

@@ -272,7 +272,6 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
       },
     );
   });
-
   it('should reset the saved message count and warning threshold after clearing', async () => {
     const safeLimit = 2;
 
