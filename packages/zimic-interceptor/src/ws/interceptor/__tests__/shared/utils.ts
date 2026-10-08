@@ -90,6 +90,7 @@ export async function expectWebSocketTimesCheckError(
   const expectedMessage = [
     options.message,
     options.unmatchedMessages && ['Unmatched messages:', '', options.unmatchedMessages].join('\n'),
+    'Learn more: https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertimes',
   ]
     .filter(Boolean)
     .join('\n\n');
