@@ -11,8 +11,6 @@ import { Default, DefaultNoExclude, IfNever, Replace, JSONValue } from '@zimic/u
 
 import { HttpMethodSchema, HttpRequestSchema, HttpResponseSchema, HttpStatusCode } from '@/types/schema';
 
-export type { HttpBody } from '@zimic/utils/http';
-
 /**
  * An HTTP headers object with a strictly-typed schema. Fully compatible with the built-in
  * {@link https://developer.mozilla.org/docs/Web/API/Headers `Headers`} class.
