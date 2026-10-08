@@ -6,6 +6,7 @@ import type { WebSocket as Socket } from 'isomorphic-ws';
 
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
 import { deserializeResponse, type SerializedHttpRequest, serializeRequest } from '@/utils/fetch';
+import { logUnhandledRequestWarning } from '@/utils/logging';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
 import type { WebSocketEventMessage } from '@/utils/webSocket/types';
@@ -271,7 +272,7 @@ class HttpInterceptorServerRuntime {
       return;
     }
 
-    await HttpInterceptorWorker.logUnhandledRequestWarning(request, 'reject');
+    await logUnhandledRequestWarning(request, 'reject');
   }
 
   private findHttpHandlerByRequestBaseURL(request: HttpRequest) {
