@@ -5,6 +5,7 @@ import WebSocketInterceptorImplementation from '../interceptor/WebSocketIntercep
 import { WebSocketMessageHandlerDelayFactory } from './types/messages';
 import {
   LocalWebSocketMessageHandler as PublicLocalWebSocketMessageHandler,
+  WebSocketMessageHandlerSchemaWithRestriction,
   WebSocketMessageHandlerMessageCallback,
   WebSocketMessageHandlerMessageDeclaration,
 } from './types/public';
@@ -31,10 +32,17 @@ export class LocalWebSocketMessageHandler<
     return this;
   }
 
-  with(restriction: WebSocketMessageHandlerRestriction<RestrictedSchema>) {
+  with<Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
+    restriction: Restriction,
+  ): PublicLocalWebSocketMessageHandler<
+    Schema,
+    WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>
+  > {
     this.implementation.with(restriction);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
-    return this as any; // TODO
+    return this as unknown as PublicLocalWebSocketMessageHandler<
+      Schema,
+      WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>
+    >;
   }
 
   delay(minMilliseconds: number | WebSocketMessageHandlerDelayFactory<RestrictedSchema>, maxMilliseconds?: number) {

@@ -7,6 +7,7 @@ import { WebSocketMessageHandlerDelayFactory } from './types/messages';
 import {
   SyncedRemoteWebSocketMessageHandler as PublicSyncedRemoteWebSocketMessageHandler,
   PendingRemoteWebSocketMessageHandler as PublicPendingRemoteWebSocketMessageHandler,
+  WebSocketMessageHandlerSchemaWithRestriction,
   WebSocketMessageHandlerMessageCallback,
   WebSocketMessageHandlerMessageDeclaration,
 } from './types/public';
@@ -64,10 +65,17 @@ export class RemoteWebSocketMessageHandler<
     return this.pending;
   }
 
-  with(restriction: WebSocketMessageHandlerRestriction<RestrictedSchema>) {
+  with<Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
+    restriction: Restriction,
+  ): PublicPendingRemoteWebSocketMessageHandler<
+    Schema,
+    WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>
+  > {
     this.implementation.with(restriction);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
-    return this.pending as any; // TODO
+    return this.pending as unknown as PublicPendingRemoteWebSocketMessageHandler<
+      Schema,
+      WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>
+    >;
   }
 
   delay(minMilliseconds: number | WebSocketMessageHandlerDelayFactory<RestrictedSchema>, maxMilliseconds?: number) {

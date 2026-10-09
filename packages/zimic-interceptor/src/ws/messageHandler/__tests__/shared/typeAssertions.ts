@@ -76,6 +76,31 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
     });
   });
 
+  it('should preserve narrowed schemas at the implementation boundary', () => {
+    /* istanbul ignore next -- @preserve
+     * These declarations exercise the concrete implementations' generic return types. */
+    function declareLocalRestrictions(handler: LocalWebSocketMessageHandler<Schema>) {
+      const staticHandler = handler.with({ type: 'create' });
+      expectTypeOf(staticHandler).toEqualTypeOf<PublicLocalWebSocketMessageHandler<Schema, CreateMessage>>();
+
+      const guardedHandler = handler.with((message: Schema): message is CreateMessage => message.type === 'create');
+      expectTypeOf(guardedHandler).toEqualTypeOf<PublicLocalWebSocketMessageHandler<Schema, CreateMessage>>();
+    }
+
+    /* istanbul ignore next -- @preserve
+     * These declarations exercise the concrete implementations' generic return types. */
+    function declareRemoteRestrictions(handler: RemoteWebSocketMessageHandler<Schema>) {
+      const staticHandler = handler.with({ type: 'create' });
+      expectTypeOf(staticHandler).toEqualTypeOf<PendingRemoteWebSocketMessageHandler<Schema, CreateMessage>>();
+
+      const guardedHandler = handler.with((message: Schema): message is CreateMessage => message.type === 'create');
+      expectTypeOf(guardedHandler).toEqualTypeOf<PendingRemoteWebSocketMessageHandler<Schema, CreateMessage>>();
+    }
+
+    expectTypeOf(declareLocalRestrictions).toBeFunction();
+    expectTypeOf(declareRemoteRestrictions).toBeFunction();
+  });
+
   it('should narrow compatible union members through partial static restrictions', async () => {
     const baseURL = await getBaseURL(type);
 
