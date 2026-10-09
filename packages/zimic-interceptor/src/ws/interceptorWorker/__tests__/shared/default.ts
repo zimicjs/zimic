@@ -944,41 +944,44 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       });
     });
 
-    it('should preserve remaining remote connections and close removed ones after clearing an interceptor', async () => {
-      await usingWebSocketInterceptorWorker(workerOptions, { start: false }, async (rawWorker) => {
-        expect(rawWorker).toBeInstanceOf(RemoteWebSocketInterceptorWorker);
-        await rawWorker.start();
-        const worker = rawWorker as RemoteWebSocketInterceptorWorker;
-        const firstInterceptor = createInternalWebSocketInterceptor<ChatMessage>({
-          type: 'remote',
-          baseURL: `${baseURL}/first`,
-        });
-        const secondInterceptor = createInternalWebSocketInterceptor<ChatMessage>({
-          type: 'remote',
-          baseURL: `${baseURL}/second`,
-        });
+    it('should preserve functioning remote handlers after clearing another interceptor', async () => {
+      await usingWebSocketInterceptor<ChatMessage>(
+        { type: 'remote', baseURL: `${baseURL}/first` },
+        { start: false },
+        async (firstInterceptor) => {
+          await usingWebSocketInterceptor<ChatMessage>(
+            { type: 'remote', baseURL: `${baseURL}/second` },
+            { start: false },
+            async (secondInterceptor) => {
+              await Promise.all([firstInterceptor.start(), secondInterceptor.start()]);
+              await firstInterceptor.message().respond({ type: 'server', text: 'first' });
+              await secondInterceptor.message().respond({ type: 'server', text: 'second' });
 
-        await worker.use(firstInterceptor.implementation);
-        await worker.use(secondInterceptor.implementation);
+              const firstClient = new WebSocketClient<ChatMessage>(firstInterceptor.baseURL);
+              const secondClient = new WebSocketClient<ChatMessage>(secondInterceptor.baseURL);
+              const firstClientClosed = new Promise<void>((resolve) => {
+                firstClient.addEventListener('close', () => resolve(), { once: true });
+              });
+              clients.push(firstClient, secondClient);
 
-        const firstClient = new WebSocketClient<ChatMessage>(firstInterceptor.baseURL);
-        const secondClient = new WebSocketClient<ChatMessage>(secondInterceptor.baseURL);
-        const firstClientClosed = new Promise<void>((resolve) => {
-          firstClient.addEventListener('close', () => resolve(), { once: true });
-        });
-        clients.push(firstClient, secondClient);
+              await Promise.all([firstClient.open(), secondClient.open()]);
+              await waitFor(() => expect(firstInterceptor.clients).toHaveLength(1));
+              await waitFor(() => expect(secondInterceptor.clients).toHaveLength(1));
 
-        await Promise.all([firstClient.open(), secondClient.open()]);
-        await waitFor(() => expect(firstInterceptor.clients).toHaveLength(1));
-        await waitFor(() => expect(secondInterceptor.clients).toHaveLength(1));
+              await firstInterceptor.clear();
 
-        await worker.clearHandlers({ interceptor: firstInterceptor.implementation });
+              await firstClientClosed;
+              expect(firstClient.readyState).toBe(WebSocketClient.CLOSED);
+              expect(secondClient.readyState).toBe(WebSocketClient.OPEN);
+              expect(secondInterceptor.clients).toHaveLength(1);
 
-        await firstClientClosed;
-        expect(firstClient.readyState).toBe(WebSocketClient.CLOSED);
-        expect(secondClient.readyState).toBe(WebSocketClient.OPEN);
-        expect(secondInterceptor.clients).toHaveLength(1);
-      });
+              const responsePromise = waitForMessage(secondClient);
+              secondClient.send(JSON.stringify({ type: 'client', text: 'still active' }));
+              await expect(responsePromise).resolves.toEqual({ type: 'server', text: 'second' });
+            },
+          );
+        },
+      );
     });
 
     it('should not throw an error if trying to clear handlers without a running web socket client', async () => {
@@ -1017,58 +1020,60 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       });
     });
 
-    it('should resolve interceptor registration only after the server commit completes', async () => {
-      await usingWebSocketInterceptorWorker(workerOptions, { start: false }, async (rawWorker) => {
-        expect(rawWorker).toBeInstanceOf(RemoteWebSocketInterceptorWorker);
-        await rawWorker.start();
-        const worker = rawWorker as RemoteWebSocketInterceptorWorker;
-        const interceptor = createDefaultWebSocketInterceptor();
-        let resolveCommit: (() => void) | undefined;
-        const commitRequest = new Promise<{}>((resolve) => {
-          resolveCommit = () => resolve({});
+    it('should keep a pending public handler unsynced until the server acknowledges its commit', async () => {
+      await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
+        const worker = (
+          interceptor as typeof interceptor & { implementation: { worker: RemoteWebSocketInterceptorWorker } }
+        ).implementation.worker;
+        let acknowledgeCommit: ((acknowledgment: {}) => void) | undefined;
+        const commitAcknowledgment = new Promise<{}>((resolve) => {
+          acknowledgeCommit = resolve;
         });
-        const commitSpy = vi.spyOn(worker.webSocketClient, 'request').mockReturnValueOnce(commitRequest);
 
-        const commitPromise = worker.use(interceptor.implementation);
-        const commitResolutionListener = vi.fn();
-        void commitPromise.then(commitResolutionListener);
+        // Hold the commit acknowledgment to keep the public handler pending.
+        vi.spyOn(worker.webSocketClient, 'request').mockReturnValueOnce(commitAcknowledgment);
 
-        await waitForNot(() => {
-          expect(commitResolutionListener).toHaveBeenCalled();
-        });
-        resolveCommit?.();
-        await expect(commitPromise).resolves.toBeUndefined();
-        const [channel, commit] = commitSpy.mock.calls[0] as [
-          'interceptors/ws/workers/commit',
-          { id: string; baseURL: string },
-        ];
-        expect(channel).toBe('interceptors/ws/workers/commit');
-        expect(commit.id).toEqual(expect.any(String));
-        expect(commit.baseURL).toBe(baseURL);
+        const pendingHandler = interceptor.message().respond({ type: 'server', text: 'acknowledged' });
+        let isHandlerSettled = false;
+        const handlerResult = Promise.resolve(pendingHandler).then(
+          () => {
+            isHandlerSettled = true;
+          },
+          () => {
+            isHandlerSettled = true;
+          },
+        );
+
+        try {
+          await Promise.resolve();
+          expect(isHandlerSettled).toBe(false);
+        } finally {
+          acknowledgeCommit?.({});
+        }
+
+        await handlerResult;
+        expect(isHandlerSettled).toBe(true);
       });
     });
 
-    it('should propagate registration failures and remove failed pending handlers', async () => {
-      await usingWebSocketInterceptorWorker(workerOptions, { start: false }, async (rawWorker) => {
-        expect(rawWorker).toBeInstanceOf(RemoteWebSocketInterceptorWorker);
-        await rawWorker.start();
-        const worker = rawWorker as RemoteWebSocketInterceptorWorker;
-        const interceptor = createDefaultWebSocketInterceptor();
+    it('should reject a failed public handler and recover with a responding handler', async () => {
+      await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
+        const worker = (
+          interceptor as typeof interceptor & { implementation: { worker: RemoteWebSocketInterceptorWorker } }
+        ).implementation.worker;
         const commitError = new Error('Commit failed');
+
+        // Reject the next commit acknowledgment to exercise recovery through a new public handler.
         vi.spyOn(worker.webSocketClient, 'request').mockRejectedValueOnce(commitError);
 
-        await expect(worker.use(interceptor.implementation)).rejects.toThrow(commitError);
+        await expect(interceptor.message().respond({ type: 'server', text: 'failed' })).rejects.toThrow(commitError);
+        await interceptor.message().respond({ type: 'server', text: 'recovered' });
 
-        const commitSpy = vi.spyOn(worker.webSocketClient, 'request');
+        const client = await createClient();
+        const responsePromise = waitForMessage(client);
+        client.send(JSON.stringify({ type: 'client', text: 'recovery' }));
 
-        await expect(worker.use(interceptor.implementation)).resolves.toBeUndefined();
-        const [channel, commit] = commitSpy.mock.calls[0] as [
-          'interceptors/ws/workers/commit',
-          { id: string; baseURL: string },
-        ];
-        expect(channel).toBe('interceptors/ws/workers/commit');
-        expect(commit.id).toEqual(expect.any(String));
-        expect(commit.baseURL).toBe(baseURL);
+        await expect(responsePromise).resolves.toEqual({ type: 'server', text: 'recovered' });
       });
     });
   }
