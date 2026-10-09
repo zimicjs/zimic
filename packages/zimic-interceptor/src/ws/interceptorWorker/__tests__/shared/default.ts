@@ -944,7 +944,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       });
     });
 
-    it('should recommit remaining remote handlers after clearing one interceptor', async () => {
+    it('should preserve remaining remote connections and close removed ones after clearing an interceptor', async () => {
       await usingWebSocketInterceptorWorker(workerOptions, { start: false }, async (rawWorker) => {
         expect(rawWorker).toBeInstanceOf(RemoteWebSocketInterceptorWorker);
         await rawWorker.start();
@@ -960,13 +960,24 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
 
         await worker.use(firstInterceptor.implementation);
         await worker.use(secondInterceptor.implementation);
+
+        const firstClient = new WebSocketClient<ChatMessage>(firstInterceptor.baseURL);
+        const secondClient = new WebSocketClient<ChatMessage>(secondInterceptor.baseURL);
+        const firstClientClosed = new Promise<void>((resolve) => {
+          firstClient.addEventListener('close', () => resolve(), { once: true });
+        });
+        clients.push(firstClient, secondClient);
+
+        await Promise.all([firstClient.open(), secondClient.open()]);
+        await waitFor(() => expect(firstInterceptor.clients).toHaveLength(1));
+        await waitFor(() => expect(secondInterceptor.clients).toHaveLength(1));
+
         await worker.clearHandlers({ interceptor: firstInterceptor.implementation });
 
-        const secondClient = new WebSocketClient<ChatMessage>(secondInterceptor.baseURL);
-        clients.push(secondClient);
-
-        await secondClient.open();
+        await firstClientClosed;
+        expect(firstClient.readyState).toBe(WebSocketClient.CLOSED);
         expect(secondClient.readyState).toBe(WebSocketClient.OPEN);
+        expect(secondInterceptor.clients).toHaveLength(1);
       });
     });
 

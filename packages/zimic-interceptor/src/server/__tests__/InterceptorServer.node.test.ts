@@ -1,20 +1,26 @@
 import { HttpSchema } from '@zimic/http';
 import { expectFetchError } from '@zimic/utils/fetch';
 import { waitFor } from '@zimic/utils/time';
+import { WebSocketClient as PublicWebSocketClient, type WebSocketSchema } from '@zimic/ws';
 import { once } from 'events';
 import { connect } from 'net';
 import path from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { WebSocket as NodeWebSocket } from 'ws';
 
 import { verifyUnhandledRequestMessage } from '@/http/interceptor/__tests__/shared/utils';
+import { INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER } from '@/interceptor/constants';
+import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
 import { usingIgnoredConsole } from '@tests/utils/console';
-import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
+import { createInternalHttpInterceptor, createInternalWebSocketInterceptor } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
 import { DEFAULT_HOSTNAME, DEFAULT_LOG_UNHANDLED_REQUESTS } from '../constants';
 import RunningInterceptorServerError from '../errors/RunningInterceptorServerError';
 import InterceptorServer from '../InterceptorServer';
 import { DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY } from '../utils/auth';
+
+type ClientMessage = WebSocketSchema<{ type: 'client'; text: string }>;
 
 // These are integration tests for the server. Only features not easily reproducible by the CLI and the remote
 // interceptor tests are covered here. The main aspects of this class should be tested in the CLI and the remote
@@ -259,6 +265,76 @@ describe('Interceptor server', () => {
         }
       } finally {
         await Promise.all([interceptor.stop(), otherInterceptor.stop()]);
+      }
+    });
+  });
+
+  describe('WebSocket runtime', () => {
+    it('should close application connections when the server stops', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+      await server.start();
+
+      const baseURL = `ws://${server.hostname}:${server.port}`;
+      const interceptor = createInternalWebSocketInterceptor<ClientMessage>({ type: 'remote', baseURL });
+      const client = new PublicWebSocketClient<ClientMessage>(baseURL);
+      const clientClosed = new Promise<void>((resolve) => {
+        client.addEventListener('close', () => resolve(), { once: true });
+      });
+
+      try {
+        await interceptor.start();
+        await interceptor.message();
+        await client.open();
+        await waitFor(() => expect(interceptor.clients).toHaveLength(1));
+
+        await server.stop();
+
+        await clientClosed;
+        expect(client.readyState).toBe(PublicWebSocketClient.CLOSED);
+        await waitFor(() => expect(interceptor.clients).toHaveLength(0));
+      } finally {
+        await Promise.all([client.close(), interceptor.stop()]);
+      }
+    });
+  });
+
+  describe('WebSocket worker authorization', () => {
+    it('should reject WebSocket worker events from an HTTP worker', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+      await server.start();
+
+      const serverURL = `ws://${server.hostname}:${server.port}`;
+      const workerSocket = new NodeWebSocket(serverURL, [
+        encodeURIComponent(`${INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER}=http`),
+      ]);
+
+      try {
+        await once(workerSocket, 'open');
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          workerSocket.send(
+            JSON.stringify({
+              id: crypto.randomUUID(),
+              channel: 'interceptors/ws/workers/commit',
+              data: {
+                id: 'not-a-websocket-worker',
+                baseURL: serverURL,
+              },
+            }),
+          );
+
+          await waitFor(() => {
+            expect(console.error).toHaveBeenCalledWith(
+              new InvalidWebSocketMessageError('WebSocket RPC received from a non-WebSocket worker.'),
+            );
+          });
+        });
+      } finally {
+        if (workerSocket.readyState === NodeWebSocket.OPEN) {
+          const workerSocketClosed = once(workerSocket, 'close');
+          workerSocket.close();
+          await workerSocketClosed;
+        }
       }
     });
   });
