@@ -12,11 +12,21 @@ import type { WebSocketEventMessage } from '@/utils/webSocket/types';
 import WebSocketServer from '@/utils/webSocket/WebSocketServer';
 import {
   deserializeWebSocketMessageDataFromTransport,
-  isSerializedWebSocketMessageData,
   serializeWebSocketMessageDataForTransport,
 } from '@/ws/utils/messageData';
 
+import { parseServerRpcPayload } from '../schemas';
 import type { InterceptorServerWebSocketSchema, WebSocketHandlerCommit } from '../types/schema';
+import {
+  webSocketCloseEventSchema,
+  webSocketConnectEventSchema,
+  webSocketConnectReplySchema,
+  webSocketHandlerCommitSchema,
+  webSocketHandlerCommitsSchema,
+  webSocketHandleMessageEventSchema,
+  webSocketMessageReplySchema,
+  webSocketSendMessageSchema,
+} from './schemas';
 
 interface WebSocketHandler {
   id: string;
@@ -71,21 +81,18 @@ class WebSocketInterceptorServerRuntime {
   ) => {
     this.assertWebSocketWorkerSocket(socket);
 
-    const commit = message.data;
-    this.validateWebSocketHandlerCommit(commit);
+    const commit = parseServerRpcPayload(webSocketHandlerCommitSchema, message.data);
 
     this.registerWebSocketHandler(commit, socket);
     return {};
   };
 
   private resetWebSocketWorker = (
-    {
-      data: handlersToRecommit,
-    }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/workers/reset'>,
+    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/workers/reset'>,
     socket: Socket,
   ) => {
     this.assertWebSocketWorkerSocket(socket);
-    this.validateWebSocketHandlerCommits(handlersToRecommit);
+    const handlersToRecommit = parseServerRpcPayload(webSocketHandlerCommitsSchema, message.data);
 
     const existingHandlersById = new Map(
       this.webSocketHandlers
@@ -184,18 +191,21 @@ class WebSocketInterceptorServerRuntime {
     let accepted: boolean;
 
     try {
-      const reply = await this.webSocketServer.request(
-        'interceptors/ws/clients/connect',
-        {
-          handlerId: handler.id,
-          clientId,
-          url: this.getWebSocketRequestURL(request).href,
-        },
-        { sockets: [handler.socket] },
-      );
+      const event = parseServerRpcPayload(webSocketConnectEventSchema, {
+        handlerId: handler.id,
+        clientId,
+        url: this.getWebSocketRequestURL(request).href,
+      });
+      const reply = await this.webSocketServer.request('interceptors/ws/clients/connect', event, {
+        sockets: [handler.socket],
+      });
 
-      accepted = reply.accepted;
-    } catch {
+      accepted = parseServerRpcPayload(webSocketConnectReplySchema, reply).accepted;
+    } catch (error) {
+      if (!(error instanceof WebSocketMessageAbortError)) {
+        console.error(error);
+      }
+
       this.closePendingUserWebSocketConnection(socket, connection, {
         pendingCloseCode: WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR,
         pendingCloseReason: WEB_SOCKET_CLOSE_REASONS.CONNECTION_SETUP_FAILED,
@@ -294,11 +304,8 @@ class WebSocketInterceptorServerRuntime {
     }
 
     try {
-      this.webSocketServer.send(
-        'interceptors/ws/clients/close',
-        { clientId: connection.clientId },
-        { sockets: [connection.handler.socket] },
-      );
+      const event = parseServerRpcPayload(webSocketCloseEventSchema, { clientId: connection.clientId });
+      this.webSocketServer.send('interceptors/ws/clients/close', event, { sockets: [connection.handler.socket] });
     } catch (error) {
       console.error(error);
     }
@@ -306,15 +313,15 @@ class WebSocketInterceptorServerRuntime {
 
   private async handleUserWebSocketMessage(connection: UserWebSocketHandler, message: ClientSocket.MessageEvent) {
     try {
-      await this.webSocketServer.request(
-        'interceptors/ws/messages/handle',
-        {
-          handlerId: connection.handler.id,
-          clientId: connection.clientId,
-          data: await serializeWebSocketMessageDataForTransport(message.data as WebSocketMessageData<WebSocketSchema>),
-        },
-        { sockets: [connection.handler.socket] },
-      );
+      const event = parseServerRpcPayload(webSocketHandleMessageEventSchema, {
+        handlerId: connection.handler.id,
+        clientId: connection.clientId,
+        data: await serializeWebSocketMessageDataForTransport(message.data as WebSocketMessageData<WebSocketSchema>),
+      });
+      const reply = await this.webSocketServer.request('interceptors/ws/messages/handle', event, {
+        sockets: [connection.handler.socket],
+      });
+      parseServerRpcPayload(webSocketMessageReplySchema, reply);
       /* istanbul ignore next -- @preserve
        * Message aborts depend on an RPC disconnect during message forwarding. */
     } catch (error) {
@@ -329,11 +336,11 @@ class WebSocketInterceptorServerRuntime {
   }
 
   private sendWebSocketMessage = (
-    { data: message }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/messages/send'>,
+    event: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/messages/send'>,
     workerSocket: Socket,
   ) => {
     this.assertWebSocketWorkerSocket(workerSocket);
-    this.validateWebSocketSendMessage(message);
+    const message = parseServerRpcPayload(webSocketSendMessageSchema, event.data);
 
     const targetSockets = [
       ...this.activeUserWebSocketHandlers.entries(),
@@ -352,60 +359,6 @@ class WebSocketInterceptorServerRuntime {
       socket.send(runtimeMessageData);
     }
   };
-
-  private validateWebSocketHandlerCommit(commit: unknown): asserts commit is WebSocketHandlerCommit {
-    const isValid =
-      typeof commit === 'object' &&
-      commit !== null &&
-      'id' in commit &&
-      typeof commit.id === 'string' &&
-      'baseURL' in commit &&
-      typeof commit.baseURL === 'string' &&
-      this.isValidWebSocketHandlerBaseURL(commit.baseURL);
-
-    if (!isValid) {
-      throw new InvalidWebSocketMessageError(JSON.stringify(commit));
-    }
-  }
-
-  private isValidWebSocketHandlerBaseURL(baseURL: string) {
-    try {
-      const protocol = new URL(baseURL).protocol;
-      return protocol === 'ws:' || protocol === 'wss:';
-    } catch {
-      return false;
-    }
-  }
-
-  private validateWebSocketHandlerCommits(commits: unknown): asserts commits is WebSocketHandlerCommit[] {
-    const isValid = Array.isArray(commits);
-
-    /* istanbul ignore if -- @preserve
-     * Invalid reset payloads are rejected by the RPC schema before normal workers can send them. */
-    if (!isValid) {
-      throw new InvalidWebSocketMessageError(JSON.stringify(commits));
-    }
-
-    for (const commit of commits) {
-      this.validateWebSocketHandlerCommit(commit);
-    }
-  }
-
-  private validateWebSocketSendMessage(
-    message: unknown,
-  ): asserts message is InterceptorServerWebSocketSchema['interceptors/ws/messages/send']['event'] {
-    const isValid =
-      typeof message === 'object' &&
-      message !== null &&
-      (!('clientId' in message) || typeof message.clientId === 'string') &&
-      (!('handlerId' in message) || typeof message.handlerId === 'string') &&
-      'data' in message &&
-      isSerializedWebSocketMessageData(message.data);
-
-    if (!isValid) {
-      throw new InvalidWebSocketMessageError(JSON.stringify(message));
-    }
-  }
 
   private findWebSocketHandlerByRequest(request: IncomingMessage) {
     const requestURLAsString = this.normalizeWebSocketBaseURL(this.getWebSocketRequestURL(request));

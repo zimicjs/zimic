@@ -13,8 +13,17 @@ import type { WebSocketEventMessage } from '@/utils/webSocket/types';
 import type WebSocketServer from '@/utils/webSocket/WebSocketServer';
 
 import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE, type AccessControlHeaders } from '../constants';
+import { parseServerRpcPayload } from '../schemas';
 import type { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '../types/schema';
 import { getFetchAPI } from '../utils/fetch';
+import {
+  httpCreateResponseEventSchema,
+  httpCreateResponseReplySchema,
+  httpHandlerCommitSchema,
+  httpHandlerCommitsSchema,
+  httpUnhandledResponseEventSchema,
+  httpUnhandledResponseReplySchema,
+} from './schemas';
 
 interface HttpHandler {
   id: string;
@@ -66,17 +75,18 @@ class HttpInterceptorServerRuntime {
     socket: Socket,
   ) => {
     this.assertHttpWorkerSocket(socket);
-    this.registerHttpHandler(message.data, socket);
+    const commit = parseServerRpcPayload(httpHandlerCommitSchema, message.data);
+
+    this.registerHttpHandler(commit, socket);
     return {};
   };
 
   private resetWorker = (
-    {
-      data: handlersToRecommit,
-    }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/http/workers/reset'>,
+    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/http/workers/reset'>,
     socket: Socket,
   ) => {
     this.assertHttpWorkerSocket(socket);
+    const handlersToRecommit = parseServerRpcPayload(httpHandlerCommitsSchema, message.data);
 
     this.webSocketServer.emitSocket('abortRequests', socket, {
       shouldAbortRequest: (request) => {
@@ -203,11 +213,11 @@ class HttpInterceptorServerRuntime {
 
       matchedSomeInterceptor = true;
 
-      const { response: serializedResponse } = await this.webSocketServer.request(
-        'interceptors/http/responses/create',
-        { handlerId: handler.id, request },
-        { sockets: [handler.socket] },
-      );
+      const event = parseServerRpcPayload(httpCreateResponseEventSchema, { handlerId: handler.id, request });
+      const reply = await this.webSocketServer.request('interceptors/http/responses/create', event, {
+        sockets: [handler.socket],
+      });
+      const { response: serializedResponse } = parseServerRpcPayload(httpCreateResponseReplySchema, reply);
 
       if (serializedResponse) {
         const response = deserializeResponse(serializedResponse);
@@ -241,10 +251,13 @@ class HttpInterceptorServerRuntime {
 
     if (handler) {
       try {
-        const { wasLogged: wasRequestLoggedByRemoteInterceptor } = await this.webSocketServer.request(
-          'interceptors/http/responses/unhandled',
-          { request: serializedRequest },
-          { sockets: [handler.socket] },
+        const event = parseServerRpcPayload(httpUnhandledResponseEventSchema, { request: serializedRequest });
+        const reply = await this.webSocketServer.request('interceptors/http/responses/unhandled', event, {
+          sockets: [handler.socket],
+        });
+        const { wasLogged: wasRequestLoggedByRemoteInterceptor } = parseServerRpcPayload(
+          httpUnhandledResponseReplySchema,
+          reply,
         );
 
         if (wasRequestLoggedByRemoteInterceptor) {
