@@ -1,9 +1,16 @@
-import { expect, it } from 'vitest';
+import { waitFor } from '@zimic/utils/time';
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+import { expect, it, vi } from 'vitest';
 
+import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+
+import LocalWebSocketInterceptorWorker from '../../../interceptorWorker/LocalWebSocketInterceptorWorker';
 import type { Schema } from '../../../messageHandler/__tests__/shared/types';
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
 import { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '../../types/options';
+
+type ClientMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
 
 interface SharedWebSocketInterceptorLifeCycleTestOptions {
   platform: WebSocketInterceptorPlatform;
@@ -88,4 +95,98 @@ export function declareLifeCycleWebSocketInterceptorTests(options: SharedWebSock
       await interceptor.stop();
     }
   });
+
+  if (type === 'local') {
+    it('should handle messages when the next interceptor starts during the previous worker stop', async () => {
+      const firstBaseURL = `${getBaseURL()}/first`;
+      const secondBaseURL = `${getBaseURL()}/second`;
+
+      await usingWebSocketInterceptor<ClientMessage>(
+        { type: 'local', baseURL: firstBaseURL, messageSaving: { enabled: true } },
+        async (firstInterceptor) => {
+          const shutdownGate = Promise.withResolvers<void>();
+          const shutdownStarted = Promise.withResolvers<void>();
+          const nextWorkerStartRequested = Promise.withResolvers<void>();
+          const getMSWWorkerOrCreate = LocalWebSocketInterceptorWorker.prototype.getMSWWorkerOrCreate;
+          const startWorker = LocalWebSocketInterceptorWorker.prototype.start;
+          const shutdownSpy = vi
+            .spyOn(LocalWebSocketInterceptorWorker.prototype, 'getMSWWorkerOrCreate')
+            .mockImplementationOnce(async function (this: LocalWebSocketInterceptorWorker) {
+              shutdownStarted.resolve();
+              await shutdownGate.promise;
+              return getMSWWorkerOrCreate.call(this);
+            });
+          const startSpy = vi.spyOn(LocalWebSocketInterceptorWorker.prototype, 'start').mockImplementation(function (
+            this: LocalWebSocketInterceptorWorker,
+          ) {
+            nextWorkerStartRequested.resolve();
+            return startWorker.call(this);
+          });
+
+          let stopPromise: Promise<void> | undefined;
+          let nextInterceptorPromise: Promise<void> | undefined;
+          let nextInterceptorStarted = false;
+
+          try {
+            stopPromise = firstInterceptor.stop();
+            await shutdownStarted.promise;
+
+            nextInterceptorPromise = usingWebSocketInterceptor<ClientMessage>(
+              { type: 'local', baseURL: secondBaseURL, messageSaving: { enabled: true } },
+              async (secondInterceptor) => {
+                nextInterceptorStarted = true;
+                const handler = secondInterceptor
+                  .message()
+                  .with({ type: 'client' })
+                  .respond((message) => ({ type: 'server', text: `received ${message.text}` }));
+
+                expect(secondInterceptor.isRunning).toBe(true);
+
+                const client = new WebSocketClient<ClientMessage>(secondBaseURL);
+
+                try {
+                  await client.open();
+
+                  let response: unknown;
+                  client.addEventListener(
+                    'message',
+                    ({ data }) => {
+                      response = typeof data === 'string' ? JSON.parse(data) : data;
+                    },
+                    { once: true },
+                  );
+
+                  client.send(JSON.stringify({ type: 'client', text: 'during restart' }));
+
+                  await waitFor(() => {
+                    expect(response).toEqual({ type: 'server', text: 'received during restart' });
+                  });
+
+                  expect(handler.messages).toHaveLength(1);
+                  expect(handler.messages[0].data).toEqual({ type: 'client', text: 'during restart' });
+                } finally {
+                  await client.close();
+                }
+              },
+            );
+
+            await nextWorkerStartRequested.promise;
+            expect(nextInterceptorStarted).toBe(false);
+            shutdownGate.resolve();
+            await stopPromise;
+            await nextInterceptorPromise;
+
+            expect(shutdownSpy).toHaveBeenCalled();
+            expect(startSpy).toHaveBeenCalledTimes(1);
+            expect(firstInterceptor.isRunning).toBe(false);
+          } finally {
+            shutdownGate.resolve();
+            await Promise.allSettled([stopPromise, nextInterceptorPromise]);
+            shutdownSpy.mockRestore();
+            startSpy.mockRestore();
+          }
+        },
+      );
+    });
+  }
 }

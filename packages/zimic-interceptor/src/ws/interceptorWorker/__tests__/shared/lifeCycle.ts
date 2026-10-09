@@ -1,93 +1,94 @@
-import { expect, it } from 'vitest';
+import { PossiblePromise } from '@zimic/utils/types';
+import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
-import WebSocketInterceptorWorker from '../../WebSocketInterceptorWorker';
+import { usingWebSocketInterceptorWorker } from '@tests/utils/interceptors';
 
-class TestWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
-  get type() {
-    return 'local' as const;
-  }
+import { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '../../../interceptor/types/options';
+import LocalWebSocketInterceptorWorker from '../../LocalWebSocketInterceptorWorker';
+import { WebSocketInterceptorWorkerOptions } from '../../types/options';
 
-  numberOfStarts = 0;
-
-  private stopGate?: Promise<void>;
-  private resolveStopGate?: () => void;
-  private signalStopStarted?: () => void;
-
-  async start() {
-    await this.sharedStart(() => {
-      this.numberOfStarts++;
-      this.isRunning = true;
-      return Promise.resolve();
-    });
-  }
-
-  async stop() {
-    await this.sharedStop(async () => {
-      this.signalStopStarted?.();
-      await this.stopGate;
-      this.platform = null;
-      this.isRunning = false;
-    });
-  }
-
-  pauseNextStop() {
-    const started = new Promise<void>((resolve) => {
-      this.signalStopStarted = resolve;
-    });
-    this.stopGate = new Promise<void>((resolve) => {
-      this.resolveStopGate = resolve;
-    });
-
-    return {
-      started,
-      finish: () => {
-        this.resolveStopGate?.();
-        this.signalStopStarted = undefined;
-        this.resolveStopGate = undefined;
-      },
-    };
-  }
-
-  use() {
-    return undefined;
-  }
-
-  sendToClient() {
-    return undefined;
-  }
-
-  sendToClients() {
-    return undefined;
-  }
-
-  clearHandlers() {
-    return undefined;
-  }
+interface SharedWebSocketInterceptorWorkerLifeCycleTestOptions {
+  platform: WebSocketInterceptorPlatform;
+  defaultWorkerOptions: WebSocketInterceptorWorkerOptions;
+  getBaseURL: (type: WebSocketInterceptorType) => PossiblePromise<string>;
+  startServer?: () => PossiblePromise<void>;
+  stopServer?: () => PossiblePromise<void>;
 }
 
-export function declareLifeCycleWebSocketInterceptorWorkerTests() {
-  it('should wait for a shared worker to finish stopping before restarting', async () => {
-    const worker = new TestWebSocketInterceptorWorker();
-    await worker.start();
+export function declareLifeCycleWebSocketInterceptorWorkerTests(
+  options: SharedWebSocketInterceptorWorkerLifeCycleTestOptions,
+) {
+  const { platform, defaultWorkerOptions, getBaseURL, startServer, stopServer } = options;
+  let workerOptions: WebSocketInterceptorWorkerOptions;
 
-    const stopping = worker.pauseNextStop();
-    const stopPromise = worker.stop();
-    let startPromise: Promise<void> | undefined;
-
-    try {
-      await stopping.started;
-
-      startPromise = worker.start();
-      stopping.finish();
-
-      await Promise.all([stopPromise, startPromise]);
-
-      expect(worker.numberOfStarts).toBe(2);
-      expect(worker.isRunning).toBe(true);
-    } finally {
-      stopping.finish();
-      await Promise.allSettled([stopPromise, ...(startPromise ? [startPromise] : [])]);
-      await worker.stop();
+  beforeAll(async () => {
+    if (defaultWorkerOptions.type === 'remote') {
+      await startServer?.();
     }
+  });
+
+  beforeEach(async () => {
+    const baseURL = await getBaseURL(defaultWorkerOptions.type);
+    workerOptions =
+      defaultWorkerOptions.type === 'local'
+        ? defaultWorkerOptions
+        : { ...defaultWorkerOptions, serverURL: new URL(new URL(baseURL).origin) };
+  });
+
+  afterAll(async () => {
+    if (defaultWorkerOptions.type === 'remote') {
+      await stopServer?.();
+    }
+  });
+
+  it('should wait for a concrete worker to finish stopping before restarting', async () => {
+    await usingWebSocketInterceptorWorker(workerOptions, async (worker) => {
+      const shutdownGate = Promise.withResolvers<void>();
+      const shutdownStarted = Promise.withResolvers<void>();
+      let restoreShutdownSpy: () => void;
+
+      // Hold a real shutdown dependency so restart encounters the worker's pending stop.
+      if (worker instanceof LocalWebSocketInterceptorWorker) {
+        const getMSWWorkerOrCreate = worker.getMSWWorkerOrCreate.bind(worker);
+        const shutdownSpy = vi.spyOn(worker, 'getMSWWorkerOrCreate').mockImplementationOnce(async () => {
+          shutdownStarted.resolve();
+          await shutdownGate.promise;
+          return getMSWWorkerOrCreate();
+        });
+        restoreShutdownSpy = () => shutdownSpy.mockRestore();
+      } else {
+        const stopClient = worker.webSocketClient.stop.bind(worker.webSocketClient);
+        const shutdownSpy = vi.spyOn(worker.webSocketClient, 'stop').mockImplementationOnce(async () => {
+          shutdownStarted.resolve();
+          await shutdownGate.promise;
+          await stopClient();
+        });
+        restoreShutdownSpy = () => shutdownSpy.mockRestore();
+      }
+
+      let stopPromise: Promise<void> | undefined;
+      let startPromise: Promise<void> | undefined;
+      let didRestart = false;
+
+      try {
+        stopPromise = worker.stop();
+        await shutdownStarted.promise;
+        startPromise = worker.start().then(() => {
+          didRestart = true;
+        });
+        await Promise.resolve();
+        expect(didRestart).toBe(false);
+        shutdownGate.resolve();
+        await Promise.all([stopPromise, startPromise]);
+      } finally {
+        shutdownGate.resolve();
+        await Promise.allSettled([stopPromise, startPromise]);
+        restoreShutdownSpy();
+      }
+
+      expect(worker.isRunning).toBe(true);
+      expect(worker.platform).toBe(platform);
+      expect(didRestart).toBe(true);
+    });
   });
 }

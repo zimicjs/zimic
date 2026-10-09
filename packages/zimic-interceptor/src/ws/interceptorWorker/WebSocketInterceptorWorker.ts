@@ -73,10 +73,13 @@ abstract class WebSocketInterceptorWorker {
 
     if (stoppingResult instanceof Promise) {
       this.stoppingPromise = stoppingResult;
-      await this.stoppingPromise;
-    }
 
-    this.stoppingPromise = undefined;
+      try {
+        await this.stoppingPromise;
+      } finally {
+        this.stoppingPromise = undefined;
+      }
+    }
   }
 
   registerRunningInterceptor(interceptor: AnyWebSocketInterceptorImplementation) {
