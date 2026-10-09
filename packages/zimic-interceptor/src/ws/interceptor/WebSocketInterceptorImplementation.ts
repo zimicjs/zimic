@@ -59,7 +59,7 @@ class WebSocketInterceptorImplementation<
     once: boolean;
   }[] = [];
 
-  private createWorker?: () => WebSocketInterceptorWorker;
+  private createWorker: () => WebSocketInterceptorWorker;
   private releaseWorker?: (worker: WebSocketInterceptorWorker) => void;
   private worker?: WebSocketInterceptorWorker;
   private startingPromise?: Promise<void>;
@@ -71,7 +71,7 @@ class WebSocketInterceptorImplementation<
     baseURL: URL;
     messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
     Handler: HandlerConstructor;
-    createWorker?: () => WebSocketInterceptorWorker;
+    createWorker: () => WebSocketInterceptorWorker;
     releaseWorker?: (worker: WebSocketInterceptorWorker) => void;
   }) {
     this.baseURL = options.baseURL;
@@ -160,13 +160,13 @@ class WebSocketInterceptorImplementation<
     }
 
     try {
-      this.worker = this.createWorker?.();
+      this.worker = this.createWorker();
 
-      await this.worker?.start();
-      if (this.worker?.type === 'local') {
+      await this.worker.start();
+      if (this.worker.type === 'local') {
         await this.worker.use(this);
       }
-      this.worker?.registerRunningInterceptor(this);
+      this.worker.registerRunningInterceptor(this);
       this.isRunning = true;
     } catch (error) {
       this.isRunning = false;
@@ -215,12 +215,6 @@ class WebSocketInterceptorImplementation<
     const operationPromise = this.lifecycleQueue.then(operation);
     this.lifecycleQueue = operationPromise.catch(() => undefined);
     return operationPromise;
-  }
-
-  /* istanbul ignore next -- @preserve
-   * This is an internal compatibility getter for worker parity with HTTP interceptors. */
-  get numberOfRunningInterceptors() {
-    return this.isRunning ? (this.worker?.numberOfRunningInterceptors ?? 0) : 0;
   }
 
   get server() {
@@ -419,6 +413,10 @@ class WebSocketInterceptorImplementation<
   }
 
   clear() {
+    if (!this.isRunning) {
+      throw new NotRunningWebSocketInterceptorError();
+    }
+
     this.messageSavingGeneration++;
 
     const clearResult = this.worker?.isRunning

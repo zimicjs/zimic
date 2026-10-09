@@ -6,9 +6,11 @@ import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
 import LocalWebSocketInterceptorWorker from '../../../interceptorWorker/LocalWebSocketInterceptorWorker';
 import type { Schema } from '../../../messageHandler/__tests__/shared/types';
+import { LocalWebSocketMessageHandler } from '../../../messageHandler/LocalWebSocketMessageHandler';
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
 import { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '../../types/options';
+import WebSocketInterceptorImplementation from '../../WebSocketInterceptorImplementation';
 
 type ClientMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
 
@@ -20,6 +22,48 @@ interface SharedWebSocketInterceptorLifeCycleTestOptions {
 
 export function declareLifeCycleWebSocketInterceptorTests(options: SharedWebSocketInterceptorLifeCycleTestOptions) {
   const { platform, type, getBaseURL } = options;
+
+  if (type === 'local') {
+    it('should release a worker after startup fails', async () => {
+      const worker = new LocalWebSocketInterceptorWorker({ type: 'local' });
+      const error = new Error('worker startup failed');
+      const startWorker = vi.spyOn(worker, 'start').mockRejectedValue(error);
+      const stopWorker = vi.spyOn(worker, 'stop');
+      const releaseWorker = vi.fn();
+      const interceptor = new WebSocketInterceptorImplementation({
+        baseURL: new URL('ws://localhost'),
+        Handler: LocalWebSocketMessageHandler,
+        createWorker: () => worker,
+        releaseWorker,
+      });
+
+      await expect(interceptor.start()).rejects.toBe(error);
+
+      expect(startWorker).toHaveBeenCalledOnce();
+      expect(stopWorker).toHaveBeenCalledOnce();
+      expect(releaseWorker).toHaveBeenCalledOnce();
+      expect(releaseWorker).toHaveBeenCalledWith(worker);
+      expect(interceptor.isRunning).toBe(false);
+    });
+
+    it('should propagate a worker factory failure without cleaning up a worker', async () => {
+      const error = new Error('worker factory failed');
+      const releaseWorker = vi.fn();
+      const interceptor = new WebSocketInterceptorImplementation({
+        baseURL: new URL('ws://localhost'),
+        Handler: LocalWebSocketMessageHandler,
+        createWorker: () => {
+          throw error;
+        },
+        releaseWorker,
+      });
+
+      await expect(interceptor.start()).rejects.toBe(error);
+
+      expect(releaseWorker).not.toHaveBeenCalled();
+      expect(interceptor.isRunning).toBe(false);
+    });
+  }
 
   it('should stop when called while starting', async () => {
     const interceptor = createWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() });

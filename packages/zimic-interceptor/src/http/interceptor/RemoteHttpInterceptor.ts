@@ -138,15 +138,9 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
     return this.implementation.options(path);
   }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
-  checkTimes() {
-    return new Promise<void>((resolve, reject) => {
-      try {
-        this.implementation.checkTimes();
-        resolve();
-      } catch (error) {
-        reject(error);
-      }
-    });
+  async checkTimes() {
+    this.implementation.checkTimes();
+    return Promise.resolve();
   }
 
   async clear() {

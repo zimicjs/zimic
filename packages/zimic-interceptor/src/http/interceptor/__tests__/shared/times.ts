@@ -2,17 +2,17 @@ import { HttpSchema, HttpSearchParams } from '@zimic/http';
 import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
 import color from 'picocolors';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { expectHttpTimesCheckError } from '@/http/requestHandler/__tests__/shared/utils';
-import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { getBaseURL, getInterceptorOptions } = options;
+  const { type, getBaseURL, getInterceptorOptions } = options;
 
   let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
@@ -30,6 +30,34 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
       204: {};
     };
   }>;
+
+  if (type === 'remote') {
+    it('should check times immediately and return a promise for synchronous failures', async () => {
+      const interceptor = createInternalHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>({ type: 'remote', baseURL: getBaseURL() });
+      const checkTimes = vi.spyOn(interceptor.implementation, 'checkTimes');
+
+      const successfulCheck = interceptor.checkTimes();
+      expect(checkTimes).toHaveBeenCalledOnce();
+      expect(successfulCheck).toBeInstanceOf(Promise);
+      await expect(successfulCheck).resolves.toBeUndefined();
+
+      const error = new Error('times check failed');
+      checkTimes.mockImplementationOnce(() => {
+        throw error;
+      });
+
+      let failedCheck: Promise<void> | undefined;
+      expect(() => {
+        failedCheck = interceptor.checkTimes();
+      }).not.toThrow();
+
+      expect(checkTimes).toHaveBeenCalledTimes(2);
+      expect(failedCheck).toBeInstanceOf(Promise);
+      await expect(failedCheck).rejects.toBe(error);
+    });
+  }
 
   describe('Exact number of requests', () => {
     it('should intercept an exact number of limited requests', async () => {
