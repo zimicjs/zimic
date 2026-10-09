@@ -1,6 +1,8 @@
 import { isNonEmpty } from '@zimic/utils/data';
 import { Range } from '@zimic/utils/types';
 
+import { stringifyJSONToLog } from '@/utils/stringifyValueToLog';
+
 import { WebSocketInterceptorMessageSaving } from '../interceptor/types/options';
 import { UnmatchedWebSocketInterceptorMessageGroup } from '../messageHandler/types/restrictions';
 import WebSocketTimesDeclarationPointer from './WebSocketTimesDeclarationPointer';
@@ -54,7 +56,7 @@ function createMessageUnmatchedMessageGroups(options: WebSocketTimesCheckErrorOp
   }
 
   const formattedGroups = options.unmatchedMessageGroups
-    .map((group) => `- ${JSON.stringify({ message: group.message, diff: group.diff })}`)
+    .map((group) => `- ${stringifyJSONToLog({ message: group.message, diff: group.diff }, { indentation: 0 })}`)
     .join('\n');
 
   return `Unmatched messages:\n\n${formattedGroups}`;

@@ -1,3 +1,4 @@
+import { WebSocketSchema } from '@zimic/ws';
 import { beforeAll, beforeEach, afterAll, describe, expect, it } from 'vitest';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
@@ -33,6 +34,29 @@ export function declareTimesWebSocketMessageHandlerTests(
   });
 
   describe('Exact number of messages', () => {
+    it('should include nested binary values in unmatched message diagnostics', async () => {
+      type BinarySchema = WebSocketSchema<ArrayBuffer>;
+
+      await usingDirectWebSocketMessageHandler<BinarySchema>(
+        { type, baseURL, Handler, messageSaving: { enabled: true } },
+        async ({ handler, handleMessage }) => {
+          const expectedBuffer = new Uint8Array([1, 2]).buffer;
+          const receivedBuffer = new Uint8Array([3, 4]).buffer;
+
+          handler.with(expectedBuffer).times(1);
+          await handleMessage(receivedBuffer);
+
+          await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+            message: 'Expected exactly 1 matching message, but got 0.',
+            expectedNumberOfMessages: 1,
+            unmatchedMessages: [
+              '- {"message":ArrayBuffer { byteLength: 2, bytes: [3, 4] },"diff":{"data":{"expected":ArrayBuffer { byteLength: 2, bytes: [1, 2] },"received":ArrayBuffer { byteLength: 2, bytes: [3, 4] }}}}',
+            ].join('\n'),
+          });
+        },
+      );
+    });
+
     it('should not match more than an exact number of limited messages when messages are handled concurrently', async () => {
       await usingDirectWebSocketMessageHandler<Schema>(
         { type, baseURL, Handler },
