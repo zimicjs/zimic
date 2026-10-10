@@ -2,22 +2,19 @@ import { expect, it } from 'vitest';
 
 import type { Schema } from '../../../messageHandler/__tests__/shared/types';
 import { usingDirectWebSocketMessageHandler } from '../../../messageHandler/__tests__/shared/utils';
-import { LocalWebSocketMessageHandler } from '../../../messageHandler/LocalWebSocketMessageHandler';
-import { RemoteWebSocketMessageHandler } from '../../../messageHandler/RemoteWebSocketMessageHandler';
 import NotRunningWebSocketInterceptorError from '../../errors/NotRunningWebSocketInterceptorError';
 import type { WebSocketInterceptorType } from '../../types/options';
 
 interface SharedWebSocketInterceptorClearTestsOptions {
   type: WebSocketInterceptorType;
-  Handler: typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
 }
 
 export function declareClearWebSocketInterceptorTests(options: SharedWebSocketInterceptorClearTestsOptions) {
-  const { type, Handler } = options;
+  const { type } = options;
 
   it('should not clear state when cleared before starting', async () => {
     await usingDirectWebSocketMessageHandler<Schema>(
-      { type, baseURL: 'ws://localhost', Handler, messageSaving: { enabled: true } },
+      { type, baseURL: 'ws://localhost', messageSaving: { enabled: true } },
       async ({ interceptor, handler, sender, receiver, handleMessage }) => {
         const effectStarted = Promise.withResolvers<void>();
         const effectRelease = Promise.withResolvers<void>();
@@ -63,7 +60,7 @@ export function declareClearWebSocketInterceptorTests(options: SharedWebSocketIn
 
   it('should not clear state when cleared after stopping', async () => {
     await usingDirectWebSocketMessageHandler<Schema>(
-      { type, baseURL: 'ws://localhost', Handler, messageSaving: { enabled: true } },
+      { type, baseURL: 'ws://localhost', messageSaving: { enabled: true } },
       async ({ interceptor, handler, sender, receiver, handleMessage }) => {
         const effectStarted = Promise.withResolvers<void>();
         const effectRelease = Promise.withResolvers<void>();
@@ -109,7 +106,7 @@ export function declareClearWebSocketInterceptorTests(options: SharedWebSocketIn
 
   it('should not save intercepted messages after cleared while a message is being handled', async () => {
     await usingDirectWebSocketMessageHandler<Schema>(
-      { type, baseURL: 'ws://localhost', Handler, messageSaving: { enabled: true } },
+      { type, baseURL: 'ws://localhost', messageSaving: { enabled: true } },
       async ({ interceptor, handler, sender, receiver, handleMessage }) => {
         const effectStarted = Promise.withResolvers<void>();
         const effectRelease = Promise.withResolvers<void>();

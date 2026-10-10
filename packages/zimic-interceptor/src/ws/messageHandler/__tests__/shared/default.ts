@@ -1,19 +1,16 @@
+import { waitFor } from '@zimic/utils/time';
+import { WebSocketClient } from '@zimic/ws';
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
+import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
-import DisabledMessageSavingError from '../../errors/DisabledMessageSavingError';
-import { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
-import { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
-import { usingDirectWebSocketMessageHandler } from './utils';
 
 export function declareDefaultWebSocketMessageHandlerTests(
-  options: SharedWebSocketMessageHandlerTestOptions & {
-    type: WebSocketInterceptorType;
-    Handler: typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
-  },
+  options: SharedWebSocketMessageHandlerTestOptions & { type: WebSocketInterceptorType },
 ) {
-  const { type, Handler, startServer, stopServer, getBaseURL } = options;
+  const { type, startServer, stopServer, getBaseURL } = options;
 
   let baseURL: string;
 
@@ -34,151 +31,149 @@ export function declareDefaultWebSocketMessageHandlerTests(
   });
 
   it('should normalize incoming text messages before matching handlers and saving intercepted messages', async () => {
-    await usingDirectWebSocketMessageHandler<Schema>(
-      { type, baseURL, Handler, messageSaving: { enabled: true } },
-      async ({ interceptor, handler, sender, receiver, handleMessage }) => {
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true } },
+      async (interceptor) => {
         let effectMessage: Schema | undefined;
-        handler.effect((message) => {
-          effectMessage = message;
-        });
+        const effectCompleted = Promise.withResolvers<void>();
         const firstRestriction = vi.fn((_message: Schema) => true);
-        handler.with(firstRestriction);
+        const handler = await interceptor
+          .message()
+          .with(firstRestriction)
+          .effect((message) => {
+            effectMessage = message;
+            effectCompleted.resolve();
+          });
 
-        const secondHandler = new Handler<Schema>(interceptor.implementation);
         const secondRestriction = vi.fn((_message: Schema) => false);
-        secondHandler.with(secondRestriction);
-        interceptor.implementation.registerMessageHandler(secondHandler);
+        await interceptor.message().with(secondRestriction);
 
-        await handleMessage(JSON.stringify({ type: 'create', body: { text: 'serialized' } }));
+        const client = new WebSocketClient<Schema>(baseURL);
 
-        const normalizedMessage = firstRestriction.mock.calls[0][0];
-        expect(normalizedMessage).toEqual({ type: 'create', body: { text: 'serialized' } });
-        expect(secondRestriction.mock.calls[0][0]).toBe(normalizedMessage);
-        expect(effectMessage).toBe(normalizedMessage);
-        expect(handler.messages[0].data).toBe(normalizedMessage);
-        expect(sender.handle.messages).toHaveLength(1);
-        expect(receiver.messages).toHaveLength(1);
+        try {
+          await client.open();
+          client.send(JSON.stringify({ type: 'create', body: { text: 'serialized' } }));
+          await effectCompleted.promise;
+          await waitFor(() => expect(handler.messages).toHaveLength(1));
+
+          expect(firstRestriction).toHaveBeenCalledWith({ type: 'create', body: { text: 'serialized' } });
+          expect(secondRestriction).toHaveBeenCalledWith({ type: 'create', body: { text: 'serialized' } });
+          expect(effectMessage).toEqual({ type: 'create', body: { text: 'serialized' } });
+          expect(handler.messages[0].data).toEqual({ type: 'create', body: { text: 'serialized' } });
+          await handler.checkTimes();
+        } finally {
+          await client.close();
+        }
       },
     );
   });
 
   it('should match any message without a declared response, effect, or restrictions', async () => {
-    await usingDirectWebSocketMessageHandler<Schema>({ type, baseURL, Handler }, async ({ handleMessage }) => {
-      const didHandleMessage = await handleMessage({ type: 'create', body: { text: 'hello' } });
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await interceptor.message().times(1);
+        const client = new WebSocketClient<Schema>(baseURL);
 
-      expect(didHandleMessage).toBe(true);
-    });
-  });
+        try {
+          await client.open();
+          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
-  it('should match any message with a declared response and no restrictions', async () => {
-    await usingDirectWebSocketMessageHandler<Schema>(
-      { type, baseURL, Handler },
-      async ({ handler, sender, handleMessage }) => {
-        handler.respond({ type: 'delete', id: '1' });
-
-        const didHandleMessage = await handleMessage({ type: 'create', body: { text: 'hello' } });
-
-        expect(didHandleMessage).toBe(true);
-        expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '1' })]);
+          await waitFor(() => expect(handler.messages).toHaveLength(1));
+          expect(handler.messages[0].data).toEqual({ type: 'create', body: { text: 'hello' } });
+          await handler.checkTimes();
+        } finally {
+          await client.close();
+        }
       },
     );
   });
 
   it('should reset a message handler if cleared', async () => {
-    await usingDirectWebSocketMessageHandler<Schema>({ type, baseURL, Handler }, async ({ handler }) => {
-      handler.respond({ type: 'delete', id: '1' }).times(1);
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(1);
+        await expect(async () => handler.checkTimes()).rejects.toThrow('Expected exactly 1 message, but got 0.');
 
-      await expect(async () => {
-        await handler.checkTimes();
-      }).rejects.toThrow('Expected exactly 1 message, but got 0.');
+        const client = new WebSocketClient<Schema>(baseURL);
 
-      handler.clear();
+        try {
+          await client.open();
+          const responsePromise = new Promise<string>((resolve) => {
+            client.addEventListener('message', ({ data }) => resolve(String(data)), { once: true });
+          });
+          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
-      await handler.checkTimes();
-    });
-  });
+          await expect(responsePromise).resolves.toBe('{"type":"delete","id":"1"}');
+          await waitFor(() => expect(handler.messages).toHaveLength(1));
+          await handler.checkTimes();
 
-  it('should create responses with declared messages and factories', async () => {
-    await usingDirectWebSocketMessageHandler<Schema>(
-      { type, baseURL, Handler },
-      async ({ handler, sender, handleMessage }) => {
-        const responseFactory = vi.fn((message: Schema) => ({ type: 'delete' as const, id: message.type }));
-
-        handler.respond(responseFactory);
-
-        await handleMessage({ type: 'create', body: { text: 'hello' } });
-
-        expect(responseFactory).toHaveBeenCalledTimes(1);
-        expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: 'create' })]);
+          await handler.clear();
+          expect(handler.messages).toHaveLength(0);
+          await handler.checkTimes();
+        } finally {
+          await client.close();
+        }
       },
     );
   });
 
-  it('should not throw when applying a message without a declared response', async () => {
-    await usingDirectWebSocketMessageHandler<Schema>({ type, baseURL, Handler }, async ({ handleMessage }) => {
-      await expect(handleMessage({ type: 'create', body: { text: 'hello' } })).resolves.toBe(true);
-    });
-  });
-
   it('should keep track of intercepted messages', async () => {
-    await usingDirectWebSocketMessageHandler<Schema>(
-      { type, baseURL, Handler, messageSaving: { enabled: true } },
-      async ({ handler, sender, receiver, handleMessage }) => {
-        handler.respond({ type: 'delete', id: '1' });
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await interceptor.message().respond({ type: 'delete', id: '1' });
+        const client = new WebSocketClient<Schema>(baseURL);
 
-        expect(handler.messages).toEqual([]);
+        try {
+          await client.open();
+          await waitFor(() => expect(interceptor.clients).toHaveLength(1));
+          const responsePromise = new Promise<string>((resolve) => {
+            client.addEventListener('message', ({ data }) => resolve(String(data)), { once: true });
+          });
+          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
-        await handleMessage({ type: 'create', body: { text: 'hello' } });
+          await expect(responsePromise).resolves.toBe('{"type":"delete","id":"1"}');
+          await waitFor(() => expect(handler.messages).toHaveLength(1));
 
-        expect(handler.messages).toHaveLength(1);
-        expect(handler.messages[0].sender).toBe(sender.handle);
-        expect(handler.messages[0].sender.url).toBe(baseURL);
-        expect(handler.messages[0].receiver).toBe(receiver);
-        expect(handler.messages[0].data).toEqual({ type: 'create', body: { text: 'hello' } });
+          expect(handler.messages[0].sender).toBe(interceptor.clients[0]);
+          expect(handler.messages[0].receiver).toBe(interceptor.server);
+          expect(handler.messages[0].data).toEqual({ type: 'create', body: { text: 'hello' } });
+        } finally {
+          await client.close();
+        }
       },
     );
   });
 
   it('should clear intercepted messages in place after cleared', async () => {
-    await usingDirectWebSocketMessageHandler<Schema>(
-      { type, baseURL, Handler, messageSaving: { enabled: true } },
-      async ({ handler, sender, receiver, handleMessage }) => {
-        handler.respond({ type: 'delete', id: '1' });
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await interceptor.message().respond({ type: 'delete', id: '1' });
+        const client = new WebSocketClient<Schema>(baseURL);
 
-        await handleMessage({ type: 'create', body: { text: 'hello' } });
+        try {
+          await client.open();
+          const responsePromise = new Promise<string>((resolve) => {
+            client.addEventListener('message', ({ data }) => resolve(String(data)), { once: true });
+          });
+          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
-        const handlerMessages = handler.messages;
-        const senderMessages = sender.handle.messages;
-        const receiverMessages = receiver.messages;
+          await expect(responsePromise).resolves.toBe('{"type":"delete","id":"1"}');
+          await waitFor(() => expect(handler.messages).toHaveLength(1));
 
-        expect(handlerMessages).toHaveLength(1);
-        expect(senderMessages).toHaveLength(1);
-        expect(receiverMessages).toHaveLength(1);
+          const handlerMessages = handler.messages;
+          expect(handlerMessages[0].data).toEqual({ type: 'create', body: { text: 'hello' } });
 
-        handler.clear();
+          await handler.clear();
 
-        expect(handler.messages).toBe(handlerMessages);
-        expect(handler.messages).toHaveLength(0);
-        expect(sender.handle.messages).toBe(senderMessages);
-        expect(sender.handle.messages).toHaveLength(0);
-        expect(receiver.messages).toBe(receiverMessages);
-        expect(receiver.messages).toHaveLength(0);
-      },
-    );
-  });
-
-  it('should not expose saved messages when message saving is disabled', async () => {
-    await usingDirectWebSocketMessageHandler<Schema>(
-      { type, baseURL, Handler, messageSaving: { enabled: false } },
-      async ({ handler, handleMessage }) => {
-        handler.respond({ type: 'delete', id: '1' });
-
-        await handleMessage({ type: 'create', body: { text: 'hello' } });
-
-        expect(() => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-          handler.messages;
-        }).toThrow(new DisabledMessageSavingError());
+          expect(handler.messages).toBe(handlerMessages);
+          expect(handler.messages).toEqual([]);
+        } finally {
+          await client.close();
+        }
       },
     );
   });

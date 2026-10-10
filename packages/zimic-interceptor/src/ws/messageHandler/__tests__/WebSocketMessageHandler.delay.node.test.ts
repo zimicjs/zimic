@@ -12,13 +12,12 @@ vi.mock('@zimic/utils/time', async (importActual) => {
   return { ...actualModule, waitForDelay: vi.fn(actualModule.waitForDelay) };
 });
 
-describe.each(testMatrix)('WebSocketMessageHandler (node, $type) > Delay', ({ type, Handler }) => {
+describe.each(testMatrix)('WebSocketMessageHandler (node, $type) > Delay', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   declareDelayWebSocketMessageHandlerTests({
     platform: 'node',
     type,
-    Handler,
     startServer: () => server.start(),
     stopServer: () => server.stop(),
     getBaseURL: (type) => getNodeBaseURL(type, server).replace(/^http/, 'ws'),

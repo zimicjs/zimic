@@ -632,6 +632,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
             const httpMSWWorker = await httpWorker.getMSWWorkerOrCreate();
             const webSocketMSWWorker = await webSocketWorker.getMSWWorkerOrCreate();
 
+            // Both protocol workers must share one MSW instance so either can keep the other active.
             expect(webSocketMSWWorker).toBe(httpMSWWorker);
           });
         });
@@ -652,6 +653,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           }
 
           const mswWorker = await httpWorker.getMSWWorkerOrCreate();
+          // Keep the real startup call while counting it to catch duplicate starts.
           const startSpy = 'start' in mswWorker ? vi.spyOn(mswWorker, 'start') : vi.spyOn(mswWorker, 'listen');
           const wasMSWWorkerRunning = webSocketWorker.class.isMSWWorkerRunning;
 
@@ -679,6 +681,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           }
 
           const mswWorker = await httpWorker.getMSWWorkerOrCreate();
+          // Keep the real cleanup call while checking that the shared worker stops only with its last owner.
           const cleanupSpy = 'stop' in mswWorker ? vi.spyOn(mswWorker, 'stop') : vi.spyOn(mswWorker, 'close');
 
           await httpWorker.start();
@@ -691,6 +694,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
 
           await webSocketWorker.stop();
 
+          // Browser service workers stay registered after the protocol workers release them.
           expect(cleanupSpy).toHaveBeenCalledTimes(platform === 'node' ? 1 : 0);
           expect(webSocketWorker.class.isMSWWorkerRunning).toBe(platform === 'browser');
         });
@@ -867,6 +871,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         const interceptor = createDefaultWebSocketInterceptor();
         await worker.use(interceptor.implementation);
 
+        // Suppress this reset RPC because the interceptor was not registered; the test covers the later rejected handshake.
         const resetRequestSpy = vi.spyOn(worker.webSocketClient, 'request').mockResolvedValueOnce({});
         await worker.clearHandlers({ interceptor: interceptor.implementation });
         resetRequestSpy.mockRestore();

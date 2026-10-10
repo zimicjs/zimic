@@ -11,7 +11,6 @@ import {
   InternalWebSocketInterceptorClient,
   InternalWebSocketInterceptorServer,
 } from '../../../interceptor/WebSocketInterceptorHandle';
-import { WebSocketHandlerConstructor } from '../../../interceptor/WebSocketInterceptorImplementation';
 import type { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
 import type { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
 
@@ -50,11 +49,11 @@ export interface DirectWebSocketMessageHandlerContext<Schema extends WebSocketSc
   ) => Promise<boolean>;
 }
 
+// This fixture bypasses worker and transport lifecycle for dispatch behavior that public clients cannot observe directly.
 export async function usingDirectWebSocketMessageHandler<Schema extends WebSocketSchema>(
   options: {
     type: WebSocketInterceptorType;
     baseURL: string;
-    Handler: WebSocketHandlerConstructor;
     messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
   },
   callback: (context: DirectWebSocketMessageHandlerContext<Schema>) => PossiblePromise<void>,
@@ -66,15 +65,14 @@ export async function usingDirectWebSocketMessageHandler<Schema extends WebSocke
   });
   interceptor.implementation.isRunning = true;
 
-  const handler = new options.Handler<Schema>(interceptor.implementation) as DirectWebSocketMessageHandler<Schema>;
-  interceptor.implementation.registerMessageHandler(handler);
+  const handler = interceptor.message() as DirectWebSocketMessageHandler<Schema>;
 
   function createSender(url = options.baseURL) {
     const sentMessages: WebSocketMessageData<Schema>[] = [];
     const handle = interceptor.implementation.createClient(url, {
-      send: vi.fn((data: WebSocketMessageData<Schema>) => {
+      send: (data: WebSocketMessageData<Schema>) => {
         sentMessages.push(data);
-      }),
+      },
     });
     interceptor.implementation.addClient(handle);
     return { handle, sentMessages };

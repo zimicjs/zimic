@@ -15,12 +15,9 @@ const DELAY_TIMING_TOLERANCE = 5;
 type TestHandler = LocalWebSocketMessageHandler<Schema> | RemoteWebSocketMessageHandler<Schema>;
 
 export function declareDelayWebSocketMessageHandlerTests(
-  options: SharedWebSocketMessageHandlerTestOptions & {
-    type: WebSocketInterceptorType;
-    Handler: typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
-  },
+  options: SharedWebSocketMessageHandlerTestOptions & { type: WebSocketInterceptorType },
 ) {
-  const { type, Handler, startServer, stopServer, getBaseURL } = options;
+  const { type, startServer, stopServer, getBaseURL } = options;
 
   let baseURL: string;
 
@@ -41,17 +38,14 @@ export function declareDelayWebSocketMessageHandlerTests(
   });
 
   async function handleDelayedMessage(delayDeclaration: (handler: TestHandler) => void) {
-    await usingDirectWebSocketMessageHandler<Schema>(
-      { type, baseURL, Handler },
-      async ({ handler, sender, handleMessage }) => {
-        delayDeclaration(handler);
-        handler.respond({ type: 'delete', id: '1' });
+    await usingDirectWebSocketMessageHandler<Schema>({ type, baseURL }, async ({ handler, sender, handleMessage }) => {
+      delayDeclaration(handler);
+      handler.respond({ type: 'delete', id: '1' });
 
-        await handleMessage({ type: 'create', body: { text: 'hello' } });
+      await handleMessage({ type: 'create', body: { text: 'hello' } });
 
-        expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '1' })]);
-      },
-    );
+      expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '1' })]);
+    });
   }
 
   describe('Exact delay', () => {
@@ -154,7 +148,7 @@ export function declareDelayWebSocketMessageHandlerTests(
   });
 
   it('should reset delay when cleared', async () => {
-    await usingDirectWebSocketMessageHandler<Schema>({ type, baseURL, Handler }, async ({ handler, handleMessage }) => {
+    await usingDirectWebSocketMessageHandler<Schema>({ type, baseURL }, async ({ handler, handleMessage }) => {
       handler.delay(100).respond({ type: 'delete', id: '1' });
       handler.clear().respond({ type: 'delete', id: '1' });
 

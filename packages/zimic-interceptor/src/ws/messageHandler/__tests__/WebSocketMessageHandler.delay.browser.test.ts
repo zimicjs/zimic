@@ -11,11 +11,10 @@ vi.mock('@zimic/utils/time', async (importActual) => {
   return { ...actualModule, waitForDelay: vi.fn(actualModule.waitForDelay) };
 });
 
-describe.each(testMatrix)('WebSocketMessageHandler (browser, $type) > Delay', ({ type, Handler }) => {
+describe.each(testMatrix)('WebSocketMessageHandler (browser, $type) > Delay', ({ type }) => {
   declareDelayWebSocketMessageHandlerTests({
     platform: 'browser',
     type,
-    Handler,
     getBaseURL: (type) => getBrowserBaseURL(type).replace(/^http/, 'ws'),
   });
 });
