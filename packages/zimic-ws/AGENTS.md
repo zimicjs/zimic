@@ -1,0 +1,3 @@
+# @zimic/ws
+
+Follow the root [AGENTS.md](../../AGENTS.md) for general rules. Keep this public package's exports, declarations, JSDoc, tests, and website API references aligned. Keep shared WebSocket and HTTP lifecycle, precedence, restrictions, timing, saving, errors, and test organization consistent with `@zimic/http`; document differences required by WebSocket protocol semantics. Match nearby test file splits and shared test modules, and preserve established runtime coverage. Use the existing [interceptor API references](../../apps/zimic-web/docs/zimic-interceptor/api) for shared behavior and add scoped WebSocket API references under that documentation section when needed.
