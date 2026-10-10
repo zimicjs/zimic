@@ -3,7 +3,9 @@ import { WebSocketOpenTimeoutError } from '@/errors/WebSocketOpenTimeoutError';
 
 export const DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT = 60 * 1000;
 
+/** Options for opening a WebSocket client. */
 export interface WebSocketClientOpenOptions {
+  /** Maximum time in milliseconds to wait for the connection to open. Defaults to 60 seconds. */
   timeout?: number;
 }
 
@@ -46,6 +48,7 @@ export async function openWebSocketClient(socket: WebSocket, options: WebSocketC
   });
 }
 
+/** Options for closing a WebSocket client. */
 export type WebSocketClientCloseOptions = WebSocketClientOpenOptions;
 
 export async function closeWebSocketClient(
