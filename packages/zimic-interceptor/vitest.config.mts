@@ -49,31 +49,128 @@ export default defineConfig({
       reporter: ['text', 'html'],
       reportsDirectory: './tests/coverage',
       thresholds: {
-        '!({src/ws/**,src/server/InterceptorServer.ts,src/server/http/HttpInterceptorServerRuntime.ts})': {
+        '!({src/server/ws/WebSocketInterceptorServerRuntime.ts,src/ws/interceptor/LocalWebSocketInterceptor.ts,src/ws/interceptor/RemoteWebSocketInterceptor.ts,src/ws/interceptor/WebSocketInterceptorHandle.ts,src/ws/interceptor/WebSocketInterceptorImplementation.ts,src/ws/interceptor/WebSocketInterceptorMessageStore.ts,src/ws/interceptor/WebSocketInterceptorStore.ts,src/ws/interceptor/__tests__/shared/connectionsAndSends.ts,src/ws/interceptor/__tests__/shared/lifeCycle.ts,src/ws/interceptorWorker/LocalWebSocketInterceptorWorker.ts,src/ws/interceptorWorker/RemoteWebSocketInterceptorWorker.ts,src/ws/interceptorWorker/WebSocketInterceptorWorker.ts,src/ws/interceptorWorker/__tests__/shared/default.ts,src/ws/messageHandler/RemoteWebSocketMessageHandler.ts,src/ws/messageHandler/WebSocketMessageHandlerImplementation.ts,src/ws/messageHandler/__tests__/shared/restrictions.ts,src/ws/messageHandler/__tests__/shared/times.ts,src/ws/messageHandler/__tests__/shared/typeAssertions.ts,src/ws/messageHandler/__tests__/shared/utils.ts})':
+          {
+            functions: 100,
+            lines: 100,
+            statements: 100,
+            branches: 100,
+          },
+        // Part 7's deferred WebSocket coverage is in PR #1339. These exact-file floors match the current full-suite
+        // report; remove them and restore the global 100% minimums when that coverage lands in this branch.
+        'src/server/ws/WebSocketInterceptorServerRuntime.ts': {
+          functions: 93.33,
+          lines: 87.4,
+          statements: 87.5,
+          branches: 69.04,
+        },
+        'src/ws/interceptor/LocalWebSocketInterceptor.ts': {
+          functions: 80.95,
+          lines: 82.6,
+          statements: 83.33,
+          branches: 100,
+        },
+        'src/ws/interceptor/RemoteWebSocketInterceptor.ts': {
+          functions: 86.95,
+          lines: 87.87,
+          statements: 88.23,
+          branches: 90,
+        },
+        'src/ws/interceptor/WebSocketInterceptorHandle.ts': {
+          functions: 85.71,
+          lines: 90.9,
+          statements: 90.9,
+          branches: 100,
+        },
+        'src/ws/interceptor/WebSocketInterceptorImplementation.ts': {
+          functions: 94.87,
+          lines: 95.67,
+          statements: 95.83,
+          branches: 91.78,
+        },
+        'src/ws/interceptor/WebSocketInterceptorMessageStore.ts': {
+          functions: 100,
+          lines: 85,
+          statements: 85,
+          branches: 80,
+        },
+        'src/ws/interceptor/WebSocketInterceptorStore.ts': {
+          functions: 66.66,
+          lines: 88.88,
+          statements: 88.88,
+          branches: 100,
+        },
+        'src/ws/interceptor/__tests__/shared/connectionsAndSends.ts': {
           functions: 100,
           lines: 100,
           statements: 100,
+          branches: 83.33,
+        },
+        'src/ws/interceptor/__tests__/shared/lifeCycle.ts': {
+          functions: 100,
+          lines: 100,
+          statements: 100,
+          branches: 75,
+        },
+        'src/ws/interceptorWorker/LocalWebSocketInterceptorWorker.ts': {
+          functions: 100,
+          lines: 98.59,
+          statements: 98.64,
           branches: 100,
         },
-        // Temporarily reduced for Part 6 because the remaining tests are in Part 7 (#1339).
-        // Restore the global 100% minimums and remove these overrides in Part 7.
-        'src/ws/**': {
-          functions: 94.37,
-          lines: 96.9,
-          statements: 96.88,
-          branches: 92.16,
+        'src/ws/interceptorWorker/RemoteWebSocketInterceptorWorker.ts': {
+          functions: 95.83,
+          lines: 95.95,
+          statements: 96.03,
+          branches: 94.11,
         },
-        'src/server/InterceptorServer.ts': {
-          functions: 93.84,
-          lines: 90.54,
-          statements: 90.23,
+        'src/ws/interceptorWorker/WebSocketInterceptorWorker.ts': {
+          functions: 100,
+          lines: 100,
+          statements: 100,
+          branches: 91.66,
+        },
+        'src/ws/interceptorWorker/__tests__/shared/default.ts': {
+          functions: 98.57,
+          lines: 98.17,
+          statements: 98,
+          branches: 82.69,
+        },
+        'src/ws/messageHandler/RemoteWebSocketMessageHandler.ts': {
+          functions: 87.5,
+          lines: 88.37,
+          statements: 88.88,
+          branches: 50,
+        },
+        'src/ws/messageHandler/WebSocketMessageHandlerImplementation.ts': {
+          functions: 100,
+          lines: 100,
+          statements: 100,
+          branches: 96,
+        },
+        'src/ws/messageHandler/__tests__/shared/restrictions.ts': {
+          functions: 100,
+          lines: 100,
+          statements: 100,
+          branches: 90,
+        },
+        'src/ws/messageHandler/__tests__/shared/times.ts': {
+          functions: 100,
+          lines: 100,
+          statements: 100,
           branches: 80,
         },
-        'src/server/http/HttpInterceptorServerRuntime.ts': {
-          functions: 100,
-          lines: 97.84,
-          statements: 97.91,
-          branches: 90.62,
+        'src/ws/messageHandler/__tests__/shared/typeAssertions.ts': {
+          functions: 75,
+          lines: 82.66,
+          statements: 81.57,
+          branches: 100,
+        },
+        'src/ws/messageHandler/__tests__/shared/utils.ts': {
+          functions: 88.88,
+          lines: 97.5,
+          statements: 97.5,
+          branches: 91.66,
         },
       },
       exclude: [

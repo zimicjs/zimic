@@ -296,6 +296,47 @@ describe('Interceptor server', () => {
         await Promise.all([client.close(), interceptor.stop()]);
       }
     });
+
+    it('should ignore malformed encoded protocols on application connections', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+      await server.start();
+
+      const socket = connect({ host: server.hostname, port: server.port! });
+      const socketConnected = once(socket, 'connect');
+      const handshakeResponse = new Promise<string>((resolve, reject) => {
+        let response = '';
+        socket.on('data', (chunk: Buffer) => {
+          response += chunk.toString();
+
+          if (response.includes('\r\n\r\n')) {
+            resolve(response);
+          }
+        });
+        socket.once('error', reject);
+      });
+
+      try {
+        await socketConnected;
+        socket.write(
+          [
+            'GET / HTTP/1.1',
+            `Host: ${server.hostname}:${server.port}`,
+            'Upgrade: websocket',
+            'Connection: Upgrade',
+            'Sec-WebSocket-Key: MDEyMzQ1Njc4OWFiY2RlZg==',
+            'Sec-WebSocket-Version: 13',
+            'Sec-WebSocket-Protocol: %',
+            '',
+            '',
+          ].join('\r\n'),
+        );
+
+        const response = await handshakeResponse;
+        expect(response).toMatch(/^HTTP\/1\.1 101 Switching Protocols\r\n/);
+      } finally {
+        socket.destroy();
+      }
+    });
   });
 
   describe('WebSocket worker authorization', () => {
@@ -335,6 +376,73 @@ describe('Interceptor server', () => {
           workerSocket.close();
           await workerSocketClosed;
         }
+      }
+    });
+
+    it('should reject WebSocket workers with an invalid protocol parameter', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+      await server.start();
+
+      const workerSocket = new NodeWebSocket(`ws://${server.hostname}:${server.port}`, [
+        encodeURIComponent(`${INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER}=%FF`),
+      ]);
+      const closeEventPromise = new Promise<{ code: number; reason: Buffer }>((resolve, reject) => {
+        workerSocket.once('close', (code, reason) => resolve({ code, reason }));
+        workerSocket.once('error', reject);
+      });
+
+      const { code, reason } = await closeEventPromise;
+
+      expect(code).toBe(1008);
+      expect(reason.toString()).toBe('Invalid interceptor worker protocol.');
+    });
+  });
+
+  describe('HTTP worker authorization', () => {
+    it('should reject HTTP worker events from a WebSocket worker', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+      await server.start();
+
+      type Schema = HttpSchema<{
+        '/users': {
+          GET: {
+            response: { 204: {} };
+          };
+        };
+      }>;
+      const baseURL = `http://${server.hostname}:${server.port}`;
+      const interceptor = createInternalHttpInterceptor<Schema>({ type: 'remote', baseURL });
+      const workerSocket = new NodeWebSocket(`ws://${server.hostname}:${server.port}`, [
+        encodeURIComponent(`${INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER}=ws`),
+      ]);
+      const workerSocketOpen = once(workerSocket, 'open');
+
+      try {
+        await interceptor.start();
+        await workerSocketOpen;
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          workerSocket.send(
+            JSON.stringify({
+              id: crypto.randomUUID(),
+              channel: 'interceptors/http/workers/commit',
+              data: { id: 'not-an-http-worker', baseURL, method: 'GET', path: '/users' },
+            }),
+          );
+
+          await waitFor(() => {
+            expect(console.error).toHaveBeenCalledWith(
+              new InvalidWebSocketMessageError('HTTP RPC received from a non-HTTP worker.'),
+            );
+          });
+        });
+      } finally {
+        if (workerSocket.readyState === NodeWebSocket.OPEN) {
+          const workerSocketClosed = once(workerSocket, 'close');
+          workerSocket.close();
+          await workerSocketClosed;
+        }
+        await interceptor.stop();
       }
     });
   });
@@ -411,6 +519,16 @@ describe('Interceptor server', () => {
           );
           await waitFor(() => expect(console.error).toHaveBeenCalledTimes(2));
           expect(console.error).toHaveBeenNthCalledWith(2, expect.any(InvalidWebSocketMessageError));
+
+          workerSocket.send(
+            JSON.stringify({
+              id: crypto.randomUUID(),
+              channel: 'interceptors/http/workers/commit',
+              data: { id: 'malformed-url', baseURL: 'not a URL', method: 'GET', path: '/users' },
+            }),
+          );
+          await waitFor(() => expect(console.error).toHaveBeenCalledTimes(3));
+          expect(console.error).toHaveBeenNthCalledWith(3, expect.any(InvalidWebSocketMessageError));
         });
 
         workerSocket.send(
@@ -851,6 +969,32 @@ describe('Interceptor server', () => {
             type: 'reject',
           });
         });
+      });
+
+      it('should log requests without handlers when the HTTP runtime is loaded', async () => {
+        server = createInternalInterceptorServer({ logUnhandledRequests: true });
+        await server.start();
+
+        const baseURL = `http://${server.hostname}:${server.port}`;
+        const interceptor = createInternalHttpInterceptor<HttpSchema>({ type: 'remote', baseURL });
+        const request = new Request(`${baseURL}/`);
+
+        await interceptor.start();
+
+        try {
+          await usingIgnoredConsole(['error'], async (console) => {
+            await expectFetchError(fetch(request.clone()));
+
+            expect(console.error).toHaveBeenCalledTimes(1);
+            await verifyUnhandledRequestMessage(console.error.mock.calls[0].join(' '), {
+              request,
+              platform: 'node',
+              type: 'reject',
+            });
+          });
+        } finally {
+          await interceptor.stop();
+        }
       });
     });
 

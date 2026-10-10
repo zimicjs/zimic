@@ -7,6 +7,7 @@ import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import LocalWebSocketInterceptorWorker from '../../../interceptorWorker/LocalWebSocketInterceptorWorker';
 import type { Schema } from '../../../messageHandler/__tests__/shared/types';
 import { LocalWebSocketMessageHandler } from '../../../messageHandler/LocalWebSocketMessageHandler';
+import NotRunningWebSocketInterceptorError from '../../errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
 import { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '../../types/options';
@@ -22,6 +23,21 @@ interface SharedWebSocketInterceptorLifeCycleTestOptions {
 
 export function declareLifeCycleWebSocketInterceptorTests(options: SharedWebSocketInterceptorLifeCycleTestOptions) {
   const { platform, type, getBaseURL } = options;
+
+  it('should reject message declarations while stopped', async () => {
+    const interceptor = createWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() });
+
+    try {
+      expect(() => interceptor.message()).toThrow(NotRunningWebSocketInterceptorError);
+
+      await interceptor.start();
+      await interceptor.stop();
+
+      expect(() => interceptor.message()).toThrow(NotRunningWebSocketInterceptorError);
+    } finally {
+      await interceptor.stop();
+    }
+  });
 
   if (type === 'local') {
     it('should release a worker after startup fails', async () => {
