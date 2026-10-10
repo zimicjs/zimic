@@ -1,0 +1,3 @@
+# @zimic/interceptor
+
+Follow the root [AGENTS.md](../../AGENTS.md) for general rules. This public package has local and remote implementations behind shared APIs; changes to shared behavior must cover both modes and every affected runtime. Keep HTTP and WebSocket lifecycle, precedence, restrictions, timing, saving, errors, and test organization aligned. Explain protocol-driven differences in code, tests, and docs. Match nearby test file splits and shared test modules. Keep exports, consumer checks, public JSDoc, and website API references aligned. See the [existing API references](../../apps/zimic-web/docs/zimic-interceptor/api); add scoped WebSocket API references in this directory when needed.

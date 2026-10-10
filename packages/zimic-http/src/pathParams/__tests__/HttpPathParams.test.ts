@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, it } from 'vitest';
 
-import { HttpPathParamsSerialized } from '../types';
+import { HttpPathParamsSerialized } from '@/index';
 
 describe('HttpPathParams', () => {
   describe('Types', () => {

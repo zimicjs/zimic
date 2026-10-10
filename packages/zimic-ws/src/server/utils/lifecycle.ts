@@ -6,7 +6,9 @@ import { DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } from '@/client/utils/lifecycle';
 import { WebSocketCloseTimeoutError } from '@/errors/WebSocketCloseTimeoutError';
 import { WebSocketOpenTimeoutError } from '@/errors/WebSocketOpenTimeoutError';
 
+/** Options for opening a WebSocket server. */
 export interface WebSocketServerOpenOptions {
+  /** Maximum time in milliseconds to wait for the HTTP server to listen. Defaults to 60 seconds. */
   timeout?: number;
 }
 
@@ -53,6 +55,7 @@ export async function openWebSocketServer(
   });
 }
 
+/** Options for closing a WebSocket server. */
 export type WebSocketServerCloseOptions = WebSocketServerOpenOptions;
 
 export async function closeWebSocketServer(

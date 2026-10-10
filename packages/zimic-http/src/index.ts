@@ -1,30 +1,31 @@
 export type { JSONValue, JSONSerialized } from '@zimic/utils/types';
 
-export { default as HttpFormData } from './formData/HttpFormData';
-export type { HttpFormDataSchema, HttpFormDataSchemaName, HttpFormDataSerialized } from './formData/types';
+export { HttpFormData } from '@zimic/utils/http';
+export type { HttpFormDataSchema, HttpFormDataSchemaName, HttpFormDataSerialized } from '@zimic/utils/http';
 
-export type { HttpPathParamsSchema, HttpPathParamsSerialized } from './pathParams/types';
+export type { HttpPathParamsSchema, HttpPathParamsSerialized } from '@zimic/utils/http';
 
-export { default as HttpHeaders } from './headers/HttpHeaders';
+export { HttpHeaders } from '@zimic/utils/http';
 export type {
   HttpHeadersInit,
   HttpHeadersSchema,
   HttpHeadersSchemaTuple,
   HttpHeadersSchemaName,
   HttpHeadersSerialized,
-} from './headers/types';
+} from '@zimic/utils/http';
 
-export { default as HttpSearchParams } from './searchParams/HttpSearchParams';
+export { HttpSearchParams } from '@zimic/utils/http';
 export type {
   HttpSearchParamsInit,
   HttpSearchParamsSchema,
   HttpSearchParamsSchemaTuple,
   HttpSearchParamsSchemaName,
   HttpSearchParamsSerialized,
-} from './searchParams/types';
+} from '@zimic/utils/http';
+
+export type { HttpBody } from '@zimic/utils/http';
 
 export type {
-  HttpBody,
   HttpRequest,
   HttpResponse,
   StrictHeaders,
@@ -56,4 +57,4 @@ export type {
 } from './types/schema';
 
 export { HTTP_METHODS } from './types/schema';
-export { parseHttpBody, InvalidJSONError, InvalidFormDataError } from './utils/bodies';
+export { parseHttpBody, InvalidJSONError, InvalidFormDataError } from '@zimic/utils/http';

@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { verifyUnhandledRequestMessage } from '@/http/interceptor/__tests__/shared/utils';
 import { createHttpInterceptor } from '@/http/interceptor/factory';
+import { INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER } from '@/interceptor/constants';
 import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/server/constants';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 import WebSocketServer from '@/utils/webSocket/WebSocketServer';
@@ -559,7 +560,10 @@ describe('CLI > Server start', () => {
       });
 
       try {
-        await webSocketClient.start();
+        await webSocketClient.start({
+          parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http' },
+          waitForAuthentication: true,
+        });
         expect(webSocketClient.isRunning).toBe(true);
 
         await server?.stop();

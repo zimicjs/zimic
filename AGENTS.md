@@ -10,12 +10,12 @@
 
 - For packages intended for direct external use, treat package exports as part of the public contract. Keep the `exports` map and consumer coverage aligned when adding, removing, or renaming an entry point. Do not require public compatibility or consumer export tests for internal packages such as `@zimic/utils`.
 - Preserve tree-shakeability. Avoid top-level side effects and do not weaken assumptions behind package `sideEffects: false`.
-- In `@zimic/utils`, group related utilities into cohesive, tree-shakeable module entry points. Prefer an existing module when it fits and create a new entry point for a distinct concern.
+- Document every public declaration with JSDoc: package exports, re-exported declarations, public members, and types reachable through public signatures.
+- For public API documentation, link to the closest existing or planned website documentation page when suitable. Otherwise, describe behavior inline. Align links with the documented route and keep HTTP and WebSocket documentation in parity where both protocols support the behavior.
 
 ## Runtime and behavior coverage
 
 - Many packages are expected to work in both Node and browser environments. Keep changes runtime-safe unless the target code is clearly environment-specific.
-- `@zimic/interceptor` has local and remote implementations behind shared APIs. Changes that affect shared behavior should account for both modes.
 - Match the test dimensions already used by the target package. Cover every affected runtime or mode instead of testing only the easiest path.
 - Do not weaken coverage expectations for core packages.
 
@@ -28,7 +28,6 @@
 ## Testing conventions
 
 - Write tests from the point of view of a user of the public API whenever possible. Avoid asserting implementation details unless the nearby test suite already does so for that layer.
-- When adding tests for a module with a close analogue, mirror the analogue's test file split, shared test modules, describe blocks, and test-case naming. Keep equivalent behaviors easy to compare across modules.
 - Avoid one-off test helper functions. Add a helper only when it matches an existing test pattern or removes meaningful repeated setup without hiding the behavior under test.
 
 ## Published artifacts
@@ -54,5 +53,6 @@ After editing a shared package, rebuild it before exercising services that depen
 ## Where to look first
 
 - General project structure and setup: root `README.md`, `CONTRIBUTING.md`, and workspace configuration.
-- App or package-specific conventions and commands: local `README.md` and package scripts.
+- Package and app contracts: the closest `AGENTS.md`; each scoped `CLAUDE.md` points to that guidance.
+- Runnable example conventions: `examples/AGENTS.md`.
 - Existing nearby tests and implementation patterns before introducing new helpers or abstractions.
