@@ -1,18 +1,9 @@
 import { waitForDelay } from '@zimic/utils/time';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { usingElapsedTime } from '@/utils/time';
-
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
-import type { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
-import type { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
 import { usingDirectWebSocketMessageHandler } from './utils';
-
-const waitForDelaySpy = vi.mocked(waitForDelay);
-const DELAY_TIMING_TOLERANCE = 5;
-
-type TestHandler = LocalWebSocketMessageHandler<Schema> | RemoteWebSocketMessageHandler<Schema>;
 
 export function declareDelayWebSocketMessageHandlerTests(
   options: SharedWebSocketMessageHandlerTestOptions & { type: WebSocketInterceptorType },
@@ -37,38 +28,71 @@ export function declareDelayWebSocketMessageHandlerTests(
     }
   });
 
-  async function handleDelayedMessage(delayDeclaration: (handler: TestHandler) => void) {
-    await usingDirectWebSocketMessageHandler<Schema>({ type, baseURL }, async ({ handler, sender, handleMessage }) => {
-      delayDeclaration(handler);
-      handler.respond({ type: 'delete', id: '1' });
-
-      await handleMessage({ type: 'create', body: { text: 'hello' } });
-
-      expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '1' })]);
-    });
-  }
-
   describe('Exact delay', () => {
     it('should apply an exact delay before responding', async () => {
       const delay = 100;
 
-      const { elapsedTime } = await usingElapsedTime(() => handleDelayedMessage((handler) => handler.delay(delay)));
-      expect(elapsedTime).toBeGreaterThanOrEqual(delay - DELAY_TIMING_TOLERANCE);
+      await usingDirectWebSocketMessageHandler<Schema>(
+        { type, baseURL },
+        async ({ handler, sender, handleMessage }) => {
+          handler.delay(delay).respond({ type: 'delete', id: '1' });
 
-      expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
-      expect(waitForDelaySpy).toHaveBeenCalledWith(delay);
+          vi.useFakeTimers();
+          try {
+            const dispatch = handleMessage({ type: 'create', body: { text: 'hello' } });
+
+            await vi.advanceTimersByTimeAsync(0);
+            expect(sender.sentMessages).toEqual([]);
+
+            await vi.advanceTimersByTimeAsync(delay - 1);
+            expect(sender.sentMessages).toEqual([]);
+
+            await vi.advanceTimersByTimeAsync(1);
+            await dispatch;
+            expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '1' })]);
+          } finally {
+            vi.useRealTimers();
+          }
+        },
+      );
     });
 
     it('should not apply delay when set to zero', async () => {
-      await handleDelayedMessage((handler) => handler.delay(0));
+      await usingDirectWebSocketMessageHandler<Schema>(
+        { type, baseURL },
+        async ({ handler, sender, handleMessage }) => {
+          handler.delay(0).respond({ type: 'delete', id: '1' });
 
-      expect(waitForDelaySpy).not.toHaveBeenCalled();
+          vi.useFakeTimers();
+          try {
+            const dispatch = handleMessage({ type: 'create', body: { text: 'hello' } });
+            await vi.advanceTimersByTimeAsync(0);
+            await dispatch;
+            expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '1' })]);
+          } finally {
+            vi.useRealTimers();
+          }
+        },
+      );
     });
 
     it('should not apply delay when set to negative', async () => {
-      await handleDelayedMessage((handler) => handler.delay(-10));
+      await usingDirectWebSocketMessageHandler<Schema>(
+        { type, baseURL },
+        async ({ handler, sender, handleMessage }) => {
+          handler.delay(-10).respond({ type: 'delete', id: '1' });
 
-      expect(waitForDelaySpy).not.toHaveBeenCalled();
+          vi.useFakeTimers();
+          try {
+            const dispatch = handleMessage({ type: 'create', body: { text: 'hello' } });
+            await vi.advanceTimersByTimeAsync(0);
+            await dispatch;
+            expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '1' })]);
+          } finally {
+            vi.useRealTimers();
+          }
+        },
+      );
     });
   });
 
@@ -77,38 +101,86 @@ export function declareDelayWebSocketMessageHandlerTests(
       const minDelay = 100;
       const maxDelay = 200;
 
-      const { elapsedTime } = await usingElapsedTime(() =>
-        handleDelayedMessage((handler) => handler.delay(minDelay, maxDelay)),
+      const delay = 150;
+
+      await usingDirectWebSocketMessageHandler<Schema>(
+        { type, baseURL },
+        async ({ handler, sender, handleMessage }) => {
+          handler.delay(minDelay, maxDelay).respond({ type: 'delete', id: '1' });
+
+          const randomSpy = vi.spyOn(Math, 'random').mockReturnValue((delay - minDelay) / (maxDelay - minDelay));
+          vi.useFakeTimers();
+          try {
+            const dispatch = handleMessage({ type: 'create', body: { text: 'hello' } });
+
+            await vi.advanceTimersByTimeAsync(0);
+            expect(sender.sentMessages).toEqual([]);
+
+            await vi.advanceTimersByTimeAsync(delay - 1);
+            expect(sender.sentMessages).toEqual([]);
+
+            await vi.advanceTimersByTimeAsync(1);
+            await dispatch;
+            expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '1' })]);
+          } finally {
+            vi.useRealTimers();
+            randomSpy.mockRestore();
+          }
+        },
       );
-      expect(elapsedTime).toBeGreaterThanOrEqual(minDelay - DELAY_TIMING_TOLERANCE);
-
-      expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
-
-      const usedDelay = waitForDelaySpy.mock.calls[0][0];
-      expect(usedDelay).toBeGreaterThanOrEqual(minDelay);
-      expect(usedDelay).toBeLessThanOrEqual(maxDelay);
     });
 
     it('should apply an exact delay when the range limits are equal', async () => {
       const delay = 50;
 
-      const { elapsedTime } = await usingElapsedTime(() =>
-        handleDelayedMessage((handler) => handler.delay(delay, delay)),
-      );
-      expect(elapsedTime).toBeGreaterThanOrEqual(delay - DELAY_TIMING_TOLERANCE);
+      await usingDirectWebSocketMessageHandler<Schema>(
+        { type, baseURL },
+        async ({ handler, sender, handleMessage }) => {
+          handler.delay(delay, delay).respond({ type: 'delete', id: '1' });
 
-      expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
-      expect(waitForDelaySpy).toHaveBeenCalledWith(delay);
+          vi.useFakeTimers();
+          try {
+            const dispatch = handleMessage({ type: 'create', body: { text: 'hello' } });
+
+            await vi.advanceTimersByTimeAsync(0);
+            expect(sender.sentMessages).toEqual([]);
+
+            await vi.advanceTimersByTimeAsync(delay - 1);
+            expect(sender.sentMessages).toEqual([]);
+
+            await vi.advanceTimersByTimeAsync(1);
+            await dispatch;
+            expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '1' })]);
+          } finally {
+            vi.useRealTimers();
+          }
+        },
+      );
     });
 
     it('should apply the highest delay when the minimum limit is higher than the maximum limit', async () => {
       const minDelay = 100;
       const maxDelay = 50;
 
-      await handleDelayedMessage((handler) => handler.delay(minDelay, maxDelay));
+      await usingDirectWebSocketMessageHandler<Schema>(
+        { type, baseURL },
+        async ({ handler, sender, handleMessage }) => {
+          handler.delay(minDelay, maxDelay).respond({ type: 'delete', id: '1' });
 
-      expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
-      expect(waitForDelaySpy).toHaveBeenCalledWith(minDelay);
+          vi.useFakeTimers();
+          try {
+            const dispatch = handleMessage({ type: 'create', body: { text: 'hello' } });
+            await vi.advanceTimersByTimeAsync(0);
+            expect(sender.sentMessages).toEqual([]);
+
+            await vi.advanceTimersByTimeAsync(minDelay);
+            await dispatch;
+            expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '1' })]);
+          } finally {
+            vi.useRealTimers();
+          }
+        },
+      );
     });
   });
 
@@ -116,45 +188,83 @@ export function declareDelayWebSocketMessageHandlerTests(
     it('should apply a computed synchronous delay', async () => {
       const delay = 100;
 
-      const { elapsedTime } = await usingElapsedTime(() =>
-        handleDelayedMessage((handler) => {
-          handler.delay(() => delay);
-        }),
-      );
-      expect(elapsedTime).toBeGreaterThanOrEqual(delay - DELAY_TIMING_TOLERANCE);
+      await usingDirectWebSocketMessageHandler<Schema>(
+        { type, baseURL },
+        async ({ handler, sender, handleMessage }) => {
+          handler.delay(() => delay).respond({ type: 'delete', id: '1' });
 
-      expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
-      expect(waitForDelaySpy).toHaveBeenCalledWith(delay);
+          vi.useFakeTimers();
+          try {
+            const dispatch = handleMessage({ type: 'create', body: { text: 'hello' } });
+
+            await vi.advanceTimersByTimeAsync(0);
+            expect(sender.sentMessages).toEqual([]);
+
+            await vi.advanceTimersByTimeAsync(delay - 1);
+            expect(sender.sentMessages).toEqual([]);
+
+            await vi.advanceTimersByTimeAsync(1);
+            await dispatch;
+            expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '1' })]);
+          } finally {
+            vi.useRealTimers();
+          }
+        },
+      );
     });
 
     it('should apply a computed asynchronous delay', async () => {
       const delayOverhead = 30;
       const delay = 50;
 
-      const { elapsedTime } = await usingElapsedTime(() =>
-        handleDelayedMessage((handler) => {
-          handler.delay(async () => {
-            await waitForDelay(delayOverhead);
-            return delay;
-          });
-        }),
-      );
-      expect(elapsedTime).toBeGreaterThanOrEqual(delayOverhead + delay - DELAY_TIMING_TOLERANCE);
+      await usingDirectWebSocketMessageHandler<Schema>(
+        { type, baseURL },
+        async ({ handler, sender, handleMessage }) => {
+          handler
+            .delay(async () => {
+              await waitForDelay(delayOverhead);
+              return delay;
+            })
+            .respond({ type: 'delete', id: '1' });
 
-      expect(waitForDelaySpy).toHaveBeenCalledTimes(2);
-      expect(waitForDelaySpy).toHaveBeenNthCalledWith(1, delayOverhead);
-      expect(waitForDelaySpy).toHaveBeenNthCalledWith(2, delay);
+          vi.useFakeTimers();
+          try {
+            const dispatch = handleMessage({ type: 'create', body: { text: 'hello' } });
+
+            await vi.advanceTimersByTimeAsync(0);
+            expect(sender.sentMessages).toEqual([]);
+
+            await vi.advanceTimersByTimeAsync(delayOverhead);
+            expect(sender.sentMessages).toEqual([]);
+
+            await vi.advanceTimersByTimeAsync(delay - 1);
+            expect(sender.sentMessages).toEqual([]);
+
+            await vi.advanceTimersByTimeAsync(1);
+            await dispatch;
+            expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '1' })]);
+          } finally {
+            vi.useRealTimers();
+          }
+        },
+      );
     });
   });
 
   it('should reset delay when cleared', async () => {
-    await usingDirectWebSocketMessageHandler<Schema>({ type, baseURL }, async ({ handler, handleMessage }) => {
+    await usingDirectWebSocketMessageHandler<Schema>({ type, baseURL }, async ({ handler, sender, handleMessage }) => {
       handler.delay(100).respond({ type: 'delete', id: '1' });
       handler.clear().respond({ type: 'delete', id: '1' });
 
-      await handleMessage({ type: 'create', body: { text: 'hello' } });
-
-      expect(waitForDelaySpy).not.toHaveBeenCalled();
+      vi.useFakeTimers();
+      try {
+        const dispatch = handleMessage({ type: 'create', body: { text: 'hello' } });
+        await vi.advanceTimersByTimeAsync(0);
+        await dispatch;
+        expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '1' })]);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 
@@ -162,13 +272,25 @@ export function declareDelayWebSocketMessageHandlerTests(
     const firstDelay = 200;
     const secondDelay = 50;
 
-    const { elapsedTime } = await usingElapsedTime(() =>
-      handleDelayedMessage((handler) => handler.delay(firstDelay).delay(secondDelay)),
-    );
-    expect(elapsedTime).toBeGreaterThanOrEqual(secondDelay - DELAY_TIMING_TOLERANCE);
-    expect(elapsedTime).toBeLessThan(firstDelay);
+    await usingDirectWebSocketMessageHandler<Schema>({ type, baseURL }, async ({ handler, sender, handleMessage }) => {
+      handler.delay(firstDelay).delay(secondDelay).respond({ type: 'delete', id: '1' });
 
-    expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
-    expect(waitForDelaySpy).toHaveBeenCalledWith(secondDelay);
+      vi.useFakeTimers();
+      try {
+        const dispatch = handleMessage({ type: 'create', body: { text: 'hello' } });
+
+        await vi.advanceTimersByTimeAsync(0);
+        expect(sender.sentMessages).toEqual([]);
+
+        await vi.advanceTimersByTimeAsync(secondDelay - 1);
+        expect(sender.sentMessages).toEqual([]);
+
+        await vi.advanceTimersByTimeAsync(1);
+        await dispatch;
+        expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '1' })]);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
 }
