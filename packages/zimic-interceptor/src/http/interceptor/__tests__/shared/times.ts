@@ -12,7 +12,7 @@ import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { getBaseURL, getInterceptorOptions } = options;
+  const { type, getBaseURL, getInterceptorOptions } = options;
 
   let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
@@ -947,4 +947,22 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
       });
     });
   });
+
+  if (type === 'remote') {
+    it('should check times when called, before the returned promise is awaited', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await interceptor.get('/users').respond({ status: 204 }).times(1);
+
+        const timesCheckPromise = interceptor.checkTimes();
+        await handler.times(0);
+
+        await expectHttpTimesCheckError(() => timesCheckPromise, {
+          message: 'Expected exactly 1 request, but got 0.',
+          expectedNumberOfRequests: 1,
+        });
+      });
+    });
+  }
 }
