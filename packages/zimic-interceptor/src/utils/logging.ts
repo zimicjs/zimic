@@ -11,6 +11,46 @@ export const logger = new Logger({
 
 const importUtil = createCachedDynamicImport(() => import('util'));
 
+function stringifyJSONToLog(value: unknown): string {
+  return JSON.stringify(
+    value,
+    (_key, value) => {
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      return stringifyValueToLog(value, {
+        fallback: (value) => value as string,
+      });
+    },
+    2,
+  )
+    .replace(/\n\s*/g, ' ')
+    .replace(/"(File { name: '.*?', type: '.*?', size: \d*? })"/g, '$1')
+    .replace(/"(Blob { type: '.*?', size: \d*? })"/g, '$1')
+    .replace(/"(ArrayBuffer { byteLength: \d*?, bytes: \[[\d, ]*?\] })"/g, '$1');
+}
+
+export function stringifyValueToLog(value: unknown, options: { fallback?: (value: unknown) => string } = {}): string {
+  const { fallback = stringifyJSONToLog } = options;
+
+  if (value === null || value === undefined || typeof value !== 'object') {
+    return String(value);
+  }
+
+  if (value instanceof File) {
+    return `File { name: '${value.name}', type: '${value.type}', size: ${value.size} }`;
+  }
+
+  if (value instanceof Blob) {
+    return `Blob { type: '${value.type}', size: ${value.size} }`;
+  }
+
+  if (value instanceof ArrayBuffer) {
+    const bytes = Array.from(new Uint8Array(value));
+    return `ArrayBuffer { byteLength: ${value.byteLength}, bytes: [${bytes.join(', ')}] }`;
+  }
+
+  return fallback(value);
+}
+
 export async function formatValueToLog(value: unknown, options: { colors?: boolean } = {}) {
   if (isClientSide()) {
     return value;
