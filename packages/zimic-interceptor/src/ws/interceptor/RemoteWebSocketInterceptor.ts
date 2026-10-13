@@ -127,15 +127,9 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
     await this.implementation.stop({ beforeStop: () => this.clear() });
   }
 
-  checkTimes() {
-    return new Promise<void>((resolve, reject) => {
-      try {
-        this.implementation.checkTimes();
-        resolve();
-      } catch (error) {
-        reject(error);
-      }
-    });
+  async checkTimes() {
+    this.implementation.checkTimes();
+    return Promise.resolve();
   }
 
   async clear() {

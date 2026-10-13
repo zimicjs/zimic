@@ -5,6 +5,7 @@ import { expect, it, vi } from 'vitest';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
 import type { Schema } from '../../../messageHandler/__tests__/shared/types';
+import NotRunningWebSocketInterceptorError from '../../errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
 import { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '../../types/options';
@@ -92,6 +93,29 @@ export function declareLifeCycleWebSocketInterceptorTests(options: SharedWebSock
       await Promise.allSettled([startPromise, stopPromise]);
       await interceptor.stop();
     }
+  });
+
+  it('should throw an error when trying to be cleared if not running', async () => {
+    const interceptor = createWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() });
+    expect(interceptor.isRunning).toBe(false);
+
+    await expect(async () => {
+      await interceptor.clear();
+    }).rejects.toThrow(new NotRunningWebSocketInterceptorError());
+  });
+
+  it('should throw an error when trying to be cleared after stopped', async () => {
+    const interceptor = createWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() });
+
+    await interceptor.start();
+    expect(interceptor.isRunning).toBe(true);
+
+    await interceptor.stop();
+    expect(interceptor.isRunning).toBe(false);
+
+    await expect(async () => {
+      await interceptor.clear();
+    }).rejects.toThrow(new NotRunningWebSocketInterceptorError());
   });
 
   if (type === 'local') {
