@@ -1,10 +1,11 @@
+import { WebSocketSchema } from '@zimic/ws';
 import { beforeAll, beforeEach, afterAll, describe, expect, it } from 'vitest';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
 import { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
-import { expectWebSocketTimesCheckError, usingDirectWebSocketMessageHandler } from './utils';
+import { createBinaryMessage, expectWebSocketTimesCheckError, usingDirectWebSocketMessageHandler } from './utils';
 
 export function declareTimesWebSocketMessageHandlerTests(
   options: SharedWebSocketMessageHandlerTestOptions & {
@@ -204,6 +205,74 @@ export function declareTimesWebSocketMessageHandlerTests(
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected at least 0 and at most 1 message, but got 2.',
             expectedNumberOfMessages: { min: 0, max: 1 },
+          });
+        },
+      );
+    });
+  });
+
+  describe('Unmatched messages', () => {
+    it('should show unmatched JSON messages in times check errors', async () => {
+      await usingDirectWebSocketMessageHandler<Schema>(
+        { type, baseURL, Handler, messageSaving: { enabled: true } },
+        async ({ handler, handleMessage }) => {
+          handler.with({ type: 'delete' }).respond({ type: 'delete', id: '1' }).times(1);
+
+          await expect(handleMessage({ type: 'create', body: { text: 'hello' } })).resolves.toBe(false);
+
+          await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+            message: 'Expected exactly 1 matching message, but got 0.',
+            expectedNumberOfMessages: 1,
+            unmatchedMessages:
+              '- { "message": { "type": "create", "body": { "text": "hello" } }, ' +
+              '"diff": { "data": { "expected": { "type": "delete" }, ' +
+              '"received": { "type": "create", "body": { "text": "hello" } } } } }',
+          });
+        },
+      );
+    });
+
+    it('should show unmatched array buffer messages in times check errors', async () => {
+      await usingDirectWebSocketMessageHandler<WebSocketSchema<ArrayBuffer>>(
+        { type, baseURL, Handler, messageSaving: { enabled: true } },
+        async ({ handler, handleMessage }) => {
+          handler.with(createBinaryMessage(1, 2)).respond(createBinaryMessage(5, 6)).times(1);
+
+          await expect(handleMessage(createBinaryMessage(3, 4))).resolves.toBe(false);
+
+          await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+            message: 'Expected exactly 1 matching message, but got 0.',
+            expectedNumberOfMessages: 1,
+            unmatchedMessages:
+              '- { "message": ArrayBuffer { byteLength: 2, bytes: [3, 4] }, ' +
+              '"diff": { "data": { "expected": ArrayBuffer { byteLength: 2, bytes: [1, 2] }, ' +
+              '"received": ArrayBuffer { byteLength: 2, bytes: [3, 4] } } } }',
+          });
+        },
+      );
+    });
+
+    it('should show unmatched blob messages in times check errors', async () => {
+      await usingDirectWebSocketMessageHandler<WebSocketSchema<Blob>>(
+        { type, baseURL, Handler, messageSaving: { enabled: true } },
+        async ({ handler, handleMessage }) => {
+          const restrictedBlob = new Blob(['1'], { type: 'application/octet-stream' });
+          const blob = new Blob(['blob'], { type: 'text/plain' });
+
+          handler
+            .with(restrictedBlob)
+            .respond(new Blob(['response']))
+            .times(1);
+
+          await expect(handleMessage(blob)).resolves.toBe(false);
+
+          await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+            message: 'Expected exactly 1 matching message, but got 0.',
+            expectedNumberOfMessages: 1,
+            unmatchedMessages:
+              '- { "message": Blob { type: \'text/plain\', size: 4 }, ' +
+              '"diff": { "data": { "expected": Blob { type: \'application/octet-stream\', size: 1 }, ' +
+              '"received": Blob { type: \'text/plain\', size: 4 } } } }',
           });
         },
       );
