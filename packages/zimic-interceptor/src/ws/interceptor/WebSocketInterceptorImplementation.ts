@@ -161,12 +161,12 @@ class WebSocketInterceptorImplementation<
 
     try {
       this.worker = this.createWorker?.();
+      this.worker?.registerRunningInterceptor(this);
 
       await this.worker?.start();
       if (this.worker?.type === 'local') {
         await this.worker.use(this);
       }
-      this.worker?.registerRunningInterceptor(this);
       this.isRunning = true;
     } catch (error) {
       this.isRunning = false;
