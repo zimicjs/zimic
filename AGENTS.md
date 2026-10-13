@@ -33,7 +33,6 @@ These rules apply to packages intended for direct external use.
 ## Runtime and behavior coverage
 
 - Many packages are expected to work in both Node and browser environments. Keep changes runtime-safe unless the target code is clearly environment-specific.
-- `@zimic/interceptor` has local and remote implementations behind shared APIs. Changes that affect shared behavior should account for both modes.
 - Match the test dimensions already used by the target package.
 - Do not weaken coverage expectations for core packages.
 
