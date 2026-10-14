@@ -27,7 +27,8 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
       Handler: LocalWebSocketMessageHandler,
       createWorker: () => this.store.getOrCreateLocalWorker({}),
       releaseWorker: (worker) => {
-        if (!worker.isRunning) {
+        // Stopping is asynchronous, so another interceptor may have started using the worker in the meantime.
+        if (worker.numberOfRunningInterceptors === 0) {
           this.store.deleteLocalWorker();
         }
       },

@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   closeServerSocket,
   WebSocketCloseTimeoutError,
+  WebSocketMessageAbortError,
   WebSocketMessageTimeoutError,
   WebSocketOpenTimeoutError,
 } from '@/utils/webSocket';
@@ -280,6 +281,19 @@ describe('Web socket client', () => {
       await expect(client.request('with-reply', requestMessage)).rejects.toThrow(
         new WebSocketMessageTimeoutError(messageTimeout),
       );
+    });
+
+    it('should abort pending reply requests if stopped', async () => {
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
+      await client.start();
+
+      const requestMessage: WebSocketEventMessage<Schema, 'with-reply'>['data'] = { question: 'test' };
+      const replyPromise = client.request('with-reply', requestMessage);
+      const replyExpectation = expect(replyPromise).rejects.toThrow(new WebSocketMessageAbortError());
+
+      await client.stop();
+
+      await replyExpectation;
     });
 
     it('should support receiving reply requests from servers', async () => {
