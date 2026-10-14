@@ -49,31 +49,34 @@ export default defineConfig({
       reporter: ['text', 'html'],
       reportsDirectory: './tests/coverage',
       thresholds: {
-        '!({src/ws/**,src/server/InterceptorServer.ts,src/server/http/HttpInterceptorServerRuntime.ts})': {
-          functions: 100,
-          lines: 100,
-          statements: 100,
-          branches: 100,
-        },
+        '!({src/ws/**,src/server/InterceptorServer.ts,src/server/errors/StaleHttpRuntimeLoadError.ts,src/server/ws/WebSocketInterceptorServerRuntime.ts})':
+          {
+            functions: 100,
+            lines: 100,
+            statements: 100,
+            branches: 100,
+          },
         // Temporarily reduced for Part 6 because the remaining tests are in Part 7 (#1339).
         // Restore the global 100% minimums and remove these overrides in Part 7.
         'src/ws/**': {
-          functions: 94.37,
-          lines: 96.9,
-          statements: 96.88,
-          branches: 92.16,
+          functions: 96.7,
+          lines: 97.95,
+          statements: 97.93,
+          branches: 94.1,
         },
-        'src/server/InterceptorServer.ts': {
-          functions: 93.84,
-          lines: 90.54,
-          statements: 90.23,
-          branches: 80,
+        // Part 7 covers the missing HTTP peer, HTTP runtime load race, and access control header paths.
+        '{src/server/InterceptorServer.ts,src/server/errors/StaleHttpRuntimeLoadError.ts}': {
+          functions: 94.59,
+          lines: 89.93,
+          statements: 89.93,
+          branches: 78.31,
         },
-        'src/server/http/HttpInterceptorServerRuntime.ts': {
-          functions: 100,
-          lines: 97.84,
-          statements: 97.91,
-          branches: 90.62,
+        // Part 7 covers the WebSocket handler reset and user connection race paths.
+        'src/server/ws/WebSocketInterceptorServerRuntime.ts': {
+          functions: 96.66,
+          lines: 94.73,
+          statements: 94.77,
+          branches: 88.09,
         },
       },
       exclude: [
