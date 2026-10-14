@@ -1,17 +1,19 @@
 import { waitForDelay } from '@zimic/utils/time';
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import { usingElapsedTime } from '@/utils/time';
+import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import { WebSocketInterceptorOptions } from '../../types/options';
+import type { LocalWebSocketInterceptor, RemoteWebSocketInterceptor } from '../../types/public';
 import { RuntimeSharedWebSocketInterceptorTestsOptions, usingWebSocketClient, waitForWebSocketMessage } from './utils';
 
-const waitForDelaySpy = vi.mocked(waitForDelay);
-
 type MessageSchema = WebSocketSchema<{ type: 'create'; body: { text: string } } | { type: 'delete'; id: string }>;
+
+type TestInterceptor = LocalWebSocketInterceptor<MessageSchema> | RemoteWebSocketInterceptor<MessageSchema>;
+type TestHandler = ReturnType<TestInterceptor['message']>;
 
 export function declareDelayWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { getBaseURL, getInterceptorOptions } = options;
@@ -24,153 +26,181 @@ export function declareDelayWebSocketInterceptorTests(options: RuntimeSharedWebS
     interceptorOptions = getInterceptorOptions();
   });
 
-  async function sendAndWaitForResponse() {
-    await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-      const messagePromise = waitForWebSocketMessage(client);
+  // The socket and the remote RPCs depend on real I/O, so only `setTimeout` is faked, after the client connects.
+  // The pending delay timer is awaited with a timer captured before the fake, because `vi.waitFor` would advance the
+  // fake clock.
+  async function usingFakeDelayTimers(
+    client: WebSocketClient<MessageSchema>,
+    callback: (utils: { sendAndWaitForDelayTimer: () => Promise<void> }) => Promise<void>,
+  ) {
+    expect(client.readyState).toBe(WebSocketClient.OPEN);
 
-      client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+    const realSetTimeout = globalThis.setTimeout;
 
-      await expect(messagePromise).resolves.toEqual({ type: 'delete', id: '1' });
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+
+    try {
+      await callback({
+        sendAndWaitForDelayTimer: async () => {
+          // Other timers may already be pending, so only a timer created after the message is sent is the delay.
+          const timerCountBeforeSend = vi.getTimerCount();
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+          while (vi.getTimerCount() <= timerCountBeforeSend) {
+            await new Promise<void>((resolve) => {
+              realSetTimeout(resolve, 1);
+            });
+          }
+        },
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  }
+
+  async function expectDelayedResponse(
+    declareDelay: (handler: TestHandler) => unknown,
+    deadline: number,
+    randomValue?: number,
+  ) {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+      const handler = interceptor.message();
+      declareDelay(handler);
+      await promiseIfRemote(handler.respond({ type: 'delete', id: '1' }), interceptor);
+
+      await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingFakeDelayTimers(client, async ({ sendAndWaitForDelayTimer }) => {
+          const randomSpy = randomValue === undefined ? undefined : vi.spyOn(Math, 'random').mockReturnValue(randomValue);
+
+          try {
+            const messagePromise = waitForWebSocketMessage(client);
+            let hasReplied = false;
+            void messagePromise.then(() => {
+              hasReplied = true;
+            });
+
+            if (deadline > 0) {
+              await sendAndWaitForDelayTimer();
+
+              await vi.advanceTimersByTimeAsync(deadline - 1);
+              expect(hasReplied).toBe(false);
+
+              await vi.advanceTimersByTimeAsync(1);
+            } else {
+              client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+            }
+
+            await expect(messagePromise).resolves.toEqual({ type: 'delete', id: '1' });
+          } finally {
+            randomSpy?.mockRestore();
+          }
+        });
+      });
     });
   }
 
   describe('Exact delay', () => {
     it('should apply an exact delay before responding', async () => {
-      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-        const delay = 100;
-
-        await promiseIfRemote(interceptor.message().delay(delay).respond({ type: 'delete', id: '1' }), interceptor);
-
-        const { elapsedTime } = await usingElapsedTime(sendAndWaitForResponse);
-        expect(elapsedTime).toBeGreaterThanOrEqual(delay);
-
-        expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
-        expect(waitForDelaySpy).toHaveBeenCalledWith(delay);
-      });
+      const delay = 100;
+      await expectDelayedResponse((message) => message.delay(delay), delay);
     });
 
     it('should not apply delay when set to zero', async () => {
-      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-        await promiseIfRemote(interceptor.message().delay(0).respond({ type: 'delete', id: '1' }), interceptor);
-
-        await sendAndWaitForResponse();
-
-        expect(waitForDelaySpy).not.toHaveBeenCalled();
-      });
+      await expectDelayedResponse((message) => message.delay(0), 0);
     });
 
     it('should not apply delay when set to negative', async () => {
-      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-        await promiseIfRemote(interceptor.message().delay(-10).respond({ type: 'delete', id: '1' }), interceptor);
-
-        await sendAndWaitForResponse();
-
-        expect(waitForDelaySpy).not.toHaveBeenCalled();
-      });
+      await expectDelayedResponse((message) => message.delay(-10), 0);
     });
   });
 
   describe('Ranged delay', () => {
     it('should apply a random delay within the specified range', async () => {
+      const minDelay = 100;
+      const maxDelay = 200;
+      const randomValue = 0.5;
+
+      // Halfway through the range.
+      const expectedDelay = 150;
+
+      await expectDelayedResponse((message) => message.delay(minDelay, maxDelay), expectedDelay, randomValue);
+    });
+
+    it('should apply random delays for multiple responses within the specified range', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-        const minDelay = 100;
-        const maxDelay = 200;
+        const minDelay = 50;
+        const maxDelay = 150;
+
+        const randomValues = [0, 0.5, 1];
+        const expectedDelays = [50, 100, 150];
 
         await promiseIfRemote(
           interceptor.message().delay(minDelay, maxDelay).respond({ type: 'delete', id: '1' }),
           interceptor,
         );
 
-        const { elapsedTime } = await usingElapsedTime(sendAndWaitForResponse);
-        expect(elapsedTime).toBeGreaterThanOrEqual(minDelay);
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          await usingFakeDelayTimers(client, async ({ sendAndWaitForDelayTimer }) => {
+            const randomSpy = vi.spyOn(Math, 'random');
 
-        expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
+            try {
+              for (const [index, expectedDelay] of expectedDelays.entries()) {
+                randomSpy.mockReturnValue(randomValues[index]);
 
-        const usedDelay = waitForDelaySpy.mock.calls[0][0];
-        expect(usedDelay).toBeGreaterThanOrEqual(minDelay);
-        expect(usedDelay).toBeLessThanOrEqual(maxDelay);
+                const messagePromise = waitForWebSocketMessage(client);
+                let hasReplied = false;
+                void messagePromise.then(() => {
+                  hasReplied = true;
+                });
+
+                await sendAndWaitForDelayTimer();
+
+                await vi.advanceTimersByTimeAsync(expectedDelay - 1);
+                expect(hasReplied).toBe(false);
+
+                await vi.advanceTimersByTimeAsync(1);
+
+                await expect(messagePromise).resolves.toEqual({ type: 'delete', id: '1' });
+              }
+            } finally {
+              randomSpy.mockRestore();
+            }
+          });
+        });
       });
     });
 
     it('should apply an exact delay when the range limits are equal', async () => {
-      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-        const delay = 50;
-
-        await promiseIfRemote(
-          interceptor.message().delay(delay, delay).respond({ type: 'delete', id: '1' }),
-          interceptor,
-        );
-
-        const { elapsedTime } = await usingElapsedTime(sendAndWaitForResponse);
-        expect(elapsedTime).toBeGreaterThanOrEqual(delay);
-
-        expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
-        expect(waitForDelaySpy).toHaveBeenCalledWith(delay);
-      });
+      const delay = 50;
+      await expectDelayedResponse((message) => message.delay(delay, delay), delay);
     });
 
     it('should apply the highest delay when the minimum limit is higher than the maximum limit', async () => {
-      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-        const minDelay = 100;
-        const maxDelay = 50;
-
-        await promiseIfRemote(
-          interceptor.message().delay(minDelay, maxDelay).respond({ type: 'delete', id: '1' }),
-          interceptor,
-        );
-
-        await sendAndWaitForResponse();
-
-        expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
-        expect(waitForDelaySpy).toHaveBeenCalledWith(minDelay);
-      });
+      const minDelay = 100;
+      const maxDelay = 50;
+      await expectDelayedResponse((message) => message.delay(minDelay, maxDelay), minDelay);
     });
   });
 
   describe('Computed delay', () => {
     it('should apply a computed synchronous delay', async () => {
-      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-        const delay = 100;
-
-        await promiseIfRemote(
-          interceptor
-            .message()
-            .delay(() => delay)
-            .respond({ type: 'delete', id: '1' }),
-          interceptor,
-        );
-
-        const { elapsedTime } = await usingElapsedTime(sendAndWaitForResponse);
-        expect(elapsedTime).toBeGreaterThanOrEqual(delay);
-
-        expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
-        expect(waitForDelaySpy).toHaveBeenCalledWith(delay);
-      });
+      const delay = 100;
+      await expectDelayedResponse((message) => message.delay(() => delay), delay);
     });
 
     it('should apply a computed asynchronous delay', async () => {
-      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-        const delayOverhead = 30;
-        const delay = 50;
+      const delayOverhead = 30;
+      const delay = 50;
 
-        await promiseIfRemote(
-          interceptor
-            .message()
-            .delay(async () => {
-              await waitForDelay(delayOverhead);
-              return delay;
-            })
-            .respond({ type: 'delete', id: '1' }),
-          interceptor,
-        );
-
-        const { elapsedTime } = await usingElapsedTime(sendAndWaitForResponse);
-        expect(elapsedTime).toBeGreaterThanOrEqual(delayOverhead + delay);
-
-        expect(waitForDelaySpy).toHaveBeenCalledTimes(2);
-        expect(waitForDelaySpy).toHaveBeenNthCalledWith(1, delayOverhead);
-        expect(waitForDelaySpy).toHaveBeenNthCalledWith(2, delay);
-      });
+      await expectDelayedResponse(
+        (message) =>
+          message.delay(async () => {
+            await waitForDelay(delayOverhead);
+            return delay;
+          }),
+        delayOverhead + delay,
+      );
     });
   });
 
@@ -183,28 +213,59 @@ export function declareDelayWebSocketInterceptorTests(options: RuntimeSharedWebS
 
       await promiseIfRemote(handler.clear().respond({ type: 'delete', id: '1' }), interceptor);
 
-      await sendAndWaitForResponse();
+      await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingFakeDelayTimers(client, async () => {
+          const messagePromise = waitForWebSocketMessage(client);
 
-      expect(waitForDelaySpy).not.toHaveBeenCalled();
+          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+          // No timer is advanced, so the response is only delivered if no delay remains.
+          await expect(messagePromise).resolves.toEqual({ type: 'delete', id: '1' });
+        });
+      });
     });
   });
 
   it('should consider only the last delay if multiple are declared', async () => {
-    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-      const firstDelay = 200;
-      const secondDelay = 50;
+    const firstDelay = 200;
+    const secondDelay = 50;
 
-      await promiseIfRemote(
-        interceptor.message().delay(firstDelay).delay(secondDelay).respond({ type: 'delete', id: '1' }),
+    await expectDelayedResponse((message) => message.delay(firstDelay).delay(secondDelay), secondDelay);
+  });
+
+  it('should not throw an error if the handler is cleared while the delay is being awaited', async () => {
+    const realSetTimeout = globalThis.setTimeout;
+
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+      const delay = 200;
+
+      const handler = await promiseIfRemote(
+        interceptor.message().delay(delay).respond({ type: 'delete', id: '1' }),
         interceptor,
       );
 
-      const { elapsedTime } = await usingElapsedTime(sendAndWaitForResponse);
-      expect(elapsedTime).toBeGreaterThanOrEqual(secondDelay);
-      expect(elapsedTime).toBeLessThan(firstDelay);
+      await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        const messageListener = vi.fn();
+        client.addEventListener('message', messageListener);
 
-      expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
-      expect(waitForDelaySpy).toHaveBeenCalledWith(secondDelay);
+        await usingIgnoredConsole(['error'], async (console) => {
+          await usingFakeDelayTimers(client, async ({ sendAndWaitForDelayTimer }) => {
+            await sendAndWaitForDelayTimer();
+
+            await promiseIfRemote(handler.clear(), interceptor);
+
+            await vi.advanceTimersByTimeAsync(delay);
+
+            // Gives a response, if any was sent, the chance to arrive through the real socket.
+            await new Promise<void>((resolve) => {
+              realSetTimeout(resolve, 1);
+            });
+          });
+
+          expect(messageListener).not.toHaveBeenCalled();
+          expect(console.error).not.toHaveBeenCalled();
+        });
+      });
     });
   });
 }
