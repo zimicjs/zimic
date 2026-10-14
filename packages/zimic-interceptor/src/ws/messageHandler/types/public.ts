@@ -25,8 +25,6 @@ export interface InternalWebSocketMessageHandler<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The context of a matched message, passed to effects and computed responses.
- *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlereffect `handler.effect()` API reference}
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerrespond `handler.respond()` API reference}
  */
@@ -88,12 +86,7 @@ type WebSocketMessageHandlerSchemaCompatibleWithStaticRestriction<
       : never
   : never;
 
-/**
- * The message type of a handler after applying a restriction. Type-guard restrictions narrow to their predicate and
- * static restrictions narrow to the schema members compatible with them. Other restrictions keep the current type.
- *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
- */
+/** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
 export type WebSocketMessageHandlerSchemaWithRestriction<Schema extends WebSocketSchema, Restriction> =
   Restriction extends WebSocketMessageHandlerComputedTypeGuardRestriction<Schema, infer Predicate>
     ? [Predicate] extends [never]
@@ -105,8 +98,6 @@ export type WebSocketMessageHandlerSchemaWithRestriction<Schema extends WebSocke
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
- *
- * A local WebSocket message handler. In a local handler, the mocking operations are synchronous.
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler `WebSocketMessageHandler` API reference}
  */

@@ -45,6 +45,7 @@ export interface SharedWebSocketInterceptorOptions {
  * @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference}
  */
 export interface LocalWebSocketInterceptorOptions extends SharedWebSocketInterceptorOptions {
+  /** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
   type?: 'local';
 }
 
@@ -65,6 +66,7 @@ export interface WebSocketInterceptorAuthOptions {
  * @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference}
  */
 export interface RemoteWebSocketInterceptorOptions extends SharedWebSocketInterceptorOptions {
+  /** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
   type: 'remote';
 
   /** @see {@link https://zimic.dev/docs/interceptor/guides/ws/remote-interceptors#interceptor-server-authentication Interceptor server authentication} */

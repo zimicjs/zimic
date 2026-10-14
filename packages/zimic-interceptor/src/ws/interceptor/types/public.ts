@@ -10,11 +10,7 @@ import {
   WebSocketInterceptorPlatform,
 } from './options';
 
-/**
- * A listener called with the client handle of each new connection to the interceptor.
- *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptoron `interceptor.on()` API reference}
- */
+/** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptoron `interceptor.on()` API reference} */
 export type WebSocketInterceptorConnectionListener<Schema extends WebSocketSchema> = (
   client: WebSocketInterceptorClient<Schema>,
 ) => void;

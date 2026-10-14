@@ -8,20 +8,12 @@ import { WebSocketSchema } from '@zimic/ws';
  */
 export type WebSocketMessageHandlerStaticRestriction<Schema extends WebSocketSchema> = DeepPartial<Schema>;
 
-/**
- * A predicate returning whether a message matches. It does not narrow the handler's message type.
- *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
- */
+/** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
 type WebSocketMessageHandlerComputedBooleanRestriction<Schema extends WebSocketSchema> = (
   message: Schema,
 ) => PossiblePromise<boolean>;
 
-/**
- * A type guard returning whether a message matches. It narrows the handler's message type to its predicate.
- *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
- */
+/** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
 export type WebSocketMessageHandlerComputedTypeGuardRestriction<
   Schema extends WebSocketSchema,
   PredicateSchema extends Schema = Schema,
