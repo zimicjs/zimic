@@ -10,11 +10,7 @@ import {
   WebSocketInterceptorPlatform,
 } from './options';
 
-/**
- * A listener called with the client handle of each new connection to the interceptor.
- *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptoron `interceptor.on()` API reference}
- */
+/** A listener called with the client handle of each new connection to the interceptor. */
 export type WebSocketInterceptorConnectionListener<Schema extends WebSocketSchema> = (
   client: WebSocketInterceptorClient<Schema>,
 ) => void;
@@ -22,111 +18,135 @@ export type WebSocketInterceptorConnectionListener<Schema extends WebSocketSchem
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor `WebSocketInterceptor` API reference}
+ * An interceptor that handles WebSocket connections and client-to-server messages to its base URL.
  */
 export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorbaseurl `interceptor.baseURL` API reference} */
+  /** The base URL used by the interceptor. Running interceptors reject changes to it. */
   baseURL: string;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptormessagesaving `interceptor.messageSaving` API reference} */
+  /** Configures if intercepted messages are saved and how they are handled. */
   messageSaving: WebSocketInterceptorMessageSaving;
 
   /**
+   * The platform the interceptor is running on. `null` if the interceptor is not running.
+   *
    * @readonly
-   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorplatform `interceptor.platform` API reference}
    */
   get platform(): WebSocketInterceptorPlatform | null;
 
   /**
+   * Whether the interceptor is currently running and ready to use.
+   *
    * @readonly
-   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorisrunning `interceptor.isRunning` API reference}
    */
   get isRunning(): boolean;
 
   /**
+   * A synthetic server handle that can send messages to currently connected clients.
+   *
    * @readonly
-   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorserver `interceptor.server` API reference}
    */
   get server(): WebSocketInterceptorServer<Schema>;
 
   /**
+   * The currently connected client handles.
+   *
    * @readonly
-   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorclients `interceptor.clients` API reference}
    */
   get clients(): readonly WebSocketInterceptorClient<Schema>[];
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptoron `interceptor.on()` API reference} */
+  /** Registers a listener for new client connections. */
   on: (event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) => void;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptoroff `interceptor.off()` API reference} */
+  /** Removes a connection listener. Pass the same callback reference used to register it. */
   off: (event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) => void;
 
   /**
    * Registers a listener that is called only for the next client connection and then removed. Otherwise, it behaves
    * like `interceptor.on()`.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptoron `interceptor.on()` API reference}
    */
   once: (event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) => void;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorstart `interceptor.start()` API reference} */
+  /** Starts the interceptor, allowing it to intercept WebSocket connections and messages. */
   start: () => Promise<void>;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorstop `interceptor.stop()` API reference} */
+  /**
+   * Stops the interceptor, preventing it from intercepting WebSocket connections and messages. Stopped interceptors are
+   * cleared as if `interceptor.clear()` had been called.
+   */
   stop: () => Promise<void>;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorchecktimes `interceptor.checkTimes()` API reference} */
+  /**
+   * Checks if all handlers created by this interceptor have matched the number of messages declared with
+   * `handler.times()`.
+   */
   checkTimes: () => PossiblePromise<void>;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorclear `interceptor.clear()` API reference} */
+  /**
+   * Clears the interceptor and all of its message handlers, including their responses, effects, restrictions, connected
+   * clients, and saved messages.
+   */
   clear: () => PossiblePromise<void>;
 }
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor `WebSocketInterceptor` API reference}
- * @see {@link https://zimic.dev/docs/interceptor/guides/ws/local-interceptors Using local WebSocket interceptors}
+ * A local WebSocket interceptor. Its mocking operations are synchronous.
  */
 export interface LocalWebSocketInterceptor<Schema extends WebSocketSchema> extends WebSocketInterceptor<Schema> {
   /**
+   * The type of the interceptor.
+   *
    * @readonly
-   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptortype `interceptor.type` API reference}
    */
   get type(): 'local';
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptormessage `interceptor.message()` API reference} */
+  /** Creates a message handler for client-to-server messages. */
   message: () => LocalWebSocketMessageHandler<Schema>;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorchecktimes `interceptor.checkTimes()` API reference} */
+  /**
+   * Checks if all handlers created by this interceptor have matched the number of messages declared with
+   * `handler.times()`.
+   */
   checkTimes: () => void;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorclear `interceptor.clear()` API reference} */
+  /**
+   * Clears the interceptor and all of its message handlers, including their responses, effects, restrictions, connected
+   * clients, and saved messages.
+   */
   clear: () => void;
 }
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor `WebSocketInterceptor` API reference}
- * @see {@link https://zimic.dev/docs/interceptor/guides/ws/remote-interceptors Using remote WebSocket interceptors}
+ * A remote WebSocket interceptor. Its mocking operations are asynchronous and include remote calls to the connected
+ * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
  */
 export interface RemoteWebSocketInterceptor<Schema extends WebSocketSchema> extends WebSocketInterceptor<Schema> {
   /**
+   * The type of the interceptor.
+   *
    * @readonly
-   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptortype `interceptor.type` API reference}
    */
   get type(): 'remote';
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorauth `interceptor.auth` API reference} */
+  /** The options used to authenticate the interceptor when connecting to an interceptor server. */
   auth?: RemoteWebSocketInterceptorOptions['auth'];
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptormessage `interceptor.message()` API reference} */
+  /** Creates a message handler for client-to-server messages. */
   message: () => RemoteWebSocketMessageHandler<Schema>;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorchecktimes `interceptor.checkTimes()` API reference} */
+  /**
+   * Checks if all handlers created by this interceptor have matched the number of messages declared with
+   * `handler.times()`.
+   */
   checkTimes: () => Promise<void>;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorclear `interceptor.clear()` API reference} */
+  /**
+   * Clears the interceptor and all of its message handlers, including their responses, effects, restrictions, connected
+   * clients, and saved messages.
+   */
   clear: () => Promise<void>;
 }
