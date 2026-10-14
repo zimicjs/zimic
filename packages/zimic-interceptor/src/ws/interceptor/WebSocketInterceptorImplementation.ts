@@ -1,6 +1,7 @@
 import { excludeNonPathParams, validateURLProtocol } from '@zimic/utils/url';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
+import { removeArrayElement } from '@/utils/arrays';
 import { isServerSide } from '@/utils/environment';
 
 import WebSocketInterceptorWorker from '../interceptorWorker/WebSocketInterceptorWorker';
@@ -159,9 +160,10 @@ class WebSocketInterceptorImplementation<
       return;
     }
 
+    const worker = this.createWorker();
+    this.worker = worker;
+
     try {
-      const worker = this.createWorker();
-      this.worker = worker;
       worker.registerRunningInterceptor(this);
 
       await worker.start();
@@ -172,13 +174,11 @@ class WebSocketInterceptorImplementation<
     } catch (error) {
       this.isRunning = false;
 
-      this.worker?.unregisterRunningInterceptor(this);
-      await this.worker?.stop();
+      worker.unregisterRunningInterceptor(this);
+      await worker.stop();
 
-      if (this.worker) {
-        this.releaseWorker?.(this.worker);
-        this.worker = undefined;
-      }
+      this.releaseWorker?.(worker);
+      this.worker = undefined;
 
       throw error;
     }
@@ -275,16 +275,12 @@ class WebSocketInterceptorImplementation<
   }
 
   private unregisterMessageHandler(handler: AnyWebSocketMessageHandlerImplementation) {
-    const handlerIndex = this.handlers.indexOf(handler);
-
-    if (handlerIndex >= 0) {
-      this.handlers.splice(handlerIndex, 1);
-    }
+    removeArrayElement(this.handlers, handler);
   }
 
   async handleInterceptedMessage(
     data: WebSocketMessageData<Schema>,
-    context?: Partial<WebSocketMessageHandlerApplyContext<Schema>>,
+    context: WebSocketMessageHandlerApplyContext<Schema>,
   ) {
     /* istanbul ignore if -- @preserve
      * Workers only forward messages while the owning interceptor is running. */
@@ -293,41 +289,22 @@ class WebSocketInterceptorImplementation<
     }
 
     const message = normalizeWebSocketMessageData(data);
-    const completeContext = this.completeMessageContext(context);
+    this.addClient(context.sender);
+
     const messageSavingGeneration = this.messageSavingGeneration;
-    const matchedHandler = await this.findMatchedHandler(message, completeContext);
+    const matchedHandler = await this.findMatchedHandler(message, context);
 
     if (!matchedHandler) {
       return false;
     }
 
-    await matchedHandler.handler.applyDeclarations(matchedHandler.message, completeContext);
+    await matchedHandler.handler.applyDeclarations(matchedHandler.message, context);
 
     if (this.messageSaving.enabled && messageSavingGeneration === this.messageSavingGeneration) {
-      matchedHandler.handler.saveInterceptedMessage(matchedHandler.message, completeContext);
+      matchedHandler.handler.saveInterceptedMessage(matchedHandler.message, context);
     }
 
     return true;
-  }
-
-  private completeMessageContext(context?: Partial<WebSocketMessageHandlerApplyContext<Schema>>) {
-    let sender = context?.sender;
-
-    if (!sender) {
-      const createdSender = this.createClient(this.baseURLAsString, {
-        send: (data) => {
-          void this.worker?.sendToClient(createdSender, data);
-        },
-      });
-      sender = createdSender;
-    }
-
-    this.addClient(sender);
-
-    return {
-      sender,
-      receiver: context?.receiver ?? this._server,
-    };
   }
 
   createClient(
@@ -363,11 +340,7 @@ class WebSocketInterceptorImplementation<
   }
 
   removeClient(client: InternalWebSocketInterceptorClient<Schema>) {
-    const clientIndex = this._clients.indexOf(client);
-
-    if (clientIndex >= 0) {
-      this._clients.splice(clientIndex, 1);
-    }
+    removeArrayElement(this._clients, client);
   }
 
   private async findMatchedHandler(message: Schema, context: WebSocketMessageHandlerApplyContext<Schema>) {

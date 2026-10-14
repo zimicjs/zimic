@@ -19,13 +19,6 @@ export interface RuntimeSharedWebSocketInterceptorTestsOptions {
   getInterceptorOptions: () => WebSocketInterceptorOptions;
 }
 
-export interface SharedWebSocketInterceptorTestsOptions {
-  platform: WebSocketInterceptorPlatform;
-  startServer?: () => PossiblePromise<void>;
-  stopServer?: () => PossiblePromise<void>;
-  getBaseURL: (type: WebSocketInterceptorType) => PossiblePromise<string>;
-}
-
 export async function usingWebSocketClient<Schema extends WebSocketSchema>(
   baseURL: string,
   callback: (client: WebSocketClient<Schema>) => PossiblePromise<void>,

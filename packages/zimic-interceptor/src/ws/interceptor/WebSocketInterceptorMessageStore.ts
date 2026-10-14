@@ -37,6 +37,18 @@ class WebSocketInterceptorMessageStore<Schema extends WebSocketSchema> {
     return messages;
   }
 
+  private getHandlerIndex(handler: object) {
+    const handlerIndex = this.handlerIndexes.get(handler);
+
+    /* istanbul ignore if -- @preserve
+     * Handler message arrays are registered during handler construction. */
+    if (!handlerIndex) {
+      throw new Error('Cannot access the messages of an unknown WebSocket handler.');
+    }
+
+    return handlerIndex;
+  }
+
   save<RestrictedSchema extends Schema>(
     handler: object,
     data: RestrictedSchema,
@@ -45,13 +57,7 @@ class WebSocketInterceptorMessageStore<Schema extends WebSocketSchema> {
       receiver: InternalWebSocketInterceptorServer<Schema>;
     },
   ) {
-    const handlerIndex = this.handlerIndexes.get(handler);
-
-    /* istanbul ignore if -- @preserve
-     * Handler message arrays are registered during handler construction. */
-    if (!handlerIndex) {
-      throw new Error('Cannot save a WebSocket message for an unknown handler.');
-    }
+    const handlerIndex = this.getHandlerIndex(handler);
 
     const message: InterceptedWebSocketInterceptorMessage<Schema> = {
       sender: context.sender,
@@ -79,11 +85,7 @@ class WebSocketInterceptorMessageStore<Schema extends WebSocketSchema> {
   }
 
   clearHandler(handler: object) {
-    const handlerIndex = this.handlerIndexes.get(handler);
-
-    if (!handlerIndex) {
-      return;
-    }
+    const handlerIndex = this.getHandlerIndex(handler);
 
     for (const record of handlerIndex.records) {
       this.removeMessageFromIndex(record.sender.messages, record.message);
