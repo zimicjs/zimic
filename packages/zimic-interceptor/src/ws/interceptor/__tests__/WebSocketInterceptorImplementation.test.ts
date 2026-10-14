@@ -76,6 +76,7 @@ describe('WebSocketInterceptorImplementation', () => {
     const interceptor = new WebSocketInterceptorImplementation<MessageSchema>({
       baseURL: new URL('ws://localhost'),
       Handler: LocalWebSocketMessageHandler,
+      createWorker: () => createWebSocketInterceptorWorker({ type: 'local' }),
     });
     const client = interceptor.createClient('ws://localhost', { send: vi.fn() });
 

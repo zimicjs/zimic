@@ -7,6 +7,7 @@ import {
   LocalWebSocketMessageHandler as PublicLocalWebSocketMessageHandler,
   WebSocketMessageHandlerMessageCallback,
   WebSocketMessageHandlerMessageDeclaration,
+  WebSocketMessageHandlerSchemaWithRestriction,
 } from './types/public';
 import { WebSocketMessageHandlerRestriction } from './types/restrictions';
 import WebSocketMessageHandlerImplementation from './WebSocketMessageHandlerImplementation';
@@ -31,10 +32,16 @@ export class LocalWebSocketMessageHandler<
     return this;
   }
 
-  with(restriction: WebSocketMessageHandlerRestriction<RestrictedSchema>) {
+  with<Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
+    restriction: Restriction,
+  ): LocalWebSocketMessageHandler<Schema, WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>> {
     this.implementation.with(restriction);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
-    return this as any; // TODO
+
+    const newThis = this as unknown as LocalWebSocketMessageHandler<
+      Schema,
+      WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>
+    >;
+    return newThis;
   }
 
   delay(minMilliseconds: number | WebSocketMessageHandlerDelayFactory<RestrictedSchema>, maxMilliseconds?: number) {
