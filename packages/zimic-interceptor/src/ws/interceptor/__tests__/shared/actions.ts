@@ -2,9 +2,9 @@ import { waitFor, waitForNot } from '@zimic/utils/time';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import { WebSocketInterceptorOptions } from '../../types/options';
 import {
@@ -96,125 +96,9 @@ export function declareActionWebSocketInterceptorTests(options: RuntimeSharedWeb
         });
       });
     });
-
-    it('should give later handlers priority and skip exhausted handlers', async () => {
-      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-        const firstHandler = await promiseIfRemote(
-          interceptor.message().respond({ type: 'delete', id: 'first' }).times(1),
-          interceptor,
-        );
-        const secondHandler = await promiseIfRemote(
-          interceptor.message().respond({ type: 'delete', id: 'second' }).times(1),
-          interceptor,
-        );
-
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          let messagePromise = waitForWebSocketMessage(client);
-          client.send(JSON.stringify({ type: 'create', body: { text: 'one' } }));
-          await expect(messagePromise).resolves.toEqual({ type: 'delete', id: 'second' });
-
-          messagePromise = waitForWebSocketMessage(client);
-          client.send(JSON.stringify({ type: 'create', body: { text: 'two' } }));
-          await expect(messagePromise).resolves.toEqual({ type: 'delete', id: 'first' });
-        });
-
-        await firstHandler.checkTimes();
-        await secondHandler.checkTimes();
-        await promiseIfRemote(interceptor.checkTimes(), interceptor);
-      });
-    });
-
-    it('should passively handle messages without sending a response', async () => {
-      await usingWebSocketInterceptor<MessageSchema>(
-        { ...interceptorOptions, messageSaving: { enabled: true } },
-        async (interceptor) => {
-          const handler = await promiseIfRemote(interceptor.message().with({ type: 'create' }).times(1), interceptor);
-
-          await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-            const messageListener = vi.fn();
-            client.addEventListener('message', messageListener);
-
-            client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
-
-            await waitFor(() => {
-              expect(handler.messages).toHaveLength(1);
-            });
-            await waitForNot(() => {
-              expect(messageListener).toHaveBeenCalled();
-            });
-          });
-
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
-        },
-      );
-    });
   });
 
   describe('Effects', () => {
-    it.each(['single client', 'client subset', 'empty recipients', 'broadcast'] as const)(
-      'should send server messages to %s',
-      async (target) => {
-        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-          await promiseIfRemote(interceptor.message(), interceptor);
-
-          await usingWebSocketClient<MessageSchema>(baseURL, async (firstClient) => {
-            await waitFor(() => {
-              expect(interceptor.clients).toHaveLength(1);
-            });
-            const firstInterceptorClient = interceptor.clients[0];
-
-            await usingWebSocketClient<MessageSchema>(baseURL, async (secondClient) => {
-              await waitFor(() => {
-                expect(interceptor.clients).toHaveLength(2);
-              });
-              const secondInterceptorClient = interceptor.clients[1];
-
-              await usingWebSocketClient<MessageSchema>(baseURL, async (thirdClient) => {
-                await waitFor(() => {
-                  expect(interceptor.clients).toHaveLength(3);
-                });
-
-                const receivedMessages: string[][] = [[], [], []];
-                for (const [index, client] of [firstClient, secondClient, thirdClient].entries()) {
-                  client.addEventListener('message', (event) => {
-                    receivedMessages[index].push(String(event.data));
-                  });
-                }
-
-                const message = { type: 'delete' as const, id: 'targeted' };
-                const data = JSON.stringify(message);
-
-                if (target === 'single client') {
-                  interceptor.server.send(data, { to: firstInterceptorClient });
-                } else if (target === 'client subset') {
-                  interceptor.server.send(data, { to: [firstInterceptorClient, secondInterceptorClient] });
-                } else if (target === 'empty recipients') {
-                  interceptor.server.send(data, { to: [] });
-                } else {
-                  interceptor.server.send(data);
-                }
-
-                const marker = JSON.stringify({ type: 'delete' as const, id: 'marker' });
-                interceptor.server.send(marker);
-
-                await waitFor(() => {
-                  for (const messages of receivedMessages) {
-                    expect(messages).toContainEqual(marker);
-                  }
-                });
-
-                expect(receivedMessages).toEqual([
-                  target === 'empty recipients' ? [marker] : [data, marker],
-                  target === 'client subset' || target === 'broadcast' ? [data, marker] : [marker],
-                  target === 'broadcast' ? [data, marker] : [marker],
-                ]);
-              });
-            });
-          });
-        });
-      },
-    );
-
     it('should handle asynchronous effects concurrently', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         const startedMessages: MessageSchema[] = [];

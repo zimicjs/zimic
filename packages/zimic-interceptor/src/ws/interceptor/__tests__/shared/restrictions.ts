@@ -1,9 +1,9 @@
 import { waitFor, waitForNot } from '@zimic/utils/time';
-import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
-import { afterEach, beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
+import { WebSocketSchema } from '@zimic/ws';
+import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import { WebSocketInterceptorOptions } from '../../types/options';
 import {
@@ -23,26 +23,11 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
 
   let baseURL: string;
   let interceptorOptions: WebSocketInterceptorOptions;
-  let closeClients: (() => Promise<void>)[];
 
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
-    closeClients = [];
   });
-
-  afterEach(async () => {
-    await Promise.all(closeClients.map((closeClient) => closeClient()));
-  });
-
-  async function createClient() {
-    const client = new WebSocketClient<MessageSchema>(baseURL);
-    closeClients.push(() => client.close());
-
-    await client.open();
-
-    return client;
-  }
 
   it('should support intercepting messages having static restrictions', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
@@ -111,35 +96,41 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, messageSaving: { enabled: true } },
       async (interceptor) => {
-        await promiseIfRemote(interceptor.message(), interceptor);
+        const unrestrictedEffect = vi.fn();
+        await promiseIfRemote(interceptor.message().effect(unrestrictedEffect), interceptor);
 
-        const firstClient = await createClient();
-        const secondClient = await createClient();
+        await usingWebSocketClient<MessageSchema>(baseURL, async (firstClient) => {
+          await usingWebSocketClient<MessageSchema>(baseURL, async (secondClient) => {
+            await waitFor(() => {
+              expect(interceptor.clients).toHaveLength(2);
+            });
 
-        await waitFor(() => {
-          expect(interceptor.clients).toHaveLength(2);
+            const handler = await promiseIfRemote(
+              interceptor.message().from(interceptor.clients[0]).respond({ type: 'delete', id: '1' }).times(1),
+              interceptor,
+            );
+
+            const secondMessageListener = vi.fn();
+            secondClient.addEventListener('message', secondMessageListener);
+
+            secondClient.send(JSON.stringify({ type: 'create', body: { text: 'other' } }));
+
+            await waitFor(() => {
+              expect(unrestrictedEffect).toHaveBeenCalledTimes(1);
+            });
+            await waitForNot(() => {
+              expect(secondMessageListener).toHaveBeenCalled();
+            });
+
+            const firstMessagePromise = waitForWebSocketMessage(firstClient);
+            firstClient.send(JSON.stringify({ type: 'create', body: { text: 'restricted' } }));
+
+            await expect(firstMessagePromise).resolves.toEqual({ type: 'delete', id: '1' });
+            expect(unrestrictedEffect).toHaveBeenCalledTimes(1);
+            expect(handler.messages[0].sender).toBe(interceptor.clients[0]);
+            expect(handler.messages[0].data).toEqual({ type: 'create', body: { text: 'restricted' } });
+          });
         });
-
-        const handler = await promiseIfRemote(
-          interceptor.message().from(interceptor.clients[0]).respond({ type: 'delete', id: '1' }).times(1),
-          interceptor,
-        );
-
-        const secondMessageListener = vi.fn();
-        secondClient.addEventListener('message', secondMessageListener);
-
-        secondClient.send(JSON.stringify({ type: 'create', body: { text: 'other' } }));
-
-        await waitForNot(() => {
-          expect(secondMessageListener).toHaveBeenCalled();
-        });
-
-        const firstMessagePromise = waitForWebSocketMessage(firstClient);
-        firstClient.send(JSON.stringify({ type: 'create', body: { text: 'restricted' } }));
-
-        await expect(firstMessagePromise).resolves.toEqual({ type: 'delete', id: '1' });
-        expect(handler.messages[0].sender).toBe(interceptor.clients[0]);
-        expect(handler.messages[0].data).toEqual({ type: 'create', body: { text: 'restricted' } });
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
       },
