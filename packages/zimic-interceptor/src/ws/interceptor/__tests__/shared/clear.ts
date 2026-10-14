@@ -14,10 +14,12 @@ interface SharedWebSocketInterceptorClearTestsOptions {
 export function declareClearWebSocketInterceptorTests(options: SharedWebSocketInterceptorClearTestsOptions) {
   const { type, Handler } = options;
 
+  // Holding the effect and awaiting the exact dispatch completion shows that no save happens after the clear. A real
+  // client cannot observe when the server finishes handling a message, so this uses the direct fixture.
   it('should not save intercepted messages after cleared while a message is being handled', async () => {
     await usingDirectWebSocketMessageHandler<Schema>(
       { type, baseURL: 'ws://localhost', Handler, messageSaving: { enabled: true } },
-      async ({ interceptor, handler, sender, receiver, handleMessage }) => {
+      async ({ interceptor, handler, handleMessage }) => {
         const effectStarted = Promise.withResolvers<void>();
         const effectRelease = Promise.withResolvers<void>();
 
@@ -30,8 +32,9 @@ export function declareClearWebSocketInterceptorTests(options: SharedWebSocketIn
 
         await handleMessage({ type: 'create', body: { text: 'existing' } });
         const handlerMessages = handler.messages;
-        const senderMessages = sender.handle.messages;
-        const receiverMessages = receiver.messages;
+        const [senderHandle] = interceptor.clients;
+        const senderMessages = senderHandle.messages;
+        const receiverMessages = interceptor.server.messages;
         const messagePromise = handleMessage({ type: 'create', body: { text: 'pending' } });
         await effectStarted.promise;
         expect(handlerMessages).toHaveLength(1);
@@ -43,9 +46,9 @@ export function declareClearWebSocketInterceptorTests(options: SharedWebSocketIn
 
         expect(handler.messages).toBe(handlerMessages);
         expect(handlerMessages).toEqual([]);
-        expect(sender.handle.messages).toBe(senderMessages);
+        expect(senderHandle.messages).toBe(senderMessages);
         expect(senderMessages).toEqual([]);
-        expect(receiver.messages).toBe(receiverMessages);
+        expect(interceptor.server.messages).toBe(receiverMessages);
         expect(receiverMessages).toEqual([]);
       },
     );
