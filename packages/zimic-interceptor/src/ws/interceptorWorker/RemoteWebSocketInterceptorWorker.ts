@@ -38,7 +38,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     super();
 
     this.webSocketClient = new WebSocketClient({
-      url: this.getWebSocketServerURL(options.serverURL).toString(),
+      url: options.serverURL.toString(),
     });
 
     this.auth = options.auth;
@@ -46,16 +46,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
   get type() {
     return 'remote' as const;
-  }
-
-  private getWebSocketServerURL(serverURL: URL) {
-    const webSocketServerURL = new URL(serverURL);
-
-    if (webSocketServerURL.protocol.startsWith('http')) {
-      webSocketServerURL.protocol = serverURL.protocol.replace(/^http(s)?:$/, 'ws$1:');
-    }
-
-    return webSocketServerURL;
   }
 
   async start() {
@@ -197,6 +187,8 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/clients/close'>) => {
     const clientEntry = this.findClientEntryById(connection.clientId);
 
+    /* istanbul ignore if -- @preserve
+     * Stale server close events after a worker reset are ignored; normal connect/close paths cover registered clients. */
     if (!clientEntry) {
       return;
     }
