@@ -1,4 +1,10 @@
-/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * Error thrown when trying to access messages when the interceptor is not configured to save them.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference}
+ */
 class DisabledMessageSavingError extends TypeError {
   constructor() {
     super(
