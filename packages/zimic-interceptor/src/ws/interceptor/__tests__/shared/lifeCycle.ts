@@ -166,7 +166,7 @@ export function declareLifeCycleWebSocketInterceptorTests(options: SharedWebSock
               await Promise.all([stopPromise, startPromise]);
             } finally {
               releaseWorkerStop();
-              await Promise.allSettled([stopPromise, ...(startPromise ? [startPromise] : [])]);
+              await Promise.allSettled([stopPromise, startPromise]);
             }
 
             expect(interceptor.isRunning).toBe(false);
