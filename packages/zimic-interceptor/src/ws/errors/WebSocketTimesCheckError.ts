@@ -72,8 +72,6 @@ function createMessage(options: WebSocketTimesCheckErrorOptions) {
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * Error thrown when the number of messages matched by a handler does not satisfy its `handler.times()` declaration.
- *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerchecktimes `handler.checkTimes()` API reference}
  */
 class WebSocketTimesCheckError extends TypeError {
   constructor(options: WebSocketTimesCheckErrorOptions) {
