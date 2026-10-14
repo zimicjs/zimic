@@ -460,9 +460,8 @@ describe('Interceptor server', () => {
           expect(handledRequestURLs).toHaveLength(2);
         } finally {
           releasePendingResponse();
-          // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
-          void Promise.allSettled(rejectedRequests);
           await worker.stop();
+          await Promise.allSettled(rejectedRequests);
         }
       });
     });
@@ -505,9 +504,8 @@ describe('Interceptor server', () => {
           const response = await fetch(baseURL);
           expect(response.status).toBe(204);
         } finally {
-          // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
-          void Promise.allSettled(rejectedRequests);
           await worker.stop();
+          await Promise.allSettled(rejectedRequests);
         }
       });
     });
@@ -552,9 +550,8 @@ describe('Interceptor server', () => {
           await expectFetchError(fetch(baseURL));
           expect(handledRequestURLs).toHaveLength(0);
         } finally {
-          // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
-          void Promise.allSettled(rejectedRequests);
           await worker.stop();
+          await Promise.allSettled(rejectedRequests);
         }
       });
     });
@@ -588,9 +585,8 @@ describe('Interceptor server', () => {
           await waitFor(() => expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError)));
           expect(console.error).toHaveBeenCalledTimes(1);
         } finally {
-          // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
-          void Promise.allSettled(rejectedRequests);
           await worker.stop();
+          await Promise.allSettled(rejectedRequests);
         }
       });
     });
@@ -825,9 +821,8 @@ describe('Interceptor server', () => {
           const response = await fetch(interceptor.baseURL);
           expect(response.status).toBe(204);
         } finally {
-          // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
-          void Promise.allSettled(rejectedRequests);
           await webSocketWorker.stop();
+          await Promise.allSettled(rejectedRequests);
           await interceptor.stop();
         }
       });
@@ -880,9 +875,8 @@ describe('Interceptor server', () => {
           expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
           expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
         } finally {
-          // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
-          void Promise.allSettled(rejectedRequests);
           await httpWorkerClient.stop();
+          await Promise.allSettled(rejectedRequests);
         }
       });
     });
@@ -1078,9 +1072,8 @@ describe('Interceptor server', () => {
             expect(otherCloseEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
           } finally {
             await Promise.all([client.close(), otherClient.close()]);
-            // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
-            void Promise.allSettled(rejectedRequests);
             await worker.stop();
+            await Promise.allSettled(rejectedRequests);
           }
         });
       });
@@ -1121,9 +1114,8 @@ describe('Interceptor server', () => {
             expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
           } finally {
             await client.close();
-            // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
-            void Promise.allSettled(rejectedRequests);
             await worker.stop();
+            await Promise.allSettled(rejectedRequests);
           }
         });
       });
@@ -1155,9 +1147,8 @@ describe('Interceptor server', () => {
             await waitFor(() => expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError)));
             expect(console.error).toHaveBeenCalledTimes(1);
           } finally {
-            // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
-            void Promise.allSettled(rejectedRequests);
             await worker.stop();
+            await Promise.allSettled(rejectedRequests);
           }
         });
       });
@@ -1434,9 +1425,8 @@ describe('Interceptor server', () => {
               await waitFor(() => expect(receivedMessages).toContain(ownerMessage));
               expect(receivedMessages).toEqual([ownerMessage]);
             } finally {
-              // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
-              void Promise.allSettled(rejectedRequests);
               await httpWorker.stop();
+              await Promise.allSettled(rejectedRequests);
               await client.close();
             }
           });
