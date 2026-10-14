@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { expectPossiblePromise } from '@tests/utils/promises';
 
 import { WebSocketInterceptorOptions } from '../../types/options';
 import {
@@ -16,7 +17,7 @@ import {
 type MessageSchema = WebSocketSchema<{ type: 'create'; body: { text: string } } | { type: 'delete'; id: string }>;
 
 export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
-  const { getBaseURL, getInterceptorOptions } = options;
+  const { type, getBaseURL, getInterceptorOptions } = options;
 
   let baseURL: string;
   let interceptorOptions: WebSocketInterceptorOptions;
@@ -289,7 +290,9 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           message: 'Expected exactly 1 matching message, but got 0.',
           expectedNumberOfMessages: 1,
           unmatchedMessages:
-            '- {"message":{"type":"create","body":{"text":"hello"}},"diff":{"data":{"expected":{"type":"delete"},"received":{"type":"create","body":{"text":"hello"}}}}}',
+            '- { "message": { "type": "create", "body": { "text": "hello" } }, ' +
+            '"diff": { "data": { "expected": { "type": "delete" }, ' +
+            '"received": { "type": "create", "body": { "text": "hello" } } } } }',
         });
       },
     );
@@ -309,4 +312,38 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
       await promiseIfRemote(interceptor.checkTimes(), interceptor);
     });
   });
+
+  it('should check the times of the registered message handlers', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+      const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(1);
+
+      await expectWebSocketTimesCheckError(
+        () => expectPossiblePromise(interceptor.checkTimes(), { shouldBePromise: type === 'remote' }),
+        {
+          message: 'Expected exactly 1 message, but got 0.',
+          expectedNumberOfMessages: 1,
+        },
+      );
+
+      await handler.times(0);
+
+      await expectPossiblePromise(interceptor.checkTimes(), { shouldBePromise: type === 'remote' });
+    });
+  });
+
+  if (type === 'remote') {
+    it('should check times when called, before the returned promise is awaited', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(1);
+
+        const timesCheckPromise = interceptor.checkTimes();
+        await handler.times(0);
+
+        await expectWebSocketTimesCheckError(() => timesCheckPromise, {
+          message: 'Expected exactly 1 message, but got 0.',
+          expectedNumberOfMessages: 1,
+        });
+      });
+    });
+  }
 }

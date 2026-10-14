@@ -6,7 +6,6 @@ import { convertArrayBufferToBase64, convertBase64ToArrayBuffer } from '@/utils/
 import {
   SerializedWebSocketBinaryMessageData,
   SerializedWebSocketMessageData,
-  SerializedWebSocketTextMessageData,
 } from '../interceptorWorker/types/messages';
 
 export function isWebSocketBinaryMessageData(data: unknown): data is Blob | BufferSource {
@@ -94,21 +93,6 @@ export function isSerializedWebSocketBinaryMessageData(data: unknown): data is S
     'data' in data &&
     typeof data.data === 'string'
   );
-}
-
-export function isSerializedWebSocketTextMessageData(data: unknown): data is SerializedWebSocketTextMessageData {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    'type' in data &&
-    data.type === 'text' &&
-    'data' in data &&
-    typeof data.data === 'string'
-  );
-}
-
-export function isSerializedWebSocketMessageData(data: unknown): data is SerializedWebSocketMessageData {
-  return isSerializedWebSocketBinaryMessageData(data) || isSerializedWebSocketTextMessageData(data);
 }
 
 export function deserializeWebSocketMessageDataFromTransport(
