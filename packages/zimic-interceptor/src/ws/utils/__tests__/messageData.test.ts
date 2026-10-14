@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest';
 
 import {
   deserializeWebSocketMessageDataFromTransport,
-  isSerializedWebSocketMessageData,
   normalizeWebSocketMessageData,
   serializeWebSocketMessageDataForSocket,
   serializeWebSocketMessageDataForTransport,
@@ -97,26 +96,6 @@ describe('serializeWebSocketMessageDataForTransport', () => {
     await expect(serializeWebSocketMessageDataForTransport(undefined)).rejects.toThrow(
       new ValidationError('WebSocket message data must not be undefined.'),
     );
-  });
-});
-
-describe('isSerializedWebSocketMessageData', () => {
-  it.each([
-    { type: 'text', data: '{"type":"message"}' },
-    { type: 'binary', data: 'AQID' },
-  ])('should accept $type message data', (data) => {
-    expect(isSerializedWebSocketMessageData(data)).toBe(true);
-  });
-
-  it.each([
-    { type: 'json', data: { type: 'message' } },
-    { type: 'text', data: 1 },
-    { type: 'binary', data: 1 },
-    { type: 'unknown', data: 'message' },
-    null,
-    undefined,
-  ])('should reject invalid message data %j', (data) => {
-    expect(isSerializedWebSocketMessageData(data)).toBe(false);
   });
 });
 

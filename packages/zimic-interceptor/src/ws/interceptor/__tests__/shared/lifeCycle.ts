@@ -1,4 +1,4 @@
-import { waitFor } from '@zimic/utils/time';
+import { waitFor, waitForNot } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
@@ -6,6 +6,8 @@ import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promis
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
+import { createWebSocketInterceptorWorker } from '../../../interceptorWorker/factory';
+import type { Schema } from '../../../messageHandler/__tests__/shared/types';
 import { LocalWebSocketMessageHandler } from '../../../messageHandler/LocalWebSocketMessageHandler';
 import NotRunningWebSocketInterceptorError from '../../errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
@@ -13,6 +15,7 @@ import { createWebSocketInterceptor } from '../../factory';
 import { RemoteWebSocketInterceptorOptions, WebSocketInterceptorOptions } from '../../types/options';
 import { WebSocketInterceptorConnectionListener } from '../../types/public';
 import WebSocketInterceptorImplementation from '../../WebSocketInterceptorImplementation';
+import WebSocketInterceptorStore from '../../WebSocketInterceptorStore';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
@@ -101,6 +104,7 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
       baseURL: new URL(baseURL),
       messageSaving: { enabled: true },
       Handler: LocalWebSocketMessageHandler,
+      createWorker: () => createWebSocketInterceptorWorker({ type: 'local' }),
     });
 
     try {
@@ -127,6 +131,7 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     const interceptor = new WebSocketInterceptorImplementation<MessageSchema>({
       baseURL: new URL(baseURL),
       Handler: LocalWebSocketMessageHandler,
+      createWorker: () => createWebSocketInterceptorWorker({ type: 'local' }),
     });
     const rawSend = JSON.stringify({ type: 'client' as const, index: 1 }) as WebSocketMessageData<MessageSchema>;
     const send = vi.fn();
@@ -467,4 +472,107 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
       await interceptor.stop();
     }
   });
+
+  it('should throw an error when trying to be cleared if not running', async () => {
+    const interceptor = createWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() });
+    expect(interceptor.isRunning).toBe(false);
+
+    await expect(async () => {
+      await interceptor.clear();
+    }).rejects.toThrow(new NotRunningWebSocketInterceptorError());
+  });
+
+  it('should throw an error when trying to be cleared after stopped', async () => {
+    const interceptor = createWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() });
+
+    await interceptor.start();
+    expect(interceptor.isRunning).toBe(true);
+
+    await interceptor.stop();
+    expect(interceptor.isRunning).toBe(false);
+
+    await expect(async () => {
+      await interceptor.clear();
+    }).rejects.toThrow(new NotRunningWebSocketInterceptorError());
+  });
+
+  if (type === 'local') {
+    it('should keep the shared worker running if the last interceptor is stopping at the same time as another is starting', async () => {
+      const store = new WebSocketInterceptorStore();
+      const otherBaseURL = `${getBaseURL()}/other`;
+
+      await usingWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() }, async (interceptor) => {
+        await usingWebSocketInterceptor<Schema>(
+          { type, baseURL: otherBaseURL },
+          { start: false },
+          async (otherInterceptor) => {
+            const worker = store.localWorker;
+            expect(worker).toBeDefined();
+            expect(worker!.numberOfRunningInterceptors).toBe(1);
+
+            const originalGetMSWWorkerOrCreate = worker!.getMSWWorkerOrCreate.bind(worker);
+            const { promise: workerStopStartedPromise, resolve: markWorkerStopAsStarted } =
+              Promise.withResolvers<void>();
+            const { promise: workerStopGatePromise, resolve: releaseWorkerStop } = Promise.withResolvers<void>();
+
+            // The shutdown dependency is held so that the other interceptor starts while the worker stop is pending.
+            vi.spyOn(worker!, 'getMSWWorkerOrCreate').mockImplementationOnce(async () => {
+              markWorkerStopAsStarted();
+              await workerStopGatePromise;
+              return originalGetMSWWorkerOrCreate();
+            });
+            const workerStartSpy = vi.spyOn(worker!, 'start');
+
+            const stopPromise = interceptor.stop();
+            let startPromise: Promise<void> | undefined;
+
+            try {
+              await workerStopStartedPromise;
+              startPromise = otherInterceptor.start();
+
+              const startResolutionListener = vi.fn();
+              void startPromise.then(startResolutionListener);
+
+              await waitFor(() => {
+                expect(workerStartSpy).toHaveBeenCalledTimes(1);
+              });
+              await waitForNot(() => {
+                expect(startResolutionListener).toHaveBeenCalled();
+              });
+
+              releaseWorkerStop();
+              await Promise.all([stopPromise, startPromise]);
+            } finally {
+              releaseWorkerStop();
+              await Promise.allSettled([stopPromise, startPromise]);
+            }
+
+            expect(interceptor.isRunning).toBe(false);
+            expect(otherInterceptor.isRunning).toBe(true);
+
+            expect(store.localWorker).toBe(worker);
+            expect(worker!.isRunning).toBe(true);
+
+            const reply: Schema = { type: 'delete', id: '1' };
+            otherInterceptor.message().respond(reply);
+
+            const client = new WebSocketClient<Schema>(otherBaseURL);
+            const messagePromise = new Promise<WebSocketClient.MessageEvent<Schema>>((resolve) => {
+              client.addEventListener('message', resolve, { once: true });
+            });
+
+            try {
+              await client.open();
+              client.send(JSON.stringify({ type: 'create', body: { text: 'one' } } satisfies Schema));
+
+              const message = await messagePromise;
+              expect(JSON.parse(message.data as string)).toEqual(reply);
+            } finally {
+              await client.close();
+            }
+          },
+        );
+      });
+    });
+  }
 }

@@ -121,14 +121,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       })
       .then(() => undefined)
       .catch((error: unknown) => {
-        const currentHandler = this.webSocketHandlers.get(handlerId);
-
-        /* istanbul ignore else -- @preserve
-         * This only skips deletion if the pending handler was already replaced by a newer commit. */
-        if (currentHandler?.commitPromise === commitPromise) {
-          this.webSocketHandlers.delete(handlerId);
-        }
-
+        this.webSocketHandlers.delete(handlerId);
         throw error;
       });
 

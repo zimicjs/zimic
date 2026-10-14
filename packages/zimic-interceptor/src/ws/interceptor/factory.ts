@@ -25,7 +25,12 @@ function isRemoteWebSocketInterceptorOptions(
   return options.type === 'remote';
 }
 
-/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * Creates a WebSocket interceptor. Client and server messages are typed with the WebSocket schema passed as the type
+ * argument.
+ */
 export function createWebSocketInterceptor<Schema extends WebSocketSchema>(
   options: LocalWebSocketInterceptorOptions,
 ): PublicLocalWebSocketInterceptor<Schema>;

@@ -73,8 +73,6 @@ abstract class HttpInterceptorWorker {
     try {
       this.startingPromise = internalStart();
       await this.startingPromise;
-
-      this.startingPromise = undefined;
     } catch (error) {
       // In server side (e.g. Node.js), we need to manually log the error because this will be treated as an unhandled
       // promise rejection. If we don't log it, the output won't contain details about the error. In the browser,
@@ -85,6 +83,8 @@ abstract class HttpInterceptorWorker {
 
       await this.stop();
       throw error;
+    } finally {
+      this.startingPromise = undefined;
     }
   }
 
@@ -127,7 +127,7 @@ abstract class HttpInterceptorWorker {
     strategy: UnhandledRequestStrategy.Declaration | null,
   ) {
     if (strategy?.log) {
-      await HttpInterceptorWorker.logUnhandledRequestWarning(request, strategy.action);
+      await logUnhandledRequestWarning(request, strategy.action);
       return { wasLogged: true };
     }
     return { wasLogged: false };
@@ -454,10 +454,6 @@ abstract class HttpInterceptorWorker {
     }
 
     return params as InferPathParams<Path>;
-  }
-
-  static async logUnhandledRequestWarning(rawRequest: Request, action: UnhandledRequestStrategy.Action) {
-    await logUnhandledRequestWarning(rawRequest, action);
   }
 }
 
