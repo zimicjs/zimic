@@ -1,8 +1,9 @@
 import { normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
-import type { HttpMethod, HttpRequest } from '@zimic/http';
+import { HTTP_METHODS, type HttpMethod, type HttpRequest } from '@zimic/http';
 import { createRegexFromPath, excludeNonPathParams } from '@zimic/utils/url';
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
+import * as z from 'zod';
 
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
 import { deserializeResponse, type SerializedHttpRequest, serializeRequest } from '@/utils/fetch';
@@ -15,6 +16,31 @@ import type WebSocketServer from '@/utils/webSocket/WebSocketServer';
 import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE, type AccessControlHeaders } from '../constants';
 import type { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '../types/schema';
 import { getFetchAPI } from '../utils/fetch';
+import { parseRPCData } from '../utils/rpc';
+
+const httpHandlerCommitSchema = z.object({
+  id: z.string(),
+  baseURL: z.url({ protocol: /^https?$/ }),
+  method: z.enum(HTTP_METHODS),
+  path: z.string(),
+}) satisfies z.ZodType<HttpHandlerCommit>;
+
+const httpHandlerCommitsSchema = z.array(httpHandlerCommitSchema);
+
+const responseCreationReplySchema = z.object({
+  response: z
+    .object({
+      type: z.enum(['basic', 'cors', 'default', 'error', 'opaque', 'opaqueredirect']),
+      action: z.enum(['bypass', 'reject']).optional(),
+      status: z.union([z.literal(0), z.number().int().min(200).max(599)]),
+      statusText: z.string(),
+      headers: z.record(z.string(), z.string()),
+      body: z.base64().nullable(),
+    })
+    .nullable(),
+});
+
+const unhandledRequestReplySchema = z.object({ wasLogged: z.boolean() });
 
 interface HttpHandler {
   id: string;
@@ -66,17 +92,17 @@ class HttpInterceptorServerRuntime {
     socket: Socket,
   ) => {
     this.assertHttpWorkerSocket(socket);
-    this.registerHttpHandler(message.data, socket);
+    this.registerHttpHandler(parseRPCData(httpHandlerCommitSchema, message.data), socket);
     return {};
   };
 
   private resetWorker = (
-    {
-      data: handlersToRecommit,
-    }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/http/workers/reset'>,
+    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/http/workers/reset'>,
     socket: Socket,
   ) => {
     this.assertHttpWorkerSocket(socket);
+
+    const handlersToRecommit = parseRPCData(httpHandlerCommitsSchema, message.data);
 
     this.webSocketServer.emitSocket('abortRequests', socket, {
       shouldAbortRequest: (request) => {
@@ -203,11 +229,12 @@ class HttpInterceptorServerRuntime {
 
       matchedSomeInterceptor = true;
 
-      const { response: serializedResponse } = await this.webSocketServer.request(
+      const reply = await this.webSocketServer.request(
         'interceptors/http/responses/create',
         { handlerId: handler.id, request },
         { sockets: [handler.socket] },
       );
+      const { response: serializedResponse } = parseRPCData(responseCreationReplySchema, reply);
 
       if (serializedResponse) {
         const response = deserializeResponse(serializedResponse);
@@ -241,29 +268,35 @@ class HttpInterceptorServerRuntime {
 
     if (handler) {
       try {
-        const { wasLogged: wasRequestLoggedByRemoteInterceptor } = await this.webSocketServer.request(
+        const reply = await this.webSocketServer.request(
           'interceptors/http/responses/unhandled',
           { request: serializedRequest },
           { sockets: [handler.socket] },
         );
+        const { wasLogged: wasRequestLoggedByRemoteInterceptor } = parseRPCData(unhandledRequestReplySchema, reply);
 
         if (wasRequestLoggedByRemoteInterceptor) {
           return;
         }
       } catch (error) {
-        /* istanbul ignore next -- @preserve
-         *
-         * If the socket is closed before receiving a response, the message is aborted with an error. This can happen if
-         * we send a request message and the interceptor worker closes the socket before sending a response. In this
-         * case, we can safely ignore the error because we know that the worker is shutting down and won't handle
-         * any more requests.
-         *
-         * Due to the rare nature of this edge case, we can't reliably reproduce it in tests. */
-        const isMessageAbortError = error instanceof WebSocketMessageAbortError;
+        if (error instanceof InvalidWebSocketMessageError) {
+          // The reply cannot be trusted, so the request is logged by the server below as if it was not logged.
+          console.error(error);
+        } else {
+          /* istanbul ignore next -- @preserve
+           *
+           * If the socket is closed before receiving a response, the message is aborted with an error. This can happen
+           * if we send a request message and the interceptor worker closes the socket before sending a response. In
+           * this case, we can safely ignore the error because we know that the worker is shutting down and won't
+           * handle any more requests.
+           *
+           * Due to the rare nature of this edge case, we can't reliably reproduce it in tests. */
+          const isMessageAbortError = error instanceof WebSocketMessageAbortError;
 
-        /* istanbul ignore next -- @preserve */
-        if (!isMessageAbortError) {
-          throw error;
+          /* istanbul ignore next -- @preserve */
+          if (!isMessageAbortError) {
+            throw error;
+          }
         }
       }
     }

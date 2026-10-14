@@ -392,6 +392,349 @@ describe('Interceptor server', () => {
     });
   });
 
+  describe('HTTP worker RPCs', () => {
+    it('should reject resets with an invalid entry, preserving existing handlers and pending requests', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+      await server.start();
+
+      const baseURL = `http://${server.hostname}:${server.port}/users`;
+      const otherBaseURL = `http://${server.hostname}:${server.port}/posts`;
+
+      const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+        url: `ws://${server.hostname}:${server.port}`,
+        messageTimeout: 500,
+      });
+
+      const handledRequestURLs: string[] = [];
+      let releasePendingResponse!: () => void;
+      const pendingResponseReleased = new Promise<void>((resolve) => {
+        releasePendingResponse = resolve;
+      });
+
+      worker.onChannel('event', 'interceptors/http/responses/create', async ({ data }) => {
+        handledRequestURLs.push(data.request.url);
+
+        if (handledRequestURLs.length === 1) {
+          await pendingResponseReleased;
+        }
+
+        return { response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null } };
+      });
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        try {
+          await worker.start({
+            parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http' },
+            waitForAuthentication: true,
+          });
+
+          await worker.request('interceptors/http/workers/commit', {
+            id: crypto.randomUUID(),
+            baseURL,
+            method: 'GET',
+            path: '/',
+          });
+
+          const pendingResponsePromise = fetch(baseURL);
+          await waitFor(() => expect(handledRequestURLs).toHaveLength(1));
+
+          const resetPromise = worker.request('interceptors/http/workers/reset', [
+            { id: crypto.randomUUID(), baseURL: otherBaseURL, method: 'GET', path: '/' },
+            { id: crypto.randomUUID(), baseURL: otherBaseURL, method: 'TRACE' as never, path: '/' },
+          ]);
+
+          await expect(resetPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+          expect(console.error).toHaveBeenCalledTimes(1);
+          expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+
+          releasePendingResponse();
+
+          const pendingResponse = await pendingResponsePromise;
+          expect(pendingResponse.status).toBe(204);
+
+          const response = await fetch(baseURL);
+          expect(response.status).toBe(204);
+          expect(handledRequestURLs).toEqual([baseURL, baseURL]);
+
+          await expectFetchError(fetch(otherBaseURL));
+          expect(handledRequestURLs).toHaveLength(2);
+        } finally {
+          releasePendingResponse();
+          await worker.stop();
+        }
+      });
+    });
+
+    it('should reject resets with a non-array payload, preserving existing handlers', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+      await server.start();
+
+      const baseURL = `http://${server.hostname}:${server.port}/users`;
+
+      const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+        url: `ws://${server.hostname}:${server.port}`,
+        messageTimeout: 500,
+      });
+
+      worker.onChannel('event', 'interceptors/http/responses/create', () => ({
+        response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null },
+      }));
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        try {
+          await worker.start({
+            parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http' },
+            waitForAuthentication: true,
+          });
+
+          await worker.request('interceptors/http/workers/commit', {
+            id: crypto.randomUUID(),
+            baseURL,
+            method: 'GET',
+            path: '/',
+          });
+
+          const resetPromise = worker.request('interceptors/http/workers/reset', { invalid: true } as never);
+
+          await expect(resetPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+          expect(console.error).toHaveBeenCalledTimes(1);
+          expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+
+          const response = await fetch(baseURL);
+          expect(response.status).toBe(204);
+        } finally {
+          await worker.stop();
+        }
+      });
+    });
+
+    it('should reject commits with an unsupported method', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+      await server.start();
+
+      const baseURL = `http://${server.hostname}:${server.port}/users`;
+
+      const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+        url: `ws://${server.hostname}:${server.port}`,
+        messageTimeout: 500,
+      });
+
+      const handledRequestURLs: string[] = [];
+
+      worker.onChannel('event', 'interceptors/http/responses/create', ({ data }) => {
+        handledRequestURLs.push(data.request.url);
+        return { response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null } };
+      });
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        try {
+          await worker.start({
+            parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http' },
+            waitForAuthentication: true,
+          });
+
+          const commitPromise = worker.request('interceptors/http/workers/commit', {
+            id: crypto.randomUUID(),
+            baseURL,
+            method: 'TRACE' as never,
+            path: '/',
+          });
+
+          await expect(commitPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+          expect(console.error).toHaveBeenCalledTimes(1);
+          expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+
+          await expectFetchError(fetch(baseURL));
+          expect(handledRequestURLs).toHaveLength(0);
+        } finally {
+          await worker.stop();
+        }
+      });
+    });
+
+    it('should reject commits with a non-HTTP base URL', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+      await server.start();
+
+      const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+        url: `ws://${server.hostname}:${server.port}`,
+        messageTimeout: 500,
+      });
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        try {
+          await worker.start({
+            parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http' },
+            waitForAuthentication: true,
+          });
+
+          const commitPromise = worker.request('interceptors/http/workers/commit', {
+            id: crypto.randomUUID(),
+            baseURL: `ws://${server!.hostname}:${server!.port}/users`,
+            method: 'GET',
+            path: '/',
+          });
+
+          await expect(commitPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+          expect(console.error).toHaveBeenCalledTimes(1);
+          expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+        } finally {
+          await worker.stop();
+        }
+      });
+    });
+
+    it('should reject malformed response replies and continue handling requests', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+      await server.start();
+
+      const baseURL = `http://${server.hostname}:${server.port}/users`;
+
+      const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+        url: `ws://${server.hostname}:${server.port}`,
+        messageTimeout: 500,
+      });
+
+      let handledRequestsCount = 0;
+
+      worker.onChannel('event', 'interceptors/http/responses/create', () => {
+        handledRequestsCount++;
+
+        if (handledRequestsCount === 1) {
+          return { response: { type: 'basic', status: 'ok' } } as never;
+        }
+
+        return { response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null } };
+      });
+
+      worker.onChannel('event', 'interceptors/http/responses/unhandled', () => ({ wasLogged: false }));
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        try {
+          await worker.start({
+            parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http' },
+            waitForAuthentication: true,
+          });
+
+          await worker.request('interceptors/http/workers/commit', {
+            id: crypto.randomUUID(),
+            baseURL,
+            method: 'GET',
+            path: '/',
+          });
+
+          await expectFetchError(fetch(baseURL));
+          expect(console.error).toHaveBeenCalledTimes(1);
+          expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+
+          const response = await fetch(baseURL);
+          expect(response.status).toBe(204);
+          expect(console.error).toHaveBeenCalledTimes(1);
+        } finally {
+          await worker.stop();
+        }
+      });
+    });
+
+    it('should log and reject requests when the unhandled request reply is malformed', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: true });
+      await server.start();
+
+      const baseURL = `http://${server.hostname}:${server.port}/api`;
+
+      const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+        url: `ws://${server.hostname}:${server.port}`,
+        messageTimeout: 500,
+      });
+
+      worker.onChannel('event', 'interceptors/http/responses/unhandled', () => ({ wasLogged: 'yes' }) as never);
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        try {
+          await worker.start({
+            parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http' },
+            waitForAuthentication: true,
+          });
+
+          await worker.request('interceptors/http/workers/commit', {
+            id: crypto.randomUUID(),
+            baseURL,
+            method: 'GET',
+            path: '/users',
+          });
+
+          const request = new Request(`${baseURL}/posts`);
+          await expectFetchError(fetch(request.clone()));
+
+          expect(console.error).toHaveBeenCalledTimes(2);
+          expect(console.error).toHaveBeenNthCalledWith(1, expect.any(InvalidWebSocketMessageError));
+
+          await verifyUnhandledRequestMessage(console.error.mock.calls[1].join(' '), {
+            request,
+            platform: 'node',
+            type: 'reject',
+          });
+        } finally {
+          await worker.stop();
+        }
+      });
+    });
+
+    it('should not allow WebSocket workers to commit or reset HTTP handlers', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+      await server.start();
+
+      type Schema = HttpSchema<{ '/': { GET: { response: { 204: {} } } } }>;
+
+      const interceptor = createInternalHttpInterceptor<Schema>({
+        type: 'remote',
+        baseURL: `http://${server.hostname}:${server.port}/users`,
+      });
+      const otherBaseURL = `http://${server.hostname}:${server.port}/posts`;
+
+      const webSocketWorker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+        url: `ws://${server.hostname}:${server.port}`,
+        messageTimeout: 500,
+      });
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        try {
+          await interceptor.start();
+          await interceptor.get('/').respond({ status: 204 });
+
+          await webSocketWorker.start({
+            parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws' },
+            waitForAuthentication: true,
+          });
+
+          const commitPromise = webSocketWorker.request('interceptors/http/workers/commit', {
+            id: crypto.randomUUID(),
+            baseURL: otherBaseURL,
+            method: 'GET',
+            path: '/',
+          });
+          await expect(commitPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+
+          const resetPromise = webSocketWorker.request('interceptors/http/workers/reset', []);
+          await expect(resetPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+
+          expect(console.error).toHaveBeenCalledTimes(2);
+          expect(console.error).toHaveBeenCalledWith(
+            new InvalidWebSocketMessageError('HTTP RPC received from a non-HTTP worker.'),
+          );
+
+          await expectFetchError(fetch(otherBaseURL));
+
+          const response = await fetch(interceptor.baseURL);
+          expect(response.status).toBe(204);
+        } finally {
+          await webSocketWorker.stop();
+          await interceptor.stop();
+        }
+      });
+    });
+  });
+
   describe('WebSocket connections', () => {
     type ChatMessage = WebSocketSchema<{ type: 'client' | 'server'; text: string }>;
 
@@ -567,6 +910,353 @@ describe('Interceptor server', () => {
         } finally {
           await client.close();
         }
+      });
+    });
+
+    describe('Worker RPCs', () => {
+      it('should reject resets with an invalid entry, preserving existing handlers and client connections', async () => {
+        server = createInternalInterceptorServer();
+        await server.start();
+
+        const baseURL = `ws://${server.hostname}:${server.port}/retained`;
+        const otherBaseURL = `ws://${server.hostname}:${server.port}/other`;
+
+        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+          url: `ws://${server.hostname}:${server.port}`,
+          messageTimeout: 500,
+        });
+        worker.onChannel('event', 'interceptors/ws/clients/connect', () => ({ accepted: true }));
+
+        const client = new WebSocketClient<ChatMessage>(baseURL);
+        const otherClient = new WebSocketClient<ChatMessage>(otherBaseURL);
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          try {
+            await worker.start({
+              parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws' },
+              waitForAuthentication: true,
+            });
+
+            await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
+
+            await client.open();
+
+            const receivedMessages: string[] = [];
+            client.addEventListener('message', ({ data }) => {
+              receivedMessages.push(data);
+            });
+
+            const resetPromise = worker.request('interceptors/ws/workers/reset', [
+              { id: crypto.randomUUID(), baseURL: otherBaseURL },
+              { id: crypto.randomUUID(), baseURL: `http://${server!.hostname}:${server!.port}/invalid` },
+            ]);
+
+            await expect(resetPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+            expect(console.error).toHaveBeenCalledTimes(1);
+            expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+
+            expect(client.readyState).toBe(WebSocketClient.OPEN);
+
+            const message = JSON.stringify({ type: 'server', text: 'retained' } satisfies ChatMessage);
+            worker.send('interceptors/ws/messages/send', { data: { type: 'text', data: message } });
+            await waitFor(() => expect(receivedMessages).toEqual([message]));
+
+            const otherCloseEventPromise = new Promise<WebSocketClient.CloseEvent<ChatMessage>>((resolve) => {
+              otherClient.addEventListener('close', resolve, { once: true });
+            });
+
+            await otherClient.open();
+
+            const otherCloseEvent = await otherCloseEventPromise;
+            expect(otherCloseEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
+            expect(otherCloseEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
+          } finally {
+            await Promise.all([client.close(), otherClient.close()]);
+            await worker.stop();
+          }
+        });
+      });
+
+      it('should reject commits with an invalid id', async () => {
+        server = createInternalInterceptorServer();
+        await server.start();
+
+        const baseURL = `ws://${server.hostname}:${server.port}/chat`;
+
+        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+          url: `ws://${server.hostname}:${server.port}`,
+          messageTimeout: 500,
+        });
+
+        const client = new WebSocketClient<ChatMessage>(baseURL);
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          try {
+            await worker.start({
+              parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws' },
+              waitForAuthentication: true,
+            });
+
+            const commitPromise = worker.request('interceptors/ws/workers/commit', { id: 1 as never, baseURL });
+
+            await expect(commitPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+            expect(console.error).toHaveBeenCalledTimes(1);
+            expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+
+            const closeEventPromise = new Promise<WebSocketClient.CloseEvent<ChatMessage>>((resolve) => {
+              client.addEventListener('close', resolve, { once: true });
+            });
+
+            await client.open();
+
+            const closeEvent = await closeEventPromise;
+            expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
+            expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
+          } finally {
+            await client.close();
+            await worker.stop();
+          }
+        });
+      });
+
+      it('should reject commits with a non-WebSocket base URL', async () => {
+        server = createInternalInterceptorServer();
+        await server.start();
+
+        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+          url: `ws://${server.hostname}:${server.port}`,
+          messageTimeout: 500,
+        });
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          try {
+            await worker.start({
+              parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws' },
+              waitForAuthentication: true,
+            });
+
+            const commitPromise = worker.request('interceptors/ws/workers/commit', {
+              id: crypto.randomUUID(),
+              baseURL: `http://${server!.hostname}:${server!.port}/chat`,
+            });
+
+            await expect(commitPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+            expect(console.error).toHaveBeenCalledTimes(1);
+            expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+          } finally {
+            await worker.stop();
+          }
+        });
+      });
+
+      it('should reject malformed messages sent to clients and continue delivering valid messages', async () => {
+        server = createInternalInterceptorServer();
+        await server.start();
+
+        const baseURL = `ws://${server.hostname}:${server.port}/chat`;
+
+        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+          url: `ws://${server.hostname}:${server.port}`,
+          messageTimeout: 500,
+        });
+        worker.onChannel('event', 'interceptors/ws/clients/connect', () => ({ accepted: true }));
+
+        const client = new WebSocketClient<ChatMessage>(baseURL);
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          try {
+            await worker.start({
+              parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws' },
+              waitForAuthentication: true,
+            });
+
+            await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
+
+            await client.open();
+
+            const receivedMessages: string[] = [];
+            client.addEventListener('message', ({ data }) => {
+              receivedMessages.push(data);
+            });
+
+            worker.send('interceptors/ws/messages/send', { data: { type: 'binary', data: 'not base64!' } });
+            worker.send('interceptors/ws/messages/send', { data: { type: 'unknown', data: 'text' } as never });
+            worker.send('interceptors/ws/messages/send', {
+              clientId: 1 as never,
+              data: { type: 'text', data: 'text' },
+            });
+
+            const validMessage = JSON.stringify({ type: 'server', text: 'valid' } satisfies ChatMessage);
+            worker.send('interceptors/ws/messages/send', { data: { type: 'text', data: validMessage } });
+
+            await waitFor(() => expect(receivedMessages).toEqual([validMessage]));
+            expect(console.error).toHaveBeenCalledTimes(3);
+            expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+          } finally {
+            await client.close();
+            await worker.stop();
+          }
+        });
+      });
+
+      it('should deliver arbitrary application messages sent to clients', async () => {
+        server = createInternalInterceptorServer();
+        await server.start();
+
+        const baseURL = `ws://${server.hostname}:${server.port}/chat`;
+
+        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+          url: `ws://${server.hostname}:${server.port}`,
+          messageTimeout: 500,
+        });
+        worker.onChannel('event', 'interceptors/ws/clients/connect', () => ({ accepted: true }));
+
+        const client = new WebSocketClient<ChatMessage>(baseURL);
+
+        try {
+          await worker.start({
+            parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws' },
+            waitForAuthentication: true,
+          });
+
+          await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
+
+          await client.open();
+
+          const receivedMessages: string[] = [];
+          client.addEventListener('message', ({ data }) => {
+            receivedMessages.push(data);
+          });
+
+          const messages = ['not json {', '', '{"unrelated":[1,2,3]}', 'ação 🚀'];
+
+          for (const message of messages) {
+            worker.send('interceptors/ws/messages/send', { data: { type: 'text', data: message } });
+          }
+
+          await waitFor(() => expect(receivedMessages).toEqual(messages));
+        } finally {
+          await client.close();
+          await worker.stop();
+        }
+      });
+
+      it('should close client connections when the connection reply is malformed and accept later connections', async () => {
+        server = createInternalInterceptorServer();
+        await server.start();
+
+        const baseURL = `ws://${server.hostname}:${server.port}/chat`;
+
+        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+          url: `ws://${server.hostname}:${server.port}`,
+          messageTimeout: 500,
+        });
+
+        let connectionRequestsCount = 0;
+
+        worker.onChannel('event', 'interceptors/ws/clients/connect', () => {
+          connectionRequestsCount++;
+          return connectionRequestsCount === 1 ? ({ accepted: 'yes' } as never) : { accepted: true };
+        });
+
+        const client = new WebSocketClient<ChatMessage>(baseURL);
+        const otherClient = new WebSocketClient<ChatMessage>(baseURL);
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          try {
+            await worker.start({
+              parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws' },
+              waitForAuthentication: true,
+            });
+
+            await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
+
+            const closeEventPromise = new Promise<WebSocketClient.CloseEvent<ChatMessage>>((resolve) => {
+              client.addEventListener('close', resolve, { once: true });
+            });
+
+            await client.open();
+
+            const closeEvent = await closeEventPromise;
+            expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
+            expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
+
+            expect(console.error).toHaveBeenCalledTimes(1);
+            expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+
+            const receivedMessages: string[] = [];
+            otherClient.addEventListener('message', ({ data }) => {
+              receivedMessages.push(data);
+            });
+
+            await otherClient.open();
+
+            const message = JSON.stringify({ type: 'server', text: 'accepted' } satisfies ChatMessage);
+            worker.send('interceptors/ws/messages/send', { data: { type: 'text', data: message } });
+
+            await waitFor(() => expect(receivedMessages).toEqual([message]));
+          } finally {
+            await Promise.all([client.close(), otherClient.close()]);
+            await worker.stop();
+          }
+        });
+      });
+
+      it('should not allow HTTP workers to reset WebSocket handlers or send messages to their clients', async () => {
+        server = createInternalInterceptorServer();
+        await server.start();
+
+        const baseURL = `ws://${server.hostname}:${server.port}/chat`;
+
+        await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
+          await interceptor.message();
+
+          const client = new WebSocketClient<ChatMessage>(baseURL);
+          const httpWorker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+            url: `ws://${server!.hostname}:${server!.port}`,
+            messageTimeout: 500,
+          });
+
+          await usingIgnoredConsole(['error'], async (console) => {
+            try {
+              await client.open();
+              await waitFor(() => expect(interceptor.clients).toHaveLength(1));
+
+              const receivedMessages: string[] = [];
+              client.addEventListener('message', ({ data }) => {
+                receivedMessages.push(data);
+              });
+
+              await httpWorker.start({
+                parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http' },
+                waitForAuthentication: true,
+              });
+
+              const httpWorkerMessage = JSON.stringify({ type: 'server', text: 'http worker' } satisfies ChatMessage);
+              httpWorker.send('interceptors/ws/messages/send', { data: { type: 'text', data: httpWorkerMessage } });
+
+              const resetPromise = httpWorker.request('interceptors/ws/workers/reset', []);
+              await expect(resetPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+
+              expect(console.error).toHaveBeenCalledTimes(2);
+              expect(console.error).toHaveBeenCalledWith(
+                new InvalidWebSocketMessageError('WebSocket RPC received from a non-WebSocket worker.'),
+              );
+
+              expect(client.readyState).toBe(WebSocketClient.OPEN);
+              expect(interceptor.clients).toHaveLength(1);
+
+              const ownerMessage = JSON.stringify({ type: 'server', text: 'owner' } satisfies ChatMessage);
+              interceptor.server.send(ownerMessage);
+
+              await waitFor(() => expect(receivedMessages).toContain(ownerMessage));
+              expect(receivedMessages).toEqual([ownerMessage]);
+            } finally {
+              await httpWorker.stop();
+              await client.close();
+            }
+          });
+        });
       });
     });
   });
