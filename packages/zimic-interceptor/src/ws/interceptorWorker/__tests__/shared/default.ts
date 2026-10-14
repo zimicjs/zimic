@@ -6,10 +6,13 @@ import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vite
 
 import LocalHttpInterceptorWorker from '@/http/interceptorWorker/LocalHttpInterceptorWorker';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
+import InterceptorWebSocketClient from '@/utils/webSocket/WebSocketClient';
+import WebSocketInterceptorImplementation from '@/ws/interceptor/WebSocketInterceptorImplementation';
 import { createWebSocketInterceptorWorker } from '@/ws/interceptorWorker/factory';
 import LocalWebSocketInterceptorWorker from '@/ws/interceptorWorker/LocalWebSocketInterceptorWorker';
 import RemoteWebSocketInterceptorWorker from '@/ws/interceptorWorker/RemoteWebSocketInterceptorWorker';
 import WebSocketInterceptorWorker from '@/ws/interceptorWorker/WebSocketInterceptorWorker';
+import { RemoteWebSocketMessageHandler } from '@/ws/messageHandler/RemoteWebSocketMessageHandler';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import {
   createInternalWebSocketInterceptor,
@@ -824,6 +827,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         const interceptor = createDefaultWebSocketInterceptor();
         await worker.use(interceptor.implementation);
 
+        // Skips the reset RPC, so the server keeps the cleared handler registered while the worker has already forgotten it.
         const resetRequestSpy = vi.spyOn(worker.webSocketClient, 'request').mockResolvedValueOnce({});
         await worker.clearHandlers({ interceptor: interceptor.implementation });
         resetRequestSpy.mockRestore();
@@ -898,27 +902,43 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       });
     });
 
-    it('should recommit remaining remote handlers after clearing one interceptor', async () => {
+    it('should keep responding through the remaining remote handlers after clearing another interceptor', async () => {
       await usingWebSocketInterceptorWorker(workerOptions, async (rawWorker) => {
         const worker = rawWorker as RemoteWebSocketInterceptorWorker;
         const firstInterceptor = createInternalWebSocketInterceptor<ChatMessage>({
           type: 'remote',
           baseURL: `${baseURL}/first`,
         });
-        const secondInterceptor = createInternalWebSocketInterceptor<ChatMessage>({
-          type: 'remote',
-          baseURL: `${baseURL}/second`,
+
+        // Runs the second interceptor on the same worker as the first one, so clearing the first recommits the second.
+        const secondInterceptor = new WebSocketInterceptorImplementation<
+          ChatMessage,
+          typeof RemoteWebSocketMessageHandler
+        >({
+          baseURL: new URL(`${baseURL}/second`),
+          Handler: RemoteWebSocketMessageHandler,
+          createWorker: () => worker,
         });
 
-        await worker.use(firstInterceptor.implementation);
-        await worker.use(secondInterceptor.implementation);
-        await worker.clearHandlers({ interceptor: firstInterceptor.implementation });
+        try {
+          await worker.use(firstInterceptor.implementation);
 
-        const secondClient = new WebSocketClient<ChatMessage>(secondInterceptor.baseURL);
-        clients.push(secondClient);
+          await secondInterceptor.start();
+          await secondInterceptor.message().respond({ type: 'server', text: 'second' });
 
-        await secondClient.open();
-        expect(secondClient.readyState).toBe(WebSocketClient.OPEN);
+          await worker.clearHandlers({ interceptor: firstInterceptor.implementation });
+
+          const secondClient = new WebSocketClient<ChatMessage>(secondInterceptor.baseURLAsString);
+          clients.push(secondClient);
+          await secondClient.open();
+
+          const messagePromise = waitForMessage(secondClient);
+          secondClient.send(JSON.stringify({ type: 'client', text: 'one' }));
+
+          await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'second' });
+        } finally {
+          await secondInterceptor.stop();
+        }
       });
     });
 
@@ -958,54 +978,73 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       });
     });
 
-    it('should resolve interceptor registration only after the server commit completes', async () => {
-      await usingWebSocketInterceptorWorker(workerOptions, async (rawWorker) => {
-        const worker = rawWorker as RemoteWebSocketInterceptorWorker;
-        const interceptor = createDefaultWebSocketInterceptor();
-        let resolveCommit: (() => void) | undefined;
-        const commitRequest = new Promise<{}>((resolve) => {
-          resolveCommit = () => resolve({});
+    it('should keep a pending remote handler unsynced until the server acknowledges the commit', async () => {
+      await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
+        let releaseCommit!: () => void;
+        const commitGate = new Promise<void>((resolve) => {
+          releaseCommit = resolve;
         });
-        const commitSpy = vi.spyOn(worker.webSocketClient, 'request').mockReturnValueOnce(commitRequest);
 
-        const commitPromise = worker.use(interceptor.implementation);
-        const commitResolutionListener = vi.fn();
-        void commitPromise.then(commitResolutionListener);
+        // Holds the first commit RPC before it is sent, so the handler is registered locally but not yet acknowledged
+        // by the server.
+        const originalRequest = InterceptorWebSocketClient.prototype.request;
+        const requestSpy = vi
+          .spyOn(InterceptorWebSocketClient.prototype, 'request')
+          .mockImplementationOnce(async function (this: unknown, ...args: Parameters<typeof originalRequest>) {
+            await commitGate;
+            const reply: unknown = await originalRequest.apply(this, args);
+            return reply as never;
+          });
 
-        await waitForNot(() => {
-          expect(commitResolutionListener).toHaveBeenCalled();
-        });
-        resolveCommit?.();
-        await expect(commitPromise).resolves.toBeUndefined();
-        const [channel, commit] = commitSpy.mock.calls[0] as [
-          'interceptors/ws/workers/commit',
-          { id: string; baseURL: string },
-        ];
-        expect(channel).toBe('interceptors/ws/workers/commit');
-        expect(commit.id).toEqual(expect.any(String));
-        expect(commit.baseURL).toBe(baseURL);
+        let handler: ReturnType<typeof interceptor.message> | undefined;
+
+        try {
+          handler = interceptor.message();
+          handler.respond({ type: 'server', text: 'acknowledged' });
+
+          const syncListener = vi.fn();
+          void handler.then(syncListener);
+
+          await waitForNot(() => {
+            expect(syncListener).toHaveBeenCalled();
+          });
+
+          releaseCommit();
+          await handler;
+
+          const client = await createClient();
+          const messagePromise = waitForMessage(client);
+          client.send(JSON.stringify({ type: 'client', text: 'one' }));
+
+          await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'acknowledged' });
+        } finally {
+          releaseCommit();
+          await Promise.allSettled([handler]);
+          requestSpy.mockRestore();
+        }
       });
     });
 
-    it('should propagate registration failures and remove failed pending handlers', async () => {
-      await usingWebSocketInterceptorWorker(workerOptions, async (rawWorker) => {
-        const worker = rawWorker as RemoteWebSocketInterceptorWorker;
-        const interceptor = createDefaultWebSocketInterceptor();
+    it('should reject a pending remote handler after a failed commit and support registering a new handler', async () => {
+      await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
         const commitError = new Error('Commit failed');
-        vi.spyOn(worker.webSocketClient, 'request').mockRejectedValueOnce(commitError);
 
-        await expect(worker.use(interceptor.implementation)).rejects.toThrow(commitError);
+        // Fails the first commit RPC before it reaches the server, so the first handler has no server registration.
+        const requestSpy = vi.spyOn(InterceptorWebSocketClient.prototype, 'request').mockRejectedValueOnce(commitError);
 
-        const commitSpy = vi.spyOn(worker.webSocketClient, 'request');
+        try {
+          await expect(interceptor.message().respond({ type: 'server', text: 'failed' })).rejects.toThrow(commitError);
 
-        await expect(worker.use(interceptor.implementation)).resolves.toBeUndefined();
-        const [channel, commit] = commitSpy.mock.calls[0] as [
-          'interceptors/ws/workers/commit',
-          { id: string; baseURL: string },
-        ];
-        expect(channel).toBe('interceptors/ws/workers/commit');
-        expect(commit.id).toEqual(expect.any(String));
-        expect(commit.baseURL).toBe(baseURL);
+          await interceptor.message().respond({ type: 'server', text: 'recovered' });
+
+          const client = await createClient();
+          const messagePromise = waitForMessage(client);
+          client.send(JSON.stringify({ type: 'client', text: 'one' }));
+
+          await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'recovered' });
+        } finally {
+          requestSpy.mockRestore();
+        }
       });
     });
   }
