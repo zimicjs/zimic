@@ -193,6 +193,32 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
     });
   });
 
+  it('should support retrying after failing to start', async () => {
+    await usingWebSocketInterceptorWorker(workerOptions, { start: false }, async (worker) => {
+      const error = new Error('Unknown error');
+
+      const startSpy =
+        worker instanceof LocalWebSocketInterceptorWorker
+          ? vi.spyOn(worker, 'getMSWWorkerOrCreate')
+          : vi.spyOn(worker.webSocketClient, 'start');
+
+      startSpy.mockRejectedValueOnce(error);
+
+      try {
+        await usingIgnoredConsole(['error'], async () => {
+          await expect(worker.start()).rejects.toThrow(error);
+        });
+
+        expect(worker.isRunning).toBe(false);
+
+        await worker.start();
+        expect(worker.isRunning).toBe(true);
+      } finally {
+        startSpy.mockRestore();
+      }
+    });
+  });
+
   it('should not throw an error when stopped while not running', async () => {
     await usingWebSocketInterceptorWorker(workerOptions, { start: false }, async (worker) => {
       expect(worker.isRunning).toBe(false);
