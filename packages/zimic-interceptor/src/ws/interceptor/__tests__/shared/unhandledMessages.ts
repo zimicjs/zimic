@@ -74,7 +74,9 @@ export function declareUnhandledMessageWebSocketInterceptorTests(
             '',
             'Unmatched messages:',
             '',
-            '- {"message":{"type":"client","index":1},"diff":{"data":{"expected":{"type":"client","index":2},"received":{"type":"client","index":1}}}}',
+            '- { "message": { "type": "client", "index": "1" }, ' +
+              '"diff": { "data": { "expected": { "type": "client", "index": "2" }, ' +
+              '"received": { "type": "client", "index": "1" } } } }',
           ].join('\n'),
         );
       },

@@ -38,23 +38,17 @@ abstract class WebSocketInterceptorWorker {
     try {
       this.startingPromise = internalStart();
       await this.startingPromise;
-
-      this.startingPromise = undefined;
-      /* istanbul ignore next -- @preserve */
     } catch (error) {
-      /* istanbul ignore next -- @preserve */
-      // Startup rollback depends on platform worker startup failures and is covered by HTTP worker parity.
       /* istanbul ignore if -- @preserve
-       * Startup failures are covered through concrete workers; this only selects platform-specific logging. */
+       * The test matrix runs on one platform at a time, so only one branch can be exercised in a given coverage run. */
       if (!isClientSide()) {
         console.error(error);
       }
 
-      /* istanbul ignore next -- @preserve
-       * Startup rollback stop is only reached after a worker startup failure. */
       await this.stop();
-      /* istanbul ignore next -- @preserve */
       throw error;
+    } finally {
+      this.startingPromise = undefined;
     }
   }
 
@@ -73,10 +67,13 @@ abstract class WebSocketInterceptorWorker {
 
     if (stoppingResult instanceof Promise) {
       this.stoppingPromise = stoppingResult;
-      await this.stoppingPromise;
-    }
 
-    this.stoppingPromise = undefined;
+      try {
+        await this.stoppingPromise;
+      } finally {
+        this.stoppingPromise = undefined;
+      }
+    }
   }
 
   registerRunningInterceptor(interceptor: AnyWebSocketInterceptorImplementation) {

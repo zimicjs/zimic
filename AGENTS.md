@@ -10,12 +10,18 @@
 
 - For packages intended for direct external use, treat package exports as part of the public contract. Keep the `exports` map and consumer coverage aligned when adding, removing, or renaming an entry point. Do not require public compatibility or consumer export tests for internal packages such as `@zimic/utils`.
 - Preserve tree-shakeability. Avoid top-level side effects and do not weaken assumptions behind package `sideEffects: false`.
-- In `@zimic/utils`, group related utilities into cohesive, tree-shakeable module entry points. Prefer an existing module when it fits and create a new entry point for a distinct concern.
+
+## Public JSDoc
+
+These rules apply to packages intended for direct external use.
+
+- Write JSDoc for every public export and its public members, including re-exported declarations, overloads, option fields, and types reachable through public signatures even when not exported by name. Audit all of them when adding or changing a public API.
+- When an existing or planned page or section of the website docs covers the resource, write a concise `@see {@link https://zimic.dev/docs/<route>#<anchor> <label>}` to the closest one instead of copying its explanation. Describe the resource inline when no suitable page or section exists.
+- Take routes from the `slug` frontmatter of pages under `apps/zimic-web/docs` and anchors from their headings. Update the JSDoc links in the same change when a route or heading moves.
 
 ## Runtime and behavior coverage
 
 - Many packages are expected to work in both Node and browser environments. Keep changes runtime-safe unless the target code is clearly environment-specific.
-- `@zimic/interceptor` has local and remote implementations behind shared APIs. Changes that affect shared behavior should account for both modes.
 - Match the test dimensions already used by the target package. Cover every affected runtime or mode instead of testing only the easiest path.
 - Do not weaken coverage expectations for core packages.
 
@@ -54,5 +60,6 @@ After editing a shared package, rebuild it before exercising services that depen
 ## Where to look first
 
 - General project structure and setup: root `README.md`, `CONTRIBUTING.md`, and workspace configuration.
-- App or package-specific conventions and commands: local `README.md` and package scripts.
+- App, package, and example contracts: the scoped `AGENTS.md` in `packages/zimic-http`, `packages/zimic-fetch`, `packages/zimic-interceptor`, `packages/zimic-ws`, `packages/zimic-utils`, `apps/zimic-web`, `apps/zimic-test-client`, or `examples`. Read it before changing files in that directory.
+- App or package-specific commands: local `README.md` and package scripts.
 - Existing nearby tests and implementation patterns before introducing new helpers or abstractions.

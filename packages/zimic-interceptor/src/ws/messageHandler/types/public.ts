@@ -22,18 +22,44 @@ export interface InternalWebSocketMessageHandler<
   implementation: WebSocketMessageHandlerImplementation<Schema, RestrictedSchema>;
 }
 
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * The context of a matched message, passed to effects and computed responses.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlereffect `handler.effect()` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerrespond `handler.respond()` API reference}
+ */
 export interface WebSocketMessageHandlerMessageContext<Schema extends WebSocketSchema> {
+  /** The client that sent the matched message. */
   sender: WebSocketInterceptorClient<Schema>;
+
+  /** The interceptor server that received the matched message. */
   receiver: WebSocketInterceptorServer<Schema>;
 }
 
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlereffect `handler.effect()` API reference}
+ */
 export type WebSocketMessageHandlerMessageCallback<
   Schema extends WebSocketSchema,
   RestrictedSchema extends Schema = Schema,
 > = (message: RestrictedSchema, context: WebSocketMessageHandlerMessageContext<Schema>) => PossiblePromise<void>;
 
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerrespond `handler.respond()` API reference}
+ */
 export type WebSocketMessageHandlerMessageStaticDeclaration<Schema extends WebSocketSchema> = Schema;
 
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerrespond `handler.respond()` API reference}
+ */
 export type WebSocketMessageHandlerMessageComputedDeclaration<
   Schema extends WebSocketSchema,
   RestrictedSchema extends Schema,
@@ -42,6 +68,11 @@ export type WebSocketMessageHandlerMessageComputedDeclaration<
   context: WebSocketMessageHandlerMessageContext<Schema>,
 ) => PossiblePromise<WebSocketMessageHandlerMessageStaticDeclaration<Schema>>;
 
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerrespond `handler.respond()` API reference}
+ */
 export type WebSocketMessageHandlerMessageDeclaration<Schema extends WebSocketSchema, RestrictedSchema extends Schema> =
   | WebSocketMessageHandlerMessageStaticDeclaration<Schema>
   | WebSocketMessageHandlerMessageComputedDeclaration<Schema, RestrictedSchema>;
@@ -57,7 +88,13 @@ type WebSocketMessageHandlerSchemaCompatibleWithStaticRestriction<
       : never
   : never;
 
-type WebSocketMessageHandlerSchemaWithRestriction<Schema extends WebSocketSchema, Restriction> =
+/**
+ * The message type of a handler after applying a restriction. Type-guard restrictions narrow to their predicate and
+ * static restrictions narrow to the schema members compatible with them. Other restrictions keep the current type.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
+ */
+export type WebSocketMessageHandlerSchemaWithRestriction<Schema extends WebSocketSchema, Restriction> =
   Restriction extends WebSocketMessageHandlerComputedTypeGuardRestriction<Schema, infer Predicate>
     ? [Predicate] extends [never]
       ? Schema
@@ -66,15 +103,27 @@ type WebSocketMessageHandlerSchemaWithRestriction<Schema extends WebSocketSchema
       ? WebSocketMessageHandlerSchemaCompatibleWithStaticRestriction<Schema, Restriction>
       : Schema;
 
-/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * A local WebSocket message handler. In a local handler, the mocking operations are synchronous.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler `WebSocketMessageHandler` API reference}
+ */
 export interface LocalWebSocketMessageHandler<
   Schema extends WebSocketSchema,
   RestrictedSchema extends Schema = Schema,
 > {
+  /**
+   * @readonly
+   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertype `handler.type` API reference}
+   */
   get type(): 'local';
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerfrom `handler.from()` API reference} */
   from: (sender: WebSocketInterceptorClient<Schema>) => this;
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
   with: <Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
     restriction: Restriction,
   ) => LocalWebSocketMessageHandler<
@@ -82,31 +131,54 @@ export interface LocalWebSocketMessageHandler<
     WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>
   >;
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerdelay `handler.delay()` API reference} */
   delay: ((milliseconds: number | WebSocketMessageHandlerDelayFactory<RestrictedSchema>) => this) &
     ((minMilliseconds: number, maxMilliseconds: number) => this);
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlereffect `handler.effect()` API reference} */
   effect: (callback: WebSocketMessageHandlerMessageCallback<Schema, RestrictedSchema>) => this;
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerrespond `handler.respond()` API reference} */
   respond: (declaration: WebSocketMessageHandlerMessageDeclaration<Schema, RestrictedSchema>) => this;
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertimes `handler.times()` API reference} */
   times: ((numberOfMessages: number) => this) & ((minNumberOfMessages: number, maxNumberOfMessages: number) => this);
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerchecktimes `handler.checkTimes()` API reference} */
   checkTimes: () => void;
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerclear `handler.clear()` API reference} */
   clear: () => LocalWebSocketMessageHandler<Schema, Schema>;
 
+  /**
+   * @readonly
+   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlermessages `handler.messages` API reference}
+   */
   get messages(): readonly InterceptedWebSocketInterceptorMessage<RestrictedSchema, Schema>[];
 }
 
-/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * A synced remote WebSocket message handler. When a remote handler is synced, it is guaranteed that all of the mocking
+ * operations were committed to the connected {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler `WebSocketMessageHandler` API reference}
+ */
 export interface SyncedRemoteWebSocketMessageHandler<
   Schema extends WebSocketSchema,
   RestrictedSchema extends Schema = Schema,
 > {
+  /**
+   * @readonly
+   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertype `handler.type` API reference}
+   */
   get type(): 'remote';
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerfrom `handler.from()` API reference} */
   from: (sender: WebSocketInterceptorClient<Schema>) => PendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema>;
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
   with: <Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
     restriction: Restriction,
   ) => PendingRemoteWebSocketMessageHandler<
@@ -114,6 +186,7 @@ export interface SyncedRemoteWebSocketMessageHandler<
     WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>
   >;
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerdelay `handler.delay()` API reference} */
   delay: ((
     milliseconds: number | WebSocketMessageHandlerDelayFactory<RestrictedSchema>,
   ) => PendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema>) &
@@ -122,32 +195,56 @@ export interface SyncedRemoteWebSocketMessageHandler<
       maxMilliseconds: number,
     ) => PendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema>);
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlereffect `handler.effect()` API reference} */
   effect: (
     callback: WebSocketMessageHandlerMessageCallback<Schema, RestrictedSchema>,
   ) => PendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema>;
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerrespond `handler.respond()` API reference} */
   respond: (
     declaration: WebSocketMessageHandlerMessageDeclaration<Schema, RestrictedSchema>,
   ) => PendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema>;
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertimes `handler.times()` API reference} */
   times: ((numberOfMessages: number) => PendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema>) &
     ((
       minNumberOfMessages: number,
       maxNumberOfMessages: number,
     ) => PendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema>);
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerchecktimes `handler.checkTimes()` API reference} */
   checkTimes: () => Promise<void>;
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerclear `handler.clear()` API reference} */
   clear: () => PendingRemoteWebSocketMessageHandler<Schema, Schema>;
 
+  /**
+   * @readonly
+   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlermessages `handler.messages` API reference}
+   */
   get messages(): readonly InterceptedWebSocketInterceptorMessage<RestrictedSchema, Schema>[];
 }
 
-/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * A pending remote WebSocket message handler. When a remote handler is pending, it is not guaranteed that all of the
+ * mocking operations were committed to the connected
+ * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
+ *
+ * To commit a remote handler, you can `await` it or use the methods {@link then handler.then()},
+ * {@link catch handler.catch()}, and {@link finally handler.finally()}.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler `WebSocketMessageHandler` API reference}
+ */
 export interface PendingRemoteWebSocketMessageHandler<
   Schema extends WebSocketSchema,
   RestrictedSchema extends Schema = Schema,
 > extends SyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema> {
+  /**
+   * Waits for the remote handler to be synced with the connected
+   * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
+   */
   then: <FulfilledResult = SyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema>, RejectedResult = never>(
     onFulfilled?:
       | ((handler: SyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema>) => PossiblePromise<FulfilledResult>)
@@ -155,19 +252,38 @@ export interface PendingRemoteWebSocketMessageHandler<
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ) => Promise<FulfilledResult | RejectedResult>;
 
+  /**
+   * Waits for the remote handler to be synced with the connected
+   * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
+   */
   catch: <RejectedResult = never>(
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ) => Promise<SyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema> | RejectedResult>;
 
+  /**
+   * Waits for the remote handler to be synced with the connected
+   * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
+   */
   finally: (onFinally?: (() => void) | null) => Promise<SyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema>>;
 }
 
-/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * A remote WebSocket message handler. In a remote handler, the mocking operations are asynchronous and include remote
+ * calls to the connected {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler `WebSocketMessageHandler` API reference}
+ */
 export type RemoteWebSocketMessageHandler<
   Schema extends WebSocketSchema,
   RestrictedSchema extends Schema = Schema,
 > = PendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema>;
 
-/** WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution. */
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler `WebSocketMessageHandler` API reference}
+ */
 export type WebSocketMessageHandler<Schema extends WebSocketSchema, RestrictedSchema extends Schema = Schema> =
   LocalWebSocketMessageHandler<Schema, RestrictedSchema> | RemoteWebSocketMessageHandler<Schema, RestrictedSchema>;
