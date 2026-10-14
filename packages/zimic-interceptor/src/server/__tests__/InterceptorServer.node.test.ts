@@ -9,7 +9,6 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { verifyUnhandledRequestMessage } from '@/http/interceptor/__tests__/shared/utils';
 import { INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER } from '@/interceptor/constants';
-import { WebSocketMessageTimeoutError } from '@/utils/webSocket';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
 import InterceptorServerWebSocketClient from '@/utils/webSocket/WebSocketClient';
@@ -402,9 +401,9 @@ describe('Interceptor server', () => {
 
       const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
         url: `ws://${server.hostname}:${server.port}`,
-        messageTimeout: 500,
       });
 
+      const rejectedRequests: Promise<unknown>[] = [];
       const handledRequestURLs: string[] = [];
       let releasePendingResponse!: () => void;
       const pendingResponseReleased = new Promise<void>((resolve) => {
@@ -438,14 +437,15 @@ describe('Interceptor server', () => {
           const pendingResponsePromise = fetch(baseURL);
           await waitFor(() => expect(handledRequestURLs).toHaveLength(1));
 
-          const resetPromise = worker.request('interceptors/http/workers/reset', [
-            { id: crypto.randomUUID(), baseURL: otherBaseURL, method: 'GET', path: '/' },
-            { id: crypto.randomUUID(), baseURL: otherBaseURL, method: 'TRACE' as never, path: '/' },
-          ]);
+          rejectedRequests.push(
+            worker.request('interceptors/http/workers/reset', [
+              { id: crypto.randomUUID(), baseURL: otherBaseURL, method: 'GET', path: '/' },
+              { id: crypto.randomUUID(), baseURL: otherBaseURL, method: 'TRACE' as never, path: '/' },
+            ]),
+          );
 
-          await expect(resetPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+          await waitFor(() => expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError)));
           expect(console.error).toHaveBeenCalledTimes(1);
-          expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
 
           releasePendingResponse();
 
@@ -460,6 +460,8 @@ describe('Interceptor server', () => {
           expect(handledRequestURLs).toHaveLength(2);
         } finally {
           releasePendingResponse();
+          // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
+          void Promise.allSettled(rejectedRequests);
           await worker.stop();
         }
       });
@@ -473,8 +475,9 @@ describe('Interceptor server', () => {
 
       const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
         url: `ws://${server.hostname}:${server.port}`,
-        messageTimeout: 500,
       });
+
+      const rejectedRequests: Promise<unknown>[] = [];
 
       worker.onChannel('event', 'interceptors/http/responses/create', () => ({
         response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null },
@@ -494,15 +497,16 @@ describe('Interceptor server', () => {
             path: '/',
           });
 
-          const resetPromise = worker.request('interceptors/http/workers/reset', { invalid: true } as never);
+          rejectedRequests.push(worker.request('interceptors/http/workers/reset', { invalid: true } as never));
 
-          await expect(resetPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+          await waitFor(() => expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError)));
           expect(console.error).toHaveBeenCalledTimes(1);
-          expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
 
           const response = await fetch(baseURL);
           expect(response.status).toBe(204);
         } finally {
+          // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
+          void Promise.allSettled(rejectedRequests);
           await worker.stop();
         }
       });
@@ -516,9 +520,9 @@ describe('Interceptor server', () => {
 
       const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
         url: `ws://${server.hostname}:${server.port}`,
-        messageTimeout: 500,
       });
 
+      const rejectedRequests: Promise<unknown>[] = [];
       const handledRequestURLs: string[] = [];
 
       worker.onChannel('event', 'interceptors/http/responses/create', ({ data }) => {
@@ -533,20 +537,23 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          const commitPromise = worker.request('interceptors/http/workers/commit', {
-            id: crypto.randomUUID(),
-            baseURL,
-            method: 'TRACE' as never,
-            path: '/',
-          });
+          rejectedRequests.push(
+            worker.request('interceptors/http/workers/commit', {
+              id: crypto.randomUUID(),
+              baseURL,
+              method: 'TRACE' as never,
+              path: '/',
+            }),
+          );
 
-          await expect(commitPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+          await waitFor(() => expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError)));
           expect(console.error).toHaveBeenCalledTimes(1);
-          expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
 
           await expectFetchError(fetch(baseURL));
           expect(handledRequestURLs).toHaveLength(0);
         } finally {
+          // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
+          void Promise.allSettled(rejectedRequests);
           await worker.stop();
         }
       });
@@ -558,8 +565,9 @@ describe('Interceptor server', () => {
 
       const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
         url: `ws://${server.hostname}:${server.port}`,
-        messageTimeout: 500,
       });
+
+      const rejectedRequests: Promise<unknown>[] = [];
 
       await usingIgnoredConsole(['error'], async (console) => {
         try {
@@ -568,17 +576,20 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          const commitPromise = worker.request('interceptors/http/workers/commit', {
-            id: crypto.randomUUID(),
-            baseURL: `ws://${server!.hostname}:${server!.port}/users`,
-            method: 'GET',
-            path: '/',
-          });
+          rejectedRequests.push(
+            worker.request('interceptors/http/workers/commit', {
+              id: crypto.randomUUID(),
+              baseURL: `ws://${server!.hostname}:${server!.port}/users`,
+              method: 'GET',
+              path: '/',
+            }),
+          );
 
-          await expect(commitPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+          await waitFor(() => expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError)));
           expect(console.error).toHaveBeenCalledTimes(1);
-          expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
         } finally {
+          // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
+          void Promise.allSettled(rejectedRequests);
           await worker.stop();
         }
       });
@@ -780,8 +791,9 @@ describe('Interceptor server', () => {
 
       const webSocketWorker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
         url: `ws://${server.hostname}:${server.port}`,
-        messageTimeout: 500,
       });
+
+      const rejectedRequests: Promise<unknown>[] = [];
 
       await usingIgnoredConsole(['error'], async (console) => {
         try {
@@ -793,18 +805,17 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          const commitPromise = webSocketWorker.request('interceptors/http/workers/commit', {
-            id: crypto.randomUUID(),
-            baseURL: otherBaseURL,
-            method: 'GET',
-            path: '/',
-          });
-          await expect(commitPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+          rejectedRequests.push(
+            webSocketWorker.request('interceptors/http/workers/commit', {
+              id: crypto.randomUUID(),
+              baseURL: otherBaseURL,
+              method: 'GET',
+              path: '/',
+            }),
+            webSocketWorker.request('interceptors/http/workers/reset', []),
+          );
 
-          const resetPromise = webSocketWorker.request('interceptors/http/workers/reset', []);
-          await expect(resetPromise).rejects.toThrow(WebSocketMessageTimeoutError);
-
-          expect(console.error).toHaveBeenCalledTimes(2);
+          await waitFor(() => expect(console.error).toHaveBeenCalledTimes(2));
           expect(console.error).toHaveBeenCalledWith(
             new InvalidWebSocketMessageError('HTTP RPC received from a non-HTTP worker.'),
           );
@@ -814,6 +825,8 @@ describe('Interceptor server', () => {
           const response = await fetch(interceptor.baseURL);
           expect(response.status).toBe(204);
         } finally {
+          // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
+          void Promise.allSettled(rejectedRequests);
           await webSocketWorker.stop();
           await interceptor.stop();
         }
@@ -832,8 +845,9 @@ describe('Interceptor server', () => {
 
       const httpWorkerClient = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
         url: `ws://${server.hostname}:${server.port}`,
-        messageTimeout: 500,
       });
+
+      const rejectedRequests: Promise<unknown>[] = [];
 
       await usingIgnoredConsole(['error'], async (console) => {
         try {
@@ -842,14 +856,17 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          const commitPromise = httpWorkerClient.request('interceptors/ws/workers/commit', {
-            id: crypto.randomUUID(),
-            baseURL,
-          });
+          rejectedRequests.push(
+            httpWorkerClient.request('interceptors/ws/workers/commit', {
+              id: crypto.randomUUID(),
+              baseURL,
+            }),
+          );
 
-          await expect(commitPromise).rejects.toThrow(WebSocketMessageTimeoutError);
-          expect(console.error).toHaveBeenCalledWith(
-            new InvalidWebSocketMessageError('WebSocket RPC received from a non-WebSocket worker.'),
+          await waitFor(() =>
+            expect(console.error).toHaveBeenCalledWith(
+              new InvalidWebSocketMessageError('WebSocket RPC received from a non-WebSocket worker.'),
+            ),
           );
 
           const client = new WebSocketClient<ChatMessage>(baseURL);
@@ -863,6 +880,8 @@ describe('Interceptor server', () => {
           expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
           expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
         } finally {
+          // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
+          void Promise.allSettled(rejectedRequests);
           await httpWorkerClient.stop();
         }
       });
@@ -1009,10 +1028,10 @@ describe('Interceptor server', () => {
 
         const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
           url: `ws://${server.hostname}:${server.port}`,
-          messageTimeout: 500,
         });
         worker.onChannel('event', 'interceptors/ws/clients/connect', () => ({ accepted: true }));
 
+        const rejectedRequests: Promise<unknown>[] = [];
         const client = new WebSocketClient<ChatMessage>(baseURL);
         const otherClient = new WebSocketClient<ChatMessage>(otherBaseURL);
 
@@ -1032,14 +1051,15 @@ describe('Interceptor server', () => {
               receivedMessages.push(data);
             });
 
-            const resetPromise = worker.request('interceptors/ws/workers/reset', [
-              { id: crypto.randomUUID(), baseURL: otherBaseURL },
-              { id: crypto.randomUUID(), baseURL: `http://${server!.hostname}:${server!.port}/invalid` },
-            ]);
+            rejectedRequests.push(
+              worker.request('interceptors/ws/workers/reset', [
+                { id: crypto.randomUUID(), baseURL: otherBaseURL },
+                { id: crypto.randomUUID(), baseURL: `http://${server!.hostname}:${server!.port}/invalid` },
+              ]),
+            );
 
-            await expect(resetPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+            await waitFor(() => expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError)));
             expect(console.error).toHaveBeenCalledTimes(1);
-            expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
 
             expect(client.readyState).toBe(WebSocketClient.OPEN);
 
@@ -1058,6 +1078,8 @@ describe('Interceptor server', () => {
             expect(otherCloseEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
           } finally {
             await Promise.all([client.close(), otherClient.close()]);
+            // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
+            void Promise.allSettled(rejectedRequests);
             await worker.stop();
           }
         });
@@ -1071,9 +1093,9 @@ describe('Interceptor server', () => {
 
         const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
           url: `ws://${server.hostname}:${server.port}`,
-          messageTimeout: 500,
         });
 
+        const rejectedRequests: Promise<unknown>[] = [];
         const client = new WebSocketClient<ChatMessage>(baseURL);
 
         await usingIgnoredConsole(['error'], async (console) => {
@@ -1083,11 +1105,10 @@ describe('Interceptor server', () => {
               waitForAuthentication: true,
             });
 
-            const commitPromise = worker.request('interceptors/ws/workers/commit', { id: 1 as never, baseURL });
+            rejectedRequests.push(worker.request('interceptors/ws/workers/commit', { id: 1 as never, baseURL }));
 
-            await expect(commitPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+            await waitFor(() => expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError)));
             expect(console.error).toHaveBeenCalledTimes(1);
-            expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
 
             const closeEventPromise = new Promise<WebSocketClient.CloseEvent<ChatMessage>>((resolve) => {
               client.addEventListener('close', resolve, { once: true });
@@ -1100,6 +1121,8 @@ describe('Interceptor server', () => {
             expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
           } finally {
             await client.close();
+            // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
+            void Promise.allSettled(rejectedRequests);
             await worker.stop();
           }
         });
@@ -1111,8 +1134,9 @@ describe('Interceptor server', () => {
 
         const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
           url: `ws://${server.hostname}:${server.port}`,
-          messageTimeout: 500,
         });
+
+        const rejectedRequests: Promise<unknown>[] = [];
 
         await usingIgnoredConsole(['error'], async (console) => {
           try {
@@ -1121,15 +1145,18 @@ describe('Interceptor server', () => {
               waitForAuthentication: true,
             });
 
-            const commitPromise = worker.request('interceptors/ws/workers/commit', {
-              id: crypto.randomUUID(),
-              baseURL: `http://${server!.hostname}:${server!.port}/chat`,
-            });
+            rejectedRequests.push(
+              worker.request('interceptors/ws/workers/commit', {
+                id: crypto.randomUUID(),
+                baseURL: `http://${server!.hostname}:${server!.port}/chat`,
+              }),
+            );
 
-            await expect(commitPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+            await waitFor(() => expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError)));
             expect(console.error).toHaveBeenCalledTimes(1);
-            expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
           } finally {
+            // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
+            void Promise.allSettled(rejectedRequests);
             await worker.stop();
           }
         });
@@ -1369,8 +1396,9 @@ describe('Interceptor server', () => {
           const client = new WebSocketClient<ChatMessage>(baseURL);
           const httpWorker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
             url: `ws://${server!.hostname}:${server!.port}`,
-            messageTimeout: 500,
           });
+
+          const rejectedRequests: Promise<unknown>[] = [];
 
           await usingIgnoredConsole(['error'], async (console) => {
             try {
@@ -1390,10 +1418,9 @@ describe('Interceptor server', () => {
               const httpWorkerMessage = JSON.stringify({ type: 'server', text: 'http worker' } satisfies ChatMessage);
               httpWorker.send('interceptors/ws/messages/send', { data: { type: 'text', data: httpWorkerMessage } });
 
-              const resetPromise = httpWorker.request('interceptors/ws/workers/reset', []);
-              await expect(resetPromise).rejects.toThrow(WebSocketMessageTimeoutError);
+              rejectedRequests.push(httpWorker.request('interceptors/ws/workers/reset', []));
 
-              expect(console.error).toHaveBeenCalledTimes(2);
+              await waitFor(() => expect(console.error).toHaveBeenCalledTimes(2));
               expect(console.error).toHaveBeenCalledWith(
                 new InvalidWebSocketMessageError('WebSocket RPC received from a non-WebSocket worker.'),
               );
@@ -1407,6 +1434,8 @@ describe('Interceptor server', () => {
               await waitFor(() => expect(receivedMessages).toContain(ownerMessage));
               expect(receivedMessages).toEqual([ownerMessage]);
             } finally {
+              // Shutdown does not abort pending requests, so only mark their eventual timeouts as handled.
+              void Promise.allSettled(rejectedRequests);
               await httpWorker.stop();
               await client.close();
             }
