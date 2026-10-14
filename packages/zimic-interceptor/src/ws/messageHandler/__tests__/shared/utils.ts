@@ -50,6 +50,15 @@ export interface DirectWebSocketMessageHandlerContext<Schema extends WebSocketSc
   ) => Promise<boolean>;
 }
 
+/**
+ * Dispatches messages straight into an interceptor that was never started. It bypasses the worker and transport
+ * lifecycle: no socket is opened, the running state is forced, and senders and the receiver are in-memory stand-ins
+ * that record what they would send.
+ *
+ * Use it only for dispatch contracts that clients cannot observe, such as the match result of a message or a rejection
+ * thrown by a user callback, which the worker logs instead of exposing. Behavior that a connected client can observe
+ * should be tested through `usingWebSocketInterceptor` and real clients.
+ */
 export async function usingDirectWebSocketMessageHandler<Schema extends WebSocketSchema>(
   options: {
     type: WebSocketInterceptorType;
@@ -66,15 +75,17 @@ export async function usingDirectWebSocketMessageHandler<Schema extends WebSocke
   });
   interceptor.implementation.isRunning = true;
 
-  const handler = new options.Handler<Schema>(interceptor.implementation) as DirectWebSocketMessageHandler<Schema>;
-  interceptor.implementation.registerMessageHandler(handler);
+  const publicHandler = interceptor.message();
+  // The matrix pairs each interceptor type with its handler class. A mismatch would silently test the wrong class.
+  expect(publicHandler).toBeInstanceOf(options.Handler);
+  const handler = publicHandler as DirectWebSocketMessageHandler<Schema>;
 
   function createSender(url = options.baseURL) {
     const sentMessages: WebSocketMessageData<Schema>[] = [];
     const handle = interceptor.implementation.createClient(url, {
-      send: vi.fn((data: WebSocketMessageData<Schema>) => {
+      send: (data) => {
         sentMessages.push(data);
-      }),
+      },
     });
     interceptor.implementation.addClient(handle);
     return { handle, sentMessages };

@@ -600,6 +600,9 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       });
     });
 
+    // Successful HTTP requests and WebSocket messages cannot show that both protocols use one MSW instance, so the
+    // identity is asserted directly. Two instances would let one protocol's start or stop tear down the other's
+    // handlers.
     it.each(['http-first', 'webSocket-first'] as const)(
       'should share the MSW worker instance with HTTP interceptors when started %s',
       async (startOrder) => {
@@ -624,6 +627,8 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       },
     );
 
+    // The spy calls through and only counts starts of the shared instance. Requests and messages work the same after a
+    // duplicate start, so the call count is the only way to detect it when both workers start concurrently.
     it('should start the shared MSW worker only once when HTTP and WebSocket workers start concurrently', async () => {
       await usingHttpInterceptorWorker({ type: 'local' }, { start: false }, async (rawHttpWorker) => {
         await usingWebSocketInterceptorWorker({ type: 'local' }, { start: false }, async (webSocketWorker) => {
@@ -643,6 +648,8 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       });
     });
 
+    // The spy calls through and only observes releases of the shared instance. The final release has no public signal,
+    // and the earlier stop must not release the instance while the other protocol still uses it.
     it('should clean up the shared MSW worker only after the final protocol worker stops', async () => {
       await usingHttpInterceptorWorker({ type: 'local' }, { start: false }, async (rawHttpWorker) => {
         await usingWebSocketInterceptorWorker({ type: 'local' }, { start: false }, async (webSocketWorker) => {
@@ -827,7 +834,8 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         const interceptor = createDefaultWebSocketInterceptor();
         await worker.use(interceptor.implementation);
 
-        // Skips the reset RPC, so the server keeps the cleared handler registered while the worker has already forgotten it.
+        // Skips the reset RPC, so the server keeps the cleared handler registered while the worker has already forgotten
+        // it.
         const resetRequestSpy = vi.spyOn(worker.webSocketClient, 'request').mockResolvedValueOnce({});
         await worker.clearHandlers({ interceptor: interceptor.implementation });
         resetRequestSpy.mockRestore();
