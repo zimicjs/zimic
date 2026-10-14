@@ -377,13 +377,8 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
   }
 
   offAny() {
+    // The abort listeners are kept so that closing the sockets after this call rejects the pending requests.
     this.channelListeners = {};
-
-    for (const listenersBySocket of Object.values(this.socketListeners)) {
-      for (const listeners of listenersBySocket.values()) {
-        listeners.clear();
-      }
-    }
   }
 
   private getOrCreateChannelListeners<Channel extends WebSocketChannel<Schema>>(channel: Channel) {

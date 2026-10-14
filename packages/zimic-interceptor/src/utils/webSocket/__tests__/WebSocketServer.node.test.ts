@@ -9,6 +9,7 @@ import {
   closeClientSocket,
   waitForOpenClientSocket,
   WebSocketCloseTimeoutError,
+  WebSocketMessageAbortError,
   WebSocketMessageTimeoutError,
 } from '@/utils/webSocket';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
@@ -389,6 +390,20 @@ describe('Web socket server', () => {
       await expect(server.request('with-reply', requestMessage)).rejects.toThrow(
         new WebSocketMessageTimeoutError(messageTimeout),
       );
+    });
+
+    it('should abort pending reply requests if stopped', async () => {
+      server = new WebSocketServer({ httpServer });
+      server.start();
+
+      rawClient = new ClientSocket(`ws://localhost:${port}`);
+      await waitForOpenClientSocket(rawClient, { waitForAuthentication: true });
+
+      const replyPromise = server.request('with-reply', { question: 'test' });
+
+      await server.stop();
+
+      await expect(replyPromise).rejects.toThrow(new WebSocketMessageAbortError());
     });
 
     it('should support receiving reply requests from clients', async () => {
