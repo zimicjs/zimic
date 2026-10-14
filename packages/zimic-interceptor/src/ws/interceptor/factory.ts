@@ -28,7 +28,8 @@ function isRemoteWebSocketInterceptorOptions(
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference}
+ * Creates a WebSocket interceptor. Client and server messages are typed with the WebSocket schema passed as the type
+ * argument.
  */
 export function createWebSocketInterceptor<Schema extends WebSocketSchema>(
   options: LocalWebSocketInterceptorOptions,
