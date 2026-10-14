@@ -38,8 +38,6 @@ abstract class WebSocketInterceptorWorker {
     try {
       this.startingPromise = internalStart();
       await this.startingPromise;
-
-      this.startingPromise = undefined;
     } catch (error) {
       /* istanbul ignore if -- @preserve
        * The test matrix runs on one platform at a time, so only one branch can be exercised in a given coverage run. */
@@ -49,6 +47,8 @@ abstract class WebSocketInterceptorWorker {
 
       await this.stop();
       throw error;
+    } finally {
+      this.startingPromise = undefined;
     }
   }
 
