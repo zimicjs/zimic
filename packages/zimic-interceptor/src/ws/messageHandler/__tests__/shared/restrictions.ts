@@ -3,6 +3,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vite
 import { createInternalWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 
+import { expectWebSocketTimesCheckError } from '../../../interceptor/__tests__/shared/utils';
 import LocalWebSocketInterceptor from '../../../interceptor/LocalWebSocketInterceptor';
 import RemoteWebSocketInterceptor from '../../../interceptor/RemoteWebSocketInterceptor';
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
@@ -40,7 +41,7 @@ export function declareRestrictionWebSocketMessageHandlerTests(
   beforeEach(async () => {
     baseURL = await getBaseURL(type);
 
-    interceptor = createInternalWebSocketInterceptor<Schema>({ type, baseURL });
+    interceptor = createInternalWebSocketInterceptor<Schema>({ type, baseURL, messageSaving: { enabled: true } });
     interceptorImplementation = interceptor.implementation;
 
     await interceptor.start();
@@ -161,6 +162,29 @@ export function declareRestrictionWebSocketMessageHandlerTests(
       cause: 'unmatchedRestrictions',
       message,
       diff: { sender: { expected: true, received: false } },
+    });
+  });
+
+  it('should report messages from other senders as unmatched in times checks when message saving is enabled', async () => {
+    const otherSender = createWebSocketInterceptorClient<Schema>(baseURL, vi.fn());
+
+    const handler = new Handler<Schema>(interceptorImplementation);
+    await promiseIfRemote(handler.from(sender).respond({ type: 'delete', id: '1' }).times(1), interceptor);
+
+    const message: Schema = { type: 'create', body: { text: 'hello' } };
+    const receiver = interceptorImplementation.server;
+
+    await interceptorImplementation.handleInterceptedMessage(JSON.stringify(message), {
+      sender: otherSender,
+      receiver,
+    });
+
+    await expectWebSocketTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+      message: 'Expected exactly 1 matching message, but got 0.',
+      expectedNumberOfMessages: 1,
+      unmatchedMessages:
+        '- { "message": { "type": "create", "body": { "text": "hello" } }, ' +
+        '"diff": { "sender": { "expected": "true", "received": "false" } } }',
     });
   });
 
