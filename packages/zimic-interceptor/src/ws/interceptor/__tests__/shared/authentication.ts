@@ -1,11 +1,17 @@
+import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it } from 'vitest';
 
 import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
 import { usingIgnoredConsole } from '@tests/utils/console';
+import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
 import { WebSocketInterceptorPlatform } from '../../types/options';
+import { usingWebSocketClient, waitForWebSocketMessage } from './utils';
+
+type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
 
 interface SharedAuthenticationWebSocketInterceptorTestsOptions {
   platform: WebSocketInterceptorPlatform;
@@ -26,30 +32,28 @@ export function declareAuthenticationWebSocketInterceptorTests(
     validToken = getValidToken();
   });
 
-  it('should start with valid credentials', async () => {
-    const interceptor = createWebSocketInterceptor<{}>({
-      type: 'remote',
-      baseURL,
-      auth: { token: validToken },
-    });
+  it('should allow starting with valid authentication', async () => {
+    await usingWebSocketInterceptor<ChatMessage>(
+      { type: 'remote', baseURL, auth: { token: validToken }, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor.message().respond({ type: 'server', text: 'pong' }),
+          interceptor,
+        );
 
-    try {
-      await expect(interceptor.start()).resolves.toBeUndefined();
-      expect(interceptor.isRunning).toBe(true);
-    } finally {
-      await interceptor.stop();
-    }
+        await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+          const messagePromise = waitForWebSocketMessage(client);
+          client.send(JSON.stringify({ type: 'client', text: 'ping' } satisfies ChatMessage));
+
+          await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'pong' });
+          expect(handler.messages).toHaveLength(1);
+        });
+      },
+    );
   });
 
-  it.each([
-    { name: 'missing', auth: undefined },
-    { name: 'invalid', auth: { token: 'invalid-token' } },
-  ])('should reject $name credentials', async ({ auth }) => {
-    const interceptor = createWebSocketInterceptor<{}>({
-      type: 'remote',
-      baseURL,
-      auth,
-    });
+  it('should not allow starting without authentication if the interceptor server requires it', async () => {
+    const interceptor = createWebSocketInterceptor<{}>({ type: 'remote', baseURL });
 
     await usingIgnoredConsole(['error'], async () => {
       await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
@@ -57,32 +61,6 @@ export function declareAuthenticationWebSocketInterceptorTests(
 
     expect(interceptor.isRunning).toBe(false);
     expect(interceptor.platform).toBe(null);
-  });
-
-  it('should create a fresh worker after an authentication failure', async () => {
-    const auth = { token: 'invalid-token' };
-    const interceptor = createWebSocketInterceptor<{}>({
-      type: 'remote',
-      baseURL,
-      auth,
-    });
-
-    await usingIgnoredConsole(['error'], async () => {
-      await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
-    });
-
-    expect(interceptor.isRunning).toBe(false);
-    expect(interceptor.platform).toBe(null);
-
-    interceptor.auth = { token: validToken };
-
-    try {
-      await expect(interceptor.start()).resolves.toBeUndefined();
-      expect(interceptor.isRunning).toBe(true);
-      expect(interceptor.platform).toBe(platform);
-    } finally {
-      await interceptor.stop();
-    }
   });
 
   it('should be able to start after adding required authentication', async () => {

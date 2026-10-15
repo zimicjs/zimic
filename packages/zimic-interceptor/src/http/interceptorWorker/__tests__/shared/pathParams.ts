@@ -6,11 +6,11 @@ import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
 import { expectBypassedResponse } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptorWorker } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import HttpInterceptorWorker from '../../HttpInterceptorWorker';
 import { HttpResponseFactoryContext } from '../../types/http';
 import { LocalHttpInterceptorWorkerOptions, RemoteHttpInterceptorWorkerOptions } from '../../types/options';
-import { promiseIfRemote } from '../utils/promises';
 import { SharedHttpInterceptorWorkerTestOptions } from './types';
 
 export function declarePathParamsHttpInterceptorWorkerTests(options: SharedHttpInterceptorWorkerTestOptions) {

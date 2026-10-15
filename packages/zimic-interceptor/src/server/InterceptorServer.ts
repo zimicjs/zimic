@@ -408,6 +408,9 @@ class InterceptorServer implements PublicInterceptorServer {
         nodeResponse.statusCode = DEFAULT_PREFLIGHT_STATUS_CODE;
 
         for (const [header, value] of Object.entries(DEFAULT_ACCESS_CONTROL_HEADERS)) {
+          /* istanbul ignore else -- @preserve
+           * Published builds define an empty max age, which is the only header value omitted. Tests define a
+           * non-empty value, so the empty branch is not reachable in them. */
           if (value) {
             nodeResponse.setHeader(header, value);
           }

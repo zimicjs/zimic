@@ -1,5 +1,6 @@
+import { expectFetchError } from '@zimic/utils/fetch';
 import { waitFor } from '@zimic/utils/time';
-import { expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 
@@ -41,8 +42,9 @@ vi.mock('../http/HttpInterceptorServerRuntime', async () => {
         httpRuntimeMock.instances.push(this);
       }
 
-      handleRequest() {
-        return undefined;
+      handleRequest(_request: unknown, response: { statusCode: number; end: () => void }) {
+        response.statusCode = 204;
+        response.end();
       }
 
       removeHandlersBySocket() {
@@ -56,85 +58,119 @@ vi.mock('../http/HttpInterceptorServerRuntime', async () => {
   };
 });
 
-it('should discard stale HTTP runtime loads and distinguish initialization failures', async () => {
-  const { default: InterceptorServer } = await import('../InterceptorServer');
+// The server destroys the connection of a worker whose runtime load became stale, so no close frame is exchanged.
+const ABNORMAL_CLOSE_CODE = 1006;
 
-  const server = new InterceptorServer({ logUnhandledRequests: false });
-  const workers: WebSocketClient<InterceptorServerWebSocketSchema>[] = [];
-  const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-  try {
-    await server.start();
-
-    const serverURL = `ws://localhost:${server.port}`;
-    const staleWorker = new WebSocketClient<InterceptorServerWebSocketSchema>({ url: serverURL });
-    workers.push(staleWorker);
-
-    const staleWorkerStartResult = staleWorker
-      .start({
-        parameters: {
-          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http',
-        },
-        waitForAuthentication: true,
-      })
-      .catch((error: unknown) => error);
-
-    await waitFor(() => {
-      expect(httpRuntimeMock.importStarted).toBe(true);
-    });
-
-    const stopPromise = server.stop();
-    httpRuntimeMock.releaseImport();
-    await stopPromise;
-    await staleWorkerStartResult;
-
-    await waitFor(() => {
-      expect(
-        (server as unknown as { httpRuntimeLoadingPromise?: Promise<unknown> }).httpRuntimeLoadingPromise,
-      ).toBeUndefined();
-    });
-    expect(httpRuntimeMock.instances).toHaveLength(0);
-    expect((server as unknown as { httpRuntime?: unknown }).httpRuntime).toBeUndefined();
-
-    await server.start();
-
-    httpRuntimeMock.rejectConstruction = true;
-    const failingWorker = new WebSocketClient<InterceptorServerWebSocketSchema>({
-      url: `ws://localhost:${server.port}`,
-    });
-    workers.push(failingWorker);
-
-    await expect(
-      failingWorker.start({
-        parameters: {
-          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http',
-        },
-        waitForAuthentication: true,
-      }),
-    ).rejects.toThrow('Could not load the HTTP interceptor runtime. (code 1008)');
-
-    expect((server as unknown as { httpRuntime?: unknown }).httpRuntime).toBeUndefined();
-
+describe('Interceptor server > HTTP runtime failures', () => {
+  afterEach(() => {
     httpRuntimeMock.rejectConstruction = false;
-    const activeWorker = new WebSocketClient<InterceptorServerWebSocketSchema>({
-      url: `ws://localhost:${server.port}`,
-    });
-    workers.push(activeWorker);
+    httpRuntimeMock.instances.length = 0;
+  });
 
-    await activeWorker.start({
-      parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http',
-      },
-      waitForAuthentication: true,
-    });
+  it('should discard an HTTP runtime load that was started before the server was stopped', async () => {
+    const { default: InterceptorServer } = await import('../InterceptorServer');
+
+    const server = new InterceptorServer({ logUnhandledRequests: false });
+    const workers: WebSocketClient<InterceptorServerWebSocketSchema>[] = [];
+
+    try {
+      await server.start();
+
+      const staleWorker = new WebSocketClient<InterceptorServerWebSocketSchema>({
+        url: `ws://localhost:${server.port}`,
+      });
+      workers.push(staleWorker);
+
+      const staleWorkerStartRejection = expect(
+        staleWorker.start({
+          parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http' },
+          waitForAuthentication: true,
+        }),
+      ).rejects.toHaveProperty('code', ABNORMAL_CLOSE_CODE);
+
+      await waitFor(() => {
+        expect(httpRuntimeMock.importStarted).toBe(true);
+      });
+
+      const stopPromise = server.stop();
+      httpRuntimeMock.releaseImport();
+      await stopPromise;
+
+      await staleWorkerStartRejection;
+      expect(httpRuntimeMock.instances).toHaveLength(0);
+
+      await server.start();
+
+      await expectFetchError(fetch(`http://localhost:${server.port}/users`));
+
+      const activeWorker = new WebSocketClient<InterceptorServerWebSocketSchema>({
+        url: `ws://localhost:${server.port}`,
+      });
+      workers.push(activeWorker);
+
+      await activeWorker.start({
+        parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http' },
+        waitForAuthentication: true,
+      });
+
+      const response = await fetch(`http://localhost:${server.port}/users`);
+      expect(response.status).toBe(204);
+    } finally {
+      await Promise.all(workers.map((worker) => worker.stop()));
+      await server.stop();
+    }
 
     expect(httpRuntimeMock.instances).toHaveLength(1);
-    expect((server as unknown as { httpRuntime?: unknown }).httpRuntime).toBe(httpRuntimeMock.instances[0]);
-    expect(consoleError).toHaveBeenCalled();
-  } finally {
-    await Promise.all(workers.map((worker) => worker.stop()));
-    await server.stop();
-  }
+    expect(httpRuntimeMock.instances[0].stopped).toBe(true);
+  });
 
-  expect(httpRuntimeMock.instances[0]?.stopped).toBe(true);
+  it('should reject HTTP workers when the HTTP runtime cannot be constructed and accept them once it can', async () => {
+    httpRuntimeMock.releaseImport();
+
+    const { default: InterceptorServer } = await import('../InterceptorServer');
+
+    const server = new InterceptorServer({ logUnhandledRequests: false });
+    const workers: WebSocketClient<InterceptorServerWebSocketSchema>[] = [];
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    try {
+      await server.start();
+
+      httpRuntimeMock.rejectConstruction = true;
+
+      const failingWorker = new WebSocketClient<InterceptorServerWebSocketSchema>({
+        url: `ws://localhost:${server.port}`,
+      });
+      workers.push(failingWorker);
+
+      await expect(
+        failingWorker.start({
+          parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http' },
+          waitForAuthentication: true,
+        }),
+      ).rejects.toThrow('Could not load the HTTP interceptor runtime. (code 1008)');
+
+      expect(consoleError).toHaveBeenCalled();
+      await expectFetchError(fetch(`http://localhost:${server.port}/users`));
+
+      httpRuntimeMock.rejectConstruction = false;
+
+      const activeWorker = new WebSocketClient<InterceptorServerWebSocketSchema>({
+        url: `ws://localhost:${server.port}`,
+      });
+      workers.push(activeWorker);
+
+      await activeWorker.start({
+        parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http' },
+        waitForAuthentication: true,
+      });
+
+      const response = await fetch(`http://localhost:${server.port}/users`);
+      expect(response.status).toBe(204);
+    } finally {
+      consoleError.mockRestore();
+      await Promise.all(workers.map((worker) => worker.stop()));
+      await server.stop();
+    }
+  });
 });

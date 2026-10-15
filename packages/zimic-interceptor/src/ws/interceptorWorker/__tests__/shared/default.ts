@@ -978,6 +978,28 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       });
     });
 
+    it('should reject remote clients after clearing the handlers of all interceptors', async () => {
+      await usingWebSocketInterceptorWorker(workerOptions, async (rawWorker) => {
+        const worker = rawWorker as RemoteWebSocketInterceptorWorker;
+        const interceptor = createDefaultWebSocketInterceptor();
+        await worker.use(interceptor.implementation);
+
+        await worker.clearHandlers();
+
+        const client = new WebSocketClient<ChatMessage>(baseURL);
+        clients.push(client);
+        const closeEventPromise = new Promise<WebSocketClient.CloseEvent<ChatMessage>>((resolve) => {
+          client.addEventListener('close', resolve, { once: true });
+        });
+
+        await client.open();
+
+        const closeEvent = await closeEventPromise;
+        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
+        expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
+      });
+    });
+
     it('should not throw an error if trying to clear handlers without a running web socket client', async () => {
       await usingWebSocketInterceptorWorker(workerOptions, async (rawWorker) => {
         expect(rawWorker).toBeInstanceOf(RemoteWebSocketInterceptorWorker);

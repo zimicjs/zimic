@@ -3,13 +3,13 @@ import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
 import { beforeEach, describe, expect, inject, it } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import UnsupportedResponseBypassError from '@/server/errors/UnsupportedResponseBypassError';
 import { usingElapsedTime } from '@/utils/time';
 import { GLOBAL_FALLBACK_SERVER_RESPONSE_STATUS, GLOBAL_FALLBACK_SERVER_HEADERS } from '@tests/setup/global/shared';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectBypassedResponse } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
