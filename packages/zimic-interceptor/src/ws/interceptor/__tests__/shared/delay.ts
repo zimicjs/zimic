@@ -27,11 +27,13 @@ export function declareDelayWebSocketInterceptorTests(options: RuntimeSharedWebS
   });
 
   // The socket and the remote RPCs depend on real I/O, so only `setTimeout` is faked, after the client connects. Those
-  // paths may schedule their own timeouts, so the delay timer is identified by its duration, observed through the
-  // faked `setTimeout`.
+  // paths may schedule their own timeouts, so the delay timer is identified by its duration among the timers scheduled
+  // after the message is sent, observed through the faked `setTimeout`. Test delays must differ from the default
+  // socket (60s) and message (180s) timeouts.
   async function usingFakeDelayTimers(
     client: WebSocketClient<MessageSchema>,
     callback: (utils: {
+      getScheduledDelays: () => unknown[];
       sendMessage: () => void;
       waitForDelayTimer: (delay: number) => Promise<void>;
     }) => Promise<void>,
@@ -56,7 +58,11 @@ export function declareDelayWebSocketInterceptorTests(options: RuntimeSharedWebS
 
     try {
       await callback({
+        getScheduledDelays: () => [...scheduledDelays],
+
         sendMessage: () => {
+          // Only timers scheduled while processing this message can be its delay.
+          scheduledDelays.length = 0;
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
         },
 
@@ -128,20 +134,19 @@ export function declareDelayWebSocketInterceptorTests(options: RuntimeSharedWebS
     });
   }
 
-  async function expectImmediateResponse(declareDelay: (handler: TestHandler) => unknown) {
+  async function expectImmediateResponse(noDelay: number) {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-      const handler = interceptor.message();
-      declareDelay(handler);
-      await promiseIfRemote(handler.respond({ type: 'delete', id: '1' }), interceptor);
+      await promiseIfRemote(interceptor.message().delay(noDelay).respond({ type: 'delete', id: '1' }), interceptor);
 
       await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-        await usingFakeDelayTimers(client, async ({ sendMessage }) => {
+        await usingFakeDelayTimers(client, async ({ getScheduledDelays, sendMessage }) => {
           const messagePromise = waitForWebSocketMessage(client);
 
           sendMessage();
 
           // No timer is advanced, so the response is only delivered if no delay applies.
           await expect(messagePromise).resolves.toEqual({ type: 'delete', id: '1' });
+          expect(getScheduledDelays()).not.toContain(noDelay);
         });
       });
     });
@@ -154,11 +159,11 @@ export function declareDelayWebSocketInterceptorTests(options: RuntimeSharedWebS
     });
 
     it('should not apply delay when set to zero', async () => {
-      await expectImmediateResponse((message) => message.delay(0));
+      await expectImmediateResponse(0);
     });
 
     it('should not apply delay when set to negative', async () => {
-      await expectImmediateResponse((message) => message.delay(-10));
+      await expectImmediateResponse(-10);
     });
   });
 
