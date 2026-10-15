@@ -32,4 +32,4 @@ Diverge only for a protocol reason, such as WebSocket connections being long-liv
 
 - HTTP reference pages live in `apps/zimic-web/docs/zimic-interceptor/api` (routes `/docs/interceptor/api/*`), HTTP guides in `apps/zimic-web/docs/zimic-interceptor/guides/http`, and CLI pages in `apps/zimic-web/docs/zimic-interceptor/cli`.
 - Add WebSocket reference pages to the same `api` directory and WebSocket guides to `guides/ws`, mirroring the structure, headings, and examples of their HTTP counterparts.
-- Match the JSDoc of WebSocket declarations to their HTTP counterparts. Where an HTTP declaration links to a page or section, link the WebSocket one to the matching WebSocket page or section. Keep the experimental notice on WebSocket public entry points while the API is experimental.
+- Match the JSDoc of WebSocket declarations to their HTTP counterparts. Keep the experimental notice on WebSocket public entry points while the API is experimental.

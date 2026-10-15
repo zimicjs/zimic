@@ -16,7 +16,7 @@
 These rules apply to packages intended for direct external use.
 
 - Write JSDoc for every public export and its public members, including re-exported declarations, overloads, option fields, and types reachable through public signatures even when not exported by name. Audit all of them when adding or changing a public API.
-- When an existing or planned page or section of the website docs covers the resource, write a concise `@see {@link https://zimic.dev/docs/<route>#<anchor> <label>}` to the closest one instead of copying its explanation. Describe the resource inline when no suitable page or section exists.
+- When an existing page or section of the website docs covers the resource, write a concise `@see {@link https://zimic.dev/docs/<route>#<anchor> <label>}` to the closest one instead of copying its explanation. Describe the resource inline when no suitable page or section exists.
 - Take routes from the `slug` frontmatter of pages under `apps/zimic-web/docs` and anchors from their headings. Update the JSDoc links in the same change when a route or heading moves.
 
 ## Runtime and behavior coverage
