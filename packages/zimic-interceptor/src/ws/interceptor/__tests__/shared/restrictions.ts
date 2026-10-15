@@ -197,7 +197,7 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
     });
   });
 
-  it('should clear restrictions after cleared', async () => {
+  it('should reset restrictions when cleared', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
       const handler = await promiseIfRemote(
         interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: '1' }).times(1),
