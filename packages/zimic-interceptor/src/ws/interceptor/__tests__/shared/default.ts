@@ -91,7 +91,7 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
 
       expect(() => {
         createInternalWebSocketInterceptor({
-          type: unknownType,  
+          type: unknownType,
           baseURL,
         });
       }).toThrow(new UnknownWebSocketInterceptorTypeError(unknownType));

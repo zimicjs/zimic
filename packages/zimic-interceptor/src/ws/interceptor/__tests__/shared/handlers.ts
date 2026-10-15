@@ -108,10 +108,7 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
     await usingWebSocketInterceptor<TextMessage>(
       { ...interceptorOptions, messageSaving: { enabled: true } },
       async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor.message().with('ping').respond('pong').times(1),
-          interceptor,
-        );
+        const handler = await promiseIfRemote(interceptor.message().with('ping').respond('pong').times(1), interceptor);
 
         await usingWebSocketClient<TextMessage>(baseURL, async (client) => {
           const messagePromise = waitForWebSocketMessage(client);
@@ -322,10 +319,7 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, messageSaving: { enabled: true } },
       async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor.message().respond({ type: 'server', index: 1 }),
-          interceptor,
-        );
+        const handler = await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
           let messagePromise = waitForWebSocketMessage(client);

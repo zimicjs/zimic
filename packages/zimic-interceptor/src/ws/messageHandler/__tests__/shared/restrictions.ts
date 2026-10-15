@@ -66,17 +66,17 @@ export function declareRestrictionWebSocketMessageHandlerTests(
     const context = { sender, receiver: interceptorImplementation.server };
 
     const matchingMessage: Schema = { type: 'create', body: { text: 'hello' } };
-    expect(await handler.implementation.matchesMessage(matchingMessage, context)).toEqual<
-      WebSocketMessageHandlerMessageMatch
-    >({ success: true, message: matchingMessage });
+    expect(
+      await handler.implementation.matchesMessage(matchingMessage, context),
+    ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: true, message: matchingMessage });
 
     for (const mismatchingMessage of [
       { type: 'delete', id: '1' },
       { type: 'create', body: { text: 'goodbye' } },
     ] satisfies Schema[]) {
-      expect(await handler.implementation.matchesMessage(mismatchingMessage, context)).toEqual<
-        WebSocketMessageHandlerMessageMatch
-      >({
+      expect(
+        await handler.implementation.matchesMessage(mismatchingMessage, context),
+      ).toEqual<WebSocketMessageHandlerMessageMatch>({
         success: false,
         cause: 'unmatchedRestrictions',
         message: mismatchingMessage,
@@ -98,14 +98,14 @@ export function declareRestrictionWebSocketMessageHandlerTests(
     const context = { sender, receiver: interceptorImplementation.server };
 
     const matchingMessage: Schema = { type: 'create', body: { text: 'hello' } };
-    expect(await handler.implementation.matchesMessage(matchingMessage, context)).toEqual<
-      WebSocketMessageHandlerMessageMatch
-    >({ success: true, message: matchingMessage });
+    expect(
+      await handler.implementation.matchesMessage(matchingMessage, context),
+    ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: true, message: matchingMessage });
 
     const mismatchingMessage: Schema = { type: 'delete', id: '1' };
-    expect(await handler.implementation.matchesMessage(mismatchingMessage, context)).toEqual<
-      WebSocketMessageHandlerMessageMatch
-    >({
+    expect(
+      await handler.implementation.matchesMessage(mismatchingMessage, context),
+    ).toEqual<WebSocketMessageHandlerMessageMatch>({
       success: false,
       cause: 'unmatchedRestrictions',
       message: mismatchingMessage,
@@ -123,17 +123,17 @@ export function declareRestrictionWebSocketMessageHandlerTests(
     const context = { sender, receiver: interceptorImplementation.server };
 
     const matchingMessage: Schema = { type: 'create', body: { text: 'hello' } };
-    expect(await handler.implementation.matchesMessage(matchingMessage, context)).toEqual<
-      WebSocketMessageHandlerMessageMatch
-    >({ success: true, message: matchingMessage });
+    expect(
+      await handler.implementation.matchesMessage(matchingMessage, context),
+    ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: true, message: matchingMessage });
 
     for (const mismatchingMessage of [
       { type: 'delete', id: '1' },
       { type: 'create', body: { text: 'goodbye' } },
     ] satisfies Schema[]) {
-      expect(await handler.implementation.matchesMessage(mismatchingMessage, context)).toEqual<
-        WebSocketMessageHandlerMessageMatch
-      >({
+      expect(
+        await handler.implementation.matchesMessage(mismatchingMessage, context),
+      ).toEqual<WebSocketMessageHandlerMessageMatch>({
         success: false,
         cause: 'unmatchedRestrictions',
         message: mismatchingMessage,
@@ -151,13 +151,13 @@ export function declareRestrictionWebSocketMessageHandlerTests(
     const receiver = interceptorImplementation.server;
     const message: Schema = { type: 'create', body: { text: 'hello' } };
 
-    expect(await handler.implementation.matchesMessage(message, { sender, receiver })).toEqual<
-      WebSocketMessageHandlerMessageMatch
-    >({ success: true, message });
+    expect(
+      await handler.implementation.matchesMessage(message, { sender, receiver }),
+    ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: true, message });
 
-    expect(await handler.implementation.matchesMessage(message, { sender: otherSender, receiver })).toEqual<
-      WebSocketMessageHandlerMessageMatch
-    >({
+    expect(
+      await handler.implementation.matchesMessage(message, { sender: otherSender, receiver }),
+    ).toEqual<WebSocketMessageHandlerMessageMatch>({
       success: false,
       cause: 'unmatchedRestrictions',
       message,
@@ -203,14 +203,14 @@ export function declareRestrictionWebSocketMessageHandlerTests(
     const context = { sender, receiver: interceptorImplementation.server };
 
     const matchingMessage: Schema = { type: 'create', body: { text: 'hello' } };
-    expect(await handler.implementation.matchesMessage(matchingMessage, context)).toEqual<
-      WebSocketMessageHandlerMessageMatch
-    >({ success: true, message: matchingMessage });
+    expect(
+      await handler.implementation.matchesMessage(matchingMessage, context),
+    ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: true, message: matchingMessage });
 
     const staticMismatchingMessage: Schema = { type: 'delete', id: '1' };
-    expect(await handler.implementation.matchesMessage(staticMismatchingMessage, context)).toEqual<
-      WebSocketMessageHandlerMessageMatch
-    >({
+    expect(
+      await handler.implementation.matchesMessage(staticMismatchingMessage, context),
+    ).toEqual<WebSocketMessageHandlerMessageMatch>({
       success: false,
       cause: 'unmatchedRestrictions',
       message: staticMismatchingMessage,
@@ -218,9 +218,9 @@ export function declareRestrictionWebSocketMessageHandlerTests(
     });
 
     const computedMismatchingMessage: Schema = { type: 'create', body: { text: 'goodbye' } };
-    expect(await handler.implementation.matchesMessage(computedMismatchingMessage, context)).toEqual<
-      WebSocketMessageHandlerMessageMatch
-    >({
+    expect(
+      await handler.implementation.matchesMessage(computedMismatchingMessage, context),
+    ).toEqual<WebSocketMessageHandlerMessageMatch>({
       success: false,
       cause: 'unmatchedRestrictions',
       message: computedMismatchingMessage,

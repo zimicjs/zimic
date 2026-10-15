@@ -144,9 +144,11 @@ export function declareTypeWebSocketMessageHandlerTests() {
 
   it('should accept boolean computed restrictions without narrowing message schemas', () => {
     function declareBooleanRestriction(handler: LocalWebSocketMessageHandler<Schema>) {
-      handler.with((message): boolean => message.type === 'create').effect((message) => {
-        expectTypeOf(message).toEqualTypeOf<Schema>();
-      });
+      handler
+        .with((message): boolean => message.type === 'create')
+        .effect((message) => {
+          expectTypeOf(message).toEqualTypeOf<Schema>();
+        });
     }
 
     expectTypeOf(declareBooleanRestriction).toBeFunction();

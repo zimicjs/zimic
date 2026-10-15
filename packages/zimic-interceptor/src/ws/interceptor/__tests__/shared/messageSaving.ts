@@ -457,7 +457,9 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
             expect(handler.messages).toHaveLength(safeLimit + 1);
 
             expect(console.warn).toHaveBeenCalledTimes(1);
-            expect(console.warn).toHaveBeenCalledWith(new MessageSavingSafeLimitExceededError(safeLimit + 1, safeLimit));
+            expect(console.warn).toHaveBeenCalledWith(
+              new MessageSavingSafeLimitExceededError(safeLimit + 1, safeLimit),
+            );
           });
         },
       );

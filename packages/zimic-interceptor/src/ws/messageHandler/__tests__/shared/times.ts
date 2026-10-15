@@ -73,21 +73,21 @@ export function declareTimesWebSocketMessageHandlerTests(
         expectedNumberOfMessages: 1,
       });
 
-      expect(await handler.implementation.matchesMessage(message, context)).toEqual<WebSocketMessageHandlerMessageMatch>(
-        { success: true, message },
-      );
+      expect(
+        await handler.implementation.matchesMessage(message, context),
+      ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: true, message });
       await promiseIfRemote(handler.checkTimes(), handler);
 
       await promiseIfRemote(handler.times(2), handler);
-      expect(await handler.implementation.matchesMessage(message, context)).toEqual<WebSocketMessageHandlerMessageMatch>(
-        { success: true, message },
-      );
+      expect(
+        await handler.implementation.matchesMessage(message, context),
+      ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: true, message });
       await promiseIfRemote(handler.checkTimes(), handler);
 
       await promiseIfRemote(handler.times(3), handler);
-      expect(await handler.implementation.matchesMessage(message, context)).toEqual<WebSocketMessageHandlerMessageMatch>(
-        { success: true, message },
-      );
+      expect(
+        await handler.implementation.matchesMessage(message, context),
+      ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: true, message });
       await promiseIfRemote(handler.checkTimes(), handler);
     });
 
@@ -102,24 +102,24 @@ export function declareTimesWebSocketMessageHandlerTests(
         expectedNumberOfMessages: 2,
       });
 
-      expect(await handler.implementation.matchesMessage(message, context)).toEqual<WebSocketMessageHandlerMessageMatch>(
-        { success: true, message },
-      );
+      expect(
+        await handler.implementation.matchesMessage(message, context),
+      ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: true, message });
 
       await expectWebSocketTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 2 messages, but got 1.',
         expectedNumberOfMessages: 2,
       });
 
-      expect(await handler.implementation.matchesMessage(message, context)).toEqual<WebSocketMessageHandlerMessageMatch>(
-        { success: true, message },
-      );
+      expect(
+        await handler.implementation.matchesMessage(message, context),
+      ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: true, message });
       await promiseIfRemote(handler.checkTimes(), handler);
 
       await promiseIfRemote(handler.times(4), handler);
-      expect(await handler.implementation.matchesMessage(message, context)).toEqual<WebSocketMessageHandlerMessageMatch>(
-        { success: true, message },
-      );
+      expect(
+        await handler.implementation.matchesMessage(message, context),
+      ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: true, message });
 
       await expectWebSocketTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 4 messages, but got 3.',
@@ -133,14 +133,14 @@ export function declareTimesWebSocketMessageHandlerTests(
 
       const context = { sender, receiver: interceptorImplementation.server };
 
-      expect(await handler.implementation.matchesMessage(message, context)).toEqual<WebSocketMessageHandlerMessageMatch>(
-        { success: true, message },
-      );
+      expect(
+        await handler.implementation.matchesMessage(message, context),
+      ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: true, message });
       await promiseIfRemote(handler.checkTimes(), handler);
 
-      expect(await handler.implementation.matchesMessage(message, context)).toEqual<WebSocketMessageHandlerMessageMatch>(
-        { success: false, cause: 'exceededNumberOfMessages' },
-      );
+      expect(
+        await handler.implementation.matchesMessage(message, context),
+      ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: false, cause: 'exceededNumberOfMessages' });
     });
 
     it('should match exactly zero messages', async () => {
@@ -151,9 +151,9 @@ export function declareTimesWebSocketMessageHandlerTests(
 
       await promiseIfRemote(handler.checkTimes(), handler);
 
-      expect(await handler.implementation.matchesMessage(message, context)).toEqual<WebSocketMessageHandlerMessageMatch>(
-        { success: false, cause: 'exceededNumberOfMessages' },
-      );
+      expect(
+        await handler.implementation.matchesMessage(message, context),
+      ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: false, cause: 'exceededNumberOfMessages' });
     });
   });
 
@@ -185,18 +185,18 @@ export function declareTimesWebSocketMessageHandlerTests(
         expectedNumberOfMessages: { min: 2, max: 3 },
       });
 
-      expect(await handler.implementation.matchesMessage(message, context)).toEqual<WebSocketMessageHandlerMessageMatch>(
-        { success: true, message },
-      );
+      expect(
+        await handler.implementation.matchesMessage(message, context),
+      ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: true, message });
 
       await expectWebSocketTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected at least 2 and at most 3 messages, but got 1.',
         expectedNumberOfMessages: { min: 2, max: 3 },
       });
 
-      expect(await handler.implementation.matchesMessage(message, context)).toEqual<WebSocketMessageHandlerMessageMatch>(
-        { success: true, message },
-      );
+      expect(
+        await handler.implementation.matchesMessage(message, context),
+      ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: true, message });
       await promiseIfRemote(handler.checkTimes(), handler);
     });
 
@@ -206,14 +206,14 @@ export function declareTimesWebSocketMessageHandlerTests(
 
       const context = { sender, receiver: interceptorImplementation.server };
 
-      expect(await handler.implementation.matchesMessage(message, context)).toEqual<WebSocketMessageHandlerMessageMatch>(
-        { success: true, message },
-      );
+      expect(
+        await handler.implementation.matchesMessage(message, context),
+      ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: true, message });
       await promiseIfRemote(handler.checkTimes(), handler);
 
-      expect(await handler.implementation.matchesMessage(message, context)).toEqual<WebSocketMessageHandlerMessageMatch>(
-        { success: false, cause: 'exceededNumberOfMessages' },
-      );
+      expect(
+        await handler.implementation.matchesMessage(message, context),
+      ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: false, cause: 'exceededNumberOfMessages' });
     });
 
     it('should match the exact number of messages limited in a unitary range', async () => {
@@ -227,14 +227,14 @@ export function declareTimesWebSocketMessageHandlerTests(
         expectedNumberOfMessages: { min: 1, max: 1 },
       });
 
-      expect(await handler.implementation.matchesMessage(message, context)).toEqual<WebSocketMessageHandlerMessageMatch>(
-        { success: true, message },
-      );
+      expect(
+        await handler.implementation.matchesMessage(message, context),
+      ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: true, message });
       await promiseIfRemote(handler.checkTimes(), handler);
 
-      expect(await handler.implementation.matchesMessage(message, context)).toEqual<WebSocketMessageHandlerMessageMatch>(
-        { success: false, cause: 'exceededNumberOfMessages' },
-      );
+      expect(
+        await handler.implementation.matchesMessage(message, context),
+      ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: false, cause: 'exceededNumberOfMessages' });
     });
   });
 
@@ -254,9 +254,9 @@ export function declareTimesWebSocketMessageHandlerTests(
     await promiseIfRemote(handler.checkTimes(), handler);
 
     for (let numberOfMessages = 1; numberOfMessages <= 2; numberOfMessages++) {
-      expect(await handler.implementation.matchesMessage(message, context)).toEqual<WebSocketMessageHandlerMessageMatch>(
-        { success: true, message },
-      );
+      expect(
+        await handler.implementation.matchesMessage(message, context),
+      ).toEqual<WebSocketMessageHandlerMessageMatch>({ success: true, message });
       await promiseIfRemote(handler.checkTimes(), handler);
     }
   });

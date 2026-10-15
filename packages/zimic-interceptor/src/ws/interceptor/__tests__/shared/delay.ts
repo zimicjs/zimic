@@ -102,7 +102,8 @@ export function declareDelayWebSocketInterceptorTests(options: RuntimeSharedWebS
 
       await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
         await usingFakeDelayTimers(client, async ({ sendMessage, waitForDelayTimer }) => {
-          const randomSpy = randomValue === undefined ? undefined : vi.spyOn(Math, 'random').mockReturnValue(randomValue);
+          const randomSpy =
+            randomValue === undefined ? undefined : vi.spyOn(Math, 'random').mockReturnValue(randomValue);
 
           try {
             const messagePromise = waitForWebSocketMessage(client);
