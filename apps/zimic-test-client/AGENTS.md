@@ -4,4 +4,4 @@ This app depends on the workspace `@zimic/*` packages and imports them like a co
 
 - When a public entry point or export changes, update the export checks in `tests/exports`. Node-only entry points go in the `.node` test file.
 - `tests/interceptor/thirdParty` runs interceptor scenarios against real HTTP clients, with shared cases in `thirdParty/shared`. Add protocol scenarios there as shared cases run by each client's test files.
-- The `test` script starts an ephemeral interceptor server on port 4000 for remote interceptor tests.
+- The `test` script starts its own interceptor server for remote interceptor tests. Do not start one separately.
