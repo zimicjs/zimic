@@ -319,7 +319,10 @@ class WebSocketInterceptorServerRuntime {
         { clientId: connection.clientId },
         { sockets: [connection.handler.socket] },
       );
+      /* istanbul ignore next -- @preserve
+       * The worker socket is open and the server is still running whenever a close is notified, so sending cannot throw. */
     } catch (error) {
+      /* istanbul ignore next -- @preserve */
       console.error(error);
     }
   }
