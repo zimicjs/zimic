@@ -512,22 +512,19 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
       it('should reject a handler if its registration fails and unregister it', async () => {
         await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, async (interceptor) => {
           const registrationError = new Error('Registration failed');
-          const originalRequest = InterceptorWebSocketClient.prototype.request;
 
           // No public path makes the server reject a registration, so only the handler commit request is failed.
           const requestSpy = vi
             .spyOn(InterceptorWebSocketClient.prototype, 'request')
-            .mockImplementation(function (this: unknown, ...args: Parameters<typeof originalRequest>) {
-              if (args[0] === 'interceptors/ws/workers/commit') {
-                return Promise.reject(registrationError);
-              }
-              return originalRequest.apply(this as InterceptorWebSocketClient<never>, args);
-            });
+            .mockRejectedValueOnce(registrationError);
 
           try {
             await expect(interceptor.message().respond({ type: 'server', index: 1 }).times(1)).rejects.toBe(
               registrationError,
             );
+
+            expect(requestSpy).toHaveBeenCalledTimes(1);
+            expect(requestSpy).toHaveBeenCalledWith('interceptors/ws/workers/commit', expect.anything());
           } finally {
             requestSpy.mockRestore();
           }
@@ -558,19 +555,16 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
       it('should reply with a later handler to a client after a previous registration failed', async () => {
         await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, async (interceptor) => {
           const registrationError = new Error('Registration failed');
-          const originalRequest = InterceptorWebSocketClient.prototype.request;
 
           const requestSpy = vi
             .spyOn(InterceptorWebSocketClient.prototype, 'request')
-            .mockImplementation(function (this: unknown, ...args: Parameters<typeof originalRequest>) {
-              if (args[0] === 'interceptors/ws/workers/commit') {
-                return Promise.reject(registrationError);
-              }
-              return originalRequest.apply(this as InterceptorWebSocketClient<never>, args);
-            });
+            .mockRejectedValueOnce(registrationError);
 
           try {
             await expect(interceptor.message().respond({ type: 'server', index: 1 })).rejects.toBe(registrationError);
+
+            expect(requestSpy).toHaveBeenCalledTimes(1);
+            expect(requestSpy).toHaveBeenCalledWith('interceptors/ws/workers/commit', expect.anything());
           } finally {
             requestSpy.mockRestore();
           }
