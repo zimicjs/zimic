@@ -133,6 +133,15 @@ class WebSocketInterceptorImplementation<
     return this.baseURL.href;
   }
 
+  private get workerOrThrow() {
+    /* istanbul ignore if -- @preserve
+     * Callers only read the worker while the interceptor is running, which always has a worker. */
+    if (!this.worker) {
+      throw new NotRunningWebSocketInterceptorError();
+    }
+    return this.worker;
+  }
+
   get platform() {
     return this.worker?.platform ?? null;
   }
@@ -194,19 +203,15 @@ class WebSocketInterceptorImplementation<
 
       await options.beforeStop?.();
 
-      const worker = this.worker;
-      worker?.unregisterRunningInterceptor(this);
-      await worker?.clearHandlers({ interceptor: this });
-      await worker?.stop();
+      const worker = this.workerOrThrow;
+      worker.unregisterRunningInterceptor(this);
+      await worker.clearHandlers({ interceptor: this });
+      await worker.stop();
 
       this.isRunning = false;
       this.worker = undefined;
 
-      /* istanbul ignore else -- @preserve
-       * A running interceptor always has a worker. */
-      if (worker) {
-        this.releaseWorker?.(worker);
-      }
+      this.releaseWorker?.(worker);
     });
   }
 
@@ -395,14 +400,11 @@ class WebSocketInterceptorImplementation<
 
     this.messageSavingGeneration++;
 
-    /* istanbul ignore next -- @preserve
-     * A running interceptor always has a running worker. */
-    const clearResult = this.worker?.isRunning
-      ? this.worker.clearHandlers({
-          interceptor: this,
-          preserveInterceptorRegistration: this.worker.type === 'local',
-        })
-      : undefined;
+    const worker = this.workerOrThrow;
+    const clearResult = worker.clearHandlers({
+      interceptor: this,
+      preserveInterceptorRegistration: worker.type === 'local',
+    });
 
     for (const handler of this.handlers) {
       handler.clear();
