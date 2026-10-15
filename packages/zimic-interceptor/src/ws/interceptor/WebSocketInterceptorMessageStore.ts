@@ -8,7 +8,6 @@ import type {
 } from './WebSocketInterceptorHandle';
 
 interface WebSocketInterceptorMessageRecord<Schema extends WebSocketSchema> {
-  handlerIndex: WebSocketInterceptorMessageHandlerIndex<Schema>;
   message: InterceptedWebSocketInterceptorMessage<Schema>;
   sender: InternalWebSocketInterceptorClient<Schema>;
   receiver: InternalWebSocketInterceptorServer<Schema>;
@@ -65,7 +64,6 @@ class WebSocketInterceptorMessageStore<Schema extends WebSocketSchema> {
       data,
     };
     const record: WebSocketInterceptorMessageRecord<Schema> = {
-      handlerIndex,
       message,
       sender: context.sender,
       receiver: context.receiver,
@@ -97,23 +95,6 @@ class WebSocketInterceptorMessageStore<Schema extends WebSocketSchema> {
     handlerIndex.messages.length = 0;
   }
 
-  clear() {
-    const handlerIndexes = new Set<WebSocketInterceptorMessageHandlerIndex<Schema>>();
-
-    for (const record of this.records) {
-      this.removeMessageFromIndex(record.sender.messages, record.message);
-      this.removeMessageFromIndex(record.receiver.messages, record.message);
-      handlerIndexes.add(record.handlerIndex);
-    }
-
-    for (const handlerIndex of handlerIndexes) {
-      handlerIndex.records.clear();
-      handlerIndex.messages.length = 0;
-    }
-
-    this.records.clear();
-  }
-
   private removeMessageFromIndex(
     messages: InterceptedWebSocketInterceptorMessage<Schema>[],
     message: InterceptedWebSocketInterceptorMessage<Schema>,
@@ -125,10 +106,6 @@ class WebSocketInterceptorMessageStore<Schema extends WebSocketSchema> {
     if (messageIndex >= 0) {
       messages.splice(messageIndex, 1);
     }
-  }
-
-  get size() {
-    return this.records.size;
   }
 }
 

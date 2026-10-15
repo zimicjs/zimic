@@ -202,6 +202,8 @@ class WebSocketInterceptorImplementation<
       this.isRunning = false;
       this.worker = undefined;
 
+      /* istanbul ignore else -- @preserve
+       * A running interceptor always has a worker. */
       if (worker) {
         this.releaseWorker?.(worker);
       }
@@ -393,6 +395,8 @@ class WebSocketInterceptorImplementation<
 
     this.messageSavingGeneration++;
 
+    /* istanbul ignore next -- @preserve
+     * A running interceptor always has a running worker. */
     const clearResult = this.worker?.isRunning
       ? this.worker.clearHandlers({
           interceptor: this,
@@ -404,7 +408,6 @@ class WebSocketInterceptorImplementation<
       handler.clear();
     }
 
-    this.messageStore.clear();
     this.handlers.length = 0;
     this._clients.length = 0;
 

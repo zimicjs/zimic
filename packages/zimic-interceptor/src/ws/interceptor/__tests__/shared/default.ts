@@ -1,7 +1,8 @@
-import { waitFor } from '@zimic/utils/time';
+import { waitFor, waitForNot } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
-import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
+import LocalWebSocketInterceptorWorker from '@/ws/interceptorWorker/LocalWebSocketInterceptorWorker';
 import InterceptorWebSocketClient from '@/utils/webSocket/WebSocketClient';
 import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
@@ -21,6 +22,7 @@ import {
   LocalWebSocketInterceptor as PublicLocalWebSocketInterceptor,
   RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor,
 } from '../../types/public';
+import WebSocketInterceptorStore from '../../WebSocketInterceptorStore';
 import { RuntimeSharedWebSocketInterceptorTestsOptions, usingWebSocketClient, waitForWebSocketMessage } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
@@ -28,12 +30,38 @@ type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type:
 export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
 
+  const store = new WebSocketInterceptorStore();
+
   let baseURL: string;
   let interceptorOptions: WebSocketInterceptorOptions;
+
+  async function expectClientToBeRejected() {
+    const client = new WebSocketClient<MessageSchema>(baseURL);
+
+    try {
+      // Depending on the platform, a rejected connection either fails to open or closes right after.
+      await client.open().catch(() => undefined);
+
+      await waitFor(() => {
+        expect(client.readyState).toBe(WebSocketClient.CLOSED);
+      });
+    } finally {
+      await client.close();
+    }
+  }
+
+  beforeAll(() => {
+    // Remote interceptors do not share workers, so only the local worker is stored.
+    expect(store.localWorker).toBe(undefined);
+  });
 
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
+  });
+
+  afterEach(() => {
+    expect(store.localWorker).toBe(undefined);
   });
 
   describe('Types', () => {
@@ -108,6 +136,25 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
 
       await Promise.all([interceptor.stop(), interceptor.stop()]);
       expect(interceptor.isRunning).toBe(false);
+    });
+  });
+
+  it('should intercept messages after repeated stops and restarts', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, { start: false }, async (interceptor) => {
+      for (let cycle = 0; cycle < 5; cycle++) {
+        await interceptor.start();
+        await promiseIfRemote(interceptor.message().respond({ type: 'server', index: cycle }), interceptor);
+
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          const messagePromise = waitForWebSocketMessage(client);
+          client.send(JSON.stringify({ type: 'client', index: cycle }));
+          await expect(messagePromise).resolves.toEqual({ type: 'server', index: cycle });
+        });
+
+        await interceptor.stop();
+
+        await expectClientToBeRejected();
+      }
     });
   });
 
@@ -211,6 +258,104 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
     });
   });
 
+  it('should still stop the worker when the last interceptor fails to stop once and retries', async () => {
+    await usingWebSocketInterceptor<{}>(interceptorOptions, async (interceptor) => {
+      const worker = store.localWorker;
+      const error = new Error('Unknown error');
+
+      // Stopping normally does not fail. To simulate a failure, we need to mock the stop method to throw an error.
+      if (type === 'local') {
+        vi.spyOn(LocalWebSocketInterceptorWorker.prototype, 'getMSWWorkerOrCreate').mockRejectedValueOnce(error);
+      } else {
+        vi.spyOn(InterceptorWebSocketClient.prototype, 'stop').mockRejectedValueOnce(error);
+      }
+
+      await expect(interceptor.stop()).rejects.toThrow(error);
+      expect(interceptor.isRunning).toBe(true);
+
+      await interceptor.stop();
+
+      expect(interceptor.isRunning).toBe(false);
+      expect(worker?.isRunning).not.toBe(true);
+      expect(store.localWorker).toBeUndefined();
+
+      await interceptor.start();
+      expect(interceptor.isRunning).toBe(true);
+    });
+  });
+
+  if (type === 'local') {
+    // Local interceptors share one worker. Remote interceptors each own a connection to the server.
+    it('should start the shared worker when the first interceptor is started', async () => {
+      await usingWebSocketInterceptor<{}>(interceptorOptions, { start: false }, async (interceptor) => {
+        await usingWebSocketInterceptor<{}>(interceptorOptions, { start: false }, async (otherInterceptor) => {
+          expect(store.localWorker).toBe(undefined);
+
+          await interceptor.start();
+          expect(interceptor.isRunning).toBe(true);
+
+          const worker = store.localWorker;
+          expect(worker).toBeDefined();
+          expect(worker!.isRunning).toBe(true);
+
+          await otherInterceptor.start();
+          expect(otherInterceptor.isRunning).toBe(true);
+
+          expect(store.localWorker).toBe(worker);
+          expect(worker!.isRunning).toBe(true);
+        });
+      });
+    });
+
+    it('should stop the shared worker when the last interceptor is stopped', async () => {
+      await usingWebSocketInterceptor<{}>(interceptorOptions, async (interceptor) => {
+        await usingWebSocketInterceptor<{}>(interceptorOptions, async (otherInterceptor) => {
+          const worker = store.localWorker;
+          expect(worker).toBeDefined();
+          expect(worker!.isRunning).toBe(true);
+
+          await interceptor.stop();
+          expect(interceptor.isRunning).toBe(false);
+          expect(worker!.isRunning).toBe(true);
+
+          await otherInterceptor.stop();
+          expect(otherInterceptor.isRunning).toBe(false);
+          expect(worker!.isRunning).toBe(false);
+          expect(store.localWorker).toBe(undefined);
+        });
+      });
+    });
+
+    it('should keep the shared worker running if the last interceptor is stopping at the same time as another is starting', async () => {
+      await usingWebSocketInterceptor<{}>(interceptorOptions, async (interceptor) => {
+        await usingWebSocketInterceptor<{}>(interceptorOptions, { start: false }, async (otherInterceptor) => {
+          const worker = store.localWorker;
+          expect(worker).toBeDefined();
+
+          const originalWorkerStop = worker!.stop.bind(worker);
+          const { promise: workerStopStartedPromise, resolve: markWorkerStopAsStarted } = Promise.withResolvers<void>();
+
+          // We need to inspect the worker stop method to be able to start another interceptor right after it is called.
+          vi.spyOn(worker!, 'stop').mockImplementationOnce(async () => {
+            markWorkerStopAsStarted();
+            await originalWorkerStop();
+          });
+
+          const stopPromise = interceptor.stop();
+          await workerStopStartedPromise;
+          await otherInterceptor.start();
+          await stopPromise;
+
+          expect(interceptor.isRunning).toBe(false);
+          expect(otherInterceptor.isRunning).toBe(true);
+
+          expect(store.localWorker).toBe(worker);
+          expect(worker!.isRunning).toBe(true);
+        });
+      });
+    });
+  }
+
   it('should throw an error when trying to be cleared if not running', async () => {
     const interceptor = createInternalWebSocketInterceptor<{}>(interceptorOptions);
     expect(interceptor.isRunning).toBe(false);
@@ -298,6 +443,7 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
         });
       });
 
+      // No HTTP counterpart: the WebSocket constructor assigns its options through the guarded auth setter.
       it('should guard constructor-provided authentication options while running', async () => {
         const auth: RemoteWebSocketInterceptorOptions['auth'] = { token: 'token' };
 
@@ -317,15 +463,8 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
       });
     });
 
+    // Remote-only: handlers are registered with the interceptor server, which local interceptors do not use.
     describe('Registrations', () => {
-      async function expectClientToBeRejected() {
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          await waitFor(() => {
-            expect(client.readyState).toBe(WebSocketClient.CLOSED);
-          });
-        });
-      }
-
       it('should register the base URL when a handler is created and resolve it after the registration completes', async () => {
         await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, async (interceptor) => {
           await expectClientToBeRejected();
@@ -370,32 +509,65 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
         });
       });
 
-      // No public path makes the server reject a registration, so the commit request is failed once at the transport.
       it('should reject a handler if its registration fails and unregister it', async () => {
         await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, async (interceptor) => {
           const registrationError = new Error('Registration failed');
+          const originalRequest = InterceptorWebSocketClient.prototype.request;
+
+          // No public path makes the server reject a registration, so only the handler commit request is failed.
           const requestSpy = vi
             .spyOn(InterceptorWebSocketClient.prototype, 'request')
-            .mockRejectedValueOnce(registrationError);
+            .mockImplementation(function (this: unknown, ...args: Parameters<typeof originalRequest>) {
+              if (args[0] === 'interceptors/ws/workers/commit') {
+                return Promise.reject(registrationError);
+              }
+              return originalRequest.apply(this as InterceptorWebSocketClient<never>, args);
+            });
 
           try {
             await expect(interceptor.message().respond({ type: 'server', index: 1 }).times(1)).rejects.toBe(
               registrationError,
             );
-
-            await expect(interceptor.checkTimes()).resolves.toBeUndefined();
           } finally {
             requestSpy.mockRestore();
           }
+
+          await interceptor.message().with({ type: 'client', index: 2 }).respond({ type: 'server', index: 2 });
+
+          await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+            // The failed handler matches any message, so it would reply here if it were still registered.
+            const unmatchedMessageListener = vi.fn();
+            client.addEventListener('message', unmatchedMessageListener);
+            client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+            await waitForNot(() => {
+              expect(unmatchedMessageListener).toHaveBeenCalled();
+            });
+
+            client.removeEventListener('message', unmatchedMessageListener);
+
+            const messagePromise = waitForWebSocketMessage(client);
+            client.send(JSON.stringify({ type: 'client', index: 2 }));
+            await expect(messagePromise).resolves.toEqual({ type: 'server', index: 2 });
+          });
+
+          await expect(interceptor.checkTimes()).resolves.toBeUndefined();
         });
       });
 
       it('should reply with a later handler to a client after a previous registration failed', async () => {
         await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, async (interceptor) => {
           const registrationError = new Error('Registration failed');
+          const originalRequest = InterceptorWebSocketClient.prototype.request;
+
           const requestSpy = vi
             .spyOn(InterceptorWebSocketClient.prototype, 'request')
-            .mockRejectedValueOnce(registrationError);
+            .mockImplementation(function (this: unknown, ...args: Parameters<typeof originalRequest>) {
+              if (args[0] === 'interceptors/ws/workers/commit') {
+                return Promise.reject(registrationError);
+              }
+              return originalRequest.apply(this as InterceptorWebSocketClient<never>, args);
+            });
 
           try {
             await expect(interceptor.message().respond({ type: 'server', index: 1 })).rejects.toBe(registrationError);
