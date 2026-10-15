@@ -22,7 +22,7 @@ These rules apply to packages intended for direct external use.
 ## Runtime and behavior coverage
 
 - Many packages are expected to work in both Node and browser environments. Keep changes runtime-safe unless the target code is clearly environment-specific.
-- Match the test dimensions already used by the target package. Cover every affected runtime or mode instead of testing only the easiest path.
+- Match the test dimensions already used by the target package.
 - Do not weaken coverage expectations for core packages.
 
 ## Implementation conventions
