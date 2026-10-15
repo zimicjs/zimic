@@ -70,6 +70,6 @@ After editing a shared package, rebuild it before exercising services that depen
 ## Where to look first
 
 - General project structure and setup: root `README.md`, `CONTRIBUTING.md`, and workspace configuration.
-- App, package, and example contracts: the scoped `AGENTS.md` in `packages/zimic-http`, `packages/zimic-fetch`, `packages/zimic-interceptor`, `packages/zimic-ws`, `packages/zimic-utils`, `apps/zimic-web`, `apps/zimic-test-client`, or `examples`. Read it before changing files in that directory.
+- App, package, and example contracts: directories with their own `AGENTS.md` add scoped rules. Read the nearest one before changing files there.
 - App or package-specific commands: local `README.md` and package scripts.
 - Existing nearby tests and implementation patterns before introducing new helpers or abstractions.
