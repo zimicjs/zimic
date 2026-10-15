@@ -102,6 +102,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     });
   });
 
+  // WebSocket interceptors expose a long-lived server handle, which must follow every base URL component change.
   it.each([
     { component: 'hostname', initial: 'localhost', changed: '127.0.0.1' },
     { component: 'hostname', initial: '127.0.0.1', changed: 'localhost' },
@@ -266,6 +267,8 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
   );
 
   if (type === 'remote' && getOtherBaseURL) {
+    // WebSocket connections are long-lived and bound to the server that accepted them, so moving to another server
+    // origin must stop handling connections on the previous one.
     it('should use a new server origin after the base URL changes', async () => {
       const baseURL = defaultBaseURL;
       const otherBaseURL = getOtherBaseURL();
@@ -330,6 +333,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     },
   );
 
+  // WebSocket connection URLs commonly carry query parameters, which must not become part of the base URL.
   it('should exclude non-path base URL parameters', () => {
     const baseURLWithNonPathParameters = `${defaultBaseURL}?search=value#hash`;
 
