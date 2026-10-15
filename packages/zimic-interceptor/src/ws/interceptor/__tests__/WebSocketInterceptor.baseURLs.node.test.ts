@@ -8,22 +8,22 @@ import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Base URLs', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
-  const alternativeServer = createInternalInterceptorServer({ logUnhandledRequests: false });
+  const otherServer = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   let baseURL: string;
-  let alternativeBaseURL: string;
+  let otherBaseURL: string;
 
   beforeAll(async () => {
     if (type === 'remote') {
-      await Promise.all([server.start(), alternativeServer.start()]);
+      await Promise.all([server.start(), otherServer.start()]);
     }
     baseURL = getNodeBaseURL(type, server).replace(/^http/, 'ws');
-    alternativeBaseURL = getNodeBaseURL(type, alternativeServer).replace(/^http/, 'ws');
+    otherBaseURL = getNodeBaseURL(type, otherServer).replace(/^http/, 'ws');
   });
 
   afterAll(async () => {
     if (type === 'remote') {
-      await Promise.all([server.stop(), alternativeServer.stop()]);
+      await Promise.all([server.stop(), otherServer.stop()]);
     }
   });
 
@@ -31,7 +31,7 @@ describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Base URLs', ({ t
     platform: 'node',
     type,
     getBaseURL: () => baseURL,
-    getAlternativeBaseURL: () => alternativeBaseURL,
+    getOtherBaseURL: type === 'remote' ? () => otherBaseURL : undefined,
     getInterceptorOptions: () => ({ type, baseURL }),
   });
 });

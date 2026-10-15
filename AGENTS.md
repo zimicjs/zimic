@@ -30,12 +30,22 @@ These rules apply to packages intended for direct external use.
 - Before changing a module, review analogous modules in the same package and follow their structure, naming, data flow, and error-handling patterns unless there is a clear reason to diverge.
 - Prefer type-safe designs over broad unions, loose public/internal type mixing, or casts. If narrowing is unavoidable, keep it isolated behind a small, named boundary that reflects a real runtime guarantee.
 - Avoid reaching through public wrappers into internal implementation details from production code unless that is already the established internal contract for the module.
+- Published packages include `@zimic/utils/types/globals`, which narrows `Object.keys`, `Object.values`, `Object.entries`, `Array.isArray`, and string case methods. Rely on those types instead of casting the results.
+- Do not add production code that only tests reach, such as optional parameters with fallbacks, unreachable guards, or unused members kept for symmetry. Delete unreachable branches instead of covering them.
+- Treat each `await` between a check and the state change it guards as a race window. Reserve state before awaiting, account for concurrent start, stop, and clear calls, and reset pending-operation state in `finally`.
+- Validate untrusted payloads completely before changing any state.
+- Before reporting a feature complete, check every requirement in its linked issue against the implementation.
 
 ## Testing conventions
 
-- Write tests from the point of view of a user of the public API whenever possible. Avoid asserting implementation details unless the nearby test suite already does so for that layer.
+- Test through the public API. Do not unit-test an internal module, or read private state through casts, when a public path reaches the behavior.
+- When a scenario cannot be reached publicly, inject the fault at one narrow boundary, comment on why no public path triggers it, and assert the resulting public outcome.
+- Mock only boundaries the project does not own, such as platform APIs, timers, randomness, or missing peer dependencies. Control time with fake timers instead of waiting in real time or measuring elapsed time.
+- Make each test prove its name with an outcome a user can observe. Synchronize on that observable state, not on intermediate internal callbacks.
+- Run every applicable case in every mode and runtime of the test matrix. Do not skip cases through conditionals or optional options; place a case that genuinely applies to one mode or runtime only in that mode's or runtime's file.
 - When adding tests for a module with a close analogue, mirror the analogue's test file split, shared test modules, describe blocks, and test-case naming. Keep equivalent behaviors easy to compare across modules.
-- Avoid one-off test helper functions. Add a helper only when it matches an existing test pattern or removes meaningful repeated setup without hiding the behavior under test.
+- Cover each scenario once, at one level, in the file where the closest analogue keeps it. Keep one behavior per test and one top-level `describe` per file. Use `it.each` instead of branching inside a test.
+- Search existing shared test utilities before writing a helper. Add a helper only when it matches an existing test pattern or removes meaningful repeated setup without hiding the behavior under test. Place helpers used by several modules in a shared location, not inside one module's tests.
 
 ## Published artifacts
 
