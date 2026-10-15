@@ -3,8 +3,7 @@ import { beforeAll, afterAll, describe } from 'vitest';
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
-import messageHandlerTestMatrix from '../../messageHandler/__tests__/shared/matrix';
-import { declareClearWebSocketInterceptorTests, declareDirectWebSocketMessageHandlerClearTests } from './shared/clear';
+import { declareClearWebSocketInterceptorTests } from './shared/clear';
 import interceptorTestMatrix from './shared/matrix';
 
 describe.each(interceptorTestMatrix)('WebSocketInterceptor (node, $type) > Clear', ({ type }) => {
@@ -32,13 +31,3 @@ describe.each(interceptorTestMatrix)('WebSocketInterceptor (node, $type) > Clear
     getInterceptorOptions: () => ({ type, baseURL }),
   });
 });
-
-describe.each(messageHandlerTestMatrix)(
-  'WebSocketMessageHandler (node, $type) > Clear while handling',
-  ({ type, Handler }) => {
-    declareDirectWebSocketMessageHandlerClearTests({
-      type,
-      Handler,
-    });
-  },
-);

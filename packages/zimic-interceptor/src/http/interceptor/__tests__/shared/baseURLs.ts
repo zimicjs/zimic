@@ -3,9 +3,9 @@ import { joinURL, UnsupportedURLProtocolError } from '@zimic/utils/url';
 import { ValidationError } from '@zimic/utils/validation';
 import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { expectBypassedResponse } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import RunningHttpInterceptorError from '../../errors/RunningHttpInterceptorError';
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../HttpInterceptorImplementation';

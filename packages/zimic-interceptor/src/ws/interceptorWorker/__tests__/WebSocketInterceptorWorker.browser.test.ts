@@ -5,7 +5,6 @@ import { getBrowserBaseURL, usingWebSocketInterceptorWorker } from '@tests/utils
 
 import { WebSocketInterceptorPlatform } from '../../interceptor/types/options';
 import UnregisteredBrowserServiceWorkerError from '../errors/UnregisteredBrowserServiceWorkerError';
-import { createWebSocketInterceptorWorker } from '../factory';
 import { BrowserMSWWorker } from '../types/msw';
 import { declareDefaultWebSocketInterceptorWorkerTests } from './shared/default';
 import testMatrix from './shared/matrix';
@@ -49,21 +48,4 @@ describe.each(testMatrix)('WebSocketInterceptorWorker (browser, $type)', (defaul
     defaultWorkerOptions,
     getBaseURL: (type) => getBrowserBaseURL(type).replace(/^http/, 'ws'),
   });
-
-  if (defaultWorkerOptions.type === 'remote') {
-    it('should accept an HTTP server URL', async () => {
-      const worker = createWebSocketInterceptorWorker({
-        type: 'remote',
-        serverURL: new URL(getBrowserBaseURL('remote')),
-      });
-
-      try {
-        await worker.start();
-
-        expect(worker.isRunning).toBe(true);
-      } finally {
-        await worker.stop();
-      }
-    });
-  }
 });

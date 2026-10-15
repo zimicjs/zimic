@@ -4,10 +4,10 @@ import { waitFor, waitForDelay } from '@zimic/utils/time';
 import { joinURL } from '@zimic/utils/url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { usingElapsedTime } from '@/utils/time';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
