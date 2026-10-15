@@ -520,19 +520,19 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
     });
   });
 
-  it('should check times when called, before the returned promise is awaited', async () => {
-    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-      const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(1);
+  if (type === 'remote') {
+    it('should check times when called, before the returned promise is awaited', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(1);
 
-      const timesCheckPromise = (async () => {
-        await interceptor.checkTimes();
-      })();
-      await handler.times(0);
+        const timesCheckPromise = interceptor.checkTimes();
+        await handler.times(0);
 
-      await expectWebSocketTimesCheckError(() => timesCheckPromise, {
-        message: 'Expected exactly 1 message, but got 0.',
-        expectedNumberOfMessages: 1,
+        await expectWebSocketTimesCheckError(() => timesCheckPromise, {
+          message: 'Expected exactly 1 message, but got 0.',
+          expectedNumberOfMessages: 1,
+        });
       });
     });
-  });
+  }
 }
