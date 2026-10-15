@@ -309,22 +309,16 @@ class WebSocketInterceptorServerRuntime {
   }
 
   private notifyUserWebSocketClose(connection: UserWebSocketHandler) {
-    if (connection.handler.socket.readyState !== ClientSocket.OPEN) {
+    // A user socket may finish closing after the server stopped waiting for it, when sending would throw.
+    if (connection.handler.socket.readyState !== ClientSocket.OPEN || !this.webSocketServer.isRunning) {
       return;
     }
 
-    try {
-      this.webSocketServer.send(
-        'interceptors/ws/clients/close',
-        { clientId: connection.clientId },
-        { sockets: [connection.handler.socket] },
-      );
-      /* istanbul ignore next -- @preserve
-       * The worker socket is open and the server is still running whenever a close is notified, so sending cannot throw. */
-    } catch (error) {
-      /* istanbul ignore next -- @preserve */
-      console.error(error);
-    }
+    this.webSocketServer.send(
+      'interceptors/ws/clients/close',
+      { clientId: connection.clientId },
+      { sockets: [connection.handler.socket] },
+    );
   }
 
   private async handleUserWebSocketMessage(connection: UserWebSocketHandler, message: ClientSocket.MessageEvent) {
