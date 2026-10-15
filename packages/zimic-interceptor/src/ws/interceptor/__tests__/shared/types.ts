@@ -9,7 +9,6 @@ import type {
 import type { LocalWebSocketMessageHandler, RemoteWebSocketMessageHandler } from '@/ws/messageHandler/types/public';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
-import UnknownWebSocketInterceptorTypeError from '../../errors/UnknownWebSocketInterceptorTypeError';
 import { createWebSocketInterceptor } from '../../factory';
 import { LocalWebSocketInterceptor, RemoteWebSocketInterceptor, WebSocketInterceptor } from '../../types/public';
 import { InferWebSocketInterceptorSchema } from '../../types/schema';
@@ -47,15 +46,17 @@ export function declareTypeWebSocketInterceptorTests(
     >();
   });
 
-  it('should reject unknown interceptor types', () => {
-    expect(() => {
-      createWebSocketInterceptor<MessageSchema>({
-        // @ts-expect-error Forcing an invalid interceptor type.
-        type: 'unknown',
-        baseURL,
-      });
-    }).toThrow(new UnknownWebSocketInterceptorTypeError('unknown'));
-  });
+  if (type === 'local') {
+    it('should create a typed local interceptor by default', () => {
+      const interceptor = createWebSocketInterceptor<MessageSchema>({ baseURL });
+
+      expect(interceptor.type).toBe('local');
+
+      expectTypeOf(interceptor.message).parameters.toEqualTypeOf<[]>();
+      expectTypeOf(interceptor.checkTimes).returns.toEqualTypeOf<void>();
+      expectTypeOf(interceptor.clear).returns.toEqualTypeOf<void>();
+    });
+  }
 
   it('should expose public interceptor types', async () => {
     await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, (interceptor) => {

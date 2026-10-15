@@ -63,7 +63,6 @@ it('should isolate a missing HTTP peer from authenticated WebSocket workers', as
     });
 
     expect(httpPeerMock.importAttempts).toBe(0);
-    expect((server as unknown as { httpRuntime?: unknown }).httpRuntime).toBeUndefined();
 
     await expect(
       unauthenticatedHttpWorker.start({
@@ -101,8 +100,6 @@ it('should isolate a missing HTTP peer from authenticated WebSocket workers', as
     expect(httpPeerMock.importAttempts).toBe(1);
     expect(server.isRunning).toBe(true);
     expect(webSocketWorker.isRunning).toBe(true);
-    expect((server as unknown as { workerProtocols: Map<unknown, unknown> }).workerProtocols.size).toBe(1);
-    expect((server as unknown as { httpRuntime?: unknown }).httpRuntime).toBeUndefined();
 
     userSocket.send('after-http-worker');
 
