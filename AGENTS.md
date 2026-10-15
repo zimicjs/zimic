@@ -30,7 +30,7 @@ These rules apply to packages intended for direct external use.
 - Before changing a module, review analogous modules in the same package and follow their structure, naming, data flow, and error-handling patterns unless there is a clear reason to diverge.
 - Prefer type-safe designs over broad unions, loose public/internal type mixing, or casts. If narrowing is unavoidable, keep it isolated behind a small, named boundary that reflects a real runtime guarantee.
 - Avoid reaching through public wrappers into internal implementation details from production code unless that is already the established internal contract for the module.
-- Published packages include `@zimic/utils/types/globals`, which narrows `Object.keys`, `Object.values`, `Object.entries`, `Array.isArray`, and string case methods. Rely on those types instead of casting the results.
+- Published packages include `@zimic/utils/types/globals`, which narrows built-ins such as `Object.keys`. Rely on those types instead of casting.
 - Do not add production code that only tests reach, such as optional parameters with fallbacks, unreachable guards, or unused members kept for symmetry. Delete unreachable branches instead of covering them.
 - Treat each `await` between a check and the state change it guards as a race window. Reserve state before awaiting, account for concurrent start, stop, and clear calls, and reset pending-operation state in `finally`.
 - Validate untrusted payloads completely before changing any state.
