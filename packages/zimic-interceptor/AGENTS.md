@@ -9,10 +9,10 @@
 
 WebSocket interceptors follow the mental model of HTTP interceptors. Keep these consistent between `src/http` and `src/ws`:
 
-- Lifecycle contracts: starting, stopping, running state, clearing, and checking expectations, including guards for operations that overlap a pending start or stop, copies of caller-provided options such as `auth`, and errors thrown when the interceptor is not running.
+- Lifecycle contracts: starting, stopping, running state, clearing, and checking expectations.
 - Handler precedence and matching order.
 - Restriction concepts.
-- `times` semantics and the errors reported when expectations are not met.
+- `times` semantics.
 - Saving controls for intercepted requests and messages.
 - Error classes, messages, and the conditions that throw them.
 - Test organization: `<Class>.<topic>.{node,browser}.test.ts` files that run shared cases from `__tests__/shared/<topic>.ts`, with matching describe blocks and test names.
