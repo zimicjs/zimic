@@ -9,10 +9,10 @@
 
 WebSocket interceptors follow the mental model of HTTP interceptors. Keep these consistent between `src/http` and `src/ws`:
 
-- Lifecycle contracts: starting, stopping, running state, clearing, and checking expectations, including guards for operations that overlap a pending start or stop, copies of caller-provided options such as `auth`, and errors thrown when the interceptor is not running.
+- Lifecycle contracts: starting, stopping, running state, clearing, and checking expectations.
 - Handler precedence and matching order.
 - Restriction concepts.
-- `times` semantics and the errors reported when expectations are not met.
+- `times` semantics.
 - Saving controls for intercepted requests and messages.
 - Error classes, messages, and the conditions that throw them.
 - Test organization: `<Class>.<topic>.{node,browser}.test.ts` files that run shared cases from `__tests__/shared/<topic>.ts`, with matching describe blocks and test names.
@@ -21,15 +21,14 @@ Diverge only for a protocol reason, such as WebSocket connections being long-liv
 
 ## Testing
 
-- Test behavior at the interceptor level. Limit handler suites to handler-only contracts, such as matching, clearing, and promise-like remote handlers, as `src/http/requestHandler/__tests__/shared` does.
+- Test behavior at the interceptor level. Limit handler suites to handler-only contracts, such as matching, clearing, and promise-like remote handlers, as the HTTP request handler suites do.
 - Limit server tests in `src/server/__tests__` to scenarios the CLI and remote interceptor tests cannot reach.
-- When adding or changing a suite for one protocol, compare it with the counterpart suite. Add an equivalent for each counterpart scenario under the same test name, or state the protocol reason for skipping it.
+- When adding or changing a suite for one protocol, compare it with the counterpart suite. Add an equivalent for each counterpart scenario under the same test name, or state the protocol reason for skipping it in a comment in the suite.
 - Manage interceptors, workers, and clients with the `using*` utilities in `tests/utils`. Add the protocol counterpart of a utility when it is missing.
 - Chain handler declarations and await the chain once instead of awaiting a bare handler.
 - Keep type tests compile-only, without executing their callbacks.
 
 ## API reference
 
-- HTTP reference pages live in `apps/zimic-web/docs/zimic-interceptor/api` (routes `/docs/interceptor/api/*`), HTTP guides in `apps/zimic-web/docs/zimic-interceptor/guides/http`, and CLI pages in `apps/zimic-web/docs/zimic-interceptor/cli`.
-- Add WebSocket reference pages to the same `api` directory and WebSocket guides to `guides/ws`, mirroring the structure, headings, and examples of their HTTP counterparts.
-- Match the JSDoc of WebSocket declarations to their HTTP counterparts. Where an HTTP declaration links to a page or section, link the WebSocket one to the matching WebSocket page or section. Keep the experimental notice on WebSocket public entry points while the API is experimental.
+- Mirror the structure, headings, and examples of HTTP reference pages and guides in their WebSocket counterparts.
+- Match the JSDoc of WebSocket declarations to their HTTP counterparts. Keep the experimental notice on WebSocket public entry points while the API is experimental.
