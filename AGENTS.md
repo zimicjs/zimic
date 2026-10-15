@@ -16,13 +16,13 @@
 These rules apply to packages intended for direct external use.
 
 - Write JSDoc for every public export and its public members, including re-exported declarations, overloads, option fields, and types reachable through public signatures even when not exported by name. Audit all of them when adding or changing a public API.
-- When an existing or planned page or section of the website docs covers the resource, write a concise `@see {@link https://zimic.dev/docs/<route>#<anchor> <label>}` to the closest one instead of copying its explanation. Describe the resource inline when no suitable page or section exists.
+- When an existing page or section of the website docs covers the resource, write a concise `@see {@link https://zimic.dev/docs/<route>#<anchor> <label>}` to the closest one instead of copying its explanation. Describe the resource inline when no suitable page or section exists.
 - Take routes from the `slug` frontmatter of pages under `apps/zimic-web/docs` and anchors from their headings. Update the JSDoc links in the same change when a route or heading moves.
 
 ## Runtime and behavior coverage
 
 - Many packages are expected to work in both Node and browser environments. Keep changes runtime-safe unless the target code is clearly environment-specific.
-- Match the test dimensions already used by the target package. Cover every affected runtime or mode instead of testing only the easiest path.
+- Match the test dimensions already used by the target package.
 - Do not weaken coverage expectations for core packages.
 
 ## Implementation conventions
@@ -30,7 +30,7 @@ These rules apply to packages intended for direct external use.
 - Before changing a module, review analogous modules in the same package and follow their structure, naming, data flow, and error-handling patterns unless there is a clear reason to diverge.
 - Prefer type-safe designs over broad unions, loose public/internal type mixing, or casts. If narrowing is unavoidable, keep it isolated behind a small, named boundary that reflects a real runtime guarantee.
 - Avoid reaching through public wrappers into internal implementation details from production code unless that is already the established internal contract for the module.
-- Published packages include `@zimic/utils/types/globals`, which narrows `Object.keys`, `Object.values`, `Object.entries`, `Array.isArray`, and string case methods. Rely on those types instead of casting the results.
+- Published packages include `@zimic/utils/types/globals`, which narrows built-ins such as `Object.keys`. Rely on those types instead of casting.
 - Do not add production code that only tests reach, such as optional parameters with fallbacks, unreachable guards, or unused members kept for symmetry. Delete unreachable branches instead of covering them.
 - Treat each `await` between a check and the state change it guards as a race window. Reserve state before awaiting, account for concurrent start, stop, and clear calls, and reset pending-operation state in `finally`.
 - Validate untrusted payloads completely before changing any state.
@@ -70,6 +70,6 @@ After editing a shared package, rebuild it before exercising services that depen
 ## Where to look first
 
 - General project structure and setup: root `README.md`, `CONTRIBUTING.md`, and workspace configuration.
-- App, package, and example contracts: the scoped `AGENTS.md` in `packages/zimic-http`, `packages/zimic-fetch`, `packages/zimic-interceptor`, `packages/zimic-ws`, `packages/zimic-utils`, `apps/zimic-web`, `apps/zimic-test-client`, or `examples`. Read it before changing files in that directory.
+- App, package, and example contracts: directories with their own `AGENTS.md` add scoped rules. Read the nearest one before changing files there.
 - App or package-specific commands: local `README.md` and package scripts.
 - Existing nearby tests and implementation patterns before introducing new helpers or abstractions.
