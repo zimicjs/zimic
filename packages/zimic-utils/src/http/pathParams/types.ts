@@ -1,4 +1,4 @@
-import { IfNever } from '@zimic/utils/types';
+import { IfNever } from '../../types';
 
 export interface HttpPathParamsSchema {
   [paramName: string]: string | undefined;

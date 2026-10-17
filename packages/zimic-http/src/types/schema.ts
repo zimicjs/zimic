@@ -1,3 +1,10 @@
+import type {
+  HttpBody,
+  HttpFormDataSchema,
+  HttpHeadersSchema,
+  HttpPathParamsSchema,
+  HttpSearchParamsSchema,
+} from '@zimic/utils/http';
 import {
   IfAny,
   UnionToIntersection,
@@ -6,12 +13,6 @@ import {
   NonEmptyArray,
   Branded,
 } from '@zimic/utils/types';
-
-import { HttpFormDataSchema } from '../formData/types';
-import { HttpHeadersSchema } from '../headers/types';
-import { HttpPathParamsSchema } from '../pathParams/types';
-import { HttpSearchParamsSchema } from '../searchParams/types';
-import { HttpBody } from './requests';
 
 export const HTTP_METHODS = Object.freeze(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const);
 /**
