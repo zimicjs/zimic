@@ -11,6 +11,17 @@
 - For packages intended for direct external use, treat package exports as part of the public contract. Keep the `exports` map and consumer coverage aligned when adding, removing, or renaming an entry point. Do not require public compatibility or consumer export tests for internal packages such as `@zimic/utils`.
 - Preserve tree-shakeability. Avoid top-level side effects and do not weaken assumptions behind package `sideEffects: false`.
 
+## Native API parity
+
+`@zimic/http`, `@zimic/fetch`, and `@zimic/ws` emulate native APIs. Their `AGENTS.md` files name the reference APIs and list approved divergences.
+
+- Keep the names, signatures, defaults, errors, and behavior of native members. Change their types only to narrow them through the schema.
+- Add capabilities as new members or options that leave native behavior unchanged.
+- Diverge from native behavior only with explicit user approval. Add the divergence to the package's approved list, state the reason in a comment next to the code, and document it in the website docs.
+- Check parity against the WHATWG specs, MDN, and TypeScript `lib.dom` declarations, or against the reference package that the package's `AGENTS.md` names.
+- When adding or changing a member with a native counterpart, add type tests proving the class is assignable to the native type and runtime tests asserting the native behavior.
+- `@zimic/interceptor` interceptor and handler APIs may favor test ergonomics. The requests, responses, headers, search params, form data, and sockets it exposes keep native parity.
+
 ## Public JSDoc
 
 These rules apply to packages intended for direct external use.
@@ -66,6 +77,10 @@ Review the project scripts and documentation before running project-specific com
 Prefer targeted checks over full-workspace runs.
 
 After editing a shared package, rebuild it before exercising services that depend on it. Never edit generated build output directly.
+
+## Issues
+
+- File bug issues with the sections of `.github/ISSUE_TEMPLATE/bug-report.yaml` in order, with System information from its `envinfo` command and a reproduction that was run against a published version.
 
 ## Where to look first
 

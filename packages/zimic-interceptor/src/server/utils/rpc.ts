@@ -1,8 +1,8 @@
-import type * as z from 'zod';
+import z, { ZodType } from 'zod';
 
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
 
-export function parseRPCData<Schema extends z.ZodType>(schema: Schema, data: unknown): z.output<Schema> {
+export function parseInterceptorServerRPCData<Schema extends ZodType>(schema: Schema, data: unknown): z.output<Schema> {
   const validation = schema.safeParse(data);
 
   if (!validation.success) {
