@@ -349,7 +349,10 @@ class InterceptorServer implements PublicInterceptorServer {
         try {
           await this.loadHttpRuntime();
         } catch (error) {
-          console.error(error);
+          // A stale load is an expected race with the server stopping or restarting, not a failure to report.
+          if (!(error instanceof StaleHttpRuntimeLoadError)) {
+            console.error(error);
+          }
 
           socket.resume();
           socket.close(
