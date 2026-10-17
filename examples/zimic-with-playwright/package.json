@@ -13,20 +13,20 @@
   "dependencies": {
     "@zimic/fetch": "latest",
     "@zimic/http": "latest",
-    "next": "^16.3.8",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "zod": "^4.6.5"
+    "next": "^16.4.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@playwright/test": "^1.63.0",
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^26.6.3",
+    "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@zimic/interceptor": "latest",
     "dotenv-cli": "^11.0.0",
-    "postcss": "^8.5.28",
+    "postcss": "^8.5.30",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
