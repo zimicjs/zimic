@@ -161,7 +161,7 @@ class HttpInterceptorServerRuntime {
     const serializedRequest = await serializeRequest(request);
 
     try {
-      const response = await this.createResponseForRequest(serializedRequest);
+      const { response, matchedSomeInterceptor } = await this.createResponseForRequest(serializedRequest);
 
       if (response) {
         if (HttpInterceptorWorker.isRejectedResponse(response)) {
@@ -179,15 +179,16 @@ class HttpInterceptorServerRuntime {
       }
 
       const isUnhandledPreflightResponse = request.method === 'OPTIONS';
+      const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse || matchedSomeInterceptor;
+
+      if (shouldWarnUnhandledRequest) {
+        await this.logUnhandledRequestIfNecessary(request, serializedRequest);
+      }
 
       if (isUnhandledPreflightResponse) {
         const defaultPreflightResponse = new Response(null, { status: DEFAULT_PREFLIGHT_STATUS_CODE });
         this.setDefaultAccessControlHeaders(defaultPreflightResponse);
         await sendNodeResponse(defaultPreflightResponse, nodeResponse, nodeRequest, true);
-      }
-
-      if (!isUnhandledPreflightResponse) {
-        await this.logUnhandledRequestIfNecessary(request, serializedRequest);
       }
 
       rejectNodeResponse(nodeResponse);
@@ -209,6 +210,8 @@ class HttpInterceptorServerRuntime {
     const requestURL = excludeNonPathParams(new URL(request.url));
     const requestURLAsString = requestURL.href === `${requestURL.origin}/` ? requestURL.origin : requestURL.href;
 
+    let matchedSomeInterceptor = false;
+
     for (let handlerIndex = methodHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
       const handler = methodHandlers[handlerIndex];
       const matchesBaseURL = requestURLAsString.startsWith(handler.baseURL);
@@ -224,6 +227,8 @@ class HttpInterceptorServerRuntime {
         continue;
       }
 
+      matchedSomeInterceptor = true;
+
       const reply = await this.webSocketServer.request(
         'interceptors/http/responses/create',
         { handlerId: handler.id, request },
@@ -232,11 +237,12 @@ class HttpInterceptorServerRuntime {
       const { response: serializedResponse } = parseInterceptorServerRPCData(responseCreationReplySchema, reply);
 
       if (serializedResponse) {
-        return deserializeResponse(serializedResponse);
+        const response = deserializeResponse(serializedResponse);
+        return { response, matchedSomeInterceptor };
       }
     }
 
-    return null;
+    return { response: null, matchedSomeInterceptor };
   }
 
   private setDefaultAccessControlHeaders(
