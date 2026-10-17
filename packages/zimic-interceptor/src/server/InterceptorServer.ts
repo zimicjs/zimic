@@ -29,6 +29,10 @@ import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from './types/sch
 import { validateInterceptorToken } from './utils/auth';
 import { getFetchAPI } from './utils/fetch';
 
+// Conflicting content lengths are a protocol error in browsers and Node.js, so the request fails as a network error.
+const INVALID_REJECTED_RESPONSE =
+  'HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nContent-Length: 1\r\n\r\n';
+
 interface HttpHandler {
   id: string;
   baseURL: string;
@@ -347,7 +351,7 @@ class InterceptorServer implements PublicInterceptorServer {
 
       if (response) {
         if (HttpInterceptorWorker.isRejectedResponse(response)) {
-          nodeResponse.destroy();
+          this.rejectNodeResponse(nodeResponse);
         } else {
           this.setDefaultAccessControlHeaders(response, [
             'access-control-allow-origin',
@@ -374,7 +378,7 @@ class InterceptorServer implements PublicInterceptorServer {
         await this.logUnhandledRequestIfNecessary(request, serializedRequest);
       }
 
-      nodeResponse.destroy();
+      this.rejectNodeResponse(nodeResponse);
     } catch (error) {
       const isMessageAbortError = error instanceof WebSocketMessageAbortError;
 
@@ -383,9 +387,20 @@ class InterceptorServer implements PublicInterceptorServer {
         await this.logUnhandledRequestIfNecessary(request, serializedRequest);
       }
 
-      nodeResponse.destroy();
+      this.rejectNodeResponse(nodeResponse);
     }
   };
+
+  private rejectNodeResponse(nodeResponse: ServerResponse) {
+    if (nodeResponse.headersSent) {
+      nodeResponse.destroy();
+      return;
+    }
+
+    // Browsers may resend a request if its connection closes before any response bytes, which would handle the request
+    // more than once. Sending an invalid response instead makes the request fail without being resent.
+    nodeResponse.socket?.end(INVALID_REJECTED_RESPONSE);
+  }
 
   private async createResponseForRequest(request: SerializedHttpRequest) {
     const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
