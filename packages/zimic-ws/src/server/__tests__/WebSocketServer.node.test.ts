@@ -1,12 +1,11 @@
 import { getHttpServerPort, startHttpServer, stopHttpServer } from '@zimic/utils/server';
+import { WebSocketCloseTimeoutError, WebSocketOpenTimeoutError } from '@zimic/utils/ws';
 import { createServer as createHttpServer, Server as HttpServer, IncomingMessage } from 'http';
 import { createServer as createHttpsServer } from 'https';
 import { Socket } from 'net';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { WebSocketClient } from '@/client/WebSocketClient';
-import { WebSocketCloseTimeoutError } from '@/errors/WebSocketCloseTimeoutError';
-import { WebSocketOpenTimeoutError } from '@/errors/WebSocketOpenTimeoutError';
 
 import ClosedWebSocketServerError from '../errors/ClosedWebSocketServerError';
 import { WebSocketServer } from '../WebSocketServer';

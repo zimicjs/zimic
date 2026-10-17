@@ -1,3 +1,4 @@
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor, waitForNot } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it, vi } from 'vitest';
@@ -5,13 +6,19 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
+import {
+  usingWebSocketClient,
+  waitForWebSocketClientClose,
+  waitForWebSocketClientMessage,
+} from '@tests/utils/webSocket';
 
 import { LocalWebSocketMessageHandler } from '../../../messageHandler/LocalWebSocketMessageHandler';
 import { RemoteWebSocketMessageHandler } from '../../../messageHandler/RemoteWebSocketMessageHandler';
 import { WebSocketInterceptorOptions } from '../../types/options';
-import { RuntimeSharedWebSocketInterceptorTestsOptions, usingWebSocketClient, waitForWebSocketMessage } from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
+type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
 
 export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { type, getBaseURL, getInterceptorOptions } = options;
@@ -44,9 +51,9 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
             expect(interceptor.clients).toHaveLength(1);
           });
 
-          const messagePromise = waitForWebSocketMessage(client);
+          const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: 1 }));
-          await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
 
           expect(handler.messages).toHaveLength(1);
           expect(interceptor.server.messages).toHaveLength(1);
@@ -90,9 +97,9 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         expect(handler.messages).toHaveLength(0);
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          const messagePromise = waitForWebSocketMessage(client);
+          const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: 2 }));
-          await expect(messagePromise).resolves.toEqual({ type: 'server', index: 2 });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
         });
 
         expect(handler.messages).toHaveLength(1);
@@ -116,9 +123,9 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         expect(handler.messages).toHaveLength(0);
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          const messagePromise = waitForWebSocketMessage(client);
+          const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: 2 }));
-          await expect(messagePromise).resolves.toEqual({ type: 'server', index: 2 });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
         });
 
         expect(otherHandler.messages).toHaveLength(1);
@@ -146,9 +153,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
                   expect(secondInterceptor.clients).toHaveLength(1);
                 });
 
-                const firstCloseEventPromise = new Promise<WebSocketClient.CloseEvent<MessageSchema>>((resolve) => {
-                  firstClient.addEventListener('close', resolve, { once: true });
-                });
+                const firstCloseEventPromise = waitForWebSocketClientClose(firstClient);
 
                 await promiseIfRemote(firstInterceptor.clear(), firstInterceptor);
 
@@ -158,13 +163,90 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
                 expect(secondInterceptor.clients).toHaveLength(1);
                 expect(secondClient.readyState).toBe(WebSocketClient.OPEN);
 
-                const secondMessagePromise = waitForWebSocketMessage(secondClient);
+                const secondMessagePromise = waitForWebSocketClientMessage(secondClient);
                 secondClient.send(JSON.stringify({ type: 'client', index: 2 }));
-                await expect(secondMessagePromise).resolves.toEqual({ type: 'server', index: 2 });
+                await expect(secondMessagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
               });
             });
           },
         );
+      },
+    );
+  });
+
+  it('should not save intercepted messages after cleared while a message is being handled', async () => {
+    await usingWebSocketInterceptor<ChatMessage>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const effectStartedPromise = createPromiseWithResolvers<void>();
+        const effectReleasePromise = createPromiseWithResolvers<void>();
+
+        const handler = await interceptor
+          .message()
+          .effect(async (message) => {
+            if (message.type === 'client' && message.text === 'pending') {
+              effectStartedPromise.resolve();
+              await effectReleasePromise;
+            }
+          })
+          .respond({ type: 'server', text: 'ack' });
+
+        const client = new WebSocketClient<ChatMessage>(baseURL);
+
+        try {
+          await client.open();
+
+          const existingResponsePromise = waitForWebSocketClientMessage(client);
+          client.send(JSON.stringify({ type: 'client', text: 'existing' }));
+          await expect(existingResponsePromise).resolves.toBe('{"type":"server","text":"ack"}');
+
+          const handlerMessages = handler.messages;
+          const serverMessages = interceptor.server.messages;
+          const [clientHandle] = interceptor.clients;
+          const clientMessages = clientHandle.messages;
+
+          expect(handlerMessages).toHaveLength(1);
+          expect(serverMessages).toHaveLength(1);
+          expect(clientMessages).toHaveLength(1);
+
+          client.send(JSON.stringify({ type: 'client', text: 'pending' }));
+          await effectStartedPromise;
+
+          await interceptor.clear();
+
+          const nextHandler = await interceptor.message().respond({ type: 'server', text: 'next' });
+
+          effectReleasePromise.resolve();
+
+          // Clearing closes the connected clients, so the follow-up message is sent by a new client.
+          const nextClient = new WebSocketClient<ChatMessage>(baseURL);
+
+          try {
+            await nextClient.open();
+
+            const nextResponsePromise = waitForWebSocketClientMessage(nextClient);
+            nextClient.send(JSON.stringify({ type: 'client', text: 'next' }));
+            await expect(nextResponsePromise).resolves.toBe('{"type":"server","text":"next"}');
+          } finally {
+            await nextClient.close();
+          }
+
+          await waitFor(() => {
+            expect(nextHandler.messages).toHaveLength(1);
+          });
+
+          expect(handler.messages).toBe(handlerMessages);
+          expect(handlerMessages).toEqual([]);
+
+          expect(interceptor.server.messages).toBe(serverMessages);
+          expect(serverMessages).toHaveLength(1);
+          expect(serverMessages[0].data).toEqual({ type: 'client', text: 'next' });
+
+          expect(clientHandle.messages).toBe(clientMessages);
+          expect(clientMessages).toEqual([]);
+        } finally {
+          await client.close();
+        }
       },
     );
   });

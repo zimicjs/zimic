@@ -1,4 +1,5 @@
 import { HttpSchema } from '@zimic/http';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor, waitForNot } from '@zimic/utils/time';
 import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
@@ -7,6 +8,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vite
 import LocalHttpInterceptorWorker from '@/http/interceptorWorker/LocalHttpInterceptorWorker';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import InterceptorWebSocketClient from '@/utils/webSocket/WebSocketClient';
+import { createWebSocketInterceptorClient } from '@/ws/interceptor/WebSocketInterceptorHandle';
 import WebSocketInterceptorImplementation from '@/ws/interceptor/WebSocketInterceptorImplementation';
 import { createWebSocketInterceptorWorker } from '@/ws/interceptorWorker/factory';
 import LocalWebSocketInterceptorWorker from '@/ws/interceptorWorker/LocalWebSocketInterceptorWorker';
@@ -21,6 +23,7 @@ import {
   usingWebSocketInterceptor,
   usingWebSocketInterceptorWorker,
 } from '@tests/utils/interceptors';
+import { waitForWebSocketClientClose, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import NotRunningWebSocketInterceptorError from '../../../interceptor/errors/NotRunningWebSocketInterceptorError';
 import { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '../../../interceptor/types/options';
@@ -49,15 +52,13 @@ interface SharedWebSocketInterceptorWorkerTestsOptions {
 }
 
 async function waitForMessage<Schema extends WebSocketSchema>(client: WebSocketClient<Schema>) {
-  const event = await new Promise<WebSocketClient.MessageEvent<Schema>>((resolve) => {
-    client.addEventListener('message', resolve, { once: true });
-  });
+  const data = await waitForWebSocketClientMessage(client);
 
-  if (typeof event.data === 'string' && /^[{[]/.test(event.data.trim())) {
-    return JSON.parse(event.data) as Schema;
+  if (typeof data === 'string' && /^[{[]/.test(data.trim())) {
+    return JSON.parse(data) as Schema;
   }
 
-  return event.data;
+  return data;
 }
 
 async function readBytes(data: Blob | ArrayBuffer) {
@@ -380,6 +381,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       const secondClient = await createClient();
       const firstMessageListener = vi.fn();
       const secondMessagePromise = waitForMessage(secondClient);
+
       firstClient.addEventListener('message', firstMessageListener);
 
       await waitFor(() => {
@@ -585,6 +587,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
               clients.push(secondClient);
 
               await secondClient.open();
+
               const messagePromise = waitForMessage(secondClient);
               secondClient.send(JSON.stringify({ type: 'client', text: 'two' }));
 
@@ -858,6 +861,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       await usingWebSocketInterceptorWorker(workerOptions, async (rawWorker) => {
         const worker = rawWorker as RemoteWebSocketInterceptorWorker;
         const interceptor = createDefaultWebSocketInterceptor();
+
         await worker.use(interceptor.implementation);
 
         // Skips the reset RPC, so the server keeps the cleared handler registered while the worker has already forgotten
@@ -868,9 +872,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
 
         const client = new WebSocketClient<ChatMessage>(baseURL);
         clients.push(client);
-        const closeEventPromise = new Promise<WebSocketClient.CloseEvent<ChatMessage>>((resolve) => {
-          client.addEventListener('close', resolve, { once: true });
-        });
+        const closeEventPromise = waitForWebSocketClientClose(client);
 
         await client.open();
 
@@ -895,6 +897,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         clients.push(client);
 
         await client.open();
+
         client.send(JSON.stringify({ type: 'client', text: 'first' }));
         client.send(JSON.stringify({ type: 'client', text: 'second' }));
 
@@ -926,11 +929,12 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         const worker = rawWorker as RemoteWebSocketInterceptorWorker;
         const interceptor = createDefaultWebSocketInterceptor();
         const send = vi.fn();
-        const client = interceptor.implementation.createClient(baseURL, { send });
+        const client = createWebSocketInterceptorClient(baseURL, send);
 
         await expect(
           worker.sendToClient(client, JSON.stringify({ type: 'server', text: 'ignored client' })),
         ).resolves.toBeUndefined();
+
         await expect(
           worker.sendToClients(interceptor.implementation, JSON.stringify({ type: 'server', text: 'ignored handler' })),
         ).resolves.toBeUndefined();
@@ -988,9 +992,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
 
         const client = new WebSocketClient<ChatMessage>(baseURL);
         clients.push(client);
-        const closeEventPromise = new Promise<WebSocketClient.CloseEvent<ChatMessage>>((resolve) => {
-          client.addEventListener('close', resolve, { once: true });
-        });
+        const closeEventPromise = waitForWebSocketClientClose(client);
 
         await client.open();
 
@@ -1038,10 +1040,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
 
     it('should keep a pending remote handler unsynced until the server acknowledges the commit', async () => {
       await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
-        let releaseCommit!: () => void;
-        const commitGate = new Promise<void>((resolve) => {
-          releaseCommit = resolve;
-        });
+        const commitGate = createPromiseWithResolvers();
 
         // Holds the first commit RPC before it is sent, so the handler is registered locally but not yet acknowledged
         // by the server.
@@ -1067,7 +1066,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
             expect(syncListener).toHaveBeenCalled();
           });
 
-          releaseCommit();
+          commitGate.resolve();
           await handler;
 
           const client = await createClient();
@@ -1076,7 +1075,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
 
           await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'acknowledged' });
         } finally {
-          releaseCommit();
+          commitGate.resolve();
           await Promise.allSettled([handler]);
           requestSpy.mockRestore();
         }

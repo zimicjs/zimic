@@ -4,10 +4,11 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
+import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import NotRunningWebSocketInterceptorError from '../../errors/NotRunningWebSocketInterceptorError';
 import { WebSocketInterceptorOptions } from '../../types/options';
-import { RuntimeSharedWebSocketInterceptorTestsOptions, usingWebSocketClient, waitForWebSocketMessage } from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
 
@@ -30,9 +31,9 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
         expect(handler.messages).toHaveLength(0);
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          const messagePromise = waitForWebSocketMessage(client);
+          const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: 1 }));
-          await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
         });
 
         expect(handler.messages).toHaveLength(1);
@@ -70,9 +71,9 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
         expect(handler.messages).toHaveLength(0);
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          const messagePromise = waitForWebSocketMessage(client);
+          const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: 1 }));
-          await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
         });
 
         expect(handler.messages).toHaveLength(1);

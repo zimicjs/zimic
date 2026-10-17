@@ -4,15 +4,11 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
+import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
+import { createBinaryMessage } from '../../../messageHandler/__tests__/shared/utils';
 import { WebSocketInterceptorOptions } from '../../types/options';
-import {
-  RuntimeSharedWebSocketInterceptorTestsOptions,
-  createBinaryMessage,
-  readBytes,
-  usingWebSocketClient,
-  waitForWebSocketMessage,
-} from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions, readBytes } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
 type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
@@ -69,7 +65,7 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
 
         await usingWebSocketClient<ChatMessage>(baseURL, async (firstClient) => {
           await usingWebSocketClient<ChatMessage>(baseURL, async (secondClient) => {
-            const firstMessagePromise = waitForWebSocketMessage(firstClient);
+            const firstMessagePromise = waitForWebSocketClientMessage(firstClient);
             const secondMessageListener = vi.fn();
             secondClient.addEventListener('message', secondMessageListener);
 
@@ -83,7 +79,7 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
 
             firstClient.send(JSON.stringify({ type: 'client', text: 'one' }));
 
-            await expect(firstMessagePromise).resolves.toEqual({ type: 'server', text: 'received one' });
+            await expect(firstMessagePromise).resolves.toBe(JSON.stringify({ type: 'server', text: 'received one' }));
             await waitForNot(() => {
               expect(secondMessageListener).toHaveBeenCalled();
             });
@@ -111,7 +107,7 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
         const handler = await promiseIfRemote(interceptor.message().with('ping').respond('pong').times(1), interceptor);
 
         await usingWebSocketClient<TextMessage>(baseURL, async (client) => {
-          const messagePromise = waitForWebSocketMessage(client);
+          const messagePromise = waitForWebSocketClientMessage(client);
 
           await waitFor(() => {
             expect(interceptor.clients).toHaveLength(1);
@@ -145,13 +141,13 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
             expect(interceptor.clients).toHaveLength(2);
           });
 
-          const firstMessagePromise = waitForWebSocketMessage(firstClient);
+          const firstMessagePromise = waitForWebSocketClientMessage(firstClient);
           firstClient.send(JSON.stringify({ type: 'binary', data: 'request' }));
-          await expect(firstMessagePromise).resolves.toEqual(responseMessage);
+          await expect(firstMessagePromise).resolves.toBe(JSON.stringify(responseMessage));
 
-          const secondMessagePromise = waitForWebSocketMessage(secondClient);
+          const secondMessagePromise = waitForWebSocketClientMessage(secondClient);
           interceptor.server.send(JSON.stringify({ type: 'binary', data: 'broadcast' }));
-          await expect(secondMessagePromise).resolves.toEqual({ type: 'binary', data: 'broadcast' });
+          await expect(secondMessagePromise).resolves.toBe(JSON.stringify({ type: 'binary', data: 'broadcast' }));
         });
       });
     });
@@ -170,7 +166,7 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
       await usingWebSocketClient<ChatMessage>(baseURL, async (firstClient) => {
         await usingWebSocketClient<ChatMessage>(baseURL, async (secondClient) => {
           const firstMessageListener = vi.fn();
-          const secondMessagePromise = waitForWebSocketMessage(secondClient);
+          const secondMessagePromise = waitForWebSocketClientMessage(secondClient);
           firstClient.addEventListener('message', firstMessageListener);
 
           await waitFor(() => {
@@ -179,7 +175,7 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
 
           firstClient.send(JSON.stringify({ type: 'client', text: 'one' }));
 
-          await expect(secondMessagePromise).resolves.toEqual({ type: 'server', text: 'targeted one' });
+          await expect(secondMessagePromise).resolves.toBe(JSON.stringify({ type: 'server', text: 'targeted one' }));
           await waitForNot(() => {
             expect(firstMessageListener).toHaveBeenCalled();
           });
@@ -322,9 +318,9 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
         const handler = await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          let messagePromise = waitForWebSocketMessage(client);
+          let messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: 1 }));
-          await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
 
           expect(handler.messages).toHaveLength(1);
 
@@ -335,9 +331,9 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
 
           expect(otherHandler.messages).toHaveLength(0);
 
-          messagePromise = waitForWebSocketMessage(client);
+          messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: 2 }));
-          await expect(messagePromise).resolves.toEqual({ type: 'server', index: 2 });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
 
           expect(handler.messages).toHaveLength(1);
           expect(otherHandler.messages).toHaveLength(1);

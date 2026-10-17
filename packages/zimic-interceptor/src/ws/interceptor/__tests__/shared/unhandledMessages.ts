@@ -5,9 +5,10 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
+import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorOptions } from '../../types/options';
-import { RuntimeSharedWebSocketInterceptorTestsOptions, usingWebSocketClient, waitForWebSocketMessage } from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
 
@@ -45,10 +46,10 @@ export function declareUnhandledMessageWebSocketInterceptorTests(
           expect(client.readyState).toBe(WebSocketClient.OPEN);
           expect(console.error).not.toHaveBeenCalled();
 
-          const messagePromise = waitForWebSocketMessage(client);
+          const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: 2 }));
 
-          await expect(messagePromise).resolves.toEqual({ type: 'server', index: 2 });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
           expect(client.readyState).toBe(WebSocketClient.OPEN);
           expect(console.error).not.toHaveBeenCalled();
         });
