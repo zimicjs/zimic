@@ -1,4 +1,4 @@
-minimumReleaseAge: 4320 # 3 days in minutes
+minimumReleaseAge: 1440 # 1 day in minutes
 autoInstallPeers: true
 engineStrict: false
 sideEffectsCache: false
@@ -30,6 +30,8 @@ overrides:
 
   colord@2: ^2.9.4
 
+  compression@1: ^1.8.2
+
   dompurify@3: ^3.4.16
 
   esbuild@0: ^0.28.1
@@ -58,6 +60,11 @@ overrides:
 
   postcss@8: ^8.5.18
 
+  postcss-selector-parser@6: ^7.1.6
+  postcss-selector-parser@7: ^7.1.6
+
+  proxy-addr@2: ^2.0.8
+
   http-proxy-middleware@2: ^3.0.7
   http-proxy-middleware@3: ^3.0.7
 
@@ -72,11 +79,15 @@ overrides:
   serialize-javascript@6: ^7.0.5
   serialize-javascript@7: ^7.0.5
 
-  shell-quote@1: ^1.8.4
+  shell-quote@1: ^1.12.0
 
-  sharp@0: ^0.35.0
+  sharp@0: ^0.35.5
+
+  source-map-js@1: ^1.2.2
 
   svgo@3: ^3.3.5
+
+  tinypool@1: ^2.2.0
 
   undici@7: ^7.28.0
   undici@8: ^8.10.2
