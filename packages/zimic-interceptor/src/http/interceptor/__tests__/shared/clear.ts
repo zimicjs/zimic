@@ -148,15 +148,20 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
   });
 
   it('should handle requests once if another interceptor is cleared while they are being handled', async () => {
-    const unhandledRequestStarted = Promise.withResolvers<void>();
-    const unhandledRequestReleased = Promise.withResolvers<void>();
+    const restrictionStarted = Promise.withResolvers<void>();
+    const restrictionReleased = Promise.withResolvers<void>();
 
-    const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(async () => {
-      unhandledRequestStarted.resolve();
-      await unhandledRequestReleased.promise;
+    const restriction = vi.fn(async () => {
+      restrictionStarted.resolve();
+      await restrictionReleased.promise;
 
-      return { action: 'reject', log: false };
+      return false;
     });
+
+    const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
 
     await usingHttpInterceptor<{
       '/users': { GET: MethodSchema };
@@ -164,25 +169,72 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
       await promiseIfRemote(otherInterceptor.get('/users').respond({ status: 204 }), otherInterceptor);
 
       await usingHttpInterceptor<{
-        '/users': { GET: MethodWithSearchParamsSchema };
+        '/users': { GET: MethodSchema };
       }>({ ...interceptorOptions, type, onUnhandledRequest }, async (interceptor) => {
         const handler = await promiseIfRemote(
-          interceptor
-            .get('/users')
-            .with({ searchParams: { value: '1' } })
-            .respond({ status: 204 }),
+          interceptor.get('/users').with(restriction).respond({ status: 204 }),
           interceptor,
         );
 
-        const responsePromise = fetch(joinURL(baseURL, '/users?value=2'), { method: 'GET' });
-        await unhandledRequestStarted.promise;
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        await restrictionStarted.promise;
 
         await promiseIfRemote(otherInterceptor.clear(), otherInterceptor);
-        unhandledRequestReleased.resolve();
+        restrictionReleased.resolve();
 
         await expectFetchError(responsePromise);
 
         expect(handler.requests).toHaveLength(0);
+        expect(restriction).toHaveBeenCalledTimes(1);
+        expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+      });
+    });
+  });
+
+  it('should not consider handlers of another interceptor cleared while requests are being handled', async () => {
+    const restrictionStarted = Promise.withResolvers<void>();
+    const restrictionReleased = Promise.withResolvers<void>();
+
+    const restriction = vi.fn(async () => {
+      restrictionStarted.resolve();
+      await restrictionReleased.promise;
+
+      return false;
+    });
+
+    const otherOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
+
+    const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
+
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>({ ...interceptorOptions, type, onUnhandledRequest: otherOnUnhandledRequest }, async (otherInterceptor) => {
+      await promiseIfRemote(otherInterceptor.get('/users').respond({ status: 204 }), otherInterceptor);
+
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>({ ...interceptorOptions, type, onUnhandledRequest }, async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor.get('/users').with(restriction).respond({ status: 204 }),
+          interceptor,
+        );
+
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        await restrictionStarted.promise;
+
+        await promiseIfRemote(otherInterceptor.clear(), otherInterceptor);
+        restrictionReleased.resolve();
+
+        await expectFetchError(responsePromise);
+
+        expect(handler.requests).toHaveLength(0);
+        expect(otherOnUnhandledRequest).not.toHaveBeenCalled();
         expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
       });
     });

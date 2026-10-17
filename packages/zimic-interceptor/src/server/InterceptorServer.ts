@@ -350,7 +350,7 @@ class InterceptorServer implements PublicInterceptorServer {
     const serializedRequest = await serializeRequest(request);
 
     try {
-      const { response, matchedSomeInterceptor } = await this.createResponseForRequest(serializedRequest);
+      const response = await this.createResponseForRequest(serializedRequest);
 
       if (response) {
         if (HttpInterceptorWorker.isRejectedResponse(response)) {
@@ -375,9 +375,7 @@ class InterceptorServer implements PublicInterceptorServer {
         await sendNodeResponse(defaultPreflightResponse, nodeResponse, nodeRequest, true);
       }
 
-      const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse && !matchedSomeInterceptor;
-
-      if (shouldWarnUnhandledRequest) {
+      if (!isUnhandledPreflightResponse) {
         await this.logUnhandledRequestIfNecessary(request, serializedRequest);
       }
 
@@ -413,8 +411,6 @@ class InterceptorServer implements PublicInterceptorServer {
     const requestURL = excludeNonPathParams(new URL(request.url));
     const requestURLAsString = requestURL.href === `${requestURL.origin}/` ? requestURL.origin : requestURL.href;
 
-    let matchedSomeInterceptor = false;
-
     for (let handlerIndex = methodHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
       const handler = methodHandlers[handlerIndex];
       const matchesBaseURL = requestURLAsString.startsWith(handler.baseURL);
@@ -430,8 +426,6 @@ class InterceptorServer implements PublicInterceptorServer {
         continue;
       }
 
-      matchedSomeInterceptor = true;
-
       const { response: serializedResponse } = await this.webSocketServerOrThrow.request(
         'interceptors/responses/create',
         { handlerId: handler.id, request },
@@ -439,12 +433,11 @@ class InterceptorServer implements PublicInterceptorServer {
       );
 
       if (serializedResponse) {
-        const response = deserializeResponse(serializedResponse);
-        return { response, matchedSomeInterceptor };
+        return deserializeResponse(serializedResponse);
       }
     }
 
-    return { response: null, matchedSomeInterceptor };
+    return null;
   }
 
   private setDefaultAccessControlHeaders(
