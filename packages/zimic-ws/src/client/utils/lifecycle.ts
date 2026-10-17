@@ -1,7 +1,4 @@
-import { WebSocketCloseTimeoutError } from '@/errors/WebSocketCloseTimeoutError';
-import { WebSocketOpenTimeoutError } from '@/errors/WebSocketOpenTimeoutError';
-
-export const DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT = 60 * 1000;
+import { DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT, WebSocketOpenTimeoutError } from '@zimic/utils/ws';
 
 export interface WebSocketClientOpenOptions {
   timeout?: number;
@@ -47,45 +44,3 @@ export async function openWebSocketClient(socket: WebSocket, options: WebSocketC
 }
 
 export type WebSocketClientCloseOptions = WebSocketClientOpenOptions;
-
-export async function closeWebSocketClient(
-  socket: WebSocket,
-  options: WebSocketClientCloseOptions & { code?: number; reason?: string },
-) {
-  const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options;
-
-  const isAlreadyClosed = socket.readyState === socket.CLOSED;
-
-  if (isAlreadyClosed) {
-    return;
-  }
-
-  await new Promise<void>((resolve, reject) => {
-    const closeTimeout = setTimeout(() => {
-      const timeoutError = new WebSocketCloseTimeoutError(timeoutDuration);
-      handleError(timeoutError); // eslint-disable-line @typescript-eslint/no-use-before-define
-    }, timeoutDuration);
-
-    function removeListenersAndTimeout() {
-      clearTimeout(closeTimeout);
-
-      socket.removeEventListener('error', handleError); // eslint-disable-line @typescript-eslint/no-use-before-define
-      socket.removeEventListener('close', handleClose); // eslint-disable-line @typescript-eslint/no-use-before-define
-    }
-
-    function handleError(error: unknown) {
-      removeListenersAndTimeout();
-      reject(error);
-    }
-
-    function handleClose() {
-      removeListenersAndTimeout();
-      resolve();
-    }
-
-    socket.addEventListener('error', handleError);
-    socket.addEventListener('close', handleClose);
-
-    socket.close(options.code, options.reason);
-  });
-}

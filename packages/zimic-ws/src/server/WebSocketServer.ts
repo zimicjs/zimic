@@ -1,5 +1,6 @@
 import { getHttpServerHostname, getHttpServerPort } from '@zimic/utils/server';
 import { PossiblePromise } from '@zimic/utils/types';
+import { closeWebSocketServer } from '@zimic/utils/ws';
 import { Server as HttpServer, IncomingMessage } from 'http';
 import { Server as HttpsServer } from 'https';
 import { WebSocketServer as NodeWebSocketServer } from 'ws';
@@ -8,12 +9,7 @@ import { WebSocketClient } from '@/client/WebSocketClient';
 import { WebSocketSchema } from '@/types/schema';
 
 import ClosedWebSocketServerError from './errors/ClosedWebSocketServerError';
-import {
-  closeWebSocketServer,
-  openWebSocketServer,
-  WebSocketServerCloseOptions,
-  WebSocketServerOpenOptions,
-} from './utils/lifecycle';
+import { openWebSocketServer, WebSocketServerCloseOptions, WebSocketServerOpenOptions } from './utils/lifecycle';
 
 export namespace WebSocketServer {
   export type EventType = 'listening' | 'connection' | 'error' | 'close';
