@@ -313,8 +313,11 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private removeHttpHandlersBySocket(socket: Socket) {
     for (const handlerGroups of Object.values(this.httpHandlersByMethod)) {
-      const socketIndex = handlerGroups.findIndex((handlerGroup) => handlerGroup.socket === socket);
-      removeArrayIndex(handlerGroups, socketIndex);
+      for (let handlerIndex = handlerGroups.length - 1; handlerIndex >= 0; handlerIndex--) {
+        if (handlerGroups[handlerIndex].socket === socket) {
+          removeArrayIndex(handlerGroups, handlerIndex);
+        }
+      }
     }
   }
 
