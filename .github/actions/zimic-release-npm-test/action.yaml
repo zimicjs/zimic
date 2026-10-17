@@ -27,7 +27,7 @@ runs:
       with:
         project-name: ${{ inputs.project-name }}
         project-directory: ${{ inputs.project-directory }}
-        validate-ref-name: ${{ inputs.ref_name }}
+        validate-ref-name: ${{ inputs.ref-name }}
 
     - name: Set up Zimic
       uses: ./.github/actions/zimic-setup
