@@ -1,5 +1,4 @@
-import { Default, Replace } from '@zimic/utils/types';
-
+import { Default, Replace } from '../../types';
 import { HttpHeadersSchema, HttpHeadersInit, HttpHeadersSchemaName, HttpHeadersSerialized } from './types';
 
 function pickPrimitiveProperties<LooseSchema extends HttpHeadersSchema.Loose>(schema: LooseSchema) {

@@ -1,6 +1,6 @@
-import HttpFormData from '@/formData/HttpFormData';
-import HttpSearchParams from '@/searchParams/HttpSearchParams';
-import { HttpBody } from '@/types/requests';
+import HttpFormData from '../formData/HttpFormData';
+import HttpSearchParams from '../searchParams/HttpSearchParams';
+import type { HttpBody } from '../types/body';
 
 /**
  * Error thrown when a value is not valid {@link https://developer.mozilla.org/docs/Web/API/FormData FormData}. HTTP

@@ -21,6 +21,7 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
     data: 'src/data/index.ts',
     error: 'src/error/index.ts',
     fetch: 'src/fetch/index.ts',
+    http: 'src/http/index.ts',
     import: 'src/import/index.ts',
     logging: 'src/logging/index.ts',
     time: 'src/time/index.ts',

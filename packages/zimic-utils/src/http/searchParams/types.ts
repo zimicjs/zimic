@@ -1,5 +1,4 @@
-import { ArrayItemIfArray, IfNever, NonArrayKey, ArrayKey } from '@zimic/utils/types';
-
+import { ArrayItemIfArray, IfNever, NonArrayKey, ArrayKey } from '../../types';
 import HttpSearchParams from './HttpSearchParams';
 
 /** A schema for strict HTTP URL search parameters. */
