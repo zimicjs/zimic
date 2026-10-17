@@ -37,7 +37,7 @@ runs:
   using: composite
   steps:
     - name: Install Node.js
-      uses: actions/setup-node@v7.0.0
+      uses: actions/setup-node@v7.1.0
       with:
         node-version: ${{ inputs.node-version }}
         registry-url: ${{ inputs.node-registry-url }}
@@ -151,7 +151,7 @@ runs:
       if: ${{ steps.filters.outputs.setup != '' }}
       shell: bash
       run: |
-        pnpm turbo setup \
+        pnpm turbo run setup \
           ${{ steps.filters.outputs.setup }} \
           --concurrency 100%
       env:
