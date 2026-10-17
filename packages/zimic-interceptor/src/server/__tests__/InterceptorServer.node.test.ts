@@ -1,4 +1,5 @@
 import { HttpSchema } from '@zimic/http';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { expectFetchError } from '@zimic/utils/fetch';
 import { waitFor } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
@@ -20,6 +21,11 @@ import {
   usingWebSocketInterceptorWorker,
 } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
+import {
+  collectWebSocketClientMessages,
+  waitForWebSocketClientClose,
+  waitForWebSocketClientMessage,
+} from '@tests/utils/webSocket';
 
 import { DEFAULT_HOSTNAME, DEFAULT_LOG_UNHANDLED_REQUESTS } from '../constants';
 import RunningInterceptorServerError from '../errors/RunningInterceptorServerError';
@@ -331,10 +337,13 @@ describe('Interceptor server', () => {
           const socket = connect({ host: server!.hostname, port: server!.port! });
           const socketClosed = once(socket, 'close');
           const responseChunks: Buffer[] = [];
+
           socket.on('data', (chunk: Buffer) => responseChunks.push(chunk));
 
           try {
             await once(socket, 'connect');
+
+            // Respond with an incomplete body to simulate a malformed request.
             socket.end(
               [
                 'POST /users HTTP/1.1',
@@ -345,6 +354,7 @@ describe('Interceptor server', () => {
                 'partial',
               ].join('\r\n'),
             );
+
             await socketClosed;
 
             expect(Buffer.concat(responseChunks).toString()).toMatch(/^(?:$|HTTP\/1\.1 4\d\d )/);
@@ -372,11 +382,15 @@ describe('Interceptor server', () => {
           const socket = connect({ host: server!.hostname, port: server!.port! });
           const socketClosed = once(socket, 'close');
           const responseChunks: Buffer[] = [];
+
           socket.on('data', (chunk: Buffer) => responseChunks.push(chunk));
 
           try {
             await once(socket, 'connect');
+
+            // Send a request with an invalid host header to simulate a malformed request.
             socket.end('GET /users HTTP/1.1\r\nHost: [invalid\r\n\r\n');
+
             await socketClosed;
 
             expect(Buffer.concat(responseChunks).toString()).toMatch(
@@ -407,16 +421,14 @@ describe('Interceptor server', () => {
 
       const rejectedRequests: Promise<unknown>[] = [];
       const handledRequestURLs: string[] = [];
-      let releasePendingResponse!: () => void;
-      const pendingResponseReleased = new Promise<void>((resolve) => {
-        releasePendingResponse = resolve;
-      });
+
+      const pendingResponseReleasedPromise = createPromiseWithResolvers();
 
       worker.onChannel('event', 'interceptors/http/responses/create', async ({ data }) => {
         handledRequestURLs.push(data.request.url);
 
         if (handledRequestURLs.length === 1) {
-          await pendingResponseReleased;
+          await pendingResponseReleasedPromise;
         }
 
         return { response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null } };
@@ -437,7 +449,10 @@ describe('Interceptor server', () => {
           });
 
           const pendingResponsePromise = fetch(baseURL);
-          await waitFor(() => expect(handledRequestURLs).toHaveLength(1));
+
+          await waitFor(() => {
+            expect(handledRequestURLs).toHaveLength(1);
+          });
 
           rejectedRequests.push(
             worker.request('interceptors/http/workers/reset', [
@@ -446,10 +461,12 @@ describe('Interceptor server', () => {
             ]),
           );
 
-          await waitFor(() => expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError)));
-          expect(console.error).toHaveBeenCalledTimes(1);
+          await waitFor(() => {
+            expect(console.error).toHaveBeenCalledTimes(1);
+            expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+          });
 
-          releasePendingResponse();
+          pendingResponseReleasedPromise.resolve();
 
           const pendingResponse = await pendingResponsePromise;
           expect(pendingResponse.status).toBe(204);
@@ -461,7 +478,7 @@ describe('Interceptor server', () => {
           await expectFetchError(fetch(otherBaseURL));
           expect(handledRequestURLs).toHaveLength(2);
         } finally {
-          releasePendingResponse();
+          pendingResponseReleasedPromise.resolve();
           await worker.stop();
           await Promise.allSettled(rejectedRequests);
         }
@@ -500,8 +517,10 @@ describe('Interceptor server', () => {
 
           rejectedRequests.push(worker.request('interceptors/http/workers/reset', { invalid: true } as never));
 
-          await waitFor(() => expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError)));
-          expect(console.error).toHaveBeenCalledTimes(1);
+          await waitFor(() => {
+            expect(console.error).toHaveBeenCalledTimes(1);
+            expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+          });
 
           const response = await fetch(baseURL);
           expect(response.status).toBe(204);
@@ -546,8 +565,10 @@ describe('Interceptor server', () => {
             }),
           );
 
-          await waitFor(() => expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError)));
-          expect(console.error).toHaveBeenCalledTimes(1);
+          await waitFor(() => {
+            expect(console.error).toHaveBeenCalledTimes(1);
+            expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+          });
 
           await expectFetchError(fetch(baseURL));
           expect(handledRequestURLs).toHaveLength(0);
@@ -584,8 +605,10 @@ describe('Interceptor server', () => {
             }),
           );
 
-          await waitFor(() => expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError)));
-          expect(console.error).toHaveBeenCalledTimes(1);
+          await waitFor(() => {
+            expect(console.error).toHaveBeenCalledTimes(1);
+            expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+          });
         } finally {
           await worker.stop();
           await Promise.allSettled(rejectedRequests);
@@ -702,11 +725,12 @@ describe('Interceptor server', () => {
 
       let workerStopPromise: Promise<void> | undefined;
 
+      const unresolvedUnhandledPromise = createPromiseWithResolvers<{ wasLogged: boolean }>();
+
       worker.onChannel('event', 'interceptors/http/responses/unhandled', () => {
         workerStopPromise = worker.stop();
-        return new Promise<never>(() => {
-          // Never replies, keeping the request pending.
-        });
+        // Never replies within the handler, keeping the request pending.
+        return unresolvedUnhandledPromise;
       });
 
       await usingIgnoredConsole(['error'], async (console) => {
@@ -735,7 +759,8 @@ describe('Interceptor server', () => {
           });
         } finally {
           await worker.stop();
-          await workerStopPromise;
+          unresolvedUnhandledPromise.resolve({ wasLogged: true });
+          await Promise.all([workerStopPromise, unresolvedUnhandledPromise]);
         }
       });
     });
@@ -813,7 +838,9 @@ describe('Interceptor server', () => {
             webSocketWorker.request('interceptors/http/workers/reset', []),
           );
 
-          await waitFor(() => expect(console.error).toHaveBeenCalledTimes(2));
+          await waitFor(() => {
+            expect(console.error).toHaveBeenCalledTimes(2);
+          });
           expect(console.error).toHaveBeenCalledWith(
             new InvalidWebSocketMessageError('HTTP RPC received from a non-HTTP worker.'),
           );
@@ -860,16 +887,14 @@ describe('Interceptor server', () => {
             }),
           );
 
-          await waitFor(() =>
+          await waitFor(() => {
             expect(console.error).toHaveBeenCalledWith(
               new InvalidWebSocketMessageError('WebSocket RPC received from a non-WebSocket worker.'),
-            ),
-          );
+            );
+          });
 
           const client = new WebSocketClient<ChatMessage>(baseURL);
-          const closeEventPromise = new Promise<WebSocketClient.CloseEvent<ChatMessage>>((resolve) => {
-            client.addEventListener('close', resolve, { once: true });
-          });
+          const closeEventPromise = waitForWebSocketClientClose(client);
 
           await client.open();
 
@@ -899,12 +924,12 @@ describe('Interceptor server', () => {
 
         try {
           await client.open();
-          await waitFor(() => expect(interceptor.clients).toHaveLength(1));
 
-          const receivedMessages: string[] = [];
-          client.addEventListener('message', ({ data }) => {
-            receivedMessages.push(data);
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(1);
           });
+
+          const receivedMessages = collectWebSocketClientMessages(client);
 
           await otherWorkerClient.start({
             parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws' },
@@ -922,7 +947,9 @@ describe('Interceptor server', () => {
           const ownerMessage = JSON.stringify({ type: 'server', text: 'owner' } satisfies ChatMessage);
           interceptor.server.send(ownerMessage);
 
-          await waitFor(() => expect(receivedMessages).toContain(ownerMessage));
+          await waitFor(() => {
+            expect(receivedMessages).toContain(ownerMessage);
+          });
           expect(receivedMessages).toEqual([ownerMessage]);
         } finally {
           await otherWorkerClient.stop();
@@ -956,12 +983,16 @@ describe('Interceptor server', () => {
         try {
           await removedClient.open();
           await retainedClient.open();
-          await waitFor(() => expect(removedInterceptor.clients).toHaveLength(1));
-          await waitFor(() => expect(retainedInterceptor.clients).toHaveLength(1));
 
-          const removedCloseEventPromise = new Promise<WebSocketClient.CloseEvent<ChatMessage>>((resolve) => {
-            removedClient.addEventListener('close', resolve, { once: true });
+          await waitFor(() => {
+            expect(removedInterceptor.clients).toHaveLength(1);
           });
+
+          await waitFor(() => {
+            expect(retainedInterceptor.clients).toHaveLength(1);
+          });
+
+          const removedCloseEventPromise = waitForWebSocketClientClose(removedClient);
 
           await worker.clearHandlers({ interceptor: removedInterceptor.implementation });
 
@@ -970,13 +1001,11 @@ describe('Interceptor server', () => {
           expect(retainedClient.readyState).toBe(WebSocketClient.OPEN);
 
           const retainedMessage = JSON.stringify({ type: 'server', text: 'retained' } satisfies ChatMessage);
-          const retainedMessagePromise = new Promise<WebSocketClient.MessageEvent<ChatMessage>>((resolve) => {
-            retainedClient.addEventListener('message', resolve, { once: true });
-          });
+          const retainedMessagePromise = waitForWebSocketClientMessage(retainedClient);
 
           await worker.sendToClients(retainedInterceptor.implementation, retainedMessage);
 
-          await expect(retainedMessagePromise).resolves.toMatchObject({ data: retainedMessage });
+          await expect(retainedMessagePromise).resolves.toBe(retainedMessage);
         } finally {
           await Promise.all([removedClient.close(), retainedClient.close()]);
         }
@@ -996,11 +1025,12 @@ describe('Interceptor server', () => {
 
         try {
           await client.open();
-          await waitFor(() => expect(interceptor.clients).toHaveLength(1));
 
-          const closeEventPromise = new Promise<WebSocketClient.CloseEvent<ChatMessage>>((resolve) => {
-            client.addEventListener('close', resolve, { once: true });
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(1);
           });
+
+          const closeEventPromise = waitForWebSocketClientClose(client);
 
           await server!.stop();
 
@@ -1025,6 +1055,7 @@ describe('Interceptor server', () => {
         const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
           url: `ws://${server.hostname}:${server.port}`,
         });
+
         worker.onChannel('event', 'interceptors/ws/clients/connect', () => ({ accepted: true }));
 
         const rejectedRequests: Promise<unknown>[] = [];
@@ -1042,10 +1073,7 @@ describe('Interceptor server', () => {
 
             await client.open();
 
-            const receivedMessages: string[] = [];
-            client.addEventListener('message', ({ data }) => {
-              receivedMessages.push(data);
-            });
+            const receivedMessages = collectWebSocketClientMessages(client);
 
             rejectedRequests.push(
               worker.request('interceptors/ws/workers/reset', [
@@ -1054,18 +1082,21 @@ describe('Interceptor server', () => {
               ]),
             );
 
-            await waitFor(() => expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError)));
+            await waitFor(() => {
+              expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+            });
             expect(console.error).toHaveBeenCalledTimes(1);
 
             expect(client.readyState).toBe(WebSocketClient.OPEN);
 
             const message = JSON.stringify({ type: 'server', text: 'retained' } satisfies ChatMessage);
             worker.send('interceptors/ws/messages/send', { data: { type: 'text', data: message } });
-            await waitFor(() => expect(receivedMessages).toEqual([message]));
 
-            const otherCloseEventPromise = new Promise<WebSocketClient.CloseEvent<ChatMessage>>((resolve) => {
-              otherClient.addEventListener('close', resolve, { once: true });
+            await waitFor(() => {
+              expect(receivedMessages).toEqual([message]);
             });
+
+            const otherCloseEventPromise = waitForWebSocketClientClose(otherClient);
 
             await otherClient.open();
 
@@ -1102,12 +1133,12 @@ describe('Interceptor server', () => {
 
             rejectedRequests.push(worker.request('interceptors/ws/workers/commit', { id: 1 as never, baseURL }));
 
-            await waitFor(() => expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError)));
+            await waitFor(() => {
+              expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+            });
             expect(console.error).toHaveBeenCalledTimes(1);
 
-            const closeEventPromise = new Promise<WebSocketClient.CloseEvent<ChatMessage>>((resolve) => {
-              client.addEventListener('close', resolve, { once: true });
-            });
+            const closeEventPromise = waitForWebSocketClientClose(client);
 
             await client.open();
 
@@ -1146,7 +1177,9 @@ describe('Interceptor server', () => {
               }),
             );
 
-            await waitFor(() => expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError)));
+            await waitFor(() => {
+              expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+            });
             expect(console.error).toHaveBeenCalledTimes(1);
           } finally {
             await worker.stop();
@@ -1165,6 +1198,7 @@ describe('Interceptor server', () => {
           url: `ws://${server.hostname}:${server.port}`,
           messageTimeout: 500,
         });
+
         worker.onChannel('event', 'interceptors/ws/clients/connect', () => ({ accepted: true }));
 
         const client = new WebSocketClient<ChatMessage>(baseURL);
@@ -1180,10 +1214,7 @@ describe('Interceptor server', () => {
 
             await client.open();
 
-            const receivedMessages: string[] = [];
-            client.addEventListener('message', ({ data }) => {
-              receivedMessages.push(data);
-            });
+            const receivedMessages = collectWebSocketClientMessages(client);
 
             worker.send('interceptors/ws/messages/send', { data: { type: 'binary', data: 'not base64!' } });
             worker.send('interceptors/ws/messages/send', { data: { type: 'unknown', data: 'text' } as never });
@@ -1195,7 +1226,9 @@ describe('Interceptor server', () => {
             const validMessage = JSON.stringify({ type: 'server', text: 'valid' } satisfies ChatMessage);
             worker.send('interceptors/ws/messages/send', { data: { type: 'text', data: validMessage } });
 
-            await waitFor(() => expect(receivedMessages).toEqual([validMessage]));
+            await waitFor(() => {
+              expect(receivedMessages).toEqual([validMessage]);
+            });
             expect(console.error).toHaveBeenCalledTimes(3);
             expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
           } finally {
@@ -1215,6 +1248,7 @@ describe('Interceptor server', () => {
           url: `ws://${server.hostname}:${server.port}`,
           messageTimeout: 500,
         });
+
         worker.onChannel('event', 'interceptors/ws/clients/connect', () => ({ accepted: true }));
 
         const client = new WebSocketClient<ChatMessage>(baseURL);
@@ -1229,10 +1263,7 @@ describe('Interceptor server', () => {
 
           await client.open();
 
-          const receivedMessages: string[] = [];
-          client.addEventListener('message', ({ data }) => {
-            receivedMessages.push(data);
-          });
+          const receivedMessages = collectWebSocketClientMessages(client);
 
           const messages = ['not json {', '', '{"unrelated":[1,2,3]}', 'ação 🚀'];
 
@@ -1240,7 +1271,9 @@ describe('Interceptor server', () => {
             worker.send('interceptors/ws/messages/send', { data: { type: 'text', data: message } });
           }
 
-          await waitFor(() => expect(receivedMessages).toEqual(messages));
+          await waitFor(() => {
+            expect(receivedMessages).toEqual(messages);
+          });
         } finally {
           await client.close();
           await worker.stop();
@@ -1277,9 +1310,7 @@ describe('Interceptor server', () => {
 
             await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
 
-            const closeEventPromise = new Promise<WebSocketClient.CloseEvent<ChatMessage>>((resolve) => {
-              client.addEventListener('close', resolve, { once: true });
-            });
+            const closeEventPromise = waitForWebSocketClientClose(client);
 
             await client.open();
 
@@ -1290,17 +1321,16 @@ describe('Interceptor server', () => {
             expect(console.error).toHaveBeenCalledTimes(1);
             expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
 
-            const receivedMessages: string[] = [];
-            otherClient.addEventListener('message', ({ data }) => {
-              receivedMessages.push(data);
-            });
+            const receivedMessages = collectWebSocketClientMessages(otherClient);
 
             await otherClient.open();
 
             const message = JSON.stringify({ type: 'server', text: 'accepted' } satisfies ChatMessage);
             worker.send('interceptors/ws/messages/send', { data: { type: 'text', data: message } });
 
-            await waitFor(() => expect(receivedMessages).toEqual([message]));
+            await waitFor(() => {
+              expect(receivedMessages).toEqual([message]);
+            });
           } finally {
             await Promise.all([client.close(), otherClient.close()]);
             await worker.stop();
@@ -1321,12 +1351,13 @@ describe('Interceptor server', () => {
 
         let connectionRequestsCount = 0;
 
+        const unresolvedConnectPromise = createPromiseWithResolvers<{ accepted: boolean }>();
+
         worker.onChannel('event', 'interceptors/ws/clients/connect', () => {
           connectionRequestsCount++;
           return connectionRequestsCount === 1
-            ? new Promise<never>(() => {
-                // Never replies, keeping the request pending.
-              })
+            ? // Never replies within the handler, keeping the request pending.
+              unresolvedConnectPromise
             : { accepted: true };
         });
 
@@ -1342,12 +1373,13 @@ describe('Interceptor server', () => {
 
             await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
 
-            const closeEventPromise = new Promise<WebSocketClient.CloseEvent<ChatMessage>>((resolve) => {
-              client.addEventListener('close', resolve, { once: true });
-            });
+            const closeEventPromise = waitForWebSocketClientClose(client);
 
             await client.open();
-            await waitFor(() => expect(connectionRequestsCount).toBe(1));
+
+            await waitFor(() => {
+              expect(connectionRequestsCount).toBe(1);
+            });
 
             await worker.request('interceptors/ws/workers/reset', []);
 
@@ -1358,20 +1390,20 @@ describe('Interceptor server', () => {
 
             await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
 
-            const receivedMessages: string[] = [];
-            otherClient.addEventListener('message', ({ data }) => {
-              receivedMessages.push(data);
-            });
+            const receivedMessages = collectWebSocketClientMessages(otherClient);
 
             await otherClient.open();
 
             const message = JSON.stringify({ type: 'server', text: 'accepted' } satisfies ChatMessage);
             worker.send('interceptors/ws/messages/send', { data: { type: 'text', data: message } });
 
-            await waitFor(() => expect(receivedMessages).toEqual([message]));
+            await waitFor(() => {
+              expect(receivedMessages).toEqual([message]);
+            });
             expect(connectionRequestsCount).toBe(2);
           } finally {
-            await Promise.all([client.close(), otherClient.close()]);
+            unresolvedConnectPromise.resolve({ accepted: false });
+            await Promise.all([client.close(), otherClient.close(), unresolvedConnectPromise]);
             await worker.stop();
           }
         });
@@ -1396,12 +1428,12 @@ describe('Interceptor server', () => {
           await usingIgnoredConsole(['error'], async (console) => {
             try {
               await client.open();
-              await waitFor(() => expect(interceptor.clients).toHaveLength(1));
 
-              const receivedMessages: string[] = [];
-              client.addEventListener('message', ({ data }) => {
-                receivedMessages.push(data);
+              await waitFor(() => {
+                expect(interceptor.clients).toHaveLength(1);
               });
+
+              const receivedMessages = collectWebSocketClientMessages(client);
 
               await httpWorker.start({
                 parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
@@ -1413,7 +1445,9 @@ describe('Interceptor server', () => {
 
               rejectedRequests.push(httpWorker.request('interceptors/ws/workers/reset', []));
 
-              await waitFor(() => expect(console.error).toHaveBeenCalledTimes(2));
+              await waitFor(() => {
+                expect(console.error).toHaveBeenCalledTimes(2);
+              });
               expect(console.error).toHaveBeenCalledWith(
                 new InvalidWebSocketMessageError('WebSocket RPC received from a non-WebSocket worker.'),
               );
@@ -1424,7 +1458,9 @@ describe('Interceptor server', () => {
               const ownerMessage = JSON.stringify({ type: 'server', text: 'owner' } satisfies ChatMessage);
               interceptor.server.send(ownerMessage);
 
-              await waitFor(() => expect(receivedMessages).toContain(ownerMessage));
+              await waitFor(() => {
+                expect(receivedMessages).toContain(ownerMessage);
+              });
               expect(receivedMessages).toEqual([ownerMessage]);
             } finally {
               await httpWorker.stop();
