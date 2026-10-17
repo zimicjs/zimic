@@ -5,7 +5,7 @@ import { IncomingMessage, Server as HttpServer, createServer, ServerResponse } f
 import type { WebSocket as Socket } from 'isomorphic-ws';
 import color from 'picocolors';
 
-import type { InterceptorServerRPCProtocol } from '@/interceptor/constants';
+import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER, type InterceptorServerRPCProtocol } from '@/interceptor/constants';
 import { isLoopbackHostname } from '@/utils/http';
 import { logger, logUnhandledRequestWarning } from '@/utils/logging';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
@@ -19,7 +19,6 @@ import {
   DEFAULT_LOG_UNHANDLED_REQUESTS,
   DEFAULT_HOSTNAME,
   DEFAULT_PREFLIGHT_STATUS_CODE,
-  INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER,
 } from './constants';
 import NotRunningInterceptorServerError from './errors/NotRunningInterceptorServerError';
 import RunningInterceptorServerError from './errors/RunningInterceptorServerError';
@@ -30,6 +29,7 @@ import type { InterceptorServer as PublicInterceptorServer } from './types/publi
 import type { InterceptorServerWebSocketSchema } from './types/schema';
 import { validateInterceptorToken } from './utils/auth';
 import { getFetchAPI } from './utils/fetch';
+import { rejectNodeResponse } from './utils/http';
 import WebSocketInterceptorServerRuntime from './ws/WebSocketInterceptorServerRuntime';
 
 const importHttpInterceptorServerRuntime = createCachedDynamicImport(
@@ -236,13 +236,13 @@ class InterceptorServer implements PublicInterceptorServer {
   private isWebSocketRPCRequest(request: IncomingMessage) {
     return this.getWebSocketRequestParameters(request).some(
       (parameter) =>
-        parameter === INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER ||
-        parameter.startsWith(`${INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER}=`),
+        parameter === INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER ||
+        parameter.startsWith(`${INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER}=`),
     );
   }
 
   private getWebSocketRPCProtocol(request: IncomingMessage): InterceptorServerRPCProtocol | undefined {
-    const protocolParameterPrefix = `${INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER}=`;
+    const protocolParameterPrefix = `${INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER}=`;
 
     const protocol = this.getWebSocketRequestParameters(request)
       .find((parameter) => parameter.startsWith(protocolParameterPrefix))
@@ -424,7 +424,7 @@ class InterceptorServer implements PublicInterceptorServer {
         return this.logUnhandledRequestWithoutRuntime(nodeRequest, nodeResponse);
       }
 
-      nodeResponse.destroy();
+      rejectNodeResponse(nodeResponse);
       return;
     }
 
@@ -438,7 +438,7 @@ class InterceptorServer implements PublicInterceptorServer {
     } catch (error) {
       console.error(error);
     } finally {
-      nodeResponse.destroy();
+      rejectNodeResponse(nodeResponse);
     }
   }
 }

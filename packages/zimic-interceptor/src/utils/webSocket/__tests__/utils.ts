@@ -4,6 +4,28 @@ import { vi } from 'vitest';
 
 const { WebSocketServer: ServerSocket } = ClientSocket;
 
+export function waitForClientSocketClose(socket: ClientSocket) {
+  return new Promise<ClientSocket.CloseEvent>((resolve) => {
+    socket.addEventListener('close', resolve, { once: true });
+  });
+}
+
+export function collectClientSocketJSONMessages<Message>(socket: ClientSocket) {
+  const messages: Message[] = [];
+
+  socket.addEventListener('message', (message) => {
+    /* istanbul ignore if -- @preserve
+     * All messages are expected to be strings. */
+    if (typeof message.data !== 'string') {
+      throw new Error('Unexpected message type');
+    }
+
+    messages.push(JSON.parse(message.data) as Message);
+  });
+
+  return messages;
+}
+
 export function delayClientSocketOpen(delayDuration: number) {
   const originalClientSocketAddEventListener = ClientSocket.prototype.addEventListener;
 

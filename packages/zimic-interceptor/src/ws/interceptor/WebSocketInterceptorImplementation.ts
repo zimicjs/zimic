@@ -20,7 +20,6 @@ import type { WebSocketInterceptorClient, WebSocketInterceptorServerSendOptions 
 import { WebSocketInterceptorMessageSaving } from './types/options';
 import type { WebSocketInterceptorConnectionListener } from './types/public';
 import {
-  createWebSocketInterceptorClient,
   createWebSocketInterceptorServer,
   InternalWebSocketInterceptorClient,
   InternalWebSocketInterceptorServer,
@@ -292,7 +291,7 @@ class WebSocketInterceptorImplementation<
     /* istanbul ignore if -- @preserve
      * Workers only forward messages while the owning interceptor is running. */
     if (!this.isRunning) {
-      return false;
+      return;
     }
 
     const message = normalizeWebSocketMessageData(data);
@@ -302,7 +301,7 @@ class WebSocketInterceptorImplementation<
     const matchedHandler = await this.findMatchedHandler(message, context);
 
     if (!matchedHandler) {
-      return false;
+      return;
     }
 
     await matchedHandler.handler.applyDeclarations(matchedHandler.message, context);
@@ -310,15 +309,6 @@ class WebSocketInterceptorImplementation<
     if (this.messageSaving.enabled && messageSavingGeneration === this.messageSavingGeneration) {
       matchedHandler.handler.saveInterceptedMessage(matchedHandler.message, context);
     }
-
-    return true;
-  }
-
-  createClient(
-    url: string,
-    options: { send: (data: WebSocketMessageData<Schema>) => void },
-  ): InternalWebSocketInterceptorClient<Schema> {
-    return createWebSocketInterceptorClient(url, options.send);
   }
 
   addClient(client: InternalWebSocketInterceptorClient<Schema>) {

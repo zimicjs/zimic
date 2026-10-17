@@ -1,10 +1,9 @@
 import { startHttpServer, stopHttpServer } from '@zimic/utils/server';
 import { waitFor, waitForNot } from '@zimic/utils/time';
+import { WebSocketCloseTimeoutError, WebSocketOpenTimeoutError } from '@zimic/utils/ws';
 import { createServer as createHttpServer, Server as HttpServer } from 'http';
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
-import { WebSocketCloseTimeoutError } from '@/errors/WebSocketCloseTimeoutError';
-import { WebSocketOpenTimeoutError } from '@/errors/WebSocketOpenTimeoutError';
 import { WebSocketServer } from '@/server';
 import { WebSocketSchema } from '@/types/schema';
 

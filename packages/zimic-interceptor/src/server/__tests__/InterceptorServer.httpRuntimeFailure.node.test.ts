@@ -2,9 +2,9 @@ import { expectFetchError } from '@zimic/utils/fetch';
 import { waitFor } from '@zimic/utils/time';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 
-import { INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER } from '../constants';
 import type { InterceptorServerWebSocketSchema } from '../types/schema';
 
 const httpRuntimeMock = vi.hoisted(() => {
@@ -83,7 +83,7 @@ describe('Interceptor server > HTTP runtime failures', () => {
 
       const staleWorkerStartRejection = expect(
         staleWorker.start({
-          parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http' },
+          parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
           waitForAuthentication: true,
         }),
       ).rejects.toHaveProperty('code', ABNORMAL_CLOSE_CODE);
@@ -109,7 +109,7 @@ describe('Interceptor server > HTTP runtime failures', () => {
       workers.push(activeWorker);
 
       await activeWorker.start({
-        parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http' },
+        parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
         waitForAuthentication: true,
       });
 
@@ -145,7 +145,7 @@ describe('Interceptor server > HTTP runtime failures', () => {
 
       await expect(
         failingWorker.start({
-          parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http' },
+          parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
           waitForAuthentication: true,
         }),
       ).rejects.toThrow('Could not load the HTTP interceptor runtime. (code 1008)');
@@ -161,7 +161,7 @@ describe('Interceptor server > HTTP runtime failures', () => {
       workers.push(activeWorker);
 
       await activeWorker.start({
-        parameters: { [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http' },
+        parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
         waitForAuthentication: true,
       });
 

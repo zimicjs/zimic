@@ -2,20 +2,18 @@ import { beforeAll, describe } from 'vitest';
 
 import { getBrowserBaseURL } from '@tests/utils/interceptors';
 
-import { declareActionWebSocketInterceptorTests } from './shared/actions';
 import testMatrix from './shared/matrix';
+import { declareResponseActionsWebSocketInterceptorTests } from './shared/responseActions';
 
-describe.each(testMatrix)('WebSocketInterceptor (browser, $type) > Actions', ({ type }) => {
+describe.each(testMatrix)('WebSocketInterceptor (browser, $type) > Response actions', ({ type }) => {
   let baseURL: string;
 
   beforeAll(() => {
     baseURL = getBrowserBaseURL(type).replace(/^http/, 'ws');
   });
 
-  declareActionWebSocketInterceptorTests({
-    platform: 'browser',
+  declareResponseActionsWebSocketInterceptorTests({
     type,
     getBaseURL: () => baseURL,
-    getInterceptorOptions: () => ({ type, baseURL }),
   });
 });

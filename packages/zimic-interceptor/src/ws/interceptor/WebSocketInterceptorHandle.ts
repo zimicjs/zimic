@@ -15,12 +15,6 @@ export interface InternalWebSocketInterceptorClient<
   messages: InterceptedWebSocketInterceptorMessage<Schema>[];
 }
 
-export interface InternalWebSocketInterceptorServer<
-  Schema extends WebSocketSchema,
-> extends WebSocketInterceptorServer<Schema> {
-  messages: InterceptedWebSocketInterceptorMessage<Schema>[];
-}
-
 class WebSocketInterceptorClientImplementation<
   Schema extends WebSocketSchema,
 > implements InternalWebSocketInterceptorClient<Schema> {
@@ -40,6 +34,19 @@ class WebSocketInterceptorClientImplementation<
   send(data: WebSocketMessageData<Schema>) {
     this.#sendMessage(data);
   }
+}
+
+export function createWebSocketInterceptorClient<Schema extends WebSocketSchema>(
+  url: string,
+  send: (data: WebSocketMessageData<Schema>) => void,
+): InternalWebSocketInterceptorClient<Schema> {
+  return new WebSocketInterceptorClientImplementation(url, send);
+}
+
+export interface InternalWebSocketInterceptorServer<
+  Schema extends WebSocketSchema,
+> extends WebSocketInterceptorServer<Schema> {
+  messages: InterceptedWebSocketInterceptorMessage<Schema>[];
 }
 
 class WebSocketInterceptorServerImplementation<
@@ -69,16 +76,9 @@ class WebSocketInterceptorServerImplementation<
   }
 }
 
-export function createWebSocketInterceptorClient<Schema extends WebSocketSchema>(
-  url: string,
-  send: (data: WebSocketMessageData<Schema>) => void,
-) {
-  return new WebSocketInterceptorClientImplementation(url, send);
-}
-
 export function createWebSocketInterceptorServer<Schema extends WebSocketSchema>(
   getURL: () => string,
   send: (data: WebSocketMessageData<Schema>, options?: WebSocketInterceptorServerSendOptions<Schema>) => void,
-) {
+): InternalWebSocketInterceptorServer<Schema> {
   return new WebSocketInterceptorServerImplementation(getURL, send);
 }

@@ -1,5 +1,4 @@
 import { PossiblePromise } from '@zimic/utils/types';
-import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { expect } from 'vitest';
 
 import WebSocketTimesCheckError from '@/ws/errors/WebSocketTimesCheckError';
@@ -17,32 +16,6 @@ export interface RuntimeSharedWebSocketInterceptorTestsOptions {
   getBaseURL: () => string;
   getOtherBaseURL?: () => string;
   getInterceptorOptions: () => WebSocketInterceptorOptions;
-}
-
-export async function usingWebSocketClient<Schema extends WebSocketSchema>(
-  baseURL: string,
-  callback: (client: WebSocketClient<Schema>) => PossiblePromise<void>,
-) {
-  const client = new WebSocketClient<Schema>(baseURL);
-
-  try {
-    await client.open();
-    await callback(client);
-  } finally {
-    await client.close();
-  }
-}
-
-export async function waitForWebSocketMessage<Schema extends WebSocketSchema>(client: WebSocketClient<Schema>) {
-  const event = await new Promise<WebSocketClient.MessageEvent<Schema>>((resolve) => {
-    client.addEventListener('message', resolve, { once: true });
-  });
-
-  if (typeof event.data === 'string' && /^[{[]/.test(event.data.trim())) {
-    return JSON.parse(event.data);
-  }
-
-  return event.data;
 }
 
 export async function readBytes(data: Blob | ArrayBuffer) {

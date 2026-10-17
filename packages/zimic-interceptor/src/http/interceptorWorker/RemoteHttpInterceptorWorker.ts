@@ -2,7 +2,7 @@ import type { HttpBody, HttpHeadersInit, HttpMethod, HttpRequest, HttpSchema } f
 import type { PossiblePromise } from '@zimic/utils/types';
 import { validatePathParams } from '@zimic/utils/url';
 
-import { INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER } from '@/interceptor/constants';
+import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
 import UnsupportedResponseBypassError from '@/server/errors/UnsupportedResponseBypassError';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/types/schema';
 import { isClientSide, isServerSide } from '@/utils/environment';
@@ -60,6 +60,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   async start() {
     await super.sharedStart(async () => {
       this.webSocketClient.onChannel('event', 'interceptors/http/responses/create', this.createResponse);
+
       this.webSocketClient.onChannel(
         'event',
         'interceptors/http/responses/unhandled',
@@ -68,7 +69,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
       await this.webSocketClient.start({
         parameters: {
-          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http',
+          [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
           ...(this.auth ? { token: this.auth.token } : {}),
         },
         waitForAuthentication: true,
@@ -101,9 +102,6 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       console.error(error);
     }
 
-    const strategy = await super.getUnhandledRequestStrategy(request, 'remote');
-    await super.logUnhandledRequestIfNecessary(request, strategy);
-
     return { response: null };
   };
 
@@ -135,6 +133,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   async stop() {
     await super.sharedStop(async () => {
       this.webSocketClient.offChannel('event', 'interceptors/http/responses/create', this.createResponse);
+
       this.webSocketClient.offChannel(
         'event',
         'interceptors/http/responses/unhandled',

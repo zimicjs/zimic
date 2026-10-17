@@ -1,11 +1,12 @@
 import { waitFor } from '@zimic/utils/time';
+import { closeWebSocketClient } from '@zimic/utils/ws';
 import ClientSocket from 'isomorphic-ws';
 import { expect, it, vi } from 'vitest';
 
-import { closeClientSocket, waitForOpenClientSocket } from '@/utils/webSocket';
+import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
+import { waitForOpenClientSocket } from '@/utils/webSocket';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 
-import { INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER } from '../constants';
 import type { InterceptorServerWebSocketSchema } from '../types/schema';
 import { createInterceptorToken, DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY, removeInterceptorToken } from '../utils/auth';
 
@@ -50,7 +51,7 @@ it('should isolate a missing HTTP peer from authenticated WebSocket workers', as
 
     await webSocketWorker.start({
       parameters: {
-        [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
+        [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
         token: token.value,
       },
       waitForAuthentication: true,
@@ -67,7 +68,7 @@ it('should isolate a missing HTTP peer from authenticated WebSocket workers', as
     await expect(
       unauthenticatedHttpWorker.start({
         parameters: {
-          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http',
+          [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
         },
         waitForAuthentication: true,
       }),
@@ -87,7 +88,7 @@ it('should isolate a missing HTTP peer from authenticated WebSocket workers', as
     await expect(
       authenticatedHttpWorker.start({
         parameters: {
-          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'http',
+          [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
           token: token.value,
         },
         waitForAuthentication: true,
@@ -108,7 +109,7 @@ it('should isolate a missing HTTP peer from authenticated WebSocket workers', as
     });
   } finally {
     if (userSocket) {
-      await closeClientSocket(userSocket);
+      await closeWebSocketClient(userSocket);
     }
     await Promise.all(workers.map((worker) => worker.stop()));
     await server.stop();
