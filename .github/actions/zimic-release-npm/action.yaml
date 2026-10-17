@@ -49,13 +49,15 @@ runs:
         # npm 11.5.1 or later is required for trusted publishing.
         npm install -g npm@11.6.2
 
-        # npm does not replace workspace: ranges, so we pack with pnpm and publish the tarball.
+        # npm does not replace "workspace:" ranges, so we pack with pnpm and publish the tarball.
         packDirectory="$(mktemp -d)"
         pnpm pack --pack-destination "$packDirectory"
         tarballPath="$(echo "$packDirectory"/*.tgz)"
 
-        if tar -xzOf "$tarballPath" package/package.json | grep --quiet '"workspace:'; then
-          echo 'The packed package.json contains workspace: ranges.' >&2
+        packedManifest="$(tar -xzOf "$tarballPath" package/package.json)"
+
+        if grep --quiet '"workspace:' <<< "$packedManifest"; then
+          echo 'The packed package.json still has "workspace:" ranges. Something likely went wrong with the packing script and they were not replaced. Aborting the release because package managers may be unable to interpret the versions correctly.' >&2
           exit 1
         fi
 
