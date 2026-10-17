@@ -406,7 +406,9 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private async createResponseForRequest(request: SerializedHttpRequest) {
-    const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
+    // Handlers may be committed or reset while we wait for responses, so we iterate over a snapshot of them. Otherwise,
+    // the indexes could shift and the same handler could be asked for a response more than once.
+    const methodHandlers = [...this.httpHandlersByMethod[request.method as HttpMethod]];
 
     const requestURL = excludeNonPathParams(new URL(request.url));
     const requestURLAsString = requestURL.href === `${requestURL.origin}/` ? requestURL.origin : requestURL.href;
