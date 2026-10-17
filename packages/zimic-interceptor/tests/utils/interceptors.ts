@@ -333,8 +333,27 @@ export function getPreflightAssessment(resources: {
 }) {
   const { method, platform, type } = resources;
 
+  const canIncludePreflight = method === 'OPTIONS' && platform === 'browser' && type === 'remote';
+
   return {
     overridesPreflightResponse: method === 'OPTIONS' && type === 'remote',
-    numberOfRequestsIncludingPreflight: method === 'OPTIONS' && platform === 'browser' && type === 'remote' ? 2 : 1,
+
+    // Browsers may skip CORS preflights, so each request may or may not be preceded by one. Preflights are not
+    // distinguishable from requests in the worker because browsers drop the forbidden `access-control-request-*`
+    // headers when deserializing them. The function below returns the possible numbers of requests including a
+    // preflight, from the original number of requests (0 preflight requests) up to the maximum of one preflight request
+    // per original request.
+    getNumbersOfRequestsIncludingPreflight(numberOfRequestsWithoutPreflight: number) {
+      const maximumNumberOfRequests = canIncludePreflight
+        ? numberOfRequestsWithoutPreflight * 2 // At most, each request will be preceded by one preflight request.
+        : numberOfRequestsWithoutPreflight;
+
+      const rangeFromMinimumToMaximumNumberOfRequests = Array.from(
+        { length: maximumNumberOfRequests - numberOfRequestsWithoutPreflight + 1 },
+        (_, index) => numberOfRequestsWithoutPreflight + index,
+      );
+
+      return rangeFromMinimumToMaximumNumberOfRequests;
+    },
   };
 }

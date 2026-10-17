@@ -1,6 +1,6 @@
 import type { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
-import { INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER } from '@/interceptor/constants';
+import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
 import { InterceptorServerWebSocketSchema, WebSocketHandlerCommit } from '@/server/types/schema';
 import { isClientSide, isServerSide } from '@/utils/environment';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
@@ -10,7 +10,10 @@ import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 import NotRunningWebSocketInterceptorError from '../interceptor/errors/NotRunningWebSocketInterceptorError';
 import UnknownWebSocketInterceptorPlatformError from '../interceptor/errors/UnknownWebSocketInterceptorPlatformError';
 import { WebSocketInterceptorPlatform } from '../interceptor/types/options';
-import { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
+import {
+  createWebSocketInterceptorClient,
+  InternalWebSocketInterceptorClient,
+} from '../interceptor/WebSocketInterceptorHandle';
 import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
 import {
   deserializeWebSocketMessageDataFromTransport,
@@ -52,7 +55,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     await super.sharedStart(async () => {
       await this.webSocketClient.start({
         parameters: {
-          [INTERCEPTOR_SERVER_WEB_SOCKET_RPC_PARAMETER]: 'ws',
+          [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
           ...(this.auth ? { token: this.auth.token } : {}),
         },
         waitForAuthentication: true,
@@ -85,8 +88,11 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       this.webSocketClient.offChannel('event', 'interceptors/ws/clients/connect', this.connectClient);
       this.webSocketClient.offChannel('event', 'interceptors/ws/clients/close', this.closeClient);
       this.webSocketClient.offChannel('event', 'interceptors/ws/messages/handle', this.handleMessage);
+
       await this.clearHandlers();
+
       await this.webSocketClient.stop();
+
       this.isRunning = false;
       this.platform = null;
     });
@@ -104,6 +110,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
 
     const handlerId = crypto.randomUUID();
+
     const commitPromise = this.webSocketClient
       .request('interceptors/ws/workers/commit', {
         id: handlerId,
@@ -169,10 +176,8 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       return { accepted: false };
     }
 
-    const client = handler.interceptor.createClient(connection.url, {
-      send: (data) => {
-        void this.sendToClient(client, data);
-      },
+    const client = createWebSocketInterceptorClient(connection.url, async (data) => {
+      await this.sendToClient(client, data);
     });
 
     // The registry is intentionally schema-erased because one remote worker owns interceptors for any schema.
@@ -210,7 +215,9 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
 
     try {
-      await handler.interceptor.handleInterceptedMessage(deserializeWebSocketMessageDataFromTransport(message.data), {
+      const deserializedMessageData = deserializeWebSocketMessageDataFromTransport(message.data);
+
+      await handler.interceptor.handleInterceptedMessage(deserializedMessageData, {
         sender: client,
         receiver: handler.interceptor.server,
       });
@@ -252,9 +259,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   }
 
   async clearHandlers<Schema extends WebSocketSchema>(
-    options: {
-      interceptor?: AnyWebSocketInterceptorImplementation<Schema>;
-    } = {},
+    options: { interceptor?: AnyWebSocketInterceptorImplementation<Schema> } = {},
   ) {
     if (!this.isRunning) {
       throw new NotRunningWebSocketInterceptorError();

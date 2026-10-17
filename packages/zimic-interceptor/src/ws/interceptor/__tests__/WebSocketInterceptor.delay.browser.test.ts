@@ -13,9 +13,7 @@ describe.each(testMatrix)('WebSocketInterceptor (browser, $type) > Delay', ({ ty
   });
 
   declareDelayWebSocketInterceptorTests({
-    platform: 'browser',
     type,
     getBaseURL: () => baseURL,
-    getInterceptorOptions: () => ({ type, baseURL }),
   });
 });

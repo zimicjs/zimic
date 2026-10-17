@@ -1,37 +1,23 @@
-import { WebSocketMessageData } from '@zimic/ws';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
+import { waitFor } from '@zimic/utils/time';
+import { WebSocketClient } from '@zimic/ws';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createInternalWebSocketInterceptor } from '@tests/utils/interceptors';
-import { promiseIfRemote } from '@tests/utils/promises';
+import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
-import LocalWebSocketInterceptor from '../../../interceptor/LocalWebSocketInterceptor';
-import RemoteWebSocketInterceptor from '../../../interceptor/RemoteWebSocketInterceptor';
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
-import {
-  createWebSocketInterceptorClient,
-  InternalWebSocketInterceptorClient,
-} from '../../../interceptor/WebSocketInterceptorHandle';
-import WebSocketInterceptorImplementation from '../../../interceptor/WebSocketInterceptorImplementation';
-import type { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
 import { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
-import { WebSocketMessageHandlerMessageMatch } from '../../WebSocketMessageHandlerImplementation';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './utils';
 
 export function declareDefaultWebSocketMessageHandlerTests(
   options: SharedWebSocketMessageHandlerTestOptions & {
     type: WebSocketInterceptorType;
-    Handler: typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
   },
 ) {
-  const { platform, type, startServer, stopServer, getBaseURL, Handler } = options;
+  const { type, startServer, stopServer, getBaseURL } = options;
 
   let baseURL: string;
-
-  let interceptor: LocalWebSocketInterceptor<Schema> | RemoteWebSocketInterceptor<Schema>;
-  let interceptorImplementation: WebSocketInterceptorImplementation<Schema>;
-
-  let sendToSender: ReturnType<typeof vi.fn<(data: WebSocketMessageData<Schema>) => void>>;
-  let sender: InternalWebSocketInterceptorClient<Schema>;
 
   beforeAll(async () => {
     if (type === 'remote') {
@@ -41,22 +27,6 @@ export function declareDefaultWebSocketMessageHandlerTests(
 
   beforeEach(async () => {
     baseURL = await getBaseURL(type);
-
-    interceptor = createInternalWebSocketInterceptor<Schema>({ type, baseURL, messageSaving: { enabled: true } });
-    interceptorImplementation = interceptor.implementation;
-
-    expect(interceptor.platform).toBe(null);
-
-    await interceptor.start();
-
-    expect(interceptor.platform).toBe(platform);
-
-    sendToSender = vi.fn();
-    sender = createWebSocketInterceptorClient<Schema>(baseURL, sendToSender);
-  });
-
-  afterEach(async () => {
-    await interceptor.stop();
   });
 
   afterAll(async () => {
@@ -65,156 +35,171 @@ export function declareDefaultWebSocketMessageHandlerTests(
     }
   });
 
-  it('should match any message if contains no declared response, effect, or restrictions', async () => {
-    const handler = new Handler<Schema>(interceptorImplementation);
-
-    const message: Schema = { type: 'create', body: { text: 'hello' } };
-    const context = { sender, receiver: interceptorImplementation.server };
-
-    expect(await handler.implementation.matchesMessage(message, context)).toEqual<WebSocketMessageHandlerMessageMatch>({
-      success: true,
-      message,
-    });
-
-    await promiseIfRemote(handler.respond({ type: 'delete', id: '1' }).with({}), interceptor);
-
-    expect(await handler.implementation.matchesMessage(message, context)).toEqual<WebSocketMessageHandlerMessageMatch>({
-      success: true,
-      message,
-    });
-  });
-
-  it('should keep track of the intercepted messages', async () => {
-    const handler = new Handler<Schema>(interceptorImplementation);
-    await promiseIfRemote(handler.respond({ type: 'delete', id: '1' }), interceptor);
-
-    expect(handler.messages).toEqual([]);
-
-    const message: Schema = { type: 'create', body: { text: 'hello' } };
-    const receiver = interceptorImplementation.server;
-
-    const wasHandled = await interceptorImplementation.handleInterceptedMessage(JSON.stringify(message), {
-      sender,
-      receiver,
-    });
-    expect(wasHandled).toBe(true);
-
-    expect(sendToSender).toHaveBeenCalledTimes(1);
-    expect(sendToSender).toHaveBeenCalledWith(JSON.stringify({ type: 'delete', id: '1' }));
-
-    expect(handler.messages).toHaveLength(1);
-    expect(handler.messages[0].sender).toBe(sender);
-    expect(handler.messages[0].receiver).toBe(receiver);
-    expect(handler.messages[0].data).toEqual(message);
-  });
-
   it('should normalize incoming text messages before matching handlers and saving intercepted messages', async () => {
-    let effectMessage: Schema | undefined;
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        let effectMessage: Schema | undefined;
+        const firstRestriction = vi.fn((_message: Schema) => true);
+        const handler = await interceptor
+          .message()
+          .with(firstRestriction)
+          .effect((message) => {
+            effectMessage = message;
+          });
 
-    const restriction = vi.fn((_message: Schema) => true);
-    const handler = new Handler<Schema>(interceptorImplementation);
-    await promiseIfRemote(
-      handler.with(restriction).effect((message) => {
-        effectMessage = message;
-      }),
-      interceptor,
-    );
+        const secondRestriction = vi.fn((_message: Schema) => false);
+        await interceptor.message().with(secondRestriction);
 
-    const message: Schema = { type: 'create', body: { text: 'serialized' } };
+        const client = new WebSocketClient<Schema>(baseURL);
 
-    const wasHandled = await interceptorImplementation.handleInterceptedMessage(JSON.stringify(message), {
-      sender,
-      receiver: interceptorImplementation.server,
-    });
-    expect(wasHandled).toBe(true);
+        try {
+          await client.open();
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(1);
+          });
 
-    const normalizedMessage = restriction.mock.calls[0][0];
-    expect(normalizedMessage).toEqual(message);
-    expect(effectMessage).toBe(normalizedMessage);
-    expect(handler.messages).toHaveLength(1);
-    expect(handler.messages[0].data).toBe(normalizedMessage);
-  });
+          client.send(JSON.stringify({ type: 'create', body: { text: 'serialized' } }));
 
-  it('should clear the intercepted messages in place after cleared', async () => {
-    const handler = new Handler<Schema>(interceptorImplementation);
-    await promiseIfRemote(handler.respond({ type: 'delete', id: '1' }), interceptor);
+          await waitFor(() => {
+            expect(handler.messages).toHaveLength(1);
+          });
 
-    const message: Schema = { type: 'create', body: { text: 'hello' } };
-    const receiver = interceptorImplementation.server;
+          const normalizedMessage = firstRestriction.mock.calls[0][0];
+          expect(normalizedMessage).toEqual({ type: 'create', body: { text: 'serialized' } });
+          expect(secondRestriction.mock.calls[0][0]).toBe(normalizedMessage);
+          expect(effectMessage).toBe(normalizedMessage);
+          expect(handler.messages[0].data).toBe(normalizedMessage);
 
-    await interceptorImplementation.handleInterceptedMessage(JSON.stringify(message), { sender, receiver });
-
-    const handlerMessages = handler.messages;
-    const senderMessages = sender.messages;
-    const receiverMessages = receiver.messages;
-
-    expect(handlerMessages).toHaveLength(1);
-    expect(senderMessages).toHaveLength(1);
-    expect(receiverMessages).toHaveLength(1);
-
-    await promiseIfRemote(handler.clear(), interceptor);
-
-    expect(handler.messages).toBe(handlerMessages);
-    expect(handlerMessages).toHaveLength(0);
-    expect(sender.messages).toBe(senderMessages);
-    expect(senderMessages).toHaveLength(0);
-    expect(receiver.messages).toBe(receiverMessages);
-    expect(receiverMessages).toHaveLength(0);
-  });
-
-  it('should not save intercepted messages after cleared while a message is being handled', async () => {
-    const handler = new Handler<Schema>(interceptorImplementation);
-
-    const effectStarted = Promise.withResolvers<void>();
-    const effectRelease = Promise.withResolvers<void>();
-
-    await promiseIfRemote(
-      handler.effect(async (message) => {
-        if (message.type === 'create' && message.body.text === 'pending') {
-          effectStarted.resolve();
-          await effectRelease.promise;
+          expect(interceptor.clients[0].messages).toHaveLength(1);
+          expect(interceptor.server.messages).toHaveLength(1);
+        } finally {
+          await client.close();
         }
-      }),
-      interceptor,
+      },
     );
-
-    const receiver = interceptorImplementation.server;
-
-    const existingMessage: Schema = { type: 'create', body: { text: 'existing' } };
-    await interceptorImplementation.handleInterceptedMessage(JSON.stringify(existingMessage), { sender, receiver });
-
-    const handlerMessages = handler.messages;
-    const senderMessages = sender.messages;
-    const receiverMessages = receiver.messages;
-
-    const pendingMessage: Schema = { type: 'create', body: { text: 'pending' } };
-    const handlingPromise = interceptorImplementation.handleInterceptedMessage(JSON.stringify(pendingMessage), {
-      sender,
-      receiver,
-    });
-
-    await effectStarted.promise;
-
-    expect(handlerMessages).toHaveLength(1);
-    expect(senderMessages).toHaveLength(1);
-    expect(receiverMessages).toHaveLength(1);
-
-    await interceptor.clear();
-    effectRelease.resolve();
-    await handlingPromise;
-
-    expect(handler.messages).toBe(handlerMessages);
-    expect(handlerMessages).toEqual([]);
-    expect(sender.messages).toBe(senderMessages);
-    expect(senderMessages).toEqual([]);
-    expect(receiver.messages).toBe(receiverMessages);
-    expect(receiverMessages).toEqual([]);
   });
 
-  if (Handler === RemoteWebSocketMessageHandler) {
+  it('should match any message without a declared response, effect, or restrictions', async () => {
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await interceptor.message().times(1);
+
+        const client = new WebSocketClient<Schema>(baseURL);
+
+        try {
+          await client.open();
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+          await waitFor(() => {
+            expect(handler.messages).toHaveLength(1);
+          });
+
+          expect(handler.messages[0].data).toEqual({ type: 'create', body: { text: 'hello' } });
+
+          await handler.checkTimes();
+        } finally {
+          await client.close();
+        }
+      },
+    );
+  });
+
+  it('should keep track of intercepted messages', async () => {
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await interceptor.message().respond({ type: 'delete', id: '1' });
+
+        expect(handler.messages).toEqual([]);
+
+        const client = new WebSocketClient<Schema>(baseURL);
+
+        try {
+          await client.open();
+
+          const response = waitForWebSocketClientMessage(client);
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+          await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: '1' }));
+
+          await waitFor(() => {
+            expect(handler.messages).toHaveLength(1);
+          });
+
+          expect(handler.messages[0].sender).toBe(interceptor.clients[0]);
+          expect(handler.messages[0].sender.url).toBe(client.url);
+          expect(handler.messages[0].receiver).toBe(interceptor.server);
+          expect(handler.messages[0].data).toEqual({ type: 'create', body: { text: 'hello' } });
+        } finally {
+          await client.close();
+        }
+      },
+    );
+  });
+
+  it('should clear intercepted messages in place after cleared', async () => {
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await interceptor.message().respond({ type: 'delete', id: '1' });
+
+        const client = new WebSocketClient<Schema>(baseURL);
+
+        try {
+          await client.open();
+
+          const response = waitForWebSocketClientMessage(client);
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+          await response;
+
+          await waitFor(() => {
+            expect(handler.messages).toHaveLength(1);
+          });
+
+          const [senderHandle] = interceptor.clients;
+          const handlerMessages = handler.messages;
+          const senderMessages = senderHandle.messages;
+          const receiverMessages = interceptor.server.messages;
+
+          expect(handlerMessages).toHaveLength(1);
+          expect(senderMessages).toHaveLength(1);
+          expect(receiverMessages).toHaveLength(1);
+
+          handler.clear();
+
+          expect(handler.messages).toBe(handlerMessages);
+          expect(handler.messages).toHaveLength(0);
+          expect(senderHandle.messages).toBe(senderMessages);
+          expect(senderHandle.messages).toHaveLength(0);
+          expect(interceptor.server.messages).toBe(receiverMessages);
+          expect(interceptor.server.messages).toHaveLength(0);
+        } finally {
+          await client.close();
+        }
+      },
+    );
+  });
+
+  if (type === 'remote') {
     describe('Promise-like', () => {
+      let interceptor: ReturnType<typeof createInternalWebSocketInterceptor<Schema>>;
+
+      beforeEach(async () => {
+        interceptor = createInternalWebSocketInterceptor<Schema>({ type, baseURL });
+        await interceptor.start();
+      });
+
+      afterEach(async () => {
+        await interceptor.stop();
+      });
+
       it('should be then-able', async () => {
-        const handler = new Handler<Schema>(interceptorImplementation);
+        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation);
         await handler.respond({ type: 'delete', id: '1' });
 
         expect(handler).toHaveProperty('then', expect.any(Function));
@@ -235,8 +220,8 @@ export function declareDefaultWebSocketMessageHandlerTests(
         const pendingHandler = handler.with({});
         expect(pendingHandler).toEqual(handler);
 
-        const syncPromise = Promise.withResolvers<void>();
-        handler.registerSyncPromise(syncPromise.promise);
+        const syncPromise = createPromiseWithResolvers<void>();
+        handler.registerSyncPromise(syncPromise);
         expect(handler.isSynced).toBe(false);
 
         const thenPromise = pendingHandler.then(fulfillmentListener);
@@ -250,7 +235,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
       });
 
       it('should be catch-able', async () => {
-        const handler = new Handler<Schema>(interceptorImplementation);
+        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation);
         await handler.respond({ type: 'delete', id: '1' });
 
         expect(handler).toHaveProperty('then', expect.any(Function));
@@ -271,7 +256,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
       });
 
       it('should be finally-able', async () => {
-        const handler = new Handler<Schema>(interceptorImplementation);
+        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation);
         await handler.respond({ type: 'delete', id: '1' });
 
         expect(handler).toHaveProperty('then', expect.any(Function));
@@ -285,8 +270,8 @@ export function declareDefaultWebSocketMessageHandlerTests(
         const pendingHandler = handler.with({});
         expect(pendingHandler).toEqual(handler);
 
-        const syncPromise = Promise.withResolvers<void>();
-        handler.registerSyncPromise(syncPromise.promise);
+        const syncPromise = createPromiseWithResolvers<void>();
+        handler.registerSyncPromise(syncPromise);
         expect(handler.isSynced).toBe(false);
 
         const finallyPromise = pendingHandler.finally(finallyListener);

@@ -32,7 +32,7 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
   });
 
   describe.each(HTTP_METHODS)('Method (%s)', (method) => {
-    const { overridesPreflightResponse, numberOfRequestsIncludingPreflight } = getPreflightAssessment({
+    const { overridesPreflightResponse, getNumbersOfRequestsIncludingPreflight } = getPreflightAssessment({
       method,
       platform,
       type,
@@ -66,8 +66,8 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
         const response = await fetch(joinURL(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
-        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
-        const request = handler.requests[numberOfRequestsIncludingPreflight - 1];
+        expect(handler.requests.length).toBeOneOf(getNumbersOfRequestsIncludingPreflight(1));
+        const request = handler.requests.at(-1)!;
         expect(request).toBeInstanceOf(Request);
 
         expectTypeOf(request.body).toEqualTypeOf<null>();
@@ -112,8 +112,8 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
 
         expect(response.status).toBe(200);
 
-        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
-        const request = handler.requests[numberOfRequestsIncludingPreflight - 1];
+        expect(handler.requests.length).toBeOneOf(getNumbersOfRequestsIncludingPreflight(1));
+        const request = handler.requests.at(-1)!;
         expect(request).toBeInstanceOf(Request);
 
         expectTypeOf(request.body).toEqualTypeOf<null>();
@@ -164,9 +164,11 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
             await expectFetchError(responsePromise);
           }
 
-          expect(console.error).toHaveBeenCalledTimes(
-            method === 'OPTIONS' && type === 'remote' && platform === 'browser' ? 4 : 2,
+          // Each request logs the handler error and the unhandled request.
+          const possibleNumbersOfErrors = getNumbersOfRequestsIncludingPreflight(1).map(
+            (numberOfRequests) => numberOfRequests * 2,
           );
+          expect(console.error.mock.calls.length).toBeOneOf(possibleNumbersOfErrors);
           expect(console.warn).toHaveBeenCalledTimes(0);
           expect(console.error.mock.calls[0]).toEqual([error]);
 
@@ -226,8 +228,8 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
         });
         expect(response.status).toBe(200);
 
-        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
-        const request = handler.requests[numberOfRequestsIncludingPreflight - 1];
+        expect(handler.requests.length).toBeOneOf(getNumbersOfRequestsIncludingPreflight(1));
+        const request = handler.requests.at(-1)!;
         expect(request).toBeInstanceOf(Request);
 
         expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserRequestHeaders>>();
@@ -284,8 +286,8 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
         const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
         expect(response.status).toBe(200);
 
-        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
-        const request = handler.requests[numberOfRequestsIncludingPreflight - 1];
+        expect(handler.requests.length).toBeOneOf(getNumbersOfRequestsIncludingPreflight(1));
+        const request = handler.requests.at(-1)!;
         expect(request).toBeInstanceOf(Request);
 
         expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserSearchParams>>();
@@ -324,7 +326,7 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
 
         expect(handlerWithoutResponse.requests).toHaveLength(0);
 
-        let _requestWithoutResponse = handlerWithoutResponse.requests[numberOfRequestsIncludingPreflight - 1];
+        let _requestWithoutResponse = handlerWithoutResponse.requests[0];
         expectTypeOf<typeof _requestWithoutResponse.body>().toEqualTypeOf<null>();
         expectTypeOf<typeof _requestWithoutResponse.response>().toEqualTypeOf<never>();
 
@@ -338,7 +340,7 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
 
         expect(handlerWithoutResponse.requests).toHaveLength(0);
 
-        _requestWithoutResponse = handlerWithoutResponse.requests[numberOfRequestsIncludingPreflight];
+        _requestWithoutResponse = handlerWithoutResponse.requests[1];
         expectTypeOf<typeof _requestWithoutResponse.body>().toEqualTypeOf<null>();
         expectTypeOf<typeof _requestWithoutResponse.response>().toEqualTypeOf<never>();
 
@@ -353,10 +355,10 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
         const response = await fetch(joinURL(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
-        expect(handlerWithoutResponse.requests).toHaveLength(numberOfRequestsIncludingPreflight);
-        expect(handlerWithResponse.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(handlerWithoutResponse.requests.length).toBeOneOf(getNumbersOfRequestsIncludingPreflight(1));
+        expect(handlerWithResponse.requests.length).toBeOneOf(getNumbersOfRequestsIncludingPreflight(1));
 
-        const requestWithResponse = handlerWithResponse.requests[numberOfRequestsIncludingPreflight - 1];
+        const requestWithResponse = handlerWithResponse.requests[handlerWithResponse.requests.length - 1];
         expect(requestWithResponse).toBeInstanceOf(Request);
         expect(requestWithResponse.response.status).toBe(200);
 
@@ -403,8 +405,8 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
         const response = await fetch(joinURL(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
-        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
-        const request = handler.requests[numberOfRequestsIncludingPreflight - 1];
+        expect(handler.requests.length).toBeOneOf(getNumbersOfRequestsIncludingPreflight(1));
+        const request = handler.requests.at(-1)!;
         expect(request).toBeInstanceOf(Request);
 
         expectTypeOf(request.body).toEqualTypeOf<null>();
@@ -429,10 +431,10 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
         const otherResponse = await fetch(joinURL(baseURL, '/users'), { method });
         expect(otherResponse.status).toBe(201);
 
-        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(handler.requests.length).toBeOneOf(getNumbersOfRequestsIncludingPreflight(1));
 
-        expect(otherHandler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
-        const otherRequest = otherHandler.requests[numberOfRequestsIncludingPreflight - 1];
+        expect(otherHandler.requests.length).toBeOneOf(getNumbersOfRequestsIncludingPreflight(1));
+        const otherRequest = otherHandler.requests[otherHandler.requests.length - 1];
         expect(otherRequest).toBeInstanceOf(Request);
 
         expectTypeOf(otherRequest.body).toEqualTypeOf<null>();
@@ -452,15 +454,17 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
           '/users': {
             OPTIONS: {
               response: {
-                200: { headers: {} };
+                200: { headers: { 'access-control-allow-origin': string } };
               };
             };
           };
         }>(interceptorOptions, async (interceptor) => {
+          // A mismatched origin fails the CORS check of the response itself, regardless of whether the browser sent a
+          // preflight. Missing headers would not, because the interceptor server sets a default allowed origin.
           const handler = await promiseIfRemote(
             interceptor.options('/users').respond({
               status: 200,
-              headers: {},
+              headers: { 'access-control-allow-origin': 'https://other.example' },
             }),
             interceptor,
           );

@@ -20,6 +20,8 @@ When a request is unhandled, `@zimic/interceptor` looks for a running intercepto
 
 If no running interceptor matches the request, it will be **rejected** with a network error. If the request was targeted to an interceptor server, the logging behavior is configured with the [`--log-unhandled-requests`](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-start) option in the interceptor server.
 
+Requests rejected by an interceptor server fail with a network error in browsers and Node.js. Some lenient HTTP clients, such as Bun and Python's `urllib`, may receive an empty `500` response instead.
+
 :::
 
 :::tip FAQ: <span>Why was my request unhandled?</span>

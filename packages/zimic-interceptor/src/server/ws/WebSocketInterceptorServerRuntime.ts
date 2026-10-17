@@ -1,4 +1,5 @@
 import { excludeNonPathParams } from '@zimic/utils/url';
+import { closeWebSocketClient } from '@zimic/utils/ws';
 import type { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 import type { IncomingMessage } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
@@ -6,7 +7,7 @@ import { WebSocket as ClientSocket } from 'ws';
 import * as z from 'zod';
 
 import { removeArrayIndex } from '@/utils/arrays';
-import { closeClientSocket, WebSocketMessageAbortError } from '@/utils/webSocket';
+import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
 import type { WebSocketEventMessage } from '@/utils/webSocket/types';
@@ -17,7 +18,7 @@ import {
 } from '@/ws/utils/messageData';
 
 import type { InterceptorServerWebSocketSchema, WebSocketHandlerCommit } from '../types/schema';
-import { parseRPCData } from '../utils/rpc';
+import { parseInterceptorServerRPCData } from '../utils/rpc';
 
 const webSocketHandlerCommitSchema = z.object({
   id: z.string(),
@@ -91,7 +92,7 @@ class WebSocketInterceptorServerRuntime {
   ) => {
     this.assertWebSocketWorkerSocket(socket);
 
-    this.registerWebSocketHandler(parseRPCData(webSocketHandlerCommitSchema, message.data), socket);
+    this.registerWebSocketHandler(parseInterceptorServerRPCData(webSocketHandlerCommitSchema, message.data), socket);
     return {};
   };
 
@@ -101,7 +102,7 @@ class WebSocketInterceptorServerRuntime {
   ) => {
     this.assertWebSocketWorkerSocket(socket);
 
-    const handlersToRecommit = parseRPCData(webSocketHandlerCommitsSchema, message.data);
+    const handlersToRecommit = parseInterceptorServerRPCData(webSocketHandlerCommitsSchema, message.data);
 
     const existingHandlersById = new Map(
       this.webSocketHandlers
@@ -209,7 +210,7 @@ class WebSocketInterceptorServerRuntime {
         { sockets: [handler.socket] },
       );
 
-      accepted = parseRPCData(clientConnectionReplySchema, reply).accepted;
+      accepted = parseInterceptorServerRPCData(clientConnectionReplySchema, reply).accepted;
     } catch (error) {
       if (error instanceof InvalidWebSocketMessageError) {
         console.error(error);
@@ -351,7 +352,7 @@ class WebSocketInterceptorServerRuntime {
   ) => {
     this.assertWebSocketWorkerSocket(workerSocket);
 
-    const message = parseRPCData(webSocketMessageSendSchema, rawMessage.data);
+    const message = parseInterceptorServerRPCData(webSocketMessageSendSchema, rawMessage.data);
 
     const targetSockets = [
       ...this.activeUserWebSocketHandlers.entries(),
@@ -412,7 +413,7 @@ class WebSocketInterceptorServerRuntime {
     ]);
 
     const closingPromises = Array.from(userSockets, (socket) =>
-      closeClientSocket(socket, { timeout: this.webSocketServer.socketTimeout }),
+      closeWebSocketClient(socket, { timeout: this.webSocketServer.socketTimeout }),
     );
 
     await Promise.all(closingPromises);

@@ -4,15 +4,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
+import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
+import { createBinaryMessage, expectWebSocketTimesCheckError } from '../../../messageHandler/__tests__/shared/utils';
 import { WebSocketInterceptorOptions } from '../../types/options';
-import {
-  RuntimeSharedWebSocketInterceptorTestsOptions,
-  createBinaryMessage,
-  expectWebSocketTimesCheckError,
-  usingWebSocketClient,
-  waitForWebSocketMessage,
-} from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'create'; body: { text: string } } | { type: 'delete'; id: string }>;
 type BinarySchema = WebSocketSchema<ArrayBuffer | Blob>;
@@ -29,11 +25,11 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
   });
 
   async function sendMatchingMessage(client: WebSocketClient<MessageSchema>, text = 'hello') {
-    const messagePromise = waitForWebSocketMessage(client);
+    const messagePromise = waitForWebSocketClientMessage(client);
 
     client.send(JSON.stringify({ type: 'create', body: { text } }));
 
-    await expect(messagePromise).resolves.toEqual({ type: 'delete', id: '1' });
+    await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'delete', id: '1' }));
   }
 
   describe('Exact number of messages', () => {
@@ -305,13 +301,13 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
         );
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          let messagePromise = waitForWebSocketMessage(client);
+          let messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'create', body: { text: 'one' } }));
-          await expect(messagePromise).resolves.toEqual({ type: 'delete', id: 'second' });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'delete', id: 'second' }));
 
-          messagePromise = waitForWebSocketMessage(client);
+          messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'create', body: { text: 'two' } }));
-          await expect(messagePromise).resolves.toEqual({ type: 'delete', id: 'first' });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'delete', id: 'first' }));
         });
 
         await firstHandler.checkTimes();
@@ -379,17 +375,17 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
             message: 'Expected exactly 1 matching message, but got 0.',
             expectedNumberOfMessages: 1,
             unmatchedMessages: [
-              '- { "message": ArrayBuffer { byteLength: 2, bytes: [3, 4] }, "diff": { "data": { ' +
-                '"expected": ArrayBuffer { byteLength: 2, bytes: [1, 2] }, ' +
-                '"received": ArrayBuffer { byteLength: 2, bytes: [3, 4] } } } }',
+              '- { "message": ArrayBuffer { byteLength: 2 }, "diff": { "data": { ' +
+                '"expected": ArrayBuffer { byteLength: 2 }, ' +
+                '"received": ArrayBuffer { byteLength: 2 } } } }',
 
               // Remote interceptors receive Blobs from the interceptor server as ArrayBuffers.
               type === 'remote'
-                ? '- { "message": ArrayBuffer { byteLength: 2, bytes: [7, 8] }, "diff": { "data": { ' +
-                  '"expected": ArrayBuffer { byteLength: 2, bytes: [1, 2] }, ' +
-                  '"received": ArrayBuffer { byteLength: 2, bytes: [7, 8] } } } }'
+                ? '- { "message": ArrayBuffer { byteLength: 2 }, "diff": { "data": { ' +
+                  '"expected": ArrayBuffer { byteLength: 2 }, ' +
+                  '"received": ArrayBuffer { byteLength: 2 } } } }'
                 : '- { "message": Blob { type: \'\', size: 2 }, "diff": { "data": { ' +
-                  '"expected": ArrayBuffer { byteLength: 2, bytes: [1, 2] }, ' +
+                  '"expected": ArrayBuffer { byteLength: 2 }, ' +
                   '"received": Blob { type: \'\', size: 2 } } } }',
             ].join('\n'),
           });

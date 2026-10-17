@@ -109,6 +109,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
         expect(worker.isRunning).toBe(false);
 
         await worker.start();
+
         expect(worker.isRunning).toBe(true);
       } finally {
         startSpy.mockRestore();

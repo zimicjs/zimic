@@ -6,12 +6,13 @@ import DisabledMessageSavingError from '@/ws/messageHandler/errors/DisabledMessa
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
+import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import MessageSavingSafeLimitExceededError from '../../errors/MessageSavingSafeLimitExceededError';
 import { createWebSocketInterceptor } from '../../factory';
 import { WebSocketInterceptorMessageSaving, WebSocketInterceptorOptions } from '../../types/options';
 import { DEFAULT_MESSAGE_SAVING_SAFE_LIMIT } from '../../WebSocketInterceptorImplementation';
-import { RuntimeSharedWebSocketInterceptorTestsOptions, usingWebSocketClient, waitForWebSocketMessage } from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
 
@@ -64,11 +65,11 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
 
           await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
             for (let index = 0; index < numberOfMessages; index++) {
-              const messagePromise = waitForWebSocketMessage(client);
+              const messagePromise = waitForWebSocketClientMessage(client);
 
               client.send(JSON.stringify({ type: 'client', index }));
 
-              await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+              await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
             }
 
             expect(handler.messages).toHaveLength(numberOfMessages);
@@ -96,11 +97,11 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
 
           await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
             for (let index = 0; index < numberOfMessages; index++) {
-              const messagePromise = waitForWebSocketMessage(client);
+              const messagePromise = waitForWebSocketClientMessage(client);
 
               client.send(JSON.stringify({ type: 'client', index }));
 
-              await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+              await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
             }
 
             expect(() => handler.messages).toThrow(error);
@@ -131,11 +132,11 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
               expect(numberOfMessages).toBeGreaterThan(safeLimit);
 
               for (let index = 0; index < numberOfMessages; index++) {
-                const messagePromise = waitForWebSocketMessage(client);
+                const messagePromise = waitForWebSocketClientMessage(client);
 
                 client.send(JSON.stringify({ type: 'client', index }));
 
-                await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
               }
 
               expect(() => handler.messages).toThrow(new DisabledMessageSavingError());
@@ -166,11 +167,11 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
               expect(numberOfMessages).toBeLessThan(safeLimit);
 
               for (let index = 0; index < numberOfMessages; index++) {
-                const messagePromise = waitForWebSocketMessage(client);
+                const messagePromise = waitForWebSocketClientMessage(client);
 
                 client.send(JSON.stringify({ type: 'client', index }));
 
-                await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
               }
 
               expect(handler.messages).toHaveLength(numberOfMessages);
@@ -201,11 +202,11 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
               expect(numberOfMessages).toBe(safeLimit);
 
               for (let index = 0; index < numberOfMessages; index++) {
-                const messagePromise = waitForWebSocketMessage(client);
+                const messagePromise = waitForWebSocketClientMessage(client);
 
                 client.send(JSON.stringify({ type: 'client', index }));
 
-                await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
               }
 
               expect(handler.messages).toHaveLength(numberOfMessages);
@@ -236,11 +237,11 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
               expect(numberOfMessages).toBeGreaterThan(safeLimit);
 
               for (let index = 0; index < numberOfMessages; index++) {
-                const messagePromise = waitForWebSocketMessage(client);
+                const messagePromise = waitForWebSocketClientMessage(client);
 
                 client.send(JSON.stringify({ type: 'client', index }));
 
-                await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
               }
 
               expect(handler.messages).toHaveLength(numberOfMessages);
@@ -287,13 +288,13 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
               expect(numberOfMessages).toBeGreaterThan(safeLimit);
 
               for (let index = 0; index < numberOfMessagesPerHandler; index++) {
-                const messagePromise = waitForWebSocketMessage(client);
+                const messagePromise = waitForWebSocketClientMessage(client);
                 client.send(JSON.stringify({ type: 'client', index: 1 }));
-                await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
 
-                const otherMessagePromise = waitForWebSocketMessage(client);
+                const otherMessagePromise = waitForWebSocketClientMessage(client);
                 client.send(JSON.stringify({ type: 'client', index: 2 }));
-                await expect(otherMessagePromise).resolves.toEqual({ type: 'server', index: 2 });
+                await expect(otherMessagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
               }
 
               expect(handler.messages).toHaveLength(numberOfMessagesPerHandler);
@@ -333,11 +334,11 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
 
               // Clearing the interceptor drops its tracked clients, so each message needs a new connection.
               await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-                const messagePromise = waitForWebSocketMessage(client);
+                const messagePromise = waitForWebSocketClientMessage(client);
 
                 client.send(JSON.stringify({ type: 'client', index }));
 
-                await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
               });
             }
 
@@ -368,11 +369,11 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
                 await promiseIfRemote(handler.clear(), handler);
                 await promiseIfRemote(handler.respond({ type: 'server', index: 1 }), interceptor);
 
-                const messagePromise = waitForWebSocketMessage(client);
+                const messagePromise = waitForWebSocketClientMessage(client);
 
                 client.send(JSON.stringify({ type: 'client', index }));
 
-                await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
               }
 
               expect(handler.messages).toHaveLength(1);
@@ -402,11 +403,11 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
               for (let index = 0; index < numberOfMessages; index++) {
                 await promiseIfRemote(handler.respond({ type: 'server', index: 1 }), interceptor);
 
-                const messagePromise = waitForWebSocketMessage(client);
+                const messagePromise = waitForWebSocketClientMessage(client);
 
                 client.send(JSON.stringify({ type: 'client', index }));
 
-                await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
               }
 
               expect(handler.messages).toHaveLength(1);
@@ -431,11 +432,11 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
           await usingIgnoredConsole(['warn'], async (console) => {
             await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
               for (let index = 0; index < safeLimit; index++) {
-                const messagePromise = waitForWebSocketMessage(client);
+                const messagePromise = waitForWebSocketClientMessage(client);
 
                 client.send(JSON.stringify({ type: 'client', index }));
 
-                await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
               }
             });
 
@@ -447,11 +448,11 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
             expect(console.warn).toHaveBeenCalledTimes(0);
 
             await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-              const messagePromise = waitForWebSocketMessage(client);
+              const messagePromise = waitForWebSocketClientMessage(client);
 
               client.send(JSON.stringify({ type: 'client', index: safeLimit }));
 
-              await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+              await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
             });
 
             expect(handler.messages).toHaveLength(safeLimit + 1);
@@ -499,11 +500,11 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
           for (let index = 0; index < numberOfMessages; index++) {
-            const messagePromise = waitForWebSocketMessage(client);
+            const messagePromise = waitForWebSocketClientMessage(client);
 
             client.send(JSON.stringify({ type: 'client', index }));
 
-            await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+            await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
           }
 
           expect(() => handler.messages).toThrow(error);
@@ -523,11 +524,11 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
           expect(handler.messages).toHaveLength(0);
 
           for (let index = 0; index < numberOfMessages; index++) {
-            const messagePromise = waitForWebSocketMessage(client);
+            const messagePromise = waitForWebSocketClientMessage(client);
 
             client.send(JSON.stringify({ type: 'client', index }));
 
-            await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+            await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
           }
 
           expect(handler.messages).toHaveLength(numberOfMessages);
