@@ -1,14 +1,14 @@
 import { HttpSchema } from '@zimic/http';
 import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
-import { beforeEach, expect, expectTypeOf, it } from 'vitest';
+import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorOptions } from '../../types/options';
+import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
@@ -25,6 +25,11 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
   });
 
   type MethodSchema = HttpSchema.Method<{
+    response: { 204: {} };
+  }>;
+
+  type MethodWithSearchParamsSchema = HttpSchema.Method<{
+    request: { searchParams: { value?: string } };
     response: { 204: {} };
   }>;
 
@@ -108,6 +113,37 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
 
       expectTypeOf(request.response.body).toEqualTypeOf<null>();
       expect(request.response.body).toBe(null);
+    });
+  });
+
+  it('should not consider handlers from before cleared when multiple paths matched requests', async () => {
+    const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
+
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodWithSearchParamsSchema };
+      '/:resource': { GET: MethodSchema };
+    }>({ ...interceptorOptions, type, onUnhandledRequest }, async (interceptor) => {
+      await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+      await promiseIfRemote(interceptor.get('/:resource').respond({ status: 204 }), interceptor);
+
+      await promiseIfRemote(interceptor.clear(), interceptor);
+
+      const handler = await promiseIfRemote(
+        interceptor
+          .get('/users')
+          .with({ searchParams: { value: '1' } })
+          .respond({ status: 204 }),
+        interceptor,
+      );
+
+      const responsePromise = fetch(joinURL(baseURL, '/users?value=2'), { method: 'GET' });
+      await expectFetchError(responsePromise);
+
+      expect(handler.requests).toHaveLength(0);
+      expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
     });
   });
 }
