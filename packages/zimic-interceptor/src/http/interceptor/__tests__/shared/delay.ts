@@ -281,10 +281,7 @@ export function declareDelayHttpInterceptorTests(options: RuntimeSharedHttpInter
           const fetchErrorExpectation = expectFetchError(response);
 
           let settled = false;
-          void response.then(
-            () => (settled = true),
-            () => (settled = true),
-          );
+          void response.catch(() => (settled = true));
 
           await promiseIfRemote(handler.clear(), interceptor);
 
