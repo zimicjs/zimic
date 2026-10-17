@@ -94,7 +94,7 @@ runs:
           done
         "
 
-        pnpm turbo setup \
+        pnpm turbo run setup \
           --concurrency 100% \
           --filter 'zimic-test-client' \
           --filter 'zimic-example*'

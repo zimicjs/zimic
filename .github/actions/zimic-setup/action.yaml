@@ -151,7 +151,7 @@ runs:
       if: ${{ steps.filters.outputs.setup != '' }}
       shell: bash
       run: |
-        pnpm turbo setup \
+        pnpm turbo run setup \
           ${{ steps.filters.outputs.setup }} \
           --concurrency 100%
       env:
