@@ -25,7 +25,7 @@ function stringifyJSONToLog(value: unknown): string {
     .replace(/\n\s*/g, ' ')
     .replace(/"(File { name: '.*?', type: '.*?', size: \d*? })"/g, '$1')
     .replace(/"(Blob { type: '.*?', size: \d*? })"/g, '$1')
-    .replace(/"(ArrayBuffer { byteLength: \d*?, bytes: \[[\d, ]*?\] })"/g, '$1');
+    .replace(/"(ArrayBuffer { byteLength: \d*? })"/g, '$1');
 }
 
 export function stringifyValueToLog(value: unknown, options: { fallback?: (value: unknown) => string } = {}): string {
@@ -44,8 +44,7 @@ export function stringifyValueToLog(value: unknown, options: { fallback?: (value
   }
 
   if (value instanceof ArrayBuffer) {
-    const bytes = Array.from(new Uint8Array(value));
-    return `ArrayBuffer { byteLength: ${value.byteLength}, bytes: [${bytes.join(', ')}] }`;
+    return `ArrayBuffer { byteLength: ${value.byteLength} }`;
   }
 
   return fallback(value);

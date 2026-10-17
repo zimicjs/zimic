@@ -1,3 +1,4 @@
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { expectFetchError } from '@zimic/utils/fetch';
 import { afterEach, beforeAll, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
@@ -351,11 +352,11 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
         expect(worker).toBeDefined();
 
         const originalWorkerStop = worker!.stop.bind(worker);
-        const { promise: workerStopStartedPromise, resolve: markWorkerStopAsStarted } = Promise.withResolvers<void>();
+        const workerStopStartedPromise = createPromiseWithResolvers<void>();
 
         // We need to inspect the worker stop method to be able to start another interceptor right after it is called.
         vi.spyOn(worker!, 'stop').mockImplementationOnce(async () => {
-          markWorkerStopAsStarted();
+          workerStopStartedPromise.resolve();
           await originalWorkerStop();
         });
 

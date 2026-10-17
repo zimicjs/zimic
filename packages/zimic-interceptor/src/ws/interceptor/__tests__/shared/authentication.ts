@@ -115,6 +115,7 @@ export function declareAuthenticationWebSocketInterceptorTests(
 
     try {
       const startPromise = interceptor.start();
+
       expect(() => {
         interceptor.auth!.token = 'other-token';
       }).toThrow(
@@ -122,6 +123,7 @@ export function declareAuthenticationWebSocketInterceptorTests(
           'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',
         ),
       );
+
       await startPromise;
       expect(interceptor.auth?.token).toBe(validToken);
     } finally {
@@ -138,6 +140,7 @@ export function declareAuthenticationWebSocketInterceptorTests(
 
     try {
       const startPromise = interceptor.start();
+
       expect(() => {
         interceptor.auth = { token: 'other-token' };
       }).toThrow(
@@ -145,6 +148,7 @@ export function declareAuthenticationWebSocketInterceptorTests(
           'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',
         ),
       );
+
       await startPromise;
       expect(interceptor.auth?.token).toBe(validToken);
     } finally {
@@ -190,6 +194,7 @@ export function declareAuthenticationWebSocketInterceptorTests(
     try {
       const startPromise = interceptor.start();
       authOptions.token = 'other-token';
+
       await startPromise;
       expect(interceptor.auth).toEqual({ token: validToken });
     } finally {

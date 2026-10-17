@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import UnregisteredBrowserServiceWorkerError from '@/interceptor/errors/UnregisteredBrowserServiceWorkerError';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { getBrowserBaseURL, usingWebSocketInterceptorWorker } from '@tests/utils/interceptors';
 
 import { WebSocketInterceptorPlatform } from '../../interceptor/types/options';
-import UnregisteredBrowserServiceWorkerError from '../errors/UnregisteredBrowserServiceWorkerError';
 import { BrowserMSWWorker } from '../types/msw';
 import { declareDefaultWebSocketInterceptorWorkerTests } from './shared/default';
 import testMatrix from './shared/matrix';

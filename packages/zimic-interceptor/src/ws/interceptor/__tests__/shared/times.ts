@@ -377,17 +377,17 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
             message: 'Expected exactly 1 matching message, but got 0.',
             expectedNumberOfMessages: 1,
             unmatchedMessages: [
-              '- { "message": ArrayBuffer { byteLength: 2, bytes: [3, 4] }, "diff": { "data": { ' +
-                '"expected": ArrayBuffer { byteLength: 2, bytes: [1, 2] }, ' +
-                '"received": ArrayBuffer { byteLength: 2, bytes: [3, 4] } } } }',
+              '- { "message": ArrayBuffer { byteLength: 2 }, "diff": { "data": { ' +
+                '"expected": ArrayBuffer { byteLength: 2 }, ' +
+                '"received": ArrayBuffer { byteLength: 2 } } } }',
 
               // Remote interceptors receive Blobs from the interceptor server as ArrayBuffers.
               type === 'remote'
-                ? '- { "message": ArrayBuffer { byteLength: 2, bytes: [7, 8] }, "diff": { "data": { ' +
-                  '"expected": ArrayBuffer { byteLength: 2, bytes: [1, 2] }, ' +
-                  '"received": ArrayBuffer { byteLength: 2, bytes: [7, 8] } } } }'
+                ? '- { "message": ArrayBuffer { byteLength: 2 }, "diff": { "data": { ' +
+                  '"expected": ArrayBuffer { byteLength: 2 }, ' +
+                  '"received": ArrayBuffer { byteLength: 2 } } } }'
                 : '- { "message": Blob { type: \'\', size: 2 }, "diff": { "data": { ' +
-                  '"expected": ArrayBuffer { byteLength: 2, bytes: [1, 2] }, ' +
+                  '"expected": ArrayBuffer { byteLength: 2 }, ' +
                   '"received": Blob { type: \'\', size: 2 } } } }',
             ].join('\n'),
           });
