@@ -17,7 +17,7 @@ import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE, type Acc
 import type { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '../types/schema';
 import { getFetchAPI } from '../utils/fetch';
 import { rejectNodeResponse } from '../utils/http';
-import { parseRPCData } from '../utils/rpc';
+import { parseInterceptorServerRPCData } from '../utils/rpc';
 
 const httpHandlerCommitSchema = z.object({
   id: z.string(),
@@ -93,7 +93,7 @@ class HttpInterceptorServerRuntime {
     socket: Socket,
   ) => {
     this.assertHttpWorkerSocket(socket);
-    this.registerHttpHandler(parseRPCData(httpHandlerCommitSchema, message.data), socket);
+    this.registerHttpHandler(parseInterceptorServerRPCData(httpHandlerCommitSchema, message.data), socket);
     return {};
   };
 
@@ -103,7 +103,7 @@ class HttpInterceptorServerRuntime {
   ) => {
     this.assertHttpWorkerSocket(socket);
 
-    const handlersToRecommit = parseRPCData(httpHandlerCommitsSchema, message.data);
+    const handlersToRecommit = parseInterceptorServerRPCData(httpHandlerCommitsSchema, message.data);
 
     this.webSocketServer.emitSocket('abortRequests', socket, {
       shouldAbortRequest: (request) => {
@@ -234,7 +234,7 @@ class HttpInterceptorServerRuntime {
         { handlerId: handler.id, request },
         { sockets: [handler.socket] },
       );
-      const { response: serializedResponse } = parseRPCData(responseCreationReplySchema, reply);
+      const { response: serializedResponse } = parseInterceptorServerRPCData(responseCreationReplySchema, reply);
 
       if (serializedResponse) {
         const response = deserializeResponse(serializedResponse);
@@ -273,7 +273,10 @@ class HttpInterceptorServerRuntime {
           { request: serializedRequest },
           { sockets: [handler.socket] },
         );
-        const { wasLogged: wasRequestLoggedByRemoteInterceptor } = parseRPCData(unhandledRequestReplySchema, reply);
+        const { wasLogged: wasRequestLoggedByRemoteInterceptor } = parseInterceptorServerRPCData(
+          unhandledRequestReplySchema,
+          reply,
+        );
 
         if (wasRequestLoggedByRemoteInterceptor) {
           return;
