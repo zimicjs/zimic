@@ -1,43 +1,28 @@
 import { waitFor } from '@zimic/utils/time';
 import { WebSocketClient } from '@zimic/ws';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
+import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
-import { WebSocketInterceptorType } from '../../../interceptor/types/options';
-import type { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
-import type { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
-import { Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
-import { usingDirectWebSocketMessageHandler } from './utils';
+import type { Schema } from '../../../messageHandler/__tests__/shared/types';
+import type { WebSocketInterceptorType } from '../../types/options';
 
-export function declareActionWebSocketMessageHandlerTests(
-  options: SharedWebSocketMessageHandlerTestOptions & {
-    type: WebSocketInterceptorType;
-    Handler: typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
-  },
+interface SharedWebSocketInterceptorResponseActionsTestOptions {
+  type: WebSocketInterceptorType;
+  getBaseURL: () => string;
+}
+
+export function declareResponseActionsWebSocketInterceptorTests(
+  options: SharedWebSocketInterceptorResponseActionsTestOptions,
 ) {
-  const { type, Handler, startServer, stopServer, getBaseURL } = options;
-
-  let baseURL: string;
-
-  beforeAll(async () => {
-    if (type === 'remote') {
-      await startServer?.();
-    }
-  });
-
-  beforeEach(async () => {
-    baseURL = await getBaseURL(type);
-  });
-
-  afterAll(async () => {
-    if (type === 'remote') {
-      await stopServer?.();
-    }
-  });
+  const { type, getBaseURL } = options;
 
   describe('Responses', () => {
     it('should send static responses', async () => {
+      const baseURL = getBaseURL();
+
       await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
         await interceptor.message().respond({ type: 'delete', id: '1' });
 
@@ -46,13 +31,11 @@ export function declareActionWebSocketMessageHandlerTests(
         try {
           await client.open();
 
-          const response = new Promise<WebSocketClient.MessageEvent<Schema>>((resolve) => {
-            client.addEventListener('message', resolve, { once: true });
-          });
+          const response = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
-          await expect(response).resolves.toMatchObject({ data: JSON.stringify({ type: 'delete', id: '1' }) });
+          await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: '1' }));
         } finally {
           await client.close();
         }
@@ -60,6 +43,8 @@ export function declareActionWebSocketMessageHandlerTests(
     });
 
     it('should send computed responses', async () => {
+      const baseURL = getBaseURL();
+
       await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
         const responseFactory = vi.fn((message: Schema) => ({ type: 'delete' as const, id: message.type }));
 
@@ -70,13 +55,11 @@ export function declareActionWebSocketMessageHandlerTests(
         try {
           await client.open();
 
-          const response = new Promise<WebSocketClient.MessageEvent<Schema>>((resolve) => {
-            client.addEventListener('message', resolve, { once: true });
-          });
+          const response = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
-          await expect(response).resolves.toMatchObject({ data: JSON.stringify({ type: 'delete', id: 'create' }) });
+          await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'create' }));
           expect(responseFactory).toHaveBeenCalledTimes(1);
         } finally {
           await client.close();
@@ -84,32 +67,48 @@ export function declareActionWebSocketMessageHandlerTests(
       });
     });
 
-    // The worker logs a failing response callback instead of exposing it to the client, so only a direct dispatch can
-    // observe the rejection.
-    it('should reject response callback errors and leave later messages usable', async () => {
-      await usingDirectWebSocketMessageHandler<Schema>(
-        { type, baseURL, Handler },
-        async ({ interceptor, sender, handleMessage }) => {
-          const error = new Error('Response failed.');
+    it('should log response callback errors and keep handling later messages', async () => {
+      const baseURL = getBaseURL();
 
-          const failedHandler = interceptor.message();
-          failedHandler.with({ type: 'create' });
-          failedHandler.respond(() => {
+      await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+        const error = new Error('Response failed.');
+
+        await interceptor
+          .message()
+          .with({ type: 'create' })
+          .respond(() => {
             throw error;
           });
-          const recoveryHandler = interceptor.message();
-          recoveryHandler.with({ type: 'delete' });
-          recoveryHandler.respond({ type: 'delete', id: '2' });
 
-          await expect(handleMessage({ type: 'create', body: { text: 'hello' } })).rejects.toThrow(error);
+        await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: '2' });
 
-          await expect(handleMessage({ type: 'delete', id: '1' })).resolves.toBe(true);
-          expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '2' })]);
-        },
-      );
+        const client = new WebSocketClient<Schema>(baseURL);
+
+        try {
+          await client.open();
+
+          await usingIgnoredConsole(['error'], async (console) => {
+            client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+            await waitFor(() => {
+              expect(console.error).toHaveBeenCalledWith(error);
+            });
+          });
+
+          const response = waitForWebSocketClientMessage(client);
+
+          client.send(JSON.stringify({ type: 'delete', id: '1' }));
+
+          await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: '2' }));
+        } finally {
+          await client.close();
+        }
+      });
     });
 
     it('should give later handlers priority and skip exhausted handlers', async () => {
+      const baseURL = getBaseURL();
+
       await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
         const firstHandler = await interceptor.message().respond({ type: 'delete', id: 'first' }).times(1);
         const secondHandler = await interceptor.message().respond({ type: 'delete', id: 'second' }).times(1);
@@ -119,25 +118,17 @@ export function declareActionWebSocketMessageHandlerTests(
         try {
           await client.open();
 
-          const firstResponse = new Promise<WebSocketClient.MessageEvent<Schema>>((resolve) => {
-            client.addEventListener('message', resolve, { once: true });
-          });
+          const firstResponse = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'one' } }));
 
-          await expect(firstResponse).resolves.toMatchObject({
-            data: JSON.stringify({ type: 'delete', id: 'second' }),
-          });
+          await expect(firstResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'second' }));
 
-          const secondResponse = new Promise<WebSocketClient.MessageEvent<Schema>>((resolve) => {
-            client.addEventListener('message', resolve, { once: true });
-          });
+          const secondResponse = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'two' } }));
 
-          await expect(secondResponse).resolves.toMatchObject({
-            data: JSON.stringify({ type: 'delete', id: 'first' }),
-          });
+          await expect(secondResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'first' }));
 
           await firstHandler.checkTimes();
           await secondHandler.checkTimes();
@@ -148,6 +139,8 @@ export function declareActionWebSocketMessageHandlerTests(
     });
 
     it('should passively handle messages without sending a response', async () => {
+      const baseURL = getBaseURL();
+
       await usingWebSocketInterceptor<Schema>(
         { type, baseURL, messageSaving: { enabled: true } },
         async (interceptor) => {
@@ -159,9 +152,7 @@ export function declareActionWebSocketMessageHandlerTests(
           try {
             await client.open();
 
-            const firstReceivedMessage = new Promise<WebSocketClient.MessageEvent<Schema>>((resolve) => {
-              client.addEventListener('message', resolve, { once: true });
-            });
+            const firstReceivedMessage = waitForWebSocketClientMessage(client);
 
             client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
@@ -173,9 +164,7 @@ export function declareActionWebSocketMessageHandlerTests(
             // passive message sent nothing.
             client.send(JSON.stringify({ type: 'delete', id: '1' }));
 
-            await expect(firstReceivedMessage).resolves.toMatchObject({
-              data: JSON.stringify({ type: 'delete', id: 'probe' }),
-            });
+            await expect(firstReceivedMessage).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
 
             await passiveHandler.checkTimes();
           } finally {
@@ -188,6 +177,8 @@ export function declareActionWebSocketMessageHandlerTests(
 
   describe('Effects', () => {
     it('should run side effects without responses', async () => {
+      const baseURL = getBaseURL();
+
       await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
         const effect = vi.fn();
 
@@ -199,9 +190,7 @@ export function declareActionWebSocketMessageHandlerTests(
         try {
           await client.open();
 
-          const firstReceivedMessage = new Promise<WebSocketClient.MessageEvent<Schema>>((resolve) => {
-            client.addEventListener('message', resolve, { once: true });
-          });
+          const firstReceivedMessage = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
@@ -213,9 +202,7 @@ export function declareActionWebSocketMessageHandlerTests(
           // effect sent nothing.
           client.send(JSON.stringify({ type: 'delete', id: '1' }));
 
-          await expect(firstReceivedMessage).resolves.toMatchObject({
-            data: JSON.stringify({ type: 'delete', id: 'probe' }),
-          });
+          await expect(firstReceivedMessage).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
           expect(effect).toHaveBeenCalledTimes(1);
         } finally {
           await client.close();
@@ -224,6 +211,8 @@ export function declareActionWebSocketMessageHandlerTests(
     });
 
     it('should allow effects to send targeted messages through the sender', async () => {
+      const baseURL = getBaseURL();
+
       await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
         await interceptor.message().effect((message, { sender }) => {
           sender.send(JSON.stringify({ type: 'delete', id: message.type }));
@@ -243,26 +232,18 @@ export function declareActionWebSocketMessageHandlerTests(
             expect(interceptor.clients).toHaveLength(2);
           });
 
-          const otherFirstMessage = new Promise<WebSocketClient.MessageEvent<Schema>>((resolve) => {
-            otherClient.addEventListener('message', resolve, { once: true });
-          });
-          const senderFirstMessage = new Promise<WebSocketClient.MessageEvent<Schema>>((resolve) => {
-            senderClient.addEventListener('message', resolve, { once: true });
-          });
+          const otherFirstMessage = waitForWebSocketClientMessage(otherClient);
+          const senderFirstMessage = waitForWebSocketClientMessage(senderClient);
 
           senderClient.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
-          await expect(senderFirstMessage).resolves.toMatchObject({
-            data: JSON.stringify({ type: 'delete', id: 'create' }),
-          });
+          await expect(senderFirstMessage).resolves.toBe(JSON.stringify({ type: 'delete', id: 'create' }));
 
           // Messages on a socket are delivered in order, so the broadcast being the first message of the other client
           // means that the targeted message did not reach it.
           interceptor.server.send(JSON.stringify({ type: 'delete', id: 'broadcast' }));
 
-          await expect(otherFirstMessage).resolves.toMatchObject({
-            data: JSON.stringify({ type: 'delete', id: 'broadcast' }),
-          });
+          await expect(otherFirstMessage).resolves.toBe(JSON.stringify({ type: 'delete', id: 'broadcast' }));
         } finally {
           await Promise.all([otherClient.close(), senderClient.close()]);
         }
@@ -270,6 +251,8 @@ export function declareActionWebSocketMessageHandlerTests(
     });
 
     it('should allow effects to broadcast through the receiver', async () => {
+      const baseURL = getBaseURL();
+
       await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
         await interceptor.message().effect((message, { receiver }) => {
           receiver.send(JSON.stringify({ type: 'delete', id: message.type }));
@@ -289,48 +272,58 @@ export function declareActionWebSocketMessageHandlerTests(
             expect(interceptor.clients).toHaveLength(2);
           });
 
-          const otherFirstMessage = new Promise<WebSocketClient.MessageEvent<Schema>>((resolve) => {
-            otherClient.addEventListener('message', resolve, { once: true });
-          });
-          const senderFirstMessage = new Promise<WebSocketClient.MessageEvent<Schema>>((resolve) => {
-            senderClient.addEventListener('message', resolve, { once: true });
-          });
+          const otherFirstMessage = waitForWebSocketClientMessage(otherClient);
+          const senderFirstMessage = waitForWebSocketClientMessage(senderClient);
 
           senderClient.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
-          const broadcast = { data: JSON.stringify({ type: 'delete', id: 'create' }) };
-          await expect(otherFirstMessage).resolves.toMatchObject(broadcast);
-          await expect(senderFirstMessage).resolves.toMatchObject(broadcast);
+          const broadcast = JSON.stringify({ type: 'delete', id: 'create' });
+
+          await expect(otherFirstMessage).resolves.toBe(broadcast);
+          await expect(senderFirstMessage).resolves.toBe(broadcast);
         } finally {
           await Promise.all([otherClient.close(), senderClient.close()]);
         }
       });
     });
 
-    // The worker logs a failing effect callback instead of exposing it to the client, so only a direct dispatch can
-    // observe the rejection.
-    it('should reject effect callback errors and leave later messages usable', async () => {
-      await usingDirectWebSocketMessageHandler<Schema>(
-        { type, baseURL, Handler },
-        async ({ interceptor, sender, handleMessage }) => {
-          const error = new Error('Effect failed.');
+    it('should log effect callback errors and keep handling later messages', async () => {
+      const baseURL = getBaseURL();
 
-          const failedHandler = interceptor.message();
-          failedHandler.with({ type: 'create' });
-          failedHandler.effect(() => {
+      await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+        const error = new Error('Effect failed.');
+
+        await interceptor
+          .message()
+          .with({ type: 'create' })
+          .effect(() => {
             throw error;
           });
-          const recoveryHandler = interceptor.message();
-          recoveryHandler.with({ type: 'delete' });
-          recoveryHandler.respond({ type: 'delete', id: '2' });
 
-          await expect(handleMessage({ type: 'create', body: { text: 'hello' } })).rejects.toThrow(error);
+        await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: '2' });
 
-          await handleMessage({ type: 'delete', id: '1' });
+        const client = new WebSocketClient<Schema>(baseURL);
 
-          expect(sender.sentMessages).toEqual([JSON.stringify({ type: 'delete', id: '2' })]);
-        },
-      );
+        try {
+          await client.open();
+
+          await usingIgnoredConsole(['error'], async (console) => {
+            client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+            await waitFor(() => {
+              expect(console.error).toHaveBeenCalledWith(error);
+            });
+          });
+
+          const response = waitForWebSocketClientMessage(client);
+
+          client.send(JSON.stringify({ type: 'delete', id: '1' }));
+
+          await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: '2' }));
+        } finally {
+          await client.close();
+        }
+      });
     });
   });
 }

@@ -1,55 +1,98 @@
+import { createPromiseWithResolvers } from '@zimic/utils/data';
+import { waitFor } from '@zimic/utils/time';
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { expect, it } from 'vitest';
 
-import type { Schema } from '../../../messageHandler/__tests__/shared/types';
-import { usingDirectWebSocketMessageHandler } from '../../../messageHandler/__tests__/shared/utils';
-import { LocalWebSocketMessageHandler } from '../../../messageHandler/LocalWebSocketMessageHandler';
-import { RemoteWebSocketMessageHandler } from '../../../messageHandler/RemoteWebSocketMessageHandler';
+import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { waitForWebSocketClientMessage } from '@tests/utils/webSocket';
+
 import type { WebSocketInterceptorType } from '../../types/options';
+
+type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
 
 interface SharedWebSocketInterceptorClearTestsOptions {
   type: WebSocketInterceptorType;
-  Handler: typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
+  getBaseURL: () => string;
 }
 
 export function declareClearWebSocketInterceptorTests(options: SharedWebSocketInterceptorClearTestsOptions) {
-  const { type, Handler } = options;
+  const { type, getBaseURL } = options;
 
-  // Holding the effect and awaiting the exact dispatch completion shows that no save happens after the clear. A real
-  // client cannot observe when the server finishes handling a message, so this uses the direct fixture.
   it('should not save intercepted messages after cleared while a message is being handled', async () => {
-    await usingDirectWebSocketMessageHandler<Schema>(
-      { type, baseURL: 'ws://localhost', Handler, messageSaving: { enabled: true } },
-      async ({ interceptor, handler, handleMessage }) => {
-        const effectStarted = Promise.withResolvers<void>();
-        const effectRelease = Promise.withResolvers<void>();
+    const baseURL = getBaseURL();
 
-        handler.effect(async (message) => {
-          if (message.type === 'create' && message.body.text === 'pending') {
-            effectStarted.resolve();
-            await effectRelease.promise;
+    await usingWebSocketInterceptor<ChatMessage>(
+      { type, baseURL, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const effectStartedPromise = createPromiseWithResolvers<void>();
+        const effectReleasePromise = createPromiseWithResolvers<void>();
+
+        const handler = await interceptor
+          .message()
+          .effect(async (message) => {
+            if (message.type === 'client' && message.text === 'pending') {
+              effectStartedPromise.resolve();
+              await effectReleasePromise;
+            }
+          })
+          .respond({ type: 'server', text: 'ack' });
+
+        const client = new WebSocketClient<ChatMessage>(baseURL);
+
+        try {
+          await client.open();
+
+          const existingResponsePromise = waitForWebSocketClientMessage(client);
+          client.send(JSON.stringify({ type: 'client', text: 'existing' }));
+          await expect(existingResponsePromise).resolves.toBe('{"type":"server","text":"ack"}');
+
+          const handlerMessages = handler.messages;
+          const serverMessages = interceptor.server.messages;
+          const [clientHandle] = interceptor.clients;
+          const clientMessages = clientHandle.messages;
+
+          expect(handlerMessages).toHaveLength(1);
+          expect(serverMessages).toHaveLength(1);
+          expect(clientMessages).toHaveLength(1);
+
+          client.send(JSON.stringify({ type: 'client', text: 'pending' }));
+          await effectStartedPromise;
+
+          await interceptor.clear();
+
+          const nextHandler = await interceptor.message().respond({ type: 'server', text: 'next' });
+
+          effectReleasePromise.resolve();
+
+          // Clearing closes the connected clients, so the follow-up message is sent by a new client.
+          const nextClient = new WebSocketClient<ChatMessage>(baseURL);
+
+          try {
+            await nextClient.open();
+
+            const nextResponsePromise = waitForWebSocketClientMessage(nextClient);
+            nextClient.send(JSON.stringify({ type: 'client', text: 'next' }));
+            await expect(nextResponsePromise).resolves.toBe('{"type":"server","text":"next"}');
+          } finally {
+            await nextClient.close();
           }
-        });
 
-        await handleMessage({ type: 'create', body: { text: 'existing' } });
-        const handlerMessages = handler.messages;
-        const [senderHandle] = interceptor.clients;
-        const senderMessages = senderHandle.messages;
-        const receiverMessages = interceptor.server.messages;
-        const messagePromise = handleMessage({ type: 'create', body: { text: 'pending' } });
-        await effectStarted.promise;
-        expect(handlerMessages).toHaveLength(1);
-        expect(senderMessages).toHaveLength(1);
-        expect(receiverMessages).toHaveLength(1);
-        await interceptor.clear();
-        effectRelease.resolve();
-        await messagePromise;
+          await waitFor(() => {
+            expect(nextHandler.messages).toHaveLength(1);
+          });
 
-        expect(handler.messages).toBe(handlerMessages);
-        expect(handlerMessages).toEqual([]);
-        expect(senderHandle.messages).toBe(senderMessages);
-        expect(senderMessages).toEqual([]);
-        expect(interceptor.server.messages).toBe(receiverMessages);
-        expect(receiverMessages).toEqual([]);
+          expect(handler.messages).toBe(handlerMessages);
+          expect(handlerMessages).toEqual([]);
+
+          expect(interceptor.server.messages).toBe(serverMessages);
+          expect(serverMessages).toHaveLength(1);
+          expect(serverMessages[0].data).toEqual({ type: 'client', text: 'next' });
+
+          expect(clientHandle.messages).toBe(clientMessages);
+          expect(clientMessages).toEqual([]);
+        } finally {
+          await client.close();
+        }
       },
     );
   });

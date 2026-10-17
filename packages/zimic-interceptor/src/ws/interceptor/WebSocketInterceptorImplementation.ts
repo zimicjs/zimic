@@ -19,7 +19,6 @@ import type { WebSocketInterceptorClient, WebSocketInterceptorServerSendOptions 
 import { WebSocketInterceptorMessageSaving } from './types/options';
 import type { WebSocketInterceptorConnectionListener } from './types/public';
 import {
-  createWebSocketInterceptorClient,
   createWebSocketInterceptorServer,
   InternalWebSocketInterceptorClient,
   InternalWebSocketInterceptorServer,
@@ -284,57 +283,29 @@ class WebSocketInterceptorImplementation<
 
   async handleInterceptedMessage(
     data: WebSocketMessageData<Schema>,
-    context?: Partial<WebSocketMessageHandlerApplyContext<Schema>>,
+    context: WebSocketMessageHandlerApplyContext<Schema>,
   ) {
     /* istanbul ignore if -- @preserve
      * Workers only forward messages while the owning interceptor is running. */
     if (!this.isRunning) {
-      return false;
+      return;
     }
 
     const message = normalizeWebSocketMessageData(data);
-    const completeContext = this.completeMessageContext(context);
+    this.addClient(context.sender);
+
     const messageSavingGeneration = this.messageSavingGeneration;
-    const matchedHandler = await this.findMatchedHandler(message, completeContext);
+    const matchedHandler = await this.findMatchedHandler(message, context);
 
     if (!matchedHandler) {
-      return false;
+      return;
     }
 
-    await matchedHandler.handler.applyDeclarations(matchedHandler.message, completeContext);
+    await matchedHandler.handler.applyDeclarations(matchedHandler.message, context);
 
     if (this.messageSaving.enabled && messageSavingGeneration === this.messageSavingGeneration) {
-      matchedHandler.handler.saveInterceptedMessage(matchedHandler.message, completeContext);
+      matchedHandler.handler.saveInterceptedMessage(matchedHandler.message, context);
     }
-
-    return true;
-  }
-
-  private completeMessageContext(context?: Partial<WebSocketMessageHandlerApplyContext<Schema>>) {
-    let sender = context?.sender;
-
-    if (!sender) {
-      const createdSender = this.createClient(this.baseURLAsString, {
-        send: (data) => {
-          void this.worker?.sendToClient(createdSender, data);
-        },
-      });
-      sender = createdSender;
-    }
-
-    this.addClient(sender);
-
-    return {
-      sender,
-      receiver: context?.receiver ?? this._server,
-    };
-  }
-
-  createClient(
-    url: string,
-    options: { send: (data: WebSocketMessageData<Schema>) => void },
-  ): InternalWebSocketInterceptorClient<Schema> {
-    return createWebSocketInterceptorClient(url, options.send);
   }
 
   addClient(client: InternalWebSocketInterceptorClient<Schema>) {

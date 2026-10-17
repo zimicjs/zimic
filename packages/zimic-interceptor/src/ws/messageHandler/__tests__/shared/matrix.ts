@@ -1,15 +1,21 @@
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
-import { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
-import { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
 
 interface TestMatrixCase {
   type: WebSocketInterceptorType;
-  Handler: typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
+  // WebSocket binary frames carry no MIME type, so the remote server receives raw bytes, while local mode hands the
+  // original Blob to the handler.
+  receivedBlobMessageRepresentation: string;
 }
 
 const testMatrix: TestMatrixCase[] = [
-  { type: 'local', Handler: LocalWebSocketMessageHandler },
-  { type: 'remote', Handler: RemoteWebSocketMessageHandler },
+  {
+    type: 'local',
+    receivedBlobMessageRepresentation: "Blob { type: 'text/plain', size: 4 }",
+  },
+  {
+    type: 'remote',
+    receivedBlobMessageRepresentation: 'ArrayBuffer { byteLength: 4 }',
+  },
 ];
 
 export default testMatrix;

@@ -13,10 +13,7 @@ export interface SharedWebSocketMessageHandlerTestOptions {
 export type ChatMessage =
   | {
       type: 'create';
-      body: {
-        text: string;
-        priority?: number;
-      };
+      body: { text: string; priority?: number };
     }
   | {
       type: 'delete';

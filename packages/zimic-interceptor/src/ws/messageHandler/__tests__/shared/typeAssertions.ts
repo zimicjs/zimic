@@ -9,8 +9,6 @@ import {
   WebSocketInterceptorServer,
 } from '../../../interceptor/types/messages';
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
-import type { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
-import type { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
 import type {
   LocalWebSocketMessageHandler as PublicLocalWebSocketMessageHandler,
   PendingRemoteWebSocketMessageHandler,
@@ -44,7 +42,6 @@ type NestedSchema = WebSocketSchema<
 export function declareTypeAssertionWebSocketMessageHandlerTests(
   options: SharedWebSocketMessageHandlerTestOptions & {
     type: WebSocketInterceptorType;
-    Handler: typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
   },
 ) {
   const { type, startServer, stopServer, getBaseURL } = options;
@@ -147,6 +144,7 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
     function declarePendingRemoteClear(handler: PendingRemoteWebSocketMessageHandler<Schema, CreateMessage>) {
       const clearedHandler = handler.clear();
       expectTypeOf(clearedHandler).toEqualTypeOf<PendingRemoteWebSocketMessageHandler<Schema, Schema>>();
+
       clearedHandler.respond({ type: 'delete', id: '1' }).effect(
         /* istanbul ignore next -- @preserve
          * This callback belongs to a compile-only handler declaration. */
@@ -161,6 +159,7 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
     async function declareSyncedRemoteClear(handler: SyncedRemoteWebSocketMessageHandler<Schema, CreateMessage>) {
       const clearedHandler = handler.clear();
       expectTypeOf(clearedHandler).toEqualTypeOf<PendingRemoteWebSocketMessageHandler<Schema, Schema>>();
+
       const syncedHandler = await clearedHandler;
       expectTypeOf(syncedHandler).toEqualTypeOf<SyncedRemoteWebSocketMessageHandler<Schema, Schema>>();
     }
@@ -238,6 +237,7 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
 
         return message;
       }
+
       responseFactory({ type: 'delete', id: '1' });
       interceptor.message().respond(responseFactory);
 
@@ -246,6 +246,7 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
       function invalidResponseFactory() {
         return { type: 'update' };
       }
+
       /* istanbul ignore next -- @preserve
        * Invalid declarations must remain compile-only to avoid registering them on a live remote interceptor. */
       function declareInvalidResponseFactory() {
