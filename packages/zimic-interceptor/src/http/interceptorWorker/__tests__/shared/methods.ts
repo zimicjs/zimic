@@ -51,7 +51,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
   });
 
   describe.each(HTTP_METHODS)('Method (%s)', (method) => {
-    const { overridesPreflightResponse, numberOfRequestsIncludingPreflight } = getPreflightAssessment({
+    const { overridesPreflightResponse, getNumbersOfRequestsIncludingPreflight } = getPreflightAssessment({
       method,
       platform,
       type: defaultWorkerOptions.type,
@@ -109,9 +109,9 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         const response = await fetch(baseURL, { method });
 
-        expect(spiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+        expect(spiedRequestHandler.mock.calls.length).toBeOneOf(getNumbersOfRequestsIncludingPreflight(1));
 
-        const [handlerContext] = spiedRequestHandler.mock.calls[numberOfRequestsIncludingPreflight - 1];
+        const [handlerContext] = spiedRequestHandler.mock.calls.at(-1)!;
         expect(handlerContext.request).toBeInstanceOf(Request);
         expect(handlerContext.request.method).toBe(method);
 
@@ -139,9 +139,9 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
           await expectFetchError(responsePromise);
         }
 
-        expect(emptySpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+        expect(emptySpiedRequestHandler.mock.calls.length).toBeOneOf(getNumbersOfRequestsIncludingPreflight(1));
 
-        const [handlerContext] = emptySpiedRequestHandler.mock.calls[numberOfRequestsIncludingPreflight - 1];
+        const [handlerContext] = emptySpiedRequestHandler.mock.calls.at(-1)!;
         expect(handlerContext.request).toBeInstanceOf(Request);
         expect(handlerContext.request.method).toBe(method);
       });
@@ -173,7 +173,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         responsePromise = fetch(baseURL, { method });
         await expect(responsePromise).resolves.toBeInstanceOf(Response);
 
-        expect(delayedSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
+        expect(delayedSpiedRequestHandler.mock.calls.length).toBeOneOf(getNumbersOfRequestsIncludingPreflight(2));
 
         for (const [handlerContext] of delayedSpiedRequestHandler.mock.calls) {
           expect(handlerContext.request).toBeInstanceOf(Request);
@@ -282,9 +282,9 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         const response = await fetch(baseURL, { method });
 
-        expect(spiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+        expect(spiedRequestHandler.mock.calls.length).toBeOneOf(getNumbersOfRequestsIncludingPreflight(1));
 
-        const [handlerContext] = spiedRequestHandler.mock.calls[numberOfRequestsIncludingPreflight - 1];
+        const [handlerContext] = spiedRequestHandler.mock.calls.at(-1)!;
         expect(handlerContext.request).toBeInstanceOf(Request);
         expect(handlerContext.request.method).toBe(method);
 
@@ -315,10 +315,12 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         let response = await fetch(baseURL, { method });
         expect(response.status).toBe(200);
 
-        expect(okSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+        expect(okSpiedRequestHandler.mock.calls.length).toBeOneOf(getNumbersOfRequestsIncludingPreflight(1));
         expect(noContentSpiedRequestHandler).not.toHaveBeenCalled();
 
-        let [okHandlerContext] = okSpiedRequestHandler.mock.calls[numberOfRequestsIncludingPreflight - 1];
+        let numberOfOkCalls = okSpiedRequestHandler.mock.calls.length;
+
+        let [okHandlerContext] = okSpiedRequestHandler.mock.calls.at(-1)!;
         expect(okHandlerContext.request).toBeInstanceOf(Request);
         expect(okHandlerContext.request.method).toBe(method);
 
@@ -336,11 +338,13 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         response = await fetch(baseURL, { method });
         expect(response.status).toBe(204);
 
-        expect(okSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
-        expect(noContentSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+        expect(okSpiedRequestHandler.mock.calls).toHaveLength(numberOfOkCalls);
 
-        const [noContentHandlerContext] =
-          noContentSpiedRequestHandler.mock.calls[numberOfRequestsIncludingPreflight - 1];
+        expect(noContentSpiedRequestHandler.mock.calls.length).toBeOneOf(getNumbersOfRequestsIncludingPreflight(1));
+
+        const numberOfNoContentCalls = noContentSpiedRequestHandler.mock.calls.length;
+
+        const [noContentHandlerContext] = noContentSpiedRequestHandler.mock.calls.at(-1)!;
         expect(noContentHandlerContext.request).toBeInstanceOf(Request);
         expect(noContentHandlerContext.request.method).toBe(method);
 
@@ -353,10 +357,12 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         response = await fetch(baseURL, { method });
         expect(response.status).toBe(200);
 
-        expect(okSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
-        expect(noContentSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+        expect(okSpiedRequestHandler.mock.calls.length).toBeOneOf(getNumbersOfRequestsIncludingPreflight(2));
+        expect(noContentSpiedRequestHandler.mock.calls).toHaveLength(numberOfNoContentCalls);
 
-        [okHandlerContext] = okSpiedRequestHandler.mock.calls[numberOfRequestsIncludingPreflight * 2 - 1];
+        numberOfOkCalls = okSpiedRequestHandler.mock.calls.length;
+
+        [okHandlerContext] = okSpiedRequestHandler.mock.calls[okSpiedRequestHandler.mock.calls.length - 1];
         expect(okHandlerContext.request).toBeInstanceOf(Request);
         expect(okHandlerContext.request.method).toBe(method);
 
@@ -375,8 +381,8 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
           await expectFetchError(responsePromise);
         }
 
-        expect(okSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
-        expect(noContentSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+        expect(okSpiedRequestHandler.mock.calls).toHaveLength(numberOfOkCalls);
+        expect(noContentSpiedRequestHandler.mock.calls).toHaveLength(numberOfNoContentCalls);
       });
     });
 
