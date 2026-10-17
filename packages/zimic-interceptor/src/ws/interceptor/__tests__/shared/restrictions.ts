@@ -4,14 +4,11 @@ import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
+import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
+import { createBinaryMessage } from '../../../messageHandler/__tests__/shared/utils';
 import { WebSocketInterceptorOptions } from '../../types/options';
-import {
-  RuntimeSharedWebSocketInterceptorTestsOptions,
-  createBinaryMessage,
-  usingWebSocketClient,
-  waitForWebSocketMessage,
-} from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type MessageSchema = WebSocketSchema<
   { type: 'create'; body: { text: string; priority?: number } } | { type: 'delete'; id: string }
@@ -52,10 +49,10 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
 
         client.removeEventListener('message', unmatchedMessageListener);
 
-        const messagePromise = waitForWebSocketMessage(client);
+        const messagePromise = waitForWebSocketClientMessage(client);
         client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
-        await expect(messagePromise).resolves.toEqual({ type: 'delete', id: '1' });
+        await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'delete', id: '1' }));
       });
 
       await promiseIfRemote(interceptor.checkTimes(), interceptor);
@@ -122,10 +119,10 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
               expect(secondMessageListener).toHaveBeenCalled();
             });
 
-            const firstMessagePromise = waitForWebSocketMessage(firstClient);
+            const firstMessagePromise = waitForWebSocketClientMessage(firstClient);
             firstClient.send(JSON.stringify({ type: 'create', body: { text: 'restricted' } }));
 
-            await expect(firstMessagePromise).resolves.toEqual({ type: 'delete', id: '1' });
+            await expect(firstMessagePromise).resolves.toBe(JSON.stringify({ type: 'delete', id: '1' }));
             expect(unrestrictedEffect).toHaveBeenCalledTimes(1);
             expect(handler.messages[0].sender).toBe(interceptor.clients[0]);
             expect(handler.messages[0].data).toEqual({ type: 'create', body: { text: 'restricted' } });
@@ -216,10 +213,10 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
 
         await promiseIfRemote(handler.clear().respond({ type: 'delete', id: '2' }).times(1), interceptor);
 
-        const messagePromise = waitForWebSocketMessage(client);
+        const messagePromise = waitForWebSocketClientMessage(client);
         client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
-        await expect(messagePromise).resolves.toEqual({ type: 'delete', id: '2' });
+        await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'delete', id: '2' }));
       });
 
       await promiseIfRemote(interceptor.checkTimes(), interceptor);

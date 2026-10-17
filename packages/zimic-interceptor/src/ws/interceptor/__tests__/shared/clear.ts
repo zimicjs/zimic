@@ -6,12 +6,16 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
-import { waitForWebSocketClientClose, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
+import {
+  usingWebSocketClient,
+  waitForWebSocketClientClose,
+  waitForWebSocketClientMessage,
+} from '@tests/utils/webSocket';
 
 import { LocalWebSocketMessageHandler } from '../../../messageHandler/LocalWebSocketMessageHandler';
 import { RemoteWebSocketMessageHandler } from '../../../messageHandler/RemoteWebSocketMessageHandler';
 import { WebSocketInterceptorOptions } from '../../types/options';
-import { RuntimeSharedWebSocketInterceptorTestsOptions, usingWebSocketClient, waitForWebSocketMessage } from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
 type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
@@ -47,9 +51,9 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
             expect(interceptor.clients).toHaveLength(1);
           });
 
-          const messagePromise = waitForWebSocketMessage(client);
+          const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: 1 }));
-          await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
 
           expect(handler.messages).toHaveLength(1);
           expect(interceptor.server.messages).toHaveLength(1);
@@ -93,9 +97,9 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         expect(handler.messages).toHaveLength(0);
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          const messagePromise = waitForWebSocketMessage(client);
+          const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: 2 }));
-          await expect(messagePromise).resolves.toEqual({ type: 'server', index: 2 });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
         });
 
         expect(handler.messages).toHaveLength(1);
@@ -119,9 +123,9 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         expect(handler.messages).toHaveLength(0);
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          const messagePromise = waitForWebSocketMessage(client);
+          const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: 2 }));
-          await expect(messagePromise).resolves.toEqual({ type: 'server', index: 2 });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
         });
 
         expect(otherHandler.messages).toHaveLength(1);
@@ -159,9 +163,9 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
                 expect(secondInterceptor.clients).toHaveLength(1);
                 expect(secondClient.readyState).toBe(WebSocketClient.OPEN);
 
-                const secondMessagePromise = waitForWebSocketMessage(secondClient);
+                const secondMessagePromise = waitForWebSocketClientMessage(secondClient);
                 secondClient.send(JSON.stringify({ type: 'client', index: 2 }));
-                await expect(secondMessagePromise).resolves.toEqual({ type: 'server', index: 2 });
+                await expect(secondMessagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
               });
             });
           },

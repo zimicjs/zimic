@@ -992,9 +992,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
 
         const client = new WebSocketClient<ChatMessage>(baseURL);
         clients.push(client);
-        const closeEventPromise = new Promise<WebSocketClient.CloseEvent<ChatMessage>>((resolve) => {
-          client.addEventListener('close', resolve, { once: true });
-        });
+        const closeEventPromise = waitForWebSocketClientClose(client);
 
         await client.open();
 

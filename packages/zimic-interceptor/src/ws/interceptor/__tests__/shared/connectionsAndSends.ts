@@ -6,11 +6,16 @@ import { expect, it, vi } from 'vitest';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
-import { waitForWebSocketClientMessage } from '@tests/utils/webSocket';
+import {
+  collectWebSocketClientMessages,
+  usingWebSocketClient,
+  waitForWebSocketClientMessage,
+} from '@tests/utils/webSocket';
 
+import { createBinaryMessage } from '../../../messageHandler/__tests__/shared/utils';
 import type { WebSocketInterceptorClient } from '../../types/messages';
 import type { WebSocketInterceptorType } from '../../types/options';
-import { createBinaryMessage, readBytes, usingWebSocketClient, waitForWebSocketMessage } from './utils';
+import { readBytes } from './utils';
 
 type ChatMessage = WebSocketSchema<{ type: 'server'; text: string }>;
 type BinaryMessage = WebSocketSchema<ArrayBuffer>;
@@ -282,12 +287,7 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
             expect(interceptor.clients).toHaveLength(2);
           });
 
-          const messages: string[][] = [[], []];
-          for (const [index, client] of [firstClient, secondClient].entries()) {
-            client.addEventListener('message', ({ data }) => {
-              messages[index].push(data);
-            });
-          }
+          const messages = [collectWebSocketClientMessages(firstClient), collectWebSocketClientMessages(secondClient)];
 
           const message = JSON.stringify({ type: 'server', text: 'single' } satisfies ChatMessage);
           const marker = JSON.stringify({ type: 'server', text: 'marker' } satisfies ChatMessage);
@@ -319,12 +319,11 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
               expect(interceptor.clients).toHaveLength(3);
             });
 
-            const messages: string[][] = [[], [], []];
-            for (const [index, client] of [firstClient, secondClient, thirdClient].entries()) {
-              client.addEventListener('message', ({ data }) => {
-                messages[index].push(data);
-              });
-            }
+            const messages = [
+              collectWebSocketClientMessages(firstClient),
+              collectWebSocketClientMessages(secondClient),
+              collectWebSocketClientMessages(thirdClient),
+            ];
 
             const message = JSON.stringify({ type: 'server', text: 'list' } satisfies ChatMessage);
             const marker = JSON.stringify({ type: 'server', text: 'marker' } satisfies ChatMessage);
@@ -357,12 +356,7 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
             expect(interceptor.clients).toHaveLength(2);
           });
 
-          const messages: string[][] = [[], []];
-          for (const [index, client] of [firstClient, secondClient].entries()) {
-            client.addEventListener('message', ({ data }) => {
-              messages[index].push(data);
-            });
-          }
+          const messages = [collectWebSocketClientMessages(firstClient), collectWebSocketClientMessages(secondClient)];
 
           const message = JSON.stringify({ type: 'server', text: 'empty recipients' } satisfies ChatMessage);
           const marker = JSON.stringify({ type: 'server', text: 'marker' } satisfies ChatMessage);
@@ -393,14 +387,14 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
             expect(interceptor.clients).toHaveLength(2);
           });
 
-          const firstMessagePromise = waitForWebSocketMessage(firstClient);
-          const secondMessagePromise = waitForWebSocketMessage(secondClient);
+          const firstMessagePromise = waitForWebSocketClientMessage(firstClient);
+          const secondMessagePromise = waitForWebSocketClientMessage(secondClient);
 
           const message: ChatMessage = { type: 'server', text: 'broadcast' };
           interceptor.server.send(JSON.stringify(message));
 
-          await expect(firstMessagePromise).resolves.toEqual(message);
-          await expect(secondMessagePromise).resolves.toEqual(message);
+          await expect(firstMessagePromise).resolves.toBe(JSON.stringify(message));
+          await expect(secondMessagePromise).resolves.toBe(JSON.stringify(message));
         });
       });
     });
@@ -421,8 +415,8 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
             expect(interceptor.clients).toHaveLength(2);
           });
 
-          const firstMessagePromise = waitForWebSocketMessage(firstClient);
-          const secondMessagePromise = waitForWebSocketMessage(secondClient);
+          const firstMessagePromise = waitForWebSocketClientMessage(firstClient);
+          const secondMessagePromise = waitForWebSocketClientMessage(secondClient);
 
           interceptor.server.send(createBinaryMessage(0x00, 0xff));
 

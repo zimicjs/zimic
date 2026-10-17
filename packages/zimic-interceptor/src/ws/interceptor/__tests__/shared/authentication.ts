@@ -5,11 +5,11 @@ import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/Unaut
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
+import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
 import { WebSocketInterceptorPlatform } from '../../types/options';
-import { usingWebSocketClient, waitForWebSocketMessage } from './utils';
 
 type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
 
@@ -42,10 +42,10 @@ export function declareAuthenticationWebSocketInterceptorTests(
         );
 
         await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
-          const messagePromise = waitForWebSocketMessage(client);
+          const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', text: 'ping' } satisfies ChatMessage));
 
-          await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'pong' });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', text: 'pong' }));
           expect(handler.messages).toHaveLength(1);
         });
       },

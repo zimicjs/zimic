@@ -1,3 +1,4 @@
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor, waitForNot } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
@@ -6,6 +7,7 @@ import InterceptorWebSocketClient from '@/utils/webSocket/WebSocketClient';
 import LocalWebSocketInterceptorWorker from '@/ws/interceptorWorker/LocalWebSocketInterceptorWorker';
 import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
+import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import NotRunningWebSocketInterceptorError from '../../errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
@@ -23,7 +25,7 @@ import {
   RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor,
 } from '../../types/public';
 import WebSocketInterceptorStore from '../../WebSocketInterceptorStore';
-import { RuntimeSharedWebSocketInterceptorTestsOptions, usingWebSocketClient, waitForWebSocketMessage } from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
 
@@ -146,9 +148,9 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
         await promiseIfRemote(interceptor.message().respond({ type: 'server', index: cycle }), interceptor);
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          const messagePromise = waitForWebSocketMessage(client);
+          const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: cycle }));
-          await expect(messagePromise).resolves.toEqual({ type: 'server', index: cycle });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: cycle }));
         });
 
         await interceptor.stop();
@@ -196,9 +198,9 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
         await promiseIfRemote(otherInterceptor.message().respond({ type: 'server', index: 1 }), otherInterceptor);
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          const messagePromise = waitForWebSocketMessage(client);
+          const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: 1 }));
-          await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
         });
       });
     });
@@ -327,31 +329,70 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
     });
 
     it('should keep the shared worker running if the last interceptor is stopping at the same time as another is starting', async () => {
-      await usingWebSocketInterceptor<{}>(interceptorOptions, async (interceptor) => {
-        await usingWebSocketInterceptor<{}>(interceptorOptions, { start: false }, async (otherInterceptor) => {
-          const worker = store.localWorker;
-          expect(worker).toBeDefined();
+      const otherBaseURL = `${baseURL}/other`;
 
-          const originalWorkerStop = worker!.stop.bind(worker);
-          const { promise: workerStopStartedPromise, resolve: markWorkerStopAsStarted } = Promise.withResolvers<void>();
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, baseURL: otherBaseURL },
+          { start: false },
+          async (otherInterceptor) => {
+            const worker = store.localWorker;
+            expect(worker).toBeDefined();
+            expect(worker!.numberOfRunningInterceptors).toBe(1);
 
-          // We need to inspect the worker stop method to be able to start another interceptor right after it is called.
-          vi.spyOn(worker!, 'stop').mockImplementationOnce(async () => {
-            markWorkerStopAsStarted();
-            await originalWorkerStop();
-          });
+            const originalGetMSWWorkerOrCreate = worker!.getMSWWorkerOrCreate.bind(worker);
+            const workerStopStartedPromise = createPromiseWithResolvers<void>();
+            const workerStopGatePromise = createPromiseWithResolvers<void>();
 
-          const stopPromise = interceptor.stop();
-          await workerStopStartedPromise;
-          await otherInterceptor.start();
-          await stopPromise;
+            // The shutdown dependency is held so that the other interceptor starts while the worker stop is pending.
+            vi.spyOn(worker!, 'getMSWWorkerOrCreate').mockImplementationOnce(async () => {
+              workerStopStartedPromise.resolve();
+              await workerStopGatePromise;
+              return originalGetMSWWorkerOrCreate();
+            });
 
-          expect(interceptor.isRunning).toBe(false);
-          expect(otherInterceptor.isRunning).toBe(true);
+            const workerStartSpy = vi.spyOn(worker!, 'start');
 
-          expect(store.localWorker).toBe(worker);
-          expect(worker!.isRunning).toBe(true);
-        });
+            const stopPromise = interceptor.stop();
+            let startPromise: Promise<void> | undefined;
+
+            try {
+              await workerStopStartedPromise;
+              startPromise = otherInterceptor.start();
+
+              const startResolutionListener = vi.fn();
+              void startPromise.then(startResolutionListener);
+
+              await waitFor(() => {
+                expect(workerStartSpy).toHaveBeenCalledTimes(1);
+              });
+              await waitForNot(() => {
+                expect(startResolutionListener).toHaveBeenCalled();
+              });
+
+              workerStopGatePromise.resolve();
+              await Promise.all([stopPromise, startPromise]);
+            } finally {
+              workerStopGatePromise.resolve();
+              await Promise.allSettled([stopPromise, startPromise]);
+            }
+
+            expect(interceptor.isRunning).toBe(false);
+            expect(otherInterceptor.isRunning).toBe(true);
+
+            expect(store.localWorker).toBe(worker);
+            expect(worker!.isRunning).toBe(true);
+
+            const reply: MessageSchema = { type: 'server', index: 1 };
+            otherInterceptor.message().respond(reply);
+
+            await usingWebSocketClient<MessageSchema>(otherBaseURL, async (client) => {
+              const messagePromise = waitForWebSocketClientMessage(client);
+              client.send(JSON.stringify({ type: 'client', index: 1 } satisfies MessageSchema));
+              await expect(messagePromise).resolves.toBe(JSON.stringify(reply));
+            });
+          },
+        );
       });
     });
   }
@@ -543,9 +584,9 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
 
             client.removeEventListener('message', unmatchedMessageListener);
 
-            const messagePromise = waitForWebSocketMessage(client);
+            const messagePromise = waitForWebSocketClientMessage(client);
             client.send(JSON.stringify({ type: 'client', index: 2 }));
-            await expect(messagePromise).resolves.toEqual({ type: 'server', index: 2 });
+            await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
           });
 
           await expect(interceptor.checkTimes()).resolves.toBeUndefined();
@@ -572,9 +613,9 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
           await interceptor.message().respond({ type: 'server', index: 2 });
 
           await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-            const messagePromise = waitForWebSocketMessage(client);
+            const messagePromise = waitForWebSocketClientMessage(client);
             client.send(JSON.stringify({ type: 'client', index: 1 }));
-            await expect(messagePromise).resolves.toEqual({ type: 'server', index: 2 });
+            await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
           });
         });
       });

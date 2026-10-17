@@ -4,15 +4,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
+import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
+import { createBinaryMessage, expectWebSocketTimesCheckError } from '../../../messageHandler/__tests__/shared/utils';
 import { WebSocketInterceptorOptions } from '../../types/options';
-import {
-  RuntimeSharedWebSocketInterceptorTestsOptions,
-  createBinaryMessage,
-  expectWebSocketTimesCheckError,
-  usingWebSocketClient,
-  waitForWebSocketMessage,
-} from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'create'; body: { text: string } } | { type: 'delete'; id: string }>;
 type BinarySchema = WebSocketSchema<ArrayBuffer | Blob>;
@@ -29,11 +25,11 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
   });
 
   async function sendMatchingMessage(client: WebSocketClient<MessageSchema>, text = 'hello') {
-    const messagePromise = waitForWebSocketMessage(client);
+    const messagePromise = waitForWebSocketClientMessage(client);
 
     client.send(JSON.stringify({ type: 'create', body: { text } }));
 
-    await expect(messagePromise).resolves.toEqual({ type: 'delete', id: '1' });
+    await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'delete', id: '1' }));
   }
 
   describe('Exact number of messages', () => {
@@ -303,13 +299,13 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
         );
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          let messagePromise = waitForWebSocketMessage(client);
+          let messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'create', body: { text: 'one' } }));
-          await expect(messagePromise).resolves.toEqual({ type: 'delete', id: 'second' });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'delete', id: 'second' }));
 
-          messagePromise = waitForWebSocketMessage(client);
+          messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'create', body: { text: 'two' } }));
-          await expect(messagePromise).resolves.toEqual({ type: 'delete', id: 'first' });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'delete', id: 'first' }));
         });
 
         await firstHandler.checkTimes();

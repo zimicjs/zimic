@@ -5,12 +5,13 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
+import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
 import { WebSocketInterceptorOptions } from '../../types/options';
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../WebSocketInterceptorImplementation';
-import { RuntimeSharedWebSocketInterceptorTestsOptions, usingWebSocketClient, waitForWebSocketMessage } from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
 
@@ -40,10 +41,10 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
         await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          const messagePromise = waitForWebSocketMessage(client);
+          const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: 1 }));
 
-          await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
         });
       });
     }
@@ -58,10 +59,10 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
       await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
 
       await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-        const messagePromise = waitForWebSocketMessage(client);
+        const messagePromise = waitForWebSocketClientMessage(client);
         client.send(JSON.stringify({ type: 'client', index: 1 }));
 
-        await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+        await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
       });
 
       const newBaseURL = joinURL(baseURL, 'new');
@@ -94,10 +95,10 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
       expect(oldBaseURLMessageListener).not.toHaveBeenCalled();
 
       await usingWebSocketClient<MessageSchema>(newBaseURL, async (client) => {
-        const messagePromise = waitForWebSocketMessage(client);
+        const messagePromise = waitForWebSocketClientMessage(client);
         client.send(JSON.stringify({ type: 'client', index: 2 }));
 
-        await expect(messagePromise).resolves.toEqual({ type: 'server', index: 2 });
+        await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
       });
     });
   });
@@ -182,10 +183,10 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
       await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
 
       await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-        const messagePromise = waitForWebSocketMessage(client);
+        const messagePromise = waitForWebSocketClientMessage(client);
         client.send(JSON.stringify({ type: 'client', index: 1 }));
 
-        await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+        await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
       });
 
       const newBaseURL = joinURL(baseURL, 'new');
@@ -219,10 +220,10 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
       expect(newBaseURLMessageListener).not.toHaveBeenCalled();
 
       await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-        const messagePromise = waitForWebSocketMessage(client);
+        const messagePromise = waitForWebSocketClientMessage(client);
         client.send(JSON.stringify({ type: 'client', index: 1 }));
 
-        await expect(messagePromise).resolves.toEqual({ type: 'server', index: 1 });
+        await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
       });
     });
   });
@@ -295,10 +296,10 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
         expect(oldOriginMessageListener).not.toHaveBeenCalled();
 
         await usingWebSocketClient<MessageSchema>(otherBaseURL, async (client) => {
-          const messagePromise = waitForWebSocketMessage(client);
+          const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: 2 }));
 
-          await expect(messagePromise).resolves.toEqual({ type: 'server', index: 2 });
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
         });
       });
     });

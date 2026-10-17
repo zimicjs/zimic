@@ -6,9 +6,9 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
-import type { Schema } from '../../../messageHandler/__tests__/shared/utils';
+import { createBinaryMessage, type Schema } from '../../../messageHandler/__tests__/shared/utils';
 import type { WebSocketInterceptorType } from '../../types/options';
-import { createBinaryMessage, readBytes } from './utils';
+import { readBytes } from './utils';
 
 type BinarySchema = WebSocketSchema<ArrayBuffer | Blob>;
 
