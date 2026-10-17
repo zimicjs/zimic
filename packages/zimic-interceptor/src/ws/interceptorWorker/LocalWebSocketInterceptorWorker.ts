@@ -7,7 +7,10 @@ import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 
 import NotRunningWebSocketInterceptorError from '../interceptor/errors/NotRunningWebSocketInterceptorError';
 import UnknownWebSocketInterceptorPlatformError from '../interceptor/errors/UnknownWebSocketInterceptorPlatformError';
-import { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
+import {
+  createWebSocketInterceptorClient,
+  InternalWebSocketInterceptorClient,
+} from '../interceptor/WebSocketInterceptorHandle';
 import WebSocketInterceptorImplementation, {
   AnyWebSocketInterceptorImplementation,
 } from '../interceptor/WebSocketInterceptorImplementation';
@@ -149,9 +152,9 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       link,
       mswHandler: link.addEventListener('connection', ({ client: rawClient }) => {
         const client = rawClient as LocalWebSocketClientConnection;
-        const interceptorClient = interceptor.createClient(client.url.href, {
-          send: (data) => client.send(data),
-        });
+        const interceptorClient = createWebSocketInterceptorClient<Schema>(client.url.href, (data) =>
+          client.send(data),
+        );
 
         async function messageListener(event: MessageEvent<string | ArrayBufferLike | Blob | ArrayBufferView>) {
           event.preventDefault();

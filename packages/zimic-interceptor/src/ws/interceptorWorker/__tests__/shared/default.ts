@@ -8,6 +8,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vite
 import LocalHttpInterceptorWorker from '@/http/interceptorWorker/LocalHttpInterceptorWorker';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import InterceptorWebSocketClient from '@/utils/webSocket/WebSocketClient';
+import { createWebSocketInterceptorClient } from '@/ws/interceptor/WebSocketInterceptorHandle';
 import WebSocketInterceptorImplementation from '@/ws/interceptor/WebSocketInterceptorImplementation';
 import { createWebSocketInterceptorWorker } from '@/ws/interceptorWorker/factory';
 import LocalWebSocketInterceptorWorker from '@/ws/interceptorWorker/LocalWebSocketInterceptorWorker';
@@ -927,11 +928,12 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       await usingWebSocketInterceptorWorker(workerOptions, async (rawWorker) => {
         const worker = rawWorker as RemoteWebSocketInterceptorWorker;
         const interceptor = createDefaultWebSocketInterceptor();
-        const client = interceptor.implementation.createClient(baseURL, { send: () => undefined });
+        const client = createWebSocketInterceptorClient(baseURL, () => undefined);
 
         await expect(
           worker.sendToClient(client, JSON.stringify({ type: 'server', text: 'ignored client' })),
         ).resolves.toBeUndefined();
+
         await expect(
           worker.sendToClients(interceptor.implementation, JSON.stringify({ type: 'server', text: 'ignored handler' })),
         ).resolves.toBeUndefined();

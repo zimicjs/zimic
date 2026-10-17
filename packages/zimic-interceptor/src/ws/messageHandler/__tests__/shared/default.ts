@@ -3,20 +3,17 @@ import { WebSocketClient } from '@zimic/ws';
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
-import { LocalWebSocketMessageHandler } from '../../LocalWebSocketMessageHandler';
-import { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
-import { usingDirectWebSocketMessageHandler } from './utils';
 
 export function declareDefaultWebSocketMessageHandlerTests(
   options: SharedWebSocketMessageHandlerTestOptions & {
     type: WebSocketInterceptorType;
-    Handler: typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
   },
 ) {
-  const { type, Handler, startServer, stopServer, getBaseURL } = options;
+  const { type, startServer, stopServer, getBaseURL } = options;
 
   let baseURL: string;
 
@@ -71,6 +68,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
           expect(secondRestriction.mock.calls[0][0]).toBe(normalizedMessage);
           expect(effectMessage).toBe(normalizedMessage);
           expect(handler.messages[0].data).toBe(normalizedMessage);
+
           expect(interceptor.clients[0].messages).toHaveLength(1);
           expect(interceptor.server.messages).toHaveLength(1);
         } finally {
@@ -80,13 +78,31 @@ export function declareDefaultWebSocketMessageHandlerTests(
     );
   });
 
-  // This scenario reads the dispatch result, which the transport does not expose to clients.
   it('should match any message without a declared response, effect, or restrictions', async () => {
-    await usingDirectWebSocketMessageHandler<Schema>({ type, baseURL, Handler }, async ({ handleMessage }) => {
-      const didHandleMessage = await handleMessage({ type: 'create', body: { text: 'hello' } });
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await interceptor.message().times(1);
 
-      expect(didHandleMessage).toBe(true);
-    });
+        const client = new WebSocketClient<Schema>(baseURL);
+
+        try {
+          await client.open();
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+          await waitFor(() => {
+            expect(handler.messages).toHaveLength(1);
+          });
+
+          expect(handler.messages[0].data).toEqual({ type: 'create', body: { text: 'hello' } });
+
+          await handler.checkTimes();
+        } finally {
+          await client.close();
+        }
+      },
+    );
   });
 
   it('should keep track of intercepted messages', async () => {
@@ -102,13 +118,11 @@ export function declareDefaultWebSocketMessageHandlerTests(
         try {
           await client.open();
 
-          const response = new Promise<WebSocketClient.MessageEvent<Schema>>((resolve) => {
-            client.addEventListener('message', resolve, { once: true });
-          });
+          const response = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
-          await expect(response).resolves.toMatchObject({ data: JSON.stringify({ type: 'delete', id: '1' }) });
+          await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: '1' }));
 
           await waitFor(() => {
             expect(handler.messages).toHaveLength(1);
@@ -136,9 +150,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
         try {
           await client.open();
 
-          const response = new Promise<WebSocketClient.MessageEvent<Schema>>((resolve) => {
-            client.addEventListener('message', resolve, { once: true });
-          });
+          const response = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
           await response;
