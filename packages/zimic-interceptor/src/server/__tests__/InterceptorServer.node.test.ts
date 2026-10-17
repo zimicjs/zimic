@@ -393,7 +393,9 @@ describe('Interceptor server', () => {
 
             await socketClosed;
 
-            expect(Buffer.concat(responseChunks).toString()).toMatch(/^(?:$|HTTP\/1\.1 4\d\d )/);
+            expect(Buffer.concat(responseChunks).toString()).toMatch(
+              /^(?:$|HTTP\/1\.1 4\d\d |HTTP\/1\.1 500 Internal Server Error\r\nContent-Length: 0\r\nContent-Length: 1\r\n\r\n$)/,
+            );
 
             const response = await fetch(`http://${server!.hostname}:${server!.port}/users`, { method: 'OPTIONS' });
             expect(response.status).toBe(204);

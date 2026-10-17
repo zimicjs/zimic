@@ -29,6 +29,7 @@ import type { InterceptorServer as PublicInterceptorServer } from './types/publi
 import type { InterceptorServerWebSocketSchema } from './types/schema';
 import { validateInterceptorToken } from './utils/auth';
 import { getFetchAPI } from './utils/fetch';
+import { rejectNodeResponse } from './utils/http';
 import WebSocketInterceptorServerRuntime from './ws/WebSocketInterceptorServerRuntime';
 
 const importHttpInterceptorServerRuntime = createCachedDynamicImport(
@@ -420,7 +421,7 @@ class InterceptorServer implements PublicInterceptorServer {
         return this.logUnhandledRequestWithoutRuntime(nodeRequest, nodeResponse);
       }
 
-      nodeResponse.destroy();
+      rejectNodeResponse(nodeResponse);
       return;
     }
 
@@ -434,7 +435,7 @@ class InterceptorServer implements PublicInterceptorServer {
     } catch (error) {
       console.error(error);
     } finally {
-      nodeResponse.destroy();
+      rejectNodeResponse(nodeResponse);
     }
   }
 }

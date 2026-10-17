@@ -102,9 +102,6 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       console.error(error);
     }
 
-    const strategy = await super.getUnhandledRequestStrategy(request, 'remote');
-    await super.logUnhandledRequestIfNecessary(request, strategy);
-
     return { response: null };
   };
 
