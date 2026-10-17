@@ -1,8 +1,7 @@
 import { PossiblePromise } from '@zimic/utils/types';
+import { closeWebSocketServer } from '@zimic/utils/ws';
 import { Server as HttpServer, IncomingMessage } from 'http';
 import ClientSocket from 'isomorphic-ws';
-
-import { closeServerSocket } from '@/utils/webSocket';
 
 import { WEB_SOCKET_CLOSE_CODES, WebSocketControlMessage } from './constants';
 import { WebSocketSchema } from './types';
@@ -125,7 +124,7 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
       super.offAny();
       await super.closeClientSockets();
 
-      await closeServerSocket(this.webSocketServer, { timeout: this.socketTimeout });
+      await closeWebSocketServer(this.webSocketServer, { timeout: this.socketTimeout, terminateClients: true });
 
       this.webSocketServer = undefined;
     } finally {

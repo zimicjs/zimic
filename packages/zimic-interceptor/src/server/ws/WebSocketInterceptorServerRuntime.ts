@@ -1,4 +1,5 @@
 import { excludeNonPathParams } from '@zimic/utils/url';
+import { closeWebSocketClient } from '@zimic/utils/ws';
 import type { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 import type { IncomingMessage } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
@@ -6,7 +7,7 @@ import { WebSocket as ClientSocket } from 'ws';
 import * as z from 'zod';
 
 import { removeArrayIndex } from '@/utils/arrays';
-import { closeClientSocket, WebSocketMessageAbortError } from '@/utils/webSocket';
+import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
 import type { WebSocketEventMessage } from '@/utils/webSocket/types';
@@ -415,7 +416,7 @@ class WebSocketInterceptorServerRuntime {
     ]);
 
     const closingPromises = Array.from(userSockets, (socket) =>
-      closeClientSocket(socket, { timeout: this.webSocketServer.socketTimeout }),
+      closeWebSocketClient(socket, { timeout: this.webSocketServer.socketTimeout }),
     );
 
     await Promise.all(closingPromises);
