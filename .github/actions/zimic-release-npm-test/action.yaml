@@ -27,7 +27,7 @@ runs:
       with:
         project-name: ${{ inputs.project-name }}
         project-directory: ${{ inputs.project-directory }}
-        validate-ref-name: ${{ inputs.ref_name }}
+        validate-ref-name: ${{ inputs.ref-name }}
 
     - name: Set up Zimic
       uses: ./.github/actions/zimic-setup
@@ -74,15 +74,33 @@ runs:
     - name: Wait for released package to be available on NPM
       shell: bash
       run: |
-        timeout 60s bash -c '
-          until pnpm view ${{ inputs.project-name }} versions --json | grep --quiet "${{ steps.zimic-version.outputs.value }}"; do
-            echo "${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} is not yet available on NPM..."
+        timeout 300s bash -c '
+          until [[ "$(npm view "$PROJECT_NAME@$PROJECT_VERSION" version)" == "$PROJECT_VERSION" ]]; do
+            echo "$PROJECT_NAME@$PROJECT_VERSION is not yet available on NPM..."
             sleep 5
             echo "Checking again..."
           done
         '
 
-        echo "${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} is available on NPM."
+        echo "$PROJECT_NAME@$PROJECT_VERSION is available on NPM."
+      env:
+        PROJECT_NAME: ${{ inputs.project-name }}
+        PROJECT_VERSION: ${{ steps.zimic-version.outputs.value }}
+
+    - name: Verify released package provenance
+      shell: bash
+      run: |
+        predicateType="$(npm view "$PROJECT_NAME@$PROJECT_VERSION" dist.attestations.provenance.predicateType)"
+
+        if [[ "$predicateType" != 'https://slsa.dev/provenance/v1' ]]; then
+          echo "$PROJECT_NAME@$PROJECT_VERSION was released without provenance." >&2
+          exit 1
+        fi
+
+        echo "$PROJECT_NAME@$PROJECT_VERSION was released with provenance."
+      env:
+        PROJECT_NAME: ${{ inputs.project-name }}
+        PROJECT_VERSION: ${{ steps.zimic-version.outputs.value }}
 
     - name: Test released package
       shell: bash
