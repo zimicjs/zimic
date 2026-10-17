@@ -29,7 +29,8 @@ import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from './types/sch
 import { validateInterceptorToken } from './utils/auth';
 import { getFetchAPI } from './utils/fetch';
 
-// Conflicting content lengths are a protocol error in browsers and Node.js, so the request fails as a network error.
+// Browsers may resend requests whose connection closes without a response. Conflicting content lengths make Chromium,
+// Firefox, and Node.js fail the request once with a network error. Lenient clients may receive an empty 500 instead.
 const INVALID_REJECTED_RESPONSE =
   'HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nContent-Length: 1\r\n\r\n';
 
@@ -398,8 +399,7 @@ class InterceptorServer implements PublicInterceptorServer {
       return;
     }
 
-    // Browsers may resend a request if its connection closes before any response bytes, which would handle the request
-    // more than once. Sending an invalid response instead makes the request fail without being resent.
+    // Write to the socket directly because Node.js rejects conflicting content lengths in `ServerResponse`.
     nodeResponse.socket?.end(INVALID_REJECTED_RESPONSE);
   }
 
