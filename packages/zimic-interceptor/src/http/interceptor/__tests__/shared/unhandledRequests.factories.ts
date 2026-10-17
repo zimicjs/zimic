@@ -301,4 +301,46 @@ export function declareUnhandledRequestFactoriesHttpInterceptorTests(
       });
     });
   });
+
+  it('should call an unhandled request factory once if multiple handlers match a request', async () => {
+    const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
+
+    await usingHttpInterceptor<
+      Schema & {
+        '/:resource': {
+          GET: {
+            request: { searchParams: { value?: string } };
+            response: { 204: {} };
+          };
+        };
+      }
+    >({ ...interceptorOptions, onUnhandledRequest }, async (interceptor) => {
+      const usersHandler = await promiseIfRemote(
+        interceptor
+          .get('/users')
+          .with({ searchParams: { value: '1' } })
+          .respond({ status: 204 }),
+        interceptor,
+      );
+
+      const resourceHandler = await promiseIfRemote(
+        interceptor
+          .get('/:resource')
+          .with({ searchParams: { value: '1' } })
+          .respond({ status: 204 }),
+        interceptor,
+      );
+
+      const responsePromise = fetch(joinURL(baseURL, '/users?value=2'), { method: 'GET' });
+      await expectFetchError(responsePromise);
+
+      expect(usersHandler.requests).toHaveLength(0);
+      expect(resourceHandler.requests).toHaveLength(0);
+
+      expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+    });
+  });
 }
