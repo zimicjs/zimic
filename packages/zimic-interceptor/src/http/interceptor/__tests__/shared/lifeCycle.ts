@@ -3,9 +3,9 @@ import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
 import { beforeEach, expect, it } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { expectBypassedResponse } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import NotRunningHttpInterceptorError from '../../errors/NotRunningHttpInterceptorError';
 import { HttpInterceptorOptions } from '../../types/options';

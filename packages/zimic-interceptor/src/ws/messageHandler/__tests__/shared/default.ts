@@ -1,12 +1,14 @@
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
 import { WebSocketClient } from '@zimic/ws';
-import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
-import { Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
+import { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
+import { Schema, SharedWebSocketMessageHandlerTestOptions } from './utils';
 
 export function declareDefaultWebSocketMessageHandlerTests(
   options: SharedWebSocketMessageHandlerTestOptions & {
@@ -182,4 +184,105 @@ export function declareDefaultWebSocketMessageHandlerTests(
       },
     );
   });
+
+  if (type === 'remote') {
+    describe('Promise-like', () => {
+      let interceptor: ReturnType<typeof createInternalWebSocketInterceptor<Schema>>;
+
+      beforeEach(async () => {
+        interceptor = createInternalWebSocketInterceptor<Schema>({ type, baseURL });
+        await interceptor.start();
+      });
+
+      afterEach(async () => {
+        await interceptor.stop();
+      });
+
+      it('should be then-able', async () => {
+        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation);
+        await handler.respond({ type: 'delete', id: '1' });
+
+        expect(handler).toHaveProperty('then', expect.any(Function));
+        expect(handler).toHaveProperty('catch', expect.any(Function));
+        expect(handler).toHaveProperty('finally', expect.any(Function));
+
+        const fulfillmentListener = vi.fn((syncedHandler) => {
+          expect(syncedHandler).toEqual(handler);
+          expect(handler.isSynced).toBe(true);
+
+          expect(syncedHandler).not.toHaveProperty('then');
+          expect(syncedHandler).toHaveProperty('catch', expect.any(Function));
+          expect(syncedHandler).toHaveProperty('finally', expect.any(Function));
+        });
+
+        expect(handler.isSynced).toBe(true);
+
+        const pendingHandler = handler.with({});
+        expect(pendingHandler).toEqual(handler);
+
+        const syncPromise = createPromiseWithResolvers<void>();
+        handler.registerSyncPromise(syncPromise);
+        expect(handler.isSynced).toBe(false);
+
+        const thenPromise = pendingHandler.then(fulfillmentListener);
+        syncPromise.resolve();
+        await thenPromise;
+
+        expect(handler.isSynced).toBe(true);
+        expect(pendingHandler.isSynced).toBe(true);
+
+        expect(fulfillmentListener).toHaveBeenCalledTimes(1);
+      });
+
+      it('should be catch-able', async () => {
+        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation);
+        await handler.respond({ type: 'delete', id: '1' });
+
+        expect(handler).toHaveProperty('then', expect.any(Function));
+        expect(handler).toHaveProperty('catch', expect.any(Function));
+        expect(handler).toHaveProperty('finally', expect.any(Function));
+
+        // @ts-expect-error Forcing an exception in an internal method
+        handler.syncPromises = 'not-an-array';
+
+        const rejectionListener = vi.fn((error: unknown) => {
+          expect(error).toBeInstanceOf(Error);
+          expect(error).toHaveProperty('message', 'this.syncPromises.filter is not a function');
+        });
+
+        await handler.with({}).catch(rejectionListener);
+
+        expect(rejectionListener).toHaveBeenCalledTimes(1);
+      });
+
+      it('should be finally-able', async () => {
+        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation);
+        await handler.respond({ type: 'delete', id: '1' });
+
+        expect(handler).toHaveProperty('then', expect.any(Function));
+        expect(handler).toHaveProperty('catch', expect.any(Function));
+        expect(handler).toHaveProperty('finally', expect.any(Function));
+
+        const finallyListener = vi.fn();
+
+        expect(handler.isSynced).toBe(true);
+
+        const pendingHandler = handler.with({});
+        expect(pendingHandler).toEqual(handler);
+
+        const syncPromise = createPromiseWithResolvers<void>();
+        handler.registerSyncPromise(syncPromise);
+        expect(handler.isSynced).toBe(false);
+
+        const finallyPromise = pendingHandler.finally(finallyListener);
+        syncPromise.resolve();
+        await finallyPromise;
+
+        expect(handler.isSynced).toBe(true);
+        expect(pendingHandler.isSynced).toBe(true);
+
+        expect(finallyListener).toHaveBeenCalledTimes(1);
+      });
+    });
+  }
 }

@@ -1,49 +1,59 @@
+import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it } from 'vitest';
 
 import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
 import { usingIgnoredConsole } from '@tests/utils/console';
+import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
+import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
-import type { Schema } from '../../../messageHandler/__tests__/shared/types';
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
 import { WebSocketInterceptorPlatform } from '../../types/options';
 
+type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
+
 interface SharedAuthenticationWebSocketInterceptorTestsOptions {
   platform: WebSocketInterceptorPlatform;
-  getServerURL: () => string;
+  getBaseURL: () => string;
   getValidToken: () => string;
 }
 
 export function declareAuthenticationWebSocketInterceptorTests(
   options: SharedAuthenticationWebSocketInterceptorTestsOptions,
 ) {
-  const { platform, getServerURL, getValidToken } = options;
-  let serverURL: string;
+  const { platform, getBaseURL, getValidToken } = options;
+
+  let baseURL: string;
   let validToken: string;
 
   beforeEach(() => {
-    serverURL = getServerURL();
+    baseURL = getBaseURL();
     validToken = getValidToken();
   });
 
   it('should allow starting with valid authentication', async () => {
-    const interceptor = createWebSocketInterceptor<Schema>({
-      type: 'remote',
-      baseURL: serverURL,
-      auth: { token: validToken },
-    });
+    await usingWebSocketInterceptor<ChatMessage>(
+      { type: 'remote', baseURL, auth: { token: validToken }, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor.message().respond({ type: 'server', text: 'pong' }),
+          interceptor,
+        );
 
-    try {
-      await interceptor.start();
-      expect(interceptor.isRunning).toBe(true);
-      expect(interceptor.platform).toBe(platform);
-    } finally {
-      await interceptor.stop();
-    }
+        await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+          const messagePromise = waitForWebSocketClientMessage(client);
+          client.send(JSON.stringify({ type: 'client', text: 'ping' } satisfies ChatMessage));
+
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', text: 'pong' }));
+          expect(handler.messages).toHaveLength(1);
+        });
+      },
+    );
   });
 
   it('should not allow starting without authentication if the interceptor server requires it', async () => {
-    const interceptor = createWebSocketInterceptor<Schema>({ type: 'remote', baseURL: serverURL });
+    const interceptor = createWebSocketInterceptor<{}>({ type: 'remote', baseURL });
 
     await usingIgnoredConsole(['error'], async () => {
       await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
@@ -54,7 +64,7 @@ export function declareAuthenticationWebSocketInterceptorTests(
   });
 
   it('should be able to start after adding required authentication', async () => {
-    const interceptor = createWebSocketInterceptor<Schema>({ type: 'remote', baseURL: serverURL });
+    const interceptor = createWebSocketInterceptor<{}>({ type: 'remote', baseURL });
 
     await usingIgnoredConsole(['error'], async () => {
       await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
@@ -75,7 +85,7 @@ export function declareAuthenticationWebSocketInterceptorTests(
   });
 
   it('should share a failed startup between concurrent calls', async () => {
-    const interceptor = createWebSocketInterceptor<Schema>({ type: 'remote', baseURL: serverURL });
+    const interceptor = createWebSocketInterceptor<{}>({ type: 'remote', baseURL });
 
     await usingIgnoredConsole(['error'], async () => {
       const [firstStartResult, secondStartResult] = await Promise.allSettled([
@@ -97,9 +107,9 @@ export function declareAuthenticationWebSocketInterceptorTests(
   });
 
   it('should not support changing authentication while starting', async () => {
-    const interceptor = createWebSocketInterceptor<Schema>({
+    const interceptor = createWebSocketInterceptor<{}>({
       type: 'remote',
-      baseURL: serverURL,
+      baseURL,
       auth: { token: validToken },
     });
 
@@ -122,9 +132,9 @@ export function declareAuthenticationWebSocketInterceptorTests(
   });
 
   it('should not support assigning authentication while starting', async () => {
-    const interceptor = createWebSocketInterceptor<Schema>({
+    const interceptor = createWebSocketInterceptor<{}>({
       type: 'remote',
-      baseURL: serverURL,
+      baseURL,
       auth: { token: validToken },
     });
 
@@ -147,9 +157,9 @@ export function declareAuthenticationWebSocketInterceptorTests(
   });
 
   it('should not support changing authentication while stopping during startup', async () => {
-    const interceptor = createWebSocketInterceptor<Schema>({
+    const interceptor = createWebSocketInterceptor<{}>({
       type: 'remote',
-      baseURL: serverURL,
+      baseURL,
       auth: { token: validToken },
     });
 
@@ -173,9 +183,9 @@ export function declareAuthenticationWebSocketInterceptorTests(
 
   it('should not change authentication if the original options object is mutated while starting', async () => {
     const authOptions = { token: validToken };
-    const interceptor = createWebSocketInterceptor<Schema>({
+    const interceptor = createWebSocketInterceptor<{}>({
       type: 'remote',
-      baseURL: serverURL,
+      baseURL,
       auth: authOptions,
     });
 

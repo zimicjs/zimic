@@ -7,7 +7,7 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { collectWebSocketClientMessages, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
-import type { Schema } from '../../../messageHandler/__tests__/shared/types';
+import type { Schema } from '../../../messageHandler/__tests__/shared/utils';
 import type {
   LocalWebSocketMessageHandler,
   PendingRemoteWebSocketMessageHandler,

@@ -26,7 +26,7 @@ Diverge only for a protocol reason, such as WebSocket connections being long-liv
 - When adding or changing a suite for one protocol, compare it with the counterpart suite. Add an equivalent for each counterpart scenario under the same test name, or state the protocol reason for skipping it in a comment in the suite.
 - Manage interceptors, workers, and clients with the `using*` utilities in `tests/utils`. Add the protocol counterpart of a utility when it is missing.
 - Chain handler declarations and await the chain once instead of awaiting a bare handler.
-- Keep type tests compile-only, without executing their callbacks.
+- Keep type tests compile-only, without executing their callbacks, and place them in `__tests__/shared/types.ts`, which coverage excludes. When `types.ts` holds type tests, put the suite's shared schemas, options, and helpers in `__tests__/shared/utils.ts`.
 
 ## API reference
 

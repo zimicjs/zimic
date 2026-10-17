@@ -7,10 +7,10 @@ import { SharedHttpInterceptorImplementation } from '@/http/interceptor/HttpInte
 import LocalHttpInterceptor from '@/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/http/interceptor/RemoteHttpInterceptor';
 import { HttpInterceptorType } from '@/http/interceptor/types/options';
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '@/http/interceptorWorker/LocalHttpInterceptorWorker';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpRequestHandlerRequestMatch } from '../../HttpRequestHandlerImplementation';
 import type LocalHttpRequestHandler from '../../LocalHttpRequestHandler';

@@ -7,7 +7,7 @@ describe('WebSocketInterceptor (browser, remote) > Authentication', () => {
 
   declareAuthenticationWebSocketInterceptorTests({
     platform: 'browser',
-    getServerURL: () => authenticatedServer.url.replace(/^http/, 'ws'),
+    getBaseURL: () => `${authenticatedServer.url.replace(/^http/, 'ws')}/chat`,
     getValidToken: () => authenticatedServer.token,
   });
 });

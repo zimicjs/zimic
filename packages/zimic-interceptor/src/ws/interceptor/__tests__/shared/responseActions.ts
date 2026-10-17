@@ -1,13 +1,16 @@
 import { waitFor } from '@zimic/utils/time';
-import { WebSocketClient } from '@zimic/ws';
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { describe, expect, it, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
-import type { Schema } from '../../../messageHandler/__tests__/shared/types';
+import { createBinaryMessage, type Schema } from '../../../messageHandler/__tests__/shared/utils';
 import type { WebSocketInterceptorType } from '../../types/options';
+import { readBytes } from './utils';
+
+type BinarySchema = WebSocketSchema<ArrayBuffer | Blob>;
 
 interface SharedWebSocketInterceptorResponseActionsTestOptions {
   type: WebSocketInterceptorType;
@@ -173,6 +176,38 @@ export function declareResponseActionsWebSocketInterceptorTests(
         },
       );
     });
+
+    it.each([
+      ['ArrayBuffer', () => createBinaryMessage(0xff, 0x00)],
+      ['Blob', () => new Blob([createBinaryMessage(0xff, 0x00)])],
+    ])('should support %s binary messages', async (_name, createRequestMessage) => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<BinarySchema>({ type, baseURL }, async (interceptor) => {
+        await interceptor
+          .message()
+          .with(createBinaryMessage(0xff, 0x00))
+          .respond(createBinaryMessage(0x00, 0xff))
+          .times(1);
+
+        const client = new WebSocketClient<BinarySchema>(baseURL);
+        client.binaryType = 'arraybuffer';
+
+        try {
+          await client.open();
+
+          const response = waitForWebSocketClientMessage(client);
+
+          client.send(createRequestMessage());
+
+          expect(await readBytes((await response) as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
+        } finally {
+          await client.close();
+        }
+
+        await interceptor.checkTimes();
+      });
+    });
   });
 
   describe('Effects', () => {
@@ -320,6 +355,59 @@ export function declareResponseActionsWebSocketInterceptorTests(
           client.send(JSON.stringify({ type: 'delete', id: '1' }));
 
           await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: '2' }));
+        } finally {
+          await client.close();
+        }
+      });
+    });
+
+    it('should handle asynchronous effects concurrently', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+        const startedMessages: Schema[] = [];
+        const completedMessages: Schema[] = [];
+        const finishEffects: (() => void)[] = [];
+
+        await interceptor.message().effect(async (message) => {
+          startedMessages.push(message);
+
+          await new Promise<void>((resolve) => {
+            finishEffects.push(resolve);
+          });
+
+          completedMessages.push(message);
+        });
+
+        const client = new WebSocketClient<Schema>(baseURL);
+
+        try {
+          await client.open();
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'first' } }));
+          client.send(JSON.stringify({ type: 'create', body: { text: 'second' } }));
+
+          await waitFor(() => {
+            expect(startedMessages).toEqual([
+              { type: 'create', body: { text: 'first' } },
+              { type: 'create', body: { text: 'second' } },
+            ]);
+          });
+
+          for (const finish of finishEffects) {
+            finish();
+          }
+
+          await waitFor(() => {
+            expect(completedMessages).toHaveLength(2);
+          });
+
+          expect(completedMessages).toEqual(
+            expect.arrayContaining([
+              { type: 'create', body: { text: 'first' } },
+              { type: 'create', body: { text: 'second' } },
+            ]),
+          );
         } finally {
           await client.close();
         }
