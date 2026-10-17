@@ -74,8 +74,6 @@ abstract class HttpInterceptorWorker {
     try {
       this.startingPromise = internalStart();
       await this.startingPromise;
-
-      this.startingPromise = undefined;
     } catch (error) {
       // In server side (e.g. Node.js), we need to manually log the error because this will be treated as an unhandled
       // promise rejection. If we don't log it, the output won't contain details about the error. In the browser,
@@ -86,6 +84,8 @@ abstract class HttpInterceptorWorker {
 
       await this.stop();
       throw error;
+    } finally {
+      this.startingPromise = undefined;
     }
   }
 
