@@ -202,10 +202,7 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
       return false;
     });
 
-    const otherOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
-      action: 'reject',
-      log: false,
-    }));
+    const otherOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>();
 
     const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
       action: 'reject',
