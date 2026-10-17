@@ -29,6 +29,11 @@ import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from './types/sch
 import { validateInterceptorToken } from './utils/auth';
 import { getFetchAPI } from './utils/fetch';
 
+// Browsers may resend requests whose connection closes without a response. Conflicting content lengths make Chromium,
+// Firefox, and Node.js fail the request once with a network error. Lenient clients may receive an empty 500 instead.
+const INVALID_REJECTED_RESPONSE =
+  'HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nContent-Length: 1\r\n\r\n';
+
 interface HttpHandler {
   id: string;
   baseURL: string;
@@ -309,8 +314,11 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private removeHttpHandlersBySocket(socket: Socket) {
     for (const handlerGroups of Object.values(this.httpHandlersByMethod)) {
-      const socketIndex = handlerGroups.findIndex((handlerGroup) => handlerGroup.socket === socket);
-      removeArrayIndex(handlerGroups, socketIndex);
+      for (let handlerIndex = handlerGroups.length - 1; handlerIndex >= 0; handlerIndex--) {
+        if (handlerGroups[handlerIndex].socket === socket) {
+          removeArrayIndex(handlerGroups, handlerIndex);
+        }
+      }
     }
   }
 
@@ -347,7 +355,7 @@ class InterceptorServer implements PublicInterceptorServer {
 
       if (response) {
         if (HttpInterceptorWorker.isRejectedResponse(response)) {
-          nodeResponse.destroy();
+          this.rejectNodeResponse(nodeResponse);
         } else {
           this.setDefaultAccessControlHeaders(response, [
             'access-control-allow-origin',
@@ -361,6 +369,11 @@ class InterceptorServer implements PublicInterceptorServer {
       }
 
       const isUnhandledPreflightResponse = request.method === 'OPTIONS';
+      const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse || matchedSomeInterceptor;
+
+      if (shouldWarnUnhandledRequest) {
+        await this.logUnhandledRequestIfNecessary(request, serializedRequest);
+      }
 
       if (isUnhandledPreflightResponse) {
         const defaultPreflightResponse = new Response(null, { status: DEFAULT_PREFLIGHT_STATUS_CODE });
@@ -368,13 +381,7 @@ class InterceptorServer implements PublicInterceptorServer {
         await sendNodeResponse(defaultPreflightResponse, nodeResponse, nodeRequest, true);
       }
 
-      const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse && !matchedSomeInterceptor;
-
-      if (shouldWarnUnhandledRequest) {
-        await this.logUnhandledRequestIfNecessary(request, serializedRequest);
-      }
-
-      nodeResponse.destroy();
+      this.rejectNodeResponse(nodeResponse);
     } catch (error) {
       const isMessageAbortError = error instanceof WebSocketMessageAbortError;
 
@@ -383,12 +390,24 @@ class InterceptorServer implements PublicInterceptorServer {
         await this.logUnhandledRequestIfNecessary(request, serializedRequest);
       }
 
-      nodeResponse.destroy();
+      this.rejectNodeResponse(nodeResponse);
     }
   };
 
+  private rejectNodeResponse(nodeResponse: ServerResponse) {
+    if (nodeResponse.headersSent) {
+      nodeResponse.destroy();
+      return;
+    }
+
+    // Write to the socket directly because Node.js rejects conflicting content lengths in `ServerResponse`.
+    nodeResponse.socket?.end(INVALID_REJECTED_RESPONSE);
+  }
+
   private async createResponseForRequest(request: SerializedHttpRequest) {
-    const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
+    // Handlers may be committed or reset while we wait for responses, so we iterate over a snapshot of them. Otherwise,
+    // the indexes could shift and the same handler could be asked for a response more than once.
+    const methodHandlers = [...this.httpHandlersByMethod[request.method as HttpMethod]];
 
     const requestURL = excludeNonPathParams(new URL(request.url));
     const requestURLAsString = requestURL.href === `${requestURL.origin}/` ? requestURL.origin : requestURL.href;
