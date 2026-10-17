@@ -4,6 +4,7 @@ import { beforeEach, expect, it } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import DisabledMessageSavingError from '../../../messageHandler/errors/DisabledMessageSavingError';
 import MessageSavingSafeLimitExceededError from '../../errors/MessageSavingSafeLimitExceededError';
@@ -39,9 +40,7 @@ export function declareMessageSavingWebSocketInterceptorTests(
 
           await usingIgnoredConsole(['warn'], async (console) => {
             for (let index = 0; index < 2; index++) {
-              const responsePromise = new Promise<string>((resolve) => {
-                client.addEventListener('message', (event) => resolve(String(event.data)), { once: true });
-              });
+              const responsePromise = waitForWebSocketClientMessage(client);
 
               client.send(JSON.stringify({ type: 'client', text: `message ${index}` }));
 
@@ -72,9 +71,7 @@ export function declareMessageSavingWebSocketInterceptorTests(
 
           await usingIgnoredConsole(['warn'], async (console) => {
             for (let index = 0; index < safeLimit + 1; index++) {
-              const responsePromise = new Promise<string>((resolve) => {
-                client.addEventListener('message', (event) => resolve(String(event.data)), { once: true });
-              });
+              const responsePromise = waitForWebSocketClientMessage(client);
 
               client.send(JSON.stringify({ type: 'client', text: `message ${index}` }));
 
@@ -111,12 +108,11 @@ export function declareMessageSavingWebSocketInterceptorTests(
 
           await usingIgnoredConsole(['warn'], async (console) => {
             for (let index = 0; index < safeLimit + 1; index++) {
-              const responsePromise = new Promise<string>((resolve) => {
-                client.addEventListener('message', (event) => resolve(String(event.data)), { once: true });
-              });
+              const responsePromise = waitForWebSocketClientMessage(client);
 
               client.send(JSON.stringify({ type: 'client', text: `before clear ${index}` }));
               await responsePromise;
+
               await waitFor(() => {
                 expect(handler.messages).toHaveLength(index + 1);
                 expect(console.warn).toHaveBeenCalledTimes(index < safeLimit ? 0 : 1);
@@ -130,14 +126,13 @@ export function declareMessageSavingWebSocketInterceptorTests(
             expect(handler.messages).toHaveLength(0);
 
             const nextHandler = await interceptor.message().respond({ type: 'server', text: 'ack' });
+
             await client.close();
             client = new WebSocketClient<ChatMessage>(baseURL);
             await client.open();
 
             for (let index = 0; index < safeLimit; index++) {
-              const responsePromise = new Promise<string>((resolve) => {
-                client.addEventListener('message', (event) => resolve(String(event.data)), { once: true });
-              });
+              const responsePromise = waitForWebSocketClientMessage(client);
 
               client.send(JSON.stringify({ type: 'client', text: `after clear ${index}` }));
               await responsePromise;

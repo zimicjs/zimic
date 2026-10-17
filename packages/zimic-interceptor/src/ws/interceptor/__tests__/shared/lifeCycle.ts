@@ -1,8 +1,10 @@
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor, waitForNot } from '@zimic/utils/time';
 import { WebSocketClient } from '@zimic/ws';
 import { expect, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import type { Schema } from '../../../messageHandler/__tests__/shared/types';
 import NotRunningWebSocketInterceptorError from '../../errors/NotRunningWebSocketInterceptorError';
@@ -49,6 +51,7 @@ export function declareLifeCycleWebSocketInterceptorTests(options: SharedWebSock
   it('should not support changing the base URL while starting', async () => {
     const interceptor = createWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() });
     const baseURL = interceptor.baseURL;
+
     let startPromise: Promise<void> | undefined;
 
     try {
@@ -97,6 +100,7 @@ export function declareLifeCycleWebSocketInterceptorTests(options: SharedWebSock
 
   it('should throw an error when trying to be cleared if not running', async () => {
     const interceptor = createWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() });
+
     expect(interceptor.isRunning).toBe(false);
 
     await expect(async () => {
@@ -133,16 +137,16 @@ export function declareLifeCycleWebSocketInterceptorTests(options: SharedWebSock
             expect(worker!.numberOfRunningInterceptors).toBe(1);
 
             const originalGetMSWWorkerOrCreate = worker!.getMSWWorkerOrCreate.bind(worker);
-            const { promise: workerStopStartedPromise, resolve: markWorkerStopAsStarted } =
-              Promise.withResolvers<void>();
-            const { promise: workerStopGatePromise, resolve: releaseWorkerStop } = Promise.withResolvers<void>();
+            const workerStopStartedPromise = createPromiseWithResolvers<void>();
+            const workerStopGatePromise = createPromiseWithResolvers<void>();
 
             // The shutdown dependency is held so that the other interceptor starts while the worker stop is pending.
             vi.spyOn(worker!, 'getMSWWorkerOrCreate').mockImplementationOnce(async () => {
-              markWorkerStopAsStarted();
+              workerStopStartedPromise.resolve();
               await workerStopGatePromise;
               return originalGetMSWWorkerOrCreate();
             });
+
             const workerStartSpy = vi.spyOn(worker!, 'start');
 
             const stopPromise = interceptor.stop();
@@ -162,10 +166,10 @@ export function declareLifeCycleWebSocketInterceptorTests(options: SharedWebSock
                 expect(startResolutionListener).toHaveBeenCalled();
               });
 
-              releaseWorkerStop();
+              workerStopGatePromise.resolve();
               await Promise.all([stopPromise, startPromise]);
             } finally {
-              releaseWorkerStop();
+              workerStopGatePromise.resolve();
               await Promise.allSettled([stopPromise, startPromise]);
             }
 
@@ -179,16 +183,14 @@ export function declareLifeCycleWebSocketInterceptorTests(options: SharedWebSock
             otherInterceptor.message().respond(reply);
 
             const client = new WebSocketClient<Schema>(otherBaseURL);
-            const messagePromise = new Promise<WebSocketClient.MessageEvent<Schema>>((resolve) => {
-              client.addEventListener('message', resolve, { once: true });
-            });
+            const messagePromise = waitForWebSocketClientMessage(client);
 
             try {
               await client.open();
               client.send(JSON.stringify({ type: 'create', body: { text: 'one' } } satisfies Schema));
 
-              const message = await messagePromise;
-              expect(JSON.parse(message.data as string)).toEqual(reply);
+              const messageData = await messagePromise;
+              expect(JSON.parse(messageData as string)).toEqual(reply);
             } finally {
               await client.close();
             }

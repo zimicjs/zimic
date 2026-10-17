@@ -956,6 +956,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         const handler = await interceptor.get('/users').respond({ status: 204 }).times(1);
 
         const timesCheckPromise = interceptor.checkTimes();
+
         await handler.times(0);
 
         await expectHttpTimesCheckError(() => timesCheckPromise, {
