@@ -20,7 +20,7 @@
 - Diverge from native behavior only with explicit user approval. Add the divergence to the package's approved list, state the reason in a comment next to the code, and document it in the website docs.
 - Check parity against the WHATWG specs, MDN, and TypeScript `lib.dom` declarations, or against the reference package that the package's `AGENTS.md` names.
 - When adding or changing a member with a native counterpart, add type tests proving the class is assignable to the native type and runtime tests asserting the native behavior.
-- `@zimic/interceptor` interceptor and handler APIs may favor test ergonomics. The requests, responses, headers, search params, and form data it exposes keep native parity.
+- `@zimic/interceptor` interceptor and handler APIs may favor test ergonomics. The requests, responses, headers, search params, form data, and sockets it exposes keep native parity.
 
 ## Public JSDoc
 
