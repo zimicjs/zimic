@@ -1,7 +1,5 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import { HttpSchema } from '@/types/schema';
-
 import HttpSearchParams from '../HttpSearchParams';
 import { HttpSearchParamsSerialized } from '../types';
 
@@ -659,13 +657,13 @@ describe('HttpSearchParams', () => {
 
   describe('Object conversion', () => {
     it('should support being converted to an object', () => {
-      type Schema = HttpSchema.SearchParams<{
+      interface Schema {
         name: string[];
         names: string[];
         threeNames: string[];
         page?: `${number}`;
         other?: string;
-      }>;
+      }
 
       const searchParams = new HttpSearchParams<Schema>({
         name: ['User1'],

@@ -1,22 +1,15 @@
+import type {
+  HttpBody,
+  HttpFormData,
+  HttpFormDataSchema,
+  HttpHeaders,
+  HttpHeadersSchema,
+  HttpSearchParams,
+  HttpSearchParamsSchema,
+} from '@zimic/utils/http';
 import { Default, DefaultNoExclude, IfNever, Replace, JSONValue } from '@zimic/utils/types';
 
 import { HttpMethodSchema, HttpRequestSchema, HttpResponseSchema, HttpStatusCode } from '@/types/schema';
-
-import HttpFormData from '../formData/HttpFormData';
-import { HttpFormDataSchema } from '../formData/types';
-import HttpHeaders from '../headers/HttpHeaders';
-import { HttpHeadersSchema } from '../headers/types';
-import HttpSearchParams from '../searchParams/HttpSearchParams';
-import { HttpSearchParamsSchema } from '../searchParams/types';
-
-/** The body type for HTTP requests and responses. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type HttpBody = JSONValue | HttpFormData<any> | HttpSearchParams<any> | Blob | ArrayBuffer | ReadableStream;
-
-export namespace HttpBody {
-  /** A loose version of the HTTP body type. JSON values are not strictly typed. */
-  export type Loose = Replace<HttpBody, JSONValue, JSONValue.Loose>;
-}
 
 /**
  * An HTTP headers object with a strictly-typed schema. Fully compatible with the built-in
