@@ -6,3 +6,4 @@
   - Client listeners receive the `WebSocketClient` as `this`.
   - The server attaches to an existing `http` or `https` server, exposes only the `connection`, `error`, `listening`, and `close` events, opens and closes asynchronously with timeouts, and passes `WebSocketClient` instances to `connection` listeners.
 - The `.` entry point (`src/index.ts`) exports the client, schema types, and errors and must stay browser-safe. The `./server` entry point (`src/server`) is Node-only.
+- `@zimic/interceptor` declares this package as a peer dependency and builds its WebSocket interceptors on its schema, client, and server types. When changing them, type check and test the WebSocket parts of `@zimic/interceptor`.
