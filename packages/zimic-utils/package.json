@@ -92,6 +92,12 @@
       "require": "./dist/validation.js",
       "default": "./dist/validation.js"
     },
+    "./ws": {
+      "types": "./ws.d.ts",
+      "import": "./dist/ws.mjs",
+      "require": "./dist/ws.js",
+      "default": "./dist/ws.js"
+    },
     "./process": {
       "types": "./process.d.ts",
       "import": "./dist/process.mjs",
