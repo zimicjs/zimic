@@ -2130,7 +2130,9 @@ describe('Interceptor server', () => {
       expect(server.hostname).toBe('0.0.0.0');
       expect(server.port).toBe(8080);
 
-      await server.start();
+      await usingIgnoredConsole(['warn'], async () => {
+        await server!.start();
+      });
 
       expect(server.isRunning).toBe(true);
       expect(server.hostname).toBe('0.0.0.0');
@@ -2172,7 +2174,9 @@ describe('Interceptor server', () => {
 
       server.hostname = newHostname;
 
-      await server.start();
+      await usingIgnoredConsole(['warn'], async () => {
+        await server!.start();
+      });
       expect(server.isRunning).toBe(true);
 
       expect(server.hostname).toBe(newHostname);
