@@ -1,16 +1,12 @@
-import ClientSocket, { type WebSocketServer as ServerSocket } from 'isomorphic-ws';
+import {
+  DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT,
+  WebSocketOpenTimeoutError,
+  WebSocketTimeoutError,
+} from '@zimic/utils/ws';
+import ClientSocket from 'isomorphic-ws';
 
 import { WEB_SOCKET_CLOSE_CODES, WebSocketControlMessage } from '@/utils/webSocket/constants';
 import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
-
-class WebSocketTimeoutError extends Error {}
-
-export class WebSocketOpenTimeoutError extends WebSocketTimeoutError {
-  constructor(reachedTimeout: number) {
-    super(`Web socket open timed out after ${reachedTimeout}ms.`);
-    this.name = 'WebSocketOpenTimeoutError';
-  }
-}
 
 export class WebSocketMessageTimeoutError extends WebSocketTimeoutError {
   constructor(reachedTimeout: number) {
@@ -26,14 +22,6 @@ export class WebSocketMessageAbortError extends WebSocketTimeoutError {
   }
 }
 
-export class WebSocketCloseTimeoutError extends WebSocketTimeoutError {
-  constructor(reachedTimeout: number) {
-    super(`Web socket close timed out after ${reachedTimeout}ms.`);
-    this.name = 'WebSocketCloseTimeoutError';
-  }
-}
-
-export const DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT = 60 * 1000;
 export const DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT = 3 * 60 * 1000;
 
 export async function waitForOpenClientSocket(
@@ -106,69 +94,5 @@ export async function waitForOpenClientSocket(
 
     socket.addEventListener('error', handleOpenError);
     socket.addEventListener('close', handleClose);
-  });
-}
-
-export async function closeClientSocket(socket: ClientSocket, options: { timeout?: number } = {}) {
-  const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options;
-
-  const isAlreadyClosed = socket.readyState === socket.CLOSED;
-  if (isAlreadyClosed) {
-    return;
-  }
-
-  await new Promise<void>((resolve, reject) => {
-    function removeAllSocketListeners() {
-      socket.removeEventListener('error', handleError); // eslint-disable-line @typescript-eslint/no-use-before-define
-      socket.removeEventListener('close', handleClose); // eslint-disable-line @typescript-eslint/no-use-before-define
-    }
-
-    function handleError(error: unknown) {
-      removeAllSocketListeners();
-      reject(error);
-    }
-
-    const closeTimeout = setTimeout(() => {
-      const timeoutError = new WebSocketCloseTimeoutError(timeoutDuration);
-      handleError(timeoutError);
-    }, timeoutDuration);
-
-    function handleClose() {
-      removeAllSocketListeners();
-      clearTimeout(closeTimeout);
-      resolve();
-    }
-
-    socket.addEventListener('error', handleError);
-    socket.addEventListener('close', handleClose);
-
-    socket.close();
-  });
-}
-
-export async function closeServerSocket(socket: InstanceType<typeof ServerSocket>, options: { timeout?: number } = {}) {
-  const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options;
-
-  await new Promise<void>((resolve, reject) => {
-    const closeTimeout = setTimeout(() => {
-      const timeoutError = new WebSocketCloseTimeoutError(timeoutDuration);
-      reject(timeoutError);
-    }, timeoutDuration);
-
-    for (const client of socket.clients) {
-      client.terminate();
-    }
-
-    socket.close((error) => {
-      clearTimeout(closeTimeout);
-
-      /* istanbul ignore if -- @preserve
-       * This is not expected since the server is not stopped unless it is running. */
-      if (error) {
-        reject(error);
-      } else {
-        resolve();
-      }
-    });
   });
 }
