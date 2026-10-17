@@ -1,18 +1,17 @@
 import { HttpSchema } from '@zimic/http';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { expectFetchError } from '@zimic/utils/fetch';
-import { waitFor, waitForDelay } from '@zimic/utils/time';
+import { waitForDelay } from '@zimic/utils/time';
 import { joinURL } from '@zimic/utils/url';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, Mock, MockInstance, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import { usingElapsedTime } from '@/utils/time';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
+import type { LocalHttpRequestHandler, PendingRemoteHttpRequestHandler } from '../../../requestHandler/types/public';
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
-
-const waitForDelaySpy = vi.mocked(waitForDelay);
 
 export function declareDelayHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { getBaseURL, getInterceptorOptions } = options;
@@ -30,237 +29,206 @@ export function declareDelayHttpInterceptorTests(options: RuntimeSharedHttpInter
     '/users': { GET: MethodSchema };
   }>;
 
+  type DelayableHandler =
+    LocalHttpRequestHandler<Schema, 'GET', '/users'> | PendingRemoteHttpRequestHandler<Schema, 'GET', '/users'>;
+
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
   });
 
+  async function usingDelayedHandler(
+    declareDelay: (handler: DelayableHandler) => DelayableHandler,
+    callback: (context: {
+      handler: { clear: () => PromiseLike<unknown> | unknown; requests: readonly unknown[] };
+      respond: Mock;
+      randomSpy: MockInstance<typeof Math.random>;
+      sendRequest: () => Promise<{ response: Promise<Response> }>;
+      interceptor: { type: 'local' | 'remote' };
+    }) => Promise<void>,
+  ) {
+    await usingHttpInterceptor<Schema>(interceptorOptions, async (interceptor) => {
+      let dispatchStartedPromise = createPromiseWithResolvers<void>();
+      const respond = vi.fn(() => ({ status: 204 as const }));
+
+      const handler = await promiseIfRemote(
+        declareDelay(
+          interceptor.get('/users').with(() => {
+            dispatchStartedPromise.resolve();
+            return true;
+          }),
+        ).respond(respond),
+        interceptor,
+      );
+
+      expect(handler.requests).toHaveLength(0);
+
+      // The timers are faked only after the interceptor is set up, which relies on real timers.
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+      // Math.random is a platform boundary. Other internals also read it, so tests set its value per request.
+      const randomSpy = vi.spyOn(Math, 'random');
+
+      try {
+        await callback({
+          handler,
+          respond,
+          randomSpy,
+          interceptor,
+          sendRequest: async () => {
+            dispatchStartedPromise = createPromiseWithResolvers<void>();
+
+            const response = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+
+            await dispatchStartedPromise;
+
+            // Lets the pending asynchronous steps schedule the delay timer.
+            await vi.advanceTimersByTimeAsync(0);
+
+            return { response };
+          },
+        });
+      } finally {
+        randomSpy.mockRestore();
+        vi.useRealTimers();
+      }
+    });
+  }
+
+  async function advanceThroughDelay(respond: Mock, delay: number) {
+    const numberOfCalls = respond.mock.calls.length;
+
+    await vi.advanceTimersByTimeAsync(delay - 1);
+    expect(respond).toHaveBeenCalledTimes(numberOfCalls);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(respond).toHaveBeenCalledTimes(numberOfCalls + 1);
+  }
+
+  async function expectDelayedResponse(
+    declareDelay: (handler: DelayableHandler) => DelayableHandler,
+    delay: number,
+    delayOptions: { randomValue?: number; delayOverhead?: number } = {},
+  ) {
+    await usingDelayedHandler(declareDelay, async ({ handler, respond, randomSpy, sendRequest }) => {
+      if (delayOptions.randomValue !== undefined) {
+        randomSpy.mockReturnValue(delayOptions.randomValue);
+      }
+
+      const { response } = await sendRequest();
+
+      if (delayOptions.delayOverhead !== undefined) {
+        await vi.advanceTimersByTimeAsync(delayOptions.delayOverhead);
+      }
+
+      await advanceThroughDelay(respond, delay);
+
+      expect((await response).status).toBe(204);
+      expect(handler.requests).toHaveLength(1);
+    });
+  }
+
+  async function expectUndelayedResponse(declareDelay: (handler: DelayableHandler) => DelayableHandler) {
+    await usingDelayedHandler(declareDelay, async ({ handler, respond, sendRequest }) => {
+      // Only a zero-millisecond flush runs before the response factory is checked, so no delay is applied.
+      const { response } = await sendRequest();
+      expect(respond).toHaveBeenCalledTimes(1);
+
+      expect((await response).status).toBe(204);
+      expect(handler.requests).toHaveLength(1);
+    });
+  }
+
   describe('Exact delay', () => {
     it('should apply an exact delay before responding', async () => {
-      await usingHttpInterceptor<Schema>(interceptorOptions, async (interceptor) => {
-        const delay = 100;
+      const delay = 100;
 
-        const handler = await promiseIfRemote(
-          interceptor.get('/users').delay(delay).respond({ status: 204 }),
-          interceptor,
-        );
-
-        expect(handler.requests).toHaveLength(0);
-
-        const { result: response, elapsedTime } = await usingElapsedTime(async () => {
-          return fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        });
-        expect(response.status).toBe(204);
-        expect(elapsedTime).toBeGreaterThanOrEqual(delay);
-
-        expect(handler.requests).toHaveLength(1);
-
-        expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
-        expect(waitForDelaySpy).toHaveBeenCalledWith(delay);
-      });
+      await expectDelayedResponse((handler) => handler.delay(delay), delay);
     });
 
     it('should not apply delay when set to zero', async () => {
-      await usingHttpInterceptor<Schema>(interceptorOptions, async (interceptor) => {
-        const delay = 0;
-
-        const handler = await promiseIfRemote(
-          interceptor.get('/users').delay(delay).respond({ status: 204 }),
-          interceptor,
-        );
-
-        const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        expect(response.status).toBe(204);
-
-        expect(handler.requests).toHaveLength(1);
-
-        expect(waitForDelaySpy).not.toHaveBeenCalled();
-      });
+      await expectUndelayedResponse((handler) => handler.delay(0));
     });
 
     it('should not apply delay when set to negative', async () => {
-      await usingHttpInterceptor<Schema>(interceptorOptions, async (interceptor) => {
-        const delay = -10;
-
-        const handler = await promiseIfRemote(
-          interceptor.get('/users').delay(delay).respond({ status: 204 }),
-          interceptor,
-        );
-
-        const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        expect(response.status).toBe(204);
-
-        expect(handler.requests).toHaveLength(1);
-
-        expect(waitForDelaySpy).not.toHaveBeenCalled();
-      });
+      await expectUndelayedResponse((handler) => handler.delay(-10));
     });
   });
 
   describe('Ranged delay', () => {
     it('should apply a random delay within the specified range', async () => {
-      await usingHttpInterceptor<Schema>(interceptorOptions, async (interceptor) => {
-        const minDelay = 100;
-        const maxDelay = 200;
+      const minDelay = 100;
+      const maxDelay = 200;
 
-        const handler = await promiseIfRemote(
-          interceptor.get('/users').delay(minDelay, maxDelay).respond({ status: 204 }),
-          interceptor,
-        );
+      // Halfway through the range.
+      const expectedDelay = 150;
 
-        expect(handler.requests).toHaveLength(0);
-
-        const { result: response, elapsedTime } = await usingElapsedTime(async () => {
-          return fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        });
-        expect(response.status).toBe(204);
-        expect(elapsedTime).toBeGreaterThanOrEqual(minDelay);
-
-        expect(handler.requests).toHaveLength(1);
-
-        expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
-
-        const usedDelay = waitForDelaySpy.mock.calls[0][0];
-        expect(usedDelay).toBeGreaterThanOrEqual(minDelay);
-        expect(usedDelay).toBeLessThanOrEqual(maxDelay);
+      await expectDelayedResponse((handler) => handler.delay(minDelay, maxDelay), expectedDelay, {
+        randomValue: 0.5,
       });
     });
 
     it('should apply random delays for multiple responses within the specified range', async () => {
-      await usingHttpInterceptor<Schema>(interceptorOptions, async (interceptor) => {
-        const minDelay = 50;
-        const maxDelay = 150;
+      const minDelay = 50;
+      const maxDelay = 150;
 
-        const numberOfRequests = 3;
+      const randomValues = [0, 0.5, 1];
+      const expectedDelays = [minDelay, 100, maxDelay];
 
-        const handler = await promiseIfRemote(
-          interceptor.get('/users').delay(minDelay, maxDelay).respond({ status: 204 }),
-          interceptor,
-        );
+      await usingDelayedHandler(
+        (handler) => handler.delay(minDelay, maxDelay),
+        async ({ handler, respond, randomSpy, sendRequest }) => {
+          for (const [index, expectedDelay] of expectedDelays.entries()) {
+            randomSpy.mockReturnValue(randomValues[index]);
 
-        expect(handler.requests).toHaveLength(0);
+            const { response } = await sendRequest();
 
-        for (let requestIndex = 0; requestIndex < numberOfRequests; requestIndex++) {
-          const { result: response, elapsedTime } = await usingElapsedTime(async () => {
-            return fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-          });
-          expect(response.status).toBe(204);
-          expect(elapsedTime).toBeGreaterThanOrEqual(minDelay);
-        }
+            await advanceThroughDelay(respond, expectedDelay);
 
-        expect(handler.requests).toHaveLength(numberOfRequests);
+            expect((await response).status).toBe(204);
+          }
 
-        expect(waitForDelaySpy).toHaveBeenCalledTimes(numberOfRequests);
-
-        for (let requestIndex = 0; requestIndex < numberOfRequests; requestIndex++) {
-          const usedDelay = waitForDelaySpy.mock.calls[requestIndex][0];
-          expect(usedDelay).toBeGreaterThanOrEqual(minDelay);
-          expect(usedDelay).toBeLessThanOrEqual(maxDelay);
-        }
-      });
+          expect(handler.requests).toHaveLength(expectedDelays.length);
+        },
+      );
     });
 
     it('should apply an exact delay when the range limits are equal', async () => {
-      await usingHttpInterceptor<Schema>(interceptorOptions, async (interceptor) => {
-        const delay = 50;
+      const delay = 50;
 
-        const handler = await promiseIfRemote(
-          interceptor.get('/users').delay(delay, delay).respond({ status: 204 }),
-          interceptor,
-        );
-
-        expect(handler.requests).toHaveLength(0);
-
-        const { result: response, elapsedTime } = await usingElapsedTime(async () => {
-          return fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        });
-        expect(response.status).toBe(204);
-        expect(elapsedTime).toBeGreaterThanOrEqual(delay);
-
-        expect(handler.requests).toHaveLength(1);
-
-        expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
-        expect(waitForDelaySpy).toHaveBeenCalledWith(delay);
-      });
+      await expectDelayedResponse((handler) => handler.delay(delay, delay), delay);
     });
 
     it('should apply the highest delay when the minimum limit is higher than the maximum limit', async () => {
-      await usingHttpInterceptor<Schema>(interceptorOptions, async (interceptor) => {
-        const minDelay = 100;
-        const maxDelay = 50;
+      const minDelay = 100;
+      const maxDelay = 50;
 
-        expect(minDelay).toBeGreaterThan(maxDelay);
+      expect(minDelay).toBeGreaterThan(maxDelay);
 
-        const handler = await promiseIfRemote(
-          interceptor.get('/users').delay(minDelay, maxDelay).respond({ status: 204 }),
-          interceptor,
-        );
-
-        const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        expect(response.status).toBe(204);
-
-        expect(handler.requests).toHaveLength(1);
-
-        expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
-        expect(waitForDelaySpy).toHaveBeenCalledWith(minDelay);
-      });
+      await expectDelayedResponse((handler) => handler.delay(minDelay, maxDelay), minDelay);
     });
   });
 
   describe('Computed delay', () => {
     it('should apply a computed synchronous delay', async () => {
-      await usingHttpInterceptor<Schema>(interceptorOptions, async (interceptor) => {
-        const delay = 100;
+      const delay = 100;
 
-        const handler = await promiseIfRemote(
-          interceptor
-            .get('/users')
-            .delay(() => delay)
-            .respond({ status: 204 }),
-          interceptor,
-        );
-
-        const { result: response, elapsedTime } = await usingElapsedTime(async () => {
-          return fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        });
-        expect(response.status).toBe(204);
-        expect(elapsedTime).toBeGreaterThanOrEqual(delay);
-
-        expect(handler.requests).toHaveLength(1);
-
-        expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
-        expect(waitForDelaySpy).toHaveBeenCalledWith(delay);
-      });
+      await expectDelayedResponse((handler) => handler.delay(() => delay), delay);
     });
 
     it('should apply a computed asynchronous delay', async () => {
-      await usingHttpInterceptor<Schema>(interceptorOptions, async (interceptor) => {
-        const delayOverhead = 30;
-        const delay = 50;
+      const delayOverhead = 30;
+      const delay = 50;
 
-        const handler = await promiseIfRemote(
-          interceptor
-            .get('/users')
-            .delay(async () => {
-              await waitForDelay(delayOverhead);
-              return delay;
-            })
-            .respond({ status: 204 }),
-          interceptor,
-        );
-
-        const { result: response, elapsedTime } = await usingElapsedTime(async () => {
-          return fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        });
-        expect(response.status).toBe(204);
-        expect(elapsedTime).toBeGreaterThanOrEqual(delayOverhead + delay);
-
-        expect(handler.requests).toHaveLength(1);
-
-        expect(waitForDelaySpy).toHaveBeenCalledTimes(2);
-        expect(waitForDelaySpy).toHaveBeenNthCalledWith(1, delayOverhead);
-        expect(waitForDelaySpy).toHaveBeenNthCalledWith(2, delay);
-      });
+      await expectDelayedResponse(
+        (handler) =>
+          handler.delay(async () => {
+            await waitForDelay(delayOverhead);
+            return delay;
+          }),
+        delay,
+        { delayOverhead },
+      );
     });
   });
 
@@ -279,71 +247,61 @@ export function declareDelayHttpInterceptorTests(options: RuntimeSharedHttpInter
 
       await promiseIfRemote(handler.respond({ status: 204 }), handler);
 
-      const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-      expect(response.status).toBe(204);
+      // No timer is advanced, so the response is only delivered if no delay remains.
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+      try {
+        const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+      } finally {
+        vi.useRealTimers();
+      }
 
       expect(handler.requests).toHaveLength(1);
-
-      expect(waitForDelaySpy).toHaveBeenCalledTimes(0);
     });
   });
 
   it('should consider only the last delay if multiple are declared', async () => {
-    await usingHttpInterceptor<Schema>(interceptorOptions, async (interceptor) => {
-      const firstDelay = 200;
-      const secondDelay = 50;
+    const firstDelay = 200;
+    const secondDelay = 50;
 
-      const handler = await promiseIfRemote(
-        interceptor.get('/users').delay(firstDelay).delay(secondDelay).respond({ status: 204 }),
-        interceptor,
-      );
-
-      expect(handler.requests).toHaveLength(0);
-
-      const { result: response, elapsedTime } = await usingElapsedTime(async () => {
-        return fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-      });
-      expect(response.status).toBe(204);
-      expect(elapsedTime).toBeGreaterThanOrEqual(secondDelay);
-      expect(elapsedTime).toBeLessThan(firstDelay);
-
-      expect(handler.requests).toHaveLength(1);
-
-      expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
-      expect(waitForDelaySpy).toHaveBeenCalledWith(secondDelay);
-    });
+    await expectDelayedResponse((handler) => handler.delay(firstDelay).delay(secondDelay), secondDelay);
   });
 
   it('should not throw an error if the handler is cleared while the delay is being awaited', async () => {
-    await usingHttpInterceptor<Schema>(interceptorOptions, async (interceptor) => {
-      const delay = 200;
+    const delay = 200;
 
-      const handler = await promiseIfRemote(
-        interceptor.get('/users').delay(delay).respond({ status: 204 }),
-        interceptor,
-      );
+    await usingDelayedHandler(
+      (handler) => handler.delay(delay),
+      async ({ handler, respond, sendRequest, interceptor }) => {
+        await usingIgnoredConsole(['error'], async (console) => {
+          const { response } = await sendRequest();
 
-      expect(handler.requests).toHaveLength(0);
+          // The rejection handler is attached before advancing, to avoid an unhandled rejection.
+          const fetchErrorExpectation = expectFetchError(response);
 
-      await usingIgnoredConsole(['error'], async (console) => {
-        const { elapsedTime } = await usingElapsedTime(async () => {
-          const fetchPromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-
-          await waitFor(() => {
-            expect(waitForDelaySpy).toHaveBeenCalledTimes(1);
-            expect(waitForDelaySpy).toHaveBeenCalledWith(delay);
-          });
+          let settled = false;
+          void response.then(
+            () => (settled = true),
+            () => (settled = true),
+          );
 
           await promiseIfRemote(handler.clear(), interceptor);
 
-          await expectFetchError(fetchPromise);
+          await vi.advanceTimersByTimeAsync(delay - 1);
+          expect(settled).toBe(false);
+
+          await vi.advanceTimersByTimeAsync(1);
+
+          await fetchErrorExpectation;
+          expect(settled).toBe(true);
+
+          expect(respond).not.toHaveBeenCalled();
+          expect(handler.requests).toHaveLength(0);
+
+          expect(console.error).toHaveBeenCalledTimes(0);
         });
-
-        expect(elapsedTime).toBeGreaterThanOrEqual(delay);
-        expect(handler.requests).toHaveLength(0);
-
-        expect(console.error).toHaveBeenCalledTimes(0);
-      });
-    });
+      },
+    );
   });
 }
