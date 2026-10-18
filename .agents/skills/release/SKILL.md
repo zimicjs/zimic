@@ -46,7 +46,7 @@ For each selected package other than `zimic-web`:
    - Title: `chore(release): <package>@<stable-version>`.
    - Label: `<package>:stable`, and no other release label.
    - Assignee: `@me`.
-   - Body, written to `./tmp/zimic-release-pr-<package-name>-<stable-version>.md`. Link each tag to `https://github.com/zimicjs/zimic/releases/tag/<URL-encoded tag>`, for example `releases/tag/%40zimic%2Fhttp%401.4.2-canary.9`:
+   - Body, written to `./tmp/release-pr-<slug>-<stable-version>.md`, with `<slug>` from the package's workflow file name. Link each tag to `https://github.com/zimicjs/zimic/releases/tag/<URL-encoded tag>`, for example `releases/tag/%40zimic%2Fhttp%401.4.2-canary.9`:
 
      ```markdown
      ## Summary
