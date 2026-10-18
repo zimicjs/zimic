@@ -1,6 +1,5 @@
-import { fileEquals } from '@zimic/utils/data';
-import { ArrayItemIfArray, Replace } from '@zimic/utils/types';
-
+import fileEquals from '../../data/fileEquals';
+import { ArrayItemIfArray, Replace } from '../../types';
 import { HttpFormDataSchema, HttpFormDataSchemaName, HttpFormDataSerialized } from './types';
 
 /** @see {@link https://zimic.dev/docs/http/api/http-form-data `HttpFormData` API reference} */

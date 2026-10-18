@@ -1,4 +1,4 @@
-import { ArrayKey, IfNever, NonArrayKey } from '@zimic/utils/types';
+import { ArrayKey, IfNever, NonArrayKey } from '../../types';
 
 /** A schema for strict HTTP form data. */
 export interface HttpFormDataSchema {
