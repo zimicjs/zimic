@@ -77,7 +77,7 @@ For each package:
    For a reused PR, apply the same title, body, label, and assignee, and remove every other `<package>:` label, because the release workflow uses the first matching label:
 
    ```bash
-   gh pr edit '<number>' --repo zimicjs/zimic --title '<title>' --body-file '<body-file>' --add-label '<package>:stable' --remove-label '<other-package-labels>' --add-assignee @me
+   gh pr edit '<number>' --repo zimicjs/zimic --title '<title>' --body-file '<body-file>' --add-label '<package>:stable' --remove-label '<comma-separated-other-package-labels>' --add-assignee @me
    ```
 
 For `zimic-web`, record the current UTC time, dispatch the release, and poll until a run created after that time appears:
