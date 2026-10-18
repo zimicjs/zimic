@@ -334,7 +334,9 @@ export function declareUnhandledRequestFactoriesHttpInterceptorTests(
         interceptor,
       );
 
-      const responsePromise = fetch(joinURL(baseURL, '/users?value=2'), { method: 'GET' });
+      const searchParams = new HttpSearchParams({ value: 2 });
+
+      const responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
       await expectFetchError(responsePromise);
 
       expect(usersHandler.requests).toHaveLength(0);

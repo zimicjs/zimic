@@ -1,4 +1,5 @@
-import { HttpSchema } from '@zimic/http';
+import { HttpSchema, HttpSearchParams } from '@zimic/http';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
 import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
@@ -139,7 +140,9 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
         interceptor,
       );
 
-      const responsePromise = fetch(joinURL(baseURL, '/users?value=2'), { method: 'GET' });
+      const searchParams = new HttpSearchParams({ value: 2 });
+
+      const responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
       await expectFetchError(responsePromise);
 
       expect(handler.requests).toHaveLength(0);
@@ -148,13 +151,12 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
   });
 
   it('should handle requests once if another interceptor is cleared while they are being handled', async () => {
-    const restrictionStarted = Promise.withResolvers<void>();
-    const restrictionReleased = Promise.withResolvers<void>();
+    const restrictionStartedPromise = createPromiseWithResolvers<void>();
+    const restrictionReleasedPromise = createPromiseWithResolvers<void>();
 
     const restriction = vi.fn(async () => {
-      restrictionStarted.resolve();
-      await restrictionReleased.promise;
-
+      restrictionStartedPromise.resolve();
+      await restrictionReleasedPromise;
       return false;
     });
 
@@ -177,10 +179,10 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
         );
 
         const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        await restrictionStarted.promise;
+        await restrictionStartedPromise;
 
         await promiseIfRemote(otherInterceptor.clear(), otherInterceptor);
-        restrictionReleased.resolve();
+        restrictionReleasedPromise.resolve();
 
         await expectFetchError(responsePromise);
 
@@ -192,13 +194,12 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
   });
 
   it('should not consider handlers of another interceptor cleared while requests are being handled', async () => {
-    const restrictionStarted = Promise.withResolvers<void>();
-    const restrictionReleased = Promise.withResolvers<void>();
+    const restrictionStartedPromise = createPromiseWithResolvers<void>();
+    const restrictionReleasedPromise = createPromiseWithResolvers<void>();
 
     const restriction = vi.fn(async () => {
-      restrictionStarted.resolve();
-      await restrictionReleased.promise;
-
+      restrictionStartedPromise.resolve();
+      await restrictionReleasedPromise;
       return false;
     });
 
@@ -223,10 +224,10 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
         );
 
         const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        await restrictionStarted.promise;
+        await restrictionStartedPromise;
 
         await promiseIfRemote(otherInterceptor.clear(), otherInterceptor);
-        restrictionReleased.resolve();
+        restrictionReleasedPromise.resolve();
 
         await expectFetchError(responsePromise);
 
