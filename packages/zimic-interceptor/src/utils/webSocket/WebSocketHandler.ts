@@ -1,12 +1,11 @@
 import { Collection } from '@zimic/utils/types';
+import { closeWebSocketClient, DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } from '@zimic/utils/ws';
 import ClientSocket from 'isomorphic-ws';
 
 import {
-  DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT,
   DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT,
   WebSocketMessageAbortError,
   WebSocketMessageTimeoutError,
-  closeClientSocket,
   waitForOpenClientSocket,
 } from '@/utils/webSocket';
 
@@ -208,7 +207,7 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
 
   protected async closeClientSockets(sockets: Collection<ClientSocket> = this.sockets) {
     const closingPromises = Array.from(sockets, async (socket) => {
-      await closeClientSocket(socket, { timeout: this.socketTimeout });
+      await closeWebSocketClient(socket, { timeout: this.socketTimeout });
     });
     await Promise.all(closingPromises);
   }
