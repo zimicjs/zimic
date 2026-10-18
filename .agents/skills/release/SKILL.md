@@ -12,7 +12,7 @@ There are two release paths:
 - **Packages** go through a pull request from `canary` to the package's long-lived branch `<package>@<major>`, such as `@zimic/http@1`. The `<package>:stable` label makes `release-<slug>-to-github.yaml` strip the pre-release suffix and create a draft GitHub release `<package>@<version>` when the PR is merged. Publishing that draft pushes the tag, which publishes to npm.
 - **`zimic-web`** has no long-lived branch. Dispatching `release-zimic-web-to-github.yaml` on `canary` pushes a `zimic-web@<version>` tag, which triggers `release-zimic-web-website.yaml` to deploy. It creates no GitHub release.
 
-Run waits (`gh pr checks --watch`, `gh run watch`) as background commands and continue with each project when its wait exits. A workflow run appears a few seconds after the event that triggers it, so poll each `gh run list` lookup every 15 seconds until a matching run appears; never take an older run. If any step fails for a project, hold that project: leave its PR or run as is, record the reason, and continue with the others.
+Run waits (`gh pr checks --watch`, `gh run watch`) as background commands and continue with each project when its wait exits. A workflow run appears a few seconds after the event that triggers it, so poll each `gh run list` lookup every 15 seconds until a matching run appears; never take an older run. Give up on any poll or retry after 10 minutes without a result and hold the project with that reason. If any step fails for a project, hold that project: leave its PR or run as is, record the reason, and continue with the others.
 
 # 1. Discover projects
 
@@ -91,7 +91,7 @@ gh run list --repo zimicjs/zimic --workflow release-zimic-web-to-github.yaml --e
 
 For each package PR:
 
-1. Record the PR's `headRefOid` with `gh pr view <number> --repo zimicjs/zimic --json headRefOid`, then wait for CI with `gh pr checks <number> --repo zimicjs/zimic --watch --fail-fast`. If it reports no checks yet, retry every minute. When the watch exits non-zero, re-read `headRefOid`. If it changed, start step 1 again with the new head. Otherwise hold the PR.
+1. Record the PR's `headRefOid` and `mergeable` with `gh pr view <number> --repo zimicjs/zimic --json headRefOid,mergeable`. Re-read while `mergeable` is `UNKNOWN`, and hold the PR on `CONFLICTING`, because GitHub runs no CI on a conflicting PR. Then wait for CI with `gh pr checks <number> --repo zimicjs/zimic --watch --fail-fast`. If it reports no checks yet, retry every minute. When the watch exits non-zero, re-read `headRefOid`. If it changed, start step 1 again with the new head. Otherwise hold the PR.
 2. Merge with a merge commit, matching past release PRs, and pin the head CI passed on:
 
    ```bash
