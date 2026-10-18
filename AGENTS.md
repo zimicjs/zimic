@@ -43,6 +43,7 @@ These rules apply to packages intended for direct external use.
 - Prefer type-safe designs over broad unions, loose public/internal type mixing, or casts. If narrowing is unavoidable, keep it isolated behind a small, named boundary that reflects a real runtime guarantee.
 - Avoid reaching through public wrappers into internal implementation details from production code unless that is already the established internal contract for the module.
 - Published packages include `@zimic/utils/types/globals`, which narrows built-ins such as `Object.keys`. Rely on those types instead of casting.
+- Create deferred promises with `createPromiseWithResolvers` from `@zimic/utils/data` instead of `Promise.withResolvers`, which older supported runtimes lack.
 - Do not add production code that only tests reach, such as optional parameters with fallbacks, unreachable guards, or unused members kept for symmetry. Delete unreachable branches instead of covering them.
 - Treat each `await` between a check and the state change it guards as a race window. Reserve state before awaiting, account for concurrent start, stop, and clear calls, and reset pending-operation state in `finally`.
 - Validate untrusted payloads completely before changing any state.
