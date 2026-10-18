@@ -119,7 +119,6 @@ jobs:
         node-version:
           - 22
           - 24
-          - 25
           - 26
 
     env:
