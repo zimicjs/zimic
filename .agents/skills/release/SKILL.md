@@ -91,14 +91,14 @@ gh run list --repo zimicjs/zimic --workflow release-zimic-web-to-github.yaml --e
 
 For each package PR:
 
-1. Record the PR's `headRefOid` with `gh pr view <number> --repo zimicjs/zimic --json headRefOid`, then wait for CI with `gh pr checks <number> --repo zimicjs/zimic --watch --fail-fast`. If it reports no checks yet, retry every minute. Hold the PR if any check fails.
+1. Record the PR's `headRefOid` with `gh pr view <number> --repo zimicjs/zimic --json headRefOid`, then wait for CI with `gh pr checks <number> --repo zimicjs/zimic --watch --fail-fast`. If it reports no checks yet, retry every minute. When the watch exits non-zero, re-read `headRefOid`. If it changed, start step 1 again with the new head. Otherwise hold the PR.
 2. Merge with a merge commit, matching past release PRs, and pin the head CI passed on:
 
    ```bash
    gh pr merge '<number>' --repo zimicjs/zimic --merge --match-head-commit '<headRefOid>'
    ```
 
-   Each stable release run merges its bump commit back into `canary`, which moves the head of every other open release PR and restarts its CI. If the merge fails because the head moved, or the watch saw cancelled checks after a head change, return to step 1.
+   Each stable release run merges its bump commit back into `canary`, which moves the head of every other open release PR and restarts its CI. If the merge fails because the head moved, return to step 1.
 
 3. Find the release run started by the merge: poll for a run of the package's workflow with `event` `pull_request` and `headSha` equal to the merged `headRefOid`:
 
