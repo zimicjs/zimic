@@ -26,7 +26,7 @@ Run waits (`gh pr checks --watch`, `gh run watch`) as background commands and co
 
 For each selected package other than `zimic-web`:
 
-1. Find the last stable tag, the highest tag matching `^<package>@[0-9]+\.[0-9]+\.[0-9]+$`. A package may have none yet.
+1. Find the last stable tag, the highest tag matching `^<package>@[0-9]+\.[0-9]+\.[0-9]+$`. If the package has none yet, ask the user for the comparison base of its release notes.
 2. List the canary tags since that stable tag, newest first:
 
    ```bash
@@ -61,7 +61,7 @@ For each selected package other than `zimic-web`:
 
 # 3. Confirm the plan
 
-Show one plan covering every selected project: for each package, its PR title, base branch, label, whether it creates or reuses the PR, and any branch to create from `origin/main`; for `zimic-web`, the dispatch inputs. Ask the user once to approve. That approval covers creating branches, opening PRs, merging them after CI passes, and dispatching the website release. Stop if the user does not approve.
+Show one plan covering every selected project: for each package, its PR title, base branch, label, release notes comparison base, whether it creates or reuses the PR, and any branch to create from `origin/main`; for `zimic-web`, the dispatch inputs. Ask the user once to approve. That approval covers creating branches, opening PRs, merging them after CI passes, and dispatching the website release. Stop if the user does not approve.
 
 # 4. Start the releases
 
@@ -108,7 +108,7 @@ For each package PR:
 
 4. Wait with `gh run watch <id> --repo zimicjs/zimic --exit-status`.
 5. Confirm the draft exists with `gh release view '<package>@<stable-version>' --repo zimicjs/zimic --json isDraft,url`.
-6. Invoke skill `write-release-description` in unattended mode with the package, the stable version, and the last stable version as the previous version. If the package has no stable tag, ask the user for the comparison base first.
+6. Invoke skill `write-release-description` in unattended mode with the package, the stable version, and the comparison base from the plan as the previous version.
 
 For `zimic-web`:
 
