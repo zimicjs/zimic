@@ -91,7 +91,7 @@ gh run list --repo zimicjs/zimic --workflow release-zimic-web-to-github.yaml --e
 
 For each package PR:
 
-1. Record the PR's `headRefOid` and `mergeable` with `gh pr view <number> --repo zimicjs/zimic --json headRefOid,mergeable`. Re-read while `mergeable` is `UNKNOWN`, and hold the PR on `CONFLICTING`, because GitHub runs no CI on a conflicting PR. Then wait for CI with `gh pr checks <number> --repo zimicjs/zimic --watch --fail-fast`. If it reports no checks yet, retry every minute. When the watch exits non-zero, re-read `headRefOid`. If it changed, start step 1 again with the new head. Otherwise hold the PR.
+1. Record the PR's `headRefOid` and `mergeable` with `gh pr view <number> --repo zimicjs/zimic --json headRefOid,mergeable`. Re-read while `mergeable` is `UNKNOWN`, and hold the PR on `CONFLICTING`, because GitHub runs no CI on a conflicting PR. Run `git fetch origin canary`, strip the pre-release suffix from `version` in `git show <headRefOid>:<project-directory>/package.json`, and hold the PR if it differs from the approved stable version. Then wait for CI with `gh pr checks <number> --repo zimicjs/zimic --watch --fail-fast`. If it reports no checks yet, retry every minute. When the watch exits non-zero, re-read `headRefOid`. If it changed, start step 1 again with the new head. Otherwise hold the PR.
 2. Merge with a merge commit, matching past release PRs, and pin the head CI passed on:
 
    ```bash
