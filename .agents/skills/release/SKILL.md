@@ -114,7 +114,7 @@ For `zimic-web`:
 
 1. Wait for the dispatched run with `gh run watch <id> --repo zimicjs/zimic --exit-status`.
 2. Fetch tags and find the new `zimic-web@<version>` tag.
-3. Poll for the deploy run with `gh run list --repo zimicjs/zimic --workflow release-zimic-web-website.yaml --branch '<tag>' --json databaseId,url` and wait for it with `gh run watch`.
+3. Poll for the deploy run with `gh run list --repo zimicjs/zimic --workflow release-zimic-web-website.yaml --branch '<tag>' --json databaseId,url` and wait for it with `gh run watch <id> --repo zimicjs/zimic --exit-status`.
 
 # 6. Report
 
