@@ -90,7 +90,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
     });
   });
 
-  it('should support retrying after failing to start', async () => {
+  it('should support starting again after failing to start at first', async () => {
     await usingHttpInterceptorWorker(workerOptions, { start: false }, async (worker) => {
       const error = new Error('Unknown error');
 
