@@ -30,9 +30,15 @@ import { validateInterceptorToken } from './utils/auth';
 import { getFetchAPI } from './utils/fetch';
 
 // Browsers may resend requests whose connection closes without a response. Conflicting content lengths make Chromium,
-// Firefox, and Node.js fail the request once with a network error. Lenient clients may receive an empty 500 instead.
-const INVALID_REJECTED_RESPONSE =
-  'HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nContent-Length: 1\r\n\r\n';
+// Firefox, and Node.js' fetch fail the request once with a network error. Lenient clients may report unexpected content
+// length or receive an empty 500 instead.
+const INVALID_REJECTED_RESPONSE = [
+  'HTTP/1.1 500 Internal Server Error',
+  'Content-Length: 0',
+  'Content-Length: 1',
+  '',
+  '',
+].join('\r\n');
 
 interface HttpHandler {
   id: string;
