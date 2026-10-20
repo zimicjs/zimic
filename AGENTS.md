@@ -64,6 +64,7 @@ These rules apply to packages intended for direct external use.
 
 - Do not hand-edit generated declaration files, except top-level entry points that are intentionally kept in source control.
 - Update docs and examples when a user-facing public API or documented behavior changes.
+- Keep the `rules` in `context7.json` consistent with the docs. Context7 serves them to coding agents with the docs from `main`. Update or remove a rule when the behavior it describes changes, and add one when a change introduces behavior agents are likely to get wrong.
 - Treat breaking public API changes as intentional work. Keep code, tests, exports, and docs consistent.
 
 ## Before finishing a change
