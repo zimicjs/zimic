@@ -1,0 +1,20 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "url": "https://context7.com/zimicjs/zimic",
+  "public_key": "pk_DfxCNEw7YXqwZG5AxLjWY",
+  "branch": "main",
+  "folders": ["apps/zimic-web/docs"],
+  "excludeFiles": ["AGENTS.md", "CLAUDE.md", "CODE_OF_CONDUCT.md", "CONTRIBUTING.md", "LICENSE.md"],
+  "rules": [
+    "Use the scoped packages @zimic/http, @zimic/fetch, and @zimic/interceptor.",
+    "@zimic/interceptor: In createHttpInterceptor, `type` is optional and defaults to 'local'. Only set `type: 'remote'` when using an interceptor server.",
+    "@zimic/interceptor: Local interceptor methods are synchronous: interceptor.clear(), interceptor.checkTimes(), and handler.with()/respond()/times()/checkTimes() return values directly.",
+    "@zimic/interceptor: Remote interceptor methods return promises: await interceptor.clear(), interceptor.checkTimes(), and every handler chain before making requests.",
+    "@zimic/interceptor: Remote interceptors need a running server, usually started as `zimic-interceptor server start --port <port> --ephemeral -- <test command>`. Their unhandled requests can only be rejected, not bypassed.",
+    "@zimic/interceptor: Local interceptors in browsers require `zimic-interceptor browser init <publicDirectory>` before interceptor.start().",
+    "@zimic/interceptor: handler.with() matches partially by default. Use `exact: true` only when extra headers, search params, or body fields must cause a mismatch.",
+    "@zimic/fetch: The package follows the Fetch API: JSON request bodies must be serialized with JSON.stringify and sent with an explicit `content-type: application/json` header. Schema content-type inference affects types only.",
+    "@zimic/fetch: The package does not throw on non-2xx responses. Check response.ok, throw response.error when needed, and narrow caught errors with fetch.isResponseError(error, method, path).",
+    "Declare path params in schema keys as '/users/:userId'. When calling fetch, pass the concrete path, such as `/users/${id}`."
+  ]
+}
