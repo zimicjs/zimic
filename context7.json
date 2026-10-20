@@ -15,6 +15,6 @@
     "@zimic/interceptor: handler.with() matches partially by default. Use `exact: true` only when extra headers, search params, or body fields must cause a mismatch.",
     "@zimic/fetch: The package follows the Fetch API: JSON request bodies must be serialized with JSON.stringify and sent with an explicit `content-type: application/json` header. Schema content-type inference affects types only.",
     "@zimic/fetch: The package does not throw on non-2xx responses. Check response.ok, throw response.error when needed, and narrow caught errors with fetch.isResponseError(error, method, path).",
-    "Declare path params in schema keys as '/users/:userId'. When calling fetch, pass the concrete path, such as `/users/${id}`."
+    "@zimic/http, @zimic/fetch, @zimic/interceptor: Declare path params in schema keys as '/users/:userId'. When calling fetch, pass the concrete path, such as `/users/${id}`."
   ]
 }
