@@ -4,7 +4,7 @@
   "public_key": "pk_DfxCNEw7YXqwZG5AxLjWY",
   "branch": "main",
   "folders": ["apps/zimic-web/docs"],
-  "excludeFiles": ["AGENTS.md", "CLAUDE.md", "CODE_OF_CONDUCT.md", "CONTRIBUTING.md", "LICENSE.md"],
+  "excludeFiles": ["AGENTS.md", "CLAUDE.md", "CODE_OF_CONDUCT.md", "CONTRIBUTING.md", "LICENSE.md", "SECURITY.md"],
   "rules": [
     "Use the scoped packages @zimic/http, @zimic/fetch, and @zimic/interceptor.",
     "@zimic/interceptor: In createHttpInterceptor, `type` is optional and defaults to 'local'. Only set `type: 'remote'` when using an interceptor server.",
