@@ -19,7 +19,7 @@ Common section order:
 
 Not every release has every section. Do not add empty headings.
 
-Write items only for changes that consumers of the package can see or rely on, such as its API, behavior, types, supported environments, dependencies, and documentation. Leave internal-only changes, such as CI, release tooling, tests, and internal refactors, out of the sections, and list their PRs only in the full changelog. When an internal PR also changes something consumers see, write an item for that visible change alone.
+Write items only for changes that consumers of the package can see or rely on, such as its API, behavior, types, supported environments, `dependencies` and `peerDependencies` of the published package, and documentation. Leave internal-only changes, such as CI, release tooling, tests, internal refactors, and devDependency-only upgrades, out of the sections, and list their PRs only in the full changelog. When an internal PR also changes something consumers see, write an item for that visible change alone.
 
 ## Item style
 
