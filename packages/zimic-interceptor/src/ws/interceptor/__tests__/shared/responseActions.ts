@@ -1,14 +1,18 @@
 import { waitFor } from '@zimic/utils/time';
-import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+import { WebSocketSchema } from '@zimic/ws';
 import { describe, expect, it, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
-import { waitForWebSocketClientMessage } from '@tests/utils/webSocket';
+import {
+  createBinaryMessage,
+  readBytes,
+  usingWebSocketClient,
+  waitForWebSocketClientMessage,
+} from '@tests/utils/webSocket';
 
-import { createBinaryMessage, type Schema } from '../../../messageHandler/__tests__/shared/utils';
+import type { Schema } from '../../../messageHandler/__tests__/shared/utils';
 import type { WebSocketInterceptorType } from '../../types/options';
-import { readBytes } from './utils';
 
 type BinarySchema = WebSocketSchema<ArrayBuffer | Blob>;
 
@@ -29,19 +33,13 @@ export function declareResponseActionsWebSocketInterceptorTests(
       await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
         await interceptor.message().respond({ type: 'delete', id: '1' });
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           const response = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
           await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: '1' }));
-        } finally {
-          await client.close();
-        }
+        });
       });
     });
 
@@ -53,20 +51,14 @@ export function declareResponseActionsWebSocketInterceptorTests(
 
         await interceptor.message().respond(responseFactory);
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           const response = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
           await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'create' }));
           expect(responseFactory).toHaveBeenCalledTimes(1);
-        } finally {
-          await client.close();
-        }
+        });
       });
     });
 
@@ -85,11 +77,7 @@ export function declareResponseActionsWebSocketInterceptorTests(
 
         await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: '2' });
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           await usingIgnoredConsole(['error'], async (console) => {
             client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
@@ -103,9 +91,7 @@ export function declareResponseActionsWebSocketInterceptorTests(
           client.send(JSON.stringify({ type: 'delete', id: '1' }));
 
           await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: '2' }));
-        } finally {
-          await client.close();
-        }
+        });
       });
     });
 
@@ -116,11 +102,7 @@ export function declareResponseActionsWebSocketInterceptorTests(
         const firstHandler = await interceptor.message().respond({ type: 'delete', id: 'first' }).times(1);
         const secondHandler = await interceptor.message().respond({ type: 'delete', id: 'second' }).times(1);
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           const firstResponse = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'one' } }));
@@ -135,9 +117,7 @@ export function declareResponseActionsWebSocketInterceptorTests(
 
           await firstHandler.checkTimes();
           await secondHandler.checkTimes();
-        } finally {
-          await client.close();
-        }
+        });
       });
     });
 
@@ -150,11 +130,7 @@ export function declareResponseActionsWebSocketInterceptorTests(
           const passiveHandler = await interceptor.message().with({ type: 'create' }).times(1);
           await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' });
 
-          const client = new WebSocketClient<Schema>(baseURL);
-
-          try {
-            await client.open();
-
+          await usingWebSocketClient<Schema>(baseURL, async (client) => {
             const firstReceivedMessage = waitForWebSocketClientMessage(client);
 
             client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
@@ -170,9 +146,7 @@ export function declareResponseActionsWebSocketInterceptorTests(
             await expect(firstReceivedMessage).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
 
             await passiveHandler.checkTimes();
-          } finally {
-            await client.close();
-          }
+          });
         },
       );
     });
@@ -190,20 +164,15 @@ export function declareResponseActionsWebSocketInterceptorTests(
           .respond(createBinaryMessage(0x00, 0xff))
           .times(1);
 
-        const client = new WebSocketClient<BinarySchema>(baseURL);
-        client.binaryType = 'arraybuffer';
-
-        try {
-          await client.open();
+        await usingWebSocketClient<BinarySchema>(baseURL, async (client) => {
+          client.binaryType = 'arraybuffer';
 
           const response = waitForWebSocketClientMessage(client);
 
           client.send(createRequestMessage());
 
           expect(await readBytes((await response) as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
-        } finally {
-          await client.close();
-        }
+        });
 
         await interceptor.checkTimes();
       });
@@ -220,11 +189,7 @@ export function declareResponseActionsWebSocketInterceptorTests(
         await interceptor.message().effect(effect);
         await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' });
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           const firstReceivedMessage = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
@@ -239,9 +204,7 @@ export function declareResponseActionsWebSocketInterceptorTests(
 
           await expect(firstReceivedMessage).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
           expect(effect).toHaveBeenCalledTimes(1);
-        } finally {
-          await client.close();
-        }
+        });
       });
     });
 
@@ -253,35 +216,30 @@ export function declareResponseActionsWebSocketInterceptorTests(
           sender.send(JSON.stringify({ type: 'delete', id: message.type }));
         });
 
-        const otherClient = new WebSocketClient<Schema>(baseURL);
-        const senderClient = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await otherClient.open();
+        await usingWebSocketClient<Schema>(baseURL, async (otherClient) => {
           await waitFor(() => {
             expect(interceptor.clients).toHaveLength(1);
           });
 
-          await senderClient.open();
-          await waitFor(() => {
-            expect(interceptor.clients).toHaveLength(2);
+          await usingWebSocketClient<Schema>(baseURL, async (senderClient) => {
+            await waitFor(() => {
+              expect(interceptor.clients).toHaveLength(2);
+            });
+
+            const otherFirstMessage = waitForWebSocketClientMessage(otherClient);
+            const senderFirstMessage = waitForWebSocketClientMessage(senderClient);
+
+            senderClient.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+            await expect(senderFirstMessage).resolves.toBe(JSON.stringify({ type: 'delete', id: 'create' }));
+
+            // Messages on a socket are delivered in order, so the broadcast being the first message of the other client
+            // means that the targeted message did not reach it.
+            interceptor.server.send(JSON.stringify({ type: 'delete', id: 'broadcast' }));
+
+            await expect(otherFirstMessage).resolves.toBe(JSON.stringify({ type: 'delete', id: 'broadcast' }));
           });
-
-          const otherFirstMessage = waitForWebSocketClientMessage(otherClient);
-          const senderFirstMessage = waitForWebSocketClientMessage(senderClient);
-
-          senderClient.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
-
-          await expect(senderFirstMessage).resolves.toBe(JSON.stringify({ type: 'delete', id: 'create' }));
-
-          // Messages on a socket are delivered in order, so the broadcast being the first message of the other client
-          // means that the targeted message did not reach it.
-          interceptor.server.send(JSON.stringify({ type: 'delete', id: 'broadcast' }));
-
-          await expect(otherFirstMessage).resolves.toBe(JSON.stringify({ type: 'delete', id: 'broadcast' }));
-        } finally {
-          await Promise.all([otherClient.close(), senderClient.close()]);
-        }
+        });
       });
     });
 
@@ -293,32 +251,27 @@ export function declareResponseActionsWebSocketInterceptorTests(
           receiver.send(JSON.stringify({ type: 'delete', id: message.type }));
         });
 
-        const otherClient = new WebSocketClient<Schema>(baseURL);
-        const senderClient = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await otherClient.open();
+        await usingWebSocketClient<Schema>(baseURL, async (otherClient) => {
           await waitFor(() => {
             expect(interceptor.clients).toHaveLength(1);
           });
 
-          await senderClient.open();
-          await waitFor(() => {
-            expect(interceptor.clients).toHaveLength(2);
+          await usingWebSocketClient<Schema>(baseURL, async (senderClient) => {
+            await waitFor(() => {
+              expect(interceptor.clients).toHaveLength(2);
+            });
+
+            const otherFirstMessage = waitForWebSocketClientMessage(otherClient);
+            const senderFirstMessage = waitForWebSocketClientMessage(senderClient);
+
+            senderClient.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+            const broadcast = JSON.stringify({ type: 'delete', id: 'create' });
+
+            await expect(otherFirstMessage).resolves.toBe(broadcast);
+            await expect(senderFirstMessage).resolves.toBe(broadcast);
           });
-
-          const otherFirstMessage = waitForWebSocketClientMessage(otherClient);
-          const senderFirstMessage = waitForWebSocketClientMessage(senderClient);
-
-          senderClient.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
-
-          const broadcast = JSON.stringify({ type: 'delete', id: 'create' });
-
-          await expect(otherFirstMessage).resolves.toBe(broadcast);
-          await expect(senderFirstMessage).resolves.toBe(broadcast);
-        } finally {
-          await Promise.all([otherClient.close(), senderClient.close()]);
-        }
+        });
       });
     });
 
@@ -337,11 +290,7 @@ export function declareResponseActionsWebSocketInterceptorTests(
 
         await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: '2' });
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           await usingIgnoredConsole(['error'], async (console) => {
             client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
@@ -355,9 +304,7 @@ export function declareResponseActionsWebSocketInterceptorTests(
           client.send(JSON.stringify({ type: 'delete', id: '1' }));
 
           await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: '2' }));
-        } finally {
-          await client.close();
-        }
+        });
       });
     });
 
@@ -379,11 +326,7 @@ export function declareResponseActionsWebSocketInterceptorTests(
           completedMessages.push(message);
         });
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           client.send(JSON.stringify({ type: 'create', body: { text: 'first' } }));
           client.send(JSON.stringify({ type: 'create', body: { text: 'second' } }));
 
@@ -408,9 +351,7 @@ export function declareResponseActionsWebSocketInterceptorTests(
               { type: 'create', body: { text: 'second' } },
             ]),
           );
-        } finally {
-          await client.close();
-        }
+        });
       });
     });
   });

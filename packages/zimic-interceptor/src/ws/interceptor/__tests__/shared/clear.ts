@@ -191,11 +191,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
           })
           .respond({ type: 'server', text: 'ack' });
 
-        const client = new WebSocketClient<ChatMessage>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
           const existingResponsePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', text: 'existing' }));
           await expect(existingResponsePromise).resolves.toBe('{"type":"server","text":"ack"}');
@@ -219,17 +215,11 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
           effectReleasePromise.resolve();
 
           // Clearing closes the connected clients, so the follow-up message is sent by a new client.
-          const nextClient = new WebSocketClient<ChatMessage>(baseURL);
-
-          try {
-            await nextClient.open();
-
+          await usingWebSocketClient<ChatMessage>(baseURL, async (nextClient) => {
             const nextResponsePromise = waitForWebSocketClientMessage(nextClient);
             nextClient.send(JSON.stringify({ type: 'client', text: 'next' }));
             await expect(nextResponsePromise).resolves.toBe('{"type":"server","text":"next"}');
-          } finally {
-            await nextClient.close();
-          }
+          });
 
           await waitFor(() => {
             expect(nextHandler.messages).toHaveLength(1);
@@ -244,9 +234,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
 
           expect(clientHandle.messages).toBe(clientMessages);
           expect(clientMessages).toEqual([]);
-        } finally {
-          await client.close();
-        }
+        });
       },
     );
   });

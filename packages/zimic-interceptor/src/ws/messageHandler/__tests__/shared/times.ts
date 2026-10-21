@@ -1,18 +1,19 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
-import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+import { WebSocketSchema } from '@zimic/ws';
 import { beforeAll, beforeEach, afterAll, describe, expect, it } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
-import { collectWebSocketClientMessages, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
-
-import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import {
+  collectWebSocketClientMessages,
   createBinaryMessage,
   expectWebSocketTimesCheckError,
-  Schema,
-  SharedWebSocketMessageHandlerTestOptions,
-} from './utils';
+  usingWebSocketClient,
+  waitForWebSocketClientMessage,
+} from '@tests/utils/webSocket';
+
+import { WebSocketInterceptorType } from '../../../interceptor/types/options';
+import { Schema, SharedWebSocketMessageHandlerTestOptions } from './utils';
 
 export function declareTimesWebSocketMessageHandlerTests(
   options: SharedWebSocketMessageHandlerTestOptions & {
@@ -62,11 +63,7 @@ export function declareTimesWebSocketMessageHandlerTests(
           .respond({ type: 'delete', id: 'limited' })
           .times(1);
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           const responses = collectWebSocketClientMessages(client);
 
           const message: Schema = { type: 'create', body: { text: 'overlap' } };
@@ -83,9 +80,7 @@ export function declareTimesWebSocketMessageHandlerTests(
           );
 
           await limitedHandler.checkTimes();
-        } finally {
-          await client.close();
-        }
+        });
       });
     });
 
@@ -98,20 +93,14 @@ export function declareTimesWebSocketMessageHandlerTests(
           expectedNumberOfMessages: 1,
         });
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           const response = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
           await response;
 
           await handler.checkTimes();
-        } finally {
-          await client.close();
-        }
+        });
       });
     });
 
@@ -124,11 +113,7 @@ export function declareTimesWebSocketMessageHandlerTests(
           expectedNumberOfMessages: 2,
         });
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           const response = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
@@ -138,9 +123,7 @@ export function declareTimesWebSocketMessageHandlerTests(
             message: 'Expected exactly 2 messages, but got 1.',
             expectedNumberOfMessages: 2,
           });
-        } finally {
-          await client.close();
-        }
+        });
       });
     });
 
@@ -150,11 +133,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
         const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(1);
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           const response = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'one' } }));
@@ -177,9 +156,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
           // The next message received is the probe response, so the over-limit message got no response.
           expect(await probeResponse).toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
-        } finally {
-          await client.close();
-        }
+        });
       });
     });
 
@@ -189,11 +166,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
         await handler.checkTimes();
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
           await waitFor(() =>
@@ -202,9 +175,7 @@ export function declareTimesWebSocketMessageHandlerTests(
               expectedNumberOfMessages: 0,
             }),
           );
-        } finally {
-          await client.close();
-        }
+        });
       });
     });
   });
@@ -216,11 +187,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
         await handler.checkTimes();
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           for (const text of ['one', 'two', 'three']) {
             const response = waitForWebSocketClientMessage(client);
 
@@ -229,9 +196,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
             await handler.checkTimes();
           }
-        } finally {
-          await client.close();
-        }
+        });
       });
     });
 
@@ -244,11 +209,7 @@ export function declareTimesWebSocketMessageHandlerTests(
           expectedNumberOfMessages: { min: 2, max: 3 },
         });
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           const response = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
@@ -258,9 +219,7 @@ export function declareTimesWebSocketMessageHandlerTests(
             message: 'Expected at least 2 and at most 3 messages, but got 1.',
             expectedNumberOfMessages: { min: 2, max: 3 },
           });
-        } finally {
-          await client.close();
-        }
+        });
       });
     });
 
@@ -270,11 +229,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
         const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(0, 1);
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           const response = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'one' } }));
@@ -295,9 +250,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
           // The next message received is the probe response, so the over-limit message got no response.
           expect(await probeResponse).toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
-        } finally {
-          await client.close();
-        }
+        });
       });
     });
 
@@ -312,11 +265,7 @@ export function declareTimesWebSocketMessageHandlerTests(
           expectedNumberOfMessages: { min: 1, max: 1 },
         });
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           const response = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'one' } }));
@@ -332,9 +281,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
           // The next message received is the probe response, so the over-limit message got no response.
           expect(await probeResponse).toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
-        } finally {
-          await client.close();
-        }
+        });
       });
     });
   });
@@ -350,11 +297,7 @@ export function declareTimesWebSocketMessageHandlerTests(
             .respond({ type: 'delete', id: '1' })
             .times(1);
 
-          const client = new WebSocketClient<Schema>(baseURL);
-
-          try {
-            await client.open();
-
+          await usingWebSocketClient<Schema>(baseURL, async (client) => {
             client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
             await waitFor(() =>
@@ -367,9 +310,7 @@ export function declareTimesWebSocketMessageHandlerTests(
                   '"received": { "type": "create", "body": { "text": "hello" } } } } }',
               }),
             );
-          } finally {
-            await client.close();
-          }
+          });
         },
       );
     });
@@ -384,11 +325,7 @@ export function declareTimesWebSocketMessageHandlerTests(
             .respond(createBinaryMessage(5, 6))
             .times(1);
 
-          const client = new WebSocketClient<WebSocketSchema<ArrayBuffer>>(baseURL);
-
-          try {
-            await client.open();
-
+          await usingWebSocketClient<WebSocketSchema<ArrayBuffer>>(baseURL, async (client) => {
             client.send(createBinaryMessage(3, 4));
 
             await waitFor(() =>
@@ -401,9 +338,7 @@ export function declareTimesWebSocketMessageHandlerTests(
                   '"received": ArrayBuffer { byteLength: 2 } } } }',
               }),
             );
-          } finally {
-            await client.close();
-          }
+          });
         },
       );
     });
@@ -421,11 +356,7 @@ export function declareTimesWebSocketMessageHandlerTests(
             .respond(new Blob(['response']))
             .times(1);
 
-          const client = new WebSocketClient<WebSocketSchema<Blob>>(baseURL);
-
-          try {
-            await client.open();
-
+          await usingWebSocketClient<WebSocketSchema<Blob>>(baseURL, async (client) => {
             client.send(blob);
 
             await waitFor(() =>
@@ -438,9 +369,7 @@ export function declareTimesWebSocketMessageHandlerTests(
                   `"received": ${receivedBlobMessageRepresentation} } } }`,
               }),
             );
-          } finally {
-            await client.close();
-          }
+          });
         },
       );
     });

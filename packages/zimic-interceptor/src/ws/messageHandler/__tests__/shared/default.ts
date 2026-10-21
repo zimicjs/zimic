@@ -1,10 +1,9 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
-import { WebSocketClient } from '@zimic/ws';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
-import { waitForWebSocketClientMessage } from '@tests/utils/webSocket';
+import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
@@ -51,10 +50,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
         const secondRestriction = vi.fn((_message: Schema) => false);
         await interceptor.message().with(secondRestriction);
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           await waitFor(() => {
             expect(interceptor.clients).toHaveLength(1);
           });
@@ -73,9 +69,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
 
           expect(interceptor.clients[0].messages).toHaveLength(1);
           expect(interceptor.server.messages).toHaveLength(1);
-        } finally {
-          await client.close();
-        }
+        });
       },
     );
   });
@@ -86,11 +80,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
       async (interceptor) => {
         const handler = await interceptor.message().times(1);
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
           await waitFor(() => {
@@ -100,9 +90,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
           expect(handler.messages[0].data).toEqual({ type: 'create', body: { text: 'hello' } });
 
           await handler.checkTimes();
-        } finally {
-          await client.close();
-        }
+        });
       },
     );
   });
@@ -115,11 +103,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
 
         expect(handler.messages).toEqual([]);
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           const response = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
@@ -134,9 +118,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
           expect(handler.messages[0].sender.url).toBe(client.url);
           expect(handler.messages[0].receiver).toBe(interceptor.server);
           expect(handler.messages[0].data).toEqual({ type: 'create', body: { text: 'hello' } });
-        } finally {
-          await client.close();
-        }
+        });
       },
     );
   });
@@ -147,11 +129,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
       async (interceptor) => {
         const handler = await interceptor.message().respond({ type: 'delete', id: '1' });
 
-        const client = new WebSocketClient<Schema>(baseURL);
-
-        try {
-          await client.open();
-
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
           const response = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
@@ -178,9 +156,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
           expect(senderHandle.messages).toHaveLength(0);
           expect(interceptor.server.messages).toBe(receiverMessages);
           expect(interceptor.server.messages).toHaveLength(0);
-        } finally {
-          await client.close();
-        }
+        });
       },
     );
   });

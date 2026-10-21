@@ -23,7 +23,12 @@ import {
   usingWebSocketInterceptor,
   usingWebSocketInterceptorWorker,
 } from '@tests/utils/interceptors';
-import { waitForWebSocketClientClose, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
+import {
+  createBinaryMessage,
+  readBytes,
+  waitForWebSocketClientClose,
+  waitForWebSocketClientMessage,
+} from '@tests/utils/webSocket';
 
 import NotRunningWebSocketInterceptorError from '../../../interceptor/errors/NotRunningWebSocketInterceptorError';
 import { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '../../../interceptor/types/options';
@@ -61,19 +66,6 @@ async function waitForMessage<Schema extends WebSocketSchema>(client: WebSocketC
   }
 
   return data;
-}
-
-async function readBytes(data: Blob | ArrayBuffer) {
-  const arrayBuffer = data instanceof Blob ? await data.arrayBuffer() : data;
-  return Array.from(new Uint8Array(arrayBuffer));
-}
-
-function createBinaryMessage(firstByte: number, secondByte: number) {
-  const message = new ArrayBuffer(2);
-  const messageView = new Uint8Array(message);
-  messageView[0] = firstByte;
-  messageView[1] = secondByte;
-  return message;
 }
 
 export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWebSocketInterceptorWorkerTestsOptions) {

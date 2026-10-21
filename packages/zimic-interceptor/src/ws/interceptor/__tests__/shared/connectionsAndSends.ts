@@ -8,14 +8,14 @@ import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 import {
   collectWebSocketClientMessages,
+  createBinaryMessage,
+  readBytes,
   usingWebSocketClient,
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
 
-import { createBinaryMessage } from '../../../messageHandler/__tests__/shared/utils';
 import type { WebSocketInterceptorClient } from '../../types/messages';
 import type { WebSocketInterceptorType } from '../../types/options';
-import { readBytes } from './utils';
 
 type ChatMessage = WebSocketSchema<{ type: 'server'; text: string }>;
 type BinaryMessage = WebSocketSchema<ArrayBuffer>;
@@ -41,7 +41,6 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
         interceptor,
       );
 
-      const client = new WebSocketClient<ChatMessage>(baseURL);
       const connectedClients: WebSocketInterceptorClient<ChatMessage>[] = [];
       const connectionPromise = createPromiseWithResolvers<void>();
 
@@ -50,8 +49,7 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
         connectionPromise.resolve();
       });
 
-      try {
-        await client.open();
+      await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
         await connectionPromise;
 
         expect(connectedClients[0]).toBe(interceptor.clients[0]);
@@ -60,9 +58,7 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
         await messageHandledPromise;
 
         expect(connectedClients).toHaveLength(1);
-      } finally {
-        await client.close();
-      }
+      });
     });
   });
 
@@ -72,24 +68,19 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
     await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
       await promiseIfRemote(interceptor.message().effect(vi.fn()), interceptor);
 
-      const client = new WebSocketClient<ChatMessage>(baseURL);
       const removedListener = vi.fn();
       const retainedListener = vi.fn();
       interceptor.once('connection', () => interceptor.off('connection', removedListener));
       interceptor[method]('connection', removedListener);
       interceptor.on('connection', retainedListener);
 
-      try {
-        await client.open();
-
+      await usingWebSocketClient<ChatMessage>(baseURL, async () => {
         await waitFor(() => {
           expect(retainedListener).toHaveBeenCalledWith(interceptor.clients[0]);
         });
 
         expect(removedListener).not.toHaveBeenCalled();
-      } finally {
-        await client.close();
-      }
+      });
     });
   });
 
@@ -120,8 +111,6 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
     await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
       await promiseIfRemote(interceptor.message().effect(vi.fn()), interceptor);
 
-      const clients = [new WebSocketClient<ChatMessage>(baseURL), new WebSocketClient<ChatMessage>(baseURL)];
-
       const firstConnectionPromise = createPromiseWithResolvers<void>();
       const secondConnectionPromise = createPromiseWithResolvers<void>();
 
@@ -140,17 +129,15 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
 
       interceptor.once('connection', listener);
 
-      try {
-        await clients[0].open();
+      await usingWebSocketClient<ChatMessage>(baseURL, async () => {
         await firstConnectionPromise;
 
-        await clients[1].open();
-        await secondConnectionPromise;
+        await usingWebSocketClient<ChatMessage>(baseURL, async () => {
+          await secondConnectionPromise;
 
-        expect(connectionCount).toBe(2);
-      } finally {
-        await Promise.all(clients.map((client) => client.close()));
-      }
+          expect(connectionCount).toBe(2);
+        });
+      });
     });
   });
 
@@ -160,7 +147,6 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
     await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
       await promiseIfRemote(interceptor.message().effect(vi.fn()), interceptor);
 
-      const clients = [new WebSocketClient<ChatMessage>(baseURL), new WebSocketClient<ChatMessage>(baseURL)];
       const firstConnectionPromise = createPromiseWithResolvers<void>();
 
       let connectionCount = 0;
@@ -170,20 +156,17 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
         firstConnectionPromise.resolve();
       });
 
-      try {
-        await clients[0].open();
+      await usingWebSocketClient<ChatMessage>(baseURL, async () => {
         await firstConnectionPromise;
 
-        await clients[1].open();
+        await usingWebSocketClient<ChatMessage>(baseURL, async () => {
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(2);
+          });
 
-        await waitFor(() => {
-          expect(interceptor.clients).toHaveLength(2);
+          expect(connectionCount).toBe(1);
         });
-
-        expect(connectionCount).toBe(1);
-      } finally {
-        await Promise.all(clients.map((client) => client.close()));
-      }
+      });
     });
   });
 
@@ -191,7 +174,6 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
     const baseURL = getBaseURL();
 
     await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
-      const clients = Array.from({ length: 4 }, () => new WebSocketClient<ChatMessage>(baseURL));
       const connectedClients: WebSocketInterceptorClient<ChatMessage>[] = [];
 
       function listener(client: WebSocketInterceptorClient<ChatMessage>) {
@@ -200,45 +182,45 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
 
       interceptor.on('connection', listener);
 
-      try {
-        await promiseIfRemote(interceptor.message().effect(vi.fn()), interceptor);
-        await clients[0].open();
+      await promiseIfRemote(interceptor.message().effect(vi.fn()), interceptor);
 
+      await usingWebSocketClient<ChatMessage>(baseURL, async () => {
         await waitFor(() => {
           expect(connectedClients).toHaveLength(1);
         });
 
         await interceptor.clear();
         await promiseIfRemote(interceptor.message().effect(vi.fn()), interceptor);
-        await clients[1].open();
 
-        await waitFor(() => {
-          expect(connectedClients).toHaveLength(2);
+        await usingWebSocketClient<ChatMessage>(baseURL, async () => {
+          await waitFor(() => {
+            expect(connectedClients).toHaveLength(2);
+          });
+
+          await interceptor.stop();
+          await interceptor.start();
+          await promiseIfRemote(interceptor.message().effect(vi.fn()), interceptor);
+
+          await usingWebSocketClient<ChatMessage>(baseURL, async () => {
+            await waitFor(() => {
+              expect(connectedClients).toHaveLength(3);
+            });
+
+            interceptor.off('connection', listener);
+            await interceptor.stop();
+            await interceptor.start();
+            await promiseIfRemote(interceptor.message().effect(vi.fn()), interceptor);
+
+            await usingWebSocketClient<ChatMessage>(baseURL, async () => {
+              await waitFor(() => {
+                expect(interceptor.clients).toHaveLength(1);
+              });
+
+              expect(connectedClients).toHaveLength(3);
+            });
+          });
         });
-
-        await interceptor.stop();
-        await interceptor.start();
-        await promiseIfRemote(interceptor.message().effect(vi.fn()), interceptor);
-        await clients[2].open();
-
-        await waitFor(() => {
-          expect(connectedClients).toHaveLength(3);
-        });
-
-        interceptor.off('connection', listener);
-        await interceptor.stop();
-        await interceptor.start();
-        await promiseIfRemote(interceptor.message().effect(vi.fn()), interceptor);
-        await clients[3].open();
-
-        await waitFor(() => {
-          expect(interceptor.clients).toHaveLength(1);
-        });
-
-        expect(connectedClients).toHaveLength(3);
-      } finally {
-        await Promise.all(clients.map((client) => client.close()));
-      }
+      });
     });
   });
 
@@ -249,16 +231,12 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
       await promiseIfRemote(interceptor.message().effect(vi.fn()), interceptor);
 
       const error = new Error('Connection listener failed.');
-      const client = new WebSocketClient<ChatMessage>(baseURL);
-
       interceptor.on('connection', () => {
         throw error;
       });
 
-      try {
-        await usingIgnoredConsole(['error'], async (console) => {
-          await client.open();
-
+      await usingIgnoredConsole(['error'], async (console) => {
+        await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
           await waitFor(() => {
             expect(interceptor.clients).toHaveLength(1);
           });
@@ -269,9 +247,7 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
 
           expect(client.readyState).toBe(WebSocketClient.OPEN);
         });
-      } finally {
-        await client.close();
-      }
+      });
     });
   });
 
