@@ -119,13 +119,14 @@ For `zimic-web`:
 
 1. Wait for the dispatched run with `gh run watch <id> --repo zimicjs/zimic --exit-status`.
 2. Fetch tags and find the new `zimic-web@<version>` tag.
-3. Poll for the deploy run with `gh run list --repo zimicjs/zimic --workflow release-zimic-web-website.yaml --branch '<tag>' --json databaseId,url` and wait for it with `gh run watch <id> --repo zimicjs/zimic --exit-status`.
+3. Poll for the deploy run with `gh run list --repo zimicjs/zimic --workflow release-zimic-web-website.yaml --branch '<tag>' --json databaseId,url`.
+4. Poll `gh run view <id> --repo zimicjs/zimic --json status,url` until `status` is `waiting`. The deploy job requires approval in the `Vercel` environment, and the user approves it only after every related package is published, so the website never documents unreleased versions. Never approve or reject the deployment yourself. Hold the project if the run completes instead.
 
 # 6. Report
 
 When every project is done or held, show one block per project:
 
 - Package: the merged PR, the release run, the draft release URL marked unpublished, and each ambiguous PR with its include or exclude decision.
-- `zimic-web`: the dispatched run, the new tag, and the deploy run.
+- `zimic-web`: the dispatched run, the new tag, and the deploy run marked waiting for approval.
 
 List held projects last with their reasons and links. End by reminding the user to review and publish each draft release.
