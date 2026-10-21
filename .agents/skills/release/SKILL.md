@@ -129,4 +129,18 @@ When every project is done or held, show one block per project:
 - Package: the merged PR, the release run, the draft release URL marked unpublished, and each ambiguous PR with its include or exclude decision.
 - `zimic-web`: the dispatched run, the new tag, and the deploy run marked waiting for approval.
 
-List held projects last with their reasons and links. End by reminding the user to review and publish each draft release.
+List held projects last with their reasons and links.
+
+End with a checklist of the user's remaining steps. Find each package's pinned announcement, a discussion whose title starts with `<package>:` or `<package>@`, with:
+
+```bash
+gh api graphql -f query='{repository(owner:"zimicjs",name:"zimic"){pinnedDiscussions(first:10){nodes{discussion{title url}}}}}'
+```
+
+For each draft release:
+
+1. Review the draft and publish it with "Create a discussion for this release" checked in the `Announcements` category. GitHub drops a discussion category set on a draft, so it can be chosen only when publishing.
+2. Add the `release` label to the new discussion and pin it.
+3. Unpin the package's previous announcement, linked when one is pinned.
+
+For `zimic-web`, add a final item: approve the deploy run, linked, once every package release above is published to npm.
