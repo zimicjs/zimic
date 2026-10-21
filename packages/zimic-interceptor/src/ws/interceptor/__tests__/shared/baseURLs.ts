@@ -50,6 +50,42 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     }
   });
 
+  // No HTTP counterpart: WebSocket handlers have no per-handler path, so base URL paths are the only way to route
+  // messages by path.
+  it('should route messages using path discriminators', async () => {
+    const firstBaseURL = `${defaultBaseURL}/first`;
+    const secondBaseURL = `${defaultBaseURL}/second`;
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, baseURL: firstBaseURL },
+      { start: false },
+      async (firstInterceptor) => {
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, baseURL: secondBaseURL },
+          { start: false },
+          async (secondInterceptor) => {
+            await Promise.all([firstInterceptor.start(), secondInterceptor.start()]);
+            await promiseIfRemote(firstInterceptor.message().respond({ type: 'server', index: 1 }), firstInterceptor);
+            await promiseIfRemote(secondInterceptor.message().respond({ type: 'server', index: 2 }), secondInterceptor);
+
+            await usingWebSocketClient<MessageSchema>(firstBaseURL, async (firstClient) => {
+              await usingWebSocketClient<MessageSchema>(secondBaseURL, async (secondClient) => {
+                const firstMessagePromise = waitForWebSocketClientMessage(firstClient);
+                const secondMessagePromise = waitForWebSocketClientMessage(secondClient);
+
+                firstClient.send(JSON.stringify({ type: 'client', index: 1 }));
+                secondClient.send(JSON.stringify({ type: 'client', index: 2 }));
+
+                await expect(firstMessagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+                await expect(secondMessagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+              });
+            });
+          },
+        );
+      },
+    );
+  });
+
   it('should support changing the base URL after created', async () => {
     const baseURL = defaultBaseURL;
 

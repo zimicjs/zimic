@@ -290,91 +290,136 @@ export function declareTimesWebSocketMessageHandlerTests(
   });
 
   describe('Unmatched messages', () => {
-    it('should show unmatched JSON messages in times check errors', async () => {
-      await usingWebSocketInterceptor<Schema>(
-        { type, baseURL, messageSaving: { enabled: true } },
-        async (interceptor) => {
-          const handler = await interceptor
-            .message()
-            .with({ type: 'delete' })
-            .respond({ type: 'delete', id: '1' })
-            .times(1);
+    describe('Restrictions', () => {
+      it('should show unmatched JSON messages in times check errors', async () => {
+        await usingWebSocketInterceptor<Schema>(
+          { type, baseURL, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const handler = await interceptor
+              .message()
+              .with({ type: 'delete' })
+              .respond({ type: 'delete', id: '1' })
+              .times(1);
 
-          await usingWebSocketClient<Schema>(baseURL, async (client) => {
-            client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+            await usingWebSocketClient<Schema>(baseURL, async (client) => {
+              client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
-            await waitFor(() =>
-              expectWebSocketTimesCheckError(() => handler.checkTimes(), {
-                message: 'Expected exactly 1 matching message, but got 0.',
-                expectedNumberOfMessages: 1,
-                unmatchedMessages:
-                  '- { "message": { "type": "create", "body": { "text": "hello" } }, ' +
-                  '"diff": { "data": { "expected": { "type": "delete" }, ' +
-                  '"received": { "type": "create", "body": { "text": "hello" } } } } }',
-              }),
-            );
-          });
-        },
-      );
-    });
+              await waitFor(() =>
+                expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                  message: 'Expected exactly 1 matching message, but got 0.',
+                  expectedNumberOfMessages: 1,
+                  unmatchedMessages:
+                    '- { "message": { "type": "create", "body": { "text": "hello" } }, ' +
+                    '"diff": { "data": { "expected": { "type": "delete" }, ' +
+                    '"received": { "type": "create", "body": { "text": "hello" } } } } }',
+                }),
+              );
+            });
+          },
+        );
+      });
 
-    it('should show unmatched array buffer messages in times check errors', async () => {
-      await usingWebSocketInterceptor<WebSocketSchema<ArrayBuffer>>(
-        { type, baseURL, messageSaving: { enabled: true } },
-        async (interceptor) => {
-          const handler = await interceptor
-            .message()
-            .with(createBinaryMessage(1, 2))
-            .respond(createBinaryMessage(5, 6))
-            .times(1);
+      it('should show unmatched array buffer messages in times check errors', async () => {
+        await usingWebSocketInterceptor<WebSocketSchema<ArrayBuffer>>(
+          { type, baseURL, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const handler = await interceptor
+              .message()
+              .with(createBinaryMessage(1, 2))
+              .respond(createBinaryMessage(5, 6))
+              .times(1);
 
-          await usingWebSocketClient<WebSocketSchema<ArrayBuffer>>(baseURL, async (client) => {
-            client.send(createBinaryMessage(3, 4));
+            await usingWebSocketClient<WebSocketSchema<ArrayBuffer>>(baseURL, async (client) => {
+              client.send(createBinaryMessage(3, 4));
 
-            await waitFor(() =>
-              expectWebSocketTimesCheckError(() => handler.checkTimes(), {
-                message: 'Expected exactly 1 matching message, but got 0.',
-                expectedNumberOfMessages: 1,
-                unmatchedMessages:
-                  '- { "message": ArrayBuffer { byteLength: 2 }, ' +
-                  '"diff": { "data": { "expected": ArrayBuffer { byteLength: 2 }, ' +
-                  '"received": ArrayBuffer { byteLength: 2 } } } }',
-              }),
-            );
-          });
-        },
-      );
-    });
+              await waitFor(() =>
+                expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                  message: 'Expected exactly 1 matching message, but got 0.',
+                  expectedNumberOfMessages: 1,
+                  unmatchedMessages:
+                    '- { "message": ArrayBuffer { byteLength: 2 }, ' +
+                    '"diff": { "data": { "expected": ArrayBuffer { byteLength: 2 }, ' +
+                    '"received": ArrayBuffer { byteLength: 2 } } } }',
+                }),
+              );
+            });
+          },
+        );
+      });
 
-    it('should show unmatched blob messages in times check errors', async () => {
-      await usingWebSocketInterceptor<WebSocketSchema<Blob>>(
-        { type, baseURL, messageSaving: { enabled: true } },
-        async (interceptor) => {
-          const restrictedBlob = new Blob(['1'], { type: 'application/octet-stream' });
-          const blob = new Blob(['blob'], { type: 'text/plain' });
+      it('should show unmatched blob messages in times check errors', async () => {
+        await usingWebSocketInterceptor<WebSocketSchema<Blob>>(
+          { type, baseURL, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const restrictedBlob = new Blob(['1'], { type: 'application/octet-stream' });
+            const blob = new Blob(['blob'], { type: 'text/plain' });
 
-          const handler = await interceptor
-            .message()
-            .with(restrictedBlob)
-            .respond(new Blob(['response']))
-            .times(1);
+            const handler = await interceptor
+              .message()
+              .with(restrictedBlob)
+              .respond(new Blob(['response']))
+              .times(1);
 
-          await usingWebSocketClient<WebSocketSchema<Blob>>(baseURL, async (client) => {
-            client.send(blob);
+            await usingWebSocketClient<WebSocketSchema<Blob>>(baseURL, async (client) => {
+              client.send(blob);
 
-            await waitFor(() =>
-              expectWebSocketTimesCheckError(() => handler.checkTimes(), {
-                message: 'Expected exactly 1 matching message, but got 0.',
-                expectedNumberOfMessages: 1,
-                unmatchedMessages:
-                  `- { "message": ${receivedBlobMessageRepresentation}, ` +
-                  '"diff": { "data": { "expected": Blob { type: \'application/octet-stream\', size: 1 }, ' +
-                  `"received": ${receivedBlobMessageRepresentation} } } }`,
-              }),
-            );
-          });
-        },
-      );
+              await waitFor(() =>
+                expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                  message: 'Expected exactly 1 matching message, but got 0.',
+                  expectedNumberOfMessages: 1,
+                  unmatchedMessages:
+                    `- { "message": ${receivedBlobMessageRepresentation}, ` +
+                    '"diff": { "data": { "expected": Blob { type: \'application/octet-stream\', size: 1 }, ' +
+                    `"received": ${receivedBlobMessageRepresentation} } } }`,
+                }),
+              );
+            });
+          },
+        );
+      });
+
+      it('should consider messages unmatched due to sender restrictions in times check errors', async () => {
+        await usingWebSocketInterceptor<Schema>(
+          { type, baseURL, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            // Remote interceptors only accept connections after a handler is registered. This handler never matches, so
+            // the message from the other client stays unmatched.
+            await interceptor.message().with(() => false);
+
+            await usingWebSocketClient<Schema>(baseURL, async () => {
+              await waitFor(() => {
+                expect(interceptor.clients).toHaveLength(1);
+              });
+
+              await usingWebSocketClient<Schema>(baseURL, async (otherClient) => {
+                await waitFor(() => {
+                  expect(interceptor.clients).toHaveLength(2);
+                });
+
+                const [restrictedSender] = interceptor.clients;
+
+                const handler = await interceptor
+                  .message()
+                  .from(restrictedSender)
+                  .respond({ type: 'delete', id: 'restricted' })
+                  .times(1);
+
+                otherClient.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+                await waitFor(() =>
+                  expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                    message: 'Expected exactly 1 matching message, but got 0.',
+                    expectedNumberOfMessages: 1,
+                    unmatchedMessages:
+                      '- { "message": { "type": "create", "body": { "text": "hello" } }, ' +
+                      '"diff": { "sender": { "expected": "true", "received": "false" } } }',
+                  }),
+                );
+              });
+            });
+          },
+        );
+      });
     });
   });
 

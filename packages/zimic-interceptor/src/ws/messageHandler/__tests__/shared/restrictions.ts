@@ -2,11 +2,7 @@ import { waitFor } from '@zimic/utils/time';
 import { beforeAll, beforeEach, afterAll, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
-import {
-  expectWebSocketTimesCheckError,
-  usingWebSocketClient,
-  waitForWebSocketClientMessage,
-} from '@tests/utils/webSocket';
+import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import { ChatMessage, Schema, SharedWebSocketMessageHandlerTestOptions } from './utils';
@@ -185,49 +181,6 @@ export function declareRestrictionWebSocketMessageHandlerTests(
     );
   });
 
-  it('should report messages from other senders as unmatched in times checks when message saving is enabled', async () => {
-    await usingWebSocketInterceptor<Schema>(
-      { type, baseURL, messageSaving: { enabled: true } },
-      async (interceptor) => {
-        // Remote interceptors only accept connections after a handler is registered. This handler never matches, so
-        // the message from the other client stays unmatched.
-        await interceptor.message().with(() => false);
-
-        await usingWebSocketClient<Schema>(baseURL, async () => {
-          await waitFor(() => {
-            expect(interceptor.clients).toHaveLength(1);
-          });
-
-          await usingWebSocketClient<Schema>(baseURL, async (otherClient) => {
-            await waitFor(() => {
-              expect(interceptor.clients).toHaveLength(2);
-            });
-
-            const [restrictedSender] = interceptor.clients;
-
-            const handler = await interceptor
-              .message()
-              .from(restrictedSender)
-              .respond({ type: 'delete', id: 'restricted' })
-              .times(1);
-
-            otherClient.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
-
-            await waitFor(() =>
-              expectWebSocketTimesCheckError(() => handler.checkTimes(), {
-                message: 'Expected exactly 1 matching message, but got 0.',
-                expectedNumberOfMessages: 1,
-                unmatchedMessages:
-                  '- { "message": { "type": "create", "body": { "text": "hello" } }, ' +
-                  '"diff": { "sender": { "expected": "true", "received": "false" } } }',
-              }),
-            );
-          });
-        });
-      },
-    );
-  });
-
   it('should match only messages satisfying multiple restrictions', async () => {
     await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
       const effect = vi.fn();
@@ -256,32 +209,6 @@ export function declareRestrictionWebSocketMessageHandlerTests(
         await expect(matchedResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'restricted' }));
 
         expect(effect).toHaveBeenCalledTimes(1);
-        await handler.checkTimes();
-      });
-    });
-  });
-
-  it('should clear restrictions after cleared', async () => {
-    await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
-      await interceptor.message().respond({ type: 'delete', id: 'fallback' });
-
-      const handler = await interceptor
-        .message()
-        .with({ type: 'delete' })
-        .respond({ type: 'delete', id: '1' })
-        .times(1);
-
-      await usingWebSocketClient<Schema>(baseURL, async (client) => {
-        const restrictedResponse = waitForWebSocketClientMessage(client);
-        client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
-        await expect(restrictedResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'fallback' }));
-
-        await handler.clear().respond({ type: 'delete', id: '2' }).times(1);
-
-        const clearedResponse = waitForWebSocketClientMessage(client);
-        client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
-        await expect(clearedResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: '2' }));
-
         await handler.checkTimes();
       });
     });
