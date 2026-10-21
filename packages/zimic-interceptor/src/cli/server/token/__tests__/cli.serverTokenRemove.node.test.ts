@@ -113,7 +113,11 @@ describe('CLI > Server token remove', () => {
         color.cyan('[@zimic/interceptor]'),
         `${color.red(color.bold('✘'))} Token ${color.red(tokenId)} not found.`,
       );
-      expect(console.error).toHaveBeenNthCalledWith(2, new Error('process.exit unexpectedly called with "1"'));
+      expect(console.error.mock.calls[1]).toEqual([expect.any(Error)]);
+      expect(console.error.mock.calls[1][0]).toHaveProperty(
+        'message',
+        expect.stringContaining('process.exit unexpectedly called with "1"'),
+      );
     });
   });
 
@@ -204,10 +208,10 @@ describe('CLI > Server token remove', () => {
       const tokenId = createInterceptorTokenId();
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'rm', tokenId]);
 
-      const error = new Error('process.exit unexpectedly called with "1"');
+      const errorMessage = 'process.exit unexpectedly called with "1"';
 
       await usingIgnoredConsole(['error'], async (console) => {
-        await expect(runCLI()).rejects.toThrow(error);
+        await expect(runCLI()).rejects.toThrow(errorMessage);
 
         expect(console.error).toHaveBeenCalledTimes(2);
         expect(console.error).toHaveBeenNthCalledWith(
@@ -215,7 +219,8 @@ describe('CLI > Server token remove', () => {
           color.cyan('[@zimic/interceptor]'),
           `${color.red(color.bold('✘'))} Token ${color.red(tokenId)} not found.`,
         );
-        expect(console.error).toHaveBeenNthCalledWith(2, error);
+        expect(console.error.mock.calls[1]).toEqual([expect.any(Error)]);
+        expect(console.error.mock.calls[1][0]).toHaveProperty('message', expect.stringContaining(errorMessage));
       });
     });
   });

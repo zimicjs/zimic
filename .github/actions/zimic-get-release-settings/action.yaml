@@ -24,7 +24,7 @@ runs:
   steps:
     - name: Get release settings
       id: release-settings
-      uses: actions/github-script@v9
+      uses: actions/github-script@v9.0.0
       with:
         script: |
           function setOutputs(outputs) {

@@ -12,8 +12,9 @@ export default [
   ...nodeConfig.slice(0, indexOfConfigWithLanguageOptions),
   {
     ...nodeConfig[indexOfConfigWithLanguageOptions],
-    files: ['*.ts'],
+    files: ['**/*.ts'],
     languageOptions: {
+      ...nodeConfig[indexOfConfigWithLanguageOptions].languageOptions,
       parserOptions: {
         ecmaFeatures: { ts: true },
         project: path.join(currentDirectory, 'tsconfig.json'),

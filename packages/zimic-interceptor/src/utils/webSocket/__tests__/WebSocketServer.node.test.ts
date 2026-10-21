@@ -1,17 +1,14 @@
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { startHttpServer, stopHttpServer } from '@zimic/utils/server';
 import { waitFor, waitForNot } from '@zimic/utils/time';
+import { closeWebSocketClient, WebSocketCloseTimeoutError } from '@zimic/utils/ws';
 import { createServer } from 'http';
 import ClientSocket from 'isomorphic-ws';
 import { AddressInfo } from 'net';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 
-import {
-  closeClientSocket,
-  waitForOpenClientSocket,
-  WebSocketCloseTimeoutError,
-  WebSocketMessageTimeoutError,
-  WebSocketOpenTimeoutError,
-} from '@/utils/webSocket';
+import { waitForOpenClientSocket, WebSocketMessageAbortError, WebSocketMessageTimeoutError } from '@/utils/webSocket';
+import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
 import InvalidWebSocketMessageError from '../errors/InvalidWebSocketMessageError';
@@ -25,10 +22,10 @@ import {
 } from '../types';
 import WebSocketServer from '../WebSocketServer';
 import {
-  delayClientSocketOpen,
+  collectClientSocketJSONMessages,
   delayClientSocketClose,
-  delayServerSocketConnection,
   delayServerSocketClose,
+  waitForClientSocketClose,
 } from './utils';
 
 describe('Web socket server', () => {
@@ -58,7 +55,7 @@ describe('Web socket server', () => {
 
   afterEach(async () => {
     if (rawClient) {
-      await closeClientSocket(rawClient);
+      await closeWebSocketClient(rawClient);
       rawClient = undefined;
     }
 
@@ -144,28 +141,121 @@ describe('Web socket server', () => {
       });
     });
 
-    it('should log an error if a client socket open timeout is reached', async () => {
-      const delayedClientSocketAddEventListener = delayClientSocketOpen(300);
-      const delayedServerSocketOn = delayServerSocketConnection();
+    it('should stop pending connection setup when stopping', async () => {
+      const connectionResultPromise = createPromiseWithResolvers<{ handled: boolean }>();
+      const handleConnection = vi.fn(() => connectionResultPromise);
+
+      server = new WebSocketServer({ httpServer, handleConnection });
+      server.start();
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+        await waitFor(() => {
+          expect(handleConnection).toHaveBeenCalledOnce();
+        });
+
+        await server!.stop();
+
+        vi.useFakeTimers();
+
+        try {
+          connectionResultPromise.resolve({ handled: false });
+          await vi.advanceTimersByTimeAsync(server!.socketTimeout);
+
+          expect(console.error).not.toHaveBeenCalled();
+        } finally {
+          vi.useRealTimers();
+        }
+      });
+    });
+
+    it('should not finish pending connection setup while stopping', async () => {
+      const connectionResultPromise = createPromiseWithResolvers<{ handled: boolean }>();
+      let sendSpy: MockInstance<ClientSocket['send']> | undefined;
+
+      server = new WebSocketServer({
+        httpServer,
+        handleConnection: (socket) => {
+          sendSpy = vi.spyOn(socket, 'send');
+          return connectionResultPromise;
+        },
+      });
+      server.start();
 
       try {
-        const socketTimeout = 100;
-        server = new WebSocketServer({ httpServer, socketTimeout });
-        expect(server.socketTimeout).toBe(socketTimeout);
-        server.start();
+        rawClient = new ClientSocket(`ws://localhost:${port}`);
 
-        await usingIgnoredConsole(['error'], async (console) => {
-          rawClient = new ClientSocket(`ws://localhost:${port}`);
-
-          await waitFor(() => {
-            expect(console.error).toHaveBeenCalledTimes(1);
-          });
-          expect(console.error).toHaveBeenCalledWith(new WebSocketOpenTimeoutError(socketTimeout));
+        await waitFor(() => {
+          expect(sendSpy).toBeDefined();
         });
+
+        connectionResultPromise.resolve({ handled: false });
+        await server.stop();
+
+        expect(sendSpy).not.toHaveBeenCalledWith('socket:auth:valid');
       } finally {
-        delayedClientSocketAddEventListener.mockRestore();
-        delayedServerSocketOn.mockRestore();
+        sendSpy?.mockRestore();
       }
+    });
+
+    it('should stop pending authentication when stopping', async () => {
+      const authenticationResultPromise = createPromiseWithResolvers<{ isValid: true }>();
+      const authenticate = vi.fn(() => authenticationResultPromise);
+
+      server = new WebSocketServer({ httpServer, authenticate });
+      server.start();
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+        await waitFor(() => {
+          expect(authenticate).toHaveBeenCalledOnce();
+        });
+
+        await server!.stop();
+
+        vi.useFakeTimers();
+
+        try {
+          authenticationResultPromise.resolve({ isValid: true });
+          await vi.advanceTimersByTimeAsync(server!.socketTimeout);
+
+          expect(console.error).not.toHaveBeenCalled();
+        } finally {
+          vi.useRealTimers();
+        }
+      });
+    });
+
+    it('should not register connections handled during setup', async () => {
+      const handleConnection = vi.fn((socket: ClientSocket) => {
+        socket.resume();
+        return { handled: true };
+      });
+
+      server = new WebSocketServer({ httpServer, handleConnection });
+      server.start();
+
+      rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+      const receivedMessages: ClientSocket.MessageEvent[] = [];
+
+      rawClient.addEventListener('message', (message) => {
+        receivedMessages.push(message);
+      });
+
+      await waitForOpenClientSocket(rawClient);
+
+      await waitFor(() => {
+        expect(handleConnection).toHaveBeenCalledOnce();
+      });
+
+      server.send('no-reply', { message: 'test' });
+
+      await waitForNot(() => {
+        expect(receivedMessages.length).toBeGreaterThan(0);
+      });
     });
 
     it('should throw an error if a client socket close timeout is reached', async () => {
@@ -196,17 +286,7 @@ describe('Web socket server', () => {
       await waitForOpenClientSocket(rawClient);
 
       type EventMessage = WebSocketEventMessage<Schema, 'no-reply'>;
-      const eventMessages: EventMessage[] = [];
-
-      rawClient.addEventListener('message', (message) => {
-        /* istanbul ignore if -- @preserve
-         * All messages are expected to be strings. */
-        if (typeof message.data !== 'string') {
-          throw new Error('Unexpected message type');
-        }
-        const parsedMessage = JSON.parse(message.data) as EventMessage;
-        eventMessages.push(parsedMessage);
-      });
+      const eventMessages = collectClientSocketJSONMessages<EventMessage>(rawClient);
 
       const eventMessage: EventMessage['data'] = { message: 'test' };
       server.send('no-reply', eventMessage);
@@ -248,17 +328,7 @@ describe('Web socket server', () => {
       await waitForOpenClientSocket(rawClient);
 
       type RequestMessage = WebSocketEventMessage<Schema, 'with-reply'>;
-      const requestMessages: RequestMessage[] = [];
-
-      rawClient.addEventListener('message', (message) => {
-        /* istanbul ignore if -- @preserve
-         * All messages are expected to be strings. */
-        if (typeof message.data !== 'string') {
-          throw new Error('Unexpected message type');
-        }
-        const parsedMessage = JSON.parse(message.data) as RequestMessage;
-        requestMessages.push(parsedMessage);
-      });
+      const requestMessages = collectClientSocketJSONMessages<RequestMessage>(rawClient);
 
       const requestMessage: RequestMessage['data'] = { question: 'test' };
       const replyPromise = server.request('with-reply', requestMessage);
@@ -303,6 +373,20 @@ describe('Web socket server', () => {
       );
     });
 
+    it('should abort pending reply requests if stopped', async () => {
+      server = new WebSocketServer({ httpServer });
+      server.start();
+
+      rawClient = new ClientSocket(`ws://localhost:${port}`);
+      await waitForOpenClientSocket(rawClient, { waitForAuthentication: true });
+
+      const replyPromise = server.request('with-reply', { question: 'test' });
+
+      await server.stop();
+
+      await expect(replyPromise).rejects.toThrow(new WebSocketMessageAbortError());
+    });
+
     it('should support receiving reply requests from clients', async () => {
       server = new WebSocketServer({ httpServer });
       server.start();
@@ -319,17 +403,7 @@ describe('Web socket server', () => {
       });
 
       type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
-      const replyMessages: ReplyMessage[] = [];
-
-      rawClient.addEventListener('message', (message) => {
-        /* istanbul ignore if -- @preserve
-         * All messages are expected to be strings. */
-        if (typeof message.data !== 'string') {
-          throw new Error('Unexpected message type');
-        }
-        const parsedMessage = JSON.parse(message.data) as ReplyMessage;
-        replyMessages.push(parsedMessage);
-      });
+      const replyMessages = collectClientSocketJSONMessages<ReplyMessage>(rawClient);
 
       const requestMessage: RequestMessage['data'] = { question: 'test' };
       rawClient.send(
@@ -442,17 +516,7 @@ describe('Web socket server', () => {
       await waitForOpenClientSocket(rawClient);
 
       type RequestMessage = WebSocketEventMessage<Schema, 'with-reply'>;
-      const requestMessages: RequestMessage[] = [];
-
-      rawClient.addEventListener('message', (message) => {
-        /* istanbul ignore if -- @preserve
-         * All messages are expected to be strings. */
-        if (typeof message.data !== 'string') {
-          throw new Error('Unexpected message type');
-        }
-        const parsedMessage = JSON.parse(message.data) as RequestMessage;
-        requestMessages.push(parsedMessage);
-      });
+      const requestMessages = collectClientSocketJSONMessages<RequestMessage>(rawClient);
 
       type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
       const replyMessages: ReplyMessage[] = [];
@@ -505,17 +569,7 @@ describe('Web socket server', () => {
       await waitForOpenClientSocket(rawClient);
 
       type RequestMessage = WebSocketEventMessage<Schema, 'with-reply'>;
-      const eventMessages: RequestMessage[] = [];
-
-      rawClient.addEventListener('message', (message) => {
-        /* istanbul ignore if -- @preserve
-         * All messages are expected to be strings. */
-        if (typeof message.data !== 'string') {
-          throw new Error('Unexpected message type');
-        }
-        const parsedMessage = JSON.parse(message.data) as RequestMessage;
-        eventMessages.push(parsedMessage);
-      });
+      const eventMessages = collectClientSocketJSONMessages<RequestMessage>(rawClient);
 
       type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
       const replyMessages: ReplyMessage[] = [];
@@ -572,6 +626,108 @@ describe('Web socket server', () => {
   });
 
   describe('Error handling', () => {
+    it('should close connection with a policy violation code if authentication is rejected', async () => {
+      const rejectionMessage = 'Rejected.';
+
+      server = new WebSocketServer({
+        httpServer,
+        authenticate: () => ({ isValid: false, message: rejectionMessage }),
+      });
+      server.start();
+
+      rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+      const closeEvent = await waitForClientSocketClose(rawClient);
+
+      expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.POLICY_VIOLATION);
+      expect(closeEvent.reason).toBe(rejectionMessage);
+    });
+
+    it('should log thrown authentication failures and close the socket as an internal error', async () => {
+      const error = new Error('Authentication failed.');
+
+      server = new WebSocketServer({
+        httpServer,
+        authenticate: () => {
+          throw error;
+        },
+      });
+      server.start();
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+        const closeEvent = await waitForClientSocketClose(rawClient);
+
+        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.INTERNAL_ERROR);
+        expect(console.error).toHaveBeenCalledWith(error);
+      });
+    });
+
+    it('should log thrown connection handler failures and close the socket as an internal error', async () => {
+      const error = new Error('Connection handler failed.');
+
+      server = new WebSocketServer({
+        httpServer,
+        handleConnection: () => {
+          throw error;
+        },
+      });
+      server.start();
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+        const closeEvent = await waitForClientSocketClose(rawClient);
+
+        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.INTERNAL_ERROR);
+        expect(console.error).toHaveBeenCalledWith(error);
+      });
+    });
+
+    it('should clean up a partially registered socket after setup fails', async () => {
+      const error = new Error('Authentication confirmation failed.');
+      let serverSocket!: ClientSocket;
+      let sendSpy: MockInstance<ClientSocket['send']> | undefined;
+      let initialListenerCounts!: Record<'message' | 'close' | 'error', number>;
+
+      try {
+        server = new WebSocketServer({
+          httpServer,
+          handleConnection: (socket) => {
+            serverSocket = socket;
+            sendSpy = vi.spyOn(socket, 'send').mockImplementationOnce(() => {
+              throw error;
+            });
+            initialListenerCounts = {
+              message: socket.listenerCount('message'),
+              close: socket.listenerCount('close'),
+              error: socket.listenerCount('error'),
+            };
+            return { handled: false };
+          },
+        });
+        server.start();
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+          const closeEvent = await waitForClientSocketClose(rawClient);
+
+          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.INTERNAL_ERROR);
+          expect(sendSpy).toHaveBeenCalledWith('socket:auth:valid');
+          await waitFor(() => {
+            expect(serverSocket.listenerCount('message')).toBe(initialListenerCounts.message);
+            expect(serverSocket.listenerCount('close')).toBe(initialListenerCounts.close);
+            expect(serverSocket.listenerCount('error')).toBe(initialListenerCounts.error);
+          });
+          expect(console.error).toHaveBeenCalledWith(error);
+        });
+      } finally {
+        sendSpy?.mockRestore();
+      }
+    });
+
     it('should log http server errors to the console', async () => {
       server = new WebSocketServer({ httpServer });
       server.start();
