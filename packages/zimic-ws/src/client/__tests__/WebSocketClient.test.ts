@@ -1,10 +1,9 @@
 import { startHttpServer, stopHttpServer } from '@zimic/utils/server';
 import { waitFor, waitForNot } from '@zimic/utils/time';
+import { WebSocketCloseTimeoutError, WebSocketOpenTimeoutError } from '@zimic/utils/ws';
 import { createServer as createHttpServer, Server as HttpServer } from 'http';
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
-import { WebSocketCloseTimeoutError } from '@/errors/WebSocketCloseTimeoutError';
-import { WebSocketOpenTimeoutError } from '@/errors/WebSocketOpenTimeoutError';
 import { WebSocketServer } from '@/server';
 import { WebSocketSchema } from '@/types/schema';
 
@@ -15,10 +14,16 @@ import { delayWebSocketClose, delayWebSocketListenerTrigger } from './utils';
 describe('WebSocketClient', () => {
   let httpServer: HttpServer;
 
-  type Schema = WebSocketSchema<{
-    type: 'message';
-    data: string;
-  }>;
+  type Schema = WebSocketSchema<
+    | {
+        type: 'message';
+        data: string;
+      }
+    | {
+        type: 'count';
+        data: number;
+      }
+  >;
 
   let webSocketServer: WebSocketServer<Schema>;
   let webSocketClient: WebSocketClient<Schema> | undefined;
@@ -230,7 +235,12 @@ describe('WebSocketClient', () => {
       webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
         serverWebSocketClient.addEventListener('message', (event) => {
           const message = JSON.parse(event.data);
+
           expectTypeOf(message).toEqualTypeOf<Schema>();
+          expectTypeOf(message.type).toEqualTypeOf<'message' | 'count'>();
+          expectTypeOf(message.data).toEqualTypeOf<string | number>();
+
+          expect(message.type).toBe('message');
 
           serverWebSocketClient.send(
             JSON.stringify({

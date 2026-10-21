@@ -192,7 +192,7 @@ await handler.respond((request) => declaration);
 
 **Arguments**:
 
-1. **declaration**: `HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode> | HttpRequestHandlerResponseDeclarationFactory<MethodSchema, StatusCode>`
+1. **declaration**: `HttpRequestHandlerResponseStaticDeclaration<MethodSchema, StatusCode> | HttpRequestHandlerResponseComputedDeclaration<Path, MethodSchema, StatusCode>`
 
    The response declaration or a factory to create it.
 
@@ -223,7 +223,7 @@ await handler.respond((request) => declaration);
 
       The intercepted request to respond to.
 
-   **Returns**: `Promise<HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>> | HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>`
+   **Returns**: `Promise<HttpRequestHandlerResponseStaticDeclaration<MethodSchema, StatusCode>> | HttpRequestHandlerResponseStaticDeclaration<MethodSchema, StatusCode>`
 
 **Returns**: `HttpRequestHandler<Method, Path, StatusCode>`
 

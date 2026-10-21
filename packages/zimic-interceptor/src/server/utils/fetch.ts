@@ -16,7 +16,6 @@ export function getFetchAPI(): FetchAPI {
     TextEncoderStream,
     Blob,
     File,
-    crypto: globalThis.crypto,
     btoa,
     TextEncoder,
     TextDecoder,
