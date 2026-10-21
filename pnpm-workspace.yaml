@@ -1,4 +1,4 @@
-minimumReleaseAge: 4320 # 3 days in minutes
+minimumReleaseAge: 1440 # 1 day in minutes
 autoInstallPeers: true
 engineStrict: false
 sideEffectsCache: false
@@ -22,17 +22,21 @@ overrides:
 
   body-parser@1: ^1.20.6
 
-  brace-expansion@1: ^5.0.8
-  brace-expansion@2: ^5.0.8
-  brace-expansion@3: ^5.0.8
-  brace-expansion@4: ^5.0.8
-  brace-expansion@5: ^5.0.8
+  brace-expansion@1: ^5.0.12
+  brace-expansion@2: ^5.0.12
+  brace-expansion@3: ^5.0.12
+  brace-expansion@4: ^5.0.12
+  brace-expansion@5: ^5.0.12
 
-  dompurify@3: ^3.4.11
+  colord@2: ^2.9.4
+
+  compression@1: ^1.8.2
+
+  dompurify@3: ^3.4.16
 
   esbuild@0: ^0.28.1
 
-  fast-uri@3: ^3.1.4
+  fast-uri@3: ^3.1.8
 
   form-data@4: ^4.0.6
 
@@ -43,7 +47,7 @@ overrides:
 
   lodash@4: ^4.17.23
 
-  qs@6: ^6.15.2
+  qs@6: ^6.16.0
   rollup@4: ^4.59.0
 
   node-forge@1: ^1.3.2
@@ -56,25 +60,37 @@ overrides:
 
   postcss@8: ^8.5.18
 
+  postcss-selector-parser@6: ^7.1.6
+  postcss-selector-parser@7: ^7.1.6
+
+  proxy-addr@2: ^2.0.8
+
   http-proxy-middleware@2: ^3.0.7
   http-proxy-middleware@3: ^3.0.7
 
-  joi@17: ^17.13.4
+  image-size@2: ^2.0.3
 
-  js-yaml@4: ^4.3.0
+  joi@17: ^17.13.7
+
+  js-yaml@4: ^4.3.2
 
   launch-editor@2: ^2.14.1
 
   serialize-javascript@6: ^7.0.5
   serialize-javascript@7: ^7.0.5
 
-  shell-quote@1: ^1.8.4
+  shell-quote@1: ^1.12.0
 
-  sharp@0: ^0.35.0
+  sharp@0: ^0.35.5
 
-  svgo@3: ^3.3.4
+  source-map-js@1: ^1.2.2
+
+  svgo@3: ^3.3.5
+
+  tinypool@1: ^2.2.0
 
   undici@7: ^7.28.0
+  undici@8: ^8.10.2
 
   uuid@8: ^11.1.1
   uuid@9: ^11.1.1
@@ -91,6 +107,7 @@ overrides:
   websocket-driver@0: ^0.7.5
 
 allowBuilds:
+  '@parcel/watcher': false
   '@swc/core': true
   '@zimic/interceptor': true
   bufferutil: true

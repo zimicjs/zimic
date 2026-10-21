@@ -1,12 +1,11 @@
 import { Collection } from '@zimic/utils/types';
+import { closeWebSocketClient, DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } from '@zimic/utils/ws';
 import ClientSocket from 'isomorphic-ws';
 
 import {
-  DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT,
   DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT,
   WebSocketMessageAbortError,
   WebSocketMessageTimeoutError,
-  closeClientSocket,
   waitForOpenClientSocket,
 } from '@/utils/webSocket';
 
@@ -64,7 +63,12 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     };
     socket.addEventListener('message', handleSocketMessage);
 
-    await openPromise;
+    try {
+      await openPromise;
+    } catch (error) {
+      socket.removeEventListener('message', handleSocketMessage);
+      throw error;
+    }
 
     /* istanbul ignore next -- @preserve
      * It is difficult to reliably simulate socket errors in tests. */
@@ -87,6 +91,8 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     socket.addEventListener('close', handleSocketClose);
 
     this.sockets.add(socket);
+
+    return handleSocketClose;
   }
 
   private handleSocketMessage = async (socket: ClientSocket, rawMessage: ClientSocket.MessageEvent) => {
@@ -123,7 +129,7 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     let parsedMessage: unknown;
 
     try {
-      parsedMessage = JSON.parse(stringifiedMessage) as unknown;
+      parsedMessage = JSON.parse(stringifiedMessage);
     } catch {
       throw new InvalidWebSocketMessageError(stringifiedMessage);
     }
@@ -201,7 +207,7 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
 
   protected async closeClientSockets(sockets: Collection<ClientSocket> = this.sockets) {
     const closingPromises = Array.from(sockets, async (socket) => {
-      await closeClientSocket(socket, { timeout: this.socketTimeout });
+      await closeWebSocketClient(socket, { timeout: this.socketTimeout });
     });
     await Promise.all(closingPromises);
   }
@@ -370,13 +376,8 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
   }
 
   offAny() {
+    // The abort listeners are kept so that closing the sockets after this call rejects the pending requests.
     this.channelListeners = {};
-
-    for (const listenersBySocket of Object.values(this.socketListeners)) {
-      for (const listeners of listenersBySocket.values()) {
-        listeners.clear();
-      }
-    }
   }
 
   private getOrCreateChannelListeners<Channel extends WebSocketChannel<Schema>>(channel: Channel) {

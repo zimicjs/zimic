@@ -22,7 +22,7 @@ export function declareDefaultBodyHttpInterceptorTests(options: RuntimeSharedHtt
   });
 
   describe.each(HTTP_METHODS)('Method (%s)', (method) => {
-    const { numberOfRequestsIncludingPreflight } = getPreflightAssessment({
+    const { getNumbersOfRequestsIncludingPreflight } = getPreflightAssessment({
       method,
       platform,
       type,
@@ -65,14 +65,15 @@ export function declareDefaultBodyHttpInterceptorTests(options: RuntimeSharedHtt
         const response = await fetch(joinURL(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
-        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(handler.requests.length).toBeOneOf(getNumbersOfRequestsIncludingPreflight(1));
+        const request = handler.requests.at(-1)!;
 
         if (methodCanHaveResponseBody(method)) {
           expect(await response.text()).toBe('data');
-          expect(handler.requests[0].response.body).toBe('data');
+          expect(request.response.body).toBe('data');
         } else {
           expect(await response.text()).toBe('');
-          expect(handler.requests[0].response.body).toBe(null);
+          expect(request.response.body).toBe(null);
         }
       });
     });

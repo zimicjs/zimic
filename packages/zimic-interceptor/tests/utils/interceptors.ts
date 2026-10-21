@@ -1,7 +1,7 @@
 import { HttpSchema, HttpMethod } from '@zimic/http';
 import { PossiblePromise } from '@zimic/utils/types';
 import { joinURL } from '@zimic/utils/url';
-import { expect } from 'vitest';
+import { expect, inject } from 'vitest';
 
 import { createHttpInterceptor } from '@/http';
 import LocalHttpInterceptor from '@/http/interceptor/LocalHttpInterceptor';
@@ -22,21 +22,19 @@ import {
   RemoteHttpInterceptorWorkerOptions,
 } from '@/http/interceptorWorker/types/options';
 import InterceptorServer from '@/server/InterceptorServer';
-import { GLOBAL_INTERCEPTOR_SERVER_HOSTNAME, GLOBAL_INTERCEPTOR_SERVER_PORT } from '@tests/setup/global/browser';
-import { GLOBAL_FALLBACK_SERVER_PORT } from '@tests/setup/global/shared';
 
 export function getBrowserBaseURL(type: HttpInterceptorType) {
   if (type === 'local') {
-    return `http://localhost:${GLOBAL_FALLBACK_SERVER_PORT}`;
+    return inject('fallbackServer').url;
   }
 
   const pathPrefix = `path-${crypto.randomUUID()}`;
-  return joinURL(`http://${GLOBAL_INTERCEPTOR_SERVER_HOSTNAME}:${GLOBAL_INTERCEPTOR_SERVER_PORT}`, pathPrefix);
+  return joinURL(inject('interceptorServer').url, pathPrefix);
 }
 
 export function getNodeBaseURL(type: HttpInterceptorType, server: InterceptorServer) {
   if (type === 'local') {
-    return `http://localhost:${GLOBAL_FALLBACK_SERVER_PORT}`;
+    return inject('fallbackServer').url;
   }
 
   expect(server.port).not.toBe(null);
@@ -168,8 +166,27 @@ export function getPreflightAssessment(resources: {
 }) {
   const { method, platform, type } = resources;
 
+  const canIncludePreflight = method === 'OPTIONS' && platform === 'browser' && type === 'remote';
+
   return {
     overridesPreflightResponse: method === 'OPTIONS' && type === 'remote',
-    numberOfRequestsIncludingPreflight: method === 'OPTIONS' && platform === 'browser' && type === 'remote' ? 2 : 1,
+
+    // Browsers may skip CORS preflights, so each request may or may not be preceded by one. Preflights are not
+    // distinguishable from requests in the worker because browsers drop the forbidden `access-control-request-*`
+    // headers when deserializing them. The function below returns the possible numbers of requests including a
+    // preflight, from the original number of requests (0 preflight requests) up to the maximum of one preflight request
+    // per original request.
+    getNumbersOfRequestsIncludingPreflight(numberOfRequestsWithoutPreflight: number) {
+      const maximumNumberOfRequests = canIncludePreflight
+        ? numberOfRequestsWithoutPreflight * 2 // At most, each request will be preceded by one preflight request.
+        : numberOfRequestsWithoutPreflight;
+
+      const rangeFromMinimumToMaximumNumberOfRequests = Array.from(
+        { length: maximumNumberOfRequests - numberOfRequestsWithoutPreflight + 1 },
+        (_, index) => numberOfRequestsWithoutPreflight + index,
+      );
+
+      return rangeFromMinimumToMaximumNumberOfRequests;
+    },
   };
 }

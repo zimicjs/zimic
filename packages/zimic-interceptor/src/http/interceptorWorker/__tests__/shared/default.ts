@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
 import NotRunningHttpInterceptorError from '@/http/interceptor/errors/NotRunningHttpInterceptorError';
+import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
+import { BrowserMSWWorker, NodeMSWWorker } from '@/interceptor/types/msw';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { createInternalHttpInterceptor, usingHttpInterceptorWorker } from '@tests/utils/interceptors';
 
@@ -8,7 +10,6 @@ import { createHttpInterceptorWorker } from '../../factory';
 import HttpInterceptorWorker from '../../HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '../../LocalHttpInterceptorWorker';
 import RemoteHttpInterceptorWorker from '../../RemoteHttpInterceptorWorker';
-import { BrowserMSWWorker, NodeMSWWorker } from '../../types/msw';
 import { LocalHttpInterceptorWorkerOptions, RemoteHttpInterceptorWorkerOptions } from '../../types/options';
 import { SharedHttpInterceptorWorkerTestOptions } from './types';
 
@@ -89,6 +90,33 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
     });
   });
 
+  it('should support starting again after failing to start at first', async () => {
+    await usingHttpInterceptorWorker(workerOptions, { start: false }, async (worker) => {
+      const error = new Error('Unknown error');
+
+      const startSpy =
+        worker instanceof LocalHttpInterceptorWorker
+          ? vi.spyOn(worker, 'getMSWWorkerOrCreate')
+          : vi.spyOn(worker.webSocketClient, 'start');
+
+      startSpy.mockRejectedValueOnce(error);
+
+      try {
+        await usingIgnoredConsole(['error'], async () => {
+          await expect(worker.start()).rejects.toThrow(error);
+        });
+
+        expect(worker.isRunning).toBe(false);
+
+        await worker.start();
+
+        expect(worker.isRunning).toBe(true);
+      } finally {
+        startSpy.mockRestore();
+      }
+    });
+  });
+
   it('should not throw an error when stopped while not running', async () => {
     await usingHttpInterceptorWorker(workerOptions, { start: false }, async (worker) => {
       expect(worker.isRunning).toBe(false);
@@ -125,6 +153,34 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
       );
 
       expect(worker.isRunning).toBe(false);
+    });
+  });
+
+  it('should support retrying after failing to stop', async () => {
+    await usingHttpInterceptorWorker(workerOptions, async (worker) => {
+      expect(worker.isRunning).toBe(true);
+
+      const error = new Error('Unknown error');
+
+      // Stopping normally does not fail. To simulate a failure, we need to mock the stop method to throw an error.
+      if (worker instanceof LocalHttpInterceptorWorker) {
+        vi.spyOn(worker, 'getMSWWorkerOrCreate').mockRejectedValueOnce(error);
+      } else {
+        vi.spyOn(worker.webSocketClient, 'stop').mockRejectedValueOnce(error);
+      }
+
+      await expect(worker.stop()).rejects.toThrow(error);
+      await worker.stop();
+
+      expect(worker.isRunning).toBe(false);
+    });
+  });
+
+  it('should support being started while stopping', async () => {
+    await usingHttpInterceptorWorker(workerOptions, async (worker) => {
+      await Promise.all([worker.stop(), worker.start()]);
+
+      expect(worker.isRunning).toBe(true);
     });
   });
 
@@ -195,16 +251,30 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
   }
 
   if (defaultWorkerOptions.type === 'local') {
+    it('should keep the shared MSW worker running after one of multiple local workers stops', async () => {
+      await usingHttpInterceptorWorker(workerOptions, async (worker) => {
+        await usingHttpInterceptorWorker(workerOptions, async (otherWorker) => {
+          await worker.stop();
+
+          expect(worker.isRunning).toBe(false);
+          expect(otherWorker.isRunning).toBe(true);
+          expect(LocalMSWWorkerStore.isMSWWorkerRunning).toBe(true);
+        });
+      });
+    });
+
     it('should throw an error after failing to start due to a unknown error', async () => {
       const interceptorWorker = createHttpInterceptorWorker(defaultWorkerOptions);
+      const mswWorker = await interceptorWorker.getMSWWorkerOrCreate();
+      const numberOfHandlersBeforeStart = mswWorker.listHandlers().length;
 
       const error = new Error('Unknown error');
 
       if (platform === 'browser') {
-        const internalBrowserWorker = (await interceptorWorker.getMSWWorkerOrCreate()) as BrowserMSWWorker;
+        const internalBrowserWorker = mswWorker as BrowserMSWWorker;
         vi.spyOn(internalBrowserWorker, 'start').mockRejectedValueOnce(error);
       } else {
-        const internalNodeWorker = (await interceptorWorker.getMSWWorkerOrCreate()) as NodeMSWWorker;
+        const internalNodeWorker = mswWorker as NodeMSWWorker;
         vi.spyOn(internalNodeWorker, 'listen').mockImplementationOnce(() => {
           throw error;
         });
@@ -217,15 +287,17 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
           /* istanbul ignore else -- @preserve
            * Because we only start the singleton browser worker once, the mock rejection will only happen if the global
            * worker is not yet running. If it is, the start will succeed because the worker won't be restarted. */
-          if (LocalHttpInterceptorWorker.isMSWWorkerRunning) {
+          if (LocalMSWWorkerStore.isMSWWorkerRunning) {
             await expect(interceptorStartPromise).resolves.not.toThrow();
           } else {
             await expect(interceptorStartPromise).rejects.toThrow(error);
+            expect(mswWorker.listHandlers()).toHaveLength(numberOfHandlersBeforeStart);
           }
 
           expect(console.error).toHaveBeenCalledTimes(0);
         } else {
           await expect(interceptorStartPromise).rejects.toThrow(error);
+          expect(mswWorker.listHandlers()).toHaveLength(numberOfHandlersBeforeStart);
           expect(console.error).toHaveBeenCalledTimes(1);
           expect(console.error).toHaveBeenCalledWith(error);
         }

@@ -96,14 +96,16 @@ declare global {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       replacer?: ((this: any, key: string, value: Value) => any) | (number | string)[] | null,
       space?: string | number,
-    ): JSONStringified<Value>;
+    ): Value extends Value ? JSONStringified<Value> : never;
 
     // eslint-disable-next-line @typescript-eslint/method-signature-style
-    parse<Value>(
-      text: JSONStringified<Value>,
+    parse<StringifiedValue extends string>(
+      text: StringifiedValue,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       reviver?: (this: any, key: string, value: any) => any,
-    ): JSONSerialized<Value>;
+      // Any is the default return type of `JSON.parse` when the input is a string, so we use it here as well.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ): StringifiedValue extends JSONStringified<infer Value> ? JSONSerialized<Value> : any;
   }
 }
 
