@@ -9,7 +9,7 @@ Release one or more Zimic projects from `canary`. Use `gh` from the repository r
 
 There are two release paths:
 
-- **Packages** go through a pull request from `canary` to the package's long-lived branch `<package>@<major>`, such as `@zimic/http@1`. The `<package>:stable` label makes `release-<slug>-to-github.yaml` strip the pre-release suffix and create a draft GitHub release `<package>@<version>` when the PR is merged. Publishing that draft pushes the tag, which publishes to npm.
+- **Packages** go through a pull request from `canary` to the package's long-lived branch `<package>@<major>`, such as `@zimic/http@1`. The `<package>:stable` label makes `release-<slug>-to-github.yaml` strip the pre-release suffix and create a draft GitHub release `<package>@<version>` when the PR is merged. Publishing that draft pushes the tag, which starts `release-<slug>-package.yaml`. Its npm publish waits for approval in the `NPM` environment.
 - **`zimic-web`** has no long-lived branch. Dispatching `release-zimic-web-to-github.yaml` on `canary` pushes a `zimic-web@<version>` tag, which triggers `release-zimic-web-website.yaml` to deploy. It creates no GitHub release.
 
 Run waits (`gh pr checks --watch`, `gh run watch`) as background commands and continue with each project when its wait exits. A workflow run appears a few seconds after the event that triggers it, so poll each `gh run list` lookup every 15 seconds until a matching run appears; never take an older run. Give up on any poll or retry after 10 minutes without a result and hold the project with that reason. If any step fails for a project, hold that project: leave its PR or run as is, record the reason, and continue with the others.
@@ -146,7 +146,8 @@ gh api graphql -f query='{repository(owner:"zimicjs",name:"zimic"){pinnedDiscuss
 For each draft release:
 
 1. Review the draft and publish it with "Create a discussion for this release" checked in the `Announcements` category. GitHub drops a discussion category set on a draft, so it can be chosen only when publishing.
-2. Add the `release` label to the new discussion and pin it.
-3. Unpin the package's previous announcement, linked when one is pinned.
+2. Approve the `NPM` deployment of the package's run in `https://github.com/zimicjs/zimic/actions/workflows/release-<slug>-package.yaml`.
+3. Add the `release` label to the new discussion and pin it.
+4. Unpin the package's previous announcement, linked when one is pinned.
 
 For `zimic-web`, add a final item: approve the deploy run, linked, once every package release above is published to npm.
