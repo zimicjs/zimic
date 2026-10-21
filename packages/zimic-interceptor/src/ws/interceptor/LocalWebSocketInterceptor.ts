@@ -5,7 +5,7 @@ import {
   WebSocketInterceptorClient as PublicWebSocketInterceptorClient,
   WebSocketInterceptorServer as PublicWebSocketInterceptorServer,
 } from './types/messages';
-import { LocalWebSocketInterceptorOptions } from './types/options';
+import { LocalWebSocketInterceptorOptions, UnhandledMessageStrategy } from './types/options';
 import {
   LocalWebSocketInterceptor as PublicLocalWebSocketInterceptor,
   type WebSocketInterceptorConnectionListener,
@@ -25,6 +25,7 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
     this.implementation = new WebSocketInterceptorImplementation<Schema>({
       baseURL,
       messageSaving: options.messageSaving,
+      onUnhandledMessage: options.onUnhandledMessage,
       Handler: LocalWebSocketMessageHandler,
       createWorker: () => this.store.getOrCreateLocalWorker({}),
       deleteWorker: () => this.store.deleteLocalWorker(),
@@ -57,6 +58,14 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
 
   set messageSaving(messageSaving: WebSocketInterceptorMessageSaving) {
     this.implementation.messageSaving = messageSaving;
+  }
+
+  get onUnhandledMessage() {
+    return this.implementation.onUnhandledMessage;
+  }
+
+  set onUnhandledMessage(onUnhandledMessage: UnhandledMessageStrategy | undefined) {
+    this.implementation.onUnhandledMessage = onUnhandledMessage;
   }
 
   message() {

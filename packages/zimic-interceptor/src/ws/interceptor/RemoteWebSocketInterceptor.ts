@@ -6,7 +6,7 @@ import {
   WebSocketInterceptorClient as PublicWebSocketInterceptorClient,
   WebSocketInterceptorServer as PublicWebSocketInterceptorServer,
 } from './types/messages';
-import { RemoteWebSocketInterceptorOptions } from './types/options';
+import { RemoteWebSocketInterceptorOptions, UnhandledMessageStrategy } from './types/options';
 import {
   RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor,
   type WebSocketInterceptorConnectionListener,
@@ -26,6 +26,7 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
     this.implementation = new WebSocketInterceptorImplementation<Schema>({
       baseURL,
       messageSaving: options.messageSaving,
+      onUnhandledMessage: options.onUnhandledMessage,
       Handler: RemoteWebSocketMessageHandler,
       createWorker: () => {
         return this.store.getOrCreateRemoteWorker({
@@ -97,6 +98,14 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
 
   set messageSaving(messageSaving: WebSocketInterceptorMessageSaving) {
     this.implementation.messageSaving = messageSaving;
+  }
+
+  get onUnhandledMessage() {
+    return this.implementation.onUnhandledMessage;
+  }
+
+  set onUnhandledMessage(onUnhandledMessage: UnhandledMessageStrategy | undefined) {
+    this.implementation.onUnhandledMessage = onUnhandledMessage;
   }
 
   message() {

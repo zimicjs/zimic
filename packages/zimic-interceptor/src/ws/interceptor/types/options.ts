@@ -1,3 +1,6 @@
+import { PossiblePromise } from '@zimic/utils/types';
+import { WebSocketSchema } from '@zimic/ws';
+
 import { WebSocketInterceptorMessageSaving } from './public';
 
 /**
@@ -14,6 +17,35 @@ export type WebSocketInterceptorType = 'local' | 'remote';
  */
 export type WebSocketInterceptorPlatform = 'node' | 'browser';
 
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * The strategy applied to client messages that no handler matches, either a static declaration or a factory returning
+ * one for each message. Unhandled messages are logged by default and do not close the connection.
+ */
+export namespace UnhandledMessageStrategy {
+  /** A strategy declaration for an unhandled client message. */
+  export interface Declaration {
+    /** Whether to log a warning with the unhandled message. Defaults to `true`. */
+    log?: boolean;
+  }
+
+  /**
+   * A function that receives the data of an unhandled client message and returns the strategy declaration to apply to
+   * it. If it throws, the error is logged and the default declaration is applied.
+   */
+  export type DeclarationFactory = (message: WebSocketSchema) => PossiblePromise<Declaration>;
+}
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * The strategy applied to client messages that no handler matches, either a static declaration or a factory returning
+ * one for each message. Unhandled messages are logged by default and do not close the connection.
+ */
+export type UnhandledMessageStrategy =
+  UnhandledMessageStrategy.Declaration | UnhandledMessageStrategy.DeclarationFactory;
+
 /** The options shared by local and remote WebSocket interceptors. */
 export interface SharedWebSocketInterceptorOptions {
   /** The type of the interceptor, either `local` or `remote`. Defaults to `local`. */
@@ -27,6 +59,12 @@ export interface SharedWebSocketInterceptorOptions {
 
   /** Configures if intercepted messages are saved and how they are handled. */
   messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
+
+  /**
+   * The strategy applied to client messages that no handler matches. Defaults to logging a warning for each unhandled
+   * message.
+   */
+  onUnhandledMessage?: UnhandledMessageStrategy;
 }
 
 /**

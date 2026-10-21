@@ -98,3 +98,13 @@ export async function logUnhandledRequestWarning(request: Request, action: 'bypa
     '\n\nLearn more: https://zimic.dev/docs/interceptor/guides/http/unhandled-requests',
   );
 }
+
+export async function logUnhandledMessageWarning(data: unknown) {
+  const formattedData = await formatValueToLog(data);
+
+  logger.warn(
+    'Warning: Message was not handled.\n\n ',
+    formattedData,
+    '\n\nLearn more: https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages',
+  );
+}

@@ -4,6 +4,7 @@ import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
 import { removeArrayElement } from '@/utils/arrays';
 import { isServerSide } from '@/utils/environment';
+import { logUnhandledMessageWarning } from '@/utils/logging';
 
 import WebSocketInterceptorWorker from '../interceptorWorker/WebSocketInterceptorWorker';
 import LocalWebSocketMessageHandler from '../messageHandler/LocalWebSocketMessageHandler';
@@ -18,6 +19,7 @@ import { normalizeWebSocketMessageData } from '../utils/messageData';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
 import type { WebSocketInterceptorClient, WebSocketInterceptorServerSendOptions } from './types/messages';
+import type { UnhandledMessageStrategy } from './types/options';
 import type { WebSocketInterceptorConnectionListener, WebSocketInterceptorMessageSaving } from './types/public';
 import {
   createWebSocketInterceptorServer,
@@ -28,6 +30,10 @@ import WebSocketInterceptorMessageStore from './WebSocketInterceptorMessageStore
 
 export const SUPPORTED_BASE_URL_PROTOCOLS = Object.freeze(['ws', 'wss']);
 export const DEFAULT_MESSAGE_SAVING_SAFE_LIMIT = 1000;
+
+const DEFAULT_UNHANDLED_MESSAGE_STRATEGY = Object.freeze({
+  log: true,
+}) satisfies UnhandledMessageStrategy.Declaration;
 
 function isWebSocketInterceptorClientArray<Schema extends WebSocketSchema>(
   clients: WebSocketInterceptorServerSendOptions<Schema>['to'],
@@ -45,6 +51,8 @@ class WebSocketInterceptorImplementation<
 
   messageSaving: WebSocketInterceptorMessageSaving;
   readonly messageStore: WebSocketInterceptorMessageStore<Schema>;
+
+  onUnhandledMessage?: UnhandledMessageStrategy;
 
   isRunning = false;
 
@@ -70,6 +78,7 @@ class WebSocketInterceptorImplementation<
   constructor(options: {
     baseURL: URL;
     messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
+    onUnhandledMessage?: UnhandledMessageStrategy;
     Handler: HandlerConstructor;
     createWorker: () => WebSocketInterceptorWorker;
     deleteWorker: () => void;
@@ -81,6 +90,8 @@ class WebSocketInterceptorImplementation<
       safeLimit: options.messageSaving?.safeLimit ?? DEFAULT_MESSAGE_SAVING_SAFE_LIMIT,
     };
     this.messageStore = new WebSocketInterceptorMessageStore(() => this.messageSaving.safeLimit);
+
+    this.onUnhandledMessage = options.onUnhandledMessage;
 
     this.Handler = options.Handler;
     this.createWorker = options.createWorker;
@@ -294,7 +305,10 @@ class WebSocketInterceptorImplementation<
     const messageSavingGeneration = this.messageSavingGeneration;
     const matchedHandler = await this.findMatchedHandler(message, context);
 
+    // Unlike HTTP, unhandled messages have no bypass or reject action. WebSocket is not request-response, so a message
+    // needs no reply and the connection stays open.
     if (!matchedHandler) {
+      await this.logUnhandledMessageIfNecessary(message);
       return;
     }
 
@@ -302,6 +316,27 @@ class WebSocketInterceptorImplementation<
 
     if (this.messageSaving.enabled && messageSavingGeneration === this.messageSavingGeneration) {
       matchedHandler.handler.saveInterceptedMessage(matchedHandler.message, context);
+    }
+  }
+
+  private async logUnhandledMessageIfNecessary(message: Schema) {
+    const strategy = await this.getUnhandledMessageStrategy(message);
+
+    if (strategy.log ?? DEFAULT_UNHANDLED_MESSAGE_STRATEGY.log) {
+      await logUnhandledMessageWarning(message);
+    }
+  }
+
+  private async getUnhandledMessageStrategy(message: Schema): Promise<UnhandledMessageStrategy.Declaration> {
+    try {
+      if (typeof this.onUnhandledMessage === 'function') {
+        return await this.onUnhandledMessage(message);
+      }
+
+      return this.onUnhandledMessage ?? DEFAULT_UNHANDLED_MESSAGE_STRATEGY;
+    } catch (error) {
+      console.error(error);
+      return DEFAULT_UNHANDLED_MESSAGE_STRATEGY;
     }
   }
 

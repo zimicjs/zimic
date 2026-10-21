@@ -4,7 +4,7 @@ import { WebSocketSchema } from '@zimic/ws';
 import { LocalWebSocketMessageHandler, RemoteWebSocketMessageHandler } from '@/ws/messageHandler/types/public';
 
 import { WebSocketInterceptorClient, WebSocketInterceptorServer } from './messages';
-import { RemoteWebSocketInterceptorOptions, WebSocketInterceptorPlatform } from './options';
+import { RemoteWebSocketInterceptorOptions, UnhandledMessageStrategy, WebSocketInterceptorPlatform } from './options';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -41,6 +41,12 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
 
   /** Configures if intercepted messages are saved and how they are handled. */
   messageSaving: WebSocketInterceptorMessageSaving;
+
+  /**
+   * The strategy applied to client messages that no handler matches. Defaults to logging a warning for each unhandled
+   * message.
+   */
+  onUnhandledMessage?: UnhandledMessageStrategy;
 
   /**
    * The platform the interceptor is running on. `null` if the interceptor is not running.
