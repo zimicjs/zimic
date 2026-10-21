@@ -30,7 +30,9 @@ import { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '../../..
 import { RemoteWebSocketInterceptorWorkerOptions, WebSocketInterceptorWorkerOptions } from '../../types/options';
 
 type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
+
 type BinaryMessage = WebSocketSchema<ArrayBuffer>;
+
 type HttpSchemaWithUsers = HttpSchema<{
   '/users': {
     GET: HttpSchema.Method<{
