@@ -12,8 +12,8 @@ import {
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
 
-import { LocalWebSocketMessageHandler } from '../../../messageHandler/LocalWebSocketMessageHandler';
-import { RemoteWebSocketMessageHandler } from '../../../messageHandler/RemoteWebSocketMessageHandler';
+import LocalWebSocketMessageHandler from '../../../messageHandler/LocalWebSocketMessageHandler';
+import RemoteWebSocketMessageHandler from '../../../messageHandler/RemoteWebSocketMessageHandler';
 import { WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 

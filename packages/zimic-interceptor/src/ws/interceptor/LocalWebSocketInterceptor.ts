@@ -1,14 +1,15 @@
 import { WebSocketSchema } from '@zimic/ws';
 
-import { LocalWebSocketMessageHandler } from '../messageHandler/LocalWebSocketMessageHandler';
+import LocalWebSocketMessageHandler from '../messageHandler/LocalWebSocketMessageHandler';
 import {
   WebSocketInterceptorClient as PublicWebSocketInterceptorClient,
   WebSocketInterceptorServer as PublicWebSocketInterceptorServer,
 } from './types/messages';
-import { LocalWebSocketInterceptorOptions, WebSocketInterceptorMessageSaving } from './types/options';
+import { LocalWebSocketInterceptorOptions } from './types/options';
 import {
   LocalWebSocketInterceptor as PublicLocalWebSocketInterceptor,
   type WebSocketInterceptorConnectionListener,
+  WebSocketInterceptorMessageSaving,
 } from './types/public';
 import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
 import WebSocketInterceptorStore from './WebSocketInterceptorStore';

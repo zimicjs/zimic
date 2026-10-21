@@ -1,16 +1,17 @@
 import { WebSocketSchema } from '@zimic/ws';
 
 import { createWebSocketInterceptorWorker } from '../interceptorWorker/factory';
-import { RemoteWebSocketMessageHandler } from '../messageHandler/RemoteWebSocketMessageHandler';
+import RemoteWebSocketMessageHandler from '../messageHandler/RemoteWebSocketMessageHandler';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
 import {
   WebSocketInterceptorClient as PublicWebSocketInterceptorClient,
   WebSocketInterceptorServer as PublicWebSocketInterceptorServer,
 } from './types/messages';
-import { RemoteWebSocketInterceptorOptions, WebSocketInterceptorMessageSaving } from './types/options';
+import { RemoteWebSocketInterceptorOptions } from './types/options';
 import {
   RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor,
   type WebSocketInterceptorConnectionListener,
+  WebSocketInterceptorMessageSaving,
 } from './types/public';
 import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
 

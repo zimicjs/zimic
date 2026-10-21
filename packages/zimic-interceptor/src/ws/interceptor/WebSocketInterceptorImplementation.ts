@@ -5,8 +5,8 @@ import { removeArrayElement } from '@/utils/arrays';
 import { isServerSide } from '@/utils/environment';
 
 import WebSocketInterceptorWorker from '../interceptorWorker/WebSocketInterceptorWorker';
-import { LocalWebSocketMessageHandler } from '../messageHandler/LocalWebSocketMessageHandler';
-import { RemoteWebSocketMessageHandler } from '../messageHandler/RemoteWebSocketMessageHandler';
+import LocalWebSocketMessageHandler from '../messageHandler/LocalWebSocketMessageHandler';
+import RemoteWebSocketMessageHandler from '../messageHandler/RemoteWebSocketMessageHandler';
 import { InternalWebSocketMessageHandler, WebSocketMessageHandler } from '../messageHandler/types/public';
 import {
   AnyWebSocketMessageHandlerImplementation,
@@ -17,8 +17,7 @@ import { normalizeWebSocketMessageData } from '../utils/messageData';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
 import type { WebSocketInterceptorClient, WebSocketInterceptorServerSendOptions } from './types/messages';
-import { WebSocketInterceptorMessageSaving } from './types/options';
-import type { WebSocketInterceptorConnectionListener } from './types/public';
+import type { WebSocketInterceptorConnectionListener, WebSocketInterceptorMessageSaving } from './types/public';
 import {
   createWebSocketInterceptorServer,
   InternalWebSocketInterceptorClient,
@@ -41,7 +40,7 @@ class WebSocketInterceptorImplementation<
   Schema extends WebSocketSchema,
   HandlerConstructor extends WebSocketHandlerConstructor = WebSocketHandlerConstructor,
 > {
-  private _baseURL!: URL;
+  #baseURL!: URL;
 
   messageSaving: WebSocketInterceptorMessageSaving;
   readonly messageStore: WebSocketInterceptorMessageStore<Schema>;
@@ -62,7 +61,7 @@ class WebSocketInterceptorImplementation<
   private createWorker: () => WebSocketInterceptorWorker;
   private releaseWorker?: (worker: WebSocketInterceptorWorker) => void;
   private worker?: WebSocketInterceptorWorker;
-  private startingPromise?: Promise<void>;
+  private startPromise?: Promise<void>;
   private numberOfPendingStarts = 0;
   private lifecycleQueue: Promise<void> = Promise.resolve();
   private messageSavingGeneration = 0;
@@ -109,7 +108,7 @@ class WebSocketInterceptorImplementation<
   }
 
   get baseURL() {
-    return this._baseURL;
+    return this.#baseURL;
   }
 
   set baseURL(newBaseURL: URL) {
@@ -122,7 +121,7 @@ class WebSocketInterceptorImplementation<
     validateURLProtocol(newBaseURL, SUPPORTED_BASE_URL_PROTOCOLS);
     excludeNonPathParams(newBaseURL);
 
-    this._baseURL = newBaseURL;
+    this.#baseURL = newBaseURL;
   }
 
   get baseURLAsString() {
@@ -146,21 +145,21 @@ class WebSocketInterceptorImplementation<
   }
 
   async start() {
-    if (this.startingPromise) {
-      return this.startingPromise;
+    if (this.startPromise) {
+      return this.startPromise;
     }
 
     this.numberOfPendingStarts++;
-    const startPromise = this.enqueueLifecycleOperation(() => this.startOnce()).finally(() => {
+    const newStartPromise = this.enqueueLifecycleOperation(() => this.startOnce()).finally(() => {
       this.numberOfPendingStarts--;
 
-      if (this.startingPromise === startPromise) {
-        this.startingPromise = undefined;
+      if (this.startPromise === newStartPromise) {
+        this.startPromise = undefined;
       }
     });
-    this.startingPromise = startPromise;
+    this.startPromise = newStartPromise;
 
-    await startPromise;
+    await newStartPromise;
   }
 
   private async startOnce() {
@@ -193,7 +192,7 @@ class WebSocketInterceptorImplementation<
   }
 
   async stop(options: { beforeStop?: () => Promise<void> } = {}) {
-    this.startingPromise = undefined;
+    this.startPromise = undefined;
 
     await this.enqueueLifecycleOperation(async () => {
       if (!this.isRunning) {

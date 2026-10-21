@@ -3,7 +3,7 @@ import { Range } from '@zimic/utils/types';
 
 import { stringifyValueToLog } from '@/utils/logging';
 
-import { WebSocketInterceptorMessageSaving } from '../interceptor/types/options';
+import { WebSocketInterceptorMessageSaving } from '../interceptor/types/public';
 import { UnmatchedWebSocketInterceptorMessageGroup } from '../messageHandler/types/restrictions';
 import WebSocketTimesDeclarationPointer from './WebSocketTimesDeclarationPointer';
 

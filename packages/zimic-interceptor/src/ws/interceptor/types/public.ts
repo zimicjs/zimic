@@ -4,11 +4,26 @@ import { WebSocketSchema } from '@zimic/ws';
 import { LocalWebSocketMessageHandler, RemoteWebSocketMessageHandler } from '@/ws/messageHandler/types/public';
 
 import { WebSocketInterceptorClient, WebSocketInterceptorServer } from './messages';
-import {
-  RemoteWebSocketInterceptorOptions,
-  WebSocketInterceptorMessageSaving,
-  WebSocketInterceptorPlatform,
-} from './options';
+import { RemoteWebSocketInterceptorOptions, WebSocketInterceptorPlatform } from './options';
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * Configures if intercepted messages are saved and how they are handled.
+ */
+export interface WebSocketInterceptorMessageSaving {
+  /**
+   * Whether message handlers should save their matched client-to-server messages in memory and make them accessible
+   * through `handler.messages`. Defaults to `process.env.NODE_ENV === 'test'` in Node.js and `false` in browsers.
+   */
+  enabled: boolean;
+
+  /**
+   * The number of saved messages after which the interceptor logs warnings in the console. It does not limit how many
+   * messages are saved. Defaults to `1000`.
+   */
+  safeLimit: number;
+}
 
 /** A listener called with the client handle of each new connection to the interceptor. */
 export type WebSocketInterceptorConnectionListener<Schema extends WebSocketSchema> = (

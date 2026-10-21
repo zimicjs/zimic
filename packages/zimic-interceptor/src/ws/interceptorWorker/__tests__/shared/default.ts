@@ -14,7 +14,7 @@ import { createWebSocketInterceptorWorker } from '@/ws/interceptorWorker/factory
 import LocalWebSocketInterceptorWorker from '@/ws/interceptorWorker/LocalWebSocketInterceptorWorker';
 import RemoteWebSocketInterceptorWorker from '@/ws/interceptorWorker/RemoteWebSocketInterceptorWorker';
 import WebSocketInterceptorWorker from '@/ws/interceptorWorker/WebSocketInterceptorWorker';
-import { RemoteWebSocketMessageHandler } from '@/ws/messageHandler/RemoteWebSocketMessageHandler';
+import RemoteWebSocketMessageHandler from '@/ws/messageHandler/RemoteWebSocketMessageHandler';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import {
   createInternalWebSocketInterceptor,

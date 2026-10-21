@@ -14,9 +14,9 @@ import {
 import { WebSocketMessageHandlerRestriction } from './types/restrictions';
 import WebSocketMessageHandlerImplementation from './WebSocketMessageHandlerImplementation';
 
-const UNSYNCED_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Promise<unknown>)[]);
+const PENDING_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Promise<unknown>)[]);
 
-export class RemoteWebSocketMessageHandler<
+class RemoteWebSocketMessageHandler<
   Schema extends WebSocketSchema,
   RestrictedSchema extends Schema = Schema,
 > implements PublicPendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema> {
@@ -41,14 +41,14 @@ export class RemoteWebSocketMessageHandler<
   private createSyncedProxy() {
     return new Proxy(this, {
       has: (target, property) => {
-        if (this.isHiddenPropertyWhenSynced(property)) {
+        if (this.shouldBeHiddenPropertyWhenSynced(property)) {
           return false;
         }
         return Reflect.has(target, property);
       },
 
       get: (target, property) => {
-        if (this.isHiddenPropertyWhenSynced(property)) {
+        if (this.shouldBeHiddenPropertyWhenSynced(property)) {
           return undefined;
         }
         return Reflect.get(target, property);
@@ -56,8 +56,8 @@ export class RemoteWebSocketMessageHandler<
     });
   }
 
-  private isHiddenPropertyWhenSynced(property: string | symbol) {
-    return UNSYNCED_PROPERTIES.has(property);
+  private shouldBeHiddenPropertyWhenSynced(property: string | symbol) {
+    return PENDING_PROPERTIES.has(property);
   }
 
   from(sender: WebSocketInterceptorClient<Schema>) {
@@ -167,3 +167,5 @@ export class RemoteWebSocketMessageHandler<
     return this.then().finally(onFinally);
   }
 }
+
+export default RemoteWebSocketMessageHandler;

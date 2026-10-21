@@ -10,7 +10,8 @@ import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/util
 
 import MessageSavingSafeLimitExceededError from '../../errors/MessageSavingSafeLimitExceededError';
 import { createWebSocketInterceptor } from '../../factory';
-import { WebSocketInterceptorMessageSaving, WebSocketInterceptorOptions } from '../../types/options';
+import { WebSocketInterceptorOptions } from '../../types/options';
+import { WebSocketInterceptorMessageSaving } from '../../types/public';
 import { DEFAULT_MESSAGE_SAVING_SAFE_LIMIT } from '../../WebSocketInterceptorImplementation';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 

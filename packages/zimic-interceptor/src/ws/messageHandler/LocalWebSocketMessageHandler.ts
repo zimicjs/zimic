@@ -12,7 +12,7 @@ import {
 import { WebSocketMessageHandlerRestriction } from './types/restrictions';
 import WebSocketMessageHandlerImplementation from './WebSocketMessageHandlerImplementation';
 
-export class LocalWebSocketMessageHandler<
+class LocalWebSocketMessageHandler<
   Schema extends WebSocketSchema,
   RestrictedSchema extends Schema = Schema,
 > implements PublicLocalWebSocketMessageHandler<Schema, RestrictedSchema> {
@@ -77,3 +77,5 @@ export class LocalWebSocketMessageHandler<
     return this.implementation.messages;
   }
 }
+
+export default LocalWebSocketMessageHandler;

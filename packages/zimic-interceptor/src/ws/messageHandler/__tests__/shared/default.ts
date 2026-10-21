@@ -6,7 +6,7 @@ import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@
 import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
-import { RemoteWebSocketMessageHandler } from '../../RemoteWebSocketMessageHandler';
+import RemoteWebSocketMessageHandler from '../../RemoteWebSocketMessageHandler';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './utils';
 
 export function declareDefaultWebSocketMessageHandlerTests(
