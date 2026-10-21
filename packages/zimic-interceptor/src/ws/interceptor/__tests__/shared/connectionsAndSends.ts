@@ -30,6 +30,31 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
 ) {
   const { type, getBaseURL } = options;
 
+  it('should track clients when they open and close', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await promiseIfRemote(interceptor.message().respond({ type: 'server', text: 'connected' }), interceptor);
+      const clients = interceptor.clients;
+      expect(interceptor.clients).toHaveLength(0);
+
+      await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toBe(clients);
+          expect(interceptor.clients).toHaveLength(1);
+          expect(interceptor.clients[0].url).toBe(client.url);
+        });
+
+        await client.close();
+
+        await waitFor(() => {
+          expect(interceptor.clients).toBe(clients);
+          expect(interceptor.clients).toHaveLength(0);
+        });
+      });
+    });
+  });
+
   it('should notify listeners with a connected public client', async () => {
     const baseURL = getBaseURL();
 

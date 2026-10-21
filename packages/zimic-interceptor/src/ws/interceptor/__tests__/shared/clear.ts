@@ -133,6 +133,53 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     );
   });
 
+  // No WebSocket counterpart for "should not consider handlers from before cleared when multiple paths matched
+  // requests": WebSocket handlers have no per-handler paths.
+
+  it('should handle messages once if another interceptor is cleared while they are being handled', async () => {
+    const restrictionStartedPromise = createPromiseWithResolvers<void>();
+    const restrictionReleasedPromise = createPromiseWithResolvers<void>();
+
+    const restriction = vi.fn(async () => {
+      restrictionStartedPromise.resolve();
+      await restrictionReleasedPromise;
+      return true;
+    });
+
+    const effect = vi.fn();
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, baseURL: `${baseURL}/other` },
+      async (otherInterceptor) => {
+        await promiseIfRemote(otherInterceptor.message().respond({ type: 'server', index: 2 }), otherInterceptor);
+
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+          await promiseIfRemote(
+            interceptor.message().with(restriction).effect(effect).respond({ type: 'server', index: 1 }),
+            interceptor,
+          );
+
+          await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+            const messagePromise = waitForWebSocketClientMessage(client);
+            client.send(JSON.stringify({ type: 'client', index: 1 }));
+            await restrictionStartedPromise;
+
+            await promiseIfRemote(otherInterceptor.clear(), otherInterceptor);
+            restrictionReleasedPromise.resolve();
+
+            await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+
+            expect(restriction).toHaveBeenCalledTimes(1);
+            expect(effect).toHaveBeenCalledTimes(1);
+          });
+        });
+      },
+    );
+  });
+
+  // No WebSocket counterpart for "should not consider handlers of another interceptor cleared while requests are being
+  // handled": messages do not fall through to other interceptors.
+
   it('should clear only clients owned by the selected interceptor', async () => {
     const firstBaseURL = `${baseURL}/first`;
     const secondBaseURL = `${baseURL}/second`;

@@ -1,7 +1,7 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
 import { WebSocketSchema } from '@zimic/ws';
-import { beforeAll, beforeEach, afterAll, describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, afterAll, describe, expect, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import {
@@ -46,6 +46,7 @@ export function declareTimesWebSocketMessageHandlerTests(
       await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
         let numberOfEvaluatedMessages = 0;
         const restrictionsReadyPromise = createPromiseWithResolvers<void>();
+        const limitedEffect = vi.fn();
 
         await interceptor.message().respond({ type: 'delete', id: 'fallback' });
 
@@ -60,6 +61,7 @@ export function declareTimesWebSocketMessageHandlerTests(
             await restrictionsReadyPromise;
             return true;
           })
+          .effect(limitedEffect)
           .respond({ type: 'delete', id: 'limited' })
           .times(1);
 
@@ -78,6 +80,7 @@ export function declareTimesWebSocketMessageHandlerTests(
               JSON.stringify({ type: 'delete', id: 'fallback' }),
             ]),
           );
+          expect(limitedEffect).toHaveBeenCalledTimes(1);
 
           await limitedHandler.checkTimes();
         });

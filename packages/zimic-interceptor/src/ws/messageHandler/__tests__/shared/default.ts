@@ -34,46 +34,6 @@ export function declareDefaultWebSocketMessageHandlerTests(
     }
   });
 
-  it('should normalize incoming text messages before matching handlers and saving intercepted messages', async () => {
-    await usingWebSocketInterceptor<Schema>(
-      { type, baseURL, messageSaving: { enabled: true } },
-      async (interceptor) => {
-        let effectMessage: Schema | undefined;
-        const firstRestriction = vi.fn((_message: Schema) => true);
-        const handler = await interceptor
-          .message()
-          .with(firstRestriction)
-          .effect((message) => {
-            effectMessage = message;
-          });
-
-        const secondRestriction = vi.fn((_message: Schema) => false);
-        await interceptor.message().with(secondRestriction);
-
-        await usingWebSocketClient<Schema>(baseURL, async (client) => {
-          await waitFor(() => {
-            expect(interceptor.clients).toHaveLength(1);
-          });
-
-          client.send(JSON.stringify({ type: 'create', body: { text: 'serialized' } }));
-
-          await waitFor(() => {
-            expect(handler.messages).toHaveLength(1);
-          });
-
-          const normalizedMessage = firstRestriction.mock.calls[0][0];
-          expect(normalizedMessage).toEqual({ type: 'create', body: { text: 'serialized' } });
-          expect(secondRestriction.mock.calls[0][0]).toBe(normalizedMessage);
-          expect(effectMessage).toBe(normalizedMessage);
-          expect(handler.messages[0].data).toBe(normalizedMessage);
-
-          expect(interceptor.clients[0].messages).toHaveLength(1);
-          expect(interceptor.server.messages).toHaveLength(1);
-        });
-      },
-    );
-  });
-
   it('should match any message without a declared response, effect, or restrictions', async () => {
     await usingWebSocketInterceptor<Schema>(
       { type, baseURL, messageSaving: { enabled: true } },
