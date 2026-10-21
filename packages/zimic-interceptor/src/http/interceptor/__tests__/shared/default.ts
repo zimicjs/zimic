@@ -163,6 +163,15 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
+  it('should support starting after stopping while starting', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (interceptor) => {
+      await Promise.all([interceptor.start(), interceptor.stop(), interceptor.start()]);
+
+      expect(interceptor.isRunning).toBe(true);
+      expect(interceptor.platform).toBe(platform);
+    });
+  });
+
   it('should support starting while stopping', async () => {
     await usingHttpInterceptor<{}>(getInterceptorOptions(), async (interceptor) => {
       await Promise.all([interceptor.stop(), interceptor.start()]);
@@ -383,6 +392,19 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     await expect(async () => {
       await interceptor.clear();
     }).rejects.toThrow(new NotRunningHttpInterceptorError());
+  });
+
+  it('should throw an error when trying to be cleared after stopped', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), async (interceptor) => {
+      expect(interceptor.isRunning).toBe(true);
+
+      await interceptor.stop();
+      expect(interceptor.isRunning).toBe(false);
+
+      await expect(async () => {
+        await interceptor.clear();
+      }).rejects.toThrow(new NotRunningHttpInterceptorError());
+    });
   });
 
   if (type === 'remote') {

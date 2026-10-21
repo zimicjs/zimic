@@ -27,7 +27,7 @@ export function declareTypeWebSocketInterceptorTests(
     baseURL = getBaseURL();
   });
 
-  it('should infer local and remote factory return types', () => {
+  it('should correctly type local and remote factory return values', () => {
     const localInterceptor = createWebSocketInterceptor<MessageSchema>({ baseURL });
     expectTypeOf(localInterceptor).toEqualTypeOf<LocalWebSocketInterceptor<MessageSchema>>();
 
@@ -47,7 +47,7 @@ export function declareTypeWebSocketInterceptorTests(
   });
 
   if (type === 'local') {
-    it('should create a typed local interceptor by default', () => {
+    it('should correctly type local interceptors by default', () => {
       const interceptor = createWebSocketInterceptor<MessageSchema>({ baseURL });
 
       expect(interceptor.type).toBe('local');
@@ -58,7 +58,7 @@ export function declareTypeWebSocketInterceptorTests(
     });
   }
 
-  it('should expose public interceptor types', async () => {
+  it('should correctly type public interceptor types', async () => {
     await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, (interceptor) => {
       expectTypeOf(interceptor).toExtend<WebSocketInterceptor<MessageSchema>>();
       expectTypeOf(interceptor.baseURL).toEqualTypeOf<string>();
@@ -86,7 +86,7 @@ export function declareTypeWebSocketInterceptorTests(
     });
   });
 
-  it('should infer schemas from public interceptor types', () => {
+  it('should correctly type schemas inferred from public interceptor types', () => {
     type LocalSchema = InferWebSocketInterceptorSchema<LocalWebSocketInterceptor<MessageSchema>>;
     expectTypeOf<LocalSchema>().toEqualTypeOf<MessageSchema>();
 
@@ -97,7 +97,7 @@ export function declareTypeWebSocketInterceptorTests(
     expectTypeOf<UnknownSchema>().toEqualTypeOf<never>();
   });
 
-  it('should expose local and remote sync return values', () => {
+  it('should correctly type local and remote sync return values', () => {
     const localInterceptor = createWebSocketInterceptor<MessageSchema>({ type: 'local', baseURL });
     expectTypeOf(localInterceptor.message).returns.toEqualTypeOf<LocalWebSocketMessageHandler<MessageSchema>>();
     expectTypeOf(localInterceptor.checkTimes).returns.toEqualTypeOf<void>();
