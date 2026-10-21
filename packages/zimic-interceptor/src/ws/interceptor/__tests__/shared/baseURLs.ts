@@ -1,5 +1,6 @@
 import { waitForNot } from '@zimic/utils/time';
 import { UnsupportedURLProtocolError, joinURL } from '@zimic/utils/url';
+import { ValidationError } from '@zimic/utils/validation';
 import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it, vi } from 'vitest';
 
@@ -276,20 +277,19 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     expect(handler).not.toHaveBeenCalled();
   });
 
-  // The WebSocket interceptor does not validate the type of the base URL. It passes the value to the URL constructor,
-  // which coerces objects to strings, so a URL instance is a valid input and has no invalid variant to test.
   const invalidBaseURLs = [
-    { label: 'undefined', value: undefined },
-    { label: 'null', value: null },
-    { label: 'a number', value: 5 },
-    { label: 'a boolean', value: true },
-    { label: 'an object', value: {} },
-    { label: 'an array', value: [] },
+    { label: 'undefined', value: undefined, expectedType: 'undefined' },
+    { label: 'null', value: null, expectedType: 'null' },
+    { label: 'a number', value: 5, expectedType: 'number' },
+    { label: 'a boolean', value: true, expectedType: 'boolean' },
+    { label: 'an object', value: {}, expectedType: 'object' },
+    { label: 'an array', value: [], expectedType: 'object' },
+    { label: 'a URL', value: new URL('ws://localhost:3000'), expectedType: 'object' },
   ];
 
   it.each(invalidBaseURLs)(
     'should throw an error if provided a base URL that is not a string ($label)',
-    async ({ value }) => {
+    async ({ value, expectedType }) => {
       const handler = vi.fn();
 
       // @ts-expect-error Forcing an invalid base URL type.
@@ -297,7 +297,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
 
       await expect(async () => {
         await usingWebSocketInterceptor({ ...interceptorOptions, baseURL: invalidBaseURL }, handler);
-      }).rejects.toThrow(/Invalid URL/);
+      }).rejects.toThrow(new ValidationError(`Expected options.baseURL to be string, but got ${expectedType}.`));
 
       expect(handler).not.toHaveBeenCalled();
     },
