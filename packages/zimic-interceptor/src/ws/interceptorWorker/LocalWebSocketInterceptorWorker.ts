@@ -110,10 +110,6 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     await super.sharedStop(async () => {
       const mswWorker = await this.getMSWWorkerOrCreate();
 
-      if (this.numberOfRunningInterceptors > 0) {
-        return;
-      }
-
       this.clearHandlers();
 
       this.store.stopMSWWorker(mswWorker);

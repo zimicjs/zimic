@@ -27,12 +27,7 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
       messageSaving: options.messageSaving,
       Handler: LocalWebSocketMessageHandler,
       createWorker: () => this.store.getOrCreateLocalWorker({}),
-      releaseWorker: (worker) => {
-        // Stopping is asynchronous, so another interceptor may have started using the worker in the meantime.
-        if (worker.numberOfRunningInterceptors === 0) {
-          this.store.deleteLocalWorker();
-        }
-      },
+      deleteWorker: () => this.store.deleteLocalWorker(),
     });
   }
 
@@ -93,7 +88,7 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
   }
 
   async stop() {
-    await this.implementation.stop({ beforeStop: () => this.implementation.clear() });
+    await this.implementation.stop({ beforeStop: () => this.clear() });
   }
 
   checkTimes() {

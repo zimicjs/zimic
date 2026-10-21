@@ -668,6 +668,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           baseURL: new URL(`${baseURL}/second`),
           Handler: RemoteWebSocketMessageHandler,
           createWorker: () => worker,
+          deleteWorker: vi.fn(),
         });
 
         try {
@@ -685,7 +686,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
             await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'second' });
           });
         } finally {
-          await secondInterceptor.stop();
+          await secondInterceptor.stop({});
         }
       });
     });

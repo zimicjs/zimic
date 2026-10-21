@@ -1,3 +1,4 @@
+import { PossiblePromise } from '@zimic/utils/types';
 import { excludeNonPathParams, validateURLProtocol } from '@zimic/utils/url';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
@@ -59,7 +60,7 @@ class WebSocketInterceptorImplementation<
   }[] = [];
 
   private createWorker: () => WebSocketInterceptorWorker;
-  private releaseWorker?: (worker: WebSocketInterceptorWorker) => void;
+  private deleteWorker: () => void;
   private worker?: WebSocketInterceptorWorker;
   private startPromise?: Promise<void>;
   private numberOfPendingStarts = 0;
@@ -71,7 +72,7 @@ class WebSocketInterceptorImplementation<
     messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
     Handler: HandlerConstructor;
     createWorker: () => WebSocketInterceptorWorker;
-    releaseWorker?: (worker: WebSocketInterceptorWorker) => void;
+    deleteWorker: () => void;
   }) {
     this.baseURL = options.baseURL;
 
@@ -83,7 +84,7 @@ class WebSocketInterceptorImplementation<
 
     this.Handler = options.Handler;
     this.createWorker = options.createWorker;
-    this.releaseWorker = options.releaseWorker;
+    this.deleteWorker = options.deleteWorker;
     this._server = createWebSocketInterceptorServer(
       () => this.baseURLAsString,
       (data, options) => {
@@ -132,8 +133,6 @@ class WebSocketInterceptorImplementation<
   }
 
   private get workerOrThrow() {
-    /* istanbul ignore if -- @preserve
-     * Callers only read the worker while the interceptor is running, which always has a worker. */
     if (!this.worker) {
       throw new NotRunningWebSocketInterceptorError();
     }
@@ -144,22 +143,26 @@ class WebSocketInterceptorImplementation<
     return this.worker?.platform ?? null;
   }
 
-  async start() {
+  start() {
     if (this.startPromise) {
       return this.startPromise;
     }
 
     this.numberOfPendingStarts++;
-    const newStartPromise = this.enqueueLifecycleOperation(() => this.startOnce()).finally(() => {
+
+    const startPromise = this.enqueueLifecycleOperation(() => this.startOnce()).finally(() => {
       this.numberOfPendingStarts--;
 
-      if (this.startPromise === newStartPromise) {
+      const isLastStartPromise = this.startPromise === startPromise;
+
+      if (isLastStartPromise) {
         this.startPromise = undefined;
       }
     });
-    this.startPromise = newStartPromise;
 
-    await newStartPromise;
+    this.startPromise = startPromise;
+
+    return startPromise;
   }
 
   private async startOnce() {
@@ -167,50 +170,60 @@ class WebSocketInterceptorImplementation<
       return;
     }
 
-    const worker = this.createWorker();
-    this.worker = worker;
-
     try {
-      worker.registerRunningInterceptor(this);
+      this.worker = this.createWorker();
+      this.worker.registerRunningInterceptor(this);
 
-      await worker.start();
-      if (worker.type === 'local') {
-        await worker.use(this);
+      await this.worker.start();
+
+      if (this.worker.type === 'local') {
+        await this.worker.use(this);
       }
+
       this.isRunning = true;
     } catch (error) {
-      this.isRunning = false;
-
-      worker.unregisterRunningInterceptor(this);
-      await worker.stop();
-
-      this.releaseWorker?.(worker);
-      this.worker = undefined;
-
+      await this.stopWorker();
       throw error;
     }
   }
 
-  async stop(options: { beforeStop?: () => Promise<void> } = {}) {
+  async stop(options: { beforeStop?: () => PossiblePromise<void> }) {
     this.startPromise = undefined;
+    await this.enqueueLifecycleOperation(() => this.stopOnce(options));
+  }
 
-    await this.enqueueLifecycleOperation(async () => {
-      if (!this.isRunning) {
-        return;
+  private async stopOnce(options: { beforeStop?: () => PossiblePromise<void> }) {
+    if (!this.isRunning) {
+      return;
+    }
+
+    await options.beforeStop?.();
+
+    // Clearing keeps the connection registration of local interceptors, so stopping has to remove it.
+    await this.workerOrThrow.clearHandlers({ interceptor: this });
+
+    await this.stopWorker();
+  }
+
+  private async stopWorker() {
+    this.worker?.unregisterRunningInterceptor(this);
+
+    const isLastRunningInterceptor = this.worker?.numberOfRunningInterceptors === 0;
+
+    if (isLastRunningInterceptor) {
+      await this.worker?.stop();
+
+      // Stopping is asynchronous, so we need to check again if we are still the last before deleting the worker.
+      // Another interceptor might have started in the meantime and the worker should not be deleted if so.
+      const isStillLastRunningInterceptor = this.worker?.numberOfRunningInterceptors === 0;
+
+      if (isStillLastRunningInterceptor) {
+        this.deleteWorker();
       }
+    }
 
-      await options.beforeStop?.();
-
-      const worker = this.workerOrThrow;
-      worker.unregisterRunningInterceptor(this);
-      await worker.clearHandlers({ interceptor: this });
-      await worker.stop();
-
-      this.isRunning = false;
-      this.worker = undefined;
-
-      this.releaseWorker?.(worker);
-    });
+    this.isRunning = false;
+    this.worker = undefined;
   }
 
   get isStarting() {
@@ -383,13 +396,10 @@ class WebSocketInterceptorImplementation<
   }
 
   clear() {
-    if (!this.isRunning) {
-      throw new NotRunningWebSocketInterceptorError();
-    }
+    const worker = this.workerOrThrow;
 
     this.messageSavingGeneration++;
 
-    const worker = this.workerOrThrow;
     const clearResult = worker.clearHandlers({
       interceptor: this,
       preserveInterceptorRegistration: worker.type === 'local',

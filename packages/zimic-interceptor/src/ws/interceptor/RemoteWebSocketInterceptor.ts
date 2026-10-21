@@ -33,6 +33,9 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
           auth: this.#auth,
         });
       },
+      deleteWorker: () => {
+        // Each remote interceptor creates its own worker, so there is no shared store entry to delete.
+      },
     });
 
     this.auth = options.auth;
