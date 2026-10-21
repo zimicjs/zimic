@@ -21,6 +21,7 @@ Required:
 Optional:
 
 - Previous version. If omitted, infer it from the latest published GitHub release for the same package before the target version.
+- Unattended mode, set by skill `release`. Skip the confirmations in steps 8 and 10, decide each ambiguous PR with the rules in [Pull request filtering](#pull-request-filtering), and return the draft URL plus each ambiguous PR with its include or exclude decision and reason.
 
 # Workflow
 
@@ -57,11 +58,11 @@ Optional:
    - Ambiguous shared/root changes.
    - Excluded with reason, if useful.
 
-8. Ask the user to confirm the PR list and mention that they may add or remove PRs.
+8. Ask the user to confirm the PR list and mention that they may add or remove PRs. In unattended mode, skip this step.
 
 9. Draft the final release body from the confirmed PRs and the static format reference.
 
-10. Show a concise preview summary plus the exact markdown body. Ask the user to confirm before editing GitHub.
+10. Show a concise preview summary plus the exact markdown body. Ask the user to confirm before editing GitHub. In unattended mode, skip this step.
 
 11. Write the body to a temporary local markdown file, such as `./tmp/zimic-release-notes-<package-name>-<version>.md`.
 
