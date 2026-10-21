@@ -11,7 +11,10 @@ import {
   WebSocketMessageHandlerMessageDeclaration,
   WebSocketMessageHandlerSchemaWithRestriction,
 } from './types/public';
-import { WebSocketMessageHandlerRestriction } from './types/restrictions';
+import {
+  WebSocketMessageHandlerRestriction,
+  WebSocketMessageHandlerRestrictionOptionsArguments,
+} from './types/restrictions';
 import WebSocketMessageHandlerImplementation from './WebSocketMessageHandlerImplementation';
 
 const PENDING_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Promise<unknown>)[]);
@@ -65,11 +68,12 @@ class RemoteWebSocketMessageHandler<
 
   with<Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
     restriction: Restriction,
+    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<RestrictedSchema, Restriction>
   ): RemoteWebSocketMessageHandler<
     Schema,
     WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>
   > {
-    this.implementation.with(restriction);
+    this.implementation.with(restriction, ...options);
 
     const pending = this.pending as unknown as RemoteWebSocketMessageHandler<
       Schema,

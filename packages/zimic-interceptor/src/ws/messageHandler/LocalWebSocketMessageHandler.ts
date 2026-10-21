@@ -9,7 +9,10 @@ import {
   WebSocketMessageHandlerMessageDeclaration,
   WebSocketMessageHandlerSchemaWithRestriction,
 } from './types/public';
-import { WebSocketMessageHandlerRestriction } from './types/restrictions';
+import {
+  WebSocketMessageHandlerRestriction,
+  WebSocketMessageHandlerRestrictionOptionsArguments,
+} from './types/restrictions';
 import WebSocketMessageHandlerImplementation from './WebSocketMessageHandlerImplementation';
 
 class LocalWebSocketMessageHandler<
@@ -34,8 +37,9 @@ class LocalWebSocketMessageHandler<
 
   with<Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
     restriction: Restriction,
+    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<RestrictedSchema, Restriction>
   ): LocalWebSocketMessageHandler<Schema, WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>> {
-    this.implementation.with(restriction);
+    this.implementation.with(restriction, ...options);
 
     const newThis = this as unknown as LocalWebSocketMessageHandler<
       Schema,

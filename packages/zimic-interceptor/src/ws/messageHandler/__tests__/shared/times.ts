@@ -428,6 +428,42 @@ export function declareTimesWebSocketMessageHandlerTests(
         );
       });
 
+      it('should show unmatched exact JSON messages in times check errors', async () => {
+        await usingWebSocketInterceptor<Schema>(
+          { type, baseURL, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const handler = await interceptor
+              .message()
+              .with({ type: 'create', body: { text: 'hello' } }, { exact: true })
+              .respond({ type: 'delete', id: '1' })
+              .times(1);
+
+            await usingWebSocketClient<Schema>(baseURL, async (client) => {
+              client.send(JSON.stringify({ type: 'create', body: { text: 'hello', priority: 1 } }));
+
+              await waitFor(() =>
+                expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                  message: [
+                    'Expected exactly 1 matching message, but got 0.',
+                    '',
+                    'Messages evaluated by this handler:',
+                    '',
+                    `  ${color.green('- Expected')}`,
+                    `  ${color.red('+ Received')}`,
+                    '',
+                    '1: { "type": "create", "body": { "text": "hello", "priority": "1" } }',
+                    '     Data:',
+                    `       ${color.green('- { "type": "create", "body": { "text": "hello" } }')}`,
+                    `       ${color.red('+ { "type": "create", "body": { "text": "hello", "priority": "1" } }')}`,
+                  ].join('\n'),
+                  expectedNumberOfMessages: 1,
+                }),
+              );
+            });
+          },
+        );
+      });
+
       it('should show unmatched array buffer messages in times check errors', async () => {
         await usingWebSocketInterceptor<WebSocketSchema<ArrayBuffer>>(
           { type, baseURL, messageSaving: { enabled: true } },

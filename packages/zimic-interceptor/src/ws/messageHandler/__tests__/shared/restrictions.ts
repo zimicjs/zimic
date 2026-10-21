@@ -56,6 +56,70 @@ export function declareRestrictionWebSocketMessageHandlerTests(
     });
   });
 
+  it.each([{ exact: true }])(
+    'should match only specific messages if contains a static restriction and exact $exact',
+    async ({ exact }) => {
+      await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+        await interceptor.message().respond({ type: 'delete', id: 'fallback' });
+
+        const restriction: Schema = { type: 'create', body: { text: 'hello' } };
+
+        await interceptor.message().with(restriction, { exact }).respond({ type: 'delete', id: 'restricted' });
+
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
+          for (const matchingMessage of [restriction] satisfies ChatMessage[]) {
+            const response = waitForWebSocketClientMessage(client);
+            client.send(JSON.stringify(matchingMessage));
+            await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'restricted' }));
+          }
+
+          for (const mismatchingMessage of [
+            { type: 'create', body: { text: 'hello', priority: 1 } },
+            { type: 'create', body: { text: 'other' } },
+            { type: 'delete', id: '1' },
+          ] satisfies ChatMessage[]) {
+            const response = waitForWebSocketClientMessage(client);
+            client.send(JSON.stringify(mismatchingMessage));
+            await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'fallback' }));
+          }
+        });
+      });
+    },
+  );
+
+  it.each([{ exact: false }, { exact: undefined }])(
+    'should match only specific messages if contains a static restriction and exact $exact',
+    async ({ exact }) => {
+      await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+        await interceptor.message().respond({ type: 'delete', id: 'fallback' });
+
+        const restriction: Schema = { type: 'create', body: { text: 'hello' } };
+
+        await interceptor.message().with(restriction, { exact }).respond({ type: 'delete', id: 'restricted' });
+
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
+          for (const matchingMessage of [
+            restriction,
+            { type: 'create', body: { text: 'hello', priority: 1 } },
+          ] satisfies ChatMessage[]) {
+            const response = waitForWebSocketClientMessage(client);
+            client.send(JSON.stringify(matchingMessage));
+            await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'restricted' }));
+          }
+
+          for (const mismatchingMessage of [
+            { type: 'create', body: { text: 'other' } },
+            { type: 'delete', id: '1' },
+          ] satisfies ChatMessage[]) {
+            const response = waitForWebSocketClientMessage(client);
+            client.send(JSON.stringify(mismatchingMessage));
+            await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'fallback' }));
+          }
+        });
+      });
+    },
+  );
+
   it('should match only specific messages if contains computed restrictions', async () => {
     await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
       function isCreateMessage(message: ChatMessage): message is Extract<ChatMessage, { type: 'create' }> {
