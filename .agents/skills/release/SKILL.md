@@ -145,9 +145,9 @@ gh api graphql -f query='{repository(owner:"zimicjs",name:"zimic"){pinnedDiscuss
 
 For each draft release:
 
-1. Review the draft and publish it with "Create a discussion for this release" checked in the `Announcements` category. GitHub drops a discussion category set on a draft, so it can be chosen only when publishing.
+1. Review the draft, linked by its URL, and publish it with "Create a discussion for this release" checked in the `Announcements` category. GitHub drops a discussion category set on a draft, so it can be chosen only when publishing.
 2. Approve the `NPM` deployment of the package's run in `https://github.com/zimicjs/zimic/actions/workflows/release-<slug>-package.yaml`.
 3. Add the `release` label to the new discussion and pin it.
 4. Unpin the package's previous announcement, linked when one is pinned.
 
-For `zimic-web`, add a final item: approve the deploy run, linked, once every package release above is published to npm.
+For `zimic-web`, add a final item: approve the pending deploy run, linked by its URL, once every package release above is published to npm.
