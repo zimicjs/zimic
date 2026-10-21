@@ -1,7 +1,7 @@
 import type { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
 import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
-import { InterceptorServerWebSocketSchema, WebSocketHandlerCommit } from '@/server/types/schema';
+import { InterceptorServerWebSocketSchema, WebSocketHandlerCommit, WebSocketHandlerReset } from '@/server/types/schema';
 import { isClientSide, isServerSide } from '@/utils/environment';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocketEventMessage } from '@/utils/webSocket/types';
@@ -260,15 +260,16 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       return options.interceptor === undefined || handler.interceptor === options.interceptor;
     });
 
+    const clearedHandlerIds: string[] = [];
+
     for (const handler of selectedHandlers) {
       handler.interceptor.clients.length = 0;
-      this.webSocketHandlers.delete(handler.id);
 
       if (options.preserveInterceptorRegistration) {
-        // Recommitting under a new id makes the server close the connections of the cleared handler while still
-        // accepting new ones.
-        const preservedHandler: WebSocketHandler = { ...handler, id: crypto.randomUUID(), clients: new Map() };
-        this.webSocketHandlers.set(preservedHandler.id, preservedHandler);
+        handler.clients.clear();
+        clearedHandlerIds.push(handler.id);
+      } else {
+        this.webSocketHandlers.delete(handler.id);
       }
     }
 
@@ -276,16 +277,16 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       return;
     }
 
-    const handlersToRecommit = Array.from<WebSocketHandler, WebSocketHandlerCommit>(
-      this.webSocketHandlers.values(),
-      (handler) => ({
+    const reset: WebSocketHandlerReset = {
+      handlers: Array.from<WebSocketHandler, WebSocketHandlerCommit>(this.webSocketHandlers.values(), (handler) => ({
         id: handler.id,
         baseURL: handler.baseURL,
-      }),
-    );
+      })),
+      clearedHandlerIds,
+    };
 
     try {
-      await this.webSocketClient.request('interceptors/ws/workers/reset', handlersToRecommit);
+      await this.webSocketClient.request('interceptors/ws/workers/reset', reset);
       /* istanbul ignore next -- @preserve
        * Reset aborts only occur when the RPC socket closes during a reset request. */
     } catch (error) {

@@ -178,7 +178,8 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
   });
 
   // No WebSocket counterpart for "should not consider handlers of another interceptor cleared while requests are being
-  // handled": messages do not fall through to other interceptors.
+  // handled": a connection belongs to one interceptor for its whole lifetime, so its messages never reach the handlers
+  // of another interceptor.
 
   it('should clear only clients owned by the selected interceptor', async () => {
     const firstBaseURL = `${baseURL}/first`;

@@ -1,3 +1,4 @@
+import { excludeNonPathParams } from '@zimic/utils/url';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 import { SharedOptions as MSWWorkerSharedOptions, ws } from 'msw';
 
@@ -144,6 +145,15 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       link,
       mswHandler: link.addEventListener('connection', ({ client: rawClient }) => {
         const client = rawClient as LocalWebSocketClientConnection;
+
+        // Unlike HTTP requests, connections do not fall back to other interceptors. A connection belongs to one
+        // interceptor for its whole lifetime, so its clients, connection listeners, and server sends stay unambiguous.
+        const isConnectionOwner = this.findConnectionOwner(client.url) === webSocketHandler;
+
+        if (!isConnectionOwner) {
+          return;
+        }
+
         const interceptorClient = createWebSocketInterceptorClient<Schema>(client.url.href, (data) =>
           client.send(data),
         );
@@ -202,6 +212,14 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     for (const client of handler?.clients.values() ?? []) {
       client.connection.send(data);
     }
+  }
+
+  private findConnectionOwner(connectionURL: URL) {
+    const normalizedURL = excludeNonPathParams(new URL(connectionURL));
+    const connectionURLAsString =
+      normalizedURL.href === `${normalizedURL.origin}/` ? normalizedURL.origin : normalizedURL.href;
+
+    return this.webSocketHandlers.findLast((handler) => handler.interceptor.baseURLAsString === connectionURLAsString);
   }
 
   private findHandlerByClient<Schema extends WebSocketSchema>(client: InternalWebSocketInterceptorClient<Schema>) {
