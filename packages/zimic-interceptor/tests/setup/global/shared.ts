@@ -1,11 +1,21 @@
 import { HttpHeaders } from '@zimic/http';
-import { startHttpServer, stopHttpServer } from '@zimic/utils/server';
+import { getHttpServerPort, startHttpServer, stopHttpServer } from '@zimic/utils/server';
+import assert from 'assert';
 import type { Server } from 'http';
+import type { TestProject } from 'vitest/node';
+
+declare module 'vitest' {
+  export interface ProvidedContext {
+    fallbackServer: {
+      url: string;
+      port: number;
+    };
+  }
+}
 
 let fallbackServer: Server | undefined;
 
 export const GLOBAL_FALLBACK_SERVER_HOSTNAME = 'localhost';
-export const GLOBAL_FALLBACK_SERVER_PORT = Number(process.env.GLOBAL_FALLBACK_SERVER_PORT);
 
 export const GLOBAL_FALLBACK_SERVER_RESPONSE_STATUS = 200;
 
@@ -20,7 +30,7 @@ export const GLOBAL_FALLBACK_SERVER_HEADERS = {
 // By comparing the responses in the tests, we can use this to check if a request was correctly bypassed and reached the
 // real network or was rejected before that.
 
-export async function setup() {
+export async function setup(project: TestProject) {
   const [http, { DEFAULT_ACCESS_CONTROL_HEADERS }] = await Promise.all([import('http'), import('@/server')]);
 
   const headers = new HttpHeaders({
@@ -36,7 +46,14 @@ export async function setup() {
 
   await startHttpServer(fallbackServer, {
     hostname: GLOBAL_FALLBACK_SERVER_HOSTNAME,
-    port: GLOBAL_FALLBACK_SERVER_PORT,
+  });
+
+  const port = getHttpServerPort(fallbackServer);
+  assert(port !== undefined);
+
+  project.provide('fallbackServer', {
+    url: `http://${GLOBAL_FALLBACK_SERVER_HOSTNAME}:${port}`,
+    port,
   });
 }
 

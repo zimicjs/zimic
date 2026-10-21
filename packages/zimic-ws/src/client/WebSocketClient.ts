@@ -1,13 +1,9 @@
 import { PossiblePromise } from '@zimic/utils/types';
+import { closeWebSocketClient } from '@zimic/utils/ws';
 
 import { WebSocketMessageData, WebSocketSchema } from '@/types/schema';
 
-import {
-  closeWebSocketClient,
-  openWebSocketClient,
-  WebSocketClientCloseOptions,
-  WebSocketClientOpenOptions,
-} from './utils/lifecycle';
+import { openWebSocketClient, WebSocketClientCloseOptions, WebSocketClientOpenOptions } from './utils/lifecycle';
 
 export namespace WebSocketClient {
   export type ReadyState =

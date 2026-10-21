@@ -21,9 +21,6 @@ export default defineConfig({
           exclude: ['**/*.browser.test.ts'],
           globalSetup: './tests/setup/global/node.ts',
         },
-        define: {
-          'process.env.GLOBAL_FALLBACK_SERVER_PORT': "'3002'",
-        },
       },
       {
         extends: true,
@@ -34,9 +31,6 @@ export default defineConfig({
           exclude: ['**/*.node.test.ts'],
           globalSetup: './tests/setup/global/browser.ts',
           setupFiles: ['./tests/setup/browser.ts'],
-          // We may need to retry browser tests on CI because browsers may retry failed requests, causing tests that
-          // expect failures to be flaky.
-          retry: process.env.CI === 'true' ? 2 : 0,
           browser: {
             instances: [{ browser: 'chromium' }],
             provider: playwright(),
@@ -44,9 +38,6 @@ export default defineConfig({
             headless: true,
             screenshotFailures: false,
           },
-        },
-        define: {
-          'process.env.GLOBAL_FALLBACK_SERVER_PORT': "'3003'",
         },
       },
     ],

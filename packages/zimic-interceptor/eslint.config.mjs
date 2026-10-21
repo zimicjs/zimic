@@ -9,4 +9,21 @@ export default [
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
+  {
+    files: ['src/http/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@zimic/utils/http',
+              allowTypeImports: true,
+              message: "Import runtime values from '@zimic/http' to share a single class identity with user code.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];

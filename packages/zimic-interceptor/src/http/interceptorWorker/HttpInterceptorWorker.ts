@@ -52,9 +52,17 @@ abstract class HttpInterceptorWorker {
 
   private runningInterceptors: AnyHttpInterceptorImplementation[] = [];
 
+  get numberOfRunningInterceptors() {
+    return this.runningInterceptors.length;
+  }
+
   abstract start(): Promise<void>;
 
   protected async sharedStart(internalStart: () => Promise<void>) {
+    if (this.stoppingPromise) {
+      await this.stoppingPromise;
+    }
+
     if (this.isRunning) {
       return;
     }
@@ -66,8 +74,6 @@ abstract class HttpInterceptorWorker {
     try {
       this.startingPromise = internalStart();
       await this.startingPromise;
-
-      this.startingPromise = undefined;
     } catch (error) {
       // In server side (e.g. Node.js), we need to manually log the error because this will be treated as an unhandled
       // promise rejection. If we don't log it, the output won't contain details about the error. In the browser,
@@ -78,6 +84,8 @@ abstract class HttpInterceptorWorker {
 
       await this.stop();
       throw error;
+    } finally {
+      this.startingPromise = undefined;
     }
   }
 
@@ -99,10 +107,13 @@ abstract class HttpInterceptorWorker {
      * reliably reproduce in tests. */
     if (stoppingResult instanceof Promise) {
       this.stoppingPromise = stoppingResult;
-      await this.stoppingPromise;
-    }
 
-    this.stoppingPromise = undefined;
+      try {
+        await this.stoppingPromise;
+      } finally {
+        this.stoppingPromise = undefined;
+      }
+    }
   }
 
   abstract use<Schema extends HttpSchema>(

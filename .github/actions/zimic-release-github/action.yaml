@@ -22,7 +22,7 @@ runs:
   using: composite
   steps:
     - name: Create GitHub release
-      uses: ncipollo/release-action@v1
+      uses: ncipollo/release-action@v1.21.0
       if: ${{ inputs.type == 'tag-and-release' }}
       with:
         name: '${{ inputs.project-name }}: ${{ inputs.version }}'

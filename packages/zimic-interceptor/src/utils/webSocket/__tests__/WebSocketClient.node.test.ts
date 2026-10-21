@@ -1,16 +1,12 @@
 import { startHttpServer, stopHttpServer } from '@zimic/utils/server';
 import { waitFor, waitForNot } from '@zimic/utils/time';
+import { closeWebSocketServer, WebSocketCloseTimeoutError, WebSocketOpenTimeoutError } from '@zimic/utils/ws';
 import { createServer } from 'http';
 import ClientSocket from 'isomorphic-ws';
 import { AddressInfo } from 'net';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  closeServerSocket,
-  WebSocketCloseTimeoutError,
-  WebSocketMessageTimeoutError,
-  WebSocketOpenTimeoutError,
-} from '@/utils/webSocket';
+import { WebSocketMessageAbortError, WebSocketMessageTimeoutError } from '@/utils/webSocket';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
 import InvalidWebSocketMessageError from '../errors/InvalidWebSocketMessageError';
@@ -23,7 +19,7 @@ import {
   WebSocketSchema,
 } from '../types';
 import WebSocketClient from '../WebSocketClient';
-import { delayClientSocketClose, delayClientSocketOpen } from './utils';
+import { collectClientSocketJSONMessages, delayClientSocketClose, delayClientSocketOpen } from './utils';
 
 const { WebSocketServer: ServerSocket } = ClientSocket;
 
@@ -58,7 +54,7 @@ describe('Web socket client', () => {
     await client?.stop();
     client = undefined;
 
-    await closeServerSocket(rawServer);
+    await closeWebSocketServer(rawServer, { terminateClients: true });
     await stopHttpServer(httpServer);
   });
 
@@ -143,7 +139,19 @@ describe('Web socket client', () => {
 
       client = new WebSocketClient({ url: `ws://localhost:${port}` });
 
-      await expect(client.start()).rejects.toThrow(/^(connect ECONNREFUSED .+)?$/);
+      const addEventListenerSpy = vi.spyOn(ClientSocket.prototype, 'addEventListener');
+      const removeEventListenerSpy = vi.spyOn(ClientSocket.prototype, 'removeEventListener');
+
+      try {
+        await expect(client.start()).rejects.toThrow(/^(connect ECONNREFUSED .+)?$/);
+
+        const messageListener = addEventListenerSpy.mock.calls.find(([type]) => type === 'message')?.[1];
+        expect(messageListener).toBeDefined();
+        expect(removeEventListenerSpy).toHaveBeenCalledWith('message', messageListener);
+      } finally {
+        addEventListenerSpy.mockRestore();
+        removeEventListenerSpy.mockRestore();
+      }
     });
   });
 
@@ -159,16 +167,7 @@ describe('Web socket client', () => {
       expect(rawServerSockets).toHaveLength(1);
 
       type EventMessage = WebSocketEventMessage<Schema, 'no-reply'>;
-      const eventMessages: EventMessage[] = [];
-
-      rawServerSockets[0].addEventListener('message', (message) => {
-        /* istanbul ignore if -- @preserve
-         * All messages are expected to be strings. */
-        if (typeof message.data !== 'string') {
-          throw new Error('Unexpected message type');
-        }
-        eventMessages.push(JSON.parse(message.data) as EventMessage);
-      });
+      const eventMessages = collectClientSocketJSONMessages<EventMessage>(rawServerSockets[0]);
 
       const eventMessage: EventMessage['data'] = { message: 'test' };
       client.send('no-reply', eventMessage);
@@ -216,16 +215,7 @@ describe('Web socket client', () => {
       expect(rawServerSockets).toHaveLength(1);
 
       type RequestMessage = WebSocketEventMessage<Schema, 'with-reply'>;
-      const requestMessages: RequestMessage[] = [];
-
-      rawServerSockets[0].addEventListener('message', (message) => {
-        /* istanbul ignore if -- @preserve
-         * All messages are expected to be strings. */
-        if (typeof message.data !== 'string') {
-          throw new Error('Unexpected message type');
-        }
-        requestMessages.push(JSON.parse(message.data) as RequestMessage);
-      });
+      const requestMessages = collectClientSocketJSONMessages<RequestMessage>(rawServerSockets[0]);
 
       const requestMessage: RequestMessage['data'] = { question: 'test' };
       const replyPromise = client.request('with-reply', requestMessage);
@@ -269,6 +259,17 @@ describe('Web socket client', () => {
       );
     });
 
+    it('should abort pending reply requests if stopped', async () => {
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
+      await client.start();
+
+      const replyPromise = client.request('with-reply', { question: 'test' });
+
+      await client.stop();
+
+      await expect(replyPromise).rejects.toThrow(new WebSocketMessageAbortError());
+    });
+
     it('should support receiving reply requests from servers', async () => {
       const rawServerSockets: ClientSocket[] = [];
       rawServer.on('connection', (socket) => rawServerSockets.push(socket));
@@ -288,17 +289,7 @@ describe('Web socket client', () => {
       });
 
       type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
-      const replyMessages: ReplyMessage[] = [];
-
-      rawServerSockets[0].addEventListener('message', (message) => {
-        /* istanbul ignore if -- @preserve
-         * All messages are expected to be strings. */
-        if (typeof message.data !== 'string') {
-          throw new Error('Unexpected message type');
-        }
-        const parsedMessage = JSON.parse(message.data) as ReplyMessage;
-        replyMessages.push(parsedMessage);
-      });
+      const replyMessages = collectClientSocketJSONMessages<ReplyMessage>(rawServerSockets[0]);
 
       const requestMessage: RequestMessage['data'] = { question: 'test' };
       rawServerSockets[0].send(
@@ -435,16 +426,7 @@ describe('Web socket client', () => {
       });
 
       type RequestMessage = WebSocketEventMessage<Schema, 'with-reply'>;
-      const requestMessages: RequestMessage[] = [];
-
-      rawServerSockets[0].addEventListener('message', (message) => {
-        /* istanbul ignore if -- @preserve
-         * All messages are expected to be strings. */
-        if (typeof message.data !== 'string') {
-          throw new Error('Unexpected message type');
-        }
-        requestMessages.push(JSON.parse(message.data) as RequestMessage);
-      });
+      const requestMessages = collectClientSocketJSONMessages<RequestMessage>(rawServerSockets[0]);
 
       const requestMessage: RequestMessage['data'] = { question: 'test' };
       const replyPromise = client.request('with-reply', requestMessage);
@@ -493,16 +475,7 @@ describe('Web socket client', () => {
       expect(rawServerSockets).toHaveLength(1);
 
       type RequestMessage = WebSocketEventMessage<Schema, 'with-reply'>;
-      const requestMessages: RequestMessage[] = [];
-
-      rawServerSockets[0].addEventListener('message', (message) => {
-        /* istanbul ignore if -- @preserve
-         * All messages are expected to be strings. */
-        if (typeof message.data !== 'string') {
-          throw new Error('Unexpected message type');
-        }
-        requestMessages.push(JSON.parse(message.data) as RequestMessage);
-      });
+      const requestMessages = collectClientSocketJSONMessages<RequestMessage>(rawServerSockets[0]);
 
       type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
       const replyMessages: ReplyMessage[] = [];

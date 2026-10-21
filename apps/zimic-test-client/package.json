@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "setup": "concurrently --names playwright,zimic 'playwright install chromium' 'zimic-interceptor browser init ./public || true'",
+    "setup": "concurrently --names playwright,zimic 'playwright install chromium' 'zimic-interceptor browser init ./public'",
     "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
@@ -14,11 +14,11 @@
     "types:check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.6.5",
     "@types/superagent": "^8.1.11",
-    "@vitest/browser": "^4.1.10",
-    "@vitest/browser-playwright": "^4.1.10",
-    "@vitest/coverage-istanbul": "^4.1.10",
+    "@vitest/browser": "^5.0.5",
+    "@vitest/browser-playwright": "^5.0.5",
+    "@vitest/coverage-istanbul": "^5.0.5",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/fetch": "workspace:*",
     "@zimic/http": "workspace:*",
@@ -27,15 +27,15 @@
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "@zimic/ws": "workspace:*",
-    "axios": "^1.18.1",
-    "concurrently": "^10.0.4",
+    "axios": "^1.20.0",
+    "concurrently": "^10.0.6",
     "dotenv-cli": "^11.0.0",
-    "eslint": "^9.39.5",
+    "eslint": "^10.12.0",
     "node-fetch": "^3.3.2",
-    "playwright": "^1.62.0",
-    "superagent": "^10.3.0",
+    "playwright": "^1.64.1",
+    "superagent": "^10.4.1",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "@typescript/native": "npm:typescript@^7.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^5.0.5"
   }
 }

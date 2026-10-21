@@ -18,7 +18,7 @@ You can override the logging and bypassing behavior per interceptor with `onUnha
 
 When a request is unhandled, `@zimic/interceptor` looks for a running interceptor whose base URL is the prefix of the request URL. If such interceptor is found, its strategy is used, or the default strategy if none was defined. If multiple interceptors match the request URL, the **last** one started with `await interceptor.start()` will be used, regardless of existing other interceptors with a more specific base URL.
 
-If no running interceptor matches the request, it will be **rejected** with a network error. If the request was targeted to an interceptor server, the logging behavior is configured with the [`--log-unhandled-requests`](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-start) option in the interceptor server.
+If no running interceptor matches the request, it will be **rejected** with a network error in browsers and Node.js' `fetch`. Other HTTP clients may process the rejection differently, such as reporting an invalid content length (e.g. Node.js' `http.get`, Python's `requests`, and `curl`) or receiving an empty `500` response (e.g. Bun, Python's `urllib`, and wget). If the request was targeted to an interceptor server, the logging behavior is configured with the [`--log-unhandled-requests`](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-start) option.
 
 :::
 
