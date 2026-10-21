@@ -16,7 +16,7 @@ Run waits (`gh pr checks --watch`, `gh run watch`) as background commands and co
 
 # 1. Discover projects
 
-1. Run `git fetch origin canary main --tags`.
+1. Run `git fetch origin canary main --tags`, and record `git rev-parse origin/canary` as the release head. Release PRs ship this commit plus only the version bumps allowed in [Merge and wait for drafts](#5-merge-and-wait-for-drafts).
 2. List releasable projects from the `project-name` and `project-directory` inputs in `.github/workflows/release-*-to-github.yaml`. Record each project's workflow file.
 3. For each project, read `version` from `git show origin/canary:<project-directory>/package.json`. The stable version strips the pre-release suffix, for example `1.4.2-canary.9` becomes `1.4.2`.
 4. Ask the user which projects to release, allowing several. If the question tool limits the number of options, split the projects across questions.
@@ -61,7 +61,7 @@ For each selected package other than `zimic-web`:
 
 # 3. Confirm the plan
 
-Show one plan covering every selected project: for each package, its PR title, base branch, label, release notes comparison base, whether it creates or reuses the PR, any branch to create from `origin/main`, and the path of its PR body file followed by the file's full Markdown; for `zimic-web`, the dispatch inputs. Ask the user once to approve. That approval covers creating branches, opening PRs, merging them after CI passes, and dispatching the website release. Stop if the user does not approve.
+Show one plan covering every selected project: the release head; for each package, its PR title, base branch, label, release notes comparison base, whether it creates or reuses the PR, any branch to create from `origin/main`, and the path of its PR body file followed by the file's full Markdown; for `zimic-web`, the dispatch inputs. Ask the user once to approve. That approval covers creating branches, opening PRs, merging them after CI passes, and dispatching the website release. Stop if the user does not approve.
 
 # 4. Start the releases
 
@@ -94,16 +94,16 @@ Once every PR is created or updated, show the user a list with the URL of each P
 Wait for CI on every package PR at the same time, then merge the passing PRs one right after another. A PR that is held does not block the others.
 
 1. For each PR, wait for its required CI:
-   1. Record `headRefOid` and `mergeable` with `gh pr view <number> --repo zimicjs/zimic --json headRefOid,mergeable`. The first `headRefOid` recorded for the PR is its release head. Re-read while `mergeable` is `UNKNOWN`, and hold the PR on `CONFLICTING`, because GitHub runs no CI on a conflicting PR.
-   2. Run `git fetch origin canary`, strip the pre-release suffix from `version` in `git show <headRefOid>:<project-directory>/package.json`, and hold the PR if it differs from the approved stable version.
-   3. Count the required checks of the base branch with `gh api 'repos/zimicjs/zimic/rules/branches/<URL-encoded branch>' --jq '[.[] | select(.type == "required_status_checks")] | length'`. If it is `0`, hold the PR and tell the user to add the branch to the `Production branches` ruleset, because no CI would gate the merge.
-   4. Poll `gh pr checks <number> --repo zimicjs/zimic --required --json name` every 15 seconds until it lists a check. GitHub registers checks a few seconds after the head changes, and until then `--watch` exits at once.
-   5. Wait with `gh pr checks <number> --repo zimicjs/zimic --required --watch --fail-fast`. `--required` skips checks that do not gate the merge, such as release workflow runs waiting for environment approval on the same commit. When the watch exits non-zero, re-read `headRefOid`. If it changed, start step 1 again with the new head. Otherwise hold the PR. Record the head CI passed on.
+   1. Record `headRefOid` and `mergeable` with `gh pr view <number> --repo zimicjs/zimic --json headRefOid,mergeable`. Re-read while `mergeable` is `UNKNOWN`, and hold the PR on `CONFLICTING`, because GitHub runs no CI on a conflicting PR.
+   2. Run `git fetch origin canary`. If `headRefOid` differs from the release head, compare them with `git diff --name-only <release-head> <headRefOid>` and `git diff -U0 <release-head> <headRefOid>`. Release commits from other projects reach `canary` while PRs wait, and they change only the `"version"` line of a project's `package.json`. Hold the PR unless every changed file is a `<project-directory>/package.json` from step 2 of [Discover projects](#1-discover-projects) and every changed line is a `"version"` line, because any other change alters the released code or its dependencies.
+   3. Strip the pre-release suffix from `version` in `git show <headRefOid>:<project-directory>/package.json`, and hold the PR if it differs from the approved stable version.
+   4. Count the required checks of the base branch with `gh api 'repos/zimicjs/zimic/rules/branches/<URL-encoded branch>' --jq '[.[] | select(.type == "required_status_checks")] | length'`. If it is `0`, hold the PR and tell the user to add the branch to the `Production branches` ruleset, because no CI would gate the merge.
+   5. Poll `gh pr checks <number> --repo zimicjs/zimic --required --json name` every 15 seconds until it lists a check. GitHub registers checks a few seconds after the head changes, and until then `--watch` exits at once.
+   6. Wait with `gh pr checks <number> --repo zimicjs/zimic --required --watch --fail-fast`. `--required` skips checks that do not gate the merge, such as release workflow runs waiting for environment approval on the same commit. When the watch exits non-zero, re-read `headRefOid`. If it changed, start step 1 again with the new head. Otherwise hold the PR. Record the head CI passed on.
 
 2. When every PR has passed CI or is held, merge each passing PR in turn, without waiting for another PR's release run:
-   1. Re-read `headRefOid`. If it differs from the release head, run `git fetch origin canary` and compare them with `git diff --name-only <release-head> <headRefOid>` and `git diff -U0 <release-head> <headRefOid>`. Release commits from other projects reach `canary` while PRs wait, and they change only the `"version"` line of a project's `package.json`. Hold the PR unless every changed file is a `<project-directory>/package.json` from step 2 of [Discover projects](#1-discover-projects) and every changed line is a `"version"` line, because any other change alters the released code or its dependencies.
-   2. If `headRefOid` differs from the head CI passed on, run step 1 on it and return to step 2.1 once it passes, merging the other PRs meanwhile. The release branches require passing checks on the current head, so GitHub blocks the merge until then.
-   3. Merge with a merge commit, pinning the head:
+   1. Re-read `headRefOid`. If it differs from the head CI passed on, run step 1 on it and return to step 2.1 once it passes, merging the other PRs meanwhile. The release branches require passing checks on the current head, so GitHub blocks the merge until then.
+   2. Merge with a merge commit, pinning the head:
 
       ```bash
       gh pr merge '<number>' --repo zimicjs/zimic --merge --match-head-commit '<headRefOid>'
