@@ -59,7 +59,6 @@ export async function expectWebSocketTimesCheckError(
   options: {
     message: string;
     expectedNumberOfMessages: number | { min: number; max: number };
-    unmatchedMessages?: string;
   },
 ) {
   let timesCheckError: WebSocketTimesCheckError | undefined;
@@ -78,10 +77,9 @@ export async function expectWebSocketTimesCheckError(
 
   const expectedMessage = [
     options.message,
-    options.unmatchedMessages && ['Unmatched messages:', '', options.unmatchedMessages].join('\n'),
-  ]
-    .filter(Boolean)
-    .join('\n\n');
+    '',
+    'Learn more: https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertimes',
+  ].join('\n');
 
   expect(timesCheckError!.message).toEqual(expectedMessage);
 
