@@ -5,7 +5,7 @@ description: Release Zimic packages and the website from canary by opening label
 
 # Overview
 
-Release one or more Zimic projects from `canary`. Use `gh` from the repository root against `zimicjs/zimic`. Never publish a GitHub release; publishing is the user's step.
+Release one or more Zimic projects from `canary`. Use `gh` from the repository root against `zimicjs/zimic`. Never publish a GitHub release, as publishing is the user's step.
 
 There are two release paths:
 
@@ -92,6 +92,7 @@ gh run list --repo zimicjs/zimic --workflow release-zimic-web-to-github.yaml --e
 For each package PR:
 
 1. Record the PR's `headRefOid` and `mergeable` with `gh pr view <number> --repo zimicjs/zimic --json headRefOid,mergeable`. Re-read while `mergeable` is `UNKNOWN`, and hold the PR on `CONFLICTING`, because GitHub runs no CI on a conflicting PR. Run `git fetch origin canary`, strip the pre-release suffix from `version` in `git show <headRefOid>:<project-directory>/package.json`, and hold the PR if it differs from the approved stable version. Then wait for CI with `gh pr checks <number> --repo zimicjs/zimic --watch --fail-fast`. If it reports no checks yet, retry every minute. When the watch exits non-zero, re-read `headRefOid`. If it changed, start step 1 again with the new head. Otherwise hold the PR.
+
 2. Merge with a merge commit, matching past release PRs, and pin the head CI passed on:
 
    ```bash
@@ -107,7 +108,9 @@ For each package PR:
    ```
 
 4. Wait with `gh run watch <id> --repo zimicjs/zimic --exit-status`.
+
 5. Confirm the draft exists with `gh release view '<package>@<stable-version>' --repo zimicjs/zimic --json isDraft,url`.
+
 6. Invoke skill `write-release-description` in unattended mode with the package, the stable version, and the comparison base from the plan as the previous version.
 
 For `zimic-web`:
