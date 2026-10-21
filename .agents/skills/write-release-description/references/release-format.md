@@ -9,15 +9,17 @@ Releases use only non-empty sections, then credits, then a collapsible full chan
 Common section order:
 
 1. `### Features`: new capabilities and user-facing improvements.
-2. `### Fixes`: bug fixes and internal improvements.
+2. `### Fixes`: bug fixes and user-visible improvements.
 3. `### Documentation`: new or updated documentation, including examples, guides, and links if applicable.
-4. `### Environment`: changes affecting the development or runtime environment, such as Node version support, TypeScript support, build tools, and release tooling.
+4. `### Environment`: changes to the environments that consumers run the package in, such as Node version support, TypeScript support, and the published build output.
 5. `### Deprecations`: deprecation notices and migration notes for users, including suggested diffs.
 6. `### Dependencies`: dependency updates.
 7. `### Credits`: acknowledgments of contributors to the release.
 8. `<details>`: full list of included pull requests with links.
 
 Not every release has every section. Do not add empty headings.
+
+Write items only for changes that consumers of the package can see or rely on, such as its API, behavior, types, supported environments, dependencies, and documentation. Leave internal-only changes, such as CI, release tooling, tests, and internal refactors, out of the sections, and list their PRs only in the full changelog. When an internal PR also changes something consumers see, write an item for that visible change alone.
 
 ## Item style
 
