@@ -61,7 +61,7 @@ For each selected package other than `zimic-web`:
 
 # 3. Confirm the plan
 
-Show one plan covering every selected project: for each package, its PR title, base branch, label, release notes comparison base, whether it creates or reuses the PR, and any branch to create from `origin/main`; for `zimic-web`, the dispatch inputs. Ask the user once to approve. That approval covers creating branches, opening PRs, merging them after CI passes, and dispatching the website release. Stop if the user does not approve.
+Show one plan covering every selected project: for each package, its PR title, base branch, label, release notes comparison base, whether it creates or reuses the PR, any branch to create from `origin/main`, and the path of its PR body file followed by the file's full Markdown; for `zimic-web`, the dispatch inputs. Ask the user once to approve. That approval covers creating branches, opening PRs, merging them after CI passes, and dispatching the website release. Stop if the user does not approve.
 
 # 4. Start the releases
 
