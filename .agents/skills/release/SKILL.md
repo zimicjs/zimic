@@ -100,7 +100,7 @@ Wait for CI on every package PR at the same time, then merge the passing PRs one
 
 2. When every PR has passed CI or is held, merge each passing PR in turn, without waiting for another PR's release run:
    1. Re-read `headRefOid`. If it differs from the release head, run `git fetch origin canary` and compare them with `git diff --name-only <release-head> <headRefOid>` and `git diff -U0 <release-head> <headRefOid>`. Release commits from other projects reach `canary` while PRs wait, and they change only the `"version"` line of a project's `package.json`. Hold the PR unless every changed file is a `<project-directory>/package.json` from step 2 of [Discover projects](#1-discover-projects) and every changed line is a `"version"` line, because any other change alters the released code or its dependencies.
-   2. If `headRefOid` differs from the head CI passed on, run step 1 on it and return here once it passes, merging the other PRs meanwhile. The release branches require passing checks on the current head, so GitHub blocks the merge until then.
+   2. If `headRefOid` differs from the head CI passed on, run step 1 on it and return to step 2.1 once it passes, merging the other PRs meanwhile. The release branches require passing checks on the current head, so GitHub blocks the merge until then.
    3. Merge with a merge commit, pinning the head:
 
       ```bash
