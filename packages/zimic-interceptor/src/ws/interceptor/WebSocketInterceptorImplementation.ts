@@ -175,10 +175,7 @@ class WebSocketInterceptorImplementation<
       this.worker.registerRunningInterceptor(this);
 
       await this.worker.start();
-
-      if (this.worker.type === 'local') {
-        await this.worker.use(this);
-      }
+      await this.worker.use(this);
 
       this.isRunning = true;
     } catch (error) {
@@ -199,7 +196,7 @@ class WebSocketInterceptorImplementation<
 
     await options.beforeStop?.();
 
-    // Clearing keeps the connection registration of local interceptors, so stopping has to remove it.
+    // Clearing keeps the interceptor registered to accept new connections, so stopping has to remove the registration.
     await this.workerOrThrow.clearHandlers({ interceptor: this });
 
     await this.stopWorker();
@@ -278,22 +275,7 @@ class WebSocketInterceptorImplementation<
 
     if (!isAlreadyRegistered) {
       this.handlers.push(handler.implementation);
-
-      const registrationResult = this.worker?.type === 'remote' ? this.worker.use(this) : undefined;
-
-      if (handler instanceof RemoteWebSocketMessageHandler && registrationResult instanceof Promise) {
-        const registrationPromise = registrationResult.catch((error: unknown) => {
-          this.unregisterMessageHandler(handler.implementation);
-          throw error;
-        });
-
-        handler.registerSyncPromise(registrationPromise);
-      }
     }
-  }
-
-  private unregisterMessageHandler(handler: AnyWebSocketMessageHandlerImplementation) {
-    removeArrayElement(this.handlers, handler);
   }
 
   async handleInterceptedMessage(
@@ -400,10 +382,7 @@ class WebSocketInterceptorImplementation<
 
     this.messageSavingGeneration++;
 
-    const clearResult = worker.clearHandlers({
-      interceptor: this,
-      preserveInterceptorRegistration: worker.type === 'local',
-    });
+    const clearResult = worker.clearHandlers({ interceptor: this, preserveInterceptorRegistration: true });
 
     for (const handler of this.handlers) {
       handler.clear();

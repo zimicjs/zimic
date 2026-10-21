@@ -1,5 +1,4 @@
-import { createPromiseWithResolvers } from '@zimic/utils/data';
-import { waitFor, waitForNot } from '@zimic/utils/time';
+import { waitFor } from '@zimic/utils/time';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
@@ -234,81 +233,25 @@ export function declareDefaultWebSocketMessageHandlerTests(
         expect(handler).toHaveProperty('catch', expect.any(Function));
         expect(handler).toHaveProperty('finally', expect.any(Function));
 
-        const fulfillmentListener = vi.fn((syncedHandler) => {
+        const fulfillmentListener = vi.fn((syncedHandler: unknown) => {
           expect(syncedHandler).toEqual(handler);
-          expect(handler.isSynced).toBe(true);
 
           expect(syncedHandler).not.toHaveProperty('then');
           expect(syncedHandler).toHaveProperty('catch', expect.any(Function));
           expect(syncedHandler).toHaveProperty('finally', expect.any(Function));
         });
-
-        expect(handler.isSynced).toBe(true);
 
         const pendingHandler = handler.with({});
         expect(pendingHandler).toEqual(handler);
 
-        const syncPromise = createPromiseWithResolvers<void>();
-        handler.registerSyncPromise(syncPromise);
-        expect(handler.isSynced).toBe(false);
-
-        const thenPromise = pendingHandler.then(fulfillmentListener);
-        syncPromise.resolve();
-        await thenPromise;
-
-        expect(handler.isSynced).toBe(true);
-        expect(pendingHandler.isSynced).toBe(true);
+        await pendingHandler.then(fulfillmentListener);
 
         expect(fulfillmentListener).toHaveBeenCalledTimes(1);
       });
 
-      it('should wait until synced before resolving, even if new sync promises were added while waiting', async () => {
-        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation);
-        await handler.respond({ type: 'delete', id: '1' });
-
-        expect(handler).toHaveProperty('then', expect.any(Function));
-        expect(handler).toHaveProperty('catch', expect.any(Function));
-        expect(handler).toHaveProperty('finally', expect.any(Function));
-
-        const fulfillmentListener = vi.fn((syncedHandler) => {
-          expect(handler).toEqual(syncedHandler);
-          expect(handler.isSynced).toBe(true);
-
-          expect(syncedHandler).not.toHaveProperty('then');
-          expect(syncedHandler).toHaveProperty('catch', expect.any(Function));
-          expect(syncedHandler).toHaveProperty('finally', expect.any(Function));
-        });
-
-        const syncPromises = [
-          createPromiseWithResolvers<void>(),
-          createPromiseWithResolvers<void>(),
-          createPromiseWithResolvers<void>(),
-        ];
-
-        expect(handler.isSynced).toBe(true);
-        handler.registerSyncPromise(syncPromises[0]);
-        expect(handler.isSynced).toBe(false);
-
-        const thenPromise = handler.with({}).then(fulfillmentListener);
-
-        handler.registerSyncPromise(syncPromises[1]);
-        handler.registerSyncPromise(syncPromises[2]);
-        expect(handler.isSynced).toBe(false);
-
-        syncPromises[1].resolve();
-        syncPromises[0].resolve();
-
-        await waitForNot(() => {
-          expect(fulfillmentListener).toHaveBeenCalled();
-        });
-
-        syncPromises[2].resolve();
-        await thenPromise;
-
-        expect(handler.isSynced).toBe(true);
-
-        expect(fulfillmentListener).toHaveBeenCalledTimes(1);
-      });
+      // No WebSocket counterpart for "should wait until synced before resolving, even if new sync promises were added
+      // while waiting": remote WebSocket handlers have nothing to sync, because handler declarations stay in the
+      // client-side worker and registration completes when the interceptor starts.
 
       it('should be catch-able', async () => {
         const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation);
@@ -318,17 +261,13 @@ export function declareDefaultWebSocketMessageHandlerTests(
         expect(handler).toHaveProperty('catch', expect.any(Function));
         expect(handler).toHaveProperty('finally', expect.any(Function));
 
-        // @ts-expect-error Forcing an exception in an internal method
-        handler.syncPromises = 'not-an-array';
+        const rejectionListener = vi.fn<(error: unknown) => void>();
 
-        const rejectionListener = vi.fn((error: unknown) => {
-          expect(error).toBeInstanceOf(Error);
-          expect(error).toHaveProperty('message', 'this.syncPromises.filter is not a function');
-        });
+        const syncedHandler = await handler.with({}).catch(rejectionListener);
 
-        await handler.with({}).catch(rejectionListener);
-
-        expect(rejectionListener).toHaveBeenCalledTimes(1);
+        expect(syncedHandler).toEqual(handler);
+        expect(syncedHandler).not.toHaveProperty('then');
+        expect(rejectionListener).not.toHaveBeenCalled();
       });
 
       it('should be finally-able', async () => {
@@ -341,22 +280,13 @@ export function declareDefaultWebSocketMessageHandlerTests(
 
         const finallyListener = vi.fn();
 
-        expect(handler.isSynced).toBe(true);
-
         const pendingHandler = handler.with({});
         expect(pendingHandler).toEqual(handler);
 
-        const syncPromise = createPromiseWithResolvers<void>();
-        handler.registerSyncPromise(syncPromise);
-        expect(handler.isSynced).toBe(false);
+        const syncedHandler = await pendingHandler.finally(finallyListener);
 
-        const finallyPromise = pendingHandler.finally(finallyListener);
-        syncPromise.resolve();
-        await finallyPromise;
-
-        expect(handler.isSynced).toBe(true);
-        expect(pendingHandler.isSynced).toBe(true);
-
+        expect(syncedHandler).toEqual(handler);
+        expect(syncedHandler).not.toHaveProperty('then');
         expect(finallyListener).toHaveBeenCalledTimes(1);
       });
     });

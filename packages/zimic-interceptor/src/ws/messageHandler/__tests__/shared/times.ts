@@ -382,10 +382,6 @@ export function declareTimesWebSocketMessageHandlerTests(
         await usingWebSocketInterceptor<Schema>(
           { type, baseURL, messageSaving: { enabled: true } },
           async (interceptor) => {
-            // Remote interceptors only accept connections after a handler is registered. This handler never matches, so
-            // the message from the other client stays unmatched.
-            await interceptor.message().with(() => false);
-
             await usingWebSocketClient<Schema>(baseURL, async () => {
               await waitFor(() => {
                 expect(interceptor.clients).toHaveLength(1);

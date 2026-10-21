@@ -1,13 +1,11 @@
 import { HttpSchema } from '@zimic/http';
-import { createPromiseWithResolvers } from '@zimic/utils/data';
-import { waitFor, waitForNot } from '@zimic/utils/time';
+import { waitFor } from '@zimic/utils/time';
 import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
 import LocalHttpInterceptorWorker from '@/http/interceptorWorker/LocalHttpInterceptorWorker';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
-import InterceptorWebSocketClient from '@/utils/webSocket/WebSocketClient';
 import { createWebSocketInterceptorClient } from '@/ws/interceptor/WebSocketInterceptorHandle';
 import WebSocketInterceptorImplementation from '@/ws/interceptor/WebSocketInterceptorImplementation';
 import { createWebSocketInterceptorWorker } from '@/ws/interceptorWorker/factory';
@@ -747,75 +745,6 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         const interceptor = createDefaultWebSocketInterceptor();
 
         await expect(worker.clearHandlers({ interceptor: interceptor.implementation })).resolves.not.toThrow();
-      });
-    });
-
-    it('should keep a pending remote handler unsynced until the server acknowledges the commit', async () => {
-      await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
-        const commitGate = createPromiseWithResolvers();
-
-        // Holds the first commit RPC before it is sent, so the handler is registered locally but not yet acknowledged
-        // by the server.
-        const originalRequest = InterceptorWebSocketClient.prototype.request;
-        const requestSpy = vi
-          .spyOn(InterceptorWebSocketClient.prototype, 'request')
-          .mockImplementationOnce(async function (this: unknown, ...args: Parameters<typeof originalRequest>) {
-            await commitGate;
-            const reply: unknown = await originalRequest.apply(this, args);
-            return reply as never;
-          });
-
-        let handler: ReturnType<typeof interceptor.message> | undefined;
-
-        try {
-          handler = interceptor.message();
-          handler.respond({ type: 'server', text: 'acknowledged' });
-
-          const syncListener = vi.fn();
-          void handler.then(syncListener);
-
-          await waitForNot(() => {
-            expect(syncListener).toHaveBeenCalled();
-          });
-
-          commitGate.resolve();
-          await handler;
-
-          await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
-            const messagePromise = waitForMessage(client);
-            client.send(JSON.stringify({ type: 'client', text: 'one' }));
-
-            await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'acknowledged' });
-          });
-        } finally {
-          commitGate.resolve();
-          await Promise.allSettled([handler]);
-          requestSpy.mockRestore();
-        }
-      });
-    });
-
-    it('should reject a pending remote handler after a failed commit and support registering a new handler', async () => {
-      await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
-        const commitError = new Error('Commit failed');
-
-        // Fails the first commit RPC before it reaches the server, so the first handler has no server registration.
-        const requestSpy = vi.spyOn(InterceptorWebSocketClient.prototype, 'request').mockRejectedValueOnce(commitError);
-
-        try {
-          await expect(interceptor.message().respond({ type: 'server', text: 'failed' })).rejects.toThrow(commitError);
-
-          await interceptor.message().respond({ type: 'server', text: 'recovered' });
-
-          await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
-            const messagePromise = waitForMessage(client);
-            client.send(JSON.stringify({ type: 'client', text: 'one' }));
-
-            await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'recovered' });
-          });
-        } finally {
-          requestSpy.mockRestore();
-        }
       });
     });
   }

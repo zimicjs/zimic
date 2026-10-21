@@ -504,39 +504,8 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
       });
     });
 
-    // Remote-only: handlers are registered with the interceptor server, which local interceptors do not use.
+    // Remote-only: interceptors are registered with the interceptor server, which local interceptors do not use.
     describe('Registrations', () => {
-      it('should register the base URL when a handler is created and resolve it after the registration completes', async () => {
-        await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, async (interceptor) => {
-          await expectClientToBeRejected();
-
-          await interceptor.message().respond({ type: 'server', index: 1 });
-
-          await usingWebSocketClient<MessageSchema>(baseURL, (client) => {
-            expect(client.readyState).toBe(WebSocketClient.OPEN);
-          });
-        });
-      });
-
-      it('should reset registrations after cleared', async () => {
-        await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, async (interceptor) => {
-          await interceptor.message().respond({ type: 'server', index: 1 });
-
-          await usingWebSocketClient<MessageSchema>(baseURL, (client) => {
-            expect(client.readyState).toBe(WebSocketClient.OPEN);
-          });
-
-          await interceptor.clear();
-          await expectClientToBeRejected();
-
-          await interceptor.message().respond({ type: 'server', index: 2 });
-
-          await usingWebSocketClient<MessageSchema>(baseURL, (client) => {
-            expect(client.readyState).toBe(WebSocketClient.OPEN);
-          });
-        });
-      });
-
       it('should reset registrations after stopped', async () => {
         await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, async (interceptor) => {
           await interceptor.message().respond({ type: 'server', index: 1 });
@@ -550,72 +519,31 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
         });
       });
 
-      it('should reject a handler if its registration fails and unregister it', async () => {
-        await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, async (interceptor) => {
+      it('should not start if its registration fails and support starting again', async () => {
+        await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, { start: false }, async (interceptor) => {
           const registrationError = new Error('Registration failed');
 
-          // No public path makes the server reject a registration, so only the handler commit request is failed.
+          // No public path makes the server reject a registration, so only the registration request is failed.
           const requestSpy = vi
             .spyOn(InterceptorWebSocketClient.prototype, 'request')
             .mockRejectedValueOnce(registrationError);
 
           try {
-            await expect(interceptor.message().respond({ type: 'server', index: 1 }).times(1)).rejects.toBe(
-              registrationError,
-            );
+            await expect(interceptor.start()).rejects.toBe(registrationError);
 
-            expect(requestSpy).toHaveBeenCalledTimes(1);
-            expect(requestSpy).toHaveBeenCalledWith('interceptors/ws/workers/commit', expect.anything());
+            expect(requestSpy).toHaveBeenNthCalledWith(1, 'interceptors/ws/workers/commit', expect.anything());
           } finally {
             requestSpy.mockRestore();
           }
 
-          await interceptor.message().with({ type: 'client', index: 2 }).respond({ type: 'server', index: 2 });
+          expect(interceptor.isRunning).toBe(false);
+          await expectClientToBeRejected();
 
-          await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-            // The failed handler matches any message, so it would reply here if it were still registered.
-            const unmatchedMessageListener = vi.fn();
-            client.addEventListener('message', unmatchedMessageListener);
-            client.send(JSON.stringify({ type: 'client', index: 1 }));
+          await interceptor.start();
+          expect(interceptor.isRunning).toBe(true);
 
-            await waitForNot(() => {
-              expect(unmatchedMessageListener).toHaveBeenCalled();
-            });
-
-            client.removeEventListener('message', unmatchedMessageListener);
-
-            const messagePromise = waitForWebSocketClientMessage(client);
-            client.send(JSON.stringify({ type: 'client', index: 2 }));
-            await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
-          });
-
-          await expect(interceptor.checkTimes()).resolves.toBeUndefined();
-        });
-      });
-
-      it('should reply with a later handler to a client after a previous registration failed', async () => {
-        await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, async (interceptor) => {
-          const registrationError = new Error('Registration failed');
-
-          const requestSpy = vi
-            .spyOn(InterceptorWebSocketClient.prototype, 'request')
-            .mockRejectedValueOnce(registrationError);
-
-          try {
-            await expect(interceptor.message().respond({ type: 'server', index: 1 })).rejects.toBe(registrationError);
-
-            expect(requestSpy).toHaveBeenCalledTimes(1);
-            expect(requestSpy).toHaveBeenCalledWith('interceptors/ws/workers/commit', expect.anything());
-          } finally {
-            requestSpy.mockRestore();
-          }
-
-          await interceptor.message().respond({ type: 'server', index: 2 });
-
-          await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-            const messagePromise = waitForWebSocketClientMessage(client);
-            client.send(JSON.stringify({ type: 'client', index: 1 }));
-            await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+          await usingWebSocketClient<MessageSchema>(baseURL, (client) => {
+            expect(client.readyState).toBe(WebSocketClient.OPEN);
           });
         });
       });

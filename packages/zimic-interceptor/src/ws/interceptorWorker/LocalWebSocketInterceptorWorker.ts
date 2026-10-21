@@ -61,10 +61,6 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     return LocalWebSocketInterceptorWorker;
   }
 
-  get type() {
-    return 'local' as const;
-  }
-
   static get isMSWWorkerRunning() {
     return LocalMSWWorkerStore.isMSWWorkerRunning;
   }

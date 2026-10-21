@@ -26,7 +26,6 @@ interface WebSocketHandler {
   id: string;
   baseURL: string;
   interceptor: AnyWebSocketInterceptorImplementation;
-  commitPromise: Promise<void>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   clients: Map<string, InternalWebSocketInterceptorClient<any>>;
 }
@@ -45,10 +44,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     });
 
     this.auth = options.auth;
-  }
-
-  get type() {
-    return 'remote' as const;
   }
 
   async start() {
@@ -103,12 +98,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       throw new NotRunningWebSocketInterceptorError();
     }
 
-    const handler = Array.from(this.webSocketHandlers.values()).find((handler) => handler.interceptor === interceptor);
-
-    if (handler) {
-      return handler.commitPromise;
-    }
-
     const handlerId = crypto.randomUUID();
 
     const commitPromise = this.webSocketClient
@@ -126,7 +115,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       id: handlerId,
       baseURL: interceptor.baseURLAsString,
       interceptor,
-      commitPromise,
       clients: new Map(),
     };
 
@@ -259,23 +247,28 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   }
 
   async clearHandlers<Schema extends WebSocketSchema>(
-    options: { interceptor?: AnyWebSocketInterceptorImplementation<Schema> } = {},
+    options: {
+      interceptor?: AnyWebSocketInterceptorImplementation<Schema>;
+      preserveInterceptorRegistration?: boolean;
+    } = {},
   ) {
     if (!this.isRunning) {
       throw new NotRunningWebSocketInterceptorError();
     }
 
-    if (options.interceptor === undefined) {
-      for (const handler of this.webSocketHandlers.values()) {
-        handler.interceptor.clients.length = 0;
-      }
-      this.webSocketHandlers.clear();
-    } else {
-      for (const handler of this.webSocketHandlers.values()) {
-        if (handler.interceptor === options.interceptor) {
-          handler.interceptor.clients.length = 0;
-          this.webSocketHandlers.delete(handler.id);
-        }
+    const selectedHandlers = Array.from(this.webSocketHandlers.values()).filter((handler) => {
+      return options.interceptor === undefined || handler.interceptor === options.interceptor;
+    });
+
+    for (const handler of selectedHandlers) {
+      handler.interceptor.clients.length = 0;
+      this.webSocketHandlers.delete(handler.id);
+
+      if (options.preserveInterceptorRegistration) {
+        // Recommitting under a new id makes the server close the connections of the cleared handler while still
+        // accepting new ones.
+        const preservedHandler: WebSocketHandler = { ...handler, id: crypto.randomUUID(), clients: new Map() };
+        this.webSocketHandlers.set(preservedHandler.id, preservedHandler);
       }
     }
 
