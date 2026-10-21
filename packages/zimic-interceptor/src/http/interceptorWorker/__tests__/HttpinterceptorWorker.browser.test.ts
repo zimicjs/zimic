@@ -43,10 +43,10 @@ describe('HttpInterceptorWorker > Browser', () => {
   });
 });
 
-describe.each(testMatrix)('HttpInterceptorWorker (browser, $type)', (defaultWorkerOptions) => {
+describe.each(testMatrix)('HttpInterceptorWorker (browser, $type)', ({ type }) => {
   declareDefaultHttpInterceptorWorkerTests({
     platform: 'browser',
-    defaultWorkerOptions,
+    type,
     getBaseURL: getBrowserBaseURL,
   });
 });

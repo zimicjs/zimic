@@ -45,7 +45,7 @@ type HttpSchemaWithUsers = HttpSchema<{
 
 interface SharedWebSocketInterceptorWorkerTestsOptions {
   platform: WebSocketInterceptorPlatform;
-  defaultWorkerOptions: WebSocketInterceptorWorkerOptions;
+  type: WebSocketInterceptorType;
   startServer?: () => PossiblePromise<void>;
   getBaseURL: (type: WebSocketInterceptorType) => PossiblePromise<string>;
   stopServer?: () => PossiblePromise<void>;
@@ -75,7 +75,7 @@ function createBinaryMessage(firstByte: number, secondByte: number) {
 }
 
 export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWebSocketInterceptorWorkerTestsOptions) {
-  const { platform, defaultWorkerOptions, startServer, getBaseURL, stopServer } = options;
+  const { platform, type, startServer, getBaseURL, stopServer } = options;
 
   let baseURL: string;
   let httpBaseURL: string;
@@ -87,20 +87,17 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
   }
 
   beforeAll(async () => {
-    if (defaultWorkerOptions.type === 'remote') {
+    if (type === 'remote') {
       await startServer?.();
     }
   });
 
   beforeEach(async () => {
-    baseURL = await getBaseURL(defaultWorkerOptions.type);
+    baseURL = await getBaseURL(type);
     httpBaseURL = baseURL.replace(/^ws/, 'http');
     clients = [];
 
-    workerOptions =
-      defaultWorkerOptions.type === 'local'
-        ? defaultWorkerOptions
-        : { ...defaultWorkerOptions, serverURL: new URL(new URL(baseURL).origin) };
+    workerOptions = type === 'local' ? { type } : { type, serverURL: new URL(new URL(baseURL).origin) };
   });
 
   afterEach(async () => {
@@ -108,7 +105,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
   });
 
   afterAll(async () => {
-    if (defaultWorkerOptions.type === 'remote') {
+    if (type === 'remote') {
       await stopServer?.();
     }
   });
@@ -554,7 +551,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
     );
   });
 
-  if (defaultWorkerOptions.type === 'local') {
+  if (type === 'local') {
     it('should expose local worker internals consistently', () => {
       const worker = createWebSocketInterceptorWorker({ type: 'local' });
 
@@ -856,7 +853,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
     });
   }
 
-  if (defaultWorkerOptions.type === 'remote') {
+  if (type === 'remote') {
     it('should reject remote clients if the referenced handler no longer exists', async () => {
       await usingWebSocketInterceptorWorker(workerOptions, async (rawWorker) => {
         const worker = rawWorker as RemoteWebSocketInterceptorWorker;
