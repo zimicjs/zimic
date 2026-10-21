@@ -222,6 +222,45 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     );
   });
 
+  it('should clear only clients owned by the selected interceptor with the same base URL', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
+      await usingWebSocketInterceptor<MessageSchema>(
+        interceptorOptions,
+        { start: false },
+        async (secondInterceptor) => {
+          await usingWebSocketClient<MessageSchema>(baseURL, async (firstClient) => {
+            await waitFor(() => {
+              expect(firstInterceptor.clients).toHaveLength(1);
+            });
+
+            await secondInterceptor.start();
+            await promiseIfRemote(secondInterceptor.message().respond({ type: 'server', index: 2 }), secondInterceptor);
+
+            await usingWebSocketClient<MessageSchema>(baseURL, async (secondClient) => {
+              await waitFor(() => {
+                expect(secondInterceptor.clients).toHaveLength(1);
+              });
+
+              const firstCloseEventPromise = waitForWebSocketClientClose(firstClient);
+
+              await promiseIfRemote(firstInterceptor.clear(), firstInterceptor);
+
+              const firstCloseEvent = await firstCloseEventPromise;
+              expect(firstCloseEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
+              expect(firstInterceptor.clients).toHaveLength(0);
+              expect(secondInterceptor.clients).toHaveLength(1);
+              expect(secondClient.readyState).toBe(WebSocketClient.OPEN);
+
+              const secondMessagePromise = waitForWebSocketClientMessage(secondClient);
+              secondClient.send(JSON.stringify({ type: 'client', index: 2 }));
+              await expect(secondMessagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+            });
+          });
+        },
+      );
+    });
+  });
+
   it('should not save intercepted messages after cleared while a message is being handled', async () => {
     await usingWebSocketInterceptor<ChatMessage>(
       { ...interceptorOptions, messageSaving: { enabled: true } },

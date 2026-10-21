@@ -1,6 +1,5 @@
 import { WebSocketSchema } from '@zimic/ws';
 
-import { createWebSocketInterceptorWorker } from '../interceptorWorker/factory';
 import RemoteWebSocketMessageHandler from '../messageHandler/RemoteWebSocketMessageHandler';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
 import {
@@ -14,8 +13,10 @@ import {
   WebSocketInterceptorMessageSaving,
 } from './types/public';
 import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
+import WebSocketInterceptorStore from './WebSocketInterceptorStore';
 
 class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements PublicRemoteWebSocketInterceptor<Schema> {
+  private store = new WebSocketInterceptorStore();
   implementation: WebSocketInterceptorImplementation<Schema>;
   #auth?: RemoteWebSocketInterceptorOptions['auth'];
 
@@ -27,14 +28,13 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
       messageSaving: options.messageSaving,
       Handler: RemoteWebSocketMessageHandler,
       createWorker: () => {
-        return createWebSocketInterceptorWorker({
-          type: 'remote',
+        return this.store.getOrCreateRemoteWorker({
           serverURL: this.implementation.baseURL,
           auth: this.#auth,
         });
       },
       deleteWorker: () => {
-        // Each remote interceptor creates its own worker, so there is no shared store entry to delete.
+        this.store.deleteRemoteWorker(this.implementation.baseURL, { auth: this.#auth });
       },
     });
 

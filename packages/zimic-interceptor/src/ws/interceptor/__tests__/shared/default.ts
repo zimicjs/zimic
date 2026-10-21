@@ -35,6 +35,7 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
   const store = new WebSocketInterceptorStore();
 
   let baseURL: string;
+  let serverURL: URL;
   let interceptorOptions: WebSocketInterceptorOptions;
 
   async function expectClientToBeRejected() {
@@ -53,8 +54,10 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
   }
 
   beforeAll(() => {
-    // Remote interceptors do not share workers, so only the local worker is stored.
-    expect(store.localWorker).toBe(undefined);
+    serverURL = new URL(getBaseURL());
+
+    const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+    expect(worker).toBe(undefined);
   });
 
   beforeEach(() => {
@@ -63,7 +66,8 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
   });
 
   afterEach(() => {
-    expect(store.localWorker).toBe(undefined);
+    const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+    expect(worker).toBe(undefined);
   });
 
   describe('Types', () => {
@@ -235,6 +239,82 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
     });
   });
 
+  it('should start the shared worker when the first interceptor is started', async () => {
+    await usingWebSocketInterceptor<{}>(interceptorOptions, { start: false }, async (interceptor) => {
+      await usingWebSocketInterceptor<{}>(interceptorOptions, { start: false }, async (otherInterceptor) => {
+        await interceptor.start();
+        expect(interceptor.isRunning).toBe(true);
+
+        const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+        expect(worker).toBeDefined();
+        expect(worker!.isRunning).toBe(true);
+
+        await otherInterceptor.start();
+        expect(otherInterceptor.isRunning).toBe(true);
+
+        const sharedWorker =
+          type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+        expect(sharedWorker).toBe(worker);
+        expect(worker!.isRunning).toBe(true);
+        expect(worker!.numberOfRunningInterceptors).toBe(2);
+      });
+    });
+  });
+
+  it('should stop the shared worker when the last interceptor is stopped', async () => {
+    await usingWebSocketInterceptor<{}>(interceptorOptions, async (interceptor) => {
+      await usingWebSocketInterceptor<{}>(interceptorOptions, async (otherInterceptor) => {
+        const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+        expect(worker).toBeDefined();
+        expect(worker!.isRunning).toBe(true);
+
+        await interceptor.stop();
+        expect(interceptor.isRunning).toBe(false);
+        expect(worker!.isRunning).toBe(true);
+
+        await otherInterceptor.stop();
+        expect(otherInterceptor.isRunning).toBe(false);
+        expect(worker!.isRunning).toBe(false);
+
+        const stoppedWorker =
+          type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+        expect(stoppedWorker).toBe(undefined);
+      });
+    });
+  });
+
+  it('should still stop the shared worker when the last interceptor fails to stop once and retries', async () => {
+    await usingWebSocketInterceptor<{}>(interceptorOptions, async (interceptor) => {
+      const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+      expect(worker).toBeDefined();
+      expect(worker!.isRunning).toBe(true);
+
+      const error = new Error('Unknown error');
+
+      // Stopping normally does not fail. To simulate a failure, we need to mock the stop method to throw an error.
+      if (worker instanceof LocalWebSocketInterceptorWorker) {
+        vi.spyOn(worker, 'getMSWWorkerOrCreate').mockRejectedValueOnce(error);
+      } else {
+        vi.spyOn(worker!.webSocketClient, 'stop').mockRejectedValueOnce(error);
+      }
+
+      await expect(interceptor.stop()).rejects.toThrow(error);
+      expect(interceptor.isRunning).toBe(true);
+
+      await interceptor.stop();
+
+      expect(interceptor.isRunning).toBe(false);
+      expect(worker!.isRunning).toBe(false);
+
+      const stoppedWorker =
+        type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+      expect(stoppedWorker).toBeUndefined();
+
+      await interceptor.start();
+      expect(interceptor.isRunning).toBe(true);
+    });
+  });
+
   it('should support starting interceptors concurrently', async () => {
     await usingWebSocketInterceptor<{}>(interceptorOptions, { start: false }, async (interceptor) => {
       await usingWebSocketInterceptor<{}>(interceptorOptions, { start: false }, async (otherInterceptor) => {
@@ -242,6 +322,11 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
 
         expect(interceptor.isRunning).toBe(true);
         expect(otherInterceptor.isRunning).toBe(true);
+
+        const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+        expect(worker).toBeDefined();
+        expect(worker!.isRunning).toBe(true);
+        expect(worker!.numberOfRunningInterceptors).toBe(2);
       });
     });
   });
@@ -252,150 +337,95 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
         expect(interceptor.isRunning).toBe(true);
         expect(otherInterceptor.isRunning).toBe(true);
 
+        const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+        expect(worker).toBeDefined();
+        expect(worker!.isRunning).toBe(true);
+
         await Promise.all([interceptor.stop(), otherInterceptor.stop()]);
 
         expect(interceptor.isRunning).toBe(false);
         expect(otherInterceptor.isRunning).toBe(false);
+
+        expect(worker!.isRunning).toBe(false);
       });
     });
   });
 
-  it('should still stop the worker when the last interceptor fails to stop once and retries', async () => {
-    await usingWebSocketInterceptor<{}>(interceptorOptions, async (interceptor) => {
-      const worker = store.localWorker;
-      const error = new Error('Unknown error');
+  it('should keep the shared worker running if the last interceptor is stopping at the same time as another is starting', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, { start: false }, async (otherInterceptor) => {
+        const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+        expect(worker).toBeDefined();
+        expect(worker!.numberOfRunningInterceptors).toBe(1);
 
-      // Stopping normally does not fail. To simulate a failure, we need to mock the stop method to throw an error.
-      if (type === 'local') {
-        vi.spyOn(LocalWebSocketInterceptorWorker.prototype, 'getMSWWorkerOrCreate').mockRejectedValueOnce(error);
-      } else {
-        vi.spyOn(InterceptorWebSocketClient.prototype, 'stop').mockRejectedValueOnce(error);
-      }
+        const workerStopStartedPromise = createPromiseWithResolvers<void>();
+        const workerStopGatePromise = createPromiseWithResolvers<void>();
 
-      await expect(interceptor.stop()).rejects.toThrow(error);
-      expect(interceptor.isRunning).toBe(true);
+        // A shutdown dependency is held so that the other interceptor starts while the worker stop is pending.
+        if (worker instanceof LocalWebSocketInterceptorWorker) {
+          const originalGetMSWWorkerOrCreate = worker.getMSWWorkerOrCreate.bind(worker);
 
-      await interceptor.stop();
+          vi.spyOn(worker, 'getMSWWorkerOrCreate').mockImplementationOnce(async () => {
+            workerStopStartedPromise.resolve();
+            await workerStopGatePromise;
+            return originalGetMSWWorkerOrCreate();
+          });
+        } else {
+          const webSocketClient = worker!.webSocketClient;
+          const originalWebSocketClientStop = webSocketClient.stop.bind(webSocketClient);
 
-      expect(interceptor.isRunning).toBe(false);
-      expect(worker?.isRunning).not.toBe(true);
-      expect(store.localWorker).toBeUndefined();
+          vi.spyOn(webSocketClient, 'stop').mockImplementationOnce(async () => {
+            workerStopStartedPromise.resolve();
+            await workerStopGatePromise;
+            return originalWebSocketClientStop();
+          });
+        }
 
-      await interceptor.start();
-      expect(interceptor.isRunning).toBe(true);
+        const workerStartSpy = vi.spyOn(worker!, 'start');
+
+        const stopPromise = interceptor.stop();
+        let startPromise: Promise<void> | undefined;
+
+        try {
+          await workerStopStartedPromise;
+          startPromise = otherInterceptor.start();
+
+          const startResolutionListener = vi.fn();
+          void startPromise.then(startResolutionListener);
+
+          await waitFor(() => {
+            expect(workerStartSpy).toHaveBeenCalledTimes(1);
+          });
+          await waitForNot(() => {
+            expect(startResolutionListener).toHaveBeenCalled();
+          });
+
+          workerStopGatePromise.resolve();
+          await Promise.all([stopPromise, startPromise]);
+        } finally {
+          workerStopGatePromise.resolve();
+          await Promise.allSettled([stopPromise, startPromise]);
+        }
+
+        expect(interceptor.isRunning).toBe(false);
+        expect(otherInterceptor.isRunning).toBe(true);
+
+        const runningWorker =
+          type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+        expect(runningWorker).toBe(worker);
+        expect(worker!.isRunning).toBe(true);
+
+        const reply: MessageSchema = { type: 'server', index: 1 };
+        await promiseIfRemote(otherInterceptor.message().respond(reply), otherInterceptor);
+
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          const messagePromise = waitForWebSocketClientMessage(client);
+          client.send(JSON.stringify({ type: 'client', index: 1 } satisfies MessageSchema));
+          await expect(messagePromise).resolves.toBe(JSON.stringify(reply));
+        });
+      });
     });
   });
-
-  if (type === 'local') {
-    // Local interceptors share one worker. Remote interceptors each own a connection to the server.
-    it('should start the shared worker when the first interceptor is started', async () => {
-      await usingWebSocketInterceptor<{}>(interceptorOptions, { start: false }, async (interceptor) => {
-        await usingWebSocketInterceptor<{}>(interceptorOptions, { start: false }, async (otherInterceptor) => {
-          expect(store.localWorker).toBe(undefined);
-
-          await interceptor.start();
-          expect(interceptor.isRunning).toBe(true);
-
-          const worker = store.localWorker;
-          expect(worker).toBeDefined();
-          expect(worker!.isRunning).toBe(true);
-
-          await otherInterceptor.start();
-          expect(otherInterceptor.isRunning).toBe(true);
-
-          expect(store.localWorker).toBe(worker);
-          expect(worker!.isRunning).toBe(true);
-        });
-      });
-    });
-
-    it('should stop the shared worker when the last interceptor is stopped', async () => {
-      await usingWebSocketInterceptor<{}>(interceptorOptions, async (interceptor) => {
-        await usingWebSocketInterceptor<{}>(interceptorOptions, async (otherInterceptor) => {
-          const worker = store.localWorker;
-          expect(worker).toBeDefined();
-          expect(worker!.isRunning).toBe(true);
-
-          await interceptor.stop();
-          expect(interceptor.isRunning).toBe(false);
-          expect(worker!.isRunning).toBe(true);
-
-          await otherInterceptor.stop();
-          expect(otherInterceptor.isRunning).toBe(false);
-          expect(worker!.isRunning).toBe(false);
-          expect(store.localWorker).toBe(undefined);
-        });
-      });
-    });
-
-    it('should keep the shared worker running if the last interceptor is stopping at the same time as another is starting', async () => {
-      const otherBaseURL = `${baseURL}/other`;
-
-      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-        await usingWebSocketInterceptor<MessageSchema>(
-          { ...interceptorOptions, baseURL: otherBaseURL },
-          { start: false },
-          async (otherInterceptor) => {
-            const worker = store.localWorker;
-            expect(worker).toBeDefined();
-            expect(worker!.numberOfRunningInterceptors).toBe(1);
-
-            const originalGetMSWWorkerOrCreate = worker!.getMSWWorkerOrCreate.bind(worker);
-            const workerStopStartedPromise = createPromiseWithResolvers<void>();
-            const workerStopGatePromise = createPromiseWithResolvers<void>();
-
-            // The shutdown dependency is held so that the other interceptor starts while the worker stop is pending.
-            vi.spyOn(worker!, 'getMSWWorkerOrCreate').mockImplementationOnce(async () => {
-              workerStopStartedPromise.resolve();
-              await workerStopGatePromise;
-              return originalGetMSWWorkerOrCreate();
-            });
-
-            const workerStartSpy = vi.spyOn(worker!, 'start');
-
-            const stopPromise = interceptor.stop();
-            let startPromise: Promise<void> | undefined;
-
-            try {
-              await workerStopStartedPromise;
-              startPromise = otherInterceptor.start();
-
-              const startResolutionListener = vi.fn();
-              void startPromise.then(startResolutionListener);
-
-              await waitFor(() => {
-                expect(workerStartSpy).toHaveBeenCalledTimes(1);
-              });
-              await waitForNot(() => {
-                expect(startResolutionListener).toHaveBeenCalled();
-              });
-
-              workerStopGatePromise.resolve();
-              await Promise.all([stopPromise, startPromise]);
-            } finally {
-              workerStopGatePromise.resolve();
-              await Promise.allSettled([stopPromise, startPromise]);
-            }
-
-            expect(interceptor.isRunning).toBe(false);
-            expect(otherInterceptor.isRunning).toBe(true);
-
-            expect(store.localWorker).toBe(worker);
-            expect(worker!.isRunning).toBe(true);
-
-            const reply: MessageSchema = { type: 'server', index: 1 };
-            otherInterceptor.message().respond(reply);
-
-            await usingWebSocketClient<MessageSchema>(otherBaseURL, async (client) => {
-              const messagePromise = waitForWebSocketClientMessage(client);
-              client.send(JSON.stringify({ type: 'client', index: 1 } satisfies MessageSchema));
-              await expect(messagePromise).resolves.toBe(JSON.stringify(reply));
-            });
-          },
-        );
-      });
-    });
-  }
 
   it('should throw an error when trying to be cleared if not running', async () => {
     const interceptor = createInternalWebSocketInterceptor<{}>(interceptorOptions);
@@ -500,6 +530,25 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
           );
 
           expect(interceptor.auth).toEqual(auth);
+        });
+      });
+    });
+
+    // Remote-only: local interceptors share one worker regardless of their base URL.
+    it('should use separate shared workers for different base URLs', async () => {
+      const otherBaseURL = `${baseURL}/other`;
+
+      await usingWebSocketInterceptor<{}>(interceptorOptions, async () => {
+        await usingWebSocketInterceptor<{}>({ ...interceptorOptions, baseURL: otherBaseURL }, () => {
+          const worker = store.getRemoteWorker(serverURL, { auth: undefined });
+          const otherWorker = store.getRemoteWorker(new URL(otherBaseURL), { auth: undefined });
+
+          expect(worker).toBeDefined();
+          expect(otherWorker).toBeDefined();
+          expect(otherWorker).not.toBe(worker);
+
+          expect(worker!.numberOfRunningInterceptors).toBe(1);
+          expect(otherWorker!.numberOfRunningInterceptors).toBe(1);
         });
       });
     });
