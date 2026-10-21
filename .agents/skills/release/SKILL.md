@@ -87,6 +87,8 @@ gh workflow run release-zimic-web-to-github.yaml --repo zimicjs/zimic --ref cana
 gh run list --repo zimicjs/zimic --workflow release-zimic-web-to-github.yaml --event workflow_dispatch --json databaseId,url,createdAt
 ```
 
+Once every PR is created or updated, show the user a list with the URL of each PR and of the `zimic-web` run, if dispatched.
+
 # 5. Merge and wait for drafts
 
 Wait for CI on every package PR at the same time, then merge the passing PRs one right after another. A PR that is held does not block the others.
@@ -114,6 +116,8 @@ Wait for CI on every package PR at the same time, then merge the passing PRs one
    ```bash
    gh run list --repo zimicjs/zimic --workflow '<workflow-file>' --event pull_request --json databaseId,headSha,url,createdAt
    ```
+
+   Once the runs of the PRs merged back to back are found, show the user a list with the URL of each run. Show the run of a PR merged later when it is found.
 
 4. Wait with `gh run watch <id> --repo zimicjs/zimic --exit-status`.
 
