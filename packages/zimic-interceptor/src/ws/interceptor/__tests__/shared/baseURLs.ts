@@ -170,20 +170,18 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
             socketIOInterceptor,
           );
 
+          // MSW removes socket.io paths before testing links, so a local socket.io connection is delivered only while an
+          // interceptor matches the URL without that path, such as the one at the root path.
           await usingWebSocketClient<MessageSchema>(socketIOURL, async (client) => {
             await waitFor(() => {
               expect(interceptor.clients).toHaveLength(1);
+              expect(socketIOInterceptor.clients).toHaveLength(1);
             });
 
             const messagePromise = waitForWebSocketClientMessage(client);
             client.send(JSON.stringify({ type: 'client', index: 1 }));
 
-            // MSW removes a socket.io path prefix at the root before testing links, so locally only the interceptor at
-            // the root path receives the connection. Remotely, the last started interceptor also holds it and replies.
-            await expect(messagePromise).resolves.toBeOneOf([
-              JSON.stringify({ type: 'server', index: 1 }),
-              JSON.stringify({ type: 'server', index: 2 }),
-            ]);
+            await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
           });
         },
       );

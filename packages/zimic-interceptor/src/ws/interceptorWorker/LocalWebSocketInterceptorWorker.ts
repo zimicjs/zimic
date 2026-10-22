@@ -238,11 +238,8 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private findConnectionHolders(connectionURL: URL) {
     const connectionURLAsString = excludeNonPathParams(new URL(connectionURL)).href;
 
-    // MSW rewrites socket.io paths before testing links, so a holder must be one whose link received the connection.
     return this.webSocketHandlers.filter((handler) => {
-      return (
-        connectionURLAsString.startsWith(handler.interceptor.baseURLAsString) && handler.mswHandler.test(connectionURL)
-      );
+      return connectionURLAsString.startsWith(handler.interceptor.baseURLAsString);
     });
   }
 
