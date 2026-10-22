@@ -1,4 +1,3 @@
-import { excludeNonPathParams } from '@zimic/utils/url';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 import { SharedOptions as MSWWorkerSharedOptions, ws } from 'msw';
 
@@ -215,11 +214,9 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   }
 
   private findConnectionOwner(connectionURL: URL) {
-    const normalizedURL = excludeNonPathParams(new URL(connectionURL));
-    const connectionURLAsString =
-      normalizedURL.href === `${normalizedURL.origin}/` ? normalizedURL.origin : normalizedURL.href;
-
-    return this.webSocketHandlers.findLast((handler) => handler.interceptor.baseURLAsString === connectionURLAsString);
+    // MSW decides which links receive a connection, so its own matching also picks the owner. Otherwise, an
+    // intercepted connection could be left without an owner.
+    return this.webSocketHandlers.findLast((handler) => handler.mswHandler.test(connectionURL));
   }
 
   private findHandlerByClient<Schema extends WebSocketSchema>(client: InternalWebSocketInterceptorClient<Schema>) {

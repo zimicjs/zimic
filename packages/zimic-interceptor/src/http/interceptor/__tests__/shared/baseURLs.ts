@@ -66,6 +66,27 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     }
   });
 
+  it('should intercept requests sent to the base URL with a trailing slash', async () => {
+    const baseURL = joinURL(defaultBaseURL.replace(/\/$/, ''), 'path');
+
+    await usingHttpInterceptor<{
+      '/': {
+        GET: {
+          response: {
+            200: {};
+          };
+        };
+      };
+    }>({ ...interceptorOptions, baseURL }, async (interceptor) => {
+      const handler = await promiseIfRemote(interceptor.get('/').respond({ status: 200 }), interceptor);
+
+      const response = await fetch(`${baseURL}/`, { method: 'GET' });
+      expect(response.status).toBe(200);
+
+      expect(handler.requests).toHaveLength(1);
+    });
+  });
+
   it('should support changing the base URL after created', async () => {
     const baseURL = defaultBaseURL.toString();
 

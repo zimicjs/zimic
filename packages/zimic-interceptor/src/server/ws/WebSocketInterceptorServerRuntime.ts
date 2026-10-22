@@ -413,7 +413,11 @@ class WebSocketInterceptorServerRuntime {
 
   private normalizeWebSocketBaseURL(url: string | URL) {
     const normalizedURL = excludeNonPathParams(new URL(url));
-    return normalizedURL.href === `${normalizedURL.origin}/` ? normalizedURL.origin : normalizedURL.href;
+
+    // Local interceptors match a URL with or without a trailing slash, so both forms belong to the same interceptor.
+    const pathnameWithoutTrailingSlash = normalizedURL.pathname.replace(/\/$/, '');
+
+    return `${normalizedURL.origin}${pathnameWithoutTrailingSlash}`;
   }
 
   async stop() {

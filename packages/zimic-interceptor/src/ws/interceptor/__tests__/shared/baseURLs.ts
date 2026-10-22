@@ -1,4 +1,4 @@
-import { waitForNot } from '@zimic/utils/time';
+import { waitFor, waitForNot } from '@zimic/utils/time';
 import { UnsupportedURLProtocolError, joinURL } from '@zimic/utils/url';
 import { ValidationError } from '@zimic/utils/validation';
 import { WebSocketSchema } from '@zimic/ws';
@@ -49,6 +49,25 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
         });
       });
     }
+  });
+
+  it('should intercept messages sent to the base URL with a trailing slash', async () => {
+    const baseURL = joinURL(defaultBaseURL.replace(/\/$/, ''), 'path');
+
+    await usingWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, baseURL }, async (interceptor) => {
+      await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+
+      await usingWebSocketClient<MessageSchema>(`${baseURL}/`, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const messagePromise = waitForWebSocketClientMessage(client);
+        client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+        await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+      });
+    });
   });
 
   // No HTTP counterpart: WebSocket handlers have no per-handler path, so base URL paths are the only way to route
