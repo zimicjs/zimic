@@ -42,10 +42,10 @@ describe('WebSocketInterceptorWorker > Browser', () => {
   });
 });
 
-describe.each(testMatrix)('WebSocketInterceptorWorker (browser, $type)', (defaultWorkerOptions) => {
+describe.each(testMatrix)('WebSocketInterceptorWorker (browser, $type)', ({ type }) => {
   declareDefaultWebSocketInterceptorWorkerTests({
     platform: 'browser',
-    defaultWorkerOptions,
+    type,
     getBaseURL: (type) => getBrowserBaseURL(type).replace(/^http/, 'ws'),
   });
 });

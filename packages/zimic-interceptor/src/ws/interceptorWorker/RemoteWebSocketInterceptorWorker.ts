@@ -1,7 +1,7 @@
 import type { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
 import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
-import { InterceptorServerWebSocketSchema, WebSocketHandlerCommit } from '@/server/types/schema';
+import { InterceptorServerWebSocketSchema, WebSocketHandlerCommit, WebSocketHandlerReset } from '@/server/types/schema';
 import { isClientSide, isServerSide } from '@/utils/environment';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocketEventMessage } from '@/utils/webSocket/types';
@@ -26,7 +26,6 @@ interface WebSocketHandler {
   id: string;
   baseURL: string;
   interceptor: AnyWebSocketInterceptorImplementation;
-  commitPromise: Promise<void>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   clients: Map<string, InternalWebSocketInterceptorClient<any>>;
 }
@@ -45,10 +44,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     });
 
     this.auth = options.auth;
-  }
-
-  get type() {
-    return 'remote' as const;
   }
 
   async start() {
@@ -103,12 +98,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       throw new NotRunningWebSocketInterceptorError();
     }
 
-    const handler = Array.from(this.webSocketHandlers.values()).find((handler) => handler.interceptor === interceptor);
-
-    if (handler) {
-      return handler.commitPromise;
-    }
-
     const handlerId = crypto.randomUUID();
 
     const commitPromise = this.webSocketClient
@@ -126,7 +115,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       id: handlerId,
       baseURL: interceptor.baseURLAsString,
       interceptor,
-      commitPromise,
       clients: new Map(),
     };
 
@@ -259,23 +247,29 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   }
 
   async clearHandlers<Schema extends WebSocketSchema>(
-    options: { interceptor?: AnyWebSocketInterceptorImplementation<Schema> } = {},
+    options: {
+      interceptor?: AnyWebSocketInterceptorImplementation<Schema>;
+      preserveInterceptorRegistration?: boolean;
+    } = {},
   ) {
     if (!this.isRunning) {
       throw new NotRunningWebSocketInterceptorError();
     }
 
-    if (options.interceptor === undefined) {
-      for (const handler of this.webSocketHandlers.values()) {
-        handler.interceptor.clients.length = 0;
-      }
-      this.webSocketHandlers.clear();
-    } else {
-      for (const handler of this.webSocketHandlers.values()) {
-        if (handler.interceptor === options.interceptor) {
-          handler.interceptor.clients.length = 0;
-          this.webSocketHandlers.delete(handler.id);
-        }
+    const selectedHandlers = Array.from(this.webSocketHandlers.values()).filter((handler) => {
+      return options.interceptor === undefined || handler.interceptor === options.interceptor;
+    });
+
+    const clearedHandlerIds: string[] = [];
+
+    for (const handler of selectedHandlers) {
+      handler.interceptor.clients.length = 0;
+
+      if (options.preserveInterceptorRegistration) {
+        handler.clients.clear();
+        clearedHandlerIds.push(handler.id);
+      } else {
+        this.webSocketHandlers.delete(handler.id);
       }
     }
 
@@ -283,16 +277,16 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       return;
     }
 
-    const handlersToRecommit = Array.from<WebSocketHandler, WebSocketHandlerCommit>(
-      this.webSocketHandlers.values(),
-      (handler) => ({
+    const reset: WebSocketHandlerReset = {
+      handlers: Array.from<WebSocketHandler, WebSocketHandlerCommit>(this.webSocketHandlers.values(), (handler) => ({
         id: handler.id,
         baseURL: handler.baseURL,
-      }),
-    );
+      })),
+      clearedHandlerIds,
+    };
 
     try {
-      await this.webSocketClient.request('interceptors/ws/workers/reset', handlersToRecommit);
+      await this.webSocketClient.request('interceptors/ws/workers/reset', reset);
       /* istanbul ignore next -- @preserve
        * Reset aborts only occur when the RPC socket closes during a reset request. */
     } catch (error) {

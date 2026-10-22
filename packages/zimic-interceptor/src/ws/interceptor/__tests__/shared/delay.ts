@@ -1,13 +1,16 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitForDelay } from '@zimic/utils/time';
-import { WebSocketClient } from '@zimic/ws';
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { describe, expect, it, Mock, MockInstance, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
-import { collectWebSocketClientMessages, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
+import {
+  collectWebSocketClientMessages,
+  usingWebSocketClient,
+  waitForWebSocketClientMessage,
+} from '@tests/utils/webSocket';
 
-import type { Schema } from '../../../messageHandler/__tests__/shared/utils';
 import type {
   LocalWebSocketMessageHandler,
   PendingRemoteWebSocketMessageHandler,
@@ -18,7 +21,10 @@ import type {
   RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor,
 } from '../../types/public';
 
-type DelayableHandler = LocalWebSocketMessageHandler<Schema> | PendingRemoteWebSocketMessageHandler<Schema>;
+type MessageSchema = WebSocketSchema<{ type: 'create'; body: { text: string } } | { type: 'delete'; id: string }>;
+
+type DelayableHandler =
+  LocalWebSocketMessageHandler<MessageSchema> | PendingRemoteWebSocketMessageHandler<MessageSchema>;
 
 interface SharedWebSocketInterceptorDelayTestOptions {
   type: WebSocketInterceptorType;
@@ -32,16 +38,16 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
     declareDelay: (handler: DelayableHandler) => DelayableHandler,
     callback: (context: {
       handler: { clear: () => PromiseLike<unknown> | unknown };
-      interceptor: PublicLocalWebSocketInterceptor<Schema> | PublicRemoteWebSocketInterceptor<Schema>;
-      client: WebSocketClient<Schema>;
+      interceptor: PublicLocalWebSocketInterceptor<MessageSchema> | PublicRemoteWebSocketInterceptor<MessageSchema>;
+      client: WebSocketClient<MessageSchema>;
       effect: Mock;
       randomSpy: MockInstance<typeof Math.random>;
-      sendMessage: () => Promise<{ response: ReturnType<typeof waitForWebSocketClientMessage<Schema>> }>;
+      sendMessage: () => Promise<{ response: ReturnType<typeof waitForWebSocketClientMessage<MessageSchema>> }>;
     }) => Promise<void>,
   ) {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+    await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, async (interceptor) => {
       let dispatchStartedPromise = createPromiseWithResolvers<void>();
       const effect = vi.fn();
 
@@ -54,11 +60,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
         .effect(effect)
         .respond({ type: 'delete', id: '1' });
 
-      const client = new WebSocketClient<Schema>(baseURL);
-
-      try {
-        await client.open();
-
+      await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
         // The timers are faked only after the interceptor and the client are set up, which relies on real timers.
         vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 
@@ -90,9 +92,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
           randomSpy.mockRestore();
           vi.useRealTimers();
         }
-      } finally {
-        await client.close();
-      }
+      });
     });
   }
 
@@ -232,15 +232,11 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
   it('should reset delay when cleared', async () => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+    await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, async (interceptor) => {
       const handler = await interceptor.message().delay(100).respond({ type: 'delete', id: '1' });
       await handler.clear().respond({ type: 'delete', id: '1' });
 
-      const client = new WebSocketClient<Schema>(baseURL);
-
-      try {
-        await client.open();
-
+      await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
         // No timer is advanced, so the response is only delivered if no delay remains.
         vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 
@@ -252,9 +248,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
         } finally {
           vi.useRealTimers();
         }
-      } finally {
-        await client.close();
-      }
+      });
     });
   });
 

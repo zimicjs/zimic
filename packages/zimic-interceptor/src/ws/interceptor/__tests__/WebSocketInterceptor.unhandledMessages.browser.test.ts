@@ -3,7 +3,8 @@ import { beforeAll, describe } from 'vitest';
 import { getBrowserBaseURL } from '@tests/utils/interceptors';
 
 import testMatrix from './shared/matrix';
-import { declareUnhandledMessageWebSocketInterceptorTests } from './shared/unhandledMessages';
+import { declareUnhandledMessageFactoriesWebSocketInterceptorTests } from './shared/unhandledMessages.factories';
+import { declareUnhandledMessageLoggingWebSocketInterceptorTests } from './shared/unhandledMessages.logging';
 
 describe.each(testMatrix)('WebSocketInterceptor (browser, $type) > Unhandled messages', ({ type }) => {
   let baseURL: string;
@@ -12,10 +13,21 @@ describe.each(testMatrix)('WebSocketInterceptor (browser, $type) > Unhandled mes
     baseURL = getBrowserBaseURL(type).replace(/^http/, 'ws');
   });
 
-  declareUnhandledMessageWebSocketInterceptorTests({
-    platform: 'browser',
-    type,
-    getBaseURL: () => baseURL,
-    getInterceptorOptions: () => ({ type, baseURL }),
+  describe('Logging', () => {
+    declareUnhandledMessageLoggingWebSocketInterceptorTests({
+      platform: 'browser',
+      type,
+      getBaseURL: () => baseURL,
+      getInterceptorOptions: () => ({ type, baseURL }),
+    });
+  });
+
+  describe('Factories', () => {
+    declareUnhandledMessageFactoriesWebSocketInterceptorTests({
+      platform: 'browser',
+      type,
+      getBaseURL: () => baseURL,
+      getInterceptorOptions: () => ({ type, baseURL }),
+    });
   });
 });

@@ -142,6 +142,41 @@ export function declareTypeWebSocketMessageHandlerTests() {
     expectTypeOf(declareChainedRestrictions).toBeFunction();
   });
 
+  it('should accept exact options only in static restrictions', () => {
+    function declareExactRestrictions(
+      localHandler: LocalWebSocketMessageHandler<Schema>,
+      remoteHandler: SyncedRemoteWebSocketMessageHandler<Schema>,
+    ) {
+      localHandler.with({ type: 'create' }, { exact: true }).effect((message) => {
+        expectTypeOf(message).toEqualTypeOf<CreateMessage>();
+      });
+
+      remoteHandler.with({ type: 'create' }, { exact: false }).effect((message) => {
+        expectTypeOf(message).toEqualTypeOf<CreateMessage>();
+      });
+
+      localHandler.with({ type: 'create' }, {});
+      localHandler.with({ type: 'create' });
+
+      function isCreateMessage(message: Schema): message is CreateMessage {
+        return message.type === 'create';
+      }
+
+      localHandler.with(isCreateMessage);
+
+      // @ts-expect-error Computed restrictions do not accept options.
+      localHandler.with(isCreateMessage, { exact: true });
+
+      // @ts-expect-error Computed restrictions do not accept options.
+      remoteHandler.with(isCreateMessage, {});
+
+      // @ts-expect-error Invalid static restriction option.
+      localHandler.with({ type: 'create' }, { exact: 'true' });
+    }
+
+    expectTypeOf(declareExactRestrictions).toBeFunction();
+  });
+
   it('should accept boolean computed restrictions without narrowing message schemas', () => {
     function declareBooleanRestriction(handler: LocalWebSocketMessageHandler<Schema>) {
       handler

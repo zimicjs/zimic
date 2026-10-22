@@ -36,7 +36,6 @@ export type {
   RemoteWebSocketInterceptorOptions,
   WebSocketInterceptorOptions,
   WebSocketInterceptorAuthOptions,
-  WebSocketInterceptorMessageSaving,
 } from './interceptor/types/options';
 
 export type { InferWebSocketInterceptorSchema } from './interceptor/types/schema';
@@ -50,6 +49,7 @@ export type {
   LocalWebSocketInterceptor,
   RemoteWebSocketInterceptor,
   WebSocketInterceptor,
+  WebSocketInterceptorMessageSaving,
 } from './interceptor/types/public';
 
 export { createWebSocketInterceptor } from './interceptor/factory';
