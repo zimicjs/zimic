@@ -53,16 +53,6 @@ interface SharedWebSocketInterceptorWorkerTestsOptions {
   stopServer?: () => PossiblePromise<void>;
 }
 
-async function waitForMessage<Schema extends WebSocketSchema>(client: WebSocketClient<Schema>) {
-  const data = await waitForWebSocketClientMessage(client);
-
-  if (typeof data === 'string' && /^[{[]/.test(data.trim())) {
-    return JSON.parse(data) as Schema;
-  }
-
-  return data;
-}
-
 export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWebSocketInterceptorWorkerTestsOptions) {
   const { platform, type, startServer, getBaseURL, stopServer } = options;
 
@@ -326,10 +316,10 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
               await firstInterceptor.stop();
 
               await usingWebSocketClient<ChatMessage>(secondBaseURL, async (secondClient) => {
-                const messagePromise = waitForMessage(secondClient);
+                const messagePromise = waitForWebSocketClientMessage(secondClient);
                 secondClient.send(JSON.stringify({ type: 'client', text: 'two' }));
 
-                await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'second' });
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', text: 'second' }));
               });
             },
           );
@@ -486,10 +476,10 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
               httpInterceptor.clear();
 
               await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
-                const messagePromise = waitForMessage(client);
+                const messagePromise = waitForWebSocketClientMessage(client);
                 client.send(JSON.stringify({ type: 'client', text: 'one' }));
 
-                await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'received one' });
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', text: 'received one' }));
               });
 
               expect(LocalWebSocketInterceptorWorker.isMSWWorkerRunning).toBe(true);
@@ -513,9 +503,9 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
               webSocketInterceptor.message().respond({ type: 'server', text: 'one' });
 
               await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
-                const messagePromise = waitForMessage(client);
+                const messagePromise = waitForWebSocketClientMessage(client);
                 client.send(JSON.stringify({ type: 'client', text: 'one' }));
-                await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'one' });
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', text: 'one' }));
               });
 
               await webSocketInterceptor.stop();
@@ -550,10 +540,10 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
               await httpInterceptor.stop();
 
               await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
-                const messagePromise = waitForMessage(client);
+                const messagePromise = waitForWebSocketClientMessage(client);
                 client.send(JSON.stringify({ type: 'client', text: 'one' }));
 
-                await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'received one' });
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', text: 'received one' }));
               });
 
               expect(LocalWebSocketInterceptorWorker.isMSWWorkerRunning).toBe(true);
@@ -678,10 +668,10 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           await worker.clearHandlers({ interceptor: firstInterceptor.implementation });
 
           await usingWebSocketClient<ChatMessage>(secondInterceptor.baseURLAsString, async (secondClient) => {
-            const messagePromise = waitForMessage(secondClient);
+            const messagePromise = waitForWebSocketClientMessage(secondClient);
             secondClient.send(JSON.stringify({ type: 'client', text: 'one' }));
 
-            await expect(messagePromise).resolves.toEqual({ type: 'server', text: 'second' });
+            await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', text: 'second' }));
           });
         } finally {
           await secondInterceptor.stop({});
