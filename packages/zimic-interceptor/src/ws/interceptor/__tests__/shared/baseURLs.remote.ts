@@ -74,6 +74,9 @@ export function declareRemoteBaseURLWebSocketInterceptorTests(
     await usingWebSocketInterceptor<MessageSchema>(
       { type: 'remote', baseURL, auth: olderAuth, messageSaving: { enabled: true } },
       async (olderInterceptor) => {
+        const olderConnectionListener = vi.fn();
+        olderInterceptor.on('connection', olderConnectionListener);
+
         const olderHandler = await olderInterceptor
           .message()
           .with(olderRestriction)
@@ -89,6 +92,10 @@ export function declareRemoteBaseURLWebSocketInterceptorTests(
               client.send(JSON.stringify({ type: 'client', index: 1 }));
 
               await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+
+              expect(interceptor.clients).toHaveLength(1);
+              expect(olderInterceptor.clients).toHaveLength(0);
+              expect(olderConnectionListener).not.toHaveBeenCalled();
             });
 
             expect(handler.messages).toHaveLength(1);
@@ -144,17 +151,29 @@ export function declareRemoteBaseURLWebSocketInterceptorTests(
   // Unlike HTTP, the last started interceptor keeps holding new connections while cleared, so the older interceptor
   // does not intercept messages between the clear and the new declaration.
   it('should intercept messages with the last started interceptor after it is cleared and declares its handlers again if an older one uses another authentication token', async () => {
+    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+
     await usingWebSocketInterceptor<MessageSchema>(
       { type: 'remote', baseURL, auth: olderAuth, messageSaving: { enabled: true } },
       async (olderInterceptor) => {
         const olderHandler = await olderInterceptor.message().respond({ type: 'server', index: 1 });
 
         await usingWebSocketInterceptor<MessageSchema>(
-          { type: 'remote', baseURL, auth, messageSaving: { enabled: true } },
+          { type: 'remote', baseURL, auth, messageSaving: { enabled: true }, onUnhandledMessage },
           async (interceptor) => {
             await interceptor.message().respond({ type: 'server', index: 2 });
 
             await interceptor.clear();
+
+            await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+              await waitFor(() => {
+                expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+              });
+            });
+
+            expect(olderHandler.messages).toHaveLength(0);
 
             const handler = await interceptor.message().respond({ type: 'server', index: 2 });
 
