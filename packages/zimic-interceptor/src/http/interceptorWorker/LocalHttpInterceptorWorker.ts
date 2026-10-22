@@ -4,7 +4,6 @@ import { SharedOptions as MSWWorkerSharedOptions, HttpHandler as MSWHttpHandler,
 
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
 import { MSWWorker } from '@/interceptor/types/msw';
-import { removeArrayIndex } from '@/utils/arrays';
 
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
@@ -261,9 +260,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
         handlers.length = 0;
       }
     } else {
-      for (const methodHandlers of Object.values(this.httpHandlersByMethod)) {
-        const groupToRemoveIndex = methodHandlers.findIndex((group) => group.interceptor === options.interceptor);
-        removeArrayIndex(methodHandlers, groupToRemoveIndex);
+      for (const [method, handlers] of Object.entries(this.httpHandlersByMethod)) {
+        this.httpHandlersByMethod[method] = handlers.filter((handler) => handler.interceptor !== options.interceptor);
       }
     }
   }

@@ -136,6 +136,9 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
   // No WebSocket counterpart for "should not consider handlers from before cleared when multiple paths matched
   // requests": WebSocket handlers have no per-handler paths.
 
+  // No WebSocket counterpart for "should handle requests once after cleared and redeclared when multiple paths matched
+  // requests": WebSocket handlers have no per-handler paths.
+
   it('should handle messages once if another interceptor is cleared while they are being handled', async () => {
     const restrictionStartedPromise = createPromiseWithResolvers<void>();
     const restrictionReleasedPromise = createPromiseWithResolvers<void>();
