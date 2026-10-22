@@ -100,6 +100,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       }
     } catch (error) {
       console.error(error);
+      return { response: null, error: true };
     }
 
     return { response: null };

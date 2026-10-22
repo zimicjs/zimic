@@ -20,7 +20,7 @@ interface HttpHandler {
   method: HttpMethod;
   pathRegex: RegExp;
   interceptor: AnyHttpInterceptorImplementation;
-  createResponse: (context: HttpResponseFactoryContext) => Promise<Response>;
+  createResponse: (context: HttpResponseFactoryContext) => Promise<Response | null>;
 }
 
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
@@ -151,18 +151,10 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       interceptor,
       createResponse: async (context) => {
         const request = context.request as HttpRequest;
-        const requestClone = request.clone();
-
-        let response: HttpResponse | null = null;
-
-        try {
-          response = await createResponse({ request });
-        } catch (error) {
-          console.error(error);
-        }
+        const response = await createResponse({ request });
 
         if (!response) {
-          return this.bypassOrRejectUnhandledRequest(requestClone);
+          return null;
         }
 
         if (context.request.method === 'HEAD') {
@@ -206,7 +198,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private async createResponseForRequest(request: HttpRequest) {
-    const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
+    // Handlers can be added or cleared while a response is created, so the request falls through a stable copy.
+    const methodHandlers = [...this.httpHandlersByMethod[request.method as HttpMethod]];
 
     const requestURL = excludeNonPathParams(new URL(request.url));
     const requestURLAsString = requestURL.href === `${requestURL.origin}/` ? requestURL.origin : requestURL.href;
@@ -226,8 +219,19 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
         continue;
       }
 
-      const response = await handler.createResponse({ request });
-      return response;
+      try {
+        const response = await handler.createResponse({ request });
+
+        if (response) {
+          return response;
+        }
+      } catch (error) {
+        console.error(error);
+
+        // A handler that threw may have already counted the request, such as toward its `times` limit, so older
+        // interceptors are not tried.
+        break;
+      }
     }
 
     return this.bypassOrRejectUnhandledRequest(request);

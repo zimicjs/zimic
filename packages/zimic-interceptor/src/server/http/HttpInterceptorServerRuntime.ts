@@ -39,6 +39,8 @@ const responseCreationReplySchema = z.object({
       body: z.base64().nullable(),
     })
     .nullable(),
+  // Workers that do not send this field are still accepted and fall through on a null response.
+  error: z.boolean().optional(),
 });
 
 const unhandledRequestReplySchema = z.object({ wasLogged: z.boolean() });
@@ -234,11 +236,20 @@ class HttpInterceptorServerRuntime {
         { handlerId: handler.id, request },
         { sockets: [handler.socket] },
       );
-      const { response: serializedResponse } = parseInterceptorServerRPCData(responseCreationReplySchema, reply);
+      const { response: serializedResponse, error: failedToCreateResponse } = parseInterceptorServerRPCData(
+        responseCreationReplySchema,
+        reply,
+      );
 
       if (serializedResponse) {
         const response = deserializeResponse(serializedResponse);
         return { response, matchedSomeInterceptor };
+      }
+
+      // A handler that threw may have already counted the request, such as toward its `times` limit, so older
+      // interceptors are not tried.
+      if (failedToCreateResponse) {
+        break;
       }
     }
 

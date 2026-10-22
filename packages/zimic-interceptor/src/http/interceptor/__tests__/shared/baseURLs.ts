@@ -3,17 +3,18 @@ import { joinURL, UnsupportedURLProtocolError } from '@zimic/utils/url';
 import { ValidationError } from '@zimic/utils/validation';
 import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
+import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectBypassedResponse } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 
 import RunningHttpInterceptorError from '../../errors/RunningHttpInterceptorError';
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../HttpInterceptorImplementation';
-import { HttpInterceptorOptions } from '../../types/options';
-import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
+import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
+import { RuntimeSharedHttpInterceptorTestsOptions, verifyUnhandledRequestMessage } from './utils';
 
 export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { type, getBaseURL, getOtherBaseURL, getInterceptorOptions } = options;
+  const { platform, type, getBaseURL, getOtherBaseURL, getInterceptorOptions } = options;
 
   let defaultBaseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
@@ -90,6 +91,141 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
   // No HTTP counterpart for "should intercept messages sent to the base URL without its trailing slash": HTTP base URLs
   // are prefixes that handler paths extend, so a request without the base URL's trailing slash is outside of it.
   // WebSocket connections are routed by the base URL alone.
+
+  it('should intercept requests with the last started interceptor if multiple interceptors match', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: { response: { 200: {} } } };
+    }>(interceptorOptions, async (olderInterceptor) => {
+      const olderHandler = await promiseIfRemote(
+        olderInterceptor.get('/users').respond({ status: 200 }),
+        olderInterceptor,
+      );
+
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 204: {} } } };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+
+        const response = await fetch(joinURL(defaultBaseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handler.requests).toHaveLength(1);
+        expect(olderHandler.requests).toHaveLength(0);
+      });
+    });
+  });
+
+  it('should intercept requests with an older interceptor if the last started one has no matching handlers', async () => {
+    const restriction = vi.fn(() => false);
+
+    await usingHttpInterceptor<{
+      '/users': { GET: { response: { 200: {} } } };
+    }>(interceptorOptions, async (olderInterceptor) => {
+      const olderHandler = await promiseIfRemote(
+        olderInterceptor.get('/users').respond({ status: 200 }),
+        olderInterceptor,
+      );
+
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 204: {} } } };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor.get('/users').with(restriction).respond({ status: 204 }),
+          interceptor,
+        );
+
+        const response = await fetch(joinURL(defaultBaseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(200);
+
+        expect(restriction).toHaveBeenCalledTimes(1);
+        expect(handler.requests).toHaveLength(0);
+        expect(olderHandler.requests).toHaveLength(1);
+      });
+    });
+  });
+
+  it('should apply the unhandled request strategy of the last started interceptor once if no interceptor handles a request', async () => {
+    const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
+
+    const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
+
+    await usingHttpInterceptor<{
+      '/users': { GET: { response: { 200: {} } } };
+    }>({ ...interceptorOptions, onUnhandledRequest: olderOnUnhandledRequest }, async (olderInterceptor) => {
+      const olderHandler = await promiseIfRemote(
+        olderInterceptor
+          .get('/users')
+          .with(() => false)
+          .respond({ status: 200 }),
+        olderInterceptor,
+      );
+
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 204: {} } } };
+      }>({ ...interceptorOptions, onUnhandledRequest }, async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor
+            .get('/users')
+            .with(() => false)
+            .respond({ status: 204 }),
+          interceptor,
+        );
+
+        await expectFetchError(fetch(joinURL(defaultBaseURL, '/users'), { method: 'GET' }));
+
+        expect(handler.requests).toHaveLength(0);
+        expect(olderHandler.requests).toHaveLength(0);
+
+        expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+        expect(olderOnUnhandledRequest).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  it('should not try older interceptors if the last started one throws while handling a request', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: { response: { 200: {} } } };
+    }>(interceptorOptions, async (olderInterceptor) => {
+      const olderHandler = await promiseIfRemote(
+        olderInterceptor.get('/users').respond({ status: 200 }),
+        olderInterceptor,
+      );
+
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 204: {} } } };
+      }>({ ...interceptorOptions, onUnhandledRequest: { action: 'reject', log: true } }, async (interceptor) => {
+        const error = new Error('An error occurred.');
+
+        const handler = await promiseIfRemote(
+          interceptor.get('/users').respond(() => {
+            throw error;
+          }),
+          interceptor,
+        );
+
+        await usingIgnoredConsole(['error', 'warn'], async (console) => {
+          const request = new Request(joinURL(defaultBaseURL, '/users'), { method: 'GET' });
+          await expectFetchError(fetch(request));
+
+          expect(console.error).toHaveBeenCalledTimes(2);
+          expect(console.warn).toHaveBeenCalledTimes(0);
+          expect(console.error.mock.calls[0]).toEqual([error]);
+
+          const errorMessage = console.error.mock.calls[1].join(' ');
+          await verifyUnhandledRequestMessage(errorMessage, { request, platform, type: 'reject' });
+        });
+
+        expect(handler.requests).toHaveLength(0);
+        expect(olderHandler.requests).toHaveLength(0);
+      });
+    });
+  });
 
   it('should support changing the base URL after created', async () => {
     const baseURL = defaultBaseURL.toString();

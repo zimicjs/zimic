@@ -39,6 +39,7 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
     };
     reply: {
       response: SerializedResponse | null;
+      error?: boolean;
     };
   };
 
