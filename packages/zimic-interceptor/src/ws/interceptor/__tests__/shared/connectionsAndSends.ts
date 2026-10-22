@@ -178,6 +178,58 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
     });
   });
 
+  it.each([
+    { firstSuffix: '', lastSuffix: '/', label: 'last with a trailing slash' },
+    { firstSuffix: '/', lastSuffix: '', label: 'last without a trailing slash' },
+  ])(
+    'should route connections to the last started interceptor if base URLs differ by a trailing slash ($label)',
+    async ({ firstSuffix, lastSuffix }) => {
+      const baseURL = `${getBaseURL()}/path`;
+
+      await usingWebSocketInterceptor<ChatMessage>(
+        { type, baseURL: `${baseURL}${firstSuffix}` },
+        async (firstInterceptor) => {
+          await usingWebSocketInterceptor<ChatMessage>(
+            { type, baseURL: `${baseURL}${lastSuffix}` },
+            async (lastInterceptor) => {
+              const firstConnectionListener = vi.fn();
+              const lastConnectionListener = vi.fn();
+              firstInterceptor.on('connection', firstConnectionListener);
+              lastInterceptor.on('connection', lastConnectionListener);
+
+              await promiseIfRemote(
+                firstInterceptor.message().respond({ type: 'server', text: 'first' }),
+                firstInterceptor,
+              );
+              await promiseIfRemote(
+                lastInterceptor.message().respond({ type: 'server', text: 'last' }),
+                lastInterceptor,
+              );
+
+              await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+                await waitFor(() => {
+                  expect(lastInterceptor.clients).toHaveLength(1);
+                });
+                expect(lastConnectionListener).toHaveBeenCalledTimes(1);
+                expect(lastConnectionListener).toHaveBeenCalledWith(lastInterceptor.clients[0]);
+
+                const messagePromise = waitForWebSocketClientMessage(client);
+                client.send(JSON.stringify({ type: 'server', text: 'ping' } satisfies ChatMessage));
+
+                await expect(messagePromise).resolves.toBe(
+                  JSON.stringify({ type: 'server', text: 'last' } satisfies ChatMessage),
+                );
+
+                expect(firstInterceptor.clients).toHaveLength(0);
+                expect(firstConnectionListener).not.toHaveBeenCalled();
+              });
+            },
+          );
+        },
+      );
+    },
+  );
+
   it('should keep routing to the last started interceptor after the previous one is cleared', async () => {
     const baseURL = getBaseURL();
 

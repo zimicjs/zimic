@@ -70,6 +70,28 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     });
   });
 
+  // No HTTP counterpart: HTTP base URLs are prefixes that handler paths extend, so a request without the base URL's
+  // trailing slash is outside of it. WebSocket connections are routed by the base URL alone.
+  it('should intercept messages sent to the base URL without its trailing slash', async () => {
+    const baseURLWithoutSlash = joinURL(defaultBaseURL.replace(/\/$/, ''), 'path');
+    const baseURL = `${baseURLWithoutSlash}/`;
+
+    await usingWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, baseURL }, async (interceptor) => {
+      await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+
+      await usingWebSocketClient<MessageSchema>(baseURLWithoutSlash, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const messagePromise = waitForWebSocketClientMessage(client);
+        client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+        await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+      });
+    });
+  });
+
   // No HTTP counterpart: WebSocket handlers have no per-handler path, so base URL paths are the only way to route
   // messages by path.
   it('should route messages using path discriminators', async () => {
