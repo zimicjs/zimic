@@ -18,6 +18,8 @@ Each WebSocket connection belongs to a single running interceptor whose base URL
 
 If the strategy is a function and it throws, the error is logged and the default strategy is used.
 
+If no running interceptor matches the connection URL, the connection is not intercepted, so no strategy is used and no message is logged. In local interceptors, the connection reaches the real network. If the connection was targeted to an interceptor server, the server closes it with a protocol error.
+
 :::
 
 :::tip FAQ: <span>Why was my message unhandled?</span>
