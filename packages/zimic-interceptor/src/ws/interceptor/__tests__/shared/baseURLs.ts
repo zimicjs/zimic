@@ -172,14 +172,14 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
 
           await usingWebSocketClient<MessageSchema>(socketIOURL, async (client) => {
             await waitFor(() => {
-              expect([...interceptor.clients, ...socketIOInterceptor.clients]).toHaveLength(1);
+              expect(interceptor.clients).toHaveLength(1);
             });
 
             const messagePromise = waitForWebSocketClientMessage(client);
             client.send(JSON.stringify({ type: 'client', index: 1 }));
 
-            // Local interceptors receive socket.io connections as MSW does, without the socket.io path prefix, so the
-            // interceptor at the root path may hold the connection instead of the last started one.
+            // MSW removes a socket.io path prefix at the root before testing links, so locally only the interceptor at
+            // the root path receives the connection. Remotely, the last started interceptor also holds it and replies.
             await expect(messagePromise).resolves.toBeOneOf([
               JSON.stringify({ type: 'server', index: 1 }),
               JSON.stringify({ type: 'server', index: 2 }),
@@ -360,6 +360,42 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     );
   });
 
+  it('should intercept messages with an older interceptor if the last started one has a nested base URL and no matching handlers', async () => {
+    const nestedBaseURL = joinURL(defaultBaseURL, 'nested');
+    const restriction = vi.fn(() => false);
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (olderInterceptor) => {
+        const olderHandler = await promiseIfRemote(
+          olderInterceptor.message().respond({ type: 'server', index: 1 }),
+          olderInterceptor,
+        );
+
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, baseURL: nestedBaseURL, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const handler = await promiseIfRemote(
+              interceptor.message().with(restriction).respond({ type: 'server', index: 2 }),
+              interceptor,
+            );
+
+            await usingWebSocketClient<MessageSchema>(nestedBaseURL, async (client) => {
+              const messagePromise = waitForWebSocketClientMessage(client);
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+              await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+            });
+
+            expect(restriction).toHaveBeenCalledTimes(1);
+            expect(handler.messages).toHaveLength(0);
+            expect(olderHandler.messages).toHaveLength(1);
+          },
+        );
+      },
+    );
+  });
+
   it('should apply the unhandled message strategy of the last started interceptor once if no interceptor handles a message', async () => {
     const olderOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
     const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
@@ -400,6 +436,49 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
             });
 
             expect(handler.messages).toHaveLength(0);
+            expect(olderHandler.messages).toHaveLength(0);
+
+            expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+            expect(olderOnUnhandledMessage).not.toHaveBeenCalled();
+          },
+        );
+      },
+    );
+  });
+
+  it('should apply the unhandled message strategy of the last started interceptor once if it has a nested base URL and no handlers', async () => {
+    const nestedBaseURL = joinURL(defaultBaseURL, 'nested');
+
+    const olderOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true }, onUnhandledMessage: olderOnUnhandledMessage },
+      async (olderInterceptor) => {
+        const olderHandler = await promiseIfRemote(
+          olderInterceptor
+            .message()
+            .with(() => false)
+            .respond({ type: 'server', index: 1 }),
+          olderInterceptor,
+        );
+
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, baseURL: nestedBaseURL, onUnhandledMessage },
+          async () => {
+            await usingWebSocketClient<MessageSchema>(nestedBaseURL, async (client) => {
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+              await waitFor(() => {
+                expect(onUnhandledMessage).toHaveBeenCalled();
+              });
+
+              // Unhandled messages have no reply, so no event signals that no other strategy will be applied.
+              await waitForNot(() => {
+                expect(olderOnUnhandledMessage).toHaveBeenCalled();
+              });
+            });
+
             expect(olderHandler.messages).toHaveLength(0);
 
             expect(onUnhandledMessage).toHaveBeenCalledTimes(1);

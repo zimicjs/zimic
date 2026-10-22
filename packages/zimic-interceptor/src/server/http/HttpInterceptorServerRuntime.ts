@@ -162,8 +162,8 @@ class HttpInterceptorServerRuntime {
     const serializedRequest = await serializeRequest(request);
 
     // Only one worker is tried, and the same worker decides the unhandled request strategy even if workers commit,
-    // reset, or disconnect while the request is handled. Other workers belong to other processes, base URLs, or
-    // authentication tokens, so they do not serve each other's requests.
+    // reset, or disconnect while the request is handled. Other workers belong to other processes or authentication
+    // tokens, so they do not serve each other's requests.
     const worker = this.findWorkerByRequestBaseURL(serializedRequest);
 
     try {

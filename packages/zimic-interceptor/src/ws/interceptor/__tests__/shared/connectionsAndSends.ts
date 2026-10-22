@@ -176,7 +176,9 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
           await usingWebSocketInterceptor<ChatMessage>(
             { type, baseURL: `${baseURL}${lastSuffix}` },
             async (lastInterceptor) => {
+              const firstConnectionListener = vi.fn();
               const lastConnectionListener = vi.fn();
+              firstInterceptor.on('connection', firstConnectionListener);
               lastInterceptor.on('connection', lastConnectionListener);
 
               await promiseIfRemote(
@@ -191,8 +193,11 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
               // Only a URL with the trailing slash starts with both base URLs.
               await usingWebSocketClient<ChatMessage>(`${baseURL}/`, async (client) => {
                 await waitFor(() => {
+                  expect(firstInterceptor.clients).toHaveLength(1);
                   expect(lastInterceptor.clients).toHaveLength(1);
                 });
+                expect(firstConnectionListener).toHaveBeenCalledTimes(1);
+                expect(firstConnectionListener).toHaveBeenCalledWith(firstInterceptor.clients[0]);
                 expect(lastConnectionListener).toHaveBeenCalledTimes(1);
                 expect(lastConnectionListener).toHaveBeenCalledWith(lastInterceptor.clients[0]);
 

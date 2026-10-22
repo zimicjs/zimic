@@ -451,7 +451,7 @@ class WebSocketInterceptorServerRuntime {
     }));
 
     // Only one worker holds a connection, the same one that decides the unhandled message strategy. Other workers belong
-    // to other processes, base URLs, or authentication tokens, so they do not serve each other's connections.
+    // to other processes or authentication tokens, so they do not serve each other's connections.
     return workers.findLast((worker) => worker.holders.length > 0);
   }
 

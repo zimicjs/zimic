@@ -244,7 +244,8 @@ describe('Interceptor server', () => {
       expect(interceptor.baseURL).not.toBe(otherInterceptor.baseURL);
 
       try {
-        await Promise.all([interceptor.start(), otherInterceptor.start()]);
+        await otherInterceptor.start();
+        await interceptor.start();
 
         expect(interceptor.isRunning).toBe(true);
         expect(otherInterceptor.isRunning).toBe(true);

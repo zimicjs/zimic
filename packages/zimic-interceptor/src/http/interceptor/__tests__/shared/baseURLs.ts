@@ -208,6 +208,36 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
+  it('should intercept requests with an older interceptor if the last started one has a nested base URL and no matching handlers', async () => {
+    const nestedBaseURL = joinURL(defaultBaseURL, 'nested');
+    const restriction = vi.fn(() => false);
+
+    await usingHttpInterceptor<{
+      '/nested/users': { GET: { response: { 200: {} } } };
+    }>(interceptorOptions, async (olderInterceptor) => {
+      const olderHandler = await promiseIfRemote(
+        olderInterceptor.get('/nested/users').respond({ status: 200 }),
+        olderInterceptor,
+      );
+
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 204: {} } } };
+      }>({ ...interceptorOptions, baseURL: nestedBaseURL }, async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor.get('/users').with(restriction).respond({ status: 204 }),
+          interceptor,
+        );
+
+        const response = await fetch(joinURL(nestedBaseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(200);
+
+        expect(restriction).toHaveBeenCalledTimes(1);
+        expect(handler.requests).toHaveLength(0);
+        expect(olderHandler.requests).toHaveLength(1);
+      });
+    });
+  });
+
   it('should apply the unhandled request strategy of the last started interceptor once if no interceptor handles a request', async () => {
     const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
       action: 'reject',
@@ -249,6 +279,44 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
         expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
         expect(olderOnUnhandledRequest).not.toHaveBeenCalled();
       });
+    });
+  });
+
+  it('should apply the unhandled request strategy of the last started interceptor once if it has a nested base URL and no handlers', async () => {
+    const nestedBaseURL = joinURL(defaultBaseURL, 'nested');
+
+    const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
+
+    const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
+
+    await usingHttpInterceptor<{
+      '/nested/users': { GET: { response: { 200: {} } } };
+    }>({ ...interceptorOptions, onUnhandledRequest: olderOnUnhandledRequest }, async (olderInterceptor) => {
+      const olderHandler = await promiseIfRemote(
+        olderInterceptor
+          .get('/nested/users')
+          .with(() => false)
+          .respond({ status: 200 }),
+        olderInterceptor,
+      );
+
+      await usingHttpInterceptor<{}>(
+        { ...interceptorOptions, baseURL: nestedBaseURL, onUnhandledRequest },
+        async () => {
+          await expectFetchError(fetch(joinURL(nestedBaseURL, '/users'), { method: 'GET' }));
+
+          expect(olderHandler.requests).toHaveLength(0);
+
+          expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+          expect(olderOnUnhandledRequest).not.toHaveBeenCalled();
+        },
+      );
     });
   });
 
