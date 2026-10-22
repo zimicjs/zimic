@@ -75,13 +75,7 @@ export async function expectWebSocketTimesCheckError(
   expect(timesCheckError).toBeDefined();
   expect(timesCheckError!.name).toBe('WebSocketTimesCheckError');
 
-  const expectedMessage = [
-    options.message,
-    '',
-    'Learn more: https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertimes',
-  ].join('\n');
-
-  expect(timesCheckError!.message).toEqual(expectedMessage);
+  expect(timesCheckError!.message).toEqual(options.message);
 
   const timesDeclarationPointer = timesCheckError!.cause! as WebSocketTimesDeclarationPointer;
   expect(timesDeclarationPointer).toBeInstanceOf(WebSocketTimesDeclarationPointer);

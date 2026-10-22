@@ -92,16 +92,11 @@ function createMessageDiffs({ messageSaving, unmatchedMessageGroups }: WebSocket
     .join('\n\n');
 }
 
-function createMessageFooter() {
-  return 'Learn more: https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertimes';
-}
-
 function createMessage(options: WebSocketTimesCheckErrorOptions) {
   const messageHeader = createMessageHeader(options);
   const messageDiffs = createMessageDiffs(options);
-  const messageFooter = createMessageFooter();
 
-  return [messageHeader, messageDiffs, messageFooter].filter(isNonEmpty).join('\n\n');
+  return [messageHeader, messageDiffs].filter(isNonEmpty).join('\n\n');
 }
 
 /**

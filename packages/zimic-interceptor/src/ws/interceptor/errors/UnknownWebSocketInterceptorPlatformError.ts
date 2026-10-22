@@ -5,8 +5,6 @@ import { ValidationError } from '@zimic/utils/validation';
  *
  * An error thrown when an unknown interceptor platform is detected. Currently, the platforms `node` and `browser` are
  * supported.
- *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorplatform `interceptor.platform` API reference}
  */
 class UnknownWebSocketInterceptorPlatformError extends ValidationError {
   /* istanbul ignore next -- @preserve
