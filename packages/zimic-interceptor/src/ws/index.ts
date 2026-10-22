@@ -26,6 +26,7 @@ export type {
 export type {
   WebSocketMessageHandlerRestriction,
   WebSocketMessageHandlerStaticRestriction,
+  WebSocketMessageHandlerStaticRestrictionOptions,
   WebSocketMessageHandlerComputedRestriction,
 } from './messageHandler/types/restrictions';
 
@@ -36,6 +37,7 @@ export type {
   RemoteWebSocketInterceptorOptions,
   WebSocketInterceptorOptions,
   WebSocketInterceptorAuthOptions,
+  UnhandledMessageStrategy,
 } from './interceptor/types/options';
 
 export type { InferWebSocketInterceptorSchema } from './interceptor/types/schema';
