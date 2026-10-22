@@ -256,6 +256,14 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     for (let holderIndex = holders.length - 1; holderIndex >= 0; holderIndex--) {
       const { handler, client } = holders[holderIndex];
 
+      // A holder cleared while a newer one was handling the message no longer holds the connection, and handling the
+      // message would add the client back to it.
+      const isStillHolding = handler.clients.has(client);
+
+      if (!isStillHolding) {
+        continue;
+      }
+
       try {
         const { handled } = await handler.interceptor.handleInterceptedMessage(data, {
           sender: client,
