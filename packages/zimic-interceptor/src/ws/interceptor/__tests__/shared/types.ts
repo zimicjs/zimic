@@ -1,5 +1,6 @@
+import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
-import { beforeEach, expect, expectTypeOf, it } from 'vitest';
+import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import type {
   InterceptedWebSocketInterceptorMessage,
@@ -10,6 +11,7 @@ import type { LocalWebSocketMessageHandler, RemoteWebSocketMessageHandler } from
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
 import { createWebSocketInterceptor } from '../../factory';
+import { UnhandledMessageStrategy } from '../../types/options';
 import { LocalWebSocketInterceptor, RemoteWebSocketInterceptor, WebSocketInterceptor } from '../../types/public';
 import { InferWebSocketInterceptorSchema } from '../../types/schema';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
@@ -27,7 +29,7 @@ export function declareTypeWebSocketInterceptorTests(
     baseURL = getBaseURL();
   });
 
-  it('should infer local and remote factory return types', () => {
+  it('should correctly type local and remote factory return values', () => {
     const localInterceptor = createWebSocketInterceptor<MessageSchema>({ baseURL });
     expectTypeOf(localInterceptor).toEqualTypeOf<LocalWebSocketInterceptor<MessageSchema>>();
 
@@ -47,7 +49,7 @@ export function declareTypeWebSocketInterceptorTests(
   });
 
   if (type === 'local') {
-    it('should create a typed local interceptor by default', () => {
+    it('should correctly type local interceptors by default', () => {
       const interceptor = createWebSocketInterceptor<MessageSchema>({ baseURL });
 
       expect(interceptor.type).toBe('local');
@@ -58,7 +60,7 @@ export function declareTypeWebSocketInterceptorTests(
     });
   }
 
-  it('should expose public interceptor types', async () => {
+  it('should correctly type public interceptor types', async () => {
     await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, (interceptor) => {
       expectTypeOf(interceptor).toExtend<WebSocketInterceptor<MessageSchema>>();
       expectTypeOf(interceptor.baseURL).toEqualTypeOf<string>();
@@ -86,7 +88,7 @@ export function declareTypeWebSocketInterceptorTests(
     });
   });
 
-  it('should infer schemas from public interceptor types', () => {
+  it('should correctly type schemas inferred from public interceptor types', () => {
     type LocalSchema = InferWebSocketInterceptorSchema<LocalWebSocketInterceptor<MessageSchema>>;
     expectTypeOf<LocalSchema>().toEqualTypeOf<MessageSchema>();
 
@@ -97,7 +99,7 @@ export function declareTypeWebSocketInterceptorTests(
     expectTypeOf<UnknownSchema>().toEqualTypeOf<never>();
   });
 
-  it('should expose local and remote sync return values', () => {
+  it('should correctly type local and remote sync return values', () => {
     const localInterceptor = createWebSocketInterceptor<MessageSchema>({ type: 'local', baseURL });
     expectTypeOf(localInterceptor.message).returns.toEqualTypeOf<LocalWebSocketMessageHandler<MessageSchema>>();
     expectTypeOf(localInterceptor.checkTimes).returns.toEqualTypeOf<void>();
@@ -137,6 +139,47 @@ export function declareTypeWebSocketInterceptorTests(
       }
 
       expectTypeOf(declareInvalidMessages).toBeFunction();
+    });
+  });
+
+  describe('Unhandled messages', () => {
+    it('should correctly type the unhandled message strategy', () => {
+      const interceptor: WebSocketInterceptor<MessageSchema> = createWebSocketInterceptor<MessageSchema>({
+        type,
+        baseURL,
+      });
+      expectTypeOf(interceptor.onUnhandledMessage).toEqualTypeOf<UnhandledMessageStrategy | undefined>();
+
+      const localInterceptor = createWebSocketInterceptor<MessageSchema>({ type: 'local', baseURL });
+      expectTypeOf(localInterceptor.onUnhandledMessage).toEqualTypeOf<UnhandledMessageStrategy | undefined>();
+
+      const remoteInterceptor = createWebSocketInterceptor<MessageSchema>({ type: 'remote', baseURL });
+      expectTypeOf(remoteInterceptor.onUnhandledMessage).toEqualTypeOf<UnhandledMessageStrategy | undefined>();
+
+      expectTypeOf<UnhandledMessageStrategy.Declaration>().toEqualTypeOf<{ log?: boolean }>();
+      expectTypeOf<UnhandledMessageStrategy.DeclarationFactory>().parameters.toEqualTypeOf<[WebSocketSchema]>();
+      expectTypeOf<UnhandledMessageStrategy.DeclarationFactory>().returns.toEqualTypeOf<
+        PossiblePromise<UnhandledMessageStrategy.Declaration>
+      >();
+
+      function declareStrategies() {
+        createWebSocketInterceptor<MessageSchema>({ baseURL, onUnhandledMessage: { log: false } });
+        createWebSocketInterceptor<MessageSchema>({ type: 'remote', baseURL, onUnhandledMessage: {} });
+        createWebSocketInterceptor<MessageSchema>({ baseURL, onUnhandledMessage: () => ({ log: true }) });
+        createWebSocketInterceptor<MessageSchema>({
+          type: 'remote',
+          baseURL,
+          onUnhandledMessage: () => Promise.resolve({}),
+        });
+
+        // @ts-expect-error Unhandled messages have no action.
+        createWebSocketInterceptor<MessageSchema>({ baseURL, onUnhandledMessage: { action: 'reject' } });
+
+        // @ts-expect-error Unhandled message factories must return a declaration.
+        createWebSocketInterceptor<MessageSchema>({ baseURL, onUnhandledMessage: () => true });
+      }
+
+      expectTypeOf(declareStrategies).toBeFunction();
     });
   });
 }

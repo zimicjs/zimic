@@ -1,4 +1,4 @@
-import { waitForNot } from '@zimic/utils/time';
+import { waitFor, waitForNot } from '@zimic/utils/time';
 import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it, vi } from 'vitest';
 
@@ -110,6 +110,33 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
         );
       },
     );
+  });
+
+  // No HTTP counterpart: WebSocket connections are long-lived, so a client can stay open after its interceptor stops.
+  it('should not handle messages from existing clients after stopped', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+      await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+
+      await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        await interceptor.stop();
+        expect(interceptor.clients).toHaveLength(0);
+
+        const messageListener = vi.fn();
+        client.addEventListener('message', messageListener);
+
+        client.send(JSON.stringify({ type: 'client', index: 2 }));
+
+        await waitForNot(() => {
+          expect(messageListener).toHaveBeenCalled();
+        });
+
+        expect(interceptor.clients).toHaveLength(0);
+      });
+    });
   });
 
   it('should throw an error when trying to create a message handler if not running', () => {

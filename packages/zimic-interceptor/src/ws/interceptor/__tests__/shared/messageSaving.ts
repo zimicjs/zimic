@@ -10,7 +10,8 @@ import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/util
 
 import MessageSavingSafeLimitExceededError from '../../errors/MessageSavingSafeLimitExceededError';
 import { createWebSocketInterceptor } from '../../factory';
-import { WebSocketInterceptorMessageSaving, WebSocketInterceptorOptions } from '../../types/options';
+import { WebSocketInterceptorOptions } from '../../types/options';
+import { WebSocketInterceptorMessageSaving } from '../../types/public';
 import { DEFAULT_MESSAGE_SAVING_SAFE_LIMIT } from '../../WebSocketInterceptorImplementation';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
@@ -61,9 +62,17 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
           );
           expect(handler.messages).toHaveLength(0);
 
+          const serverMessages = interceptor.server.messages;
           const numberOfMessages = 5;
 
           await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+            await waitFor(() => {
+              expect(interceptor.clients).toHaveLength(1);
+            });
+
+            const [clientHandle] = interceptor.clients;
+            const clientMessages = clientHandle.messages;
+
             for (let index = 0; index < numberOfMessages; index++) {
               const messagePromise = waitForWebSocketClientMessage(client);
 
@@ -73,6 +82,12 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
             }
 
             expect(handler.messages).toHaveLength(numberOfMessages);
+
+            expect(interceptor.server.messages).toBe(serverMessages);
+            expect(serverMessages).toHaveLength(numberOfMessages);
+
+            expect(clientHandle.messages).toBe(clientMessages);
+            expect(clientMessages).toHaveLength(numberOfMessages);
           });
         },
       );

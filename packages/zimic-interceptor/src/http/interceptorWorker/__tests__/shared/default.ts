@@ -14,7 +14,7 @@ import { LocalHttpInterceptorWorkerOptions, RemoteHttpInterceptorWorkerOptions }
 import { SharedHttpInterceptorWorkerTestOptions } from './types';
 
 export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInterceptorWorkerTestOptions) {
-  const { platform, defaultWorkerOptions, startServer, getBaseURL, stopServer } = options;
+  const { platform, type, startServer, getBaseURL, stopServer } = options;
 
   let baseURL: string;
   let workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions;
@@ -24,22 +24,19 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
   }
 
   beforeAll(async () => {
-    if (defaultWorkerOptions.type === 'remote') {
+    if (type === 'remote') {
       await startServer?.();
     }
   });
 
   beforeEach(async () => {
-    baseURL = await getBaseURL(defaultWorkerOptions.type);
+    baseURL = await getBaseURL(type);
 
-    workerOptions =
-      defaultWorkerOptions.type === 'local'
-        ? defaultWorkerOptions
-        : { ...defaultWorkerOptions, serverURL: new URL(new URL(baseURL).origin) };
+    workerOptions = type === 'local' ? { type } : { type, serverURL: new URL(new URL(baseURL).origin) };
   });
 
   afterAll(async () => {
-    if (defaultWorkerOptions.type === 'remote') {
+    if (type === 'remote') {
       await stopServer?.();
     }
   });
@@ -206,7 +203,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
     });
   });
 
-  if (defaultWorkerOptions.type === 'remote') {
+  if (type === 'remote') {
     it('should not throw an error if trying to clear handlers without a running web socket client', async () => {
       await usingHttpInterceptorWorker(workerOptions, async (rawWorker) => {
         expect(rawWorker).toBeInstanceOf(RemoteHttpInterceptorWorker);
@@ -250,7 +247,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
     });
   }
 
-  if (defaultWorkerOptions.type === 'local') {
+  if (type === 'local') {
     it('should keep the shared MSW worker running after one of multiple local workers stops', async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         await usingHttpInterceptorWorker(workerOptions, async (otherWorker) => {
@@ -264,7 +261,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
     });
 
     it('should throw an error after failing to start due to a unknown error', async () => {
-      const interceptorWorker = createHttpInterceptorWorker(defaultWorkerOptions);
+      const interceptorWorker = createHttpInterceptorWorker({ type });
       const mswWorker = await interceptorWorker.getMSWWorkerOrCreate();
       const numberOfHandlersBeforeStart = mswWorker.listHandlers().length;
 

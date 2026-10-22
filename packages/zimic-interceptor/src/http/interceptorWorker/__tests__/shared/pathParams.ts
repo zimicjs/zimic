@@ -14,13 +14,13 @@ import { LocalHttpInterceptorWorkerOptions, RemoteHttpInterceptorWorkerOptions }
 import { SharedHttpInterceptorWorkerTestOptions } from './types';
 
 export function declarePathParamsHttpInterceptorWorkerTests(options: SharedHttpInterceptorWorkerTestOptions) {
-  const { defaultWorkerOptions, startServer, getBaseURL, stopServer } = options;
+  const { type, startServer, getBaseURL, stopServer } = options;
 
   let baseURL: string;
   let workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions;
 
   function createDefaultHttpInterceptor() {
-    return createInternalHttpInterceptor<{}>({ type: defaultWorkerOptions.type, baseURL });
+    return createInternalHttpInterceptor<{}>({ type, baseURL });
   }
 
   const responseStatus = 200;
@@ -34,22 +34,19 @@ export function declarePathParamsHttpInterceptorWorkerTests(options: SharedHttpI
   const spiedRequestHandler = vi.fn(requestHandler);
 
   beforeAll(async () => {
-    if (defaultWorkerOptions.type === 'remote') {
+    if (type === 'remote') {
       await startServer?.();
     }
   });
 
   beforeEach(async () => {
-    baseURL = await getBaseURL(defaultWorkerOptions.type);
+    baseURL = await getBaseURL(type);
 
-    workerOptions =
-      defaultWorkerOptions.type === 'local'
-        ? defaultWorkerOptions
-        : { ...defaultWorkerOptions, serverURL: new URL(new URL(baseURL).origin) };
+    workerOptions = type === 'local' ? { type } : { type, serverURL: new URL(new URL(baseURL).origin) };
   });
 
   afterAll(async () => {
-    if (defaultWorkerOptions.type === 'remote') {
+    if (type === 'remote') {
       await stopServer?.();
     }
   });
@@ -545,7 +542,7 @@ export function declarePathParamsHttpInterceptorWorkerTests(options: SharedHttpI
         const matchedBody = (await response.json()) as typeof responseBody;
         expect(matchedBody).toEqual(responseBody);
       } else {
-        if (defaultWorkerOptions.type === 'local') {
+        if (type === 'local') {
           await expectBypassedResponse(responsePromise);
         } else {
           await expectFetchError(responsePromise);
@@ -579,7 +576,7 @@ export function declarePathParamsHttpInterceptorWorkerTests(options: SharedHttpI
 
         const responsePromise = fetch(urlExpectedToFail, { method: 'GET' });
 
-        if (defaultWorkerOptions.type === 'local') {
+        if (type === 'local') {
           await expectBypassedResponse(responsePromise);
         } else {
           await expectFetchError(responsePromise);

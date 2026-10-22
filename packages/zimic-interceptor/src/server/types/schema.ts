@@ -16,6 +16,11 @@ export interface WebSocketHandlerCommit {
   baseURL: string;
 }
 
+export interface WebSocketHandlerReset {
+  handlers: WebSocketHandlerCommit[];
+  clearedHandlerIds?: string[];
+}
+
 export type InterceptorServerWebSocketSchema = WebSocketSchema<{
   'interceptors/http/workers/commit': {
     event: HttpHandlerCommit;
@@ -52,7 +57,7 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
   };
 
   'interceptors/ws/workers/reset': {
-    event: WebSocketHandlerCommit[];
+    event: WebSocketHandlerReset;
     reply: {};
   };
 
