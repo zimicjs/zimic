@@ -291,6 +291,205 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
+  // Remote-only: local interceptors have no authentication.
+  if (type === 'remote') {
+    const olderAuth = { token: 'older-token' };
+    const auth = { token: 'token' };
+
+    it('should apply the unhandled request strategy of the last started interceptor if only an older one using another authentication token has a matching handler', async () => {
+      const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+        action: 'reject',
+        log: false,
+      }));
+
+      const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+        action: 'reject',
+        log: false,
+      }));
+
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 200: {} } } };
+      }>(
+        { type: 'remote', baseURL: defaultBaseURL, auth: olderAuth, onUnhandledRequest: olderOnUnhandledRequest },
+        async (olderInterceptor) => {
+          const olderHandler = await olderInterceptor.get('/users').respond({ status: 200 });
+
+          await usingHttpInterceptor<{
+            '/posts': { GET: { response: { 200: {} } } };
+          }>({ type: 'remote', baseURL: defaultBaseURL, auth, onUnhandledRequest }, async (interceptor) => {
+            const handler = await interceptor.get('/posts').respond({ status: 200 });
+
+            await expectFetchError(fetch(joinURL(defaultBaseURL, '/users'), { method: 'GET' }));
+
+            expect(handler.requests).toHaveLength(0);
+            expect(olderHandler.requests).toHaveLength(0);
+
+            expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+            expect(olderOnUnhandledRequest).not.toHaveBeenCalled();
+          });
+        },
+      );
+    });
+
+    it('should intercept requests with the last started interceptor if an older one using another authentication token also matches', async () => {
+      const olderRestriction = vi.fn(() => true);
+
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 200: {} } } };
+      }>({ type: 'remote', baseURL: defaultBaseURL, auth: olderAuth }, async (olderInterceptor) => {
+        const olderHandler = await olderInterceptor.get('/users').with(olderRestriction).respond({ status: 200 });
+
+        await usingHttpInterceptor<{
+          '/users': { GET: { response: { 204: {} } } };
+        }>({ type: 'remote', baseURL: defaultBaseURL, auth }, async (interceptor) => {
+          const handler = await interceptor.get('/users').respond({ status: 204 });
+
+          const response = await fetch(joinURL(defaultBaseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(204);
+
+          expect(handler.requests).toHaveLength(1);
+          expect(olderHandler.requests).toHaveLength(0);
+          expect(olderRestriction).not.toHaveBeenCalled();
+        });
+      });
+    });
+
+    it('should intercept requests with an older interceptor using another authentication token after the last started one stops', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 200: {} } } };
+      }>({ type: 'remote', baseURL: defaultBaseURL, auth: olderAuth }, async (olderInterceptor) => {
+        const olderHandler = await olderInterceptor.get('/users').respond({ status: 200 });
+
+        await usingHttpInterceptor<{
+          '/users': { GET: { response: { 204: {} } } };
+        }>({ type: 'remote', baseURL: defaultBaseURL, auth }, async (interceptor) => {
+          const handler = await interceptor.get('/users').respond({ status: 204 });
+
+          let response = await fetch(joinURL(defaultBaseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(204);
+
+          expect(handler.requests).toHaveLength(1);
+          expect(olderHandler.requests).toHaveLength(0);
+
+          await interceptor.stop();
+
+          response = await fetch(joinURL(defaultBaseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(200);
+
+          expect(olderHandler.requests).toHaveLength(1);
+        });
+      });
+    });
+
+    it('should intercept requests with the last started interceptor after an older one using another authentication token is cleared', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 200: {} } } };
+      }>({ type: 'remote', baseURL: defaultBaseURL, auth: olderAuth }, async (olderInterceptor) => {
+        const olderHandler = await olderInterceptor.get('/users').respond({ status: 200 });
+
+        await usingHttpInterceptor<{
+          '/users': { GET: { response: { 201: {} } } };
+        }>({ type: 'remote', baseURL: defaultBaseURL, auth: olderAuth }, async (otherOlderInterceptor) => {
+          await otherOlderInterceptor.get('/users').respond({ status: 201 });
+
+          await usingHttpInterceptor<{
+            '/users': { GET: { response: { 204: {} } } };
+          }>({ type: 'remote', baseURL: defaultBaseURL, auth }, async (interceptor) => {
+            const handler = await interceptor.get('/users').respond({ status: 204 });
+
+            let response = await fetch(joinURL(defaultBaseURL, '/users'), { method: 'GET' });
+            expect(response.status).toBe(204);
+
+            await otherOlderInterceptor.clear();
+
+            response = await fetch(joinURL(defaultBaseURL, '/users'), { method: 'GET' });
+            expect(response.status).toBe(204);
+
+            expect(handler.requests).toHaveLength(2);
+            expect(olderHandler.requests).toHaveLength(0);
+          });
+        });
+      });
+    });
+
+    it('should intercept requests with the last started interceptor after an older one using another authentication token is cleared and declares its handlers again', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 200: {} } } };
+      }>({ type: 'remote', baseURL: defaultBaseURL, auth: olderAuth }, async (olderInterceptor) => {
+        await olderInterceptor.get('/users').respond({ status: 200 });
+
+        await usingHttpInterceptor<{
+          '/users': { GET: { response: { 204: {} } } };
+        }>({ type: 'remote', baseURL: defaultBaseURL, auth }, async (interceptor) => {
+          const handler = await interceptor.get('/users').respond({ status: 204 });
+
+          let response = await fetch(joinURL(defaultBaseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(204);
+
+          await olderInterceptor.clear();
+
+          const olderHandler = await olderInterceptor.get('/users').respond({ status: 200 });
+
+          response = await fetch(joinURL(defaultBaseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(204);
+
+          expect(handler.requests).toHaveLength(2);
+          expect(olderHandler.requests).toHaveLength(0);
+        });
+      });
+    });
+
+    it('should intercept requests with the last started interceptor after an older one using another authentication token declares its handlers later', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 200: {} } } };
+      }>({ type: 'remote', baseURL: defaultBaseURL, auth: olderAuth }, async (olderInterceptor) => {
+        await usingHttpInterceptor<{
+          '/users': { GET: { response: { 201: {} } } };
+        }>({ type: 'remote', baseURL: defaultBaseURL, auth: olderAuth }, async (otherOlderInterceptor) => {
+          const otherOlderHandler = await otherOlderInterceptor.get('/users').respond({ status: 201 });
+
+          await usingHttpInterceptor<{
+            '/users': { GET: { response: { 204: {} } } };
+          }>({ type: 'remote', baseURL: defaultBaseURL, auth }, async (interceptor) => {
+            const handler = await interceptor.get('/users').respond({ status: 204 });
+
+            const olderHandler = await olderInterceptor.get('/users').respond({ status: 200 });
+
+            const response = await fetch(joinURL(defaultBaseURL, '/users'), { method: 'GET' });
+            expect(response.status).toBe(204);
+
+            expect(handler.requests).toHaveLength(1);
+            expect(olderHandler.requests).toHaveLength(0);
+            expect(otherOlderHandler.requests).toHaveLength(0);
+          });
+        });
+      });
+    });
+
+    it('should intercept requests with the last started interceptor after an older one using another authentication token declares more handlers', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 200: {} } } };
+        '/posts': { GET: { response: { 200: {} } } };
+      }>({ type: 'remote', baseURL: defaultBaseURL, auth: olderAuth }, async (olderInterceptor) => {
+        const olderHandler = await olderInterceptor.get('/users').respond({ status: 200 });
+
+        await usingHttpInterceptor<{
+          '/users': { GET: { response: { 204: {} } } };
+        }>({ type: 'remote', baseURL: defaultBaseURL, auth }, async (interceptor) => {
+          const handler = await interceptor.get('/users').respond({ status: 204 });
+
+          await olderInterceptor.get('/posts').respond({ status: 200 });
+
+          const response = await fetch(joinURL(defaultBaseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(204);
+
+          expect(handler.requests).toHaveLength(1);
+          expect(olderHandler.requests).toHaveLength(0);
+        });
+      });
+    });
+  }
+
   it('should support changing the base URL after created', async () => {
     const baseURL = defaultBaseURL.toString();
 

@@ -48,8 +48,8 @@ const unhandledRequestReplySchema = z.object({ wasLogged: z.boolean() });
 interface HttpHandler {
   id: string;
   baseURL: string;
+  method: HttpMethod;
   pathRegex: RegExp;
-  socket: Socket;
 }
 
 interface HttpInterceptorServerRuntimeOptions {
@@ -63,17 +63,9 @@ class HttpInterceptorServerRuntime {
   private isHttpWorkerSocket: HttpInterceptorServerRuntimeOptions['isHttpWorkerSocket'];
   private shouldLogUnhandledRequests: HttpInterceptorServerRuntimeOptions['shouldLogUnhandledRequests'];
 
-  private httpHandlersByMethod: {
-    [Method in HttpMethod]: HttpHandler[];
-  } = {
-    GET: [],
-    POST: [],
-    PATCH: [],
-    PUT: [],
-    DELETE: [],
-    HEAD: [],
-    OPTIONS: [],
-  };
+  // Workers are kept in the order of their first committed handler, which decides the worker that serves a request.
+  // Each worker keeps that position until its socket disconnects, even if all of its handlers are cleared.
+  private httpHandlersByWorkerSocket = new Map<Socket, HttpHandler[]>();
 
   constructor(options: HttpInterceptorServerRuntimeOptions) {
     this.webSocketServer = options.webSocketServer;
@@ -132,30 +124,32 @@ class HttpInterceptorServerRuntime {
       },
     });
 
-    this.removeHandlersBySocket(socket);
+    const hasWorkerPosition = this.httpHandlersByWorkerSocket.has(socket);
 
-    for (const handler of handlersToRecommit) {
-      this.registerHttpHandler(handler, socket);
+    // A worker takes its position with its first handler. Setting the handlers of a socket already in the map keeps its
+    // position.
+    if (hasWorkerPosition || handlersToRecommit.length > 0) {
+      this.httpHandlersByWorkerSocket.set(
+        socket,
+        handlersToRecommit.map((handler) => this.createHttpHandler(handler)),
+      );
     }
 
     return {};
   };
 
-  private registerHttpHandler({ id, baseURL, method, path }: HttpHandlerCommit, socket: Socket) {
-    const handlerGroups = this.httpHandlersByMethod[method];
+  private registerHttpHandler(commit: HttpHandlerCommit, socket: Socket) {
+    const handlers = this.httpHandlersByWorkerSocket.get(socket) ?? [];
+    handlers.push(this.createHttpHandler(commit));
+    this.httpHandlersByWorkerSocket.set(socket, handlers);
+  }
 
-    handlerGroups.push({
-      id,
-      baseURL,
-      pathRegex: createRegexFromPath(path),
-      socket,
-    });
+  private createHttpHandler({ id, baseURL, method, path }: HttpHandlerCommit): HttpHandler {
+    return { id, baseURL, method, pathRegex: createRegexFromPath(path) };
   }
 
   removeHandlersBySocket(socket: Socket) {
-    for (const [method, handlers] of Object.entries(this.httpHandlersByMethod)) {
-      this.httpHandlersByMethod[method] = handlers.filter((handler) => handler.socket !== socket);
-    }
+    this.httpHandlersByWorkerSocket.delete(socket);
   }
 
   handleRequest = async (nodeRequest: IncomingMessage, nodeResponse: ServerResponse) => {
@@ -207,15 +201,26 @@ class HttpInterceptorServerRuntime {
   };
 
   private async createResponseForRequest(request: SerializedHttpRequest) {
-    const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
+    // Only one worker is tried, the same one that decides the unhandled request strategy. Other workers belong to other
+    // processes, base URLs, or authentication tokens, so they do not serve each other's requests.
+    const worker = this.findWorkerByRequestBaseURL(request);
+
+    if (!worker) {
+      return { response: null, matchedSomeInterceptor: false };
+    }
 
     const requestURL = excludeNonPathParams(new URL(request.url));
     const requestURLAsString = requestURL.href === `${requestURL.origin}/` ? requestURL.origin : requestURL.href;
 
     let matchedSomeInterceptor = false;
 
-    for (let handlerIndex = methodHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
-      const handler = methodHandlers[handlerIndex];
+    for (let handlerIndex = worker.handlers.length - 1; handlerIndex >= 0; handlerIndex--) {
+      const handler = worker.handlers[handlerIndex];
+
+      if (handler.method !== request.method) {
+        continue;
+      }
+
       const matchesBaseURL = requestURLAsString.startsWith(handler.baseURL);
 
       if (!matchesBaseURL) {
@@ -234,7 +239,7 @@ class HttpInterceptorServerRuntime {
       const reply = await this.webSocketServer.request(
         'interceptors/http/responses/create',
         { handlerId: handler.id, request },
-        { sockets: [handler.socket] },
+        { sockets: [worker.socket] },
       );
       const { response: serializedResponse, error: failedToCreateResponse } = parseInterceptorServerRPCData(
         responseCreationReplySchema,
@@ -275,14 +280,14 @@ class HttpInterceptorServerRuntime {
   }
 
   private async logUnhandledRequestIfNecessary(request: HttpRequest, serializedRequest: SerializedHttpRequest) {
-    const handler = this.findHttpHandlerByRequestBaseURL(request);
+    const worker = this.findWorkerByRequestBaseURL(serializedRequest);
 
-    if (handler) {
+    if (worker) {
       try {
         const reply = await this.webSocketServer.request(
           'interceptors/http/responses/unhandled',
           { request: serializedRequest },
-          { sockets: [handler.socket] },
+          { sockets: [worker.socket] },
         );
         const { wasLogged: wasRequestLoggedByRemoteInterceptor } = parseInterceptorServerRPCData(
           unhandledRequestReplySchema,
@@ -322,20 +327,20 @@ class HttpInterceptorServerRuntime {
     await logUnhandledRequestWarning(request, 'reject');
   }
 
-  private findHttpHandlerByRequestBaseURL(request: HttpRequest) {
-    const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
+  private findWorkerByRequestBaseURL(request: SerializedHttpRequest) {
+    const workers = Array.from(this.httpHandlersByWorkerSocket, ([socket, handlers]) => ({ socket, handlers }));
 
-    const handler = methodHandlers.findLast((handler) => request.url.startsWith(handler.baseURL));
-    return handler;
+    const worker = workers.findLast(({ handlers }) =>
+      handlers.some((handler) => handler.method === request.method && request.url.startsWith(handler.baseURL)),
+    );
+    return worker;
   }
 
   stop() {
     this.webSocketServer.offChannel('event', 'interceptors/http/workers/commit', this.commitWorker);
     this.webSocketServer.offChannel('event', 'interceptors/http/workers/reset', this.resetWorker);
 
-    for (const handlers of Object.values(this.httpHandlersByMethod)) {
-      handlers.length = 0;
-    }
+    this.httpHandlersByWorkerSocket.clear();
   }
 }
 
