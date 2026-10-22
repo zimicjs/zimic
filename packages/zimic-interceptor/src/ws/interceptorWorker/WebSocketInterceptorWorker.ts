@@ -7,11 +7,8 @@ import { isClientSide } from '@/utils/environment';
 import { WebSocketInterceptorPlatform } from '../interceptor/types/options';
 import { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
 import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
-import { WebSocketInterceptorWorkerType } from './types/options';
 
 abstract class WebSocketInterceptorWorker {
-  abstract get type(): WebSocketInterceptorWorkerType;
-
   platform: WebSocketInterceptorPlatform | null = null;
   isRunning = false;
 

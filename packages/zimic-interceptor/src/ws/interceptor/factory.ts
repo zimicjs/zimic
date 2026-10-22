@@ -1,3 +1,4 @@
+import { assertTypeOf } from '@zimic/utils/validation';
 import { WebSocketSchema } from '@zimic/ws';
 
 import UnknownWebSocketInterceptorTypeError from './errors/UnknownWebSocketInterceptorTypeError';
@@ -43,6 +44,8 @@ export function createWebSocketInterceptor<Schema extends WebSocketSchema>(
 export function createWebSocketInterceptor<Schema extends WebSocketSchema>(
   options: WebSocketInterceptorOptions,
 ): PublicLocalWebSocketInterceptor<Schema> | PublicRemoteWebSocketInterceptor<Schema> {
+  assertTypeOf('options.baseURL', options.baseURL, 'string');
+
   const type = options.type;
 
   if (isLocalWebSocketInterceptorOptions(options)) {

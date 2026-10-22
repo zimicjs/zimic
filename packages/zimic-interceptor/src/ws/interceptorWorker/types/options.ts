@@ -1,5 +1,3 @@
-export type WebSocketInterceptorWorkerType = 'local' | 'remote';
-
 export interface LocalWebSocketInterceptorWorkerOptions {
   type: 'local';
 }

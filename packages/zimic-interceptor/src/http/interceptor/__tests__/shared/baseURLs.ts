@@ -66,6 +66,31 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     }
   });
 
+  it('should intercept requests sent to the base URL with a trailing slash', async () => {
+    const baseURL = joinURL(defaultBaseURL.replace(/\/$/, ''), 'path');
+
+    await usingHttpInterceptor<{
+      '/': {
+        GET: {
+          response: {
+            200: {};
+          };
+        };
+      };
+    }>({ ...interceptorOptions, baseURL }, async (interceptor) => {
+      const handler = await promiseIfRemote(interceptor.get('/').respond({ status: 200 }), interceptor);
+
+      const response = await fetch(`${baseURL}/`, { method: 'GET' });
+      expect(response.status).toBe(200);
+
+      expect(handler.requests).toHaveLength(1);
+    });
+  });
+
+  // No HTTP counterpart for "should intercept messages sent to the base URL without its trailing slash": HTTP base URLs
+  // are prefixes that handler paths extend, so a request without the base URL's trailing slash is outside of it.
+  // WebSocket connections are routed by the base URL alone.
+
   it('should support changing the base URL after created', async () => {
     const baseURL = defaultBaseURL.toString();
 

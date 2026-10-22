@@ -4,7 +4,8 @@ import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
 import testMatrix from './shared/matrix';
-import { declareUnhandledMessageWebSocketInterceptorTests } from './shared/unhandledMessages';
+import { declareUnhandledMessageFactoriesWebSocketInterceptorTests } from './shared/unhandledMessages.factories';
+import { declareUnhandledMessageLoggingWebSocketInterceptorTests } from './shared/unhandledMessages.logging';
 
 describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Unhandled messages', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
@@ -24,10 +25,21 @@ describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Unhandled messag
     }
   });
 
-  declareUnhandledMessageWebSocketInterceptorTests({
-    platform: 'node',
-    type,
-    getBaseURL: () => baseURL,
-    getInterceptorOptions: () => ({ type, baseURL }),
+  describe('Logging', () => {
+    declareUnhandledMessageLoggingWebSocketInterceptorTests({
+      platform: 'node',
+      type,
+      getBaseURL: () => baseURL,
+      getInterceptorOptions: () => ({ type, baseURL }),
+    });
+  });
+
+  describe('Factories', () => {
+    declareUnhandledMessageFactoriesWebSocketInterceptorTests({
+      platform: 'node',
+      type,
+      getBaseURL: () => baseURL,
+      getInterceptorOptions: () => ({ type, baseURL }),
+    });
   });
 });

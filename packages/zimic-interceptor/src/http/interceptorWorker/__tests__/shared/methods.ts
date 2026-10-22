@@ -20,32 +20,29 @@ import { LocalHttpInterceptorWorkerOptions, RemoteHttpInterceptorWorkerOptions }
 import { SharedHttpInterceptorWorkerTestOptions } from './types';
 
 export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInterceptorWorkerTestOptions) {
-  const { platform, defaultWorkerOptions, startServer, getBaseURL, stopServer } = options;
+  const { platform, type, startServer, getBaseURL, stopServer } = options;
 
   let baseURL: string;
   let workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions;
 
   function createDefaultHttpInterceptor() {
-    return createInternalHttpInterceptor<{}>({ type: defaultWorkerOptions.type, baseURL });
+    return createInternalHttpInterceptor<{}>({ type, baseURL });
   }
 
   beforeAll(async () => {
-    if (defaultWorkerOptions.type === 'remote') {
+    if (type === 'remote') {
       await startServer?.();
     }
   });
 
   beforeEach(async () => {
-    baseURL = await getBaseURL(defaultWorkerOptions.type);
+    baseURL = await getBaseURL(type);
 
-    workerOptions =
-      defaultWorkerOptions.type === 'local'
-        ? defaultWorkerOptions
-        : { ...defaultWorkerOptions, serverURL: new URL(new URL(baseURL).origin) };
+    workerOptions = type === 'local' ? { type } : { type, serverURL: new URL(new URL(baseURL).origin) };
   });
 
   afterAll(async () => {
-    if (defaultWorkerOptions.type === 'remote') {
+    if (type === 'remote') {
       await stopServer?.();
     }
   });
@@ -54,7 +51,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     const { overridesPreflightResponse, getNumbersOfRequestsIncludingPreflight } = getPreflightAssessment({
       method,
       platform,
-      type: defaultWorkerOptions.type,
+      type,
     });
 
     const defaultHeaders = new HttpHeaders<AccessControlHeaders>();
@@ -133,7 +130,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (defaultWorkerOptions.type === 'local') {
+        } else if (type === 'local') {
           await expectBypassedResponse(responsePromise);
         } else {
           await expectFetchError(responsePromise);
@@ -198,7 +195,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (defaultWorkerOptions.type === 'local') {
+        } else if (type === 'local') {
           await expectBypassedResponse(responsePromise, { canBeAborted: true });
         } else {
           await expectFetchError(responsePromise, { canBeAborted: true });
@@ -222,7 +219,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (defaultWorkerOptions.type === 'local') {
+        } else if (type === 'local') {
           await expectBypassedResponse(responsePromise, { canBeAborted: true });
         } else {
           await expectFetchError(responsePromise, { canBeAborted: true });
@@ -247,7 +244,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (defaultWorkerOptions.type === 'local') {
+        } else if (type === 'local') {
           await expectBypassedResponse(responsePromise, { canBeAborted: true });
         } else {
           await expectFetchError(responsePromise, { canBeAborted: true });
@@ -268,7 +265,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (defaultWorkerOptions.type === 'local') {
+        } else if (type === 'local') {
           await expectBypassedResponse(responsePromise);
         } else {
           await expectFetchError(responsePromise);
@@ -375,7 +372,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (defaultWorkerOptions.type === 'local') {
+        } else if (type === 'local') {
           await expectBypassedResponse(responsePromise);
         } else {
           await expectFetchError(responsePromise);
