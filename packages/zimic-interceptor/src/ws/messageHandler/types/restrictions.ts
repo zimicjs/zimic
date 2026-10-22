@@ -13,13 +13,10 @@ export type WebSocketMessageHandlerStaticRestriction<Schema extends WebSocketSch
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The options of a static restriction declared with `handler.with()`.
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
  */
 export interface WebSocketMessageHandlerStaticRestrictionOptions {
-  /**
-   * Whether JSON messages must be equal to the restriction instead of containing it. Defaults to `false`. Binary
-   * restrictions always require messages with the same bytes.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
   exact?: boolean;
 }
 
