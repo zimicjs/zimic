@@ -103,6 +103,8 @@ import {
   type WebSocketMessageHandlerDelayFactory,
   type WebSocketMessageHandlerRestriction,
   type WebSocketMessageHandlerStaticRestriction,
+  type WebSocketMessageHandlerStaticRestrictionOptions,
+  type UnhandledMessageStrategy,
   type InferWebSocketInterceptorSchema,
   MessageSavingSafeLimitExceededError,
   NotRunningWebSocketInterceptorError,
@@ -467,6 +469,9 @@ describe('Exports', () => {
       expectTypeOf<WebSocketInterceptorType>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorPlatform>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorMessageSaving>().not.toBeAny();
+      expectTypeOf<UnhandledMessageStrategy>().not.toBeAny();
+      expectTypeOf<UnhandledMessageStrategy.Declaration>().not.toBeAny();
+      expectTypeOf<UnhandledMessageStrategy.DeclarationFactory>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorAuthOptions>().not.toBeAny();
       expectTypeOf<RemoteWebSocketInterceptorOptions['auth']>().toEqualTypeOf<
         WebSocketInterceptorAuthOptions | undefined
@@ -490,6 +495,7 @@ describe('Exports', () => {
       expectTypeOf<WebSocketMessageHandlerDelayFactory<never>>().not.toBeAny();
       expectTypeOf<WebSocketMessageHandlerRestriction<never>>().not.toBeAny();
       expectTypeOf<WebSocketMessageHandlerStaticRestriction<never>>().not.toBeAny();
+      expectTypeOf<WebSocketMessageHandlerStaticRestrictionOptions>().not.toBeAny();
       expectTypeOf<WebSocketMessageHandler<never>['from']>()
         .parameter(0)
         .toEqualTypeOf<WebSocketInterceptorClient<never>>();
