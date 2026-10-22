@@ -4,6 +4,7 @@ import { ValidationError } from '@zimic/utils/validation';
 import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it, vi } from 'vitest';
 
+import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 import {
@@ -14,7 +15,7 @@ import {
 
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
-import { WebSocketInterceptorOptions } from '../../types/options';
+import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../types/options';
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../WebSocketInterceptorImplementation';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
@@ -178,7 +179,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
             client.send(JSON.stringify({ type: 'client', index: 1 }));
 
             // Local interceptors receive socket.io connections as MSW does, without the socket.io path prefix, so the
-            // interceptor at the root path may own the connection instead of the last started one.
+            // interceptor at the root path may hold the connection instead of the last started one.
             await expect(messagePromise).resolves.toBeOneOf([
               JSON.stringify({ type: 'server', index: 1 }),
               JSON.stringify({ type: 'server', index: 2 }),
@@ -219,6 +220,240 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
                 await expect(secondMessagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
               });
             });
+          },
+        );
+      },
+    );
+  });
+
+  it('should intercept messages with the last started interceptor if multiple interceptors match', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (olderInterceptor) => {
+        const olderHandler = await promiseIfRemote(
+          olderInterceptor.message().respond({ type: 'server', index: 1 }),
+          olderInterceptor,
+        );
+
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const handler = await promiseIfRemote(
+              interceptor.message().respond({ type: 'server', index: 2 }),
+              interceptor,
+            );
+
+            await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+              const messagePromise = waitForWebSocketClientMessage(client);
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+              await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+            });
+
+            expect(handler.messages).toHaveLength(1);
+            expect(olderHandler.messages).toHaveLength(0);
+          },
+        );
+      },
+    );
+  });
+
+  it('should intercept messages with the last started interceptor if an older one declares its handlers later', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (olderInterceptor) => {
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const handler = await promiseIfRemote(
+              interceptor.message().respond({ type: 'server', index: 2 }),
+              interceptor,
+            );
+
+            const olderHandler = await promiseIfRemote(
+              olderInterceptor.message().respond({ type: 'server', index: 1 }),
+              olderInterceptor,
+            );
+
+            await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+              const messagePromise = waitForWebSocketClientMessage(client);
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+              await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+            });
+
+            expect(handler.messages).toHaveLength(1);
+            expect(olderHandler.messages).toHaveLength(0);
+          },
+        );
+      },
+    );
+  });
+
+  it('should intercept messages with an older interceptor that declares its handlers later if the last started one has no matching handlers', async () => {
+    const restriction = vi.fn(() => false);
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (olderInterceptor) => {
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const handler = await promiseIfRemote(
+              interceptor.message().with(restriction).respond({ type: 'server', index: 2 }),
+              interceptor,
+            );
+
+            const olderHandler = await promiseIfRemote(
+              olderInterceptor.message().respond({ type: 'server', index: 1 }),
+              olderInterceptor,
+            );
+
+            await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+              const messagePromise = waitForWebSocketClientMessage(client);
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+              await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+            });
+
+            expect(restriction).toHaveBeenCalledTimes(1);
+            expect(handler.messages).toHaveLength(0);
+            expect(olderHandler.messages).toHaveLength(1);
+          },
+        );
+      },
+    );
+  });
+
+  it('should intercept messages with an older interceptor if the last started one has no matching handlers', async () => {
+    const restriction = vi.fn(() => false);
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (olderInterceptor) => {
+        const olderHandler = await promiseIfRemote(
+          olderInterceptor.message().respond({ type: 'server', index: 1 }),
+          olderInterceptor,
+        );
+
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const handler = await promiseIfRemote(
+              interceptor.message().with(restriction).respond({ type: 'server', index: 2 }),
+              interceptor,
+            );
+
+            await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+              const messagePromise = waitForWebSocketClientMessage(client);
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+              await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+            });
+
+            expect(restriction).toHaveBeenCalledTimes(1);
+            expect(handler.messages).toHaveLength(0);
+            expect(olderHandler.messages).toHaveLength(1);
+          },
+        );
+      },
+    );
+  });
+
+  it('should apply the unhandled message strategy of the last started interceptor once if no interceptor handles a message', async () => {
+    const olderOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true }, onUnhandledMessage: olderOnUnhandledMessage },
+      async (olderInterceptor) => {
+        const olderHandler = await promiseIfRemote(
+          olderInterceptor
+            .message()
+            .with(() => false)
+            .respond({ type: 'server', index: 1 }),
+          olderInterceptor,
+        );
+
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, messageSaving: { enabled: true }, onUnhandledMessage },
+          async (interceptor) => {
+            const handler = await promiseIfRemote(
+              interceptor
+                .message()
+                .with(() => false)
+                .respond({ type: 'server', index: 2 }),
+              interceptor,
+            );
+
+            await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+              await waitFor(() => {
+                expect(onUnhandledMessage).toHaveBeenCalled();
+              });
+
+              // Unhandled messages have no reply, so no event signals that no other strategy will be applied.
+              await waitForNot(() => {
+                expect(olderOnUnhandledMessage).toHaveBeenCalled();
+              });
+            });
+
+            expect(handler.messages).toHaveLength(0);
+            expect(olderHandler.messages).toHaveLength(0);
+
+            expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+            expect(olderOnUnhandledMessage).not.toHaveBeenCalled();
+          },
+        );
+      },
+    );
+  });
+
+  // Unlike HTTP, a message that a handler failed to handle is not unhandled, because there is no reply to reject.
+  it('should not try older interceptors if the last started one throws while handling a message', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (olderInterceptor) => {
+        const olderHandler = await promiseIfRemote(
+          olderInterceptor.message().respond({ type: 'server', index: 1 }),
+          olderInterceptor,
+        );
+
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, messageSaving: { enabled: true }, onUnhandledMessage: { log: true } },
+          async (interceptor) => {
+            const error = new Error('An error occurred.');
+
+            const handler = await promiseIfRemote(
+              interceptor.message().respond(() => {
+                throw error;
+              }),
+              interceptor,
+            );
+
+            await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+              await usingIgnoredConsole(['error', 'warn'], async (console) => {
+                const messageListener = vi.fn();
+                client.addEventListener('message', messageListener);
+
+                client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                await waitFor(() => {
+                  expect(console.error).toHaveBeenCalledWith(error);
+                });
+
+                await waitForNot(() => {
+                  expect(messageListener).toHaveBeenCalled();
+                });
+
+                expect(console.error).toHaveBeenCalledTimes(1);
+                expect(console.warn).toHaveBeenCalledTimes(0);
+              });
+            });
+
+            expect(handler.messages).toHaveLength(0);
+            expect(olderHandler.messages).toHaveLength(0);
           },
         );
       },

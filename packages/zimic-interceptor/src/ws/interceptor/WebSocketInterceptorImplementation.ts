@@ -294,9 +294,9 @@ class WebSocketInterceptorImplementation<
     context: WebSocketMessageHandlerApplyContext<Schema>,
   ) {
     /* istanbul ignore if -- @preserve
-     * Workers only forward messages while the owning interceptor is running. */
+     * Workers only forward messages while the holding interceptor is running. */
     if (!this.isRunning) {
-      return;
+      return { handled: false };
     }
 
     const message = normalizeWebSocketMessageData(data);
@@ -305,11 +305,8 @@ class WebSocketInterceptorImplementation<
     const messageSavingGeneration = this.messageSavingGeneration;
     const matchedHandler = await this.findMatchedHandler(message, context);
 
-    // Unlike HTTP, unhandled messages have no bypass or reject action. WebSocket is not request-response, so a message
-    // needs no reply and the connection stays open.
     if (!matchedHandler) {
-      await this.logUnhandledMessageIfNecessary(message);
-      return;
+      return { handled: false };
     }
 
     await matchedHandler.handler.applyDeclarations(matchedHandler.message, context);
@@ -317,9 +314,14 @@ class WebSocketInterceptorImplementation<
     if (this.messageSaving.enabled && messageSavingGeneration === this.messageSavingGeneration) {
       matchedHandler.handler.saveInterceptedMessage(matchedHandler.message, context);
     }
+
+    return { handled: true };
   }
 
-  private async logUnhandledMessageIfNecessary(message: Schema) {
+  // Unlike HTTP, unhandled messages have no bypass or reject action. WebSocket is not request-response, so a message
+  // needs no reply and the connection stays open.
+  async logUnhandledMessageIfNecessary(data: WebSocketMessageData<Schema>) {
+    const message = normalizeWebSocketMessageData(data);
     const strategy = await this.getUnhandledMessageStrategy(message);
 
     if (strategy.log ?? DEFAULT_UNHANDLED_MESSAGE_STRATEGY.log) {

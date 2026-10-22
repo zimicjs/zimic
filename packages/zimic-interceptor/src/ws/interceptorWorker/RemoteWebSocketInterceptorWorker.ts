@@ -59,6 +59,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       this.webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', this.connectClient);
       this.webSocketClient.onChannel('event', 'interceptors/ws/clients/close', this.closeClient);
       this.webSocketClient.onChannel('event', 'interceptors/ws/messages/handle', this.handleMessage);
+      this.webSocketClient.onChannel('event', 'interceptors/ws/messages/unhandled', this.handleUnhandledMessage);
 
       this.platform = this.readPlatform();
       this.isRunning = true;
@@ -83,6 +84,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       this.webSocketClient.offChannel('event', 'interceptors/ws/clients/connect', this.connectClient);
       this.webSocketClient.offChannel('event', 'interceptors/ws/clients/close', this.closeClient);
       this.webSocketClient.offChannel('event', 'interceptors/ws/messages/handle', this.handleMessage);
+      this.webSocketClient.offChannel('event', 'interceptors/ws/messages/unhandled', this.handleUnhandledMessage);
 
       await this.clearHandlers();
 
@@ -178,16 +180,15 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private closeClient = ({
     data: connection,
   }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/clients/close'>) => {
-    const clientEntry = this.findClientEntryById(connection.clientId);
+    // A connection shared by several interceptors has one client in each of them.
+    for (const handler of this.webSocketHandlers.values()) {
+      const client = handler.clients.get(connection.clientId);
 
-    /* istanbul ignore if -- @preserve
-     * Stale server close events after a worker reset are ignored; normal connect/close paths cover registered clients. */
-    if (!clientEntry) {
-      return;
+      if (client) {
+        handler.clients.delete(connection.clientId);
+        handler.interceptor.removeClient(client);
+      }
     }
-
-    clientEntry.handler.clients.delete(connection.clientId);
-    clientEntry.handler.interceptor.removeClient(clientEntry.client);
   };
 
   private handleMessage = async ({
@@ -199,19 +200,35 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     /* istanbul ignore if -- @preserve
      * Stale server events after a worker reset are ignored; normal connect/close paths cover registered clients. */
     if (!handler || !client) {
-      return {};
+      return { handled: false };
     }
 
     try {
       const deserializedMessageData = deserializeWebSocketMessageDataFromTransport(message.data);
 
-      await handler.interceptor.handleInterceptedMessage(deserializedMessageData, {
+      return await handler.interceptor.handleInterceptedMessage(deserializedMessageData, {
         sender: client,
         receiver: handler.interceptor.server,
       });
     } catch (error) {
       console.error(error);
+      return { handled: false, error: true };
     }
+  };
+
+  private handleUnhandledMessage = async ({
+    data: message,
+  }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/messages/unhandled'>) => {
+    const handler = this.webSocketHandlers.get(message.handlerId);
+
+    /* istanbul ignore if -- @preserve
+     * Stale server events after a worker reset are ignored; normal connect/close paths cover registered clients. */
+    if (!handler) {
+      return {};
+    }
+
+    const deserializedMessageData = deserializeWebSocketMessageDataFromTransport(message.data);
+    await handler.interceptor.logUnhandledMessageIfNecessary(deserializedMessageData);
 
     return {};
   };
@@ -228,18 +245,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
         if (handlerClient === client) {
           return { handler, clientId };
         }
-      }
-    }
-
-    return undefined;
-  }
-
-  private findClientEntryById(clientId: string) {
-    for (const handler of this.webSocketHandlers.values()) {
-      const client = handler.clients.get(clientId);
-
-      if (client) {
-        return { handler, client };
       }
     }
 

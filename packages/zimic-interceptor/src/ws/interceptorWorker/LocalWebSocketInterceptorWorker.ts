@@ -35,8 +35,16 @@ interface LocalWebSocketClientConnection {
     ((type: 'close', listener: () => void, options?: EventListenerOptions | boolean) => void);
 }
 
+interface WebSocketConnectionHolder {
+  handler: WebSocketHandler;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: InternalWebSocketInterceptorClient<any>;
+}
+
 interface WebSocketClientRegistration {
   connection: LocalWebSocketClientConnection;
+  // Kept in the order the interceptors started, so the last holder is the newest.
+  holders: WebSocketConnectionHolder[];
   messageListener: (event: MessageEvent<string | ArrayBufferLike | Blob | ArrayBufferView>) => void;
   closeListener: () => void;
 }
@@ -63,7 +71,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private store = new LocalMSWWorkerStore();
 
   private webSocketHandlers: WebSocketHandler[] = [];
-  private passedThroughClients = new WeakSet<LocalWebSocketClientConnection>();
+  private routedConnections = new WeakSet<LocalWebSocketClientConnection>();
 
   constructor(_options: LocalWebSocketInterceptorWorkerOptions) {
     super();
@@ -154,52 +162,8 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     const webSocketHandler: WebSocketHandler = {
       interceptor,
       link,
-      mswHandler: link.addEventListener('connection', ({ client: rawClient, server }) => {
-        const client = rawClient as LocalWebSocketClientConnection;
-        const connectionOwner = this.findConnectionOwner(client.url);
-
-        if (!connectionOwner) {
-          this.passConnectionThrough(client, server);
-          return;
-        }
-
-        // Unlike HTTP requests, connections do not fall back to other interceptors. A connection belongs to one
-        // interceptor for its whole lifetime, so its clients, connection listeners, and server sends stay unambiguous.
-        if (connectionOwner !== webSocketHandler) {
-          return;
-        }
-
-        const interceptorClient = createWebSocketInterceptorClient<Schema>(client.url.href, (data) =>
-          client.send(data),
-        );
-
-        async function messageListener(event: MessageEvent<string | ArrayBufferLike | Blob | ArrayBufferView>) {
-          event.preventDefault();
-
-          try {
-            await interceptor.handleInterceptedMessage(event.data as WebSocketMessageData<Schema>, {
-              sender: interceptorClient,
-              receiver: interceptor.server,
-            });
-          } catch (error) {
-            console.error(error);
-          }
-        }
-
-        function closeListener() {
-          webSocketHandler.clients.delete(interceptorClient);
-          interceptor.removeClient(interceptorClient);
-        }
-
-        webSocketHandler.clients.set(interceptorClient, {
-          connection: client,
-          messageListener,
-          closeListener,
-        });
-        interceptor.addClient(interceptorClient);
-
-        client.addEventListener('message', messageListener);
-        client.addEventListener('close', closeListener, { once: true });
+      mswHandler: link.addEventListener('connection', ({ client, server }) => {
+        this.routeConnection(client, server);
       }),
       clients: new Map(),
     };
@@ -229,25 +193,96 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
   }
 
-  private passConnectionThrough(client: LocalWebSocketClientConnection, server: { connect: () => void }) {
-    // Every link that received the connection runs this, but the connection must reach the network only once.
-    if (this.passedThroughClients.has(client)) {
+  private routeConnection(connection: LocalWebSocketClientConnection, server: { connect: () => void }) {
+    // Every link that received the connection runs this, but the connection must be routed only once.
+    if (this.routedConnections.has(connection)) {
       return;
     }
 
-    this.passedThroughClients.add(client);
-    server.connect();
+    this.routedConnections.add(connection);
+
+    const holderHandlers = this.findConnectionHolders(connection.url);
+
+    if (holderHandlers.length === 0) {
+      server.connect();
+      return;
+    }
+
+    // A connection is shared by every interceptor matching it when it opens, so each of them lists the client and can
+    // send to it. Interceptors started later do not hold it, because joining an open connection would fire connection
+    // listeners with no network counterpart.
+    const registration: WebSocketClientRegistration = {
+      connection,
+      holders: holderHandlers.map((handler) => ({
+        handler,
+        client: createWebSocketInterceptorClient<WebSocketSchema>(connection.url.href, (data) => connection.send(data)),
+      })),
+      messageListener: (event) => {
+        event.preventDefault();
+        void this.handleConnectionMessage(registration, event.data as WebSocketMessageData<WebSocketSchema>);
+      },
+      closeListener: () => {
+        this.removeConnectionFromHolders(registration);
+      },
+    };
+
+    for (const { handler, client } of registration.holders) {
+      handler.clients.set(client, registration);
+      handler.interceptor.addClient(client);
+    }
+
+    connection.addEventListener('message', registration.messageListener);
+    connection.addEventListener('close', registration.closeListener, { once: true });
   }
 
-  private findConnectionOwner(connectionURL: URL) {
+  private findConnectionHolders(connectionURL: URL) {
     const connectionURLAsString = excludeNonPathParams(new URL(connectionURL)).href;
 
-    // MSW rewrites socket.io paths before testing links, so the owner must be one whose link received the connection.
-    return this.webSocketHandlers.findLast((handler) => {
+    // MSW rewrites socket.io paths before testing links, so a holder must be one whose link received the connection.
+    return this.webSocketHandlers.filter((handler) => {
       return (
         connectionURLAsString.startsWith(handler.interceptor.baseURLAsString) && handler.mswHandler.test(connectionURL)
       );
     });
+  }
+
+  private async handleConnectionMessage(
+    registration: WebSocketClientRegistration,
+    data: WebSocketMessageData<WebSocketSchema>,
+  ) {
+    const { holders } = registration;
+
+    // Messages fall through holders from the last started to the first, as HTTP requests fall through interceptors.
+    for (let holderIndex = holders.length - 1; holderIndex >= 0; holderIndex--) {
+      const { handler, client } = holders[holderIndex];
+
+      try {
+        const { handled } = await handler.interceptor.handleInterceptedMessage(data, {
+          sender: client,
+          receiver: handler.interceptor.server,
+        });
+
+        if (handled) {
+          return;
+        }
+      } catch (error) {
+        console.error(error);
+
+        // A handler that threw may have already counted the message, such as toward its `times` limit, so older
+        // interceptors are not tried.
+        return;
+      }
+    }
+
+    const newestHolder = holders[holders.length - 1];
+    await newestHolder.handler.interceptor.logUnhandledMessageIfNecessary(data);
+  }
+
+  private removeConnectionFromHolders(registration: WebSocketClientRegistration) {
+    for (const { handler, client } of registration.holders) {
+      handler.clients.delete(client);
+      handler.interceptor.removeClient(client);
+    }
   }
 
   private findHandlerByClient<Schema extends WebSocketSchema>(client: InternalWebSocketInterceptorClient<Schema>) {
@@ -273,14 +308,12 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     });
 
     for (const handler of selectedHandlers) {
-      for (const [interceptorClient, registration] of handler.clients) {
+      for (const registration of handler.clients.values()) {
         registration.connection.removeEventListener('message', registration.messageListener);
         registration.connection.removeEventListener('close', registration.closeListener);
-        handler.interceptor.removeClient(interceptorClient);
+        this.removeConnectionFromHolders(registration);
         registration.connection.close(WEB_SOCKET_CLOSE_CODES.DEFAULT);
       }
-
-      handler.clients.clear();
     }
 
     if (options?.preserveInterceptorRegistration) {
