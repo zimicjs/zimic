@@ -23,7 +23,10 @@ Diverge only for a protocol reason, such as WebSocket connections being long-liv
 
 - Test behavior at the interceptor level. Limit handler suites to handler-only contracts, such as matching, clearing, and promise-like remote handlers, as the HTTP request handler suites do.
 - Limit server tests in `src/server/__tests__` to scenarios the CLI and remote interceptor tests cannot reach.
-- When adding or changing a suite for one protocol, compare it with the counterpart suite. Add an equivalent for each counterpart scenario under the same test name, or state the protocol reason for skipping it in a comment in the suite.
+- Keep the same concept under the same topic name in both protocols. Map renamed topics explicitly: `requestSaving`/`messageSaving`, `unhandledRequests`/`unhandledMessages`, `bodies`/`messageData`. Give a protocol-only concept its own topic, such as `connectionsAndSends` or `effects`, instead of reusing a counterpart topic name.
+- When adding or changing a suite for one protocol, compare it with the counterpart suite in both directions. Add each scenario that applies to both protocols to both suites in the same change, or state the protocol reason for skipping it in a comment in the suite. Write that comment as `// No <Protocol> counterpart for "<counterpart title>": <protocol reason>.`, so parity audits can find it.
+- Translate test names by swapping only protocol nouns. Interceptor suites say "intercept" and handler suites say "match" in both protocols.
+- Keep counterpart tests in the same order and `describe` groups.
 - Manage interceptors, workers, and clients with the `using*` utilities in `tests/utils`. Add the protocol counterpart of a utility when it is missing.
 - Chain handler declarations and await the chain once instead of awaiting a bare handler.
 - Keep type tests compile-only, without executing their callbacks, and place them in `__tests__/shared/types.ts`, which coverage excludes. When `types.ts` holds type tests, put the suite's shared schemas, options, and helpers in `__tests__/shared/utils.ts`.

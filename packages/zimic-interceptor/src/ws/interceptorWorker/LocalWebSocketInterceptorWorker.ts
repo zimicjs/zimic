@@ -61,10 +61,6 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     return LocalWebSocketInterceptorWorker;
   }
 
-  get type() {
-    return 'local' as const;
-  }
-
   static get isMSWWorkerRunning() {
     return LocalMSWWorkerStore.isMSWWorkerRunning;
   }
@@ -110,10 +106,6 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     await super.sharedStop(async () => {
       const mswWorker = await this.getMSWWorkerOrCreate();
 
-      if (this.numberOfRunningInterceptors > 0) {
-        return;
-      }
-
       this.clearHandlers();
 
       this.store.stopMSWWorker(mswWorker);
@@ -152,6 +144,15 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       link,
       mswHandler: link.addEventListener('connection', ({ client: rawClient }) => {
         const client = rawClient as LocalWebSocketClientConnection;
+
+        // Unlike HTTP requests, connections do not fall back to other interceptors. A connection belongs to one
+        // interceptor for its whole lifetime, so its clients, connection listeners, and server sends stay unambiguous.
+        const isConnectionOwner = this.findConnectionOwner(client.url) === webSocketHandler;
+
+        if (!isConnectionOwner) {
+          return;
+        }
+
         const interceptorClient = createWebSocketInterceptorClient<Schema>(client.url.href, (data) =>
           client.send(data),
         );
@@ -210,6 +211,12 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     for (const client of handler?.clients.values() ?? []) {
       client.connection.send(data);
     }
+  }
+
+  private findConnectionOwner(connectionURL: URL) {
+    // MSW decides which links receive a connection, so its own matching also picks the owner. Otherwise, an
+    // intercepted connection could be left without an owner.
+    return this.webSocketHandlers.findLast((handler) => handler.mswHandler.test(connectionURL));
   }
 
   private findHandlerByClient<Schema extends WebSocketSchema>(client: InternalWebSocketInterceptorClient<Schema>) {

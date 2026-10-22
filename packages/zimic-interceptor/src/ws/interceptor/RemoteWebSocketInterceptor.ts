@@ -1,20 +1,22 @@
 import { WebSocketSchema } from '@zimic/ws';
 
-import { createWebSocketInterceptorWorker } from '../interceptorWorker/factory';
-import { RemoteWebSocketMessageHandler } from '../messageHandler/RemoteWebSocketMessageHandler';
+import RemoteWebSocketMessageHandler from '../messageHandler/RemoteWebSocketMessageHandler';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
 import {
   WebSocketInterceptorClient as PublicWebSocketInterceptorClient,
   WebSocketInterceptorServer as PublicWebSocketInterceptorServer,
 } from './types/messages';
-import { RemoteWebSocketInterceptorOptions, WebSocketInterceptorMessageSaving } from './types/options';
+import { RemoteWebSocketInterceptorOptions, UnhandledMessageStrategy } from './types/options';
 import {
   RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor,
   type WebSocketInterceptorConnectionListener,
+  WebSocketInterceptorMessageSaving,
 } from './types/public';
 import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
+import WebSocketInterceptorStore from './WebSocketInterceptorStore';
 
 class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements PublicRemoteWebSocketInterceptor<Schema> {
+  private store = new WebSocketInterceptorStore();
   implementation: WebSocketInterceptorImplementation<Schema>;
   #auth?: RemoteWebSocketInterceptorOptions['auth'];
 
@@ -24,13 +26,16 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
     this.implementation = new WebSocketInterceptorImplementation<Schema>({
       baseURL,
       messageSaving: options.messageSaving,
+      onUnhandledMessage: options.onUnhandledMessage,
       Handler: RemoteWebSocketMessageHandler,
       createWorker: () => {
-        return createWebSocketInterceptorWorker({
-          type: 'remote',
+        return this.store.getOrCreateRemoteWorker({
           serverURL: this.implementation.baseURL,
           auth: this.#auth,
         });
+      },
+      deleteWorker: () => {
+        this.store.deleteRemoteWorker(this.implementation.baseURL, { auth: this.#auth });
       },
     });
 
@@ -93,6 +98,14 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
 
   set messageSaving(messageSaving: WebSocketInterceptorMessageSaving) {
     this.implementation.messageSaving = messageSaving;
+  }
+
+  get onUnhandledMessage() {
+    return this.implementation.onUnhandledMessage;
+  }
+
+  set onUnhandledMessage(onUnhandledMessage: UnhandledMessageStrategy | undefined) {
+    this.implementation.onUnhandledMessage = onUnhandledMessage;
   }
 
   message() {

@@ -950,7 +950,7 @@ describe('Interceptor server', () => {
           });
 
           // A reply from the same worker socket guarantees the server already processed the previous send.
-          await otherWorkerClient.request('interceptors/ws/workers/reset', []);
+          await otherWorkerClient.request('interceptors/ws/workers/reset', { handlers: [] });
 
           const ownerMessage = JSON.stringify({ type: 'server', text: 'owner' } satisfies ChatMessage);
           interceptor.server.send(ownerMessage);
@@ -1294,7 +1294,7 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          await worker.request('interceptors/ws/workers/reset', [{ id: handlerId, baseURL }]);
+          await worker.request('interceptors/ws/workers/reset', { handlers: [{ id: handlerId, baseURL }] });
 
           await client.open();
 
@@ -1337,10 +1337,12 @@ describe('Interceptor server', () => {
             const receivedMessages = collectWebSocketClientMessages(client);
 
             rejectedRequests.push(
-              worker.request('interceptors/ws/workers/reset', [
-                { id: crypto.randomUUID(), baseURL: otherBaseURL },
-                { id: crypto.randomUUID(), baseURL: `http://${server!.hostname}:${server!.port}/invalid` },
-              ]),
+              worker.request('interceptors/ws/workers/reset', {
+                handlers: [
+                  { id: crypto.randomUUID(), baseURL: otherBaseURL },
+                  { id: crypto.randomUUID(), baseURL: `http://${server!.hostname}:${server!.port}/invalid` },
+                ],
+              }),
             );
 
             await waitFor(() => {
@@ -1642,7 +1644,7 @@ describe('Interceptor server', () => {
               expect(connectionRequestsCount).toBe(1);
             });
 
-            await worker.request('interceptors/ws/workers/reset', []);
+            await worker.request('interceptors/ws/workers/reset', { handlers: [] });
 
             const closeEvent = await closeEventPromise;
             expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
@@ -1704,7 +1706,7 @@ describe('Interceptor server', () => {
               const httpWorkerMessage = JSON.stringify({ type: 'server', text: 'http worker' } satisfies ChatMessage);
               httpWorker.send('interceptors/ws/messages/send', { data: { type: 'text', data: httpWorkerMessage } });
 
-              rejectedRequests.push(httpWorker.request('interceptors/ws/workers/reset', []));
+              rejectedRequests.push(httpWorker.request('interceptors/ws/workers/reset', { handlers: [] }));
 
               await waitFor(() => {
                 expect(console.error).toHaveBeenCalledTimes(2);
@@ -1856,7 +1858,9 @@ describe('Interceptor server', () => {
           await Promise.all([client.open(), otherClient.open()]);
           await Promise.all([connectionReceivedPromise, otherConnectionReceivedPromise]);
 
-          await worker.request('interceptors/ws/workers/reset', [{ id: otherHandlerId, baseURL: otherBaseURL }]);
+          await worker.request('interceptors/ws/workers/reset', {
+            handlers: [{ id: otherHandlerId, baseURL: otherBaseURL }],
+          });
 
           const closeEvent = await closeEventPromise;
           expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
@@ -2041,7 +2045,7 @@ describe('Interceptor server', () => {
             messageFinishedPromise.resolve();
 
             // A reply from the same worker socket guarantees the server already processed the previous send.
-            await worker.request('interceptors/ws/workers/reset', []);
+            await worker.request('interceptors/ws/workers/reset', { handlers: [] });
 
             expect(console.error).not.toHaveBeenCalled();
           } finally {

@@ -12,6 +12,7 @@ import { WebSocketMessageHandlerDelayFactory } from './messages';
 import {
   WebSocketMessageHandlerComputedTypeGuardRestriction,
   WebSocketMessageHandlerRestriction,
+  WebSocketMessageHandlerRestrictionOptionsArguments,
   WebSocketMessageHandlerStaticRestriction,
 } from './restrictions';
 
@@ -117,6 +118,7 @@ export interface LocalWebSocketMessageHandler<
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
   with: <Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
     restriction: Restriction,
+    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<RestrictedSchema, Restriction>
   ) => LocalWebSocketMessageHandler<
     Schema,
     WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>
@@ -172,6 +174,7 @@ export interface SyncedRemoteWebSocketMessageHandler<
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
   with: <Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
     restriction: Restriction,
+    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<RestrictedSchema, Restriction>
   ) => PendingRemoteWebSocketMessageHandler<
     Schema,
     WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>

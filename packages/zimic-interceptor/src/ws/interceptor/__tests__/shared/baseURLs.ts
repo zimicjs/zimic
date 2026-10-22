@@ -1,5 +1,6 @@
-import { waitForNot } from '@zimic/utils/time';
+import { waitFor, waitForNot } from '@zimic/utils/time';
 import { UnsupportedURLProtocolError, joinURL } from '@zimic/utils/url';
+import { ValidationError } from '@zimic/utils/validation';
 import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it, vi } from 'vitest';
 
@@ -48,6 +49,83 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
         });
       });
     }
+  });
+
+  it('should intercept messages sent to the base URL with a trailing slash', async () => {
+    const baseURL = joinURL(defaultBaseURL.replace(/\/$/, ''), 'path');
+
+    await usingWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, baseURL }, async (interceptor) => {
+      await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+
+      await usingWebSocketClient<MessageSchema>(`${baseURL}/`, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const messagePromise = waitForWebSocketClientMessage(client);
+        client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+        await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+      });
+    });
+  });
+
+  // No HTTP counterpart: HTTP base URLs are prefixes that handler paths extend, so a request without the base URL's
+  // trailing slash is outside of it. WebSocket connections are routed by the base URL alone.
+  it('should intercept messages sent to the base URL without its trailing slash', async () => {
+    const baseURLWithoutSlash = joinURL(defaultBaseURL.replace(/\/$/, ''), 'path');
+    const baseURL = `${baseURLWithoutSlash}/`;
+
+    await usingWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, baseURL }, async (interceptor) => {
+      await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+
+      await usingWebSocketClient<MessageSchema>(baseURLWithoutSlash, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const messagePromise = waitForWebSocketClientMessage(client);
+        client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+        await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+      });
+    });
+  });
+
+  // No HTTP counterpart: WebSocket handlers have no per-handler path, so base URL paths are the only way to route
+  // messages by path.
+  it('should route messages using path discriminators', async () => {
+    const firstBaseURL = `${defaultBaseURL}/first`;
+    const secondBaseURL = `${defaultBaseURL}/second`;
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, baseURL: firstBaseURL },
+      { start: false },
+      async (firstInterceptor) => {
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, baseURL: secondBaseURL },
+          { start: false },
+          async (secondInterceptor) => {
+            await Promise.all([firstInterceptor.start(), secondInterceptor.start()]);
+            await promiseIfRemote(firstInterceptor.message().respond({ type: 'server', index: 1 }), firstInterceptor);
+            await promiseIfRemote(secondInterceptor.message().respond({ type: 'server', index: 2 }), secondInterceptor);
+
+            await usingWebSocketClient<MessageSchema>(firstBaseURL, async (firstClient) => {
+              await usingWebSocketClient<MessageSchema>(secondBaseURL, async (secondClient) => {
+                const firstMessagePromise = waitForWebSocketClientMessage(firstClient);
+                const secondMessagePromise = waitForWebSocketClientMessage(secondClient);
+
+                firstClient.send(JSON.stringify({ type: 'client', index: 1 }));
+                secondClient.send(JSON.stringify({ type: 'client', index: 2 }));
+
+                await expect(firstMessagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+                await expect(secondMessagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+              });
+            });
+          },
+        );
+      },
+    );
   });
 
   it('should support changing the base URL after created', async () => {
@@ -240,20 +318,19 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     expect(handler).not.toHaveBeenCalled();
   });
 
-  // The WebSocket interceptor does not validate the type of the base URL. It passes the value to the URL constructor,
-  // which coerces objects to strings, so a URL instance is a valid input and has no invalid variant to test.
   const invalidBaseURLs = [
-    { label: 'undefined', value: undefined },
-    { label: 'null', value: null },
-    { label: 'a number', value: 5 },
-    { label: 'a boolean', value: true },
-    { label: 'an object', value: {} },
-    { label: 'an array', value: [] },
+    { label: 'undefined', value: undefined, expectedType: 'undefined' },
+    { label: 'null', value: null, expectedType: 'null' },
+    { label: 'a number', value: 5, expectedType: 'number' },
+    { label: 'a boolean', value: true, expectedType: 'boolean' },
+    { label: 'an object', value: {}, expectedType: 'object' },
+    { label: 'an array', value: [], expectedType: 'object' },
+    { label: 'a URL', value: new URL('ws://localhost:3000'), expectedType: 'object' },
   ];
 
   it.each(invalidBaseURLs)(
     'should throw an error if provided a base URL that is not a string ($label)',
-    async ({ value }) => {
+    async ({ value, expectedType }) => {
       const handler = vi.fn();
 
       // @ts-expect-error Forcing an invalid base URL type.
@@ -261,7 +338,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
 
       await expect(async () => {
         await usingWebSocketInterceptor({ ...interceptorOptions, baseURL: invalidBaseURL }, handler);
-      }).rejects.toThrow(/Invalid URL/);
+      }).rejects.toThrow(new ValidationError(`Expected options.baseURL to be string, but got ${expectedType}.`));
 
       expect(handler).not.toHaveBeenCalled();
     },

@@ -1,9 +1,10 @@
 import { isNonEmpty } from '@zimic/utils/data';
 import { Range } from '@zimic/utils/types';
+import color from 'picocolors';
 
 import { stringifyValueToLog } from '@/utils/logging';
 
-import { WebSocketInterceptorMessageSaving } from '../interceptor/types/options';
+import { WebSocketInterceptorMessageSaving } from '../interceptor/types/public';
 import { UnmatchedWebSocketInterceptorMessageGroup } from '../messageHandler/types/restrictions';
 import WebSocketTimesDeclarationPointer from './WebSocketTimesDeclarationPointer';
 
@@ -11,15 +12,16 @@ interface WebSocketTimesCheckErrorOptions {
   messageLimits: Range<number>;
   numberOfMatchedMessages: number;
   declarationPointer: WebSocketTimesDeclarationPointer | undefined;
+  unmatchedMessageGroups: UnmatchedWebSocketInterceptorMessageGroup[];
   hasRestrictions: boolean;
   messageSaving: WebSocketInterceptorMessageSaving;
-  unmatchedMessageGroups: UnmatchedWebSocketInterceptorMessageGroup[];
 }
 
 function createMessageHeader({
   messageLimits,
   hasRestrictions,
   numberOfMatchedMessages,
+  unmatchedMessageGroups,
 }: WebSocketTimesCheckErrorOptions) {
   const messagePrefix = hasRestrictions ? 'matching ' : '';
 
@@ -42,31 +44,64 @@ function createMessageHeader({
     ', but got ',
     numberOfMatchedMessages,
     '.',
+
+    unmatchedMessageGroups.length > 0 &&
+      `\n\nMessages evaluated by this handler:\n\n  ${color.green('- Expected')}\n  ${color.red('+ Received')}`,
   ]
     .filter((part) => part !== false)
     .join('');
 }
 
-function createMessageUnmatchedMessageGroups(options: WebSocketTimesCheckErrorOptions) {
-  const shouldShowUnmatchedMessages =
-    options.messageSaving.enabled && options.hasRestrictions && options.unmatchedMessageGroups.length > 0;
-
-  if (!shouldShowUnmatchedMessages) {
-    return '';
+function createMessageDiffs({ messageSaving, unmatchedMessageGroups }: WebSocketTimesCheckErrorOptions) {
+  if (!messageSaving.enabled) {
+    return 'Tip: use `messageSaving.enabled: true` in your interceptor for more details about the unmatched messages.';
   }
 
-  const formattedGroups = options.unmatchedMessageGroups
-    .map((group) => `- ${stringifyValueToLog({ message: group.message, diff: group.diff })}`)
-    .join('\n');
+  return unmatchedMessageGroups
+    .map(({ message, diff }, index) => {
+      const messageNumber = index + 1;
 
-  return `Unmatched messages:\n\n${formattedGroups}`;
+      const messageParts = [`${messageNumber}: ${stringifyValueToLog(message)}`];
+
+      if (diff.sender) {
+        messageParts.push('Sender restriction:');
+
+        messageParts.push(`  ${color.green(`- ${diff.sender.expected}`)}`);
+        messageParts.push(`  ${color.red(`+ ${diff.sender.received}`)}`);
+      }
+
+      if (diff.computed) {
+        messageParts.push('Computed restriction:');
+
+        messageParts.push(`  ${color.green(`- return ${diff.computed.expected}`)}`);
+        messageParts.push(`  ${color.red(`+ return ${diff.computed.received}`)}`);
+      }
+
+      if (diff.data) {
+        messageParts.push('Data:');
+
+        const stringifiedExpected = stringifyValueToLog(diff.data.expected);
+        const stringifiedReceived = stringifyValueToLog(diff.data.received);
+
+        messageParts.push(`  ${color.green(`- ${stringifiedExpected}`)}`);
+        messageParts.push(`  ${color.red(`+ ${stringifiedReceived}`)}`);
+      }
+
+      return messageParts.join('\n     ');
+    })
+    .join('\n\n');
+}
+
+function createMessageFooter() {
+  return 'Learn more: https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertimes';
 }
 
 function createMessage(options: WebSocketTimesCheckErrorOptions) {
   const messageHeader = createMessageHeader(options);
-  const messageUnmatchedMessageGroups = createMessageUnmatchedMessageGroups(options);
-  const messageFooter = 'Learn more: https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertimes';
-  return [messageHeader, messageUnmatchedMessageGroups, messageFooter].filter(isNonEmpty).join('\n\n');
+  const messageDiffs = createMessageDiffs(options);
+  const messageFooter = createMessageFooter();
+
+  return [messageHeader, messageDiffs, messageFooter].filter(isNonEmpty).join('\n\n');
 }
 
 /**

@@ -17,7 +17,7 @@ import {
   serializeWebSocketMessageDataForTransport,
 } from '@/ws/utils/messageData';
 
-import type { InterceptorServerWebSocketSchema, WebSocketHandlerCommit } from '../types/schema';
+import type { InterceptorServerWebSocketSchema, WebSocketHandlerCommit, WebSocketHandlerReset } from '../types/schema';
 import { parseInterceptorServerRPCData } from '../utils/rpc';
 
 const webSocketHandlerCommitSchema = z.object({
@@ -25,7 +25,10 @@ const webSocketHandlerCommitSchema = z.object({
   baseURL: z.url({ protocol: /^wss?$/ }),
 }) satisfies z.ZodType<WebSocketHandlerCommit>;
 
-const webSocketHandlerCommitsSchema = z.array(webSocketHandlerCommitSchema);
+const webSocketHandlerResetSchema = z.object({
+  handlers: z.array(webSocketHandlerCommitSchema),
+  clearedHandlerIds: z.array(z.string()).optional(),
+}) satisfies z.ZodType<WebSocketHandlerReset>;
 
 const webSocketMessageSendSchema = z.object({
   clientId: z.string().optional(),
@@ -102,7 +105,8 @@ class WebSocketInterceptorServerRuntime {
   ) => {
     this.assertWebSocketWorkerSocket(socket);
 
-    const handlersToRecommit = parseInterceptorServerRPCData(webSocketHandlerCommitsSchema, message.data);
+    const reset = parseInterceptorServerRPCData(webSocketHandlerResetSchema, message.data);
+    const clearedHandlerIds = new Set(reset.clearedHandlerIds);
 
     const existingHandlersById = new Map(
       this.webSocketHandlers
@@ -110,12 +114,18 @@ class WebSocketInterceptorServerRuntime {
         .map((handler) => [handler.id, handler] as const),
     );
 
-    for (const commit of handlersToRecommit) {
+    for (const commit of reset.handlers) {
       const existingHandler = existingHandlersById.get(commit.id);
 
       if (existingHandler) {
         existingHandler.baseURL = commit.baseURL;
         existingHandlersById.delete(commit.id);
+
+        // A cleared handler keeps its registration and position, which decide connection ownership, but loses its
+        // connections.
+        if (clearedHandlerIds.has(commit.id)) {
+          this.closeWebSocketHandlerConnections(existingHandler);
+        }
       } else {
         this.registerWebSocketHandler(commit, socket);
       }
@@ -153,6 +163,16 @@ class WebSocketInterceptorServerRuntime {
     const handlerIndex = this.webSocketHandlers.indexOf(handler);
     removeArrayIndex(this.webSocketHandlers, handlerIndex);
 
+    this.closeWebSocketHandlerConnections(handler, options);
+  }
+
+  private closeWebSocketHandlerConnections(
+    handler: WebSocketHandler,
+    options: {
+      pendingCloseCode?: number;
+      pendingCloseReason?: string;
+    } = {},
+  ) {
     this.webSocketServer.emitSocket('abortRequests', handler.socket, {
       shouldAbortRequest: (request) =>
         this.webSocketServer.isChannelEvent(request, 'interceptors/ws/clients/connect') &&
@@ -162,6 +182,10 @@ class WebSocketInterceptorServerRuntime {
     for (const [userSocket, userHandler] of this.pendingUserWebSocketHandlers) {
       if (userHandler.handler === handler) {
         this.closePendingUserWebSocketConnection(userSocket, userHandler, options);
+
+        // The worker may have accepted the connection after the server stopped waiting for its reply, so it is told
+        // to forget the client.
+        this.notifyUserWebSocketClose(userHandler);
       }
     }
 
@@ -389,7 +413,11 @@ class WebSocketInterceptorServerRuntime {
 
   private normalizeWebSocketBaseURL(url: string | URL) {
     const normalizedURL = excludeNonPathParams(new URL(url));
-    return normalizedURL.href === `${normalizedURL.origin}/` ? normalizedURL.origin : normalizedURL.href;
+
+    // Local interceptors match a URL with or without a trailing slash, so both forms belong to the same interceptor.
+    const pathnameWithoutTrailingSlash = normalizedURL.pathname.replace(/\/$/, '');
+
+    return `${normalizedURL.origin}${pathnameWithoutTrailingSlash}`;
   }
 
   async stop() {

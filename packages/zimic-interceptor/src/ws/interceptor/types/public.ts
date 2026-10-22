@@ -4,11 +4,21 @@ import { WebSocketSchema } from '@zimic/ws';
 import { LocalWebSocketMessageHandler, RemoteWebSocketMessageHandler } from '@/ws/messageHandler/types/public';
 
 import { WebSocketInterceptorClient, WebSocketInterceptorServer } from './messages';
-import {
-  RemoteWebSocketInterceptorOptions,
-  WebSocketInterceptorMessageSaving,
-  WebSocketInterceptorPlatform,
-} from './options';
+import { RemoteWebSocketInterceptorOptions, UnhandledMessageStrategy, WebSocketInterceptorPlatform } from './options';
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptormessagesaving `interceptor.messageSaving` API reference}
+ */
+export interface WebSocketInterceptorMessageSaving {
+  /** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
+  enabled: boolean;
+
+  /** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
+  safeLimit: number;
+}
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptoron `interceptor.on()` API reference} */
 export type WebSocketInterceptorConnectionListener<Schema extends WebSocketSchema> = (
@@ -26,6 +36,12 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptormessagesaving `interceptor.messageSaving` API reference} */
   messageSaving: WebSocketInterceptorMessageSaving;
+
+  /**
+   * The strategy applied to client messages that no handler matches. Defaults to logging a warning for each unhandled
+   * message.
+   */
+  onUnhandledMessage?: UnhandledMessageStrategy;
 
   /**
    * @readonly

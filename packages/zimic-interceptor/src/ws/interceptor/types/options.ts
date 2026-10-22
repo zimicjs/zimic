@@ -1,3 +1,8 @@
+import { PossiblePromise } from '@zimic/utils/types';
+import { WebSocketSchema } from '@zimic/ws';
+
+import { WebSocketInterceptorMessageSaving } from './public';
+
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
@@ -15,16 +20,31 @@ export type WebSocketInterceptorPlatform = 'node' | 'browser';
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference}
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptormessagesaving `interceptor.messageSaving` API reference}
+ * The strategy applied to client messages that no handler matches, either a static declaration or a factory returning
+ * one for each message. Unhandled messages are logged by default and do not close the connection.
  */
-export interface WebSocketInterceptorMessageSaving {
-  /** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
-  enabled: boolean;
+export namespace UnhandledMessageStrategy {
+  /** A strategy declaration for an unhandled client message. */
+  export interface Declaration {
+    /** Whether to log a warning with the unhandled message. Defaults to `true`. */
+    log?: boolean;
+  }
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
-  safeLimit: number;
+  /**
+   * A function that receives the data of an unhandled client message and returns the strategy declaration to apply to
+   * it. If it throws, the error is logged and the default declaration is applied.
+   */
+  export type DeclarationFactory = (message: WebSocketSchema) => PossiblePromise<Declaration>;
 }
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * The strategy applied to client messages that no handler matches, either a static declaration or a factory returning
+ * one for each message. Unhandled messages are logged by default and do not close the connection.
+ */
+export type UnhandledMessageStrategy =
+  UnhandledMessageStrategy.Declaration | UnhandledMessageStrategy.DeclarationFactory;
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
 export interface SharedWebSocketInterceptorOptions {
@@ -36,6 +56,12 @@ export interface SharedWebSocketInterceptorOptions {
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
   messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
+
+  /**
+   * The strategy applied to client messages that no handler matches. Defaults to logging a warning for each unhandled
+   * message.
+   */
+  onUnhandledMessage?: UnhandledMessageStrategy;
 }
 
 /**

@@ -97,6 +97,7 @@ export function createInternalWebSocketInterceptor<Schema extends WebSocketSchem
 ) {
   return createWebSocketInterceptor<Schema>({
     messageSaving: { enabled: false },
+    onUnhandledMessage: { log: false },
     ...options,
   }) satisfies WebSocketInterceptor<Schema> as LocalWebSocketInterceptor<Schema> | RemoteWebSocketInterceptor<Schema>;
 }

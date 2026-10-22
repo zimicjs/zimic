@@ -1,4 +1,4 @@
-import { blobEquals, jsonContains } from '@zimic/utils/data';
+import { blobEquals, jsonContains, jsonEquals } from '@zimic/utils/data';
 import { waitForDelay } from '@zimic/utils/time';
 import { JSONValue, Range } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
@@ -32,6 +32,7 @@ import {
   WebSocketMessageHandlerRestrictionDiffs,
   WebSocketMessageHandlerRestrictionMatch,
   WebSocketMessageHandlerStaticRestriction,
+  WebSocketMessageHandlerStaticRestrictionOptions,
 } from './types/restrictions';
 
 const DEFAULT_NUMBER_OF_MESSAGE_LIMITS: Range<number> = Object.freeze({
@@ -55,7 +56,10 @@ export interface WebSocketMessageHandlerApplyContext<Schema extends WebSocketSch
 }
 
 class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, RestrictedSchema extends Schema = Schema> {
-  private restrictions: WebSocketMessageHandlerRestriction<RestrictedSchema>[] = [];
+  private restrictions: {
+    restriction: WebSocketMessageHandlerRestriction<RestrictedSchema>;
+    options: WebSocketMessageHandlerStaticRestrictionOptions;
+  }[] = [];
 
   private restrictedSender?: WebSocketInterceptorClient<Schema>;
 
@@ -87,8 +91,11 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     return this;
   }
 
-  with(restriction: WebSocketMessageHandlerRestriction<RestrictedSchema>) {
-    this.restrictions.push(restriction);
+  with(
+    restriction: WebSocketMessageHandlerRestriction<RestrictedSchema>,
+    options: WebSocketMessageHandlerStaticRestrictionOptions = {},
+  ) {
+    this.restrictions.push({ restriction, options });
     return this;
   }
 
@@ -225,7 +232,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
     const restrictedMessage = message;
 
-    for (const restriction of this.restrictions) {
+    for (const { restriction, options } of this.restrictions) {
       if (this.isComputedMessageRestriction(restriction)) {
         const matchesComputedRestriction = await restriction(this.assumeMessageMatchesRestrictions(restrictedMessage));
 
@@ -238,7 +245,11 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
         continue;
       }
 
-      const matchesStaticRestriction = await this.matchesStaticMessageRestriction(restrictedMessage, restriction);
+      const matchesStaticRestriction = await this.matchesStaticMessageRestriction(
+        restrictedMessage,
+        restriction,
+        options,
+      );
 
       if (!matchesStaticRestriction) {
         return {
@@ -258,6 +269,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
   private async matchesStaticMessageRestriction(
     message: Schema,
     restriction: WebSocketMessageHandlerStaticRestriction<RestrictedSchema>,
+    options: WebSocketMessageHandlerStaticRestrictionOptions,
   ) {
     if (isWebSocketBinaryMessageData(restriction)) {
       /* istanbul ignore if -- @preserve
@@ -269,7 +281,9 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
       return this.binaryMessageDataEquals(message, restriction);
     }
 
-    return jsonContains(message as JSONValue, restriction as JSONValue);
+    return options.exact
+      ? jsonEquals(message as JSONValue, restriction as JSONValue)
+      : jsonContains(message as JSONValue, restriction as JSONValue);
   }
 
   private async binaryMessageDataEquals(actual: Blob | BufferSource, expected: Blob | BufferSource) {
