@@ -41,8 +41,7 @@ const webSocketMessageSendSchema = z.object({
 const clientConnectionReplySchema = z.object({ accepted: z.boolean() });
 
 const messageHandlingReplySchema = z.object({
-  // Workers that do not send this field log unhandled messages themselves, so their reply ends the fall-through.
-  handled: z.boolean().optional(),
+  handled: z.boolean(),
   error: z.boolean().optional(),
 });
 
@@ -383,7 +382,7 @@ class WebSocketInterceptorServerRuntime {
           { handlerId: holders[holderIndex].id, clientId: connection.clientId, data },
           { sockets: [connection.workerSocket] },
         );
-        const { handled = true, error: failedToHandleMessage } = parseInterceptorServerRPCData(
+        const { handled, error: failedToHandleMessage } = parseInterceptorServerRPCData(
           messageHandlingReplySchema,
           reply,
         );

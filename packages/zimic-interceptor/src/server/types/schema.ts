@@ -86,7 +86,7 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
       data: SerializedWebSocketMessageData;
     };
     reply: {
-      handled?: boolean;
+      handled: boolean;
       error?: boolean;
     };
   };
