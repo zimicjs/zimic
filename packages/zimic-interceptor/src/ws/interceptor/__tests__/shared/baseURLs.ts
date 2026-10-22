@@ -155,6 +155,40 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     });
   });
 
+  it('should intercept messages sent to socket.io paths under the base URL', async () => {
+    const socketIOBaseURL = joinURL(defaultBaseURL, 'socket.io/');
+    const socketIOURL = joinURL(socketIOBaseURL, 'chat');
+
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, baseURL: socketIOBaseURL },
+        async (socketIOInterceptor) => {
+          await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+          await promiseIfRemote(
+            socketIOInterceptor.message().respond({ type: 'server', index: 2 }),
+            socketIOInterceptor,
+          );
+
+          await usingWebSocketClient<MessageSchema>(socketIOURL, async (client) => {
+            await waitFor(() => {
+              expect([...interceptor.clients, ...socketIOInterceptor.clients]).toHaveLength(1);
+            });
+
+            const messagePromise = waitForWebSocketClientMessage(client);
+            client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+            // Local interceptors receive socket.io connections as MSW does, without the socket.io path prefix, so the
+            // interceptor at the root path may own the connection instead of the last started one.
+            await expect(messagePromise).resolves.toBeOneOf([
+              JSON.stringify({ type: 'server', index: 1 }),
+              JSON.stringify({ type: 'server', index: 2 }),
+            ]);
+          });
+        },
+      );
+    });
+  });
+
   // No HTTP counterpart: WebSocket handlers have no per-handler path, so base URL paths are the only way to route
   // messages by path.
   it('should route messages using path discriminators', async () => {

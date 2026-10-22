@@ -242,8 +242,11 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private findConnectionOwner(connectionURL: URL) {
     const connectionURLAsString = excludeNonPathParams(new URL(connectionURL)).href;
 
+    // MSW rewrites socket.io paths before testing links, so the owner must be one whose link received the connection.
     return this.webSocketHandlers.findLast((handler) => {
-      return connectionURLAsString.startsWith(handler.interceptor.baseURLAsString);
+      return (
+        connectionURLAsString.startsWith(handler.interceptor.baseURLAsString) && handler.mswHandler.test(connectionURL)
+      );
     });
   }
 

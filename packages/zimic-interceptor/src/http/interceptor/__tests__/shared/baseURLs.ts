@@ -101,6 +101,9 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
   // No HTTP counterpart for "should not intercept messages sent to the base URL without its trailing slash": HTTP
   // requests also need a matching handler path, so the base URL alone does not decide which requests are intercepted.
 
+  // No HTTP counterpart for "should intercept messages sent to socket.io paths under the base URL": MSW rewrites
+  // socket.io paths only for WebSocket connections.
+
   it('should intercept requests with the last started interceptor if multiple interceptors match', async () => {
     await usingHttpInterceptor<{
       '/users': { GET: { response: { 200: {} } } };
