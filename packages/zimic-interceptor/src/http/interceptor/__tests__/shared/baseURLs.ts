@@ -88,9 +88,18 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
-  // No HTTP counterpart for "should intercept messages sent to the base URL without its trailing slash": HTTP base URLs
-  // are prefixes that handler paths extend, so a request without the base URL's trailing slash is outside of it.
-  // WebSocket connections are routed by the base URL alone.
+  // No HTTP counterpart for "should intercept messages sent to URLs that extend the last path segment of the base URL":
+  // HTTP requests also need a matching handler path, so the base URL alone does not decide which requests are
+  // intercepted.
+
+  // No HTTP counterpart for "should intercept messages sent to the base URL with search params": HTTP requests also need
+  // a matching handler path, so the base URL alone does not decide which requests are intercepted.
+
+  // No HTTP counterpart for "should not intercept messages sent to URLs not starting with the base URL": HTTP requests
+  // also need a matching handler path, so the base URL alone does not decide which requests are intercepted.
+
+  // No HTTP counterpart for "should not intercept messages sent to the base URL without its trailing slash": HTTP
+  // requests also need a matching handler path, so the base URL alone does not decide which requests are intercepted.
 
   it('should intercept requests with the last started interceptor if multiple interceptors match', async () => {
     await usingHttpInterceptor<{

@@ -397,11 +397,9 @@ class WebSocketInterceptorServerRuntime {
   };
 
   private findWebSocketHandlerByRequest(request: IncomingMessage) {
-    const requestURLAsString = this.normalizeWebSocketBaseURL(this.getWebSocketRequestURL(request));
+    const requestURL = excludeNonPathParams(this.getWebSocketRequestURL(request));
 
-    const handler = this.webSocketHandlers.findLast(
-      (handler) => requestURLAsString === this.normalizeWebSocketBaseURL(handler.baseURL),
-    );
+    const handler = this.webSocketHandlers.findLast((handler) => requestURL.href.startsWith(handler.baseURL));
     return handler;
   }
 
@@ -409,15 +407,6 @@ class WebSocketInterceptorServerRuntime {
     /* istanbul ignore next -- @preserve
      * Upgrade requests always include a URL in the supported Node runtimes. */
     return new URL(request.url ?? '/', `ws://${request.headers.host}`);
-  }
-
-  private normalizeWebSocketBaseURL(url: string | URL) {
-    const normalizedURL = excludeNonPathParams(new URL(url));
-
-    // Local interceptors match a URL with or without a trailing slash, so both forms belong to the same interceptor.
-    const pathnameWithoutTrailingSlash = normalizedURL.pathname.replace(/\/$/, '');
-
-    return `${normalizedURL.origin}${pathnameWithoutTrailingSlash}`;
   }
 
   async stop() {

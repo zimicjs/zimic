@@ -6,7 +6,11 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
-import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
+import {
+  usingWebSocketClient,
+  waitForWebSocketClientClose,
+  waitForWebSocketClientMessage,
+} from '@tests/utils/webSocket';
 
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
@@ -28,20 +32,18 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
   });
 
   it('should handle base URLs and paths correctly', async () => {
-    // WebSocket handlers have no per-handler path, so the path is only part of the base URL.
     const baseURLWithoutSlash = defaultBaseURL.replace(/\/$/, '');
-    const baseURLWithPathWithoutSlash = joinURL(baseURLWithoutSlash, 'path');
 
-    for (const baseURL of [
-      baseURLWithoutSlash,
-      `${baseURLWithoutSlash}/`,
-      baseURLWithPathWithoutSlash,
-      `${baseURLWithPathWithoutSlash}/`,
+    for (const { baseURL, path } of [
+      { baseURL: baseURLWithoutSlash, path: 'path' },
+      { baseURL: `${baseURLWithoutSlash}/`, path: 'path' },
+      { baseURL: baseURLWithoutSlash, path: '/path' },
+      { baseURL: `${baseURLWithoutSlash}/`, path: '/path' },
     ]) {
       await usingWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, baseURL }, async (interceptor) => {
         await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema>(joinURL(baseURL, path), async (client) => {
           const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: 1 }));
 
@@ -70,16 +72,14 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     });
   });
 
-  // No HTTP counterpart: HTTP base URLs are prefixes that handler paths extend, so a request without the base URL's
-  // trailing slash is outside of it. WebSocket connections are routed by the base URL alone.
-  it('should intercept messages sent to the base URL without its trailing slash', async () => {
-    const baseURLWithoutSlash = joinURL(defaultBaseURL.replace(/\/$/, ''), 'path');
-    const baseURL = `${baseURLWithoutSlash}/`;
+  it('should intercept messages sent to URLs that extend the last path segment of the base URL', async () => {
+    const baseURL = joinURL(defaultBaseURL, 'api');
+    const extendedURL = `${baseURL}x`;
 
     await usingWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, baseURL }, async (interceptor) => {
       await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
 
-      await usingWebSocketClient<MessageSchema>(baseURLWithoutSlash, async (client) => {
+      await usingWebSocketClient<MessageSchema>(extendedURL, async (client) => {
         await waitFor(() => {
           expect(interceptor.clients).toHaveLength(1);
         });
@@ -89,6 +89,69 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
 
         await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
       });
+    });
+  });
+
+  it('should intercept messages sent to the base URL with search params', async () => {
+    const baseURL = joinURL(defaultBaseURL, 'path');
+    const urlWithSearchParams = `${baseURL}?search=value`;
+
+    await usingWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, baseURL }, async (interceptor) => {
+      await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+
+      await usingWebSocketClient<MessageSchema>(urlWithSearchParams, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const messagePromise = waitForWebSocketClientMessage(client);
+        client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+        await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+      });
+    });
+  });
+
+  it('should not intercept messages sent to URLs not starting with the base URL', async () => {
+    const baseURL = joinURL(defaultBaseURL, 'api');
+    const otherURL = joinURL(defaultBaseURL, 'other');
+
+    await usingWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, baseURL }, async (interceptor) => {
+      await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+
+      const otherURLMessageListener = vi.fn();
+
+      // Depending on the mode, the other URL either refuses the connection or accepts it without handling messages.
+      await Promise.allSettled([
+        usingWebSocketClient<MessageSchema>(otherURL, async (client) => {
+          client.addEventListener('message', otherURLMessageListener);
+          client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+          await waitForNot(() => {
+            expect(otherURLMessageListener).toHaveBeenCalled();
+          });
+        }),
+      ]);
+      expect(otherURLMessageListener).not.toHaveBeenCalled();
+      expect(interceptor.clients).toHaveLength(0);
+    });
+  });
+
+  it('should not intercept messages sent to the base URL without its trailing slash', async () => {
+    const baseURLWithoutSlash = joinURL(defaultBaseURL, 'path');
+    const baseURL = `${baseURLWithoutSlash}/`;
+
+    await usingWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, baseURL }, async (interceptor) => {
+      await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+
+      // Depending on the mode, the interceptor server refuses the connection, or the connection reaches the network,
+      // where no WebSocket server accepts it. Either way, the connection closes.
+      await Promise.allSettled([
+        usingWebSocketClient<MessageSchema>(baseURLWithoutSlash, async (client) => {
+          await waitForWebSocketClientClose(client);
+        }),
+      ]);
+      expect(interceptor.clients).toHaveLength(0);
     });
   });
 
@@ -253,7 +316,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
   });
 
   it('should not support changing the base URL if the interceptor is running', async () => {
-    const baseURL = defaultBaseURL;
+    const baseURL = joinURL(defaultBaseURL, 'path');
 
     await usingWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, baseURL }, async (interceptor) => {
       expect(interceptor.baseURL).toBe(baseURL.replace(/\/$/, ''));
@@ -267,7 +330,8 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
         await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
       });
 
-      const newBaseURL = joinURL(baseURL, 'new');
+      // The current base URL intercepts every URL starting with it, so the new base URL must be outside of it.
+      const newBaseURL = joinURL(defaultBaseURL, 'new');
       expect(newBaseURL).not.toBe(interceptor.baseURL);
 
       expect(interceptor.isRunning).toBe(true);

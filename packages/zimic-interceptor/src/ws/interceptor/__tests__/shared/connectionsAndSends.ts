@@ -206,7 +206,8 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
                 lastInterceptor,
               );
 
-              await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+              // Only a URL with the trailing slash starts with both base URLs.
+              await usingWebSocketClient<ChatMessage>(`${baseURL}/`, async (client) => {
                 await waitFor(() => {
                   expect(lastInterceptor.clients).toHaveLength(1);
                 });

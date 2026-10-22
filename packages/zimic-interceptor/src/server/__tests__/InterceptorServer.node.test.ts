@@ -1052,31 +1052,6 @@ describe('Interceptor server', () => {
       });
     });
 
-    it('should not route client connections to sibling paths of a registered handler', async () => {
-      server = createInternalInterceptorServer();
-      await server.start();
-
-      const baseURL = `ws://${server.hostname}:${server.port}/chat`;
-
-      await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
-        await interceptor.message();
-
-        const client = new WebSocketClient<ChatMessage>(`${baseURL}/other`);
-        const closeEventPromise = waitForWebSocketClientClose(client);
-
-        try {
-          await client.open();
-
-          const closeEvent = await closeEventPromise;
-          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-          expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
-          expect(interceptor.clients).toHaveLength(0);
-        } finally {
-          await client.close();
-        }
-      });
-    });
-
     it('should accept client connections that request a protocol with URL-encoded characters', async () => {
       server = createInternalInterceptorServer();
       await server.start();

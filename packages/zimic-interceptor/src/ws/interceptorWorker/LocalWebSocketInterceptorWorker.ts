@@ -1,3 +1,4 @@
+import { excludeNonPathParams } from '@zimic/utils/url';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 import { SharedOptions as MSWWorkerSharedOptions, ws } from 'msw';
 
@@ -48,10 +49,21 @@ interface WebSocketHandler {
   clients: Map<InternalWebSocketInterceptorClient<any>, WebSocketClientRegistration>;
 }
 
+// MSW tests links against connection URLs without their search params and trailing slash. A base URL with a trailing
+// slash therefore also receives the URL without it, which no interceptor owns by raw prefix and must pass through.
+function createConnectionURLRegex(baseURL: string) {
+  const baseURLWithoutTrailingSlash = baseURL.replace(/\/$/, '');
+  const escapedBaseURL = baseURLWithoutTrailingSlash.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  const hasTrailingSlash = baseURLWithoutTrailingSlash !== baseURL;
+  return new RegExp(hasTrailingSlash ? `^${escapedBaseURL}(?:/|$)` : `^${escapedBaseURL}`);
+}
+
 class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private store = new LocalMSWWorkerStore();
 
   private webSocketHandlers: WebSocketHandler[] = [];
+  private passedThroughClients = new WeakSet<LocalWebSocketClientConnection>();
 
   constructor(_options: LocalWebSocketInterceptorWorkerOptions) {
     super();
@@ -138,18 +150,22 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       throw new NotRunningWebSocketInterceptorError();
     }
 
-    const link = ws.link(interceptor.baseURLAsString);
+    const link = ws.link(createConnectionURLRegex(interceptor.baseURLAsString));
     const webSocketHandler: WebSocketHandler = {
       interceptor,
       link,
-      mswHandler: link.addEventListener('connection', ({ client: rawClient }) => {
+      mswHandler: link.addEventListener('connection', ({ client: rawClient, server }) => {
         const client = rawClient as LocalWebSocketClientConnection;
+        const connectionOwner = this.findConnectionOwner(client.url);
+
+        if (!connectionOwner) {
+          this.passConnectionThrough(client, server);
+          return;
+        }
 
         // Unlike HTTP requests, connections do not fall back to other interceptors. A connection belongs to one
         // interceptor for its whole lifetime, so its clients, connection listeners, and server sends stay unambiguous.
-        const isConnectionOwner = this.findConnectionOwner(client.url) === webSocketHandler;
-
-        if (!isConnectionOwner) {
+        if (connectionOwner !== webSocketHandler) {
           return;
         }
 
@@ -213,10 +229,22 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
   }
 
+  private passConnectionThrough(client: LocalWebSocketClientConnection, server: { connect: () => void }) {
+    // Every link that received the connection runs this, but the connection must reach the network only once.
+    if (this.passedThroughClients.has(client)) {
+      return;
+    }
+
+    this.passedThroughClients.add(client);
+    server.connect();
+  }
+
   private findConnectionOwner(connectionURL: URL) {
-    // MSW decides which links receive a connection, so its own matching also picks the owner. Otherwise, an
-    // intercepted connection could be left without an owner.
-    return this.webSocketHandlers.findLast((handler) => handler.mswHandler.test(connectionURL));
+    const connectionURLAsString = excludeNonPathParams(new URL(connectionURL)).href;
+
+    return this.webSocketHandlers.findLast((handler) => {
+      return connectionURLAsString.startsWith(handler.interceptor.baseURLAsString);
+    });
   }
 
   private findHandlerByClient<Schema extends WebSocketSchema>(client: InternalWebSocketInterceptorClient<Schema>) {
