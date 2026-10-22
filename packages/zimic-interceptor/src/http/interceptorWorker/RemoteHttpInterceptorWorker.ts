@@ -172,12 +172,27 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     this.httpHandlers.set(handler.id, handler);
 
-    await this.webSocketClient.request('interceptors/http/workers/commit', {
+    const handlerCommits = this.getHandlerCommitsByInterceptorStartOrder();
+    const lastHandlerCommit = handlerCommits.at(-1);
+
+    if (lastHandlerCommit?.id === handler.id) {
+      await this.webSocketClient.request('interceptors/http/workers/commit', lastHandlerCommit);
+    } else {
+      // The server tries handlers from the last committed to the first and appends new commits, so a handler of an
+      // interceptor started before others is placed by recommitting all handlers in order.
+      await this.webSocketClient.request('interceptors/http/workers/reset', handlerCommits);
+    }
+  }
+
+  private getHandlerCommitsByInterceptorStartOrder() {
+    const handlers = this.sortHandlersByInterceptorStartOrder(this.httpHandlers.values());
+
+    return handlers.map<HttpHandlerCommit>((handler) => ({
       id: handler.id,
       baseURL: handler.baseURL,
       method: handler.method,
       path: handler.path,
-    });
+    }));
   }
 
   async createResponseFromDeclaration(
@@ -221,12 +236,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       return;
     }
 
-    const handlersToRecommit = Array.from<HttpHandler, HttpHandlerCommit>(this.httpHandlers.values(), (handler) => ({
-      id: handler.id,
-      baseURL: handler.baseURL,
-      method: handler.method,
-      path: handler.path,
-    }));
+    const handlersToRecommit = this.getHandlerCommitsByInterceptorStartOrder();
 
     try {
       await this.webSocketClient.request('interceptors/http/workers/reset', handlersToRecommit);

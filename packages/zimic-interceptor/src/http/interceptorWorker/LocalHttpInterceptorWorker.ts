@@ -198,8 +198,10 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private async createResponseForRequest(request: HttpRequest) {
-    // Handlers can be added or cleared while a response is created, so the request falls through a stable copy.
-    const methodHandlers = [...this.httpHandlersByMethod[request.method as HttpMethod]];
+    // Handlers can be added or cleared while a response is created, so the request falls through a sorted copy.
+    const methodHandlers = this.sortHandlersByInterceptorStartOrder(
+      this.httpHandlersByMethod[request.method as HttpMethod],
+    );
 
     const requestURL = excludeNonPathParams(new URL(request.url));
     const requestURLAsString = requestURL.href === `${requestURL.origin}/` ? requestURL.origin : requestURL.href;

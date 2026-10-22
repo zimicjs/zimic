@@ -124,6 +124,29 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
+  it('should intercept requests with the last started interceptor if an older one declares its handlers later', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: { response: { 200: {} } } };
+    }>(interceptorOptions, async (olderInterceptor) => {
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 204: {} } } };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+
+        const olderHandler = await promiseIfRemote(
+          olderInterceptor.get('/users').respond({ status: 200 }),
+          olderInterceptor,
+        );
+
+        const response = await fetch(joinURL(defaultBaseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handler.requests).toHaveLength(1);
+        expect(olderHandler.requests).toHaveLength(0);
+      });
+    });
+  });
+
   it('should intercept requests with an older interceptor if the last started one has no matching handlers', async () => {
     const restriction = vi.fn(() => false);
 

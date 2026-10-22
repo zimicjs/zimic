@@ -185,6 +185,19 @@ abstract class HttpInterceptorWorker {
     removeArrayElement(this.runningInterceptors, interceptor);
   }
 
+  // Requests fall through interceptors from the last started to the first, the same order that selects the unhandled
+  // request strategy. The sort is stable, so the handlers of each interceptor keep their declaration order.
+  protected sortHandlersByInterceptorStartOrder<Handler extends { interceptor: AnyHttpInterceptorImplementation }>(
+    handlers: Iterable<Handler>,
+  ) {
+    return Array.from(handlers).sort((handler, otherHandler) => {
+      return (
+        this.runningInterceptors.indexOf(handler.interceptor) -
+        this.runningInterceptors.indexOf(otherHandler.interceptor)
+      );
+    });
+  }
+
   private findInterceptorByRequestBaseURL(request: Request) {
     const interceptor = this.runningInterceptors.findLast((interceptor) => {
       return request.url.startsWith(interceptor.baseURLAsString);
