@@ -553,6 +553,28 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
       });
     });
 
+    // Remote-only: local interceptors have no authentication.
+    it('should share workers only between interceptors with the same authentication token', async () => {
+      const auth = { token: 'token' };
+      const otherAuth = { token: 'other-token' };
+
+      await usingWebSocketInterceptor<{}>({ type: 'remote', baseURL, auth }, async () => {
+        await usingWebSocketInterceptor<{}>({ type: 'remote', baseURL, auth: { token: auth.token } }, async () => {
+          await usingWebSocketInterceptor<{}>({ type: 'remote', baseURL, auth: otherAuth }, () => {
+            const worker = store.getRemoteWorker(serverURL, { auth });
+            const otherWorker = store.getRemoteWorker(serverURL, { auth: otherAuth });
+
+            expect(worker).toBeDefined();
+            expect(otherWorker).toBeDefined();
+            expect(otherWorker).not.toBe(worker);
+
+            expect(worker!.numberOfRunningInterceptors).toBe(2);
+            expect(otherWorker!.numberOfRunningInterceptors).toBe(1);
+          });
+        });
+      });
+    });
+
     // Remote-only: interceptors are registered with the interceptor server, which local interceptors do not use.
     describe('Registrations', () => {
       it('should reset registrations after stopped', async () => {

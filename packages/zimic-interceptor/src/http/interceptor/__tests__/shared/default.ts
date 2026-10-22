@@ -472,5 +472,46 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
         });
       });
     });
+
+    // Remote-only: local interceptors share one worker regardless of their base URL.
+    it('should use separate shared workers for different base URLs', async () => {
+      const otherBaseURL = `${baseURL}/other`;
+
+      await usingHttpInterceptor<{}>(getInterceptorOptions(), async () => {
+        await usingHttpInterceptor<{}>({ ...getInterceptorOptions(), baseURL: otherBaseURL }, () => {
+          const worker = store.getRemoteWorker(serverURL, { auth: undefined });
+          const otherWorker = store.getRemoteWorker(new URL(otherBaseURL), { auth: undefined });
+
+          expect(worker).toBeDefined();
+          expect(otherWorker).toBeDefined();
+          expect(otherWorker).not.toBe(worker);
+
+          expect(worker!.numberOfRunningInterceptors).toBe(1);
+          expect(otherWorker!.numberOfRunningInterceptors).toBe(1);
+        });
+      });
+    });
+
+    // Remote-only: local interceptors have no authentication.
+    it('should share workers only between interceptors with the same authentication token', async () => {
+      const auth = { token: 'token' };
+      const otherAuth = { token: 'other-token' };
+
+      await usingHttpInterceptor<{}>({ type: 'remote', baseURL, auth }, async () => {
+        await usingHttpInterceptor<{}>({ type: 'remote', baseURL, auth: { token: auth.token } }, async () => {
+          await usingHttpInterceptor<{}>({ type: 'remote', baseURL, auth: otherAuth }, () => {
+            const worker = store.getRemoteWorker(serverURL, { auth });
+            const otherWorker = store.getRemoteWorker(serverURL, { auth: otherAuth });
+
+            expect(worker).toBeDefined();
+            expect(otherWorker).toBeDefined();
+            expect(otherWorker).not.toBe(worker);
+
+            expect(worker!.numberOfRunningInterceptors).toBe(2);
+            expect(otherWorker!.numberOfRunningInterceptors).toBe(1);
+          });
+        });
+      });
+    });
   }
 }
