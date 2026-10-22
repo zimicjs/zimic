@@ -14,19 +14,24 @@ import type { WebSocketEventMessage } from '@/utils/webSocket/types';
 import type WebSocketServer from '@/utils/webSocket/WebSocketServer';
 
 import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE, type AccessControlHeaders } from '../constants';
-import type { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '../types/schema';
+import type { HttpHandlerCommit, HttpWorkerReset, InterceptorServerWebSocketSchema } from '../types/schema';
 import { getFetchAPI } from '../utils/fetch';
 import { rejectNodeResponse } from '../utils/http';
 import { parseInterceptorServerRPCData } from '../utils/rpc';
 
+const httpBaseURLSchema = z.url({ protocol: /^https?$/ });
+
 const httpHandlerCommitSchema = z.object({
   id: z.string(),
-  baseURL: z.url({ protocol: /^https?$/ }),
+  baseURL: httpBaseURLSchema,
   method: z.enum(HTTP_METHODS),
   path: z.string(),
 }) satisfies z.ZodType<HttpHandlerCommit>;
 
-const httpHandlerCommitsSchema = z.array(httpHandlerCommitSchema);
+const httpWorkerResetSchema = z.object({
+  interceptorBaseURLs: z.array(httpBaseURLSchema),
+  handlers: z.array(httpHandlerCommitSchema),
+}) satisfies z.ZodType<HttpWorkerReset>;
 
 const responseCreationReplySchema = z.object({
   response: z
@@ -54,6 +59,7 @@ interface HttpHandler {
 
 interface HttpWorker {
   socket: Socket;
+  interceptorBaseURLs: string[];
   handlers: HttpHandler[];
 }
 
@@ -68,9 +74,9 @@ class HttpInterceptorServerRuntime {
   private isHttpWorkerSocket: HttpInterceptorServerRuntimeOptions['isHttpWorkerSocket'];
   private shouldLogUnhandledRequests: HttpInterceptorServerRuntimeOptions['shouldLogUnhandledRequests'];
 
-  // Workers are kept in the order of their first committed handler, which decides the worker that serves a request.
-  // Each worker keeps that position until its socket disconnects, even if all of its handlers are cleared.
-  private httpHandlersByWorkerSocket = new Map<Socket, HttpHandler[]>();
+  // Workers are kept in the order of their first registration, which decides the worker that serves a request. Each
+  // worker keeps that position until its socket disconnects, even if all of its interceptors stop.
+  private httpWorkersBySocket = new Map<Socket, HttpWorker>();
 
   constructor(options: HttpInterceptorServerRuntimeOptions) {
     this.webSocketServer = options.webSocketServer;
@@ -102,7 +108,7 @@ class HttpInterceptorServerRuntime {
   ) => {
     this.assertHttpWorkerSocket(socket);
 
-    const handlersToRecommit = parseInterceptorServerRPCData(httpHandlerCommitsSchema, message.data);
+    const reset = parseInterceptorServerRPCData(httpWorkerResetSchema, message.data);
 
     this.webSocketServer.emitSocket('abortRequests', socket, {
       shouldAbortRequest: (request) => {
@@ -118,7 +124,7 @@ class HttpInterceptorServerRuntime {
           return false;
         }
 
-        const isHandlerStillCommitted = handlersToRecommit.some(
+        const isHandlerStillCommitted = reset.handlers.some(
           /* istanbul ignore next -- @preserve
            * Ensuring this function is called in tests is difficult because it requires clearing or stopping a worker
            * at the exact moment a request is being handled, in a scenario when there are other handlers still
@@ -129,24 +135,21 @@ class HttpInterceptorServerRuntime {
       },
     });
 
-    const hasWorkerPosition = this.httpHandlersByWorkerSocket.has(socket);
-
-    // A worker takes its position with its first handler. Setting the handlers of a socket already in the map keeps its
-    // position.
-    if (hasWorkerPosition || handlersToRecommit.length > 0) {
-      this.httpHandlersByWorkerSocket.set(
-        socket,
-        handlersToRecommit.map((handler) => this.createHttpHandler(handler)),
-      );
-    }
+    // Setting a socket already in the map keeps its position. A new worker object is set so that requests in progress
+    // keep the handlers they started with.
+    this.httpWorkersBySocket.set(socket, {
+      socket,
+      interceptorBaseURLs: reset.interceptorBaseURLs,
+      handlers: reset.handlers.map((handler) => this.createHttpHandler(handler)),
+    });
 
     return {};
   };
 
   private registerHttpHandler(commit: HttpHandlerCommit, socket: Socket) {
-    const handlers = this.httpHandlersByWorkerSocket.get(socket) ?? [];
-    handlers.push(this.createHttpHandler(commit));
-    this.httpHandlersByWorkerSocket.set(socket, handlers);
+    const worker = this.httpWorkersBySocket.get(socket) ?? { socket, interceptorBaseURLs: [], handlers: [] };
+    worker.handlers.push(this.createHttpHandler(commit));
+    this.httpWorkersBySocket.set(socket, worker);
   }
 
   private createHttpHandler({ id, baseURL, method, path }: HttpHandlerCommit): HttpHandler {
@@ -154,7 +157,7 @@ class HttpInterceptorServerRuntime {
   }
 
   removeHandlersBySocket(socket: Socket) {
-    this.httpHandlersByWorkerSocket.delete(socket);
+    this.httpWorkersBySocket.delete(socket);
   }
 
   handleRequest = async (nodeRequest: IncomingMessage, nodeResponse: ServerResponse) => {
@@ -335,20 +338,22 @@ class HttpInterceptorServerRuntime {
     await logUnhandledRequestWarning(request, 'reject');
   }
 
+  // A request goes to the newest worker with a running interceptor whose base URL is a prefix of the request URL, even
+  // if that interceptor has no handlers, as it goes to the last started matching interceptor in local mode. WebSocket
+  // connections follow the same rule.
   private findWorkerByRequestBaseURL(request: SerializedHttpRequest) {
-    const workers = Array.from(this.httpHandlersByWorkerSocket, ([socket, handlers]) => ({ socket, handlers }));
+    const workers = Array.from(this.httpWorkersBySocket.values());
 
-    const worker = workers.findLast(({ handlers }) =>
-      handlers.some((handler) => handler.method === request.method && request.url.startsWith(handler.baseURL)),
-    );
-    return worker;
+    return workers.findLast((worker) => {
+      return worker.interceptorBaseURLs.some((baseURL) => request.url.startsWith(baseURL));
+    });
   }
 
   stop() {
     this.webSocketServer.offChannel('event', 'interceptors/http/workers/commit', this.commitWorker);
     this.webSocketServer.offChannel('event', 'interceptors/http/workers/reset', this.resetWorker);
 
-    this.httpHandlersByWorkerSocket.clear();
+    this.httpWorkersBySocket.clear();
   }
 }
 

@@ -107,12 +107,36 @@ export function declareRemoteBaseURLHttpInterceptorTests(options: SharedRemoteBa
     });
   });
 
-  it('should intercept requests with an older interceptor using another authentication token after the last started one is cleared', async () => {
-    const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
-      action: 'reject',
-      log: false,
-    }));
+  it('should intercept requests with an older interceptor using another authentication token after the last started one stops if an interceptor using its authentication token is still running', async () => {
+    const otherBaseURL = joinURL(baseURL, 'other');
 
+    await usingHttpInterceptor<{
+      '/users': { GET: { response: { 200: {} } } };
+    }>({ type: 'remote', baseURL, auth: olderAuth }, async (olderInterceptor) => {
+      const olderHandler = await olderInterceptor.get('/users').respond({ status: 200 });
+
+      await usingHttpInterceptor<{}>({ type: 'remote', baseURL: otherBaseURL, auth }, async (otherInterceptor) => {
+        await usingHttpInterceptor<{
+          '/users': { GET: { response: { 204: {} } } };
+        }>({ type: 'remote', baseURL, auth }, async (interceptor) => {
+          await interceptor.get('/users').respond({ status: 204 });
+
+          let response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(204);
+
+          await interceptor.stop();
+          expect(otherInterceptor.isRunning).toBe(true);
+
+          response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(200);
+
+          expect(olderHandler.requests).toHaveLength(1);
+        });
+      });
+    });
+  });
+
+  it('should intercept requests with the last started interceptor after it is cleared and declares its handlers again if an older one uses another authentication token', async () => {
     const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
       action: 'reject',
       log: false,
@@ -120,63 +144,28 @@ export function declareRemoteBaseURLHttpInterceptorTests(options: SharedRemoteBa
 
     await usingHttpInterceptor<{
       '/users': { GET: { response: { 200: {} } } };
-    }>(
-      { type: 'remote', baseURL, auth: olderAuth, onUnhandledRequest: olderOnUnhandledRequest },
-      async (olderInterceptor) => {
-        const olderHandler = await olderInterceptor.get('/users').respond({ status: 200 });
-
-        await usingHttpInterceptor<{
-          '/users': { GET: { response: { 204: {} } } };
-        }>({ type: 'remote', baseURL, auth, onUnhandledRequest }, async (interceptor) => {
-          const handler = await interceptor.get('/users').respond({ status: 204 });
-
-          let response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-          expect(response.status).toBe(204);
-
-          expect(handler.requests).toHaveLength(1);
-          expect(olderHandler.requests).toHaveLength(0);
-
-          await interceptor.clear();
-
-          response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-          expect(response.status).toBe(200);
-
-          expect(olderHandler.requests).toHaveLength(1);
-
-          await expectFetchError(fetch(joinURL(baseURL, '/posts'), { method: 'GET' }));
-
-          expect(olderOnUnhandledRequest).toHaveBeenCalledTimes(1);
-          expect(onUnhandledRequest).not.toHaveBeenCalled();
-        });
-      },
-    );
-  });
-
-  it('should intercept requests with the last started interceptor after it is cleared and declares its handlers again if an older one uses another authentication token', async () => {
-    await usingHttpInterceptor<{
-      '/users': { GET: { response: { 200: {} } } };
     }>({ type: 'remote', baseURL, auth: olderAuth }, async (olderInterceptor) => {
       const olderHandler = await olderInterceptor.get('/users').respond({ status: 200 });
 
       await usingHttpInterceptor<{
         '/users': { GET: { response: { 204: {} } } };
-      }>({ type: 'remote', baseURL, auth }, async (interceptor) => {
+      }>({ type: 'remote', baseURL, auth, onUnhandledRequest }, async (interceptor) => {
         await interceptor.get('/users').respond({ status: 204 });
 
         await interceptor.clear();
 
-        let response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        expect(response.status).toBe(200);
+        await expectFetchError(fetch(joinURL(baseURL, '/users'), { method: 'GET' }));
 
-        expect(olderHandler.requests).toHaveLength(1);
+        expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+        expect(olderHandler.requests).toHaveLength(0);
 
         const handler = await interceptor.get('/users').respond({ status: 204 });
 
-        response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
         expect(response.status).toBe(204);
 
         expect(handler.requests).toHaveLength(1);
-        expect(olderHandler.requests).toHaveLength(1);
+        expect(olderHandler.requests).toHaveLength(0);
       });
     });
   });

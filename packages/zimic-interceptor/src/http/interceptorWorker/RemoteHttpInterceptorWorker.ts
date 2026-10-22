@@ -4,7 +4,7 @@ import { validatePathParams } from '@zimic/utils/url';
 
 import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
 import UnsupportedResponseBypassError from '@/server/errors/UnsupportedResponseBypassError';
-import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/types/schema';
+import { HttpHandlerCommit, HttpWorkerReset, InterceptorServerWebSocketSchema } from '@/server/types/schema';
 import { isClientSide, isServerSide } from '@/utils/environment';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
 import { methodCanHaveResponseBody } from '@/utils/http';
@@ -75,9 +75,22 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
         waitForAuthentication: true,
       });
 
+      // Interceptors register before the worker connects, so the server learns about them once connected.
+      await this.resetServerWorker();
+
       this.platform = this.readPlatform();
       this.isRunning = true;
     });
+  }
+
+  async registerRunningInterceptor(interceptor: AnyHttpInterceptorImplementation) {
+    await super.registerRunningInterceptor(interceptor);
+    await this.resetServerWorker();
+  }
+
+  async unregisterRunningInterceptor(interceptor: AnyHttpInterceptorImplementation) {
+    await super.unregisterRunningInterceptor(interceptor);
+    await this.resetServerWorker();
   }
 
   private createResponse = async (
@@ -180,7 +193,41 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     } else {
       // The server tries handlers from the last committed to the first and appends new commits, so a handler of an
       // interceptor started before others is placed by recommitting all handlers in order.
-      await this.webSocketClient.request('interceptors/http/workers/reset', handlerCommits);
+      await this.webSocketClient.request('interceptors/http/workers/reset', this.createWorkerReset(handlerCommits));
+    }
+  }
+
+  private createWorkerReset(handlers: HttpHandlerCommit[]): HttpWorkerReset {
+    return {
+      interceptorBaseURLs: this.runningInterceptors.map((interceptor) => interceptor.baseURLAsString),
+      handlers,
+    };
+  }
+
+  private async resetServerWorker() {
+    if (!this.webSocketClient.isRunning) {
+      return;
+    }
+
+    const reset = this.createWorkerReset(this.getHandlerCommitsByInterceptorStartOrder());
+
+    try {
+      await this.webSocketClient.request('interceptors/http/workers/reset', reset);
+    } catch (error) {
+      /* istanbul ignore next -- @preserve
+       *
+       * If the socket is closed before receiving a response, the message is aborted with an error. This can happen if
+       * we send a request message and the interceptor server closes the socket before sending a response. In this case,
+       * we can safely ignore the error because we know that the server is shutting down and resetting is no longer
+       * necessary.
+       *
+       * Due to the rare nature of this edge case, we can't reliably reproduce it in tests. */
+      const isMessageAbortError = error instanceof WebSocketMessageAbortError;
+
+      /* istanbul ignore next -- @preserve */
+      if (!isMessageAbortError) {
+        throw error;
+      }
     }
   }
 
@@ -232,30 +279,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       }
     }
 
-    if (!this.webSocketClient.isRunning) {
-      return;
-    }
-
-    const handlersToRecommit = this.getHandlerCommitsByInterceptorStartOrder();
-
-    try {
-      await this.webSocketClient.request('interceptors/http/workers/reset', handlersToRecommit);
-    } catch (error) {
-      /* istanbul ignore next -- @preserve
-       *
-       * If the socket is closed before receiving a response, the message is aborted with an error. This can happen if
-       * we send a request message and the interceptor server closes the socket before sending a response. In this case,
-       * we can safely ignore the error because we know that the server is shutting down and resetting is no longer
-       * necessary.
-       *
-       * Due to the rare nature of this edge case, we can't reliably reproduce it in tests. */
-      const isMessageAbortError = error instanceof WebSocketMessageAbortError;
-
-      /* istanbul ignore next -- @preserve */
-      if (!isMessageAbortError) {
-        throw error;
-      }
-    }
+    await this.resetServerWorker();
   }
 
   get interceptorsWithHandlers() {

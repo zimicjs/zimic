@@ -76,8 +76,8 @@ class WebSocketInterceptorServerRuntime {
   private webSocketServer: WebSocketInterceptorServerRuntimeOptions['webSocketServer'];
   private isWebSocketWorkerSocket: WebSocketInterceptorServerRuntimeOptions['isWebSocketWorkerSocket'];
 
-  // Workers are kept in the order of their first committed handler, which decides the worker that holds a connection.
-  // Each worker keeps that position until its socket disconnects, even if all of its handlers are removed.
+  // Workers are kept in the order of their first registration, which decides the worker that holds a connection. Each
+  // worker keeps that position until its socket disconnects, even if all of its interceptors stop.
   private webSocketHandlersByWorkerSocket = new Map<Socket, WebSocketHandler[]>();
   private pendingUserWebSocketHandlers = new Map<Socket, PendingUserWebSocketHandler>();
   private activeUserWebSocketHandlers = new Map<Socket, UserWebSocketHandler>();
@@ -450,7 +450,9 @@ class WebSocketInterceptorServerRuntime {
     }));
 
     // Only one worker holds a connection, the same one that decides the unhandled message strategy. Other workers belong
-    // to other processes or authentication tokens, so they do not serve each other's connections.
+    // to other processes or authentication tokens, so they do not serve each other's connections. A connection goes to
+    // the newest worker with a running interceptor whose base URL is a prefix of the connection URL, even if that
+    // interceptor has no handlers, as HTTP requests do.
     return workers.findLast((worker) => worker.holders.length > 0);
   }
 

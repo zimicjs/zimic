@@ -320,6 +320,27 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
+  it('should apply the unhandled request strategy of the last started interceptor once if no interceptor has handlers', async () => {
+    const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
+
+    const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
+
+    await usingHttpInterceptor<{}>({ ...interceptorOptions, onUnhandledRequest: olderOnUnhandledRequest }, async () => {
+      await usingHttpInterceptor<{}>({ ...interceptorOptions, onUnhandledRequest }, async () => {
+        await expectFetchError(fetch(joinURL(defaultBaseURL, '/users'), { method: 'GET' }));
+
+        expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+        expect(olderOnUnhandledRequest).not.toHaveBeenCalled();
+      });
+    });
+  });
+
   it('should not try older interceptors if the last started one throws while handling a request', async () => {
     await usingHttpInterceptor<{
       '/users': { GET: { response: { 200: {} } } };

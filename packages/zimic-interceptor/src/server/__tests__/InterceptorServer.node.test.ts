@@ -450,6 +450,8 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
+          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL], handlers: [] });
+
           await worker.request('interceptors/http/workers/commit', {
             id: crypto.randomUUID(),
             baseURL,
@@ -464,10 +466,13 @@ describe('Interceptor server', () => {
           });
 
           rejectedRequests.push(
-            worker.request('interceptors/http/workers/reset', [
-              { id: crypto.randomUUID(), baseURL: otherBaseURL, method: 'GET', path: '/' },
-              { id: crypto.randomUUID(), baseURL: otherBaseURL, method: 'TRACE' as never, path: '/' },
-            ]),
+            worker.request('interceptors/http/workers/reset', {
+              interceptorBaseURLs: [otherBaseURL],
+              handlers: [
+                { id: crypto.randomUUID(), baseURL: otherBaseURL, method: 'GET', path: '/' },
+                { id: crypto.randomUUID(), baseURL: otherBaseURL, method: 'TRACE' as never, path: '/' },
+              ],
+            }),
           );
 
           await waitFor(() => {
@@ -494,7 +499,7 @@ describe('Interceptor server', () => {
       });
     });
 
-    it('should reject resets with a non-array payload, preserving existing handlers', async () => {
+    it('should reject resets with an invalid payload, preserving existing handlers', async () => {
       server = createInternalInterceptorServer({ logUnhandledRequests: false });
       await server.start();
 
@@ -516,6 +521,8 @@ describe('Interceptor server', () => {
             parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
             waitForAuthentication: true,
           });
+
+          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL], handlers: [] });
 
           await worker.request('interceptors/http/workers/commit', {
             id: crypto.randomUUID(),
@@ -558,12 +565,16 @@ describe('Interceptor server', () => {
         return { response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null } };
       });
 
+      worker.onChannel('event', 'interceptors/http/responses/unhandled', () => ({ wasLogged: false }));
+
       await usingIgnoredConsole(['error'], async (console) => {
         try {
           await worker.start({
             parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
             waitForAuthentication: true,
           });
+
+          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL], handlers: [] });
 
           rejectedRequests.push(
             worker.request('interceptors/http/workers/commit', {
@@ -657,6 +668,8 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
+          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL], handlers: [] });
+
           await worker.request('interceptors/http/workers/commit', {
             id: crypto.randomUUID(),
             baseURL,
@@ -696,6 +709,8 @@ describe('Interceptor server', () => {
             parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
             waitForAuthentication: true,
           });
+
+          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL], handlers: [] });
 
           await worker.request('interceptors/http/workers/commit', {
             id: crypto.randomUUID(),
@@ -749,6 +764,8 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
+          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL], handlers: [] });
+
           await worker.request('interceptors/http/workers/commit', {
             id: crypto.randomUUID(),
             baseURL,
@@ -794,6 +811,8 @@ describe('Interceptor server', () => {
           parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
           waitForAuthentication: true,
         });
+
+        await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL], handlers: [] });
 
         await worker.request('interceptors/http/workers/commit', {
           id: crypto.randomUUID(),
@@ -844,7 +863,7 @@ describe('Interceptor server', () => {
               method: 'GET',
               path: '/',
             }),
-            webSocketWorker.request('interceptors/http/workers/reset', []),
+            webSocketWorker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [], handlers: [] }),
           );
 
           await waitFor(() => {

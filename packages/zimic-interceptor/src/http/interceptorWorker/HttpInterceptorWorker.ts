@@ -49,7 +49,7 @@ abstract class HttpInterceptorWorker {
   private startingPromise?: Promise<void>;
   private stoppingPromise?: Promise<void>;
 
-  private runningInterceptors: AnyHttpInterceptorImplementation[] = [];
+  protected runningInterceptors: AnyHttpInterceptorImplementation[] = [];
 
   get numberOfRunningInterceptors() {
     return this.runningInterceptors.length;
@@ -177,11 +177,11 @@ abstract class HttpInterceptorWorker {
     }
   }
 
-  registerRunningInterceptor(interceptor: AnyHttpInterceptorImplementation) {
+  registerRunningInterceptor(interceptor: AnyHttpInterceptorImplementation): PossiblePromise<void> {
     this.runningInterceptors.push(interceptor);
   }
 
-  unregisterRunningInterceptor(interceptor: AnyHttpInterceptorImplementation) {
+  unregisterRunningInterceptor(interceptor: AnyHttpInterceptorImplementation): PossiblePromise<void> {
     removeArrayElement(this.runningInterceptors, interceptor);
   }
 

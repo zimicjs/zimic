@@ -487,6 +487,34 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     );
   });
 
+  it('should apply the unhandled message strategy of the last started interceptor once if no interceptor has handlers', async () => {
+    const olderOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, onUnhandledMessage: olderOnUnhandledMessage },
+      async () => {
+        await usingWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, onUnhandledMessage }, async () => {
+          await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+            client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+            await waitFor(() => {
+              expect(onUnhandledMessage).toHaveBeenCalled();
+            });
+
+            // Unhandled messages have no reply, so no event signals that no other strategy will be applied.
+            await waitForNot(() => {
+              expect(olderOnUnhandledMessage).toHaveBeenCalled();
+            });
+          });
+
+          expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+          expect(olderOnUnhandledMessage).not.toHaveBeenCalled();
+        });
+      },
+    );
+  });
+
   // Unlike HTTP, a message that a handler failed to handle is not unhandled, because there is no reply to reject.
   it('should not try older interceptors if the last started one throws while handling a message', async () => {
     await usingWebSocketInterceptor<MessageSchema>(

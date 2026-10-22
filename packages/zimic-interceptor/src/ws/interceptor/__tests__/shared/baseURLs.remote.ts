@@ -1,4 +1,5 @@
 import { waitFor } from '@zimic/utils/time';
+import { joinURL } from '@zimic/utils/url';
 import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it, vi } from 'vitest';
 
@@ -144,12 +145,48 @@ export function declareRemoteBaseURLWebSocketInterceptorTests(
     );
   });
 
-  // No WebSocket counterpart for "should intercept requests with an older interceptor using another authentication
-  // token after the last started one is cleared": a cleared WebSocket interceptor keeps accepting connections without
-  // handlers, so the server keeps choosing its worker.
+  it('should intercept messages with an older interceptor using another authentication token after the last started one stops if an interceptor using its authentication token is still running', async () => {
+    const otherBaseURL = joinURL(baseURL, 'other');
 
-  // Unlike HTTP, the last started interceptor keeps holding new connections while cleared, so the older interceptor
-  // does not intercept messages between the clear and the new declaration.
+    await usingWebSocketInterceptor<MessageSchema>(
+      { type: 'remote', baseURL, auth: olderAuth, messageSaving: { enabled: true } },
+      async (olderInterceptor) => {
+        const olderHandler = await olderInterceptor.message().respond({ type: 'server', index: 1 });
+
+        await usingWebSocketInterceptor<MessageSchema>(
+          { type: 'remote', baseURL: otherBaseURL, auth },
+          async (otherInterceptor) => {
+            await usingWebSocketInterceptor<MessageSchema>(
+              { type: 'remote', baseURL, auth, messageSaving: { enabled: true } },
+              async (interceptor) => {
+                await interceptor.message().respond({ type: 'server', index: 2 });
+
+                await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+                  const messagePromise = waitForWebSocketClientMessage(client);
+                  client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                  await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+                });
+
+                await interceptor.stop();
+                expect(otherInterceptor.isRunning).toBe(true);
+
+                await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+                  const messagePromise = waitForWebSocketClientMessage(client);
+                  client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                  await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+                });
+
+                expect(olderHandler.messages).toHaveLength(1);
+              },
+            );
+          },
+        );
+      },
+    );
+  });
+
   it('should intercept messages with the last started interceptor after it is cleared and declares its handlers again if an older one uses another authentication token', async () => {
     const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
 

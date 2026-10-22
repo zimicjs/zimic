@@ -167,7 +167,7 @@ class HttpInterceptorImplementation<
 
     try {
       this.worker = this.createWorker();
-      this.worker.registerRunningInterceptor(this);
+      await this.worker.registerRunningInterceptor(this);
 
       await this.worker.start();
 
@@ -198,7 +198,7 @@ class HttpInterceptorImplementation<
   }
 
   private async stopWorker() {
-    this.worker?.unregisterRunningInterceptor(this);
+    await this.worker?.unregisterRunningInterceptor(this);
 
     const isLastRunningInterceptor = this.worker?.numberOfRunningInterceptors === 0;
 

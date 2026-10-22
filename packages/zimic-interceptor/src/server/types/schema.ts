@@ -11,6 +11,11 @@ export interface HttpHandlerCommit {
   path: string;
 }
 
+export interface HttpWorkerReset {
+  interceptorBaseURLs: string[];
+  handlers: HttpHandlerCommit[];
+}
+
 export interface WebSocketHandlerCommit {
   id: string;
   baseURL: string;
@@ -28,7 +33,7 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
   };
 
   'interceptors/http/workers/reset': {
-    event: HttpHandlerCommit[];
+    event: HttpWorkerReset;
     reply: {};
   };
 
