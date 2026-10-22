@@ -290,6 +290,34 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
       });
     });
 
+    it('should not intercept more than a singular maximum number of requests limited in a range', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor.get('/users').respond({ status: 204 }).times(0, 1),
+          interceptor,
+        );
+
+        const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handler.requests).toHaveLength(1);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        await expectFetchError(responsePromise);
+
+        expect(handler.requests).toHaveLength(1);
+
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected at least 0 and at most 1 request, but got 2.',
+          expectedNumberOfRequests: { min: 0, max: 1 },
+        });
+      });
+    });
+
     it('should intercept the exact number of requests limited in a range where the minimum and maximum are equal', async () => {
       await usingHttpInterceptor<{
         '/users': { GET: MethodSchema };
@@ -945,6 +973,22 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
           expectedNumberOfRequests: 1,
         });
       });
+    });
+  });
+
+  it('should reset request counts when cleared', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }).times(1), interceptor);
+
+      const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      expect(response.status).toBe(204);
+
+      await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+      await interceptor.clear();
+      await promiseIfRemote(interceptor.checkTimes(), interceptor);
     });
   });
 
