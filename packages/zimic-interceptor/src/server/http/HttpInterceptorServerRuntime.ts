@@ -52,6 +52,11 @@ interface HttpHandler {
   pathRegex: RegExp;
 }
 
+interface HttpWorker {
+  socket: Socket;
+  handlers: HttpHandler[];
+}
+
 interface HttpInterceptorServerRuntimeOptions {
   webSocketServer: WebSocketServer<InterceptorServerWebSocketSchema>;
   isHttpWorkerSocket: (socket: Socket) => boolean;
@@ -156,8 +161,13 @@ class HttpInterceptorServerRuntime {
     const request = normalizeNodeRequest(nodeRequest, getFetchAPI());
     const serializedRequest = await serializeRequest(request);
 
+    // Only one worker is tried, and the same worker decides the unhandled request strategy even if workers commit,
+    // reset, or disconnect while the request is handled. Other workers belong to other processes, base URLs, or
+    // authentication tokens, so they do not serve each other's requests.
+    const worker = this.findWorkerByRequestBaseURL(serializedRequest);
+
     try {
-      const { response, matchedSomeInterceptor } = await this.createResponseForRequest(serializedRequest);
+      const { response, matchedSomeInterceptor } = await this.createResponseForRequest(serializedRequest, worker);
 
       if (response) {
         if (HttpInterceptorWorker.isRejectedResponse(response)) {
@@ -178,7 +188,7 @@ class HttpInterceptorServerRuntime {
       const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse || matchedSomeInterceptor;
 
       if (shouldWarnUnhandledRequest) {
-        await this.logUnhandledRequestIfNecessary(request, serializedRequest);
+        await this.logUnhandledRequestIfNecessary(request, serializedRequest, worker);
       }
 
       if (isUnhandledPreflightResponse) {
@@ -193,18 +203,14 @@ class HttpInterceptorServerRuntime {
 
       if (!isMessageAbortError) {
         console.error(error);
-        await this.logUnhandledRequestIfNecessary(request, serializedRequest);
+        await this.logUnhandledRequestIfNecessary(request, serializedRequest, worker);
       }
 
       rejectNodeResponse(nodeResponse);
     }
   };
 
-  private async createResponseForRequest(request: SerializedHttpRequest) {
-    // Only one worker is tried, the same one that decides the unhandled request strategy. Other workers belong to other
-    // processes, base URLs, or authentication tokens, so they do not serve each other's requests.
-    const worker = this.findWorkerByRequestBaseURL(request);
-
+  private async createResponseForRequest(request: SerializedHttpRequest, worker: HttpWorker | undefined) {
     if (!worker) {
       return { response: null, matchedSomeInterceptor: false };
     }
@@ -279,9 +285,11 @@ class HttpInterceptorServerRuntime {
     }
   }
 
-  private async logUnhandledRequestIfNecessary(request: HttpRequest, serializedRequest: SerializedHttpRequest) {
-    const worker = this.findWorkerByRequestBaseURL(serializedRequest);
-
+  private async logUnhandledRequestIfNecessary(
+    request: HttpRequest,
+    serializedRequest: SerializedHttpRequest,
+    worker: HttpWorker | undefined,
+  ) {
     if (worker) {
       try {
         const reply = await this.webSocketServer.request(
