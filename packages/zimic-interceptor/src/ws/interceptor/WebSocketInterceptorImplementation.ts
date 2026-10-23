@@ -72,6 +72,7 @@ class WebSocketInterceptorImplementation<
   private worker?: WebSocketInterceptorWorker;
   private startPromise?: Promise<void>;
   private numberOfPendingStarts = 0;
+  private numberOfPendingStops = 0;
   private lifecycleQueue: Promise<void> = Promise.resolve();
   private messageSavingGeneration = 0;
 
@@ -195,9 +196,23 @@ class WebSocketInterceptorImplementation<
     }
   }
 
+  // Handlers declared while stopping would survive the clear before the interceptor unregisters, so declarations are
+  // rejected from the moment stop is called until it completes.
+  get isStopping() {
+    return this.numberOfPendingStops > 0;
+  }
+
   async stop(options: { beforeStop?: () => PossiblePromise<void> }) {
     this.startPromise = undefined;
-    await this.enqueueLifecycleOperation(() => this.stopOnce(options));
+    this.numberOfPendingStops++;
+
+    await this.enqueueLifecycleOperation(async () => {
+      try {
+        await this.stopOnce(options);
+      } finally {
+        this.numberOfPendingStops--;
+      }
+    });
   }
 
   private async stopOnce(options: { beforeStop?: () => PossiblePromise<void> }) {
@@ -269,10 +284,6 @@ class WebSocketInterceptorImplementation<
   }
 
   private createWebSocketMessageHandler(): WebSocketMessageHandler<Schema> {
-    if (!this.isRunning) {
-      throw new NotRunningWebSocketInterceptorError();
-    }
-
     const handler = new this.Handler<Schema>(this);
     this.registerMessageHandler(handler);
 
@@ -282,6 +293,10 @@ class WebSocketInterceptorImplementation<
   registerMessageHandler<RestrictedSchema extends Schema>(
     handler: InternalWebSocketMessageHandler<Schema, RestrictedSchema>,
   ) {
+    if (!this.isRunning || this.isStopping) {
+      throw new NotRunningWebSocketInterceptorError();
+    }
+
     const isAlreadyRegistered = this.handlers.includes(handler.implementation);
 
     if (!isAlreadyRegistered) {
@@ -294,9 +309,9 @@ class WebSocketInterceptorImplementation<
     context: WebSocketMessageHandlerApplyContext<Schema>,
   ) {
     /* istanbul ignore if -- @preserve
-     * Workers only forward messages while the owning interceptor is running. */
+     * Workers only forward messages while the holding interceptor is running. */
     if (!this.isRunning) {
-      return;
+      return { handled: false };
     }
 
     const message = normalizeWebSocketMessageData(data);
@@ -305,11 +320,8 @@ class WebSocketInterceptorImplementation<
     const messageSavingGeneration = this.messageSavingGeneration;
     const matchedHandler = await this.findMatchedHandler(message, context);
 
-    // Unlike HTTP, unhandled messages have no bypass or reject action. WebSocket is not request-response, so a message
-    // needs no reply and the connection stays open.
     if (!matchedHandler) {
-      await this.logUnhandledMessageIfNecessary(message);
-      return;
+      return { handled: false };
     }
 
     await matchedHandler.handler.applyDeclarations(matchedHandler.message, context);
@@ -317,9 +329,14 @@ class WebSocketInterceptorImplementation<
     if (this.messageSaving.enabled && messageSavingGeneration === this.messageSavingGeneration) {
       matchedHandler.handler.saveInterceptedMessage(matchedHandler.message, context);
     }
+
+    return { handled: true };
   }
 
-  private async logUnhandledMessageIfNecessary(message: Schema) {
+  // Unlike HTTP, unhandled messages have no bypass or reject action. WebSocket is not request-response, so a message
+  // needs no reply and the connection stays open.
+  async logUnhandledMessageIfNecessary(data: WebSocketMessageData<Schema>) {
+    const message = normalizeWebSocketMessageData(data);
     const strategy = await this.getUnhandledMessageStrategy(message);
 
     if (strategy.log ?? DEFAULT_UNHANDLED_MESSAGE_STRATEGY.log) {

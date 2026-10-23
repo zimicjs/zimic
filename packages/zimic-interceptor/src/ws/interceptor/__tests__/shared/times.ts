@@ -436,6 +436,12 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           await waitForNot(() => {
             expect(messageListener).toHaveBeenCalled();
           });
+
+          await waitFor(async () => {
+            await expect(async () => {
+              await promiseIfRemote(interceptor.checkTimes(), interceptor);
+            }).rejects.toThrow('1: { "type": "create", "body": { "text": "hello" } }');
+          });
         });
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
@@ -464,6 +470,10 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           interceptor,
         );
 
+        // Remote interceptors receive Blobs from the interceptor server as ArrayBuffers.
+        const receivedBlobMessageRepresentation =
+          type === 'remote' ? 'ArrayBuffer { byteLength: 2 }' : "Blob { type: '', size: 2 }";
+
         await usingWebSocketClient<BinarySchema>(baseURL, async (client) => {
           const messageListener = vi.fn();
           client.addEventListener('message', messageListener);
@@ -474,11 +484,13 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           await waitForNot(() => {
             expect(messageListener).toHaveBeenCalled();
           });
-        });
 
-        // Remote interceptors receive Blobs from the interceptor server as ArrayBuffers.
-        const receivedBlobMessageRepresentation =
-          type === 'remote' ? 'ArrayBuffer { byteLength: 2 }' : "Blob { type: '', size: 2 }";
+          await waitFor(async () => {
+            await expect(async () => {
+              await promiseIfRemote(interceptor.checkTimes(), interceptor);
+            }).rejects.toThrow(`2: ${receivedBlobMessageRepresentation}`);
+          });
+        });
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: [

@@ -3,7 +3,7 @@
 ## Modes and platforms
 
 - HTTP interceptors (`src/http`) and WebSocket interceptors (`src/ws`) each have local and remote implementations behind shared APIs, and both run in Node and browser. Account for every protocol, mode, and platform a shared change touches.
-- Remote interceptors depend on the interceptor server in `src/server`, which the `zimic-interceptor server` CLI in `src/cli` also exposes. Changes to remote behavior must keep the interceptor and server sides compatible.
+- Remote interceptors depend on the interceptor server in `src/server`, which the `zimic-interceptor server` CLI in `src/cli` also exposes. Interceptors and servers always run the same version. Change both sides of the protocol in the same commit, without fallbacks for older peers.
 
 ## HTTP and WebSocket parity
 
@@ -17,7 +17,9 @@ WebSocket interceptors follow the mental model of HTTP interceptors. Keep these 
 - Error classes, messages, and the conditions that throw them.
 - Test organization: `<Class>.<topic>.{node,browser}.test.ts` files that run shared cases from `__tests__/shared/<topic>.ts`, with matching describe blocks and test names.
 
-Diverge only for a protocol reason, such as WebSocket connections being long-lived and bidirectional. State that reason in a comment next to the divergent code, and in the docs when users can observe the difference.
+Local and remote interceptors behave identically for routing, fall-through, and unhandled strategies. Diverge only for a platform constraint such as MSW's URL handling, and state it next to the code.
+
+Diverge between protocols only for a protocol reason, such as WebSocket connections being long-lived and bidirectional. State that reason in a comment next to the divergent code, and in the docs when users can observe the difference.
 
 ## Testing
 

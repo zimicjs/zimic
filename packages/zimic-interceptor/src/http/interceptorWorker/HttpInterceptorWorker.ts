@@ -19,6 +19,7 @@ import { removeArrayElement } from '@/utils/arrays';
 import { isClientSide } from '@/utils/environment';
 import { methodCanHaveResponseBody } from '@/utils/http';
 import { logUnhandledRequestWarning, logger } from '@/utils/logging';
+import { isURLUnderBaseURL } from '@/utils/urls';
 
 import HttpInterceptorImplementation, {
   AnyHttpInterceptorImplementation,
@@ -49,7 +50,7 @@ abstract class HttpInterceptorWorker {
   private startingPromise?: Promise<void>;
   private stoppingPromise?: Promise<void>;
 
-  private runningInterceptors: AnyHttpInterceptorImplementation[] = [];
+  protected runningInterceptors: AnyHttpInterceptorImplementation[] = [];
 
   get numberOfRunningInterceptors() {
     return this.runningInterceptors.length;
@@ -177,17 +178,37 @@ abstract class HttpInterceptorWorker {
     }
   }
 
-  registerRunningInterceptor(interceptor: AnyHttpInterceptorImplementation) {
+  registerRunningInterceptor(interceptor: AnyHttpInterceptorImplementation): PossiblePromise<void> {
     this.runningInterceptors.push(interceptor);
   }
 
-  unregisterRunningInterceptor(interceptor: AnyHttpInterceptorImplementation) {
+  unregisterRunningInterceptor(interceptor: AnyHttpInterceptorImplementation): PossiblePromise<void> {
     removeArrayElement(this.runningInterceptors, interceptor);
+  }
+
+  // Requests fall through interceptors from the last started to the first, the same order that selects the unhandled
+  // request strategy. Each handler goes after the last handler of an interceptor started no later than its own, so the
+  // handlers of each interceptor keep their declaration order. Interceptors clear their handlers before they stop and
+  // start without handlers, so the handlers already in the list never need to move.
+  protected insertHandlerByInterceptorStartOrder<Handler extends { interceptor: AnyHttpInterceptorImplementation }>(
+    handlers: Handler[],
+    handler: Handler,
+  ) {
+    const interceptorStartIndex = this.runningInterceptors.indexOf(handler.interceptor);
+
+    const handlerIndex =
+      handlers.findLastIndex((otherHandler) => {
+        return this.runningInterceptors.indexOf(otherHandler.interceptor) <= interceptorStartIndex;
+      }) + 1;
+
+    handlers.splice(handlerIndex, 0, handler);
+
+    return handlerIndex;
   }
 
   private findInterceptorByRequestBaseURL(request: Request) {
     const interceptor = this.runningInterceptors.findLast((interceptor) => {
-      return request.url.startsWith(interceptor.baseURLAsString);
+      return isURLUnderBaseURL(request.url, interceptor.baseURLAsString);
     });
 
     return interceptor;

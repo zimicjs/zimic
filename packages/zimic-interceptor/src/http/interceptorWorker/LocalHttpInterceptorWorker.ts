@@ -4,7 +4,7 @@ import { SharedOptions as MSWWorkerSharedOptions, HttpHandler as MSWHttpHandler,
 
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
 import { MSWWorker } from '@/interceptor/types/msw';
-import { removeArrayIndex } from '@/utils/arrays';
+import { isURLUnderBaseURL } from '@/utils/urls';
 
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
@@ -21,7 +21,7 @@ interface HttpHandler {
   method: HttpMethod;
   pathRegex: RegExp;
   interceptor: AnyHttpInterceptorImplementation;
-  createResponse: (context: HttpResponseFactoryContext) => Promise<Response>;
+  createResponse: (context: HttpResponseFactoryContext) => Promise<Response | null>;
 }
 
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
@@ -152,18 +152,10 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       interceptor,
       createResponse: async (context) => {
         const request = context.request as HttpRequest;
-        const requestClone = request.clone();
-
-        let response: HttpResponse | null = null;
-
-        try {
-          response = await createResponse({ request });
-        } catch (error) {
-          console.error(error);
-        }
+        const response = await createResponse({ request });
 
         if (!response) {
-          return this.bypassOrRejectUnhandledRequest(requestClone);
+          return null;
         }
 
         if (context.request.method === 'HEAD') {
@@ -178,7 +170,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       },
     };
 
-    methodHandlers.push(handler);
+    this.insertHandlerByInterceptorStartOrder(methodHandlers, handler);
   }
 
   async createResponseFromDeclaration(
@@ -207,14 +199,15 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private async createResponseForRequest(request: HttpRequest) {
-    const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
+    // Handlers can be added or cleared while a response is created, so the request falls through a copy.
+    const methodHandlers = [...this.httpHandlersByMethod[request.method as HttpMethod]];
 
     const requestURL = excludeNonPathParams(new URL(request.url));
     const requestURLAsString = requestURL.href === `${requestURL.origin}/` ? requestURL.origin : requestURL.href;
 
     for (let handlerIndex = methodHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
       const handler = methodHandlers[handlerIndex];
-      const matchesBaseURL = requestURLAsString.startsWith(handler.baseURL);
+      const matchesBaseURL = isURLUnderBaseURL(requestURLAsString, handler.baseURL);
 
       if (!matchesBaseURL) {
         continue;
@@ -227,8 +220,19 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
         continue;
       }
 
-      const response = await handler.createResponse({ request });
-      return response;
+      try {
+        const response = await handler.createResponse({ request });
+
+        if (response) {
+          return response;
+        }
+      } catch (error) {
+        console.error(error);
+
+        // A handler that threw may have already counted the request, such as toward its `times` limit, so older
+        // interceptors are not tried.
+        break;
+      }
     }
 
     return this.bypassOrRejectUnhandledRequest(request);
@@ -261,9 +265,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
         handlers.length = 0;
       }
     } else {
-      for (const methodHandlers of Object.values(this.httpHandlersByMethod)) {
-        const groupToRemoveIndex = methodHandlers.findIndex((group) => group.interceptor === options.interceptor);
-        removeArrayIndex(methodHandlers, groupToRemoveIndex);
+      for (const [method, handlers] of Object.entries(this.httpHandlersByMethod)) {
+        this.httpHandlersByMethod[method] = handlers.filter((handler) => handler.interceptor !== options.interceptor);
       }
     }
   }
