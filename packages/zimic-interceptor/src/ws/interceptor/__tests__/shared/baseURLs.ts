@@ -7,11 +7,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
-import {
-  usingWebSocketClient,
-  waitForWebSocketClientClose,
-  waitForWebSocketClientMessage,
-} from '@tests/utils/webSocket';
+import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
@@ -145,13 +141,22 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     await usingWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, baseURL }, async (interceptor) => {
       await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
 
+      const messageListener = vi.fn();
+
       // Depending on the mode, the interceptor server refuses the connection, or the connection reaches the network,
-      // where no WebSocket server accepts it. Either way, the connection closes.
+      // where no WebSocket server accepts it. MSW does not reliably close bypassed connections, so wait for no response
+      // instead of the close.
       await Promise.allSettled([
         usingWebSocketClient<MessageSchema>(baseURLWithoutSlash, async (client) => {
-          await waitForWebSocketClientClose(client);
+          client.addEventListener('message', messageListener);
+          client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+          await waitForNot(() => {
+            expect(messageListener).toHaveBeenCalled();
+          });
         }),
       ]);
+      expect(messageListener).not.toHaveBeenCalled();
       expect(interceptor.clients).toHaveLength(0);
     });
   });
@@ -169,12 +174,21 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
         async (interceptor) => {
           interceptor.message().respond({ type: 'server', index: 1 });
 
-          // The connection reaches the network, where no WebSocket server accepts it.
+          const messageListener = vi.fn();
+
+          // The connection reaches the network, where no WebSocket server accepts it. MSW does not reliably close
+          // bypassed connections, so wait for no response instead of the close.
           await Promise.allSettled([
             usingWebSocketClient<MessageSchema>(joinURL(defaultBaseURL, 'chat'), async (client) => {
-              await waitForWebSocketClientClose(client);
+              client.addEventListener('message', messageListener);
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+              await waitForNot(() => {
+                expect(messageListener).toHaveBeenCalled();
+              });
             }),
           ]);
+          expect(messageListener).not.toHaveBeenCalled();
           expect(interceptor.clients).toHaveLength(0);
         },
       );
@@ -288,13 +302,22 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
             socketIOInterceptor,
           );
 
+          const messageListener = vi.fn();
+
           // Depending on the mode, the interceptor server refuses the connection, or the connection reaches the network,
-          // where no WebSocket server accepts it. Either way, the connection closes.
+          // where no WebSocket server accepts it. MSW does not reliably close bypassed connections, so wait for no
+          // response instead of the close.
           await Promise.allSettled([
             usingWebSocketClient<MessageSchema>(urlWithoutSocketIOPath, async (client) => {
-              await waitForWebSocketClientClose(client);
+              client.addEventListener('message', messageListener);
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+              await waitForNot(() => {
+                expect(messageListener).toHaveBeenCalled();
+              });
             }),
           ]);
+          expect(messageListener).not.toHaveBeenCalled();
           expect(socketIOInterceptor.clients).toHaveLength(0);
         },
       );
