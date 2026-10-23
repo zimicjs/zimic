@@ -1,10 +1,9 @@
-import { WebSocketInterceptorWorkerOptions } from '../../types/options';
+import { WebSocketInterceptorType } from '@/ws/interceptor/types/options';
 
-type TestMatrixCase = WebSocketInterceptorWorkerOptions;
+interface TestMatrixCase {
+  type: WebSocketInterceptorType;
+}
 
-const testMatrix: TestMatrixCase[] = [
-  { type: 'local' },
-  { type: 'remote', serverURL: new URL('ws://localhost/temporary') },
-];
+const testMatrix: TestMatrixCase[] = [{ type: 'local' }, { type: 'remote' }];
 
 export default testMatrix;

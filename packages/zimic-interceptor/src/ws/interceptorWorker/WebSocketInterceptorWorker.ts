@@ -7,11 +7,8 @@ import { isClientSide } from '@/utils/environment';
 import { WebSocketInterceptorPlatform } from '../interceptor/types/options';
 import { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
 import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
-import { WebSocketInterceptorWorkerType } from './types/options';
 
 abstract class WebSocketInterceptorWorker {
-  abstract get type(): WebSocketInterceptorWorkerType;
-
   platform: WebSocketInterceptorPlatform | null = null;
   isRunning = false;
 
@@ -54,7 +51,7 @@ abstract class WebSocketInterceptorWorker {
 
   abstract stop(): Promise<void>;
 
-  protected async sharedStop(internalStop: () => PossiblePromise<void>) {
+  protected async sharedStop(internalStop: () => Promise<void>) {
     if (!this.isRunning) {
       return;
     }
@@ -63,16 +60,12 @@ abstract class WebSocketInterceptorWorker {
       return this.stoppingPromise;
     }
 
-    const stoppingResult = internalStop();
+    this.stoppingPromise = internalStop();
 
-    if (stoppingResult instanceof Promise) {
-      this.stoppingPromise = stoppingResult;
-
-      try {
-        await this.stoppingPromise;
-      } finally {
-        this.stoppingPromise = undefined;
-      }
+    try {
+      await this.stoppingPromise;
+    } finally {
+      this.stoppingPromise = undefined;
     }
   }
 

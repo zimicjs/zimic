@@ -4,9 +4,9 @@ import { joinURL } from '@zimic/utils/url';
 import color from 'picocolors';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { expectHttpTimesCheckError } from '@/http/requestHandler/__tests__/shared/utils';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
@@ -286,6 +286,34 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected at least 2 and at most 3 requests, but got 4.',
           expectedNumberOfRequests: { min: 2, max: 3 },
+        });
+      });
+    });
+
+    it('should not intercept more than a singular maximum number of requests limited in a range', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor.get('/users').respond({ status: 204 }).times(0, 1),
+          interceptor,
+        );
+
+        const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handler.requests).toHaveLength(1);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        await expectFetchError(responsePromise);
+
+        expect(handler.requests).toHaveLength(1);
+
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected at least 0 and at most 1 request, but got 2.',
+          expectedNumberOfRequests: { min: 0, max: 1 },
         });
       });
     });
@@ -945,6 +973,22 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
           expectedNumberOfRequests: 1,
         });
       });
+    });
+  });
+
+  it('should reset request counts when cleared', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }).times(1), interceptor);
+
+      const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      expect(response.status).toBe(204);
+
+      await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+      await interceptor.clear();
+      await promiseIfRemote(interceptor.checkTimes(), interceptor);
     });
   });
 

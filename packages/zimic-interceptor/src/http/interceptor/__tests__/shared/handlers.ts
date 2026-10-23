@@ -3,13 +3,13 @@ import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectPreflightResponse } from '@tests/utils/fetch';
 import { getPreflightAssessment, usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions, verifyUnhandledRequestMessage } from './utils';
@@ -29,6 +29,24 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
+  });
+
+  it('should intercept requests with the handler of their method if a handler of another method is declared later', async () => {
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: { response: { 200: {} } };
+        POST: { response: { 201: {} } };
+      };
+    }>(interceptorOptions, async (interceptor) => {
+      const getHandler = await promiseIfRemote(interceptor.get('/users').respond({ status: 200 }), interceptor);
+      const postHandler = await promiseIfRemote(interceptor.post('/users').respond({ status: 201 }), interceptor);
+
+      const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      expect(response.status).toBe(200);
+
+      expect(getHandler.requests).toHaveLength(1);
+      expect(postHandler.requests).toHaveLength(0);
+    });
   });
 
   describe.each(HTTP_METHODS)('Method (%s)', (method) => {

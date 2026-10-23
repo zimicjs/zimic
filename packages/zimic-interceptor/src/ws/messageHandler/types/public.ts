@@ -12,6 +12,7 @@ import { WebSocketMessageHandlerDelayFactory } from './messages';
 import {
   WebSocketMessageHandlerComputedTypeGuardRestriction,
   WebSocketMessageHandlerRestriction,
+  WebSocketMessageHandlerRestrictionOptionsArguments,
   WebSocketMessageHandlerStaticRestriction,
 } from './restrictions';
 
@@ -120,10 +121,11 @@ export interface LocalWebSocketMessageHandler<
 
   /**
    * Declares a restriction to intercepted message matches. If multiple restrictions are declared, all of them must be
-   * met.
+   * met. Static restrictions match JSON messages containing them, or equal to them with `{ exact: true }`.
    */
   with: <Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
     restriction: Restriction,
+    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<RestrictedSchema, Restriction>
   ) => LocalWebSocketMessageHandler<
     Schema,
     WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>
@@ -179,10 +181,11 @@ export interface SyncedRemoteWebSocketMessageHandler<
 
   /**
    * Declares a restriction to intercepted message matches. If multiple restrictions are declared, all of them must be
-   * met.
+   * met. Static restrictions match JSON messages containing them, or equal to them with `{ exact: true }`.
    */
   with: <Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
     restriction: Restriction,
+    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<RestrictedSchema, Restriction>
   ) => PendingRemoteWebSocketMessageHandler<
     Schema,
     WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>

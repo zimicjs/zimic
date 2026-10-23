@@ -1,18 +1,21 @@
-import { afterAll, beforeAll, describe } from 'vitest';
+import { beforeAll, afterAll, describe } from 'vitest';
 
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
 import { declareClearWebSocketInterceptorTests } from './shared/clear';
-import testMatrix from './shared/matrix';
+import interceptorTestMatrix from './shared/matrix';
 
-describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Clear', ({ type }) => {
+describe.each(interceptorTestMatrix)('WebSocketInterceptor (node, $type) > Clear', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
+
+  let baseURL: string;
 
   beforeAll(async () => {
     if (type === 'remote') {
       await server.start();
     }
+    baseURL = getNodeBaseURL(type, server).replace(/^http/, 'ws');
   });
 
   afterAll(async () => {
@@ -22,7 +25,9 @@ describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Clear', ({ type 
   });
 
   declareClearWebSocketInterceptorTests({
+    platform: 'node',
     type,
-    getBaseURL: () => getNodeBaseURL(type, server).replace(/^http/, 'ws'),
+    getBaseURL: () => baseURL,
+    getInterceptorOptions: () => ({ type, baseURL }),
   });
 });

@@ -3,9 +3,9 @@ import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
 import { beforeEach, expect, it } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { expectBypassedResponse } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import NotRunningHttpInterceptorError from '../../errors/NotRunningHttpInterceptorError';
 import { HttpInterceptorOptions } from '../../types/options';
@@ -106,6 +106,32 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
     });
   });
 
+  it('should intercept requests with the restarted interceptor if another one with the same base URL started earlier', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: { response: { 204: {} } } };
+    }>(interceptorOptions, async (interceptor) => {
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 200: {} } } };
+      }>(interceptorOptions, async (otherInterceptor) => {
+        await interceptor.stop();
+        await interceptor.start();
+
+        const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+
+        const otherHandler = await promiseIfRemote(
+          otherInterceptor.get('/users').respond({ status: 200 }),
+          otherInterceptor,
+        );
+
+        const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handler.requests).toHaveLength(1);
+        expect(otherHandler.requests).toHaveLength(0);
+      });
+    });
+  });
+
   it('should throw an error when trying to create a request handler if not running', async () => {
     const interceptor = createInternalHttpInterceptor(interceptorOptions);
     expect(interceptor.isRunning).toBe(false);
@@ -113,5 +139,49 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
     await expect(async () => {
       await interceptor.get('/');
     }).rejects.toThrow(new NotRunningHttpInterceptorError());
+  });
+
+  it('should throw an error when trying to create a request handler while stopping', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      const stopPromise = interceptor.stop();
+
+      await expect(async () => {
+        await interceptor.get('/users');
+      }).rejects.toThrow(new NotRunningHttpInterceptorError());
+
+      await stopPromise;
+    });
+  });
+
+  it('should throw an error when trying to redeclare a request handler while stopping', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+
+      const stopPromise = interceptor.stop();
+
+      await expect(async () => {
+        await handler.respond({ status: 204 });
+      }).rejects.toThrow(new NotRunningHttpInterceptorError());
+
+      await stopPromise;
+    });
+  });
+
+  it('should throw an error when trying to redeclare a request handler after stopped', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+
+      await interceptor.stop();
+
+      await expect(async () => {
+        await handler.respond({ status: 204 });
+      }).rejects.toThrow(new NotRunningHttpInterceptorError());
+    });
   });
 }

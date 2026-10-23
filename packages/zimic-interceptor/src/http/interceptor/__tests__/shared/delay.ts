@@ -5,9 +5,9 @@ import { waitForDelay } from '@zimic/utils/time';
 import { joinURL } from '@zimic/utils/url';
 import { beforeEach, describe, expect, it, Mock, MockInstance, vi } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import type { LocalHttpRequestHandler, PendingRemoteHttpRequestHandler } from '../../../requestHandler/types/public';
 import { HttpInterceptorOptions } from '../../types/options';

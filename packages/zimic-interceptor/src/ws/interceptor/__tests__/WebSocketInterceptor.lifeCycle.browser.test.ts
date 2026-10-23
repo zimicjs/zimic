@@ -16,5 +16,6 @@ describe.each(testMatrix)('WebSocketInterceptor (browser, $type) > Life cycle', 
     platform: 'browser',
     type,
     getBaseURL: () => baseURL,
+    getInterceptorOptions: () => ({ type, baseURL }),
   });
 });

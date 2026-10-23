@@ -13,39 +13,46 @@ import {
   createInternalHttpInterceptor,
   usingHttpInterceptorWorker,
 } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
+import HttpInterceptorWorker from '../../HttpInterceptorWorker';
 import { HttpResponseFactoryContext } from '../../types/http';
 import { LocalHttpInterceptorWorkerOptions, RemoteHttpInterceptorWorkerOptions } from '../../types/options';
-import { promiseIfRemote } from '../utils/promises';
 import { SharedHttpInterceptorWorkerTestOptions } from './types';
 
 export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInterceptorWorkerTestOptions) {
-  const { platform, defaultWorkerOptions, startServer, getBaseURL, stopServer } = options;
+  const { platform, type, startServer, getBaseURL, stopServer } = options;
 
   let baseURL: string;
   let workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions;
 
-  function createDefaultHttpInterceptor() {
-    return createInternalHttpInterceptor<{}>({ type: defaultWorkerOptions.type, baseURL });
+  async function createDefaultHttpInterceptor(worker: HttpInterceptorWorker) {
+    const interceptor = createInternalHttpInterceptor<{}>({
+      type,
+      baseURL,
+      onUnhandledRequest: { action: 'reject', log: false },
+    });
+
+    // Workers serve only the requests of their running interceptors.
+    await worker.registerRunningInterceptor(interceptor.implementation);
+
+    return interceptor;
   }
 
   beforeAll(async () => {
-    if (defaultWorkerOptions.type === 'remote') {
+    if (type === 'remote') {
       await startServer?.();
     }
   });
 
   beforeEach(async () => {
-    baseURL = await getBaseURL(defaultWorkerOptions.type);
+    baseURL = await getBaseURL(type);
 
-    workerOptions =
-      defaultWorkerOptions.type === 'local'
-        ? defaultWorkerOptions
-        : { ...defaultWorkerOptions, serverURL: new URL(new URL(baseURL).origin) };
+    workerOptions = type === 'local' ? { type } : { type, serverURL: new URL(new URL(baseURL).origin) };
   });
 
   afterAll(async () => {
-    if (defaultWorkerOptions.type === 'remote') {
+    if (type === 'remote') {
       await stopServer?.();
     }
   });
@@ -54,7 +61,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     const { overridesPreflightResponse, getNumbersOfRequestsIncludingPreflight } = getPreflightAssessment({
       method,
       platform,
-      type: defaultWorkerOptions.type,
+      type,
     });
 
     const defaultHeaders = new HttpHeaders<AccessControlHeaders>();
@@ -101,7 +108,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
     it(`should intercept ${method} requests after started`, async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
-        const interceptor = createDefaultHttpInterceptor();
+        const interceptor = await createDefaultHttpInterceptor(worker);
 
         await promiseIfRemote(worker.use(interceptor.implementation, method, '', spiedRequestHandler), worker);
 
@@ -122,7 +129,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
     it(`should not intercept ${method} requests that resulted in no mocked response`, async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
-        const interceptor = createDefaultHttpInterceptor();
+        const interceptor = await createDefaultHttpInterceptor(worker);
         const emptySpiedRequestHandler = vi.fn(requestHandler).mockImplementation(() => null);
 
         await promiseIfRemote(worker.use(interceptor.implementation, method, '', emptySpiedRequestHandler), worker);
@@ -133,8 +140,6 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (defaultWorkerOptions.type === 'local') {
-          await expectBypassedResponse(responsePromise);
         } else {
           await expectFetchError(responsePromise);
         }
@@ -149,7 +154,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
     it(`should support intercepting ${method} requests with a delay`, async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
-        const interceptor = createDefaultHttpInterceptor();
+        const interceptor = await createDefaultHttpInterceptor(worker);
 
         const waitPromise = createPromiseWithResolvers();
 
@@ -184,7 +189,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
     it(`should not intercept ${method} requests before started`, async () => {
       await usingHttpInterceptorWorker(workerOptions, { start: false }, async (worker) => {
-        const interceptor = createDefaultHttpInterceptor();
+        const interceptor = await createDefaultHttpInterceptor(worker);
         await expect(async () => {
           await worker.use(interceptor.implementation, method, '', spiedRequestHandler);
         }).rejects.toThrow(Error);
@@ -198,7 +203,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (defaultWorkerOptions.type === 'local') {
+        } else if (type === 'local') {
           await expectBypassedResponse(responsePromise, { canBeAborted: true });
         } else {
           await expectFetchError(responsePromise, { canBeAborted: true });
@@ -210,7 +215,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
     it(`should not intercept ${method} requests after stopped`, async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
-        const interceptor = createDefaultHttpInterceptor();
+        const interceptor = await createDefaultHttpInterceptor(worker);
         await promiseIfRemote(worker.use(interceptor.implementation, method, '', spiedRequestHandler), worker);
 
         await worker.stop();
@@ -222,7 +227,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (defaultWorkerOptions.type === 'local') {
+        } else if (type === 'local') {
           await expectBypassedResponse(responsePromise, { canBeAborted: true });
         } else {
           await expectFetchError(responsePromise, { canBeAborted: true });
@@ -234,7 +239,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
     it(`should clear all ${method} handlers after stopped`, async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
-        const interceptor = createDefaultHttpInterceptor();
+        const interceptor = await createDefaultHttpInterceptor(worker);
         await promiseIfRemote(worker.use(interceptor.implementation, method, '', spiedRequestHandler), worker);
 
         await worker.stop();
@@ -247,8 +252,6 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (defaultWorkerOptions.type === 'local') {
-          await expectBypassedResponse(responsePromise, { canBeAborted: true });
         } else {
           await expectFetchError(responsePromise, { canBeAborted: true });
         }
@@ -259,7 +262,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
     it(`should not intercept ${method} requests having no handler after cleared`, async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
-        const interceptor = createDefaultHttpInterceptor();
+        const interceptor = await createDefaultHttpInterceptor(worker);
         await promiseIfRemote(worker.use(interceptor.implementation, method, '', spiedRequestHandler), worker);
 
         await promiseIfRemote(worker.clearHandlers(), worker);
@@ -268,8 +271,6 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (defaultWorkerOptions.type === 'local') {
-          await expectBypassedResponse(responsePromise);
         } else {
           await expectFetchError(responsePromise);
         }
@@ -304,7 +305,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
           return response as HttpResponse;
         });
 
-        const interceptor = createDefaultHttpInterceptor();
+        const interceptor = await createDefaultHttpInterceptor(worker);
         await promiseIfRemote(worker.use(interceptor.implementation, method, '', okSpiedRequestHandler), worker);
 
         let interceptorsWithHandlers = worker.interceptorsWithHandlers;
@@ -324,7 +325,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         expect(okHandlerContext.request).toBeInstanceOf(Request);
         expect(okHandlerContext.request.method).toBe(method);
 
-        const otherInterceptor = createDefaultHttpInterceptor();
+        const otherInterceptor = await createDefaultHttpInterceptor(worker);
         await promiseIfRemote(
           worker.use(otherInterceptor.implementation, method, '', noContentSpiedRequestHandler),
           worker,
@@ -375,8 +376,6 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (defaultWorkerOptions.type === 'local') {
-          await expectBypassedResponse(responsePromise);
         } else {
           await expectFetchError(responsePromise);
         }
@@ -388,7 +387,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
     it(`should throw an error if trying to apply a ${method} handler before started`, async () => {
       await usingHttpInterceptorWorker(workerOptions, { start: false }, async (worker) => {
-        const interceptor = createDefaultHttpInterceptor();
+        const interceptor = await createDefaultHttpInterceptor(worker);
 
         await expect(async () => {
           await worker.use(interceptor.implementation, method, '', spiedRequestHandler);

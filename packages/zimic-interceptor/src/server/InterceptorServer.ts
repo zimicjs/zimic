@@ -349,7 +349,10 @@ class InterceptorServer implements PublicInterceptorServer {
         try {
           await this.loadHttpRuntime();
         } catch (error) {
-          console.error(error);
+          // A stale load is an expected race with the server stopping or restarting, not a failure to report.
+          if (!(error instanceof StaleHttpRuntimeLoadError)) {
+            console.error(error);
+          }
 
           socket.resume();
           socket.close(
@@ -408,6 +411,9 @@ class InterceptorServer implements PublicInterceptorServer {
         nodeResponse.statusCode = DEFAULT_PREFLIGHT_STATUS_CODE;
 
         for (const [header, value] of Object.entries(DEFAULT_ACCESS_CONTROL_HEADERS)) {
+          /* istanbul ignore else -- @preserve
+           * Published builds define an empty max age, which is the only header value omitted. Tests define a
+           * non-empty value, so the empty branch is not reachable in them. */
           if (value) {
             nodeResponse.setHeader(header, value);
           }

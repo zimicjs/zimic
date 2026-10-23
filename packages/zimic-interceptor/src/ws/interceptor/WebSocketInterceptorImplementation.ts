@@ -1,11 +1,14 @@
+import { PossiblePromise } from '@zimic/utils/types';
 import { excludeNonPathParams, validateURLProtocol } from '@zimic/utils/url';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
+import { removeArrayElement } from '@/utils/arrays';
 import { isServerSide } from '@/utils/environment';
+import { logUnhandledMessageWarning } from '@/utils/logging';
 
 import WebSocketInterceptorWorker from '../interceptorWorker/WebSocketInterceptorWorker';
-import { LocalWebSocketMessageHandler } from '../messageHandler/LocalWebSocketMessageHandler';
-import { RemoteWebSocketMessageHandler } from '../messageHandler/RemoteWebSocketMessageHandler';
+import LocalWebSocketMessageHandler from '../messageHandler/LocalWebSocketMessageHandler';
+import RemoteWebSocketMessageHandler from '../messageHandler/RemoteWebSocketMessageHandler';
 import { InternalWebSocketMessageHandler, WebSocketMessageHandler } from '../messageHandler/types/public';
 import {
   AnyWebSocketMessageHandlerImplementation,
@@ -16,8 +19,8 @@ import { normalizeWebSocketMessageData } from '../utils/messageData';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
 import type { WebSocketInterceptorClient, WebSocketInterceptorServerSendOptions } from './types/messages';
-import { WebSocketInterceptorMessageSaving } from './types/options';
-import type { WebSocketInterceptorConnectionListener } from './types/public';
+import type { UnhandledMessageStrategy } from './types/options';
+import type { WebSocketInterceptorConnectionListener, WebSocketInterceptorMessageSaving } from './types/public';
 import {
   createWebSocketInterceptorServer,
   InternalWebSocketInterceptorClient,
@@ -27,6 +30,10 @@ import WebSocketInterceptorMessageStore from './WebSocketInterceptorMessageStore
 
 export const SUPPORTED_BASE_URL_PROTOCOLS = Object.freeze(['ws', 'wss']);
 export const DEFAULT_MESSAGE_SAVING_SAFE_LIMIT = 1000;
+
+const DEFAULT_UNHANDLED_MESSAGE_STRATEGY = Object.freeze({
+  log: true,
+}) satisfies UnhandledMessageStrategy.Declaration;
 
 function isWebSocketInterceptorClientArray<Schema extends WebSocketSchema>(
   clients: WebSocketInterceptorServerSendOptions<Schema>['to'],
@@ -40,10 +47,12 @@ class WebSocketInterceptorImplementation<
   Schema extends WebSocketSchema,
   HandlerConstructor extends WebSocketHandlerConstructor = WebSocketHandlerConstructor,
 > {
-  private _baseURL!: URL;
+  #baseURL!: URL;
 
   messageSaving: WebSocketInterceptorMessageSaving;
   readonly messageStore: WebSocketInterceptorMessageStore<Schema>;
+
+  onUnhandledMessage?: UnhandledMessageStrategy;
 
   isRunning = false;
 
@@ -59,19 +68,21 @@ class WebSocketInterceptorImplementation<
   }[] = [];
 
   private createWorker: () => WebSocketInterceptorWorker;
-  private releaseWorker?: (worker: WebSocketInterceptorWorker) => void;
+  private deleteWorker: () => void;
   private worker?: WebSocketInterceptorWorker;
-  private startingPromise?: Promise<void>;
+  private startPromise?: Promise<void>;
   private numberOfPendingStarts = 0;
+  private numberOfPendingStops = 0;
   private lifecycleQueue: Promise<void> = Promise.resolve();
   private messageSavingGeneration = 0;
 
   constructor(options: {
     baseURL: URL;
     messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
+    onUnhandledMessage?: UnhandledMessageStrategy;
     Handler: HandlerConstructor;
     createWorker: () => WebSocketInterceptorWorker;
-    releaseWorker?: (worker: WebSocketInterceptorWorker) => void;
+    deleteWorker: () => void;
   }) {
     this.baseURL = options.baseURL;
 
@@ -81,9 +92,11 @@ class WebSocketInterceptorImplementation<
     };
     this.messageStore = new WebSocketInterceptorMessageStore(() => this.messageSaving.safeLimit);
 
+    this.onUnhandledMessage = options.onUnhandledMessage;
+
     this.Handler = options.Handler;
     this.createWorker = options.createWorker;
-    this.releaseWorker = options.releaseWorker;
+    this.deleteWorker = options.deleteWorker;
     this._server = createWebSocketInterceptorServer(
       () => this.baseURLAsString,
       (data, options) => {
@@ -108,7 +121,7 @@ class WebSocketInterceptorImplementation<
   }
 
   get baseURL() {
-    return this._baseURL;
+    return this.#baseURL;
   }
 
   set baseURL(newBaseURL: URL) {
@@ -121,7 +134,7 @@ class WebSocketInterceptorImplementation<
     validateURLProtocol(newBaseURL, SUPPORTED_BASE_URL_PROTOCOLS);
     excludeNonPathParams(newBaseURL);
 
-    this._baseURL = newBaseURL;
+    this.#baseURL = newBaseURL;
   }
 
   get baseURLAsString() {
@@ -131,26 +144,37 @@ class WebSocketInterceptorImplementation<
     return this.baseURL.href;
   }
 
+  private get workerOrThrow() {
+    if (!this.worker) {
+      throw new NotRunningWebSocketInterceptorError();
+    }
+    return this.worker;
+  }
+
   get platform() {
     return this.worker?.platform ?? null;
   }
 
-  async start() {
-    if (this.startingPromise) {
-      return this.startingPromise;
+  start() {
+    if (this.startPromise) {
+      return this.startPromise;
     }
 
     this.numberOfPendingStarts++;
+
     const startPromise = this.enqueueLifecycleOperation(() => this.startOnce()).finally(() => {
       this.numberOfPendingStarts--;
 
-      if (this.startingPromise === startPromise) {
-        this.startingPromise = undefined;
+      const isLastStartPromise = this.startPromise === startPromise;
+
+      if (isLastStartPromise) {
+        this.startPromise = undefined;
       }
     });
-    this.startingPromise = startPromise;
 
-    await startPromise;
+    this.startPromise = startPromise;
+
+    return startPromise;
   }
 
   private async startOnce() {
@@ -159,52 +183,70 @@ class WebSocketInterceptorImplementation<
     }
 
     try {
-      const worker = this.createWorker();
-      this.worker = worker;
-      worker.registerRunningInterceptor(this);
+      this.worker = this.createWorker();
+      this.worker.registerRunningInterceptor(this);
 
-      await worker.start();
-      if (worker.type === 'local') {
-        await worker.use(this);
-      }
+      await this.worker.start();
+      await this.worker.use(this);
+
       this.isRunning = true;
     } catch (error) {
-      this.isRunning = false;
-
-      this.worker?.unregisterRunningInterceptor(this);
-      await this.worker?.stop();
-
-      if (this.worker) {
-        this.releaseWorker?.(this.worker);
-        this.worker = undefined;
-      }
-
+      await this.stopWorker();
       throw error;
     }
   }
 
-  async stop(options: { beforeStop?: () => Promise<void> } = {}) {
-    this.startingPromise = undefined;
+  // Handlers declared while stopping would survive the clear before the interceptor unregisters, so declarations are
+  // rejected from the moment stop is called until it completes.
+  get isStopping() {
+    return this.numberOfPendingStops > 0;
+  }
+
+  async stop(options: { beforeStop?: () => PossiblePromise<void> }) {
+    this.startPromise = undefined;
+    this.numberOfPendingStops++;
 
     await this.enqueueLifecycleOperation(async () => {
-      if (!this.isRunning) {
-        return;
-      }
-
-      await options.beforeStop?.();
-
-      const worker = this.worker;
-      worker?.unregisterRunningInterceptor(this);
-      await worker?.clearHandlers({ interceptor: this });
-      await worker?.stop();
-
-      this.isRunning = false;
-      this.worker = undefined;
-
-      if (worker) {
-        this.releaseWorker?.(worker);
+      try {
+        await this.stopOnce(options);
+      } finally {
+        this.numberOfPendingStops--;
       }
     });
+  }
+
+  private async stopOnce(options: { beforeStop?: () => PossiblePromise<void> }) {
+    if (!this.isRunning) {
+      return;
+    }
+
+    await options.beforeStop?.();
+
+    // Clearing keeps the interceptor registered to accept new connections, so stopping has to remove the registration.
+    await this.workerOrThrow.clearHandlers({ interceptor: this });
+
+    await this.stopWorker();
+  }
+
+  private async stopWorker() {
+    this.worker?.unregisterRunningInterceptor(this);
+
+    const isLastRunningInterceptor = this.worker?.numberOfRunningInterceptors === 0;
+
+    if (isLastRunningInterceptor) {
+      await this.worker?.stop();
+
+      // Stopping is asynchronous, so we need to check again if we are still the last before deleting the worker.
+      // Another interceptor might have started in the meantime and the worker should not be deleted if so.
+      const isStillLastRunningInterceptor = this.worker?.numberOfRunningInterceptors === 0;
+
+      if (isStillLastRunningInterceptor) {
+        this.deleteWorker();
+      }
+    }
+
+    this.isRunning = false;
+    this.worker = undefined;
   }
 
   get isStarting() {
@@ -242,10 +284,6 @@ class WebSocketInterceptorImplementation<
   }
 
   private createWebSocketMessageHandler(): WebSocketMessageHandler<Schema> {
-    if (!this.isRunning) {
-      throw new NotRunningWebSocketInterceptorError();
-    }
-
     const handler = new this.Handler<Schema>(this);
     this.registerMessageHandler(handler);
 
@@ -255,29 +293,14 @@ class WebSocketInterceptorImplementation<
   registerMessageHandler<RestrictedSchema extends Schema>(
     handler: InternalWebSocketMessageHandler<Schema, RestrictedSchema>,
   ) {
+    if (!this.isRunning || this.isStopping) {
+      throw new NotRunningWebSocketInterceptorError();
+    }
+
     const isAlreadyRegistered = this.handlers.includes(handler.implementation);
 
     if (!isAlreadyRegistered) {
       this.handlers.push(handler.implementation);
-
-      const registrationResult = this.worker?.type === 'remote' ? this.worker.use(this) : undefined;
-
-      if (handler instanceof RemoteWebSocketMessageHandler && registrationResult instanceof Promise) {
-        const registrationPromise = registrationResult.catch((error: unknown) => {
-          this.unregisterMessageHandler(handler.implementation);
-          throw error;
-        });
-
-        handler.registerSyncPromise(registrationPromise);
-      }
-    }
-  }
-
-  private unregisterMessageHandler(handler: AnyWebSocketMessageHandlerImplementation) {
-    const handlerIndex = this.handlers.indexOf(handler);
-
-    if (handlerIndex >= 0) {
-      this.handlers.splice(handlerIndex, 1);
     }
   }
 
@@ -286,9 +309,9 @@ class WebSocketInterceptorImplementation<
     context: WebSocketMessageHandlerApplyContext<Schema>,
   ) {
     /* istanbul ignore if -- @preserve
-     * Workers only forward messages while the owning interceptor is running. */
+     * Workers only forward messages while the holding interceptor is running. */
     if (!this.isRunning) {
-      return;
+      return { handled: false };
     }
 
     const message = normalizeWebSocketMessageData(data);
@@ -298,13 +321,39 @@ class WebSocketInterceptorImplementation<
     const matchedHandler = await this.findMatchedHandler(message, context);
 
     if (!matchedHandler) {
-      return;
+      return { handled: false };
     }
 
     await matchedHandler.handler.applyDeclarations(matchedHandler.message, context);
 
     if (this.messageSaving.enabled && messageSavingGeneration === this.messageSavingGeneration) {
       matchedHandler.handler.saveInterceptedMessage(matchedHandler.message, context);
+    }
+
+    return { handled: true };
+  }
+
+  // Unlike HTTP, unhandled messages have no bypass or reject action. WebSocket is not request-response, so a message
+  // needs no reply and the connection stays open.
+  async logUnhandledMessageIfNecessary(data: WebSocketMessageData<Schema>) {
+    const message = normalizeWebSocketMessageData(data);
+    const strategy = await this.getUnhandledMessageStrategy(message);
+
+    if (strategy.log ?? DEFAULT_UNHANDLED_MESSAGE_STRATEGY.log) {
+      await logUnhandledMessageWarning(message);
+    }
+  }
+
+  private async getUnhandledMessageStrategy(message: Schema): Promise<UnhandledMessageStrategy.Declaration> {
+    try {
+      if (typeof this.onUnhandledMessage === 'function') {
+        return await this.onUnhandledMessage(message);
+      }
+
+      return this.onUnhandledMessage ?? DEFAULT_UNHANDLED_MESSAGE_STRATEGY;
+    } catch (error) {
+      console.error(error);
+      return DEFAULT_UNHANDLED_MESSAGE_STRATEGY;
     }
   }
 
@@ -334,11 +383,7 @@ class WebSocketInterceptorImplementation<
   }
 
   removeClient(client: InternalWebSocketInterceptorClient<Schema>) {
-    const clientIndex = this._clients.indexOf(client);
-
-    if (clientIndex >= 0) {
-      this._clients.splice(clientIndex, 1);
-    }
+    removeArrayElement(this._clients, client);
   }
 
   private async findMatchedHandler(message: Schema, context: WebSocketMessageHandlerApplyContext<Schema>) {
@@ -385,24 +430,16 @@ class WebSocketInterceptorImplementation<
   }
 
   clear() {
-    if (!this.isRunning) {
-      throw new NotRunningWebSocketInterceptorError();
-    }
+    const worker = this.workerOrThrow;
 
     this.messageSavingGeneration++;
 
-    const clearResult = this.worker?.isRunning
-      ? this.worker.clearHandlers({
-          interceptor: this,
-          preserveInterceptorRegistration: this.worker.type === 'local',
-        })
-      : undefined;
+    const clearResult = worker.clearHandlers({ interceptor: this, preserveInterceptorRegistration: true });
 
     for (const handler of this.handlers) {
       handler.clear();
     }
 
-    this.messageStore.clear();
     this.handlers.length = 0;
     this._clients.length = 0;
 

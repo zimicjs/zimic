@@ -1,7 +1,7 @@
 import type { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
 import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
-import { InterceptorServerWebSocketSchema, WebSocketHandlerCommit } from '@/server/types/schema';
+import { InterceptorServerWebSocketSchema, WebSocketHandlerCommit, WebSocketHandlerReset } from '@/server/types/schema';
 import { isClientSide, isServerSide } from '@/utils/environment';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocketEventMessage } from '@/utils/webSocket/types';
@@ -26,13 +26,15 @@ interface WebSocketHandler {
   id: string;
   baseURL: string;
   interceptor: AnyWebSocketInterceptorImplementation;
-  commitPromise: Promise<void>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   clients: Map<string, InternalWebSocketInterceptorClient<any>>;
+  // The number of resets sent to the server when the handler was last cleared.
+  numberOfResetsWhenCleared: number;
 }
 
 class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private webSocketHandlers = new Map<WebSocketHandler['id'], WebSocketHandler>();
+  private numberOfResets = 0;
   private auth?: RemoteWebSocketInterceptorWorkerOptions['auth'];
 
   webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
@@ -41,28 +43,17 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     super();
 
     this.webSocketClient = new WebSocketClient({
-      url: this.getWebSocketServerURL(options.serverURL).toString(),
+      url: options.serverURL.toString(),
     });
 
     this.auth = options.auth;
   }
 
-  get type() {
-    return 'remote' as const;
-  }
-
-  private getWebSocketServerURL(serverURL: URL) {
-    const webSocketServerURL = new URL(serverURL);
-
-    if (webSocketServerURL.protocol.startsWith('http')) {
-      webSocketServerURL.protocol = serverURL.protocol.replace(/^http(s)?:$/, 'ws$1:');
-    }
-
-    return webSocketServerURL;
-  }
-
   async start() {
     await super.sharedStart(async () => {
+      // The server counts resets per worker socket, so a new socket starts the count again.
+      this.numberOfResets = 0;
+
       await this.webSocketClient.start({
         parameters: {
           [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
@@ -74,6 +65,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       this.webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', this.connectClient);
       this.webSocketClient.onChannel('event', 'interceptors/ws/clients/close', this.closeClient);
       this.webSocketClient.onChannel('event', 'interceptors/ws/messages/handle', this.handleMessage);
+      this.webSocketClient.onChannel('event', 'interceptors/ws/messages/unhandled', this.handleUnhandledMessage);
 
       this.platform = this.readPlatform();
       this.isRunning = true;
@@ -98,6 +90,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       this.webSocketClient.offChannel('event', 'interceptors/ws/clients/connect', this.connectClient);
       this.webSocketClient.offChannel('event', 'interceptors/ws/clients/close', this.closeClient);
       this.webSocketClient.offChannel('event', 'interceptors/ws/messages/handle', this.handleMessage);
+      this.webSocketClient.offChannel('event', 'interceptors/ws/messages/unhandled', this.handleUnhandledMessage);
 
       await this.clearHandlers();
 
@@ -111,12 +104,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   async use<Schema extends WebSocketSchema>(interceptor: AnyWebSocketInterceptorImplementation<Schema>) {
     if (!this.isRunning) {
       throw new NotRunningWebSocketInterceptorError();
-    }
-
-    const handler = Array.from(this.webSocketHandlers.values()).find((handler) => handler.interceptor === interceptor);
-
-    if (handler) {
-      return handler.commitPromise;
     }
 
     const handlerId = crypto.randomUUID();
@@ -136,8 +123,8 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       id: handlerId,
       baseURL: interceptor.baseURLAsString,
       interceptor,
-      commitPromise,
       clients: new Map(),
+      numberOfResetsWhenCleared: 0,
     };
 
     this.webSocketHandlers.set(newHandler.id, newHandler);
@@ -180,34 +167,50 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private connectClient = ({
     data: connection,
   }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/clients/connect'>) => {
-    const handler = this.webSocketHandlers.get(connection.handlerId);
+    const holders: { handler: WebSocketHandler; client: InternalWebSocketInterceptorClient<WebSocketSchema> }[] = [];
 
-    if (!handler) {
-      return { accepted: false };
+    for (const handlerId of connection.handlerIds) {
+      const handler = this.webSocketHandlers.get(handlerId);
+
+      // A removed handler, or one cleared after the server sent the connection, does not accept it, as a local
+      // interceptor cleared after a connection opens lets it go. The reset of that handler reaches the server before
+      // this reply, so the server no longer counts it as a holder.
+      if (!handler || handler.numberOfResetsWhenCleared > connection.numberOfResets) {
+        continue;
+      }
+
+      const client = createWebSocketInterceptorClient(connection.url, async (data) => {
+        await this.sendToClient(client, data);
+      });
+
+      // The registry is intentionally schema-erased because one remote worker owns interceptors for any schema.
+      handler.clients.set(connection.clientId, client);
+      holders.push({ handler, client });
     }
 
-    const client = createWebSocketInterceptorClient(connection.url, async (data) => {
-      await this.sendToClient(client, data);
-    });
+    // Every holder lists the client before any connection listener runs, so a listener that clears another holder makes
+    // it let the connection go, as in local mode.
+    for (const { handler, client } of holders) {
+      if (handler.clients.has(connection.clientId)) {
+        handler.interceptor.addClient(client);
+      }
+    }
 
-    // The registry is intentionally schema-erased because one remote worker owns interceptors for any schema.
-    handler.clients.set(connection.clientId, client);
-    handler.interceptor.addClient(client);
-
-    return { accepted: true };
+    return { acceptedHandlerIds: holders.map(({ handler }) => handler.id) };
   };
 
   private closeClient = ({
     data: connection,
   }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/clients/close'>) => {
-    const clientEntry = this.findClientEntryById(connection.clientId);
+    // A connection shared by several interceptors has one client in each of them.
+    for (const handler of this.webSocketHandlers.values()) {
+      const client = handler.clients.get(connection.clientId);
 
-    if (!clientEntry) {
-      return;
+      if (client) {
+        handler.clients.delete(connection.clientId);
+        handler.interceptor.removeClient(client);
+      }
     }
-
-    clientEntry.handler.clients.delete(connection.clientId);
-    clientEntry.handler.interceptor.removeClient(clientEntry.client);
   };
 
   private handleMessage = async ({
@@ -219,19 +222,38 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     /* istanbul ignore if -- @preserve
      * Stale server events after a worker reset are ignored; normal connect/close paths cover registered clients. */
     if (!handler || !client) {
-      return {};
+      return { handled: false };
     }
 
     try {
       const deserializedMessageData = deserializeWebSocketMessageDataFromTransport(message.data);
 
-      await handler.interceptor.handleInterceptedMessage(deserializedMessageData, {
+      return await handler.interceptor.handleInterceptedMessage(deserializedMessageData, {
         sender: client,
         receiver: handler.interceptor.server,
       });
     } catch (error) {
       console.error(error);
+      return { handled: false, error: true };
     }
+  };
+
+  private handleUnhandledMessage = async ({
+    data: message,
+  }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/messages/unhandled'>) => {
+    // Holders that let the connection go while the message was handled no longer decide its strategy. If none is left,
+    // the connection is closed and the message is dropped, as a cleared interceptor does not save the messages it was
+    // handling.
+    const handler = message.handlerIds
+      .map((handlerId) => this.webSocketHandlers.get(handlerId))
+      .findLast((handler) => handler?.clients.has(message.clientId));
+
+    if (!handler) {
+      return {};
+    }
+
+    const deserializedMessageData = deserializeWebSocketMessageDataFromTransport(message.data);
+    await handler.interceptor.logUnhandledMessageIfNecessary(deserializedMessageData);
 
     return {};
   };
@@ -254,36 +276,30 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     return undefined;
   }
 
-  private findClientEntryById(clientId: string) {
-    for (const handler of this.webSocketHandlers.values()) {
-      const client = handler.clients.get(clientId);
-
-      if (client) {
-        return { handler, client };
-      }
-    }
-
-    return undefined;
-  }
-
   async clearHandlers<Schema extends WebSocketSchema>(
-    options: { interceptor?: AnyWebSocketInterceptorImplementation<Schema> } = {},
+    options: {
+      interceptor?: AnyWebSocketInterceptorImplementation<Schema>;
+      preserveInterceptorRegistration?: boolean;
+    } = {},
   ) {
     if (!this.isRunning) {
       throw new NotRunningWebSocketInterceptorError();
     }
 
-    if (options.interceptor === undefined) {
-      for (const handler of this.webSocketHandlers.values()) {
-        handler.interceptor.clients.length = 0;
-      }
-      this.webSocketHandlers.clear();
-    } else {
-      for (const handler of this.webSocketHandlers.values()) {
-        if (handler.interceptor === options.interceptor) {
-          handler.interceptor.clients.length = 0;
-          this.webSocketHandlers.delete(handler.id);
-        }
+    const selectedHandlers = Array.from(this.webSocketHandlers.values()).filter((handler) => {
+      return options.interceptor === undefined || handler.interceptor === options.interceptor;
+    });
+
+    const clearedHandlers: WebSocketHandler[] = [];
+
+    for (const handler of selectedHandlers) {
+      handler.interceptor.clients.length = 0;
+
+      if (options.preserveInterceptorRegistration) {
+        handler.clients.clear();
+        clearedHandlers.push(handler);
+      } else {
+        this.webSocketHandlers.delete(handler.id);
       }
     }
 
@@ -291,16 +307,22 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       return;
     }
 
-    const handlersToRecommit = Array.from<WebSocketHandler, WebSocketHandlerCommit>(
-      this.webSocketHandlers.values(),
-      (handler) => ({
+    this.numberOfResets++;
+
+    for (const handler of clearedHandlers) {
+      handler.numberOfResetsWhenCleared = this.numberOfResets;
+    }
+
+    const reset: WebSocketHandlerReset = {
+      handlers: Array.from<WebSocketHandler, WebSocketHandlerCommit>(this.webSocketHandlers.values(), (handler) => ({
         id: handler.id,
         baseURL: handler.baseURL,
-      }),
-    );
+      })),
+      clearedHandlerIds: clearedHandlers.map((handler) => handler.id),
+    };
 
     try {
-      await this.webSocketClient.request('interceptors/ws/workers/reset', handlersToRecommit);
+      await this.webSocketClient.request('interceptors/ws/workers/reset', reset);
       /* istanbul ignore next -- @preserve
        * Reset aborts only occur when the RPC socket closes during a reset request. */
     } catch (error) {
