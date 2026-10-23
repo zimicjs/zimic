@@ -508,7 +508,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
   });
 
   it('should apply the unhandled message strategy of the last started interceptor once if no interceptor handles a message', async () => {
-    const olderOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+    const olderOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>();
     const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
 
     await usingWebSocketInterceptor<MessageSchema>(
@@ -560,7 +560,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
   it('should apply the unhandled message strategy of the last started interceptor once if it has a nested base URL and no handlers', async () => {
     const nestedBaseURL = joinURL(defaultBaseURL, 'nested');
 
-    const olderOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+    const olderOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>();
     const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
 
     await usingWebSocketInterceptor<MessageSchema>(
@@ -601,7 +601,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
   });
 
   it('should apply the unhandled message strategy of the last started interceptor once if no interceptor has handlers', async () => {
-    const olderOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+    const olderOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>();
     const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
 
     await usingWebSocketInterceptor<MessageSchema>(
@@ -684,7 +684,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     const auth = { token: 'token' };
 
     it('should apply the unhandled message strategy of the last started interceptor if only an older one using another authentication token has a matching handler', async () => {
-      const olderOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+      const olderOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>();
       const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
 
       await usingWebSocketInterceptor<MessageSchema>(
@@ -725,7 +725,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     });
 
     it('should intercept messages with the last started interceptor if an older one using another authentication token also matches', async () => {
-      const olderRestriction = vi.fn(() => true);
+      const olderRestriction = vi.fn<() => boolean>();
 
       await usingWebSocketInterceptor<MessageSchema>(
         { type: 'remote', baseURL: defaultBaseURL, auth: olderAuth, messageSaving: { enabled: true } },

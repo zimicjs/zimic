@@ -750,7 +750,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         const worker = rawWorker as RemoteWebSocketInterceptorWorker;
 
         const firstOnUnhandledMessage = vi.fn(() => ({ log: false }));
-        const secondOnUnhandledMessage = vi.fn(() => ({ log: false }));
+        const secondOnUnhandledMessage = vi.fn();
 
         const firstInterceptor = new WebSocketInterceptorImplementation<
           ChatMessage,

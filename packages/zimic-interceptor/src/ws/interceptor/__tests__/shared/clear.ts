@@ -256,7 +256,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     });
 
     const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
-    const otherOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+    const otherOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>();
 
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, onUnhandledMessage },
@@ -413,7 +413,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
   // No HTTP counterpart: WebSocket connections are long-lived, so one can outlive the clear of an interceptor holding it.
   it('should apply the unhandled message strategy of an older interceptor to connections shared with it after the last started one is cleared', async () => {
     const firstOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
-    const secondOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+    const secondOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>();
 
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, onUnhandledMessage: firstOnUnhandledMessage },
@@ -619,7 +619,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
       return false;
     });
 
-    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>();
 
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, onUnhandledMessage },

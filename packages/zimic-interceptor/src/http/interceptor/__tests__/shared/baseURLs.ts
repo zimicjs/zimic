@@ -110,10 +110,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
       const otherPortBaseURL = `${protocol}//${hostname}:${port.slice(0, -1)}`;
       expect(defaultBaseURL.startsWith(otherPortBaseURL)).toBe(true);
 
-      const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.LocalDeclarationFactory>(() => ({
-        action: 'bypass',
-        log: false,
-      }));
+      const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.LocalDeclarationFactory>();
 
       await usingHttpInterceptor<{
         '/users': { GET: { response: { 200: {} } } };
@@ -275,10 +272,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
   });
 
   it('should apply the unhandled request strategy of the last started interceptor once if no interceptor handles a request', async () => {
-    const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
-      action: 'reject',
-      log: false,
-    }));
+    const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>();
 
     const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
       action: 'reject',
@@ -321,10 +315,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
   it('should apply the unhandled request strategy of the last started interceptor once if it has a nested base URL and no handlers', async () => {
     const nestedBaseURL = joinURL(defaultBaseURL, 'nested');
 
-    const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
-      action: 'reject',
-      log: false,
-    }));
+    const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>();
 
     const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
       action: 'reject',
@@ -357,10 +348,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
   });
 
   it('should apply the unhandled request strategy of the last started interceptor once if no interceptor has handlers', async () => {
-    const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
-      action: 'reject',
-      log: false,
-    }));
+    const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>();
 
     const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
       action: 'reject',
@@ -422,10 +410,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     const auth = { token: 'token' };
 
     it('should apply the unhandled request strategy of the last started interceptor if only an older one using another authentication token has a matching handler', async () => {
-      const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
-        action: 'reject',
-        log: false,
-      }));
+      const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>();
 
       const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
         action: 'reject',
@@ -457,7 +442,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
 
     it('should intercept requests with the last started interceptor if an older one using another authentication token also matches', async () => {
-      const olderRestriction = vi.fn(() => true);
+      const olderRestriction = vi.fn<() => boolean>();
 
       await usingHttpInterceptor<{
         '/users': { GET: { response: { 200: {} } } };
