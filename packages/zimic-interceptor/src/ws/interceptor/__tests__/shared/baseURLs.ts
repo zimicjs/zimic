@@ -678,6 +678,388 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     );
   });
 
+  // Authentication tokens apply only to remote interceptors, which share an interceptor server by token.
+  if (type === 'remote') {
+    const olderAuth = { token: 'older-token' };
+    const auth = { token: 'token' };
+
+    it('should apply the unhandled message strategy of the last started interceptor if only an older one using another authentication token has a matching handler', async () => {
+      const olderOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+      const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+
+      await usingWebSocketInterceptor<MessageSchema>(
+        {
+          type: 'remote',
+          baseURL: defaultBaseURL,
+          auth: olderAuth,
+          messageSaving: { enabled: true },
+          onUnhandledMessage: olderOnUnhandledMessage,
+        },
+        async (olderInterceptor) => {
+          const olderHandler = await olderInterceptor.message().respond({ type: 'server', index: 1 });
+
+          await usingWebSocketInterceptor<MessageSchema>(
+            { type: 'remote', baseURL: defaultBaseURL, auth, messageSaving: { enabled: true }, onUnhandledMessage },
+            async (interceptor) => {
+              const handler = await interceptor
+                .message()
+                .with({ type: 'client', index: 2 })
+                .respond({ type: 'server', index: 2 });
+
+              await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+                client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                await waitFor(() => {
+                  expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+                });
+              });
+
+              expect(handler.messages).toHaveLength(0);
+              expect(olderHandler.messages).toHaveLength(0);
+
+              expect(olderOnUnhandledMessage).not.toHaveBeenCalled();
+            },
+          );
+        },
+      );
+    });
+
+    it('should intercept messages with the last started interceptor if an older one using another authentication token also matches', async () => {
+      const olderRestriction = vi.fn(() => true);
+
+      await usingWebSocketInterceptor<MessageSchema>(
+        { type: 'remote', baseURL: defaultBaseURL, auth: olderAuth, messageSaving: { enabled: true } },
+        async (olderInterceptor) => {
+          const olderConnectionListener = vi.fn();
+          olderInterceptor.on('connection', olderConnectionListener);
+
+          const olderHandler = await olderInterceptor
+            .message()
+            .with(olderRestriction)
+            .respond({ type: 'server', index: 1 });
+
+          await usingWebSocketInterceptor<MessageSchema>(
+            { type: 'remote', baseURL: defaultBaseURL, auth, messageSaving: { enabled: true } },
+            async (interceptor) => {
+              const handler = await interceptor.message().respond({ type: 'server', index: 2 });
+
+              await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+                const messagePromise = waitForWebSocketClientMessage(client);
+                client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+
+                expect(interceptor.clients).toHaveLength(1);
+                expect(olderInterceptor.clients).toHaveLength(0);
+                expect(olderConnectionListener).not.toHaveBeenCalled();
+              });
+
+              expect(handler.messages).toHaveLength(1);
+              expect(olderHandler.messages).toHaveLength(0);
+              expect(olderRestriction).not.toHaveBeenCalled();
+            },
+          );
+        },
+      );
+    });
+
+    it('should intercept messages with an older interceptor using another authentication token after the last started one stops', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(
+        { type: 'remote', baseURL: defaultBaseURL, auth: olderAuth, messageSaving: { enabled: true } },
+        async (olderInterceptor) => {
+          const olderHandler = await olderInterceptor.message().respond({ type: 'server', index: 1 });
+
+          await usingWebSocketInterceptor<MessageSchema>(
+            { type: 'remote', baseURL: defaultBaseURL, auth, messageSaving: { enabled: true } },
+            async (interceptor) => {
+              const handler = await interceptor.message().respond({ type: 'server', index: 2 });
+
+              await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+                const messagePromise = waitForWebSocketClientMessage(client);
+                client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+              });
+
+              expect(handler.messages).toHaveLength(1);
+              expect(olderHandler.messages).toHaveLength(0);
+
+              await interceptor.stop();
+
+              await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+                const messagePromise = waitForWebSocketClientMessage(client);
+                client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+              });
+
+              expect(olderHandler.messages).toHaveLength(1);
+            },
+          );
+        },
+      );
+    });
+
+    it('should intercept messages with an older interceptor using another authentication token after the last started one stops if an interceptor using its authentication token is still running', async () => {
+      const otherBaseURL = joinURL(defaultBaseURL, 'other');
+
+      await usingWebSocketInterceptor<MessageSchema>(
+        { type: 'remote', baseURL: defaultBaseURL, auth: olderAuth, messageSaving: { enabled: true } },
+        async (olderInterceptor) => {
+          const olderHandler = await olderInterceptor.message().respond({ type: 'server', index: 1 });
+
+          await usingWebSocketInterceptor<MessageSchema>(
+            { type: 'remote', baseURL: otherBaseURL, auth },
+            async (otherInterceptor) => {
+              await usingWebSocketInterceptor<MessageSchema>(
+                { type: 'remote', baseURL: defaultBaseURL, auth, messageSaving: { enabled: true } },
+                async (interceptor) => {
+                  await interceptor.message().respond({ type: 'server', index: 2 });
+
+                  await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+                    const messagePromise = waitForWebSocketClientMessage(client);
+                    client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                    await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+                  });
+
+                  await interceptor.stop();
+                  expect(otherInterceptor.isRunning).toBe(true);
+
+                  await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+                    const messagePromise = waitForWebSocketClientMessage(client);
+                    client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                    await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+                  });
+
+                  expect(olderHandler.messages).toHaveLength(1);
+                },
+              );
+            },
+          );
+        },
+      );
+    });
+
+    it('should intercept messages with the last started interceptor after it is cleared and declares its handlers again if an older one uses another authentication token', async () => {
+      const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+
+      await usingWebSocketInterceptor<MessageSchema>(
+        { type: 'remote', baseURL: defaultBaseURL, auth: olderAuth, messageSaving: { enabled: true } },
+        async (olderInterceptor) => {
+          const olderHandler = await olderInterceptor.message().respond({ type: 'server', index: 1 });
+
+          await usingWebSocketInterceptor<MessageSchema>(
+            { type: 'remote', baseURL: defaultBaseURL, auth, messageSaving: { enabled: true }, onUnhandledMessage },
+            async (interceptor) => {
+              await interceptor.message().respond({ type: 'server', index: 2 });
+
+              await interceptor.clear();
+
+              await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+                client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                await waitFor(() => {
+                  expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+                });
+              });
+
+              expect(olderHandler.messages).toHaveLength(0);
+
+              const handler = await interceptor.message().respond({ type: 'server', index: 2 });
+
+              await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+                const messagePromise = waitForWebSocketClientMessage(client);
+                client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+              });
+
+              expect(handler.messages).toHaveLength(1);
+              expect(olderHandler.messages).toHaveLength(0);
+            },
+          );
+        },
+      );
+    });
+
+    it('should intercept messages with the last started interceptor after an older one using another authentication token is cleared', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(
+        { type: 'remote', baseURL: defaultBaseURL, auth: olderAuth, messageSaving: { enabled: true } },
+        async (olderInterceptor) => {
+          const olderHandler = await olderInterceptor.message().respond({ type: 'server', index: 1 });
+
+          await usingWebSocketInterceptor<MessageSchema>(
+            { type: 'remote', baseURL: defaultBaseURL, auth: olderAuth, messageSaving: { enabled: true } },
+            async (otherOlderInterceptor) => {
+              await otherOlderInterceptor.message().respond({ type: 'server', index: 3 });
+
+              await usingWebSocketInterceptor<MessageSchema>(
+                { type: 'remote', baseURL: defaultBaseURL, auth, messageSaving: { enabled: true } },
+                async (interceptor) => {
+                  const handler = await interceptor.message().respond({ type: 'server', index: 2 });
+
+                  await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+                    const messagePromise = waitForWebSocketClientMessage(client);
+                    client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                    await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+                  });
+
+                  await otherOlderInterceptor.clear();
+
+                  await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+                    const messagePromise = waitForWebSocketClientMessage(client);
+                    client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                    await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+                  });
+
+                  expect(handler.messages).toHaveLength(2);
+                  expect(olderHandler.messages).toHaveLength(0);
+                },
+              );
+            },
+          );
+        },
+      );
+    });
+
+    it('should intercept messages with the last started interceptor after an older one using another authentication token is cleared and declares its handlers again', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(
+        { type: 'remote', baseURL: defaultBaseURL, auth: olderAuth, messageSaving: { enabled: true } },
+        async (olderInterceptor) => {
+          await olderInterceptor.message().respond({ type: 'server', index: 1 });
+
+          await usingWebSocketInterceptor<MessageSchema>(
+            { type: 'remote', baseURL: defaultBaseURL, auth, messageSaving: { enabled: true } },
+            async (interceptor) => {
+              const handler = await interceptor.message().respond({ type: 'server', index: 2 });
+
+              await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+                const messagePromise = waitForWebSocketClientMessage(client);
+                client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+              });
+
+              await olderInterceptor.clear();
+
+              const olderHandler = await olderInterceptor.message().respond({ type: 'server', index: 1 });
+
+              await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+                const messagePromise = waitForWebSocketClientMessage(client);
+                client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+              });
+
+              expect(handler.messages).toHaveLength(2);
+              expect(olderHandler.messages).toHaveLength(0);
+            },
+          );
+        },
+      );
+    });
+
+    it('should intercept messages with the last started interceptor after an older one using another authentication token declares its handlers later', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(
+        { type: 'remote', baseURL: defaultBaseURL, auth: olderAuth, messageSaving: { enabled: true } },
+        async (olderInterceptor) => {
+          await usingWebSocketInterceptor<MessageSchema>(
+            { type: 'remote', baseURL: defaultBaseURL, auth: olderAuth, messageSaving: { enabled: true } },
+            async (otherOlderInterceptor) => {
+              const otherOlderHandler = await otherOlderInterceptor.message().respond({ type: 'server', index: 3 });
+
+              await usingWebSocketInterceptor<MessageSchema>(
+                { type: 'remote', baseURL: defaultBaseURL, auth, messageSaving: { enabled: true } },
+                async (interceptor) => {
+                  const handler = await interceptor.message().respond({ type: 'server', index: 2 });
+
+                  const olderHandler = await olderInterceptor.message().respond({ type: 'server', index: 1 });
+
+                  await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+                    const messagePromise = waitForWebSocketClientMessage(client);
+                    client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                    await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+                  });
+
+                  expect(handler.messages).toHaveLength(1);
+                  expect(olderHandler.messages).toHaveLength(0);
+                  expect(otherOlderHandler.messages).toHaveLength(0);
+                },
+              );
+            },
+          );
+        },
+      );
+    });
+
+    it('should intercept messages with the last started interceptor after an older one using another authentication token declares more handlers', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(
+        { type: 'remote', baseURL: defaultBaseURL, auth: olderAuth, messageSaving: { enabled: true } },
+        async (olderInterceptor) => {
+          const olderHandler = await olderInterceptor.message().respond({ type: 'server', index: 1 });
+
+          await usingWebSocketInterceptor<MessageSchema>(
+            { type: 'remote', baseURL: defaultBaseURL, auth, messageSaving: { enabled: true } },
+            async (interceptor) => {
+              const handler = await interceptor.message().respond({ type: 'server', index: 2 });
+
+              await olderInterceptor.message().respond({ type: 'server', index: 3 });
+
+              await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+                const messagePromise = waitForWebSocketClientMessage(client);
+                client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+              });
+
+              expect(handler.messages).toHaveLength(1);
+              expect(olderHandler.messages).toHaveLength(0);
+            },
+          );
+        },
+      );
+    });
+
+    it('should intercept messages with an interceptor using a newer authentication token after an interceptor using an older one starts later', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(
+        { type: 'remote', baseURL: defaultBaseURL, auth: olderAuth, messageSaving: { enabled: true } },
+        async (olderInterceptor) => {
+          const olderHandler = await olderInterceptor.message().respond({ type: 'server', index: 1 });
+
+          await usingWebSocketInterceptor<MessageSchema>(
+            { type: 'remote', baseURL: defaultBaseURL, auth, messageSaving: { enabled: true } },
+            async (interceptor) => {
+              const handler = await interceptor.message().respond({ type: 'server', index: 2 });
+
+              await usingWebSocketInterceptor<MessageSchema>(
+                { type: 'remote', baseURL: defaultBaseURL, auth: olderAuth, messageSaving: { enabled: true } },
+                async (laterOlderInterceptor) => {
+                  const laterOlderHandler = await laterOlderInterceptor.message().respond({ type: 'server', index: 3 });
+
+                  await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+                    const messagePromise = waitForWebSocketClientMessage(client);
+                    client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                    await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+                  });
+
+                  expect(handler.messages).toHaveLength(1);
+                  expect(olderHandler.messages).toHaveLength(0);
+                  expect(laterOlderHandler.messages).toHaveLength(0);
+                },
+              );
+            },
+          );
+        },
+      );
+    });
+  }
+
   it('should support changing the base URL after created', async () => {
     const baseURL = defaultBaseURL;
 

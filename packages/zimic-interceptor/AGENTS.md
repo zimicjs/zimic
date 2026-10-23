@@ -29,7 +29,6 @@ Diverge between protocols only for a protocol reason, such as WebSocket connecti
 - When adding or changing a suite for one protocol, compare it with the counterpart suite in both directions. Add each scenario that applies to both protocols to both suites in the same change, or state the protocol reason for skipping it in a comment in the suite. Write that comment as `// No <Protocol> counterpart for "<counterpart title>": <protocol reason>.`, so parity audits can find it.
 - Translate test names by swapping only protocol nouns. Interceptor suites say "intercept" and handler suites say "match" in both protocols.
 - Keep counterpart tests in the same order and `describe` groups.
-- Place mode-only cases in `__tests__/shared/<topic>.<mode>.ts`, run by `<Class>.<topic>.<mode>.{node,browser}.test.ts`, instead of `if (type === ...)` blocks in a shared suite.
 - Manage interceptors, workers, and clients with the `using*` utilities in `tests/utils`. Add the protocol counterpart of a utility when it is missing.
 - Chain handler declarations and await the chain once instead of awaiting a bare handler.
 - Keep type tests compile-only, without executing their callbacks, and place them in `__tests__/shared/types.ts`, which coverage excludes. When `types.ts` holds type tests, put the suite's shared schemas, options, and helpers in `__tests__/shared/utils.ts`.
