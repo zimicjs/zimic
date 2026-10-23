@@ -48,6 +48,7 @@ class HttpInterceptorImplementation<
 
   private startPromise?: Promise<void>;
   private numberOfPendingStarts = 0;
+  private numberOfPendingStops = 0;
   private lifecycleQueue: Promise<void> = Promise.resolve();
 
   requestSaving: HttpInterceptorRequestSaving;
@@ -182,9 +183,23 @@ class HttpInterceptorImplementation<
     return this.numberOfPendingStarts > 0;
   }
 
+  // Handlers declared while stopping would survive the clear before the interceptor unregisters, so declarations are
+  // rejected from the moment stop is called until it completes.
+  get isStopping() {
+    return this.numberOfPendingStops > 0;
+  }
+
   async stop(options: { beforeStop?: () => PossiblePromise<void> }) {
     this.startPromise = undefined;
-    await this.enqueueLifecycleOperation(() => this.stopOnce(options));
+    this.numberOfPendingStops++;
+
+    await this.enqueueLifecycleOperation(async () => {
+      try {
+        await this.stopOnce(options);
+      } finally {
+        this.numberOfPendingStops--;
+      }
+    });
   }
 
   private async stopOnce(options: { beforeStop?: () => PossiblePromise<void> }) {
@@ -269,10 +284,6 @@ class HttpInterceptorImplementation<
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath<Schema, Method>,
   >(method: Method, path: Path): HttpRequestHandler<Schema, Method, Path> {
-    if (!this.isRunning) {
-      throw new NotRunningHttpInterceptorError();
-    }
-
     const handler = new this.Handler<Schema, Method, Path>(
       this as SharedHttpInterceptorImplementation<Schema>,
       method,
@@ -288,6 +299,10 @@ class HttpInterceptorImplementation<
     Path extends HttpSchemaPath<Schema, Method>,
     StatusCode extends HttpStatusCode = never,
   >(handler: InternalHttpRequestHandler<Schema, Method, Path, StatusCode>) {
+    if (!this.isRunning || this.isStopping) {
+      throw new NotRunningHttpInterceptorError();
+    }
+
     const pathHandlers = this.handlers[handler.method].get(handler.path) ?? [];
 
     const isAlreadyRegistered = pathHandlers.includes(handler.implementation);

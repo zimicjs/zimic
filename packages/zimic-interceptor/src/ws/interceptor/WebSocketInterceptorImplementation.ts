@@ -72,6 +72,7 @@ class WebSocketInterceptorImplementation<
   private worker?: WebSocketInterceptorWorker;
   private startPromise?: Promise<void>;
   private numberOfPendingStarts = 0;
+  private numberOfPendingStops = 0;
   private lifecycleQueue: Promise<void> = Promise.resolve();
   private messageSavingGeneration = 0;
 
@@ -195,9 +196,23 @@ class WebSocketInterceptorImplementation<
     }
   }
 
+  // Handlers declared while stopping would survive the clear before the interceptor unregisters, so declarations are
+  // rejected from the moment stop is called until it completes.
+  get isStopping() {
+    return this.numberOfPendingStops > 0;
+  }
+
   async stop(options: { beforeStop?: () => PossiblePromise<void> }) {
     this.startPromise = undefined;
-    await this.enqueueLifecycleOperation(() => this.stopOnce(options));
+    this.numberOfPendingStops++;
+
+    await this.enqueueLifecycleOperation(async () => {
+      try {
+        await this.stopOnce(options);
+      } finally {
+        this.numberOfPendingStops--;
+      }
+    });
   }
 
   private async stopOnce(options: { beforeStop?: () => PossiblePromise<void> }) {
@@ -269,10 +284,6 @@ class WebSocketInterceptorImplementation<
   }
 
   private createWebSocketMessageHandler(): WebSocketMessageHandler<Schema> {
-    if (!this.isRunning) {
-      throw new NotRunningWebSocketInterceptorError();
-    }
-
     const handler = new this.Handler<Schema>(this);
     this.registerMessageHandler(handler);
 
@@ -282,6 +293,10 @@ class WebSocketInterceptorImplementation<
   registerMessageHandler<RestrictedSchema extends Schema>(
     handler: InternalWebSocketMessageHandler<Schema, RestrictedSchema>,
   ) {
+    if (!this.isRunning || this.isStopping) {
+      throw new NotRunningWebSocketInterceptorError();
+    }
+
     const isAlreadyRegistered = this.handlers.includes(handler.implementation);
 
     if (!isAlreadyRegistered) {

@@ -117,6 +117,41 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     );
   });
 
+  it('should intercept messages with the restarted interceptor if another one with the same base URL started earlier', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, messageSaving: { enabled: true } },
+          async (otherInterceptor) => {
+            await interceptor.stop();
+            await interceptor.start();
+
+            const handler = await promiseIfRemote(
+              interceptor.message().respond({ type: 'server', index: 2 }),
+              interceptor,
+            );
+
+            const otherHandler = await promiseIfRemote(
+              otherInterceptor.message().respond({ type: 'server', index: 1 }),
+              otherInterceptor,
+            );
+
+            await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+              const messagePromise = waitForWebSocketClientMessage(client);
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+              await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+            });
+
+            expect(handler.messages).toHaveLength(1);
+            expect(otherHandler.messages).toHaveLength(0);
+          },
+        );
+      },
+    );
+  });
+
   // No HTTP counterpart: WebSocket connections are long-lived, so a client can stay open after its interceptor stops.
   it('should not handle messages from existing clients after stopped', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
@@ -214,5 +249,15 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     expect(interceptor.isRunning).toBe(false);
 
     expect(() => interceptor.message()).toThrow(new NotRunningWebSocketInterceptorError());
+  });
+
+  it('should throw an error when trying to create a message handler while stopping', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+      const stopPromise = interceptor.stop();
+
+      expect(() => interceptor.message()).toThrow(new NotRunningWebSocketInterceptorError());
+
+      await stopPromise;
+    });
   });
 }
