@@ -31,6 +31,24 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
     interceptorOptions = getInterceptorOptions();
   });
 
+  it('should intercept requests with the handler of their method if a handler of another method is declared later', async () => {
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: { response: { 200: {} } };
+        POST: { response: { 201: {} } };
+      };
+    }>(interceptorOptions, async (interceptor) => {
+      const getHandler = await promiseIfRemote(interceptor.get('/users').respond({ status: 200 }), interceptor);
+      const postHandler = await promiseIfRemote(interceptor.post('/users').respond({ status: 201 }), interceptor);
+
+      const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      expect(response.status).toBe(200);
+
+      expect(getHandler.requests).toHaveLength(1);
+      expect(postHandler.requests).toHaveLength(0);
+    });
+  });
+
   describe.each(HTTP_METHODS)('Method (%s)', (method) => {
     const { overridesPreflightResponse, getNumbersOfRequestsIncludingPreflight } = getPreflightAssessment({
       method,
