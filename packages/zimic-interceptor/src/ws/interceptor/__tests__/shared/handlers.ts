@@ -23,6 +23,9 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
     interceptorOptions = getInterceptorOptions();
   });
 
+  // No WebSocket counterpart for "should intercept requests with the handler of their method if a handler of another
+  // method is declared later": WebSocket messages have no method.
+
   // No WebSocket counterpart for the HTTP method groups: WebSocket messages have no method.
 
   it('should support intercepting messages with a static response', async () => {
