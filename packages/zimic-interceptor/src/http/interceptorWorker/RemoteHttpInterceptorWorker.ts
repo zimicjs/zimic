@@ -35,6 +35,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   private httpHandlers = new Map<HttpHandler['id'], HttpHandler>();
 
   webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
+  private isConnectedToServer = false;
   private auth?: RemoteHttpInterceptorWorkerOptions['auth'];
 
   constructor(options: RemoteHttpInterceptorWorkerOptions) {
@@ -75,8 +76,17 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
         waitForAuthentication: true,
       });
 
-      // Interceptors register before the worker connects, so the server learns about them once connected.
-      await this.resetServerWorker();
+      // Resets are sent only from here on, because the socket opens before the server authenticates it and messages
+      // sent in between are never answered. This first reset includes the interceptors registered until now.
+      this.isConnectedToServer = true;
+
+      try {
+        await this.resetServerWorker();
+      } catch (error) {
+        // Stopping returns early while the worker is not running, so the connection is closed here.
+        await this.disconnectFromServer();
+        throw error;
+      }
 
       this.platform = this.readPlatform();
       this.isRunning = true;
@@ -156,10 +166,17 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
       await this.clearHandlers();
 
-      await this.webSocketClient.stop();
+      await this.disconnectFromServer();
 
       this.isRunning = false;
     });
+  }
+
+  private async disconnectFromServer() {
+    this.isConnectedToServer = false;
+
+    // Stopping the client also removes its channel listeners.
+    await this.webSocketClient.stop();
   }
 
   async use<Schema extends HttpSchema>(
@@ -205,7 +222,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private async resetServerWorker() {
-    if (!this.webSocketClient.isRunning) {
+    if (!this.isConnectedToServer || !this.webSocketClient.isRunning) {
       return;
     }
 
