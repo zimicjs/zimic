@@ -150,6 +150,37 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
     });
   });
 
+  it('should handle requests once after cleared and redeclared when multiple paths matched requests', async () => {
+    const restriction = vi.fn(() => false);
+
+    const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
+
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+      '/:resource': { GET: MethodSchema };
+    }>({ ...interceptorOptions, type, onUnhandledRequest }, async (interceptor) => {
+      await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+      await promiseIfRemote(interceptor.get('/:resource').respond({ status: 204 }), interceptor);
+
+      await promiseIfRemote(interceptor.clear(), interceptor);
+
+      const handler = await promiseIfRemote(
+        interceptor.get('/:resource').with(restriction).respond({ status: 204 }),
+        interceptor,
+      );
+
+      const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      await expectFetchError(responsePromise);
+
+      expect(restriction).toHaveBeenCalledTimes(1);
+      expect(handler.requests).toHaveLength(0);
+      expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('should handle requests once if another interceptor is cleared while they are being handled', async () => {
     const restrictionStartedPromise = createPromiseWithResolvers<void>();
     const restrictionReleasedPromise = createPromiseWithResolvers<void>();
