@@ -9,6 +9,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 
 import RunningHttpInterceptorError from '../../errors/RunningHttpInterceptorError';
+import { createHttpInterceptor } from '../../factory';
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../HttpInterceptorImplementation';
 import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions, verifyUnhandledRequestMessage } from './utils';
@@ -891,37 +892,29 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     },
   );
 
-  if (type === 'local') {
-    it.each(SUPPORTED_BASE_URL_PROTOCOLS)(
-      'should not throw an error if provided a supported base URL protocol (%s)',
-      async (supportedProtocol) => {
-        const url = `${supportedProtocol}://localhost:3000`;
-        const handler = vi.fn();
+  it.each(SUPPORTED_BASE_URL_PROTOCOLS)(
+    'should not throw an error if provided a supported base URL protocol (%s)',
+    (supportedProtocol) => {
+      const supportedBaseURL = defaultBaseURL.replace(/^http/, supportedProtocol);
 
-        const interceptorPromise = usingHttpInterceptor({ ...interceptorOptions, baseURL: url }, handler);
-        await expect(interceptorPromise).resolves.not.toThrow();
+      const interceptor = createHttpInterceptor({ ...interceptorOptions, baseURL: supportedBaseURL });
 
-        expect(handler).toHaveBeenCalledTimes(1);
-      },
-    );
+      expect(interceptor.baseURL).toBe(supportedBaseURL.replace(/\/$/, ''));
+    },
+  );
 
-    const exampleUnsupportedProtocols = ['ws', 'wss', 'ftp'];
+  const exampleUnsupportedProtocols = ['ws', 'wss', 'ftp'];
 
-    it.each(exampleUnsupportedProtocols)(
-      'should throw an error if provided an unsupported base URL protocol (%s)',
-      async (unsupportedProtocol) => {
-        expect(SUPPORTED_BASE_URL_PROTOCOLS).not.toContain(unsupportedProtocol);
+  it.each(exampleUnsupportedProtocols)(
+    'should throw an error if provided an unsupported base URL protocol (%s)',
+    (unsupportedProtocol) => {
+      expect(SUPPORTED_BASE_URL_PROTOCOLS).not.toContain(unsupportedProtocol);
 
-        const url = `${unsupportedProtocol}://localhost:3000`;
-        const handler = vi.fn();
+      const unsupportedBaseURL = defaultBaseURL.replace(/^http/, unsupportedProtocol);
 
-        const interceptorPromise = usingHttpInterceptor({ ...interceptorOptions, baseURL: url }, handler);
-        await expect(interceptorPromise).rejects.toThrow(
-          new UnsupportedURLProtocolError(unsupportedProtocol, SUPPORTED_BASE_URL_PROTOCOLS),
-        );
-
-        expect(handler).not.toHaveBeenCalled();
-      },
-    );
-  }
+      expect(() => {
+        createHttpInterceptor({ ...interceptorOptions, baseURL: unsupportedBaseURL });
+      }).toThrow(new UnsupportedURLProtocolError(unsupportedProtocol, SUPPORTED_BASE_URL_PROTOCOLS));
+    },
+  );
 }
