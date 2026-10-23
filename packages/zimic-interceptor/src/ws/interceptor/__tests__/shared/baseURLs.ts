@@ -186,72 +186,95 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     });
   });
 
-  it('should intercept messages sent to socket.io paths under a socket.io base URL', async () => {
-    const socketIOBaseURL = joinURL(defaultBaseURL, 'socket.io/');
-    const socketIOURL = joinURL(socketIOBaseURL, 'chat');
+  // MSW treats any character in place of the socket.io dot as part of a socket.io path.
+  it.each(['socket.io/', 'socket.io', 'socket-io'])(
+    'should intercept messages sent to socket.io paths under a socket.io base URL (%s)',
+    async (socketIOBasePath) => {
+      const socketIOBaseURL = joinURL(defaultBaseURL, socketIOBasePath);
+      const socketIOURL = joinURL(socketIOBaseURL, 'chat');
 
-    await usingWebSocketInterceptor<MessageSchema>(
-      { ...interceptorOptions, baseURL: socketIOBaseURL },
-      async (socketIOInterceptor) => {
-        await promiseIfRemote(socketIOInterceptor.message().respond({ type: 'server', index: 1 }), socketIOInterceptor);
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, baseURL: socketIOBaseURL },
+        async (socketIOInterceptor) => {
+          await promiseIfRemote(
+            socketIOInterceptor.message().respond({ type: 'server', index: 1 }),
+            socketIOInterceptor,
+          );
 
-        await usingWebSocketClient<MessageSchema>(socketIOURL, async (client) => {
-          await waitFor(() => {
-            expect(socketIOInterceptor.clients).toHaveLength(1);
+          await usingWebSocketClient<MessageSchema>(socketIOURL, async (client) => {
+            await waitFor(() => {
+              expect(socketIOInterceptor.clients).toHaveLength(1);
+            });
+
+            const messagePromise = waitForWebSocketClientMessage(client);
+            client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+            await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
           });
+        },
+      );
+    },
+  );
 
-          const messagePromise = waitForWebSocketClientMessage(client);
-          client.send(JSON.stringify({ type: 'client', index: 1 }));
-
-          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
-        });
-      },
-    );
-  });
-
-  it('should intercept messages sent to socket.io paths under a socket.io base URL without a trailing slash', async () => {
+  it('should intercept messages sent to other paths only with their interceptor while a socket.io base URL interceptor is running', async () => {
+    const otherBaseURL = joinURL(defaultBaseURL, 'other');
     const socketIOBaseURL = joinURL(defaultBaseURL, 'socket.io');
-    const socketIOURL = joinURL(socketIOBaseURL, 'chat');
 
     await usingWebSocketInterceptor<MessageSchema>(
-      { ...interceptorOptions, baseURL: socketIOBaseURL },
-      async (socketIOInterceptor) => {
-        await promiseIfRemote(socketIOInterceptor.message().respond({ type: 'server', index: 1 }), socketIOInterceptor);
+      { ...interceptorOptions, baseURL: otherBaseURL },
+      async (otherInterceptor) => {
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, baseURL: socketIOBaseURL },
+          async (socketIOInterceptor) => {
+            await promiseIfRemote(otherInterceptor.message().respond({ type: 'server', index: 1 }), otherInterceptor);
+            await promiseIfRemote(
+              socketIOInterceptor.message().respond({ type: 'server', index: 2 }),
+              socketIOInterceptor,
+            );
 
-        await usingWebSocketClient<MessageSchema>(socketIOURL, async (client) => {
-          await waitFor(() => {
-            expect(socketIOInterceptor.clients).toHaveLength(1);
-          });
+            await usingWebSocketClient<MessageSchema>(joinURL(otherBaseURL, 'chat'), async (client) => {
+              await waitFor(() => {
+                expect(otherInterceptor.clients).toHaveLength(1);
+              });
 
-          const messagePromise = waitForWebSocketClientMessage(client);
-          client.send(JSON.stringify({ type: 'client', index: 1 }));
+              const messagePromise = waitForWebSocketClientMessage(client);
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
 
-          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
-        });
+              await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+              expect(socketIOInterceptor.clients).toHaveLength(0);
+            });
+          },
+        );
       },
     );
   });
 
-  it('should not intercept messages sent to a socket.io base URL without its socket.io path', async () => {
-    const socketIOBaseURL = joinURL(defaultBaseURL, 'socket.io/');
-    const urlWithoutSocketIOPath = joinURL(defaultBaseURL, 'chat');
+  it.each(['socket.io/', 'socket.io'])(
+    'should not intercept messages sent to a socket.io base URL without its socket.io path (%s)',
+    async (socketIOBasePath) => {
+      const socketIOBaseURL = joinURL(defaultBaseURL, socketIOBasePath);
+      const urlWithoutSocketIOPath = joinURL(defaultBaseURL, 'chat');
 
-    await usingWebSocketInterceptor<MessageSchema>(
-      { ...interceptorOptions, baseURL: socketIOBaseURL },
-      async (socketIOInterceptor) => {
-        await promiseIfRemote(socketIOInterceptor.message().respond({ type: 'server', index: 1 }), socketIOInterceptor);
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, baseURL: socketIOBaseURL },
+        async (socketIOInterceptor) => {
+          await promiseIfRemote(
+            socketIOInterceptor.message().respond({ type: 'server', index: 1 }),
+            socketIOInterceptor,
+          );
 
-        // Depending on the mode, the interceptor server refuses the connection, or the connection reaches the network,
-        // where no WebSocket server accepts it. Either way, the connection closes.
-        await Promise.allSettled([
-          usingWebSocketClient<MessageSchema>(urlWithoutSocketIOPath, async (client) => {
-            await waitForWebSocketClientClose(client);
-          }),
-        ]);
-        expect(socketIOInterceptor.clients).toHaveLength(0);
-      },
-    );
-  });
+          // Depending on the mode, the interceptor server refuses the connection, or the connection reaches the network,
+          // where no WebSocket server accepts it. Either way, the connection closes.
+          await Promise.allSettled([
+            usingWebSocketClient<MessageSchema>(urlWithoutSocketIOPath, async (client) => {
+              await waitForWebSocketClientClose(client);
+            }),
+          ]);
+          expect(socketIOInterceptor.clients).toHaveLength(0);
+        },
+      );
+    },
+  );
 
   // No HTTP counterpart: WebSocket handlers have no per-handler path, so base URL paths are the only way to route
   // messages by path.

@@ -70,8 +70,11 @@ function getMSWBaseURL(baseURL: string) {
     return `${origin}${mswPathname}`;
   }
 
-  // A base path that is a prefix of the socket.io path also covers socket.io URLs, whose rewritten paths can be anything.
-  if (SOCKET_IO_PATH.startsWith(pathname)) {
+  // A base path that a socket.io path can start with, such as the root path, also covers socket.io URLs, whose rewritten
+  // paths can be anything.
+  const canPrefixSocketIOPath = MSW_SOCKET_IO_PATH_REGEX.test(pathname + SOCKET_IO_PATH.slice(pathname.length));
+
+  if (canPrefixSocketIOPath) {
     return origin;
   }
 
