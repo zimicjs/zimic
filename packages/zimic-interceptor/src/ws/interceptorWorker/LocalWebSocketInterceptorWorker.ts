@@ -60,14 +60,30 @@ interface WebSocketHandler {
 // Same pattern MSW uses to remove a leading socket.io path from connection URLs, including its unescaped dot.
 const MSW_SOCKET_IO_PATH_REGEX = /^\/socket.io\//;
 
+const SOCKET_IO_PATH = '/socket.io/';
+
+function getMSWBaseURL(baseURL: string) {
+  const { origin, pathname } = new URL(baseURL);
+  const mswPathname = pathname.replace(MSW_SOCKET_IO_PATH_REGEX, '/');
+
+  if (mswPathname !== pathname) {
+    return `${origin}${mswPathname}`;
+  }
+
+  // A base path that is a prefix of the socket.io path also covers socket.io URLs, whose rewritten paths can be anything.
+  if (SOCKET_IO_PATH.startsWith(pathname)) {
+    return origin;
+  }
+
+  return baseURL;
+}
+
 // MSW tests links against connection URLs without their search params, trailing slash, and leading socket.io path, so
 // a link accepts the URLs under its base URL in that form. It therefore also receives URLs no interceptor owns by raw
 // prefix, such as the base URL without its trailing slash or a socket.io base URL without its socket.io path, which must
 // pass through.
 function createConnectionURLRegex(baseURL: string) {
-  const { origin, pathname } = new URL(baseURL);
-  const mswPathname = pathname.replace(MSW_SOCKET_IO_PATH_REGEX, '/');
-  const mswBaseURL = mswPathname === pathname ? baseURL : `${origin}${mswPathname}`;
+  const mswBaseURL = getMSWBaseURL(baseURL);
 
   const baseURLWithoutTrailingSlash = mswBaseURL.replace(/\/$/, '');
   const escapedBaseURL = baseURLWithoutTrailingSlash.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

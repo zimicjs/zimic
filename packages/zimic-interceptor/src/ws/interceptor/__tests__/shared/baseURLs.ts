@@ -209,6 +209,29 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     );
   });
 
+  it('should intercept messages sent to socket.io paths under a socket.io base URL without a trailing slash', async () => {
+    const socketIOBaseURL = joinURL(defaultBaseURL, 'socket.io');
+    const socketIOURL = joinURL(socketIOBaseURL, 'chat');
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, baseURL: socketIOBaseURL },
+      async (socketIOInterceptor) => {
+        await promiseIfRemote(socketIOInterceptor.message().respond({ type: 'server', index: 1 }), socketIOInterceptor);
+
+        await usingWebSocketClient<MessageSchema>(socketIOURL, async (client) => {
+          await waitFor(() => {
+            expect(socketIOInterceptor.clients).toHaveLength(1);
+          });
+
+          const messagePromise = waitForWebSocketClientMessage(client);
+          client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+        });
+      },
+    );
+  });
+
   it('should not intercept messages sent to a socket.io base URL without its socket.io path', async () => {
     const socketIOBaseURL = joinURL(defaultBaseURL, 'socket.io/');
     const urlWithoutSocketIOPath = joinURL(defaultBaseURL, 'chat');
