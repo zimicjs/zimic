@@ -703,6 +703,48 @@ describe('Interceptor server', () => {
       });
     });
 
+    it('should reject commits sent before the first reset of their worker', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+      await server.start();
+
+      const baseURL = `http://${server.hostname}:${server.port}/users`;
+
+      const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+        url: `ws://${server.hostname}:${server.port}`,
+      });
+
+      const rejectedRequests: Promise<unknown>[] = [];
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        try {
+          await worker.start({
+            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
+            waitForAuthentication: true,
+          });
+
+          rejectedRequests.push(
+            worker.request('interceptors/http/workers/commit', {
+              id: crypto.randomUUID(),
+              baseURL,
+              method: 'GET',
+              path: '/',
+              index: 0,
+            }),
+          );
+
+          await waitFor(() => {
+            expect(console.error).toHaveBeenCalledTimes(1);
+          });
+          expect(console.error).toHaveBeenCalledWith(
+            new InvalidWebSocketMessageError('HTTP handler commit received before the first reset of its worker.'),
+          );
+        } finally {
+          await worker.stop();
+          await Promise.allSettled(rejectedRequests);
+        }
+      });
+    });
+
     it('should reject malformed response replies and continue handling requests', async () => {
       server = createInternalInterceptorServer({ logUnhandledRequests: false });
       await server.start();

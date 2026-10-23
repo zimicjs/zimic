@@ -157,7 +157,13 @@ class HttpInterceptorServerRuntime {
   };
 
   private registerHttpHandler(commit: HttpWorkerCommit, socket: Socket) {
-    const worker = this.httpWorkersBySocket.get(socket) ?? { socket, interceptorBaseURLs: [], handlers: [] };
+    const worker = this.httpWorkersBySocket.get(socket);
+
+    // Workers reset before their first commit, and a reset replaces all handlers of a worker, so a handler committed
+    // before it could never handle a request.
+    if (!worker) {
+      throw new InvalidWebSocketMessageError('HTTP handler commit received before the first reset of its worker.');
+    }
 
     if (commit.index > worker.handlers.length) {
       throw new InvalidWebSocketMessageError(
