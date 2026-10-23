@@ -243,6 +243,57 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     );
   });
 
+  // No HTTP counterpart: clearing a WebSocket interceptor detaches it from its connections, so it no longer decides the
+  // strategy of their messages, while a cleared HTTP interceptor still decides it for requests.
+  it('should apply the unhandled message strategy of an older interceptor if the last started one is cleared while messages are being handled', async () => {
+    const restrictionStartedPromise = createPromiseWithResolvers<void>();
+    const restrictionReleasedPromise = createPromiseWithResolvers<void>();
+
+    const restriction = vi.fn(async () => {
+      restrictionStartedPromise.resolve();
+      await restrictionReleasedPromise;
+      return false;
+    });
+
+    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+    const otherOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, onUnhandledMessage },
+      async (interceptor) => {
+        await promiseIfRemote(
+          interceptor.message().with(restriction).respond({ type: 'server', index: 1 }),
+          interceptor,
+        );
+
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, onUnhandledMessage: otherOnUnhandledMessage },
+          async (otherInterceptor) => {
+            await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+              await waitFor(() => {
+                expect(interceptor.clients).toHaveLength(1);
+                expect(otherInterceptor.clients).toHaveLength(1);
+              });
+
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
+              await restrictionStartedPromise;
+
+              await promiseIfRemote(otherInterceptor.clear(), otherInterceptor);
+              restrictionReleasedPromise.resolve();
+
+              await waitFor(() => {
+                expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+              });
+
+              expect(restriction).toHaveBeenCalledTimes(1);
+              expect(otherOnUnhandledMessage).not.toHaveBeenCalled();
+            });
+          },
+        );
+      },
+    );
+  });
+
   it('should clear only clients owned by the selected interceptor', async () => {
     const firstBaseURL = `${baseURL}/first`;
     const secondBaseURL = `${baseURL}/second`;

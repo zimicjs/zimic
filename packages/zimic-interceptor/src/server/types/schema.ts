@@ -72,6 +72,8 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
       handlerIds: string[];
       clientId: string;
       url: string;
+      // The number of resets the server had processed from the worker when it sent the connection.
+      numberOfResets: number;
     };
     reply: {
       acceptedHandlerIds: string[];
@@ -98,7 +100,9 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
 
   'interceptors/ws/messages/unhandled': {
     event: {
-      handlerId: string;
+      // Kept in the order of the worker's handlers, so the last holder is the newest.
+      handlerIds: string[];
+      clientId: string;
       data: SerializedWebSocketMessageData;
     };
     reply: {};

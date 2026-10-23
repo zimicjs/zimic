@@ -28,10 +28,13 @@ interface WebSocketHandler {
   interceptor: AnyWebSocketInterceptorImplementation;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   clients: Map<string, InternalWebSocketInterceptorClient<any>>;
+  // The number of resets sent to the server when the handler was last cleared.
+  numberOfResetsWhenCleared: number;
 }
 
 class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private webSocketHandlers = new Map<WebSocketHandler['id'], WebSocketHandler>();
+  private numberOfResets = 0;
   private auth?: RemoteWebSocketInterceptorWorkerOptions['auth'];
 
   webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
@@ -48,6 +51,9 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
   async start() {
     await super.sharedStart(async () => {
+      // The server counts resets per worker socket, so a new socket starts the count again.
+      this.numberOfResets = 0;
+
       await this.webSocketClient.start({
         parameters: {
           [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
@@ -118,6 +124,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       baseURL: interceptor.baseURLAsString,
       interceptor,
       clients: new Map(),
+      numberOfResetsWhenCleared: 0,
     };
 
     this.webSocketHandlers.set(newHandler.id, newHandler);
@@ -165,9 +172,10 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     for (const handlerId of connection.handlerIds) {
       const handler = this.webSocketHandlers.get(handlerId);
 
-      // A handler removed before the connection reached the worker does not accept it. The reset that removed it reaches
-      // the server before this reply, so the server no longer counts it as a holder.
-      if (!handler) {
+      // A removed handler, or one cleared after the server sent the connection, does not accept it, as a local
+      // interceptor cleared after a connection opens lets it go. The reset of that handler reaches the server before
+      // this reply, so the server no longer counts it as a holder.
+      if (!handler || handler.numberOfResetsWhenCleared > connection.numberOfResets) {
         continue;
       }
 
@@ -233,10 +241,13 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private handleUnhandledMessage = async ({
     data: message,
   }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/messages/unhandled'>) => {
-    const handler = this.webSocketHandlers.get(message.handlerId);
+    // Holders that let the connection go while the message was handled no longer decide its strategy. If none is left,
+    // the connection is closed and the message is dropped, as a cleared interceptor does not save the messages it was
+    // handling.
+    const handler = message.handlerIds
+      .map((handlerId) => this.webSocketHandlers.get(handlerId))
+      .findLast((handler) => handler?.clients.has(message.clientId));
 
-    /* istanbul ignore if -- @preserve
-     * Stale server events after a worker reset are ignored; normal connect/close paths cover registered clients. */
     if (!handler) {
       return {};
     }
@@ -279,14 +290,14 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       return options.interceptor === undefined || handler.interceptor === options.interceptor;
     });
 
-    const clearedHandlerIds: string[] = [];
+    const clearedHandlers: WebSocketHandler[] = [];
 
     for (const handler of selectedHandlers) {
       handler.interceptor.clients.length = 0;
 
       if (options.preserveInterceptorRegistration) {
         handler.clients.clear();
-        clearedHandlerIds.push(handler.id);
+        clearedHandlers.push(handler);
       } else {
         this.webSocketHandlers.delete(handler.id);
       }
@@ -296,12 +307,18 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       return;
     }
 
+    this.numberOfResets++;
+
+    for (const handler of clearedHandlers) {
+      handler.numberOfResetsWhenCleared = this.numberOfResets;
+    }
+
     const reset: WebSocketHandlerReset = {
       handlers: Array.from<WebSocketHandler, WebSocketHandlerCommit>(this.webSocketHandlers.values(), (handler) => ({
         id: handler.id,
         baseURL: handler.baseURL,
       })),
-      clearedHandlerIds,
+      clearedHandlerIds: clearedHandlers.map((handler) => handler.id),
     };
 
     try {

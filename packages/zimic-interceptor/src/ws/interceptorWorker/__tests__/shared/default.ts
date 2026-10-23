@@ -1,4 +1,5 @@
 import { HttpSchema } from '@zimic/http';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
 import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
@@ -675,6 +676,71 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           });
         } finally {
           await secondInterceptor.stop({});
+        }
+      });
+    });
+
+    it('should not connect remote clients to interceptors cleared after the server sent the connection', async () => {
+      await usingWebSocketInterceptorWorker(workerOptions, { start: false }, async (rawWorker) => {
+        const worker = rawWorker as RemoteWebSocketInterceptorWorker;
+
+        const firstInterceptor = new WebSocketInterceptorImplementation<
+          ChatMessage,
+          typeof RemoteWebSocketMessageHandler
+        >({
+          baseURL: new URL(baseURL),
+          Handler: RemoteWebSocketMessageHandler,
+          createWorker: () => worker,
+          deleteWorker: vi.fn(),
+        });
+
+        const secondInterceptor = new WebSocketInterceptorImplementation<
+          ChatMessage,
+          typeof RemoteWebSocketMessageHandler
+        >({
+          baseURL: new URL(baseURL),
+          Handler: RemoteWebSocketMessageHandler,
+          createWorker: () => worker,
+          deleteWorker: vi.fn(),
+        });
+
+        const firstConnectionListener = vi.fn();
+        firstInterceptor.on('connection', firstConnectionListener);
+
+        // No public path clears an interceptor after the server sends a connection and before the worker receives it.
+        // A connection listener registered ahead of the worker's clears the first interceptor at that point. It never
+        // replies before the test ends, leaving the reply to the worker.
+        const connectionReplyPromise = createPromiseWithResolvers<{ acceptedHandlerIds: string[] }>();
+        let firstClearPromise: Promise<void> | undefined;
+
+        worker.webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', () => {
+          firstClearPromise = firstInterceptor.clear();
+          return connectionReplyPromise;
+        });
+
+        try {
+          await firstInterceptor.start();
+          await secondInterceptor.start();
+          await secondInterceptor.message().respond({ type: 'server', text: 'second' });
+
+          await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+            await waitFor(() => {
+              expect(secondInterceptor.clients).toHaveLength(1);
+            });
+
+            await firstClearPromise;
+
+            expect(firstInterceptor.clients).toHaveLength(0);
+            expect(firstConnectionListener).not.toHaveBeenCalled();
+
+            const messagePromise = waitForWebSocketClientMessage(client);
+            client.send(JSON.stringify({ type: 'client', text: 'one' }));
+            await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', text: 'second' }));
+          });
+        } finally {
+          connectionReplyPromise.resolve({ acceptedHandlerIds: [] });
+          await secondInterceptor.stop({});
+          await firstInterceptor.stop({});
         }
       });
     });

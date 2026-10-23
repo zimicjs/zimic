@@ -79,6 +79,7 @@ class WebSocketInterceptorServerRuntime {
   // Workers are kept in the order of their first registration, which decides the worker that holds a connection. Each
   // worker keeps that position until its socket disconnects, even if all of its interceptors stop.
   private webSocketHandlersByWorkerSocket = new Map<Socket, WebSocketHandler[]>();
+  private numberOfResetsByWorkerSocket = new Map<Socket, number>();
   private pendingUserWebSocketHandlers = new Map<Socket, PendingUserWebSocketHandler>();
   private activeUserWebSocketHandlers = new Map<Socket, UserWebSocketHandler>();
 
@@ -112,6 +113,9 @@ class WebSocketInterceptorServerRuntime {
     socket: Socket,
   ) => {
     this.assertWebSocketWorkerSocket(socket);
+
+    // Counted before parsing, so the count matches the resets the worker sent even if one is invalid.
+    this.numberOfResetsByWorkerSocket.set(socket, (this.numberOfResetsByWorkerSocket.get(socket) ?? 0) + 1);
 
     const reset = parseInterceptorServerRPCData(webSocketHandlerResetSchema, message.data);
     const clearedHandlerIds = new Set(reset.clearedHandlerIds);
@@ -173,6 +177,7 @@ class WebSocketInterceptorServerRuntime {
     }
 
     this.webSocketHandlersByWorkerSocket.delete(socket);
+    this.numberOfResetsByWorkerSocket.delete(socket);
   }
 
   // Clearing or stopping one interceptor must not affect the others, so a shared connection stays open until its last
@@ -253,6 +258,9 @@ class WebSocketInterceptorServerRuntime {
           handlerIds: connection.holders.map((holder) => holder.id),
           clientId,
           url: this.getWebSocketRequestURL(request).href,
+          // Lets the worker tell which clears the server has not processed yet. Those holders let the connection go
+          // before holding it, and the server drops them when their reset arrives, before the reply.
+          numberOfResets: this.numberOfResetsByWorkerSocket.get(connection.workerSocket) ?? 0,
         },
         { sockets: [connection.workerSocket] },
       );
@@ -389,18 +397,11 @@ class WebSocketInterceptorServerRuntime {
         }
       }
 
-      // Holders that let the connection go while the message was handled no longer decide its strategy. If none is
-      // left, the connection is closed and the message is dropped, as a cleared interceptor does not save the messages
-      // it was handling.
-      const newestHolder = connection.holders.at(-1);
-
-      if (!newestHolder) {
-        return;
-      }
-
+      // Holders may let the connection go until the worker receives this event, so the worker picks the newest one
+      // still holding it.
       await this.webSocketServer.request(
         'interceptors/ws/messages/unhandled',
-        { handlerId: newestHolder.id, data },
+        { handlerIds: holders.map((holder) => holder.id), clientId: connection.clientId, data },
         { sockets: [connection.workerSocket] },
       );
       /* istanbul ignore next -- @preserve
@@ -472,6 +473,7 @@ class WebSocketInterceptorServerRuntime {
     await this.closeUserWebSocketConnections();
 
     this.webSocketHandlersByWorkerSocket.clear();
+    this.numberOfResetsByWorkerSocket.clear();
   }
 
   private async closeUserWebSocketConnections() {
