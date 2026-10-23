@@ -369,4 +369,38 @@ export function declareRemoteBaseURLWebSocketInterceptorTests(
       },
     );
   });
+
+  it('should intercept messages with an interceptor using a newer authentication token after an interceptor using an older one starts later', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(
+      { type: 'remote', baseURL, auth: olderAuth, messageSaving: { enabled: true } },
+      async (olderInterceptor) => {
+        const olderHandler = await olderInterceptor.message().respond({ type: 'server', index: 1 });
+
+        await usingWebSocketInterceptor<MessageSchema>(
+          { type: 'remote', baseURL, auth, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const handler = await interceptor.message().respond({ type: 'server', index: 2 });
+
+            await usingWebSocketInterceptor<MessageSchema>(
+              { type: 'remote', baseURL, auth: olderAuth, messageSaving: { enabled: true } },
+              async (laterOlderInterceptor) => {
+                const laterOlderHandler = await laterOlderInterceptor.message().respond({ type: 'server', index: 3 });
+
+                await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+                  const messagePromise = waitForWebSocketClientMessage(client);
+                  client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+                  await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+                });
+
+                expect(handler.messages).toHaveLength(1);
+                expect(olderHandler.messages).toHaveLength(0);
+                expect(laterOlderHandler.messages).toHaveLength(0);
+              },
+            );
+          },
+        );
+      },
+    );
+  });
 }

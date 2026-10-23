@@ -277,4 +277,31 @@ export function declareRemoteBaseURLHttpInterceptorTests(options: SharedRemoteBa
       });
     });
   });
+
+  it('should intercept requests with an interceptor using a newer authentication token after an interceptor using an older one starts later', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: { response: { 200: {} } } };
+    }>({ type: 'remote', baseURL, auth: olderAuth }, async (olderInterceptor) => {
+      const olderHandler = await olderInterceptor.get('/users').respond({ status: 200 });
+
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 204: {} } } };
+      }>({ type: 'remote', baseURL, auth }, async (interceptor) => {
+        const handler = await interceptor.get('/users').respond({ status: 204 });
+
+        await usingHttpInterceptor<{
+          '/users': { GET: { response: { 201: {} } } };
+        }>({ type: 'remote', baseURL, auth: olderAuth }, async (laterOlderInterceptor) => {
+          const laterOlderHandler = await laterOlderInterceptor.get('/users').respond({ status: 201 });
+
+          const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(204);
+
+          expect(handler.requests).toHaveLength(1);
+          expect(olderHandler.requests).toHaveLength(0);
+          expect(laterOlderHandler.requests).toHaveLength(0);
+        });
+      });
+    });
+  });
 }
