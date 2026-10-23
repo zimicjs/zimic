@@ -1,5 +1,6 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor, waitForNot } from '@zimic/utils/time';
+import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it, vi } from 'vitest';
 
@@ -416,6 +417,77 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
           expect(secondInterceptor.clients).toHaveLength(0);
         });
       });
+    });
+  });
+
+  // No HTTP counterpart: WebSocket connection listeners run while a connection opens, so they can clear an interceptor
+  // before it holds the connection.
+  it('should keep connections open for the remaining interceptors if another one is cleared while they open', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
+      await promiseIfRemote(firstInterceptor.message().respond({ type: 'server', index: 1 }), firstInterceptor);
+
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (secondInterceptor) => {
+        const secondConnectionListener = vi.fn();
+        secondInterceptor.on('connection', secondConnectionListener);
+
+        let secondClearResult: PossiblePromise<void> | undefined;
+
+        // The first interceptor started first, so its connection listeners run before the second one holds the
+        // connection.
+        firstInterceptor.once('connection', () => {
+          secondClearResult = secondInterceptor.clear();
+        });
+
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          await waitFor(() => {
+            expect(firstInterceptor.clients).toHaveLength(1);
+          });
+
+          await promiseIfRemote(secondClearResult, secondInterceptor);
+
+          expect(secondInterceptor.clients).toHaveLength(0);
+          expect(secondConnectionListener).not.toHaveBeenCalled();
+
+          const messagePromise = waitForWebSocketClientMessage(client);
+          client.send(JSON.stringify({ type: 'client', index: 1 }));
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+
+          expect(client.readyState).toBe(WebSocketClient.OPEN);
+          expect(firstInterceptor.clients).toHaveLength(1);
+        });
+      });
+    });
+  });
+
+  // No HTTP counterpart: WebSocket connection listeners run while a connection opens, so they can clear an interceptor
+  // before it holds the connection.
+  it('should close connections if their only interceptor is cleared while they open', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+      let clearResult: PossiblePromise<void> | undefined;
+
+      const connectionListener = vi.fn(() => {
+        clearResult = interceptor.clear();
+      });
+      interceptor.once('connection', connectionListener);
+
+      const client = new WebSocketClient<MessageSchema>(baseURL);
+      const closeEventPromise = waitForWebSocketClientClose(client);
+
+      // The interceptor server completes the handshake before connecting the client to its interceptors, so only
+      // remote clients open before closing. The close event is the outcome in both modes.
+      const openPromise = client.open().catch(() => undefined);
+
+      try {
+        const closeEvent = await closeEventPromise;
+        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
+
+        expect(connectionListener).toHaveBeenCalledTimes(1);
+        await promiseIfRemote(clearResult, interceptor);
+        expect(interceptor.clients).toHaveLength(0);
+      } finally {
+        await openPromise;
+        await client.close();
+      }
     });
   });
 

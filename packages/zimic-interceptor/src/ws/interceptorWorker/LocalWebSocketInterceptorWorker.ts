@@ -228,11 +228,18 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     for (const { handler, client } of registration.holders) {
       handler.clients.set(client, registration);
-      handler.interceptor.addClient(client);
     }
 
     connection.addEventListener('message', registration.messageListener);
     connection.addEventListener('close', registration.closeListener, { once: true });
+
+    // Every holder lists the client before any connection listener runs, so a listener that clears another holder makes
+    // it let the connection go, as in remote mode.
+    for (const { handler, client } of registration.holders) {
+      if (handler.clients.has(client)) {
+        handler.interceptor.addClient(client);
+      }
+    }
   }
 
   private findConnectionHolders(connectionURL: URL) {

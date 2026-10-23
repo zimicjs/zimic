@@ -160,21 +160,35 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private connectClient = ({
     data: connection,
   }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/clients/connect'>) => {
-    const handler = this.webSocketHandlers.get(connection.handlerId);
+    const holders: { handler: WebSocketHandler; client: InternalWebSocketInterceptorClient<WebSocketSchema> }[] = [];
 
-    if (!handler) {
-      return { accepted: false };
+    for (const handlerId of connection.handlerIds) {
+      const handler = this.webSocketHandlers.get(handlerId);
+
+      // A handler removed before the connection reached the worker does not accept it. The reset that removed it reaches
+      // the server before this reply, so the server no longer counts it as a holder.
+      if (!handler) {
+        continue;
+      }
+
+      const client = createWebSocketInterceptorClient(connection.url, async (data) => {
+        await this.sendToClient(client, data);
+      });
+
+      // The registry is intentionally schema-erased because one remote worker owns interceptors for any schema.
+      handler.clients.set(connection.clientId, client);
+      holders.push({ handler, client });
     }
 
-    const client = createWebSocketInterceptorClient(connection.url, async (data) => {
-      await this.sendToClient(client, data);
-    });
+    // Every holder lists the client before any connection listener runs, so a listener that clears another holder makes
+    // it let the connection go, as in local mode.
+    for (const { handler, client } of holders) {
+      if (handler.clients.has(connection.clientId)) {
+        handler.interceptor.addClient(client);
+      }
+    }
 
-    // The registry is intentionally schema-erased because one remote worker owns interceptors for any schema.
-    handler.clients.set(connection.clientId, client);
-    handler.interceptor.addClient(client);
-
-    return { accepted: true };
+    return { acceptedHandlerIds: holders.map(({ handler }) => handler.id) };
   };
 
   private closeClient = ({

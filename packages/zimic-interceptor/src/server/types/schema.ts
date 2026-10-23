@@ -69,12 +69,12 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
 
   'interceptors/ws/clients/connect': {
     event: {
-      handlerId: string;
+      handlerIds: string[];
       clientId: string;
       url: string;
     };
     reply: {
-      accepted: boolean;
+      acceptedHandlerIds: string[];
     };
   };
 
