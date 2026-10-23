@@ -1,10 +1,15 @@
 import { waitFor, waitForNot } from '@zimic/utils/time';
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it, vi } from 'vitest';
 
+import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
-import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
+import {
+  usingWebSocketClient,
+  waitForWebSocketClientClose,
+  waitForWebSocketClientMessage,
+} from '@tests/utils/webSocket';
 
 import NotRunningWebSocketInterceptorError from '../../errors/NotRunningWebSocketInterceptorError';
 import { WebSocketInterceptorOptions } from '../../types/options';
@@ -122,8 +127,13 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
           expect(interceptor.clients).toHaveLength(1);
         });
 
+        const closeEventPromise = waitForWebSocketClientClose(client);
+
         await interceptor.stop();
         expect(interceptor.clients).toHaveLength(0);
+
+        const closeEvent = await closeEventPromise;
+        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
 
         const messageListener = vi.fn();
         client.addEventListener('message', messageListener);
@@ -135,6 +145,66 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
         });
 
         expect(interceptor.clients).toHaveLength(0);
+      });
+    });
+  });
+
+  // No HTTP counterpart: WebSocket connections are long-lived, so one can outlive the stop of an interceptor holding it.
+  it('should keep connections shared with another interceptor open after stopped', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
+      await promiseIfRemote(firstInterceptor.message().respond({ type: 'server', index: 1 }), firstInterceptor);
+
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (secondInterceptor) => {
+        await promiseIfRemote(secondInterceptor.message().respond({ type: 'server', index: 2 }), secondInterceptor);
+
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          await waitFor(() => {
+            expect(firstInterceptor.clients).toHaveLength(1);
+            expect(secondInterceptor.clients).toHaveLength(1);
+          });
+
+          await secondInterceptor.stop();
+
+          expect(secondInterceptor.clients).toHaveLength(0);
+          expect(firstInterceptor.clients).toHaveLength(1);
+          expect(client.readyState).toBe(WebSocketClient.OPEN);
+
+          const handledMessagePromise = waitForWebSocketClientMessage(client);
+          client.send(JSON.stringify({ type: 'client', index: 1 }));
+          await expect(handledMessagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+
+          const sentMessage = JSON.stringify({ type: 'server', index: 3 } satisfies MessageSchema);
+
+          const sentMessagePromise = waitForWebSocketClientMessage(client);
+          firstInterceptor.server.send(sentMessage);
+          await expect(sentMessagePromise).resolves.toBe(sentMessage);
+        });
+      });
+    });
+  });
+
+  // No HTTP counterpart: WebSocket connections are long-lived, so one can outlive the stop of an interceptor holding it.
+  it('should close connections shared with other interceptors after all of them are stopped', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (secondInterceptor) => {
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          await waitFor(() => {
+            expect(firstInterceptor.clients).toHaveLength(1);
+            expect(secondInterceptor.clients).toHaveLength(1);
+          });
+
+          const closeEventPromise = waitForWebSocketClientClose(client);
+
+          await secondInterceptor.stop();
+          expect(client.readyState).toBe(WebSocketClient.OPEN);
+
+          await firstInterceptor.stop();
+
+          const closeEvent = await closeEventPromise;
+          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
+          expect(firstInterceptor.clients).toHaveLength(0);
+          expect(secondInterceptor.clients).toHaveLength(0);
+        });
       });
     });
   });

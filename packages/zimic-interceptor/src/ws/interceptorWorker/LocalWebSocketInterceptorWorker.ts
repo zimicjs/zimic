@@ -279,8 +279,14 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       }
     }
 
-    const newestHolder = holders[holders.length - 1];
-    await newestHolder.handler.interceptor.logUnhandledMessageIfNecessary(data);
+    // Holders that let the connection go while the message was handled no longer decide its strategy. If none is left,
+    // the connection is closed and the message is dropped, as a cleared interceptor does not save the messages it was
+    // handling.
+    const newestHolder = holders.findLast(({ handler, client }) => handler.clients.has(client));
+
+    if (newestHolder) {
+      await newestHolder.handler.interceptor.logUnhandledMessageIfNecessary(data);
+    }
   }
 
   private removeConnectionFromHolders(registration: WebSocketClientRegistration) {
@@ -313,11 +319,19 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     });
 
     for (const handler of selectedHandlers) {
-      for (const registration of handler.clients.values()) {
-        registration.connection.removeEventListener('message', registration.messageListener);
-        registration.connection.removeEventListener('close', registration.closeListener);
-        this.removeConnectionFromHolders(registration);
-        registration.connection.close(WEB_SOCKET_CLOSE_CODES.DEFAULT);
+      for (const [client, registration] of handler.clients) {
+        handler.clients.delete(client);
+        handler.interceptor.removeClient(client);
+
+        // Clearing or stopping one interceptor must not affect the others, so a shared connection stays open until its
+        // last holder lets it go.
+        const isStillHeld = registration.holders.some((holder) => holder.handler.clients.has(holder.client));
+
+        if (!isStillHeld) {
+          registration.connection.removeEventListener('message', registration.messageListener);
+          registration.connection.removeEventListener('close', registration.closeListener);
+          registration.connection.close(WEB_SOCKET_CLOSE_CODES.DEFAULT);
+        }
       }
     }
 

@@ -204,8 +204,15 @@ class WebSocketInterceptorServerRuntime {
 
     for (const [userSocket, userHandler] of this.activeUserWebSocketHandlers) {
       if (userHandler.holders.includes(handler)) {
-        this.activeUserWebSocketHandlers.delete(userSocket);
-        userSocket.close(WEB_SOCKET_CLOSE_CODES.DEFAULT);
+        // Clearing or stopping one interceptor must not affect the others, so a shared connection stays open until its
+        // last holder lets it go. Replacing the array instead of splicing it keeps a message being handled from falling
+        // through a holder twice.
+        userHandler.holders = userHandler.holders.filter((holder) => holder !== handler);
+
+        if (userHandler.holders.length === 0) {
+          this.activeUserWebSocketHandlers.delete(userSocket);
+          userSocket.close(WEB_SOCKET_CLOSE_CODES.DEFAULT);
+        }
       }
     }
   }
@@ -368,6 +375,8 @@ class WebSocketInterceptorServerRuntime {
   }
 
   private async handleUserWebSocketMessage(connection: UserWebSocketHandler, message: ClientSocket.MessageEvent) {
+    // Holders that let the connection go while the message is handled ignore it in the worker, which no longer lists
+    // the client.
     const { holders } = connection;
 
     try {
@@ -394,7 +403,14 @@ class WebSocketInterceptorServerRuntime {
         }
       }
 
-      const newestHolder = holders[holders.length - 1];
+      // Holders that let the connection go while the message was handled no longer decide its strategy. If none is
+      // left, the connection is closed and the message is dropped, as a cleared interceptor does not save the messages
+      // it was handling.
+      const newestHolder = connection.holders.at(-1);
+
+      if (!newestHolder) {
+        return;
+      }
 
       await this.webSocketServer.request(
         'interceptors/ws/messages/unhandled',
