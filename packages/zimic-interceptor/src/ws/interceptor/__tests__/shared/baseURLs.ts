@@ -170,8 +170,6 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
             socketIOInterceptor,
           );
 
-          // MSW removes socket.io paths before testing links, so a local socket.io connection is delivered only while an
-          // interceptor matches the URL without that path, such as the one at the root path.
           await usingWebSocketClient<MessageSchema>(socketIOURL, async (client) => {
             await waitFor(() => {
               expect(interceptor.clients).toHaveLength(1);
@@ -186,6 +184,50 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
         },
       );
     });
+  });
+
+  it('should intercept messages sent to socket.io paths under a socket.io base URL', async () => {
+    const socketIOBaseURL = joinURL(defaultBaseURL, 'socket.io/');
+    const socketIOURL = joinURL(socketIOBaseURL, 'chat');
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, baseURL: socketIOBaseURL },
+      async (socketIOInterceptor) => {
+        await promiseIfRemote(socketIOInterceptor.message().respond({ type: 'server', index: 1 }), socketIOInterceptor);
+
+        await usingWebSocketClient<MessageSchema>(socketIOURL, async (client) => {
+          await waitFor(() => {
+            expect(socketIOInterceptor.clients).toHaveLength(1);
+          });
+
+          const messagePromise = waitForWebSocketClientMessage(client);
+          client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+        });
+      },
+    );
+  });
+
+  it('should not intercept messages sent to a socket.io base URL without its socket.io path', async () => {
+    const socketIOBaseURL = joinURL(defaultBaseURL, 'socket.io/');
+    const urlWithoutSocketIOPath = joinURL(defaultBaseURL, 'chat');
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, baseURL: socketIOBaseURL },
+      async (socketIOInterceptor) => {
+        await promiseIfRemote(socketIOInterceptor.message().respond({ type: 'server', index: 1 }), socketIOInterceptor);
+
+        // Depending on the mode, the interceptor server refuses the connection, or the connection reaches the network,
+        // where no WebSocket server accepts it. Either way, the connection closes.
+        await Promise.allSettled([
+          usingWebSocketClient<MessageSchema>(urlWithoutSocketIOPath, async (client) => {
+            await waitForWebSocketClientClose(client);
+          }),
+        ]);
+        expect(socketIOInterceptor.clients).toHaveLength(0);
+      },
+    );
   });
 
   // No HTTP counterpart: WebSocket handlers have no per-handler path, so base URL paths are the only way to route

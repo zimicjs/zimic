@@ -57,13 +57,22 @@ interface WebSocketHandler {
   clients: Map<InternalWebSocketInterceptorClient<any>, WebSocketClientRegistration>;
 }
 
-// MSW tests links against connection URLs without their search params and trailing slash. A base URL with a trailing
-// slash therefore also receives the URL without it, which no interceptor owns by raw prefix and must pass through.
+// Same pattern MSW uses to remove a leading socket.io path from connection URLs, including its unescaped dot.
+const MSW_SOCKET_IO_PATH_REGEX = /^\/socket.io\//;
+
+// MSW tests links against connection URLs without their search params, trailing slash, and leading socket.io path, so
+// a link accepts the URLs under its base URL in that form. It therefore also receives URLs no interceptor owns by raw
+// prefix, such as the base URL without its trailing slash or a socket.io base URL without its socket.io path, which must
+// pass through.
 function createConnectionURLRegex(baseURL: string) {
-  const baseURLWithoutTrailingSlash = baseURL.replace(/\/$/, '');
+  const { origin, pathname } = new URL(baseURL);
+  const mswPathname = pathname.replace(MSW_SOCKET_IO_PATH_REGEX, '/');
+  const mswBaseURL = mswPathname === pathname ? baseURL : `${origin}${mswPathname}`;
+
+  const baseURLWithoutTrailingSlash = mswBaseURL.replace(/\/$/, '');
   const escapedBaseURL = baseURLWithoutTrailingSlash.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-  const hasTrailingSlash = baseURLWithoutTrailingSlash !== baseURL;
+  const hasTrailingSlash = baseURLWithoutTrailingSlash !== mswBaseURL;
   return new RegExp(hasTrailingSlash ? `^${escapedBaseURL}(?:/|$)` : `^${escapedBaseURL}`);
 }
 
