@@ -245,6 +245,28 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
         await expect(clearPromise).resolves.not.toThrow();
       });
     });
+
+    it('should close the web socket client after failing to register with the server while starting', async () => {
+      await usingHttpInterceptorWorker(workerOptions, { start: false }, async (rawWorker) => {
+        expect(rawWorker).toBeInstanceOf(RemoteHttpInterceptorWorker);
+
+        const worker = rawWorker as RemoteHttpInterceptorWorker;
+        const error = new Error('Could not register with the server.');
+
+        // The server accepts every valid registration, so no public path makes it fail. The first request after
+        // connecting is the registration.
+        vi.spyOn(worker.webSocketClient, 'request').mockRejectedValueOnce(error);
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          await expect(worker.start()).rejects.toThrow(error);
+
+          expect(console.error).toHaveBeenCalledTimes(platform === 'node' ? 1 : 0);
+        });
+
+        expect(worker.isRunning).toBe(false);
+        expect(worker.webSocketClient.isRunning).toBe(false);
+      });
+    });
   }
 
   if (type === 'local') {

@@ -52,8 +52,8 @@ export interface SharedWebSocketInterceptorOptions {
   type?: WebSocketInterceptorType;
 
   /**
-   * The URL matched by the interceptor. For remote interceptors, it should point to an
-   * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
+   * The URL matched by the interceptor. Any connection whose URL starts with this base URL is intercepted. For remote
+   * interceptors, it should point to an {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
    */
   baseURL: string;
 
