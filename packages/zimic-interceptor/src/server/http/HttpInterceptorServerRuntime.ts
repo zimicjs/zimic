@@ -14,7 +14,12 @@ import type { WebSocketEventMessage } from '@/utils/webSocket/types';
 import type WebSocketServer from '@/utils/webSocket/WebSocketServer';
 
 import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE, type AccessControlHeaders } from '../constants';
-import type { HttpHandlerCommit, HttpWorkerReset, InterceptorServerWebSocketSchema } from '../types/schema';
+import type {
+  HttpHandlerCommit,
+  HttpWorkerCommit,
+  HttpWorkerReset,
+  InterceptorServerWebSocketSchema,
+} from '../types/schema';
 import { getFetchAPI } from '../utils/fetch';
 import { rejectNodeResponse } from '../utils/http';
 import { parseInterceptorServerRPCData } from '../utils/rpc';
@@ -27,6 +32,10 @@ const httpHandlerCommitSchema = z.object({
   method: z.enum(HTTP_METHODS),
   path: z.string(),
 }) satisfies z.ZodType<HttpHandlerCommit>;
+
+const httpWorkerCommitSchema = httpHandlerCommitSchema.extend({
+  index: z.number().int().nonnegative(),
+}) satisfies z.ZodType<HttpWorkerCommit>;
 
 const httpWorkerResetSchema = z.object({
   interceptorBaseURLs: z.array(httpBaseURLSchema),
@@ -98,7 +107,7 @@ class HttpInterceptorServerRuntime {
     socket: Socket,
   ) => {
     this.assertHttpWorkerSocket(socket);
-    this.registerHttpHandler(parseInterceptorServerRPCData(httpHandlerCommitSchema, message.data), socket);
+    this.registerHttpHandler(parseInterceptorServerRPCData(httpWorkerCommitSchema, message.data), socket);
     return {};
   };
 
@@ -146,10 +155,21 @@ class HttpInterceptorServerRuntime {
     return {};
   };
 
-  private registerHttpHandler(commit: HttpHandlerCommit, socket: Socket) {
+  private registerHttpHandler(commit: HttpWorkerCommit, socket: Socket) {
     const worker = this.httpWorkersBySocket.get(socket) ?? { socket, interceptorBaseURLs: [], handlers: [] };
-    worker.handlers.push(this.createHttpHandler(commit));
-    this.httpWorkersBySocket.set(socket, worker);
+
+    if (commit.index > worker.handlers.length) {
+      throw new InvalidWebSocketMessageError(
+        `HTTP handler commit index ${commit.index} exceeds the handler count of its worker (${worker.handlers.length}).`,
+      );
+    }
+
+    // A new worker object is set so that requests in progress keep the handlers they started with. Setting a socket
+    // already in the map keeps its position.
+    this.httpWorkersBySocket.set(socket, {
+      ...worker,
+      handlers: worker.handlers.toSpliced(commit.index, 0, this.createHttpHandler(commit)),
+    });
   }
 
   private createHttpHandler({ id, baseURL, method, path }: HttpHandlerCommit): HttpHandler {

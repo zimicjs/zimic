@@ -457,6 +457,7 @@ describe('Interceptor server', () => {
             baseURL,
             method: 'GET',
             path: '/',
+            index: 0,
           });
 
           const pendingResponsePromise = fetch(baseURL);
@@ -529,6 +530,7 @@ describe('Interceptor server', () => {
             baseURL,
             method: 'GET',
             path: '/',
+            index: 0,
           });
 
           rejectedRequests.push(worker.request('interceptors/http/workers/reset', { invalid: true } as never));
@@ -582,6 +584,7 @@ describe('Interceptor server', () => {
               baseURL,
               method: 'TRACE' as never,
               path: '/',
+              index: 0,
             }),
           );
 
@@ -622,6 +625,7 @@ describe('Interceptor server', () => {
               baseURL: `ws://${server!.hostname}:${server!.port}/users`,
               method: 'GET',
               path: '/',
+              index: 0,
             }),
           );
 
@@ -629,6 +633,69 @@ describe('Interceptor server', () => {
             expect(console.error).toHaveBeenCalledTimes(1);
             expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
           });
+        } finally {
+          await worker.stop();
+          await Promise.allSettled(rejectedRequests);
+        }
+      });
+    });
+
+    it('should reject commits with an index past the handlers of their worker, preserving existing handlers', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+      await server.start();
+
+      const baseURL = `http://${server.hostname}:${server.port}/users`;
+
+      const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+        url: `ws://${server.hostname}:${server.port}`,
+      });
+
+      const rejectedRequests: Promise<unknown>[] = [];
+      const handledHandlerIds: string[] = [];
+
+      worker.onChannel('event', 'interceptors/http/responses/create', ({ data }) => {
+        handledHandlerIds.push(data.handlerId);
+        return { response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null } };
+      });
+
+      worker.onChannel('event', 'interceptors/http/responses/unhandled', () => ({ wasLogged: false }));
+
+      const existingHandlerId = crypto.randomUUID();
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        try {
+          await worker.start({
+            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
+            waitForAuthentication: true,
+          });
+
+          await worker.request('interceptors/http/workers/reset', {
+            interceptorBaseURLs: [baseURL],
+            handlers: [{ id: existingHandlerId, baseURL, method: 'GET', path: '/' }],
+          });
+
+          rejectedRequests.push(
+            worker.request('interceptors/http/workers/commit', {
+              id: crypto.randomUUID(),
+              baseURL,
+              method: 'GET',
+              path: '/',
+              index: 2,
+            }),
+          );
+
+          await waitFor(() => {
+            expect(console.error).toHaveBeenCalledTimes(1);
+          });
+          expect(console.error).toHaveBeenCalledWith(
+            new InvalidWebSocketMessageError(
+              'HTTP handler commit index 2 exceeds the handler count of its worker (1).',
+            ),
+          );
+
+          const response = await fetch(baseURL);
+          expect(response.status).toBe(204);
+          expect(handledHandlerIds).toEqual([existingHandlerId]);
         } finally {
           await worker.stop();
           await Promise.allSettled(rejectedRequests);
@@ -675,6 +742,7 @@ describe('Interceptor server', () => {
             baseURL,
             method: 'GET',
             path: '/',
+            index: 0,
           });
 
           await expectFetchError(fetch(baseURL));
@@ -717,6 +785,7 @@ describe('Interceptor server', () => {
             baseURL,
             method: 'GET',
             path: '/users',
+            index: 0,
           });
 
           const request = new Request(`${baseURL}/posts`);
@@ -771,6 +840,7 @@ describe('Interceptor server', () => {
             baseURL,
             method: 'GET',
             path: '/users',
+            index: 0,
           });
 
           const request = new Request(`${baseURL}/posts`);
@@ -819,6 +889,7 @@ describe('Interceptor server', () => {
           baseURL,
           method: 'GET',
           path: '/',
+          index: 0,
         });
 
         const response = await fetch(`${baseURL}/`);
@@ -862,6 +933,7 @@ describe('Interceptor server', () => {
               baseURL: otherBaseURL,
               method: 'GET',
               path: '/',
+              index: 0,
             }),
             webSocketWorker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [], handlers: [] }),
           );

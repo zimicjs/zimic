@@ -32,7 +32,7 @@ interface HttpHandler {
 }
 
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
-  private httpHandlers = new Map<HttpHandler['id'], HttpHandler>();
+  private httpHandlers: HttpHandler[] = [];
 
   webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
   private isConnectedToServer = false;
@@ -108,7 +108,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   ) => {
     const { handlerId, request: serializedRequest } = message.data;
 
-    const handler = this.httpHandlers.get(handlerId);
+    const handler = this.httpHandlers.find((handler) => handler.id === handlerId);
     const request = deserializeRequest(serializedRequest);
 
     try {
@@ -200,24 +200,20 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       createResponse,
     };
 
-    this.httpHandlers.set(handler.id, handler);
+    const index = this.insertHandlerByInterceptorStartOrder(this.httpHandlers, handler);
 
-    const handlerCommits = this.getHandlerCommitsByInterceptorStartOrder();
-    const lastHandlerCommit = handlerCommits.at(-1);
-
-    if (lastHandlerCommit?.id === handler.id) {
-      await this.webSocketClient.request('interceptors/http/workers/commit', lastHandlerCommit);
-    } else {
-      // The server tries handlers from the last committed to the first and appends new commits, so a handler of an
-      // interceptor started before others is placed by recommitting all handlers in order.
-      await this.webSocketClient.request('interceptors/http/workers/reset', this.createWorkerReset(handlerCommits));
-    }
+    await this.webSocketClient.request('interceptors/http/workers/commit', {
+      ...this.createHandlerCommit(handler),
+      index,
+    });
   }
 
-  private createWorkerReset(handlers: HttpHandlerCommit[]): HttpWorkerReset {
+  private createHandlerCommit(handler: HttpHandler): HttpHandlerCommit {
     return {
-      interceptorBaseURLs: this.runningInterceptors.map((interceptor) => interceptor.baseURLAsString),
-      handlers,
+      id: handler.id,
+      baseURL: handler.baseURL,
+      method: handler.method,
+      path: handler.path,
     };
   }
 
@@ -226,7 +222,10 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       return;
     }
 
-    const reset = this.createWorkerReset(this.getHandlerCommitsByInterceptorStartOrder());
+    const reset: HttpWorkerReset = {
+      interceptorBaseURLs: this.runningInterceptors.map((interceptor) => interceptor.baseURLAsString),
+      handlers: this.httpHandlers.map((handler) => this.createHandlerCommit(handler)),
+    };
 
     try {
       await this.webSocketClient.request('interceptors/http/workers/reset', reset);
@@ -246,17 +245,6 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
         throw error;
       }
     }
-  }
-
-  private getHandlerCommitsByInterceptorStartOrder() {
-    const handlers = this.sortHandlersByInterceptorStartOrder(this.httpHandlers.values());
-
-    return handlers.map<HttpHandlerCommit>((handler) => ({
-      id: handler.id,
-      baseURL: handler.baseURL,
-      method: handler.method,
-      path: handler.path,
-    }));
   }
 
   async createResponseFromDeclaration(
@@ -287,20 +275,16 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     }
 
     if (options.interceptor === undefined) {
-      this.httpHandlers.clear();
+      this.httpHandlers = [];
     } else {
-      for (const handler of this.httpHandlers.values()) {
-        if (handler.interceptor === options.interceptor) {
-          this.httpHandlers.delete(handler.id);
-        }
-      }
+      this.httpHandlers = this.httpHandlers.filter((handler) => handler.interceptor !== options.interceptor);
     }
 
     await this.resetServerWorker();
   }
 
   get interceptorsWithHandlers() {
-    const interceptors = Array.from(this.httpHandlers.values(), (handler) => handler.interceptor);
+    const interceptors = this.httpHandlers.map((handler) => handler.interceptor);
     return interceptors;
   }
 }
