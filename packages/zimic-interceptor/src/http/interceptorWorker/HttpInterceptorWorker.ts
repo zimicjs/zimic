@@ -19,6 +19,7 @@ import { removeArrayElement } from '@/utils/arrays';
 import { isClientSide } from '@/utils/environment';
 import { methodCanHaveResponseBody } from '@/utils/http';
 import { logUnhandledRequestWarning, logger } from '@/utils/logging';
+import { isURLUnderBaseURL } from '@/utils/urls';
 
 import HttpInterceptorImplementation, {
   AnyHttpInterceptorImplementation,
@@ -207,7 +208,7 @@ abstract class HttpInterceptorWorker {
 
   private findInterceptorByRequestBaseURL(request: Request) {
     const interceptor = this.runningInterceptors.findLast((interceptor) => {
-      return request.url.startsWith(interceptor.baseURLAsString);
+      return isURLUnderBaseURL(request.url, interceptor.baseURLAsString);
     });
 
     return interceptor;

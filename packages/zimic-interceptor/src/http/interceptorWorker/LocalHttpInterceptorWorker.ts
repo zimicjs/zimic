@@ -4,6 +4,7 @@ import { SharedOptions as MSWWorkerSharedOptions, HttpHandler as MSWHttpHandler,
 
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
 import { MSWWorker } from '@/interceptor/types/msw';
+import { isURLUnderBaseURL } from '@/utils/urls';
 
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
@@ -206,7 +207,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
     for (let handlerIndex = methodHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
       const handler = methodHandlers[handlerIndex];
-      const matchesBaseURL = requestURLAsString.startsWith(handler.baseURL);
+      const matchesBaseURL = isURLUnderBaseURL(requestURLAsString, handler.baseURL);
 
       if (!matchesBaseURL) {
         continue;

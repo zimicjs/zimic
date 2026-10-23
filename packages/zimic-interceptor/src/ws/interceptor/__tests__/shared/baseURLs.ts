@@ -156,6 +156,31 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     });
   });
 
+  // Remote interceptors connect to an interceptor server at their base URL, so they cannot use a port where no server
+  // listens.
+  if (type === 'local') {
+    it('should not intercept messages sent to another port starting with the base URL port', async () => {
+      const { protocol, hostname, port } = new URL(defaultBaseURL);
+      const otherPortBaseURL = `${protocol}//${hostname}:${port.slice(0, -1)}`;
+      expect(defaultBaseURL.startsWith(otherPortBaseURL)).toBe(true);
+
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, baseURL: otherPortBaseURL },
+        async (interceptor) => {
+          interceptor.message().respond({ type: 'server', index: 1 });
+
+          // The connection reaches the network, where no WebSocket server accepts it.
+          await Promise.allSettled([
+            usingWebSocketClient<MessageSchema>(joinURL(defaultBaseURL, 'chat'), async (client) => {
+              await waitForWebSocketClientClose(client);
+            }),
+          ]);
+          expect(interceptor.clients).toHaveLength(0);
+        },
+      );
+    });
+  }
+
   it('should intercept messages sent to socket.io paths under the base URL', async () => {
     const socketIOBaseURL = joinURL(defaultBaseURL, 'socket.io/');
     const socketIOURL = joinURL(socketIOBaseURL, 'chat');

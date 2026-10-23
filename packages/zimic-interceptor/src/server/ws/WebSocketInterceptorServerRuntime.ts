@@ -6,6 +6,7 @@ import type { WebSocket as Socket } from 'isomorphic-ws';
 import { WebSocket as ClientSocket } from 'ws';
 import * as z from 'zod';
 
+import { isURLUnderBaseURL } from '@/utils/urls';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
@@ -449,7 +450,7 @@ class WebSocketInterceptorServerRuntime {
 
     const workers = Array.from(this.webSocketHandlersByWorkerSocket, ([workerSocket, handlers]) => ({
       workerSocket,
-      holders: handlers.filter((handler) => requestURL.href.startsWith(handler.baseURL)),
+      holders: handlers.filter((handler) => isURLUnderBaseURL(requestURL.href, handler.baseURL)),
     }));
 
     // Only one worker holds a connection, the same one that decides the unhandled message strategy. Other workers belong

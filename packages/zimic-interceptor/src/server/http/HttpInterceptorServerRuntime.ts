@@ -8,6 +8,7 @@ import * as z from 'zod';
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
 import { deserializeResponse, type SerializedHttpRequest, serializeRequest } from '@/utils/fetch';
 import { logUnhandledRequestWarning } from '@/utils/logging';
+import { isURLUnderBaseURL } from '@/utils/urls';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
 import type { WebSocketEventMessage } from '@/utils/webSocket/types';
@@ -250,7 +251,7 @@ class HttpInterceptorServerRuntime {
         continue;
       }
 
-      const matchesBaseURL = requestURLAsString.startsWith(handler.baseURL);
+      const matchesBaseURL = isURLUnderBaseURL(requestURLAsString, handler.baseURL);
 
       if (!matchesBaseURL) {
         continue;
@@ -365,7 +366,7 @@ class HttpInterceptorServerRuntime {
     const workers = Array.from(this.httpWorkersBySocket.values());
 
     return workers.findLast((worker) => {
-      return worker.interceptorBaseURLs.some((baseURL) => request.url.startsWith(baseURL));
+      return worker.interceptorBaseURLs.some((baseURL) => isURLUnderBaseURL(request.url, baseURL));
     });
   }
 

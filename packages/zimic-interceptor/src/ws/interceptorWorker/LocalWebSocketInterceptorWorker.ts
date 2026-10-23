@@ -4,6 +4,7 @@ import { SharedOptions as MSWWorkerSharedOptions, ws } from 'msw';
 
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
 import { removeArrayElement } from '@/utils/arrays';
+import { isURLUnderBaseURL } from '@/utils/urls';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 
 import NotRunningWebSocketInterceptorError from '../interceptor/errors/NotRunningWebSocketInterceptorError';
@@ -75,7 +76,7 @@ function getMSWBaseURL(baseURL: string) {
   const canPrefixSocketIOPath = MSW_SOCKET_IO_PATH_REGEX.test(pathname + SOCKET_IO_PATH.slice(pathname.length));
 
   if (canPrefixSocketIOPath) {
-    return origin;
+    return `${origin}/`;
   }
 
   return baseURL;
@@ -274,7 +275,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     const connectionURLAsString = excludeNonPathParams(new URL(connectionURL)).href;
 
     return this.webSocketHandlers.filter((handler) => {
-      return connectionURLAsString.startsWith(handler.interceptor.baseURLAsString);
+      return isURLUnderBaseURL(connectionURLAsString, handler.interceptor.baseURLAsString);
     });
   }
 

@@ -101,6 +101,32 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
   // No HTTP counterpart for "should not intercept messages sent to the base URL without its trailing slash": HTTP
   // requests also need a matching handler path, so the base URL alone does not decide which requests are intercepted.
 
+  // Remote interceptors connect to an interceptor server at their base URL, so they cannot use a port where no server
+  // listens.
+  if (type === 'local') {
+    it('should not intercept requests sent to another port starting with the base URL port', async () => {
+      const { protocol, hostname, port } = new URL(defaultBaseURL);
+      const otherPortBaseURL = `${protocol}//${hostname}:${port.slice(0, -1)}`;
+      expect(defaultBaseURL.startsWith(otherPortBaseURL)).toBe(true);
+
+      const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.LocalDeclarationFactory>(() => ({
+        action: 'bypass',
+        log: false,
+      }));
+
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 200: {} } } };
+      }>({ type: 'local', baseURL: otherPortBaseURL, onUnhandledRequest }, async (interceptor) => {
+        const handler = interceptor.get('/users').respond({ status: 200 });
+
+        // The request reaches the network, where the server at the base URL responds.
+        await expectBypassedResponse(fetch(joinURL(defaultBaseURL, 'users'), { method: 'GET' }));
+        expect(handler.requests).toHaveLength(0);
+        expect(onUnhandledRequest).not.toHaveBeenCalled();
+      });
+    });
+  }
+
   // No HTTP counterpart for "should intercept messages sent to socket.io paths under the base URL": MSW rewrites
   // socket.io paths only for WebSocket connections.
 
