@@ -11,6 +11,10 @@ import {
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
 
+import {
+  LocalWebSocketMessageHandler,
+  SyncedRemoteWebSocketMessageHandler,
+} from '../../../messageHandler/types/public';
 import NotRunningWebSocketInterceptorError from '../../errors/NotRunningWebSocketInterceptorError';
 import { WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
@@ -260,4 +264,40 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
       await stopPromise;
     });
   });
+
+  type DeclaredMessageHandler =
+    LocalWebSocketMessageHandler<MessageSchema> | SyncedRemoteWebSocketMessageHandler<MessageSchema>;
+
+  const redeclarations = [
+    ['respond', (handler: DeclaredMessageHandler) => handler.respond({ type: 'server', index: 2 })],
+    ['effect', (handler: DeclaredMessageHandler) => handler.effect(vi.fn())],
+  ] as const;
+
+  it.each(redeclarations)(
+    'should throw an error when trying to redeclare a message handler while stopping (%s)',
+    async (_method, redeclare) => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+
+        const stopPromise = interceptor.stop();
+
+        expect(() => redeclare(handler)).toThrow(new NotRunningWebSocketInterceptorError());
+
+        await stopPromise;
+      });
+    },
+  );
+
+  it.each(redeclarations)(
+    'should throw an error when trying to redeclare a message handler after stopped (%s)',
+    async (_method, redeclare) => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+
+        await interceptor.stop();
+
+        expect(() => redeclare(handler)).toThrow(new NotRunningWebSocketInterceptorError());
+      });
+    },
+  );
 }

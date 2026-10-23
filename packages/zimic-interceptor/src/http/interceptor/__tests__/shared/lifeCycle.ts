@@ -154,4 +154,34 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
       await stopPromise;
     });
   });
+
+  it('should throw an error when trying to redeclare a request handler while stopping', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+
+      const stopPromise = interceptor.stop();
+
+      await expect(async () => {
+        await handler.respond({ status: 204 });
+      }).rejects.toThrow(new NotRunningHttpInterceptorError());
+
+      await stopPromise;
+    });
+  });
+
+  it('should throw an error when trying to redeclare a request handler after stopped', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+
+      await interceptor.stop();
+
+      await expect(async () => {
+        await handler.respond({ status: 204 });
+      }).rejects.toThrow(new NotRunningHttpInterceptorError());
+    });
+  });
 }
