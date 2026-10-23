@@ -745,6 +745,73 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       });
     });
 
+    it('should apply the unhandled message strategy of an older remote interceptor if the last started one is cleared after the server sent the message', async () => {
+      await usingWebSocketInterceptorWorker(workerOptions, { start: false }, async (rawWorker) => {
+        const worker = rawWorker as RemoteWebSocketInterceptorWorker;
+
+        const firstOnUnhandledMessage = vi.fn(() => ({ log: false }));
+        const secondOnUnhandledMessage = vi.fn(() => ({ log: false }));
+
+        const firstInterceptor = new WebSocketInterceptorImplementation<
+          ChatMessage,
+          typeof RemoteWebSocketMessageHandler
+        >({
+          baseURL: new URL(baseURL),
+          onUnhandledMessage: firstOnUnhandledMessage,
+          Handler: RemoteWebSocketMessageHandler,
+          createWorker: () => worker,
+          deleteWorker: vi.fn(),
+        });
+
+        const secondInterceptor = new WebSocketInterceptorImplementation<
+          ChatMessage,
+          typeof RemoteWebSocketMessageHandler
+        >({
+          baseURL: new URL(baseURL),
+          onUnhandledMessage: secondOnUnhandledMessage,
+          Handler: RemoteWebSocketMessageHandler,
+          createWorker: () => worker,
+          deleteWorker: vi.fn(),
+        });
+
+        // No public path clears an interceptor after the server sends an unhandled message and before the worker
+        // receives it. A listener registered ahead of the worker's clears the second interceptor at that point. It
+        // never replies before the test ends, leaving the reply to the worker.
+        const unhandledReplyPromise = createPromiseWithResolvers<Record<string, never>>();
+        let secondClearPromise: Promise<void> | undefined;
+
+        worker.webSocketClient.onChannel('event', 'interceptors/ws/messages/unhandled', () => {
+          secondClearPromise = secondInterceptor.clear();
+          return unhandledReplyPromise;
+        });
+
+        try {
+          await firstInterceptor.start();
+          await secondInterceptor.start();
+
+          await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+            await waitFor(() => {
+              expect(firstInterceptor.clients).toHaveLength(1);
+              expect(secondInterceptor.clients).toHaveLength(1);
+            });
+
+            client.send(JSON.stringify({ type: 'client', text: 'one' }));
+
+            await waitFor(() => {
+              expect(firstOnUnhandledMessage).toHaveBeenCalledTimes(1);
+            });
+
+            await secondClearPromise;
+            expect(secondOnUnhandledMessage).not.toHaveBeenCalled();
+          });
+        } finally {
+          unhandledReplyPromise.resolve({});
+          await secondInterceptor.stop({});
+          await firstInterceptor.stop({});
+        }
+      });
+    });
+
     it('should reject remote clients after clearing the handlers of all interceptors', async () => {
       await usingWebSocketInterceptorWorker(workerOptions, async (rawWorker) => {
         const worker = rawWorker as RemoteWebSocketInterceptorWorker;
