@@ -271,6 +271,32 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
+  it('should intercept requests with an older interceptor if they are sent outside the nested base URL of the last started one', async () => {
+    const nestedBaseURL = joinURL(defaultBaseURL, 'nested');
+
+    // Catch-all paths match any request path, so only the base URLs decide which interceptor handles the request.
+    await usingHttpInterceptor<{
+      '/:path+': { GET: { response: { 200: {} } } };
+    }>(interceptorOptions, async (olderInterceptor) => {
+      const olderHandler = await promiseIfRemote(
+        olderInterceptor.get('/:path+').respond({ status: 200 }),
+        olderInterceptor,
+      );
+
+      await usingHttpInterceptor<{
+        '/:path+': { GET: { response: { 204: {} } } };
+      }>({ ...interceptorOptions, baseURL: nestedBaseURL }, async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.get('/:path+').respond({ status: 204 }), interceptor);
+
+        const response = await fetch(joinURL(defaultBaseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(200);
+
+        expect(handler.requests).toHaveLength(0);
+        expect(olderHandler.requests).toHaveLength(1);
+      });
+    });
+  });
+
   it('should apply the unhandled request strategy of the last started interceptor once if no interceptor handles a request', async () => {
     const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>();
 

@@ -507,6 +507,40 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     );
   });
 
+  it('should intercept messages with an older interceptor if they are sent outside the nested base URL of the last started one', async () => {
+    const nestedBaseURL = joinURL(defaultBaseURL, 'nested');
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (olderInterceptor) => {
+        const olderHandler = await promiseIfRemote(
+          olderInterceptor.message().respond({ type: 'server', index: 1 }),
+          olderInterceptor,
+        );
+
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, baseURL: nestedBaseURL, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const handler = await promiseIfRemote(
+              interceptor.message().respond({ type: 'server', index: 2 }),
+              interceptor,
+            );
+
+            await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+              const messagePromise = waitForWebSocketClientMessage(client);
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+              await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+            });
+
+            expect(handler.messages).toHaveLength(0);
+            expect(olderHandler.messages).toHaveLength(1);
+          },
+        );
+      },
+    );
+  });
+
   it('should apply the unhandled message strategy of the last started interceptor once if no interceptor handles a message', async () => {
     const olderOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>();
     const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
