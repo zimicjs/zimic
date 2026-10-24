@@ -1,22 +1,21 @@
 import {
+  HttpRequest,
   HttpResponse,
   HTTP_METHODS,
   HttpMethod,
+  HttpMethodSchema,
   HttpSchemaMethod,
   HttpSchemaPath,
   HttpStatusCode,
   HttpSchema,
 } from '@zimic/http';
-import { Default, PossiblePromise } from '@zimic/utils/types';
-import { createRegexFromPath, excludeNonPathParams, validateURLProtocol } from '@zimic/utils/url';
+import { PossiblePromise } from '@zimic/utils/types';
+import { excludeNonPathParams, validateURLProtocol } from '@zimic/utils/url';
 
 import { isServerSide } from '@/utils/environment';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
-import HttpRequestHandlerImplementation, {
-  AnyHttpRequestHandlerImplementation,
-  HttpRequestHandlerRequestMatch,
-} from '../requestHandler/HttpRequestHandlerImplementation';
+import { AnyHttpRequestHandlerImplementation } from '../requestHandler/HttpRequestHandlerImplementation';
 import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
 import { HttpRequestHandler, InternalHttpRequestHandler } from '../requestHandler/types/public';
@@ -27,7 +26,6 @@ import RunningHttpInterceptorError from './errors/RunningHttpInterceptorError';
 import type HttpInterceptorStore from './HttpInterceptorStore';
 import { UnhandledRequestStrategy } from './types/options';
 import { HttpInterceptorRequestSaving } from './types/public';
-import { HttpInterceptorRequestContext } from './types/requests';
 
 export const SUPPORTED_BASE_URL_PROTOCOLS = Object.freeze(['http', 'https']);
 
@@ -312,49 +310,17 @@ class HttpInterceptorImplementation<
     }
 
     pathHandlers.push(handler.implementation);
-
-    const isFirstHandlerForMethodPath = pathHandlers.length === 1;
-
-    if (!isFirstHandlerForMethodPath) {
-      return;
-    }
-
     this.handlers[handler.method].set(handler.path, pathHandlers);
 
-    const pathRegex = createRegexFromPath(handler.path);
-
-    const registrationResult = this.workerOrThrow.use(this, handler.method, handler.path, async (context) => {
-      const response = await this.handleInterceptedRequest(
-        handler.method,
-        handler.path,
-        pathRegex,
-        context as HttpInterceptorRequestContext<Schema, Method, Path>,
-      );
-      return response;
-    });
-
-    if (handler instanceof RemoteHttpRequestHandler && registrationResult instanceof Promise) {
-      handler.registerSyncPromise(registrationResult);
-    }
+    this.workerOrThrow.use(this, handler.implementation);
   }
 
-  async handleInterceptedRequest<
-    Method extends HttpSchemaMethod<Schema>,
-    Path extends HttpSchemaPath<Schema, Method>,
-    Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
-  >(method: Method, path: Path, pathRegex: RegExp, { request }: Context): Promise<HttpResponse | null> {
-    const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Path, Default<Schema[Path][Method]>>(request, {
-      baseURL: this.baseURLAsString,
-      pathRegex,
-    });
-
-    const matchedHandler = await this.findMatchedHandler(method, path, parsedRequest);
-
-    if (!matchedHandler) {
-      return null;
-    }
-
-    const responseDeclaration = await matchedHandler.applyResponseDeclaration(parsedRequest);
+  async handleMatchedRequest(
+    handler: AnyHttpRequestHandlerImplementation,
+    request: HttpRequest,
+    parsedRequest: HttpInterceptorRequest<string, HttpMethodSchema>,
+  ): Promise<HttpResponse | null> {
+    const responseDeclaration = await handler.applyResponseDeclaration(parsedRequest);
 
     if (!responseDeclaration) {
       return null;
@@ -368,9 +334,9 @@ class HttpInterceptorImplementation<
     if (shouldSaveInterceptedRequest) {
       const responseClone = response.clone();
 
-      const parsedResponse = await HttpInterceptorWorker.parseRawResponse<Default<Schema[Path][Method]>>(responseClone);
+      const parsedResponse = await HttpInterceptorWorker.parseRawResponse<HttpMethodSchema>(responseClone);
 
-      matchedHandler.saveInterceptedRequest(parsedRequest, parsedResponse);
+      handler.saveInterceptedRequest(parsedRequest, parsedResponse);
     }
 
     return response;
@@ -387,56 +353,6 @@ class HttpInterceptorImplementation<
     }
   }
 
-  private async findMatchedHandler<
-    Method extends HttpSchemaMethod<Schema>,
-    Path extends HttpSchemaPath<Schema, Method>,
-  >(
-    method: Method,
-    path: Path,
-    request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): Promise<HttpRequestHandlerImplementation<Schema, Method, Path, any> | undefined> {
-    /* istanbul ignore next -- @preserve
-     * Ignoring because there will always be a handler for the given method and path at this point. */
-    const pathHandlers = this.handlers[method].get(path) ?? [];
-
-    const failedRequestMatches = new Map<
-      AnyHttpRequestHandlerImplementation,
-      Extract<HttpRequestHandlerRequestMatch, { success: false }>
-    >();
-
-    // If we find a matching handler that can accept more requests, we return it immediately.
-    for (let handlerIndex = pathHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
-      const handler = pathHandlers[handlerIndex];
-      const requestMatch = await handler.matchesRequest(request);
-
-      if (requestMatch.success) {
-        handler.markRequestAsMatched(request);
-        return handler;
-      }
-
-      failedRequestMatches.set(handler, requestMatch);
-    }
-
-    // If no handler matched or could accept more requests, we iterate again over the handlers to check which ones
-    // could have matched considering only restrictions.
-    for (let handlerIndex = pathHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
-      const handler = pathHandlers[handlerIndex];
-      const requestMatch = failedRequestMatches.get(handler);
-
-      // Handlers that did not match due to anything other than restrictions are still marked as matched to trigger a
-      // times check error.
-      if (requestMatch?.cause === 'unmatchedRestrictions') {
-        handler.markRequestAsUnmatched(request, { diff: requestMatch.diff });
-      } else {
-        handler.markRequestAsMatched(request);
-        break;
-      }
-    }
-
-    return undefined;
-  }
-
   checkTimes() {
     for (const method of HTTP_METHODS) {
       const pathHandlers = this.handlers[method];
@@ -450,9 +366,9 @@ class HttpInterceptorImplementation<
   }
 
   clear() {
-    const clearPromises: Promise<AnyHttpRequestHandlerImplementation | void>[] = [
-      Promise.resolve(this.workerOrThrow.clearHandlers({ interceptor: this })),
-    ];
+    this.workerOrThrow.clearHandlers({ interceptor: this });
+
+    const clearPromises: Promise<AnyHttpRequestHandlerImplementation>[] = [];
 
     for (const method of HTTP_METHODS) {
       for (const result of this.clearMethodHandlers(method)) {

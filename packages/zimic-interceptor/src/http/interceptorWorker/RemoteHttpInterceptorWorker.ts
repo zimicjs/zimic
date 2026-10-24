@@ -1,10 +1,18 @@
-import type { HttpBody, HttpHeadersInit, HttpMethod, HttpRequest, HttpSchema } from '@zimic/http';
-import type { PossiblePromise } from '@zimic/utils/types';
-import { validatePathParams } from '@zimic/utils/url';
+import type {
+  HttpBody,
+  HttpHeadersInit,
+  HttpMethod,
+  HttpRequest,
+  HttpSchema,
+  HttpSchemaMethod,
+  HttpSchemaPath,
+  HttpStatusCode,
+} from '@zimic/http';
+import { createRegexFromPath, validatePathParams } from '@zimic/utils/url';
 
 import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
 import UnsupportedResponseBypassError from '@/server/errors/UnsupportedResponseBypassError';
-import { HttpHandlerCommit, HttpWorkerReset, InterceptorServerWebSocketSchema } from '@/server/types/schema';
+import { HttpWorkerReset, InterceptorServerWebSocketSchema } from '@/server/types/schema';
 import { isClientSide, isServerSide } from '@/utils/environment';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
 import { methodCanHaveResponseBody } from '@/utils/http';
@@ -18,21 +26,22 @@ import HttpInterceptorImplementation, {
   AnyHttpInterceptorImplementation,
 } from '../interceptor/HttpInterceptorImplementation';
 import { HttpInterceptorPlatform, UnhandledRequestStrategy } from '../interceptor/types/options';
-import HttpInterceptorWorker from './HttpInterceptorWorker';
-import { HttpResponseFactory, HttpResponseFactoryContext } from './types/http';
+import type HttpRequestHandlerImplementation from '../requestHandler/HttpRequestHandlerImplementation';
+import HttpInterceptorWorker, { HttpHandler } from './HttpInterceptorWorker';
 import { RemoteHttpInterceptorWorkerOptions } from './types/options';
 
-interface HttpHandler {
-  id: string;
-  baseURL: string;
-  method: HttpMethod;
-  path: string;
-  interceptor: AnyHttpInterceptorImplementation;
-  createResponse: (context: HttpResponseFactoryContext) => PossiblePromise<Response | null>;
-}
-
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
-  private httpHandlers: HttpHandler[] = [];
+  private httpHandlersByMethod: {
+    [Method in HttpMethod]: HttpHandler[];
+  } = {
+    GET: [],
+    POST: [],
+    PATCH: [],
+    PUT: [],
+    DELETE: [],
+    HEAD: [],
+    OPTIONS: [],
+  };
 
   webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
   private isConnectedToServer = false;
@@ -106,27 +115,24 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   private createResponse = async (
     message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/http/responses/create'>,
   ) => {
-    const { handlerId, request: serializedRequest } = message.data;
+    const request = deserializeRequest(message.data.request);
 
-    const handler = this.httpHandlers.find((handler) => handler.id === handlerId);
-    const request = deserializeRequest(serializedRequest);
+    const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
+    const {
+      response: rawResponse,
+      matchedSomeHandler,
+      error,
+    } = await this.createResponseWithHandlers(request, methodHandlers);
 
-    try {
-      const rawResponse = (await handler?.createResponse({ request })) ?? null;
-
-      if (rawResponse) {
-        const response = methodCanHaveResponseBody(request.method as HttpMethod)
-          ? rawResponse
-          : new Response(null, rawResponse);
-
-        return { response: await serializeResponse(response) };
-      }
-    } catch (error) {
-      console.error(error);
-      return { response: null, error: true };
+    if (!rawResponse) {
+      return { response: null, matchedSomeHandler, error };
     }
 
-    return { response: null };
+    const response = methodCanHaveResponseBody(request.method as HttpMethod)
+      ? rawResponse
+      : new Response(null, rawResponse);
+
+    return { response: await serializeResponse(response), matchedSomeHandler };
   };
 
   private handleUnhandledServerRequest = async (
@@ -164,7 +170,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
         this.handleUnhandledServerRequest,
       );
 
-      await this.clearHandlers();
+      this.clearHandlers();
 
       await this.disconnectFromServer();
 
@@ -179,42 +185,26 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     await this.webSocketClient.stop();
   }
 
-  async use<Schema extends HttpSchema>(
+  use<
+    Schema extends HttpSchema,
+    Method extends HttpSchemaMethod<Schema>,
+    Path extends HttpSchemaPath<Schema, Method>,
+    StatusCode extends HttpStatusCode,
+  >(
     interceptor: HttpInterceptorImplementation<Schema>,
-    method: HttpMethod,
-    path: string,
-    createResponse: HttpResponseFactory,
+    handler: HttpRequestHandlerImplementation<Schema, Method, Path, StatusCode>,
   ) {
     if (!this.isRunning) {
       throw new NotRunningHttpInterceptorError();
     }
 
-    validatePathParams(path);
+    validatePathParams(handler.path);
 
-    const handler: HttpHandler = {
-      id: crypto.randomUUID(),
-      baseURL: interceptor.baseURLAsString,
-      method,
-      path,
+    this.httpHandlersByMethod[handler.method].push({
       interceptor,
-      createResponse,
-    };
-
-    const index = this.insertHandlerByInterceptorStartOrder(this.httpHandlers, handler);
-
-    await this.webSocketClient.request('interceptors/http/workers/commit', {
-      ...this.createHandlerCommit(handler),
-      index,
+      implementation: handler,
+      pathRegex: createRegexFromPath(handler.path),
     });
-  }
-
-  private createHandlerCommit(handler: HttpHandler): HttpHandlerCommit {
-    return {
-      id: handler.id,
-      baseURL: handler.baseURL,
-      method: handler.method,
-      path: handler.path,
-    };
   }
 
   private async resetServerWorker() {
@@ -224,7 +214,6 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     const reset: HttpWorkerReset = {
       interceptorBaseURLs: this.runningInterceptors.map((interceptor) => interceptor.baseURLAsString),
-      handlers: this.httpHandlers.map((handler) => this.createHandlerCommit(handler)),
     };
 
     try {
@@ -265,7 +254,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     return response;
   }
 
-  async clearHandlers<Schema extends HttpSchema>(
+  clearHandlers<Schema extends HttpSchema>(
     options: {
       interceptor?: HttpInterceptorImplementation<Schema>;
     } = {},
@@ -275,17 +264,26 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     }
 
     if (options.interceptor === undefined) {
-      this.httpHandlers = [];
+      for (const handlers of Object.values(this.httpHandlersByMethod)) {
+        handlers.length = 0;
+      }
     } else {
-      this.httpHandlers = this.httpHandlers.filter((handler) => handler.interceptor !== options.interceptor);
+      for (const [method, handlers] of Object.entries(this.httpHandlersByMethod)) {
+        this.httpHandlersByMethod[method] = handlers.filter((handler) => handler.interceptor !== options.interceptor);
+      }
     }
-
-    await this.resetServerWorker();
   }
 
   get interceptorsWithHandlers() {
-    const interceptors = this.httpHandlers.map((handler) => handler.interceptor);
-    return interceptors;
+    const interceptors = new Set<AnyHttpInterceptorImplementation>();
+
+    for (const handlers of Object.values(this.httpHandlersByMethod)) {
+      for (const handler of handlers) {
+        interceptors.add(handler.interceptor);
+      }
+    }
+
+    return Array.from(interceptors);
   }
 }
 

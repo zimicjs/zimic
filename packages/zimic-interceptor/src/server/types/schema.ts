@@ -1,23 +1,9 @@
-import type { HttpMethod } from '@zimic/http';
-
 import type { SerializedHttpRequest, SerializedResponse } from '@/utils/fetch';
 import type { WebSocketSchema } from '@/utils/webSocket/types';
 import type { SerializedWebSocketMessageData } from '@/ws/interceptorWorker/types/messages';
 
-export interface HttpHandlerCommit {
-  id: string;
-  baseURL: string;
-  method: HttpMethod;
-  path: string;
-}
-
-export interface HttpWorkerCommit extends HttpHandlerCommit {
-  index: number;
-}
-
 export interface HttpWorkerReset {
   interceptorBaseURLs: string[];
-  handlers: HttpHandlerCommit[];
 }
 
 export interface WebSocketHandlerCommit {
@@ -31,11 +17,6 @@ export interface WebSocketHandlerReset {
 }
 
 export type InterceptorServerWebSocketSchema = WebSocketSchema<{
-  'interceptors/http/workers/commit': {
-    event: HttpWorkerCommit;
-    reply: {};
-  };
-
   'interceptors/http/workers/reset': {
     event: HttpWorkerReset;
     reply: {};
@@ -43,12 +24,12 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
 
   'interceptors/http/responses/create': {
     event: {
-      handlerId: string;
       request: SerializedHttpRequest;
     };
     reply: {
       response: SerializedResponse | null;
       error?: boolean;
+      matchedSomeHandler: boolean;
     };
   };
 

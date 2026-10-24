@@ -1,10 +1,19 @@
-import { HttpRequest, HttpResponse, HttpMethod, HttpSchema, HttpHeadersInit, HttpBody } from '@zimic/http';
-import { createRegexFromPath, excludeNonPathParams, validatePathParams } from '@zimic/utils/url';
+import {
+  HttpRequest,
+  HttpResponse,
+  HttpMethod,
+  HttpSchema,
+  HttpSchemaMethod,
+  HttpSchemaPath,
+  HttpStatusCode,
+  HttpHeadersInit,
+  HttpBody,
+} from '@zimic/http';
+import { createRegexFromPath, validatePathParams } from '@zimic/utils/url';
 import { SharedOptions as MSWWorkerSharedOptions, HttpHandler as MSWHttpHandler, bypass, http, passthrough } from 'msw';
 
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
 import { MSWWorker } from '@/interceptor/types/msw';
-import { isURLUnderBaseURL } from '@/utils/urls';
 
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
@@ -12,17 +21,9 @@ import HttpInterceptorImplementation, {
   AnyHttpInterceptorImplementation,
 } from '../interceptor/HttpInterceptorImplementation';
 import { UnhandledRequestStrategy } from '../interceptor/types/options';
-import HttpInterceptorWorker from './HttpInterceptorWorker';
-import { HttpResponseFactory, HttpResponseFactoryContext } from './types/http';
+import HttpRequestHandlerImplementation from '../requestHandler/HttpRequestHandlerImplementation';
+import HttpInterceptorWorker, { HttpHandler } from './HttpInterceptorWorker';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
-
-interface HttpHandler {
-  baseURL: string;
-  method: HttpMethod;
-  pathRegex: RegExp;
-  interceptor: AnyHttpInterceptorImplementation;
-  createResponse: (context: HttpResponseFactoryContext) => Promise<Response | null>;
-}
 
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   private mswHttpHandler?: MSWHttpHandler;
@@ -131,46 +132,26 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     return !this.hasInternalBrowserWorker();
   }
 
-  use<Schema extends HttpSchema>(
+  use<
+    Schema extends HttpSchema,
+    Method extends HttpSchemaMethod<Schema>,
+    Path extends HttpSchemaPath<Schema, Method>,
+    StatusCode extends HttpStatusCode,
+  >(
     interceptor: HttpInterceptorImplementation<Schema>,
-    method: HttpMethod,
-    path: string,
-    createResponse: HttpResponseFactory,
+    handler: HttpRequestHandlerImplementation<Schema, Method, Path, StatusCode>,
   ) {
     if (!this.isRunning) {
       throw new NotRunningHttpInterceptorError();
     }
 
-    validatePathParams(path);
+    validatePathParams(handler.path);
 
-    const methodHandlers = this.httpHandlersByMethod[method];
-
-    const handler: HttpHandler = {
-      baseURL: interceptor.baseURLAsString,
-      method,
-      pathRegex: createRegexFromPath(path),
+    this.httpHandlersByMethod[handler.method].push({
       interceptor,
-      createResponse: async (context) => {
-        const request = context.request as HttpRequest;
-        const response = await createResponse({ request });
-
-        if (!response) {
-          return null;
-        }
-
-        if (context.request.method === 'HEAD') {
-          return new Response(null, {
-            status: response.status,
-            statusText: response.statusText,
-            headers: response.headers,
-          });
-        }
-
-        return response;
-      },
-    };
-
-    this.insertHandlerByInterceptorStartOrder(methodHandlers, handler);
+      implementation: handler,
+      pathRegex: createRegexFromPath(handler.path),
+    });
   }
 
   async createResponseFromDeclaration(
@@ -199,43 +180,22 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private async createResponseForRequest(request: HttpRequest) {
-    // Handlers can be added or cleared while a response is created, so the request falls through a copy.
-    const methodHandlers = [...this.httpHandlersByMethod[request.method as HttpMethod]];
+    const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
+    const { response } = await this.createResponseWithHandlers(request, methodHandlers);
 
-    const requestURL = excludeNonPathParams(new URL(request.url));
-    const requestURLAsString = requestURL.href === `${requestURL.origin}/` ? requestURL.origin : requestURL.href;
-
-    for (let handlerIndex = methodHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
-      const handler = methodHandlers[handlerIndex];
-      const matchesBaseURL = isURLUnderBaseURL(requestURLAsString, handler.baseURL);
-
-      if (!matchesBaseURL) {
-        continue;
-      }
-
-      const requestPath = requestURLAsString.replace(handler.baseURL, '');
-      const matchesPath = handler.pathRegex.test(requestPath);
-
-      if (!matchesPath) {
-        continue;
-      }
-
-      try {
-        const response = await handler.createResponse({ request });
-
-        if (response) {
-          return response;
-        }
-      } catch (error) {
-        console.error(error);
-
-        // A handler that threw may have already counted the request, such as toward its `times` limit, so older
-        // interceptors are not tried.
-        break;
-      }
+    if (!response) {
+      return this.bypassOrRejectUnhandledRequest(request);
     }
 
-    return this.bypassOrRejectUnhandledRequest(request);
+    if (request.method === 'HEAD') {
+      return new Response(null, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      });
+    }
+
+    return response;
   }
 
   private async bypassOrRejectUnhandledRequest(request: HttpRequest) {
