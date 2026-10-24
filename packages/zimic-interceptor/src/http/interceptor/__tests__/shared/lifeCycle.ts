@@ -106,7 +106,7 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
     });
   });
 
-  it('should intercept requests with the restarted interceptor if another one with the same base URL started earlier', async () => {
+  it('should intercept requests with the newest handler if a restarted interceptor with the same base URL declares an older one', async () => {
     await usingHttpInterceptor<{
       '/users': { GET: { response: { 204: {} } } };
     }>(interceptorOptions, async (interceptor) => {
@@ -124,10 +124,10 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
         );
 
         const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        expect(response.status).toBe(204);
+        expect(response.status).toBe(200);
 
-        expect(handler.requests).toHaveLength(1);
-        expect(otherHandler.requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
+        expect(otherHandler.requests).toHaveLength(1);
       });
     });
   });

@@ -8,6 +8,7 @@ import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 import {
+  expectWebSocketTimesCheckError,
   usingWebSocketClient,
   waitForWebSocketClientClose,
   waitForWebSocketClientMessage,
@@ -602,6 +603,52 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
 
           expect(clientHandle.messages).toBe(clientMessages);
           expect(clientMessages).toEqual([]);
+        });
+      },
+    );
+  });
+
+  it('should not handle messages after cleared while they are being matched', async () => {
+    const restrictionStartedPromise = createPromiseWithResolvers<void>();
+    const restrictionReleasedPromise = createPromiseWithResolvers<void>();
+
+    const restriction = vi.fn(async () => {
+      restrictionStartedPromise.resolve();
+      await restrictionReleasedPromise;
+      return true;
+    });
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor.message().with(restriction).respond({ type: 'server', index: 1 }),
+          interceptor,
+        );
+
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          client.send(JSON.stringify({ type: 'client', index: 1 }));
+          await restrictionStartedPromise;
+
+          await promiseIfRemote(interceptor.clear(), interceptor);
+
+          // Redeclaring the cleared handler would apply its new declarations to the message being matched.
+          const effect = vi.fn();
+          await promiseIfRemote(handler.effect(effect).times(1), interceptor);
+
+          restrictionReleasedPromise.resolve();
+
+          await waitForNot(() => {
+            expect(effect).toHaveBeenCalled();
+          });
+
+          expect(restriction).toHaveBeenCalledTimes(1);
+          expect(handler.messages).toHaveLength(0);
+        });
+
+        await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 1 message, but got 0.',
+          expectedNumberOfMessages: 1,
         });
       },
     );
