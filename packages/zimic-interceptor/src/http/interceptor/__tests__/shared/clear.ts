@@ -269,6 +269,56 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
     });
   });
 
+  it('should not save intercepted requests after cleared while a request is being handled', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodWithSearchParamsSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      const responseStartedPromise = createPromiseWithResolvers<void>();
+      const responseReleasedPromise = createPromiseWithResolvers<void>();
+
+      const handler = await promiseIfRemote(
+        interceptor.get('/users').respond(async (request) => {
+          if (request.searchParams.get('value') === 'pending') {
+            responseStartedPromise.resolve();
+            await responseReleasedPromise;
+          }
+          return { status: 204 };
+        }),
+        interceptor,
+      );
+
+      const existingResponse = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      expect(existingResponse.status).toBe(204);
+
+      const handlerRequests = handler.requests;
+      expect(handlerRequests).toHaveLength(1);
+
+      const pendingSearchParams = new HttpSearchParams({ value: 'pending' });
+
+      const pendingResponsePromise = fetch(joinURL(baseURL, `/users?${pendingSearchParams.toString()}`), {
+        method: 'GET',
+      });
+      await responseStartedPromise;
+
+      await promiseIfRemote(interceptor.clear(), interceptor);
+
+      const nextHandler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+
+      responseReleasedPromise.resolve();
+
+      const pendingResponse = await pendingResponsePromise;
+      expect(pendingResponse.status).toBe(204);
+
+      const nextResponse = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      expect(nextResponse.status).toBe(204);
+
+      expect(nextHandler.requests).toHaveLength(1);
+
+      expect(handler.requests).toBe(handlerRequests);
+      expect(handlerRequests).toEqual([]);
+    });
+  });
+
   it('should not handle requests after cleared while they are being matched', async () => {
     const restrictionStartedPromise = createPromiseWithResolvers<void>();
     const restrictionReleasedPromise = createPromiseWithResolvers<void>();

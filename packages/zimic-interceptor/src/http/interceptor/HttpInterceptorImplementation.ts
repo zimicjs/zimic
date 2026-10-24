@@ -51,6 +51,7 @@ class HttpInterceptorImplementation<
 
   requestSaving: HttpInterceptorRequestSaving;
   private numberOfSavedRequests = 0;
+  private requestSavingGeneration = 0;
 
   onUnhandledRequest?: HandlerConstructor extends typeof LocalHttpRequestHandler
     ? UnhandledRequestStrategy.Local
@@ -320,6 +321,8 @@ class HttpInterceptorImplementation<
     request: HttpRequest,
     parsedRequest: HttpInterceptorRequest<string, HttpMethodSchema>,
   ): Promise<HttpResponse | null> {
+    const requestSavingGeneration = this.requestSavingGeneration;
+
     const responseDeclaration = await handler.applyResponseDeclaration(parsedRequest);
 
     if (!responseDeclaration) {
@@ -329,7 +332,10 @@ class HttpInterceptorImplementation<
     const response = await this.workerOrThrow.createResponseFromDeclaration(request, responseDeclaration);
 
     const shouldSaveInterceptedRequest =
-      this.requestSaving.enabled && response && !HttpInterceptorWorker.isRejectedResponse(response);
+      this.requestSaving.enabled &&
+      requestSavingGeneration === this.requestSavingGeneration &&
+      response &&
+      !HttpInterceptorWorker.isRejectedResponse(response);
 
     if (shouldSaveInterceptedRequest) {
       const responseClone = response.clone();
@@ -366,6 +372,8 @@ class HttpInterceptorImplementation<
   }
 
   clear() {
+    this.requestSavingGeneration++;
+
     this.workerOrThrow.clearHandlers({ interceptor: this });
 
     const clearPromises: Promise<AnyHttpRequestHandlerImplementation>[] = [];
