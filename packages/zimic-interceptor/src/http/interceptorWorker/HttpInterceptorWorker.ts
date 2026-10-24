@@ -1,4 +1,5 @@
 import {
+  HTTP_METHODS,
   HttpHeadersInit,
   HttpHeaders,
   HttpBody,
@@ -16,7 +17,7 @@ import {
 } from '@zimic/http';
 import { isDefined } from '@zimic/utils/data';
 import { Default, PossiblePromise } from '@zimic/utils/types';
-import { excludeNonPathParams } from '@zimic/utils/url';
+import { createRegexFromPath, excludeNonPathParams, validatePathParams } from '@zimic/utils/url';
 
 import { removeArrayElement } from '@/utils/arrays';
 import { isClientSide } from '@/utils/environment';
@@ -24,6 +25,7 @@ import { methodCanHaveResponseBody } from '@/utils/http';
 import { logUnhandledRequestWarning, logger } from '@/utils/logging';
 import { isURLUnderBaseURL } from '@/utils/urls';
 
+import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import HttpInterceptorImplementation, {
   AnyHttpInterceptorImplementation,
 } from '../interceptor/HttpInterceptorImplementation';
@@ -47,7 +49,7 @@ import { HttpInterceptorWorkerType } from './types/options';
 
 const RESPONSE_ACTION_SYMBOL = Symbol.for('HttpResponse.action');
 
-export interface HttpHandler {
+interface HttpHandler {
   interceptor: AnyHttpInterceptorImplementation;
   implementation: AnyHttpRequestHandlerImplementation;
   pathRegex: RegExp;
@@ -59,7 +61,7 @@ interface FailedHttpRequestMatch {
   requestMatch: Extract<HttpRequestHandlerRequestMatch, { success: false }>;
 }
 
-export interface HttpRequestHandling {
+interface HttpRequestHandling {
   response: HttpResponse | null;
   matchedSomeHandler: boolean;
   error?: boolean;
@@ -75,6 +77,18 @@ abstract class HttpInterceptorWorker {
   private stoppingPromise?: Promise<void>;
 
   protected runningInterceptors: AnyHttpInterceptorImplementation[] = [];
+
+  private httpHandlersByMethod: {
+    [Method in HttpMethod]: HttpHandler[];
+  } = {
+    GET: [],
+    POST: [],
+    PATCH: [],
+    PUT: [],
+    DELETE: [],
+    HEAD: [],
+    OPTIONS: [],
+  };
 
   get numberOfRunningInterceptors() {
     return this.runningInterceptors.length;
@@ -140,7 +154,7 @@ abstract class HttpInterceptorWorker {
     }
   }
 
-  abstract use<
+  use<
     Schema extends HttpSchema,
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath<Schema, Method>,
@@ -148,22 +162,44 @@ abstract class HttpInterceptorWorker {
   >(
     interceptor: HttpInterceptorImplementation<Schema>,
     handler: HttpRequestHandlerImplementation<Schema, Method, Path, StatusCode>,
-  ): void;
+  ) {
+    if (!this.isRunning) {
+      throw new NotRunningHttpInterceptorError();
+    }
+
+    validatePathParams(handler.path);
+
+    this.httpHandlersByMethod[handler.method].push({
+      interceptor,
+      implementation: handler,
+      pathRegex: createRegexFromPath(handler.path),
+    });
+  }
+
+  protected clearHttpHandlers<Schema extends HttpSchema>(
+    interceptor: HttpInterceptorImplementation<Schema> | undefined,
+  ) {
+    for (const method of HTTP_METHODS) {
+      this.httpHandlersByMethod[method] =
+        interceptor === undefined
+          ? []
+          : this.httpHandlersByMethod[method].filter((handler) => handler.interceptor !== interceptor);
+    }
+  }
 
   // The handlers of all interceptors in the worker are tried together, from the last created to the first, so a newer
   // handler wins regardless of the start order of its interceptor or the path it was declared with.
-  protected async createResponseWithHandlers(
-    request: HttpRequest,
-    handlers: readonly HttpHandler[],
-  ): Promise<HttpRequestHandling> {
+  protected async createResponseWithHandlers(request: HttpRequest): Promise<HttpRequestHandling> {
     const requestURL = excludeNonPathParams(new URL(request.url));
     const requestURLAsString = requestURL.href === `${requestURL.origin}/` ? requestURL.origin : requestURL.href;
 
     const failedRequestMatches: FailedHttpRequestMatch[] = [];
     let matchedSomeHandler = false;
 
+    const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
+
     // Handlers can be added or cleared while a response is created, so the request is matched against a copy.
-    for (const handler of handlers.toReversed()) {
+    for (const handler of methodHandlers.toReversed()) {
       if (!this.matchesHandlerRoute(requestURLAsString, handler)) {
         continue;
       }

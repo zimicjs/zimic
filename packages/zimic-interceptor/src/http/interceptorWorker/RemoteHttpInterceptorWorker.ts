@@ -1,14 +1,4 @@
-import type {
-  HttpBody,
-  HttpHeadersInit,
-  HttpMethod,
-  HttpRequest,
-  HttpSchema,
-  HttpSchemaMethod,
-  HttpSchemaPath,
-  HttpStatusCode,
-} from '@zimic/http';
-import { createRegexFromPath, validatePathParams } from '@zimic/utils/url';
+import type { HttpBody, HttpHeadersInit, HttpMethod, HttpRequest, HttpSchema } from '@zimic/http';
 
 import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
 import UnsupportedResponseBypassError from '@/server/errors/UnsupportedResponseBypassError';
@@ -26,23 +16,10 @@ import HttpInterceptorImplementation, {
   AnyHttpInterceptorImplementation,
 } from '../interceptor/HttpInterceptorImplementation';
 import { HttpInterceptorPlatform, UnhandledRequestStrategy } from '../interceptor/types/options';
-import type HttpRequestHandlerImplementation from '../requestHandler/HttpRequestHandlerImplementation';
-import HttpInterceptorWorker, { HttpHandler } from './HttpInterceptorWorker';
+import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { RemoteHttpInterceptorWorkerOptions } from './types/options';
 
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
-  private httpHandlersByMethod: {
-    [Method in HttpMethod]: HttpHandler[];
-  } = {
-    GET: [],
-    POST: [],
-    PATCH: [],
-    PUT: [],
-    DELETE: [],
-    HEAD: [],
-    OPTIONS: [],
-  };
-
   webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
   private isConnectedToServer = false;
   private auth?: RemoteHttpInterceptorWorkerOptions['auth'];
@@ -117,12 +94,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   ) => {
     const request = deserializeRequest(message.data.request);
 
-    const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
-    const {
-      response: rawResponse,
-      matchedSomeHandler,
-      error,
-    } = await this.createResponseWithHandlers(request, methodHandlers);
+    const { response: rawResponse, matchedSomeHandler, error } = await this.createResponseWithHandlers(request);
 
     if (!rawResponse) {
       return { response: null, matchedSomeHandler, error };
@@ -185,28 +157,6 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     await this.webSocketClient.stop();
   }
 
-  use<
-    Schema extends HttpSchema,
-    Method extends HttpSchemaMethod<Schema>,
-    Path extends HttpSchemaPath<Schema, Method>,
-    StatusCode extends HttpStatusCode,
-  >(
-    interceptor: HttpInterceptorImplementation<Schema>,
-    handler: HttpRequestHandlerImplementation<Schema, Method, Path, StatusCode>,
-  ) {
-    if (!this.isRunning) {
-      throw new NotRunningHttpInterceptorError();
-    }
-
-    validatePathParams(handler.path);
-
-    this.httpHandlersByMethod[handler.method].push({
-      interceptor,
-      implementation: handler,
-      pathRegex: createRegexFromPath(handler.path),
-    });
-  }
-
   private async resetServerWorker() {
     if (!this.isConnectedToServer || !this.webSocketClient.isRunning) {
       return;
@@ -263,15 +213,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       throw new NotRunningHttpInterceptorError();
     }
 
-    if (options.interceptor === undefined) {
-      for (const handlers of Object.values(this.httpHandlersByMethod)) {
-        handlers.length = 0;
-      }
-    } else {
-      for (const [method, handlers] of Object.entries(this.httpHandlersByMethod)) {
-        this.httpHandlersByMethod[method] = handlers.filter((handler) => handler.interceptor !== options.interceptor);
-      }
-    }
+    this.clearHttpHandlers(options.interceptor);
   }
 }
 

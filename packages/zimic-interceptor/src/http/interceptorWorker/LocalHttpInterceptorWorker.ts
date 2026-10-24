@@ -1,15 +1,4 @@
-import {
-  HttpRequest,
-  HttpResponse,
-  HttpMethod,
-  HttpSchema,
-  HttpSchemaMethod,
-  HttpSchemaPath,
-  HttpStatusCode,
-  HttpHeadersInit,
-  HttpBody,
-} from '@zimic/http';
-import { createRegexFromPath, validatePathParams } from '@zimic/utils/url';
+import { HttpRequest, HttpResponse, HttpSchema, HttpHeadersInit, HttpBody } from '@zimic/http';
 import { SharedOptions as MSWWorkerSharedOptions, HttpHandler as MSWHttpHandler, bypass, http, passthrough } from 'msw';
 
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
@@ -19,24 +8,11 @@ import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttp
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
 import HttpInterceptorImplementation from '../interceptor/HttpInterceptorImplementation';
 import { UnhandledRequestStrategy } from '../interceptor/types/options';
-import HttpRequestHandlerImplementation from '../requestHandler/HttpRequestHandlerImplementation';
-import HttpInterceptorWorker, { HttpHandler } from './HttpInterceptorWorker';
+import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
 
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   private mswHttpHandler?: MSWHttpHandler;
-
-  private httpHandlersByMethod: {
-    [Method in HttpMethod]: HttpHandler[];
-  } = {
-    GET: [],
-    POST: [],
-    PATCH: [],
-    PUT: [],
-    DELETE: [],
-    HEAD: [],
-    OPTIONS: [],
-  };
 
   private store = new LocalMSWWorkerStore();
 
@@ -130,28 +106,6 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     return !this.hasInternalBrowserWorker();
   }
 
-  use<
-    Schema extends HttpSchema,
-    Method extends HttpSchemaMethod<Schema>,
-    Path extends HttpSchemaPath<Schema, Method>,
-    StatusCode extends HttpStatusCode,
-  >(
-    interceptor: HttpInterceptorImplementation<Schema>,
-    handler: HttpRequestHandlerImplementation<Schema, Method, Path, StatusCode>,
-  ) {
-    if (!this.isRunning) {
-      throw new NotRunningHttpInterceptorError();
-    }
-
-    validatePathParams(handler.path);
-
-    this.httpHandlersByMethod[handler.method].push({
-      interceptor,
-      implementation: handler,
-      pathRegex: createRegexFromPath(handler.path),
-    });
-  }
-
   async createResponseFromDeclaration(
     request: HttpRequest,
     declaration:
@@ -178,8 +132,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private async createResponseForRequest(request: HttpRequest) {
-    const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
-    const { response } = await this.createResponseWithHandlers(request, methodHandlers);
+    const { response } = await this.createResponseWithHandlers(request);
 
     if (!response) {
       return this.bypassOrRejectUnhandledRequest(request);
@@ -218,15 +171,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       throw new NotRunningHttpInterceptorError();
     }
 
-    if (options.interceptor === undefined) {
-      for (const handlers of Object.values(this.httpHandlersByMethod)) {
-        handlers.length = 0;
-      }
-    } else {
-      for (const [method, handlers] of Object.entries(this.httpHandlersByMethod)) {
-        this.httpHandlersByMethod[method] = handlers.filter((handler) => handler.interceptor !== options.interceptor);
-      }
-    }
+    this.clearHttpHandlers(options.interceptor);
   }
 }
 
