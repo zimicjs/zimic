@@ -198,7 +198,8 @@ abstract class HttpInterceptorWorker {
 
     const parsedRequestsByRoute = new Map<string, HttpInterceptorRequest<string, HttpMethodSchema>>();
 
-    const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
+    const method = request.method as HttpMethod;
+    const methodHandlers = this.httpHandlersByMethod[method];
 
     // Handlers can be added or cleared while a response is created, so the request is matched against a copy.
     for (const handler of methodHandlers.toReversed()) {
@@ -214,6 +215,12 @@ abstract class HttpInterceptorWorker {
         const requestMatch = await handler.implementation.matchesRequest(parsedRequest);
 
         if (requestMatch.success) {
+          // An asynchronous match can outlive a clear, after which the handler does not handle the request, even if
+          // redeclared. Older handlers are not tried.
+          if (!this.isHandlerRegistered(method, handler)) {
+            return { response: null, matchedSomeHandler };
+          }
+
           handler.implementation.markRequestAsMatched(parsedRequest);
 
           const response = await handler.interceptor.handleMatchedRequest(
@@ -264,6 +271,11 @@ abstract class HttpInterceptorWorker {
     parsedRequestsByRoute.set(routeKey, parsedRequest);
 
     return parsedRequest;
+  }
+
+  // Clearing removes the entries of a handler, and redeclaring it registers a new entry.
+  private isHandlerRegistered(method: HttpMethod, handler: HttpHandler) {
+    return this.httpHandlersByMethod[method].includes(handler);
   }
 
   private matchesHandlerRoute(requestURL: string, handler: HttpHandler) {

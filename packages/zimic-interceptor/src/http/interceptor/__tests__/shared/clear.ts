@@ -268,4 +268,45 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
       });
     });
   });
+
+  it('should not handle requests after cleared while they are being matched', async () => {
+    const restrictionStartedPromise = createPromiseWithResolvers<void>();
+    const restrictionReleasedPromise = createPromiseWithResolvers<void>();
+
+    const restriction = vi.fn(async () => {
+      restrictionStartedPromise.resolve();
+      await restrictionReleasedPromise;
+      return true;
+    });
+
+    const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
+
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>({ ...interceptorOptions, type, onUnhandledRequest }, async (interceptor) => {
+      const handler = await promiseIfRemote(
+        interceptor.get('/users').with(restriction).respond({ status: 204 }),
+        interceptor,
+      );
+
+      const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      await restrictionStartedPromise;
+
+      await promiseIfRemote(interceptor.clear(), interceptor);
+
+      // Redeclaring the cleared handler would apply its new response to the request being matched.
+      await promiseIfRemote(handler.respond({ status: 204 }), interceptor);
+
+      restrictionReleasedPromise.resolve();
+
+      await expectFetchError(responsePromise);
+
+      expect(restriction).toHaveBeenCalledTimes(1);
+      expect(handler.requests).toHaveLength(0);
+      expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+    });
+  });
 }
