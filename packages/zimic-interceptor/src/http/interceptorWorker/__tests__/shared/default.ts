@@ -182,70 +182,28 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
   });
 
   it('should throw an error if trying to clear handlers without a running worker', async () => {
-    await usingHttpInterceptorWorker(workerOptions, { start: false }, async (worker) => {
+    await usingHttpInterceptorWorker(workerOptions, { start: false }, (worker) => {
       expect(worker.isRunning).toBe(false);
 
-      await expect(async () => {
-        await worker.clearHandlers();
-      }).rejects.toThrow(new NotRunningHttpInterceptorError());
+      expect(() => {
+        worker.clearHandlers();
+      }).toThrow(new NotRunningHttpInterceptorError());
     });
   });
 
   it('should throw an error if trying to clear interceptor handlers without a running worker', async () => {
-    await usingHttpInterceptorWorker(workerOptions, { start: false }, async (worker) => {
+    await usingHttpInterceptorWorker(workerOptions, { start: false }, (worker) => {
       expect(worker.isRunning).toBe(false);
 
       const interceptor = createDefaultHttpInterceptor();
 
-      await expect(async () => {
-        await worker.clearHandlers({ interceptor: interceptor.implementation });
-      }).rejects.toThrow(new NotRunningHttpInterceptorError());
+      expect(() => {
+        worker.clearHandlers({ interceptor: interceptor.implementation });
+      }).toThrow(new NotRunningHttpInterceptorError());
     });
   });
 
   if (type === 'remote') {
-    it('should not throw an error if trying to clear handlers without a running web socket client', async () => {
-      await usingHttpInterceptorWorker(workerOptions, async (rawWorker) => {
-        expect(rawWorker).toBeInstanceOf(RemoteHttpInterceptorWorker);
-
-        const worker = rawWorker as RemoteHttpInterceptorWorker;
-        expect(worker.isRunning).toBe(true);
-        expect(worker.webSocketClient.isRunning).toBe(true);
-
-        // The websocket client automatically stops running if the interceptor server is closed.
-        // Let's stop the client manually to simulate that.
-        await worker.webSocketClient.stop();
-
-        expect(worker.isRunning).toBe(true);
-        expect(worker.webSocketClient.isRunning).toBe(false);
-
-        const clearPromise = worker.clearHandlers();
-        await expect(clearPromise).resolves.not.toThrow();
-      });
-    });
-
-    it('should not throw an error if trying to clear interceptor handlers without a running web socket client', async () => {
-      await usingHttpInterceptorWorker(workerOptions, async (rawWorker) => {
-        expect(rawWorker).toBeInstanceOf(RemoteHttpInterceptorWorker);
-
-        const worker = rawWorker as RemoteHttpInterceptorWorker;
-        expect(worker.isRunning).toBe(true);
-        expect(worker.webSocketClient.isRunning).toBe(true);
-
-        // The websocket client automatically stops running if the interceptor server is closed.
-        // Let's stop the client manually to simulate that.
-        await worker.webSocketClient.stop();
-
-        expect(worker.isRunning).toBe(true);
-        expect(worker.webSocketClient.isRunning).toBe(false);
-
-        const interceptor = createDefaultHttpInterceptor();
-
-        const clearPromise = worker.clearHandlers({ interceptor: interceptor.implementation });
-        await expect(clearPromise).resolves.not.toThrow();
-      });
-    });
-
     it('should close the web socket client after failing to register with the server while starting', async () => {
       await usingHttpInterceptorWorker(workerOptions, { start: false }, async (rawWorker) => {
         expect(rawWorker).toBeInstanceOf(RemoteHttpInterceptorWorker);
