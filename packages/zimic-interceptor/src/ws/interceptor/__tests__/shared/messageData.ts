@@ -143,6 +143,10 @@ export function declareMessageDataWebSocketInterceptorTests(options: RuntimeShar
     );
   });
 
+  // No WebSocket counterpart for "should show an error once if the body of a request defined as JSON is not valid and
+  // multiple handlers match it": WebSocket messages have no content type, so text that is not valid JSON is kept as a
+  // string without a parse error.
+
   it('should preserve binary data before unrestricted handler callbacks', async () => {
     await usingWebSocketInterceptor<BinaryMessage>(
       { ...interceptorOptions, messageSaving: { enabled: true } },

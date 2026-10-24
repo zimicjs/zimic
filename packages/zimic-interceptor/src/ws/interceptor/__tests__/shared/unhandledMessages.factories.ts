@@ -1,4 +1,4 @@
-import { waitFor } from '@zimic/utils/time';
+import { waitFor, waitForNot } from '@zimic/utils/time';
 import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it, vi } from 'vitest';
 
@@ -266,6 +266,52 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
 
           expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
         });
+      },
+    );
+  });
+
+  it('should call the unhandled message factory of the last started interceptor if an older one declares the newest handler', async () => {
+    const olderOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>();
+    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true }, onUnhandledMessage: olderOnUnhandledMessage },
+      async (olderInterceptor) => {
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, messageSaving: { enabled: true }, onUnhandledMessage },
+          async (interceptor) => {
+            const matchedMessage: MessageSchema = { type: 'client', index: 1 };
+
+            const handler = await promiseIfRemote(
+              interceptor.message().with(matchedMessage).respond({ type: 'server', index: 2 }),
+              interceptor,
+            );
+
+            const olderHandler = await promiseIfRemote(
+              olderInterceptor.message().with(matchedMessage).respond({ type: 'server', index: 1 }),
+              olderInterceptor,
+            );
+
+            await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+              client.send(JSON.stringify({ type: 'client', index: 2 }));
+
+              await waitFor(() => {
+                expect(onUnhandledMessage).toHaveBeenCalled();
+              });
+
+              // Unhandled messages have no reply, so no event signals that no other strategy will be applied.
+              await waitForNot(() => {
+                expect(olderOnUnhandledMessage).toHaveBeenCalled();
+              });
+            });
+
+            expect(handler.messages).toHaveLength(0);
+            expect(olderHandler.messages).toHaveLength(0);
+
+            expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+            expect(olderOnUnhandledMessage).not.toHaveBeenCalled();
+          },
+        );
       },
     );
   });

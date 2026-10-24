@@ -11,7 +11,7 @@ import { promiseIfRemote } from '@tests/utils/promises';
 import RunningHttpInterceptorError from '../../errors/RunningHttpInterceptorError';
 import { createHttpInterceptor } from '../../factory';
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../HttpInterceptorImplementation';
-import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
+import { HttpInterceptorAuthOptions, HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions, verifyUnhandledRequestMessage } from './utils';
 
 export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
@@ -119,6 +119,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
         // The request reaches the network, where the server at the base URL responds.
         await expectBypassedResponse(fetch(joinURL(defaultBaseURL, 'users'), { method: 'GET' }));
+
         expect(handler.requests).toHaveLength(0);
         expect(onUnhandledRequest).not.toHaveBeenCalled();
       });
@@ -160,7 +161,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
-  it('should intercept requests with the last started interceptor if an older one declares its handlers later', async () => {
+  it('should intercept requests with an older interceptor if it declares the newest handler', async () => {
     await usingHttpInterceptor<{
       '/users': { GET: { response: { 200: {} } } };
     }>(interceptorOptions, async (olderInterceptor) => {
@@ -175,16 +176,16 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
         );
 
         const response = await fetch(joinURL(defaultBaseURL, '/users'), { method: 'GET' });
-        expect(response.status).toBe(204);
+        expect(response.status).toBe(200);
 
-        expect(handler.requests).toHaveLength(1);
-        expect(olderHandler.requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
+        expect(olderHandler.requests).toHaveLength(1);
       });
     });
   });
 
-  it('should intercept requests with an older interceptor that declares its handlers later if the last started one has no matching handlers', async () => {
-    const restriction = vi.fn(() => false);
+  it('should intercept requests with the last started interceptor if the newest handler of an older one does not match', async () => {
+    const olderRestriction = vi.fn(() => false);
 
     await usingHttpInterceptor<{
       '/users': { GET: { response: { 200: {} } } };
@@ -192,22 +193,19 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
       await usingHttpInterceptor<{
         '/users': { GET: { response: { 204: {} } } };
       }>(interceptorOptions, async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor.get('/users').with(restriction).respond({ status: 204 }),
-          interceptor,
-        );
+        const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
 
         const olderHandler = await promiseIfRemote(
-          olderInterceptor.get('/users').respond({ status: 200 }),
+          olderInterceptor.get('/users').with(olderRestriction).respond({ status: 200 }),
           olderInterceptor,
         );
 
         const response = await fetch(joinURL(defaultBaseURL, '/users'), { method: 'GET' });
-        expect(response.status).toBe(200);
+        expect(response.status).toBe(204);
 
-        expect(restriction).toHaveBeenCalledTimes(1);
-        expect(handler.requests).toHaveLength(0);
-        expect(olderHandler.requests).toHaveLength(1);
+        expect(olderRestriction).toHaveBeenCalledTimes(1);
+        expect(handler.requests).toHaveLength(1);
+        expect(olderHandler.requests).toHaveLength(0);
       });
     });
   });
@@ -391,25 +389,24 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
-  it('should not try older interceptors if the last started one throws while handling a request', async () => {
+  it('should not try older handlers if the newest one throws while handling a request', async () => {
+    const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>();
+
     await usingHttpInterceptor<{
       '/users': { GET: { response: { 200: {} } } };
-    }>(interceptorOptions, async (olderInterceptor) => {
-      const olderHandler = await promiseIfRemote(
-        olderInterceptor.get('/users').respond({ status: 200 }),
-        olderInterceptor,
-      );
-
+    }>({ ...interceptorOptions, onUnhandledRequest: olderOnUnhandledRequest }, async (olderInterceptor) => {
       await usingHttpInterceptor<{
         '/users': { GET: { response: { 204: {} } } };
       }>({ ...interceptorOptions, onUnhandledRequest: { action: 'reject', log: true } }, async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+
         const error = new Error('An error occurred.');
 
-        const handler = await promiseIfRemote(
-          interceptor.get('/users').respond(() => {
+        const olderHandler = await promiseIfRemote(
+          olderInterceptor.get('/users').respond(() => {
             throw error;
           }),
-          interceptor,
+          olderInterceptor,
         );
 
         await usingIgnoredConsole(['error', 'warn'], async (console) => {
@@ -426,14 +423,15 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
         expect(handler.requests).toHaveLength(0);
         expect(olderHandler.requests).toHaveLength(0);
+        expect(olderOnUnhandledRequest).not.toHaveBeenCalled();
       });
     });
   });
 
   // Authentication tokens apply only to remote interceptors, which share an interceptor server by token.
   if (type === 'remote') {
-    const olderAuth = { token: 'older-token' };
-    const auth = { token: 'token' };
+    const olderAuth: HttpInterceptorAuthOptions = { token: 'older-token' };
+    const auth: HttpInterceptorAuthOptions = { token: 'token' };
 
     it('should apply the unhandled request strategy of the last started interceptor if only an older one using another authentication token has a matching handler', async () => {
       const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>();

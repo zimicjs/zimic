@@ -36,7 +36,7 @@ interface LocalWebSocketClientConnection {
     ((type: 'close', listener: () => void, options?: EventListenerOptions | boolean) => void);
 }
 
-interface WebSocketConnectionHolder {
+interface LocalWebSocketConnectionHolder {
   handler: WebSocketHandler;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: InternalWebSocketInterceptorClient<any>;
@@ -45,7 +45,7 @@ interface WebSocketConnectionHolder {
 interface WebSocketClientRegistration {
   connection: LocalWebSocketClientConnection;
   // Kept in the order the interceptors started, so the last holder is the newest.
-  holders: WebSocketConnectionHolder[];
+  holders: LocalWebSocketConnectionHolder[];
   messageListener: (event: MessageEvent<string | ArrayBufferLike | Blob | ArrayBufferView>) => void;
   closeListener: () => void;
 }
@@ -283,46 +283,8 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     registration: WebSocketClientRegistration,
     data: WebSocketMessageData<WebSocketSchema>,
   ) {
-    const { holders } = registration;
-
-    // Messages fall through holders from the last started to the first, as HTTP requests fall through interceptors.
-    for (let holderIndex = holders.length - 1; holderIndex >= 0; holderIndex--) {
-      const { handler, client } = holders[holderIndex];
-
-      // A holder cleared while a newer one was handling the message no longer holds the connection, and handling the
-      // message would add the client back to it.
-      const isStillHolding = handler.clients.has(client);
-
-      if (!isStillHolding) {
-        continue;
-      }
-
-      try {
-        const { handled } = await handler.interceptor.handleInterceptedMessage(data, {
-          sender: client,
-          receiver: handler.interceptor.server,
-        });
-
-        if (handled) {
-          return;
-        }
-      } catch (error) {
-        console.error(error);
-
-        // A handler that threw may have already counted the message, such as toward its `times` limit, so older
-        // interceptors are not tried.
-        return;
-      }
-    }
-
-    // Holders that let the connection go while the message was handled no longer decide its strategy. If none is left,
-    // the connection is closed and the message is dropped, as a cleared interceptor does not save the messages it was
-    // handling.
-    const newestHolder = holders.findLast(({ handler, client }) => handler.clients.has(client));
-
-    if (newestHolder) {
-      await newestHolder.handler.interceptor.logUnhandledMessageIfNecessary(data);
-    }
+    const holders = registration.holders.map(({ handler, client }) => ({ interceptor: handler.interceptor, client }));
+    await this.handleMessageWithHandlers(data, holders);
   }
 
   private removeConnectionFromHolders(registration: WebSocketClientRegistration) {
@@ -349,6 +311,8 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     if (!this.isRunning) {
       throw new NotRunningWebSocketInterceptorError();
     }
+
+    this.clearMessageHandlers(options?.interceptor);
 
     const selectedHandlers = this.webSocketHandlers.filter((handler) => {
       return options?.interceptor === undefined || handler.interceptor === options.interceptor;

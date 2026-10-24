@@ -64,10 +64,10 @@ function createMessageDiffs({ messageSaving, unmatchedMessageGroups }: WebSocket
       const messageParts = [`${messageNumber}: ${stringifyValueToLog(message)}`];
 
       if (diff.sender) {
-        messageParts.push('Sender restriction:');
+        messageParts.push('Sender:');
 
-        messageParts.push(`  ${color.green(`- ${diff.sender.expected}`)}`);
-        messageParts.push(`  ${color.red(`+ ${diff.sender.received}`)}`);
+        messageParts.push(`  ${color.green('- client from handler.from()')}`);
+        messageParts.push(`  ${color.red('+ another client')}`);
       }
 
       if (diff.computed) {

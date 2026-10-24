@@ -182,8 +182,7 @@ class WebSocketInterceptorServerRuntime {
   }
 
   // Clearing or stopping one interceptor must not affect the others, so a shared connection stays open until its last
-  // holder lets it go, whether or not the connection is still being set up. Replacing the holder arrays instead of
-  // splicing them keeps a message being handled from falling through a holder twice.
+  // holder lets it go, whether or not the connection is still being set up.
   private detachWebSocketHandlerConnections(
     handler: WebSocketHandler,
     options: {
@@ -379,32 +378,15 @@ class WebSocketInterceptorServerRuntime {
         message.data as WebSocketMessageData<WebSocketSchema>,
       );
 
-      // Messages fall through holders from the last started to the first, as HTTP requests fall through interceptors.
-      for (let holderIndex = holders.length - 1; holderIndex >= 0; holderIndex--) {
-        const reply = await this.webSocketServer.request(
-          'interceptors/ws/messages/handle',
-          { handlerId: holders[holderIndex].id, clientId: connection.clientId, data },
-          { sockets: [connection.workerSocket] },
-        );
-        const { handled, error: failedToHandleMessage } = parseInterceptorServerRPCData(
-          messageHandlingReplySchema,
-          reply,
-        );
-
-        // A handler that threw may have already counted the message, such as toward its `times` limit, so older
-        // holders are not tried.
-        if (handled || failedToHandleMessage) {
-          return;
-        }
-      }
-
-      // Holders may let the connection go until the worker receives this event, so the worker picks the newest one
-      // still holding it.
-      await this.webSocketServer.request(
-        'interceptors/ws/messages/unhandled',
+      // The message is sent to the worker once with all holders, so the worker tries their handlers together by
+      // creation order and applies the unhandled message strategy of the newest holder still holding the connection.
+      const reply = await this.webSocketServer.request(
+        'interceptors/ws/messages/handle',
         { handlerIds: holders.map((holder) => holder.id), clientId: connection.clientId, data },
         { sockets: [connection.workerSocket] },
       );
+
+      parseInterceptorServerRPCData(messageHandlingReplySchema, reply);
       /* istanbul ignore next -- @preserve
        * Message aborts depend on an RPC disconnect during message forwarding. */
     } catch (error) {

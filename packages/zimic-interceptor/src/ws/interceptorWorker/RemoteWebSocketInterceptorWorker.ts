@@ -65,7 +65,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       this.webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', this.connectClient);
       this.webSocketClient.onChannel('event', 'interceptors/ws/clients/close', this.closeClient);
       this.webSocketClient.onChannel('event', 'interceptors/ws/messages/handle', this.handleMessage);
-      this.webSocketClient.onChannel('event', 'interceptors/ws/messages/unhandled', this.handleUnhandledMessage);
 
       this.platform = this.readPlatform();
       this.isRunning = true;
@@ -90,7 +89,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       this.webSocketClient.offChannel('event', 'interceptors/ws/clients/connect', this.connectClient);
       this.webSocketClient.offChannel('event', 'interceptors/ws/clients/close', this.closeClient);
       this.webSocketClient.offChannel('event', 'interceptors/ws/messages/handle', this.handleMessage);
-      this.webSocketClient.offChannel('event', 'interceptors/ws/messages/unhandled', this.handleUnhandledMessage);
 
       await this.clearHandlers();
 
@@ -216,46 +214,15 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private handleMessage = async ({
     data: message,
   }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/messages/handle'>) => {
-    const handler = this.webSocketHandlers.get(message.handlerId);
-    const client = handler?.clients.get(message.clientId);
-
-    /* istanbul ignore if -- @preserve
-     * Stale server events after a worker reset are ignored; normal connect/close paths cover registered clients. */
-    if (!handler || !client) {
-      return { handled: false };
-    }
-
-    try {
-      const deserializedMessageData = deserializeWebSocketMessageDataFromTransport(message.data);
-
-      return await handler.interceptor.handleInterceptedMessage(deserializedMessageData, {
-        sender: client,
-        receiver: handler.interceptor.server,
-      });
-    } catch (error) {
-      console.error(error);
-      return { handled: false, error: true };
-    }
-  };
-
-  private handleUnhandledMessage = async ({
-    data: message,
-  }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/messages/unhandled'>) => {
-    // Holders that let the connection go while the message was handled no longer decide its strategy. If none is left,
-    // the connection is closed and the message is dropped, as a cleared interceptor does not save the messages it was
-    // handling.
-    const handler = message.handlerIds
-      .map((handlerId) => this.webSocketHandlers.get(handlerId))
-      .findLast((handler) => handler?.clients.has(message.clientId));
-
-    if (!handler) {
-      return {};
-    }
+    // Holders removed or cleared after the server sent the message no longer hold the connection.
+    const holders = message.handlerIds.flatMap((handlerId) => {
+      const handler = this.webSocketHandlers.get(handlerId);
+      const client = handler?.clients.get(message.clientId);
+      return handler && client ? [{ interceptor: handler.interceptor, client }] : [];
+    });
 
     const deserializedMessageData = deserializeWebSocketMessageDataFromTransport(message.data);
-    await handler.interceptor.logUnhandledMessageIfNecessary(deserializedMessageData);
-
-    return {};
+    return this.handleMessageWithHandlers(deserializedMessageData, holders);
   };
 
   private findHandlerByInterceptor<Schema extends WebSocketSchema>(
@@ -285,6 +252,8 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     if (!this.isRunning) {
       throw new NotRunningWebSocketInterceptorError();
     }
+
+    this.clearMessageHandlers(options.interceptor);
 
     const selectedHandlers = Array.from(this.webSocketHandlers.values()).filter((handler) => {
       return options.interceptor === undefined || handler.interceptor === options.interceptor;

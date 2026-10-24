@@ -774,15 +774,15 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           deleteWorker: vi.fn(),
         });
 
-        // No public path clears an interceptor after the server sends an unhandled message and before the worker
-        // receives it. A listener registered ahead of the worker's clears the second interceptor at that point. It
-        // never replies before the test ends, leaving the reply to the worker.
-        const unhandledReplyPromise = createPromiseWithResolvers<Record<string, never>>();
+        // No public path clears an interceptor after the server sends a message and before the worker receives it. A
+        // listener registered ahead of the worker's clears the second interceptor at that point. It never replies
+        // before the test ends, leaving the reply to the worker.
+        const handlingReplyPromise = createPromiseWithResolvers<{ handled: boolean }>();
         let secondClearPromise: Promise<void> | undefined;
 
-        worker.webSocketClient.onChannel('event', 'interceptors/ws/messages/unhandled', () => {
+        worker.webSocketClient.onChannel('event', 'interceptors/ws/messages/handle', () => {
           secondClearPromise = secondInterceptor.clear();
-          return unhandledReplyPromise;
+          return handlingReplyPromise;
         });
 
         try {
@@ -805,7 +805,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
             expect(secondOnUnhandledMessage).not.toHaveBeenCalled();
           });
         } finally {
-          unhandledReplyPromise.resolve({});
+          handlingReplyPromise.resolve({ handled: false });
           await secondInterceptor.stop({});
           await firstInterceptor.stop({});
         }
