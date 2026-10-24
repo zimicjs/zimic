@@ -196,6 +196,8 @@ abstract class HttpInterceptorWorker {
     const failedRequestMatches: FailedHttpRequestMatch[] = [];
     let matchedSomeHandler = false;
 
+    const parsedRequestsByRoute = new Map<string, HttpInterceptorRequest<string, HttpMethodSchema>>();
+
     const methodHandlers = this.httpHandlersByMethod[request.method as HttpMethod];
 
     // Handlers can be added or cleared while a response is created, so the request is matched against a copy.
@@ -207,10 +209,7 @@ abstract class HttpInterceptorWorker {
       matchedSomeHandler = true;
 
       try {
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest(request, {
-          baseURL: handler.interceptor.baseURLAsString,
-          pathRegex: handler.pathRegex,
-        });
+        const parsedRequest = await this.parseRequestForHandlerRoute(request, handler, parsedRequestsByRoute);
 
         const requestMatch = await handler.implementation.matchesRequest(parsedRequest);
 
@@ -239,6 +238,32 @@ abstract class HttpInterceptorWorker {
     this.markRequestAsUnhandled(failedRequestMatches);
 
     return { response: null, matchedSomeHandler };
+  }
+
+  // Parsing clones the request and reads its body, and the parsed path params depend only on the base URL and path of
+  // the handler, so handlers on the same route share one parsed request.
+  private async parseRequestForHandlerRoute(
+    request: HttpRequest,
+    handler: HttpHandler,
+    parsedRequestsByRoute: Map<string, HttpInterceptorRequest<string, HttpMethodSchema>>,
+  ) {
+    const baseURL = handler.interceptor.baseURLAsString;
+    const routeKey = JSON.stringify([baseURL, handler.implementation.path]);
+
+    const cachedParsedRequest = parsedRequestsByRoute.get(routeKey);
+
+    if (cachedParsedRequest) {
+      return cachedParsedRequest;
+    }
+
+    const parsedRequest = await HttpInterceptorWorker.parseRawRequest(request, {
+      baseURL,
+      pathRegex: handler.pathRegex,
+    });
+
+    parsedRequestsByRoute.set(routeKey, parsedRequest);
+
+    return parsedRequest;
   }
 
   private matchesHandlerRoute(requestURL: string, handler: HttpHandler) {
