@@ -345,4 +345,47 @@ export function declareUnhandledRequestFactoriesHttpInterceptorTests(
       expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
     });
   });
+
+  it('should call the unhandled request factory of the last started interceptor if an older one declares the newest handler', async () => {
+    const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>();
+
+    const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
+
+    await usingHttpInterceptor<Schema>(
+      { ...interceptorOptions, onUnhandledRequest: olderOnUnhandledRequest },
+      async (olderInterceptor) => {
+        await usingHttpInterceptor<Schema>({ ...interceptorOptions, onUnhandledRequest }, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor
+              .get('/users')
+              .with({ searchParams: { value: '1' } })
+              .respond({ status: 204 }),
+            interceptor,
+          );
+
+          const olderHandler = await promiseIfRemote(
+            olderInterceptor
+              .get('/users')
+              .with({ searchParams: { value: '1' } })
+              .respond({ status: 204 }),
+            olderInterceptor,
+          );
+
+          const searchParams = new HttpSearchParams({ value: '2' });
+
+          const responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
+          await expectFetchError(responsePromise);
+
+          expect(handler.requests).toHaveLength(0);
+          expect(olderHandler.requests).toHaveLength(0);
+
+          expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+          expect(olderOnUnhandledRequest).not.toHaveBeenCalled();
+        });
+      },
+    );
+  });
 }
