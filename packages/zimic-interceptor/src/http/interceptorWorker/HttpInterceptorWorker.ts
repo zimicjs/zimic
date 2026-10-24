@@ -316,8 +316,6 @@ abstract class HttpInterceptorWorker {
     interceptor?: HttpInterceptorImplementation<Schema>;
   }): void;
 
-  abstract get interceptorsWithHandlers(): AnyHttpInterceptorImplementation[];
-
   static setResponseAction(response: Response, action: UnhandledRequestStrategy.Action) {
     Object.defineProperty(response, RESPONSE_ACTION_SYMBOL, {
       value: action,

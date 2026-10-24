@@ -273,18 +273,6 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       }
     }
   }
-
-  get interceptorsWithHandlers() {
-    const interceptors = new Set<AnyHttpInterceptorImplementation>();
-
-    for (const handlers of Object.values(this.httpHandlersByMethod)) {
-      for (const handler of handlers) {
-        interceptors.add(handler.interceptor);
-      }
-    }
-
-    return Array.from(interceptors);
-  }
 }
 
 export default RemoteHttpInterceptorWorker;

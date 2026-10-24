@@ -17,9 +17,7 @@ import { MSWWorker } from '@/interceptor/types/msw';
 
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
-import HttpInterceptorImplementation, {
-  AnyHttpInterceptorImplementation,
-} from '../interceptor/HttpInterceptorImplementation';
+import HttpInterceptorImplementation from '../interceptor/HttpInterceptorImplementation';
 import { UnhandledRequestStrategy } from '../interceptor/types/options';
 import HttpRequestHandlerImplementation from '../requestHandler/HttpRequestHandlerImplementation';
 import HttpInterceptorWorker, { HttpHandler } from './HttpInterceptorWorker';
@@ -229,18 +227,6 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
         this.httpHandlersByMethod[method] = handlers.filter((handler) => handler.interceptor !== options.interceptor);
       }
     }
-  }
-
-  get interceptorsWithHandlers() {
-    const interceptors = new Set<AnyHttpInterceptorImplementation>();
-
-    for (const handlers of Object.values(this.httpHandlersByMethod)) {
-      for (const handler of handlers) {
-        interceptors.add(handler.interceptor);
-      }
-    }
-
-    return Array.from(interceptors);
   }
 }
 

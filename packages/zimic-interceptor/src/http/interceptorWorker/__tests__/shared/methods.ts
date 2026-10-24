@@ -319,11 +319,6 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         await new Handler(interceptor, method, '').respond(okSpiedResponseDeclarationFactory);
 
-        let interceptorsWithHandlers = worker.interceptorsWithHandlers;
-
-        expect(interceptorsWithHandlers).toHaveLength(1);
-        expect(interceptorsWithHandlers[0]).toBe(interceptor);
-
         let response = await fetch(baseURL, { method });
         expect(response.status).toBe(200);
 
@@ -343,11 +338,6 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         await new Handler(otherInterceptor, method, '').respond(noContentSpiedResponseDeclarationFactory);
 
-        interceptorsWithHandlers = worker.interceptorsWithHandlers;
-        expect(interceptorsWithHandlers).toHaveLength(2);
-        expect(interceptorsWithHandlers[0]).toBe(interceptor);
-        expect(interceptorsWithHandlers[1]).toBe(otherInterceptor);
-
         response = await fetch(baseURL, { method });
         expect(response.status).toBe(204);
 
@@ -365,10 +355,6 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         worker.clearHandlers({ interceptor: otherInterceptor });
 
-        interceptorsWithHandlers = worker.interceptorsWithHandlers;
-        expect(interceptorsWithHandlers).toHaveLength(1);
-        expect(interceptorsWithHandlers[0]).toBe(interceptor);
-
         response = await fetch(baseURL, { method });
         expect(response.status).toBe(200);
 
@@ -384,9 +370,6 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         expect(okRequest.method).toBe(method);
 
         worker.clearHandlers({ interceptor });
-
-        interceptorsWithHandlers = worker.interceptorsWithHandlers;
-        expect(interceptorsWithHandlers).toHaveLength(0);
 
         const responsePromise = fetch(baseURL, { method });
 
