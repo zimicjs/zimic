@@ -13,7 +13,7 @@ import UnknownHttpInterceptorTypeError from '../../errors/UnknownHttpInterceptor
 import { createHttpInterceptor } from '../../factory';
 import LocalHttpInterceptor from '../../LocalHttpInterceptor';
 import RemoteHttpInterceptor from '../../RemoteHttpInterceptor';
-import { RemoteHttpInterceptorOptions } from '../../types/options';
+import { HttpInterceptorAuthOptions, RemoteHttpInterceptorOptions } from '../../types/options';
 import {
   LocalHttpInterceptor as PublicLocalHttpInterceptor,
   RemoteHttpInterceptor as PublicRemoteHttpInterceptor,
@@ -506,8 +506,8 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
 
     // Remote-only: local interceptors have no authentication.
     it('should share workers only between interceptors with the same authentication token', async () => {
-      const auth = { token: 'token' };
-      const otherAuth = { token: 'other-token' };
+      const otherAuth: HttpInterceptorAuthOptions = { token: 'other-token' };
+      const auth: HttpInterceptorAuthOptions = { token: 'token' };
 
       await usingHttpInterceptor<{}>({ type: 'remote', baseURL, auth }, async () => {
         await usingHttpInterceptor<{}>({ type: 'remote', baseURL, auth: { token: auth.token } }, async () => {

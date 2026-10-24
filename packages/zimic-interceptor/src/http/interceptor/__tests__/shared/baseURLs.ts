@@ -11,7 +11,7 @@ import { promiseIfRemote } from '@tests/utils/promises';
 import RunningHttpInterceptorError from '../../errors/RunningHttpInterceptorError';
 import { createHttpInterceptor } from '../../factory';
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../HttpInterceptorImplementation';
-import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
+import { HttpInterceptorAuthOptions, HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions, verifyUnhandledRequestMessage } from './utils';
 
 export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
@@ -119,6 +119,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
         // The request reaches the network, where the server at the base URL responds.
         await expectBypassedResponse(fetch(joinURL(defaultBaseURL, 'users'), { method: 'GET' }));
+
         expect(handler.requests).toHaveLength(0);
         expect(onUnhandledRequest).not.toHaveBeenCalled();
       });
@@ -432,8 +433,8 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
   // Authentication tokens apply only to remote interceptors, which share an interceptor server by token.
   if (type === 'remote') {
-    const olderAuth = { token: 'older-token' };
-    const auth = { token: 'token' };
+    const olderAuth: HttpInterceptorAuthOptions = { token: 'older-token' };
+    const auth: HttpInterceptorAuthOptions = { token: 'token' };
 
     it('should apply the unhandled request strategy of the last started interceptor if only an older one using another authentication token has a matching handler', async () => {
       const olderOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>();
