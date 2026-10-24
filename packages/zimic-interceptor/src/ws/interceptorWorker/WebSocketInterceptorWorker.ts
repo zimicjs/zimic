@@ -152,6 +152,13 @@ abstract class WebSocketInterceptorWorker {
         const messageMatch = await handler.implementation.matchesMessage(message, context);
 
         if (messageMatch.success) {
+          // A holder that let the connection go while its handler was matching the message does not handle it. As
+          // with an HTTP handler cleared while matching a request, older handlers are not tried.
+          if (!this.isHoldingConnection(holder)) {
+            await this.logUnhandledMessageIfNecessary(data, holders);
+            return { handled: false };
+          }
+
           await holder.interceptor.handleMatchedMessage(handler.implementation, messageMatch.message, context);
           return { handled: true };
         }
@@ -167,14 +174,20 @@ abstract class WebSocketInterceptorWorker {
     }
 
     this.markMessageAsUnhandled(message, failedMessageMatches);
-
-    // Holders that let the connection go while the message was handled no longer decide its strategy. If none is left,
-    // the connection is closed and the message is dropped, as a cleared interceptor does not save the messages it was
-    // handling.
-    const newestHolder = holders.findLast((holder) => this.isHoldingConnection(holder));
-    await newestHolder?.interceptor.logUnhandledMessageIfNecessary(data);
+    await this.logUnhandledMessageIfNecessary(data, holders);
 
     return { handled: false };
+  }
+
+  // Holders that let the connection go while the message was handled no longer decide its strategy. If none is left,
+  // the connection is closed and the message is dropped, as a cleared interceptor does not save the messages it was
+  // handling.
+  private async logUnhandledMessageIfNecessary(
+    data: WebSocketMessageData<WebSocketSchema>,
+    holders: readonly WebSocketConnectionHolder[],
+  ) {
+    const newestHolder = holders.findLast((holder) => this.isHoldingConnection(holder));
+    await newestHolder?.interceptor.logUnhandledMessageIfNecessary(data);
   }
 
   // A holder lists the client from the moment it accepts the connection until it lets the connection go.
