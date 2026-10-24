@@ -417,6 +417,40 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
         });
       });
     });
+
+    it('should distribute messages to a matching handler of another interceptor when the maximum number of messages is reached', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (olderInterceptor) => {
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor.message().respond({ type: 'delete', id: 'newer-interceptor' }),
+            interceptor,
+          );
+
+          const olderHandler = await promiseIfRemote(
+            olderInterceptor.message().respond({ type: 'delete', id: 'older-interceptor' }).times(1),
+            olderInterceptor,
+          );
+
+          await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+            let messagePromise = waitForWebSocketClientMessage(client);
+            client.send(JSON.stringify({ type: 'create', body: { text: 'one' } }));
+            await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'delete', id: 'older-interceptor' }));
+
+            expect(olderHandler.messages).toHaveLength(1);
+            expect(handler.messages).toHaveLength(0);
+
+            messagePromise = waitForWebSocketClientMessage(client);
+            client.send(JSON.stringify({ type: 'create', body: { text: 'two' } }));
+            await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'delete', id: 'newer-interceptor' }));
+
+            expect(olderHandler.messages).toHaveLength(1);
+            expect(handler.messages).toHaveLength(1);
+          });
+
+          await promiseIfRemote(olderInterceptor.checkTimes(), olderInterceptor);
+        });
+      });
+    });
   });
 
   describe('Unmatched messages', () => {
@@ -627,6 +661,34 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
     // No WebSocket counterpart for "should not consider requests unmatched due to unmocked path in times checks":
     // WebSocket handlers have no per-handler path.
+
+    it('should not consider messages handled by another interceptor unmatched in times checks', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (olderInterceptor) => {
+        const olderHandler = await promiseIfRemote(
+          olderInterceptor.message().respond({ type: 'delete', id: '1' }),
+          olderInterceptor,
+        );
+
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: '2' }).times(1),
+            interceptor,
+          );
+
+          await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+            await sendMatchingMessage(client);
+          });
+
+          expect(handler.messages).toHaveLength(0);
+          expect(olderHandler.messages).toHaveLength(1);
+
+          await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected exactly 1 matching message, but got 0.',
+            expectedNumberOfMessages: 1,
+          });
+        });
+      });
+    });
   });
 
   it('should reset message counts when cleared', async () => {
