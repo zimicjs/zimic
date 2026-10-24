@@ -8,6 +8,7 @@ import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 import {
+  expectWebSocketTimesCheckError,
   usingWebSocketClient,
   waitForWebSocketClientClose,
   waitForWebSocketClientMessage,
@@ -633,7 +634,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
 
           // Redeclaring the cleared handler would apply its new declarations to the message being matched.
           const effect = vi.fn();
-          await promiseIfRemote(handler.effect(effect), interceptor);
+          await promiseIfRemote(handler.effect(effect).times(1), interceptor);
 
           restrictionReleasedPromise.resolve();
 
@@ -643,6 +644,11 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
 
           expect(restriction).toHaveBeenCalledTimes(1);
           expect(handler.messages).toHaveLength(0);
+        });
+
+        await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 1 message, but got 0.',
+          expectedNumberOfMessages: 1,
         });
       },
     );

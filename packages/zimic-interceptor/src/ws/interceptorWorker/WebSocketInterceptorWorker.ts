@@ -151,19 +151,27 @@ abstract class WebSocketInterceptorWorker {
       try {
         const messageMatch = await handler.implementation.matchesMessage(message, context);
 
-        if (messageMatch.success) {
-          // A holder that let the connection go while its handler was matching the message does not handle it. As
-          // with an HTTP handler cleared while matching a request, older handlers are not tried.
-          if (!this.isHoldingConnection(holder)) {
-            await this.logUnhandledMessageIfNecessary(data, holders);
-            return { handled: false };
-          }
-
-          await holder.interceptor.handleMatchedMessage(handler.implementation, messageMatch.message, context);
-          return { handled: true };
+        if (!messageMatch.success) {
+          failedMessageMatches.push({ handler: handler.implementation, messageMatch });
+          continue;
         }
 
-        failedMessageMatches.push({ handler: handler.implementation, messageMatch });
+        // A holder that let the connection go while its handler was matching the message does not handle it. As with
+        // an HTTP handler cleared while matching a request, older handlers are not tried.
+        if (!this.isHoldingConnection(holder)) {
+          await this.logUnhandledMessageIfNecessary(data, holders);
+          return { handled: false };
+        }
+
+        const reservation = handler.implementation.reserveMessage(messageMatch.message);
+
+        if (!reservation.success) {
+          failedMessageMatches.push({ handler: handler.implementation, messageMatch: reservation });
+          continue;
+        }
+
+        await holder.interceptor.handleMatchedMessage(handler.implementation, reservation.message, context);
+        return { handled: true };
       } catch (error) {
         console.error(error);
 
