@@ -209,14 +209,26 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
       };
     }
 
-    const canAcceptMoreMessages = this.numberOfMatchedMessages < this.limits.numberOfMessages.max;
+    if (!this.canAcceptMoreMessages()) {
+      return { success: false, cause: 'exceededNumberOfMessages' };
+    }
 
-    if (!canAcceptMoreMessages) {
+    return { success: true, message: restrictionsMatch.message };
+  }
+
+  // Concurrent messages can reach the limit while this one is matched asynchronously, so the limit is checked again in
+  // the same synchronous step that counts the message.
+  reserveMessage(message: WebSocketSchema): WebSocketMessageHandlerMessageMatch {
+    if (!this.canAcceptMoreMessages()) {
       return { success: false, cause: 'exceededNumberOfMessages' };
     }
 
     this.numberOfMatchedMessages++;
-    return { success: true, message: restrictionsMatch.message };
+    return { success: true, message };
+  }
+
+  private canAcceptMoreMessages() {
+    return this.numberOfMatchedMessages < this.limits.numberOfMessages.max;
   }
 
   private async matchesRestrictions(

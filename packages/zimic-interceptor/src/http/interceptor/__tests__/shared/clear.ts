@@ -4,6 +4,7 @@ import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
 import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
+import { expectHttpTimesCheckError } from '@/http/requestHandler/__tests__/shared/utils';
 import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -265,6 +266,102 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
         expect(handler.requests).toHaveLength(0);
         expect(otherOnUnhandledRequest).not.toHaveBeenCalled();
         expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+      });
+    });
+  });
+
+  it('should not save intercepted requests after cleared while a request is being handled', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodWithSearchParamsSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      const responseStartedPromise = createPromiseWithResolvers<void>();
+      const responseReleasedPromise = createPromiseWithResolvers<void>();
+
+      const handler = await promiseIfRemote(
+        interceptor.get('/users').respond(async (request) => {
+          if (request.searchParams.get('value') === 'pending') {
+            responseStartedPromise.resolve();
+            await responseReleasedPromise;
+          }
+          return { status: 204 };
+        }),
+        interceptor,
+      );
+
+      const existingResponse = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      expect(existingResponse.status).toBe(204);
+
+      const handlerRequests = handler.requests;
+      expect(handlerRequests).toHaveLength(1);
+
+      const pendingSearchParams = new HttpSearchParams({ value: 'pending' });
+
+      const pendingResponsePromise = fetch(joinURL(baseURL, `/users?${pendingSearchParams.toString()}`), {
+        method: 'GET',
+      });
+      await responseStartedPromise;
+
+      await promiseIfRemote(interceptor.clear(), interceptor);
+
+      const nextHandler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+
+      responseReleasedPromise.resolve();
+
+      const pendingResponse = await pendingResponsePromise;
+      expect(pendingResponse.status).toBe(204);
+
+      const nextResponse = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      expect(nextResponse.status).toBe(204);
+
+      expect(nextHandler.requests).toHaveLength(1);
+
+      expect(handler.requests).toBe(handlerRequests);
+      expect(handlerRequests).toEqual([]);
+    });
+  });
+
+  it('should not handle requests after cleared while they are being matched', async () => {
+    const restrictionStartedPromise = createPromiseWithResolvers<void>();
+    const restrictionReleasedPromise = createPromiseWithResolvers<void>();
+
+    const restriction = vi.fn(async () => {
+      restrictionStartedPromise.resolve();
+      await restrictionReleasedPromise;
+      return true;
+    });
+
+    const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
+
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>({ ...interceptorOptions, type, onUnhandledRequest }, async (interceptor) => {
+      const handler = await promiseIfRemote(
+        interceptor.get('/users').with(restriction).respond({ status: 204 }),
+        interceptor,
+      );
+
+      const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      await restrictionStartedPromise;
+
+      await promiseIfRemote(interceptor.clear(), interceptor);
+
+      // Redeclaring the cleared handler would apply its new response to the request being matched.
+      await promiseIfRemote(handler.respond({ status: 204 }).times(1), interceptor);
+
+      restrictionReleasedPromise.resolve();
+
+      await expectFetchError(responsePromise);
+
+      expect(restriction).toHaveBeenCalledTimes(1);
+      expect(handler.requests).toHaveLength(0);
+      expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+
+      await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        message: 'Expected exactly 1 request, but got 0.',
+        expectedNumberOfRequests: 1,
       });
     });
   });

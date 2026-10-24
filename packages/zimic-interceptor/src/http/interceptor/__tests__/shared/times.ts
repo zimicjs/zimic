@@ -1,8 +1,9 @@
 import { HttpSchema, HttpSearchParams } from '@zimic/http';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
 import color from 'picocolors';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { expectHttpTimesCheckError } from '@/http/requestHandler/__tests__/shared/utils';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -774,6 +775,75 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         });
       });
     });
+
+    it('should distribute requests to a matching handler of another interceptor when the maximum number of requests is reached', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 200: {} } } };
+      }>(interceptorOptions, async (olderInterceptor) => {
+        await usingHttpInterceptor<{
+          '/users': { GET: MethodSchema };
+        }>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+
+          const olderHandler = await promiseIfRemote(
+            olderInterceptor.get('/users').respond({ status: 200 }).times(1),
+            olderInterceptor,
+          );
+
+          let response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(200);
+
+          expect(olderHandler.requests).toHaveLength(1);
+          expect(handler.requests).toHaveLength(0);
+
+          response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(204);
+
+          expect(olderHandler.requests).toHaveLength(1);
+          expect(handler.requests).toHaveLength(1);
+
+          await promiseIfRemote(olderInterceptor.checkTimes(), olderInterceptor);
+        });
+      });
+    });
+
+    it('should distribute concurrent requests to the next matching handler when the maximum number of requests is reached', async () => {
+      const concurrentRequestCount = 2;
+      const allRequestsMatchingPromise = createPromiseWithResolvers<void>();
+
+      const restriction = vi.fn(async () => {
+        if (restriction.mock.calls.length === concurrentRequestCount) {
+          allRequestsMatchingPromise.resolve();
+        }
+
+        await allRequestsMatchingPromise;
+        return true;
+      });
+
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 200: {}; 204: {} } } };
+      }>(interceptorOptions, async (interceptor) => {
+        const fallbackHandler = await promiseIfRemote(interceptor.get('/users').respond({ status: 200 }), interceptor);
+
+        const limitedHandler = await promiseIfRemote(
+          interceptor.get('/users').with(restriction).respond({ status: 204 }).times(1),
+          interceptor,
+        );
+
+        const responses = await Promise.all(
+          Array.from({ length: concurrentRequestCount }, () => fetch(joinURL(baseURL, '/users'), { method: 'GET' })),
+        );
+
+        const statuses = responses.map((response) => response.status);
+        expect(statuses.toSorted((status, otherStatus) => status - otherStatus)).toEqual([200, 204]);
+
+        expect(restriction).toHaveBeenCalledTimes(concurrentRequestCount);
+        expect(limitedHandler.requests).toHaveLength(1);
+        expect(fallbackHandler.requests).toHaveLength(1);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      });
+    });
   });
 
   describe('Unmatched requests', () => {
@@ -971,6 +1041,41 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 matching request, but got 0.',
           expectedNumberOfRequests: 1,
+        });
+      });
+    });
+
+    it('should not consider requests handled by another interceptor unmatched in times checks', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 200: {} } } };
+      }>(interceptorOptions, async (olderInterceptor) => {
+        const olderHandler = await promiseIfRemote(
+          olderInterceptor.get('/users').respond({ status: 200 }),
+          olderInterceptor,
+        );
+
+        await usingHttpInterceptor<{
+          '/users': { GET: MethodSchema };
+        }>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor
+              .get('/users')
+              .with({ searchParams: { value: '1' } })
+              .respond({ status: 204 })
+              .times(1),
+            interceptor,
+          );
+
+          const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(200);
+
+          expect(handler.requests).toHaveLength(0);
+          expect(olderHandler.requests).toHaveLength(1);
+
+          await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected exactly 1 matching request, but got 0.',
+            expectedNumberOfRequests: 1,
+          });
         });
       });
     });

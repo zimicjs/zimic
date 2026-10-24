@@ -417,7 +417,7 @@ describe('Interceptor server', () => {
   });
 
   describe('HTTP worker RPCs', () => {
-    it('should reject resets with an invalid entry, preserving existing handlers and pending requests', async () => {
+    it('should reject resets with an invalid base URL, preserving existing base URLs and pending requests', async () => {
       server = createInternalInterceptorServer({ logUnhandledRequests: false });
       await server.start();
 
@@ -440,7 +440,10 @@ describe('Interceptor server', () => {
           await pendingResponseReleasedPromise;
         }
 
-        return { response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null } };
+        return {
+          response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null },
+          matchedSomeHandler: true,
+        };
       });
 
       await usingIgnoredConsole(['error'], async (console) => {
@@ -450,15 +453,7 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL], handlers: [] });
-
-          await worker.request('interceptors/http/workers/commit', {
-            id: crypto.randomUUID(),
-            baseURL,
-            method: 'GET',
-            path: '/',
-            index: 0,
-          });
+          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL] });
 
           const pendingResponsePromise = fetch(baseURL);
 
@@ -468,11 +463,7 @@ describe('Interceptor server', () => {
 
           rejectedRequests.push(
             worker.request('interceptors/http/workers/reset', {
-              interceptorBaseURLs: [otherBaseURL],
-              handlers: [
-                { id: crypto.randomUUID(), baseURL: otherBaseURL, method: 'GET', path: '/' },
-                { id: crypto.randomUUID(), baseURL: otherBaseURL, method: 'TRACE' as never, path: '/' },
-              ],
+              interceptorBaseURLs: [otherBaseURL, `ws://${server!.hostname}:${server!.port}/chat`],
             }),
           );
 
@@ -500,7 +491,7 @@ describe('Interceptor server', () => {
       });
     });
 
-    it('should reject resets with an invalid payload, preserving existing handlers', async () => {
+    it('should reject resets with an invalid payload, preserving existing base URLs', async () => {
       server = createInternalInterceptorServer({ logUnhandledRequests: false });
       await server.start();
 
@@ -514,6 +505,7 @@ describe('Interceptor server', () => {
 
       worker.onChannel('event', 'interceptors/http/responses/create', () => ({
         response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null },
+        matchedSomeHandler: true,
       }));
 
       await usingIgnoredConsole(['error'], async (console) => {
@@ -523,15 +515,7 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL], handlers: [] });
-
-          await worker.request('interceptors/http/workers/commit', {
-            id: crypto.randomUUID(),
-            baseURL,
-            method: 'GET',
-            path: '/',
-            index: 0,
-          });
+          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL] });
 
           rejectedRequests.push(worker.request('interceptors/http/workers/reset', { invalid: true } as never));
 
@@ -542,202 +526,6 @@ describe('Interceptor server', () => {
 
           const response = await fetch(baseURL);
           expect(response.status).toBe(204);
-        } finally {
-          await worker.stop();
-          await Promise.allSettled(rejectedRequests);
-        }
-      });
-    });
-
-    it('should reject commits with an unsupported method', async () => {
-      server = createInternalInterceptorServer({ logUnhandledRequests: false });
-      await server.start();
-
-      const baseURL = `http://${server.hostname}:${server.port}/users`;
-
-      const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
-        url: `ws://${server.hostname}:${server.port}`,
-      });
-
-      const rejectedRequests: Promise<unknown>[] = [];
-      const handledRequestURLs: string[] = [];
-
-      worker.onChannel('event', 'interceptors/http/responses/create', ({ data }) => {
-        handledRequestURLs.push(data.request.url);
-        return { response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null } };
-      });
-
-      worker.onChannel('event', 'interceptors/http/responses/unhandled', () => ({ wasLogged: false }));
-
-      await usingIgnoredConsole(['error'], async (console) => {
-        try {
-          await worker.start({
-            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
-            waitForAuthentication: true,
-          });
-
-          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL], handlers: [] });
-
-          rejectedRequests.push(
-            worker.request('interceptors/http/workers/commit', {
-              id: crypto.randomUUID(),
-              baseURL,
-              method: 'TRACE' as never,
-              path: '/',
-              index: 0,
-            }),
-          );
-
-          await waitFor(() => {
-            expect(console.error).toHaveBeenCalledTimes(1);
-            expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
-          });
-
-          await expectFetchError(fetch(baseURL));
-          expect(handledRequestURLs).toHaveLength(0);
-        } finally {
-          await worker.stop();
-          await Promise.allSettled(rejectedRequests);
-        }
-      });
-    });
-
-    it('should reject commits with a non-HTTP base URL', async () => {
-      server = createInternalInterceptorServer({ logUnhandledRequests: false });
-      await server.start();
-
-      const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
-        url: `ws://${server.hostname}:${server.port}`,
-      });
-
-      const rejectedRequests: Promise<unknown>[] = [];
-
-      await usingIgnoredConsole(['error'], async (console) => {
-        try {
-          await worker.start({
-            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
-            waitForAuthentication: true,
-          });
-
-          rejectedRequests.push(
-            worker.request('interceptors/http/workers/commit', {
-              id: crypto.randomUUID(),
-              baseURL: `ws://${server!.hostname}:${server!.port}/users`,
-              method: 'GET',
-              path: '/',
-              index: 0,
-            }),
-          );
-
-          await waitFor(() => {
-            expect(console.error).toHaveBeenCalledTimes(1);
-            expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
-          });
-        } finally {
-          await worker.stop();
-          await Promise.allSettled(rejectedRequests);
-        }
-      });
-    });
-
-    it('should reject commits with an index past the handlers of their worker, preserving existing handlers', async () => {
-      server = createInternalInterceptorServer({ logUnhandledRequests: false });
-      await server.start();
-
-      const baseURL = `http://${server.hostname}:${server.port}/users`;
-
-      const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
-        url: `ws://${server.hostname}:${server.port}`,
-      });
-
-      const rejectedRequests: Promise<unknown>[] = [];
-      const handledHandlerIds: string[] = [];
-
-      worker.onChannel('event', 'interceptors/http/responses/create', ({ data }) => {
-        handledHandlerIds.push(data.handlerId);
-        return { response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null } };
-      });
-
-      worker.onChannel('event', 'interceptors/http/responses/unhandled', () => ({ wasLogged: false }));
-
-      const existingHandlerId = crypto.randomUUID();
-
-      await usingIgnoredConsole(['error'], async (console) => {
-        try {
-          await worker.start({
-            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
-            waitForAuthentication: true,
-          });
-
-          await worker.request('interceptors/http/workers/reset', {
-            interceptorBaseURLs: [baseURL],
-            handlers: [{ id: existingHandlerId, baseURL, method: 'GET', path: '/' }],
-          });
-
-          rejectedRequests.push(
-            worker.request('interceptors/http/workers/commit', {
-              id: crypto.randomUUID(),
-              baseURL,
-              method: 'GET',
-              path: '/',
-              index: 2,
-            }),
-          );
-
-          await waitFor(() => {
-            expect(console.error).toHaveBeenCalledTimes(1);
-          });
-          expect(console.error).toHaveBeenCalledWith(
-            new InvalidWebSocketMessageError(
-              'HTTP handler commit index 2 exceeds the handler count of its worker (1).',
-            ),
-          );
-
-          const response = await fetch(baseURL);
-          expect(response.status).toBe(204);
-          expect(handledHandlerIds).toEqual([existingHandlerId]);
-        } finally {
-          await worker.stop();
-          await Promise.allSettled(rejectedRequests);
-        }
-      });
-    });
-
-    it('should reject commits sent before the first reset of their worker', async () => {
-      server = createInternalInterceptorServer({ logUnhandledRequests: false });
-      await server.start();
-
-      const baseURL = `http://${server.hostname}:${server.port}/users`;
-
-      const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
-        url: `ws://${server.hostname}:${server.port}`,
-      });
-
-      const rejectedRequests: Promise<unknown>[] = [];
-
-      await usingIgnoredConsole(['error'], async (console) => {
-        try {
-          await worker.start({
-            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
-            waitForAuthentication: true,
-          });
-
-          rejectedRequests.push(
-            worker.request('interceptors/http/workers/commit', {
-              id: crypto.randomUUID(),
-              baseURL,
-              method: 'GET',
-              path: '/',
-              index: 0,
-            }),
-          );
-
-          await waitFor(() => {
-            expect(console.error).toHaveBeenCalledTimes(1);
-          });
-          expect(console.error).toHaveBeenCalledWith(
-            new InvalidWebSocketMessageError('HTTP handler commit received before the first reset of its worker.'),
-          );
         } finally {
           await worker.stop();
           await Promise.allSettled(rejectedRequests);
@@ -762,10 +550,13 @@ describe('Interceptor server', () => {
         handledRequestsCount++;
 
         if (handledRequestsCount === 1) {
-          return { response: { type: 'basic', status: 'ok' } } as never;
+          return { response: { type: 'basic', status: 'ok' }, matchedSomeHandler: true } as never;
         }
 
-        return { response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null } };
+        return {
+          response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null },
+          matchedSomeHandler: true,
+        };
       });
 
       worker.onChannel('event', 'interceptors/http/responses/unhandled', () => ({ wasLogged: false }));
@@ -777,15 +568,7 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL], handlers: [] });
-
-          await worker.request('interceptors/http/workers/commit', {
-            id: crypto.randomUUID(),
-            baseURL,
-            method: 'GET',
-            path: '/',
-            index: 0,
-          });
+          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL] });
 
           await expectFetchError(fetch(baseURL));
           expect(console.error).toHaveBeenCalledTimes(1);
@@ -811,6 +594,11 @@ describe('Interceptor server', () => {
         messageTimeout: 500,
       });
 
+      worker.onChannel('event', 'interceptors/http/responses/create', () => ({
+        response: null,
+        matchedSomeHandler: false,
+      }));
+
       worker.onChannel('event', 'interceptors/http/responses/unhandled', () => ({ wasLogged: 'yes' }) as never);
 
       await usingIgnoredConsole(['error'], async (console) => {
@@ -820,15 +608,7 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL], handlers: [] });
-
-          await worker.request('interceptors/http/workers/commit', {
-            id: crypto.randomUUID(),
-            baseURL,
-            method: 'GET',
-            path: '/users',
-            index: 0,
-          });
+          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL] });
 
           const request = new Request(`${baseURL}/posts`);
           await expectFetchError(fetch(request.clone()));
@@ -862,6 +642,11 @@ describe('Interceptor server', () => {
 
       const unresolvedUnhandledPromise = createPromiseWithResolvers<{ wasLogged: boolean }>();
 
+      worker.onChannel('event', 'interceptors/http/responses/create', () => ({
+        response: null,
+        matchedSomeHandler: false,
+      }));
+
       worker.onChannel('event', 'interceptors/http/responses/unhandled', () => {
         workerStopPromise = worker.stop();
         // Never replies within the handler, keeping the request pending.
@@ -875,15 +660,7 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL], handlers: [] });
-
-          await worker.request('interceptors/http/workers/commit', {
-            id: crypto.randomUUID(),
-            baseURL,
-            method: 'GET',
-            path: '/users',
-            index: 0,
-          });
+          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL] });
 
           const request = new Request(`${baseURL}/posts`);
           await expectFetchError(fetch(request.clone()));
@@ -903,6 +680,51 @@ describe('Interceptor server', () => {
       });
     });
 
+    it('should reject requests without logging them when the worker disconnects before replying to the response creation request', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: true });
+      await server.start();
+
+      const baseURL = `http://${server.hostname}:${server.port}/api`;
+
+      const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+        url: `ws://${server.hostname}:${server.port}`,
+        messageTimeout: 500,
+      });
+
+      let workerStopPromise: Promise<void> | undefined;
+
+      const unresolvedResponsePromise = createPromiseWithResolvers<{ response: null; matchedSomeHandler: boolean }>();
+
+      worker.onChannel('event', 'interceptors/http/responses/create', () => {
+        workerStopPromise = worker.stop();
+        // Never replies within the handler, keeping the request pending.
+        return unresolvedResponsePromise;
+      });
+
+      const unhandledRequestListener = vi.fn(() => ({ wasLogged: false }));
+      worker.onChannel('event', 'interceptors/http/responses/unhandled', unhandledRequestListener);
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        try {
+          await worker.start({
+            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
+            waitForAuthentication: true,
+          });
+
+          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL] });
+
+          await expectFetchError(fetch(`${baseURL}/users`));
+
+          expect(console.error).not.toHaveBeenCalled();
+          expect(unhandledRequestListener).not.toHaveBeenCalled();
+        } finally {
+          await worker.stop();
+          unresolvedResponsePromise.resolve({ response: null, matchedSomeHandler: false });
+          await Promise.all([workerStopPromise, unresolvedResponsePromise]);
+        }
+      });
+    });
+
     it('should handle requests to the root of the base URL', async () => {
       server = createInternalInterceptorServer({ logUnhandledRequests: false });
       await server.start();
@@ -916,6 +738,7 @@ describe('Interceptor server', () => {
 
       worker.onChannel('event', 'interceptors/http/responses/create', () => ({
         response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null },
+        matchedSomeHandler: true,
       }));
 
       try {
@@ -924,15 +747,7 @@ describe('Interceptor server', () => {
           waitForAuthentication: true,
         });
 
-        await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL], handlers: [] });
-
-        await worker.request('interceptors/http/workers/commit', {
-          id: crypto.randomUUID(),
-          baseURL,
-          method: 'GET',
-          path: '/',
-          index: 0,
-        });
+        await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL] });
 
         const response = await fetch(`${baseURL}/`);
         expect(response.status).toBe(204);
@@ -954,6 +769,7 @@ describe('Interceptor server', () => {
 
       const createResponseListener = vi.fn(() => ({
         response: { type: 'basic' as const, status: 204, statusText: '', headers: {}, body: null },
+        matchedSomeHandler: true,
       }));
       worker.onChannel('event', 'interceptors/http/responses/create', createResponseListener);
 
@@ -966,18 +782,7 @@ describe('Interceptor server', () => {
           waitForAuthentication: true,
         });
 
-        await worker.request('interceptors/http/workers/reset', {
-          interceptorBaseURLs: [otherPortBaseURL],
-          handlers: [],
-        });
-
-        await worker.request('interceptors/http/workers/commit', {
-          id: crypto.randomUUID(),
-          baseURL: otherPortBaseURL,
-          method: 'GET',
-          path: '/',
-          index: 0,
-        });
+        await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [otherPortBaseURL] });
 
         await expectFetchError(fetch(`http://${server.hostname}:${server.port}/`));
 
@@ -988,7 +793,7 @@ describe('Interceptor server', () => {
       }
     });
 
-    it('should not allow WebSocket workers to commit or reset HTTP handlers', async () => {
+    it('should not allow WebSocket workers to reset HTTP workers', async () => {
       server = createInternalInterceptorServer({ logUnhandledRequests: false });
       await server.start();
 
@@ -1017,18 +822,11 @@ describe('Interceptor server', () => {
           });
 
           rejectedRequests.push(
-            webSocketWorker.request('interceptors/http/workers/commit', {
-              id: crypto.randomUUID(),
-              baseURL: otherBaseURL,
-              method: 'GET',
-              path: '/',
-              index: 0,
-            }),
-            webSocketWorker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [], handlers: [] }),
+            webSocketWorker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [otherBaseURL] }),
           );
 
           await waitFor(() => {
-            expect(console.error).toHaveBeenCalledTimes(2);
+            expect(console.error).toHaveBeenCalledTimes(1);
           });
           expect(console.error).toHaveBeenCalledWith(
             new InvalidWebSocketMessageError('HTTP RPC received from a non-HTTP worker.'),

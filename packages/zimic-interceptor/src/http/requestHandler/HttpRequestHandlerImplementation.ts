@@ -203,13 +203,26 @@ class HttpRequestHandlerImplementation<
       return { success: false, cause: 'missingResponseDeclaration' };
     }
 
-    const canAcceptMoreRequests = this.numberOfMatchedRequests < this.limits.numberOfRequests.max;
-
-    if (!canAcceptMoreRequests) {
+    if (!this.canAcceptMoreRequests()) {
       return { success: false, cause: 'exceededNumberOfRequests' };
     }
 
     return { success: true };
+  }
+
+  // Concurrent requests can reach the limit while this one is matched asynchronously, so the limit is checked again in
+  // the same synchronous step that counts the request.
+  reserveRequest(): HttpRequestHandlerRequestMatch {
+    if (!this.canAcceptMoreRequests()) {
+      return { success: false, cause: 'exceededNumberOfRequests' };
+    }
+
+    this.numberOfMatchedRequests++;
+    return { success: true };
+  }
+
+  private canAcceptMoreRequests() {
+    return this.numberOfMatchedRequests < this.limits.numberOfRequests.max;
   }
 
   markRequestAsMatched(_request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) {

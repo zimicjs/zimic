@@ -249,10 +249,6 @@ export function declareDefaultWebSocketMessageHandlerTests(
         expect(fulfillmentListener).toHaveBeenCalledTimes(1);
       });
 
-      // No WebSocket counterpart for "should wait until synced before resolving, even if new sync promises were added
-      // while waiting": remote WebSocket handlers have nothing to sync, because handler declarations stay in the
-      // client-side worker and registration completes when the interceptor starts.
-
       it('should be catch-able', async () => {
         const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation);
         await handler.respond({ type: 'delete', id: '1' });
