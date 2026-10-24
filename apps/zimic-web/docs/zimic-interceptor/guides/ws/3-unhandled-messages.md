@@ -14,7 +14,7 @@ You can override the logging behavior per interceptor with `onUnhandledMessage` 
 
 :::info INFO: <span>How `@zimic/interceptor` treats unhandled messages</span>
 
-Each WebSocket connection belongs to a single running interceptor whose base URL matches the connection URL. If multiple interceptors match, the **last** one started with `await interceptor.start()` owns the connection. When a client message on that connection is unhandled, the strategy of the owning interceptor is used, or the default strategy if none was defined.
+A client message is tried by the running interceptors [sharing its connection](/docs/interceptor/api/websocket-interceptor#interceptorbaseurl), from the **last** one started to the first, until one of them handles it. If none handles it, the strategy of the last started interceptor still sharing the connection is used, or the default strategy if none was defined.
 
 If the strategy is a function and it throws, the error is logged and the default strategy is used.
 
