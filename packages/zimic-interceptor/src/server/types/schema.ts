@@ -73,7 +73,8 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
 
   'interceptors/ws/messages/handle': {
     event: {
-      handlerId: string;
+      // Kept in the order of the worker's handlers, so the last holder is the newest.
+      handlerIds: string[];
       clientId: string;
       data: SerializedWebSocketMessageData;
     };
@@ -81,16 +82,6 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
       handled: boolean;
       error?: boolean;
     };
-  };
-
-  'interceptors/ws/messages/unhandled': {
-    event: {
-      // Kept in the order of the worker's handlers, so the last holder is the newest.
-      handlerIds: string[];
-      clientId: string;
-      data: SerializedWebSocketMessageData;
-    };
-    reply: {};
   };
 
   'interceptors/ws/messages/send': {

@@ -13,7 +13,6 @@ import { InternalWebSocketMessageHandler, WebSocketMessageHandler } from '../mes
 import {
   AnyWebSocketMessageHandlerImplementation,
   WebSocketMessageHandlerApplyContext,
-  WebSocketMessageHandlerMessageMatch,
 } from '../messageHandler/WebSocketMessageHandlerImplementation';
 import { normalizeWebSocketMessageData } from '../utils/messageData';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
@@ -299,38 +298,27 @@ class WebSocketInterceptorImplementation<
 
     const isAlreadyRegistered = this.handlers.includes(handler.implementation);
 
-    if (!isAlreadyRegistered) {
-      this.handlers.push(handler.implementation);
+    if (isAlreadyRegistered) {
+      return;
     }
+
+    this.handlers.push(handler.implementation);
+
+    this.workerOrThrow.useMessageHandler(this, handler.implementation);
   }
 
-  async handleInterceptedMessage(
-    data: WebSocketMessageData<Schema>,
+  async handleMatchedMessage(
+    handler: AnyWebSocketMessageHandlerImplementation,
+    message: WebSocketSchema,
     context: WebSocketMessageHandlerApplyContext<Schema>,
   ) {
-    /* istanbul ignore if -- @preserve
-     * Workers only forward messages while the holding interceptor is running. */
-    if (!this.isRunning) {
-      return { handled: false };
-    }
-
-    const message = normalizeWebSocketMessageData(data);
-    this.addClient(context.sender);
-
     const messageSavingGeneration = this.messageSavingGeneration;
-    const matchedHandler = await this.findMatchedHandler(message, context);
 
-    if (!matchedHandler) {
-      return { handled: false };
-    }
-
-    await matchedHandler.handler.applyDeclarations(matchedHandler.message, context);
+    await handler.applyDeclarations(message, context);
 
     if (this.messageSaving.enabled && messageSavingGeneration === this.messageSavingGeneration) {
-      matchedHandler.handler.saveInterceptedMessage(matchedHandler.message, context);
+      handler.saveInterceptedMessage(message, context);
     }
-
-    return { handled: true };
   }
 
   // Unlike HTTP, unhandled messages have no bypass or reject action. WebSocket is not request-response, so a message
@@ -358,69 +346,30 @@ class WebSocketInterceptorImplementation<
   }
 
   addClient(client: InternalWebSocketInterceptorClient<Schema>) {
-    if (!this._clients.includes(client)) {
-      this._clients.push(client);
+    this._clients.push(client);
 
-      for (const entry of [...this.connectionListeners]) {
-        const listenerIndex = this.connectionListeners.indexOf(entry);
+    for (const entry of [...this.connectionListeners]) {
+      const listenerIndex = this.connectionListeners.indexOf(entry);
 
-        if (listenerIndex < 0) {
-          continue;
-        }
+      if (listenerIndex < 0) {
+        continue;
+      }
 
-        if (entry.once) {
-          this.connectionListeners.splice(listenerIndex, 1);
-        }
+      if (entry.once) {
+        this.connectionListeners.splice(listenerIndex, 1);
+      }
 
-        try {
-          const { listener } = entry;
-          listener(client);
-        } catch (error) {
-          console.error(error);
-        }
+      try {
+        const { listener } = entry;
+        listener(client);
+      } catch (error) {
+        console.error(error);
       }
     }
   }
 
   removeClient(client: InternalWebSocketInterceptorClient<Schema>) {
     removeArrayElement(this._clients, client);
-  }
-
-  private async findMatchedHandler(message: Schema, context: WebSocketMessageHandlerApplyContext<Schema>) {
-    const failedMessageMatches = new Map<
-      AnyWebSocketMessageHandlerImplementation,
-      Extract<WebSocketMessageHandlerMessageMatch, { success: false }>
-    >();
-
-    // If we find a matching handler that can accept more messages, we return it immediately.
-    for (let handlerIndex = this.handlers.length - 1; handlerIndex >= 0; handlerIndex--) {
-      const handler = this.handlers[handlerIndex];
-      const messageMatch = await handler.matchesMessage(message, context);
-
-      if (messageMatch.success) {
-        return { handler, message: messageMatch.message as Schema };
-      }
-
-      failedMessageMatches.set(handler, messageMatch);
-    }
-
-    // If no handler matched or could accept more messages, we iterate again over the handlers to check which ones
-    // could have matched considering only restrictions.
-    for (let handlerIndex = this.handlers.length - 1; handlerIndex >= 0; handlerIndex--) {
-      const handler = this.handlers[handlerIndex];
-      const messageMatch = failedMessageMatches.get(handler);
-
-      // Handlers that did not match due to anything other than restrictions are still marked as matched to trigger a
-      // times check error.
-      if (messageMatch?.cause === 'unmatchedRestrictions') {
-        handler.markMessageAsUnmatched(messageMatch.message, { diff: messageMatch.diff });
-      } else {
-        handler.markMessageAsMatched(message);
-        break;
-      }
-    }
-
-    return undefined;
   }
 
   checkTimes() {

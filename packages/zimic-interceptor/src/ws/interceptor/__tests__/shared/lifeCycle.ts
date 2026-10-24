@@ -121,7 +121,7 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     );
   });
 
-  it('should intercept messages with the restarted interceptor if another one with the same base URL started earlier', async () => {
+  it('should intercept messages with the newest handler if a restarted interceptor with the same base URL declares an older one', async () => {
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, messageSaving: { enabled: true } },
       async (interceptor) => {
@@ -145,11 +145,11 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
               const messagePromise = waitForWebSocketClientMessage(client);
               client.send(JSON.stringify({ type: 'client', index: 1 }));
 
-              await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+              await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
             });
 
-            expect(handler.messages).toHaveLength(1);
-            expect(otherHandler.messages).toHaveLength(0);
+            expect(handler.messages).toHaveLength(0);
+            expect(otherHandler.messages).toHaveLength(1);
           },
         );
       },
