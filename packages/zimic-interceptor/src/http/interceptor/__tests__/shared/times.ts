@@ -1,8 +1,9 @@
 import { HttpSchema, HttpSearchParams } from '@zimic/http';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
 import color from 'picocolors';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { expectHttpTimesCheckError } from '@/http/requestHandler/__tests__/shared/utils';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -803,6 +804,44 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
 
           await promiseIfRemote(olderInterceptor.checkTimes(), olderInterceptor);
         });
+      });
+    });
+
+    it('should distribute concurrent requests to the next matching handler when the maximum number of requests is reached', async () => {
+      const concurrentRequestCount = 2;
+      const allRequestsMatchingPromise = createPromiseWithResolvers<void>();
+
+      const restriction = vi.fn(async () => {
+        if (restriction.mock.calls.length === concurrentRequestCount) {
+          allRequestsMatchingPromise.resolve();
+        }
+
+        await allRequestsMatchingPromise;
+        return true;
+      });
+
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 200: {}; 204: {} } } };
+      }>(interceptorOptions, async (interceptor) => {
+        const fallbackHandler = await promiseIfRemote(interceptor.get('/users').respond({ status: 200 }), interceptor);
+
+        const limitedHandler = await promiseIfRemote(
+          interceptor.get('/users').with(restriction).respond({ status: 204 }).times(1),
+          interceptor,
+        );
+
+        const responses = await Promise.all(
+          Array.from({ length: concurrentRequestCount }, () => fetch(joinURL(baseURL, '/users'), { method: 'GET' })),
+        );
+
+        const statuses = responses.map((response) => response.status);
+        expect(statuses.toSorted((status, otherStatus) => status - otherStatus)).toEqual([200, 204]);
+
+        expect(restriction).toHaveBeenCalledTimes(concurrentRequestCount);
+        expect(limitedHandler.requests).toHaveLength(1);
+        expect(fallbackHandler.requests).toHaveLength(1);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
       });
     });
   });

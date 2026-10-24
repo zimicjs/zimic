@@ -1,3 +1,4 @@
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor, waitForNot } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import color from 'picocolors';
@@ -6,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 import {
+  collectWebSocketClientMessages,
   createBinaryMessage,
   expectWebSocketTimesCheckError,
   usingWebSocketClient,
@@ -449,6 +451,55 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
           await promiseIfRemote(olderInterceptor.checkTimes(), olderInterceptor);
         });
+      });
+    });
+
+    it('should distribute concurrent messages to the next matching handler when the maximum number of messages is reached', async () => {
+      const concurrentMessageCount = 2;
+      const allMessagesMatchingPromise = createPromiseWithResolvers<void>();
+
+      const restriction = vi.fn(async () => {
+        if (restriction.mock.calls.length === concurrentMessageCount) {
+          allMessagesMatchingPromise.resolve();
+        }
+
+        await allMessagesMatchingPromise;
+        return true;
+      });
+
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const fallbackHandler = await promiseIfRemote(
+          interceptor.message().respond({ type: 'delete', id: 'fallback' }),
+          interceptor,
+        );
+
+        const limitedHandler = await promiseIfRemote(
+          interceptor.message().with(restriction).respond({ type: 'delete', id: 'limited' }).times(1),
+          interceptor,
+        );
+
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          const receivedMessages = collectWebSocketClientMessages(client);
+
+          for (let index = 0; index < concurrentMessageCount; index++) {
+            client.send(JSON.stringify({ type: 'create', body: { text: `${index}` } }));
+          }
+
+          await waitFor(() => {
+            expect(receivedMessages).toHaveLength(concurrentMessageCount);
+          });
+
+          expect(receivedMessages.toSorted()).toEqual([
+            JSON.stringify({ type: 'delete', id: 'fallback' }),
+            JSON.stringify({ type: 'delete', id: 'limited' }),
+          ]);
+        });
+
+        expect(restriction).toHaveBeenCalledTimes(concurrentMessageCount);
+        expect(limitedHandler.messages).toHaveLength(1);
+        expect(fallbackHandler.messages).toHaveLength(1);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
       });
     });
   });

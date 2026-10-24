@@ -4,6 +4,7 @@ import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
 import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
+import { expectHttpTimesCheckError } from '@/http/requestHandler/__tests__/shared/utils';
 import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -348,7 +349,7 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
       await promiseIfRemote(interceptor.clear(), interceptor);
 
       // Redeclaring the cleared handler would apply its new response to the request being matched.
-      await promiseIfRemote(handler.respond({ status: 204 }), interceptor);
+      await promiseIfRemote(handler.respond({ status: 204 }).times(1), interceptor);
 
       restrictionReleasedPromise.resolve();
 
@@ -357,6 +358,11 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
       expect(restriction).toHaveBeenCalledTimes(1);
       expect(handler.requests).toHaveLength(0);
       expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+
+      await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        message: 'Expected exactly 1 request, but got 0.',
+        expectedNumberOfRequests: 1,
+      });
     });
   });
 }

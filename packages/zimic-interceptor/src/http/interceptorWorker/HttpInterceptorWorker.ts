@@ -214,25 +214,26 @@ abstract class HttpInterceptorWorker {
 
         const requestMatch = await handler.implementation.matchesRequest(parsedRequest);
 
-        if (requestMatch.success) {
-          // An asynchronous match can outlive a clear, after which the handler does not handle the request, even if
-          // redeclared. Older handlers are not tried.
-          if (!this.isHandlerRegistered(method, handler)) {
-            return { response: null, matchedSomeHandler };
-          }
-
-          handler.implementation.markRequestAsMatched(parsedRequest);
-
-          const response = await handler.interceptor.handleMatchedRequest(
-            handler.implementation,
-            request,
-            parsedRequest,
-          );
-
-          return { response, matchedSomeHandler };
+        if (!requestMatch.success) {
+          failedRequestMatches.push({ handler, request: parsedRequest, requestMatch });
+          continue;
         }
 
-        failedRequestMatches.push({ handler, request: parsedRequest, requestMatch });
+        // An asynchronous match can outlive a clear, after which the handler does not handle the request, even if
+        // redeclared. Older handlers are not tried.
+        if (!this.isHandlerRegistered(method, handler)) {
+          return { response: null, matchedSomeHandler };
+        }
+
+        const reservation = handler.implementation.reserveRequest();
+
+        if (!reservation.success) {
+          failedRequestMatches.push({ handler, request: parsedRequest, requestMatch: reservation });
+          continue;
+        }
+
+        const response = await handler.interceptor.handleMatchedRequest(handler.implementation, request, parsedRequest);
+        return { response, matchedSomeHandler };
       } catch (error) {
         console.error(error);
 
