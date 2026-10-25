@@ -176,7 +176,8 @@ abstract class WebSocketInterceptorWorker {
         console.error(error);
 
         // A handler that threw may have already counted the message, such as toward its `times` limit, so older
-        // handlers are not tried. Unlike HTTP, the message is not unhandled, because there is no reply to reject.
+        // handlers are not tried.
+        await this.logUnhandledMessageIfNecessary(data, holders);
         return;
       }
     }
