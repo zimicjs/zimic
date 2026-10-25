@@ -717,6 +717,45 @@ describe('CLI > Server start', () => {
     });
   });
 
+  it('should not log unhandled requests again if the remote interceptor already logged them', async () => {
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--log-unhandled-requests']);
+
+    await usingIgnoredConsole(['log', 'error'], async (console) => {
+      await runCLI();
+
+      expect(server).toBeDefined();
+      expect(server!.isRunning).toBe(true);
+
+      await usingHttpInterceptor<{
+        '/users': {
+          GET: { response: { 204: {} } };
+        };
+      }>(
+        {
+          type: 'remote',
+          baseURL: `http://localhost:${server!.port}`,
+          onUnhandledRequest: { action: 'reject', log: true },
+        },
+        async (interceptor) => {
+          await interceptor.get('/users').respond({ status: 204 });
+
+          const request = new Request(`http://localhost:${server!.port}/unknown`);
+          const responsePromise = fetch(request);
+          await expectFetchError(responsePromise);
+
+          expect(console.error).toHaveBeenCalledTimes(1);
+
+          const errorMessage = console.error.mock.calls[0].join(' ');
+          await verifyUnhandledRequestMessage(errorMessage, {
+            request,
+            platform: 'node',
+            type: 'reject',
+          });
+        },
+      );
+    });
+  });
+
   it('should log and reject requests if the worker stops before responding', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--log-unhandled-requests']);
 
