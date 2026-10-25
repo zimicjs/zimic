@@ -46,7 +46,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async start() {
     await super.sharedStart(async () => {
-      this.webSocketClient.onChannel('event', 'interceptors/http/responses/create', this.createResponse);
+      this.webSocketClient.onChannel('event', 'interceptors/http/requests/handle', this.handleRequest);
 
       await this.webSocketClient.start({
         parameters: {
@@ -83,8 +83,8 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     await this.resetServerWorker();
   }
 
-  private createResponse = async (
-    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/http/responses/create'>,
+  private handleRequest = async (
+    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/http/requests/handle'>,
   ) => {
     const request = deserializeRequest(message.data.request);
 
@@ -126,7 +126,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async stop() {
     await super.sharedStop(async () => {
-      this.webSocketClient.offChannel('event', 'interceptors/http/responses/create', this.createResponse);
+      this.webSocketClient.offChannel('event', 'interceptors/http/requests/handle', this.handleRequest);
 
       this.clearHandlers();
 

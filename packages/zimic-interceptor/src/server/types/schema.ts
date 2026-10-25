@@ -22,7 +22,7 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
     reply: {};
   };
 
-  'interceptors/http/responses/create': {
+  'interceptors/http/requests/handle': {
     event: {
       request: SerializedHttpRequest;
     };

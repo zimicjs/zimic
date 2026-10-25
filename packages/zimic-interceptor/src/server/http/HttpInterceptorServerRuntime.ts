@@ -25,7 +25,7 @@ const httpWorkerResetSchema = z.object({
   interceptorBaseURLs: z.array(httpBaseURLSchema),
 }) satisfies z.ZodType<HttpWorkerReset>;
 
-const responseCreationReplySchema = z.object({
+const requestHandlingReplySchema = z.object({
   response: z
     .object({
       type: z.enum(['basic', 'cors', 'default', 'error', 'opaque', 'opaqueredirect']),
@@ -105,7 +105,7 @@ class HttpInterceptorServerRuntime {
     const worker = this.findWorkerByRequestBaseURL(serializedRequest);
 
     try {
-      const { response, matchedSomeHandler, wasUnhandledRequestLogged } = await this.createResponseForRequest(
+      const { response, matchedSomeHandler, wasUnhandledRequestLogged } = await this.handleRequestInWorker(
         serializedRequest,
         worker,
       );
@@ -155,13 +155,13 @@ class HttpInterceptorServerRuntime {
     }
   };
 
-  private async createResponseForRequest(request: SerializedHttpRequest, worker: HttpWorker | undefined) {
+  private async handleRequestInWorker(request: SerializedHttpRequest, worker: HttpWorker | undefined) {
     if (!worker) {
       return { response: null, matchedSomeHandler: false, wasUnhandledRequestLogged: false };
     }
 
     const reply = await this.webSocketServer.request(
-      'interceptors/http/responses/create',
+      'interceptors/http/requests/handle',
       { request },
       { sockets: [worker.socket] },
     );
@@ -170,7 +170,7 @@ class HttpInterceptorServerRuntime {
       response: serializedResponse,
       matchedSomeHandler,
       wasUnhandledRequestLogged,
-    } = parseInterceptorServerRPCData(responseCreationReplySchema, reply);
+    } = parseInterceptorServerRPCData(requestHandlingReplySchema, reply);
 
     const response = serializedResponse ? deserializeResponse(serializedResponse) : null;
     return { response, matchedSomeHandler, wasUnhandledRequestLogged };
