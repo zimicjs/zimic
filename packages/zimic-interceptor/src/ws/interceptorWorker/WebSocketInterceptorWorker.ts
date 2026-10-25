@@ -6,9 +6,12 @@ import { isClientSide } from '@/utils/environment';
 
 import { WebSocketInterceptorPlatform } from '../interceptor/types/options';
 import { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
-import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
+import WebSocketInterceptorImplementation, {
+  AnyWebSocketInterceptorImplementation,
+} from '../interceptor/WebSocketInterceptorImplementation';
 import type {
   AnyWebSocketMessageHandlerImplementation,
+  WebSocketMessageHandlerApplyContext,
   WebSocketMessageHandlerMessageMatch,
 } from '../messageHandler/WebSocketMessageHandlerImplementation';
 import { normalizeWebSocketMessageData } from '../utils/messageData';
@@ -18,10 +21,9 @@ interface WebSocketMessageHandler {
   implementation: AnyWebSocketMessageHandlerImplementation;
 }
 
-export interface WebSocketConnectionHolder {
-  interceptor: AnyWebSocketInterceptorImplementation;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  client: InternalWebSocketInterceptorClient<any>;
+export interface WebSocketConnectionHolder<Schema extends WebSocketSchema> {
+  interceptor: WebSocketInterceptorImplementation<Schema>;
+  client: InternalWebSocketInterceptorClient<Schema>;
 }
 
 interface FailedWebSocketMessageMatch {
@@ -130,7 +132,7 @@ abstract class WebSocketInterceptorWorker {
   // a newer handler wins regardless of the start order of its interceptor. Holders are ordered from oldest to newest.
   protected async handleMessageWithHandlers(
     data: WebSocketMessageData<WebSocketSchema>,
-    holders: readonly WebSocketConnectionHolder[],
+    holders: WebSocketConnectionHolder<WebSocketSchema>[],
   ): Promise<WebSocketMessageHandling> {
     const message = normalizeWebSocketMessageData<WebSocketSchema>(data);
     const failedMessageMatches: FailedWebSocketMessageMatch[] = [];
@@ -146,7 +148,10 @@ abstract class WebSocketInterceptorWorker {
         continue;
       }
 
-      const context = { sender: holder.client, receiver: holder.interceptor.server };
+      const context: WebSocketMessageHandlerApplyContext<WebSocketSchema> = {
+        sender: holder.client,
+        receiver: holder.interceptor.server,
+      };
 
       try {
         const messageMatch = await handler.implementation.matchesMessage(message, context);
@@ -192,14 +197,14 @@ abstract class WebSocketInterceptorWorker {
   // handling.
   private async logUnhandledMessageIfNecessary(
     data: WebSocketMessageData<WebSocketSchema>,
-    holders: readonly WebSocketConnectionHolder[],
+    holders: WebSocketConnectionHolder<WebSocketSchema>[],
   ) {
     const newestHolder = holders.findLast((holder) => this.isHoldingConnection(holder));
     await newestHolder?.interceptor.logUnhandledMessageIfNecessary(data);
   }
 
   // A holder lists the client from the moment it accepts the connection until it lets the connection go.
-  private isHoldingConnection(holder: WebSocketConnectionHolder) {
+  private isHoldingConnection(holder: WebSocketConnectionHolder<WebSocketSchema>) {
     return holder.interceptor.clients.includes(holder.client);
   }
 
