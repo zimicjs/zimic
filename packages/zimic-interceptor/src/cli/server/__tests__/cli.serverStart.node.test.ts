@@ -717,7 +717,7 @@ describe('CLI > Server start', () => {
     });
   });
 
-  it('should abort waiting for a worker reply if it was uncommitted before responding', async () => {
+  it('should log and reject requests if the worker stops before responding', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--log-unhandled-requests']);
 
     await usingIgnoredConsole(['log', 'error'], async (console) => {
@@ -740,8 +740,10 @@ describe('CLI > Server start', () => {
 
         await interceptor.get('/users').respond(responseFactory);
 
+        const request = new Request(`http://localhost:${server!.port}/users`);
+
         const onFetchError = vi.fn<(error: unknown) => void>();
-        const responsePromise = fetch(`http://localhost:${server!.port}/users`).catch(onFetchError);
+        const responsePromise = fetch(request).catch(onFetchError);
 
         await waitFor(() => {
           expect(responseFactory).toHaveBeenCalledTimes(1);
@@ -759,12 +761,15 @@ describe('CLI > Server start', () => {
         // Wait for slow factory to return the response after the interceptor is already stopped
         await responseFactoryPromise;
 
-        expect(console.error).not.toHaveBeenCalled();
+        expect(console.error).toHaveBeenCalledTimes(1);
+
+        const errorMessage = console.error.mock.calls[0].join(' ');
+        await verifyUnhandledRequestMessage(errorMessage, { request, platform: 'node', type: 'reject' });
       });
     });
   });
 
-  it('should abort waiting for a worker reply if its internal web socket client was closed before responding', async () => {
+  it('should log and reject requests if the internal web socket client of the worker closes before responding', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--log-unhandled-requests']);
 
     await usingIgnoredConsole(['log', 'error'], async (console) => {
@@ -802,8 +807,10 @@ describe('CLI > Server start', () => {
 
         await interceptor.get('/users').respond(responseFactory);
 
+        const request = new Request(`http://localhost:${server!.port}/users`);
+
         const onFetchError = vi.fn<(error: unknown) => void>();
-        const responsePromise = fetch(`http://localhost:${server!.port}/users`).catch(onFetchError);
+        const responsePromise = fetch(request).catch(onFetchError);
 
         await waitFor(() => {
           expect(wasResponseFactoryCalled).toBe(true);
@@ -819,7 +826,10 @@ describe('CLI > Server start', () => {
           expect(onFetchError).toHaveBeenCalled();
         });
 
-        expect(console.error).not.toHaveBeenCalled();
+        expect(console.error).toHaveBeenCalledTimes(1);
+
+        const errorMessage = console.error.mock.calls[0].join(' ');
+        await verifyUnhandledRequestMessage(errorMessage, { request, platform: 'node', type: 'reject' });
       } finally {
         await interceptor.stop();
       }

@@ -443,6 +443,7 @@ describe('Interceptor server', () => {
         return {
           response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null },
           matchedSomeHandler: true,
+          wasLogged: false,
         };
       });
 
@@ -506,6 +507,7 @@ describe('Interceptor server', () => {
       worker.onChannel('event', 'interceptors/http/responses/create', () => ({
         response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null },
         matchedSomeHandler: true,
+        wasLogged: false,
       }));
 
       await usingIgnoredConsole(['error'], async (console) => {
@@ -550,16 +552,15 @@ describe('Interceptor server', () => {
         handledRequestsCount++;
 
         if (handledRequestsCount === 1) {
-          return { response: { type: 'basic', status: 'ok' }, matchedSomeHandler: true } as never;
+          return { response: { type: 'basic', status: 'ok' }, matchedSomeHandler: true, wasLogged: false } as never;
         }
 
         return {
           response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null },
           matchedSomeHandler: true,
+          wasLogged: false,
         };
       });
-
-      worker.onChannel('event', 'interceptors/http/responses/unhandled', () => ({ wasLogged: false }));
 
       await usingIgnoredConsole(['error'], async (console) => {
         try {
@@ -583,7 +584,7 @@ describe('Interceptor server', () => {
       });
     });
 
-    it('should log and reject requests when the unhandled request reply is malformed', async () => {
+    it('should log and reject requests when the response creation reply is malformed', async () => {
       server = createInternalInterceptorServer({ logUnhandledRequests: true });
       await server.start();
 
@@ -594,12 +595,11 @@ describe('Interceptor server', () => {
         messageTimeout: 500,
       });
 
-      worker.onChannel('event', 'interceptors/http/responses/create', () => ({
-        response: null,
-        matchedSomeHandler: false,
-      }));
-
-      worker.onChannel('event', 'interceptors/http/responses/unhandled', () => ({ wasLogged: 'yes' }) as never);
+      worker.onChannel(
+        'event',
+        'interceptors/http/responses/create',
+        () => ({ response: null, matchedSomeHandler: false, wasLogged: 'yes' }) as never,
+      );
 
       await usingIgnoredConsole(['error'], async (console) => {
         try {
@@ -627,7 +627,7 @@ describe('Interceptor server', () => {
       });
     });
 
-    it('should log and reject requests when the worker disconnects before replying to the unhandled request notification', async () => {
+    it('should log and reject requests when the worker disconnects before replying to the response creation request', async () => {
       server = createInternalInterceptorServer({ logUnhandledRequests: true });
       await server.start();
 
@@ -640,17 +640,16 @@ describe('Interceptor server', () => {
 
       let workerStopPromise: Promise<void> | undefined;
 
-      const unresolvedUnhandledPromise = createPromiseWithResolvers<{ wasLogged: boolean }>();
+      const unresolvedResponsePromise = createPromiseWithResolvers<{
+        response: null;
+        matchedSomeHandler: boolean;
+        wasLogged: boolean;
+      }>();
 
-      worker.onChannel('event', 'interceptors/http/responses/create', () => ({
-        response: null,
-        matchedSomeHandler: false,
-      }));
-
-      worker.onChannel('event', 'interceptors/http/responses/unhandled', () => {
+      worker.onChannel('event', 'interceptors/http/responses/create', () => {
         workerStopPromise = worker.stop();
         // Never replies within the handler, keeping the request pending.
-        return unresolvedUnhandledPromise;
+        return unresolvedResponsePromise;
       });
 
       await usingIgnoredConsole(['error'], async (console) => {
@@ -674,52 +673,7 @@ describe('Interceptor server', () => {
           });
         } finally {
           await worker.stop();
-          unresolvedUnhandledPromise.resolve({ wasLogged: true });
-          await Promise.all([workerStopPromise, unresolvedUnhandledPromise]);
-        }
-      });
-    });
-
-    it('should reject requests without logging them when the worker disconnects before replying to the response creation request', async () => {
-      server = createInternalInterceptorServer({ logUnhandledRequests: true });
-      await server.start();
-
-      const baseURL = `http://${server.hostname}:${server.port}/api`;
-
-      const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
-        url: `ws://${server.hostname}:${server.port}`,
-        messageTimeout: 500,
-      });
-
-      let workerStopPromise: Promise<void> | undefined;
-
-      const unresolvedResponsePromise = createPromiseWithResolvers<{ response: null; matchedSomeHandler: boolean }>();
-
-      worker.onChannel('event', 'interceptors/http/responses/create', () => {
-        workerStopPromise = worker.stop();
-        // Never replies within the handler, keeping the request pending.
-        return unresolvedResponsePromise;
-      });
-
-      const unhandledRequestListener = vi.fn(() => ({ wasLogged: false }));
-      worker.onChannel('event', 'interceptors/http/responses/unhandled', unhandledRequestListener);
-
-      await usingIgnoredConsole(['error'], async (console) => {
-        try {
-          await worker.start({
-            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
-            waitForAuthentication: true,
-          });
-
-          await worker.request('interceptors/http/workers/reset', { interceptorBaseURLs: [baseURL] });
-
-          await expectFetchError(fetch(`${baseURL}/users`));
-
-          expect(console.error).not.toHaveBeenCalled();
-          expect(unhandledRequestListener).not.toHaveBeenCalled();
-        } finally {
-          await worker.stop();
-          unresolvedResponsePromise.resolve({ response: null, matchedSomeHandler: false });
+          unresolvedResponsePromise.resolve({ response: null, matchedSomeHandler: false, wasLogged: true });
           await Promise.all([workerStopPromise, unresolvedResponsePromise]);
         }
       });
@@ -739,6 +693,7 @@ describe('Interceptor server', () => {
       worker.onChannel('event', 'interceptors/http/responses/create', () => ({
         response: { type: 'basic', status: 204, statusText: '', headers: {}, body: null },
         matchedSomeHandler: true,
+        wasLogged: false,
       }));
 
       try {
@@ -770,11 +725,9 @@ describe('Interceptor server', () => {
       const createResponseListener = vi.fn(() => ({
         response: { type: 'basic' as const, status: 204, statusText: '', headers: {}, body: null },
         matchedSomeHandler: true,
+        wasLogged: false,
       }));
       worker.onChannel('event', 'interceptors/http/responses/create', createResponseListener);
-
-      const unhandledRequestListener = vi.fn(() => ({ wasLogged: true }));
-      worker.onChannel('event', 'interceptors/http/responses/unhandled', unhandledRequestListener);
 
       try {
         await worker.start({
@@ -787,7 +740,6 @@ describe('Interceptor server', () => {
         await expectFetchError(fetch(`http://${server.hostname}:${server.port}/`));
 
         expect(createResponseListener).not.toHaveBeenCalled();
-        expect(unhandledRequestListener).not.toHaveBeenCalled();
       } finally {
         await worker.stop();
       }

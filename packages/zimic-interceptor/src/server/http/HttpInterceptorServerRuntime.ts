@@ -36,11 +36,9 @@ const responseCreationReplySchema = z.object({
       body: z.base64().nullable(),
     })
     .nullable(),
-  error: z.boolean().optional(),
   matchedSomeHandler: z.boolean(),
+  wasLogged: z.boolean(),
 });
-
-const unhandledRequestReplySchema = z.object({ wasLogged: z.boolean() });
 
 interface HttpWorker {
   socket: Socket;
@@ -107,7 +105,10 @@ class HttpInterceptorServerRuntime {
     const worker = this.findWorkerByRequestBaseURL(serializedRequest);
 
     try {
-      const { response, matchedSomeHandler } = await this.createResponseForRequest(serializedRequest, worker);
+      const { response, matchedSomeHandler, wasLogged } = await this.createResponseForRequest(
+        serializedRequest,
+        worker,
+      );
 
       if (response) {
         if (HttpInterceptorWorker.isRejectedResponse(response)) {
@@ -125,10 +126,10 @@ class HttpInterceptorServerRuntime {
       }
 
       const isUnhandledPreflightResponse = request.method === 'OPTIONS';
-      const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse || matchedSomeHandler;
+      const shouldWarnUnhandledRequest = !wasLogged && (!isUnhandledPreflightResponse || matchedSomeHandler);
 
       if (shouldWarnUnhandledRequest) {
-        await this.logUnhandledRequestIfNecessary(request, serializedRequest, worker);
+        await this.logUnhandledRequestIfNecessary(request);
       }
 
       if (isUnhandledPreflightResponse) {
@@ -139,12 +140,15 @@ class HttpInterceptorServerRuntime {
 
       rejectNodeResponse(nodeResponse);
     } catch (error) {
+      // An aborted reply means that the worker disconnected, which is not an error of the server.
       const isMessageAbortError = error instanceof WebSocketMessageAbortError;
 
       if (!isMessageAbortError) {
         console.error(error);
-        await this.logUnhandledRequestIfNecessary(request, serializedRequest, worker);
       }
+
+      // The reply was not received or cannot be trusted, so the request is logged as if the worker did not log it.
+      await this.logUnhandledRequestIfNecessary(request);
 
       rejectNodeResponse(nodeResponse);
     }
@@ -152,7 +156,7 @@ class HttpInterceptorServerRuntime {
 
   private async createResponseForRequest(request: SerializedHttpRequest, worker: HttpWorker | undefined) {
     if (!worker) {
-      return { response: null, matchedSomeHandler: false };
+      return { response: null, matchedSomeHandler: false, wasLogged: false };
     }
 
     const reply = await this.webSocketServer.request(
@@ -161,13 +165,14 @@ class HttpInterceptorServerRuntime {
       { sockets: [worker.socket] },
     );
 
-    const { response: serializedResponse, matchedSomeHandler } = parseInterceptorServerRPCData(
-      responseCreationReplySchema,
-      reply,
-    );
+    const {
+      response: serializedResponse,
+      matchedSomeHandler,
+      wasLogged,
+    } = parseInterceptorServerRPCData(responseCreationReplySchema, reply);
 
     const response = serializedResponse ? deserializeResponse(serializedResponse) : null;
-    return { response, matchedSomeHandler };
+    return { response, matchedSomeHandler, wasLogged };
   }
 
   private setDefaultAccessControlHeaders(
@@ -188,49 +193,7 @@ class HttpInterceptorServerRuntime {
     }
   }
 
-  private async logUnhandledRequestIfNecessary(
-    request: HttpRequest,
-    serializedRequest: SerializedHttpRequest,
-    worker: HttpWorker | undefined,
-  ) {
-    if (worker) {
-      try {
-        const reply = await this.webSocketServer.request(
-          'interceptors/http/responses/unhandled',
-          { request: serializedRequest },
-          { sockets: [worker.socket] },
-        );
-        const { wasLogged: wasRequestLoggedByRemoteInterceptor } = parseInterceptorServerRPCData(
-          unhandledRequestReplySchema,
-          reply,
-        );
-
-        if (wasRequestLoggedByRemoteInterceptor) {
-          return;
-        }
-      } catch (error) {
-        if (error instanceof InvalidWebSocketMessageError) {
-          // The reply cannot be trusted, so the request is logged by the server below as if it was not logged.
-          console.error(error);
-        } else {
-          /* istanbul ignore next -- @preserve
-           *
-           * If the socket is closed before receiving a response, the message is aborted with an error. This can happen
-           * if we send a request message and the interceptor worker closes the socket before sending a response. In
-           * this case, we can safely ignore the error because we know that the worker is shutting down and won't
-           * handle any more requests.
-           *
-           * Due to the rare nature of this edge case, we can't reliably reproduce it in tests. */
-          const isMessageAbortError = error instanceof WebSocketMessageAbortError;
-
-          /* istanbul ignore next -- @preserve */
-          if (!isMessageAbortError) {
-            throw error;
-          }
-        }
-      }
-    }
-
+  private async logUnhandledRequestIfNecessary(request: HttpRequest) {
     if (!this.shouldLogUnhandledRequests()) {
       return;
     }

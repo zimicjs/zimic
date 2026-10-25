@@ -28,16 +28,8 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
     };
     reply: {
       response: SerializedResponse | null;
-      error?: boolean;
       matchedSomeHandler: boolean;
-    };
-  };
-
-  'interceptors/http/responses/unhandled': {
-    event: {
-      request: SerializedHttpRequest;
-    };
-    reply: {
+      // Whether the worker logged the request as unhandled, applying the unhandled request strategy of its interceptor.
       wasLogged: boolean;
     };
   };
