@@ -150,7 +150,7 @@ class WebSocketInterceptorServerRuntime {
     return {};
   };
 
-  removeHandlersBySocket(socket: Socket) {
+  removeWorkerBySocket(socket: Socket) {
     for (const interceptor of this.webSocketWorkersBySocket.get(socket)?.interceptors ?? []) {
       this.detachWebSocketInterceptorConnections(interceptor, {
         pendingCloseCode: WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR,

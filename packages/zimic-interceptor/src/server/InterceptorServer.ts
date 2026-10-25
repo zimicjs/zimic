@@ -293,9 +293,9 @@ class InterceptorServer implements PublicInterceptorServer {
 
     socket.addEventListener('close', () => {
       if (protocol === 'http') {
-        this.httpRuntime?.removeHandlersBySocket(socket);
+        this.httpRuntime?.removeWorkerBySocket(socket);
       } else {
-        this.webSocketRuntime?.removeHandlersBySocket(socket);
+        this.webSocketRuntime?.removeWorkerBySocket(socket);
       }
 
       this.workerProtocols.delete(socket);

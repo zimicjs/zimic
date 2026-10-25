@@ -48,7 +48,7 @@ vi.mock('../http/HttpInterceptorServerRuntime', async () => {
         response.end();
       }
 
-      removeHandlersBySocket() {
+      removeWorkerBySocket() {
         return undefined;
       }
 

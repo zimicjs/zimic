@@ -91,7 +91,7 @@ class HttpInterceptorServerRuntime {
     return {};
   };
 
-  removeHandlersBySocket(socket: Socket) {
+  removeWorkerBySocket(socket: Socket) {
     this.httpWorkersBySocket.delete(socket);
   }
 
