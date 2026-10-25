@@ -46,13 +46,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async start() {
     await super.sharedStart(async () => {
-      this.webSocketClient.onChannel('event', 'interceptors/http/responses/create', this.createResponse);
-
-      this.webSocketClient.onChannel(
-        'event',
-        'interceptors/http/responses/unhandled',
-        this.handleUnhandledServerRequest,
-      );
+      this.webSocketClient.onChannel('event', 'interceptors/http/requests/handle', this.handleRequest);
 
       await this.webSocketClient.start({
         parameters: {
@@ -89,34 +83,32 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     await this.resetServerWorker();
   }
 
-  private createResponse = async (
-    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/http/responses/create'>,
+  private handleRequest = async (
+    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/http/requests/handle'>,
   ) => {
     const request = deserializeRequest(message.data.request);
 
-    const { response: rawResponse, matchedSomeHandler, error } = await this.createResponseWithHandlers(request);
+    const { response: rawResponse, matchedSomeHandler } = await this.createResponseWithHandlers(request);
 
     if (!rawResponse) {
-      return { response: null, matchedSomeHandler, error };
+      // The server answers an unmatched preflight request with its default preflight response, so it is not warned.
+      const isUnmatchedPreflightRequest = request.method === 'OPTIONS' && !matchedSomeHandler;
+
+      if (isUnmatchedPreflightRequest) {
+        return { response: null, matchedSomeHandler, wasUnhandledRequestLogged: false };
+      }
+
+      const strategy = await super.getUnhandledRequestStrategy(request, 'remote');
+      const { wasUnhandledRequestLogged } = await super.logUnhandledRequestIfNecessary(request, strategy);
+
+      return { response: null, matchedSomeHandler, wasUnhandledRequestLogged };
     }
 
     const response = methodCanHaveResponseBody(request.method as HttpMethod)
       ? rawResponse
       : new Response(null, rawResponse);
 
-    return { response: await serializeResponse(response), matchedSomeHandler };
-  };
-
-  private handleUnhandledServerRequest = async (
-    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/http/responses/unhandled'>,
-  ) => {
-    const { request: serializedRequest } = message.data;
-    const request = deserializeRequest(serializedRequest);
-
-    const strategy = await super.getUnhandledRequestStrategy(request, 'remote');
-    const { wasLogged } = await super.logUnhandledRequestIfNecessary(request, strategy);
-
-    return { wasLogged };
+    return { response: await serializeResponse(response), matchedSomeHandler, wasUnhandledRequestLogged: false };
   };
 
   private readPlatform(): HttpInterceptorPlatform {
@@ -134,13 +126,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async stop() {
     await super.sharedStop(async () => {
-      this.webSocketClient.offChannel('event', 'interceptors/http/responses/create', this.createResponse);
-
-      this.webSocketClient.offChannel(
-        'event',
-        'interceptors/http/responses/unhandled',
-        this.handleUnhandledServerRequest,
-      );
+      this.webSocketClient.offChannel('event', 'interceptors/http/requests/handle', this.handleRequest);
 
       this.clearHandlers();
 

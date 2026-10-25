@@ -6,14 +6,14 @@ export interface HttpWorkerReset {
   interceptorBaseURLs: string[];
 }
 
-export interface WebSocketHandlerCommit {
+export interface WebSocketInterceptorRegistration {
   id: string;
   baseURL: string;
 }
 
-export interface WebSocketHandlerReset {
-  handlers: WebSocketHandlerCommit[];
-  clearedHandlerIds?: string[];
+export interface WebSocketWorkerReset {
+  interceptors: WebSocketInterceptorRegistration[];
+  clearedInterceptorIds?: string[];
 }
 
 export type InterceptorServerWebSocketSchema = WebSocketSchema<{
@@ -22,46 +22,32 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
     reply: {};
   };
 
-  'interceptors/http/responses/create': {
+  'interceptors/http/requests/handle': {
     event: {
       request: SerializedHttpRequest;
     };
     reply: {
       response: SerializedResponse | null;
-      error?: boolean;
       matchedSomeHandler: boolean;
+      wasUnhandledRequestLogged: boolean;
     };
-  };
-
-  'interceptors/http/responses/unhandled': {
-    event: {
-      request: SerializedHttpRequest;
-    };
-    reply: {
-      wasLogged: boolean;
-    };
-  };
-
-  'interceptors/ws/workers/commit': {
-    event: WebSocketHandlerCommit;
-    reply: {};
   };
 
   'interceptors/ws/workers/reset': {
-    event: WebSocketHandlerReset;
+    event: WebSocketWorkerReset;
     reply: {};
   };
 
   'interceptors/ws/clients/connect': {
     event: {
-      handlerIds: string[];
+      interceptorIds: string[];
       clientId: string;
       url: string;
       // The number of resets the server had processed from the worker when it sent the connection.
       numberOfResets: number;
     };
     reply: {
-      acceptedHandlerIds: string[];
+      acceptedInterceptorIds: string[];
     };
   };
 
@@ -73,21 +59,17 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
 
   'interceptors/ws/messages/handle': {
     event: {
-      // Kept in the order of the worker's handlers, so the last holder is the newest.
-      handlerIds: string[];
+      // Kept in the order of the worker's interceptors, so the last holder is the newest.
+      interceptorIds: string[];
       clientId: string;
       data: SerializedWebSocketMessageData;
-    };
-    reply: {
-      handled: boolean;
-      error?: boolean;
     };
   };
 
   'interceptors/ws/messages/send': {
     event: {
       clientId?: string;
-      handlerId?: string;
+      interceptorId?: string;
       data: SerializedWebSocketMessageData;
     };
   };

@@ -51,7 +51,8 @@ class HttpInterceptorImplementation<
 
   requestSaving: HttpInterceptorRequestSaving;
   private numberOfSavedRequests = 0;
-  private requestSavingGeneration = 0;
+
+  private requestSavingGeneration = {};
 
   onUnhandledRequest?: HandlerConstructor extends typeof LocalHttpRequestHandler
     ? UnhandledRequestStrategy.Local
@@ -333,6 +334,7 @@ class HttpInterceptorImplementation<
 
     const shouldSaveInterceptedRequest =
       this.requestSaving.enabled &&
+      // Ensure the request saving generation has not changed since the request was initiated.
       requestSavingGeneration === this.requestSavingGeneration &&
       response &&
       !HttpInterceptorWorker.isRejectedResponse(response);
@@ -372,7 +374,7 @@ class HttpInterceptorImplementation<
   }
 
   clear() {
-    this.requestSavingGeneration++;
+    this.requestSavingGeneration = {};
 
     this.workerOrThrow.clearHandlers({ interceptor: this });
 

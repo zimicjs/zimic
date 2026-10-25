@@ -25,7 +25,7 @@ const httpWorkerResetSchema = z.object({
   interceptorBaseURLs: z.array(httpBaseURLSchema),
 }) satisfies z.ZodType<HttpWorkerReset>;
 
-const responseCreationReplySchema = z.object({
+const requestHandlingReplySchema = z.object({
   response: z
     .object({
       type: z.enum(['basic', 'cors', 'default', 'error', 'opaque', 'opaqueredirect']),
@@ -36,11 +36,9 @@ const responseCreationReplySchema = z.object({
       body: z.base64().nullable(),
     })
     .nullable(),
-  error: z.boolean().optional(),
   matchedSomeHandler: z.boolean(),
+  wasUnhandledRequestLogged: z.boolean(),
 });
-
-const unhandledRequestReplySchema = z.object({ wasLogged: z.boolean() });
 
 interface HttpWorker {
   socket: Socket;
@@ -93,7 +91,7 @@ class HttpInterceptorServerRuntime {
     return {};
   };
 
-  removeHandlersBySocket(socket: Socket) {
+  removeWorkerBySocket(socket: Socket) {
     this.httpWorkersBySocket.delete(socket);
   }
 
@@ -107,7 +105,10 @@ class HttpInterceptorServerRuntime {
     const worker = this.findWorkerByRequestBaseURL(serializedRequest);
 
     try {
-      const { response, matchedSomeHandler } = await this.createResponseForRequest(serializedRequest, worker);
+      const { response, matchedSomeHandler, wasUnhandledRequestLogged } = await this.handleRequestInWorker(
+        serializedRequest,
+        worker,
+      );
 
       if (response) {
         if (HttpInterceptorWorker.isRejectedResponse(response)) {
@@ -125,10 +126,11 @@ class HttpInterceptorServerRuntime {
       }
 
       const isUnhandledPreflightResponse = request.method === 'OPTIONS';
-      const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse || matchedSomeHandler;
+      const shouldWarnUnhandledRequest =
+        !wasUnhandledRequestLogged && (!isUnhandledPreflightResponse || matchedSomeHandler);
 
       if (shouldWarnUnhandledRequest) {
-        await this.logUnhandledRequestIfNecessary(request, serializedRequest, worker);
+        await this.logUnhandledRequestIfNecessary(request);
       }
 
       if (isUnhandledPreflightResponse) {
@@ -139,35 +141,39 @@ class HttpInterceptorServerRuntime {
 
       rejectNodeResponse(nodeResponse);
     } catch (error) {
+      // An aborted reply means that the worker disconnected, which is not an error of the server.
       const isMessageAbortError = error instanceof WebSocketMessageAbortError;
 
       if (!isMessageAbortError) {
         console.error(error);
-        await this.logUnhandledRequestIfNecessary(request, serializedRequest, worker);
       }
+
+      // The reply was not received or cannot be trusted, so the request is logged as if the worker did not log it.
+      await this.logUnhandledRequestIfNecessary(request);
 
       rejectNodeResponse(nodeResponse);
     }
   };
 
-  private async createResponseForRequest(request: SerializedHttpRequest, worker: HttpWorker | undefined) {
+  private async handleRequestInWorker(request: SerializedHttpRequest, worker: HttpWorker | undefined) {
     if (!worker) {
-      return { response: null, matchedSomeHandler: false };
+      return { response: null, matchedSomeHandler: false, wasUnhandledRequestLogged: false };
     }
 
     const reply = await this.webSocketServer.request(
-      'interceptors/http/responses/create',
+      'interceptors/http/requests/handle',
       { request },
       { sockets: [worker.socket] },
     );
 
-    const { response: serializedResponse, matchedSomeHandler } = parseInterceptorServerRPCData(
-      responseCreationReplySchema,
-      reply,
-    );
+    const {
+      response: serializedResponse,
+      matchedSomeHandler,
+      wasUnhandledRequestLogged,
+    } = parseInterceptorServerRPCData(requestHandlingReplySchema, reply);
 
     const response = serializedResponse ? deserializeResponse(serializedResponse) : null;
-    return { response, matchedSomeHandler };
+    return { response, matchedSomeHandler, wasUnhandledRequestLogged };
   }
 
   private setDefaultAccessControlHeaders(
@@ -188,49 +194,7 @@ class HttpInterceptorServerRuntime {
     }
   }
 
-  private async logUnhandledRequestIfNecessary(
-    request: HttpRequest,
-    serializedRequest: SerializedHttpRequest,
-    worker: HttpWorker | undefined,
-  ) {
-    if (worker) {
-      try {
-        const reply = await this.webSocketServer.request(
-          'interceptors/http/responses/unhandled',
-          { request: serializedRequest },
-          { sockets: [worker.socket] },
-        );
-        const { wasLogged: wasRequestLoggedByRemoteInterceptor } = parseInterceptorServerRPCData(
-          unhandledRequestReplySchema,
-          reply,
-        );
-
-        if (wasRequestLoggedByRemoteInterceptor) {
-          return;
-        }
-      } catch (error) {
-        if (error instanceof InvalidWebSocketMessageError) {
-          // The reply cannot be trusted, so the request is logged by the server below as if it was not logged.
-          console.error(error);
-        } else {
-          /* istanbul ignore next -- @preserve
-           *
-           * If the socket is closed before receiving a response, the message is aborted with an error. This can happen
-           * if we send a request message and the interceptor worker closes the socket before sending a response. In
-           * this case, we can safely ignore the error because we know that the worker is shutting down and won't
-           * handle any more requests.
-           *
-           * Due to the rare nature of this edge case, we can't reliably reproduce it in tests. */
-          const isMessageAbortError = error instanceof WebSocketMessageAbortError;
-
-          /* istanbul ignore next -- @preserve */
-          if (!isMessageAbortError) {
-            throw error;
-          }
-        }
-      }
-    }
-
+  private async logUnhandledRequestIfNecessary(request: HttpRequest) {
     if (!this.shouldLogUnhandledRequests()) {
       return;
     }
