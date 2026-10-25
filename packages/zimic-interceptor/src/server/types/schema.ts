@@ -6,14 +6,14 @@ export interface HttpWorkerReset {
   interceptorBaseURLs: string[];
 }
 
-export interface WebSocketHandlerCommit {
+export interface WebSocketInterceptorCommit {
   id: string;
   baseURL: string;
 }
 
-export interface WebSocketHandlerReset {
-  handlers: WebSocketHandlerCommit[];
-  clearedHandlerIds?: string[];
+export interface WebSocketWorkerReset {
+  interceptors: WebSocketInterceptorCommit[];
+  clearedInterceptorIds?: string[];
 }
 
 export type InterceptorServerWebSocketSchema = WebSocketSchema<{
@@ -34,25 +34,25 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
   };
 
   'interceptors/ws/workers/commit': {
-    event: WebSocketHandlerCommit;
+    event: WebSocketInterceptorCommit;
     reply: {};
   };
 
   'interceptors/ws/workers/reset': {
-    event: WebSocketHandlerReset;
+    event: WebSocketWorkerReset;
     reply: {};
   };
 
   'interceptors/ws/clients/connect': {
     event: {
-      handlerIds: string[];
+      interceptorIds: string[];
       clientId: string;
       url: string;
       // The number of resets the server had processed from the worker when it sent the connection.
       numberOfResets: number;
     };
     reply: {
-      acceptedHandlerIds: string[];
+      acceptedInterceptorIds: string[];
     };
   };
 
@@ -64,8 +64,8 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
 
   'interceptors/ws/messages/handle': {
     event: {
-      // Kept in the order of the worker's handlers, so the last holder is the newest.
-      handlerIds: string[];
+      // Kept in the order of the worker's interceptors, so the last holder is the newest.
+      interceptorIds: string[];
       clientId: string;
       data: SerializedWebSocketMessageData;
     };
@@ -74,7 +74,7 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
   'interceptors/ws/messages/send': {
     event: {
       clientId?: string;
-      handlerId?: string;
+      interceptorId?: string;
       data: SerializedWebSocketMessageData;
     };
   };
