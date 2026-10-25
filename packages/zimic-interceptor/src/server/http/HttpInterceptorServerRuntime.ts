@@ -37,7 +37,7 @@ const responseCreationReplySchema = z.object({
     })
     .nullable(),
   matchedSomeHandler: z.boolean(),
-  wasLogged: z.boolean(),
+  wasUnhandledRequestLogged: z.boolean(),
 });
 
 interface HttpWorker {
@@ -105,7 +105,7 @@ class HttpInterceptorServerRuntime {
     const worker = this.findWorkerByRequestBaseURL(serializedRequest);
 
     try {
-      const { response, matchedSomeHandler, wasLogged } = await this.createResponseForRequest(
+      const { response, matchedSomeHandler, wasUnhandledRequestLogged } = await this.createResponseForRequest(
         serializedRequest,
         worker,
       );
@@ -126,7 +126,8 @@ class HttpInterceptorServerRuntime {
       }
 
       const isUnhandledPreflightResponse = request.method === 'OPTIONS';
-      const shouldWarnUnhandledRequest = !wasLogged && (!isUnhandledPreflightResponse || matchedSomeHandler);
+      const shouldWarnUnhandledRequest =
+        !wasUnhandledRequestLogged && (!isUnhandledPreflightResponse || matchedSomeHandler);
 
       if (shouldWarnUnhandledRequest) {
         await this.logUnhandledRequestIfNecessary(request);
@@ -156,7 +157,7 @@ class HttpInterceptorServerRuntime {
 
   private async createResponseForRequest(request: SerializedHttpRequest, worker: HttpWorker | undefined) {
     if (!worker) {
-      return { response: null, matchedSomeHandler: false, wasLogged: false };
+      return { response: null, matchedSomeHandler: false, wasUnhandledRequestLogged: false };
     }
 
     const reply = await this.webSocketServer.request(
@@ -168,11 +169,11 @@ class HttpInterceptorServerRuntime {
     const {
       response: serializedResponse,
       matchedSomeHandler,
-      wasLogged,
+      wasUnhandledRequestLogged,
     } = parseInterceptorServerRPCData(responseCreationReplySchema, reply);
 
     const response = serializedResponse ? deserializeResponse(serializedResponse) : null;
-    return { response, matchedSomeHandler, wasLogged };
+    return { response, matchedSomeHandler, wasUnhandledRequestLogged };
   }
 
   private setDefaultAccessControlHeaders(

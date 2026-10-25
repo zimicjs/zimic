@@ -95,20 +95,20 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       const isUnmatchedPreflightRequest = request.method === 'OPTIONS' && !matchedSomeHandler;
 
       if (isUnmatchedPreflightRequest) {
-        return { response: null, matchedSomeHandler, wasLogged: false };
+        return { response: null, matchedSomeHandler, wasUnhandledRequestLogged: false };
       }
 
       const strategy = await super.getUnhandledRequestStrategy(request, 'remote');
-      const { wasLogged } = await super.logUnhandledRequestIfNecessary(request, strategy);
+      const { wasUnhandledRequestLogged } = await super.logUnhandledRequestIfNecessary(request, strategy);
 
-      return { response: null, matchedSomeHandler, wasLogged };
+      return { response: null, matchedSomeHandler, wasUnhandledRequestLogged };
     }
 
     const response = methodCanHaveResponseBody(request.method as HttpMethod)
       ? rawResponse
       : new Response(null, rawResponse);
 
-    return { response: await serializeResponse(response), matchedSomeHandler, wasLogged: false };
+    return { response: await serializeResponse(response), matchedSomeHandler, wasUnhandledRequestLogged: false };
   };
 
   private readPlatform(): HttpInterceptorPlatform {

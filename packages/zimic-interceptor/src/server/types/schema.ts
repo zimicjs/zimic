@@ -29,8 +29,7 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
     reply: {
       response: SerializedResponse | null;
       matchedSomeHandler: boolean;
-      // Whether the worker logged the request as unhandled, applying the unhandled request strategy of its interceptor.
-      wasLogged: boolean;
+      wasUnhandledRequestLogged: boolean;
     };
   };
 

@@ -308,9 +308,9 @@ abstract class HttpInterceptorWorker {
   ) {
     if (strategy?.log) {
       await logUnhandledRequestWarning(request, strategy.action);
-      return { wasLogged: true };
+      return { wasUnhandledRequestLogged: true };
     }
-    return { wasLogged: false };
+    return { wasUnhandledRequestLogged: false };
   }
 
   protected async getUnhandledRequestStrategy(request: Request, interceptorType: HttpInterceptorType) {
