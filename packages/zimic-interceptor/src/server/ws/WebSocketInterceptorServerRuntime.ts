@@ -341,7 +341,8 @@ class WebSocketInterceptorServerRuntime {
     return (message: ClientSocket.MessageEvent) => {
       void this.handleUserWebSocketMessage(connection, message).catch(
         /* istanbul ignore next -- @preserve
-         * Message errors require the worker RPC to fail after a user message has already been received. */
+         * Message errors require serializing the message data to fail or the server to stop before the message
+         * is sent to the worker. */
         (error: unknown) => {
           console.error(error);
         },
