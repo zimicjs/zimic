@@ -37,7 +37,7 @@ interface LocalWebSocketClientConnection {
 }
 
 interface LocalWebSocketConnectionHolder {
-  handler: WebSocketHandler;
+  registeredInterceptor: RegisteredWebSocketInterceptor;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: InternalWebSocketInterceptorClient<any>;
 }
@@ -50,7 +50,7 @@ interface WebSocketClientRegistration {
   closeListener: () => void;
 }
 
-interface WebSocketHandler {
+interface RegisteredWebSocketInterceptor {
   interceptor: AnyWebSocketInterceptorImplementation;
   link: ReturnType<typeof ws.link>;
   mswHandler: MSWWebSocketHandler;
@@ -99,7 +99,7 @@ function createConnectionURLRegex(baseURL: string) {
 class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private store = new LocalMSWWorkerStore();
 
-  private webSocketHandlers: WebSocketHandler[] = [];
+  private registeredInterceptors: RegisteredWebSocketInterceptor[] = [];
   private routedConnections = new WeakSet<LocalWebSocketClientConnection>();
 
   constructor(_options: LocalWebSocketInterceptorWorkerOptions) {
@@ -188,7 +188,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
 
     const link = ws.link(createConnectionURLRegex(interceptor.baseURLAsString));
-    const webSocketHandler: WebSocketHandler = {
+    const registeredInterceptor: RegisteredWebSocketInterceptor = {
       interceptor,
       link,
       mswHandler: link.addEventListener('connection', ({ client, server }) => {
@@ -197,27 +197,27 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       clients: new Map(),
     };
 
-    this.webSocketHandlers.push(webSocketHandler);
+    this.registeredInterceptors.push(registeredInterceptor);
 
     const mswWorker = this.mswWorkerOrThrow;
-    mswWorker.use(webSocketHandler.mswHandler);
+    mswWorker.use(registeredInterceptor.mswHandler);
   }
 
   sendToClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
     data: WebSocketMessageData<Schema>,
   ) {
-    const handler = this.findHandlerByClient(client);
-    handler?.clients.get(client)?.connection.send(data);
+    const registeredInterceptor = this.findRegisteredInterceptorByClient(client);
+    registeredInterceptor?.clients.get(client)?.connection.send(data);
   }
 
   sendToClients<Schema extends WebSocketSchema>(
     interceptor: AnyWebSocketInterceptorImplementation<Schema>,
     data: WebSocketMessageData<Schema>,
   ) {
-    const handler = this.findHandlerByInterceptor(interceptor);
+    const registeredInterceptor = this.findRegisteredInterceptor(interceptor);
 
-    for (const client of handler?.clients.values() ?? []) {
+    for (const client of registeredInterceptor?.clients.values() ?? []) {
       client.connection.send(data);
     }
   }
@@ -230,9 +230,9 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     this.routedConnections.add(connection);
 
-    const holderHandlers = this.findConnectionHolders(connection.url);
+    const holderInterceptors = this.findConnectionHolders(connection.url);
 
-    if (holderHandlers.length === 0) {
+    if (holderInterceptors.length === 0) {
       server.connect();
       return;
     }
@@ -242,8 +242,8 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     // listeners with no network counterpart.
     const registration: WebSocketClientRegistration = {
       connection,
-      holders: holderHandlers.map((handler) => ({
-        handler,
+      holders: holderInterceptors.map((registeredInterceptor) => ({
+        registeredInterceptor,
         client: createWebSocketInterceptorClient<WebSocketSchema>(connection.url.href, (data) => connection.send(data)),
       })),
       messageListener: (event) => {
@@ -255,8 +255,8 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       },
     };
 
-    for (const { handler, client } of registration.holders) {
-      handler.clients.set(client, registration);
+    for (const { registeredInterceptor, client } of registration.holders) {
+      registeredInterceptor.clients.set(client, registration);
     }
 
     connection.addEventListener('message', registration.messageListener);
@@ -264,9 +264,9 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     // Every holder lists the client before any connection listener runs, so a listener that clears another holder makes
     // it let the connection go, as in remote mode.
-    for (const { handler, client } of registration.holders) {
-      if (handler.clients.has(client)) {
-        handler.interceptor.addClient(client);
+    for (const { registeredInterceptor, client } of registration.holders) {
+      if (registeredInterceptor.clients.has(client)) {
+        registeredInterceptor.interceptor.addClient(client);
       }
     }
   }
@@ -274,8 +274,8 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private findConnectionHolders(connectionURL: URL) {
     const connectionURLAsString = excludeNonPathParams(new URL(connectionURL)).href;
 
-    return this.webSocketHandlers.filter((handler) => {
-      return isURLUnderBaseURL(connectionURLAsString, handler.interceptor.baseURLAsString);
+    return this.registeredInterceptors.filter((registeredInterceptor) => {
+      return isURLUnderBaseURL(connectionURLAsString, registeredInterceptor.interceptor.baseURLAsString);
     });
   }
 
@@ -283,25 +283,32 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     registration: WebSocketClientRegistration,
     data: WebSocketMessageData<WebSocketSchema>,
   ) {
-    const holders = registration.holders.map(({ handler, client }) => ({ interceptor: handler.interceptor, client }));
+    const holders = registration.holders.map(({ registeredInterceptor, client }) => ({
+      interceptor: registeredInterceptor.interceptor,
+      client,
+    }));
     await this.handleMessageWithHandlers(data, holders);
   }
 
   private removeConnectionFromHolders(registration: WebSocketClientRegistration) {
-    for (const { handler, client } of registration.holders) {
-      handler.clients.delete(client);
-      handler.interceptor.removeClient(client);
+    for (const { registeredInterceptor, client } of registration.holders) {
+      registeredInterceptor.clients.delete(client);
+      registeredInterceptor.interceptor.removeClient(client);
     }
   }
 
-  private findHandlerByClient<Schema extends WebSocketSchema>(client: InternalWebSocketInterceptorClient<Schema>) {
-    return this.webSocketHandlers.find((handler) => handler.clients.has(client));
+  private findRegisteredInterceptorByClient<Schema extends WebSocketSchema>(
+    client: InternalWebSocketInterceptorClient<Schema>,
+  ) {
+    return this.registeredInterceptors.find((registeredInterceptor) => registeredInterceptor.clients.has(client));
   }
 
-  private findHandlerByInterceptor<Schema extends WebSocketSchema>(
+  private findRegisteredInterceptor<Schema extends WebSocketSchema>(
     interceptor: AnyWebSocketInterceptorImplementation<Schema>,
   ) {
-    return this.webSocketHandlers.find((handler) => handler.interceptor === interceptor);
+    return this.registeredInterceptors.find(
+      (registeredInterceptor) => registeredInterceptor.interceptor === interceptor,
+    );
   }
 
   clearHandlers<Schema extends WebSocketSchema>(options?: {
@@ -314,18 +321,20 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     this.clearMessageHandlers(options?.interceptor);
 
-    const selectedHandlers = this.webSocketHandlers.filter((handler) => {
-      return options?.interceptor === undefined || handler.interceptor === options.interceptor;
+    const selectedInterceptors = this.registeredInterceptors.filter((registeredInterceptor) => {
+      return options?.interceptor === undefined || registeredInterceptor.interceptor === options.interceptor;
     });
 
-    for (const handler of selectedHandlers) {
-      for (const [client, registration] of handler.clients) {
-        handler.clients.delete(client);
-        handler.interceptor.removeClient(client);
+    for (const registeredInterceptor of selectedInterceptors) {
+      for (const [client, registration] of registeredInterceptor.clients) {
+        registeredInterceptor.clients.delete(client);
+        registeredInterceptor.interceptor.removeClient(client);
 
         // Clearing or stopping one interceptor must not affect the others, so a shared connection stays open until its
         // last holder lets it go.
-        const isStillHeld = registration.holders.some((holder) => holder.handler.clients.has(holder.client));
+        const isStillHeld = registration.holders.some((holder) =>
+          holder.registeredInterceptor.clients.has(holder.client),
+        );
 
         if (!isStillHeld) {
           registration.connection.removeEventListener('message', registration.messageListener);
@@ -339,13 +348,13 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       return;
     }
 
-    for (const handler of selectedHandlers) {
-      removeArrayElement(this.webSocketHandlers, handler);
+    for (const registeredInterceptor of selectedInterceptors) {
+      removeArrayElement(this.registeredInterceptors, registeredInterceptor);
     }
 
     const mswWorker = this.mswWorkerOrThrow;
     const remainingHandlers = mswWorker.listHandlers().filter((handler) => {
-      return !selectedHandlers.some((selectedHandler) => selectedHandler.mswHandler === handler);
+      return !selectedInterceptors.some((selectedInterceptor) => selectedInterceptor.mswHandler === handler);
     });
 
     mswWorker.resetHandlers(...remainingHandlers);

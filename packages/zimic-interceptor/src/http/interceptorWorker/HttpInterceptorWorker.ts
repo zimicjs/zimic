@@ -64,7 +64,6 @@ interface FailedHttpRequestMatch {
 interface HttpRequestHandling {
   response: HttpResponse | null;
   matchedSomeHandler: boolean;
-  error?: boolean;
 }
 
 abstract class HttpInterceptorWorker {
@@ -239,7 +238,7 @@ abstract class HttpInterceptorWorker {
 
         // A handler that threw may have already counted the request, such as toward its `times` limit, so older
         // handlers are not tried.
-        return { response: null, matchedSomeHandler, error: true };
+        return { response: null, matchedSomeHandler };
       }
     }
 
@@ -309,9 +308,9 @@ abstract class HttpInterceptorWorker {
   ) {
     if (strategy?.log) {
       await logUnhandledRequestWarning(request, strategy.action);
-      return { wasLogged: true };
+      return { wasUnhandledRequestLogged: true };
     }
-    return { wasLogged: false };
+    return { wasUnhandledRequestLogged: false };
   }
 
   protected async getUnhandledRequestStrategy(request: Request, interceptorType: HttpInterceptorType) {

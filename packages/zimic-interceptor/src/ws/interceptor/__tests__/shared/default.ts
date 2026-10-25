@@ -614,7 +614,7 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
           try {
             await expect(interceptor.start()).rejects.toBe(registrationError);
 
-            expect(requestSpy).toHaveBeenNthCalledWith(1, 'interceptors/ws/workers/commit', expect.anything());
+            expect(requestSpy).toHaveBeenNthCalledWith(1, 'interceptors/ws/workers/reset', expect.anything());
           } finally {
             requestSpy.mockRestore();
           }

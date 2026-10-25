@@ -340,6 +340,7 @@ describe('Web socket server', () => {
         id: expect.any(String) as string,
         channel: 'with-reply',
         data: requestMessage,
+        expectsReply: true,
       });
 
       type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
@@ -411,6 +412,7 @@ describe('Web socket server', () => {
           id: crypto.randomUUID(),
           channel: 'with-reply',
           data: requestMessage,
+          expectsReply: true,
         } satisfies RequestMessage),
       );
 
@@ -421,6 +423,7 @@ describe('Web socket server', () => {
         id: expect.any(String) as string,
         channel: 'with-reply',
         data: requestMessage,
+        expectsReply: true,
       });
 
       await waitFor(() => {
@@ -432,6 +435,49 @@ describe('Web socket server', () => {
         requestId: requestMessages[0].id,
         data: { response: 'answer' },
       });
+    });
+
+    it('should not reply to event messages from clients that do not expect a reply', async () => {
+      server = new WebSocketServer({ httpServer });
+      server.start();
+
+      rawClient = new ClientSocket(`ws://localhost:${port}`);
+      await waitForOpenClientSocket(rawClient);
+
+      type EventMessage = WebSocketEventMessage<Schema, 'no-reply'>;
+      const eventMessages: EventMessage[] = [];
+
+      server.onChannel('event', 'no-reply', (message) => {
+        eventMessages.push(message);
+      });
+      server.onChannel('event', 'with-reply', () => ({ response: 'answer' }));
+
+      type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
+      const replyMessages = collectClientSocketJSONMessages<ReplyMessage>(rawClient);
+
+      const eventMessage: EventMessage = { id: crypto.randomUUID(), channel: 'no-reply', data: { message: 'test' } };
+      rawClient.send(JSON.stringify(eventMessage));
+
+      // Frames on one socket arrive in order, so a reply to the event would arrive before the reply to this request.
+      const requestMessage: WebSocketEventMessage<Schema, 'with-reply'> = {
+        id: crypto.randomUUID(),
+        channel: 'with-reply',
+        data: { question: 'test' },
+        expectsReply: true,
+      };
+      rawClient.send(JSON.stringify(requestMessage));
+
+      await waitFor(() => {
+        expect(replyMessages).toHaveLength(1);
+      });
+      expect(replyMessages[0]).toEqual<ReplyMessage>({
+        id: expect.any(String) as string,
+        channel: 'with-reply',
+        requestId: requestMessage.id,
+        data: { response: 'answer' },
+      });
+
+      expect(eventMessages).toEqual([eventMessage]);
     });
   });
 
@@ -535,6 +581,7 @@ describe('Web socket server', () => {
         id: expect.any(String) as string,
         channel: 'with-reply',
         data: requestMessage,
+        expectsReply: true,
       });
 
       await waitForNot(() => {
@@ -596,6 +643,7 @@ describe('Web socket server', () => {
         id: expect.any(String) as string,
         channel: 'with-reply',
         data: requestMessage,
+        expectsReply: true,
       });
 
       await waitForNot(() => {
