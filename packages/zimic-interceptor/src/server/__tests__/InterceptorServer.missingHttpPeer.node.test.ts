@@ -48,7 +48,6 @@ it('should isolate a missing HTTP peer from authenticated WebSocket workers', as
     }));
     webSocketWorker.onChannel('event', 'interceptors/ws/messages/handle', ({ data }) => {
       handledMessages.push(data);
-      return { handled: true };
     });
 
     await webSocketWorker.start({

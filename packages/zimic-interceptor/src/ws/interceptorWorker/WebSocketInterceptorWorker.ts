@@ -31,11 +31,6 @@ interface FailedWebSocketMessageMatch {
   messageMatch: Extract<WebSocketMessageHandlerMessageMatch, { success: false }>;
 }
 
-export interface WebSocketMessageHandling {
-  handled: boolean;
-  error?: boolean;
-}
-
 abstract class WebSocketInterceptorWorker {
   platform: WebSocketInterceptorPlatform | null = null;
   isRunning = false;
@@ -133,7 +128,7 @@ abstract class WebSocketInterceptorWorker {
   protected async handleMessageWithHandlers(
     data: WebSocketMessageData<WebSocketSchema>,
     holders: WebSocketConnectionHolder<WebSocketSchema>[],
-  ): Promise<WebSocketMessageHandling> {
+  ) {
     const message = normalizeWebSocketMessageData<WebSocketSchema>(data);
     const failedMessageMatches: FailedWebSocketMessageMatch[] = [];
 
@@ -165,7 +160,7 @@ abstract class WebSocketInterceptorWorker {
         // an HTTP handler cleared while matching a request, older handlers are not tried.
         if (!this.isHoldingConnection(holder)) {
           await this.logUnhandledMessageIfNecessary(data, holders);
-          return { handled: false };
+          return;
         }
 
         const reservation = handler.implementation.reserveMessage(messageMatch.message);
@@ -176,20 +171,18 @@ abstract class WebSocketInterceptorWorker {
         }
 
         await holder.interceptor.handleMatchedMessage(handler.implementation, reservation.message, context);
-        return { handled: true };
+        return;
       } catch (error) {
         console.error(error);
 
         // A handler that threw may have already counted the message, such as toward its `times` limit, so older
         // handlers are not tried. Unlike HTTP, the message is not unhandled, because there is no reply to reject.
-        return { handled: false, error: true };
+        return;
       }
     }
 
     this.markMessageAsUnhandled(message, failedMessageMatches);
     await this.logUnhandledMessageIfNecessary(data, holders);
-
-    return { handled: false };
   }
 
   // Holders that let the connection go while the message was handled no longer decide its strategy. If none is left,

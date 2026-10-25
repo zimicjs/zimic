@@ -7,7 +7,6 @@ import { WebSocket as ClientSocket } from 'ws';
 import * as z from 'zod';
 
 import { isURLUnderBaseURL } from '@/utils/urls';
-import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
 import type { WebSocketEventMessage } from '@/utils/webSocket/types';
@@ -40,11 +39,6 @@ const webSocketMessageSendSchema = z.object({
 });
 
 const clientConnectionReplySchema = z.object({ acceptedHandlerIds: z.array(z.string()) });
-
-const messageHandlingReplySchema = z.object({
-  handled: z.boolean(),
-  error: z.boolean().optional(),
-});
 
 interface WebSocketHandler {
   id: string;
@@ -373,31 +367,15 @@ class WebSocketInterceptorServerRuntime {
     // the client.
     const { holders } = connection;
 
-    try {
-      const data = await serializeWebSocketMessageDataForTransport(
-        message.data as WebSocketMessageData<WebSocketSchema>,
-      );
+    const data = await serializeWebSocketMessageDataForTransport(message.data as WebSocketMessageData<WebSocketSchema>);
 
-      // The message is sent to the worker once with all holders, so the worker tries their handlers together by
-      // creation order and applies the unhandled message strategy of the newest holder still holding the connection.
-      const reply = await this.webSocketServer.request(
-        'interceptors/ws/messages/handle',
-        { handlerIds: holders.map((holder) => holder.id), clientId: connection.clientId, data },
-        { sockets: [connection.workerSocket] },
-      );
-
-      parseInterceptorServerRPCData(messageHandlingReplySchema, reply);
-      /* istanbul ignore next -- @preserve
-       * Message aborts depend on an RPC disconnect during message forwarding. */
-    } catch (error) {
-      /* istanbul ignore next -- @preserve */
-      const isMessageAbortError = error instanceof WebSocketMessageAbortError;
-
-      /* istanbul ignore next -- @preserve */
-      if (!isMessageAbortError) {
-        throw error;
-      }
-    }
+    // The message is sent to the worker once with all holders, so the worker tries their handlers together by creation
+    // order and applies the unhandled message strategy of the newest holder still holding the connection.
+    this.webSocketServer.send(
+      'interceptors/ws/messages/handle',
+      { handlerIds: holders.map((holder) => holder.id), clientId: connection.clientId, data },
+      { sockets: [connection.workerSocket] },
+    );
   }
 
   private sendMessage = (

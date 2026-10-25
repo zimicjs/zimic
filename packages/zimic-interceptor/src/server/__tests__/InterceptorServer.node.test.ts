@@ -1863,7 +1863,6 @@ describe('Interceptor server', () => {
         });
         worker.onChannel('event', 'interceptors/ws/messages/handle', ({ data }) => {
           handledMessages.push(data.data.data);
-          return { handled: true };
         });
 
         const client = new WebSocketClient<WebSocketSchema<string>>(baseURL);
@@ -1975,7 +1974,6 @@ describe('Interceptor server', () => {
         worker.onChannel('event', 'interceptors/ws/messages/handle', async () => {
           messageStartedPromise.resolve();
           await messageFinishedPromise;
-          return { handled: true };
         });
         worker.onChannel('event', 'interceptors/ws/clients/close', ({ data }) => {
           closedClientIds.push(data.clientId);

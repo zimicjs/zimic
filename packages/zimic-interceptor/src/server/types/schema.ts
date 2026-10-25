@@ -70,10 +70,6 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
       clientId: string;
       data: SerializedWebSocketMessageData;
     };
-    reply: {
-      handled: boolean;
-      error?: boolean;
-    };
   };
 
   'interceptors/ws/messages/send': {

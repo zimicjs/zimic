@@ -222,7 +222,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     });
 
     const deserializedMessageData = deserializeWebSocketMessageDataFromTransport(message.data);
-    return this.handleMessageWithHandlers(deserializedMessageData, holders);
+    await this.handleMessageWithHandlers(deserializedMessageData, holders);
   };
 
   private findHandlerByInterceptor<Schema extends WebSocketSchema>(
