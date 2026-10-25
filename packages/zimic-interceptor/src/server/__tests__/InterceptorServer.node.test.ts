@@ -808,7 +808,7 @@ describe('Interceptor server', () => {
   describe('WebSocket connections', () => {
     type ChatMessage = WebSocketSchema<{ type: 'client' | 'server'; text: string }>;
 
-    it('should not register WebSocket interceptors committed by HTTP interceptor workers', async () => {
+    it('should not register WebSocket interceptors reset by HTTP interceptor workers', async () => {
       server = createInternalInterceptorServer();
       await server.start();
 
@@ -828,9 +828,8 @@ describe('Interceptor server', () => {
           });
 
           rejectedRequests.push(
-            httpWorkerClient.request('interceptors/ws/workers/commit', {
-              id: crypto.randomUUID(),
-              baseURL,
+            httpWorkerClient.request('interceptors/ws/workers/reset', {
+              interceptors: [{ id: crypto.randomUUID(), baseURL }],
             }),
           );
 
@@ -1061,7 +1060,9 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
+          await worker.request('interceptors/ws/workers/reset', {
+            interceptors: [{ id: crypto.randomUUID(), baseURL }],
+          });
 
           const closeEventPromise = waitForWebSocketClientClose(client);
 
@@ -1109,8 +1110,12 @@ describe('Interceptor server', () => {
 
           const interceptorId = crypto.randomUUID();
           const otherInterceptorId = crypto.randomUUID();
-          await worker.request('interceptors/ws/workers/commit', { id: interceptorId, baseURL });
-          await worker.request('interceptors/ws/workers/commit', { id: otherInterceptorId, baseURL: otherBaseURL });
+          await worker.request('interceptors/ws/workers/reset', {
+            interceptors: [
+              { id: interceptorId, baseURL },
+              { id: otherInterceptorId, baseURL: otherBaseURL },
+            ],
+          });
 
           const receivedMessages: string[] = [];
           const otherReceivedMessages: string[] = [];
@@ -1170,7 +1175,7 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          await worker.request('interceptors/ws/workers/commit', { id: interceptorId, baseURL });
+          await worker.request('interceptors/ws/workers/reset', { interceptors: [{ id: interceptorId, baseURL }] });
 
           await client.open();
 
@@ -1205,9 +1210,8 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          await worker.request('interceptors/ws/workers/commit', {
-            id: crypto.randomUUID(),
-            baseURL: otherPortBaseURL,
+          await worker.request('interceptors/ws/workers/reset', {
+            interceptors: [{ id: crypto.randomUUID(), baseURL: otherPortBaseURL }],
           });
 
           const closeEventPromise = waitForWebSocketClientClose(client);
@@ -1218,44 +1222,6 @@ describe('Interceptor server', () => {
           expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
           expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
           expect(connectionListener).not.toHaveBeenCalled();
-        } finally {
-          await client.close();
-          await worker.stop();
-        }
-      });
-
-      it('should route client connections to interceptors first registered by a reset', async () => {
-        server = createInternalInterceptorServer();
-        await server.start();
-
-        const baseURL = `ws://${server.hostname}:${server.port}/chat`;
-
-        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
-          url: `ws://${server.hostname}:${server.port}`,
-        });
-
-        const interceptorId = crypto.randomUUID();
-        const connectionReceivedPromise = createPromiseWithResolvers<{ interceptorIds: string[] }>();
-
-        worker.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => {
-          connectionReceivedPromise.resolve(data);
-          return { acceptedInterceptorIds: data.interceptorIds };
-        });
-
-        const client = new WebSocketClient<ChatMessage>(baseURL);
-
-        try {
-          await worker.start({
-            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws' },
-            waitForAuthentication: true,
-          });
-
-          await worker.request('interceptors/ws/workers/reset', { interceptors: [{ id: interceptorId, baseURL }] });
-
-          await client.open();
-
-          await expect(connectionReceivedPromise).resolves.toMatchObject({ interceptorIds: [interceptorId] });
-          expect(client.readyState).toBe(WebSocketClient.OPEN);
         } finally {
           await client.close();
           await worker.stop();
@@ -1288,7 +1254,9 @@ describe('Interceptor server', () => {
               waitForAuthentication: true,
             });
 
-            await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
+            await worker.request('interceptors/ws/workers/reset', {
+              interceptors: [{ id: crypto.randomUUID(), baseURL }],
+            });
 
             await client.open();
 
@@ -1332,7 +1300,7 @@ describe('Interceptor server', () => {
         });
       });
 
-      it('should reject commits with an invalid id', async () => {
+      it('should reject resets with an invalid interceptor id', async () => {
         server = createInternalInterceptorServer();
         await server.start();
 
@@ -1352,7 +1320,9 @@ describe('Interceptor server', () => {
               waitForAuthentication: true,
             });
 
-            rejectedRequests.push(worker.request('interceptors/ws/workers/commit', { id: 1 as never, baseURL }));
+            rejectedRequests.push(
+              worker.request('interceptors/ws/workers/reset', { interceptors: [{ id: 1 as never, baseURL }] }),
+            );
 
             await waitFor(() => {
               expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
@@ -1368,41 +1338,6 @@ describe('Interceptor server', () => {
             expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
           } finally {
             await client.close();
-            await worker.stop();
-            await Promise.allSettled(rejectedRequests);
-          }
-        });
-      });
-
-      it('should reject commits with a non-WebSocket base URL', async () => {
-        server = createInternalInterceptorServer();
-        await server.start();
-
-        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
-          url: `ws://${server.hostname}:${server.port}`,
-        });
-
-        const rejectedRequests: Promise<unknown>[] = [];
-
-        await usingIgnoredConsole(['error'], async (console) => {
-          try {
-            await worker.start({
-              parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws' },
-              waitForAuthentication: true,
-            });
-
-            rejectedRequests.push(
-              worker.request('interceptors/ws/workers/commit', {
-                id: crypto.randomUUID(),
-                baseURL: `http://${server!.hostname}:${server!.port}/chat`,
-              }),
-            );
-
-            await waitFor(() => {
-              expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
-            });
-            expect(console.error).toHaveBeenCalledTimes(1);
-          } finally {
             await worker.stop();
             await Promise.allSettled(rejectedRequests);
           }
@@ -1433,7 +1368,9 @@ describe('Interceptor server', () => {
               waitForAuthentication: true,
             });
 
-            await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
+            await worker.request('interceptors/ws/workers/reset', {
+              interceptors: [{ id: crypto.randomUUID(), baseURL }],
+            });
 
             await client.open();
 
@@ -1484,7 +1421,9 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
+          await worker.request('interceptors/ws/workers/reset', {
+            interceptors: [{ id: crypto.randomUUID(), baseURL }],
+          });
 
           await client.open();
 
@@ -1535,7 +1474,9 @@ describe('Interceptor server', () => {
               waitForAuthentication: true,
             });
 
-            await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
+            await worker.request('interceptors/ws/workers/reset', {
+              interceptors: [{ id: crypto.randomUUID(), baseURL }],
+            });
 
             const closeEventPromise = waitForWebSocketClientClose(client);
 
@@ -1598,7 +1539,9 @@ describe('Interceptor server', () => {
               waitForAuthentication: true,
             });
 
-            await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
+            await worker.request('interceptors/ws/workers/reset', {
+              interceptors: [{ id: crypto.randomUUID(), baseURL }],
+            });
 
             const closeEventPromise = waitForWebSocketClientClose(client);
 
@@ -1615,7 +1558,9 @@ describe('Interceptor server', () => {
 
             expect(console.error).not.toHaveBeenCalled();
 
-            await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
+            await worker.request('interceptors/ws/workers/reset', {
+              interceptors: [{ id: crypto.randomUUID(), baseURL }],
+            });
 
             const receivedMessages = collectWebSocketClientMessages(otherClient);
 
@@ -1717,7 +1662,9 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
+          await worker.request('interceptors/ws/workers/reset', {
+            interceptors: [{ id: crypto.randomUUID(), baseURL }],
+          });
 
           const closeEventPromise = waitForWebSocketClientClose(client);
 
@@ -1759,7 +1706,9 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
+          await worker.request('interceptors/ws/workers/reset', {
+            interceptors: [{ id: crypto.randomUUID(), baseURL }],
+          });
 
           const closeEventPromise = waitForWebSocketClientClose(client);
 
@@ -1815,8 +1764,12 @@ describe('Interceptor server', () => {
           });
 
           const otherInterceptorId = crypto.randomUUID();
-          await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
-          await worker.request('interceptors/ws/workers/commit', { id: otherInterceptorId, baseURL: otherBaseURL });
+          await worker.request('interceptors/ws/workers/reset', {
+            interceptors: [
+              { id: crypto.randomUUID(), baseURL },
+              { id: otherInterceptorId, baseURL: otherBaseURL },
+            ],
+          });
 
           const closeEventPromise = waitForWebSocketClientClose(client);
           const otherMessagePromise = waitForWebSocketClientMessage(otherClient);
@@ -1881,7 +1834,9 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
+          await worker.request('interceptors/ws/workers/reset', {
+            interceptors: [{ id: crypto.randomUUID(), baseURL }],
+          });
 
           await client.open();
           client.send('first');
@@ -1932,7 +1887,9 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
+          await worker.request('interceptors/ws/workers/reset', {
+            interceptors: [{ id: crypto.randomUUID(), baseURL }],
+          });
 
           // A graceful close handshake cannot complete while the server holds the connection, so the client
           // disconnects abruptly.
@@ -1996,7 +1953,9 @@ describe('Interceptor server', () => {
               waitForAuthentication: true,
             });
 
-            await worker.request('interceptors/ws/workers/commit', { id: crypto.randomUUID(), baseURL });
+            await worker.request('interceptors/ws/workers/reset', {
+              interceptors: [{ id: crypto.randomUUID(), baseURL }],
+            });
 
             await client.open();
             const {

@@ -1,11 +1,7 @@
 import type { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
 import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
-import {
-  InterceptorServerWebSocketSchema,
-  WebSocketInterceptorCommit,
-  WebSocketWorkerReset,
-} from '@/server/types/schema';
+import { InterceptorServerWebSocketSchema, WebSocketWorkerReset } from '@/server/types/schema';
 import { isClientSide, isServerSide } from '@/utils/environment';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocketEventMessage } from '@/utils/webSocket/types';
@@ -108,21 +104,8 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       throw new NotRunningWebSocketInterceptorError();
     }
 
-    const interceptorId = crypto.randomUUID();
-
-    const commitPromise = this.webSocketClient
-      .request('interceptors/ws/workers/commit', {
-        id: interceptorId,
-        baseURL: interceptor.baseURLAsString,
-      })
-      .then(() => undefined)
-      .catch((error: unknown) => {
-        this.registeredInterceptors.delete(interceptorId);
-        throw error;
-      });
-
     const registeredInterceptor: RegisteredWebSocketInterceptor = {
-      id: interceptorId,
+      id: crypto.randomUUID(),
       baseURL: interceptor.baseURLAsString,
       interceptor,
       clients: new Map(),
@@ -131,7 +114,12 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     this.registeredInterceptors.set(registeredInterceptor.id, registeredInterceptor);
 
-    return commitPromise;
+    try {
+      await this.resetServerWorker([]);
+    } catch (error) {
+      this.registeredInterceptors.delete(registeredInterceptor.id);
+      throw error;
+    }
   }
 
   async sendToClient<Schema extends WebSocketSchema>(
@@ -281,6 +269,10 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       }
     }
 
+    await this.resetServerWorker(clearedInterceptors);
+  }
+
+  private async resetServerWorker(clearedInterceptors: RegisteredWebSocketInterceptor[]) {
     if (!this.webSocketClient.isRunning) {
       return;
     }
@@ -292,10 +284,10 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
 
     const reset: WebSocketWorkerReset = {
-      interceptors: Array.from<RegisteredWebSocketInterceptor, WebSocketInterceptorCommit>(
-        this.registeredInterceptors.values(),
-        (registeredInterceptor) => ({ id: registeredInterceptor.id, baseURL: registeredInterceptor.baseURL }),
-      ),
+      interceptors: Array.from(this.registeredInterceptors.values(), (registeredInterceptor) => ({
+        id: registeredInterceptor.id,
+        baseURL: registeredInterceptor.baseURL,
+      })),
       clearedInterceptorIds: clearedInterceptors.map((registeredInterceptor) => registeredInterceptor.id),
     };
 

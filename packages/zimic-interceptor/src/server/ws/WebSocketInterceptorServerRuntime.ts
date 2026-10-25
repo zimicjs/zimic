@@ -18,18 +18,18 @@ import {
 
 import type {
   InterceptorServerWebSocketSchema,
-  WebSocketInterceptorCommit,
+  WebSocketInterceptorRegistration,
   WebSocketWorkerReset,
 } from '../types/schema';
 import { parseInterceptorServerRPCData } from '../utils/rpc';
 
-const webSocketInterceptorCommitSchema = z.object({
+const webSocketInterceptorRegistrationSchema = z.object({
   id: z.string(),
   baseURL: z.url({ protocol: /^wss?$/ }),
-}) satisfies z.ZodType<WebSocketInterceptorCommit>;
+}) satisfies z.ZodType<WebSocketInterceptorRegistration>;
 
 const webSocketWorkerResetSchema = z.object({
-  interceptors: z.array(webSocketInterceptorCommitSchema),
+  interceptors: z.array(webSocketInterceptorRegistrationSchema),
   clearedInterceptorIds: z.array(z.string()).optional(),
 }) satisfies z.ZodType<WebSocketWorkerReset>;
 
@@ -48,6 +48,12 @@ interface RegisteredWebSocketInterceptor {
   id: string;
   baseURL: string;
   socket: Socket;
+}
+
+interface WebSocketWorker {
+  socket: Socket;
+  interceptors: RegisteredWebSocketInterceptor[];
+  numberOfResets: number;
 }
 
 interface UserWebSocketHandler {
@@ -75,10 +81,10 @@ class WebSocketInterceptorServerRuntime {
   private webSocketServer: WebSocketInterceptorServerRuntimeOptions['webSocketServer'];
   private isWebSocketWorkerSocket: WebSocketInterceptorServerRuntimeOptions['isWebSocketWorkerSocket'];
 
-  // Workers are kept in the order of their first registration, which decides the worker that holds a connection. Each
-  // worker keeps that position until its socket disconnects, even if all of its interceptors stop.
-  private webSocketInterceptorsByWorkerSocket = new Map<Socket, RegisteredWebSocketInterceptor[]>();
-  private numberOfResetsByWorkerSocket = new Map<Socket, number>();
+  // Workers are kept in the order of their first reset, which registers their first interceptor and decides the worker
+  // that holds a connection. Each worker keeps that position until its socket disconnects, even if all of its
+  // interceptors stop.
+  private webSocketWorkersBySocket = new Map<Socket, WebSocketWorker>();
   private pendingUserWebSocketHandlers = new Map<Socket, PendingUserWebSocketHandler>();
   private activeUserWebSocketHandlers = new Map<Socket, UserWebSocketHandler>();
 
@@ -86,7 +92,6 @@ class WebSocketInterceptorServerRuntime {
     this.webSocketServer = options.webSocketServer;
     this.isWebSocketWorkerSocket = options.isWebSocketWorkerSocket;
 
-    this.webSocketServer.onChannel('event', 'interceptors/ws/workers/commit', this.commitWorker);
     this.webSocketServer.onChannel('event', 'interceptors/ws/workers/reset', this.resetWorker);
     this.webSocketServer.onChannel('event', 'interceptors/ws/messages/send', this.sendMessage);
   }
@@ -97,50 +102,39 @@ class WebSocketInterceptorServerRuntime {
     }
   }
 
-  private commitWorker = (
-    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/workers/commit'>,
-    socket: Socket,
-  ) => {
-    this.assertWebSocketWorkerSocket(socket);
-
-    this.registerWebSocketInterceptor(
-      parseInterceptorServerRPCData(webSocketInterceptorCommitSchema, message.data),
-      socket,
-    );
-    return {};
-  };
-
   private resetWorker = (
     message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/workers/reset'>,
     socket: Socket,
   ) => {
     this.assertWebSocketWorkerSocket(socket);
 
+    // Setting a socket already in the map keeps its position.
+    const worker = this.webSocketWorkersBySocket.get(socket) ?? { socket, interceptors: [], numberOfResets: 0 };
+    this.webSocketWorkersBySocket.set(socket, worker);
+
     // Counted before parsing, so the count matches the resets the worker sent even if one is invalid.
-    this.numberOfResetsByWorkerSocket.set(socket, (this.numberOfResetsByWorkerSocket.get(socket) ?? 0) + 1);
+    worker.numberOfResets++;
 
     const reset = parseInterceptorServerRPCData(webSocketWorkerResetSchema, message.data);
     const clearedInterceptorIds = new Set(reset.clearedInterceptorIds);
 
     const existingInterceptorsById = new Map(
-      (this.webSocketInterceptorsByWorkerSocket.get(socket) ?? []).map(
-        (interceptor) => [interceptor.id, interceptor] as const,
-      ),
+      worker.interceptors.map((interceptor) => [interceptor.id, interceptor] as const),
     );
 
-    const resetInterceptors = reset.interceptors.map((commit) => {
-      const existingInterceptor = existingInterceptorsById.get(commit.id);
+    const resetInterceptors = reset.interceptors.map((registration): RegisteredWebSocketInterceptor => {
+      const existingInterceptor = existingInterceptorsById.get(registration.id);
 
       if (!existingInterceptor) {
-        return this.createRegisteredWebSocketInterceptor(commit, socket);
+        return { ...registration, socket };
       }
 
-      existingInterceptor.baseURL = commit.baseURL;
-      existingInterceptorsById.delete(commit.id);
+      existingInterceptor.baseURL = registration.baseURL;
+      existingInterceptorsById.delete(registration.id);
 
       // A cleared interceptor keeps its registration, which decides the holders of new connections, but loses its
       // connections.
-      if (clearedInterceptorIds.has(commit.id)) {
+      if (clearedInterceptorIds.has(registration.id)) {
         this.detachWebSocketInterceptorConnections(existingInterceptor);
       }
 
@@ -151,40 +145,20 @@ class WebSocketInterceptorServerRuntime {
       this.detachWebSocketInterceptorConnections(removedInterceptor);
     }
 
-    const hasWorkerPosition = this.webSocketInterceptorsByWorkerSocket.has(socket);
-
-    // A worker takes its position with its first interceptor. Setting the interceptors of a socket already in the map
-    // keeps its position.
-    if (hasWorkerPosition || resetInterceptors.length > 0) {
-      this.webSocketInterceptorsByWorkerSocket.set(socket, resetInterceptors);
-    }
+    worker.interceptors = resetInterceptors;
 
     return {};
   };
 
-  private registerWebSocketInterceptor(commit: WebSocketInterceptorCommit, socket: Socket) {
-    const interceptors = this.webSocketInterceptorsByWorkerSocket.get(socket) ?? [];
-    interceptors.push(this.createRegisteredWebSocketInterceptor(commit, socket));
-    this.webSocketInterceptorsByWorkerSocket.set(socket, interceptors);
-  }
-
-  private createRegisteredWebSocketInterceptor(
-    { id, baseURL }: WebSocketInterceptorCommit,
-    socket: Socket,
-  ): RegisteredWebSocketInterceptor {
-    return { id, baseURL, socket };
-  }
-
   removeHandlersBySocket(socket: Socket) {
-    for (const interceptor of this.webSocketInterceptorsByWorkerSocket.get(socket) ?? []) {
+    for (const interceptor of this.webSocketWorkersBySocket.get(socket)?.interceptors ?? []) {
       this.detachWebSocketInterceptorConnections(interceptor, {
         pendingCloseCode: WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR,
         pendingCloseReason: WEB_SOCKET_CLOSE_REASONS.CONNECTION_SETUP_FAILED,
       });
     }
 
-    this.webSocketInterceptorsByWorkerSocket.delete(socket);
-    this.numberOfResetsByWorkerSocket.delete(socket);
+    this.webSocketWorkersBySocket.delete(socket);
   }
 
   // Clearing or stopping one interceptor must not affect the others, so a shared connection stays open until its last
@@ -241,7 +215,7 @@ class WebSocketInterceptorServerRuntime {
 
     const connection: PendingUserWebSocketHandler = {
       clientId,
-      workerSocket: connectionTarget.workerSocket,
+      workerSocket: connectionTarget.worker.socket,
       holders: connectionTarget.holders,
       closeListener: () => {
         this.removePendingUserWebSocketConnection(socket, connection);
@@ -266,7 +240,7 @@ class WebSocketInterceptorServerRuntime {
           url: this.getWebSocketRequestURL(request).href,
           // Lets the worker tell which clears the server has not processed yet. Those holders let the connection go
           // before holding it, and the server drops them when their reset arrives, before the reply.
-          numberOfResets: this.numberOfResetsByWorkerSocket.get(connection.workerSocket) ?? 0,
+          numberOfResets: connectionTarget.worker.numberOfResets,
         },
         { sockets: [connection.workerSocket] },
       );
@@ -422,16 +396,16 @@ class WebSocketInterceptorServerRuntime {
   private findConnectionTargetByRequest(request: IncomingMessage) {
     const requestURL = excludeNonPathParams(this.getWebSocketRequestURL(request));
 
-    const workers = Array.from(this.webSocketInterceptorsByWorkerSocket, ([workerSocket, interceptors]) => ({
-      workerSocket,
-      holders: interceptors.filter((interceptor) => isURLUnderBaseURL(requestURL.href, interceptor.baseURL)),
+    const workers = Array.from(this.webSocketWorkersBySocket.values(), (worker) => ({
+      worker,
+      holders: worker.interceptors.filter((interceptor) => isURLUnderBaseURL(requestURL.href, interceptor.baseURL)),
     }));
 
     // Only one worker holds a connection, the same one that decides the unhandled message strategy. Other workers belong
     // to other processes or authentication tokens, so they do not serve each other's connections. A connection goes to
     // the newest worker with a running interceptor whose base URL is a prefix of the connection URL, even if that
     // interceptor has no handlers, as HTTP requests do.
-    return workers.findLast((worker) => worker.holders.length > 0);
+    return workers.findLast((target) => target.holders.length > 0);
   }
 
   private getWebSocketRequestURL(request: IncomingMessage) {
@@ -441,14 +415,12 @@ class WebSocketInterceptorServerRuntime {
   }
 
   async stop() {
-    this.webSocketServer.offChannel('event', 'interceptors/ws/workers/commit', this.commitWorker);
     this.webSocketServer.offChannel('event', 'interceptors/ws/workers/reset', this.resetWorker);
     this.webSocketServer.offChannel('event', 'interceptors/ws/messages/send', this.sendMessage);
 
     await this.closeUserWebSocketConnections();
 
-    this.webSocketInterceptorsByWorkerSocket.clear();
-    this.numberOfResetsByWorkerSocket.clear();
+    this.webSocketWorkersBySocket.clear();
   }
 
   private async closeUserWebSocketConnections() {

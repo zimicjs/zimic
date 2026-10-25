@@ -59,9 +59,8 @@ it('should isolate a missing HTTP peer from authenticated WebSocket workers', as
     });
 
     const baseURL = `${serverURL}/chat`;
-    await webSocketWorker.request('interceptors/ws/workers/commit', {
-      id: crypto.randomUUID(),
-      baseURL,
+    await webSocketWorker.request('interceptors/ws/workers/reset', {
+      interceptors: [{ id: crypto.randomUUID(), baseURL }],
     });
 
     expect(httpPeerMock.importAttempts).toBe(0);

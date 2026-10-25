@@ -6,13 +6,13 @@ export interface HttpWorkerReset {
   interceptorBaseURLs: string[];
 }
 
-export interface WebSocketInterceptorCommit {
+export interface WebSocketInterceptorRegistration {
   id: string;
   baseURL: string;
 }
 
 export interface WebSocketWorkerReset {
-  interceptors: WebSocketInterceptorCommit[];
+  interceptors: WebSocketInterceptorRegistration[];
   clearedInterceptorIds?: string[];
 }
 
@@ -31,11 +31,6 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
       matchedSomeHandler: boolean;
       wasUnhandledRequestLogged: boolean;
     };
-  };
-
-  'interceptors/ws/workers/commit': {
-    event: WebSocketInterceptorCommit;
-    reply: {};
   };
 
   'interceptors/ws/workers/reset': {

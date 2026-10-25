@@ -652,7 +652,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           baseURL: `${baseURL}/first`,
         });
 
-        // Runs the second interceptor on the same worker as the first one, so clearing the first recommits the second.
+        // Runs the second interceptor on the same worker as the first one, so clearing the first resets the second.
         const secondInterceptor = new WebSocketInterceptorImplementation<
           ChatMessage,
           typeof RemoteWebSocketMessageHandler
