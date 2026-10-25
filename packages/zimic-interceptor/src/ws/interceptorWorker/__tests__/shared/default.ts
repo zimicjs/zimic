@@ -556,15 +556,15 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
   }
 
   if (type === 'remote') {
-    it('should reject remote clients if the referenced handler no longer exists', async () => {
+    it('should reject remote clients if the referenced interceptor is no longer registered', async () => {
       await usingWebSocketInterceptorWorker(workerOptions, async (rawWorker) => {
         const worker = rawWorker as RemoteWebSocketInterceptorWorker;
         const interceptor = createDefaultWebSocketInterceptor();
 
         await worker.use(interceptor.implementation);
 
-        // Skips the reset RPC, so the server keeps the cleared handler registered while the worker has already forgotten
-        // it.
+        // Skips the reset RPC, so the server keeps the cleared interceptor registered while the worker has already
+        // forgotten it.
         const resetRequestSpy = vi.spyOn(worker.webSocketClient, 'request').mockResolvedValueOnce({});
         await worker.clearHandlers({ interceptor: interceptor.implementation });
         resetRequestSpy.mockRestore();
@@ -623,7 +623,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       );
     });
 
-    it('should ignore sends without a registered remote client or handler', async () => {
+    it('should ignore sends without a registered remote client or interceptor', async () => {
       await usingWebSocketInterceptorWorker(workerOptions, async (rawWorker) => {
         const worker = rawWorker as RemoteWebSocketInterceptorWorker;
         const interceptor = createDefaultWebSocketInterceptor();
@@ -635,7 +635,10 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         ).resolves.toBeUndefined();
 
         await expect(
-          worker.sendToClients(interceptor.implementation, JSON.stringify({ type: 'server', text: 'ignored handler' })),
+          worker.sendToClients(
+            interceptor.implementation,
+            JSON.stringify({ type: 'server', text: 'ignored interceptor' }),
+          ),
         ).resolves.toBeUndefined();
         expect(send).not.toHaveBeenCalled();
       });
@@ -649,7 +652,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           baseURL: `${baseURL}/first`,
         });
 
-        // Runs the second interceptor on the same worker as the first one, so clearing the first recommits the second.
+        // Runs the second interceptor on the same worker as the first one, so clearing the first resets the second.
         const secondInterceptor = new WebSocketInterceptorImplementation<
           ChatMessage,
           typeof RemoteWebSocketMessageHandler
@@ -710,7 +713,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         // No public path clears an interceptor after the server sends a connection and before the worker receives it.
         // A connection listener registered ahead of the worker's clears the first interceptor at that point. It never
         // replies before the test ends, leaving the reply to the worker.
-        const connectionReplyPromise = createPromiseWithResolvers<{ acceptedHandlerIds: string[] }>();
+        const connectionReplyPromise = createPromiseWithResolvers<{ acceptedInterceptorIds: string[] }>();
         let firstClearPromise: Promise<void> | undefined;
 
         worker.webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', () => {
@@ -738,7 +741,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
             await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', text: 'second' }));
           });
         } finally {
-          connectionReplyPromise.resolve({ acceptedHandlerIds: [] });
+          connectionReplyPromise.resolve({ acceptedInterceptorIds: [] });
           await secondInterceptor.stop({});
           await firstInterceptor.stop({});
         }
@@ -775,14 +778,11 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         });
 
         // No public path clears an interceptor after the server sends a message and before the worker receives it. A
-        // listener registered ahead of the worker's clears the second interceptor at that point. It never replies
-        // before the test ends, leaving the reply to the worker.
-        const handlingReplyPromise = createPromiseWithResolvers<{ handled: boolean }>();
+        // listener registered ahead of the worker's clears the second interceptor at that point.
         let secondClearPromise: Promise<void> | undefined;
 
         worker.webSocketClient.onChannel('event', 'interceptors/ws/messages/handle', () => {
           secondClearPromise = secondInterceptor.clear();
-          return handlingReplyPromise;
         });
 
         try {
@@ -805,7 +805,6 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
             expect(secondOnUnhandledMessage).not.toHaveBeenCalled();
           });
         } finally {
-          handlingReplyPromise.resolve({ handled: false });
           await secondInterceptor.stop({});
           await firstInterceptor.stop({});
         }

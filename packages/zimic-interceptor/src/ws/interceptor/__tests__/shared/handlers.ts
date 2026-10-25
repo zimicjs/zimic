@@ -8,12 +8,12 @@ import { promiseIfRemote } from '@tests/utils/promises';
 import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorOptions } from '../../types/options';
-import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions, verifyUnhandledMessageWarning } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
 
 export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
-  const { getBaseURL, getInterceptorOptions } = options;
+  const { platform, getBaseURL, getInterceptorOptions } = options;
 
   let baseURL: string;
   let interceptorOptions: WebSocketInterceptorOptions;
@@ -60,40 +60,50 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
   });
 
   it('should log an error if a message is intercepted with a computed response and the handler throws', async () => {
-    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-      const error = new Error('An error occurred.');
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, onUnhandledMessage: { log: true } },
+      async (interceptor) => {
+        const error = new Error('An error occurred.');
 
-      await promiseIfRemote(
-        interceptor
-          .message()
-          .with({ type: 'client', index: 1 })
-          .respond(() => {
-            throw error;
-          }),
-        interceptor,
-      );
+        await promiseIfRemote(
+          interceptor
+            .message()
+            .with({ type: 'client', index: 1 })
+            .respond(() => {
+              throw error;
+            }),
+          interceptor,
+        );
 
-      await promiseIfRemote(
-        interceptor.message().with({ type: 'client', index: 2 }).respond({ type: 'server', index: 2 }),
-        interceptor,
-      );
+        await promiseIfRemote(
+          interceptor.message().with({ type: 'client', index: 2 }).respond({ type: 'server', index: 2 }),
+          interceptor,
+        );
 
-      await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-        await usingIgnoredConsole(['error'], async (console) => {
-          client.send(JSON.stringify({ type: 'client', index: 1 }));
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          await usingIgnoredConsole(['error', 'warn'], async (console) => {
+            const message: MessageSchema = { type: 'client', index: 1 };
+            client.send(JSON.stringify(message));
 
-          await waitFor(() => {
-            expect(console.error).toHaveBeenCalledWith(error);
+            // The message logs the handler error and the unhandled message.
+            await waitFor(() => {
+              expect(console.warn).toHaveBeenCalledTimes(1);
+            });
+
+            expect(console.error).toHaveBeenCalledTimes(1);
+            expect(console.error.mock.calls[0]).toEqual([error]);
+
+            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], { data: message, platform });
           });
+
+          const messagePromise = waitForWebSocketClientMessage(client);
+
+          client.send(JSON.stringify({ type: 'client', index: 2 }));
+
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
         });
-
-        const messagePromise = waitForWebSocketClientMessage(client);
-
-        client.send(JSON.stringify({ type: 'client', index: 2 }));
-
-        await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
-      });
-    });
+      },
+    );
   });
 
   // No WebSocket counterparts for the HTTP cases intercepting requests having headers or search params: WebSocket

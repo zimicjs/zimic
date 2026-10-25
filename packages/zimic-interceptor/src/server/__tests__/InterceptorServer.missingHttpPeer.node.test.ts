@@ -44,11 +44,10 @@ it('should isolate a missing HTTP peer from authenticated WebSocket workers', as
 
     const handledMessages: unknown[] = [];
     webSocketWorker.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => ({
-      acceptedHandlerIds: data.handlerIds,
+      acceptedInterceptorIds: data.interceptorIds,
     }));
     webSocketWorker.onChannel('event', 'interceptors/ws/messages/handle', ({ data }) => {
       handledMessages.push(data);
-      return { handled: true };
     });
 
     await webSocketWorker.start({
@@ -60,9 +59,8 @@ it('should isolate a missing HTTP peer from authenticated WebSocket workers', as
     });
 
     const baseURL = `${serverURL}/chat`;
-    await webSocketWorker.request('interceptors/ws/workers/commit', {
-      id: crypto.randomUUID(),
-      baseURL,
+    await webSocketWorker.request('interceptors/ws/workers/reset', {
+      interceptors: [{ id: crypto.randomUUID(), baseURL }],
     });
 
     expect(httpPeerMock.importAttempts).toBe(0);

@@ -13,12 +13,12 @@ import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInter
 import { createWebSocketInterceptor } from '../../factory';
 import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../types/options';
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../WebSocketInterceptorImplementation';
-import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions, verifyUnhandledMessageWarning } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
 
 export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
-  const { type, getBaseURL, getOtherBaseURL, getInterceptorOptions } = options;
+  const { platform, type, getBaseURL, getOtherBaseURL, getInterceptorOptions } = options;
 
   let defaultBaseURL: string;
   let interceptorOptions: WebSocketInterceptorOptions;
@@ -685,7 +685,6 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     );
   });
 
-  // Unlike HTTP, a message that a handler failed to handle is not unhandled, because there is no reply to reject.
   it('should not try older handlers if the newest one throws while handling a message', async () => {
     const olderOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>();
 
@@ -714,18 +713,19 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
                 const messageListener = vi.fn();
                 client.addEventListener('message', messageListener);
 
-                client.send(JSON.stringify({ type: 'client', index: 1 }));
+                const message: MessageSchema = { type: 'client', index: 1 };
+                client.send(JSON.stringify(message));
 
                 await waitFor(() => {
-                  expect(console.error).toHaveBeenCalledWith(error);
-                });
-
-                await waitForNot(() => {
-                  expect(messageListener).toHaveBeenCalled();
+                  expect(console.warn).toHaveBeenCalledTimes(1);
                 });
 
                 expect(console.error).toHaveBeenCalledTimes(1);
-                expect(console.warn).toHaveBeenCalledTimes(0);
+                expect(console.error.mock.calls[0]).toEqual([error]);
+
+                await verifyUnhandledMessageWarning(console.warn.mock.calls[0], { data: message, platform });
+
+                expect(messageListener).not.toHaveBeenCalled();
               });
             });
 
