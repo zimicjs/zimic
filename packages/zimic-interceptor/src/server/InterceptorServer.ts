@@ -345,6 +345,8 @@ class InterceptorServer implements PublicInterceptorServer {
         return { handled: true };
       }
 
+      this.registerWorkerSocket(socket, protocol);
+
       if (protocol === 'http') {
         try {
           await this.loadHttpRuntime();
@@ -362,8 +364,6 @@ class InterceptorServer implements PublicInterceptorServer {
           return { handled: true };
         }
       }
-
-      this.registerWorkerSocket(socket, protocol);
 
       return { handled: false };
     }
