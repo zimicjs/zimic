@@ -13,10 +13,9 @@ import { createBinaryMessage, expectWebSocketTimesCheckError } from './utils';
 export function declareTimesWebSocketMessageHandlerTests(
   options: SharedWebSocketMessageHandlerTestOptions & {
     type: WebSocketInterceptorType;
-    receivedBlobMessageRepresentation: string;
   },
 ) {
-  const { type, receivedBlobMessageRepresentation, startServer, stopServer, getBaseURL } = options;
+  const { type, startServer, stopServer, getBaseURL } = options;
 
   let baseURL: string;
 
@@ -392,9 +391,9 @@ export function declareTimesWebSocketMessageHandlerTests(
                 message: 'Expected exactly 1 matching message, but got 0.',
                 expectedNumberOfMessages: 1,
                 unmatchedMessages:
-                  `- { "message": ${receivedBlobMessageRepresentation}, ` +
+                  '- { "message": ArrayBuffer { byteLength: 4 }, ' +
                   '"diff": { "data": { "expected": Blob { type: \'application/octet-stream\', size: 1 }, ' +
-                  `"received": ${receivedBlobMessageRepresentation} } } }`,
+                  '"received": ArrayBuffer { byteLength: 4 } } } }',
               }),
             );
           } finally {

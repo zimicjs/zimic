@@ -1,7 +1,7 @@
 import { WebSocketSchema } from '@zimic/ws';
 
 import MessageSavingSafeLimitExceededError from './errors/MessageSavingSafeLimitExceededError';
-import type { InterceptedWebSocketInterceptorMessage } from './types/messages';
+import type { InterceptedWebSocketInterceptorMessage, ReceivedWebSocketMessageData } from './types/messages';
 import type {
   InternalWebSocketInterceptorClient,
   InternalWebSocketInterceptorServer,
@@ -39,7 +39,7 @@ class WebSocketInterceptorMessageStore<Schema extends WebSocketSchema> {
 
   save<RestrictedSchema extends Schema>(
     handler: object,
-    data: RestrictedSchema,
+    data: ReceivedWebSocketMessageData<RestrictedSchema>,
     context: {
       sender: InternalWebSocketInterceptorClient<Schema>;
       receiver: InternalWebSocketInterceptorServer<Schema>;

@@ -228,6 +228,69 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
     });
   });
 
+  it('should receive binary schema members as ArrayBuffer', async () => {
+    const baseURL = await getBaseURL(type);
+
+    type BinarySchema = WebSocketSchema<Blob | { type: 'a' }>;
+    type ReceivedBinaryMessage = ArrayBuffer | Extract<BinarySchema, { type: 'a' }>;
+
+    await usingWebSocketInterceptor<BinarySchema>({ type, baseURL }, async (interceptor) => {
+      const handler = interceptor
+        .message()
+        .with(
+          /* istanbul ignore next -- @preserve
+           * This callback exists only to assert its inferred parameter type. */
+          (message) => {
+            expectTypeOf(message).toEqualTypeOf<ReceivedBinaryMessage>();
+            return true;
+          },
+        )
+        .delay(
+          /* istanbul ignore next -- @preserve
+           * This callback exists only to assert its inferred parameter type. */
+          (message) => {
+            expectTypeOf(message).toEqualTypeOf<ReceivedBinaryMessage>();
+            return 0;
+          },
+        )
+        .effect(
+          /* istanbul ignore next -- @preserve
+           * This callback exists only to assert its inferred parameter type. */
+          (message) => {
+            expectTypeOf(message).toEqualTypeOf<ReceivedBinaryMessage>();
+          },
+        )
+        .respond(
+          /* istanbul ignore next -- @preserve
+           * This callback exists only to assert its inferred parameter type. */
+          (message) => {
+            expectTypeOf(message).toEqualTypeOf<ReceivedBinaryMessage>();
+            return { type: 'a' };
+          },
+        );
+
+      expectTypeOf<(typeof handler.messages)[number]['data']>().toEqualTypeOf<ReceivedBinaryMessage>();
+
+      const binaryHandler = interceptor.message().with(
+        /* istanbul ignore next -- @preserve
+         * This type guard exists only to assert the narrowed handler types. */
+        (message): message is ArrayBuffer => message instanceof ArrayBuffer,
+      );
+
+      binaryHandler.effect(
+        /* istanbul ignore next -- @preserve
+         * This callback exists only to assert its inferred parameter type. */
+        (message) => {
+          expectTypeOf(message).toEqualTypeOf<ArrayBuffer>();
+        },
+      );
+
+      expectTypeOf<(typeof binaryHandler.messages)[number]['data']>().toEqualTypeOf<ArrayBuffer>();
+
+      await Promise.all([handler, binaryHandler]);
+    });
+  });
+
   it('should reject invalid message declarations', async () => {
     const baseURL = await getBaseURL(type);
 

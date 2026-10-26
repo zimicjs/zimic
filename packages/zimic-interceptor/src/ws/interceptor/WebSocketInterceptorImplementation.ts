@@ -15,7 +15,11 @@ import {
 import { normalizeWebSocketMessageData } from '../utils/messageData';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
-import type { WebSocketInterceptorClient, WebSocketInterceptorServerSendOptions } from './types/messages';
+import type {
+  ReceivedWebSocketMessageData,
+  WebSocketInterceptorClient,
+  WebSocketInterceptorServerSendOptions,
+} from './types/messages';
 import { WebSocketInterceptorMessageSaving } from './types/options';
 import type { WebSocketInterceptorConnectionListener } from './types/public';
 import {
@@ -291,10 +295,10 @@ class WebSocketInterceptorImplementation<
       return;
     }
 
-    const message = normalizeWebSocketMessageData(data);
     this.addClient(context.sender);
 
     const messageSavingGeneration = this.messageSavingGeneration;
+    const message = await normalizeWebSocketMessageData(data);
     const matchedHandler = await this.findMatchedHandler(message, context);
 
     if (!matchedHandler) {
@@ -341,7 +345,10 @@ class WebSocketInterceptorImplementation<
     }
   }
 
-  private async findMatchedHandler(message: Schema, context: WebSocketMessageHandlerApplyContext<Schema>) {
+  private async findMatchedHandler(
+    message: ReceivedWebSocketMessageData<Schema>,
+    context: WebSocketMessageHandlerApplyContext<Schema>,
+  ) {
     const failedMessageMatches = new Map<
       AnyWebSocketMessageHandlerImplementation,
       Extract<WebSocketMessageHandlerMessageMatch, { success: false }>
@@ -353,7 +360,7 @@ class WebSocketInterceptorImplementation<
       const messageMatch = await handler.matchesMessage(message, context);
 
       if (messageMatch.success) {
-        return { handler, message: messageMatch.message as Schema };
+        return { handler, message: messageMatch.message as ReceivedWebSocketMessageData<Schema> };
       }
 
       failedMessageMatches.set(handler, messageMatch);

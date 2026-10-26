@@ -1,5 +1,5 @@
 import { waitFor } from '@zimic/utils/time';
-import { WebSocketClient } from '@zimic/ws';
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
@@ -77,6 +77,64 @@ export function declareDefaultWebSocketMessageHandlerTests(
       },
     );
   });
+
+  it.each([
+    { dataType: 'Blob', data: new Blob([new Uint8Array([1, 2, 3])]) },
+    { dataType: 'ArrayBuffer', data: new Uint8Array([1, 2, 3]).buffer },
+    { dataType: 'Uint8Array', data: new Uint8Array([0, 1, 2, 3, 0]).subarray(1, 4) },
+  ])(
+    'should receive incoming $dataType messages as ArrayBuffer when matching handlers and saving intercepted messages',
+    async ({ data }) => {
+      type BinarySchema = WebSocketSchema<Blob | BufferSource>;
+
+      await usingWebSocketInterceptor<BinarySchema>(
+        { type, baseURL, messageSaving: { enabled: true } },
+        async (interceptor) => {
+          const firstRestriction = vi.fn((_message: ArrayBuffer) => true);
+          const delay = vi.fn((_message: ArrayBuffer) => 0);
+          const effect = vi.fn<(message: ArrayBuffer) => void>();
+          const respond = vi.fn((_message: ArrayBuffer) => new Uint8Array([4]).buffer);
+
+          const handler = await interceptor
+            .message()
+            .with(firstRestriction)
+            .delay(delay)
+            .effect(effect)
+            .respond(respond);
+
+          const secondRestriction = vi.fn((_message: ArrayBuffer) => false);
+          await interceptor.message().with(secondRestriction);
+
+          const client = new WebSocketClient<BinarySchema>(baseURL);
+
+          try {
+            await client.open();
+            await waitFor(() => {
+              expect(interceptor.clients).toHaveLength(1);
+            });
+
+            client.send(data);
+
+            await waitFor(() => {
+              expect(handler.messages).toHaveLength(1);
+            });
+
+            const receivedMessage = firstRestriction.mock.calls[0][0];
+            expect(receivedMessage).toBeInstanceOf(ArrayBuffer);
+            expect(Array.from(new Uint8Array(receivedMessage))).toEqual([1, 2, 3]);
+
+            expect(secondRestriction.mock.calls[0][0]).toBe(receivedMessage);
+            expect(delay.mock.calls[0][0]).toBe(receivedMessage);
+            expect(effect.mock.calls[0][0]).toBe(receivedMessage);
+            expect(respond.mock.calls[0][0]).toBe(receivedMessage);
+            expect(handler.messages[0].data).toBe(receivedMessage);
+          } finally {
+            await client.close();
+          }
+        },
+      );
+    },
+  );
 
   it('should match any message without a declared response, effect, or restrictions', async () => {
     await usingWebSocketInterceptor<Schema>(
