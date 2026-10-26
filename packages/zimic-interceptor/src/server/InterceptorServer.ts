@@ -378,7 +378,6 @@ class InterceptorServer implements PublicInterceptorServer {
       return;
     }
 
-    this.httpRuntimeLoadingPromise = undefined;
     await this.stopWebSocketServer();
     await this.stopHttpServer();
   }
@@ -390,16 +389,25 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private async stopWebSocketServer() {
-    this.httpRuntime?.stop();
-    this.httpRuntime = undefined;
+    this.stopHttpRuntime();
 
     await this.webSocketRuntimeOrThrow.stop();
 
     await this.webSocketServerOrThrow.stop();
 
+    // HTTP workers can connect and load a runtime while the servers above stop. That runtime is bound to the stopped
+    // WebSocket server, so it must not survive to the next start.
+    this.stopHttpRuntime();
+
     this.workerProtocols.clear();
     this.webSocketRuntime = undefined;
     this.webSocketServer = undefined;
+  }
+
+  private stopHttpRuntime() {
+    this.httpRuntime?.stop();
+    this.httpRuntime = undefined;
+    this.httpRuntimeLoadingPromise = undefined;
   }
 
   private handleHttpRequest = (nodeRequest: IncomingMessage, nodeResponse: ServerResponse) => {

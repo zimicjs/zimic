@@ -6,7 +6,7 @@ import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { once } from 'events';
 import { connect } from 'net';
 import path from 'path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { verifyUnhandledRequestMessage } from '@/http/interceptor/__tests__/shared/utils';
 import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
@@ -17,6 +17,7 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 import {
   createInternalHttpInterceptor,
   createInternalWebSocketInterceptor,
+  usingHttpInterceptor,
   usingWebSocketInterceptor,
   usingWebSocketInterceptorWorker,
 } from '@tests/utils/interceptors';
@@ -32,6 +33,7 @@ import RunningInterceptorServerError from '../errors/RunningInterceptorServerErr
 import InterceptorServer from '../InterceptorServer';
 import type { InterceptorServerWebSocketSchema } from '../types/schema';
 import { DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY } from '../utils/auth';
+import WebSocketInterceptorServerRuntime from '../ws/WebSocketInterceptorServerRuntime';
 
 // These are integration tests for the server. Only features not easily reproducible by the CLI and the remote
 // interceptor tests are covered here. The main aspects of this class should be tested in the CLI and the remote
@@ -125,6 +127,58 @@ describe('Interceptor server', () => {
         expect(server.isRunning).toBe(false);
         expect(interceptor.isRunning).toBe(false);
       }
+    });
+
+    it('should handle HTTP requests after restarted if an HTTP worker connected while stopping', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: false });
+      await server.start();
+
+      const baseURL = `http://${server.hostname}:${server.port}`;
+
+      // No public signal tells when stop has started without finishing, so the WebSocket runtime stop is held open to
+      // let an HTTP worker connect deterministically while the server is stopping.
+      const webSocketRuntimeStopRelease = createPromiseWithResolvers<void>();
+      const originalWebSocketRuntimeStop = WebSocketInterceptorServerRuntime.prototype.stop;
+
+      const webSocketRuntimeStopSpy = vi
+        .spyOn(WebSocketInterceptorServerRuntime.prototype, 'stop')
+        .mockImplementationOnce(async function (this: WebSocketInterceptorServerRuntime) {
+          await webSocketRuntimeStopRelease;
+          await originalWebSocketRuntimeStop.call(this);
+        });
+
+      const stoppingWorker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+        url: `ws://${server.hostname}:${server.port}`,
+      });
+
+      try {
+        const stopPromise = server.stop();
+
+        await stoppingWorker.start({
+          parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
+          waitForAuthentication: true,
+        });
+
+        webSocketRuntimeStopRelease.resolve();
+        await stopPromise;
+        expect(server.isRunning).toBe(false);
+      } finally {
+        webSocketRuntimeStopRelease.resolve();
+        webSocketRuntimeStopSpy.mockRestore();
+        await stoppingWorker.stop();
+      }
+
+      await server.start();
+      expect(server.isRunning).toBe(true);
+
+      type Schema = HttpSchema<{ '/users': { GET: { response: { 204: {} } } } }>;
+
+      await usingHttpInterceptor<Schema>({ type: 'remote', baseURL }, async (interceptor) => {
+        await interceptor.get('/users').respond({ status: 204 });
+
+        const response = await fetch(`${baseURL}/users`);
+        expect(response.status).toBe(204);
+      });
     });
 
     it('should only reset handlers of cleared interceptors, preserving handlers of other interceptors even if they share the same base URL', async () => {
