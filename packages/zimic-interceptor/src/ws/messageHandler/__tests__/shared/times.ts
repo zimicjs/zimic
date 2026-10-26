@@ -402,6 +402,40 @@ export function declareTimesWebSocketMessageHandlerTests(
         },
       );
     });
+
+    it('should show unmatched typed array messages in times check errors', async () => {
+      await usingWebSocketInterceptor<WebSocketSchema<Uint8Array<ArrayBuffer>>>(
+        { type, baseURL, messageSaving: { enabled: true } },
+        async (interceptor) => {
+          const handler = await interceptor
+            .message()
+            .with(new Uint8Array([1, 2]))
+            .respond(new Uint8Array([5, 6]))
+            .times(1);
+
+          const client = new WebSocketClient<WebSocketSchema<Uint8Array<ArrayBuffer>>>(baseURL);
+
+          try {
+            await client.open();
+
+            client.send(new Uint8Array([3, 4]));
+
+            await waitFor(() =>
+              expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                message: 'Expected exactly 1 matching message, but got 0.',
+                expectedNumberOfMessages: 1,
+                unmatchedMessages:
+                  '- { "message": ArrayBuffer { byteLength: 2 }, ' +
+                  '"diff": { "data": { "expected": Uint8Array { byteLength: 2 }, ' +
+                  '"received": ArrayBuffer { byteLength: 2 } } } }',
+              }),
+            );
+          } finally {
+            await client.close();
+          }
+        },
+      );
+    });
   });
 
   it('should reset times when cleared', async () => {
