@@ -17,7 +17,11 @@ import {
 import { normalizeWebSocketMessageData } from '../utils/messageData';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
-import type { WebSocketInterceptorClient, WebSocketInterceptorServerSendOptions } from './types/messages';
+import type {
+  ReceivedWebSocketMessageData,
+  WebSocketInterceptorClient,
+  WebSocketInterceptorServerSendOptions,
+} from './types/messages';
 import type { UnhandledMessageStrategy } from './types/options';
 import type { WebSocketInterceptorConnectionListener, WebSocketInterceptorMessageSaving } from './types/public';
 import {
@@ -309,7 +313,7 @@ class WebSocketInterceptorImplementation<
 
   async handleMatchedMessage(
     handler: AnyWebSocketMessageHandlerImplementation,
-    message: WebSocketSchema,
+    message: ReceivedWebSocketMessageData<WebSocketSchema>,
     context: WebSocketMessageHandlerApplyContext<Schema>,
   ) {
     const messageSavingGeneration = this.messageSavingGeneration;
@@ -324,7 +328,7 @@ class WebSocketInterceptorImplementation<
   // Unlike HTTP, unhandled messages have no bypass or reject action. WebSocket is not request-response, so a message
   // needs no reply and the connection stays open.
   async logUnhandledMessageIfNecessary(data: WebSocketMessageData<Schema>) {
-    const message = normalizeWebSocketMessageData(data);
+    const message = await normalizeWebSocketMessageData(data);
     const strategy = await this.getUnhandledMessageStrategy(message);
 
     if (strategy.log ?? DEFAULT_UNHANDLED_MESSAGE_STRATEGY.log) {
@@ -332,7 +336,9 @@ class WebSocketInterceptorImplementation<
     }
   }
 
-  private async getUnhandledMessageStrategy(message: Schema): Promise<UnhandledMessageStrategy.Declaration> {
+  private async getUnhandledMessageStrategy(
+    message: ReceivedWebSocketMessageData<Schema>,
+  ): Promise<UnhandledMessageStrategy.Declaration> {
     try {
       if (typeof this.onUnhandledMessage === 'function') {
         return await this.onUnhandledMessage(message);

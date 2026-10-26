@@ -4,6 +4,7 @@ import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 import { removeArrayElement } from '@/utils/arrays';
 import { isClientSide } from '@/utils/environment';
 
+import { ReceivedWebSocketMessageData } from '../interceptor/types/messages';
 import { WebSocketInterceptorPlatform } from '../interceptor/types/options';
 import { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
 import WebSocketInterceptorImplementation, {
@@ -129,7 +130,7 @@ abstract class WebSocketInterceptorWorker {
     data: WebSocketMessageData<WebSocketSchema>,
     holders: WebSocketConnectionHolder<WebSocketSchema>[],
   ) {
-    const message = normalizeWebSocketMessageData<WebSocketSchema>(data);
+    const message = await normalizeWebSocketMessageData<WebSocketSchema>(data);
     const failedMessageMatches: FailedWebSocketMessageMatch[] = [];
 
     // Handlers can be added or cleared while a message is handled, so the message is matched against a copy.
@@ -204,7 +205,10 @@ abstract class WebSocketInterceptorWorker {
 
   // Handlers that failed only on restrictions record their diffs. The newest handler that failed for any other cause,
   // such as exceeding its `times` limit, is still marked as matched to trigger a times check error.
-  private markMessageAsUnhandled(message: WebSocketSchema, failedMessageMatches: FailedWebSocketMessageMatch[]) {
+  private markMessageAsUnhandled(
+    message: ReceivedWebSocketMessageData<WebSocketSchema>,
+    failedMessageMatches: FailedWebSocketMessageMatch[],
+  ) {
     for (const { handler, messageMatch } of failedMessageMatches) {
       if (messageMatch.cause === 'unmatchedRestrictions') {
         handler.markMessageAsUnmatched(messageMatch.message, { diff: messageMatch.diff });

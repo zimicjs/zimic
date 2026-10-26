@@ -1,6 +1,11 @@
 import type { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
-import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
+import { version } from '@@/package.json';
+
+import {
+  INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
+  INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
+} from '@/interceptor/constants';
 import { InterceptorServerWebSocketSchema, WebSocketWorkerReset } from '@/server/types/schema';
 import { isClientSide, isServerSide } from '@/utils/environment';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
@@ -57,6 +62,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       await this.webSocketClient.start({
         parameters: {
           [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+          [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
           ...(this.auth ? { token: this.auth.token } : {}),
         },
         waitForAuthentication: true,

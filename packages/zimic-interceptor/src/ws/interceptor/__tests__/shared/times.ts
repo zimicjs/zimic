@@ -555,10 +555,6 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           interceptor,
         );
 
-        // Remote interceptors receive Blobs from the interceptor server as ArrayBuffers.
-        const receivedBlobMessageRepresentation =
-          type === 'remote' ? 'ArrayBuffer { byteLength: 2 }' : "Blob { type: '', size: 2 }";
-
         await usingWebSocketClient<BinarySchema>(baseURL, async (client) => {
           const messageListener = vi.fn();
           client.addEventListener('message', messageListener);
@@ -573,7 +569,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           await waitFor(async () => {
             await expect(async () => {
               await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            }).rejects.toThrow(`2: ${receivedBlobMessageRepresentation}`);
+            }).rejects.toThrow('2: ArrayBuffer { byteLength: 2 }');
           });
         });
 
@@ -591,10 +587,10 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
             `       ${color.green('- ArrayBuffer { byteLength: 2 }')}`,
             `       ${color.red('+ ArrayBuffer { byteLength: 2 }')}`,
             '',
-            `2: ${receivedBlobMessageRepresentation}`,
+            '2: ArrayBuffer { byteLength: 2 }',
             '     Data:',
             `       ${color.green('- ArrayBuffer { byteLength: 2 }')}`,
-            `       ${color.red(`+ ${receivedBlobMessageRepresentation}`)}`,
+            `       ${color.red('+ ArrayBuffer { byteLength: 2 }')}`,
           ].join('\n'),
           expectedNumberOfMessages: 1,
         });

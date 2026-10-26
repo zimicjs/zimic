@@ -1,8 +1,9 @@
 import { waitFor } from '@zimic/utils/time';
+import { WebSocketSchema } from '@zimic/ws';
 import { beforeAll, beforeEach, afterAll, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
-import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
+import { createBinaryMessage, usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import { ChatMessage, Schema, SharedWebSocketMessageHandlerTestOptions } from './utils';
@@ -119,6 +120,42 @@ export function declareRestrictionWebSocketMessageHandlerTests(
       });
     },
   );
+
+  it('should not match JSON messages if contains static binary restrictions', async () => {
+    type BinarySchema = WebSocketSchema<{ type: 'a' | 'b' } | ArrayBuffer>;
+
+    await usingWebSocketInterceptor<BinarySchema>({ type, baseURL }, async (interceptor) => {
+      await interceptor.message().respond({ type: 'a' });
+
+      const handler = await interceptor.message().with(createBinaryMessage(1, 2)).respond({ type: 'b' }).times(0);
+
+      await usingWebSocketClient<BinarySchema>(baseURL, async (client) => {
+        const unmatchedResponse = waitForWebSocketClientMessage(client);
+        client.send(JSON.stringify({ type: 'a' }));
+        await expect(unmatchedResponse).resolves.toBe(JSON.stringify({ type: 'a' }));
+
+        await handler.checkTimes();
+      });
+    });
+  });
+
+  it('should not match binary messages if contains static JSON restrictions', async () => {
+    type BinarySchema = WebSocketSchema<{ type: 'a' | 'b' } | ArrayBuffer>;
+
+    await usingWebSocketInterceptor<BinarySchema>({ type, baseURL }, async (interceptor) => {
+      await interceptor.message().respond({ type: 'a' });
+
+      const handler = await interceptor.message().with({}).respond({ type: 'b' }).times(0);
+
+      await usingWebSocketClient<BinarySchema>(baseURL, async (client) => {
+        const unmatchedResponse = waitForWebSocketClientMessage(client);
+        client.send(createBinaryMessage(1, 2));
+        await expect(unmatchedResponse).resolves.toBe(JSON.stringify({ type: 'a' }));
+
+        await handler.checkTimes();
+      });
+    });
+  });
 
   it('should match only specific messages if contains computed restrictions', async () => {
     await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {

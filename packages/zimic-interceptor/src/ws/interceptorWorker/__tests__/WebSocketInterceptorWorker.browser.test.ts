@@ -46,6 +46,8 @@ describe.each(testMatrix)('WebSocketInterceptorWorker (browser, $type)', ({ type
   declareDefaultWebSocketInterceptorWorkerTests({
     platform: 'browser',
     type,
+    // In the browser, unhandled promise rejections are logged automatically, so the worker does not log start errors.
+    numberOfLoggedStartErrors: 0,
     getBaseURL: (type) => getBrowserBaseURL(type).replace(/^http/, 'ws'),
   });
 });

@@ -166,7 +166,8 @@ export function declareMessageDataWebSocketInterceptorTests(options: RuntimeShar
             expect(effect).toHaveBeenCalledOnce();
           });
 
-          const receivedMessage = effect.mock.calls[0][0] as Blob | ArrayBuffer;
+          const receivedMessage = effect.mock.calls[0][0] as ArrayBuffer;
+          expect(receivedMessage).toBeInstanceOf(ArrayBuffer);
           expect(await readBytes(receivedMessage)).toEqual([0xff, 0x00]);
           expect(handler.messages).toHaveLength(1);
           expect(await readBytes(handler.messages[0].data)).toEqual([0xff, 0x00]);
@@ -177,6 +178,57 @@ export function declareMessageDataWebSocketInterceptorTests(options: RuntimeShar
       },
     );
   });
+
+  it.each([
+    { dataType: 'Blob', data: new Blob([new Uint8Array([1, 2, 3])]) },
+    { dataType: 'ArrayBuffer', data: new Uint8Array([1, 2, 3]).buffer },
+    { dataType: 'Uint8Array', data: new Uint8Array([0, 1, 2, 3, 0]).subarray(1, 4) },
+  ])(
+    'should receive incoming $dataType messages as ArrayBuffer in handler callbacks and saved messages',
+    async ({ data }) => {
+      type BinaryBufferSchema = WebSocketSchema<Blob | BufferSource>;
+
+      await usingWebSocketInterceptor<BinaryBufferSchema>(
+        { ...interceptorOptions, messageSaving: { enabled: true } },
+        async (interceptor) => {
+          const firstRestriction = vi.fn((_message: ArrayBuffer) => true);
+          const delay = vi.fn((_message: ArrayBuffer) => 0);
+          const effect = vi.fn<(message: ArrayBuffer) => void>();
+          const respond = vi.fn((_message: ArrayBuffer) => new Uint8Array([4]).buffer);
+
+          const handler = await promiseIfRemote(
+            interceptor.message().with(firstRestriction).delay(delay).effect(effect).respond(respond),
+            interceptor,
+          );
+
+          const secondRestriction = vi.fn((_message: ArrayBuffer) => false);
+          await promiseIfRemote(interceptor.message().with(secondRestriction), interceptor);
+
+          await usingWebSocketClient<BinaryBufferSchema>(baseURL, async (client) => {
+            await waitFor(() => {
+              expect(interceptor.clients).toHaveLength(1);
+            });
+
+            client.send(data);
+
+            await waitFor(() => {
+              expect(handler.messages).toHaveLength(1);
+            });
+
+            const receivedMessage = firstRestriction.mock.calls[0][0];
+            expect(receivedMessage).toBeInstanceOf(ArrayBuffer);
+            expect(await readBytes(receivedMessage)).toEqual([1, 2, 3]);
+
+            expect(secondRestriction.mock.calls[0][0]).toBe(receivedMessage);
+            expect(delay.mock.calls[0][0]).toBe(receivedMessage);
+            expect(effect.mock.calls[0][0]).toBe(receivedMessage);
+            expect(respond.mock.calls[0][0]).toBe(receivedMessage);
+            expect(handler.messages[0].data).toBe(receivedMessage);
+          });
+        },
+      );
+    },
+  );
 
   it.each([
     ['ArrayBuffer', () => createBinaryMessage(0xff, 0x00)],

@@ -3,7 +3,12 @@ import { closeWebSocketClient } from '@zimic/utils/ws';
 import ClientSocket from 'isomorphic-ws';
 import { expect, it, vi } from 'vitest';
 
-import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
+import { version } from '@@/package.json';
+
+import {
+  INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
+  INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
+} from '@/interceptor/constants';
 import { waitForOpenClientSocket } from '@/utils/webSocket';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 
@@ -53,6 +58,7 @@ it('should isolate a missing HTTP peer from authenticated WebSocket workers', as
     await webSocketWorker.start({
       parameters: {
         [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+        [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
         token: token.value,
       },
       waitForAuthentication: true,
@@ -69,6 +75,7 @@ it('should isolate a missing HTTP peer from authenticated WebSocket workers', as
       unauthenticatedHttpWorker.start({
         parameters: {
           [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
+          [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
         },
         waitForAuthentication: true,
       }),
@@ -89,6 +96,7 @@ it('should isolate a missing HTTP peer from authenticated WebSocket workers', as
       authenticatedHttpWorker.start({
         parameters: {
           [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
+          [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
           token: token.value,
         },
         waitForAuthentication: true,

@@ -47,6 +47,8 @@ describe.each(testMatrix)('HttpInterceptorWorker (browser, $type)', ({ type }) =
   declareDefaultHttpInterceptorWorkerTests({
     platform: 'browser',
     type,
+    // In the browser, unhandled promise rejections are logged automatically, so the worker does not log start errors.
+    numberOfLoggedStartErrors: 0,
     getBaseURL: getBrowserBaseURL,
   });
 });

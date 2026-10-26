@@ -1,6 +1,11 @@
 import type { HttpBody, HttpHeadersInit, HttpMethod, HttpRequest, HttpSchema } from '@zimic/http';
 
-import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
+import { version } from '@@/package.json';
+
+import {
+  INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
+  INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
+} from '@/interceptor/constants';
 import UnsupportedResponseBypassError from '@/server/errors/UnsupportedResponseBypassError';
 import { HttpWorkerReset, InterceptorServerWebSocketSchema } from '@/server/types/schema';
 import { isClientSide, isServerSide } from '@/utils/environment';
@@ -51,6 +56,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       await this.webSocketClient.start({
         parameters: {
           [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
+          [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
           ...(this.auth ? { token: this.auth.token } : {}),
         },
         waitForAuthentication: true,

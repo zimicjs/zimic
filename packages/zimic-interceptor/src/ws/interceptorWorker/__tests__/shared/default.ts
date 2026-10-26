@@ -30,7 +30,7 @@ import {
 
 import NotRunningWebSocketInterceptorError from '../../../interceptor/errors/NotRunningWebSocketInterceptorError';
 import { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '../../../interceptor/types/options';
-import { RemoteWebSocketInterceptorWorkerOptions, WebSocketInterceptorWorkerOptions } from '../../types/options';
+import { WebSocketInterceptorWorkerOptions } from '../../types/options';
 
 type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
 
@@ -49,13 +49,19 @@ type HttpSchemaWithUsers = HttpSchema<{
 interface SharedWebSocketInterceptorWorkerTestsOptions {
   platform: WebSocketInterceptorPlatform;
   type: WebSocketInterceptorType;
+  numberOfLoggedStartErrors: number;
   startServer?: () => PossiblePromise<void>;
   getBaseURL: (type: WebSocketInterceptorType) => PossiblePromise<string>;
   stopServer?: () => PossiblePromise<void>;
 }
 
+const workerClasses = {
+  local: LocalWebSocketInterceptorWorker,
+  remote: RemoteWebSocketInterceptorWorker,
+};
+
 export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWebSocketInterceptorWorkerTestsOptions) {
-  const { platform, type, startServer, getBaseURL, stopServer } = options;
+  const { platform, type, numberOfLoggedStartErrors, startServer, getBaseURL, stopServer } = options;
 
   let baseURL: string;
   let httpBaseURL: string;
@@ -88,18 +94,11 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
     await usingWebSocketInterceptorWorker(workerOptions, { start: false }, async (worker) => {
       expect(worker.platform).toBe(null);
       expect(worker).toBeInstanceOf(WebSocketInterceptorWorker);
-      expect(worker).toBeInstanceOf(
-        workerOptions.type === 'remote' ? RemoteWebSocketInterceptorWorker : LocalWebSocketInterceptorWorker,
-      );
+      expect(worker).toBeInstanceOf(workerClasses[workerOptions.type]);
 
       await worker.start();
 
       expect(worker.platform).toBe(platform);
-
-      if (worker instanceof LocalWebSocketInterceptorWorker) {
-        expect(worker.hasInternalBrowserWorker()).toBe(platform === 'browser');
-        expect(worker.hasInternalNodeWorker()).toBe(platform === 'node');
-      }
     });
   });
 
@@ -143,13 +142,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       await usingIgnoredConsole(['error'], async (console) => {
         await expect(worker.start()).rejects.toThrow(error);
 
-        // In the browser, unhandled promise rejections are logged automatically, so the worker does not log them.
-        if (platform === 'node') {
-          expect(console.error).toHaveBeenCalledTimes(1);
-          expect(console.error).toHaveBeenCalledWith(error);
-        } else {
-          expect(console.error).not.toHaveBeenCalled();
-        }
+        expect(console.error.mock.calls).toEqual(Array.from({ length: numberOfLoggedStartErrors }, () => [error]));
       });
 
       expect(worker.isRunning).toBe(false);
@@ -553,6 +546,13 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         },
       );
     });
+
+    it('should use the internal worker of the current platform', async () => {
+      await usingWebSocketInterceptorWorker({ type: 'local' }, (worker) => {
+        expect(worker.hasInternalBrowserWorker()).toBe(platform === 'browser');
+        expect(worker.hasInternalNodeWorker()).toBe(platform === 'node');
+      });
+    });
   }
 
   if (type === 'remote') {
@@ -607,20 +607,6 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           });
         });
       });
-    });
-
-    it('should start with authentication options', async () => {
-      const remoteWorkerOptions = workerOptions as RemoteWebSocketInterceptorWorkerOptions;
-
-      await usingWebSocketInterceptorWorker(
-        { ...remoteWorkerOptions, auth: { token: 'test-token' } },
-        { start: false },
-        async (worker) => {
-          await worker.start();
-
-          expect(worker.isRunning).toBe(true);
-        },
-      );
     });
 
     it('should ignore sends without a registered remote client or interceptor', async () => {

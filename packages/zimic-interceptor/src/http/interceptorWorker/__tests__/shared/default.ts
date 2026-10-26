@@ -2,7 +2,6 @@ import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
 import NotRunningHttpInterceptorError from '@/http/interceptor/errors/NotRunningHttpInterceptorError';
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
-import { BrowserMSWWorker, NodeMSWWorker } from '@/interceptor/types/msw';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { createInternalHttpInterceptor, usingHttpInterceptorWorker } from '@tests/utils/interceptors';
 
@@ -13,8 +12,17 @@ import RemoteHttpInterceptorWorker from '../../RemoteHttpInterceptorWorker';
 import { LocalHttpInterceptorWorkerOptions, RemoteHttpInterceptorWorkerOptions } from '../../types/options';
 import { SharedHttpInterceptorWorkerTestOptions } from './types';
 
-export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInterceptorWorkerTestOptions) {
-  const { platform, type, startServer, getBaseURL, stopServer } = options;
+const workerClasses = {
+  local: LocalHttpInterceptorWorker,
+  remote: RemoteHttpInterceptorWorker,
+};
+
+interface DefaultHttpInterceptorWorkerTestOptions extends SharedHttpInterceptorWorkerTestOptions {
+  numberOfLoggedStartErrors: number;
+}
+
+export function declareDefaultHttpInterceptorWorkerTests(options: DefaultHttpInterceptorWorkerTestOptions) {
+  const { platform, type, numberOfLoggedStartErrors, startServer, getBaseURL, stopServer } = options;
 
   let baseURL: string;
   let workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions;
@@ -45,18 +53,11 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
     await usingHttpInterceptorWorker(workerOptions, { start: false }, async (worker) => {
       expect(worker.platform).toBe(null);
       expect(worker).toBeInstanceOf(HttpInterceptorWorker);
-      expect(worker).toBeInstanceOf(
-        workerOptions.type === 'remote' ? RemoteHttpInterceptorWorker : LocalHttpInterceptorWorker,
-      );
+      expect(worker).toBeInstanceOf(workerClasses[workerOptions.type]);
 
       await worker.start();
 
       expect(worker.platform).toBe(platform);
-
-      if (worker instanceof LocalHttpInterceptorWorker) {
-        expect(worker.hasInternalBrowserWorker()).toBe(platform === 'browser');
-        expect(worker.hasInternalNodeWorker()).toBe(platform === 'node');
-      }
     });
   });
 
@@ -87,7 +88,27 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
     });
   });
 
-  it('should support starting again after failing to start at first', async () => {
+  it('should throw an error after failing to start due to an unknown error', async () => {
+    await usingHttpInterceptorWorker(workerOptions, { start: false }, async (worker) => {
+      const error = new Error('Unknown error');
+
+      if (worker instanceof LocalHttpInterceptorWorker) {
+        vi.spyOn(worker, 'getMSWWorkerOrCreate').mockRejectedValueOnce(error);
+      } else {
+        vi.spyOn(worker.webSocketClient, 'start').mockRejectedValueOnce(error);
+      }
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        await expect(worker.start()).rejects.toThrow(error);
+
+        expect(console.error.mock.calls).toEqual(Array.from({ length: numberOfLoggedStartErrors }, () => [error]));
+      });
+
+      expect(worker.isRunning).toBe(false);
+    });
+  });
+
+  it('should support retrying after failing to start', async () => {
     await usingHttpInterceptorWorker(workerOptions, { start: false }, async (worker) => {
       const error = new Error('Unknown error');
 
@@ -240,47 +261,17 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
       });
     });
 
-    it('should throw an error after failing to start due to a unknown error', async () => {
-      const interceptorWorker = createHttpInterceptorWorker({ type });
-      const mswWorker = await interceptorWorker.getMSWWorkerOrCreate();
-      const numberOfHandlersBeforeStart = mswWorker.listHandlers().length;
+    it('should use the internal worker of the current platform', async () => {
+      const worker = createHttpInterceptorWorker({ type });
 
-      const error = new Error('Unknown error');
+      try {
+        await worker.start();
 
-      if (platform === 'browser') {
-        const internalBrowserWorker = mswWorker as BrowserMSWWorker;
-        vi.spyOn(internalBrowserWorker, 'start').mockRejectedValueOnce(error);
-      } else {
-        const internalNodeWorker = mswWorker as NodeMSWWorker;
-        vi.spyOn(internalNodeWorker, 'listen').mockImplementationOnce(() => {
-          throw error;
-        });
+        expect(worker.hasInternalBrowserWorker()).toBe(platform === 'browser');
+        expect(worker.hasInternalNodeWorker()).toBe(platform === 'node');
+      } finally {
+        await worker.stop();
       }
-
-      await usingIgnoredConsole(['error'], async (console) => {
-        const interceptorStartPromise = interceptorWorker.start();
-
-        if (platform === 'browser') {
-          /* istanbul ignore else -- @preserve
-           * Because we only start the singleton browser worker once, the mock rejection will only happen if the global
-           * worker is not yet running. If it is, the start will succeed because the worker won't be restarted. */
-          if (LocalMSWWorkerStore.isMSWWorkerRunning) {
-            await expect(interceptorStartPromise).resolves.not.toThrow();
-          } else {
-            await expect(interceptorStartPromise).rejects.toThrow(error);
-            expect(mswWorker.listHandlers()).toHaveLength(numberOfHandlersBeforeStart);
-          }
-
-          expect(console.error).toHaveBeenCalledTimes(0);
-        } else {
-          await expect(interceptorStartPromise).rejects.toThrow(error);
-          expect(mswWorker.listHandlers()).toHaveLength(numberOfHandlersBeforeStart);
-          expect(console.error).toHaveBeenCalledTimes(1);
-          expect(console.error).toHaveBeenCalledWith(error);
-        }
-      });
-
-      expect(interceptorWorker.platform).toBe(platform);
     });
   }
 }
