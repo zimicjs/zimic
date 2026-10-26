@@ -8,10 +8,16 @@ import { connect } from 'net';
 import path from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { version } from '@@/package.json';
+
 import { verifyUnhandledRequestMessage } from '@/http/interceptor/__tests__/shared/utils';
-import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
+import {
+  INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
+  INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
+} from '@/interceptor/constants';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
+import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
 import InterceptorServerWebSocketClient from '@/utils/webSocket/WebSocketClient';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import {
@@ -155,7 +161,10 @@ describe('Interceptor server', () => {
         const stopPromise = server.stop();
 
         await stoppingWorker.start({
-          parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
+          parameters: {
+            [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
+            [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+          },
           waitForAuthentication: true,
         });
 
@@ -461,6 +470,60 @@ describe('Interceptor server', () => {
     });
   });
 
+  describe('Worker connections', () => {
+    const oversizedWorkerVersion = '1.0.0-'.padEnd(200, 'x');
+
+    // Remote interceptors always send the version of the installed package, so a raw RPC client simulates workers on
+    // other versions.
+    it.each([
+      { protocol: 'http', scenario: 'missing', workerVersion: undefined, displayedWorkerVersion: 'unknown' },
+      { protocol: 'ws', scenario: 'missing', workerVersion: undefined, displayedWorkerVersion: 'unknown' },
+      { protocol: 'http', scenario: 'different', workerVersion: '0.0.0-other', displayedWorkerVersion: '0.0.0-other' },
+      { protocol: 'ws', scenario: 'different', workerVersion: '0.0.0-other', displayedWorkerVersion: '0.0.0-other' },
+      {
+        protocol: 'http',
+        scenario: 'oversized',
+        workerVersion: oversizedWorkerVersion,
+        displayedWorkerVersion: 'unknown',
+      },
+      {
+        protocol: 'ws',
+        scenario: 'oversized',
+        workerVersion: oversizedWorkerVersion,
+        displayedWorkerVersion: 'unknown',
+      },
+    ] as const)(
+      'should reject $protocol workers if their version is $scenario',
+      async ({ protocol, workerVersion, displayedWorkerVersion }) => {
+        server = createInternalInterceptorServer();
+        await server.start();
+
+        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+          url: `ws://${server.hostname}:${server.port}`,
+        });
+
+        try {
+          const startPromise = worker.start({
+            parameters: {
+              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: protocol,
+              ...(workerVersion === undefined ? {} : { [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: workerVersion }),
+            },
+            waitForAuthentication: true,
+          });
+
+          await expect(startPromise).rejects.toThrow(UnauthorizedWebSocketConnectionError);
+          await expect(startPromise).rejects.toThrow(
+            `Interceptor version ${displayedWorkerVersion} does not match server version ${version}. (code 1008)`,
+          );
+
+          expect(worker.isRunning).toBe(false);
+        } finally {
+          await worker.stop();
+        }
+      },
+    );
+  });
+
   describe('HTTP worker RPCs', () => {
     it('should reject resets with an invalid entry, preserving existing handlers and pending requests', async () => {
       server = createInternalInterceptorServer({ logUnhandledRequests: false });
@@ -491,7 +554,10 @@ describe('Interceptor server', () => {
       await usingIgnoredConsole(['error'], async (console) => {
         try {
           await worker.start({
-            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
+            parameters: {
+              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
+              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+            },
             waitForAuthentication: true,
           });
 
@@ -558,7 +624,10 @@ describe('Interceptor server', () => {
       await usingIgnoredConsole(['error'], async (console) => {
         try {
           await worker.start({
-            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
+            parameters: {
+              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
+              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+            },
             waitForAuthentication: true,
           });
 
@@ -606,7 +675,10 @@ describe('Interceptor server', () => {
       await usingIgnoredConsole(['error'], async (console) => {
         try {
           await worker.start({
-            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
+            parameters: {
+              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
+              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+            },
             waitForAuthentication: true,
           });
 
@@ -646,7 +718,10 @@ describe('Interceptor server', () => {
       await usingIgnoredConsole(['error'], async (console) => {
         try {
           await worker.start({
-            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
+            parameters: {
+              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
+              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+            },
             waitForAuthentication: true,
           });
 
@@ -698,7 +773,10 @@ describe('Interceptor server', () => {
       await usingIgnoredConsole(['error'], async (console) => {
         try {
           await worker.start({
-            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
+            parameters: {
+              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
+              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+            },
             waitForAuthentication: true,
           });
 
@@ -738,7 +816,10 @@ describe('Interceptor server', () => {
       await usingIgnoredConsole(['error'], async (console) => {
         try {
           await worker.start({
-            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
+            parameters: {
+              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
+              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+            },
             waitForAuthentication: true,
           });
 
@@ -790,7 +871,10 @@ describe('Interceptor server', () => {
       await usingIgnoredConsole(['error'], async (console) => {
         try {
           await worker.start({
-            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
+            parameters: {
+              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
+              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+            },
             waitForAuthentication: true,
           });
 
@@ -836,7 +920,10 @@ describe('Interceptor server', () => {
 
       try {
         await worker.start({
-          parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
+          parameters: {
+            [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
+            [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+          },
           waitForAuthentication: true,
         });
 
@@ -878,7 +965,10 @@ describe('Interceptor server', () => {
           await interceptor.get('/').respond({ status: 204 });
 
           await webSocketWorker.start({
-            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws' },
+            parameters: {
+              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+            },
             waitForAuthentication: true,
           });
 
@@ -930,7 +1020,10 @@ describe('Interceptor server', () => {
       await usingIgnoredConsole(['error'], async (console) => {
         try {
           await httpWorkerClient.start({
-            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
+            parameters: {
+              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
+              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+            },
             waitForAuthentication: true,
           });
 
@@ -986,7 +1079,10 @@ describe('Interceptor server', () => {
           const receivedMessages = collectWebSocketClientMessages(client);
 
           await otherWorkerClient.start({
-            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws' },
+            parameters: {
+              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+            },
             waitForAuthentication: true,
           });
 
@@ -1119,7 +1215,10 @@ describe('Interceptor server', () => {
         await usingIgnoredConsole(['error'], async (console) => {
           try {
             await worker.start({
-              parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws' },
+              parameters: {
+                [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+                [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+              },
               waitForAuthentication: true,
             });
 
@@ -1181,7 +1280,10 @@ describe('Interceptor server', () => {
         await usingIgnoredConsole(['error'], async (console) => {
           try {
             await worker.start({
-              parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws' },
+              parameters: {
+                [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+                [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+              },
               waitForAuthentication: true,
             });
 
@@ -1220,7 +1322,10 @@ describe('Interceptor server', () => {
         await usingIgnoredConsole(['error'], async (console) => {
           try {
             await worker.start({
-              parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws' },
+              parameters: {
+                [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+                [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+              },
               waitForAuthentication: true,
             });
 
@@ -1260,7 +1365,10 @@ describe('Interceptor server', () => {
         await usingIgnoredConsole(['error'], async (console) => {
           try {
             await worker.start({
-              parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws' },
+              parameters: {
+                [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+                [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+              },
               waitForAuthentication: true,
             });
 
@@ -1309,7 +1417,10 @@ describe('Interceptor server', () => {
 
         try {
           await worker.start({
-            parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws' },
+            parameters: {
+              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+            },
             waitForAuthentication: true,
           });
 
@@ -1358,7 +1469,10 @@ describe('Interceptor server', () => {
         await usingIgnoredConsole(['error'], async (console) => {
           try {
             await worker.start({
-              parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws' },
+              parameters: {
+                [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+                [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+              },
               waitForAuthentication: true,
             });
 
@@ -1421,7 +1535,10 @@ describe('Interceptor server', () => {
         await usingIgnoredConsole(['error'], async (console) => {
           try {
             await worker.start({
-              parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws' },
+              parameters: {
+                [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+                [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+              },
               waitForAuthentication: true,
             });
 
@@ -1490,7 +1607,10 @@ describe('Interceptor server', () => {
               const receivedMessages = collectWebSocketClientMessages(client);
 
               await httpWorker.start({
-                parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
+                parameters: {
+                  [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
+                  [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+                },
                 waitForAuthentication: true,
               });
 

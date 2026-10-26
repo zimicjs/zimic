@@ -5,7 +5,13 @@ import { IncomingMessage, Server as HttpServer, createServer, ServerResponse } f
 import type { WebSocket as Socket } from 'isomorphic-ws';
 import color from 'picocolors';
 
-import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER, type InterceptorServerRPCProtocol } from '@/interceptor/constants';
+import { version } from '@@/package.json';
+
+import {
+  INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
+  INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
+  type InterceptorServerRPCProtocol,
+} from '@/interceptor/constants';
 import { isLoopbackHostname } from '@/utils/http';
 import { logger, logUnhandledRequestWarning } from '@/utils/logging';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
@@ -41,6 +47,17 @@ const WEB_SOCKET_CLOSE_REASONS = Object.freeze({
   MISSING_HTTP_PEER: 'The optional peer dependency "@zimic/http" is required for HTTP interceptor workers.',
   HTTP_RUNTIME_LOAD_FAILED: 'Could not load the HTTP interceptor runtime.',
 } as const);
+
+// WebSocket close reasons are limited to 123 bytes. Worker versions come from the client, so only short semver-like
+// versions are echoed back.
+const DISPLAYABLE_WORKER_VERSION_PATTERN = /^[\w.+-]{1,32}$/;
+
+function createWorkerVersionMismatchReason(workerVersion: string | undefined) {
+  const displayedWorkerVersion =
+    workerVersion !== undefined && DISPLAYABLE_WORKER_VERSION_PATTERN.test(workerVersion) ? workerVersion : 'unknown';
+
+  return `Interceptor version ${displayedWorkerVersion} does not match server version ${version}.`;
+}
 
 function isMissingHttpPeerError(error: unknown): boolean {
   if (!(error instanceof Error)) {
@@ -242,13 +259,16 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private getWebSocketRPCProtocol(request: IncomingMessage): InterceptorServerRPCProtocol | undefined {
-    const protocolParameterPrefix = `${INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER}=`;
-
-    const protocol = this.getWebSocketRequestParameters(request)
-      .find((parameter) => parameter.startsWith(protocolParameterPrefix))
-      ?.slice(protocolParameterPrefix.length);
-
+    const protocol = this.getWebSocketRequestParameterValue(request, INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER);
     return protocol === 'http' || protocol === 'ws' ? protocol : undefined;
+  }
+
+  private getWebSocketRequestParameterValue(request: IncomingMessage, parameterName: string) {
+    const parameterPrefix = `${parameterName}=`;
+
+    return this.getWebSocketRequestParameters(request)
+      .find((parameter) => parameter.startsWith(parameterPrefix))
+      ?.slice(parameterPrefix.length);
   }
 
   private getWebSocketRequestParameters(request: IncomingMessage) {
@@ -337,6 +357,14 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private handleWebSocketConnection: WebSocketServerConnectionHandler = async (socket, request) => {
     if (this.isWebSocketRPCRequest(request)) {
+      const workerVersion = this.getWebSocketRequestParameterValue(request, INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER);
+
+      if (workerVersion !== version) {
+        socket.resume();
+        socket.close(WEB_SOCKET_CLOSE_CODES.POLICY_VIOLATION, createWorkerVersionMismatchReason(workerVersion));
+        return { handled: true };
+      }
+
       const protocol = this.getWebSocketRPCProtocol(request);
 
       if (!protocol) {
