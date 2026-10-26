@@ -291,6 +291,36 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
     });
   });
 
+  it('should accept only whole binary values in static restrictions', async () => {
+    const baseURL = await getBaseURL(type);
+
+    type BinarySchema = WebSocketSchema<Blob | ArrayBuffer | { type: 'a'; id: string }>;
+
+    await usingWebSocketInterceptor<BinarySchema>({ type, baseURL }, (interceptor) => {
+      /* istanbul ignore next -- @preserve
+       * Declarations must remain compile-only to avoid registering them on a live remote interceptor. */
+      function declareRestrictions() {
+        interceptor.message().with(new Blob(['a']));
+        interceptor.message().with(new ArrayBuffer(1));
+        interceptor.message().with(new Uint8Array([1]));
+
+        const jsonHandler = interceptor.message().with({ type: 'a' });
+
+        jsonHandler.effect((message) => {
+          expectTypeOf(message).toEqualTypeOf<Extract<BinarySchema, { type: 'a' }>>();
+        });
+
+        // @ts-expect-error Partial binary restriction.
+        interceptor.message().with({ size: 1 });
+
+        // @ts-expect-error Partial binary restriction.
+        interceptor.message().with({ byteLength: 1 });
+      }
+
+      expectTypeOf(declareRestrictions).toBeFunction();
+    });
+  });
+
   it('should reject invalid message declarations', async () => {
     const baseURL = await getBaseURL(type);
 

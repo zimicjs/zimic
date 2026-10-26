@@ -6,9 +6,13 @@ import { ReceivedWebSocketMessageData } from '@/ws/interceptor/types/messages';
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A static restriction declared with `handler.with()`, matching messages that contain its partial data.
+ * A static restriction declared with `handler.with()`, matching messages that contain its partial data. Binary members
+ * accept only whole binary values of any kind, compared byte by byte.
  */
-export type WebSocketMessageHandlerStaticRestriction<Schema extends WebSocketSchema> = DeepPartial<Schema>;
+export type WebSocketMessageHandlerStaticRestriction<Schema extends WebSocketSchema> = Schema extends
+  Blob | BufferSource
+  ? Blob | BufferSource
+  : DeepPartial<Schema>;
 
 /** A predicate returning whether a message matches. It does not narrow the handler's message type. */
 type WebSocketMessageHandlerComputedBooleanRestriction<Schema extends WebSocketSchema> = (
