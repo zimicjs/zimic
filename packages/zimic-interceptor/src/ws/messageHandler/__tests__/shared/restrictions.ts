@@ -1,5 +1,5 @@
 import { waitFor } from '@zimic/utils/time';
-import { WebSocketClient } from '@zimic/ws';
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { beforeAll, beforeEach, afterAll, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
@@ -7,6 +7,7 @@ import { waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import { ChatMessage, Schema, SharedWebSocketMessageHandlerTestOptions } from './types';
+import { createBinaryMessage } from './utils';
 
 export function declareRestrictionWebSocketMessageHandlerTests(
   options: SharedWebSocketMessageHandlerTestOptions & {
@@ -55,6 +56,30 @@ export function declareRestrictionWebSocketMessageHandlerTests(
         const matchedResponse = waitForWebSocketClientMessage(client);
         client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
         await expect(matchedResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'restricted' }));
+
+        await handler.checkTimes();
+      } finally {
+        await client.close();
+      }
+    });
+  });
+
+  it('should not match JSON messages if contains static binary restrictions', async () => {
+    type BinarySchema = WebSocketSchema<{ type: 'a' | 'b' } | ArrayBuffer>;
+
+    await usingWebSocketInterceptor<BinarySchema>({ type, baseURL }, async (interceptor) => {
+      await interceptor.message().respond({ type: 'a' });
+
+      const handler = await interceptor.message().with(createBinaryMessage(1, 2)).respond({ type: 'b' }).times(0);
+
+      const client = new WebSocketClient<BinarySchema>(baseURL);
+
+      try {
+        await client.open();
+
+        const unmatchedResponse = waitForWebSocketClientMessage(client);
+        client.send(JSON.stringify({ type: 'a' }));
+        await expect(unmatchedResponse).resolves.toBe(JSON.stringify({ type: 'a' }));
 
         await handler.checkTimes();
       } finally {
