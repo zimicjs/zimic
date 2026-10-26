@@ -310,6 +310,12 @@ export function declareTypeAssertionWebSocketMessageHandlerTests(
           expectTypeOf(message).toEqualTypeOf<Extract<BinarySchema, { type: 'a' }>>();
         });
 
+        const emptyRestrictionHandler = interceptor.message().with({});
+
+        emptyRestrictionHandler.effect((message) => {
+          expectTypeOf(message).toEqualTypeOf<Extract<BinarySchema, { type: 'a' }>>();
+        });
+
         // @ts-expect-error Partial binary restriction.
         interceptor.message().with({ size: 1 });
 

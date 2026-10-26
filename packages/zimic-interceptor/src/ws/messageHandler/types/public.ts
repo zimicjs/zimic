@@ -84,11 +84,13 @@ type WebSocketMessageHandlerSchemaCompatibleWithStaticRestriction<
   Schema extends WebSocketSchema,
   Restriction,
 > = Schema extends unknown
-  ? Schema extends Restriction
-    ? Schema
-    : Restriction extends WebSocketMessageHandlerStaticRestriction<Schema>
+  ? [Schema, Restriction] extends [Blob | BufferSource, Exclude<Restriction, Blob | BufferSource>]
+    ? never
+    : Schema extends Restriction
       ? Schema
-      : never
+      : Restriction extends WebSocketMessageHandlerStaticRestriction<Schema>
+        ? Schema
+        : never
   : never;
 
 /**

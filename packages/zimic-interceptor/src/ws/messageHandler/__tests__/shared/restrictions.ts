@@ -88,6 +88,30 @@ export function declareRestrictionWebSocketMessageHandlerTests(
     });
   });
 
+  it('should not match binary messages if contains static JSON restrictions', async () => {
+    type BinarySchema = WebSocketSchema<{ type: 'a' | 'b' } | ArrayBuffer>;
+
+    await usingWebSocketInterceptor<BinarySchema>({ type, baseURL }, async (interceptor) => {
+      await interceptor.message().respond({ type: 'a' });
+
+      const handler = await interceptor.message().with({}).respond({ type: 'b' }).times(0);
+
+      const client = new WebSocketClient<BinarySchema>(baseURL);
+
+      try {
+        await client.open();
+
+        const unmatchedResponse = waitForWebSocketClientMessage(client);
+        client.send(createBinaryMessage(1, 2));
+        await expect(unmatchedResponse).resolves.toBe(JSON.stringify({ type: 'a' }));
+
+        await handler.checkTimes();
+      } finally {
+        await client.close();
+      }
+    });
+  });
+
   it('should match only specific messages if contains computed restrictions', async () => {
     await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
       function isCreateMessage(message: ChatMessage): message is Extract<ChatMessage, { type: 'create' }> {

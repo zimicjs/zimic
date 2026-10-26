@@ -271,7 +271,11 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
       return this.binaryMessageDataEquals(message, restriction);
     }
 
-    return jsonContains(message as JSONValue, restriction as JSONValue);
+    if (isWebSocketBinaryMessageData(message)) {
+      return false;
+    }
+
+    return jsonContains(message, restriction as JSONValue);
   }
 
   private async binaryMessageDataEquals(actual: Blob | BufferSource, expected: Blob | BufferSource) {
