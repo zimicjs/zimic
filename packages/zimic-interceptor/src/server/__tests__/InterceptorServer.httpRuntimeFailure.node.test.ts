@@ -2,10 +2,9 @@ import { expectFetchError } from '@zimic/utils/fetch';
 import { waitFor } from '@zimic/utils/time';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { version } from '@@/package.json';
-
 import {
   INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
+  INTERCEPTOR_SERVER_RPC_VERSION,
   INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
 } from '@/interceptor/constants';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
@@ -92,7 +91,7 @@ describe('Interceptor server > HTTP runtime failures', () => {
           staleWorker.start({
             parameters: {
               [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
-              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
             },
             waitForAuthentication: true,
           }),
@@ -121,7 +120,7 @@ describe('Interceptor server > HTTP runtime failures', () => {
         await activeWorker.start({
           parameters: {
             [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
-            [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+            [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
           },
           waitForAuthentication: true,
         });
@@ -163,7 +162,7 @@ describe('Interceptor server > HTTP runtime failures', () => {
           failingWorker.start({
             parameters: {
               [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
-              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
             },
             waitForAuthentication: true,
           }),
@@ -182,7 +181,7 @@ describe('Interceptor server > HTTP runtime failures', () => {
         await activeWorker.start({
           parameters: {
             [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
-            [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+            [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
           },
           waitForAuthentication: true,
         });

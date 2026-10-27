@@ -63,6 +63,12 @@ Interceptor servers are development and test tools. Do not use them as productio
 
 :::
 
+:::info NOTE: <span>Interceptor server versions</span>
+
+Use the same `@zimic/interceptor` version for the interceptor server and your remote interceptors. Changes to how they communicate ship in minor releases and are not breaking changes, so a server on another version may reject your interceptors when they start.
+
+:::
+
 :::info IMPORTANT: <span>Interceptor server authentication</span>
 
 Although `--tokens-dir` is optional for private development servers, we strongly recommend setting `--tokens-dir` when the server is not bound to `localhost`, `127.0.0.1`, or `::1`, or when it is shared over a network. Authentication prevents unauthorized remote interceptors from connecting to the server. Use [`server token create`](#zimic-interceptor-server-token-create) to protect your interceptor server with a token, then configure each remote interceptor with [`auth.token`](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#interceptor-server-authentication).

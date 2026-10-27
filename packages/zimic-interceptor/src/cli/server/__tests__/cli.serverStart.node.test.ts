@@ -9,12 +9,11 @@ import path from 'path';
 import color from 'picocolors';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { version } from '@@/package.json';
-
 import { verifyUnhandledRequestMessage } from '@/http/interceptor/__tests__/shared/utils';
 import { createHttpInterceptor } from '@/http/interceptor/factory';
 import {
   INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
+  INTERCEPTOR_SERVER_RPC_VERSION,
   INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
 } from '@/interceptor/constants';
 import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/server/constants';
@@ -568,7 +567,7 @@ describe('CLI > Server start', () => {
         await webSocketClient.start({
           parameters: {
             [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
-            [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+            [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
           },
           waitForAuthentication: true,
         });

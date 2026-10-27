@@ -8,7 +8,9 @@ import color from 'picocolors';
 import { version } from '@@/package.json';
 
 import {
+  INTERCEPTOR_SERVER_RPC_PACKAGE_VERSION_PARAMETER,
   INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
+  INTERCEPTOR_SERVER_RPC_VERSION,
   INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
   type InterceptorServerRPCProtocol,
 } from '@/interceptor/constants';
@@ -48,15 +50,28 @@ const WEB_SOCKET_CLOSE_REASONS = Object.freeze({
   HTTP_RUNTIME_LOAD_FAILED: 'Could not load the HTTP interceptor runtime.',
 } as const);
 
-// WebSocket close reasons are limited to 123 bytes. Worker versions come from the client, so only short semver-like
-// versions are echoed back.
-const DISPLAYABLE_WORKER_VERSION_PATTERN = /^[\w.+-]{1,32}$/;
+// Worker versions come from the client, so only ASCII semver-like versions that keep the reason within the WebSocket
+// close reason limit of 123 bytes are echoed back.
+const DISPLAYABLE_WORKER_VERSION_PATTERN = /^[\w.+-]+$/;
+const MAX_WEB_SOCKET_CLOSE_REASON_LENGTH = 123;
+
+function formatWorkerVersionMismatchReason(displayedWorkerVersion: string) {
+  return (
+    `Interceptor ${displayedWorkerVersion} is incompatible with server ${version}. ` +
+    'Use the same @zimic/interceptor version in both.'
+  );
+}
 
 function createWorkerVersionMismatchReason(workerVersion: string | undefined) {
-  const displayedWorkerVersion =
-    workerVersion !== undefined && DISPLAYABLE_WORKER_VERSION_PATTERN.test(workerVersion) ? workerVersion : 'unknown';
+  if (workerVersion !== undefined && DISPLAYABLE_WORKER_VERSION_PATTERN.test(workerVersion)) {
+    const reason = formatWorkerVersionMismatchReason(workerVersion);
 
-  return `Interceptor version ${displayedWorkerVersion} does not match server version ${version}.`;
+    if (reason.length <= MAX_WEB_SOCKET_CLOSE_REASON_LENGTH) {
+      return reason;
+    }
+  }
+
+  return formatWorkerVersionMismatchReason('unknown');
 }
 
 function isMissingHttpPeerError(error: unknown): boolean {
@@ -357,9 +372,17 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private handleWebSocketConnection: WebSocketServerConnectionHandler = async (socket, request) => {
     if (this.isWebSocketRPCRequest(request)) {
-      const workerVersion = this.getWebSocketRequestParameterValue(request, INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER);
+      const workerRPCVersion = this.getWebSocketRequestParameterValue(
+        request,
+        INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
+      );
 
-      if (workerVersion !== version) {
+      if (workerRPCVersion !== String(INTERCEPTOR_SERVER_RPC_VERSION)) {
+        const workerVersion = this.getWebSocketRequestParameterValue(
+          request,
+          INTERCEPTOR_SERVER_RPC_PACKAGE_VERSION_PARAMETER,
+        );
+
         socket.resume();
         socket.close(WEB_SOCKET_CLOSE_CODES.POLICY_VIOLATION, createWorkerVersionMismatchReason(workerVersion));
         return { handled: true };
