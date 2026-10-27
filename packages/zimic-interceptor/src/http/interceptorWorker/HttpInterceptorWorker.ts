@@ -198,7 +198,8 @@ abstract class HttpInterceptorWorker {
     const parsedRequestsByRoute = new Map<string, HttpInterceptorRequest<string, HttpMethodSchema>>();
 
     const method = request.method as HttpMethod;
-    const methodHandlers = this.httpHandlersByMethod[method];
+    // Methods outside `HTTP_METHODS`, such as `PROPFIND`, have no handlers, so their requests are unhandled.
+    const methodHandlers = HTTP_METHODS.includes(method) ? this.httpHandlersByMethod[method] : [];
 
     // Handlers can be added or cleared while a response is created, so the request is matched against a copy.
     for (const handler of methodHandlers.toReversed()) {

@@ -138,8 +138,8 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
       );
     });
 
-    // No WebSocket counterparts for the cases with unmocked paths and array search params: WebSocket handlers have
-    // no per-handler path and messages have no search params.
+    // No WebSocket counterparts for the cases with unmocked paths, unknown methods, and array search params: WebSocket
+    // handlers have no per-handler path or method and messages have no search params.
   });
 
   describe.each([{ declarationType: 'static' as const }, { declarationType: 'factory' as const }])(

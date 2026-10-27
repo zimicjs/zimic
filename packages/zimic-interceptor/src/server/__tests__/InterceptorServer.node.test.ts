@@ -2227,6 +2227,59 @@ describe('Interceptor server', () => {
       }
     });
 
+    it('should reject requests with methods forbidden by the Fetch API and continue handling requests', async () => {
+      server = createInternalInterceptorServer({ logUnhandledRequests: true });
+      await server.start();
+
+      type Schema = HttpSchema<{
+        '/users': {
+          GET: {
+            response: { 204: {} };
+          };
+        };
+      }>;
+      const interceptor = createInternalHttpInterceptor<Schema>({
+        type: 'remote',
+        baseURL: `http://${server.hostname}:${server.port}`,
+      });
+
+      try {
+        await interceptor.start();
+        await interceptor.get('/users').respond({ status: 204 });
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          const socket = connect({ host: server!.hostname, port: server!.port! });
+          const socketClosed = once(socket, 'close');
+          const responseChunks: Buffer[] = [];
+
+          socket.on('data', (chunk: Buffer) => responseChunks.push(chunk));
+
+          try {
+            await once(socket, 'connect');
+
+            // Fetch rejects `TRACE` requests, so the request is sent through a raw socket.
+            socket.end(['TRACE /users HTTP/1.1', `Host: ${server!.hostname}:${server!.port}`, '', ''].join('\r\n'));
+
+            await socketClosed;
+
+            expect(Buffer.concat(responseChunks).toString()).toBe(
+              'HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nContent-Length: 1\r\n\r\n',
+            );
+
+            expect(console.error).toHaveBeenCalledTimes(1);
+            expect(console.error).toHaveBeenCalledWith(expect.any(TypeError));
+          } finally {
+            socket.destroy();
+          }
+
+          const response = await fetch(`http://${server!.hostname}:${server!.port}/users`, { method: 'GET' });
+          expect(response.status).toBe(204);
+        });
+      } finally {
+        await interceptor.stop();
+      }
+    });
+
     it('should reject unhandled requests without logging when runtime logging is disabled', async () => {
       server = createInternalInterceptorServer({ logUnhandledRequests: false });
       await server.start();
