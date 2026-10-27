@@ -108,3 +108,10 @@ export async function logUnhandledMessageWarning(data: unknown) {
 
   logger.warn('Warning: Message was not handled.\n\n ', formattedData);
 }
+
+export function logUnexpectedServerDisconnection(serverURL: URL) {
+  logger.warn(
+    `Warning: The connection to the interceptor server ${serverURL.origin} was closed. ` +
+      'Restart your interceptors to reconnect.',
+  );
+}

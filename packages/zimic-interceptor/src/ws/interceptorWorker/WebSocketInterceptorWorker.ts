@@ -37,7 +37,7 @@ abstract class WebSocketInterceptorWorker {
   isRunning = false;
 
   private startingPromise?: Promise<void>;
-  private stoppingPromise?: Promise<void>;
+  protected stoppingPromise?: Promise<void>;
 
   private runningInterceptors: AnyWebSocketInterceptorImplementation[] = [];
   private messageHandlers: WebSocketMessageHandler[] = [];

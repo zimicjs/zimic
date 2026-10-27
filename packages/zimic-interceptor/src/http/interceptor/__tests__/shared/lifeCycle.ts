@@ -1,8 +1,10 @@
 import { HttpSchema } from '@zimic/http';
 import { expectFetchError } from '@zimic/utils/fetch';
+import { waitFor } from '@zimic/utils/time';
 import { joinURL } from '@zimic/utils/url';
 import { beforeEach, expect, it } from 'vitest';
 
+import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectBypassedResponse } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
@@ -12,7 +14,7 @@ import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { type, getBaseURL, getInterceptorOptions } = options;
+  const { platform, type, getBaseURL, getInterceptorOptions, startServer, stopServer } = options;
 
   let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
@@ -131,6 +133,45 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
       });
     });
   });
+
+  it('should not log a warning when stopped', async () => {
+    await usingIgnoredConsole(['warn'], async (console) => {
+      await usingHttpInterceptor(interceptorOptions, async (interceptor) => {
+        await interceptor.stop();
+        expect(interceptor.isRunning).toBe(false);
+      });
+
+      expect(console.warn).not.toHaveBeenCalled();
+    });
+  });
+
+  // Only remote interceptors connect to an interceptor server, and browser tests cannot stop their shared server.
+  if (type === 'remote' && platform === 'node') {
+    it('should log a warning once if the interceptor server stops while running', async () => {
+      await usingIgnoredConsole(['warn'], async (console) => {
+        // Interceptors with the same server share one connection, so they should log a single warning.
+        await usingHttpInterceptor(interceptorOptions, async () => {
+          await usingHttpInterceptor(interceptorOptions, async () => {
+            await stopServer?.();
+
+            try {
+              await waitFor(() => {
+                expect(console.warn).toHaveBeenCalledTimes(1);
+              });
+
+              expect(console.warn).toHaveBeenCalledWith(
+                expect.stringContaining('[@zimic/interceptor]'),
+                `Warning: The connection to the interceptor server ${new URL(baseURL).origin} was closed. ` +
+                  'Restart your interceptors to reconnect.',
+              );
+            } finally {
+              await startServer?.();
+            }
+          });
+        });
+      });
+    });
+  }
 
   it('should throw an error when trying to create a request handler if not running', async () => {
     const interceptor = createInternalHttpInterceptor(interceptorOptions);

@@ -14,6 +14,8 @@ export interface RuntimeSharedWebSocketInterceptorTestsOptions {
   getBaseURL: () => string;
   getOtherBaseURL?: () => string;
   getInterceptorOptions: () => WebSocketInterceptorOptions;
+  startServer?: () => Promise<void>;
+  stopServer?: () => Promise<void>;
 }
 
 export async function verifyUnhandledMessageWarning(

@@ -21,6 +21,8 @@ export interface RuntimeSharedHttpInterceptorTestsOptions {
   getBaseURL: () => string;
   getOtherBaseURL?: () => string;
   getInterceptorOptions: () => HttpInterceptorOptions;
+  startServer?: () => Promise<void>;
+  stopServer?: () => Promise<void>;
 }
 
 export async function verifyUnhandledRequestMessage(

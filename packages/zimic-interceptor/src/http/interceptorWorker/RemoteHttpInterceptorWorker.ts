@@ -13,6 +13,7 @@ import { HttpWorkerReset, InterceptorServerWebSocketSchema } from '@/server/type
 import { isClientSide, isServerSide } from '@/utils/environment';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
 import { methodCanHaveResponseBody } from '@/utils/http';
+import { logUnexpectedServerDisconnection } from '@/utils/logging';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocketEventMessage } from '@/utils/webSocket/types';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
@@ -36,6 +37,9 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     this.webSocketClient = new WebSocketClient({
       url: this.getWebSocketServerURL(options.serverURL).toString(),
+      onUnexpectedClose: () => {
+        logUnexpectedServerDisconnection(options.serverURL);
+      },
     });
 
     this.auth = options.auth;

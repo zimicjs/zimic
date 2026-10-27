@@ -10,6 +10,7 @@ import {
 } from '@/interceptor/constants';
 import { InterceptorServerWebSocketSchema, WebSocketWorkerReset } from '@/server/types/schema';
 import { isClientSide, isServerSide } from '@/utils/environment';
+import { logUnexpectedServerDisconnection } from '@/utils/logging';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocketEventMessage } from '@/utils/webSocket/types';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
@@ -51,6 +52,12 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     this.webSocketClient = new WebSocketClient({
       url: options.serverURL.toString(),
+      onUnexpectedClose: () => {
+        // Stopping resets the server worker before closing the socket, so the server may close it in between.
+        if (!this.stoppingPromise) {
+          logUnexpectedServerDisconnection(options.serverURL);
+        }
+      },
     });
 
     this.auth = options.auth;

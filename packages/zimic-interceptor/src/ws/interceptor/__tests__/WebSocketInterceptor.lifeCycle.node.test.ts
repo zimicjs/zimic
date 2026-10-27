@@ -29,5 +29,7 @@ describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Life cycle', ({ 
     type,
     getBaseURL: () => baseURL,
     getInterceptorOptions: () => ({ type, baseURL }),
+    startServer: () => server.start(),
+    stopServer: () => server.stop(),
   });
 });

@@ -3,6 +3,7 @@ import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
+import { usingIgnoredConsole } from '@tests/utils/console';
 import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 import {
@@ -22,7 +23,7 @@ import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
 
 export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
-  const { getBaseURL, getInterceptorOptions } = options;
+  const { platform, type, getBaseURL, getInterceptorOptions, startServer, stopServer } = options;
 
   let baseURL: string;
   let interceptorOptions: WebSocketInterceptorOptions;
@@ -167,6 +168,45 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
       },
     );
   });
+
+  it('should not log a warning when stopped', async () => {
+    await usingIgnoredConsole(['warn'], async (console) => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        await interceptor.stop();
+        expect(interceptor.isRunning).toBe(false);
+      });
+
+      expect(console.warn).not.toHaveBeenCalled();
+    });
+  });
+
+  // Only remote interceptors connect to an interceptor server, and browser tests cannot stop their shared server.
+  if (type === 'remote' && platform === 'node') {
+    it('should log a warning once if the interceptor server stops while running', async () => {
+      await usingIgnoredConsole(['warn'], async (console) => {
+        // Interceptors with the same server share one connection, so they should log a single warning.
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async () => {
+          await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async () => {
+            await stopServer?.();
+
+            try {
+              await waitFor(() => {
+                expect(console.warn).toHaveBeenCalledTimes(1);
+              });
+
+              expect(console.warn).toHaveBeenCalledWith(
+                expect.stringContaining('[@zimic/interceptor]'),
+                `Warning: The connection to the interceptor server ${new URL(baseURL).origin} was closed. ` +
+                  'Restart your interceptors to reconnect.',
+              );
+            } finally {
+              await startServer?.();
+            }
+          });
+        });
+      });
+    });
+  }
 
   // No HTTP counterpart: WebSocket connections are long-lived, so a client can stay open after its interceptor stops.
   it('should not handle messages from existing clients after stopped', async () => {
