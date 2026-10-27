@@ -1,11 +1,16 @@
-import { waitFor, waitForNot } from '@zimic/utils/time';
+import { waitFor } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
-import { createBinaryMessage, usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
+import {
+  createBinaryMessage,
+  usingWebSocketClient,
+  waitForWebSocketClientClose,
+  waitForWebSocketClientMessage,
+} from '@tests/utils/webSocket';
 
 import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions, verifyUnhandledMessageWarning } from './utils';
@@ -165,9 +170,13 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
 
                 client.send(JSON.stringify({ type: 'client', index: 2 }));
 
-                await waitForNot(() => {
-                  expect(console.warn).toHaveBeenCalled();
-                });
+                // Messages on a socket are handled in order, so the response to the matched message arriving means that
+                // the unhandled message was handled without logging.
+                const probeResponsePromise = waitForWebSocketClientMessage(client);
+                client.send(JSON.stringify(matchedMessage));
+                await expect(probeResponsePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+
+                expect(console.warn).toHaveBeenCalledTimes(0);
                 expect(console.error).toHaveBeenCalledTimes(0);
 
                 expect(client.readyState).toBe(WebSocketClient.OPEN);
@@ -200,13 +209,16 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
 
             console.warn.mockClear();
 
+            const closeEventPromise = waitForWebSocketClientClose(client);
+
             await interceptor.stop();
+
+            // Stopping closes the connection, so no message can be handled after the close event.
+            await closeEventPromise;
 
             client.send(JSON.stringify(message));
 
-            await waitForNot(() => {
-              expect(console.warn).toHaveBeenCalled();
-            });
+            expect(console.warn).toHaveBeenCalledTimes(0);
             expect(console.error).toHaveBeenCalledTimes(0);
           });
         });
@@ -222,15 +234,24 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
       async (interceptor) => {
         expect(interceptor.onUnhandledMessage).toEqual(initialOnUnhandledMessage);
 
+        await promiseIfRemote(
+          interceptor.message().with({ type: 'client', index: 0 }).respond({ type: 'server', index: 0 }),
+          interceptor,
+        );
+
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
           const message: MessageSchema = { type: 'client', index: 1 };
 
           await usingIgnoredConsole(['warn', 'error'], async (console) => {
             client.send(JSON.stringify(message));
 
-            await waitForNot(() => {
-              expect(console.warn).toHaveBeenCalled();
-            });
+            // Messages on a socket are handled in order, so the probe response arriving means that the unhandled
+            // message was handled with the initial strategy.
+            const probeResponsePromise = waitForWebSocketClientMessage(client);
+            client.send(JSON.stringify({ type: 'client', index: 0 }));
+            await expect(probeResponsePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 0 }));
+
+            expect(console.warn).toHaveBeenCalledTimes(0);
             expect(console.error).toHaveBeenCalledTimes(0);
           });
 

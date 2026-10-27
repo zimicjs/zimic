@@ -1,7 +1,7 @@
 import { HttpSchema } from '@zimic/http';
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { expectFetchError } from '@zimic/utils/fetch';
-import { waitFor, waitForNot } from '@zimic/utils/time';
+import { waitFor } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { once } from 'events';
 import ClientSocket from 'isomorphic-ws';
@@ -2036,7 +2036,7 @@ describe('Interceptor server', () => {
           client.send('second');
           await connectionReceivedPromise;
 
-          await waitForNot(() => expect(handledMessages).not.toHaveLength(0));
+          expect(handledMessages).toHaveLength(0);
 
           connectionPromise.resolve();
 

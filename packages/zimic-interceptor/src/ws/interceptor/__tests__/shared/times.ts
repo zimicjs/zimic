@@ -1,5 +1,5 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
-import { waitFor, waitForNot } from '@zimic/utils/time';
+import { waitFor } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import color from 'picocolors';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,6 +10,7 @@ import {
   collectWebSocketClientMessages,
   createBinaryMessage,
   expectWebSocketTimesCheckError,
+  readBytes,
   usingWebSocketClient,
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
@@ -81,18 +82,24 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         await promiseIfRemote(interceptor.message().respond({ type: 'delete', id: '1' }).times(1), interceptor);
 
+        await promiseIfRemote(
+          interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' }),
+          interceptor,
+        );
+
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
           await sendMatchingMessage(client);
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-          const messageListener = vi.fn();
-          client.addEventListener('message', messageListener);
+          const probeResponse = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'again' } }));
 
-          await waitForNot(() => {
-            expect(messageListener).toHaveBeenCalled();
-          });
+          // Messages on a socket are delivered in order, so the probe response arriving first means that the
+          // over-limit message got no response.
+          client.send(JSON.stringify({ type: 'delete', id: 'probe' }));
+
+          await expect(probeResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
         });
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
@@ -158,20 +165,26 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         await promiseIfRemote(interceptor.message().respond({ type: 'delete', id: '1' }).times(2, 3), interceptor);
 
+        await promiseIfRemote(
+          interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' }),
+          interceptor,
+        );
+
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
           await sendMatchingMessage(client, 'one');
           await sendMatchingMessage(client, 'two');
           await sendMatchingMessage(client, 'three');
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-          const messageListener = vi.fn();
-          client.addEventListener('message', messageListener);
+          const probeResponse = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'four' } }));
 
-          await waitForNot(() => {
-            expect(messageListener).toHaveBeenCalled();
-          });
+          // Messages on a socket are delivered in order, so the probe response arriving first means that the
+          // over-limit message got no response.
+          client.send(JSON.stringify({ type: 'delete', id: 'probe' }));
+
+          await expect(probeResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
         });
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
@@ -185,18 +198,24 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         await promiseIfRemote(interceptor.message().respond({ type: 'delete', id: '1' }).times(0, 1), interceptor);
 
+        await promiseIfRemote(
+          interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' }),
+          interceptor,
+        );
+
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
           await sendMatchingMessage(client, 'one');
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-          const messageListener = vi.fn();
-          client.addEventListener('message', messageListener);
+          const probeResponse = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'two' } }));
 
-          await waitForNot(() => {
-            expect(messageListener).toHaveBeenCalled();
-          });
+          // Messages on a socket are delivered in order, so the probe response arriving first means that the
+          // over-limit message got no response.
+          client.send(JSON.stringify({ type: 'delete', id: 'probe' }));
+
+          await expect(probeResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
         });
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
@@ -273,6 +292,11 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           ),
         ];
 
+        await promiseIfRemote(
+          interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' }),
+          interceptor,
+        );
+
         const unmatchedMessageLines = [
           '',
           'Messages evaluated by this handler:',
@@ -333,16 +357,13 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
             expectedNumberOfMessages: { min: 1, max: 2 },
           });
 
-          const messageListener = vi.fn();
-          client.addEventListener('message', messageListener);
-
+          messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify(unknownMessage));
 
-          await waitForNot(() => {
-            expect(messageListener).toHaveBeenCalled();
-          });
-
-          client.removeEventListener('message', messageListener);
+          // Messages on a socket are delivered in order, so the probe response arriving first means that the unknown
+          // message got no response.
+          client.send(JSON.stringify({ type: 'delete', id: 'probe' }));
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
 
           expect(handlers[0].messages).toHaveLength(1);
           expect(handlers[1].messages).toHaveLength(0);
@@ -393,13 +414,13 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-          client.addEventListener('message', messageListener);
-
+          messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify(secondMessage));
 
-          await waitForNot(() => {
-            expect(messageListener).toHaveBeenCalled();
-          });
+          // Messages on a socket are delivered in order, so the probe response arriving first means that the
+          // over-limit message got no response.
+          client.send(JSON.stringify({ type: 'delete', id: 'probe' }));
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
 
           expect(handlers[0].messages).toHaveLength(1);
           expect(handlers[1].messages).toHaveLength(2);
@@ -512,15 +533,24 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           interceptor,
         );
 
+        await promiseIfRemote(
+          interceptor
+            .message()
+            .with({ type: 'create', body: { text: 'probe' } })
+            .respond({ type: 'delete', id: 'probe' }),
+          interceptor,
+        );
+
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          const messageListener = vi.fn();
-          client.addEventListener('message', messageListener);
+          const probeResponse = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
-          await waitForNot(() => {
-            expect(messageListener).toHaveBeenCalled();
-          });
+          // Messages on a socket are delivered in order, so the probe response arriving first means that the unmatched
+          // message got no response.
+          client.send(JSON.stringify({ type: 'create', body: { text: 'probe' } }));
+
+          await expect(probeResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
 
           await waitFor(async () => {
             await expect(async () => {
@@ -555,16 +585,22 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           interceptor,
         );
 
+        await promiseIfRemote(
+          interceptor.message().with(createBinaryMessage(9, 9)).respond(createBinaryMessage(9, 0)),
+          interceptor,
+        );
+
         await usingWebSocketClient<BinarySchema>(baseURL, async (client) => {
-          const messageListener = vi.fn();
-          client.addEventListener('message', messageListener);
+          const probeResponse = waitForWebSocketClientMessage(client);
 
           client.send(createBinaryMessage(3, 4));
           client.send(new Blob([createBinaryMessage(7, 8)]));
 
-          await waitForNot(() => {
-            expect(messageListener).toHaveBeenCalled();
-          });
+          // Messages on a socket are delivered in order, so the probe response arriving first means that the unmatched
+          // messages got no response.
+          client.send(createBinaryMessage(9, 9));
+
+          expect(await readBytes(await probeResponse)).toEqual([9, 0]);
 
           await waitFor(async () => {
             await expect(async () => {

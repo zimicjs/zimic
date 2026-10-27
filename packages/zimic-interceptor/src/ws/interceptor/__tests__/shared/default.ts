@@ -1,5 +1,5 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
-import { waitFor, waitForNot } from '@zimic/utils/time';
+import { waitFor } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
@@ -427,9 +427,7 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
           await waitFor(() => {
             expect(workerStartSpy).toHaveBeenCalledTimes(1);
           });
-          await waitForNot(() => {
-            expect(startResolutionListener).toHaveBeenCalled();
-          });
+          expect(startResolutionListener).not.toHaveBeenCalled();
 
           workerStopGatePromise.resolve();
           await Promise.all([stopPromise, startPromise]);

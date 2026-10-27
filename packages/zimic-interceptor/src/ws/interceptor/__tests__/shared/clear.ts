@@ -1,5 +1,5 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
-import { waitFor, waitForNot } from '@zimic/utils/time';
+import { waitFor } from '@zimic/utils/time';
 import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it, vi } from 'vitest';
@@ -71,15 +71,21 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
           expect(interceptor.clients).toHaveLength(0);
         });
 
+        await promiseIfRemote(
+          interceptor.message().with({ type: 'client', index: 0 }).respond({ type: 'server', index: 0 }),
+          interceptor,
+        );
+
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          const messageListener = vi.fn();
-          client.addEventListener('message', messageListener);
+          const probeResponse = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'client', index: 2 }));
 
-          await waitForNot(() => {
-            expect(messageListener).toHaveBeenCalled();
-          });
+          // Messages on a socket are delivered in order, so the probe response arriving first means that the cleared
+          // handler sent no response.
+          client.send(JSON.stringify({ type: 'client', index: 0 }));
+
+          await expect(probeResponse).resolves.toBe(JSON.stringify({ type: 'server', index: 0 }));
 
           expect(handler.messages).toHaveLength(0);
         });
@@ -636,12 +642,22 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
           const effect = vi.fn();
           await promiseIfRemote(handler.effect(effect).times(1), interceptor);
 
+          await promiseIfRemote(
+            interceptor.message().with({ type: 'client', index: 0 }).respond({ type: 'server', index: 0 }),
+            interceptor,
+          );
+
           restrictionReleasedPromise.resolve();
 
-          await waitForNot(() => {
-            expect(effect).toHaveBeenCalled();
+          // Clearing closed the connection, so the probe is sent from a new client. The matching message finishes being
+          // handled once its restriction is released, before the probe arrives.
+          await usingWebSocketClient<MessageSchema>(baseURL, async (probeClient) => {
+            const probeResponse = waitForWebSocketClientMessage(probeClient);
+            probeClient.send(JSON.stringify({ type: 'client', index: 0 }));
+            await expect(probeResponse).resolves.toBe(JSON.stringify({ type: 'server', index: 0 }));
           });
 
+          expect(effect).not.toHaveBeenCalled();
           expect(restriction).toHaveBeenCalledTimes(1);
           expect(handler.messages).toHaveLength(0);
         });
@@ -666,7 +682,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
       return false;
     });
 
-    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>();
+    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
 
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, onUnhandledMessage },
@@ -688,12 +704,18 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
           expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
 
           restrictionReleasedPromise.resolve();
-
-          await waitForNot(() => {
-            expect(onUnhandledMessage).toHaveBeenCalled();
-          });
-
           expect(restriction).toHaveBeenCalledTimes(1);
+        });
+
+        // The cleared message finishes being handled once its restriction is released, so the strategy being applied
+        // only to an unhandled message from a new client means that it was not applied to the cleared message.
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          client.send(JSON.stringify({ type: 'client', index: 2 }));
+
+          await waitFor(() => {
+            expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+          });
+          expect(onUnhandledMessage).toHaveBeenCalledWith({ type: 'client', index: 2 });
         });
       },
     );

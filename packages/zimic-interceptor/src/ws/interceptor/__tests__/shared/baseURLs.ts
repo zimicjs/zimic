@@ -124,6 +124,8 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
           client.addEventListener('message', otherURLMessageListener);
           client.send(JSON.stringify({ type: 'client', index: 1 }));
 
+          // No interceptor holds this connection to answer a probe, and MSW does not reliably close bypassed
+          // connections, so no ordering signal exists here.
           await waitForNot(() => {
             expect(otherURLMessageListener).toHaveBeenCalled();
           });
@@ -151,6 +153,8 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
           client.addEventListener('message', messageListener);
           client.send(JSON.stringify({ type: 'client', index: 1 }));
 
+          // No interceptor holds this connection to answer a probe, and MSW does not reliably close bypassed
+          // connections, so no ordering signal exists here.
           await waitForNot(() => {
             expect(messageListener).toHaveBeenCalled();
           });
@@ -183,6 +187,8 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
               client.addEventListener('message', messageListener);
               client.send(JSON.stringify({ type: 'client', index: 1 }));
 
+              // No interceptor holds this connection to answer a probe, and MSW does not reliably close bypassed
+              // connections, so no ordering signal exists here.
               await waitForNot(() => {
                 expect(messageListener).toHaveBeenCalled();
               });
@@ -312,6 +318,8 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
               client.addEventListener('message', messageListener);
               client.send(JSON.stringify({ type: 'client', index: 1 }));
 
+              // No interceptor holds this connection to answer a probe, and MSW does not reliably close bypassed
+              // connections, so no ordering signal exists here.
               await waitForNot(() => {
                 expect(messageListener).toHaveBeenCalled();
               });
@@ -593,20 +601,22 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
             await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
               client.send(JSON.stringify({ type: 'client', index: 1 }));
 
-              await waitFor(() => {
-                expect(onUnhandledMessage).toHaveBeenCalled();
-              });
+              // Messages on a socket are handled in order, so the strategy being applied to this probe message means
+              // that it was already applied to the first message.
+              client.send(JSON.stringify({ type: 'client', index: 2 }));
 
-              // Unhandled messages have no reply, so no event signals that no other strategy will be applied.
-              await waitForNot(() => {
-                expect(olderOnUnhandledMessage).toHaveBeenCalled();
+              await waitFor(() => {
+                expect(onUnhandledMessage).toHaveBeenCalledTimes(2);
               });
             });
 
             expect(handler.messages).toHaveLength(0);
             expect(olderHandler.messages).toHaveLength(0);
 
-            expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+            expect(onUnhandledMessage.mock.calls).toEqual([
+              [{ type: 'client', index: 1 }],
+              [{ type: 'client', index: 2 }],
+            ]);
             expect(olderOnUnhandledMessage).not.toHaveBeenCalled();
           },
         );
@@ -637,19 +647,21 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
             await usingWebSocketClient<MessageSchema>(nestedBaseURL, async (client) => {
               client.send(JSON.stringify({ type: 'client', index: 1 }));
 
-              await waitFor(() => {
-                expect(onUnhandledMessage).toHaveBeenCalled();
-              });
+              // Messages on a socket are handled in order, so the strategy being applied to this probe message means
+              // that it was already applied to the first message.
+              client.send(JSON.stringify({ type: 'client', index: 2 }));
 
-              // Unhandled messages have no reply, so no event signals that no other strategy will be applied.
-              await waitForNot(() => {
-                expect(olderOnUnhandledMessage).toHaveBeenCalled();
+              await waitFor(() => {
+                expect(onUnhandledMessage).toHaveBeenCalledTimes(2);
               });
             });
 
             expect(olderHandler.messages).toHaveLength(0);
 
-            expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+            expect(onUnhandledMessage.mock.calls).toEqual([
+              [{ type: 'client', index: 1 }],
+              [{ type: 'client', index: 2 }],
+            ]);
             expect(olderOnUnhandledMessage).not.toHaveBeenCalled();
           },
         );
@@ -668,17 +680,19 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
           await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
             client.send(JSON.stringify({ type: 'client', index: 1 }));
 
-            await waitFor(() => {
-              expect(onUnhandledMessage).toHaveBeenCalled();
-            });
+            // Messages on a socket are handled in order, so the strategy being applied to this probe message means that
+            // it was already applied to the first message.
+            client.send(JSON.stringify({ type: 'client', index: 2 }));
 
-            // Unhandled messages have no reply, so no event signals that no other strategy will be applied.
-            await waitForNot(() => {
-              expect(olderOnUnhandledMessage).toHaveBeenCalled();
+            await waitFor(() => {
+              expect(onUnhandledMessage).toHaveBeenCalledTimes(2);
             });
           });
 
-          expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+          expect(onUnhandledMessage.mock.calls).toEqual([
+            [{ type: 'client', index: 1 }],
+            [{ type: 'client', index: 2 }],
+          ]);
           expect(olderOnUnhandledMessage).not.toHaveBeenCalled();
         });
       },
@@ -1157,6 +1171,8 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
           client.addEventListener('message', oldBaseURLMessageListener);
           client.send(JSON.stringify({ type: 'client', index: 2 }));
 
+          // No interceptor holds this connection to answer a probe, and MSW does not reliably close bypassed
+          // connections, so no ordering signal exists here.
           await waitForNot(() => {
             expect(oldBaseURLMessageListener).toHaveBeenCalled();
           });
@@ -1283,6 +1299,8 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
           client.addEventListener('message', newBaseURLMessageListener);
           client.send(JSON.stringify({ type: 'client', index: 1 }));
 
+          // No interceptor holds this connection to answer a probe, and MSW does not reliably close bypassed
+          // connections, so no ordering signal exists here.
           await waitForNot(() => {
             expect(newBaseURLMessageListener).toHaveBeenCalled();
           });
@@ -1358,6 +1376,8 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
             client.addEventListener('message', oldOriginMessageListener);
             client.send(JSON.stringify({ type: 'client', index: 2 }));
 
+            // No interceptor holds this connection to answer a probe, and MSW does not reliably close bypassed
+            // connections, so no ordering signal exists here.
             await waitForNot(() => {
               expect(oldOriginMessageListener).toHaveBeenCalled();
             });

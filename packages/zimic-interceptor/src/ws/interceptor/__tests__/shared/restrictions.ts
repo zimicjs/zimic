@@ -1,10 +1,15 @@
-import { waitFor, waitForNot } from '@zimic/utils/time';
+import { waitFor } from '@zimic/utils/time';
 import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
-import { createBinaryMessage, usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
+import {
+  createBinaryMessage,
+  readBytes,
+  usingWebSocketClient,
+  waitForWebSocketClientMessage,
+} from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
@@ -36,17 +41,21 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
         interceptor,
       );
 
+      await promiseIfRemote(
+        interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' }),
+        interceptor,
+      );
+
       await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-        const unmatchedMessageListener = vi.fn();
-        client.addEventListener('message', unmatchedMessageListener);
+        const probeResponse = waitForWebSocketClientMessage(client);
 
         client.send(JSON.stringify({ type: 'create', body: { text: 'other' } }));
 
-        await waitForNot(() => {
-          expect(unmatchedMessageListener).toHaveBeenCalled();
-        });
+        // Messages on a socket are delivered in order, so the probe response arriving first means that the unmatched
+        // message got no response.
+        client.send(JSON.stringify({ type: 'delete', id: '1' }));
 
-        client.removeEventListener('message', unmatchedMessageListener);
+        await expect(probeResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
 
         const messagePromise = waitForWebSocketClientMessage(client);
         client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
@@ -72,16 +81,14 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
 
       await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
         client.send(JSON.stringify({ type: 'delete', id: '1' }));
-
-        await waitForNot(() => {
-          expect(effect).toHaveBeenCalled();
-        });
-
         client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
+        // Messages on a socket are handled in order, so the effect running only for the matching message means that the
+        // unmatched message did not run it.
         await waitFor(() => {
           expect(effect).toHaveBeenCalledTimes(1);
         });
+        expect(effect).toHaveBeenCalledWith({ type: 'create', body: { text: 'hello' } }, expect.any(Object));
       });
 
       await promiseIfRemote(interceptor.checkTimes(), interceptor);
@@ -111,12 +118,11 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
 
             secondClient.send(JSON.stringify({ type: 'create', body: { text: 'other' } }));
 
+            // The restricted handler has precedence, so the unrestricted effect running means that it did not match.
             await waitFor(() => {
               expect(unrestrictedEffect).toHaveBeenCalledTimes(1);
             });
-            await waitForNot(() => {
-              expect(secondMessageListener).toHaveBeenCalled();
-            });
+            expect(secondMessageListener).not.toHaveBeenCalled();
 
             const firstMessagePromise = waitForWebSocketClientMessage(firstClient);
             firstClient.send(JSON.stringify({ type: 'create', body: { text: 'restricted' } }));
@@ -151,16 +157,14 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
 
       await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
         client.send(JSON.stringify({ type: 'create', body: { text: 'goodbye' } }));
-
-        await waitForNot(() => {
-          expect(effect).toHaveBeenCalled();
-        });
-
         client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
+        // Messages on a socket are handled in order, so the effect running only for the matching message means that the
+        // unmatched message did not run it.
         await waitFor(() => {
           expect(effect).toHaveBeenCalledTimes(1);
         });
+        expect(effect).toHaveBeenCalledWith({ type: 'create', body: { text: 'hello' } }, expect.any(Object));
       });
 
       await promiseIfRemote(interceptor.checkTimes(), interceptor);
@@ -177,16 +181,14 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
 
       await usingWebSocketClient<BinarySchema>(baseURL, async (client) => {
         client.send(new Blob([createBinaryMessage(3, 4)]));
-
-        await waitForNot(() => {
-          expect(effect).toHaveBeenCalled();
-        });
-
         client.send(binaryBlob);
 
+        // Messages on a socket are handled in order, so the effect running only for the matching message means that the
+        // unmatched message did not run it.
         await waitFor(() => {
           expect(effect).toHaveBeenCalledTimes(1);
         });
+        expect(await readBytes(effect.mock.calls[0][0] as Blob | ArrayBuffer)).toEqual([1, 2]);
       });
 
       await promiseIfRemote(interceptor.checkTimes(), interceptor);
@@ -200,15 +202,24 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
         interceptor,
       );
 
+      await promiseIfRemote(
+        interceptor
+          .message()
+          .with({ type: 'create', body: { text: 'probe' } })
+          .respond({ type: 'delete', id: 'probe' }),
+        interceptor,
+      );
+
       await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-        const unmatchedMessageListener = vi.fn();
-        client.addEventListener('message', unmatchedMessageListener);
+        const probeResponse = waitForWebSocketClientMessage(client);
 
         client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
-        await waitForNot(() => {
-          expect(unmatchedMessageListener).toHaveBeenCalled();
-        });
+        // Messages on a socket are delivered in order, so the probe response arriving first means that the unmatched
+        // message got no response.
+        client.send(JSON.stringify({ type: 'create', body: { text: 'probe' } }));
+
+        await expect(probeResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
 
         await promiseIfRemote(handler.clear().respond({ type: 'delete', id: '2' }).times(1), interceptor);
 

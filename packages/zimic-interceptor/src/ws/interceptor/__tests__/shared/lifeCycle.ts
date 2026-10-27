@@ -1,4 +1,4 @@
-import { waitFor, waitForNot } from '@zimic/utils/time';
+import { waitFor } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it, vi } from 'vitest';
 
@@ -56,15 +56,21 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
         await interceptor.start();
         expect(interceptor.isRunning).toBe(true);
 
+        await promiseIfRemote(
+          interceptor.message().with({ type: 'client', index: 0 }).respond({ type: 'server', index: 0 }),
+          interceptor,
+        );
+
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          const messageListener = vi.fn();
-          client.addEventListener('message', messageListener);
+          const probeResponse = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'client', index: 2 }));
 
-          await waitForNot(() => {
-            expect(messageListener).toHaveBeenCalled();
-          });
+          // Messages on a socket are delivered in order, so the probe response arriving first means that the handler
+          // declared before the restart sent no response.
+          client.send(JSON.stringify({ type: 'client', index: 0 }));
+
+          await expect(probeResponse).resolves.toBe(JSON.stringify({ type: 'server', index: 0 }));
         });
 
         expect(handler.messages).toHaveLength(0);
@@ -103,15 +109,21 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
             expect(interceptor.isRunning).toBe(true);
             expect(otherInterceptor.isRunning).toBe(true);
 
+            await promiseIfRemote(
+              interceptor.message().with({ type: 'client', index: 0 }).respond({ type: 'server', index: 0 }),
+              interceptor,
+            );
+
             await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-              const messageListener = vi.fn();
-              client.addEventListener('message', messageListener);
+              const probeResponse = waitForWebSocketClientMessage(client);
 
               client.send(JSON.stringify({ type: 'client', index: 2 }));
 
-              await waitForNot(() => {
-                expect(messageListener).toHaveBeenCalled();
-              });
+              // Messages on a socket are delivered in order, so the probe response arriving first means that the
+              // handler declared before the restart sent no response.
+              client.send(JSON.stringify({ type: 'client', index: 0 }));
+
+              await expect(probeResponse).resolves.toBe(JSON.stringify({ type: 'server', index: 0 }));
             });
 
             expect(handler.messages).toHaveLength(0);
@@ -179,9 +191,8 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
 
         client.send(JSON.stringify({ type: 'client', index: 2 }));
 
-        await waitForNot(() => {
-          expect(messageListener).toHaveBeenCalled();
-        });
+        // A closed socket receives no further messages, so none can arrive after the close event.
+        expect(messageListener).not.toHaveBeenCalled();
 
         expect(interceptor.clients).toHaveLength(0);
       });
