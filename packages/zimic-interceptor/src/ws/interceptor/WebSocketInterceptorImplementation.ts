@@ -1,4 +1,3 @@
-import { PossiblePromise } from '@zimic/utils/types';
 import { excludeNonPathParams, validateURLProtocol } from '@zimic/utils/url';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
@@ -205,28 +204,27 @@ class WebSocketInterceptorImplementation<
     return this.numberOfPendingStops > 0;
   }
 
-  async stop(options: { beforeStop?: () => PossiblePromise<void> }) {
+  async stop() {
     this.startPromise = undefined;
     this.numberOfPendingStops++;
 
     await this.enqueueLifecycleOperation(async () => {
       try {
-        await this.stopOnce(options);
+        await this.stopOnce();
       } finally {
         this.numberOfPendingStops--;
       }
     });
   }
 
-  private async stopOnce(options: { beforeStop?: () => PossiblePromise<void> }) {
+  private async stopOnce() {
     if (!this.isRunning) {
       return;
     }
 
-    await options.beforeStop?.();
-
-    // Clearing keeps the interceptor registered to accept new connections, so stopping has to remove the registration.
-    await this.workerOrThrow.clearHandlers({ interceptor: this });
+    // Clearing and unregistering in one worker call sends a single reset to a remote server, so no connection opened
+    // during the stop reaches an interceptor that is cleared but still registered.
+    await this.clearAndOptionallyUnregister({ preserveInterceptorRegistration: false });
 
     await this.stopWorker();
   }
@@ -391,18 +389,21 @@ class WebSocketInterceptorImplementation<
   }
 
   clear() {
+    return this.clearAndOptionallyUnregister({ preserveInterceptorRegistration: true });
+  }
+
+  private clearAndOptionallyUnregister(options: { preserveInterceptorRegistration: boolean }) {
     const worker = this.workerOrThrow;
 
     this.messageSavingGeneration = {};
 
-    const clearResult = worker.clearHandlers({ interceptor: this, preserveInterceptorRegistration: true });
+    const clearResult = worker.clearHandlers({ interceptor: this, ...options });
 
     for (const handler of this.handlers) {
       handler.clear();
     }
 
     this.handlers.length = 0;
-    this._clients.length = 0;
 
     return Promise.resolve(clearResult);
   }

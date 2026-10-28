@@ -107,7 +107,10 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       this.webSocketClient.offChannel('event', 'interceptors/ws/clients/close', this.closeClient);
       this.webSocketClient.offChannel('event', 'interceptors/ws/messages/handle', this.handleMessage);
 
-      await this.clearHandlers();
+      // Stopped interceptors already reset their registrations, so a reset is only needed for ones still registered.
+      if (this.registeredInterceptors.size > 0) {
+        await this.clearHandlers();
+      }
 
       await this.webSocketClient.stop();
 
@@ -286,7 +289,9 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     const clearedInterceptors: RegisteredWebSocketInterceptor[] = [];
 
     for (const registeredInterceptor of selectedInterceptors) {
-      registeredInterceptor.interceptor.clients.length = 0;
+      for (const client of registeredInterceptor.clients.values()) {
+        registeredInterceptor.interceptor.removeClient(client);
+      }
 
       if (options.preserveInterceptorRegistration) {
         registeredInterceptor.clients.clear();

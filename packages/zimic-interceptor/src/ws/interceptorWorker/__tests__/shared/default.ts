@@ -584,6 +584,36 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       });
     });
 
+    // Remote-only: local workers have no interceptor server to reset.
+    it('should send one reset when the last remote interceptor stops', async () => {
+      await usingWebSocketInterceptorWorker(workerOptions, { start: false }, async (rawWorker) => {
+        const worker = rawWorker as RemoteWebSocketInterceptorWorker;
+
+        const interceptor = new WebSocketInterceptorImplementation<ChatMessage, typeof RemoteWebSocketMessageHandler>({
+          baseURL: new URL(baseURL),
+          Handler: RemoteWebSocketMessageHandler,
+          createWorker: () => worker,
+          deleteWorker: vi.fn(),
+        });
+
+        await interceptor.start();
+
+        // A redundant reset has no outcome a user can observe, so the reset requests are counted on the RPC client.
+        const requestSpy = vi.spyOn(worker.webSocketClient, 'request');
+
+        try {
+          await interceptor.stop();
+
+          expect(worker.isRunning).toBe(false);
+          expect(requestSpy.mock.calls).toEqual([
+            ['interceptors/ws/workers/reset', { interceptors: [], clearedInterceptorIds: [] }],
+          ]);
+        } finally {
+          requestSpy.mockRestore();
+        }
+      });
+    });
+
     it('should handle messages sent immediately after a remote client opens', async () => {
       await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
         const handledMessages: ChatMessage[] = [];
@@ -664,7 +694,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
             await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', text: 'second' }));
           });
         } finally {
-          await secondInterceptor.stop({});
+          await secondInterceptor.stop();
         }
       });
     });
@@ -728,8 +758,8 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           });
         } finally {
           connectionReplyPromise.resolve({ acceptedInterceptorIds: [] });
-          await secondInterceptor.stop({});
-          await firstInterceptor.stop({});
+          await secondInterceptor.stop();
+          await firstInterceptor.stop();
         }
       });
     });
@@ -791,8 +821,8 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
             expect(secondOnUnhandledMessage).not.toHaveBeenCalled();
           });
         } finally {
-          await secondInterceptor.stop({});
-          await firstInterceptor.stop({});
+          await secondInterceptor.stop();
+          await firstInterceptor.stop();
         }
       });
     });
