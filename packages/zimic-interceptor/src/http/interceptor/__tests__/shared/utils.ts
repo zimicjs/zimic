@@ -1,4 +1,4 @@
-import { HttpHeaders, HttpSearchParams, HttpRequest, HttpRequestBodySchema } from '@zimic/http';
+import { HttpHeaders, HttpSearchParams, HttpRequest, HttpRequestBodySchema, HttpSchema } from '@zimic/http';
 import { PossiblePromise, Replace } from '@zimic/utils/types';
 import { expect, expectTypeOf } from 'vitest';
 
@@ -6,6 +6,7 @@ import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorke
 import { formatValueToLog } from '@/utils/logging';
 
 import { HttpInterceptorOptions, HttpInterceptorPlatform, HttpInterceptorType } from '../../types/options';
+import { LocalHttpInterceptor, RemoteHttpInterceptor } from '../../types/public';
 import { UnhandledHttpInterceptorRequest, UnhandledHttpInterceptorRequestMethodSchema } from '../../types/requests';
 
 export interface SharedHttpInterceptorTestsOptions {
@@ -23,6 +24,12 @@ export interface RuntimeSharedHttpInterceptorTestsOptions {
   getInterceptorOptions: () => HttpInterceptorOptions;
   startServer?: () => Promise<void>;
   stopServer?: () => Promise<void>;
+}
+
+export function declareHttpInterceptorTypes<Schema extends HttpSchema>(
+  _callback: (interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>) => Promise<void>,
+) {
+  // Type tests are compile-only, so the callback is type-checked and never called.
 }
 
 export async function verifyUnhandledRequestMessage(

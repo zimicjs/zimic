@@ -893,6 +893,10 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
       });
     });
 
+    // No HTTP counterpart for "should not consider binary messages unmatched due to restrictions in times checks":
+    // WebSocket messages can be whole Blob or ArrayBuffer payloads that times checks report as message data, while an
+    // HTTP binary body is one part of a request reported with its method, URL, and headers.
+
     it('should consider requests unmatched due to missing response declarations in times checks', async () => {
       await usingHttpInterceptor<{
         '/users': { GET: MethodSchema };

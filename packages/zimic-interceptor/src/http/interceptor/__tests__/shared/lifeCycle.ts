@@ -173,6 +173,18 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
     });
   }
 
+  // No HTTP counterpart for "should not handle messages from existing clients after stopped": WebSocket connections are
+  // long-lived, so a client can stay open after its interceptor stops.
+
+  // No HTTP counterpart for "should not accept connections opened while stopping": HTTP interceptors have no connections
+  // or connection listeners.
+
+  // No HTTP counterpart for "should keep connections shared with another interceptor open after stopped": WebSocket
+  // connections are long-lived, so one can outlive the stop of an interceptor holding it.
+
+  // No HTTP counterpart for "should close connections shared with other interceptors after all of them are stopped":
+  // WebSocket connections are long-lived, so one can outlive the stop of an interceptor holding it.
+
   it('should throw an error when trying to create a request handler if not running', async () => {
     const interceptor = createInternalHttpInterceptor(interceptorOptions);
     expect(interceptor.isRunning).toBe(false);

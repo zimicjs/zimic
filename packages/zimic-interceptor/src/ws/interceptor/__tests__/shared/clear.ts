@@ -251,8 +251,6 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     );
   });
 
-  // No HTTP counterpart: clearing a WebSocket interceptor detaches it from its connections, so it no longer decides the
-  // strategy of their messages, while a cleared HTTP interceptor still decides it for requests.
   it('should apply the unhandled message strategy of an older interceptor if the last started one is cleared while messages are being handled', async () => {
     const restrictionStartedPromise = createPromiseWithResolvers<void>();
     const restrictionReleasedPromise = createPromiseWithResolvers<void>();
@@ -343,7 +341,6 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     );
   });
 
-  // No HTTP counterpart: WebSocket connections are long-lived, so one can outlive the clear of an interceptor holding it.
   it('should clear only clients owned by the selected interceptor with the same base URL', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
       await usingWebSocketInterceptor<MessageSchema>(
@@ -384,7 +381,6 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     });
   });
 
-  // No HTTP counterpart: WebSocket connections are long-lived, so one can outlive the clear of an interceptor holding it.
   it('should keep connections shared with another interceptor open after cleared', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
       await promiseIfRemote(firstInterceptor.message().respond({ type: 'server', index: 1 }), firstInterceptor);
@@ -418,7 +414,6 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     });
   });
 
-  // No HTTP counterpart: WebSocket connections are long-lived, so one can outlive the clear of an interceptor holding it.
   it('should apply the unhandled message strategy of an older interceptor to connections shared with it after the last started one is cleared', async () => {
     const firstOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
     const secondOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>();
@@ -453,7 +448,6 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     );
   });
 
-  // No HTTP counterpart: WebSocket connections are long-lived, so one can outlive the clear of an interceptor holding it.
   it('should close connections shared with other interceptors after all of them are cleared', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (secondInterceptor) => {
@@ -479,8 +473,6 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     });
   });
 
-  // No HTTP counterpart: WebSocket connection listeners run while a connection opens, so they can clear an interceptor
-  // before it holds the connection.
   it('should keep connections open for the remaining interceptors if another one is cleared while they open', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
       await promiseIfRemote(firstInterceptor.message().respond({ type: 'server', index: 1 }), firstInterceptor);
@@ -518,8 +510,6 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     });
   });
 
-  // No HTTP counterpart: WebSocket connection listeners run while a connection opens, so they can clear an interceptor
-  // before it holds the connection.
   it('should close connections if their only interceptor is cleared while they open', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
       let clearResult: PossiblePromise<void> | undefined;
@@ -779,8 +769,6 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     );
   });
 
-  // No HTTP counterpart: clearing a WebSocket interceptor closes its connections, so a message being handled has no
-  // connection left, while an HTTP request being handled still needs a response.
   it('should not apply the unhandled message strategy after cleared while a message is being handled', async () => {
     const restrictionStartedPromise = createPromiseWithResolvers<void>();
     const restrictionReleasedPromise = createPromiseWithResolvers<void>();

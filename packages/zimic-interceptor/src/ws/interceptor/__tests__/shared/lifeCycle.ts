@@ -213,7 +213,6 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     });
   }
 
-  // No HTTP counterpart: WebSocket connections are long-lived, so a client can stay open after its interceptor stops.
   it('should not handle messages from existing clients after stopped', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
       await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
@@ -244,7 +243,6 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     });
   });
 
-  // No HTTP counterpart: HTTP interceptors have no connections or connection listeners.
   it('should not accept connections opened while stopping', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (stoppingInterceptor) => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (otherInterceptor) => {
@@ -292,7 +290,6 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     });
   });
 
-  // No HTTP counterpart: WebSocket connections are long-lived, so one can outlive the stop of an interceptor holding it.
   it('should keep connections shared with another interceptor open after stopped', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
       await promiseIfRemote(firstInterceptor.message().respond({ type: 'server', index: 1 }), firstInterceptor);
@@ -326,7 +323,6 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     });
   });
 
-  // No HTTP counterpart: WebSocket connections are long-lived, so one can outlive the stop of an interceptor holding it.
   it('should close connections shared with other interceptors after all of them are stopped', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (secondInterceptor) => {

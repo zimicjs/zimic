@@ -116,6 +116,15 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
     });
   });
 
+  it('should not expose socket members on the interceptor server', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, (interceptor) => {
+      expect(interceptor.server).not.toHaveProperty('open');
+      expect(interceptor.server).not.toHaveProperty('close');
+      expect(interceptor.server).not.toHaveProperty('readyState');
+      expect(interceptor.server).not.toHaveProperty('addEventListener');
+    });
+  });
+
   it('should not throw an error if started multiple times', async () => {
     await usingWebSocketInterceptor<{}>(interceptorOptions, { start: false }, async (interceptor) => {
       expect(interceptor.isRunning).toBe(false);
@@ -543,7 +552,6 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
         });
       });
 
-      // No HTTP counterpart: the WebSocket constructor assigns its options through the guarded auth setter.
       it('should guard constructor-provided authentication options while running', async () => {
         const auth: RemoteWebSocketInterceptorOptions['auth'] = { token: 'token' };
 

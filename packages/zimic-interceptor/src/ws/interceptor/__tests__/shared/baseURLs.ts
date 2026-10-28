@@ -332,8 +332,6 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     },
   );
 
-  // No HTTP counterpart: WebSocket handlers have no per-handler path, so base URL paths are the only way to route
-  // messages by path.
   it('should route messages using path discriminators', async () => {
     const firstBaseURL = `${defaultBaseURL}/first`;
     const secondBaseURL = `${defaultBaseURL}/second`;
@@ -565,6 +563,54 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
             });
 
             expect(handler.messages).toHaveLength(0);
+            expect(olderHandler.messages).toHaveLength(1);
+          },
+        );
+      },
+    );
+  });
+
+  it('should preserve handlers of other interceptors when an interceptor with an overlapping base URL is stopped', async () => {
+    const nestedBaseURL = joinURL(defaultBaseURL, 'nested');
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (olderInterceptor) => {
+        const olderHandler = await promiseIfRemote(
+          olderInterceptor.message().respond({ type: 'server', index: 1 }),
+          olderInterceptor,
+        );
+
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, baseURL: nestedBaseURL, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const handler = await promiseIfRemote(
+              interceptor.message().respond({ type: 'server', index: 2 }),
+              interceptor,
+            );
+
+            await usingWebSocketClient<MessageSchema>(nestedBaseURL, async (client) => {
+              const messagePromise = waitForWebSocketClientMessage(client);
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+              await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
+            });
+
+            expect(handler.messages).toHaveLength(1);
+            expect(olderHandler.messages).toHaveLength(0);
+
+            await interceptor.stop();
+
+            expect(interceptor.isRunning).toBe(false);
+            expect(olderInterceptor.isRunning).toBe(true);
+
+            await usingWebSocketClient<MessageSchema>(nestedBaseURL, async (client) => {
+              const messagePromise = waitForWebSocketClientMessage(client);
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+              await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+            });
+
             expect(olderHandler.messages).toHaveLength(1);
           },
         );
@@ -1428,7 +1474,6 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     },
   );
 
-  // WebSocket connection URLs commonly carry query parameters, which must not become part of the base URL.
   it('should exclude non-path base URL parameters', () => {
     const baseURLWithNonPathParameters = `${defaultBaseURL}?search=value#hash`;
 

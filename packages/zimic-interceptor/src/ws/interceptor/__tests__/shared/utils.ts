@@ -1,3 +1,4 @@
+import { WebSocketSchema } from '@zimic/ws';
 import { expect } from 'vitest';
 
 import { formatValueToLog } from '@/utils/logging';
@@ -7,6 +8,7 @@ import {
   WebSocketInterceptorPlatform,
   WebSocketInterceptorType,
 } from '../../types/options';
+import { LocalWebSocketInterceptor, RemoteWebSocketInterceptor } from '../../types/public';
 
 export interface RuntimeSharedWebSocketInterceptorTestsOptions {
   platform: WebSocketInterceptorPlatform;
@@ -16,6 +18,12 @@ export interface RuntimeSharedWebSocketInterceptorTestsOptions {
   getInterceptorOptions: () => WebSocketInterceptorOptions;
   startServer?: () => Promise<void>;
   stopServer?: () => Promise<void>;
+}
+
+export function declareWebSocketInterceptorTypes<Schema extends WebSocketSchema>(
+  _callback: (interceptor: LocalWebSocketInterceptor<Schema> | RemoteWebSocketInterceptor<Schema>) => void,
+) {
+  // Type tests are compile-only, so the callback is type-checked and never called.
 }
 
 export async function verifyUnhandledMessageWarning(
