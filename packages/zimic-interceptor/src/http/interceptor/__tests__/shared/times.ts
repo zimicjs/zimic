@@ -1017,6 +1017,22 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
       });
     });
 
+    it('should consider requests unmatched by cleared handlers instead of older handlers in times checks', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }).times(0), interceptor);
+        const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }).times(1), interceptor);
+
+        await promiseIfRemote(handler.clear(), interceptor);
+
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        await expectFetchError(responsePromise);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      });
+    });
+
     it('should not consider requests unmatched due to unmocked path in times checks', async () => {
       await usingHttpInterceptor<{
         '/users': { GET: MethodSchema };

@@ -210,15 +210,14 @@ abstract class WebSocketInterceptorWorker {
   }
 
   // Handlers that failed only on restrictions record their diffs. The newest handler that failed for any other cause,
-  // such as exceeding its `times` limit, is still marked as matched to trigger a times check error. Handlers whose holder
-  // let the connection go after their match record nothing. Cleared handlers record nothing either and let older handlers
-  // be marked, as if they did not exist.
+  // such as exceeding its `times` limit or being cleared, is still marked as matched to trigger a times check error, as
+  // in HTTP. Handlers whose holder let the connection go after their match record nothing.
   private markMessageAsUnhandled(
     message: ReceivedWebSocketMessageData<WebSocketSchema>,
     failedMessageMatches: FailedWebSocketMessageMatch[],
   ) {
     for (const { handler, holder, messageMatch } of failedMessageMatches) {
-      if (!this.isHoldingConnection(holder) || messageMatch.cause === 'clearedHandler') {
+      if (!this.isHoldingConnection(holder)) {
         continue;
       }
 

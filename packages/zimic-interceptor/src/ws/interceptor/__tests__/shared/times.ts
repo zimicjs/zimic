@@ -15,7 +15,7 @@ import {
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
 
-import { WebSocketInterceptorOptions } from '../../types/options';
+import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'create'; body: { text: string } } | { type: 'delete'; id: string }>;
@@ -740,6 +740,30 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           expectedNumberOfMessages: 0,
         });
       });
+    });
+
+    it('should consider messages unmatched by cleared handlers instead of older handlers in times checks', async () => {
+      const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, onUnhandledMessage },
+        async (interceptor) => {
+          await promiseIfRemote(interceptor.message().respond({ type: 'delete', id: '1' }).times(0), interceptor);
+          const handler = await promiseIfRemote(interceptor.message().times(1), interceptor);
+
+          await promiseIfRemote(handler.clear(), interceptor);
+
+          await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+            client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+            await waitFor(() => {
+              expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+            });
+          });
+
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        },
+      );
     });
 
     // No WebSocket counterpart for "should not consider requests unmatched due to unmocked path in times checks":
