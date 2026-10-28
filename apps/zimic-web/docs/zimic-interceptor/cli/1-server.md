@@ -46,7 +46,8 @@ Options:
                                 were found for the base URL of a request. If an
                                 interceptor was matched, the logging behavior
                                 for that base URL is configured in the
-                                interceptor itself.                    [boolean]
+                                interceptor itself, unless the interceptor
+                                disconnects or fails before responding.[boolean]
   -t, --tokens-dir              The directory where the authorized interceptor
                                 authentication tokens are saved. If provided,
                                 only remote interceptors bearing a valid token
