@@ -83,6 +83,8 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
   private applyEffect?: WebSocketMessageHandlerMessageCallback<Schema, RestrictedSchema>;
 
+  private clearGeneration = {};
+
   constructor(
     private interceptor: WebSocketInterceptorImplementation<Schema>,
     private handler: InternalWebSocketMessageHandler<Schema, RestrictedSchema>,
@@ -174,6 +176,8 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
   }
 
   clear() {
+    this.clearGeneration = {};
+
     this.restrictions.length = 0;
     this.restrictedSender = undefined;
 
@@ -338,10 +342,13 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     }
   }
 
+  // Called in the same synchronous step that reserves the message, so the captured generation is the one the message
+  // was counted in. Returns whether the message was handled.
   async applyDeclarations(
     message: ReceivedWebSocketMessageData<Schema>,
     context: WebSocketMessageHandlerApplyContext<Schema>,
   ) {
+    const clearGeneration = this.clearGeneration;
     const restrictedMessage = this.assumeMessageMatchesRestrictions(message);
 
     if (this.createResponseDelay) {
@@ -352,6 +359,11 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
       }
     }
 
+    // A message whose handler was cleared during its delay is not handled, even if the handler was redeclared.
+    if (clearGeneration !== this.clearGeneration) {
+      return false;
+    }
+
     await this.applyEffect?.(restrictedMessage, context);
 
     const response = await this.createResponseDeclaration?.(restrictedMessage, context);
@@ -359,6 +371,8 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     if (response !== undefined) {
       context.sender.send(serializeWebSocketMessageDataForSocket(response));
     }
+
+    return true;
   }
 
   saveInterceptedMessage(

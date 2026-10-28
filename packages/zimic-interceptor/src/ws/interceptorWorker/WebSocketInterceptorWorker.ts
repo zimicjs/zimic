@@ -172,7 +172,16 @@ abstract class WebSocketInterceptorWorker {
           continue;
         }
 
-        await holder.interceptor.handleMatchedMessage(handler.implementation, reservation.message, context);
+        const wasHandled = await holder.interceptor.handleMatchedMessage(
+          handler.implementation,
+          reservation.message,
+          context,
+        );
+
+        if (!wasHandled) {
+          await this.logUnhandledMessageIfNecessary(data, holders);
+        }
+
         return;
       } catch (error) {
         console.error(error);

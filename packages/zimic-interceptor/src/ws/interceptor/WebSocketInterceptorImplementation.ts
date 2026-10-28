@@ -77,7 +77,7 @@ class WebSocketInterceptorImplementation<
   private numberOfPendingStarts = 0;
   private numberOfPendingStops = 0;
   private lifecycleQueue: Promise<void> = Promise.resolve();
-  private messageSavingGeneration = 0;
+  private messageSavingGeneration = {};
 
   constructor(options: {
     baseURL: URL;
@@ -318,11 +318,17 @@ class WebSocketInterceptorImplementation<
   ) {
     const messageSavingGeneration = this.messageSavingGeneration;
 
-    await handler.applyDeclarations(message, context);
+    const wasHandled = await handler.applyDeclarations(message, context);
+
+    if (!wasHandled) {
+      return false;
+    }
 
     if (this.messageSaving.enabled && messageSavingGeneration === this.messageSavingGeneration) {
       handler.saveInterceptedMessage(message, context);
     }
+
+    return true;
   }
 
   // Unlike HTTP, unhandled messages have no bypass or reject action. WebSocket is not request-response, so a message
@@ -387,7 +393,7 @@ class WebSocketInterceptorImplementation<
   clear() {
     const worker = this.workerOrThrow;
 
-    this.messageSavingGeneration++;
+    this.messageSavingGeneration = {};
 
     const clearResult = worker.clearHandlers({ interceptor: this, preserveInterceptorRegistration: true });
 
