@@ -1097,6 +1097,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
     });
   });
 
+  // Remote-only: local `checkTimes()` throws synchronously, so it has no returned promise to await later.
   if (type === 'remote') {
     it('should check times when called, before the returned promise is awaited', async () => {
       await usingHttpInterceptor<{

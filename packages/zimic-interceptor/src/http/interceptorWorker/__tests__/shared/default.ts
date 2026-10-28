@@ -224,12 +224,15 @@ export function declareDefaultHttpInterceptorWorkerTests(options: DefaultHttpInt
     });
   });
 
+  // Remote-only: local workers do not register with an interceptor server.
   if (type === 'remote') {
     it('should close the web socket client after failing to register with the server while starting', async () => {
-      await usingHttpInterceptorWorker(workerOptions, { start: false }, async (rawWorker) => {
-        expect(rawWorker).toBeInstanceOf(RemoteHttpInterceptorWorker);
+      const remoteWorkerOptions: RemoteHttpInterceptorWorkerOptions = {
+        type,
+        serverURL: new URL(new URL(baseURL).origin),
+      };
 
-        const worker = rawWorker as RemoteHttpInterceptorWorker;
+      await usingHttpInterceptorWorker(remoteWorkerOptions, { start: false }, async (worker) => {
         const error = new Error('Could not register with the server.');
 
         // The server accepts every valid registration, so no public path makes it fail. The first request after
@@ -248,6 +251,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: DefaultHttpInt
     });
   }
 
+  // Local-only: these cases cover the shared MSW worker, which remote workers do not use.
   if (type === 'local') {
     it('should keep the shared MSW worker running after one of multiple local workers stops', async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {

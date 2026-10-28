@@ -1070,8 +1070,6 @@ describe('Interceptor server', () => {
       const baseURL = `ws://${server.hostname}:${server.port}/chat`;
 
       await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
-        await interceptor.message();
-
         const client = new WebSocketClient<ChatMessage>(baseURL);
         const otherWorkerClient = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
           url: `ws://${server!.hostname}:${server!.port}`,
@@ -1177,8 +1175,6 @@ describe('Interceptor server', () => {
       const baseURL = `ws://${server.hostname}:${server.port}/chat`;
 
       await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
-        await interceptor.message();
-
         const client = new WebSocketClient<ChatMessage>(baseURL);
 
         try {
@@ -1209,8 +1205,6 @@ describe('Interceptor server', () => {
       const baseURL = `ws://${server.hostname}:${server.port}/chat`;
 
       await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
-        await interceptor.message();
-
         const client = new WebSocketClient<ChatMessage>(baseURL, ['v1%beta']);
 
         try {
@@ -1841,8 +1835,6 @@ describe('Interceptor server', () => {
         const baseURL = `ws://${server.hostname}:${server.port}/chat`;
 
         await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
-          await interceptor.message();
-
           const client = new WebSocketClient<ChatMessage>(baseURL);
           const httpWorker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
             url: `ws://${server!.hostname}:${server!.port}`,

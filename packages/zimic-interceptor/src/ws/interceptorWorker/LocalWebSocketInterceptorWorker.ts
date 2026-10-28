@@ -106,14 +106,6 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     super();
   }
 
-  get class() {
-    return LocalWebSocketInterceptorWorker;
-  }
-
-  static get isMSWWorkerRunning() {
-    return LocalMSWWorkerStore.isMSWWorkerRunning;
-  }
-
   get mswWorkerOrThrow() {
     /* istanbul ignore if -- @preserve
      * The shared MSW worker is process-static; after any local worker starts, this guard is order-dependent in tests. */
