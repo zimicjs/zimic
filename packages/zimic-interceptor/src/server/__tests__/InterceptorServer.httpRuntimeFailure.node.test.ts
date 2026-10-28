@@ -1,6 +1,7 @@
+import { HttpSchema } from '@zimic/http';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { expectFetchError } from '@zimic/utils/fetch';
-import { waitFor } from '@zimic/utils/time';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
@@ -9,83 +10,73 @@ import {
 } from '@/interceptor/constants';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 import { usingIgnoredConsole } from '@tests/utils/console';
+import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import type { InterceptorServerWebSocketSchema } from '../types/schema';
 
-const httpRuntimeMock = vi.hoisted(() => {
-  function doNothing() {
-    return undefined;
-  }
+interface HttpRuntimeMock {
+  importStarted: ReturnType<typeof createPromiseWithResolvers<void>>;
+  importRelease: ReturnType<typeof createPromiseWithResolvers<void>>;
+  shouldFailConstruction: boolean;
+}
 
-  let releaseImport: () => void = doNothing;
-  const importGate = new Promise<void>((resolve) => {
-    releaseImport = resolve;
-  });
-
-  return {
-    importGate,
-    releaseImport,
-    importStarted: false,
-    rejectConstruction: false,
-    instances: [] as { stopped: boolean }[],
-  };
-});
-
-vi.mock('../http/HttpInterceptorServerRuntime', async () => {
-  httpRuntimeMock.importStarted = true;
-  await httpRuntimeMock.importGate;
-
-  return {
-    default: class HttpInterceptorServerRuntimeMock {
-      stopped = false;
-
-      constructor() {
-        if (httpRuntimeMock.rejectConstruction) {
-          throw new Error('HTTP runtime construction failed.');
-        }
-
-        httpRuntimeMock.instances.push(this);
-      }
-
-      handleRequest(_request: unknown, response: { statusCode: number; end: () => void }) {
-        response.statusCode = 204;
-        response.end();
-      }
-
-      removeWorkerBySocket() {
-        return undefined;
-      }
-
-      stop() {
-        this.stopped = true;
-      }
-    },
-  };
-});
+let httpRuntimeMock: HttpRuntimeMock;
 
 // The server destroys the connection of a worker whose runtime load became stale, so no close frame is exchanged.
 const ABNORMAL_CLOSE_CODE = 1006;
 
+type Schema = HttpSchema<{
+  '/users': { GET: { response: { 204: {} } } };
+}>;
+
 describe('Interceptor server > HTTP runtime failures', () => {
-  afterEach(() => {
-    httpRuntimeMock.rejectConstruction = false;
-    httpRuntimeMock.instances.length = 0;
+  beforeEach(() => {
+    const mock: HttpRuntimeMock = {
+      importStarted: createPromiseWithResolvers<void>(),
+      importRelease: createPromiseWithResolvers<void>(),
+      shouldFailConstruction: false,
+    };
+    httpRuntimeMock = mock;
+
+    // Each test needs a fresh server module and runtime mock, so the cached runtime import runs again behind a new
+    // gate. `vi.mock` would keep the first evaluated factory result across `vi.resetModules()`.
+    vi.resetModules();
+
+    // No public path delays or fails the dynamic import of the HTTP runtime, so the import is held behind a gate and
+    // the real runtime is wrapped by a subclass whose construction fails only while requested.
+    vi.doMock('../http/HttpInterceptorServerRuntime', async (importOriginal) => {
+      const { default: HttpInterceptorServerRuntime } =
+        await importOriginal<typeof import('../http/HttpInterceptorServerRuntime')>();
+
+      mock.importStarted.resolve();
+      await mock.importRelease;
+
+      class FailingHttpInterceptorServerRuntime extends HttpInterceptorServerRuntime {
+        constructor(...parameters: ConstructorParameters<typeof HttpInterceptorServerRuntime>) {
+          if (mock.shouldFailConstruction) {
+            throw new Error('HTTP runtime construction failed.');
+          }
+
+          super(...parameters);
+        }
+      }
+
+      return { default: FailingHttpInterceptorServerRuntime };
+    });
   });
 
   it('should discard an HTTP runtime load that was started before the server was stopped', async () => {
     const { default: InterceptorServer } = await import('../InterceptorServer');
 
     const server = new InterceptorServer({ logUnhandledRequests: false });
-    const workers: WebSocketClient<InterceptorServerWebSocketSchema>[] = [];
+    let staleWorker: WebSocketClient<InterceptorServerWebSocketSchema> | undefined;
 
     await usingIgnoredConsole(['error'], async (console) => {
       try {
         await server.start();
 
-        const staleWorker = new WebSocketClient<InterceptorServerWebSocketSchema>({
-          url: `ws://localhost:${server.port}`,
-        });
-        workers.push(staleWorker);
+        const baseURL = `http://localhost:${server.port}`;
+        staleWorker = new WebSocketClient<InterceptorServerWebSocketSchema>({ url: `ws://localhost:${server.port}` });
 
         const staleWorkerStartRejection = expect(
           staleWorker.start({
@@ -97,66 +88,49 @@ describe('Interceptor server > HTTP runtime failures', () => {
           }),
         ).rejects.toHaveProperty('code', ABNORMAL_CLOSE_CODE);
 
-        await waitFor(() => {
-          expect(httpRuntimeMock.importStarted).toBe(true);
-        });
+        await httpRuntimeMock.importStarted;
 
         const stopPromise = server.stop();
-        httpRuntimeMock.releaseImport();
+        httpRuntimeMock.importRelease.resolve();
         await stopPromise;
 
         await staleWorkerStartRejection;
-        expect(httpRuntimeMock.instances).toHaveLength(0);
 
         await server.start();
 
-        await expectFetchError(fetch(`http://localhost:${server.port}/users`));
+        await expectFetchError(fetch(`${baseURL}/users`));
 
-        const activeWorker = new WebSocketClient<InterceptorServerWebSocketSchema>({
-          url: `ws://localhost:${server.port}`,
+        await usingHttpInterceptor<Schema>({ type: 'remote', baseURL }, async (interceptor) => {
+          await interceptor.get('/users').respond({ status: 204 });
+
+          const response = await fetch(`${baseURL}/users`);
+          expect(response.status).toBe(204);
         });
-        workers.push(activeWorker);
-
-        await activeWorker.start({
-          parameters: {
-            [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
-            [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
-          },
-          waitForAuthentication: true,
-        });
-
-        const response = await fetch(`http://localhost:${server.port}/users`);
-        expect(response.status).toBe(204);
       } finally {
-        await Promise.all(workers.map((worker) => worker.stop()));
+        await staleWorker?.stop();
         await server.stop();
       }
 
       expect(console.error).not.toHaveBeenCalled();
     });
-
-    expect(httpRuntimeMock.instances).toHaveLength(1);
-    expect(httpRuntimeMock.instances[0].stopped).toBe(true);
   });
 
   it('should reject HTTP workers when the HTTP runtime cannot be constructed and accept them once it can', async () => {
-    httpRuntimeMock.releaseImport();
+    httpRuntimeMock.importRelease.resolve();
 
     const { default: InterceptorServer } = await import('../InterceptorServer');
 
     const server = new InterceptorServer({ logUnhandledRequests: false });
-    const workers: WebSocketClient<InterceptorServerWebSocketSchema>[] = [];
+    let failingWorker: WebSocketClient<InterceptorServerWebSocketSchema> | undefined;
 
     await usingIgnoredConsole(['error'], async (console) => {
       try {
         await server.start();
 
-        httpRuntimeMock.rejectConstruction = true;
+        const baseURL = `http://localhost:${server.port}`;
+        failingWorker = new WebSocketClient<InterceptorServerWebSocketSchema>({ url: `ws://localhost:${server.port}` });
 
-        const failingWorker = new WebSocketClient<InterceptorServerWebSocketSchema>({
-          url: `ws://localhost:${server.port}`,
-        });
-        workers.push(failingWorker);
+        httpRuntimeMock.shouldFailConstruction = true;
 
         await expect(
           failingWorker.start({
@@ -168,28 +142,21 @@ describe('Interceptor server > HTTP runtime failures', () => {
           }),
         ).rejects.toThrow('Could not load the HTTP interceptor runtime. (code 1011)');
 
-        expect(console.error).toHaveBeenCalled();
-        await expectFetchError(fetch(`http://localhost:${server.port}/users`));
+        expect(console.error).toHaveBeenCalledOnce();
+        expect(console.error).toHaveBeenCalledWith(new Error('HTTP runtime construction failed.'));
 
-        httpRuntimeMock.rejectConstruction = false;
+        await expectFetchError(fetch(`${baseURL}/users`));
 
-        const activeWorker = new WebSocketClient<InterceptorServerWebSocketSchema>({
-          url: `ws://localhost:${server.port}`,
+        httpRuntimeMock.shouldFailConstruction = false;
+
+        await usingHttpInterceptor<Schema>({ type: 'remote', baseURL }, async (interceptor) => {
+          await interceptor.get('/users').respond({ status: 204 });
+
+          const response = await fetch(`${baseURL}/users`);
+          expect(response.status).toBe(204);
         });
-        workers.push(activeWorker);
-
-        await activeWorker.start({
-          parameters: {
-            [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
-            [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
-          },
-          waitForAuthentication: true,
-        });
-
-        const response = await fetch(`http://localhost:${server.port}/users`);
-        expect(response.status).toBe(204);
       } finally {
-        await Promise.all(workers.map((worker) => worker.stop()));
+        await failingWorker?.stop();
         await server.stop();
       }
     });
