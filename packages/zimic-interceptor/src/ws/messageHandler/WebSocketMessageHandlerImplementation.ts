@@ -7,16 +7,13 @@ import { random } from '@/utils/numbers';
 
 import WebSocketTimesCheckError from '../errors/WebSocketTimesCheckError';
 import WebSocketTimesDeclarationPointer from '../errors/WebSocketTimesDeclarationPointer';
-import {
-  InterceptedWebSocketInterceptorMessage,
-  ReceivedWebSocketMessageData,
-  WebSocketInterceptorClient,
-} from '../interceptor/types/messages';
+import { ReceivedWebSocketMessageData, WebSocketInterceptorClient } from '../interceptor/types/messages';
 import {
   InternalWebSocketInterceptorClient,
   InternalWebSocketInterceptorServer,
 } from '../interceptor/WebSocketInterceptorHandle';
 import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
+import type { WebSocketInterceptorMessageHandlerIndex } from '../interceptor/WebSocketInterceptorMessageStore';
 import {
   isWebSocketBinaryMessageData,
   normalizeWebSocketBinaryMessageData,
@@ -70,7 +67,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
   private numberOfMatchedMessages = 0;
   private unmatchedMessageGroups: UnmatchedWebSocketInterceptorMessageGroup<Schema>[] = [];
-  private savedInterceptedMessages: InterceptedWebSocketInterceptorMessage<RestrictedSchema, Schema>[];
+  private savedMessageIndex: WebSocketInterceptorMessageHandlerIndex<Schema, RestrictedSchema>;
 
   private createResponseDeclaration?: WebSocketMessageHandlerMessageComputedDeclaration<Schema, RestrictedSchema>;
 
@@ -88,7 +85,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     private interceptor: WebSocketInterceptorImplementation<Schema>,
     private handler: InternalWebSocketMessageHandler<Schema, RestrictedSchema>,
   ) {
-    this.savedInterceptedMessages = this.interceptor.messageStore.createHandlerMessages<RestrictedSchema>(this);
+    this.savedMessageIndex = this.interceptor.messageStore.createHandlerIndex<RestrictedSchema>();
   }
 
   from(sender: WebSocketInterceptorClient<Schema>) {
@@ -379,18 +376,18 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     message: ReceivedWebSocketMessageData<Schema>,
     context: WebSocketMessageHandlerApplyContext<Schema>,
   ) {
-    this.interceptor.messageStore.save(this, this.assumeMessageMatchesRestrictions(message), context);
+    this.interceptor.messageStore.save(this.savedMessageIndex, this.assumeMessageMatchesRestrictions(message), context);
   }
 
   private clearInterceptedMessages() {
-    this.interceptor.messageStore.clearHandler(this);
+    this.interceptor.messageStore.clearHandler(this.savedMessageIndex);
   }
 
   get messages() {
     if (!this.interceptor.messageSaving.enabled) {
       throw new DisabledMessageSavingError();
     }
-    return this.savedInterceptedMessages;
+    return this.savedMessageIndex.messages;
   }
 }
 
