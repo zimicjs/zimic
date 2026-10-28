@@ -378,31 +378,17 @@ class HttpInterceptorImplementation<
 
     this.workerOrThrow.clearHandlers({ interceptor: this });
 
-    const clearPromises: Promise<AnyHttpRequestHandlerImplementation>[] = [];
-
     for (const method of HTTP_METHODS) {
-      for (const result of this.clearMethodHandlers(method)) {
-        clearPromises.push(Promise.resolve(result));
+      const pathHandlers = this.handlers[method];
+
+      for (const handlers of pathHandlers.values()) {
+        for (const handler of handlers) {
+          handler.clear();
+        }
       }
 
-      const pathHandlers = this.handlers[method];
       pathHandlers.clear();
     }
-
-    return Promise.all(clearPromises);
-  }
-
-  private clearMethodHandlers(method: HttpMethod) {
-    const pathHandlers = this.handlers[method];
-    const clearResults: PossiblePromise<AnyHttpRequestHandlerImplementation>[] = [];
-
-    for (const handlers of pathHandlers.values()) {
-      for (const handler of handlers) {
-        clearResults.push(handler.clear());
-      }
-    }
-
-    return clearResults;
   }
 }
 

@@ -274,8 +274,11 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
         reject(timeoutError);
       }, this.messageTimeout);
 
-      const replyListener = this.onChannel('reply', channel, (message) => {
-        if (message.requestId !== request.id) {
+      const targetSockets = new Set(sockets);
+
+      const replyListener = this.onChannel('reply', channel, (message, socket) => {
+        // Request IDs are not secret, so a reply only counts if it comes from a socket the request was sent to.
+        if (message.requestId !== request.id || !targetSockets.has(socket)) {
           return;
         }
 

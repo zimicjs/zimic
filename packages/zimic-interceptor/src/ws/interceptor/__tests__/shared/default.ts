@@ -1,5 +1,5 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
-import { waitFor, waitForNot } from '@zimic/utils/time';
+import { waitFor } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
@@ -113,6 +113,15 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
 
       await interceptor.stop();
       expect(interceptor.platform).toBe(null);
+    });
+  });
+
+  it('should not expose socket members on the interceptor server', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, (interceptor) => {
+      expect(interceptor.server).not.toHaveProperty('open');
+      expect(interceptor.server).not.toHaveProperty('close');
+      expect(interceptor.server).not.toHaveProperty('readyState');
+      expect(interceptor.server).not.toHaveProperty('addEventListener');
     });
   });
 
@@ -427,9 +436,7 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
           await waitFor(() => {
             expect(workerStartSpy).toHaveBeenCalledTimes(1);
           });
-          await waitForNot(() => {
-            expect(startResolutionListener).toHaveBeenCalled();
-          });
+          expect(startResolutionListener).not.toHaveBeenCalled();
 
           workerStopGatePromise.resolve();
           await Promise.all([stopPromise, startPromise]);
@@ -545,7 +552,6 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
         });
       });
 
-      // No HTTP counterpart: the WebSocket constructor assigns its options through the guarded auth setter.
       it('should guard constructor-provided authentication options while running', async () => {
         const auth: RemoteWebSocketInterceptorOptions['auth'] = { token: 'token' };
 

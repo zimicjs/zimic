@@ -138,6 +138,9 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
   // No HTTP counterpart for "should not intercept messages sent to a socket.io base URL without its socket.io path (%s)":
   // MSW rewrites socket.io paths only for WebSocket connections.
 
+  // No HTTP counterpart for "should route messages using path discriminators": HTTP handlers declare their own paths, so
+  // HTTP requests do not need base URL paths to be routed by path.
+
   it('should intercept requests with the last started interceptor if multiple interceptors match', async () => {
     await usingHttpInterceptor<{
       '/users': { GET: { response: { 200: {} } } };
@@ -290,6 +293,41 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
         expect(response.status).toBe(200);
 
         expect(handler.requests).toHaveLength(0);
+        expect(olderHandler.requests).toHaveLength(1);
+      });
+    });
+  });
+
+  it('should preserve handlers of other interceptors when an interceptor with an overlapping base URL is stopped', async () => {
+    const nestedBaseURL = joinURL(defaultBaseURL, 'nested');
+
+    await usingHttpInterceptor<{
+      '/nested/users': { GET: { response: { 200: {} } } };
+    }>(interceptorOptions, async (olderInterceptor) => {
+      const olderHandler = await promiseIfRemote(
+        olderInterceptor.get('/nested/users').respond({ status: 200 }),
+        olderInterceptor,
+      );
+
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 204: {} } } };
+      }>({ ...interceptorOptions, baseURL: nestedBaseURL }, async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+
+        let response = await fetch(joinURL(nestedBaseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handler.requests).toHaveLength(1);
+        expect(olderHandler.requests).toHaveLength(0);
+
+        await interceptor.stop();
+
+        expect(interceptor.isRunning).toBe(false);
+        expect(olderInterceptor.isRunning).toBe(true);
+
+        response = await fetch(joinURL(nestedBaseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(200);
+
         expect(olderHandler.requests).toHaveLength(1);
       });
     });
@@ -770,6 +808,9 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
+  // No HTTP counterpart for "should support changing the base URL $component from $initial to $changed while stopped":
+  // HTTP interceptors expose no long-lived server handle that must follow base URL changes.
+
   it('should not support changing the base URL while starting', async () => {
     await usingHttpInterceptor<{}>(interceptorOptions, { start: false }, async (interceptor) => {
       const startPromise = interceptor.start();
@@ -901,6 +942,9 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     },
   );
 
+  // No HTTP counterpart for "should use a new server origin after the base URL changes": HTTP requests do not hold
+  // long-lived connections, so none can stay bound to the previous server origin after the base URL changes.
+
   it.each(SUPPORTED_BASE_URL_PROTOCOLS)(
     'should not throw an error if provided a supported base URL protocol (%s)',
     (supportedProtocol) => {
@@ -926,4 +970,12 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
       }).toThrow(new UnsupportedURLProtocolError(unsupportedProtocol, SUPPORTED_BASE_URL_PROTOCOLS));
     },
   );
+
+  it('should exclude non-path base URL parameters', () => {
+    const baseURLWithNonPathParameters = `${defaultBaseURL}?search=value#hash`;
+
+    const interceptor = createHttpInterceptor({ ...interceptorOptions, baseURL: baseURLWithNonPathParameters });
+
+    expect(interceptor.baseURL).toBe(defaultBaseURL.replace(/\/$/, ''));
+  });
 }

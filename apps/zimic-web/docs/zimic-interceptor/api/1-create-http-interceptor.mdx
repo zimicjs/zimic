@@ -26,7 +26,7 @@ createHttpInterceptor<Schema>(options);
 
    - **baseURL**: `string`
 
-     Represents the URL that should be matched by the interceptor. Any request starting with this base URL will be intercepted if a matching [handler](/docs/zimic-interceptor/api/3-http-request-handler.mdx) exists. For [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md), this base URL should point to an [interceptor server](/docs/zimic-interceptor/cli/1-server.md), optionally including [path discriminators](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#path-discriminators).
+     Represents the URL that should be matched by the interceptor. A request matches the base URL when its URL starts with the base URL and has the same origin. Matching requests will be intercepted if a matching [handler](/docs/zimic-interceptor/api/3-http-request-handler.mdx) exists. For [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md), this base URL should point to an [interceptor server](/docs/zimic-interceptor/cli/1-server.md), optionally including [path discriminators](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#path-discriminators).
 
    - **requestSaving**: `Partial<HttpInterceptorRequestSaving> | undefined`
 

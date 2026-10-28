@@ -72,7 +72,7 @@ async function runCLI() {
                 description:
                   'Whether to log a warning when no interceptors were found for the base URL of a request. ' +
                   'If an interceptor was matched, the logging behavior for that base URL is configured in the ' +
-                  'interceptor itself.',
+                  'interceptor itself, unless the interceptor disconnects or fails before responding.',
                 alias: 'l',
               })
               .option('tokens-dir', {

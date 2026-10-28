@@ -1,6 +1,6 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { startHttpServer, stopHttpServer } from '@zimic/utils/server';
-import { waitFor, waitForNot } from '@zimic/utils/time';
+import { waitFor } from '@zimic/utils/time';
 import { closeWebSocketClient, WebSocketCloseTimeoutError } from '@zimic/utils/ws';
 import { createServer } from 'http';
 import ClientSocket from 'isomorphic-ws';
@@ -253,9 +253,14 @@ describe('Web socket server', () => {
 
       server.send('no-reply', { message: 'test' });
 
-      await waitForNot(() => {
-        expect(receivedMessages.length).toBeGreaterThan(0);
+      // Frames on one socket arrive in order, so a message sent to a registered socket would arrive before this probe.
+      const serverSocket = handleConnection.mock.calls[0][0];
+      serverSocket.send('probe');
+
+      await waitFor(() => {
+        expect(receivedMessages).toHaveLength(1);
       });
+      expect(receivedMessages[0].data).toBe('probe');
     });
 
     it('should throw an error if a client socket close timeout is reached', async () => {
@@ -548,9 +553,25 @@ describe('Web socket server', () => {
         } satisfies WebSocketEventMessage<Schema, 'no-reply'>),
       );
 
-      await waitForNot(() => {
-        expect(eventMessages.length).toBeGreaterThan(0);
+      server.onChannel('event', 'with-reply', () => ({ response: 'answer' }));
+
+      type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
+      const replyMessages = collectClientSocketJSONMessages<ReplyMessage>(rawClient);
+
+      // Frames on one socket arrive in order, so the event is handled before the reply to this request is sent.
+      const requestMessage: WebSocketEventMessage<Schema, 'with-reply'> = {
+        id: crypto.randomUUID(),
+        channel: 'with-reply',
+        data: { question: 'test' },
+        expectsReply: true,
+      };
+      rawClient.send(JSON.stringify(requestMessage));
+
+      await waitFor(() => {
+        expect(replyMessages).toHaveLength(1);
       });
+
+      expect(eventMessages).toHaveLength(0);
       expect(eventListener).not.toHaveBeenCalled();
     });
 
@@ -584,9 +605,7 @@ describe('Web socket server', () => {
         expectsReply: true,
       });
 
-      await waitForNot(() => {
-        expect(replyMessages.length).toBeGreaterThan(0);
-      });
+      expect(replyMessages).toHaveLength(0);
 
       const replyMessage: ReplyMessage['data'] = { response: 'answer' };
 
@@ -646,9 +665,7 @@ describe('Web socket server', () => {
         expectsReply: true,
       });
 
-      await waitForNot(() => {
-        expect(replyMessages.length).toBeGreaterThan(0);
-      });
+      expect(replyMessages).toHaveLength(0);
 
       server.offChannel('reply', 'with-reply', replyListener);
 
@@ -666,9 +683,8 @@ describe('Web socket server', () => {
       const receivedReplyMessage = await replyPromise;
       expect(receivedReplyMessage).toEqual(replyMessage);
 
-      await waitForNot(() => {
-        expect(replyMessages.length).toBeGreaterThan(0);
-      });
+      // Reply listeners are notified together, so the request resolving means the removed listener would have run.
+      expect(replyMessages).toHaveLength(0);
       expect(replyListener).not.toHaveBeenCalled();
     });
   });

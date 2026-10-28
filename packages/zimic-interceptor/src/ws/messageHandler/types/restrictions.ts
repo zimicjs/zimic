@@ -1,12 +1,17 @@
 import { DeepPartial, PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
+import { ReceivedWebSocketMessageData } from '@/ws/interceptor/types/messages';
+
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
  */
-export type WebSocketMessageHandlerStaticRestriction<Schema extends WebSocketSchema> = DeepPartial<Schema>;
+export type WebSocketMessageHandlerStaticRestriction<Schema extends WebSocketSchema> = Schema extends
+  Blob | BufferSource
+  ? Blob | BufferSource
+  : DeepPartial<Schema>;
 
 // Unlike HTTP, where `exact` is a field of the static restriction, a WebSocket static restriction is the partial
 // message itself, so a field would be ambiguous with message data.
@@ -22,14 +27,14 @@ export interface WebSocketMessageHandlerStaticRestrictionOptions {
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
 type WebSocketMessageHandlerComputedBooleanRestriction<Schema extends WebSocketSchema> = (
-  message: Schema,
+  message: ReceivedWebSocketMessageData<Schema>,
 ) => PossiblePromise<boolean>;
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
 export type WebSocketMessageHandlerComputedTypeGuardRestriction<
   Schema extends WebSocketSchema,
-  PredicateSchema extends Schema = Schema,
-> = (message: Schema) => message is PredicateSchema;
+  PredicateSchema extends ReceivedWebSocketMessageData<Schema> = ReceivedWebSocketMessageData<Schema>,
+> = (message: ReceivedWebSocketMessageData<Schema>) => message is PredicateSchema;
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -38,7 +43,7 @@ export type WebSocketMessageHandlerComputedTypeGuardRestriction<
  */
 export type WebSocketMessageHandlerComputedRestriction<
   Schema extends WebSocketSchema,
-  PredicateSchema extends Schema = Schema,
+  PredicateSchema extends ReceivedWebSocketMessageData<Schema> = ReceivedWebSocketMessageData<Schema>,
 > =
   | WebSocketMessageHandlerComputedBooleanRestriction<Schema>
   | WebSocketMessageHandlerComputedTypeGuardRestriction<Schema, PredicateSchema>;
@@ -65,13 +70,15 @@ export interface WebSocketMessageHandlerRestrictionDiff<Value> {
 export interface WebSocketMessageHandlerRestrictionDiffs<Schema extends WebSocketSchema = WebSocketSchema> {
   sender?: WebSocketMessageHandlerRestrictionDiff<boolean>;
   computed?: WebSocketMessageHandlerRestrictionDiff<boolean>;
-  data?: WebSocketMessageHandlerRestrictionDiff<WebSocketMessageHandlerStaticRestriction<Schema> | Schema>;
+  data?: WebSocketMessageHandlerRestrictionDiff<
+    WebSocketMessageHandlerStaticRestriction<Schema> | ReceivedWebSocketMessageData<Schema>
+  >;
 }
 
 export type WebSocketMessageHandlerRestrictionMatch<Schema extends WebSocketSchema = WebSocketSchema> =
-  { success: true; message: Schema } | { success: false; diff: WebSocketMessageHandlerRestrictionDiffs<Schema> };
+  { success: true } | { success: false; diff: WebSocketMessageHandlerRestrictionDiffs<Schema> };
 
 export interface UnmatchedWebSocketInterceptorMessageGroup<Schema extends WebSocketSchema = WebSocketSchema> {
-  message: Schema;
+  message: ReceivedWebSocketMessageData<Schema>;
   diff: WebSocketMessageHandlerRestrictionDiffs<Schema>;
 }

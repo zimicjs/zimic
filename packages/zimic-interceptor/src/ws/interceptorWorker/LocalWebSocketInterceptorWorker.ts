@@ -106,14 +106,6 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     super();
   }
 
-  get class() {
-    return LocalWebSocketInterceptorWorker;
-  }
-
-  static get isMSWWorkerRunning() {
-    return LocalMSWWorkerStore.isMSWWorkerRunning;
-  }
-
   get mswWorkerOrThrow() {
     /* istanbul ignore if -- @preserve
      * The shared MSW worker is process-static; after any local worker starts, this guard is order-dependent in tests. */
@@ -242,10 +234,13 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     // listeners with no network counterpart.
     const registration: WebSocketClientRegistration = {
       connection,
-      holders: holderInterceptors.map((registeredInterceptor) => ({
-        registeredInterceptor,
-        client: createWebSocketInterceptorClient<WebSocketSchema>(connection.url.href, (data) => connection.send(data)),
-      })),
+      holders: holderInterceptors.map((registeredInterceptor) => {
+        // Sending through the holder lookup makes the client stop sending once its interceptor lets the connection go.
+        const client = createWebSocketInterceptorClient<WebSocketSchema>(connection.url.href, (data) => {
+          this.sendToClient(client, data);
+        });
+        return { registeredInterceptor, client };
+      }),
       messageListener: (event) => {
         event.preventDefault();
         void this.handleConnectionMessage(registration, event.data as WebSocketMessageData<WebSocketSchema>);

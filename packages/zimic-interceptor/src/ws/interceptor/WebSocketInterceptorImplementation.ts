@@ -1,4 +1,3 @@
-import { PossiblePromise } from '@zimic/utils/types';
 import { excludeNonPathParams, validateURLProtocol } from '@zimic/utils/url';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
@@ -17,7 +16,11 @@ import {
 import { normalizeWebSocketMessageData } from '../utils/messageData';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
-import type { WebSocketInterceptorClient, WebSocketInterceptorServerSendOptions } from './types/messages';
+import type {
+  ReceivedWebSocketMessageData,
+  WebSocketInterceptorClient,
+  WebSocketInterceptorServerSendOptions,
+} from './types/messages';
 import type { UnhandledMessageStrategy } from './types/options';
 import type { WebSocketInterceptorConnectionListener, WebSocketInterceptorMessageSaving } from './types/public';
 import {
@@ -73,7 +76,7 @@ class WebSocketInterceptorImplementation<
   private numberOfPendingStarts = 0;
   private numberOfPendingStops = 0;
   private lifecycleQueue: Promise<void> = Promise.resolve();
-  private messageSavingGeneration = 0;
+  private messageSavingGeneration = {};
 
   constructor(options: {
     baseURL: URL;
@@ -201,28 +204,27 @@ class WebSocketInterceptorImplementation<
     return this.numberOfPendingStops > 0;
   }
 
-  async stop(options: { beforeStop?: () => PossiblePromise<void> }) {
+  async stop() {
     this.startPromise = undefined;
     this.numberOfPendingStops++;
 
     await this.enqueueLifecycleOperation(async () => {
       try {
-        await this.stopOnce(options);
+        await this.stopOnce();
       } finally {
         this.numberOfPendingStops--;
       }
     });
   }
 
-  private async stopOnce(options: { beforeStop?: () => PossiblePromise<void> }) {
+  private async stopOnce() {
     if (!this.isRunning) {
       return;
     }
 
-    await options.beforeStop?.();
-
-    // Clearing keeps the interceptor registered to accept new connections, so stopping has to remove the registration.
-    await this.workerOrThrow.clearHandlers({ interceptor: this });
+    // Clearing and unregistering in one worker call sends a single reset to a remote server, so no connection opened
+    // during the stop reaches an interceptor that is cleared but still registered.
+    await this.clearAndOptionallyUnregister({ preserveInterceptorRegistration: false });
 
     await this.stopWorker();
   }
@@ -309,30 +311,38 @@ class WebSocketInterceptorImplementation<
 
   async handleMatchedMessage(
     handler: AnyWebSocketMessageHandlerImplementation,
-    message: WebSocketSchema,
+    message: ReceivedWebSocketMessageData<WebSocketSchema>,
     context: WebSocketMessageHandlerApplyContext<Schema>,
   ) {
     const messageSavingGeneration = this.messageSavingGeneration;
 
-    await handler.applyDeclarations(message, context);
+    const wasHandled = await handler.applyDeclarations(message, context);
+
+    if (!wasHandled) {
+      return false;
+    }
 
     if (this.messageSaving.enabled && messageSavingGeneration === this.messageSavingGeneration) {
       handler.saveInterceptedMessage(message, context);
     }
+
+    return true;
   }
 
   // Unlike HTTP, unhandled messages have no bypass or reject action. WebSocket is not request-response, so a message
   // needs no reply and the connection stays open.
-  async logUnhandledMessageIfNecessary(data: WebSocketMessageData<Schema>) {
-    const message = normalizeWebSocketMessageData(data);
+  async logUnhandledMessageIfNecessary(data: WebSocketMessageData<Schema>, url: string) {
+    const message = await normalizeWebSocketMessageData(data);
     const strategy = await this.getUnhandledMessageStrategy(message);
 
     if (strategy.log ?? DEFAULT_UNHANDLED_MESSAGE_STRATEGY.log) {
-      await logUnhandledMessageWarning(message);
+      await logUnhandledMessageWarning(message, url);
     }
   }
 
-  private async getUnhandledMessageStrategy(message: Schema): Promise<UnhandledMessageStrategy.Declaration> {
+  private async getUnhandledMessageStrategy(
+    message: ReceivedWebSocketMessageData<Schema>,
+  ): Promise<UnhandledMessageStrategy.Declaration> {
     try {
       if (typeof this.onUnhandledMessage === 'function') {
         return await this.onUnhandledMessage(message);
@@ -379,18 +389,21 @@ class WebSocketInterceptorImplementation<
   }
 
   clear() {
+    return this.clearAndOptionallyUnregister({ preserveInterceptorRegistration: true });
+  }
+
+  private clearAndOptionallyUnregister(options: { preserveInterceptorRegistration: boolean }) {
     const worker = this.workerOrThrow;
 
-    this.messageSavingGeneration++;
+    this.messageSavingGeneration = {};
 
-    const clearResult = worker.clearHandlers({ interceptor: this, preserveInterceptorRegistration: true });
+    const clearResult = worker.clearHandlers({ interceptor: this, ...options });
 
     for (const handler of this.handlers) {
       handler.clear();
     }
 
     this.handlers.length = 0;
-    this._clients.length = 0;
 
     return Promise.resolve(clearResult);
   }

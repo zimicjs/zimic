@@ -437,6 +437,9 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
         });
       });
     });
+
+    // No HTTP counterpart for "should show a warning if the number of saved messages exceeds the safe limit,
+    // considering disconnected clients": HTTP requests have no long-lived client connection that can disconnect.
   });
 
   it('should support changing the request saving configuration after created', async () => {

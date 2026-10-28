@@ -2,6 +2,7 @@ import { HttpSchema, HttpSearchParams } from '@zimic/http';
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
+import color from 'picocolors';
 import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { expectHttpTimesCheckError } from '@/http/requestHandler/__tests__/shared/utils';
@@ -270,6 +271,33 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
     });
   });
 
+  // No HTTP counterpart for "should apply the unhandled message strategy of an older interceptor if the last started one
+  // is cleared while messages are being handled": clearing a WebSocket interceptor detaches it from its connections, so
+  // it no longer decides the strategy of their messages, while a cleared HTTP interceptor still decides it for requests.
+
+  // No HTTP counterpart for "should clear only clients owned by the selected interceptor": WebSocket connections are
+  // long-lived, so one can outlive the clear of an interceptor holding it.
+
+  // No HTTP counterpart for "should clear only clients owned by the selected interceptor with the same base URL":
+  // WebSocket connections are long-lived, so one can outlive the clear of an interceptor holding it.
+
+  // No HTTP counterpart for "should keep connections shared with another interceptor open after cleared": WebSocket
+  // connections are long-lived, so one can outlive the clear of an interceptor holding it.
+
+  // No HTTP counterpart for "should apply the unhandled message strategy of an older interceptor to connections shared
+  // with it after the last started one is cleared": WebSocket connections are long-lived, so one can outlive the clear of
+  // an interceptor holding it.
+
+  // No HTTP counterpart for "should close connections shared with other interceptors after all of them are cleared":
+  // WebSocket connections are long-lived, so one can outlive the clear of an interceptor holding it.
+
+  // No HTTP counterpart for "should keep connections open for the remaining interceptors if another one is cleared while
+  // they open": WebSocket connection listeners run while a connection opens, so they can clear an interceptor before it
+  // holds the connection.
+
+  // No HTTP counterpart for "should close connections if their only interceptor is cleared while they open": WebSocket
+  // connection listeners run while a connection opens, so they can clear an interceptor before it holds the connection.
+
   it('should not save intercepted requests after cleared while a request is being handled', async () => {
     await usingHttpInterceptor<{
       '/users': { GET: MethodWithSearchParamsSchema };
@@ -320,14 +348,74 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
     });
   });
 
-  it('should not handle requests after cleared while they are being matched', async () => {
-    const restrictionStartedPromise = createPromiseWithResolvers<void>();
-    const restrictionReleasedPromise = createPromiseWithResolvers<void>();
+  it.each([{ restrictionResult: true }, { restrictionResult: false }])(
+    'should not handle requests after cleared while they are being matched (restriction result: $restrictionResult)',
+    async ({ restrictionResult }) => {
+      const restrictionStartedPromise = createPromiseWithResolvers<void>();
+      const restrictionReleasedPromise = createPromiseWithResolvers<void>();
 
-    const restriction = vi.fn(async () => {
-      restrictionStartedPromise.resolve();
-      await restrictionReleasedPromise;
-      return true;
+      const restriction = vi.fn(async () => {
+        restrictionStartedPromise.resolve();
+        await restrictionReleasedPromise;
+        return restrictionResult;
+      });
+
+      const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+        action: 'reject',
+        log: false,
+      }));
+
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>({ ...interceptorOptions, type, onUnhandledRequest }, async (olderInterceptor) => {
+        // The older interceptor is not cleared, so its handler could still respond if it were tried.
+        const olderHandler = await promiseIfRemote(
+          olderInterceptor.get('/users').respond({ status: 204 }),
+          olderInterceptor,
+        );
+
+        await usingHttpInterceptor<{
+          '/users': { GET: MethodSchema };
+        }>({ ...interceptorOptions, type, onUnhandledRequest }, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor.get('/users').with(restriction).respond({ status: 204 }),
+            interceptor,
+          );
+
+          const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+          await restrictionStartedPromise;
+
+          await promiseIfRemote(interceptor.clear(), interceptor);
+
+          // Redeclaring the cleared handler would apply its new response to the request being matched.
+          await promiseIfRemote(handler.respond({ status: 204 }).times(1), interceptor);
+
+          restrictionReleasedPromise.resolve();
+
+          await expectFetchError(responsePromise);
+
+          expect(restriction).toHaveBeenCalledTimes(1);
+          expect(handler.requests).toHaveLength(0);
+          expect(olderHandler.requests).toHaveLength(0);
+          expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+
+          await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected exactly 1 request, but got 0.',
+            expectedNumberOfRequests: 1,
+          });
+        });
+      });
+    },
+  );
+
+  it('should not record unmatched requests of handlers cleared while older handlers are matching them', async () => {
+    const olderRestrictionStartedPromise = createPromiseWithResolvers<void>();
+    const olderRestrictionReleasedPromise = createPromiseWithResolvers<void>();
+
+    const olderRestriction = vi.fn(async () => {
+      olderRestrictionStartedPromise.resolve();
+      await olderRestrictionReleasedPromise;
+      return false;
     });
 
     const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
@@ -336,33 +424,73 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
     }));
 
     await usingHttpInterceptor<{
-      '/users': { GET: MethodSchema };
-    }>({ ...interceptorOptions, type, onUnhandledRequest }, async (interceptor) => {
-      const handler = await promiseIfRemote(
-        interceptor.get('/users').with(restriction).respond({ status: 204 }),
-        interceptor,
+      '/users': { GET: MethodWithSearchParamsSchema };
+    }>({ ...interceptorOptions, type, onUnhandledRequest }, async (olderInterceptor) => {
+      const olderHandler = await promiseIfRemote(
+        olderInterceptor.get('/users').with(olderRestriction).respond({ status: 204 }).times(1),
+        olderInterceptor,
       );
 
-      const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-      await restrictionStartedPromise;
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodWithSearchParamsSchema };
+      }>({ ...interceptorOptions, type, onUnhandledRequest }, async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor
+            .get('/users')
+            .with({ searchParams: { value: '1' } })
+            .respond({ status: 204 })
+            .times(1),
+          interceptor,
+        );
 
-      await promiseIfRemote(interceptor.clear(), interceptor);
+        // The newer handler fails to match before the older one starts matching. Redeclaring it with a restriction and
+        // a times limit makes it save any unmatched request still recorded for it.
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        await olderRestrictionStartedPromise;
 
-      // Redeclaring the cleared handler would apply its new response to the request being matched.
-      await promiseIfRemote(handler.respond({ status: 204 }).times(1), interceptor);
+        await promiseIfRemote(interceptor.clear(), interceptor);
 
-      restrictionReleasedPromise.resolve();
+        await promiseIfRemote(
+          handler
+            .with({ searchParams: { value: '1' } })
+            .respond({ status: 204 })
+            .times(1),
+          interceptor,
+        );
 
-      await expectFetchError(responsePromise);
+        olderRestrictionReleasedPromise.resolve();
 
-      expect(restriction).toHaveBeenCalledTimes(1);
-      expect(handler.requests).toHaveLength(0);
-      expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+        await expectFetchError(responsePromise);
 
-      await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-        message: 'Expected exactly 1 request, but got 0.',
-        expectedNumberOfRequests: 1,
+        expect(olderRestriction).toHaveBeenCalledTimes(1);
+        expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+          message: 'Expected exactly 1 matching request, but got 0.',
+          expectedNumberOfRequests: 1,
+        });
+
+        await expectHttpTimesCheckError(() => promiseIfRemote(olderHandler.checkTimes(), olderHandler), {
+          message: [
+            'Expected exactly 1 matching request, but got 0.',
+            '',
+            'Requests evaluated by this handler:',
+            '',
+            `  ${color.green('- Expected')}`,
+            `  ${color.red('+ Received')}`,
+            '',
+            `1: GET ${joinURL(baseURL, '/users')}`,
+            '     Computed restriction:',
+            `       ${color.green('- return true')}`,
+            `       ${color.red('+ return false')}`,
+          ].join('\n'),
+          expectedNumberOfRequests: 1,
+        });
       });
     });
   });
+
+  // No HTTP counterpart for "should not apply the unhandled message strategy after cleared while a message is being
+  // handled": clearing a WebSocket interceptor closes its connections, so a message being handled has no connection
+  // left, while an HTTP request being handled still needs a response.
 }

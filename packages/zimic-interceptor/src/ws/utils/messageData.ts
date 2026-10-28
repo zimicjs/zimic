@@ -2,6 +2,7 @@ import { assertTypeOf, ValidationError } from '@zimic/utils/validation';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
 import { convertArrayBufferToBase64, convertBase64ToArrayBuffer } from '@/utils/data';
+import { ReceivedWebSocketMessageData } from '@/ws/interceptor/types/messages';
 
 import {
   SerializedWebSocketBinaryMessageData,
@@ -24,7 +25,14 @@ export function normalizeBufferSource(bufferSource: BufferSource): ArrayBuffer {
   return normalizedBytes.buffer;
 }
 
+// Only objects and arrays are parsed, so text such as `'42'`, `'true'`, or `'null'` stays a string.
 function tryParseJSONMessageData(data: string): unknown {
+  const firstCharacter = data.trimStart()[0];
+
+  if (firstCharacter !== '{' && firstCharacter !== '[') {
+    return data;
+  }
+
   try {
     return JSON.parse(data);
   } catch {
@@ -39,15 +47,24 @@ export function normalizeWebSocketBinaryMessageData(data: Blob | BufferSource): 
   return normalizeBufferSource(data);
 }
 
-export function normalizeWebSocketMessageData<Schema extends WebSocketSchema>(
+export async function normalizeWebSocketMessageData<Schema extends WebSocketSchema>(
   data: Schema | WebSocketMessageData<Schema>,
-): Schema {
+): Promise<ReceivedWebSocketMessageData<Schema>> {
   if (typeof data === 'string') {
     const normalizedStringData = tryParseJSONMessageData(data);
-    return normalizedStringData as Schema;
+    return normalizedStringData as ReceivedWebSocketMessageData<Schema>;
   }
 
-  return data as Schema;
+  // WebSocket binary frames carry only raw bytes, so a real server never receives a `Blob` or a typed array view.
+  if (data instanceof Blob) {
+    return (await data.arrayBuffer()) as ReceivedWebSocketMessageData<Schema>;
+  }
+
+  if (isWebSocketBinaryMessageData(data)) {
+    return normalizeBufferSource(data) as ReceivedWebSocketMessageData<Schema>;
+  }
+
+  return data as ReceivedWebSocketMessageData<Schema>;
 }
 
 export function serializeWebSocketMessageDataForSocket<Schema extends WebSocketSchema>(

@@ -1,4 +1,4 @@
-import { waitFor, waitForNot } from '@zimic/utils/time';
+import { waitFor } from '@zimic/utils/time';
 import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it, vi } from 'vitest';
 
@@ -93,7 +93,11 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
             expect(console.error).toHaveBeenCalledTimes(1);
             expect(console.error.mock.calls[0]).toEqual([error]);
 
-            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], { data: message, platform });
+            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+              data: message,
+              url: client.url,
+              platform,
+            });
           });
 
           const messagePromise = waitForWebSocketClientMessage(client);
@@ -190,8 +194,7 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
       await usingWebSocketClient<MessageSchema>(baseURL, async (firstClient) => {
         await usingWebSocketClient<MessageSchema>(baseURL, async (secondClient) => {
           const firstMessagePromise = waitForWebSocketClientMessage(firstClient);
-          const secondMessageListener = vi.fn();
-          secondClient.addEventListener('message', secondMessageListener);
+          const secondMessagePromise = waitForWebSocketClientMessage(secondClient);
 
           await waitFor(() => {
             expect(interceptor.clients).toHaveLength(2);
@@ -200,9 +203,12 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
           firstClient.send(JSON.stringify({ type: 'client', index: 1 }));
 
           await expect(firstMessagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
-          await waitForNot(() => {
-            expect(secondMessageListener).toHaveBeenCalled();
-          });
+
+          // Messages on a socket are delivered in order, so the second client receiving the response to its own message
+          // first means that the response to the first client was not sent to it.
+          secondClient.send(JSON.stringify({ type: 'client', index: 2 }));
+
+          await expect(secondMessagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
         });
       });
     });

@@ -29,5 +29,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Life cycle', ({ type 
     type,
     getBaseURL: () => baseURL,
     getInterceptorOptions: () => ({ type, baseURL }),
+    startServer: () => server.start(),
+    stopServer: () => server.stop(),
   });
 });

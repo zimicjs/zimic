@@ -25,7 +25,7 @@ function stringifyJSONToLog(value: unknown): string {
     .replace(/\n\s*/g, ' ')
     .replace(/"(File { name: '.*?', type: '.*?', size: \d*? })"/g, '$1')
     .replace(/"(Blob { type: '.*?', size: \d*? })"/g, '$1')
-    .replace(/"(ArrayBuffer { byteLength: \d*? })"/g, '$1');
+    .replace(/"(\w+ { byteLength: \d*? })"/g, '$1');
 }
 
 export function stringifyValueToLog(value: unknown, options: { fallback?: (value: unknown) => string } = {}): string {
@@ -45,6 +45,10 @@ export function stringifyValueToLog(value: unknown, options: { fallback?: (value
 
   if (value instanceof ArrayBuffer) {
     return `ArrayBuffer { byteLength: ${value.byteLength} }`;
+  }
+
+  if (ArrayBuffer.isView(value)) {
+    return `${value.constructor.name} { byteLength: ${value.byteLength} }`;
   }
 
   return fallback(value);
@@ -99,12 +103,21 @@ export async function logUnhandledRequestWarning(request: Request, action: 'bypa
   );
 }
 
-export async function logUnhandledMessageWarning(data: unknown) {
+export async function logUnhandledMessageWarning(data: unknown, url: string) {
   const formattedData = await formatValueToLog(data);
 
   logger.warn(
     'Warning: Message was not handled.\n\n ',
+    url,
+    '\n    Data:',
     formattedData,
     '\n\nLearn more: https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages',
+  );
+}
+
+export function logUnexpectedServerDisconnection(serverURL: URL) {
+  logger.warn(
+    `Warning: The connection to the interceptor server ${serverURL.origin} was closed. ` +
+      'Restart your interceptors to reconnect.',
   );
 }

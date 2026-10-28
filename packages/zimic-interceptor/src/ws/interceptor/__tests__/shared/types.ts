@@ -1,6 +1,6 @@
 import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
-import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
+import { beforeEach, describe, expectTypeOf, it } from 'vitest';
 
 import type {
   InterceptedWebSocketInterceptorMessage,
@@ -9,13 +9,12 @@ import type {
   WebSocketInterceptorServerSendOptions,
 } from '@/ws/interceptor/types/messages';
 import type { LocalWebSocketMessageHandler, RemoteWebSocketMessageHandler } from '@/ws/messageHandler/types/public';
-import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
 import { createWebSocketInterceptor } from '../../factory';
 import { UnhandledMessageStrategy } from '../../types/options';
 import { LocalWebSocketInterceptor, RemoteWebSocketInterceptor, WebSocketInterceptor } from '../../types/public';
 import { InferWebSocketInterceptorSchema } from '../../types/schema';
-import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
+import { declareWebSocketInterceptorTypes, RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'create'; body: { text: string } } | { type: 'delete'; id: string }>;
 
@@ -53,16 +52,14 @@ export function declareTypeWebSocketInterceptorTests(
     it('should correctly type local interceptors by default', () => {
       const interceptor = createWebSocketInterceptor<MessageSchema>({ baseURL });
 
-      expect(interceptor.type).toBe('local');
-
       expectTypeOf(interceptor.message).parameters.toEqualTypeOf<[]>();
       expectTypeOf(interceptor.checkTimes).returns.toEqualTypeOf<void>();
       expectTypeOf(interceptor.clear).returns.toEqualTypeOf<void>();
     });
   }
 
-  it('should correctly type public interceptor types', async () => {
-    await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, (interceptor) => {
+  it('should correctly type public interceptor types', () => {
+    declareWebSocketInterceptorTypes<MessageSchema>((interceptor) => {
       expectTypeOf(interceptor).toExtend<WebSocketInterceptor<MessageSchema>>();
       expectTypeOf(interceptor.baseURL).toEqualTypeOf<string>();
       expectTypeOf(interceptor.messageSaving.enabled).toEqualTypeOf<boolean>();
@@ -74,10 +71,6 @@ export function declareTypeWebSocketInterceptorTests(
       expectTypeOf(interceptor.server).not.toExtend<WebSocketInterceptorClient<MessageSchema>>();
       expectTypeOf<(typeof interceptor.clients)[number]>().not.toExtend<WebSocketInterceptorServer<MessageSchema>>();
 
-      expect(interceptor.server).not.toHaveProperty('open');
-      expect(interceptor.server).not.toHaveProperty('close');
-      expect(interceptor.server).not.toHaveProperty('readyState');
-      expect(interceptor.server).not.toHaveProperty('addEventListener');
       expectTypeOf(interceptor.message().from).parameter(0).toEqualTypeOf<WebSocketInterceptorClient<MessageSchema>>();
 
       function declareInvalidSender() {
@@ -112,8 +105,8 @@ export function declareTypeWebSocketInterceptorTests(
     expectTypeOf(remoteInterceptor.clear).returns.toEqualTypeOf<Promise<void>>();
   });
 
-  it('should correctly type response and effect callbacks', async () => {
-    await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, (interceptor) => {
+  it('should correctly type response and effect callbacks', () => {
+    declareWebSocketInterceptorTypes<MessageSchema>((interceptor) => {
       interceptor
         .message()
         .with({ type: 'create' })

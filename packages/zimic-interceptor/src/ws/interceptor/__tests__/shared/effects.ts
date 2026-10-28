@@ -139,7 +139,11 @@ export function declareEffectWebSocketInterceptorTests(options: RuntimeSharedWeb
             expect(console.error).toHaveBeenCalledTimes(1);
             expect(console.error.mock.calls[0]).toEqual([error]);
 
-            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], { data: message, platform });
+            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+              data: message,
+              url: client.url,
+              platform,
+            });
           });
 
           const response = waitForWebSocketClientMessage(client);
@@ -150,6 +154,40 @@ export function declareEffectWebSocketInterceptorTests(options: RuntimeSharedWeb
         });
       },
     );
+  });
+
+  it('should not try older handlers after an effect callback throws', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+      const error = new Error('Effect failed.');
+
+      await interceptor.message().with({ type: 'create' }).respond({ type: 'delete', id: 'older' });
+
+      await interceptor
+        .message()
+        .with({ type: 'create' })
+        .effect(() => {
+          throw error;
+        });
+
+      await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' });
+
+      await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingIgnoredConsole(['error', 'warn'], async (console) => {
+          const firstReceivedMessage = waitForWebSocketClientMessage(client);
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+          // Messages on a socket are delivered in order, so the probe response arriving first means that the older
+          // handler sent no response.
+          client.send(JSON.stringify({ type: 'delete', id: '1' }));
+
+          await expect(firstReceivedMessage).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
+
+          expect(console.error).toHaveBeenCalledTimes(1);
+          expect(console.error.mock.calls[0]).toEqual([error]);
+        });
+      });
+    });
   });
 
   it('should handle asynchronous effects concurrently', async () => {
