@@ -1,11 +1,14 @@
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
+import { WebSocketInterceptorClient } from '../../../interceptor/types/messages';
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import RemoteWebSocketMessageHandler from '../../RemoteWebSocketMessageHandler';
+import { WebSocketMessageHandler } from '../../types/public';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './utils';
 
 export function declareDefaultWebSocketMessageHandlerTests(
@@ -75,13 +78,12 @@ export function declareDefaultWebSocketMessageHandlerTests(
     });
   });
 
-  // Unlike HTTP requests, a message needs no reply, so a cleared handler still matches.
-  it('should match any message if cleared', async () => {
+  it('should not match any message if cleared', async () => {
     await usingWebSocketInterceptor<Schema>(
       { type, baseURL, messageSaving: { enabled: true } },
       async (interceptor) => {
+        await interceptor.message().respond({ type: 'delete', id: 'older' });
         const handler = await interceptor.message().respond({ type: 'delete', id: '1' });
-        await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' });
 
         await usingWebSocketClient<Schema>(baseURL, async (client) => {
           let response = waitForWebSocketClientMessage(client);
@@ -92,23 +94,85 @@ export function declareDefaultWebSocketMessageHandlerTests(
 
           response = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'create', body: { text: 'cleared' } }));
+          await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'older' }));
 
-          await waitFor(() => {
-            expect(handler.messages).toHaveLength(1);
-          });
-
-          expect(handler.messages[0].data).toEqual({ type: 'create', body: { text: 'cleared' } });
-
-          // Messages on a socket are delivered in order, so the probe response arriving first means that the cleared
-          // handler sent nothing.
-          client.send(JSON.stringify({ type: 'delete', id: '1' }));
-          await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
+          expect(handler.messages).toHaveLength(0);
 
           await handler.respond({ type: 'delete', id: '2' });
 
           response = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'create', body: { text: 'after' } }));
           await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: '2' }));
+        });
+      },
+    );
+  });
+
+  it('should not match messages if cleared while they are being matched', async () => {
+    const restrictionStartedPromise = createPromiseWithResolvers<void>();
+    const restrictionReleasedPromise = createPromiseWithResolvers<void>();
+
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        await interceptor.message().respond({ type: 'delete', id: 'older' });
+
+        const handler = await interceptor
+          .message()
+          .with(async () => {
+            restrictionStartedPromise.resolve();
+            await restrictionReleasedPromise;
+            return true;
+          })
+          .respond({ type: 'delete', id: '1' });
+
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
+          const response = waitForWebSocketClientMessage(client);
+          client.send(JSON.stringify({ type: 'create', body: { text: 'pending' } }));
+          await restrictionStartedPromise;
+
+          await handler.clear();
+          restrictionReleasedPromise.resolve();
+
+          await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'older' }));
+          expect(handler.messages).toHaveLength(0);
+        });
+      },
+    );
+  });
+
+  it.each<{
+    declaration: string;
+    declare: (handler: WebSocketMessageHandler<Schema>, sender: WebSocketInterceptorClient<Schema>) => unknown;
+  }>([
+    { declaration: 'with', declare: (handler) => handler.with({ type: 'create' }) },
+    { declaration: 'from', declare: (handler, sender) => handler.from(sender) },
+    { declaration: 'respond', declare: (handler) => handler.respond({ type: 'delete', id: '2' }) },
+    { declaration: 'effect', declare: (handler) => handler.effect(vi.fn()) },
+    { declaration: 'delay', declare: (handler) => handler.delay(0) },
+    { declaration: 'times', declare: (handler) => handler.times(1) },
+  ])('should match messages again if cleared and declared with $declaration', async ({ declare }) => {
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const olderHandler = await interceptor.message().respond({ type: 'delete', id: 'older' });
+        const handler = await interceptor.message().respond({ type: 'delete', id: '1' });
+
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(1);
+          });
+
+          await declare(handler.clear(), interceptor.clients[0]);
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'declared' } }));
+
+          await waitFor(() => {
+            expect(handler.messages).toHaveLength(1);
+          });
+
+          expect(handler.messages[0].data).toEqual({ type: 'create', body: { text: 'declared' } });
+          expect(olderHandler.messages).toHaveLength(0);
         });
       },
     );

@@ -893,6 +893,10 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
       });
     });
 
+    // No HTTP counterpart for "should not consider binary messages unmatched due to restrictions in times checks":
+    // WebSocket messages can be whole Blob or ArrayBuffer payloads that times checks report as message data, while an
+    // HTTP binary body is one part of a request reported with its method, URL, and headers.
+
     it('should consider requests unmatched due to missing response declarations in times checks', async () => {
       await usingHttpInterceptor<{
         '/users': { GET: MethodSchema };
@@ -1013,6 +1017,22 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
       });
     });
 
+    it('should consider requests unmatched by cleared handlers instead of older handlers in times checks', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }).times(0), interceptor);
+        const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }).times(1), interceptor);
+
+        await promiseIfRemote(handler.clear(), interceptor);
+
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        await expectFetchError(responsePromise);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      });
+    });
+
     it('should not consider requests unmatched due to unmocked path in times checks', async () => {
       await usingHttpInterceptor<{
         '/users': { GET: MethodSchema };
@@ -1097,6 +1117,7 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
     });
   });
 
+  // Remote-only: local `checkTimes()` throws synchronously, so it has no returned promise to await later.
   if (type === 'remote') {
     it('should check times when called, before the returned promise is awaited', async () => {
       await usingHttpInterceptor<{

@@ -6,6 +6,7 @@ import {
 import ClientSocket from 'isomorphic-ws';
 
 import { WEB_SOCKET_CLOSE_CODES, WebSocketControlMessage } from '@/utils/webSocket/constants';
+import InternalWebSocketServerError from '@/utils/webSocket/errors/InternalWebSocketServerError';
 import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
 
 export class WebSocketMessageTimeoutError extends WebSocketTimeoutError {
@@ -53,13 +54,12 @@ export async function waitForOpenClientSocket(
     }
 
     function handleClose(event: ClientSocket.CloseEvent) {
-      const isUnauthorized = event.code === WEB_SOCKET_CLOSE_CODES.POLICY_VIOLATION;
-
-      /* istanbul ignore else -- @preserve
-       * An unauthorized close event is the only one we expect to happen here. */
-      if (isUnauthorized) {
+      if (event.code === WEB_SOCKET_CLOSE_CODES.POLICY_VIOLATION) {
         const unauthorizedError = new UnauthorizedWebSocketConnectionError(event);
         handleOpenError(unauthorizedError);
+      } else if (event.code === WEB_SOCKET_CLOSE_CODES.INTERNAL_ERROR) {
+        const internalError = new InternalWebSocketServerError(event);
+        handleOpenError(internalError);
       } else {
         handleOpenError(event);
       }

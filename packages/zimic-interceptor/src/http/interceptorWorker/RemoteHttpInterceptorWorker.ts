@@ -1,11 +1,19 @@
 import type { HttpBody, HttpHeadersInit, HttpMethod, HttpRequest, HttpSchema } from '@zimic/http';
 
-import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
+import { version } from '@@/package.json';
+
+import {
+  INTERCEPTOR_SERVER_RPC_PACKAGE_VERSION_PARAMETER,
+  INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
+  INTERCEPTOR_SERVER_RPC_VERSION,
+  INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
+} from '@/interceptor/constants';
 import UnsupportedResponseBypassError from '@/server/errors/UnsupportedResponseBypassError';
 import { HttpWorkerReset, InterceptorServerWebSocketSchema } from '@/server/types/schema';
 import { isClientSide, isServerSide } from '@/utils/environment';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
 import { methodCanHaveResponseBody } from '@/utils/http';
+import { logUnexpectedServerDisconnection } from '@/utils/logging';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocketEventMessage } from '@/utils/webSocket/types';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
@@ -29,6 +37,9 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     this.webSocketClient = new WebSocketClient({
       url: this.getWebSocketServerURL(options.serverURL).toString(),
+      onUnexpectedClose: () => {
+        logUnexpectedServerDisconnection(options.serverURL);
+      },
     });
 
     this.auth = options.auth;
@@ -51,6 +62,8 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       await this.webSocketClient.start({
         parameters: {
           [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
+          [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
+          [INTERCEPTOR_SERVER_RPC_PACKAGE_VERSION_PARAMETER]: version,
           ...(this.auth ? { token: this.auth.token } : {}),
         },
         waitForAuthentication: true,

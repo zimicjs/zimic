@@ -144,7 +144,8 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
   }
 
   async clear() {
-    await this.implementation.clear();
+    this.implementation.clear();
+    return Promise.resolve();
   }
 }
 

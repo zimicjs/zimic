@@ -96,6 +96,9 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
+  // No HTTP counterpart for "should not expose socket members on the interceptor server": HTTP interceptors have no
+  // server handle representing the other side of a connection.
+
   it('should not throw an error if started multiple times', async () => {
     await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (interceptor) => {
       expect(interceptor.isRunning).toBe(false);
@@ -493,6 +496,24 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
 
           expect(() => {
             interceptor.auth!.token = otherAuth.token;
+          }).toThrow(
+            new RunningHttpInterceptorError(
+              'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',
+            ),
+          );
+
+          expect(interceptor.auth).toEqual(auth);
+        });
+      });
+
+      it('should guard constructor-provided authentication options while running', async () => {
+        const auth: RemoteHttpInterceptorOptions['auth'] = { token: 'token' };
+
+        await usingHttpInterceptor<{}>({ type, baseURL, auth }, (interceptor) => {
+          expect(interceptor.isRunning).toBe(true);
+
+          expect(() => {
+            interceptor.auth!.token = 'other-token';
           }).toThrow(
             new RunningHttpInterceptorError(
               'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',

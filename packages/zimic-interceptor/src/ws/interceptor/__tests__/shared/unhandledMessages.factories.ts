@@ -1,4 +1,4 @@
-import { waitFor, waitForNot } from '@zimic/utils/time';
+import { waitFor } from '@zimic/utils/time';
 import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it, vi } from 'vitest';
 
@@ -70,7 +70,11 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
             expect(onUnhandledMessage).toHaveBeenCalledTimes(2);
             expect(onUnhandledMessage).toHaveBeenNthCalledWith(2, loggedMessage);
 
-            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], { data: loggedMessage, platform });
+            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+              data: loggedMessage,
+              url: client.url,
+              platform,
+            });
           });
         });
       },
@@ -122,7 +126,11 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
             expect(onUnhandledMessage).toHaveBeenCalledTimes(2);
             expect(onUnhandledMessage).toHaveBeenNthCalledWith(2, loggedMessage);
 
-            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], { data: loggedMessage, platform });
+            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+              data: loggedMessage,
+              url: client.url,
+              platform,
+            });
           });
         });
       },
@@ -176,7 +184,11 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
             expect(console.error).toHaveBeenCalledTimes(1);
             expect(console.error).toHaveBeenNthCalledWith(1, error);
 
-            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], { data: loggedMessage, platform });
+            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+              data: loggedMessage,
+              url: client.url,
+              platform,
+            });
           });
         });
       },
@@ -228,7 +240,11 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
             expect(console.error).toHaveBeenCalledTimes(1);
             expect(console.error).toHaveBeenNthCalledWith(1, error);
 
-            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], { data: loggedMessage, platform });
+            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+              data: loggedMessage,
+              url: client.url,
+              platform,
+            });
           });
         });
       },
@@ -299,14 +315,16 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
                 expect(onUnhandledMessage).toHaveBeenCalled();
               });
 
-              // Unhandled messages have no reply, so no event signals that no other strategy will be applied.
-              await waitForNot(() => {
-                expect(olderOnUnhandledMessage).toHaveBeenCalled();
-              });
+              // Messages on a socket are handled in order, so the response to the matched message arriving means that
+              // no other strategy was applied to the unhandled message.
+              const responsePromise = waitForWebSocketClientMessage(client);
+              client.send(JSON.stringify(matchedMessage));
+              await expect(responsePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
             });
 
             expect(handler.messages).toHaveLength(0);
-            expect(olderHandler.messages).toHaveLength(0);
+            expect(olderHandler.messages).toHaveLength(1);
+            expect(olderHandler.messages[0].data).toEqual(matchedMessage);
 
             expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
             expect(olderOnUnhandledMessage).not.toHaveBeenCalled();

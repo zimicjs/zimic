@@ -1,8 +1,11 @@
-import { waitFor, waitForNot } from '@zimic/utils/time';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
+import { waitFor } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
+import WebSocketInterceptorWorker from '@/ws/interceptorWorker/WebSocketInterceptorWorker';
+import { usingIgnoredConsole } from '@tests/utils/console';
 import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 import {
@@ -17,12 +20,15 @@ import {
 } from '../../../messageHandler/types/public';
 import NotRunningWebSocketInterceptorError from '../../errors/NotRunningWebSocketInterceptorError';
 import { WebSocketInterceptorOptions } from '../../types/options';
+import WebSocketInterceptorStore from '../../WebSocketInterceptorStore';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
 
 export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
-  const { getBaseURL, getInterceptorOptions } = options;
+  const { platform, type, getBaseURL, getInterceptorOptions, startServer, stopServer } = options;
+
+  const store = new WebSocketInterceptorStore();
 
   let baseURL: string;
   let interceptorOptions: WebSocketInterceptorOptions;
@@ -56,15 +62,21 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
         await interceptor.start();
         expect(interceptor.isRunning).toBe(true);
 
+        await promiseIfRemote(
+          interceptor.message().with({ type: 'client', index: 0 }).respond({ type: 'server', index: 0 }),
+          interceptor,
+        );
+
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          const messageListener = vi.fn();
-          client.addEventListener('message', messageListener);
+          const probeResponse = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'client', index: 2 }));
 
-          await waitForNot(() => {
-            expect(messageListener).toHaveBeenCalled();
-          });
+          // Messages on a socket are delivered in order, so the probe response arriving first means that the handler
+          // declared before the restart sent no response.
+          client.send(JSON.stringify({ type: 'client', index: 0 }));
+
+          await expect(probeResponse).resolves.toBe(JSON.stringify({ type: 'server', index: 0 }));
         });
 
         expect(handler.messages).toHaveLength(0);
@@ -103,15 +115,21 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
             expect(interceptor.isRunning).toBe(true);
             expect(otherInterceptor.isRunning).toBe(true);
 
+            await promiseIfRemote(
+              interceptor.message().with({ type: 'client', index: 0 }).respond({ type: 'server', index: 0 }),
+              interceptor,
+            );
+
             await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-              const messageListener = vi.fn();
-              client.addEventListener('message', messageListener);
+              const probeResponse = waitForWebSocketClientMessage(client);
 
               client.send(JSON.stringify({ type: 'client', index: 2 }));
 
-              await waitForNot(() => {
-                expect(messageListener).toHaveBeenCalled();
-              });
+              // Messages on a socket are delivered in order, so the probe response arriving first means that the
+              // handler declared before the restart sent no response.
+              client.send(JSON.stringify({ type: 'client', index: 0 }));
+
+              await expect(probeResponse).resolves.toBe(JSON.stringify({ type: 'server', index: 0 }));
             });
 
             expect(handler.messages).toHaveLength(0);
@@ -156,7 +174,45 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     );
   });
 
-  // No HTTP counterpart: WebSocket connections are long-lived, so a client can stay open after its interceptor stops.
+  it('should not log a warning when stopped', async () => {
+    await usingIgnoredConsole(['warn'], async (console) => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        await interceptor.stop();
+        expect(interceptor.isRunning).toBe(false);
+      });
+
+      expect(console.warn).not.toHaveBeenCalled();
+    });
+  });
+
+  // Only remote interceptors connect to an interceptor server, and browser tests cannot stop their shared server.
+  if (type === 'remote' && platform === 'node') {
+    it('should log a warning once if the interceptor server stops while running', async () => {
+      await usingIgnoredConsole(['warn'], async (console) => {
+        // Interceptors with the same server share one connection, so they should log a single warning.
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async () => {
+          await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async () => {
+            await stopServer?.();
+
+            try {
+              await waitFor(() => {
+                expect(console.warn).toHaveBeenCalledTimes(1);
+              });
+
+              expect(console.warn).toHaveBeenCalledWith(
+                expect.stringContaining('[@zimic/interceptor]'),
+                `Warning: The connection to the interceptor server ${new URL(baseURL).origin} was closed. ` +
+                  'Restart your interceptors to reconnect.',
+              );
+            } finally {
+              await startServer?.();
+            }
+          });
+        });
+      });
+    });
+  }
+
   it('should not handle messages from existing clients after stopped', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
       await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
@@ -179,16 +235,61 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
 
         client.send(JSON.stringify({ type: 'client', index: 2 }));
 
-        await waitForNot(() => {
-          expect(messageListener).toHaveBeenCalled();
-        });
+        // A closed socket receives no further messages, so none can arrive after the close event.
+        expect(messageListener).not.toHaveBeenCalled();
 
         expect(interceptor.clients).toHaveLength(0);
       });
     });
   });
 
-  // No HTTP counterpart: WebSocket connections are long-lived, so one can outlive the stop of an interceptor holding it.
+  it('should not accept connections opened while stopping', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (stoppingInterceptor) => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (otherInterceptor) => {
+        const connectionListener = vi.fn();
+        stoppingInterceptor.on('connection', connectionListener);
+
+        const worker: WebSocketInterceptorWorker | undefined =
+          type === 'local' ? store.localWorker : store.getRemoteWorker(new URL(baseURL), { auth: undefined });
+        expect(worker).toBeDefined();
+
+        const clearStartedPromise = createPromiseWithResolvers<void>();
+        const clearGatePromise = createPromiseWithResolvers<void>();
+
+        // No public path holds a stop while it is pending, so the worker clear of the stop is held after it completes.
+        const originalClearHandlers = worker!.clearHandlers.bind(worker);
+
+        vi.spyOn(worker!, 'clearHandlers').mockImplementationOnce(async (options) => {
+          await originalClearHandlers(options);
+          clearStartedPromise.resolve();
+          await clearGatePromise;
+        });
+
+        const stopPromise = stoppingInterceptor.stop();
+
+        try {
+          await clearStartedPromise;
+
+          await usingWebSocketClient<MessageSchema>(baseURL, async () => {
+            // Every holder receives a connection in the same pass, so the other interceptor listing the client means
+            // that the stopping interceptor already let it go.
+            await waitFor(() => {
+              expect(otherInterceptor.clients).toHaveLength(1);
+            });
+
+            expect(stoppingInterceptor.clients).toHaveLength(0);
+            expect(connectionListener).not.toHaveBeenCalled();
+          });
+        } finally {
+          clearGatePromise.resolve();
+          await stopPromise;
+        }
+
+        expect(stoppingInterceptor.isRunning).toBe(false);
+      });
+    });
+  });
+
   it('should keep connections shared with another interceptor open after stopped', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
       await promiseIfRemote(firstInterceptor.message().respond({ type: 'server', index: 1 }), firstInterceptor);
@@ -222,7 +323,6 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     });
   });
 
-  // No HTTP counterpart: WebSocket connections are long-lived, so one can outlive the stop of an interceptor holding it.
   it('should close connections shared with other interceptors after all of them are stopped', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (secondInterceptor) => {

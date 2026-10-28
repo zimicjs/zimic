@@ -189,6 +189,68 @@ export function declareTypeWebSocketMessageHandlerTests() {
     expectTypeOf(declareBooleanRestriction).toBeFunction();
   });
 
+  it('should receive binary schema members as ArrayBuffer', () => {
+    type BinarySchema = WebSocketSchema<Blob | { type: 'a' }>;
+    type ReceivedBinaryMessage = ArrayBuffer | Extract<BinarySchema, { type: 'a' }>;
+
+    function declareBinaryHandlers(handler: LocalWebSocketMessageHandler<BinarySchema>) {
+      const restrictedHandler = handler
+        .with((message) => {
+          expectTypeOf(message).toEqualTypeOf<ReceivedBinaryMessage>();
+          return true;
+        })
+        .delay((message) => {
+          expectTypeOf(message).toEqualTypeOf<ReceivedBinaryMessage>();
+          return 0;
+        })
+        .effect((message) => {
+          expectTypeOf(message).toEqualTypeOf<ReceivedBinaryMessage>();
+        })
+        .respond((message) => {
+          expectTypeOf(message).toEqualTypeOf<ReceivedBinaryMessage>();
+          return { type: 'a' };
+        });
+
+      expectTypeOf(restrictedHandler.messages[0].data).toEqualTypeOf<ReceivedBinaryMessage>();
+
+      const binaryHandler = handler.with((message): message is ArrayBuffer => message instanceof ArrayBuffer);
+
+      binaryHandler.effect((message) => {
+        expectTypeOf(message).toEqualTypeOf<ArrayBuffer>();
+      });
+
+      expectTypeOf<(typeof binaryHandler.messages)[number]['data']>().toEqualTypeOf<ArrayBuffer>();
+    }
+
+    expectTypeOf(declareBinaryHandlers).toBeFunction();
+  });
+
+  it('should accept only whole binary values in static restrictions', () => {
+    type BinarySchema = WebSocketSchema<Blob | ArrayBuffer | { type: 'a'; id: string }>;
+
+    function declareBinaryRestrictions(handler: LocalWebSocketMessageHandler<BinarySchema>) {
+      handler.with(new Blob(['a']));
+      handler.with(new ArrayBuffer(1));
+      handler.with(new Uint8Array([1]));
+
+      handler.with({ type: 'a' }).effect((message) => {
+        expectTypeOf(message).toEqualTypeOf<Extract<BinarySchema, { type: 'a' }>>();
+      });
+
+      handler.with({}).effect((message) => {
+        expectTypeOf(message).toEqualTypeOf<Extract<BinarySchema, { type: 'a' }>>();
+      });
+
+      // @ts-expect-error Partial binary restriction.
+      handler.with({ size: 1 });
+
+      // @ts-expect-error Partial binary restriction.
+      handler.with({ byteLength: 1 });
+    }
+
+    expectTypeOf(declareBinaryRestrictions).toBeFunction();
+  });
+
   it('should reject invalid message declarations', () => {
     function declareInvalidMessages(handler: LocalWebSocketMessageHandler<Schema>) {
       const restrictedHandler = handler

@@ -1,4 +1,5 @@
 import { HttpRequest, HttpResponse, StrictFormData } from '@zimic/http';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { joinURL } from '@zimic/utils/url';
 import { expectTypeOf, expect, vi, it, beforeAll, afterAll, describe, beforeEach, afterEach } from 'vitest';
 
@@ -140,6 +141,35 @@ export function declareDefaultHttpRequestHandlerTests(
     );
     expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
   });
+
+  it('should not match requests if cleared while they are being matched', async () => {
+    const restrictionStartedPromise = createPromiseWithResolvers<void>();
+    const restrictionReleasedPromise = createPromiseWithResolvers<void>();
+
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
+      .with(async () => {
+        restrictionStartedPromise.resolve();
+        await restrictionReleasedPromise;
+        return true;
+      })
+      .respond({ status: 200, body: { success: true } });
+
+    const request = new Request(baseURL);
+    const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+    const matchPromise = handler.matchesRequest(parsedRequest);
+
+    await restrictionStartedPromise;
+    await promiseIfRemote(handler.clear(), interceptor);
+    restrictionReleasedPromise.resolve();
+
+    expect(await matchPromise).toEqual<HttpRequestHandlerRequestMatch>({
+      success: false,
+      cause: 'missingResponseDeclaration',
+    });
+  });
+
+  // No HTTP counterpart for "should match messages again if cleared and declared with $declaration": a request needs a
+  // response, so only `respond` makes a cleared HTTP handler match again, as covered above.
 
   it('should create response with declared status and body', async () => {
     const responseStatus = 200;

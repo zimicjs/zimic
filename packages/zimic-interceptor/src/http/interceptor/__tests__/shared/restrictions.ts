@@ -832,6 +832,9 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
     });
   });
 
+  // No HTTP counterpart for "should support intercepting messages from a restricted sender": HTTP requests have no
+  // sender connection to restrict.
+
   it('should reset restrictions when cleared', async () => {
     await usingHttpInterceptor<{
       '/users': { GET: MethodSchema };
