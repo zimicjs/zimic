@@ -141,6 +141,9 @@ export function declareDefaultHttpRequestHandlerTests(
     expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
   });
 
+  // No HTTP counterpart for "should match messages again if cleared and declared with $declaration": a request needs a
+  // response, so only `respond` makes a cleared HTTP handler match again, as covered above.
+
   it('should create response with declared status and body', async () => {
     const responseStatus = 200;
     const responseBody = { success: true } as const;

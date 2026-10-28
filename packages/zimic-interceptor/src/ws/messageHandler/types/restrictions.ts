@@ -81,8 +81,7 @@ export interface WebSocketMessageHandlerRestrictionDiffs<Schema extends WebSocke
 }
 
 export type WebSocketMessageHandlerRestrictionMatch<Schema extends WebSocketSchema = WebSocketSchema> =
-  | { success: true; message: ReceivedWebSocketMessageData<Schema> }
-  | { success: false; diff: WebSocketMessageHandlerRestrictionDiffs<Schema> };
+  { success: true } | { success: false; diff: WebSocketMessageHandlerRestrictionDiffs<Schema> };
 
 export interface UnmatchedWebSocketInterceptorMessageGroup<Schema extends WebSocketSchema = WebSocketSchema> {
   message: ReceivedWebSocketMessageData<Schema>;

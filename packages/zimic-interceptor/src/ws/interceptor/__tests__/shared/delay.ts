@@ -290,7 +290,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
 
               await vi.advanceTimersByTimeAsync(delay);
 
-              // A newer handler answers the probe message, because the cleared handler still matches every message.
+              // A newer handler answers the probe message, because the cleared handler no longer matches messages.
               await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' });
 
               // Messages on a socket are delivered in order, so the probe response being the next message means that

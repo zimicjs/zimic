@@ -45,14 +45,9 @@ const DEFAULT_NUMBER_OF_MESSAGE_LIMITS: Range<number> = Object.freeze({
 });
 
 export type WebSocketMessageHandlerMessageMatch =
-  | { success: true; message: ReceivedWebSocketMessageData<WebSocketSchema> }
-  | { success: false; cause: 'exceededNumberOfMessages' }
-  | {
-      success: false;
-      cause: 'unmatchedRestrictions';
-      message: ReceivedWebSocketMessageData<WebSocketSchema>;
-      diff: WebSocketMessageHandlerRestrictionDiffs<WebSocketSchema>;
-    };
+  | { success: true }
+  | { success: false; cause: 'clearedHandler' | 'exceededNumberOfMessages' }
+  | { success: false; cause: 'unmatchedRestrictions'; diff: WebSocketMessageHandlerRestrictionDiffs<WebSocketSchema> };
 
 export interface WebSocketMessageHandlerApplyContext<Schema extends WebSocketSchema> {
   sender: InternalWebSocketInterceptorClient<Schema>;
@@ -85,6 +80,10 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
   private clearGeneration = {};
 
+  // Handlers match messages without a declared response, so a cleared handler would keep shadowing older handlers. As
+  // with a cleared HTTP handler, it stops matching until it is declared again.
+  private isCleared = false;
+
   constructor(
     private interceptor: WebSocketInterceptorImplementation<Schema>,
     private handler: InternalWebSocketMessageHandler<Schema, RestrictedSchema>,
@@ -94,6 +93,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
   from(sender: WebSocketInterceptorClient<Schema>) {
     this.restrictedSender = sender;
+    this.isCleared = false;
     return this;
   }
 
@@ -102,6 +102,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     options: WebSocketMessageHandlerStaticRestrictionOptions = {},
   ) {
     this.restrictions.push({ restriction, options });
+    this.isCleared = false;
     return this;
   }
 
@@ -109,6 +110,8 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     minMilliseconds: number | WebSocketMessageHandlerDelayFactory<RestrictedSchema>,
     maxMilliseconds?: number,
   ): this {
+    this.isCleared = false;
+
     if (minMilliseconds === maxMilliseconds) {
       return this.delay(minMilliseconds);
     }
@@ -129,6 +132,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
   effect(callback: WebSocketMessageHandlerMessageCallback<Schema, RestrictedSchema>) {
     this.applyEffect = callback;
+    this.isCleared = false;
     this.resetMatchedMessages();
     this.interceptor.registerMessageHandler(this.handler);
     return this;
@@ -136,6 +140,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
   respond(declaration: WebSocketMessageHandlerMessageDeclaration<Schema, RestrictedSchema>) {
     this.createResponseDeclaration = this.isResponseDeclarationFactory(declaration) ? declaration : () => declaration;
+    this.isCleared = false;
     this.resetMatchedMessages();
     this.interceptor.registerMessageHandler(this.handler);
     return this;
@@ -154,6 +159,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     };
 
     this.timesPointer = new WebSocketTimesDeclarationPointer(minNumberOfMessages, maxNumberOfMessages);
+    this.isCleared = false;
 
     return this;
   }
@@ -177,6 +183,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
   clear() {
     this.clearGeneration = {};
+    this.isCleared = true;
 
     this.restrictions.length = 0;
     this.restrictedSender = undefined;
@@ -206,33 +213,32 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     message: ReceivedWebSocketMessageData<Schema>,
     context: WebSocketMessageHandlerApplyContext<Schema>,
   ): Promise<WebSocketMessageHandlerMessageMatch> {
+    if (this.isCleared) {
+      return { success: false, cause: 'clearedHandler' };
+    }
+
     const restrictionsMatch = await this.matchesRestrictions(message, context);
 
     if (!restrictionsMatch.success) {
-      return {
-        success: false,
-        cause: 'unmatchedRestrictions',
-        message,
-        diff: restrictionsMatch.diff,
-      };
+      return { success: false, cause: 'unmatchedRestrictions', diff: restrictionsMatch.diff };
     }
 
     if (!this.canAcceptMoreMessages()) {
       return { success: false, cause: 'exceededNumberOfMessages' };
     }
 
-    return { success: true, message: restrictionsMatch.message };
+    return { success: true };
   }
 
   // Concurrent messages can reach the limit while this one is matched asynchronously, so the limit is checked again in
   // the same synchronous step that counts the message.
-  reserveMessage(message: ReceivedWebSocketMessageData<WebSocketSchema>): WebSocketMessageHandlerMessageMatch {
+  reserveMessage(): WebSocketMessageHandlerMessageMatch {
     if (!this.canAcceptMoreMessages()) {
       return { success: false, cause: 'exceededNumberOfMessages' };
     }
 
     this.numberOfMatchedMessages++;
-    return { success: true, message };
+    return { success: true };
   }
 
   private canAcceptMoreMessages() {
@@ -250,11 +256,9 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
       };
     }
 
-    const restrictedMessage = message;
-
     for (const { restriction, options } of this.restrictions) {
       if (this.isComputedMessageRestriction(restriction)) {
-        const matchesComputedRestriction = await restriction(this.assumeMessageMatchesRestrictions(restrictedMessage));
+        const matchesComputedRestriction = await restriction(this.assumeMessageMatchesRestrictions(message));
 
         if (!matchesComputedRestriction) {
           return {
@@ -265,21 +269,17 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
         continue;
       }
 
-      const matchesStaticRestriction = await this.matchesStaticMessageRestriction(
-        restrictedMessage,
-        restriction,
-        options,
-      );
+      const matchesStaticRestriction = await this.matchesStaticMessageRestriction(message, restriction, options);
 
       if (!matchesStaticRestriction) {
         return {
           success: false,
-          diff: { data: { expected: restriction, received: restrictedMessage } },
+          diff: { data: { expected: restriction, received: message } },
         };
       }
     }
 
-    return { success: true, message: restrictedMessage };
+    return { success: true };
   }
 
   private isComputedMessageRestriction(restriction: WebSocketMessageHandlerRestriction<RestrictedSchema>) {

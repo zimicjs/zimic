@@ -165,18 +165,14 @@ abstract class WebSocketInterceptorWorker {
           continue;
         }
 
-        const reservation = handler.implementation.reserveMessage(messageMatch.message);
+        const reservation = handler.implementation.reserveMessage();
 
         if (!reservation.success) {
           failedMessageMatches.push({ handler: handler.implementation, holder, messageMatch: reservation });
           continue;
         }
 
-        const wasHandled = await holder.interceptor.handleMatchedMessage(
-          handler.implementation,
-          reservation.message,
-          context,
-        );
+        const wasHandled = await holder.interceptor.handleMatchedMessage(handler.implementation, message, context);
 
         if (!wasHandled) {
           await this.logUnhandledMessageIfNecessary(data, holders);
@@ -215,18 +211,19 @@ abstract class WebSocketInterceptorWorker {
 
   // Handlers that failed only on restrictions record their diffs. The newest handler that failed for any other cause,
   // such as exceeding its `times` limit, is still marked as matched to trigger a times check error. Handlers whose holder
-  // let the connection go after their match record nothing.
+  // let the connection go after their match record nothing. Cleared handlers record nothing either and let older handlers
+  // be marked, as if they did not exist.
   private markMessageAsUnhandled(
     message: ReceivedWebSocketMessageData<WebSocketSchema>,
     failedMessageMatches: FailedWebSocketMessageMatch[],
   ) {
     for (const { handler, holder, messageMatch } of failedMessageMatches) {
-      if (!this.isHoldingConnection(holder)) {
+      if (!this.isHoldingConnection(holder) || messageMatch.cause === 'clearedHandler') {
         continue;
       }
 
       if (messageMatch.cause === 'unmatchedRestrictions') {
-        handler.markMessageAsUnmatched(messageMatch.message, { diff: messageMatch.diff });
+        handler.markMessageAsUnmatched(message, { diff: messageMatch.diff });
       } else {
         handler.markMessageAsMatched(message);
         break;
