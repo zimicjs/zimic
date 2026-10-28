@@ -251,6 +251,74 @@ export function declareTypeWebSocketMessageHandlerTests() {
     expectTypeOf(declareBinaryRestrictions).toBeFunction();
   });
 
+  it('should receive top-level number and boolean schema members as text', () => {
+    type PrimitiveSchema = WebSocketSchema<number | boolean | { type: 'a' }>;
+    type ReceivedPrimitiveMessage = `${number}` | 'true' | 'false' | Extract<PrimitiveSchema, { type: 'a' }>;
+
+    function declarePrimitiveHandlers(handler: LocalWebSocketMessageHandler<PrimitiveSchema>) {
+      const restrictedHandler = handler
+        .with((message) => {
+          expectTypeOf(message).toEqualTypeOf<ReceivedPrimitiveMessage>();
+          return true;
+        })
+        .effect((message) => {
+          expectTypeOf(message).toEqualTypeOf<ReceivedPrimitiveMessage>();
+        })
+        .respond((message) => {
+          expectTypeOf(message).toEqualTypeOf<ReceivedPrimitiveMessage>();
+          return 1;
+        });
+
+      expectTypeOf(restrictedHandler.messages[0].data).toEqualTypeOf<ReceivedPrimitiveMessage>();
+
+      const numberHandler = handler.with((message): message is `${number}` => !Number.isNaN(Number(message)));
+
+      numberHandler.effect((message) => {
+        expectTypeOf(message).toEqualTypeOf<`${number}`>();
+      });
+
+      expectTypeOf<(typeof numberHandler.messages)[number]['data']>().toEqualTypeOf<`${number}`>();
+    }
+
+    expectTypeOf(declarePrimitiveHandlers).toBeFunction();
+  });
+
+  it('should accept only the text of top-level number and boolean members in static restrictions', () => {
+    type PrimitiveSchema = WebSocketSchema<number | boolean | { type: 'a'; id: string }>;
+
+    function declarePrimitiveRestrictions(
+      handler: LocalWebSocketMessageHandler<PrimitiveSchema>,
+      mixedText: '42' | 'true',
+    ) {
+      handler.with('42').effect((message) => {
+        expectTypeOf(message).toEqualTypeOf<`${number}`>();
+      });
+
+      handler.with('true').effect((message) => {
+        expectTypeOf(message).toEqualTypeOf<'true'>();
+      });
+
+      handler.with(mixedText).effect((message) => {
+        expectTypeOf(message).toEqualTypeOf<`${number}` | 'true'>();
+      });
+
+      handler.with({ type: 'a' }).effect((message) => {
+        expectTypeOf(message).toEqualTypeOf<Extract<PrimitiveSchema, { type: 'a' }>>();
+      });
+
+      // @ts-expect-error Number restrictions accept only text.
+      handler.with(42);
+
+      // @ts-expect-error Boolean restrictions accept only text.
+      handler.with(true);
+
+      // @ts-expect-error Restriction text must match a schema member.
+      handler.with('text');
+    }
+
+    expectTypeOf(declarePrimitiveRestrictions).toBeFunction();
+  });
+
   it('should reject invalid message declarations', () => {
     function declareInvalidMessages(handler: LocalWebSocketMessageHandler<Schema>) {
       const restrictedHandler = handler
