@@ -333,12 +333,12 @@ class WebSocketInterceptorImplementation<
 
   // Unlike HTTP, unhandled messages have no bypass or reject action. WebSocket is not request-response, so a message
   // needs no reply and the connection stays open.
-  async logUnhandledMessageIfNecessary(data: WebSocketMessageData<Schema>) {
+  async logUnhandledMessageIfNecessary(data: WebSocketMessageData<Schema>, url: string) {
     const message = await normalizeWebSocketMessageData(data);
     const strategy = await this.getUnhandledMessageStrategy(message);
 
     if (strategy.log ?? DEFAULT_UNHANDLED_MESSAGE_STRATEGY.log) {
-      await logUnhandledMessageWarning(message);
+      await logUnhandledMessageWarning(message, url);
     }
   }
 

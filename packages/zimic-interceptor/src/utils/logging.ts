@@ -103,10 +103,10 @@ export async function logUnhandledRequestWarning(request: Request, action: 'bypa
   );
 }
 
-export async function logUnhandledMessageWarning(data: unknown) {
+export async function logUnhandledMessageWarning(data: unknown, url: string) {
   const formattedData = await formatValueToLog(data);
 
-  logger.warn('Warning: Message was not handled.\n\n ', formattedData);
+  logger.warn('Warning: Message was not handled.\n\n ', url, '\n    Data:', formattedData);
 }
 
 export function logUnexpectedServerDisconnection(serverURL: URL) {

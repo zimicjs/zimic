@@ -201,7 +201,7 @@ abstract class WebSocketInterceptorWorker {
     holders: WebSocketConnectionHolder<WebSocketSchema>[],
   ) {
     const newestHolder = holders.findLast((holder) => this.isHoldingConnection(holder));
-    await newestHolder?.interceptor.logUnhandledMessageIfNecessary(data);
+    await newestHolder?.interceptor.logUnhandledMessageIfNecessary(data, newestHolder.client.url);
   }
 
   // A holder lists the client from the moment it accepts the connection until it lets the connection go.

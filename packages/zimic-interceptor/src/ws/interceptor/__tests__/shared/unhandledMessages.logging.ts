@@ -58,7 +58,11 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
               });
               expect(console.error).toHaveBeenCalledTimes(0);
 
-              await verifyUnhandledMessageWarning(console.warn.mock.calls[0], { data: message, platform });
+              await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+                data: message,
+                url: client.url,
+                platform,
+              });
 
               expect(client.readyState).toBe(WebSocketClient.OPEN);
             });
@@ -83,7 +87,11 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
               });
               expect(console.error).toHaveBeenCalledTimes(0);
 
-              await verifyUnhandledMessageWarning(console.warn.mock.calls[0], { data: message, platform });
+              await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+                data: message,
+                url: client.url,
+                platform,
+              });
 
               expect(client.readyState).toBe(WebSocketClient.OPEN);
             });
@@ -122,7 +130,11 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
               });
               expect(console.error).toHaveBeenCalledTimes(0);
 
-              await verifyUnhandledMessageWarning(console.warn.mock.calls[0], { data: unmatchedMessage, platform });
+              await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+                data: unmatchedMessage,
+                url: client.url,
+                platform,
+              });
 
               expect(client.readyState).toBe(WebSocketClient.OPEN);
 
@@ -205,7 +217,11 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
             });
             expect(console.error).toHaveBeenCalledTimes(0);
 
-            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], { data: message, platform });
+            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+              data: message,
+              url: client.url,
+              platform,
+            });
 
             console.warn.mockClear();
 
@@ -269,7 +285,11 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
             });
             expect(console.error).toHaveBeenCalledTimes(0);
 
-            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], { data: message, platform });
+            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+              data: message,
+              url: client.url,
+              platform,
+            });
           });
         });
       },

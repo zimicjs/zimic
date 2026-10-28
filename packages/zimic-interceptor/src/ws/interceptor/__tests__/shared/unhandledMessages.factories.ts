@@ -70,7 +70,11 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
             expect(onUnhandledMessage).toHaveBeenCalledTimes(2);
             expect(onUnhandledMessage).toHaveBeenNthCalledWith(2, loggedMessage);
 
-            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], { data: loggedMessage, platform });
+            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+              data: loggedMessage,
+              url: client.url,
+              platform,
+            });
           });
         });
       },
@@ -122,7 +126,11 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
             expect(onUnhandledMessage).toHaveBeenCalledTimes(2);
             expect(onUnhandledMessage).toHaveBeenNthCalledWith(2, loggedMessage);
 
-            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], { data: loggedMessage, platform });
+            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+              data: loggedMessage,
+              url: client.url,
+              platform,
+            });
           });
         });
       },
@@ -176,7 +184,11 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
             expect(console.error).toHaveBeenCalledTimes(1);
             expect(console.error).toHaveBeenNthCalledWith(1, error);
 
-            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], { data: loggedMessage, platform });
+            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+              data: loggedMessage,
+              url: client.url,
+              platform,
+            });
           });
         });
       },
@@ -228,7 +240,11 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
             expect(console.error).toHaveBeenCalledTimes(1);
             expect(console.error).toHaveBeenNthCalledWith(1, error);
 
-            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], { data: loggedMessage, platform });
+            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+              data: loggedMessage,
+              url: client.url,
+              platform,
+            });
           });
         });
       },

@@ -22,14 +22,16 @@ export async function verifyUnhandledMessageWarning(
   warnArguments: unknown[],
   options: {
     data: unknown;
+    url: string;
     platform: WebSocketInterceptorPlatform;
   },
 ) {
-  const { data, platform } = options;
+  const { data, url, platform } = options;
 
   const message = warnArguments.join(' ');
 
   expect(message).toMatch(/^[^\s]*\[@zimic\/interceptor\][^\s]* Warning: Message was not handled\.\n/);
+  expect(message).toContain(`Message was not handled.\n\n  ${url} \n    Data: `);
 
   // Browsers receive the raw message data to render it in the console.
   if (platform === 'node') {

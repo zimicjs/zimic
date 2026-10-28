@@ -737,7 +737,11 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
                 expect(console.error).toHaveBeenCalledTimes(1);
                 expect(console.error.mock.calls[0]).toEqual([error]);
 
-                await verifyUnhandledMessageWarning(console.warn.mock.calls[0], { data: message, platform });
+                await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+                  data: message,
+                  url: client.url,
+                  platform,
+                });
 
                 expect(messageListener).not.toHaveBeenCalled();
               });
