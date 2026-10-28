@@ -3,7 +3,7 @@
 ## Modes and platforms
 
 - HTTP interceptors (`src/http`) and WebSocket interceptors (`src/ws`) each have local and remote implementations behind shared APIs, and both run in Node and browser. Account for every protocol, mode, and platform a shared change touches.
-- Remote interceptors depend on the interceptor server in `src/server`, which the `zimic-interceptor server` CLI in `src/cli` also exposes. Interceptors and servers always run the same version. Change both sides of the protocol in the same commit, without fallbacks for older peers.
+- Remote interceptors depend on the interceptor server in `src/server`, which the `zimic-interceptor server` CLI in `src/cli` also exposes. Users must run interceptors and servers on the same version. Change both sides of the protocol in the same commit, without fallbacks for older peers. Bump `INTERCEPTOR_SERVER_RPC_VERSION` in `src/interceptor/constants.ts` only for changes that break communication with the previous version, and release the bump as a minor change, not a breaking one.
 
 ## HTTP and WebSocket parity
 

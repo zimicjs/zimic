@@ -3,6 +3,7 @@ import { WebSocketSchema } from '@zimic/ws';
 
 import {
   InterceptedWebSocketInterceptorMessage,
+  ReceivedWebSocketMessageData,
   WebSocketInterceptorClient,
   WebSocketInterceptorServer,
 } from '@/ws/interceptor/types/messages';
@@ -39,12 +40,16 @@ export interface WebSocketMessageHandlerMessageContext<Schema extends WebSocketS
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A side effect declared with `handler.effect()`, called with each matched message and its context.
+ * A side effect declared with `handler.effect()`, called with each matched message and its context. Binary messages
+ * arrive as `ArrayBuffer`.
  */
 export type WebSocketMessageHandlerMessageCallback<
   Schema extends WebSocketSchema,
   RestrictedSchema extends Schema = Schema,
-> = (message: RestrictedSchema, context: WebSocketMessageHandlerMessageContext<Schema>) => PossiblePromise<void>;
+> = (
+  message: ReceivedWebSocketMessageData<RestrictedSchema>,
+  context: WebSocketMessageHandlerMessageContext<Schema>,
+) => PossiblePromise<void>;
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -57,13 +62,13 @@ export type WebSocketMessageHandlerMessageStaticDeclaration<Schema extends WebSo
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * A function declared with `handler.respond()` that computes the server message from each matched message and its
- * context.
+ * context. Binary messages arrive as `ArrayBuffer`.
  */
 export type WebSocketMessageHandlerMessageComputedDeclaration<
   Schema extends WebSocketSchema,
   RestrictedSchema extends Schema,
 > = (
-  message: RestrictedSchema,
+  message: ReceivedWebSocketMessageData<RestrictedSchema>,
   context: WebSocketMessageHandlerMessageContext<Schema>,
 ) => PossiblePromise<WebSocketMessageHandlerMessageStaticDeclaration<Schema>>;
 
@@ -80,12 +85,22 @@ type WebSocketMessageHandlerSchemaCompatibleWithStaticRestriction<
   Schema extends WebSocketSchema,
   Restriction,
 > = Schema extends unknown
-  ? Schema extends Restriction
-    ? Schema
-    : Restriction extends WebSocketMessageHandlerStaticRestriction<Schema>
+  ? [Schema, Restriction] extends [Blob | BufferSource, Exclude<Restriction, Blob | BufferSource>]
+    ? never
+    : Schema extends Restriction
       ? Schema
-      : never
+      : Restriction extends WebSocketMessageHandlerStaticRestriction<Schema>
+        ? Schema
+        : never
   : never;
+
+/**
+ * The schema members a type-guard predicate keeps. Type guards receive binary messages as `ArrayBuffer`, so a predicate
+ * accepting `ArrayBuffer` keeps every binary schema member.
+ */
+type WebSocketMessageHandlerSchemaCompatibleWithTypeGuard<Schema extends WebSocketSchema, Predicate> =
+  | Extract<Predicate, Schema>
+  | ([Extract<Predicate, ArrayBuffer>] extends [never] ? never : Extract<Schema, Blob | BufferSource>);
 
 /**
  * The message type of a handler after applying a restriction. Type-guard restrictions narrow to their predicate and
@@ -95,7 +110,7 @@ export type WebSocketMessageHandlerSchemaWithRestriction<Schema extends WebSocke
   Restriction extends WebSocketMessageHandlerComputedTypeGuardRestriction<Schema, infer Predicate>
     ? [Predicate] extends [never]
       ? Schema
-      : Predicate
+      : WebSocketMessageHandlerSchemaCompatibleWithTypeGuard<Schema, Predicate>
     : Restriction extends WebSocketMessageHandlerStaticRestriction<Schema>
       ? WebSocketMessageHandlerSchemaCompatibleWithStaticRestriction<Schema, Restriction>
       : Schema;

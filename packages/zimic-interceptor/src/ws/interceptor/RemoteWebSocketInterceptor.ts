@@ -137,7 +137,7 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
   }
 
   async stop() {
-    await this.implementation.stop({ beforeStop: () => this.clear() });
+    await this.implementation.stop();
   }
 
   async checkTimes() {

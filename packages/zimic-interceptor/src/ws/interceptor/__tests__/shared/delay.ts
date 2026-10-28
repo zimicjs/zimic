@@ -1,12 +1,13 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitForDelay } from '@zimic/utils/time';
-import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+import { WebSocketSchema } from '@zimic/ws';
 import { describe, expect, it, Mock, MockInstance, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import {
   collectWebSocketClientMessages,
+  expectWebSocketTimesCheckError,
   usingWebSocketClient,
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
@@ -15,11 +16,7 @@ import type {
   LocalWebSocketMessageHandler,
   PendingRemoteWebSocketMessageHandler,
 } from '../../../messageHandler/types/public';
-import type { WebSocketInterceptorType } from '../../types/options';
-import type {
-  LocalWebSocketInterceptor as PublicLocalWebSocketInterceptor,
-  RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor,
-} from '../../types/public';
+import type { UnhandledMessageStrategy, WebSocketInterceptorType } from '../../types/options';
 
 type MessageSchema = WebSocketSchema<{ type: 'create'; body: { text: string } } | { type: 'delete'; id: string }>;
 
@@ -37,9 +34,6 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
   async function usingDelayedHandler(
     declareDelay: (handler: DelayableHandler) => DelayableHandler,
     callback: (context: {
-      handler: { clear: () => PromiseLike<unknown> | unknown };
-      interceptor: PublicLocalWebSocketInterceptor<MessageSchema> | PublicRemoteWebSocketInterceptor<MessageSchema>;
-      client: WebSocketClient<MessageSchema>;
       effect: Mock;
       randomSpy: MockInstance<typeof Math.random>;
       sendMessage: () => Promise<{ response: ReturnType<typeof waitForWebSocketClientMessage<MessageSchema>> }>;
@@ -51,7 +45,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
       let dispatchStartedPromise = createPromiseWithResolvers<void>();
       const effect = vi.fn();
 
-      const handler = await declareDelay(
+      await declareDelay(
         interceptor.message().with(() => {
           dispatchStartedPromise.resolve();
           return true;
@@ -69,9 +63,6 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
 
         try {
           await callback({
-            handler,
-            interceptor,
-            client,
             effect,
             randomSpy,
             sendMessage: async () => {
@@ -259,34 +250,137 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
     await expectDelayedResponse((handler) => handler.delay(firstDelay).delay(secondDelay), secondDelay);
   });
 
-  it('should not throw an error if the handler is cleared while the delay is being awaited', async () => {
+  it('should not handle messages after cleared during their delay', async () => {
+    const baseURL = getBaseURL();
     const delay = 200;
 
-    await usingDelayedHandler(
-      (handler) => handler.delay(delay),
-      async ({ handler, interceptor, client, effect, sendMessage }) => {
-        const receivedMessages = collectWebSocketClientMessages(client);
+    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
 
-        await usingIgnoredConsole(['error'], async (console) => {
-          await sendMessage();
+    await usingWebSocketInterceptor<MessageSchema>(
+      { type, baseURL, messageSaving: { enabled: true }, onUnhandledMessage },
+      async (interceptor) => {
+        const delayStartedPromise = createPromiseWithResolvers<void>();
+        const effect = vi.fn();
 
-          await handler.clear();
+        const handler = await interceptor
+          .message()
+          .delay(() => {
+            delayStartedPromise.resolve();
+            return delay;
+          })
+          .effect(effect)
+          .respond({ type: 'delete', id: '1' });
 
-          await vi.advanceTimersByTimeAsync(delay);
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          const receivedMessages = collectWebSocketClientMessages(client);
 
-          expect(effect).not.toHaveBeenCalled();
-          expect(console.error).toHaveBeenCalledTimes(0);
+          // The timers are faked only after the interceptor and the client are set up, which relies on real timers.
+          vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 
-          // A higher-priority handler answers the probe message, because the cleared handler still matches every message.
-          await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' });
+          try {
+            await usingIgnoredConsole(['error'], async (console) => {
+              client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
-          // Messages on a socket are delivered in order, so the probe response being the next message means that no
-          // response was sent for the cleared handler.
-          const probeResponse = waitForWebSocketClientMessage(client);
-          client.send(JSON.stringify({ type: 'delete', id: '1' }));
+              await delayStartedPromise;
 
-          await expect(probeResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
-          expect(receivedMessages).toEqual([JSON.stringify({ type: 'delete', id: 'probe' })]);
+              // Lets the pending asynchronous steps schedule the delay timer.
+              await vi.advanceTimersByTimeAsync(0);
+
+              await handler.clear();
+
+              await vi.advanceTimersByTimeAsync(delay);
+
+              // A newer handler answers the probe message, because the cleared handler no longer matches messages.
+              await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' });
+
+              // Messages on a socket are delivered in order, so the probe response being the next message means that
+              // no response was sent for the cleared handler.
+              const probeResponse = waitForWebSocketClientMessage(client);
+              client.send(JSON.stringify({ type: 'delete', id: '1' }));
+
+              await expect(probeResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
+              expect(receivedMessages).toEqual([JSON.stringify({ type: 'delete', id: 'probe' })]);
+
+              expect(effect).not.toHaveBeenCalled();
+              expect(handler.messages).toHaveLength(0);
+              expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+
+              expect(console.error).toHaveBeenCalledTimes(0);
+            });
+          } finally {
+            vi.useRealTimers();
+          }
+        });
+      },
+    );
+  });
+
+  it('should not handle messages after cleared and redeclared during their delay', async () => {
+    const baseURL = getBaseURL();
+    const delay = 200;
+
+    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { type, baseURL, messageSaving: { enabled: true }, onUnhandledMessage },
+      async (interceptor) => {
+        const delayStartedPromise = createPromiseWithResolvers<void>();
+        const effect = vi.fn();
+
+        const handler = await interceptor
+          .message()
+          .delay(() => {
+            delayStartedPromise.resolve();
+            return delay;
+          })
+          .effect(effect)
+          .respond({ type: 'delete', id: '1' });
+
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          const receivedMessages = collectWebSocketClientMessages(client);
+
+          // The timers are faked only after the interceptor and the client are set up, which relies on real timers.
+          vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+          try {
+            client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+            await delayStartedPromise;
+
+            // Lets the pending asynchronous steps schedule the delay timer.
+            await vi.advanceTimersByTimeAsync(0);
+
+            await handler.clear();
+
+            // Redeclaring the cleared handler would apply its new declarations to the message in its delay.
+            const redeclaredEffect = vi.fn();
+            await handler.effect(redeclaredEffect).respond({ type: 'delete', id: 'redeclared' }).times(1);
+
+            await vi.advanceTimersByTimeAsync(delay);
+
+            // A newer handler answers the probe message, because the redeclared handler matches every message.
+            await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' });
+
+            // Messages on a socket are delivered in order, so the probe response being the next message means that no
+            // response was sent for the cleared handler.
+            const probeResponse = waitForWebSocketClientMessage(client);
+            client.send(JSON.stringify({ type: 'delete', id: '1' }));
+
+            await expect(probeResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
+            expect(receivedMessages).toEqual([JSON.stringify({ type: 'delete', id: 'probe' })]);
+
+            expect(effect).not.toHaveBeenCalled();
+            expect(redeclaredEffect).not.toHaveBeenCalled();
+            expect(handler.messages).toHaveLength(0);
+            expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+          } finally {
+            vi.useRealTimers();
+          }
+        });
+
+        await expectWebSocketTimesCheckError(() => interceptor.checkTimes(), {
+          message: 'Expected exactly 1 message, but got 0.',
+          expectedNumberOfMessages: 1,
         });
       },
     );

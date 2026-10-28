@@ -1,14 +1,13 @@
 import { HttpHeaders, HttpSearchParams, HttpSchema, HttpStatusCode, MergeHttpResponsesByStatusCode } from '@zimic/http';
-import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
+import { beforeEach, describe, expectTypeOf, it } from 'vitest';
 
 import { HttpRequestHandlerPath } from '@/http/requestHandler/types/utils';
-import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { createHttpInterceptor } from '../../factory';
 import { UnhandledRequestStrategy } from '../../types/options';
 import { HttpInterceptor } from '../../types/public';
 import { InferHttpInterceptorSchema } from '../../types/schema';
-import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
+import { declareHttpInterceptorTypes, RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareTypeHttpInterceptorTests(
   options: Omit<RuntimeSharedHttpInterceptorTestsOptions, 'getInterceptorOptions'>,
@@ -27,15 +26,15 @@ export function declareTypeHttpInterceptorTests(
     baseURL = getBaseURL();
   });
 
-  it('should correctly type requests', async () => {
-    await usingHttpInterceptor<{
+  it('should correctly type requests', () => {
+    declareHttpInterceptorTypes<{
       '/users': {
         POST: {
           request: { body: User };
           response: { 201: { body: User } };
         };
       };
-    }>({ type, baseURL }, async (interceptor) => {
+    }>(async (interceptor) => {
       const _creationHandler = await interceptor.post('/users').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<User>();
 
@@ -50,14 +49,14 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should correctly type requests with search params', async () => {
+  it('should correctly type requests with search params', () => {
     type UserListSearchParams = HttpSchema.SearchParams<{
       name: string;
       usernames: string[];
       orderBy?: ('name' | 'createdAt')[];
     }>;
 
-    await usingHttpInterceptor<{
+    declareHttpInterceptorTypes<{
       '/users': {
         GET: {
           request: {
@@ -68,7 +67,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       };
-    }>({ type, baseURL }, async (interceptor) => {
+    }>(async (interceptor) => {
       const _listHandler = await interceptor.get('/users').respond((request) => {
         expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
 
@@ -83,7 +82,7 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should correctly type requests with search params containing invalid types', async () => {
+  it('should correctly type requests with search params containing invalid types', () => {
     interface UserListSearchParams {
       name: string;
       usernames: string[];
@@ -92,7 +91,7 @@ export function declareTypeHttpInterceptorTests(
       method?: () => void; // Forcing an invalid type
     }
 
-    await usingHttpInterceptor<
+    declareHttpInterceptorTypes<
       HttpSchema<{
         '/users': {
           GET: {
@@ -105,7 +104,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       }>
-    >({ type, baseURL }, async (interceptor) => {
+    >(async (interceptor) => {
       const _listHandler = await interceptor.get('/users').respond((request) => {
         expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
 
@@ -117,8 +116,8 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should correctly type requests with no search params', async () => {
-    await usingHttpInterceptor<{
+  it('should correctly type requests with no search params', () => {
+    declareHttpInterceptorTypes<{
       '/users': {
         GET: {
           response: { 200: { body: User } };
@@ -136,7 +135,7 @@ export function declareTypeHttpInterceptorTests(
           response: { 200: { body: User } };
         };
       };
-    }>({ type, baseURL }, async (interceptor) => {
+    }>(async (interceptor) => {
       const _listHandler = await interceptor.get('/users').respond((request) => {
         expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<never>>();
 
@@ -151,13 +150,13 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should correctly type requests with headers', async () => {
+  it('should correctly type requests with headers', () => {
     type UserListHeaders = HttpSchema.Headers<{
       accept: string;
       'content-language': string;
     }>;
 
-    await usingHttpInterceptor<{
+    declareHttpInterceptorTypes<{
       '/users': {
         GET: {
           request: {
@@ -168,7 +167,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       };
-    }>({ type, baseURL }, async (interceptor) => {
+    }>(async (interceptor) => {
       const _listHandler = await interceptor.get('/users').respond((request) => {
         expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListHeaders>>();
 
@@ -183,7 +182,7 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should correctly type requests with headers containing invalid types', async () => {
+  it('should correctly type requests with headers containing invalid types', () => {
     interface UserListHeaders {
       accept: string;
       'content-language': string;
@@ -191,7 +190,7 @@ export function declareTypeHttpInterceptorTests(
       method?: () => void; // Forcing an invalid type
     }
 
-    await usingHttpInterceptor<
+    declareHttpInterceptorTypes<
       HttpSchema<{
         '/users': {
           GET: {
@@ -204,7 +203,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       }>
-    >({ type, baseURL }, async (interceptor) => {
+    >(async (interceptor) => {
       const _listHandler = await interceptor.get('/users').respond((request) => {
         expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListHeaders>>();
 
@@ -216,12 +215,12 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should correctly type requests with headers containing only `content-type`', async () => {
+  it('should correctly type requests with headers containing only `content-type`', () => {
     type UserListHeaders = HttpSchema.Headers<{
       'content-type': string;
     }>;
 
-    await usingHttpInterceptor<{
+    declareHttpInterceptorTypes<{
       '/users': {
         GET: {
           request: {
@@ -232,7 +231,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       };
-    }>({ type, baseURL }, async (interceptor) => {
+    }>(async (interceptor) => {
       const _listHandler = await interceptor.get('/users').respond((request) => {
         expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListHeaders>>();
 
@@ -247,8 +246,8 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should correctly type requests with no headers', async () => {
-    await usingHttpInterceptor<{
+  it('should correctly type requests with no headers', () => {
+    declareHttpInterceptorTypes<{
       '/users': {
         GET: {
           response: { 200: { body: User } };
@@ -266,7 +265,7 @@ export function declareTypeHttpInterceptorTests(
           response: { 200: { body: User } };
         };
       };
-    }>({ type, baseURL }, async (interceptor) => {
+    }>(async (interceptor) => {
       const _listHandler = await interceptor.get('/users').respond((request) => {
         expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<never>>();
 
@@ -281,8 +280,8 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should correctly type responses with a single status code', async () => {
-    await usingHttpInterceptor<{
+  it('should correctly type responses with a single status code', () => {
+    declareHttpInterceptorTypes<{
       '/users': {
         GET: {
           response: {
@@ -291,7 +290,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       };
-    }>({ type, baseURL }, async (interceptor) => {
+    }>(async (interceptor) => {
       const successfulHandlers = await Promise.all([
         Promise.resolve(interceptor.get('/users').respond({ status: 200, body: users })),
         Promise.resolve(interceptor.get('/users').respond(() => ({ status: 200, body: users }))),
@@ -320,8 +319,8 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should correctly type responses with multiple status codes', async () => {
-    await usingHttpInterceptor<{
+  it('should correctly type responses with multiple status codes', () => {
+    declareHttpInterceptorTypes<{
       '/users': {
         GET: {
           request: {
@@ -339,7 +338,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       };
-    }>({ type, baseURL }, async (interceptor) => {
+    }>(async (interceptor) => {
       const _handler = await interceptor.get('/users').respond((request) => {
         const name = request.searchParams.get('name');
 
@@ -413,8 +412,8 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should correctly type responses with merged status codes', async () => {
-    await usingHttpInterceptor<{
+  it('should correctly type responses with merged status codes', () => {
+    declareHttpInterceptorTypes<{
       '/users': {
         GET: {
           request: {
@@ -445,7 +444,7 @@ export function declareTypeHttpInterceptorTests(
           >;
         };
       };
-    }>({ type, baseURL }, async (interceptor) => {
+    }>(async (interceptor) => {
       const _handler = await interceptor.get('/users').respond((request) => {
         const name = request.searchParams.get('name');
 
@@ -535,12 +534,12 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should correctly type responses with headers', async () => {
+  it('should correctly type responses with headers', () => {
     type UserListHeaders = HttpSchema.Headers<{
       accept: string;
     }>;
 
-    await usingHttpInterceptor<{
+    declareHttpInterceptorTypes<{
       '/users': {
         GET: {
           response: {
@@ -551,7 +550,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       };
-    }>({ type, baseURL }, async (interceptor) => {
+    }>(async (interceptor) => {
       const _listHandler = await interceptor.get('/users').respond({
         status: 200,
         headers: {
@@ -567,14 +566,14 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should correctly type responses with headers containing invalid types', async () => {
+  it('should correctly type responses with headers containing invalid types', () => {
     interface UserListHeaders {
       accept: string;
       date?: Date; // Forcing an invalid type
       method?: () => void; // Forcing an invalid type
     }
 
-    await usingHttpInterceptor<
+    declareHttpInterceptorTypes<
       HttpSchema<{
         '/users': {
           GET: {
@@ -587,7 +586,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       }>
-    >({ type, baseURL }, async (interceptor) => {
+    >(async (interceptor) => {
       const _listHandler = await interceptor.get('/users').respond({
         status: 200,
         headers: { accept: '*/*' },
@@ -601,14 +600,14 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should correctly type responses with headers containing only `content-type`', async () => {
+  it('should correctly type responses with headers containing only `content-type`', () => {
     // If only content type is specified, the headers should be optional. This is because the content type is
     // automatically set by the interceptor before returning a response, unless overridden.
     type UserListHeaders = HttpSchema.Headers<{
       'content-type': 'application/json; charset=utf-8';
     }>;
 
-    await usingHttpInterceptor<{
+    declareHttpInterceptorTypes<{
       '/users': {
         GET: {
           response: {
@@ -619,7 +618,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       };
-    }>({ type, baseURL }, async (interceptor) => {
+    }>(async (interceptor) => {
       let _listHandler = await interceptor.get('/users').respond({
         status: 200,
         body: users[0],
@@ -648,7 +647,7 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should correctly type responses with headers containing `content-type` and additional required headers', async () => {
+  it('should correctly type responses with headers containing `content-type` and additional required headers', () => {
     // If additional headers existing, beyond content type, only the `content-type` key should be optional. The
     // additional headers should be kept as defined.
     type UserListHeaders = HttpSchema.Headers<{
@@ -656,7 +655,7 @@ export function declareTypeHttpInterceptorTests(
       accept: string;
     }>;
 
-    await usingHttpInterceptor<{
+    declareHttpInterceptorTypes<{
       '/users': {
         GET: {
           response: {
@@ -667,7 +666,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       };
-    }>({ type, baseURL }, async (interceptor) => {
+    }>(async (interceptor) => {
       // @ts-expect-error Headers are required
       let _listHandler = await interceptor.get('/users').respond({
         status: 200,
@@ -706,7 +705,7 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should correctly type responses with headers containing `content-type` and additional optional headers', async () => {
+  it('should correctly type responses with headers containing `content-type` and additional optional headers', () => {
     // If additional headers existing, beyond content type, only the `content-type` key should be optional. The
     // additional headers should be kept as defined.
     type UserListHeaders = HttpSchema.Headers<{
@@ -714,7 +713,7 @@ export function declareTypeHttpInterceptorTests(
       accept?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    declareHttpInterceptorTypes<{
       '/users': {
         GET: {
           response: {
@@ -725,7 +724,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       };
-    }>({ type, baseURL }, async (interceptor) => {
+    }>(async (interceptor) => {
       // @ts-expect-error Headers are required
       let _listHandler = await interceptor.get('/users').respond({
         status: 200,
@@ -761,8 +760,8 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should correctly type responses with no headers', async () => {
-    await usingHttpInterceptor<{
+  it('should correctly type responses with no headers', () => {
+    declareHttpInterceptorTypes<{
       '/users': {
         GET: {
           response: {
@@ -778,7 +777,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       };
-    }>({ type, baseURL }, async (interceptor) => {
+    }>(async (interceptor) => {
       const _listHandler = await interceptor.get('/users').respond({
         status: 200,
         body: users[0],
@@ -789,8 +788,8 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should show a type error if trying to use a non-specified status code', async () => {
-    await usingHttpInterceptor<{
+  it('should show a type error if trying to use a non-specified status code', () => {
+    declareHttpInterceptorTypes<{
       '/users': {
         GET: {
           response: {
@@ -798,7 +797,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       };
-    }>({ type, baseURL }, async (interceptor) => {
+    }>(async (interceptor) => {
       await interceptor.get('/users').respond({
         status: 200,
         body: users,
@@ -818,8 +817,8 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should show a type error if trying to use a non-assignable response body', async () => {
-    await usingHttpInterceptor<{
+  it('should show a type error if trying to use a non-assignable response body', () => {
+    declareHttpInterceptorTypes<{
       '/users': {
         GET: {
           response: {
@@ -833,7 +832,7 @@ export function declareTypeHttpInterceptorTests(
           response: { 204: {} };
         };
       };
-    }>({ type, baseURL }, async (interceptor) => {
+    }>(async (interceptor) => {
       await interceptor.get('/users').respond({
         status: 200,
         body: users,
@@ -874,8 +873,8 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should show a type error if trying to use a non-specified path and/or method', async () => {
-    await usingHttpInterceptor<{
+  it('should show a type error if trying to use a non-specified path and/or method', () => {
+    declareHttpInterceptorTypes<{
       '/users': {
         GET: {
           response: {
@@ -897,7 +896,7 @@ export function declareTypeHttpInterceptorTests(
           response: { 204: {} };
         };
       };
-    }>({ type, baseURL }, async (interceptor) => {
+    }>(async (interceptor) => {
       await interceptor.get('/users');
       await interceptor.get('/users/:id');
       await interceptor.get('/users/123');
@@ -922,7 +921,7 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
-  it('should correctly type paths with multiple methods', async () => {
+  it('should correctly type paths with multiple methods', () => {
     type Schema = HttpSchema<{
       '/users': {
         POST: {
@@ -954,7 +953,7 @@ export function declareTypeHttpInterceptorTests(
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+    declareHttpInterceptorTypes<Schema>(async (interceptor) => {
       const _creationHandler = await interceptor.post('/users').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<User>();
 
@@ -972,7 +971,6 @@ export function declareTypeHttpInterceptorTests(
 
       const _listHandler = await interceptor.get('/users').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<null>();
-        expect(request.body).toBe(null);
 
         return {
           status: 200,
@@ -988,7 +986,6 @@ export function declareTypeHttpInterceptorTests(
 
       const _getGroupHandler = await interceptor.get('/groups/1').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<null>();
-        expect(request.body).toBe(null);
 
         return {
           status: 200,
@@ -1127,8 +1124,8 @@ export function declareTypeHttpInterceptorTests(
       };
     }>;
 
-    it('should correctly type requests with static paths that conflict with a dynamic path, preferring the former', async () => {
-      await usingHttpInterceptor<SchemaWithDynamicPaths>({ type, baseURL }, async (interceptor) => {
+    it('should correctly type requests with static paths that conflict with a dynamic path, preferring the former', () => {
+      declareHttpInterceptorTypes<SchemaWithDynamicPaths>(async (interceptor) => {
         const _getHandler = await interceptor.get('/groups/users').respond((request) => {
           expectTypeOf(request.pathParams).toEqualTypeOf<{}>();
           expectTypeOf(request.body).toEqualTypeOf<null>();
@@ -1165,8 +1162,8 @@ export function declareTypeHttpInterceptorTests(
       });
     });
 
-    it('should correctly type requests with dynamic paths containing one parameter at the start of the path', async () => {
-      await usingHttpInterceptor<SchemaWithDynamicPaths>({ type, baseURL }, async (interceptor) => {
+    it('should correctly type requests with dynamic paths containing one parameter at the start of the path', () => {
+      declareHttpInterceptorTypes<SchemaWithDynamicPaths>(async (interceptor) => {
         const _genericGetHandler = await interceptor.get('/:any').respond((request) => {
           expectTypeOf(request.pathParams).toEqualTypeOf<{ any: string }>();
           expectTypeOf(request.body).toEqualTypeOf<null>();
@@ -1205,8 +1202,8 @@ export function declareTypeHttpInterceptorTests(
       });
     });
 
-    it('should correctly type requests with dynamic paths containing one parameter in the middle of the path', async () => {
-      await usingHttpInterceptor<SchemaWithDynamicPaths>({ type, baseURL }, async (interceptor) => {
+    it('should correctly type requests with dynamic paths containing one parameter in the middle of the path', () => {
+      declareHttpInterceptorTypes<SchemaWithDynamicPaths>(async (interceptor) => {
         const _genericGetHandler = await interceptor.get('/groups/:groupId/users').respond((request) => {
           expectTypeOf(request.pathParams).toEqualTypeOf<{ groupId: string }>();
           expectTypeOf(request.body).toEqualTypeOf<null>();
@@ -1245,8 +1242,8 @@ export function declareTypeHttpInterceptorTests(
       });
     });
 
-    it('should correctly type requests with dynamic paths containing one parameter at the end of the path', async () => {
-      await usingHttpInterceptor<SchemaWithDynamicPaths>({ type, baseURL }, async (interceptor) => {
+    it('should correctly type requests with dynamic paths containing one parameter at the end of the path', () => {
+      declareHttpInterceptorTypes<SchemaWithDynamicPaths>(async (interceptor) => {
         const _genericGetHandler = await interceptor.get('/groups/:groupId').respond((request) => {
           expectTypeOf(request.pathParams).toEqualTypeOf<{ groupId: string }>();
           expectTypeOf(request.body).toEqualTypeOf<null>();
@@ -1285,8 +1282,8 @@ export function declareTypeHttpInterceptorTests(
       });
     });
 
-    it('should correctly type requests with dynamic paths containing multiple, non-consecutive parameters', async () => {
-      await usingHttpInterceptor<SchemaWithDynamicPaths>({ type, baseURL }, async (interceptor) => {
+    it('should correctly type requests with dynamic paths containing multiple, non-consecutive parameters', () => {
+      declareHttpInterceptorTypes<SchemaWithDynamicPaths>(async (interceptor) => {
         const _genericGetHandler = await interceptor.get('/groups/:groupId/users/:userId').respond((request) => {
           expectTypeOf(request.pathParams).toEqualTypeOf<{ groupId: string; userId: string }>();
           expectTypeOf(request.body).toEqualTypeOf<null>();
@@ -1327,8 +1324,8 @@ export function declareTypeHttpInterceptorTests(
       });
     });
 
-    it('should correctly type requests with dynamic paths containing multiple, consecutive parameters', async () => {
-      await usingHttpInterceptor<SchemaWithDynamicPaths>({ type, baseURL }, async (interceptor) => {
+    it('should correctly type requests with dynamic paths containing multiple, consecutive parameters', () => {
+      declareHttpInterceptorTypes<SchemaWithDynamicPaths>(async (interceptor) => {
         const _genericGetHandler = await interceptor
           .get('/groups/:groupId/users/:userId/:otherId')
           .respond((request) => {
@@ -1371,8 +1368,8 @@ export function declareTypeHttpInterceptorTests(
       });
     });
 
-    it('should correctly type requests with dynamic paths containing multiple, consecutive parameters ending with static path', async () => {
-      await usingHttpInterceptor<SchemaWithDynamicPaths>({ type, baseURL }, async (interceptor) => {
+    it('should correctly type requests with dynamic paths containing multiple, consecutive parameters ending with static path', () => {
+      declareHttpInterceptorTypes<SchemaWithDynamicPaths>(async (interceptor) => {
         const _genericGetHandler = await interceptor
           .get('/groups/:groupId/users/:userId/:otherId/suffix')
           .respond((request) => {
@@ -1415,8 +1412,8 @@ export function declareTypeHttpInterceptorTests(
       });
     });
 
-    it('should correctly type responses with dynamic paths, based on the applied status code', async () => {
-      await usingHttpInterceptor<{
+    it('should correctly type responses with dynamic paths, based on the applied status code', () => {
+      declareHttpInterceptorTypes<{
         '/groups/:groupId/users': {
           GET: {
             response: {
@@ -1425,7 +1422,7 @@ export function declareTypeHttpInterceptorTests(
             };
           };
         };
-      }>({ type, baseURL }, async (interceptor) => {
+      }>(async (interceptor) => {
         const _successfulGenericListHandler = await interceptor.get('/groups/:groupId/users').respond({
           status: 200,
           body: users,
