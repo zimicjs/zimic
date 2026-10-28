@@ -1,3 +1,4 @@
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -102,6 +103,39 @@ export function declareDefaultWebSocketMessageHandlerTests(
           response = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'create', body: { text: 'after' } }));
           await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: '2' }));
+        });
+      },
+    );
+  });
+
+  it('should not match messages if cleared while they are being matched', async () => {
+    const restrictionStartedPromise = createPromiseWithResolvers<void>();
+    const restrictionReleasedPromise = createPromiseWithResolvers<void>();
+
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        await interceptor.message().respond({ type: 'delete', id: 'older' });
+
+        const handler = await interceptor
+          .message()
+          .with(async () => {
+            restrictionStartedPromise.resolve();
+            await restrictionReleasedPromise;
+            return true;
+          })
+          .respond({ type: 'delete', id: '1' });
+
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
+          const response = waitForWebSocketClientMessage(client);
+          client.send(JSON.stringify({ type: 'create', body: { text: 'pending' } }));
+          await restrictionStartedPromise;
+
+          await handler.clear();
+          restrictionReleasedPromise.resolve();
+
+          await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'older' }));
+          expect(handler.messages).toHaveLength(0);
         });
       },
     );

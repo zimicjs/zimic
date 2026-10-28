@@ -210,11 +210,12 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     message: ReceivedWebSocketMessageData<Schema>,
     context: WebSocketMessageHandlerApplyContext<Schema>,
   ): Promise<WebSocketMessageHandlerMessageMatch> {
+    const restrictionsMatch = await this.matchesRestrictions(message, context);
+
+    // Checked after the restrictions because the handler may be cleared while they are matched asynchronously.
     if (this.isCleared) {
       return { success: false, cause: 'clearedHandler' };
     }
-
-    const restrictionsMatch = await this.matchesRestrictions(message, context);
 
     if (!restrictionsMatch.success) {
       return { success: false, cause: 'unmatchedRestrictions', diff: restrictionsMatch.diff };
