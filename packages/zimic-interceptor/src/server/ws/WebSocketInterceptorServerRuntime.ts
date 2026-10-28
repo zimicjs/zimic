@@ -7,6 +7,7 @@ import { WebSocket as ClientSocket } from 'ws';
 import * as z from 'zod';
 
 import { isURLUnderBaseURL } from '@/utils/urls';
+import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
 import type { WebSocketEventMessage } from '@/utils/webSocket/types';
@@ -182,10 +183,6 @@ class WebSocketInterceptorServerRuntime {
           });
 
           this.closePendingUserWebSocketConnection(userSocket, userConnection, options);
-
-          // The worker may have accepted the connection after the server stopped waiting for its reply, so it is told
-          // to forget the client.
-          this.notifyUserWebSocketClose(userConnection);
         }
       }
     }
@@ -271,7 +268,8 @@ class WebSocketInterceptorServerRuntime {
 
       isActivated = true;
     } catch (error) {
-      if (error instanceof InvalidWebSocketMessageError) {
+      // Aborts are expected when the last holder lets the connection go or the worker disconnects.
+      if (!(error instanceof WebSocketMessageAbortError)) {
         console.error(error);
       }
     } finally {

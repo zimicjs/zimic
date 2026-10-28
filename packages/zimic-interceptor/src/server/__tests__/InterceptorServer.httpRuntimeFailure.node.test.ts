@@ -166,7 +166,7 @@ describe('Interceptor server > HTTP runtime failures', () => {
             },
             waitForAuthentication: true,
           }),
-        ).rejects.toThrow('Could not load the HTTP interceptor runtime. (code 1008)');
+        ).rejects.toThrow('Could not load the HTTP interceptor runtime. (code 1011)');
 
         expect(console.error).toHaveBeenCalled();
         await expectFetchError(fetch(`http://localhost:${server.port}/users`));

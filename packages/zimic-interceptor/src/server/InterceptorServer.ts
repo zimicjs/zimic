@@ -408,12 +408,12 @@ class InterceptorServer implements PublicInterceptorServer {
           }
 
           socket.resume();
-          socket.close(
-            WEB_SOCKET_CLOSE_CODES.POLICY_VIOLATION,
-            isMissingHttpPeerError(error)
-              ? WEB_SOCKET_CLOSE_REASONS.MISSING_HTTP_PEER
-              : WEB_SOCKET_CLOSE_REASONS.HTTP_RUNTIME_LOAD_FAILED,
-          );
+
+          if (isMissingHttpPeerError(error)) {
+            socket.close(WEB_SOCKET_CLOSE_CODES.POLICY_VIOLATION, WEB_SOCKET_CLOSE_REASONS.MISSING_HTTP_PEER);
+          } else {
+            socket.close(WEB_SOCKET_CLOSE_CODES.INTERNAL_ERROR, WEB_SOCKET_CLOSE_REASONS.HTTP_RUNTIME_LOAD_FAILED);
+          }
 
           return { handled: true };
         }
