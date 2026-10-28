@@ -1,18 +1,21 @@
 import { DeepPartial, PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
-import { ReceivedWebSocketMessageData } from '@/ws/interceptor/types/messages';
+import { ReceivedWebSocketMessageData, UnparsedWebSocketJSONPrimitive } from '@/ws/interceptor/types/messages';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * A static restriction declared with `handler.with()`, matching messages that contain its partial data. Binary members
- * accept only whole binary values of any kind, compared byte by byte.
+ * accept only whole binary values of any kind, compared byte by byte. Top-level number and boolean members accept only
+ * their whole text as received, such as `'42'`.
  */
 export type WebSocketMessageHandlerStaticRestriction<Schema extends WebSocketSchema> = Schema extends
   Blob | BufferSource
   ? Blob | BufferSource
-  : DeepPartial<Schema>;
+  : Schema extends UnparsedWebSocketJSONPrimitive
+    ? ReceivedWebSocketMessageData<Schema>
+    : DeepPartial<Schema>;
 
 // Unlike HTTP, where `exact` is a field of the static restriction, a WebSocket static restriction is the partial
 // message itself, so a field would be ambiguous with message data.

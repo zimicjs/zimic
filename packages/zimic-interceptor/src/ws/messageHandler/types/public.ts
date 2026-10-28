@@ -4,6 +4,7 @@ import { WebSocketSchema } from '@zimic/ws';
 import {
   InterceptedWebSocketInterceptorMessage,
   ReceivedWebSocketMessageData,
+  UnparsedWebSocketJSONPrimitive,
   WebSocketInterceptorClient,
   WebSocketInterceptorServer,
 } from '@/ws/interceptor/types/messages';
@@ -87,20 +88,37 @@ type WebSocketMessageHandlerSchemaCompatibleWithStaticRestriction<
 > = Schema extends unknown
   ? [Schema, Restriction] extends [Blob | BufferSource, Exclude<Restriction, Blob | BufferSource>]
     ? never
-    : Schema extends Restriction
-      ? Schema
-      : Restriction extends WebSocketMessageHandlerStaticRestriction<Schema>
+    : Schema extends UnparsedWebSocketJSONPrimitive
+      ? WebSocketMessageHandlerPrimitiveSchemaMatchingText<Schema, Restriction>
+      : Schema extends Restriction
         ? Schema
-        : never
+        : Restriction extends WebSocketMessageHandlerStaticRestriction<Schema>
+          ? Schema
+          : never
+  : never;
+
+/**
+ * The top-level number and boolean schema members whose received text overlaps a restriction, which may mix the text of
+ * several members, such as `'42' | 'true'`.
+ */
+type WebSocketMessageHandlerPrimitiveSchemaMatchingText<
+  Schema extends WebSocketSchema,
+  Text,
+> = Schema extends UnparsedWebSocketJSONPrimitive
+  ? [Extract<Text, ReceivedWebSocketMessageData<Schema>>] extends [never]
+    ? never
+    : Schema
   : never;
 
 /**
  * The schema members a type-guard predicate keeps. Type guards receive binary messages as `ArrayBuffer`, so a predicate
- * accepting `ArrayBuffer` keeps every binary schema member.
+ * accepting `ArrayBuffer` keeps every binary schema member. They also receive top-level number and boolean members as
+ * text, so a predicate accepting that text keeps the member.
  */
 type WebSocketMessageHandlerSchemaCompatibleWithTypeGuard<Schema extends WebSocketSchema, Predicate> =
   | Extract<Predicate, Schema>
-  | ([Extract<Predicate, ArrayBuffer>] extends [never] ? never : Extract<Schema, Blob | BufferSource>);
+  | ([Extract<Predicate, ArrayBuffer>] extends [never] ? never : Extract<Schema, Blob | BufferSource>)
+  | WebSocketMessageHandlerPrimitiveSchemaMatchingText<Schema, Predicate>;
 
 /**
  * The message type of a handler after applying a restriction. Type-guard restrictions narrow to their predicate and

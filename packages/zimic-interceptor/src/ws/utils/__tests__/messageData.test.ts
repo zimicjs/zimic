@@ -26,13 +26,13 @@ describe('normalizeWebSocketMessageData', () => {
     await expect(normalizeWebSocketMessageData(data)).resolves.toBe(data);
   });
 
+  it.each(['"message"', '1', 'true', 'null'])('should preserve JSON primitive text message data %s', async (data) => {
+    await expect(normalizeWebSocketMessageData(data)).resolves.toBe(data);
+  });
+
   it.each([
     { data: '{"type":"message"}', expected: { type: 'message' } },
     { data: '["message"]', expected: ['message'] },
-    { data: '"message"', expected: 'message' },
-    { data: '1', expected: 1 },
-    { data: 'true', expected: true },
-    { data: 'null', expected: null },
   ])('should parse JSON message data $data', async ({ data, expected }) => {
     await expect(normalizeWebSocketMessageData(data)).resolves.toEqual(expected);
   });

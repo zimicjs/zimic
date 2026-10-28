@@ -25,7 +25,9 @@ export function normalizeBufferSource(bufferSource: BufferSource): ArrayBuffer {
   return normalizedBytes.buffer;
 }
 
-// Only objects and arrays are parsed, so text such as `'42'`, `'true'`, or `'null'` stays a string.
+// Unlike HTTP bodies without a content type, which are parsed as any JSON value, only objects and arrays are parsed.
+// WebSocket frames have no content type to declare JSON, and string schema members are sent as raw text, so text such
+// as `'42'`, `'true'`, `'null'`, or `'"message"'` stays a string.
 function tryParseJSONMessageData(data: string): unknown {
   const firstCharacter = data.trimStart()[0];
 
