@@ -256,6 +256,62 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
     });
   });
 
+  it.each([
+    {
+      action: 'cleared',
+      release: (interceptor: WebSocketInterceptor<ChatMessage>) => promiseIfRemote(interceptor.clear(), { type }),
+    },
+    {
+      action: 'stopped',
+      release: (interceptor: WebSocketInterceptor<ChatMessage>) => interceptor.stop(),
+    },
+  ])(
+    'should not send messages from clients of an interceptor $action while another one shares their connection',
+    async ({ release }) => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (firstInterceptor) => {
+        await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (secondInterceptor) => {
+          const secondConnectedClients: WebSocketInterceptorClient<ChatMessage>[] = [];
+          secondInterceptor.on('connection', (connectedClient) => {
+            secondConnectedClients.push(connectedClient);
+          });
+
+          await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+            await waitFor(() => {
+              expect(firstInterceptor.clients).toHaveLength(1);
+              expect(secondInterceptor.clients).toHaveLength(1);
+            });
+
+            expect(secondConnectedClients).toHaveLength(1);
+            const releasedClient = secondConnectedClients[0];
+
+            await release(secondInterceptor);
+
+            expect(secondInterceptor.clients).toHaveLength(0);
+            expect(client.readyState).toBe(WebSocketClient.OPEN);
+
+            const messages = collectWebSocketClientMessages(client);
+
+            const releasedMessage = JSON.stringify({ type: 'server', text: 'released' } satisfies ChatMessage);
+            const probeMessage = JSON.stringify({ type: 'server', text: 'probe' } satisfies ChatMessage);
+
+            releasedClient.send(releasedMessage);
+
+            // Messages on a socket are delivered in order, so the probe arriving first means that the released client
+            // sent nothing.
+            firstInterceptor.clients[0].send(probeMessage);
+
+            await waitFor(() => {
+              expect(messages).toContain(probeMessage);
+            });
+            expect(messages).toEqual([probeMessage]);
+          });
+        });
+      });
+    },
+  );
+
   it('should notify listeners with a connected public client', async () => {
     const baseURL = getBaseURL();
 
