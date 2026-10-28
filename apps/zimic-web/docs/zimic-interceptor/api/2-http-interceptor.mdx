@@ -131,7 +131,7 @@ After a request is intercepted, Zimic tries to find a handler that matches it, c
 
 The handlers are checked from the **last** one created to the first one, so new handlers have preference over older ones. This allows you to declare generic and specific handlers based on their order of creation. For example, a generic handler for `GET /users` can return an empty list, while a specific handler in a test case can return a list with some users. In this case, the specific handler will be considered first as long as it is created **after** the generic one.
 
-This order spans all running interceptors whose base URL is a prefix of the request URL, regardless of the order in which they started or the paths of the handlers. A handler created after [`interceptor.clear()`](#interceptorclear) is the newest one.
+This order spans all running interceptors whose [base URL matches](/docs/zimic-interceptor/api/1-create-http-interceptor.mdx) the request URL, regardless of the order in which they started or the paths of the handlers. A handler created after [`interceptor.clear()`](#interceptorclear) is the newest one.
 
 **Related**:
 
