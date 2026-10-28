@@ -25,7 +25,14 @@ export function normalizeBufferSource(bufferSource: BufferSource): ArrayBuffer {
   return normalizedBytes.buffer;
 }
 
+// Only objects and arrays are parsed, so text such as `'42'`, `'true'`, or `'null'` stays a string.
 function tryParseJSONMessageData(data: string): unknown {
+  const firstCharacter = data.trimStart()[0];
+
+  if (firstCharacter !== '{' && firstCharacter !== '[') {
+    return data;
+  }
+
   try {
     return JSON.parse(data);
   } catch {

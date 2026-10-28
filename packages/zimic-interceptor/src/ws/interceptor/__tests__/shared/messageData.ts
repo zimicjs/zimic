@@ -143,6 +143,38 @@ export function declareMessageDataWebSocketInterceptorTests(options: RuntimeShar
     );
   });
 
+  it.each([
+    { text: '42', expectedData: '42' },
+    { text: 'true', expectedData: 'true' },
+    { text: 'null', expectedData: 'null' },
+    { text: ' [1, 2]', expectedData: [1, 2] },
+  ])('should receive the text message $text as $expectedData in handlers', async ({ text, expectedData }) => {
+    type PrimitiveOrArrayMessage = WebSocketSchema<string | number[]>;
+
+    await usingWebSocketInterceptor<PrimitiveOrArrayMessage>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const effect = vi.fn();
+        const handler = await promiseIfRemote(
+          interceptor.message().with(expectedData).effect(effect).respond('matched').times(1),
+          interceptor,
+        );
+
+        await usingWebSocketClient<PrimitiveOrArrayMessage>(baseURL, async (client) => {
+          const messagePromise = waitForWebSocketClientMessage(client);
+          client.send(text);
+          await expect(messagePromise).resolves.toBe('matched');
+
+          expect(effect).toHaveBeenCalledWith(expectedData, expect.any(Object));
+          expect(handler.messages).toHaveLength(1);
+          expect(handler.messages[0].data).toEqual(expectedData);
+        });
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      },
+    );
+  });
+
   // No WebSocket counterpart for "should show an error once if the body of a request defined as JSON is not valid and
   // multiple handlers match it": WebSocket messages have no content type, so text that is not valid JSON is kept as a
   // string without a parse error.
