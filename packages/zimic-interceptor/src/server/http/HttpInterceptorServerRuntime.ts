@@ -96,8 +96,18 @@ class HttpInterceptorServerRuntime {
   }
 
   handleRequest = async (nodeRequest: IncomingMessage, nodeResponse: ServerResponse) => {
-    const request = normalizeNodeRequest(nodeRequest, getFetchAPI());
-    const serializedRequest = await serializeRequest(request);
+    let request: Request;
+    let serializedRequest: SerializedHttpRequest;
+
+    try {
+      request = normalizeNodeRequest(nodeRequest, getFetchAPI());
+      serializedRequest = await serializeRequest(request);
+    } catch (error) {
+      // The Fetch API forbids some methods, such as `TRACE` and `CONNECT`, so their requests cannot be handled.
+      console.error(error);
+      rejectNodeResponse(nodeResponse);
+      return;
+    }
 
     // Only one worker is tried, and the same worker decides the unhandled request strategy even if workers reset or
     // disconnect while the request is handled. Other workers belong to other processes or authentication tokens, so

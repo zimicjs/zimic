@@ -1,7 +1,21 @@
+import { Replace } from '@zimic/utils/types';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
 export declare const webSocketInterceptorClientRole: unique symbol;
 export declare const webSocketInterceptorServerRole: unique symbol;
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * The data of a client-to-server message as received by the interceptor. Text messages are parsed as JSON when
+ * possible. Binary messages arrive as `ArrayBuffer`, regardless of whether the client sent a `Blob`, an `ArrayBuffer`,
+ * or an `ArrayBufferView`, because WebSocket binary frames carry only raw bytes.
+ */
+export type ReceivedWebSocketMessageData<Schema extends WebSocketSchema> = Replace<
+  Schema,
+  Blob | ArrayBufferView,
+  ArrayBuffer
+>;
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -18,8 +32,8 @@ export interface InterceptedWebSocketInterceptorMessage<
   /** The interceptor server that received the message. */
   receiver: WebSocketInterceptorServer<ClientSchema>;
 
-  /** The message data, as matched by the handler. */
-  data: MessageSchema;
+  /** The message data, as matched by the handler. Binary messages arrive as `ArrayBuffer`. */
+  data: ReceivedWebSocketMessageData<MessageSchema>;
 }
 
 /**

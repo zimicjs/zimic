@@ -1,5 +1,6 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
+import { ValidationError } from '@zimic/utils/validation';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { expect, it, vi } from 'vitest';
 
@@ -16,9 +17,11 @@ import {
 
 import type { WebSocketInterceptorClient } from '../../types/messages';
 import type { WebSocketInterceptorType } from '../../types/options';
+import type { WebSocketInterceptor } from '../../types/public';
 
 type ChatMessage = WebSocketSchema<{ type: 'server'; text: string }>;
 type BinaryMessage = WebSocketSchema<ArrayBuffer>;
+type BinaryOrTextMessage = WebSocketSchema<Blob | string>;
 
 interface SharedWebSocketInterceptorConnectionAndSendTestsOptions {
   type: WebSocketInterceptorType;
@@ -252,6 +255,62 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
       });
     });
   });
+
+  it.each([
+    {
+      action: 'cleared',
+      release: (interceptor: WebSocketInterceptor<ChatMessage>) => promiseIfRemote(interceptor.clear(), { type }),
+    },
+    {
+      action: 'stopped',
+      release: (interceptor: WebSocketInterceptor<ChatMessage>) => interceptor.stop(),
+    },
+  ])(
+    'should not send messages from clients of an interceptor $action while another one shares their connection',
+    async ({ release }) => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (firstInterceptor) => {
+        await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (secondInterceptor) => {
+          const secondConnectedClients: WebSocketInterceptorClient<ChatMessage>[] = [];
+          secondInterceptor.on('connection', (connectedClient) => {
+            secondConnectedClients.push(connectedClient);
+          });
+
+          await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+            await waitFor(() => {
+              expect(firstInterceptor.clients).toHaveLength(1);
+              expect(secondInterceptor.clients).toHaveLength(1);
+            });
+
+            expect(secondConnectedClients).toHaveLength(1);
+            const releasedClient = secondConnectedClients[0];
+
+            await release(secondInterceptor);
+
+            expect(secondInterceptor.clients).toHaveLength(0);
+            expect(client.readyState).toBe(WebSocketClient.OPEN);
+
+            const messages = collectWebSocketClientMessages(client);
+
+            const releasedMessage = JSON.stringify({ type: 'server', text: 'released' } satisfies ChatMessage);
+            const probeMessage = JSON.stringify({ type: 'server', text: 'probe' } satisfies ChatMessage);
+
+            releasedClient.send(releasedMessage);
+
+            // Messages on a socket are delivered in order, so the probe arriving first means that the released client
+            // sent nothing.
+            firstInterceptor.clients[0].send(probeMessage);
+
+            await waitFor(() => {
+              expect(messages).toContain(probeMessage);
+            });
+            expect(messages).toEqual([probeMessage]);
+          });
+        });
+      });
+    },
+  );
 
   it('should notify listeners with a connected public client', async () => {
     const baseURL = getBaseURL();
@@ -594,6 +653,101 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
           expect(await readBytes((await firstMessagePromise) as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
           expect(await readBytes((await secondMessagePromise) as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
         });
+      });
+    });
+  });
+
+  it.each([
+    {
+      sender: 'server',
+      send: (interceptor: WebSocketInterceptor<BinaryOrTextMessage>, data: Blob | string) => {
+        interceptor.server.send(data);
+      },
+    },
+    {
+      sender: 'client',
+      send: (interceptor: WebSocketInterceptor<BinaryOrTextMessage>, data: Blob | string) => {
+        interceptor.clients[0].send(data);
+      },
+    },
+  ])('should send $sender messages in call order when a binary message precedes a text message', async ({ send }) => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<BinaryOrTextMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<BinaryOrTextMessage>(baseURL, async (client) => {
+        client.binaryType = 'arraybuffer';
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const messages = collectWebSocketClientMessages(client);
+
+        send(interceptor, new Blob([createBinaryMessage(0x00, 0xff)]));
+        send(interceptor, 'text');
+
+        await waitFor(() => {
+          expect(messages).toHaveLength(2);
+        });
+        expect(await readBytes(messages[0] as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
+        expect(messages[1]).toBe('text');
+      });
+    });
+  });
+
+  it('should log send errors and keep sending later messages', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<BinaryOrTextMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<BinaryOrTextMessage>(baseURL, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const messages = collectWebSocketClientMessages(client);
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          // Simulates an invalid runtime value, which typed code cannot send.
+          interceptor.server.send(undefined as unknown as string);
+          interceptor.server.send('valid');
+
+          await waitFor(() => {
+            expect(messages).toContain('valid');
+          });
+
+          // Remote interceptors serialize messages to send them through the interceptor server, which rejects invalid
+          // data. Local interceptors pass the data to the client connection as is.
+          if (type === 'remote') {
+            expect(messages).toEqual(['valid']);
+            expect(console.error).toHaveBeenCalledTimes(1);
+            expect(console.error).toHaveBeenCalledWith(
+              new ValidationError('WebSocket message data must not be undefined.'),
+            );
+          } else {
+            expect(messages).toHaveLength(2);
+            expect(messages[1]).toBe('valid');
+            expect(console.error).not.toHaveBeenCalled();
+          }
+        });
+      });
+    });
+  });
+
+  it('should not reject sends when the interceptor stops right after them', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<BinaryOrTextMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<BinaryOrTextMessage>(baseURL, async () => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        interceptor.server.send(new Blob([createBinaryMessage(0x00, 0xff)]));
+        interceptor.clients[0].send('text');
+
+        await interceptor.stop();
+
+        expect(interceptor.isRunning).toBe(false);
       });
     });
   });

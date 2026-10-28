@@ -11,7 +11,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { verifyUnhandledRequestMessage } from '@/http/interceptor/__tests__/shared/utils';
 import { createHttpInterceptor } from '@/http/interceptor/factory';
-import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
+import {
+  INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
+  INTERCEPTOR_SERVER_RPC_VERSION,
+  INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
+} from '@/interceptor/constants';
 import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/server/constants';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 import WebSocketServer from '@/utils/webSocket/WebSocketServer';
@@ -54,7 +58,8 @@ describe('CLI > Server start', () => {
     '                                were found for the base URL of a request. If an',
     '                                interceptor was matched, the logging behavior',
     '                                for that base URL is configured in the',
-    '                                interceptor itself.                    [boolean]',
+    '                                interceptor itself, unless the interceptor',
+    '                                disconnects or fails before responding.[boolean]',
     '  -t, --tokens-dir              The directory where the authorized interceptor',
     '                                authentication tokens are saved. If provided,',
     '                                only remote interceptors bearing a valid token',
@@ -561,7 +566,10 @@ describe('CLI > Server start', () => {
 
       try {
         await webSocketClient.start({
-          parameters: { [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http' },
+          parameters: {
+            [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
+            [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
+          },
           waitForAuthentication: true,
         });
         expect(webSocketClient.isRunning).toBe(true);

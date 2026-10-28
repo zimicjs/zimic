@@ -1,7 +1,8 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
-import { waitFor, waitForNot } from '@zimic/utils/time';
+import { waitFor } from '@zimic/utils/time';
 import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+import color from 'picocolors';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
@@ -71,15 +72,21 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
           expect(interceptor.clients).toHaveLength(0);
         });
 
+        await promiseIfRemote(
+          interceptor.message().with({ type: 'client', index: 0 }).respond({ type: 'server', index: 0 }),
+          interceptor,
+        );
+
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          const messageListener = vi.fn();
-          client.addEventListener('message', messageListener);
+          const probeResponse = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'client', index: 2 }));
 
-          await waitForNot(() => {
-            expect(messageListener).toHaveBeenCalled();
-          });
+          // Messages on a socket are delivered in order, so the probe response arriving first means that the cleared
+          // handler sent no response.
+          client.send(JSON.stringify({ type: 'client', index: 0 }));
+
+          await expect(probeResponse).resolves.toBe(JSON.stringify({ type: 'server', index: 0 }));
 
           expect(handler.messages).toHaveLength(0);
         });
@@ -244,8 +251,6 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     );
   });
 
-  // No HTTP counterpart: clearing a WebSocket interceptor detaches it from its connections, so it no longer decides the
-  // strategy of their messages, while a cleared HTTP interceptor still decides it for requests.
   it('should apply the unhandled message strategy of an older interceptor if the last started one is cleared while messages are being handled', async () => {
     const restrictionStartedPromise = createPromiseWithResolvers<void>();
     const restrictionReleasedPromise = createPromiseWithResolvers<void>();
@@ -336,7 +341,6 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     );
   });
 
-  // No HTTP counterpart: WebSocket connections are long-lived, so one can outlive the clear of an interceptor holding it.
   it('should clear only clients owned by the selected interceptor with the same base URL', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
       await usingWebSocketInterceptor<MessageSchema>(
@@ -377,7 +381,6 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     });
   });
 
-  // No HTTP counterpart: WebSocket connections are long-lived, so one can outlive the clear of an interceptor holding it.
   it('should keep connections shared with another interceptor open after cleared', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
       await promiseIfRemote(firstInterceptor.message().respond({ type: 'server', index: 1 }), firstInterceptor);
@@ -411,7 +414,6 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     });
   });
 
-  // No HTTP counterpart: WebSocket connections are long-lived, so one can outlive the clear of an interceptor holding it.
   it('should apply the unhandled message strategy of an older interceptor to connections shared with it after the last started one is cleared', async () => {
     const firstOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
     const secondOnUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>();
@@ -446,7 +448,6 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     );
   });
 
-  // No HTTP counterpart: WebSocket connections are long-lived, so one can outlive the clear of an interceptor holding it.
   it('should close connections shared with other interceptors after all of them are cleared', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (secondInterceptor) => {
@@ -472,8 +473,6 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     });
   });
 
-  // No HTTP counterpart: WebSocket connection listeners run while a connection opens, so they can clear an interceptor
-  // before it holds the connection.
   it('should keep connections open for the remaining interceptors if another one is cleared while they open', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
       await promiseIfRemote(firstInterceptor.message().respond({ type: 'server', index: 1 }), firstInterceptor);
@@ -511,8 +510,6 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     });
   });
 
-  // No HTTP counterpart: WebSocket connection listeners run while a connection opens, so they can clear an interceptor
-  // before it holds the connection.
   it('should close connections if their only interceptor is cleared while they open', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
       let clearResult: PossiblePromise<void> | undefined;
@@ -608,54 +605,170 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     );
   });
 
-  it('should not handle messages after cleared while they are being matched', async () => {
-    const restrictionStartedPromise = createPromiseWithResolvers<void>();
-    const restrictionReleasedPromise = createPromiseWithResolvers<void>();
+  it.each([{ restrictionResult: true }, { restrictionResult: false }])(
+    'should not handle messages after cleared while they are being matched (restriction result: $restrictionResult)',
+    async ({ restrictionResult }) => {
+      const restrictionStartedPromise = createPromiseWithResolvers<void>();
+      const restrictionReleasedPromise = createPromiseWithResolvers<void>();
 
-    const restriction = vi.fn(async () => {
-      restrictionStartedPromise.resolve();
-      await restrictionReleasedPromise;
-      return true;
+      const restriction = vi.fn(async () => {
+        restrictionStartedPromise.resolve();
+        await restrictionReleasedPromise;
+        return restrictionResult;
+      });
+
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, messageSaving: { enabled: true } },
+        async (olderInterceptor) => {
+          // The older interceptor is not cleared, so it keeps holding the connection and its handler could still
+          // respond if it were tried.
+          const olderHandler = await promiseIfRemote(
+            olderInterceptor.message().respond({ type: 'server', index: 2 }),
+            olderInterceptor,
+          );
+
+          await usingWebSocketInterceptor<MessageSchema>(
+            { ...interceptorOptions, messageSaving: { enabled: true } },
+            async (interceptor) => {
+              const handler = await promiseIfRemote(
+                interceptor.message().with(restriction).respond({ type: 'server', index: 1 }),
+                interceptor,
+              );
+
+              await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+                await waitFor(() => {
+                  expect(olderInterceptor.clients).toHaveLength(1);
+                  expect(interceptor.clients).toHaveLength(1);
+                });
+
+                client.send(JSON.stringify({ type: 'client', index: 1 }));
+                await restrictionStartedPromise;
+
+                await promiseIfRemote(interceptor.clear(), interceptor);
+
+                // Redeclaring the cleared handler would apply its new declarations to the message being matched.
+                const effect = vi.fn();
+                await promiseIfRemote(handler.effect(effect).times(1), interceptor);
+
+                await promiseIfRemote(
+                  olderInterceptor.message().with({ type: 'client', index: 0 }).respond({ type: 'server', index: 0 }),
+                  olderInterceptor,
+                );
+
+                const firstResponsePromise = waitForWebSocketClientMessage(client);
+
+                restrictionReleasedPromise.resolve();
+
+                // The matching message finishes being handled once its restriction is released, before the probe
+                // arrives, so the probe response arriving first means that the matching message got no response.
+                client.send(JSON.stringify({ type: 'client', index: 0 }));
+                await expect(firstResponsePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 0 }));
+
+                expect(effect).not.toHaveBeenCalled();
+                expect(restriction).toHaveBeenCalledTimes(1);
+                expect(handler.messages).toHaveLength(0);
+                expect(olderHandler.messages).toHaveLength(0);
+              });
+
+              await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+                message: 'Expected exactly 1 message, but got 0.',
+                expectedNumberOfMessages: 1,
+              });
+            },
+          );
+        },
+      );
+    },
+  );
+
+  it('should not record unmatched messages of handlers cleared while older handlers are matching them', async () => {
+    const olderRestrictionStartedPromise = createPromiseWithResolvers<void>();
+    const olderRestrictionReleasedPromise = createPromiseWithResolvers<void>();
+
+    const olderRestriction = vi.fn(async (message: MessageSchema) => {
+      if (message.type === 'client' && message.index === 1) {
+        olderRestrictionStartedPromise.resolve();
+        await olderRestrictionReleasedPromise;
+      }
+      return false;
     });
 
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, messageSaving: { enabled: true } },
-      async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor.message().with(restriction).respond({ type: 'server', index: 1 }),
-          interceptor,
+      async (olderInterceptor) => {
+        const olderHandler = await promiseIfRemote(
+          olderInterceptor.message().with(olderRestriction).respond({ type: 'server', index: 2 }).times(1),
+          olderInterceptor,
         );
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          client.send(JSON.stringify({ type: 'client', index: 1 }));
-          await restrictionStartedPromise;
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const handler = await promiseIfRemote(
+              interceptor.message().with({ type: 'client', index: 3 }).respond({ type: 'server', index: 3 }).times(1),
+              interceptor,
+            );
 
-          await promiseIfRemote(interceptor.clear(), interceptor);
+            await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+              await waitFor(() => {
+                expect(olderInterceptor.clients).toHaveLength(1);
+                expect(interceptor.clients).toHaveLength(1);
+              });
 
-          // Redeclaring the cleared handler would apply its new declarations to the message being matched.
-          const effect = vi.fn();
-          await promiseIfRemote(handler.effect(effect).times(1), interceptor);
+              // The newer handler fails to match before the older one starts matching. Redeclaring it with a
+              // restriction and a times limit makes it save any unmatched message still recorded for it.
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
+              await olderRestrictionStartedPromise;
 
-          restrictionReleasedPromise.resolve();
+              await promiseIfRemote(interceptor.clear(), interceptor);
 
-          await waitForNot(() => {
-            expect(effect).toHaveBeenCalled();
-          });
+              await promiseIfRemote(
+                handler.with({ type: 'client', index: 3 }).respond({ type: 'server', index: 3 }).times(1),
+                interceptor,
+              );
 
-          expect(restriction).toHaveBeenCalledTimes(1);
-          expect(handler.messages).toHaveLength(0);
-        });
+              await promiseIfRemote(
+                olderInterceptor.message().with({ type: 'client', index: 0 }).respond({ type: 'server', index: 0 }),
+                olderInterceptor,
+              );
 
-        await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
-          message: 'Expected exactly 1 message, but got 0.',
-          expectedNumberOfMessages: 1,
-        });
+              const firstResponsePromise = waitForWebSocketClientMessage(client);
+
+              olderRestrictionReleasedPromise.resolve();
+
+              // The matching message finishes being handled once its restriction is released, before the probe
+              // arrives.
+              client.send(JSON.stringify({ type: 'client', index: 0 }));
+              await expect(firstResponsePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 0 }));
+            });
+
+            await expectWebSocketTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+              message: 'Expected exactly 1 matching message, but got 0.',
+              expectedNumberOfMessages: 1,
+            });
+
+            await expectWebSocketTimesCheckError(() => promiseIfRemote(olderHandler.checkTimes(), olderHandler), {
+              message: [
+                'Expected exactly 1 matching message, but got 0.',
+                '',
+                'Messages evaluated by this handler:',
+                '',
+                `  ${color.green('- Expected')}`,
+                `  ${color.red('+ Received')}`,
+                '',
+                '1: { "type": "client", "index": "1" }',
+                '     Computed restriction:',
+                `       ${color.green('- return true')}`,
+                `       ${color.red('+ return false')}`,
+              ].join('\n'),
+              expectedNumberOfMessages: 1,
+            });
+          },
+        );
       },
     );
   });
 
-  // No HTTP counterpart: clearing a WebSocket interceptor closes its connections, so a message being handled has no
-  // connection left, while an HTTP request being handled still needs a response.
   it('should not apply the unhandled message strategy after cleared while a message is being handled', async () => {
     const restrictionStartedPromise = createPromiseWithResolvers<void>();
     const restrictionReleasedPromise = createPromiseWithResolvers<void>();
@@ -666,7 +779,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
       return false;
     });
 
-    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>();
+    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
 
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, onUnhandledMessage },
@@ -688,12 +801,18 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
           expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
 
           restrictionReleasedPromise.resolve();
-
-          await waitForNot(() => {
-            expect(onUnhandledMessage).toHaveBeenCalled();
-          });
-
           expect(restriction).toHaveBeenCalledTimes(1);
+        });
+
+        // The cleared message finishes being handled once its restriction is released, so the strategy being applied
+        // only to an unhandled message from a new client means that it was not applied to the cleared message.
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          client.send(JSON.stringify({ type: 'client', index: 2 }));
+
+          await waitFor(() => {
+            expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+          });
+          expect(onUnhandledMessage).toHaveBeenCalledWith({ type: 'client', index: 2 });
         });
       },
     );

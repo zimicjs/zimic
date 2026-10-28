@@ -198,11 +198,12 @@ abstract class HttpInterceptorWorker {
     const parsedRequestsByRoute = new Map<string, HttpInterceptorRequest<string, HttpMethodSchema>>();
 
     const method = request.method as HttpMethod;
-    const methodHandlers = this.httpHandlersByMethod[method];
+    // Methods outside `HTTP_METHODS`, such as `PROPFIND`, have no handlers, so their requests are unhandled.
+    const methodHandlers = HTTP_METHODS.includes(method) ? this.httpHandlersByMethod[method] : [];
 
     // Handlers can be added or cleared while a response is created, so the request is matched against a copy.
     for (const handler of methodHandlers.toReversed()) {
-      if (!this.matchesHandlerRoute(requestURLAsString, handler)) {
+      if (!this.isHandlerRegistered(method, handler) || !this.matchesHandlerRoute(requestURLAsString, handler)) {
         continue;
       }
 
@@ -213,15 +214,15 @@ abstract class HttpInterceptorWorker {
 
         const requestMatch = await handler.implementation.matchesRequest(parsedRequest);
 
+        // An asynchronous match can outlive a clear, after which the handler does not handle the request, even if
+        // redeclared. Whatever the match result, older handlers are not tried.
+        if (!this.isHandlerRegistered(method, handler)) {
+          return { response: null, matchedSomeHandler };
+        }
+
         if (!requestMatch.success) {
           failedRequestMatches.push({ handler, request: parsedRequest, requestMatch });
           continue;
-        }
-
-        // An asynchronous match can outlive a clear, after which the handler does not handle the request, even if
-        // redeclared. Older handlers are not tried.
-        if (!this.isHandlerRegistered(method, handler)) {
-          return { response: null, matchedSomeHandler };
         }
 
         const reservation = handler.implementation.reserveRequest();
@@ -242,7 +243,7 @@ abstract class HttpInterceptorWorker {
       }
     }
 
-    this.markRequestAsUnhandled(failedRequestMatches);
+    this.markRequestAsUnhandled(method, failedRequestMatches);
 
     return { response: null, matchedSomeHandler };
   }
@@ -290,9 +291,14 @@ abstract class HttpInterceptorWorker {
   }
 
   // Handlers that failed only on restrictions record their diffs. The newest handler that failed for any other cause,
-  // such as exceeding its `times` limit, is still marked as matched to trigger a times check error.
-  private markRequestAsUnhandled(failedRequestMatches: FailedHttpRequestMatch[]) {
+  // such as exceeding its `times` limit, is still marked as matched to trigger a times check error. Handlers cleared
+  // after their match record nothing.
+  private markRequestAsUnhandled(method: HttpMethod, failedRequestMatches: FailedHttpRequestMatch[]) {
     for (const { handler, request, requestMatch } of failedRequestMatches) {
+      if (!this.isHandlerRegistered(method, handler)) {
+        continue;
+      }
+
       if (requestMatch.cause === 'unmatchedRestrictions') {
         handler.implementation.markRequestAsUnmatched(request, { diff: requestMatch.diff });
       } else {

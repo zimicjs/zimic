@@ -19,10 +19,9 @@ import { Schema, SharedWebSocketMessageHandlerTestOptions } from './utils';
 export function declareTimesWebSocketMessageHandlerTests(
   options: SharedWebSocketMessageHandlerTestOptions & {
     type: WebSocketInterceptorType;
-    receivedBlobMessageRepresentation: string;
   },
 ) {
-  const { type, receivedBlobMessageRepresentation, startServer, stopServer, getBaseURL } = options;
+  const { type, startServer, stopServer, getBaseURL } = options;
 
   let baseURL: string;
 
@@ -526,10 +525,46 @@ export function declareTimesWebSocketMessageHandlerTests(
                     `  ${color.green('- Expected')}`,
                     `  ${color.red('+ Received')}`,
                     '',
-                    `1: ${receivedBlobMessageRepresentation}`,
+                    '1: ArrayBuffer { byteLength: 4 }',
                     '     Data:',
                     `       ${color.green("- Blob { type: 'application/octet-stream', size: 1 }")}`,
-                    `       ${color.red(`+ ${receivedBlobMessageRepresentation}`)}`,
+                    `       ${color.red('+ ArrayBuffer { byteLength: 4 }')}`,
+                  ].join('\n'),
+                  expectedNumberOfMessages: 1,
+                }),
+              );
+            });
+          },
+        );
+      });
+
+      it('should show unmatched typed array messages in times check errors', async () => {
+        await usingWebSocketInterceptor<WebSocketSchema<Uint8Array<ArrayBuffer>>>(
+          { type, baseURL, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const handler = await interceptor
+              .message()
+              .with(new Uint8Array([1, 2]))
+              .respond(new Uint8Array([5, 6]))
+              .times(1);
+
+            await usingWebSocketClient<WebSocketSchema<Uint8Array<ArrayBuffer>>>(baseURL, async (client) => {
+              client.send(new Uint8Array([3, 4]));
+
+              await waitFor(() =>
+                expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                  message: [
+                    'Expected exactly 1 matching message, but got 0.',
+                    '',
+                    'Messages evaluated by this handler:',
+                    '',
+                    `  ${color.green('- Expected')}`,
+                    `  ${color.red('+ Received')}`,
+                    '',
+                    '1: ArrayBuffer { byteLength: 2 }',
+                    '     Data:',
+                    `       ${color.green('- Uint8Array { byteLength: 2 }')}`,
+                    `       ${color.red('+ ArrayBuffer { byteLength: 2 }')}`,
                   ].join('\n'),
                   expectedNumberOfMessages: 1,
                 }),

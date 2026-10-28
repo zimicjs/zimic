@@ -1,8 +1,16 @@
 import type { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
-import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
+import { version } from '@@/package.json';
+
+import {
+  INTERCEPTOR_SERVER_RPC_PACKAGE_VERSION_PARAMETER,
+  INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
+  INTERCEPTOR_SERVER_RPC_VERSION,
+  INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
+} from '@/interceptor/constants';
 import { InterceptorServerWebSocketSchema, WebSocketWorkerReset } from '@/server/types/schema';
 import { isClientSide, isServerSide } from '@/utils/environment';
+import { logUnexpectedServerDisconnection } from '@/utils/logging';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocketEventMessage } from '@/utils/webSocket/types';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
@@ -35,6 +43,7 @@ interface RegisteredWebSocketInterceptor {
 class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private registeredInterceptors = new Map<RegisteredWebSocketInterceptor['id'], RegisteredWebSocketInterceptor>();
   private numberOfResets = 0;
+  private sendQueue = Promise.resolve();
   private auth?: RemoteWebSocketInterceptorWorkerOptions['auth'];
 
   webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
@@ -44,6 +53,12 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     this.webSocketClient = new WebSocketClient({
       url: options.serverURL.toString(),
+      onUnexpectedClose: () => {
+        // Stopping resets the server worker before closing the socket, so the server may close it in between.
+        if (!this.stoppingPromise) {
+          logUnexpectedServerDisconnection(options.serverURL);
+        }
+      },
     });
 
     this.auth = options.auth;
@@ -57,6 +72,8 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       await this.webSocketClient.start({
         parameters: {
           [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+          [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
+          [INTERCEPTOR_SERVER_RPC_PACKAGE_VERSION_PARAMETER]: version,
           ...(this.auth ? { token: this.auth.token } : {}),
         },
         waitForAuthentication: true,
@@ -90,7 +107,10 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       this.webSocketClient.offChannel('event', 'interceptors/ws/clients/close', this.closeClient);
       this.webSocketClient.offChannel('event', 'interceptors/ws/messages/handle', this.handleMessage);
 
-      await this.clearHandlers();
+      // Stopped interceptors already reset their registrations, so a reset is only needed for ones still registered.
+      if (this.registeredInterceptors.size > 0) {
+        await this.clearHandlers();
+      }
 
       await this.webSocketClient.stop();
 
@@ -128,14 +148,9 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   ) {
     const clientEntry = this.findClientEntry(client);
 
-    if (!clientEntry) {
-      return;
+    if (clientEntry) {
+      await this.enqueueSend({ clientId: clientEntry.clientId }, data);
     }
-
-    this.webSocketClient.send('interceptors/ws/messages/send', {
-      clientId: clientEntry.clientId,
-      data: await serializeWebSocketMessageDataForTransport(data),
-    });
   }
 
   async sendToClients<Schema extends WebSocketSchema>(
@@ -144,14 +159,29 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   ) {
     const registeredInterceptor = this.findRegisteredInterceptor(interceptor);
 
-    if (!registeredInterceptor) {
-      return;
+    if (registeredInterceptor) {
+      await this.enqueueSend({ interceptorId: registeredInterceptor.id }, data);
     }
+  }
 
-    this.webSocketClient.send('interceptors/ws/messages/send', {
-      interceptorId: registeredInterceptor.id,
-      data: await serializeWebSocketMessageDataForTransport(data),
+  // Serializing a Blob is asynchronous, so sends are chained to reach the server in call order, as in local mode.
+  // Failures are logged because the public send methods return nothing to reject, as native `WebSocket.send`.
+  private enqueueSend<Schema extends WebSocketSchema>(
+    target: { clientId: string } | { interceptorId: string },
+    data: WebSocketMessageData<Schema>,
+  ) {
+    this.sendQueue = this.sendQueue.then(async () => {
+      try {
+        this.webSocketClient.send('interceptors/ws/messages/send', {
+          ...target,
+          data: await serializeWebSocketMessageDataForTransport(data),
+        });
+      } catch (error) {
+        console.error(error);
+      }
     });
+
+    return this.sendQueue;
   }
 
   private connectClient = ({
@@ -259,7 +289,9 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     const clearedInterceptors: RegisteredWebSocketInterceptor[] = [];
 
     for (const registeredInterceptor of selectedInterceptors) {
-      registeredInterceptor.interceptor.clients.length = 0;
+      for (const client of registeredInterceptor.clients.values()) {
+        registeredInterceptor.interceptor.removeClient(client);
+      }
 
       if (options.preserveInterceptorRegistration) {
         registeredInterceptor.clients.clear();

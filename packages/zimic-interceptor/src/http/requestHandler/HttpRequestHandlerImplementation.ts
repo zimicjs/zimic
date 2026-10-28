@@ -78,6 +78,8 @@ class HttpRequestHandlerImplementation<
 
   private createResponseDelay?: HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>;
 
+  private clearGeneration = {};
+
   constructor(
     private interceptor: HttpInterceptorImplementation<Schema>,
     public method: Method,
@@ -169,6 +171,8 @@ class HttpRequestHandlerImplementation<
   }
 
   clear(): this {
+    this.clearGeneration = {};
+
     this.restrictions.length = 0;
 
     this.limits = {
@@ -443,13 +447,22 @@ class HttpRequestHandlerImplementation<
     return typeof restriction === 'function';
   }
 
+  // Called in the same synchronous step that reserves the request, so the captured generation is the one the request
+  // was counted in.
   async applyResponseDeclaration(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) {
+    const clearGeneration = this.clearGeneration;
+
     if (this.createResponseDelay) {
       const delay = await this.createResponseDelay(request);
 
       if (delay > 0) {
         await waitForDelay(delay);
       }
+    }
+
+    // A request whose handler was cleared during its delay is not handled, even if the handler was redeclared.
+    if (clearGeneration !== this.clearGeneration) {
+      return undefined;
     }
 
     const appliedDeclaration = await this.createResponseDeclaration?.(request);

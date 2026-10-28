@@ -501,4 +501,7 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
       });
     }
   });
+
+  // No HTTP counterpart for "should reply only to the sender of an intercepted message": an HTTP response always goes
+  // to the client that sent the request, while a WebSocket server can send to any connected client.
 }
