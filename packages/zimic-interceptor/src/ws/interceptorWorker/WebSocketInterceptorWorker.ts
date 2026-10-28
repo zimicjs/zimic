@@ -29,6 +29,7 @@ export interface WebSocketConnectionHolder<Schema extends WebSocketSchema> {
 
 interface FailedWebSocketMessageMatch {
   handler: AnyWebSocketMessageHandlerImplementation;
+  holder: WebSocketConnectionHolder<WebSocketSchema>;
   messageMatch: Extract<WebSocketMessageHandlerMessageMatch, { success: false }>;
 }
 
@@ -152,22 +153,22 @@ abstract class WebSocketInterceptorWorker {
       try {
         const messageMatch = await handler.implementation.matchesMessage(message, context);
 
-        if (!messageMatch.success) {
-          failedMessageMatches.push({ handler: handler.implementation, messageMatch });
-          continue;
-        }
-
         // A holder that let the connection go while its handler was matching the message does not handle it. As with
-        // an HTTP handler cleared while matching a request, older handlers are not tried.
+        // an HTTP handler cleared while matching a request, older handlers are not tried, whatever the match result.
         if (!this.isHoldingConnection(holder)) {
           await this.logUnhandledMessageIfNecessary(data, holders);
           return;
         }
 
+        if (!messageMatch.success) {
+          failedMessageMatches.push({ handler: handler.implementation, holder, messageMatch });
+          continue;
+        }
+
         const reservation = handler.implementation.reserveMessage(messageMatch.message);
 
         if (!reservation.success) {
-          failedMessageMatches.push({ handler: handler.implementation, messageMatch: reservation });
+          failedMessageMatches.push({ handler: handler.implementation, holder, messageMatch: reservation });
           continue;
         }
 
@@ -204,12 +205,17 @@ abstract class WebSocketInterceptorWorker {
   }
 
   // Handlers that failed only on restrictions record their diffs. The newest handler that failed for any other cause,
-  // such as exceeding its `times` limit, is still marked as matched to trigger a times check error.
+  // such as exceeding its `times` limit, is still marked as matched to trigger a times check error. Handlers whose holder
+  // let the connection go after their match record nothing.
   private markMessageAsUnhandled(
     message: ReceivedWebSocketMessageData<WebSocketSchema>,
     failedMessageMatches: FailedWebSocketMessageMatch[],
   ) {
-    for (const { handler, messageMatch } of failedMessageMatches) {
+    for (const { handler, holder, messageMatch } of failedMessageMatches) {
+      if (!this.isHoldingConnection(holder)) {
+        continue;
+      }
+
       if (messageMatch.cause === 'unmatchedRestrictions') {
         handler.markMessageAsUnmatched(messageMatch.message, { diff: messageMatch.diff });
       } else {
