@@ -7,15 +7,28 @@ export declare const webSocketInterceptorServerRole: unique symbol;
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The data of a client-to-server message as received by the interceptor. Text messages are parsed as JSON when
- * possible. Binary messages arrive as `ArrayBuffer`, regardless of whether the client sent a `Blob`, an `ArrayBuffer`,
+ * The data of a client-to-server message as received by the interceptor. Text messages holding a JSON object or array
+ * are parsed. Other text messages, including top-level numbers and booleans, arrive as their text, such as `'42'` or
+ * `'true'`. Binary messages arrive as `ArrayBuffer`, regardless of whether the client sent a `Blob`, an `ArrayBuffer`,
  * or an `ArrayBufferView`, because WebSocket binary frames carry only raw bytes.
  */
-export type ReceivedWebSocketMessageData<Schema extends WebSocketSchema> = Replace<
-  Schema,
-  Blob | ArrayBufferView,
-  ArrayBuffer
->;
+export type ReceivedWebSocketMessageData<Schema extends WebSocketSchema> = Schema extends UnparsedWebSocketJSONPrimitive
+  ? UnparsedWebSocketJSONPrimitiveText<Schema>
+  : Replace<Schema, Blob | ArrayBufferView, ArrayBuffer>;
+
+/**
+ * The top-level JSON values that text messages keep as text, because only objects and arrays are parsed. Top-level
+ * `null` is absent because a branded `WebSocketSchema` member cannot be `null`.
+ */
+export type UnparsedWebSocketJSONPrimitive = number | boolean;
+
+// Template literal types cannot stringify branded schema members, so each kind maps to its text explicitly. Numeric
+// literal members widen to any numeric text for the same reason.
+type UnparsedWebSocketJSONPrimitiveText<Schema extends UnparsedWebSocketJSONPrimitive> = Schema extends true
+  ? 'true'
+  : Schema extends false
+    ? 'false'
+    : `${number}`;
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.

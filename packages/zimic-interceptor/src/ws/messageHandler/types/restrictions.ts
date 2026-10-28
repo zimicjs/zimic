@@ -1,7 +1,7 @@
 import { DeepPartial, PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
-import { ReceivedWebSocketMessageData } from '@/ws/interceptor/types/messages';
+import { ReceivedWebSocketMessageData, UnparsedWebSocketJSONPrimitive } from '@/ws/interceptor/types/messages';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -11,7 +11,9 @@ import { ReceivedWebSocketMessageData } from '@/ws/interceptor/types/messages';
 export type WebSocketMessageHandlerStaticRestriction<Schema extends WebSocketSchema> = Schema extends
   Blob | BufferSource
   ? Blob | BufferSource
-  : DeepPartial<Schema>;
+  : Schema extends UnparsedWebSocketJSONPrimitive
+    ? ReceivedWebSocketMessageData<Schema>
+    : DeepPartial<Schema>;
 
 // Unlike HTTP, where `exact` is a field of the static restriction, a WebSocket static restriction is the partial
 // message itself, so a field would be ambiguous with message data.
