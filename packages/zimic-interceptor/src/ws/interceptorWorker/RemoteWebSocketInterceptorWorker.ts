@@ -43,6 +43,7 @@ interface RegisteredWebSocketInterceptor {
 class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private registeredInterceptors = new Map<RegisteredWebSocketInterceptor['id'], RegisteredWebSocketInterceptor>();
   private numberOfResets = 0;
+  private sendQueue = Promise.resolve();
   private auth?: RemoteWebSocketInterceptorWorkerOptions['auth'];
 
   webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
@@ -144,14 +145,9 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   ) {
     const clientEntry = this.findClientEntry(client);
 
-    if (!clientEntry) {
-      return;
+    if (clientEntry) {
+      await this.enqueueSend({ clientId: clientEntry.clientId }, data);
     }
-
-    this.webSocketClient.send('interceptors/ws/messages/send', {
-      clientId: clientEntry.clientId,
-      data: await serializeWebSocketMessageDataForTransport(data),
-    });
   }
 
   async sendToClients<Schema extends WebSocketSchema>(
@@ -160,14 +156,29 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   ) {
     const registeredInterceptor = this.findRegisteredInterceptor(interceptor);
 
-    if (!registeredInterceptor) {
-      return;
+    if (registeredInterceptor) {
+      await this.enqueueSend({ interceptorId: registeredInterceptor.id }, data);
     }
+  }
 
-    this.webSocketClient.send('interceptors/ws/messages/send', {
-      interceptorId: registeredInterceptor.id,
-      data: await serializeWebSocketMessageDataForTransport(data),
+  // Serializing a Blob is asynchronous, so sends are chained to reach the server in call order, as in local mode.
+  // Failures are logged because the public send methods return nothing to reject, as native `WebSocket.send`.
+  private enqueueSend<Schema extends WebSocketSchema>(
+    target: { clientId: string } | { interceptorId: string },
+    data: WebSocketMessageData<Schema>,
+  ) {
+    this.sendQueue = this.sendQueue.then(async () => {
+      try {
+        this.webSocketClient.send('interceptors/ws/messages/send', {
+          ...target,
+          data: await serializeWebSocketMessageDataForTransport(data),
+        });
+      } catch (error) {
+        console.error(error);
+      }
     });
+
+    return this.sendQueue;
   }
 
   private connectClient = ({
