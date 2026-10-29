@@ -1,6 +1,8 @@
+import { ValidationError } from '@zimic/utils/validation';
+
 import { HttpInterceptorType } from '../types/options';
 
-class UnknownHttpInterceptorTypeError extends TypeError {
+class UnknownHttpInterceptorTypeError extends ValidationError {
   constructor(unknownType: unknown) {
     super(
       `Unknown HTTP interceptor type: ${unknownType}. The available options are ` +

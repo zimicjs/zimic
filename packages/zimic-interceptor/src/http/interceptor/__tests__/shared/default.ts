@@ -1,5 +1,6 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { expectFetchError } from '@zimic/utils/fetch';
+import { ValidationError } from '@zimic/utils/validation';
 import { afterEach, beforeAll, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import HttpInterceptorStore from '@/http/interceptor/HttpInterceptorStore';
@@ -78,12 +79,15 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
       // @ts-expect-error Forcing an unknown type.
       const unknownType: HttpInterceptorType = 'unknown';
 
-      expect(() => {
-        createInternalHttpInterceptor({
+      function createUnknownTypeInterceptor() {
+        return createInternalHttpInterceptor({
           type: unknownType, // eslint-disable-line @typescript-eslint/no-unsafe-assignment
           baseURL,
         });
-      }).toThrow(new UnknownHttpInterceptorTypeError(unknownType));
+      }
+
+      expect(createUnknownTypeInterceptor).toThrow(new UnknownHttpInterceptorTypeError(unknownType));
+      expect(createUnknownTypeInterceptor).toThrow(ValidationError);
     });
   });
 
