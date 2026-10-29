@@ -1,9 +1,6 @@
 import type { HttpBody, HttpHeadersInit, HttpMethod, HttpRequest, HttpSchema } from '@zimic/http';
 
-import { version } from '@@/package.json';
-
 import {
-  INTERCEPTOR_SERVER_RPC_PACKAGE_VERSION_PARAMETER,
   INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
   INTERCEPTOR_SERVER_RPC_VERSION,
   INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
@@ -63,7 +60,6 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
         parameters: {
           [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
           [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
-          [INTERCEPTOR_SERVER_RPC_PACKAGE_VERSION_PARAMETER]: version,
           ...(this.auth ? { token: this.auth.token } : {}),
         },
         waitForAuthentication: true,

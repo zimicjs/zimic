@@ -1,9 +1,6 @@
 import type { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
-import { version } from '@@/package.json';
-
 import {
-  INTERCEPTOR_SERVER_RPC_PACKAGE_VERSION_PARAMETER,
   INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
   INTERCEPTOR_SERVER_RPC_VERSION,
   INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
@@ -70,7 +67,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
         parameters: {
           [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
           [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
-          [INTERCEPTOR_SERVER_RPC_PACKAGE_VERSION_PARAMETER]: version,
           ...(this.auth ? { token: this.auth.token } : {}),
         },
         waitForAuthentication: true,
