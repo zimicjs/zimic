@@ -447,8 +447,6 @@ class HttpRequestHandlerImplementation<
     return typeof restriction === 'function';
   }
 
-  // Called in the same synchronous step that reserves the request, so the captured generation is the one the request
-  // was counted in.
   async applyResponseDeclaration(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) {
     const clearGeneration = this.clearGeneration;
 

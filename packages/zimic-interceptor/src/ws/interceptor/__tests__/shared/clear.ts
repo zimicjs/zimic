@@ -685,11 +685,9 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     const olderRestrictionStartedPromise = createPromiseWithResolvers<void>();
     const olderRestrictionReleasedPromise = createPromiseWithResolvers<void>();
 
-    const olderRestriction = vi.fn(async (message: MessageSchema) => {
-      if (message.type === 'client' && message.index === 1) {
-        olderRestrictionStartedPromise.resolve();
-        await olderRestrictionReleasedPromise;
-      }
+    const olderRestriction = vi.fn(async () => {
+      olderRestrictionStartedPromise.resolve();
+      await olderRestrictionReleasedPromise;
       return false;
     });
 

@@ -118,10 +118,10 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
 
   it('should not expose socket members on the interceptor server', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, (interceptor) => {
-      expect(interceptor.server).not.toHaveProperty('open');
-      expect(interceptor.server).not.toHaveProperty('close');
-      expect(interceptor.server).not.toHaveProperty('readyState');
-      expect(interceptor.server).not.toHaveProperty('addEventListener');
+      expect(interceptor.server).not.toHaveProperty('open' satisfies keyof WebSocketClient<MessageSchema>);
+      expect(interceptor.server).not.toHaveProperty('close' satisfies keyof WebSocketClient<MessageSchema>);
+      expect(interceptor.server).not.toHaveProperty('readyState' satisfies keyof WebSocketClient<MessageSchema>);
+      expect(interceptor.server).not.toHaveProperty('addEventListener' satisfies keyof WebSocketClient<MessageSchema>);
     });
   });
 
