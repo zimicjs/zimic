@@ -2,11 +2,11 @@ import { assertTypeOf, ValidationError } from '@zimic/utils/validation';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
 import { convertArrayBufferToBase64, convertBase64ToArrayBuffer } from '@/utils/data';
+import { ReceivedWebSocketMessageData } from '@/ws/interceptor/types/messages';
 
 import {
   SerializedWebSocketBinaryMessageData,
   SerializedWebSocketMessageData,
-  SerializedWebSocketTextMessageData,
 } from '../interceptorWorker/types/messages';
 
 export function isWebSocketBinaryMessageData(data: unknown): data is Blob | BufferSource {
@@ -40,15 +40,24 @@ export function normalizeWebSocketBinaryMessageData(data: Blob | BufferSource): 
   return normalizeBufferSource(data);
 }
 
-export function normalizeWebSocketMessageData<Schema extends WebSocketSchema>(
+export async function normalizeWebSocketMessageData<Schema extends WebSocketSchema>(
   data: Schema | WebSocketMessageData<Schema>,
-): Schema {
+): Promise<ReceivedWebSocketMessageData<Schema>> {
   if (typeof data === 'string') {
     const normalizedStringData = tryParseJSONMessageData(data);
-    return normalizedStringData as Schema;
+    return normalizedStringData as ReceivedWebSocketMessageData<Schema>;
   }
 
-  return data as Schema;
+  // WebSocket binary frames carry only raw bytes, so a real server never receives a `Blob` or a typed array view.
+  if (data instanceof Blob) {
+    return (await data.arrayBuffer()) as ReceivedWebSocketMessageData<Schema>;
+  }
+
+  if (isWebSocketBinaryMessageData(data)) {
+    return normalizeBufferSource(data) as ReceivedWebSocketMessageData<Schema>;
+  }
+
+  return data as ReceivedWebSocketMessageData<Schema>;
 }
 
 export function serializeWebSocketMessageDataForSocket<Schema extends WebSocketSchema>(
@@ -94,21 +103,6 @@ export function isSerializedWebSocketBinaryMessageData(data: unknown): data is S
     'data' in data &&
     typeof data.data === 'string'
   );
-}
-
-export function isSerializedWebSocketTextMessageData(data: unknown): data is SerializedWebSocketTextMessageData {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    'type' in data &&
-    data.type === 'text' &&
-    'data' in data &&
-    typeof data.data === 'string'
-  );
-}
-
-export function isSerializedWebSocketMessageData(data: unknown): data is SerializedWebSocketMessageData {
-  return isSerializedWebSocketBinaryMessageData(data) || isSerializedWebSocketTextMessageData(data);
 }
 
 export function deserializeWebSocketMessageDataFromTransport(

@@ -1,7 +1,13 @@
-import { HttpBody, HttpHeadersInit, HttpMethod, HttpRequest, HttpSchema } from '@zimic/http';
-import { PossiblePromise } from '@zimic/utils/types';
+import type { HttpBody, HttpHeadersInit, HttpMethod, HttpRequest, HttpSchema } from '@zimic/http';
+import type { PossiblePromise } from '@zimic/utils/types';
 import { validatePathParams } from '@zimic/utils/url';
 
+import { version } from '@@/package.json';
+
+import {
+  INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
+  INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
+} from '@/interceptor/constants';
 import UnsupportedResponseBypassError from '@/server/errors/UnsupportedResponseBypassError';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/types/schema';
 import { isClientSide, isServerSide } from '@/utils/environment';
@@ -58,11 +64,20 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async start() {
     await super.sharedStart(async () => {
-      this.webSocketClient.onChannel('event', 'interceptors/responses/create', this.createResponse);
-      this.webSocketClient.onChannel('event', 'interceptors/responses/unhandled', this.handleUnhandledServerRequest);
+      this.webSocketClient.onChannel('event', 'interceptors/http/responses/create', this.createResponse);
+
+      this.webSocketClient.onChannel(
+        'event',
+        'interceptors/http/responses/unhandled',
+        this.handleUnhandledServerRequest,
+      );
 
       await this.webSocketClient.start({
-        parameters: this.auth ? { token: this.auth.token } : undefined,
+        parameters: {
+          [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
+          [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+          ...(this.auth ? { token: this.auth.token } : {}),
+        },
         waitForAuthentication: true,
       });
 
@@ -72,7 +87,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private createResponse = async (
-    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/responses/create'>,
+    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/http/responses/create'>,
   ) => {
     const { handlerId, request: serializedRequest } = message.data;
 
@@ -97,7 +112,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   };
 
   private handleUnhandledServerRequest = async (
-    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/responses/unhandled'>,
+    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/http/responses/unhandled'>,
   ) => {
     const { request: serializedRequest } = message.data;
     const request = deserializeRequest(serializedRequest);
@@ -123,8 +138,13 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async stop() {
     await super.sharedStop(async () => {
-      this.webSocketClient.offChannel('event', 'interceptors/responses/create', this.createResponse);
-      this.webSocketClient.offChannel('event', 'interceptors/responses/unhandled', this.handleUnhandledServerRequest);
+      this.webSocketClient.offChannel('event', 'interceptors/http/responses/create', this.createResponse);
+
+      this.webSocketClient.offChannel(
+        'event',
+        'interceptors/http/responses/unhandled',
+        this.handleUnhandledServerRequest,
+      );
 
       await this.clearHandlers();
 
@@ -157,7 +177,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     this.httpHandlers.set(handler.id, handler);
 
-    await this.webSocketClient.request('interceptors/workers/commit', {
+    await this.webSocketClient.request('interceptors/http/workers/commit', {
       id: handler.id,
       baseURL: handler.baseURL,
       method: handler.method,
@@ -214,7 +234,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     }));
 
     try {
-      await this.webSocketClient.request('interceptors/workers/reset', handlersToRecommit);
+      await this.webSocketClient.request('interceptors/http/workers/reset', handlersToRecommit);
     } catch (error) {
       /* istanbul ignore next -- @preserve
        *
