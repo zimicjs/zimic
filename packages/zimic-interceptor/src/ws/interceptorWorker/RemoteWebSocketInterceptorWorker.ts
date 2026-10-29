@@ -54,10 +54,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     this.webSocketClient = new WebSocketClient({
       url: options.serverURL.toString(),
       onUnexpectedClose: () => {
-        // Stopping resets the server worker before closing the socket, so the server may close it in between.
-        if (!this.stoppingPromise) {
-          logUnexpectedServerDisconnection(options.serverURL);
-        }
+        logUnexpectedServerDisconnection(options.serverURL);
       },
     });
 
