@@ -277,7 +277,7 @@ export function declareDelayHttpInterceptorTests(options: RuntimeSharedHttpInter
 
     await usingHttpInterceptor<Schema>({ ...interceptorOptions, onUnhandledRequest }, async (interceptor) => {
       const delayStartedPromise = createPromiseWithResolvers<void>();
-      const respond = vi.fn(() => ({ status: 204 as const }));
+      const respond = vi.fn();
 
       const handler = await promiseIfRemote(
         interceptor
@@ -339,7 +339,7 @@ export function declareDelayHttpInterceptorTests(options: RuntimeSharedHttpInter
 
     await usingHttpInterceptor<Schema>({ ...interceptorOptions, onUnhandledRequest }, async (interceptor) => {
       const delayStartedPromise = createPromiseWithResolvers<void>();
-      const respond = vi.fn(() => ({ status: 204 as const }));
+      const respond = vi.fn();
 
       const handler = await promiseIfRemote(
         interceptor
@@ -369,7 +369,7 @@ export function declareDelayHttpInterceptorTests(options: RuntimeSharedHttpInter
         await promiseIfRemote(handler.clear(), interceptor);
 
         // Redeclaring the cleared handler would apply its new response to the request in its delay.
-        const redeclaredRespond = vi.fn(() => ({ status: 204 as const }));
+        const redeclaredRespond = vi.fn();
         await promiseIfRemote(handler.respond(redeclaredRespond).times(1), interceptor);
 
         await vi.advanceTimersByTimeAsync(delay);

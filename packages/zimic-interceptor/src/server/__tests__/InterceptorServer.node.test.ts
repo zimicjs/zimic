@@ -13,7 +13,6 @@ import { version } from '@@/package.json';
 
 import { verifyUnhandledRequestMessage } from '@/http/interceptor/__tests__/shared/utils';
 import {
-  INTERCEPTOR_SERVER_RPC_PACKAGE_VERSION_PARAMETER,
   INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
   INTERCEPTOR_SERVER_RPC_VERSION,
   INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
@@ -418,37 +417,9 @@ describe('Interceptor server', () => {
   });
 
   describe('Worker connections', () => {
-    // Remote interceptors always send the versions of the installed package, so a raw RPC client simulates workers on
-    // other versions.
-    const otherWorkerVersion = '0.0.0-other';
+    // Remote interceptors always send the RPC version of the installed package, so a raw RPC client simulates workers
+    // on other versions.
     const otherWorkerRPCVersion = String(INTERCEPTOR_SERVER_RPC_VERSION + 1);
-
-    it.each(['http', 'ws'] as const)(
-      'should accept %s workers with a different package version and the same RPC version',
-      async (protocol) => {
-        server = createInternalInterceptorServer();
-        await server.start();
-
-        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
-          url: `ws://${server.hostname}:${server.port}`,
-        });
-
-        try {
-          await worker.start({
-            parameters: {
-              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: protocol,
-              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
-              [INTERCEPTOR_SERVER_RPC_PACKAGE_VERSION_PARAMETER]: otherWorkerVersion,
-            },
-            waitForAuthentication: true,
-          });
-
-          expect(worker.isRunning).toBe(true);
-        } finally {
-          await worker.stop();
-        }
-      },
-    );
 
     it.each([
       { protocol: 'http', scenario: 'missing', workerRPCVersion: undefined },
@@ -472,56 +443,13 @@ describe('Interceptor server', () => {
               ...(workerRPCVersion === undefined
                 ? {}
                 : { [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: workerRPCVersion }),
-              [INTERCEPTOR_SERVER_RPC_PACKAGE_VERSION_PARAMETER]: otherWorkerVersion,
             },
             waitForAuthentication: true,
           });
 
           await expect(startPromise).rejects.toThrow(UnauthorizedWebSocketConnectionError);
           await expect(startPromise).rejects.toThrow(
-            `Interceptor ${otherWorkerVersion} is incompatible with server ${version}. ` +
-              'Use the same @zimic/interceptor version in both. (code 1008)',
-          );
-
-          expect(worker.isRunning).toBe(false);
-        } finally {
-          await worker.stop();
-        }
-      },
-    );
-
-    it.each([
-      { protocol: 'http', scenario: 'missing', workerVersion: undefined },
-      { protocol: 'ws', scenario: 'missing', workerVersion: undefined },
-      { protocol: 'http', scenario: 'not displayable', workerVersion: '1.0.0 <script>' },
-      { protocol: 'ws', scenario: 'not displayable', workerVersion: '1.0.0 <script>' },
-      { protocol: 'http', scenario: 'too long to display', workerVersion: '1.0.0-'.padEnd(200, 'x') },
-      { protocol: 'ws', scenario: 'too long to display', workerVersion: '1.0.0-'.padEnd(200, 'x') },
-    ] as const)(
-      'should reject $protocol workers with an unknown version if their package version is $scenario',
-      async ({ protocol, workerVersion }) => {
-        server = createInternalInterceptorServer();
-        await server.start();
-
-        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
-          url: `ws://${server.hostname}:${server.port}`,
-        });
-
-        try {
-          const startPromise = worker.start({
-            parameters: {
-              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: protocol,
-              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: otherWorkerRPCVersion,
-              ...(workerVersion === undefined
-                ? {}
-                : { [INTERCEPTOR_SERVER_RPC_PACKAGE_VERSION_PARAMETER]: workerVersion }),
-            },
-            waitForAuthentication: true,
-          });
-
-          await expect(startPromise).rejects.toThrow(UnauthorizedWebSocketConnectionError);
-          await expect(startPromise).rejects.toThrow(
-            `Interceptor unknown is incompatible with server ${version}. ` +
+            `Interceptor is incompatible with server ${version}. ` +
               'Use the same @zimic/interceptor version in both. (code 1008)',
           );
 
