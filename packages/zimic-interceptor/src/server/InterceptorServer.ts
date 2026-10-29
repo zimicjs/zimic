@@ -8,7 +8,6 @@ import color from 'picocolors';
 import { version } from '@@/package.json';
 
 import {
-  INTERCEPTOR_SERVER_RPC_PACKAGE_VERSION_PARAMETER,
   INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
   INTERCEPTOR_SERVER_RPC_VERSION,
   INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
@@ -48,31 +47,8 @@ const WEB_SOCKET_CLOSE_REASONS = Object.freeze({
   INVALID_WORKER_PROTOCOL: 'Invalid interceptor worker protocol.',
   MISSING_HTTP_PEER: 'The optional peer dependency "@zimic/http" is required for HTTP interceptor workers.',
   HTTP_RUNTIME_LOAD_FAILED: 'Could not load the HTTP interceptor runtime.',
+  INCOMPATIBLE_WORKER_VERSION: `Interceptor is incompatible with server ${version}. Use the same @zimic/interceptor version in both.`,
 } as const);
-
-// Worker versions come from the client, so only ASCII semver-like versions that keep the reason within the WebSocket
-// close reason limit of 123 bytes are echoed back.
-const DISPLAYABLE_WORKER_VERSION_PATTERN = /^[\w.+-]+$/;
-const MAX_WEB_SOCKET_CLOSE_REASON_LENGTH = 123;
-
-function formatWorkerVersionMismatchReason(displayedWorkerVersion: string) {
-  return (
-    `Interceptor ${displayedWorkerVersion} is incompatible with server ${version}. ` +
-    'Use the same @zimic/interceptor version in both.'
-  );
-}
-
-function createWorkerVersionMismatchReason(workerVersion: string | undefined) {
-  if (workerVersion !== undefined && DISPLAYABLE_WORKER_VERSION_PATTERN.test(workerVersion)) {
-    const reason = formatWorkerVersionMismatchReason(workerVersion);
-
-    if (reason.length <= MAX_WEB_SOCKET_CLOSE_REASON_LENGTH) {
-      return reason;
-    }
-  }
-
-  return formatWorkerVersionMismatchReason('unknown');
-}
 
 function isMissingHttpPeerError(error: unknown): boolean {
   if (!(error instanceof Error)) {
@@ -378,13 +354,8 @@ class InterceptorServer implements PublicInterceptorServer {
       );
 
       if (workerRPCVersion !== String(INTERCEPTOR_SERVER_RPC_VERSION)) {
-        const workerVersion = this.getWebSocketRequestParameterValue(
-          request,
-          INTERCEPTOR_SERVER_RPC_PACKAGE_VERSION_PARAMETER,
-        );
-
         socket.resume();
-        socket.close(WEB_SOCKET_CLOSE_CODES.POLICY_VIOLATION, createWorkerVersionMismatchReason(workerVersion));
+        socket.close(WEB_SOCKET_CLOSE_CODES.POLICY_VIOLATION, WEB_SOCKET_CLOSE_REASONS.INCOMPATIBLE_WORKER_VERSION);
         return { handled: true };
       }
 
