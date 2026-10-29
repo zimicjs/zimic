@@ -9,12 +9,11 @@ import path from 'path';
 import color from 'picocolors';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { version } from '@@/package.json';
-
 import { verifyUnhandledRequestMessage } from '@/http/interceptor/__tests__/shared/utils';
 import { createHttpInterceptor } from '@/http/interceptor/factory';
 import {
   INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
+  INTERCEPTOR_SERVER_RPC_VERSION,
   INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
 } from '@/interceptor/constants';
 import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/server/constants';
@@ -59,7 +58,8 @@ describe('CLI > Server start', () => {
     '                                were found for the base URL of a request. If an',
     '                                interceptor was matched, the logging behavior',
     '                                for that base URL is configured in the',
-    '                                interceptor itself.                    [boolean]',
+    '                                interceptor itself, unless the interceptor',
+    '                                disconnects or fails before responding.[boolean]',
     '  -t, --tokens-dir              The directory where the authorized interceptor',
     '                                authentication tokens are saved. If provided,',
     '                                only remote interceptors bearing a valid token',
@@ -568,7 +568,7 @@ describe('CLI > Server start', () => {
         await webSocketClient.start({
           parameters: {
             [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
-            [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+            [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
           },
           waitForAuthentication: true,
         });
@@ -725,7 +725,46 @@ describe('CLI > Server start', () => {
     });
   });
 
-  it('should abort waiting for a worker reply if it was uncommitted before responding', async () => {
+  it('should not log unhandled requests again if the remote interceptor already logged them', async () => {
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--log-unhandled-requests']);
+
+    await usingIgnoredConsole(['log', 'error'], async (console) => {
+      await runCLI();
+
+      expect(server).toBeDefined();
+      expect(server!.isRunning).toBe(true);
+
+      await usingHttpInterceptor<{
+        '/users': {
+          GET: { response: { 204: {} } };
+        };
+      }>(
+        {
+          type: 'remote',
+          baseURL: `http://localhost:${server!.port}`,
+          onUnhandledRequest: { action: 'reject', log: true },
+        },
+        async (interceptor) => {
+          await interceptor.get('/users').respond({ status: 204 });
+
+          const request = new Request(`http://localhost:${server!.port}/unknown`);
+          const responsePromise = fetch(request);
+          await expectFetchError(responsePromise);
+
+          expect(console.error).toHaveBeenCalledTimes(1);
+
+          const errorMessage = console.error.mock.calls[0].join(' ');
+          await verifyUnhandledRequestMessage(errorMessage, {
+            request,
+            platform: 'node',
+            type: 'reject',
+          });
+        },
+      );
+    });
+  });
+
+  it('should log and reject requests if the worker stops before responding', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--log-unhandled-requests']);
 
     await usingIgnoredConsole(['log', 'error'], async (console) => {
@@ -748,8 +787,10 @@ describe('CLI > Server start', () => {
 
         await interceptor.get('/users').respond(responseFactory);
 
+        const request = new Request(`http://localhost:${server!.port}/users`);
+
         const onFetchError = vi.fn<(error: unknown) => void>();
-        const responsePromise = fetch(`http://localhost:${server!.port}/users`).catch(onFetchError);
+        const responsePromise = fetch(request).catch(onFetchError);
 
         await waitFor(() => {
           expect(responseFactory).toHaveBeenCalledTimes(1);
@@ -767,12 +808,15 @@ describe('CLI > Server start', () => {
         // Wait for slow factory to return the response after the interceptor is already stopped
         await responseFactoryPromise;
 
-        expect(console.error).not.toHaveBeenCalled();
+        expect(console.error).toHaveBeenCalledTimes(1);
+
+        const errorMessage = console.error.mock.calls[0].join(' ');
+        await verifyUnhandledRequestMessage(errorMessage, { request, platform: 'node', type: 'reject' });
       });
     });
   });
 
-  it('should abort waiting for a worker reply if its internal web socket client was closed before responding', async () => {
+  it('should log and reject requests if the internal web socket client of the worker closes before responding', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--log-unhandled-requests']);
 
     await usingIgnoredConsole(['log', 'error'], async (console) => {
@@ -810,8 +854,10 @@ describe('CLI > Server start', () => {
 
         await interceptor.get('/users').respond(responseFactory);
 
+        const request = new Request(`http://localhost:${server!.port}/users`);
+
         const onFetchError = vi.fn<(error: unknown) => void>();
-        const responsePromise = fetch(`http://localhost:${server!.port}/users`).catch(onFetchError);
+        const responsePromise = fetch(request).catch(onFetchError);
 
         await waitFor(() => {
           expect(wasResponseFactoryCalled).toBe(true);
@@ -827,7 +873,10 @@ describe('CLI > Server start', () => {
           expect(onFetchError).toHaveBeenCalled();
         });
 
-        expect(console.error).not.toHaveBeenCalled();
+        expect(console.error).toHaveBeenCalledTimes(1);
+
+        const errorMessage = console.error.mock.calls[0].join(' ');
+        await verifyUnhandledRequestMessage(errorMessage, { request, platform: 'node', type: 'reject' });
       } finally {
         await interceptor.stop();
       }

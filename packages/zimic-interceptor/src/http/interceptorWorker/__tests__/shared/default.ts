@@ -22,7 +22,7 @@ interface DefaultHttpInterceptorWorkerTestOptions extends SharedHttpInterceptorW
 }
 
 export function declareDefaultHttpInterceptorWorkerTests(options: DefaultHttpInterceptorWorkerTestOptions) {
-  const { platform, defaultWorkerOptions, numberOfLoggedStartErrors, startServer, getBaseURL, stopServer } = options;
+  const { platform, type, numberOfLoggedStartErrors, startServer, getBaseURL, stopServer } = options;
 
   let baseURL: string;
   let workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions;
@@ -32,22 +32,19 @@ export function declareDefaultHttpInterceptorWorkerTests(options: DefaultHttpInt
   }
 
   beforeAll(async () => {
-    if (defaultWorkerOptions.type === 'remote') {
+    if (type === 'remote') {
       await startServer?.();
     }
   });
 
   beforeEach(async () => {
-    baseURL = await getBaseURL(defaultWorkerOptions.type);
+    baseURL = await getBaseURL(type);
 
-    workerOptions =
-      defaultWorkerOptions.type === 'local'
-        ? defaultWorkerOptions
-        : { ...defaultWorkerOptions, serverURL: new URL(new URL(baseURL).origin) };
+    workerOptions = type === 'local' ? { type } : { type, serverURL: new URL(new URL(baseURL).origin) };
   });
 
   afterAll(async () => {
-    if (defaultWorkerOptions.type === 'remote') {
+    if (type === 'remote') {
       await stopServer?.();
     }
   });
@@ -206,72 +203,56 @@ export function declareDefaultHttpInterceptorWorkerTests(options: DefaultHttpInt
   });
 
   it('should throw an error if trying to clear handlers without a running worker', async () => {
-    await usingHttpInterceptorWorker(workerOptions, { start: false }, async (worker) => {
+    await usingHttpInterceptorWorker(workerOptions, { start: false }, (worker) => {
       expect(worker.isRunning).toBe(false);
 
-      await expect(async () => {
-        await worker.clearHandlers();
-      }).rejects.toThrow(new NotRunningHttpInterceptorError());
+      expect(() => {
+        worker.clearHandlers();
+      }).toThrow(new NotRunningHttpInterceptorError());
     });
   });
 
   it('should throw an error if trying to clear interceptor handlers without a running worker', async () => {
-    await usingHttpInterceptorWorker(workerOptions, { start: false }, async (worker) => {
+    await usingHttpInterceptorWorker(workerOptions, { start: false }, (worker) => {
       expect(worker.isRunning).toBe(false);
 
       const interceptor = createDefaultHttpInterceptor();
 
-      await expect(async () => {
-        await worker.clearHandlers({ interceptor: interceptor.implementation });
-      }).rejects.toThrow(new NotRunningHttpInterceptorError());
+      expect(() => {
+        worker.clearHandlers({ interceptor: interceptor.implementation });
+      }).toThrow(new NotRunningHttpInterceptorError());
     });
   });
 
-  if (defaultWorkerOptions.type === 'remote') {
-    it('should not throw an error if trying to clear handlers without a running web socket client', async () => {
-      await usingHttpInterceptorWorker(workerOptions, async (rawWorker) => {
-        expect(rawWorker).toBeInstanceOf(RemoteHttpInterceptorWorker);
+  // Remote-only: local workers do not register with an interceptor server.
+  if (type === 'remote') {
+    it('should close the web socket client after failing to register with the server while starting', async () => {
+      const remoteWorkerOptions: RemoteHttpInterceptorWorkerOptions = {
+        type,
+        serverURL: new URL(new URL(baseURL).origin),
+      };
 
-        const worker = rawWorker as RemoteHttpInterceptorWorker;
-        expect(worker.isRunning).toBe(true);
-        expect(worker.webSocketClient.isRunning).toBe(true);
+      await usingHttpInterceptorWorker(remoteWorkerOptions, { start: false }, async (worker) => {
+        const error = new Error('Could not register with the server.');
 
-        // The websocket client automatically stops running if the interceptor server is closed.
-        // Let's stop the client manually to simulate that.
-        await worker.webSocketClient.stop();
+        // The server accepts every valid registration, so no public path makes it fail. The first request after
+        // connecting is the registration.
+        vi.spyOn(worker.webSocketClient, 'request').mockRejectedValueOnce(error);
 
-        expect(worker.isRunning).toBe(true);
+        await usingIgnoredConsole(['error'], async (console) => {
+          await expect(worker.start()).rejects.toThrow(error);
+
+          expect(console.error).toHaveBeenCalledTimes(platform === 'node' ? 1 : 0);
+        });
+
+        expect(worker.isRunning).toBe(false);
         expect(worker.webSocketClient.isRunning).toBe(false);
-
-        const clearPromise = worker.clearHandlers();
-        await expect(clearPromise).resolves.not.toThrow();
-      });
-    });
-
-    it('should not throw an error if trying to clear interceptor handlers without a running web socket client', async () => {
-      await usingHttpInterceptorWorker(workerOptions, async (rawWorker) => {
-        expect(rawWorker).toBeInstanceOf(RemoteHttpInterceptorWorker);
-
-        const worker = rawWorker as RemoteHttpInterceptorWorker;
-        expect(worker.isRunning).toBe(true);
-        expect(worker.webSocketClient.isRunning).toBe(true);
-
-        // The websocket client automatically stops running if the interceptor server is closed.
-        // Let's stop the client manually to simulate that.
-        await worker.webSocketClient.stop();
-
-        expect(worker.isRunning).toBe(true);
-        expect(worker.webSocketClient.isRunning).toBe(false);
-
-        const interceptor = createDefaultHttpInterceptor();
-
-        const clearPromise = worker.clearHandlers({ interceptor: interceptor.implementation });
-        await expect(clearPromise).resolves.not.toThrow();
       });
     });
   }
 
-  if (defaultWorkerOptions.type === 'local') {
+  // Local-only: these cases cover the shared MSW worker, which remote workers do not use.
+  if (type === 'local') {
     it('should keep the shared MSW worker running after one of multiple local workers stops', async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         await usingHttpInterceptorWorker(workerOptions, async (otherWorker) => {
@@ -285,7 +266,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: DefaultHttpInt
     });
 
     it('should use the internal worker of the current platform', async () => {
-      const worker = createHttpInterceptorWorker(defaultWorkerOptions);
+      const worker = createHttpInterceptorWorker({ type });
 
       try {
         await worker.start();

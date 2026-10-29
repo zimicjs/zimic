@@ -1,55 +1,73 @@
-import { HttpResponse } from '@zimic/http';
+import { HttpSchema } from '@zimic/http';
 import { expectFetchError } from '@zimic/utils/fetch';
-import { PossiblePromise } from '@zimic/utils/types';
-import { createRegexFromPath, joinURL, DuplicatedPathParamError } from '@zimic/utils/url';
+import { joinURL, DuplicatedPathParamError } from '@zimic/utils/url';
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
-import { expectBypassedResponse } from '@tests/utils/fetch';
-import { createInternalHttpInterceptor, usingHttpInterceptorWorker } from '@tests/utils/interceptors';
+import HttpInterceptorImplementation, {
+  SharedHttpInterceptorImplementation,
+} from '@/http/interceptor/HttpInterceptorImplementation';
+import HttpInterceptorStore from '@/http/interceptor/HttpInterceptorStore';
+import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
+import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
+import { HttpInterceptorRequest } from '@/http/requestHandler/types/requests';
+import { usingHttpInterceptorWorker } from '@tests/utils/interceptors';
 
 import HttpInterceptorWorker from '../../HttpInterceptorWorker';
-import { HttpResponseFactoryContext } from '../../types/http';
 import { LocalHttpInterceptorWorkerOptions, RemoteHttpInterceptorWorkerOptions } from '../../types/options';
-import { promiseIfRemote } from '../utils/promises';
 import { SharedHttpInterceptorWorkerTestOptions } from './types';
 
 export function declarePathParamsHttpInterceptorWorkerTests(options: SharedHttpInterceptorWorkerTestOptions) {
-  const { defaultWorkerOptions, startServer, getBaseURL, stopServer } = options;
+  const { type, startServer, getBaseURL, stopServer } = options;
+
+  const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
+
+  type MethodSchema = HttpSchema.Method<{
+    response: { 200: { body: { success: boolean } } };
+  }>;
+
+  type Schema = HttpSchema<{
+    [path: string]: { GET: MethodSchema };
+  }>;
 
   let baseURL: string;
   let workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions;
 
-  function createDefaultHttpInterceptor() {
-    return createInternalHttpInterceptor<{}>({ type: defaultWorkerOptions.type, baseURL });
+  function createDefaultHttpInterceptor(worker: HttpInterceptorWorker) {
+    const interceptor = new HttpInterceptorImplementation<Schema>({
+      store: new HttpInterceptorStore(),
+      baseURL: new URL(baseURL),
+      // The interceptor registers its handlers in the worker under test instead of the worker shared by its store.
+      createWorker: () => worker,
+      deleteWorker: vi.fn(),
+      Handler,
+      onUnhandledRequest: { action: 'reject', log: false },
+    });
+
+    return interceptor as SharedHttpInterceptorImplementation<Schema>;
   }
 
-  const responseStatus = 200;
   const responseBody = { success: true };
 
-  function requestHandler(_context: HttpResponseFactoryContext): PossiblePromise<HttpResponse | null> {
-    const response = Response.json(responseBody, { status: responseStatus });
-    return response as HttpResponse;
+  function createResponseDeclaration(_request: HttpInterceptorRequest<string, MethodSchema>) {
+    return { status: 200, body: responseBody } as const;
   }
 
-  const spiedRequestHandler = vi.fn(requestHandler);
+  const spiedResponseDeclarationFactory = vi.fn(createResponseDeclaration);
 
   beforeAll(async () => {
-    if (defaultWorkerOptions.type === 'remote') {
+    if (type === 'remote') {
       await startServer?.();
     }
   });
 
   beforeEach(async () => {
-    baseURL = await getBaseURL(defaultWorkerOptions.type);
+    baseURL = await getBaseURL(type);
 
-    workerOptions =
-      defaultWorkerOptions.type === 'local'
-        ? defaultWorkerOptions
-        : { ...defaultWorkerOptions, serverURL: new URL(new URL(baseURL).origin) };
+    workerOptions = type === 'local' ? { type } : { type, serverURL: new URL(new URL(baseURL).origin) };
   });
 
   afterAll(async () => {
-    if (defaultWorkerOptions.type === 'remote') {
+    if (type === 'remote') {
       await stopServer?.();
     }
   });
@@ -518,40 +536,32 @@ export function declarePathParamsHttpInterceptorWorkerTests(options: SharedHttpI
     { path: ':p1?/other/:p2+', input: 'other/v1-v2', matches: true, params: { p2: 'v1-v2' } },
   ])('should intercept requests with dynamic paths (path $path, input $input)', async (testCase) => {
     await usingHttpInterceptorWorker(workerOptions, async (worker) => {
-      const interceptor = createDefaultHttpInterceptor();
-      await promiseIfRemote(worker.use(interceptor.implementation, 'GET', testCase.path, spiedRequestHandler), worker);
+      const interceptor = createDefaultHttpInterceptor(worker);
+      await interceptor.start();
 
-      expect(spiedRequestHandler).not.toHaveBeenCalled();
+      await new Handler(interceptor, 'GET', testCase.path).respond(spiedResponseDeclarationFactory);
+
+      expect(spiedResponseDeclarationFactory).not.toHaveBeenCalled();
 
       const responsePromise = fetch(joinURL(baseURL, testCase.input), { method: 'GET' });
 
       if (testCase.matches) {
         const response = await responsePromise;
 
-        expect(spiedRequestHandler).toHaveBeenCalledTimes(1);
+        expect(spiedResponseDeclarationFactory).toHaveBeenCalledTimes(1);
 
-        const [handlerContext] = spiedRequestHandler.mock.calls[0];
-        expect(handlerContext.request).toBeInstanceOf(Request);
-        expect(handlerContext.request.method).toBe('GET');
-
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest(handlerContext.request, {
-          baseURL,
-          pathRegex: createRegexFromPath(testCase.path),
-        });
-        expect(parsedRequest.pathParams).toEqual(testCase.params ?? {});
+        const [request] = spiedResponseDeclarationFactory.mock.calls[0];
+        expect(request).toBeInstanceOf(Request);
+        expect(request.method).toBe('GET');
+        expect(request.pathParams).toEqual(testCase.params ?? {});
 
         expect(response.status).toBe(200);
 
         const matchedBody = (await response.json()) as typeof responseBody;
         expect(matchedBody).toEqual(responseBody);
       } else {
-        if (defaultWorkerOptions.type === 'local') {
-          await expectBypassedResponse(responsePromise);
-        } else {
-          await expectFetchError(responsePromise);
-        }
-
-        expect(spiedRequestHandler).not.toHaveBeenCalled();
+        await expectFetchError(responsePromise);
+        expect(spiedResponseDeclarationFactory).not.toHaveBeenCalled();
       }
     });
   });
@@ -567,25 +577,19 @@ export function declarePathParamsHttpInterceptorWorkerTests(options: SharedHttpI
     'should throw an error if trying to use a url with duplicate dynamic path params (path $path, input $input)',
     async (testCase) => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
-        const interceptor = createDefaultHttpInterceptor();
+        const interceptor = createDefaultHttpInterceptor(worker);
+        await interceptor.start();
 
-        await expect(async () => {
-          await worker.use(interceptor.implementation, 'GET', testCase.path, spiedRequestHandler);
-        }).rejects.toThrow(new DuplicatedPathParamError(testCase.path, testCase.duplicatedParameter));
+        const handler = new Handler(interceptor, 'GET', testCase.path);
 
-        expect(spiedRequestHandler).not.toHaveBeenCalled();
+        expect(() => {
+          worker.use(interceptor, handler.implementation);
+        }).toThrow(new DuplicatedPathParamError(testCase.path, testCase.duplicatedParameter));
 
         const urlExpectedToFail = joinURL(baseURL, testCase.input);
 
         const responsePromise = fetch(urlExpectedToFail, { method: 'GET' });
-
-        if (defaultWorkerOptions.type === 'local') {
-          await expectBypassedResponse(responsePromise);
-        } else {
-          await expectFetchError(responsePromise);
-        }
-
-        expect(spiedRequestHandler).not.toHaveBeenCalled();
+        await expectFetchError(responsePromise);
       });
     },
   );

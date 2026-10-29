@@ -1,18 +1,36 @@
 import { DeepPartial, PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
-import { ReceivedWebSocketMessageData } from '@/ws/interceptor/types/messages';
+import { ReceivedWebSocketMessageData, UnparsedWebSocketJSONPrimitive } from '@/ws/interceptor/types/messages';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * A static restriction declared with `handler.with()`, matching messages that contain its partial data. Binary members
- * accept only whole binary values of any kind, compared byte by byte.
+ * accept only whole binary values of any kind, compared byte by byte. Top-level number and boolean members accept only
+ * their whole text as received, such as `'42'`.
  */
 export type WebSocketMessageHandlerStaticRestriction<Schema extends WebSocketSchema> = Schema extends
   Blob | BufferSource
   ? Blob | BufferSource
-  : DeepPartial<Schema>;
+  : Schema extends UnparsedWebSocketJSONPrimitive
+    ? ReceivedWebSocketMessageData<Schema>
+    : DeepPartial<Schema>;
+
+// Unlike HTTP, where `exact` is a field of the static restriction, a WebSocket static restriction is the partial
+// message itself, so a field would be ambiguous with message data.
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * The options of a static restriction declared with `handler.with()`.
+ */
+export interface WebSocketMessageHandlerStaticRestrictionOptions {
+  /**
+   * Whether JSON messages must be equal to the restriction instead of containing it. Defaults to `false`. Binary
+   * restrictions always require messages with the same bytes.
+   */
+  exact?: boolean;
+}
 
 /** A predicate returning whether a message matches. It does not narrow the handler's message type. */
 type WebSocketMessageHandlerComputedBooleanRestriction<Schema extends WebSocketSchema> = (
@@ -46,6 +64,12 @@ export type WebSocketMessageHandlerComputedRestriction<
 export type WebSocketMessageHandlerRestriction<Schema extends WebSocketSchema> =
   WebSocketMessageHandlerStaticRestriction<Schema> | WebSocketMessageHandlerComputedRestriction<Schema>;
 
+/** The arguments accepted by `handler.with()` after a restriction. Only static restrictions accept options. */
+export type WebSocketMessageHandlerRestrictionOptionsArguments<Schema extends WebSocketSchema, Restriction> =
+  Restriction extends WebSocketMessageHandlerComputedRestriction<Schema>
+    ? []
+    : [options?: WebSocketMessageHandlerStaticRestrictionOptions];
+
 export interface WebSocketMessageHandlerRestrictionDiff<Value> {
   expected: Value;
   received: Value;
@@ -60,8 +84,7 @@ export interface WebSocketMessageHandlerRestrictionDiffs<Schema extends WebSocke
 }
 
 export type WebSocketMessageHandlerRestrictionMatch<Schema extends WebSocketSchema = WebSocketSchema> =
-  | { success: true; message: ReceivedWebSocketMessageData<Schema> }
-  | { success: false; diff: WebSocketMessageHandlerRestrictionDiffs<Schema> };
+  { success: true } | { success: false; diff: WebSocketMessageHandlerRestrictionDiffs<Schema> };
 
 export interface UnmatchedWebSocketInterceptorMessageGroup<Schema extends WebSocketSchema = WebSocketSchema> {
   message: ReceivedWebSocketMessageData<Schema>;

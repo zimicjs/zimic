@@ -28,8 +28,6 @@ class RemoteHttpRequestHandler<
 
   implementation: HttpRequestHandlerImplementation<Schema, Method, Path, StatusCode>;
 
-  private syncPromises: Promise<unknown>[] = [];
-
   private pending: this;
   private synced: this;
 
@@ -144,14 +142,6 @@ class RemoteHttpRequestHandler<
     this.implementation.saveInterceptedRequest(request, response);
   }
 
-  registerSyncPromise(promise: Promise<unknown>) {
-    this.syncPromises.push(promise);
-  }
-
-  get isSynced() {
-    return this.syncPromises.length === 0;
-  }
-
   then<
     FulfilledResult = PublicSyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>,
     RejectedResult = never,
@@ -163,15 +153,9 @@ class RemoteHttpRequestHandler<
       | null,
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ): Promise<FulfilledResult | RejectedResult> {
-    const promisesToWait = new Set(this.syncPromises);
-
-    return Promise.all(promisesToWait)
-      .then(() => {
-        this.syncPromises = this.syncPromises.filter((promise) => !promisesToWait.has(promise));
-
-        return this.isSynced ? this.synced : this.pending;
-      })
-      .then(onFulfilled, onRejected);
+    // Declarations stay in this process and the interceptor registers with the server when it starts, so the handler
+    // has nothing to wait for before it is synced.
+    return Promise.resolve(this.synced).then(onFulfilled, onRejected);
   }
 
   catch<RejectedResult = never>(

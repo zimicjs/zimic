@@ -3,9 +3,9 @@ import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
 import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
@@ -831,6 +831,9 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
       }
     });
   });
+
+  // No HTTP counterpart for "should support intercepting messages from a restricted sender": HTTP requests have no
+  // sender connection to restrict.
 
   it('should reset restrictions when cleared', async () => {
     await usingHttpInterceptor<{

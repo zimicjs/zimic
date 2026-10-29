@@ -1,5 +1,5 @@
 import { HttpRequest, HttpResponse, StrictFormData } from '@zimic/http';
-import { waitForDelay } from '@zimic/utils/time';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { joinURL } from '@zimic/utils/url';
 import { expectTypeOf, expect, vi, it, beforeAll, afterAll, describe, beforeEach, afterEach } from 'vitest';
 
@@ -7,10 +7,10 @@ import { SharedHttpInterceptorImplementation } from '@/http/interceptor/HttpInte
 import LocalHttpInterceptor from '@/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/http/interceptor/RemoteHttpInterceptor';
 import { HttpInterceptorType } from '@/http/interceptor/types/options';
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '@/http/interceptorWorker/LocalHttpInterceptorWorker';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpRequestHandlerRequestMatch } from '../../HttpRequestHandlerImplementation';
 import type LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
@@ -141,6 +141,35 @@ export function declareDefaultHttpRequestHandlerTests(
     );
     expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
   });
+
+  it('should not match requests if cleared while they are being matched', async () => {
+    const restrictionStartedPromise = createPromiseWithResolvers<void>();
+    const restrictionReleasedPromise = createPromiseWithResolvers<void>();
+
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
+      .with(async () => {
+        restrictionStartedPromise.resolve();
+        await restrictionReleasedPromise;
+        return true;
+      })
+      .respond({ status: 200, body: { success: true } });
+
+    const request = new Request(baseURL);
+    const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+    const matchPromise = handler.matchesRequest(parsedRequest);
+
+    await restrictionStartedPromise;
+    await promiseIfRemote(handler.clear(), interceptor);
+    restrictionReleasedPromise.resolve();
+
+    expect(await matchPromise).toEqual<HttpRequestHandlerRequestMatch>({
+      success: false,
+      cause: 'missingResponseDeclaration',
+    });
+  });
+
+  // No HTTP counterpart for "should match messages again if cleared and declared with $declaration": a request needs a
+  // response, so only `respond` makes a cleared HTTP handler match again, as covered above.
 
   it('should create response with declared status and body', async () => {
     const responseStatus = 200;
@@ -432,68 +461,18 @@ export function declareDefaultHttpRequestHandlerTests(
         expect(handler).toHaveProperty('catch', expect.any(Function));
         expect(handler).toHaveProperty('finally', expect.any(Function));
 
-        const fulfillmentListener = vi.fn((syncedHandler) => {
+        const fulfillmentListener = vi.fn((syncedHandler: unknown) => {
           expect(syncedHandler).toEqual(handler);
-          expect(handler.isSynced).toBe(true);
 
           expect(syncedHandler).not.toHaveProperty('then');
           expect(syncedHandler).toHaveProperty('catch', expect.any(Function));
           expect(syncedHandler).toHaveProperty('finally', expect.any(Function));
         });
-
-        expect(handler.isSynced).toBe(true);
 
         const pendingHandler = handler.with({});
         expect(pendingHandler).toEqual(handler);
 
-        expect(handler.isSynced).toBe(true);
-        handler.registerSyncPromise(waitForDelay(100));
-        expect(handler.isSynced).toBe(false);
-
         await pendingHandler.then(fulfillmentListener);
-
-        expect(handler.isSynced).toBe(true);
-        expect(pendingHandler.isSynced).toBe(true);
-
-        expect(fulfillmentListener).toHaveBeenCalledTimes(1);
-      });
-
-      it('should wait until synced before resolving, even if new sync promises were added while waiting', async () => {
-        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users').respond({
-          status: 200,
-          body: { success: true },
-        });
-
-        await handler;
-
-        expect(handler).toHaveProperty('then', expect.any(Function));
-        expect(handler).toHaveProperty('catch', expect.any(Function));
-        expect(handler).toHaveProperty('finally', expect.any(Function));
-
-        const fulfillmentListener = vi.fn((syncedHandler) => {
-          expect(handler).toEqual(syncedHandler);
-          expect(handler.isSynced).toBe(true);
-
-          expect(syncedHandler).not.toHaveProperty('then');
-          expect(syncedHandler).toHaveProperty('catch', expect.any(Function));
-          expect(syncedHandler).toHaveProperty('finally', expect.any(Function));
-        });
-
-        const delayedSyncPromises = [waitForDelay(200), waitForDelay(100), waitForDelay(300)];
-
-        expect(handler.isSynced).toBe(true);
-        handler.registerSyncPromise(delayedSyncPromises[0]);
-        expect(handler.isSynced).toBe(false);
-
-        const thenPromise = handler.with({}).then(fulfillmentListener);
-
-        handler.registerSyncPromise(delayedSyncPromises[1]);
-        handler.registerSyncPromise(delayedSyncPromises[2]);
-        expect(handler.isSynced).toBe(false);
-
-        await thenPromise;
-
-        expect(handler.isSynced).toBe(true);
 
         expect(fulfillmentListener).toHaveBeenCalledTimes(1);
       });
@@ -508,17 +487,13 @@ export function declareDefaultHttpRequestHandlerTests(
         expect(handler).toHaveProperty('catch', expect.any(Function));
         expect(handler).toHaveProperty('finally', expect.any(Function));
 
-        // @ts-expect-error Forcing an exception in an internal method
-        handler.syncPromises = 'not-an-array';
+        const rejectionListener = vi.fn<(error: unknown) => void>();
 
-        const rejectionListener = vi.fn((error: unknown) => {
-          expect(error).toBeInstanceOf(Error);
-          expect(error).toHaveProperty('message', 'this.syncPromises.filter is not a function');
-        });
+        const syncedHandler = await handler.with({}).catch(rejectionListener);
 
-        await handler.with({}).catch(rejectionListener);
-
-        expect(rejectionListener).toHaveBeenCalledTimes(1);
+        expect(syncedHandler).toEqual(handler);
+        expect(syncedHandler).not.toHaveProperty('then');
+        expect(rejectionListener).not.toHaveBeenCalled();
       });
 
       it('should be finally-able', async () => {
@@ -535,20 +510,13 @@ export function declareDefaultHttpRequestHandlerTests(
 
         const finallyListener = vi.fn();
 
-        expect(handler.isSynced).toBe(true);
-
         const pendingHandler = handler.with({});
         expect(pendingHandler).toEqual(handler);
 
-        expect(handler.isSynced).toBe(true);
-        handler.registerSyncPromise(waitForDelay(100));
-        expect(handler.isSynced).toBe(false);
+        const syncedHandler = await pendingHandler.finally(finallyListener);
 
-        await pendingHandler.finally(finallyListener);
-
-        expect(handler.isSynced).toBe(true);
-        expect(pendingHandler.isSynced).toBe(true);
-
+        expect(syncedHandler).toEqual(handler);
+        expect(syncedHandler).not.toHaveProperty('then');
         expect(finallyListener).toHaveBeenCalledTimes(1);
       });
     });

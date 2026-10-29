@@ -2,9 +2,9 @@ import { HttpSchema } from '@zimic/http';
 import { joinURL } from '@zimic/utils/url';
 import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { randomInt } from '@/utils/numbers';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpInterceptorOptions } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../utils';

@@ -97,6 +97,7 @@ export function createInternalWebSocketInterceptor<Schema extends WebSocketSchem
 ) {
   return createWebSocketInterceptor<Schema>({
     messageSaving: { enabled: false },
+    onUnhandledMessage: { log: false },
     ...options,
   }) satisfies WebSocketInterceptor<Schema> as LocalWebSocketInterceptor<Schema> | RemoteWebSocketInterceptor<Schema>;
 }
@@ -231,28 +232,57 @@ export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
   }
 }
 
-type UsingWorkerCallback = (worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker) => PossiblePromise<void>;
+type UsingHttpWorkerCallback<Worker extends LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker> = (
+  worker: Worker,
+) => PossiblePromise<void>;
 
 interface UsingWorkerOptions {
   start?: boolean;
 }
 
 export async function usingHttpInterceptorWorker(
+  workerOptions: LocalHttpInterceptorWorkerOptions,
+  callback: UsingHttpWorkerCallback<LocalHttpInterceptorWorker>,
+): Promise<void>;
+export async function usingHttpInterceptorWorker(
+  workerOptions: LocalHttpInterceptorWorkerOptions,
+  options: UsingWorkerOptions,
+  callback: UsingHttpWorkerCallback<LocalHttpInterceptorWorker>,
+): Promise<void>;
+export async function usingHttpInterceptorWorker(
+  workerOptions: RemoteHttpInterceptorWorkerOptions,
+  callback: UsingHttpWorkerCallback<RemoteHttpInterceptorWorker>,
+): Promise<void>;
+export async function usingHttpInterceptorWorker(
+  workerOptions: RemoteHttpInterceptorWorkerOptions,
+  options: UsingWorkerOptions,
+  callback: UsingHttpWorkerCallback<RemoteHttpInterceptorWorker>,
+): Promise<void>;
+export async function usingHttpInterceptorWorker(
   workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions,
-  callback: UsingWorkerCallback,
+  callback: UsingHttpWorkerCallback<LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker>,
 ): Promise<void>;
 export async function usingHttpInterceptorWorker(
   workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions,
   options: UsingWorkerOptions,
-  callback: UsingWorkerCallback,
+  callback: UsingHttpWorkerCallback<LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker>,
 ): Promise<void>;
 export async function usingHttpInterceptorWorker(
   workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions,
-  callbackOrOptions: UsingWorkerCallback | UsingWorkerOptions,
-  optionalCallback?: UsingWorkerCallback,
+  callbackOrOptions:
+    | UsingHttpWorkerCallback<LocalHttpInterceptorWorker>
+    | UsingHttpWorkerCallback<RemoteHttpInterceptorWorker>
+    | UsingHttpWorkerCallback<LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker>
+    | UsingWorkerOptions,
+  optionalCallback?:
+    | UsingHttpWorkerCallback<LocalHttpInterceptorWorker>
+    | UsingHttpWorkerCallback<RemoteHttpInterceptorWorker>
+    | UsingHttpWorkerCallback<LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker>,
 ): Promise<void> {
   const { start: shouldStartWorker = true } = typeof callbackOrOptions === 'function' ? {} : callbackOrOptions;
-  const callback = (optionalCallback ?? callbackOrOptions) as UsingWorkerCallback;
+  const callback = (optionalCallback ?? callbackOrOptions) as UsingHttpWorkerCallback<
+    LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker
+  >;
 
   const worker = createHttpInterceptorWorker(workerOptions);
 

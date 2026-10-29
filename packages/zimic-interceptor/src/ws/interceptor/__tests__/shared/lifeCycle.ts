@@ -1,202 +1,403 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
-import { waitFor, waitForNot } from '@zimic/utils/time';
-import { WebSocketClient } from '@zimic/ws';
-import { expect, it, vi } from 'vitest';
+import { waitFor } from '@zimic/utils/time';
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+import { beforeEach, expect, it, vi } from 'vitest';
 
-import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
-import { waitForWebSocketClientMessage } from '@tests/utils/webSocket';
+import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
+import WebSocketInterceptorWorker from '@/ws/interceptorWorker/WebSocketInterceptorWorker';
+import { usingIgnoredConsole } from '@tests/utils/console';
+import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
+import {
+  usingWebSocketClient,
+  waitForWebSocketClientClose,
+  waitForWebSocketClientMessage,
+} from '@tests/utils/webSocket';
 
-import type { Schema } from '../../../messageHandler/__tests__/shared/types';
+import {
+  LocalWebSocketMessageHandler,
+  SyncedRemoteWebSocketMessageHandler,
+} from '../../../messageHandler/types/public';
 import NotRunningWebSocketInterceptorError from '../../errors/NotRunningWebSocketInterceptorError';
-import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
-import { createWebSocketInterceptor } from '../../factory';
-import { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '../../types/options';
+import { WebSocketInterceptorOptions } from '../../types/options';
 import WebSocketInterceptorStore from '../../WebSocketInterceptorStore';
+import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
-interface SharedWebSocketInterceptorLifeCycleTestOptions {
-  platform: WebSocketInterceptorPlatform;
-  type: WebSocketInterceptorType;
-  getBaseURL: () => string;
-}
+type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
 
-export function declareLifeCycleWebSocketInterceptorTests(options: SharedWebSocketInterceptorLifeCycleTestOptions) {
-  const { platform, type, getBaseURL } = options;
+export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
+  const { platform, type, getBaseURL, getInterceptorOptions, startServer, stopServer } = options;
 
-  it('should stop when called while starting', async () => {
-    const interceptor = createWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() });
+  const store = new WebSocketInterceptorStore();
 
-    try {
-      await Promise.all([interceptor.start(), interceptor.stop()]);
+  let baseURL: string;
+  let interceptorOptions: WebSocketInterceptorOptions;
 
-      expect(interceptor.isRunning).toBe(false);
-      expect(interceptor.platform).toBe(null);
-    } finally {
-      await interceptor.stop();
-    }
+  beforeEach(() => {
+    baseURL = getBaseURL();
+    interceptorOptions = getInterceptorOptions();
   });
 
-  it('should start when called after stopping while starting', async () => {
-    const interceptor = createWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() });
+  it('should ignore all handlers after restarted when intercepting messages', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+        expect(handler.messages).toHaveLength(0);
 
-    try {
-      await Promise.all([interceptor.start(), interceptor.stop(), interceptor.start()]);
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          const messagePromise = waitForWebSocketClientMessage(client);
+          client.send(JSON.stringify({ type: 'client', index: 1 }));
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+        });
 
-      expect(interceptor.isRunning).toBe(true);
-      expect(interceptor.platform).toBe(platform);
-    } finally {
-      await interceptor.stop();
-    }
+        expect(handler.messages).toHaveLength(1);
+
+        expect(interceptor.isRunning).toBe(true);
+        await interceptor.stop();
+        expect(interceptor.isRunning).toBe(false);
+
+        expect(handler.messages).toHaveLength(0);
+
+        await interceptor.start();
+        expect(interceptor.isRunning).toBe(true);
+
+        await promiseIfRemote(
+          interceptor.message().with({ type: 'client', index: 0 }).respond({ type: 'server', index: 0 }),
+          interceptor,
+        );
+
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          const probeResponse = waitForWebSocketClientMessage(client);
+
+          client.send(JSON.stringify({ type: 'client', index: 2 }));
+
+          // Messages on a socket are delivered in order, so the probe response arriving first means that the handler
+          // declared before the restart sent no response.
+          client.send(JSON.stringify({ type: 'client', index: 0 }));
+
+          await expect(probeResponse).resolves.toBe(JSON.stringify({ type: 'server', index: 0 }));
+        });
+
+        expect(handler.messages).toHaveLength(0);
+      },
+    );
   });
 
-  it('should not support changing the base URL while starting', async () => {
-    const interceptor = createWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() });
-    const baseURL = interceptor.baseURL;
+  it('should ignore all handlers after restarted when intercepting messages, even if another interceptor is still running', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+        expect(handler.messages).toHaveLength(0);
 
-    let startPromise: Promise<void> | undefined;
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          const messagePromise = waitForWebSocketClientMessage(client);
+          client.send(JSON.stringify({ type: 'client', index: 1 }));
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+        });
 
-    try {
-      startPromise = interceptor.start();
+        expect(handler.messages).toHaveLength(1);
 
-      expect(() => {
-        interceptor.baseURL = new URL('new', baseURL).toString();
-      }).toThrow(
-        new RunningWebSocketInterceptorError(
-          'Did you forget to call `await interceptor.stop()` before changing the base URL?',
-        ),
-      );
-
-      await startPromise;
-      expect(interceptor.baseURL).toBe(baseURL);
-    } finally {
-      await Promise.allSettled(startPromise ? [startPromise] : []);
-      await interceptor.stop();
-    }
-  });
-
-  it('should not support changing the base URL while stopping during startup', async () => {
-    const interceptor = createWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() });
-    const baseURL = interceptor.baseURL;
-    const otherBaseURL = new URL('new', baseURL).toString();
-
-    const startPromise = interceptor.start();
-    const stopPromise = interceptor.stop();
-
-    try {
-      expect(() => {
-        interceptor.baseURL = otherBaseURL;
-      }).toThrow(
-        new RunningWebSocketInterceptorError(
-          'Did you forget to call `await interceptor.stop()` before changing the base URL?',
-        ),
-      );
-
-      await Promise.all([startPromise, stopPromise]);
-      expect(interceptor.baseURL).toBe(baseURL);
-    } finally {
-      await Promise.allSettled([startPromise, stopPromise]);
-      await interceptor.stop();
-    }
-  });
-
-  it('should throw an error when trying to be cleared if not running', async () => {
-    const interceptor = createWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() });
-
-    expect(interceptor.isRunning).toBe(false);
-
-    await expect(async () => {
-      await interceptor.clear();
-    }).rejects.toThrow(new NotRunningWebSocketInterceptorError());
-  });
-
-  it('should throw an error when trying to be cleared after stopped', async () => {
-    const interceptor = createWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() });
-
-    await interceptor.start();
-    expect(interceptor.isRunning).toBe(true);
-
-    await interceptor.stop();
-    expect(interceptor.isRunning).toBe(false);
-
-    await expect(async () => {
-      await interceptor.clear();
-    }).rejects.toThrow(new NotRunningWebSocketInterceptorError());
-  });
-
-  if (type === 'local') {
-    it('should keep the shared worker running if the last interceptor is stopping at the same time as another is starting', async () => {
-      const store = new WebSocketInterceptorStore();
-      const otherBaseURL = `${getBaseURL()}/other`;
-
-      await usingWebSocketInterceptor<Schema>({ type, baseURL: getBaseURL() }, async (interceptor) => {
-        await usingWebSocketInterceptor<Schema>(
-          { type, baseURL: otherBaseURL },
-          { start: false },
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, baseURL: `${baseURL}/other` },
           async (otherInterceptor) => {
-            const worker = store.localWorker;
-            expect(worker).toBeDefined();
-            expect(worker!.numberOfRunningInterceptors).toBe(1);
+            expect(interceptor.isRunning).toBe(true);
+            expect(otherInterceptor.isRunning).toBe(true);
 
-            const originalGetMSWWorkerOrCreate = worker!.getMSWWorkerOrCreate.bind(worker);
-            const workerStopStartedPromise = createPromiseWithResolvers<void>();
-            const workerStopGatePromise = createPromiseWithResolvers<void>();
-
-            // The shutdown dependency is held so that the other interceptor starts while the worker stop is pending.
-            vi.spyOn(worker!, 'getMSWWorkerOrCreate').mockImplementationOnce(async () => {
-              workerStopStartedPromise.resolve();
-              await workerStopGatePromise;
-              return originalGetMSWWorkerOrCreate();
-            });
-
-            const workerStartSpy = vi.spyOn(worker!, 'start');
-
-            const stopPromise = interceptor.stop();
-            let startPromise: Promise<void> | undefined;
-
-            try {
-              await workerStopStartedPromise;
-              startPromise = otherInterceptor.start();
-
-              const startResolutionListener = vi.fn();
-              void startPromise.then(startResolutionListener);
-
-              await waitFor(() => {
-                expect(workerStartSpy).toHaveBeenCalledTimes(1);
-              });
-              await waitForNot(() => {
-                expect(startResolutionListener).toHaveBeenCalled();
-              });
-
-              workerStopGatePromise.resolve();
-              await Promise.all([stopPromise, startPromise]);
-            } finally {
-              workerStopGatePromise.resolve();
-              await Promise.allSettled([stopPromise, startPromise]);
-            }
-
+            await interceptor.stop();
             expect(interceptor.isRunning).toBe(false);
             expect(otherInterceptor.isRunning).toBe(true);
 
-            expect(store.localWorker).toBe(worker);
-            expect(worker!.isRunning).toBe(true);
+            expect(handler.messages).toHaveLength(0);
 
-            const reply: Schema = { type: 'delete', id: '1' };
-            otherInterceptor.message().respond(reply);
+            await interceptor.start();
+            expect(interceptor.isRunning).toBe(true);
+            expect(otherInterceptor.isRunning).toBe(true);
 
-            const client = new WebSocketClient<Schema>(otherBaseURL);
-            const messagePromise = waitForWebSocketClientMessage(client);
+            await promiseIfRemote(
+              interceptor.message().with({ type: 'client', index: 0 }).respond({ type: 'server', index: 0 }),
+              interceptor,
+            );
 
-            try {
-              await client.open();
-              client.send(JSON.stringify({ type: 'create', body: { text: 'one' } } satisfies Schema));
+            await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+              const probeResponse = waitForWebSocketClientMessage(client);
 
-              const messageData = await messagePromise;
-              expect(JSON.parse(messageData as string)).toEqual(reply);
-            } finally {
-              await client.close();
-            }
+              client.send(JSON.stringify({ type: 'client', index: 2 }));
+
+              // Messages on a socket are delivered in order, so the probe response arriving first means that the
+              // handler declared before the restart sent no response.
+              client.send(JSON.stringify({ type: 'client', index: 0 }));
+
+              await expect(probeResponse).resolves.toBe(JSON.stringify({ type: 'server', index: 0 }));
+            });
+
+            expect(handler.messages).toHaveLength(0);
           },
         );
+      },
+    );
+  });
+
+  it('should intercept messages with the newest handler if a restarted interceptor with the same base URL declares an older one', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, messageSaving: { enabled: true } },
+          async (otherInterceptor) => {
+            await interceptor.stop();
+            await interceptor.start();
+
+            const handler = await promiseIfRemote(
+              interceptor.message().respond({ type: 'server', index: 2 }),
+              interceptor,
+            );
+
+            const otherHandler = await promiseIfRemote(
+              otherInterceptor.message().respond({ type: 'server', index: 1 }),
+              otherInterceptor,
+            );
+
+            await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+              const messagePromise = waitForWebSocketClientMessage(client);
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
+
+              await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+            });
+
+            expect(handler.messages).toHaveLength(0);
+            expect(otherHandler.messages).toHaveLength(1);
+          },
+        );
+      },
+    );
+  });
+
+  it('should not log a warning when stopped', async () => {
+    await usingIgnoredConsole(['warn'], async (console) => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        await interceptor.stop();
+        expect(interceptor.isRunning).toBe(false);
+      });
+
+      expect(console.warn).not.toHaveBeenCalled();
+    });
+  });
+
+  // Only remote interceptors connect to an interceptor server, and browser tests cannot stop their shared server.
+  if (type === 'remote' && platform === 'node') {
+    it('should log a warning once if the interceptor server stops while running', async () => {
+      await usingIgnoredConsole(['warn'], async (console) => {
+        // Interceptors with the same server share one connection, so they should log a single warning.
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async () => {
+          await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async () => {
+            await stopServer?.();
+
+            try {
+              await waitFor(() => {
+                expect(console.warn).toHaveBeenCalledTimes(1);
+              });
+
+              expect(console.warn).toHaveBeenCalledWith(
+                expect.stringContaining('[@zimic/interceptor]'),
+                `Warning: The connection to the interceptor server ${new URL(baseURL).origin} was closed. ` +
+                  'Restart your interceptors to reconnect.',
+              );
+            } finally {
+              await startServer?.();
+            }
+          });
+        });
       });
     });
   }
+
+  it('should not handle messages from existing clients after stopped', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+      await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+
+      await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const closeEventPromise = waitForWebSocketClientClose(client);
+
+        await interceptor.stop();
+        expect(interceptor.clients).toHaveLength(0);
+
+        const closeEvent = await closeEventPromise;
+        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
+
+        const messageListener = vi.fn();
+        client.addEventListener('message', messageListener);
+
+        client.send(JSON.stringify({ type: 'client', index: 2 }));
+
+        // A closed socket receives no further messages, so none can arrive after the close event.
+        expect(messageListener).not.toHaveBeenCalled();
+
+        expect(interceptor.clients).toHaveLength(0);
+      });
+    });
+  });
+
+  it('should not accept connections opened while stopping', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (stoppingInterceptor) => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (otherInterceptor) => {
+        const connectionListener = vi.fn();
+        stoppingInterceptor.on('connection', connectionListener);
+
+        const worker: WebSocketInterceptorWorker | undefined =
+          type === 'local' ? store.localWorker : store.getRemoteWorker(new URL(baseURL), { auth: undefined });
+        expect(worker).toBeDefined();
+
+        const clearStartedPromise = createPromiseWithResolvers<void>();
+        const clearGatePromise = createPromiseWithResolvers<void>();
+
+        // No public path holds a stop while it is pending, so the worker clear of the stop is held after it completes.
+        const originalClearHandlers = worker!.clearHandlers.bind(worker);
+
+        vi.spyOn(worker!, 'clearHandlers').mockImplementationOnce(async (options) => {
+          await originalClearHandlers(options);
+          clearStartedPromise.resolve();
+          await clearGatePromise;
+        });
+
+        const stopPromise = stoppingInterceptor.stop();
+
+        try {
+          await clearStartedPromise;
+
+          await usingWebSocketClient<MessageSchema>(baseURL, async () => {
+            // Every holder receives a connection in the same pass, so the other interceptor listing the client means
+            // that the stopping interceptor already let it go.
+            await waitFor(() => {
+              expect(otherInterceptor.clients).toHaveLength(1);
+            });
+
+            expect(stoppingInterceptor.clients).toHaveLength(0);
+            expect(connectionListener).not.toHaveBeenCalled();
+          });
+        } finally {
+          clearGatePromise.resolve();
+          await stopPromise;
+        }
+
+        expect(stoppingInterceptor.isRunning).toBe(false);
+      });
+    });
+  });
+
+  it('should keep connections shared with another interceptor open after stopped', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
+      await promiseIfRemote(firstInterceptor.message().respond({ type: 'server', index: 1 }), firstInterceptor);
+
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (secondInterceptor) => {
+        await promiseIfRemote(secondInterceptor.message().respond({ type: 'server', index: 2 }), secondInterceptor);
+
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          await waitFor(() => {
+            expect(firstInterceptor.clients).toHaveLength(1);
+            expect(secondInterceptor.clients).toHaveLength(1);
+          });
+
+          await secondInterceptor.stop();
+
+          expect(secondInterceptor.clients).toHaveLength(0);
+          expect(firstInterceptor.clients).toHaveLength(1);
+          expect(client.readyState).toBe(WebSocketClient.OPEN);
+
+          const handledMessagePromise = waitForWebSocketClientMessage(client);
+          client.send(JSON.stringify({ type: 'client', index: 1 }));
+          await expect(handledMessagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+
+          const sentMessage = JSON.stringify({ type: 'server', index: 3 } satisfies MessageSchema);
+
+          const sentMessagePromise = waitForWebSocketClientMessage(client);
+          firstInterceptor.server.send(sentMessage);
+          await expect(sentMessagePromise).resolves.toBe(sentMessage);
+        });
+      });
+    });
+  });
+
+  it('should close connections shared with other interceptors after all of them are stopped', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (secondInterceptor) => {
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          await waitFor(() => {
+            expect(firstInterceptor.clients).toHaveLength(1);
+            expect(secondInterceptor.clients).toHaveLength(1);
+          });
+
+          const closeEventPromise = waitForWebSocketClientClose(client);
+
+          await secondInterceptor.stop();
+          expect(client.readyState).toBe(WebSocketClient.OPEN);
+
+          await firstInterceptor.stop();
+
+          const closeEvent = await closeEventPromise;
+          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
+          expect(firstInterceptor.clients).toHaveLength(0);
+          expect(secondInterceptor.clients).toHaveLength(0);
+        });
+      });
+    });
+  });
+
+  it('should throw an error when trying to create a message handler if not running', () => {
+    const interceptor = createInternalWebSocketInterceptor<MessageSchema>(interceptorOptions);
+    expect(interceptor.isRunning).toBe(false);
+
+    expect(() => interceptor.message()).toThrow(new NotRunningWebSocketInterceptorError());
+  });
+
+  it('should throw an error when trying to create a message handler while stopping', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+      const stopPromise = interceptor.stop();
+
+      expect(() => interceptor.message()).toThrow(new NotRunningWebSocketInterceptorError());
+
+      await stopPromise;
+    });
+  });
+
+  type DeclaredMessageHandler =
+    LocalWebSocketMessageHandler<MessageSchema> | SyncedRemoteWebSocketMessageHandler<MessageSchema>;
+
+  const redeclarations = [
+    ['respond', (handler: DeclaredMessageHandler) => handler.respond({ type: 'server', index: 2 })],
+    ['effect', (handler: DeclaredMessageHandler) => handler.effect(vi.fn())],
+  ] as const;
+
+  it.each(redeclarations)(
+    'should throw an error when trying to redeclare a message handler while stopping (%s)',
+    async (_method, redeclare) => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+
+        const stopPromise = interceptor.stop();
+
+        expect(() => redeclare(handler)).toThrow(new NotRunningWebSocketInterceptorError());
+
+        await stopPromise;
+      });
+    },
+  );
+
+  it.each(redeclarations)(
+    'should throw an error when trying to redeclare a message handler after stopped (%s)',
+    async (_method, redeclare) => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+
+        await interceptor.stop();
+
+        expect(() => redeclare(handler)).toThrow(new NotRunningWebSocketInterceptorError());
+      });
+    },
+  );
 }

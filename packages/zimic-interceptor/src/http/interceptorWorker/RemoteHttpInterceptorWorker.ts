@@ -1,18 +1,16 @@
 import type { HttpBody, HttpHeadersInit, HttpMethod, HttpRequest, HttpSchema } from '@zimic/http';
-import type { PossiblePromise } from '@zimic/utils/types';
-import { validatePathParams } from '@zimic/utils/url';
-
-import { version } from '@@/package.json';
 
 import {
   INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
+  INTERCEPTOR_SERVER_RPC_VERSION,
   INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
 } from '@/interceptor/constants';
 import UnsupportedResponseBypassError from '@/server/errors/UnsupportedResponseBypassError';
-import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/types/schema';
+import { HttpWorkerReset, InterceptorServerWebSocketSchema } from '@/server/types/schema';
 import { isClientSide, isServerSide } from '@/utils/environment';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
 import { methodCanHaveResponseBody } from '@/utils/http';
+import { logUnexpectedServerDisconnection } from '@/utils/logging';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocketEventMessage } from '@/utils/webSocket/types';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
@@ -24,22 +22,11 @@ import HttpInterceptorImplementation, {
 } from '../interceptor/HttpInterceptorImplementation';
 import { HttpInterceptorPlatform, UnhandledRequestStrategy } from '../interceptor/types/options';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
-import { HttpResponseFactory, HttpResponseFactoryContext } from './types/http';
 import { RemoteHttpInterceptorWorkerOptions } from './types/options';
 
-interface HttpHandler {
-  id: string;
-  baseURL: string;
-  method: HttpMethod;
-  path: string;
-  interceptor: AnyHttpInterceptorImplementation;
-  createResponse: (context: HttpResponseFactoryContext) => PossiblePromise<Response | null>;
-}
-
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
-  private httpHandlers = new Map<HttpHandler['id'], HttpHandler>();
-
   webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
+  private isConnectedToServer = false;
   private auth?: RemoteHttpInterceptorWorkerOptions['auth'];
 
   constructor(options: RemoteHttpInterceptorWorkerOptions) {
@@ -47,6 +34,9 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     this.webSocketClient = new WebSocketClient({
       url: this.getWebSocketServerURL(options.serverURL).toString(),
+      onUnexpectedClose: () => {
+        logUnexpectedServerDisconnection(options.serverURL);
+      },
     });
 
     this.auth = options.auth;
@@ -64,63 +54,70 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async start() {
     await super.sharedStart(async () => {
-      this.webSocketClient.onChannel('event', 'interceptors/http/responses/create', this.createResponse);
-
-      this.webSocketClient.onChannel(
-        'event',
-        'interceptors/http/responses/unhandled',
-        this.handleUnhandledServerRequest,
-      );
+      this.webSocketClient.onChannel('event', 'interceptors/http/requests/handle', this.handleRequest);
 
       await this.webSocketClient.start({
         parameters: {
           [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'http',
-          [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: version,
+          [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
           ...(this.auth ? { token: this.auth.token } : {}),
         },
         waitForAuthentication: true,
       });
+
+      // Resets are sent only from here on, because the socket opens before the server authenticates it and messages
+      // sent in between are never answered. This first reset includes the interceptors registered until now.
+      this.isConnectedToServer = true;
+
+      try {
+        await this.resetServerWorker();
+      } catch (error) {
+        // Stopping returns early while the worker is not running, so the connection is closed here.
+        await this.disconnectFromServer();
+        throw error;
+      }
 
       this.platform = this.readPlatform();
       this.isRunning = true;
     });
   }
 
-  private createResponse = async (
-    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/http/responses/create'>,
+  async registerRunningInterceptor(interceptor: AnyHttpInterceptorImplementation) {
+    await super.registerRunningInterceptor(interceptor);
+    await this.resetServerWorker();
+  }
+
+  async unregisterRunningInterceptor(interceptor: AnyHttpInterceptorImplementation) {
+    await super.unregisterRunningInterceptor(interceptor);
+    await this.resetServerWorker();
+  }
+
+  private handleRequest = async (
+    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/http/requests/handle'>,
   ) => {
-    const { handlerId, request: serializedRequest } = message.data;
+    const request = deserializeRequest(message.data.request);
 
-    const handler = this.httpHandlers.get(handlerId);
-    const request = deserializeRequest(serializedRequest);
+    const { response: rawResponse, matchedSomeHandler } = await this.createResponseWithHandlers(request);
 
-    try {
-      const rawResponse = (await handler?.createResponse({ request })) ?? null;
+    if (!rawResponse) {
+      // The server answers an unmatched preflight request with its default preflight response, so it is not warned.
+      const isUnmatchedPreflightRequest = request.method === 'OPTIONS' && !matchedSomeHandler;
 
-      if (rawResponse) {
-        const response = methodCanHaveResponseBody(request.method as HttpMethod)
-          ? rawResponse
-          : new Response(null, rawResponse);
-
-        return { response: await serializeResponse(response) };
+      if (isUnmatchedPreflightRequest) {
+        return { response: null, matchedSomeHandler, wasUnhandledRequestLogged: false };
       }
-    } catch (error) {
-      console.error(error);
+
+      const strategy = await super.getUnhandledRequestStrategy(request, 'remote');
+      const { wasUnhandledRequestLogged } = await super.logUnhandledRequestIfNecessary(request, strategy);
+
+      return { response: null, matchedSomeHandler, wasUnhandledRequestLogged };
     }
 
-    return { response: null };
-  };
+    const response = methodCanHaveResponseBody(request.method as HttpMethod)
+      ? rawResponse
+      : new Response(null, rawResponse);
 
-  private handleUnhandledServerRequest = async (
-    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/http/responses/unhandled'>,
-  ) => {
-    const { request: serializedRequest } = message.data;
-    const request = deserializeRequest(serializedRequest);
-
-    const strategy = await super.getUnhandledRequestStrategy(request, 'remote');
-    const { wasLogged } = await super.logUnhandledRequestIfNecessary(request, strategy);
-
-    return { wasLogged };
+    return { response: await serializeResponse(response), matchedSomeHandler, wasUnhandledRequestLogged: false };
   };
 
   private readPlatform(): HttpInterceptorPlatform {
@@ -138,51 +135,50 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async stop() {
     await super.sharedStop(async () => {
-      this.webSocketClient.offChannel('event', 'interceptors/http/responses/create', this.createResponse);
+      this.webSocketClient.offChannel('event', 'interceptors/http/requests/handle', this.handleRequest);
 
-      this.webSocketClient.offChannel(
-        'event',
-        'interceptors/http/responses/unhandled',
-        this.handleUnhandledServerRequest,
-      );
+      this.clearHandlers();
 
-      await this.clearHandlers();
-
-      await this.webSocketClient.stop();
+      await this.disconnectFromServer();
 
       this.isRunning = false;
     });
   }
 
-  async use<Schema extends HttpSchema>(
-    interceptor: HttpInterceptorImplementation<Schema>,
-    method: HttpMethod,
-    path: string,
-    createResponse: HttpResponseFactory,
-  ) {
-    if (!this.isRunning) {
-      throw new NotRunningHttpInterceptorError();
+  private async disconnectFromServer() {
+    this.isConnectedToServer = false;
+
+    // Stopping the client also removes its channel listeners.
+    await this.webSocketClient.stop();
+  }
+
+  private async resetServerWorker() {
+    if (!this.isConnectedToServer || !this.webSocketClient.isRunning) {
+      return;
     }
 
-    validatePathParams(path);
-
-    const handler: HttpHandler = {
-      id: crypto.randomUUID(),
-      baseURL: interceptor.baseURLAsString,
-      method,
-      path,
-      interceptor,
-      createResponse,
+    const reset: HttpWorkerReset = {
+      interceptorBaseURLs: this.runningInterceptors.map((interceptor) => interceptor.baseURLAsString),
     };
 
-    this.httpHandlers.set(handler.id, handler);
+    try {
+      await this.webSocketClient.request('interceptors/http/workers/reset', reset);
+    } catch (error) {
+      /* istanbul ignore next -- @preserve
+       *
+       * If the socket is closed before receiving a response, the message is aborted with an error. This can happen if
+       * we send a request message and the interceptor server closes the socket before sending a response. In this case,
+       * we can safely ignore the error because we know that the server is shutting down and resetting is no longer
+       * necessary.
+       *
+       * Due to the rare nature of this edge case, we can't reliably reproduce it in tests. */
+      const isMessageAbortError = error instanceof WebSocketMessageAbortError;
 
-    await this.webSocketClient.request('interceptors/http/workers/commit', {
-      id: handler.id,
-      baseURL: handler.baseURL,
-      method: handler.method,
-      path: handler.path,
-    });
+      /* istanbul ignore next -- @preserve */
+      if (!isMessageAbortError) {
+        throw error;
+      }
+    }
   }
 
   async createResponseFromDeclaration(
@@ -203,7 +199,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     return response;
   }
 
-  async clearHandlers<Schema extends HttpSchema>(
+  clearHandlers<Schema extends HttpSchema>(
     options: {
       interceptor?: HttpInterceptorImplementation<Schema>;
     } = {},
@@ -212,50 +208,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       throw new NotRunningHttpInterceptorError();
     }
 
-    if (options.interceptor === undefined) {
-      this.httpHandlers.clear();
-    } else {
-      for (const handler of this.httpHandlers.values()) {
-        if (handler.interceptor === options.interceptor) {
-          this.httpHandlers.delete(handler.id);
-        }
-      }
-    }
-
-    if (!this.webSocketClient.isRunning) {
-      return;
-    }
-
-    const handlersToRecommit = Array.from<HttpHandler, HttpHandlerCommit>(this.httpHandlers.values(), (handler) => ({
-      id: handler.id,
-      baseURL: handler.baseURL,
-      method: handler.method,
-      path: handler.path,
-    }));
-
-    try {
-      await this.webSocketClient.request('interceptors/http/workers/reset', handlersToRecommit);
-    } catch (error) {
-      /* istanbul ignore next -- @preserve
-       *
-       * If the socket is closed before receiving a response, the message is aborted with an error. This can happen if
-       * we send a request message and the interceptor server closes the socket before sending a response. In this case,
-       * we can safely ignore the error because we know that the server is shutting down and resetting is no longer
-       * necessary.
-       *
-       * Due to the rare nature of this edge case, we can't reliably reproduce it in tests. */
-      const isMessageAbortError = error instanceof WebSocketMessageAbortError;
-
-      /* istanbul ignore next -- @preserve */
-      if (!isMessageAbortError) {
-        throw error;
-      }
-    }
-  }
-
-  get interceptorsWithHandlers() {
-    const interceptors = Array.from(this.httpHandlers.values(), (handler) => handler.interceptor);
-    return interceptors;
+    this.clearHttpHandlers(options.interceptor);
   }
 }
 

@@ -46,7 +46,8 @@ Options:
                                 were found for the base URL of a request. If an
                                 interceptor was matched, the logging behavior
                                 for that base URL is configured in the
-                                interceptor itself.                    [boolean]
+                                interceptor itself, unless the interceptor
+                                disconnects or fails before responding.[boolean]
   -t, --tokens-dir              The directory where the authorized interceptor
                                 authentication tokens are saved. If provided,
                                 only remote interceptors bearing a valid token
@@ -60,6 +61,12 @@ Options:
 :::info NOTE: <span>Interceptor servers in development and testing</span>
 
 Interceptor servers are development and test tools. Do not use them as production application servers.
+
+:::
+
+:::info NOTE: <span>Interceptor server versions</span>
+
+Use the same `@zimic/interceptor` version for the interceptor server and your remote interceptors. Changes to how they communicate ship in minor releases and are not breaking changes, so a server on another version may reject your interceptors when they start.
 
 :::
 

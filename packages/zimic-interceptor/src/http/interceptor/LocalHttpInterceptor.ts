@@ -103,7 +103,7 @@ class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttp
   }
 
   clear() {
-    void this.implementation.clear();
+    this.implementation.clear();
   }
 }
 

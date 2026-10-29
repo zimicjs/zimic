@@ -11,20 +11,21 @@ import {
   WebSocketMessageHandlerMessageDeclaration,
   WebSocketMessageHandlerSchemaWithRestriction,
 } from './types/public';
-import { WebSocketMessageHandlerRestriction } from './types/restrictions';
+import {
+  WebSocketMessageHandlerRestriction,
+  WebSocketMessageHandlerRestrictionOptionsArguments,
+} from './types/restrictions';
 import WebSocketMessageHandlerImplementation from './WebSocketMessageHandlerImplementation';
 
-const UNSYNCED_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Promise<unknown>)[]);
+const PENDING_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Promise<unknown>)[]);
 
-export class RemoteWebSocketMessageHandler<
+class RemoteWebSocketMessageHandler<
   Schema extends WebSocketSchema,
   RestrictedSchema extends Schema = Schema,
 > implements PublicPendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema> {
   readonly type = 'remote';
 
   implementation: WebSocketMessageHandlerImplementation<Schema, RestrictedSchema>;
-
-  private syncPromises: Promise<unknown>[] = [];
 
   private pending: this;
   private synced: this;
@@ -41,14 +42,14 @@ export class RemoteWebSocketMessageHandler<
   private createSyncedProxy() {
     return new Proxy(this, {
       has: (target, property) => {
-        if (this.isHiddenPropertyWhenSynced(property)) {
+        if (this.shouldBeHiddenPropertyWhenSynced(property)) {
           return false;
         }
         return Reflect.has(target, property);
       },
 
       get: (target, property) => {
-        if (this.isHiddenPropertyWhenSynced(property)) {
+        if (this.shouldBeHiddenPropertyWhenSynced(property)) {
           return undefined;
         }
         return Reflect.get(target, property);
@@ -56,8 +57,8 @@ export class RemoteWebSocketMessageHandler<
     });
   }
 
-  private isHiddenPropertyWhenSynced(property: string | symbol) {
-    return UNSYNCED_PROPERTIES.has(property);
+  private shouldBeHiddenPropertyWhenSynced(property: string | symbol) {
+    return PENDING_PROPERTIES.has(property);
   }
 
   from(sender: WebSocketInterceptorClient<Schema>) {
@@ -67,11 +68,12 @@ export class RemoteWebSocketMessageHandler<
 
   with<Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
     restriction: Restriction,
+    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<RestrictedSchema, Restriction>
   ): RemoteWebSocketMessageHandler<
     Schema,
     WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>
   > {
-    this.implementation.with(restriction);
+    this.implementation.with(restriction, ...options);
 
     const pending = this.pending as unknown as RemoteWebSocketMessageHandler<
       Schema,
@@ -120,14 +122,6 @@ export class RemoteWebSocketMessageHandler<
     return this.implementation.messages;
   }
 
-  registerSyncPromise(promise: Promise<unknown>) {
-    this.syncPromises.push(promise);
-  }
-
-  get isSynced() {
-    return this.syncPromises.length === 0;
-  }
-
   then<FulfilledResult = PublicSyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema>, RejectedResult = never>(
     onFulfilled?:
       | ((
@@ -136,23 +130,9 @@ export class RemoteWebSocketMessageHandler<
       | null,
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ): Promise<FulfilledResult | RejectedResult> {
-    const promisesToWait = new Set(this.syncPromises);
-
-    return Promise.all(promisesToWait)
-      .then(
-        () => {
-          this.syncPromises = this.syncPromises.filter((promise) => !promisesToWait.has(promise));
-
-          /* istanbul ignore next -- @preserve
-           * The pending path requires new sync promises being registered while resolving current ones. */
-          return this.isSynced ? this.synced : this.pending;
-        },
-        (error: unknown) => {
-          this.syncPromises = this.syncPromises.filter((promise) => !promisesToWait.has(promise));
-          throw error;
-        },
-      )
-      .then(onFulfilled, onRejected);
+    // Declarations stay in this process and the interceptor registers with the server when it starts, so the handler
+    // has nothing to wait for before it is synced.
+    return Promise.resolve(this.synced).then(onFulfilled, onRejected);
   }
 
   catch<RejectedResult = never>(
@@ -167,3 +147,5 @@ export class RemoteWebSocketMessageHandler<
     return this.then().finally(onFinally);
   }
 }
+
+export default RemoteWebSocketMessageHandler;

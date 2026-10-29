@@ -3,10 +3,10 @@ import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectBypassedResponse } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
 import {
@@ -474,6 +474,35 @@ export function declareUnhandledRequestLoggingHttpInterceptorTests(options: Runt
         },
       );
     });
+
+    // In remote browser interceptors, the CORS preflight of the interceptor server does not allow unknown methods, so the
+    // browser blocks the request before it reaches the server.
+    if (!(type === 'remote' && platform === 'browser')) {
+      it('should show an error when logging is enabled and requests with an unknown method are unhandled and rejected', async () => {
+        await usingHttpInterceptor<SchemaWithoutRequestBody>(
+          { ...interceptorOptions, type, onUnhandledRequest: onUnhandledRequest.reject },
+          async (interceptor) => {
+            expect(interceptor.onUnhandledRequest).toBe(onUnhandledRequest.reject);
+
+            const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+
+            await usingIgnoredConsole(['warn', 'error'], async (console) => {
+              const request = new Request(joinURL(baseURL, '/users'), { method: 'PROPFIND' });
+              const responsePromise = fetch(request);
+              await expectFetchError(responsePromise);
+
+              expect(handler.requests).toHaveLength(0);
+
+              expect(console.warn).toHaveBeenCalledTimes(0);
+              expect(console.error).toHaveBeenCalledTimes(1);
+
+              const errorMessage = console.error.mock.calls[0].join(' ');
+              await verifyUnhandledRequestMessage(errorMessage, { request, platform, type: 'reject' });
+            });
+          },
+        );
+      });
+    }
 
     it('should show an error when logging is enabled and requests with array search params are unhandled and rejected', async () => {
       await usingHttpInterceptor<SchemaWithoutRequestBody>(

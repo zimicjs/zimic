@@ -102,3 +102,16 @@ export async function logUnhandledRequestWarning(request: Request, action: 'bypa
     '\n\nLearn more: https://zimic.dev/docs/interceptor/guides/http/unhandled-requests',
   );
 }
+
+export async function logUnhandledMessageWarning(data: unknown, url: string) {
+  const formattedData = await formatValueToLog(data);
+
+  logger.warn('Warning: Message was not handled.\n\n ', url, '\n    Data:', formattedData);
+}
+
+export function logUnexpectedServerDisconnection(serverURL: URL) {
+  logger.warn(
+    `Warning: The connection to the interceptor server ${serverURL.origin} was closed. ` +
+      'Restart your interceptors to reconnect.',
+  );
+}

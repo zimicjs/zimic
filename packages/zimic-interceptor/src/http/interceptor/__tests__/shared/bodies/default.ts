@@ -2,10 +2,10 @@ import { HttpSchema, HTTP_METHODS } from '@zimic/http';
 import { joinURL } from '@zimic/utils/url';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { DEFAULT_ACCESS_CONTROL_HEADERS, AccessControlHeaders } from '@/server/constants';
 import { methodCanHaveResponseBody } from '@/utils/http';
 import { getPreflightAssessment, usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpInterceptorOptions } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../utils';

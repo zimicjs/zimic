@@ -1,14 +1,15 @@
 import { WebSocketSchema } from '@zimic/ws';
 
-import { LocalWebSocketMessageHandler } from '../messageHandler/LocalWebSocketMessageHandler';
+import LocalWebSocketMessageHandler from '../messageHandler/LocalWebSocketMessageHandler';
 import {
   WebSocketInterceptorClient as PublicWebSocketInterceptorClient,
   WebSocketInterceptorServer as PublicWebSocketInterceptorServer,
 } from './types/messages';
-import { LocalWebSocketInterceptorOptions, WebSocketInterceptorMessageSaving } from './types/options';
+import { LocalWebSocketInterceptorOptions, UnhandledMessageStrategy } from './types/options';
 import {
   LocalWebSocketInterceptor as PublicLocalWebSocketInterceptor,
   type WebSocketInterceptorConnectionListener,
+  WebSocketInterceptorMessageSaving,
 } from './types/public';
 import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
 import WebSocketInterceptorStore from './WebSocketInterceptorStore';
@@ -24,14 +25,10 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
     this.implementation = new WebSocketInterceptorImplementation<Schema>({
       baseURL,
       messageSaving: options.messageSaving,
+      onUnhandledMessage: options.onUnhandledMessage,
       Handler: LocalWebSocketMessageHandler,
       createWorker: () => this.store.getOrCreateLocalWorker({}),
-      releaseWorker: (worker) => {
-        // Stopping is asynchronous, so another interceptor may have started using the worker in the meantime.
-        if (worker.numberOfRunningInterceptors === 0) {
-          this.store.deleteLocalWorker();
-        }
-      },
+      deleteWorker: () => this.store.deleteLocalWorker(),
     });
   }
 
@@ -63,6 +60,14 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
     this.implementation.messageSaving = messageSaving;
   }
 
+  get onUnhandledMessage() {
+    return this.implementation.onUnhandledMessage;
+  }
+
+  set onUnhandledMessage(onUnhandledMessage: UnhandledMessageStrategy | undefined) {
+    this.implementation.onUnhandledMessage = onUnhandledMessage;
+  }
+
   message() {
     return this.implementation.message() as LocalWebSocketMessageHandler<Schema>;
   }
@@ -92,7 +97,7 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
   }
 
   async stop() {
-    await this.implementation.stop({ beforeStop: () => this.implementation.clear() });
+    await this.implementation.stop();
   }
 
   checkTimes() {

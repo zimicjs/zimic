@@ -10,43 +10,44 @@ import { createHttpInterceptorWorker } from '../factory';
 import { declareDefaultHttpInterceptorWorkerTests } from './shared/default';
 import testMatrix from './shared/matrix';
 
-describe('HttpInterceptorWorker > Browser', () => {
-  it('should throw an error if trying to start without a registered service worker', async () => {
-    const interceptorWorker = createHttpInterceptorWorker({ type: 'local' });
+describe.each(testMatrix)('HttpInterceptorWorker (browser, $type)', ({ type }) => {
+  // Local-only: only local workers register a service worker in the browser.
+  if (type === 'local') {
+    it('should throw an error if trying to start without a registered service worker', async () => {
+      const interceptorWorker = createHttpInterceptorWorker({ type });
 
-    // As of @vitest/browser@2.1.3, specifically https://github.com/vitest-dev/vitest/pull/6687, an MSW worker is always
-    // registered by default in the browser. Because of that, we cannot reliably simulate the real error thrown by the
-    // absence of a worker. As a workaround, we're mocking the worker start method to throw a synthetic error.
-    // This is not ideal, but no other solutions appear to be available at the moment.
-    const unavailableMSWWorkerScriptError = new Error(
-      [
-        "[MSW] Failed to register a Service Worker for scope ('http://localhost:5173/') with script " +
-          "('http://localhost:5173/mockServiceWorker.js'): Service Worker script does not exist at the given path.\n",
-        'Did you forget to run "npx msw init <PUBLIC_DIR>"?\n',
-        'Learn more about creating the Service Worker script: https://mswjs.io/docs/cli/init`',
-      ].join('\n'),
-    );
+      // As of @vitest/browser@2.1.3, specifically https://github.com/vitest-dev/vitest/pull/6687, an MSW worker is
+      // always registered by default in the browser. Because of that, we cannot reliably simulate the real error thrown
+      // by the absence of a worker. As a workaround, we're mocking the worker start method to throw a synthetic error.
+      // This is not ideal, but no other solutions appear to be available at the moment.
+      const unavailableMSWWorkerScriptError = new Error(
+        [
+          "[MSW] Failed to register a Service Worker for scope ('http://localhost:5173/') with script " +
+            "('http://localhost:5173/mockServiceWorker.js'): Service Worker script does not exist at the given path.\n",
+          'Did you forget to run "npx msw init <PUBLIC_DIR>"?\n',
+          'Learn more about creating the Service Worker script: https://mswjs.io/docs/cli/init`',
+        ].join('\n'),
+      );
 
-    const mswWorker = (await interceptorWorker.getMSWWorkerOrCreate()) as BrowserMSWWorker;
-    vi.spyOn(mswWorker, 'start').mockRejectedValueOnce(unavailableMSWWorkerScriptError);
+      const mswWorker = (await interceptorWorker.getMSWWorkerOrCreate()) as BrowserMSWWorker;
+      vi.spyOn(mswWorker, 'start').mockRejectedValueOnce(unavailableMSWWorkerScriptError);
 
-    await usingIgnoredConsole(['error'], async (console) => {
-      const interceptorStartPromise = interceptorWorker.start();
+      await usingIgnoredConsole(['error'], async (console) => {
+        const interceptorStartPromise = interceptorWorker.start();
 
-      const expectedError = new UnregisteredBrowserServiceWorkerError();
-      await expect(interceptorStartPromise).rejects.toThrow(expectedError);
+        const expectedError = new UnregisteredBrowserServiceWorkerError();
+        await expect(interceptorStartPromise).rejects.toThrow(expectedError);
 
-      expect(console.error).toHaveBeenCalledTimes(0);
+        expect(console.error).toHaveBeenCalledTimes(0);
+      });
+
+      expect(interceptorWorker.platform).toBe<HttpInterceptorPlatform>('browser');
     });
+  }
 
-    expect(interceptorWorker.platform).toBe<HttpInterceptorPlatform>('browser');
-  });
-});
-
-describe.each(testMatrix)('HttpInterceptorWorker (browser, $type)', (defaultWorkerOptions) => {
   declareDefaultHttpInterceptorWorkerTests({
     platform: 'browser',
-    defaultWorkerOptions,
+    type,
     // In the browser, unhandled promise rejections are logged automatically, so the worker does not log start errors.
     numberOfLoggedStartErrors: 0,
     getBaseURL: getBrowserBaseURL,

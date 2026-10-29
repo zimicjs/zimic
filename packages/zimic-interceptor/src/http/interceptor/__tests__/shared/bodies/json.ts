@@ -1,11 +1,11 @@
 import { HttpSchema, HttpRequest, HttpResponse, JSONSerialized, JSONValue, InvalidJSONError } from '@zimic/http';
 import { joinURL } from '@zimic/utils/url';
 import color from 'picocolors';
-import { beforeEach, expect, expectTypeOf, it } from 'vitest';
+import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpInterceptorOptions } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../utils';
@@ -750,6 +750,51 @@ export function declareJSONBodyHttpInterceptorTests(options: RuntimeSharedHttpIn
       expect(request.response.headers.get('content-type')).toBe('application/json');
       expectTypeOf(request.response.body).toEqualTypeOf<string>();
       expect(request.response.body).toBe(null);
+    });
+  });
+
+  it('should show an error once if the body of a request defined as JSON is not valid and multiple handlers match it', async () => {
+    type MethodSchema = HttpSchema.Method<{
+      request: {
+        headers: { 'content-type': string };
+        body: string;
+      };
+      response: { 204: {} };
+    }>;
+
+    const unmatchedRestriction = vi.fn(() => false);
+
+    await usingHttpInterceptor<{
+      '/users/:id': { POST: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      const handler = await promiseIfRemote(interceptor.post('/users/:id').respond({ status: 204 }), interceptor);
+
+      const unmatchedHandler = await promiseIfRemote(
+        interceptor.post('/users/:id').with(unmatchedRestriction).respond({ status: 204 }),
+        interceptor,
+      );
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: invalidRequestJSONString,
+        });
+        expect(response.status).toBe(204);
+
+        expect(console.error).toHaveBeenCalledTimes(1);
+        expect(console.error.mock.calls).toEqual([
+          [
+            color.cyan('[@zimic/interceptor]'),
+            'Failed to parse request body:',
+            new InvalidJSONError(invalidRequestJSONString),
+          ],
+        ]);
+      });
+
+      expect(unmatchedRestriction).toHaveBeenCalledTimes(1);
+      expect(unmatchedHandler.requests).toHaveLength(0);
+      expect(handler.requests).toHaveLength(1);
     });
   });
 

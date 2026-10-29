@@ -78,6 +78,8 @@ class HttpRequestHandlerImplementation<
 
   private createResponseDelay?: HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>;
 
+  private clearGeneration = {};
+
   constructor(
     private interceptor: HttpInterceptorImplementation<Schema>,
     public method: Method,
@@ -169,6 +171,8 @@ class HttpRequestHandlerImplementation<
   }
 
   clear(): this {
+    this.clearGeneration = {};
+
     this.restrictions.length = 0;
 
     this.limits = {
@@ -203,13 +207,26 @@ class HttpRequestHandlerImplementation<
       return { success: false, cause: 'missingResponseDeclaration' };
     }
 
-    const canAcceptMoreRequests = this.numberOfMatchedRequests < this.limits.numberOfRequests.max;
-
-    if (!canAcceptMoreRequests) {
+    if (!this.canAcceptMoreRequests()) {
       return { success: false, cause: 'exceededNumberOfRequests' };
     }
 
     return { success: true };
+  }
+
+  // Concurrent requests can reach the limit while this one is matched asynchronously, so the limit is checked again in
+  // the same synchronous step that counts the request.
+  reserveRequest(): HttpRequestHandlerRequestMatch {
+    if (!this.canAcceptMoreRequests()) {
+      return { success: false, cause: 'exceededNumberOfRequests' };
+    }
+
+    this.numberOfMatchedRequests++;
+    return { success: true };
+  }
+
+  private canAcceptMoreRequests() {
+    return this.numberOfMatchedRequests < this.limits.numberOfRequests.max;
   }
 
   markRequestAsMatched(_request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) {
@@ -431,12 +448,19 @@ class HttpRequestHandlerImplementation<
   }
 
   async applyResponseDeclaration(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) {
+    const clearGeneration = this.clearGeneration;
+
     if (this.createResponseDelay) {
       const delay = await this.createResponseDelay(request);
 
       if (delay > 0) {
         await waitForDelay(delay);
       }
+    }
+
+    // A request whose handler was cleared during its delay is not handled, even if the handler was redeclared.
+    if (clearGeneration !== this.clearGeneration) {
+      return undefined;
     }
 
     const appliedDeclaration = await this.createResponseDeclaration?.(request);

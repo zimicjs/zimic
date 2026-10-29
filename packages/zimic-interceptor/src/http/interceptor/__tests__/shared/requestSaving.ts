@@ -2,11 +2,11 @@ import { HttpSchema } from '@zimic/http';
 import { joinURL } from '@zimic/utils/url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import DisabledRequestSavingError from '@/http/requestHandler/errors/DisabledRequestSavingError';
 import { isClientSide } from '@/utils/environment';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import RequestSavingSafeLimitExceededError from '../../errors/RequestSavingSafeLimitExceededError';
 import { DEFAULT_REQUEST_SAVING_SAFE_LIMIT } from '../../HttpInterceptorImplementation';
@@ -437,6 +437,9 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
         });
       });
     });
+
+    // No HTTP counterpart for "should show a warning if the number of saved messages exceeds the safe limit,
+    // considering disconnected clients": HTTP requests have no long-lived client connection that can disconnect.
   });
 
   it('should support changing the request saving configuration after created', async () => {

@@ -22,8 +22,8 @@ class HttpInterceptorStore {
     return this.class.localWorker;
   }
 
-  private getRemoteWorkerKey(baseURL: URL, options: RemoteWorkerKeyOptions) {
-    const key = [`${baseURL.origin}${baseURL.pathname}`];
+  private getRemoteWorkerKey(serverURL: URL, options: RemoteWorkerKeyOptions) {
+    const key = [serverURL.origin];
 
     if (options.auth) {
       key.push(options.auth.token);
@@ -32,8 +32,8 @@ class HttpInterceptorStore {
     return key.join(':');
   }
 
-  getRemoteWorker(baseURL: URL, options: RemoteWorkerKeyOptions) {
-    const remoteWorkerKey = this.getRemoteWorkerKey(baseURL, options);
+  getRemoteWorker(serverURL: URL, options: RemoteWorkerKeyOptions) {
+    const remoteWorkerKey = this.getRemoteWorkerKey(serverURL, options);
     return this.class.remoteWorkers.get(remoteWorkerKey);
   }
 
@@ -102,8 +102,8 @@ class HttpInterceptorStore {
     return createdWorker;
   }
 
-  deleteRemoteWorker(baseURL: URL, options: RemoteWorkerKeyOptions) {
-    const remoteWorkerKey = this.getRemoteWorkerKey(baseURL, options);
+  deleteRemoteWorker(serverURL: URL, options: RemoteWorkerKeyOptions) {
+    const remoteWorkerKey = this.getRemoteWorkerKey(serverURL, options);
     this.class.remoteWorkers.delete(remoteWorkerKey);
   }
 }

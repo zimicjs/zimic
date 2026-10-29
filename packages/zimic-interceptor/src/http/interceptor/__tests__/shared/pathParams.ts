@@ -1,12 +1,12 @@
 import { HttpSchema } from '@zimic/http';
 import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
-import { beforeEach, expect, expectTypeOf, it } from 'vitest';
+import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
@@ -109,6 +109,58 @@ export function declarePathParamsHttpInterceptorTests(options: RuntimeSharedHttp
 
       const unmatchedResponsePromise = fetch(joinURL(baseURL, '/users/2'), { method: 'GET' });
       await expectFetchError(unmatchedResponsePromise);
+    });
+  });
+
+  it('should intercept requests with the newest handler if it is declared with an older overlapping path', async () => {
+    await usingHttpInterceptor<{
+      '/users/:userId': { GET: { response: { 200: {}; 201: {} } } };
+      '/users/me': { GET: { response: { 204: {} } } };
+    }>(interceptorOptions, async (interceptor) => {
+      const genericHandler = await promiseIfRemote(
+        interceptor.get('/users/:userId').respond({ status: 200 }),
+        interceptor,
+      );
+
+      const specificHandler = await promiseIfRemote(interceptor.get('/users/me').respond({ status: 204 }), interceptor);
+
+      const newerGenericHandler = await promiseIfRemote(
+        interceptor.get('/users/:userId').respond({ status: 201 }),
+        interceptor,
+      );
+
+      const response = await fetch(joinURL(baseURL, '/users/me'), { method: 'GET' });
+      expect(response.status).toBe(201);
+
+      expect(genericHandler.requests).toHaveLength(0);
+      expect(specificHandler.requests).toHaveLength(0);
+      expect(newerGenericHandler.requests).toHaveLength(1);
+    });
+  });
+
+  it('should intercept requests with an older handler of an overlapping path if the newest one does not match', async () => {
+    const specificRestriction = vi.fn(() => false);
+
+    await usingHttpInterceptor<{
+      '/users/:userId': { GET: { response: { 200: {} } } };
+      '/users/me': { GET: { response: { 204: {} } } };
+    }>(interceptorOptions, async (interceptor) => {
+      const genericHandler = await promiseIfRemote(
+        interceptor.get('/users/:userId').respond({ status: 200 }),
+        interceptor,
+      );
+
+      const specificHandler = await promiseIfRemote(
+        interceptor.get('/users/me').with(specificRestriction).respond({ status: 204 }),
+        interceptor,
+      );
+
+      const response = await fetch(joinURL(baseURL, '/users/me'), { method: 'GET' });
+      expect(response.status).toBe(200);
+
+      expect(specificRestriction).toHaveBeenCalledTimes(1);
+      expect(genericHandler.requests).toHaveLength(1);
+      expect(specificHandler.requests).toHaveLength(0);
     });
   });
 

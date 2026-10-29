@@ -13,7 +13,7 @@ import UnknownHttpInterceptorTypeError from '../../errors/UnknownHttpInterceptor
 import { createHttpInterceptor } from '../../factory';
 import LocalHttpInterceptor from '../../LocalHttpInterceptor';
 import RemoteHttpInterceptor from '../../RemoteHttpInterceptor';
-import { RemoteHttpInterceptorOptions } from '../../types/options';
+import { HttpInterceptorAuthOptions, RemoteHttpInterceptorOptions } from '../../types/options';
 import {
   LocalHttpInterceptor as PublicLocalHttpInterceptor,
   RemoteHttpInterceptor as PublicRemoteHttpInterceptor,
@@ -96,6 +96,9 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
+  // No HTTP counterpart for "should not expose socket members on the interceptor server": HTTP interceptors have no
+  // server handle representing the other side of a connection.
+
   it('should not throw an error if started multiple times', async () => {
     await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (interceptor) => {
       expect(interceptor.isRunning).toBe(false);
@@ -160,6 +163,15 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
 
       const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
       expect(worker).toBe(undefined);
+    });
+  });
+
+  it('should support starting after stopping while starting', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), { start: false }, async (interceptor) => {
+      await Promise.all([interceptor.start(), interceptor.stop(), interceptor.start()]);
+
+      expect(interceptor.isRunning).toBe(true);
+      expect(interceptor.platform).toBe(platform);
     });
   });
 
@@ -275,6 +287,37 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
+  it('should share the worker between interceptors with nested base URLs', async () => {
+    const nestedBaseURL = `${baseURL}/nested`;
+
+    await usingHttpInterceptor<{}>(
+      { ...getInterceptorOptions(), baseURL: nestedBaseURL },
+      async (nestedInterceptor) => {
+        await usingHttpInterceptor<{}>(getInterceptorOptions(), async (interceptor) => {
+          const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+          expect(worker).toBeDefined();
+          expect(worker!.isRunning).toBe(true);
+          expect(worker!.numberOfRunningInterceptors).toBe(2);
+
+          await nestedInterceptor.stop();
+          expect(nestedInterceptor.isRunning).toBe(false);
+
+          expect(worker!.isRunning).toBe(true);
+          expect(worker!.numberOfRunningInterceptors).toBe(1);
+
+          await interceptor.stop();
+          expect(interceptor.isRunning).toBe(false);
+
+          expect(worker!.isRunning).toBe(false);
+
+          const stoppedWorker =
+            type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
+          expect(stoppedWorker).toBe(undefined);
+        });
+      },
+    );
+  });
+
   it('should still stop the shared worker when the last interceptor fails to stop once and retries', async () => {
     await usingHttpInterceptor<{}>(getInterceptorOptions(), async (interceptor) => {
       const worker = type === 'local' ? store.localWorker : store.getRemoteWorker(serverURL, { auth: undefined });
@@ -385,6 +428,19 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     }).rejects.toThrow(new NotRunningHttpInterceptorError());
   });
 
+  it('should throw an error when trying to be cleared after stopped', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), async (interceptor) => {
+      expect(interceptor.isRunning).toBe(true);
+
+      await interceptor.stop();
+      expect(interceptor.isRunning).toBe(false);
+
+      await expect(async () => {
+        await interceptor.clear();
+      }).rejects.toThrow(new NotRunningHttpInterceptorError());
+    });
+  });
+
   if (type === 'remote') {
     describe('Authentication', () => {
       it('should support changing the authentication options after created', () => {
@@ -447,6 +503,46 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
           );
 
           expect(interceptor.auth).toEqual(auth);
+        });
+      });
+
+      it('should guard constructor-provided authentication options while running', async () => {
+        const auth: RemoteHttpInterceptorOptions['auth'] = { token: 'token' };
+
+        await usingHttpInterceptor<{}>({ type, baseURL, auth }, (interceptor) => {
+          expect(interceptor.isRunning).toBe(true);
+
+          expect(() => {
+            interceptor.auth!.token = 'other-token';
+          }).toThrow(
+            new RunningHttpInterceptorError(
+              'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?',
+            ),
+          );
+
+          expect(interceptor.auth).toEqual(auth);
+        });
+      });
+    });
+
+    // Remote-only: local interceptors have no authentication.
+    it('should share workers only between interceptors with the same authentication token', async () => {
+      const otherAuth: HttpInterceptorAuthOptions = { token: 'other-token' };
+      const auth: HttpInterceptorAuthOptions = { token: 'token' };
+
+      await usingHttpInterceptor<{}>({ type: 'remote', baseURL, auth }, async () => {
+        await usingHttpInterceptor<{}>({ type: 'remote', baseURL, auth: { token: auth.token } }, async () => {
+          await usingHttpInterceptor<{}>({ type: 'remote', baseURL, auth: otherAuth }, () => {
+            const worker = store.getRemoteWorker(serverURL, { auth });
+            const otherWorker = store.getRemoteWorker(serverURL, { auth: otherAuth });
+
+            expect(worker).toBeDefined();
+            expect(otherWorker).toBeDefined();
+            expect(otherWorker).not.toBe(worker);
+
+            expect(worker!.numberOfRunningInterceptors).toBe(2);
+            expect(otherWorker!.numberOfRunningInterceptors).toBe(1);
+          });
         });
       });
     });

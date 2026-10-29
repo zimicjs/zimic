@@ -11,6 +11,8 @@ export interface WebSocketEventMessage<
   Channel extends WebSocketChannel<Schema> = WebSocketChannel<Schema>,
 > extends WebSocketChannelFrame<Channel> {
   data: Schema[Channel]['event'];
+  // Set only by requests, so that receivers do not reply to events sent without waiting for a reply.
+  expectsReply?: boolean;
 }
 
 export interface WebSocketReplyMessage<

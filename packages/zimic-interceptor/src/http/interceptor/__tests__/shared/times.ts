@@ -1,12 +1,13 @@
 import { HttpSchema, HttpSearchParams } from '@zimic/http';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
 import color from 'picocolors';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { expectHttpTimesCheckError } from '@/http/requestHandler/__tests__/shared/utils';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
@@ -286,6 +287,34 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected at least 2 and at most 3 requests, but got 4.',
           expectedNumberOfRequests: { min: 2, max: 3 },
+        });
+      });
+    });
+
+    it('should not intercept more than a singular maximum number of requests limited in a range', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor.get('/users').respond({ status: 204 }).times(0, 1),
+          interceptor,
+        );
+
+        const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+
+        expect(handler.requests).toHaveLength(1);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        await expectFetchError(responsePromise);
+
+        expect(handler.requests).toHaveLength(1);
+
+        await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected at least 0 and at most 1 request, but got 2.',
+          expectedNumberOfRequests: { min: 0, max: 1 },
         });
       });
     });
@@ -746,6 +775,75 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         });
       });
     });
+
+    it('should distribute requests to a matching handler of another interceptor when the maximum number of requests is reached', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 200: {} } } };
+      }>(interceptorOptions, async (olderInterceptor) => {
+        await usingHttpInterceptor<{
+          '/users': { GET: MethodSchema };
+        }>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+
+          const olderHandler = await promiseIfRemote(
+            olderInterceptor.get('/users').respond({ status: 200 }).times(1),
+            olderInterceptor,
+          );
+
+          let response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(200);
+
+          expect(olderHandler.requests).toHaveLength(1);
+          expect(handler.requests).toHaveLength(0);
+
+          response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(204);
+
+          expect(olderHandler.requests).toHaveLength(1);
+          expect(handler.requests).toHaveLength(1);
+
+          await promiseIfRemote(olderInterceptor.checkTimes(), olderInterceptor);
+        });
+      });
+    });
+
+    it('should distribute concurrent requests to the next matching handler when the maximum number of requests is reached', async () => {
+      const concurrentRequestCount = 2;
+      const allRequestsMatchingPromise = createPromiseWithResolvers<void>();
+
+      const restriction = vi.fn(async () => {
+        if (restriction.mock.calls.length === concurrentRequestCount) {
+          allRequestsMatchingPromise.resolve();
+        }
+
+        await allRequestsMatchingPromise;
+        return true;
+      });
+
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 200: {}; 204: {} } } };
+      }>(interceptorOptions, async (interceptor) => {
+        const fallbackHandler = await promiseIfRemote(interceptor.get('/users').respond({ status: 200 }), interceptor);
+
+        const limitedHandler = await promiseIfRemote(
+          interceptor.get('/users').with(restriction).respond({ status: 204 }).times(1),
+          interceptor,
+        );
+
+        const responses = await Promise.all(
+          Array.from({ length: concurrentRequestCount }, () => fetch(joinURL(baseURL, '/users'), { method: 'GET' })),
+        );
+
+        const statuses = responses.map((response) => response.status);
+        expect(statuses.toSorted((status, otherStatus) => status - otherStatus)).toEqual([200, 204]);
+
+        expect(restriction).toHaveBeenCalledTimes(concurrentRequestCount);
+        expect(limitedHandler.requests).toHaveLength(1);
+        expect(fallbackHandler.requests).toHaveLength(1);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      });
+    });
   });
 
   describe('Unmatched requests', () => {
@@ -794,6 +892,10 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         });
       });
     });
+
+    // No HTTP counterpart for "should not consider binary messages unmatched due to restrictions in times checks":
+    // WebSocket messages can be whole Blob or ArrayBuffer payloads that times checks report as message data, while an
+    // HTTP binary body is one part of a request reported with its method, URL, and headers.
 
     it('should consider requests unmatched due to missing response declarations in times checks', async () => {
       await usingHttpInterceptor<{
@@ -915,6 +1017,22 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
       });
     });
 
+    it('should consider requests unmatched by cleared handlers instead of older handlers in times checks', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: MethodSchema };
+      }>(interceptorOptions, async (interceptor) => {
+        await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }).times(0), interceptor);
+        const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }).times(1), interceptor);
+
+        await promiseIfRemote(handler.clear(), interceptor);
+
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        await expectFetchError(responsePromise);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      });
+    });
+
     it('should not consider requests unmatched due to unmocked path in times checks', async () => {
       await usingHttpInterceptor<{
         '/users': { GET: MethodSchema };
@@ -946,8 +1064,60 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
         });
       });
     });
+
+    it('should not consider requests handled by another interceptor unmatched in times checks', async () => {
+      await usingHttpInterceptor<{
+        '/users': { GET: { response: { 200: {} } } };
+      }>(interceptorOptions, async (olderInterceptor) => {
+        const olderHandler = await promiseIfRemote(
+          olderInterceptor.get('/users').respond({ status: 200 }),
+          olderInterceptor,
+        );
+
+        await usingHttpInterceptor<{
+          '/users': { GET: MethodSchema };
+        }>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor
+              .get('/users')
+              .with({ searchParams: { value: '1' } })
+              .respond({ status: 204 })
+              .times(1),
+            interceptor,
+          );
+
+          const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(200);
+
+          expect(handler.requests).toHaveLength(0);
+          expect(olderHandler.requests).toHaveLength(1);
+
+          await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected exactly 1 matching request, but got 0.',
+            expectedNumberOfRequests: 1,
+          });
+        });
+      });
+    });
   });
 
+  it('should reset request counts when cleared', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }).times(1), interceptor);
+
+      const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      expect(response.status).toBe(204);
+
+      await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+      await interceptor.clear();
+      await promiseIfRemote(interceptor.checkTimes(), interceptor);
+    });
+  });
+
+  // Remote-only: local `checkTimes()` throws synchronously, so it has no returned promise to await later.
   if (type === 'remote') {
     it('should check times when called, before the returned promise is awaited', async () => {
       await usingHttpInterceptor<{

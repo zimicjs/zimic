@@ -9,6 +9,7 @@ import { version } from '@@/package.json';
 
 import {
   INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
+  INTERCEPTOR_SERVER_RPC_VERSION,
   INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
   type InterceptorServerRPCProtocol,
 } from '@/interceptor/constants';
@@ -46,18 +47,8 @@ const WEB_SOCKET_CLOSE_REASONS = Object.freeze({
   INVALID_WORKER_PROTOCOL: 'Invalid interceptor worker protocol.',
   MISSING_HTTP_PEER: 'The optional peer dependency "@zimic/http" is required for HTTP interceptor workers.',
   HTTP_RUNTIME_LOAD_FAILED: 'Could not load the HTTP interceptor runtime.',
+  INCOMPATIBLE_WORKER_VERSION: `Interceptor is incompatible with server ${version}. Use the same @zimic/interceptor version in both.`,
 } as const);
-
-// WebSocket close reasons are limited to 123 bytes. Worker versions come from the client, so only short semver-like
-// versions are echoed back.
-const DISPLAYABLE_WORKER_VERSION_PATTERN = /^[\w.+-]{1,32}$/;
-
-function createWorkerVersionMismatchReason(workerVersion: string | undefined) {
-  const displayedWorkerVersion =
-    workerVersion !== undefined && DISPLAYABLE_WORKER_VERSION_PATTERN.test(workerVersion) ? workerVersion : 'unknown';
-
-  return `Interceptor version ${displayedWorkerVersion} does not match server version ${version}.`;
-}
 
 function isMissingHttpPeerError(error: unknown): boolean {
   if (!(error instanceof Error)) {
@@ -313,9 +304,9 @@ class InterceptorServer implements PublicInterceptorServer {
 
     socket.addEventListener('close', () => {
       if (protocol === 'http') {
-        this.httpRuntime?.removeHandlersBySocket(socket);
+        this.httpRuntime?.removeWorkerBySocket(socket);
       } else {
-        this.webSocketRuntime?.removeHandlersBySocket(socket);
+        this.webSocketRuntime?.removeWorkerBySocket(socket);
       }
 
       this.workerProtocols.delete(socket);
@@ -357,11 +348,14 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private handleWebSocketConnection: WebSocketServerConnectionHandler = async (socket, request) => {
     if (this.isWebSocketRPCRequest(request)) {
-      const workerVersion = this.getWebSocketRequestParameterValue(request, INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER);
+      const workerRPCVersion = this.getWebSocketRequestParameterValue(
+        request,
+        INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
+      );
 
-      if (workerVersion !== version) {
+      if (workerRPCVersion !== String(INTERCEPTOR_SERVER_RPC_VERSION)) {
         socket.resume();
-        socket.close(WEB_SOCKET_CLOSE_CODES.POLICY_VIOLATION, createWorkerVersionMismatchReason(workerVersion));
+        socket.close(WEB_SOCKET_CLOSE_CODES.POLICY_VIOLATION, WEB_SOCKET_CLOSE_REASONS.INCOMPATIBLE_WORKER_VERSION);
         return { handled: true };
       }
 
@@ -379,15 +373,18 @@ class InterceptorServer implements PublicInterceptorServer {
         try {
           await this.loadHttpRuntime();
         } catch (error) {
-          console.error(error);
+          // A stale load is an expected race with the server stopping or restarting, not a failure to report.
+          if (!(error instanceof StaleHttpRuntimeLoadError)) {
+            console.error(error);
+          }
 
           socket.resume();
-          socket.close(
-            WEB_SOCKET_CLOSE_CODES.POLICY_VIOLATION,
-            isMissingHttpPeerError(error)
-              ? WEB_SOCKET_CLOSE_REASONS.MISSING_HTTP_PEER
-              : WEB_SOCKET_CLOSE_REASONS.HTTP_RUNTIME_LOAD_FAILED,
-          );
+
+          if (isMissingHttpPeerError(error)) {
+            socket.close(WEB_SOCKET_CLOSE_CODES.POLICY_VIOLATION, WEB_SOCKET_CLOSE_REASONS.MISSING_HTTP_PEER);
+          } else {
+            socket.close(WEB_SOCKET_CLOSE_CODES.INTERNAL_ERROR, WEB_SOCKET_CLOSE_REASONS.HTTP_RUNTIME_LOAD_FAILED);
+          }
 
           return { handled: true };
         }
@@ -444,6 +441,9 @@ class InterceptorServer implements PublicInterceptorServer {
         nodeResponse.statusCode = DEFAULT_PREFLIGHT_STATUS_CODE;
 
         for (const [header, value] of Object.entries(DEFAULT_ACCESS_CONTROL_HEADERS)) {
+          /* istanbul ignore else -- @preserve
+           * Published builds define an empty max age, which is the only header value omitted. Tests define a
+           * non-empty value, so the empty branch is not reachable in them. */
           if (value) {
             nodeResponse.setHeader(header, value);
           }
