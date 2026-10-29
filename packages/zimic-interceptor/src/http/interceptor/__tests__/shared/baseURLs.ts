@@ -965,9 +965,14 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
       const unsupportedBaseURL = defaultBaseURL.replace(/^http/, unsupportedProtocol);
 
-      expect(() => {
+      function createInterceptor() {
         createHttpInterceptor({ ...interceptorOptions, baseURL: unsupportedBaseURL });
-      }).toThrow(new UnsupportedURLProtocolError(unsupportedProtocol, SUPPORTED_BASE_URL_PROTOCOLS));
+      }
+
+      expect(createInterceptor).toThrow(
+        new UnsupportedURLProtocolError(unsupportedProtocol, SUPPORTED_BASE_URL_PROTOCOLS),
+      );
+      expect(createInterceptor).toThrow(ValidationError);
     },
   );
 
