@@ -7,7 +7,7 @@ export async function checkTypes(tsconfigFilePath: string) {
 }
 
 export async function lint(input: string, eslintConfigFilePath: string) {
-  return runCommand('pnpm', ['lint', input, '--no-ignore', '--max-warnings', '0', '--config', eslintConfigFilePath], {
+  return runCommand('pnpm', ['lint', input, '--no-ignore', '--config', eslintConfigFilePath], {
     stdio: ['ignore', 'ignore', 'inherit'],
   });
 }
