@@ -449,18 +449,29 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
           })
           .times(1);
 
-        const response = await createUser(creationInput);
-        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:create:success'>>();
+        const otherUserListener = vi.fn();
+        userSockets[1].addEventListener('message', otherUserListener);
 
-        expect(response.data).toEqual<JSONSerialized<User>>({
-          id: expect.any(String) as string,
-          name: creationInput.name,
-          email: creationInput.email,
-          birthDate: creationInput.birthDate,
-        });
+        try {
+          const response = await createUser(creationInput);
+          expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:create:success'>>();
 
-        expectMessagedClients(userInterceptor, [creatorClient], { type: 'user:create', data: creationInput });
-        expect(creationHandler.messages).toHaveLength(1);
+          expect(response.data).toEqual<JSONSerialized<User>>({
+            id: expect.any(String) as string,
+            name: creationInput.name,
+            email: creationInput.email,
+            birthDate: creationInput.birthDate,
+          });
+
+          await waitForNot(() => {
+            expect(otherUserListener).toHaveBeenCalled();
+          });
+
+          expectMessagedClients(userInterceptor, [creatorClient], { type: 'user:create', data: creationInput });
+          expect(creationHandler.messages).toHaveLength(1);
+        } finally {
+          userSockets[1].removeEventListener('message', otherUserListener);
+        }
       });
 
       it('should support creating users notifying all users', async () => {
