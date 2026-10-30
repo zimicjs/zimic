@@ -36,15 +36,15 @@ function getNativeClientBaseURL(type: WebSocketInterceptorType) {
 async function openNativeWebSocket(socket: WebSocket) {
   await new Promise<void>((resolve, reject) => {
     socket.addEventListener('open', () => resolve(), { once: true });
-    socket.addEventListener('error', (event) => reject(event), { once: true });
-    socket.addEventListener('close', (event) => reject(event), { once: true });
+    socket.addEventListener('error', reject, { once: true });
+    socket.addEventListener('close', reject, { once: true });
   });
 }
 
 async function closeNativeWebSocket(socket: WebSocket) {
   await new Promise<void>((resolve, reject) => {
     socket.addEventListener('close', () => resolve(), { once: true });
-    socket.addEventListener('error', (event) => reject(event), { once: true });
+    socket.addEventListener('error', reject, { once: true });
 
     socket.close();
   });
@@ -52,16 +52,13 @@ async function closeNativeWebSocket(socket: WebSocket) {
 
 async function waitForNativeUserCreationResponse(socket: WebSocket) {
   return new Promise<UserWebSocketMessage<'user:create:success'>>((resolve) => {
-    function messageListener(event: MessageEvent) {
-      const message = JSON.parse(event.data as string) as UserWebSocketMessage;
-
-      if (message.type === 'user:create:success') {
-        socket.removeEventListener('message', messageListener);
-        resolve(message);
-      }
-    }
-
-    socket.addEventListener('message', messageListener);
+    socket.addEventListener(
+      'message',
+      (event: MessageEvent) => {
+        resolve(JSON.parse(event.data as string) as UserWebSocketMessage<'user:create:success'>);
+      },
+      { once: true },
+    );
   });
 }
 
