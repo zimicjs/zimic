@@ -953,18 +953,6 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
       return waitForResponseMessage(socket, 'notification:update:success');
     }
 
-    function waitForNotificationRead(socket: WebSocketClient<NotificationWebSocketSchema>) {
-      return waitForResponseMessage(socket, 'notification:read:success');
-    }
-
-    function waitForNotificationReadError(socket: WebSocketClient<NotificationWebSocketSchema>) {
-      return waitForResponseMessage(socket, 'notification:read:error');
-    }
-
-    function waitForNotificationUnread(socket: WebSocketClient<NotificationWebSocketSchema>) {
-      return waitForResponseMessage(socket, 'notification:unread:success');
-    }
-
     it('should support receiving notification creation events started by the server', async () => {
       const message: NotificationWebSocketMessage<'notification:create:success'> = {
         type: 'notification:create:success',
@@ -1057,77 +1045,28 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
       },
     );
 
-    it('should support receiving notification update events started by the server', async () => {
-      const message: NotificationWebSocketMessage<'notification:update:success'> = {
-        type: 'notification:update:success',
-        data: updatedNotification,
-      };
+    type ServerStartedNotificationMessage = NotificationWebSocketMessage<
+      | 'notification:update:success'
+      | 'notification:read:success'
+      | 'notification:read:error'
+      | 'notification:unread:success'
+    >;
 
-      const responsesPromise = Promise.all(notificationSockets.map((socket) => waitForNotificationUpdate(socket)));
-
-      sendNotificationFromServer(message);
-
-      const responses = await responsesPromise;
-
-      expectTypeOf(responses[0]).toEqualTypeOf<NotificationWebSocketMessage<'notification:update:success'>>();
-      expect(responses).toEqual([message, message]);
-
-      expectNoSavedServerSentNotificationMessages();
-    });
-
-    it('should support receiving notification read events started by the server', async () => {
-      const message: NotificationWebSocketMessage<'notification:read:success'> = {
-        type: 'notification:read:success',
-        data: readNotification,
-      };
-
-      const responsesPromise = Promise.all(notificationSockets.map((socket) => waitForNotificationRead(socket)));
+    it.each<ServerStartedNotificationMessage>([
+      { type: 'notification:update:success', data: updatedNotification },
+      { type: 'notification:read:success', data: readNotification },
+      { type: 'notification:read:error', data: { code: 'validation_error', message: 'Invalid input' } },
+      { type: 'notification:unread:success', data: unreadNotification },
+    ])('should support receiving $type messages started by the server', async (message) => {
+      const responsesPromise = Promise.all(
+        notificationSockets.map((socket) => waitForResponseMessage(socket, message.type)),
+      );
 
       sendNotificationFromServer(message);
 
       const responses = await responsesPromise;
 
-      expectTypeOf(responses[0]).toEqualTypeOf<NotificationWebSocketMessage<'notification:read:success'>>();
-      expect(responses).toEqual([message, message]);
-
-      expectNoSavedServerSentNotificationMessages();
-    });
-
-    it('should support receiving notification read errors started by the server', async () => {
-      const validationError: ValidationError = {
-        code: 'validation_error',
-        message: 'Invalid input',
-      };
-      const message: NotificationWebSocketMessage<'notification:read:error'> = {
-        type: 'notification:read:error',
-        data: validationError,
-      };
-
-      const responsesPromise = Promise.all(notificationSockets.map((socket) => waitForNotificationReadError(socket)));
-
-      sendNotificationFromServer(message);
-
-      const responses = await responsesPromise;
-
-      expectTypeOf(responses[0]).toEqualTypeOf<NotificationWebSocketMessage<'notification:read:error'>>();
-      expect(responses).toEqual([message, message]);
-
-      expectNoSavedServerSentNotificationMessages();
-    });
-
-    it('should support receiving notification unread events started by the server', async () => {
-      const message: NotificationWebSocketMessage<'notification:unread:success'> = {
-        type: 'notification:unread:success',
-        data: unreadNotification,
-      };
-
-      const responsesPromise = Promise.all(notificationSockets.map((socket) => waitForNotificationUnread(socket)));
-
-      sendNotificationFromServer(message);
-
-      const responses = await responsesPromise;
-
-      expectTypeOf(responses[0]).toEqualTypeOf<NotificationWebSocketMessage<'notification:unread:success'>>();
+      expectTypeOf(responses[0]).toEqualTypeOf<ServerStartedNotificationMessage>();
       expect(responses).toEqual([message, message]);
 
       expectNoSavedServerSentNotificationMessages();
