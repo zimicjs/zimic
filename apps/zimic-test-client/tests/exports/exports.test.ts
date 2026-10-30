@@ -90,6 +90,8 @@ import {
   type InterceptedWebSocketInterceptorMessage,
   type WebSocketInterceptorClient,
   type WebSocketInterceptorServer,
+  type WebSocketInterceptorServerSendOptions,
+  type WebSocketInterceptorConnectionListener,
   type WebSocketMessageHandler,
   type LocalWebSocketMessageHandler,
   type RemoteWebSocketMessageHandler,
@@ -466,6 +468,8 @@ describe('Exports', () => {
       expectTypeOf<InterceptedWebSocketInterceptorMessage<never>>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorClient<never>>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorServer<never>>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorServerSendOptions<never>>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorConnectionListener<never>>().not.toBeAny();
 
       expectTypeOf<WebSocketMessageHandler<never>>().not.toBeAny();
       expectTypeOf<LocalWebSocketMessageHandler<never>>().not.toBeAny();

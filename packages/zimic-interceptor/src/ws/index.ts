@@ -45,12 +45,14 @@ export type {
   InterceptedWebSocketInterceptorMessage,
   WebSocketInterceptorClient,
   WebSocketInterceptorServer,
+  WebSocketInterceptorServerSendOptions,
 } from './interceptor/types/messages';
 
 export type {
   LocalWebSocketInterceptor,
   RemoteWebSocketInterceptor,
   WebSocketInterceptor,
+  WebSocketInterceptorConnectionListener,
   WebSocketInterceptorMessageSaving,
 } from './interceptor/types/public';
 
