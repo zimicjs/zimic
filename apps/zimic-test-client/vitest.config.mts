@@ -69,7 +69,9 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['@vitest/coverage-istanbul'],
+    // Vite does not pre-bundle linked workspace packages by default, unlike packages installed from the registry.
+    // Including the interceptor entry points makes browser tests load them as consumers do.
+    include: ['@vitest/coverage-istanbul', '@zimic/interceptor/http', '@zimic/interceptor/experimental/ws'],
   },
   plugins: [],
 });
