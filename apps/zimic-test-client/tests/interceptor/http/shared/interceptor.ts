@@ -231,7 +231,7 @@ export function declareHttpInterceptorTests({ platform, type, fetch }: ClientTes
         expect(await creationHandler.requests[0].response.raw.json()).toEqual(validationError);
       });
 
-      it('should return an error if the input is not valid', async () => {
+      it('should return an error if the user already exists', async () => {
         const conflictingInput: UserCreationInput = creationInput;
 
         const conflictError: ConflictError = {
