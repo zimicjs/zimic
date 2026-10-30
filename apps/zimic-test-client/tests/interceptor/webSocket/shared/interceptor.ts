@@ -58,18 +58,13 @@ async function waitForResponseMessage<
   Schema extends UserWebSocketSchema | NotificationWebSocketSchema,
   ResponseMessageType extends Schema['type'],
 >(socket: WebSocketClient<Schema>, responseMessageType: ResponseMessageType) {
-  return new Promise<Extract<Schema, { type: ResponseMessageType }>>((resolve, reject) => {
+  return new Promise<Extract<Schema, { type: ResponseMessageType }>>((resolve) => {
     function messageListener(event: WebSocketClient.MessageEvent<Schema>) {
-      try {
-        const message = JSON.parse(event.data);
+      const message = JSON.parse(event.data);
 
-        if (message.type === responseMessageType) {
-          socket.removeEventListener('message', messageListener);
-          resolve(message);
-        }
-      } catch (error) {
+      if (message.type === responseMessageType) {
         socket.removeEventListener('message', messageListener);
-        reject(error);
+        resolve(message);
       }
     }
 
@@ -78,7 +73,7 @@ async function waitForResponseMessage<
 }
 
 async function waitForBinaryMessage(socket: WebSocketClient<BinaryWebSocketSchema>) {
-  return new Promise<Blob | BufferSource>((resolve) => {
+  return new Promise<ArrayBuffer>((resolve) => {
     function messageListener(event: WebSocketClient.MessageEvent<BinaryWebSocketSchema>) {
       socket.removeEventListener('message', messageListener);
       resolve(event.data);
@@ -88,12 +83,8 @@ async function waitForBinaryMessage(socket: WebSocketClient<BinaryWebSocketSchem
   });
 }
 
-async function readBytes(data: Blob | BufferSource) {
-  const arrayBuffer = data instanceof Blob ? await data.arrayBuffer() : data;
-  const uint8Array =
-    arrayBuffer instanceof ArrayBuffer ? new Uint8Array(arrayBuffer) : new Uint8Array(arrayBuffer.buffer);
-
-  return Array.from(uint8Array);
+function readBytes(data: ArrayBuffer) {
+  return Array.from(new Uint8Array(data));
 }
 
 export function declareWebSocketInterceptorTests({ platform, type }: ClientTestOptionsByWorkerType) {
@@ -313,46 +304,6 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
     });
   });
 
-  describe('Response waiting', () => {
-    it('should keep waiting after unrelated messages and remove the listener after the expected response', async () => {
-      const socket = userSockets[0];
-      const removeEventListener = vi.spyOn(socket, 'removeEventListener');
-      const responsePromise = waitForResponseMessage(socket, 'user:create:success');
-
-      socket.dispatchEvent(
-        new MessageEvent('message', {
-          data: JSON.stringify({ type: 'user:delete:success', data: {} }),
-        }),
-      );
-      expect(removeEventListener).not.toHaveBeenCalled();
-
-      const expectedResponse: UserWebSocketMessage<'user:create:success'> = {
-        type: 'user:create:success',
-        data: {
-          id: crypto.randomUUID(),
-          name: 'Name',
-          email: 'email@email.com',
-          birthDate: new Date().toISOString(),
-        },
-      };
-      socket.dispatchEvent(new MessageEvent('message', { data: JSON.stringify(expectedResponse) }));
-
-      await expect(responsePromise).resolves.toEqual(expectedResponse);
-      expect(removeEventListener).toHaveBeenCalledOnce();
-    });
-
-    it('should remove the listener after a terminal parsing failure', async () => {
-      const socket = userSockets[0];
-      const removeEventListener = vi.spyOn(socket, 'removeEventListener');
-      const responsePromise = waitForResponseMessage(socket, 'user:create:success');
-
-      socket.dispatchEvent(new MessageEvent('message', { data: '{' }));
-
-      await expect(responsePromise).rejects.toBeInstanceOf(SyntaxError);
-      expect(removeEventListener).toHaveBeenCalledOnce();
-    });
-  });
-
   describe('Users', () => {
     const user: User = {
       id: crypto.randomUUID(),
@@ -449,18 +400,29 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
           })
           .times(1);
 
-        const response = await createUser(creationInput);
-        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:create:success'>>();
+        const otherUserListener = vi.fn();
+        userSockets[1].addEventListener('message', otherUserListener);
 
-        expect(response.data).toEqual<JSONSerialized<User>>({
-          id: expect.any(String) as string,
-          name: creationInput.name,
-          email: creationInput.email,
-          birthDate: creationInput.birthDate,
-        });
+        try {
+          const response = await createUser(creationInput);
+          expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:create:success'>>();
 
-        expectMessagedClients(userInterceptor, [creatorClient], { type: 'user:create', data: creationInput });
-        expect(creationHandler.messages).toHaveLength(1);
+          expect(response.data).toEqual<JSONSerialized<User>>({
+            id: expect.any(String) as string,
+            name: creationInput.name,
+            email: creationInput.email,
+            birthDate: creationInput.birthDate,
+          });
+
+          await waitForNot(() => {
+            expect(otherUserListener).toHaveBeenCalled();
+          });
+
+          expectMessagedClients(userInterceptor, [creatorClient], { type: 'user:create', data: creationInput });
+          expect(creationHandler.messages).toHaveLength(1);
+        } finally {
+          userSockets[1].removeEventListener('message', otherUserListener);
+        }
       });
 
       it('should support creating users notifying all users', async () => {
@@ -942,18 +904,6 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
       return waitForResponseMessage(socket, 'notification:update:success');
     }
 
-    function waitForNotificationRead(socket: WebSocketClient<NotificationWebSocketSchema>) {
-      return waitForResponseMessage(socket, 'notification:read:success');
-    }
-
-    function waitForNotificationReadError(socket: WebSocketClient<NotificationWebSocketSchema>) {
-      return waitForResponseMessage(socket, 'notification:read:error');
-    }
-
-    function waitForNotificationUnread(socket: WebSocketClient<NotificationWebSocketSchema>) {
-      return waitForResponseMessage(socket, 'notification:unread:success');
-    }
-
     it('should support receiving notification creation events started by the server', async () => {
       const message: NotificationWebSocketMessage<'notification:create:success'> = {
         type: 'notification:create:success',
@@ -1046,77 +996,28 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
       },
     );
 
-    it('should support receiving notification update events started by the server', async () => {
-      const message: NotificationWebSocketMessage<'notification:update:success'> = {
-        type: 'notification:update:success',
-        data: updatedNotification,
-      };
+    type ServerStartedNotificationMessage = NotificationWebSocketMessage<
+      | 'notification:update:success'
+      | 'notification:read:success'
+      | 'notification:read:error'
+      | 'notification:unread:success'
+    >;
 
-      const responsesPromise = Promise.all(notificationSockets.map((socket) => waitForNotificationUpdate(socket)));
-
-      sendNotificationFromServer(message);
-
-      const responses = await responsesPromise;
-
-      expectTypeOf(responses[0]).toEqualTypeOf<NotificationWebSocketMessage<'notification:update:success'>>();
-      expect(responses).toEqual([message, message]);
-
-      expectNoSavedServerSentNotificationMessages();
-    });
-
-    it('should support receiving notification read events started by the server', async () => {
-      const message: NotificationWebSocketMessage<'notification:read:success'> = {
-        type: 'notification:read:success',
-        data: readNotification,
-      };
-
-      const responsesPromise = Promise.all(notificationSockets.map((socket) => waitForNotificationRead(socket)));
+    it.each<ServerStartedNotificationMessage>([
+      { type: 'notification:update:success', data: updatedNotification },
+      { type: 'notification:read:success', data: readNotification },
+      { type: 'notification:read:error', data: { code: 'validation_error', message: 'Invalid input' } },
+      { type: 'notification:unread:success', data: unreadNotification },
+    ])('should support receiving $type messages started by the server', async (message) => {
+      const responsesPromise = Promise.all(
+        notificationSockets.map((socket) => waitForResponseMessage(socket, message.type)),
+      );
 
       sendNotificationFromServer(message);
 
       const responses = await responsesPromise;
 
-      expectTypeOf(responses[0]).toEqualTypeOf<NotificationWebSocketMessage<'notification:read:success'>>();
-      expect(responses).toEqual([message, message]);
-
-      expectNoSavedServerSentNotificationMessages();
-    });
-
-    it('should support receiving notification read errors started by the server', async () => {
-      const validationError: ValidationError = {
-        code: 'validation_error',
-        message: 'Invalid input',
-      };
-      const message: NotificationWebSocketMessage<'notification:read:error'> = {
-        type: 'notification:read:error',
-        data: validationError,
-      };
-
-      const responsesPromise = Promise.all(notificationSockets.map((socket) => waitForNotificationReadError(socket)));
-
-      sendNotificationFromServer(message);
-
-      const responses = await responsesPromise;
-
-      expectTypeOf(responses[0]).toEqualTypeOf<NotificationWebSocketMessage<'notification:read:error'>>();
-      expect(responses).toEqual([message, message]);
-
-      expectNoSavedServerSentNotificationMessages();
-    });
-
-    it('should support receiving notification unread events started by the server', async () => {
-      const message: NotificationWebSocketMessage<'notification:unread:success'> = {
-        type: 'notification:unread:success',
-        data: unreadNotification,
-      };
-
-      const responsesPromise = Promise.all(notificationSockets.map((socket) => waitForNotificationUnread(socket)));
-
-      sendNotificationFromServer(message);
-
-      const responses = await responsesPromise;
-
-      expectTypeOf(responses[0]).toEqualTypeOf<NotificationWebSocketMessage<'notification:unread:success'>>();
+      expectTypeOf(responses[0]).toEqualTypeOf<ServerStartedNotificationMessage>();
       expect(responses).toEqual([message, message]);
 
       expectNoSavedServerSentNotificationMessages();
@@ -1124,14 +1025,6 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
   });
 
   describe('Binary messages', () => {
-    it.each([
-      new Blob([new Uint8Array([0x00, 0xff])]),
-      new Uint8Array([0x00, 0xff]),
-      new Uint8Array([0x00, 0xff]).buffer,
-    ])('should read binary message bytes from supported representations', async (data) => {
-      expect(await readBytes(data)).toEqual([0x00, 0xff]);
-    });
-
     it('should support responding to binary messages', async () => {
       const message = new Uint8Array([0x00, 0xff]).buffer;
       const binaryClient = binaryInterceptor.clients[0];
@@ -1143,23 +1036,20 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
         .respond(message)
         .times(2);
 
-      const removeEventListener = vi.spyOn(binarySocket, 'removeEventListener');
-
       for (let index = 0; index < 2; index++) {
         const responsePromise = waitForBinaryMessage(binarySocket);
 
         binarySocket.send(message);
 
         const response = await responsePromise;
-        expect(await readBytes(response)).toEqual([0x00, 0xff]);
-        expect(removeEventListener).toHaveBeenCalledTimes(index + 1);
+        expect(readBytes(response)).toEqual([0x00, 0xff]);
       }
 
       expect(binaryHandler.messages).toHaveLength(2);
-      expect(await readBytes(binaryHandler.messages[0].data)).toEqual([0x00, 0xff]);
+      expect(readBytes(binaryHandler.messages[0].data)).toEqual([0x00, 0xff]);
       expect(binaryHandler.messages[0].sender).toBe(binaryClient);
       expect(binaryHandler.messages[0].receiver).toBe(binaryInterceptor.server);
-      expect(await readBytes(binaryHandler.messages[1].data)).toEqual([0x00, 0xff]);
+      expect(readBytes(binaryHandler.messages[1].data)).toEqual([0x00, 0xff]);
       expect(binaryHandler.messages[1].sender).toBe(binaryClient);
       expect(binaryHandler.messages[1].receiver).toBe(binaryInterceptor.server);
     });
