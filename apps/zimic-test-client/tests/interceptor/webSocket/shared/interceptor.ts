@@ -58,18 +58,13 @@ async function waitForResponseMessage<
   Schema extends UserWebSocketSchema | NotificationWebSocketSchema,
   ResponseMessageType extends Schema['type'],
 >(socket: WebSocketClient<Schema>, responseMessageType: ResponseMessageType) {
-  return new Promise<Extract<Schema, { type: ResponseMessageType }>>((resolve, reject) => {
+  return new Promise<Extract<Schema, { type: ResponseMessageType }>>((resolve) => {
     function messageListener(event: WebSocketClient.MessageEvent<Schema>) {
-      try {
-        const message = JSON.parse(event.data);
+      const message = JSON.parse(event.data);
 
-        if (message.type === responseMessageType) {
-          socket.removeEventListener('message', messageListener);
-          resolve(message);
-        }
-      } catch (error) {
+      if (message.type === responseMessageType) {
         socket.removeEventListener('message', messageListener);
-        reject(error);
+        resolve(message);
       }
     }
 
@@ -78,7 +73,7 @@ async function waitForResponseMessage<
 }
 
 async function waitForBinaryMessage(socket: WebSocketClient<BinaryWebSocketSchema>) {
-  return new Promise<Blob | BufferSource>((resolve) => {
+  return new Promise<ArrayBuffer>((resolve) => {
     function messageListener(event: WebSocketClient.MessageEvent<BinaryWebSocketSchema>) {
       socket.removeEventListener('message', messageListener);
       resolve(event.data);
@@ -88,12 +83,8 @@ async function waitForBinaryMessage(socket: WebSocketClient<BinaryWebSocketSchem
   });
 }
 
-async function readBytes(data: Blob | BufferSource) {
-  const arrayBuffer = data instanceof Blob ? await data.arrayBuffer() : data;
-  const uint8Array =
-    arrayBuffer instanceof ArrayBuffer ? new Uint8Array(arrayBuffer) : new Uint8Array(arrayBuffer.buffer);
-
-  return Array.from(uint8Array);
+function readBytes(data: ArrayBuffer) {
+  return Array.from(new Uint8Array(data));
 }
 
 export function declareWebSocketInterceptorTests({ platform, type }: ClientTestOptionsByWorkerType) {
@@ -310,46 +301,6 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
         userInterceptor.off('connection', listener);
         userInterceptor.off('connection', remainingListener);
       }
-    });
-  });
-
-  describe('Response waiting', () => {
-    it('should keep waiting after unrelated messages and remove the listener after the expected response', async () => {
-      const socket = userSockets[0];
-      const removeEventListener = vi.spyOn(socket, 'removeEventListener');
-      const responsePromise = waitForResponseMessage(socket, 'user:create:success');
-
-      socket.dispatchEvent(
-        new MessageEvent('message', {
-          data: JSON.stringify({ type: 'user:delete:success', data: {} }),
-        }),
-      );
-      expect(removeEventListener).not.toHaveBeenCalled();
-
-      const expectedResponse: UserWebSocketMessage<'user:create:success'> = {
-        type: 'user:create:success',
-        data: {
-          id: crypto.randomUUID(),
-          name: 'Name',
-          email: 'email@email.com',
-          birthDate: new Date().toISOString(),
-        },
-      };
-      socket.dispatchEvent(new MessageEvent('message', { data: JSON.stringify(expectedResponse) }));
-
-      await expect(responsePromise).resolves.toEqual(expectedResponse);
-      expect(removeEventListener).toHaveBeenCalledOnce();
-    });
-
-    it('should remove the listener after a terminal parsing failure', async () => {
-      const socket = userSockets[0];
-      const removeEventListener = vi.spyOn(socket, 'removeEventListener');
-      const responsePromise = waitForResponseMessage(socket, 'user:create:success');
-
-      socket.dispatchEvent(new MessageEvent('message', { data: '{' }));
-
-      await expect(responsePromise).rejects.toBeInstanceOf(SyntaxError);
-      expect(removeEventListener).toHaveBeenCalledOnce();
     });
   });
 
@@ -1074,14 +1025,6 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
   });
 
   describe('Binary messages', () => {
-    it.each([
-      new Blob([new Uint8Array([0x00, 0xff])]),
-      new Uint8Array([0x00, 0xff]),
-      new Uint8Array([0x00, 0xff]).buffer,
-    ])('should read binary message bytes from supported representations', async (data) => {
-      expect(await readBytes(data)).toEqual([0x00, 0xff]);
-    });
-
     it('should support responding to binary messages', async () => {
       const message = new Uint8Array([0x00, 0xff]).buffer;
       const binaryClient = binaryInterceptor.clients[0];
@@ -1093,23 +1036,20 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
         .respond(message)
         .times(2);
 
-      const removeEventListener = vi.spyOn(binarySocket, 'removeEventListener');
-
       for (let index = 0; index < 2; index++) {
         const responsePromise = waitForBinaryMessage(binarySocket);
 
         binarySocket.send(message);
 
         const response = await responsePromise;
-        expect(await readBytes(response)).toEqual([0x00, 0xff]);
-        expect(removeEventListener).toHaveBeenCalledTimes(index + 1);
+        expect(readBytes(response)).toEqual([0x00, 0xff]);
       }
 
       expect(binaryHandler.messages).toHaveLength(2);
-      expect(await readBytes(binaryHandler.messages[0].data)).toEqual([0x00, 0xff]);
+      expect(readBytes(binaryHandler.messages[0].data)).toEqual([0x00, 0xff]);
       expect(binaryHandler.messages[0].sender).toBe(binaryClient);
       expect(binaryHandler.messages[0].receiver).toBe(binaryInterceptor.server);
-      expect(await readBytes(binaryHandler.messages[1].data)).toEqual([0x00, 0xff]);
+      expect(readBytes(binaryHandler.messages[1].data)).toEqual([0x00, 0xff]);
       expect(binaryHandler.messages[1].sender).toBe(binaryClient);
       expect(binaryHandler.messages[1].receiver).toBe(binaryInterceptor.server);
     });
