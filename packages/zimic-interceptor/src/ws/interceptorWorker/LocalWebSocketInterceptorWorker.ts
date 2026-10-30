@@ -1,3 +1,4 @@
+import { createCachedDynamicImport } from '@zimic/utils/import';
 import { excludeNonPathParams } from '@zimic/utils/url';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 import { SharedOptions as MSWWorkerSharedOptions, ws } from 'msw';
@@ -19,6 +20,9 @@ import WebSocketInterceptorImplementation, {
 import type { MSWWebSocketHandler, MSWWorker } from './types/msw';
 import { LocalWebSocketInterceptorWorkerOptions } from './types/options';
 import WebSocketInterceptorWorker from './WebSocketInterceptorWorker';
+
+const importMSWNode = createCachedDynamicImport(() => import('msw/node'));
+const importMSWBrowser = createCachedDynamicImport(() => import('msw/browser'));
 
 interface LocalWebSocketClientConnection {
   url: URL;
@@ -117,6 +121,8 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
   async getMSWWorkerOrCreate() {
     return this.store.getMSWWorkerOrCreate({
+      importMSWNode,
+      importMSWBrowser,
       createUnknownPlatformError:
         /* istanbul ignore next -- @preserve
          * Unknown runtime platforms are not part of the package test matrix. */
