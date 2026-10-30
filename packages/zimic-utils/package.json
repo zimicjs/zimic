@@ -144,6 +144,7 @@
     "tsup": "^9.0.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "@typescript/native": "npm:typescript@^7.0.2",
+    "vite": "^7.3.7",
     "vitest": "^5.0.5"
   }
 }
