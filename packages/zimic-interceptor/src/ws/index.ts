@@ -3,7 +3,7 @@ export { default as NotRunningWebSocketInterceptorError } from './interceptor/er
 export { default as UnknownWebSocketInterceptorPlatformError } from './interceptor/errors/UnknownWebSocketInterceptorPlatformError';
 export { default as UnknownWebSocketInterceptorTypeError } from './interceptor/errors/UnknownWebSocketInterceptorTypeError';
 export { default as MessageSavingSafeLimitExceededError } from './interceptor/errors/MessageSavingSafeLimitExceededError';
-export { default as UnregisteredBrowserServiceWorkerError } from '../interceptor/errors/UnregisteredBrowserServiceWorkerError';
+export { default as UnregisteredBrowserServiceWorkerError } from '@/interceptor/errors/UnregisteredBrowserServiceWorkerError';
 
 export { default as DisabledMessageSavingError } from './messageHandler/errors/DisabledMessageSavingError';
 export { default as WebSocketTimesCheckError } from './errors/WebSocketTimesCheckError';
@@ -45,12 +45,14 @@ export type {
   InterceptedWebSocketInterceptorMessage,
   WebSocketInterceptorClient,
   WebSocketInterceptorServer,
+  WebSocketInterceptorServerSendOptions,
 } from './interceptor/types/messages';
 
 export type {
   LocalWebSocketInterceptor,
   RemoteWebSocketInterceptor,
   WebSocketInterceptor,
+  WebSocketInterceptorConnectionListener,
   WebSocketInterceptorMessageSaving,
 } from './interceptor/types/public';
 
