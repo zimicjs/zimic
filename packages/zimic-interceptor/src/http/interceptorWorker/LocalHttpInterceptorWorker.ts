@@ -1,4 +1,5 @@
 import { HttpRequest, HttpResponse, HttpSchema, HttpHeadersInit, HttpBody } from '@zimic/http';
+import { createCachedDynamicImport } from '@zimic/utils/import';
 import { SharedOptions as MSWWorkerSharedOptions, HttpHandler as MSWHttpHandler, bypass, http, passthrough } from 'msw';
 
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
@@ -10,6 +11,9 @@ import HttpInterceptorImplementation from '../interceptor/HttpInterceptorImpleme
 import { UnhandledRequestStrategy } from '../interceptor/types/options';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
+
+const importMSWNode = createCachedDynamicImport(() => import('msw/node'));
+const importMSWBrowser = createCachedDynamicImport(() => import('msw/browser'));
 
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   private mswHttpHandler?: MSWHttpHandler;
@@ -35,6 +39,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async getMSWWorkerOrCreate() {
     return this.store.getMSWWorkerOrCreate({
+      importMSWNode,
+      importMSWBrowser,
       createUnknownPlatformError:
         // The unknown platform error is created here to prevent the store from relying on HTTP-specific resources.
         /* istanbul ignore next -- @preserve
