@@ -1,3 +1,5 @@
+import { ValidationError } from '@zimic/utils/validation';
+
 import { WebSocketInterceptorType } from '../types/options';
 
 /**
@@ -5,7 +7,7 @@ import { WebSocketInterceptorType } from '../types/options';
  *
  * An error thrown when an unknown interceptor type is used. Currently, the types `local` and `remote` are supported.
  */
-class UnknownWebSocketInterceptorTypeError extends TypeError {
+class UnknownWebSocketInterceptorTypeError extends ValidationError {
   constructor(unknownType: unknown) {
     super(
       `Unknown WebSocket interceptor type: ${unknownType}. The available options are ` +

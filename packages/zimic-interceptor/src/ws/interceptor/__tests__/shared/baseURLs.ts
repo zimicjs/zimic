@@ -1468,9 +1468,14 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
 
       const unsupportedBaseURL = defaultBaseURL.replace(/^ws/, unsupportedProtocol);
 
-      expect(() => {
+      function createInterceptor() {
         createWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, baseURL: unsupportedBaseURL });
-      }).toThrow(new UnsupportedURLProtocolError(unsupportedProtocol, SUPPORTED_BASE_URL_PROTOCOLS));
+      }
+
+      expect(createInterceptor).toThrow(
+        new UnsupportedURLProtocolError(unsupportedProtocol, SUPPORTED_BASE_URL_PROTOCOLS),
+      );
+      expect(createInterceptor).toThrow(ValidationError);
     },
   );
 
