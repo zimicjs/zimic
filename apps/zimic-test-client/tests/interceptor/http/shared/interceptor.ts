@@ -814,97 +814,49 @@ export function declareHttpInterceptorTests({ platform, type, fetch }: ClientTes
     });
 
     describe('Notification reading', () => {
-      async function markNotificationAsRead(notificationId: string) {
-        const request = new Request(`${notificationBaseURL}/notifications/${encodeURIComponent(notificationId)}/read`, {
-          method: 'POST',
-        });
-        return fetch(request);
-      }
-
-      async function markNotificationAsUnread(notificationId: string) {
+      async function markNotificationAs(state: 'read' | 'unread', notificationId: string) {
         const request = new Request(
-          `${notificationBaseURL}/notifications/${encodeURIComponent(notificationId)}/unread`,
-          {
-            method: 'POST',
-          },
+          `${notificationBaseURL}/notifications/${encodeURIComponent(notificationId)}/${state}`,
+          { method: 'POST' },
         );
         return fetch(request);
       }
 
-      it('should support marking notifications as read', async () => {
-        const markAsReadHandler = await notificationInterceptor
-          .post('/notifications/:notificationId/read')
+      it.each(['read', 'unread'] as const)('should support marking notifications as %s', async (state) => {
+        const markAsHandler = await notificationInterceptor
+          .post(`/notifications/:notificationId/${state}`)
           .respond({ status: 204 })
           .times(1);
 
-        const response = await markNotificationAsRead(notification.id);
+        const response = await markNotificationAs(state, notification.id);
         expect(response.status).toBe(204);
 
-        expect(markAsReadHandler.requests).toHaveLength(1);
-        expect(markAsReadHandler.requests[0].url).toBe(`${notificationBaseURL}/notifications/${notification.id}/read`);
+        expect(markAsHandler.requests).toHaveLength(1);
+        expect(markAsHandler.requests[0].url).toBe(`${notificationBaseURL}/notifications/${notification.id}/${state}`);
 
-        expectTypeOf(markAsReadHandler.requests[0].pathParams).toEqualTypeOf<{ notificationId: string }>();
-        expect(markAsReadHandler.requests[0].pathParams).toEqual({ notificationId: notification.id });
+        expectTypeOf(markAsHandler.requests[0].pathParams).toEqualTypeOf<{ notificationId: string }>();
+        expect(markAsHandler.requests[0].pathParams).toEqual({ notificationId: notification.id });
 
-        expectTypeOf(markAsReadHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+        expectTypeOf(markAsHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(markAsReadHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
-        expect(markAsReadHandler.requests[0].searchParams.size).toBe(0);
+        expectTypeOf(markAsHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expect(markAsHandler.requests[0].searchParams.size).toBe(0);
 
-        expectTypeOf(markAsReadHandler.requests[0].body).toEqualTypeOf<null>();
-        expect(markAsReadHandler.requests[0].body).toBe(null);
+        expectTypeOf(markAsHandler.requests[0].body).toEqualTypeOf<null>();
+        expect(markAsHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(markAsReadHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
-        expect(markAsReadHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(markAsReadHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
-        expect(await markAsReadHandler.requests[0].raw.text()).toBe('');
+        expectTypeOf(markAsHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
+        expect(markAsHandler.requests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(markAsHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
+        expect(await markAsHandler.requests[0].raw.text()).toBe('');
 
-        expectTypeOf(markAsReadHandler.requests[0].response.body).toEqualTypeOf<null>();
-        expect(markAsReadHandler.requests[0].response.body).toBe(null);
+        expectTypeOf(markAsHandler.requests[0].response.body).toEqualTypeOf<null>();
+        expect(markAsHandler.requests[0].response.body).toBe(null);
 
-        expectTypeOf(markAsReadHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<null, never, 204>>();
-        expect(markAsReadHandler.requests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(markAsReadHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<never>>();
-        expect(await markAsReadHandler.requests[0].response.raw.text()).toBe('');
-      });
-
-      it('should support marking notifications as unread', async () => {
-        const markAsUnreadHandler = await notificationInterceptor
-          .post('/notifications/:notificationId/unread')
-          .respond({ status: 204 })
-          .times(1);
-
-        const response = await markNotificationAsUnread(notification.id);
-        expect(response.status).toBe(204);
-
-        expect(markAsUnreadHandler.requests).toHaveLength(1);
-        expect(markAsUnreadHandler.requests[0].url).toBe(
-          `${notificationBaseURL}/notifications/${notification.id}/unread`,
-        );
-
-        expectTypeOf(markAsUnreadHandler.requests[0].pathParams).toEqualTypeOf<{ notificationId: string }>();
-        expect(markAsUnreadHandler.requests[0].pathParams).toEqual({ notificationId: notification.id });
-
-        expectTypeOf(markAsUnreadHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
-
-        expectTypeOf(markAsUnreadHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
-        expect(markAsUnreadHandler.requests[0].searchParams.size).toBe(0);
-
-        expectTypeOf(markAsUnreadHandler.requests[0].body).toEqualTypeOf<null>();
-        expect(markAsUnreadHandler.requests[0].body).toBe(null);
-
-        expectTypeOf(markAsUnreadHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null, never>>();
-        expect(markAsUnreadHandler.requests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(markAsUnreadHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<never>>();
-        expect(await markAsUnreadHandler.requests[0].raw.text()).toBe('');
-
-        expectTypeOf(markAsUnreadHandler.requests[0].response.body).toEqualTypeOf<null>();
-        expect(markAsUnreadHandler.requests[0].response.body).toBe(null);
-
-        expectTypeOf(markAsUnreadHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<null, never, 204>>();
-        expect(markAsUnreadHandler.requests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(markAsUnreadHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<never>>();
-        expect(await markAsUnreadHandler.requests[0].response.raw.text()).toBe('');
+        expectTypeOf(markAsHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<null, never, 204>>();
+        expect(markAsHandler.requests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(markAsHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<never>>();
+        expect(await markAsHandler.requests[0].response.raw.text()).toBe('');
       });
     });
   });
