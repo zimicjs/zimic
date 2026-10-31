@@ -106,7 +106,13 @@ export async function logUnhandledRequestWarning(request: Request, action: 'bypa
 export async function logUnhandledMessageWarning(data: unknown, url: string) {
   const formattedData = await formatValueToLog(data);
 
-  logger.warn('Warning: Message was not handled.\n\n ', url, '\n    Data:', formattedData);
+  logger.warn(
+    'Warning: Message was not handled.\n\n ',
+    url,
+    '\n    Data:',
+    formattedData,
+    '\n\nLearn more: https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages',
+  );
 }
 
 export function logUnexpectedServerDisconnection(serverURL: URL) {

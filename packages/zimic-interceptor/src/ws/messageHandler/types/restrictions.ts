@@ -6,9 +6,7 @@ import { ReceivedWebSocketMessageData, UnparsedWebSocketJSONPrimitive } from '@/
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A static restriction declared with `handler.with()`, matching messages that contain its partial data. Binary members
- * accept only whole binary values of any kind, compared byte by byte. Top-level number and boolean members accept only
- * their whole text as received, such as `'42'`.
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
  */
 export type WebSocketMessageHandlerStaticRestriction<Schema extends WebSocketSchema> = Schema extends
   Blob | BufferSource
@@ -22,22 +20,19 @@ export type WebSocketMessageHandlerStaticRestriction<Schema extends WebSocketSch
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The options of a static restriction declared with `handler.with()`.
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
  */
 export interface WebSocketMessageHandlerStaticRestrictionOptions {
-  /**
-   * Whether JSON messages must be equal to the restriction instead of containing it. Defaults to `false`. Binary
-   * restrictions always require messages with the same bytes.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
   exact?: boolean;
 }
 
-/** A predicate returning whether a message matches. It does not narrow the handler's message type. */
+/** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
 type WebSocketMessageHandlerComputedBooleanRestriction<Schema extends WebSocketSchema> = (
   message: ReceivedWebSocketMessageData<Schema>,
 ) => PossiblePromise<boolean>;
 
-/** A type guard returning whether a message matches. It narrows the handler's message type to its predicate. */
+/** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
 export type WebSocketMessageHandlerComputedTypeGuardRestriction<
   Schema extends WebSocketSchema,
   PredicateSchema extends ReceivedWebSocketMessageData<Schema> = ReceivedWebSocketMessageData<Schema>,
@@ -46,8 +41,7 @@ export type WebSocketMessageHandlerComputedTypeGuardRestriction<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A computed restriction declared with `handler.with()`, either a predicate or a type guard. Binary messages arrive as
- * `ArrayBuffer`.
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
  */
 export type WebSocketMessageHandlerComputedRestriction<
   Schema extends WebSocketSchema,
@@ -59,7 +53,7 @@ export type WebSocketMessageHandlerComputedRestriction<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A restriction declared with `handler.with()`, either static or computed.
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
  */
 export type WebSocketMessageHandlerRestriction<Schema extends WebSocketSchema> =
   WebSocketMessageHandlerStaticRestriction<Schema> | WebSocketMessageHandlerComputedRestriction<Schema>;

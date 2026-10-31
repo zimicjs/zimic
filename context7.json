@@ -15,6 +15,7 @@
     "@zimic/interceptor: Local interceptors in browsers require `zimic-interceptor browser init <publicDirectory>` before interceptor.start().",
     "@zimic/interceptor: Handlers are checked from the last created to the first across all running interceptors whose base URL matches the request URL (the request URL starts with the base URL and has the same origin), regardless of interceptor start order. The unhandled request strategy comes from the last started interceptor whose base URL matches.",
     "@zimic/interceptor: handler.with() matches partially by default. Use `exact: true` only when extra headers, search params, or body fields must cause a mismatch.",
+    "@zimic/interceptor: In experimental WebSocket message handlers, pass `exact` as a second argument, `handler.with(restriction, { exact: true })`. The static restriction is the partial message itself, so an `exact` field is matched as message data.",
     "@zimic/fetch: The package follows the Fetch API: JSON request bodies must be serialized with JSON.stringify and sent with an explicit `content-type: application/json` header. Schema content-type inference affects types only.",
     "@zimic/fetch: The package does not throw on non-2xx responses. Check response.ok, throw response.error when needed, and narrow caught errors with fetch.isResponseError(error, method, path).",
     "@zimic/http, @zimic/fetch, @zimic/interceptor: Declare path params in schema keys as '/users/:userId'. When calling fetch, pass the concrete path, such as `/users/${id}`."
