@@ -213,6 +213,79 @@ describe('WebSocketClient', () => {
       webSocketClient.binaryType = 'blob';
       expect(webSocketClient.binaryType).toBe('blob');
     });
+
+    it('should apply the binary type set in an open listener to received messages', async () => {
+      webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
+        serverWebSocketClient.addEventListener('message', (event) => {
+          serverWebSocketClient.send(event.data);
+        });
+      });
+
+      const binaryWebSocketClient = new WebSocketClient<WebSocketSchema<Blob | ArrayBuffer>>(webSocketServer.baseURL);
+
+      try {
+        expect(binaryWebSocketClient.binaryType).toBe('blob');
+
+        binaryWebSocketClient.addEventListener('open', () => {
+          binaryWebSocketClient.binaryType = 'arraybuffer';
+        });
+
+        const messageListener = vi.fn<WebSocketClient.EventListener<WebSocketSchema<Blob | ArrayBuffer>, 'message'>>();
+        binaryWebSocketClient.addEventListener('message', messageListener);
+
+        await binaryWebSocketClient.open();
+        expect(binaryWebSocketClient.binaryType).toBe('arraybuffer');
+
+        binaryWebSocketClient.send(new Uint8Array([1, 2, 3]).buffer);
+
+        await waitFor(() => {
+          expect(messageListener).toHaveBeenCalledTimes(1);
+        });
+
+        const receivedData = messageListener.mock.calls[0][0].data;
+        expect(receivedData).toBeInstanceOf(ArrayBuffer);
+        expect(receivedData).toEqual(new Uint8Array([1, 2, 3]).buffer);
+      } finally {
+        await binaryWebSocketClient.close();
+      }
+    });
+
+    it('should apply the binary type set while opening to received messages', async () => {
+      const binaryWebSocketClient = new WebSocketClient<WebSocketSchema<Blob | ArrayBuffer>>(webSocketServer.baseURL);
+
+      // The server accepts the connection only after the client created its socket, so this sets the binary type
+      // while the client is still opening.
+      webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
+        expect(binaryWebSocketClient.readyState).toBe(binaryWebSocketClient.CLOSED);
+        binaryWebSocketClient.binaryType = 'arraybuffer';
+
+        serverWebSocketClient.addEventListener('message', (event) => {
+          serverWebSocketClient.send(event.data);
+        });
+      });
+
+      try {
+        expect(binaryWebSocketClient.binaryType).toBe('blob');
+
+        const messageListener = vi.fn<WebSocketClient.EventListener<WebSocketSchema<Blob | ArrayBuffer>, 'message'>>();
+        binaryWebSocketClient.addEventListener('message', messageListener);
+
+        await binaryWebSocketClient.open();
+        expect(binaryWebSocketClient.binaryType).toBe('arraybuffer');
+
+        binaryWebSocketClient.send(new Uint8Array([1, 2, 3]).buffer);
+
+        await waitFor(() => {
+          expect(messageListener).toHaveBeenCalledTimes(1);
+        });
+
+        const receivedData = messageListener.mock.calls[0][0].data;
+        expect(receivedData).toBeInstanceOf(ArrayBuffer);
+        expect(receivedData).toEqual(new Uint8Array([1, 2, 3]).buffer);
+      } finally {
+        await binaryWebSocketClient.close();
+      }
+    });
   });
 
   describe('Messaging', () => {
