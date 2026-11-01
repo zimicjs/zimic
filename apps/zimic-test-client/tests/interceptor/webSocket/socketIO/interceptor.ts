@@ -139,11 +139,8 @@ export function declareSocketIOInterceptorTests(options: { platform: WebSocketIn
 
         const deleteHandler = await interceptor
           .message()
-          .with((message): message is `42["user:delete",${string}]` => message.startsWith('42["user:delete",'))
-          .respond((message) => {
-            const [, data] = JSON.parse(message.slice('42'.length)) as ['user:delete', { id: string }];
-            return `42["user:delete:success",${JSON.stringify(data)}]` as const;
-          })
+          .with(`42["user:delete",${JSON.stringify({ id: userId })}]`)
+          .respond(`42["user:delete:success",${JSON.stringify({ id: userId })}]` as const)
           .times(1);
 
         const socket = connectSocket(interceptor.baseURL, transports);
@@ -159,7 +156,9 @@ export function declareSocketIOInterceptorTests(options: { platform: WebSocketIn
         expect(await responsePromise).toEqual({ id: userId });
 
         expect(deleteHandler.messages).toHaveLength(1);
-        expectTypeOf(deleteHandler.messages[0].data).toEqualTypeOf<`42["user:delete",${string}]`>();
+        expectTypeOf(deleteHandler.messages[0].data).toEqualTypeOf<
+          Extract<SocketIOWebSocketSchema, `42["user:delete",${string}]`>
+        >();
         expect(deleteHandler.messages[0].data).toBe(`42["user:delete",${JSON.stringify({ id: userId })}]`);
         expect(deleteHandler.messages[0].sender).toBe(interceptor.clients[0]);
       });
