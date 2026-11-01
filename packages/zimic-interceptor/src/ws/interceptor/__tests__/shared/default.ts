@@ -96,15 +96,15 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
       // @ts-expect-error Forcing an unknown type.
       const unknownType: WebSocketInterceptorType = 'unknown';
 
-      function createUnknownTypeInterceptor() {
-        return createInternalWebSocketInterceptor({
+      const expectedError = new UnknownWebSocketInterceptorTypeError(unknownType);
+      expect(expectedError).toBeInstanceOf(ValidationError);
+
+      expect(() => {
+        createInternalWebSocketInterceptor({
           type: unknownType,
           baseURL,
         });
-      }
-
-      expect(createUnknownTypeInterceptor).toThrow(new UnknownWebSocketInterceptorTypeError(unknownType));
-      expect(createUnknownTypeInterceptor).toThrow(ValidationError);
+      }).toThrow(expectedError);
     });
   });
 

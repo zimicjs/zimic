@@ -79,15 +79,15 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
       // @ts-expect-error Forcing an unknown type.
       const unknownType: HttpInterceptorType = 'unknown';
 
-      function createUnknownTypeInterceptor() {
-        return createInternalHttpInterceptor({
+      const expectedError = new UnknownHttpInterceptorTypeError(unknownType);
+      expect(expectedError).toBeInstanceOf(ValidationError);
+
+      expect(() => {
+        createInternalHttpInterceptor({
           type: unknownType, // eslint-disable-line @typescript-eslint/no-unsafe-assignment
           baseURL,
         });
-      }
-
-      expect(createUnknownTypeInterceptor).toThrow(new UnknownHttpInterceptorTypeError(unknownType));
-      expect(createUnknownTypeInterceptor).toThrow(ValidationError);
+      }).toThrow(expectedError);
     });
   });
 
