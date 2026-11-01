@@ -4,6 +4,15 @@ import { playwright } from '@vitest/browser-playwright';
 import path from 'path';
 import { defineConfig } from 'vitest/config';
 
+import packageJSON from './package.json';
+
+// Configuration packages are not runtime dependencies, and `@zimic/utils` is bundled into the published packages
+// instead of installed by consumers.
+const zimicRuntimePackageNames = Object.keys(packageJSON.devDependencies).filter(
+  (packageName) =>
+    packageName.startsWith('@zimic/') && !packageName.includes('config') && packageName !== '@zimic/utils',
+);
+
 export default defineConfig({
   publicDir: './public',
   test: {
@@ -69,7 +78,9 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['@vitest/coverage-istanbul'],
+    // Vite does not pre-bundle linked workspace packages by default, unlike packages installed from the registry.
+    // Including every entry point of the Zimic packages makes browser tests load them as consumers do.
+    include: ['@vitest/coverage-istanbul', ...zimicRuntimePackageNames.map((packageName) => `${packageName}/**`)],
   },
   plugins: [],
 });
