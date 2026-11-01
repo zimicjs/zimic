@@ -6,7 +6,6 @@ import type {
   InterceptedWebSocketInterceptorMessage,
   WebSocketInterceptorClient,
   WebSocketInterceptorServer,
-  WebSocketInterceptorServerSendOptions,
 } from '@/ws/interceptor/types/messages';
 import type { LocalWebSocketMessageHandler, RemoteWebSocketMessageHandler } from '@/ws/messageHandler/types/public';
 
@@ -120,10 +119,6 @@ export function declareTypeWebSocketInterceptorTests(
 
       interceptor.message().effect((message, context) => {
         expectTypeOf(message).toEqualTypeOf<MessageSchema>();
-        expectTypeOf(context.receiver.send).parameter(0).toEqualTypeOf<Parameters<typeof context.sender.send>[0]>();
-        expectTypeOf(context.receiver.send)
-          .parameter(1)
-          .toEqualTypeOf<WebSocketInterceptorServerSendOptions<MessageSchema> | undefined>();
         expectTypeOf(context.receiver.send).toEqualTypeOf<WebSocketInterceptorServer<MessageSchema>['send']>();
         expectTypeOf(context.sender.send).toEqualTypeOf<WebSocketInterceptorClient<MessageSchema>['send']>();
       });
