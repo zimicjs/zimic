@@ -183,8 +183,12 @@ const config: Docusaurus.Config = {
     algolia: {
       appId: 'OZK76E9ED8',
       apiKey: 'f1cad248a458bf95d1b45999b18353e4',
+      // After migrating to Docusaurus v4, replace `indexName` with `indices`.
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       indexName: 'zimic',
       contextualSearch: true,
+      // After migrating to Docusaurus v4, replace `searchParameters` with `indices`.
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       searchParameters: {},
       searchPagePath: 'search',
       insights: false,

@@ -11,6 +11,11 @@ export async function axiosAsFetch(request: Request, options: { adapter?: 'fetch
       headers: convertHeadersToObject(request.headers),
       data: requestCanHaveBody(request) ? await request.text() : undefined,
       adapter: options.adapter,
+      // axios caches its fetch adapter with the `Request` global from when the adapter was built. If that happens while
+      // MSW is patching the globals, the cached `Request` keeps calling MSW's raw header recording after MSW restores
+      // `Headers`, which throws `inferRawHeaders(...) is not iterable`. Passing the current `Request` makes axios use
+      // an adapter matching it. TODO: Remove when MSW is removed (https://github.com/zimicjs/zimic/issues/1375).
+      env: { Request: globalThis.Request },
     });
 
     const stringifiedResponseData = axiosResponse.status === 204 ? null : JSON.stringify(axiosResponse.data);
