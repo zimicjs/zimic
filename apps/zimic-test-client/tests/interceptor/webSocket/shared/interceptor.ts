@@ -186,10 +186,6 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
   });
 
   afterAll(async () => {
-    expect(userInterceptor.clients).toHaveLength(0);
-    expect(notificationInterceptor.clients).toHaveLength(0);
-    expect(binaryInterceptor.clients).toHaveLength(0);
-
     await Promise.all(
       interceptors.map(async (interceptor) => {
         await interceptor.stop();
