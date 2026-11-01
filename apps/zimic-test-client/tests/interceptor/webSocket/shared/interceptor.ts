@@ -688,6 +688,35 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
     });
   });
 
+  describe('Subprotocols', () => {
+    it('should support messages from sockets connected with a subprotocol', async () => {
+      const userId = crypto.randomUUID();
+      const response: UserWebSocketMessage<'user:delete:success'> = {
+        type: 'user:delete:success',
+        data: { id: userId },
+      };
+      const deleteHandler = await userInterceptor
+        .message()
+        .with({ type: 'user:delete', data: { id: userId } })
+        .respond(response)
+        .times(1);
+
+      const socket = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL, 'graphql-transport-ws');
+
+      try {
+        expect(socket.protocol).toBe('graphql-transport-ws');
+
+        await expect(
+          sendAndWaitForResponse(socket, { type: 'user:delete', data: { id: userId } }, 'user:delete:success'),
+        ).resolves.toEqual(response);
+
+        expect(deleteHandler.messages).toHaveLength(1);
+      } finally {
+        await closeWebSocketClient(socket);
+      }
+    });
+  });
+
   describe('Types', () => {
     it('should narrow handler messages from installed schema restrictions', async () => {
       const creatorClient = userInterceptor.clients[0];
