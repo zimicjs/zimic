@@ -717,6 +717,36 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
     });
   });
 
+  describe('Connection URLs', () => {
+    it('should support responding based on the path and search params of the connection URL', async () => {
+      const roomURL = `${userInterceptor.baseURL}/rooms/1?token=${crypto.randomUUID()}`;
+
+      const deleteHandler = await userInterceptor
+        .message()
+        .with({ type: 'user:delete' })
+        .respond((_message, { sender }) => ({ type: 'user:delete:success', data: { id: sender.url } }))
+        .times(1);
+
+      const socket = await openSocket<UserWebSocketSchema>(roomURL);
+
+      try {
+        await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length + 1));
+        expect(userInterceptor.clients[userSockets.length].url).toBe(roomURL);
+
+        const message: UserWebSocketMessage<'user:delete'> = { type: 'user:delete', data: { id: crypto.randomUUID() } };
+
+        await expect(sendAndWaitForResponse(socket, message, 'user:delete:success')).resolves.toEqual({
+          type: 'user:delete:success',
+          data: { id: roomURL },
+        });
+
+        expect(deleteHandler.messages).toHaveLength(1);
+      } finally {
+        await closeWebSocketClient(socket);
+      }
+    });
+  });
+
   describe('Types', () => {
     it('should narrow handler messages from installed schema restrictions', async () => {
       const creatorClient = userInterceptor.clients[0];
