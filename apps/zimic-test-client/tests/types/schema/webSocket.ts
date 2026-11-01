@@ -1,5 +1,5 @@
 import { JSONSerialized } from '@zimic/http';
-import { WebSocketSchema } from '@zimic/ws';
+import { JSONStringified, WebSocketSchema } from '@zimic/ws';
 
 import {
   ConflictError,
@@ -97,8 +97,25 @@ export type NotificationWebSocketMessage<
 
 export type BinaryWebSocketSchema = WebSocketSchema<BufferSource | Blob>;
 
+interface EngineIOOpenPacketData {
+  sid: string;
+  upgrades: string[];
+  pingInterval: number;
+  pingTimeout: number;
+  maxPayload: number;
+}
+
+interface SocketIOConnectPacketData {
+  sid: string;
+}
+
 // socket.io frames start with an Engine.IO packet type, `0` (open) or `4` (message), followed for messages by a
-// socket.io packet type: `0` (connect), `1` (disconnect), or `2` (event).
+// socket.io packet type: `0` (connect), `1` (disconnect), or `2` (event). Clients without auth send `40` without data.
 export type SocketIOWebSocketSchema = WebSocketSchema<
-  `0${string}` | `40${string}` | '41' | `42["user:delete",${string}]` | `42["user:delete:success",${string}]`
+  | `0${JSONStringified<EngineIOOpenPacketData>}`
+  | '40'
+  | `40${JSONStringified<SocketIOConnectPacketData>}`
+  | '41'
+  | `42["user:delete",${JSONStringified<UserWebSocketMessage<'user:delete'>['data']>}]`
+  | `42["user:delete:success",${JSONStringified<UserWebSocketMessage<'user:delete:success'>['data']>}]`
 >;

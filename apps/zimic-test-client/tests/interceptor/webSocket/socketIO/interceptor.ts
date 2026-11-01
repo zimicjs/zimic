@@ -5,10 +5,12 @@ import {
   WebSocketInterceptorType,
 } from '@zimic/interceptor/experimental/ws';
 import { waitFor } from '@zimic/utils/time';
+import { JSONStringified } from '@zimic/ws';
 import { io, ManagerOptions, Socket, WebSocket } from 'socket.io-client';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { ZIMIC_SERVER_PORT } from '@tests/constants';
+import { User } from '@tests/types/schema/entities';
 import { SocketIOWebSocketSchema } from '@tests/types/schema/webSocket';
 
 const ENGINE_IO_OPEN_PACKET = `0${JSON.stringify({
@@ -143,6 +145,14 @@ export function declareSocketIOInterceptorTests(options: { platform: WebSocketIn
           .respond(`42["user:delete:success",${JSON.stringify({ id: userId })}]` as const)
           .times(1);
 
+        expectTypeOf(
+          `42["user:delete",${JSON.stringify({ id: userId })}]` as const,
+        ).toExtend<SocketIOWebSocketSchema>();
+        expectTypeOf(
+          `42["user:delete",${JSON.stringify({ userId })}]` as const,
+        ).not.toExtend<SocketIOWebSocketSchema>();
+        expectTypeOf(`42["user:delete",{"id":"${userId}"}]` as const).not.toExtend<SocketIOWebSocketSchema>();
+
         const socket = connectSocket(interceptor.baseURL, transports);
         sockets.push(socket);
         await waitForConnection(socket);
@@ -157,7 +167,7 @@ export function declareSocketIOInterceptorTests(options: { platform: WebSocketIn
 
         expect(deleteHandler.messages).toHaveLength(1);
         expectTypeOf(deleteHandler.messages[0].data).toEqualTypeOf<
-          Extract<SocketIOWebSocketSchema, `42["user:delete",${string}]`>
+          Extract<SocketIOWebSocketSchema, `42["user:delete",${JSONStringified<{ id: User['id'] }>}]`>
         >();
         expect(deleteHandler.messages[0].data).toBe(`42["user:delete",${JSON.stringify({ id: userId })}]`);
         expect(deleteHandler.messages[0].sender).toBe(interceptor.clients[0]);
