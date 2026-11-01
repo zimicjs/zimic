@@ -882,9 +882,28 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
       }
     });
 
-    it.each(['single client', 'client array'] as const)(
-      'should target server notifications to a %s and preserve broadcasts',
-      async (target) => {
+    it.each<{
+      target: string;
+      selectRecipients: (
+        clients: readonly WebSocketInterceptorClient<NotificationWebSocketSchema>[],
+      ) =>
+        | WebSocketInterceptorClient<NotificationWebSocketSchema>
+        | readonly WebSocketInterceptorClient<NotificationWebSocketSchema>[];
+      expectedThirdSocketMessageTypes: NotificationWebSocketSchema['type'][];
+    }>([
+      {
+        target: 'single client',
+        selectRecipients: (clients) => clients[0],
+        expectedThirdSocketMessageTypes: ['notification:update:success'],
+      },
+      {
+        target: 'client array',
+        selectRecipients: (clients) => [clients[0], clients[2]] as const,
+        expectedThirdSocketMessageTypes: ['notification:create:success', 'notification:update:success'],
+      },
+    ])(
+      'should target server notifications to a $target and preserve broadcasts',
+      async ({ selectRecipients, expectedThirdSocketMessageTypes }) => {
         const thirdSocket = await openSocket<NotificationWebSocketSchema>(notificationInterceptor.baseURL);
         const sockets = [...notificationSockets, thirdSocket];
         const messageListeners = sockets.map(() =>
@@ -907,8 +926,7 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
           }
 
           const broadcastsPromise = Promise.all(sockets.map((socket) => waitForNotificationUpdate(socket)));
-          const [firstClient, , thirdClient] = notificationInterceptor.clients;
-          const recipients = target === 'single client' ? firstClient : ([firstClient, thirdClient] as const);
+          const recipients = selectRecipients(notificationInterceptor.clients);
 
           notificationInterceptor.server.send(JSON.stringify(message), { to: recipients });
           notificationInterceptor.server.send(JSON.stringify(broadcast));
@@ -916,8 +934,8 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
           expect(await broadcastsPromise).toEqual([broadcast, broadcast, broadcast]);
           expect(messageListeners[0].mock.calls.map(([event]) => JSON.parse(event.data))).toEqual([message, broadcast]);
           expect(messageListeners[1].mock.calls.map(([event]) => JSON.parse(event.data))).toEqual([broadcast]);
-          expect(messageListeners[2].mock.calls.map(([event]) => JSON.parse(event.data))).toEqual(
-            target === 'single client' ? [broadcast] : [message, broadcast],
+          expect(messageListeners[2].mock.calls.map(([event]) => JSON.parse(event.data).type)).toEqual(
+            expectedThirdSocketMessageTypes,
           );
 
           expectNoSavedServerSentNotificationMessages();
