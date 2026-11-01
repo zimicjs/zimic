@@ -1,5 +1,6 @@
 import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
 import { waitFor } from '@zimic/utils/time';
+import { JSONStringified } from '@zimic/utils/types';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import NodeWebSocket, { type RawData } from 'ws';
 
@@ -15,7 +16,7 @@ describe("ws client (Node.js, type 'remote')", () => {
     messageSaving: { enabled: true },
   });
 
-  function waitForWsOpen(socket: NodeWebSocket) {
+  function waitForNodeWebSocketOpen(socket: NodeWebSocket) {
     return new Promise<void>((resolve, reject) => {
       socket.once('open', resolve);
       socket.once('error', reject);
@@ -23,7 +24,7 @@ describe("ws client (Node.js, type 'remote')", () => {
     });
   }
 
-  function closeWs(socket: NodeWebSocket) {
+  function closeNodeWebSocket(socket: NodeWebSocket) {
     return new Promise<void>((resolve, reject) => {
       socket.once('close', () => resolve());
       socket.once('error', reject);
@@ -32,7 +33,7 @@ describe("ws client (Node.js, type 'remote')", () => {
     });
   }
 
-  function waitForWsUserCreationResponse(socket: NodeWebSocket) {
+  function waitForNodeWebSocketUserCreationResponse(socket: NodeWebSocket) {
     return new Promise<UserWebSocketMessage<'user:create:success'>>((resolve) => {
       function messageListener(data: RawData) {
         const dataBuffer = Array.isArray(data)
@@ -40,7 +41,8 @@ describe("ws client (Node.js, type 'remote')", () => {
           : data instanceof ArrayBuffer
             ? Buffer.from(data)
             : data;
-        const message = JSON.parse(dataBuffer.toString()) as UserWebSocketMessage;
+
+        const message = JSON.parse(dataBuffer.toString() as JSONStringified<UserWebSocketSchema>);
 
         if (message.type === 'user:create:success') {
           socket.off('message', messageListener);
@@ -54,6 +56,7 @@ describe("ws client (Node.js, type 'remote')", () => {
 
   beforeAll(async () => {
     await interceptor.start();
+
     expect(interceptor.isRunning).toBe(true);
     expect(interceptor.platform).toBe('node');
   });
@@ -69,20 +72,19 @@ describe("ws client (Node.js, type 'remote')", () => {
 
   afterAll(async () => {
     await interceptor.stop();
+
     expect(interceptor.isRunning).toBe(false);
   });
 
   it('should support handling and responding to user creation messages', async () => {
-    const creationInput = {
-      name: 'Name',
-      email: 'email@email.com',
-      password: crypto.randomUUID(),
-      birthDate: new Date().toISOString(),
-    };
-
     const requestMessage: UserWebSocketMessage<'user:create'> = {
       type: 'user:create',
-      data: creationInput,
+      data: {
+        name: 'Name',
+        email: 'email@email.com',
+        password: crypto.randomUUID(),
+        birthDate: new Date().toISOString(),
+      },
     };
 
     const creationHandler = await interceptor
@@ -102,14 +104,14 @@ describe("ws client (Node.js, type 'remote')", () => {
     const socket = new NodeWebSocket(interceptor.baseURL);
 
     try {
-      await waitForWsOpen(socket);
+      await waitForNodeWebSocketOpen(socket);
 
       await waitFor(() => {
         expect(interceptor.clients).toHaveLength(1);
       });
 
       for (let index = 0; index < 2; index++) {
-        const responsePromise = waitForWsUserCreationResponse(socket);
+        const responsePromise = waitForNodeWebSocketUserCreationResponse(socket);
 
         socket.send(JSON.stringify(requestMessage));
 
@@ -117,9 +119,9 @@ describe("ws client (Node.js, type 'remote')", () => {
         expect(response).toMatchObject({
           type: 'user:create:success',
           data: {
-            name: creationInput.name,
-            email: creationInput.email,
-            birthDate: creationInput.birthDate,
+            name: requestMessage.data.name,
+            email: requestMessage.data.email,
+            birthDate: requestMessage.data.birthDate,
           },
         });
       }
@@ -128,7 +130,7 @@ describe("ws client (Node.js, type 'remote')", () => {
       expect(creationHandler.messages[0].data).toEqual(requestMessage);
       expect(creationHandler.messages[1].data).toEqual(requestMessage);
     } finally {
-      await closeWs(socket);
+      await closeNodeWebSocket(socket);
     }
   });
 });
