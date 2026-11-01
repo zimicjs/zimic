@@ -1489,6 +1489,134 @@ describe('Interceptor server', () => {
         });
       });
 
+      it('should close client connections only when requested by the worker owning them', async () => {
+        server = createInternalInterceptorServer();
+        await server.start();
+
+        const baseURL = `ws://${server.hostname}:${server.port}/chat`;
+
+        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+          url: `ws://${server.hostname}:${server.port}`,
+        });
+        const otherWorker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+          url: `ws://${server.hostname}:${server.port}`,
+        });
+
+        const connectionPromise = createPromiseWithResolvers<{ clientId: string }>();
+
+        worker.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => {
+          connectionPromise.resolve(data);
+          return { acceptedInterceptorIds: data.interceptorIds };
+        });
+
+        const client = new WebSocketClient<ChatMessage>(baseURL);
+
+        try {
+          for (const workerClient of [worker, otherWorker]) {
+            await workerClient.start({
+              parameters: {
+                [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+                [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
+              },
+              waitForAuthentication: true,
+            });
+          }
+
+          await worker.request('interceptors/ws/workers/reset', {
+            interceptors: [{ id: crypto.randomUUID(), baseURL }],
+          });
+
+          const receivedMessages = collectWebSocketClientMessages(client);
+          const closeEventPromise = waitForWebSocketClientClose(client);
+
+          await client.open();
+          const { clientId } = await connectionPromise;
+
+          otherWorker.send('interceptors/ws/clients/disconnect', { clientId, code: 4000, reason: 'Other worker.' });
+
+          // A reply from the same worker socket guarantees the server already processed the previous disconnection.
+          await otherWorker.request('interceptors/ws/workers/reset', { interceptors: [] });
+
+          worker.send('interceptors/ws/messages/send', { clientId, data: { type: 'text', data: 'still open' } });
+
+          await waitFor(() => {
+            expect(receivedMessages).toEqual(['still open']);
+          });
+          expect(client.readyState).toBe(WebSocketClient.OPEN);
+
+          worker.send('interceptors/ws/clients/disconnect', { clientId, code: 4001, reason: 'Owner worker.' });
+
+          const closeEvent = await closeEventPromise;
+          expect(closeEvent.code).toBe(4001);
+          expect(closeEvent.reason).toBe('Owner worker.');
+        } finally {
+          await client.close();
+          await otherWorker.stop();
+          await worker.stop();
+        }
+      });
+
+      it('should reject malformed client disconnections and keep the client connections open', async () => {
+        server = createInternalInterceptorServer();
+        await server.start();
+
+        const baseURL = `ws://${server.hostname}:${server.port}/chat`;
+
+        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+          url: `ws://${server.hostname}:${server.port}`,
+        });
+
+        const connectionPromise = createPromiseWithResolvers<{ clientId: string }>();
+
+        worker.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => {
+          connectionPromise.resolve(data);
+          return { acceptedInterceptorIds: data.interceptorIds };
+        });
+
+        const client = new WebSocketClient<ChatMessage>(baseURL);
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          try {
+            await worker.start({
+              parameters: {
+                [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+                [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
+              },
+              waitForAuthentication: true,
+            });
+
+            await worker.request('interceptors/ws/workers/reset', {
+              interceptors: [{ id: crypto.randomUUID(), baseURL }],
+            });
+
+            const receivedMessages = collectWebSocketClientMessages(client);
+
+            await client.open();
+            const { clientId } = await connectionPromise;
+
+            worker.send('interceptors/ws/clients/disconnect', { clientId: 1 as never });
+            worker.send('interceptors/ws/clients/disconnect', { clientId, code: 1001 });
+            worker.send('interceptors/ws/clients/disconnect', { clientId, code: '4000' as never });
+            // Workers round codes before sending them, so the server accepts only integers.
+            worker.send('interceptors/ws/clients/disconnect', { clientId, code: 3000.5 });
+            // 62 two-byte characters, which exceed the 123-byte limit of close reasons.
+            worker.send('interceptors/ws/clients/disconnect', { clientId, code: 4000, reason: 'é'.repeat(62) });
+
+            worker.send('interceptors/ws/messages/send', { clientId, data: { type: 'text', data: 'still open' } });
+
+            await waitFor(() => {
+              expect(receivedMessages).toEqual(['still open']);
+            });
+            expect(client.readyState).toBe(WebSocketClient.OPEN);
+            expect(console.error).toHaveBeenCalledTimes(5);
+            expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+          } finally {
+            await client.close();
+            await worker.stop();
+          }
+        });
+      });
+
       it('should deliver arbitrary application messages sent to clients', async () => {
         server = createInternalInterceptorServer();
         await server.start();

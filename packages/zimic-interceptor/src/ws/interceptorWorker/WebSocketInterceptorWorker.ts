@@ -240,6 +240,12 @@ abstract class WebSocketInterceptorWorker {
     data: WebSocketMessageData<Schema>,
   ): PossiblePromise<void>;
 
+  abstract closeClient<Schema extends WebSocketSchema>(
+    client: InternalWebSocketInterceptorClient<Schema>,
+    code?: number,
+    reason?: string,
+  ): PossiblePromise<void>;
+
   abstract clearHandlers<Schema extends WebSocketSchema>(options?: {
     interceptor?: AnyWebSocketInterceptorImplementation<Schema>;
     preserveInterceptorRegistration?: boolean;

@@ -74,6 +74,22 @@ export interface WebSocketInterceptorClient<Schema extends WebSocketSchema> {
 
   /** Sends a server message to this client. */
   send: (data: WebSocketMessageData<Schema>) => void;
+
+  /**
+   * Closes the connection of this client, as if the server closed it, and removes the client from every interceptor
+   * holding it. The arguments follow the native
+   * {@link https://developer.mozilla.org/docs/Web/API/WebSocket/close `WebSocket.close()`}: if `code` is omitted, the
+   * client receives the close code 1005 and no reason. Closing a client that is already closed, or no longer held by a
+   * running interceptor, does nothing.
+   *
+   * @param code The close code, either 1000 or between 3000 and 4999. As in `WebSocket.close()`, it is clamped to 0
+   *   through 65535 and rounded to the nearest integer, with ties to even, before being checked.
+   * @param reason The close reason, up to 123 bytes when encoded as UTF-8. Sent only if `code` is also provided.
+   * @throws {DOMException} An `InvalidAccessError` if `code`, after clamping and rounding, is not 1000 or between 3000
+   *   and 4999.
+   * @throws {DOMException} A `SyntaxError` if `reason` is longer than 123 bytes when encoded as UTF-8.
+   */
+  close: (code?: number, reason?: string) => void;
 }
 
 /** Options for sending a message with `interceptor.server.send()`. */

@@ -4,6 +4,7 @@ export type WebSocketControlMessage = (typeof WEB_SOCKET_CONTROL_MESSAGES)[numbe
 export const WEB_SOCKET_CLOSE_CODES = Object.freeze({
   DEFAULT: 1000,
   PROTOCOL_ERROR: 1002,
+  NO_STATUS_RECEIVED: 1005,
   POLICY_VIOLATION: 1008,
   INTERNAL_ERROR: 1011,
 } as const);

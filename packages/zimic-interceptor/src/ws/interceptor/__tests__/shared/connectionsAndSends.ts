@@ -12,6 +12,7 @@ import {
   createBinaryMessage,
   readBytes,
   usingWebSocketClient,
+  waitForWebSocketClientClose,
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
 
@@ -510,6 +511,287 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
           });
 
           expect(client.readyState).toBe(WebSocketClient.OPEN);
+        });
+      });
+    });
+  });
+
+  it('should close clients with a code and reason', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const closeEventPromise = waitForWebSocketClientClose(client);
+        interceptor.clients[0].close(4000, 'Closed by the interceptor.');
+
+        const closeEvent = await closeEventPromise;
+        expect(closeEvent.code).toBe(4000);
+        expect(closeEvent.reason).toBe('Closed by the interceptor.');
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(0);
+        });
+      });
+    });
+  });
+
+  it('should close clients with no status code if no code is provided', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const closeEventPromise = waitForWebSocketClientClose(client);
+        interceptor.clients[0].close();
+
+        const closeEvent = await closeEventPromise;
+        expect(closeEvent.code).toBe(1005);
+        expect(closeEvent.reason).toBe('');
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(0);
+        });
+      });
+    });
+  });
+
+  it('should deliver earlier server messages before closing clients', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<BinaryOrTextMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<BinaryOrTextMessage>(baseURL, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const messages = collectWebSocketClientMessages(client);
+        const closeEventPromise = waitForWebSocketClientClose(client);
+
+        interceptor.clients[0].send(new Blob([createBinaryMessage(0x00, 0xff)]));
+        interceptor.clients[0].close(1000);
+
+        const closeEvent = await closeEventPromise;
+        expect(closeEvent.code).toBe(1000);
+        expect(messages).toHaveLength(1);
+        expect(await readBytes(messages[0] as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
+      });
+    });
+  });
+
+  it('should remove closed clients from every interceptor holding them', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (firstInterceptor) => {
+      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (secondInterceptor) => {
+        await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+          await waitFor(() => {
+            expect(firstInterceptor.clients).toHaveLength(1);
+            expect(secondInterceptor.clients).toHaveLength(1);
+          });
+
+          const closeEventPromise = waitForWebSocketClientClose(client);
+          firstInterceptor.clients[0].close(1000);
+
+          expect((await closeEventPromise).code).toBe(1000);
+
+          await waitFor(() => {
+            expect(firstInterceptor.clients).toHaveLength(0);
+            expect(secondInterceptor.clients).toHaveLength(0);
+          });
+        });
+      });
+    });
+  });
+
+  it('should allow a connection listener to close its client immediately', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      const client = new WebSocketClient<ChatMessage>(baseURL);
+      const closeEventPromise = waitForWebSocketClientClose(client);
+
+      interceptor.once('connection', (connectedClient) => connectedClient.close(4000, 'Rejected.'));
+
+      try {
+        await client.open();
+
+        const closeEvent = await closeEventPromise;
+        expect(closeEvent.code).toBe(4000);
+        expect(closeEvent.reason).toBe('Rejected.');
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(0);
+        });
+      } finally {
+        await client.close();
+      }
+    });
+  });
+
+  it.each([
+    { code: 3000.5, expectedCode: 3000 },
+    { code: 3001.5, expectedCode: 3002 },
+    { code: 999.6, expectedCode: 1000 },
+    { code: 4999.4, expectedCode: 4999 },
+  ])('should close clients with code $code rounded to $expectedCode', async ({ code, expectedCode }) => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const closeEventPromise = waitForWebSocketClientClose(client);
+        interceptor.clients[0].close(code, 'Rounded.');
+
+        const closeEvent = await closeEventPromise;
+        expect(closeEvent.code).toBe(expectedCode);
+        expect(closeEvent.reason).toBe('Rounded.');
+      });
+    });
+  });
+
+  // Codes are clamped to 0 through 65535 and rounded with ties to even before being checked, so the last five codes
+  // become 999, 5000, 0, 0, and 65535.
+  it.each([999, 1001, 1005, 2999, 5000, 999.4, 4999.5, Number.NaN, -1, Number.POSITIVE_INFINITY])(
+    'should throw an error when closing clients with an invalid code (%s)',
+    async (code) => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+        await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(1);
+          });
+
+          expect(() => interceptor.clients[0].close(code)).toThrow(
+            expect.objectContaining({ name: 'InvalidAccessError', constructor: DOMException }),
+          );
+
+          expect(interceptor.clients).toHaveLength(1);
+          expect(client.readyState).toBe(WebSocketClient.OPEN);
+        });
+      });
+    },
+  );
+
+  it('should throw an error when closing clients with a reason longer than 123 bytes', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        // 62 two-byte characters, so the reason is short enough in characters but not in UTF-8 bytes.
+        const reason = 'é'.repeat(62);
+
+        expect(() => interceptor.clients[0].close(1000, reason)).toThrow(
+          expect.objectContaining({ name: 'SyntaxError', constructor: DOMException }),
+        );
+
+        expect(interceptor.clients).toHaveLength(1);
+        expect(client.readyState).toBe(WebSocketClient.OPEN);
+      });
+    });
+  });
+
+  it('should not affect other clients when closing a client already closed', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatMessage>(baseURL, async (closedClient) => {
+        await usingWebSocketClient<ChatMessage>(baseURL, async (openClient) => {
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(2);
+          });
+
+          const [closedClientHandle, openClientHandle] = interceptor.clients;
+
+          const closeEventPromise = waitForWebSocketClientClose(closedClient);
+          closedClientHandle.close(4000, 'First close.');
+          closedClientHandle.close(4001, 'Second close.');
+
+          const closeEvent = await closeEventPromise;
+          expect(closeEvent.code).toBe(4000);
+          expect(closeEvent.reason).toBe('First close.');
+
+          await waitFor(() => {
+            expect(interceptor.clients).toEqual([openClientHandle]);
+          });
+
+          closedClientHandle.close(4002, 'Third close.');
+
+          const messages = collectWebSocketClientMessages(openClient);
+          const marker = JSON.stringify({ type: 'server', text: 'marker' } satisfies ChatMessage);
+          interceptor.server.send(marker);
+
+          await waitFor(() => {
+            expect(messages).toEqual([marker]);
+          });
+          expect(openClient.readyState).toBe(WebSocketClient.OPEN);
+          expect(interceptor.clients).toEqual([openClientHandle]);
+        });
+      });
+    });
+  });
+
+  it.each([
+    {
+      action: 'clearing',
+      release: async (interceptor: WebSocketInterceptor<ChatMessage>) => {
+        await interceptor.clear();
+      },
+    },
+    {
+      action: 'restarting',
+      release: async (interceptor: WebSocketInterceptor<ChatMessage>) => {
+        await interceptor.stop();
+        await interceptor.start();
+      },
+    },
+  ])('should not affect other clients when closing a client after $action the interceptor', async ({ release }) => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatMessage>(baseURL, async (releasedClient) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const releasedClientHandle = interceptor.clients[0];
+
+        const closeEventPromise = waitForWebSocketClientClose(releasedClient);
+        await release(interceptor);
+        await closeEventPromise;
+
+        await usingWebSocketClient<ChatMessage>(baseURL, async (openClient) => {
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(1);
+          });
+
+          const openClientHandle = interceptor.clients[0];
+
+          releasedClientHandle.close(4000, 'Released close.');
+
+          const messages = collectWebSocketClientMessages(openClient);
+          const marker = JSON.stringify({ type: 'server', text: 'marker' } satisfies ChatMessage);
+          interceptor.server.send(marker);
+
+          await waitFor(() => {
+            expect(messages).toEqual([marker]);
+          });
+          expect(openClient.readyState).toBe(WebSocketClient.OPEN);
+          expect(interceptor.clients).toEqual([openClientHandle]);
         });
       });
     });

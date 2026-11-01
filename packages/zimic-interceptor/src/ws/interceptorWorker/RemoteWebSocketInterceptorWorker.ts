@@ -1,3 +1,4 @@
+import type { PossiblePromise } from '@zimic/utils/types';
 import type { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
 import {
@@ -73,7 +74,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       });
 
       this.webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', this.connectClient);
-      this.webSocketClient.onChannel('event', 'interceptors/ws/clients/close', this.closeClient);
+      this.webSocketClient.onChannel('event', 'interceptors/ws/clients/close', this.removeClosedClient);
       this.webSocketClient.onChannel('event', 'interceptors/ws/messages/handle', this.handleMessage);
 
       this.platform = this.readPlatform();
@@ -97,7 +98,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   async stop() {
     await super.sharedStop(async () => {
       this.webSocketClient.offChannel('event', 'interceptors/ws/clients/connect', this.connectClient);
-      this.webSocketClient.offChannel('event', 'interceptors/ws/clients/close', this.closeClient);
+      this.webSocketClient.offChannel('event', 'interceptors/ws/clients/close', this.removeClosedClient);
       this.webSocketClient.offChannel('event', 'interceptors/ws/messages/handle', this.handleMessage);
 
       // Stopped interceptors already reset their registrations, so a reset is only needed for ones still registered.
@@ -157,18 +158,44 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
   }
 
-  // Serializing a Blob is asynchronous, so sends are chained to reach the server in call order, as in local mode.
-  // Failures are logged because the public send methods return nothing to reject, as native `WebSocket.send`.
+  async closeClient<Schema extends WebSocketSchema>(
+    client: InternalWebSocketInterceptorClient<Schema>,
+    code?: number,
+    reason?: string,
+  ) {
+    const clientEntry = this.findClientEntry(client);
+
+    if (clientEntry) {
+      // Queued after earlier sends, so the client receives them before the connection closes, as in local mode.
+      await this.enqueueServerEvent(() => {
+        this.webSocketClient.send('interceptors/ws/clients/disconnect', {
+          clientId: clientEntry.clientId,
+          code,
+          reason,
+        });
+      });
+    }
+  }
+
   private enqueueSend<Schema extends WebSocketSchema>(
     target: { clientId: string } | { interceptorId: string },
     data: WebSocketMessageData<Schema>,
   ) {
+    return this.enqueueServerEvent(async () => {
+      this.webSocketClient.send('interceptors/ws/messages/send', {
+        ...target,
+        data: await serializeWebSocketMessageDataForTransport(data),
+      });
+    });
+  }
+
+  // Serializing a Blob is asynchronous, so sends and closes are chained to reach the server in call order, as in local
+  // mode. Failures are logged because the public send and close methods return nothing to reject, as native
+  // `WebSocket.send` and `WebSocket.close`.
+  private enqueueServerEvent(sendEvent: () => PossiblePromise<void>) {
     this.sendQueue = this.sendQueue.then(async () => {
       try {
-        this.webSocketClient.send('interceptors/ws/messages/send', {
-          ...target,
-          data: await serializeWebSocketMessageDataForTransport(data),
-        });
+        await sendEvent();
       } catch (error) {
         console.error(error);
       }
@@ -195,9 +222,15 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
         continue;
       }
 
-      const client = createWebSocketInterceptorClient(connection.url, async (data) => {
-        await this.sendToClient(client, data);
-      });
+      const client = createWebSocketInterceptorClient(
+        connection.url,
+        async (data) => {
+          await this.sendToClient(client, data);
+        },
+        async (code, reason) => {
+          await this.closeClient(client, code, reason);
+        },
+      );
 
       // The registry is intentionally schema-erased because one remote worker owns interceptors for any schema.
       registeredInterceptor.clients.set(connection.clientId, client);
@@ -215,7 +248,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     return { acceptedInterceptorIds: holders.map(({ registeredInterceptor }) => registeredInterceptor.id) };
   };
 
-  private closeClient = ({
+  private removeClosedClient = ({
     data: connection,
   }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/clients/close'>) => {
     // A connection shared by several interceptors has one client in each of them.

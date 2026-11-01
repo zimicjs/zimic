@@ -26,6 +26,7 @@ const importMSWBrowser = createCachedDynamicImport(() => import('msw/browser'));
 
 interface LocalWebSocketClientConnection {
   url: URL;
+  socket: Pick<WebSocket, 'readyState' | 'CONNECTING' | 'addEventListener'>;
   send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => void;
   close: (code?: number, reason?: string) => void;
   addEventListener: ((
@@ -192,7 +193,9 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       interceptor,
       link,
       mswHandler: link.addEventListener('connection', ({ client, server }) => {
-        this.routeConnection(client, server);
+        // MSW types connections by their protocol, but they are `WebSocketClientConnection` instances, which expose
+        // their socket.
+        this.routeConnection(client as typeof client & Pick<LocalWebSocketClientConnection, 'socket'>, server);
       }),
       clients: new Map(),
     };
@@ -222,6 +225,33 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
   }
 
+  // The close listener of the connection removes the client from every interceptor holding it.
+  closeClient<Schema extends WebSocketSchema>(
+    client: InternalWebSocketInterceptorClient<Schema>,
+    code?: number,
+    reason?: string,
+  ) {
+    const connection = this.findRegisteredInterceptorByClient(client)?.clients.get(client)?.connection;
+
+    if (!connection) {
+      return;
+    }
+
+    // MSW closes with 1000 when no code is given, unlike a server sending a close frame without a code.
+    const closeCode = code ?? WEB_SOCKET_CLOSE_CODES.NO_STATUS_RECEIVED;
+
+    // MSW delivers server messages in a later microtask and drops them once the connection is closing, and it never
+    // opens a connection closed while opening. A real server opens the connection and delivers earlier messages before
+    // closing it, so the close waits for both.
+    if (connection.socket.readyState === connection.socket.CONNECTING) {
+      connection.socket.addEventListener('open', () => queueMicrotask(() => connection.close(closeCode, reason)), {
+        once: true,
+      });
+    } else {
+      queueMicrotask(() => connection.close(closeCode, reason));
+    }
+  }
+
   private routeConnection(connection: LocalWebSocketClientConnection, server: { connect: () => void }) {
     // Every link that received the connection runs this, but the connection must be routed only once.
     if (this.routedConnections.has(connection)) {
@@ -244,9 +274,15 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       connection,
       holders: holderInterceptors.map((registeredInterceptor) => {
         // Sending through the holder lookup makes the client stop sending once its interceptor lets the connection go.
-        const client = createWebSocketInterceptorClient<WebSocketSchema>(connection.url.href, (data) => {
-          this.sendToClient(client, data);
-        });
+        const client = createWebSocketInterceptorClient<WebSocketSchema>(
+          connection.url.href,
+          (data) => {
+            this.sendToClient(client, data);
+          },
+          (code, reason) => {
+            this.closeClient(client, code, reason);
+          },
+        );
         return { registeredInterceptor, client };
       }),
       messageListener: (event) => {
