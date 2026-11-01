@@ -167,6 +167,7 @@ import {
   WebSocketTimeoutError,
   WebSocketOpenTimeoutError,
   WebSocketCloseTimeoutError,
+  type JSONStringified as WebSocketJSONStringified,
 } from '@zimic/ws';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
@@ -355,6 +356,8 @@ describe('Exports', () => {
 
       expectTypeOf<WebSocketCloseTimeoutError>().not.toBeAny();
       expect(typeof WebSocketCloseTimeoutError).toBe('function');
+
+      expectTypeOf<WebSocketJSONStringified<never>>().not.toBeAny();
     });
   });
 
