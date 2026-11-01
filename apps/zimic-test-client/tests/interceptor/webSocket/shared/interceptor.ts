@@ -75,7 +75,7 @@ async function sendAndWaitForResponse<ResponseMessageType extends UserWebSocketS
 }
 
 async function waitForBinaryMessage(socket: ClientTestSocket<BinaryWebSocketSchema>) {
-  return new Promise<ArrayBuffer>((resolve) => {
+  return new Promise<BinaryWebSocketSchema>((resolve) => {
     function messageListener(event: ClientTestSocketMessageEvent<BinaryWebSocketSchema>) {
       socket.removeEventListener('message', messageListener);
       resolve(event.data);
@@ -85,8 +85,10 @@ async function waitForBinaryMessage(socket: ClientTestSocket<BinaryWebSocketSche
   });
 }
 
-function readBytes(data: ArrayBuffer) {
-  return Array.from(new Uint8Array(data));
+// Node `Buffer`s, received by `ws` sockets with their default binary type, are `Uint8Array`s.
+async function readBytes(data: BinaryWebSocketSchema) {
+  const bytes = data instanceof Blob ? new Uint8Array(await data.arrayBuffer()) : new Uint8Array(data);
+  return Array.from(bytes);
 }
 
 export function declareWebSocketInterceptorTests({ platform, type, openSocket }: ClientTestOptionsByWorkerType) {
@@ -157,7 +159,6 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
     ];
 
     binarySocket = await openSocket<BinaryWebSocketSchema>(binaryInterceptor.baseURL);
-    binarySocket.binaryType = 'arraybuffer';
 
     await waitFor(() => {
       expect(userInterceptor.clients).toHaveLength(userSockets.length);
@@ -922,33 +923,39 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
   });
 
   describe('Binary messages', () => {
-    it('should support responding to binary messages', async () => {
-      const message = new Uint8Array([0x00, 0xff]).buffer;
-      const binaryClient = binaryInterceptor.clients[0];
+    const receivedBinaryTypes = [{ binaryType: undefined }, { binaryType: 'arraybuffer' }] as const;
 
-      const binaryHandler = await binaryInterceptor
-        .message()
-        .from(binaryClient)
-        .with(message)
-        .respond(message)
-        .times(2);
+    const sentPayloads = [
+      { payloadType: 'ArrayBuffer', createPayload: () => new Uint8Array([0x00, 0xff]).buffer },
+      { payloadType: 'Uint8Array', createPayload: () => new Uint8Array([0x00, 0xff]) },
+      { payloadType: 'Blob', createPayload: () => new Blob([new Uint8Array([0x00, 0xff])]) },
+    ];
 
-      for (let index = 0; index < 2; index++) {
+    it.each(
+      receivedBinaryTypes.flatMap(({ binaryType }) =>
+        sentPayloads.map((payload) => ({ ...payload, binaryType, binaryTypeName: binaryType ?? 'client default' })),
+      ),
+    )(
+      'should support responding to $payloadType binary messages received with the $binaryTypeName binary type',
+      async ({ binaryType, createPayload }) => {
+        binarySocket.binaryType = binaryType ?? binarySocket.binaryType;
+
+        const binaryHandler = await binaryInterceptor
+          .message()
+          .with(new Uint8Array([0x00, 0xff]).buffer)
+          .respond(new Uint8Array([0xff, 0x00]).buffer)
+          .times(1);
+
         const responsePromise = waitForBinaryMessage(binarySocket);
+        binarySocket.send(createPayload());
 
-        binarySocket.send(message);
+        expect(await readBytes(await responsePromise)).toEqual([0xff, 0x00]);
 
-        const response = await responsePromise;
-        expect(readBytes(response)).toEqual([0x00, 0xff]);
-      }
-
-      expect(binaryHandler.messages).toHaveLength(2);
-      expect(readBytes(binaryHandler.messages[0].data)).toEqual([0x00, 0xff]);
-      expect(binaryHandler.messages[0].sender).toBe(binaryClient);
-      expect(binaryHandler.messages[0].receiver).toBe(binaryInterceptor.server);
-      expect(readBytes(binaryHandler.messages[1].data)).toEqual([0x00, 0xff]);
-      expect(binaryHandler.messages[1].sender).toBe(binaryClient);
-      expect(binaryHandler.messages[1].receiver).toBe(binaryInterceptor.server);
-    });
+        expect(binaryHandler.messages).toHaveLength(1);
+        expect(await readBytes(binaryHandler.messages[0].data)).toEqual([0x00, 0xff]);
+        expect(binaryHandler.messages[0].sender).toBe(binaryInterceptor.clients[0]);
+        expect(binaryHandler.messages[0].receiver).toBe(binaryInterceptor.server);
+      },
+    );
   });
 }

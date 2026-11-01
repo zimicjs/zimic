@@ -95,4 +95,4 @@ export type NotificationWebSocketMessage<
   Type extends NotificationWebSocketSchema['type'] = NotificationWebSocketSchema['type'],
 > = Extract<NotificationWebSocketSchema, { type: Type }>;
 
-export type BinaryWebSocketSchema = WebSocketSchema<ArrayBuffer>;
+export type BinaryWebSocketSchema = WebSocketSchema<ArrayBuffer | Uint8Array<ArrayBuffer> | Blob>;
