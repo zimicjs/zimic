@@ -1,7 +1,11 @@
 import { describe } from 'vitest';
 
-import { declareNativeWebSocketClientTests } from '../shared/client';
+import { declareClientTests } from '../shared/client';
+import { openNativeWebSocket } from './utils';
 
 describe('Native WebSocket client (Browser)', () => {
-  declareNativeWebSocketClientTests({ platform: 'browser' });
+  declareClientTests({
+    platform: 'browser',
+    openSocket: openNativeWebSocket,
+  });
 });

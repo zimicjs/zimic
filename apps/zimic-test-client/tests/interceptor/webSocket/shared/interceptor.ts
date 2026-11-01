@@ -16,7 +16,7 @@ import {
   WebSocketInterceptorType,
 } from '@zimic/interceptor/experimental/ws';
 import { waitFor, waitForNot } from '@zimic/utils/time';
-import { WebSocketClient } from '@zimic/ws';
+import { closeWebSocketClient } from '@zimic/utils/ws';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { ZIMIC_SERVER_PORT } from '@tests/constants';
@@ -38,7 +38,7 @@ import {
 } from '@tests/types/schema/webSocket';
 import { serializeUser } from '@tests/utils/schema';
 
-import { ClientTestOptionsByWorkerType } from './client';
+import { ClientTestOptionsByWorkerType, ClientTestSocket, ClientTestSocketMessageEvent } from './client';
 
 function getUserBaseURL(type: WebSocketInterceptorType) {
   return type === 'local' ? 'ws://localhost:4000' : `ws://localhost:${ZIMIC_SERVER_PORT}/user-${crypto.randomUUID()}`;
@@ -57,9 +57,9 @@ function getBinaryBaseURL(type: WebSocketInterceptorType) {
 async function waitForResponseMessage<
   Schema extends UserWebSocketSchema | NotificationWebSocketSchema,
   ResponseMessageType extends Schema['type'],
->(socket: WebSocketClient<Schema>, responseMessageType: ResponseMessageType) {
+>(socket: ClientTestSocket<Schema>, responseMessageType: ResponseMessageType) {
   return new Promise<Extract<Schema, { type: ResponseMessageType }>>((resolve) => {
-    function messageListener(event: WebSocketClient.MessageEvent<Schema>) {
+    function messageListener(event: ClientTestSocketMessageEvent<Schema>) {
       const message = JSON.parse(event.data);
 
       if (message.type === responseMessageType) {
@@ -72,9 +72,9 @@ async function waitForResponseMessage<
   });
 }
 
-async function waitForBinaryMessage(socket: WebSocketClient<BinaryWebSocketSchema>) {
+async function waitForBinaryMessage(socket: ClientTestSocket<BinaryWebSocketSchema>) {
   return new Promise<ArrayBuffer>((resolve) => {
-    function messageListener(event: WebSocketClient.MessageEvent<BinaryWebSocketSchema>) {
+    function messageListener(event: ClientTestSocketMessageEvent<BinaryWebSocketSchema>) {
       socket.removeEventListener('message', messageListener);
       resolve(event.data);
     }
@@ -87,7 +87,7 @@ function readBytes(data: ArrayBuffer) {
   return Array.from(new Uint8Array(data));
 }
 
-export function declareWebSocketInterceptorTests({ platform, type }: ClientTestOptionsByWorkerType) {
+export function declareWebSocketInterceptorTests({ platform, type, openSocket }: ClientTestOptionsByWorkerType) {
   const userInterceptor = createWebSocketInterceptor<UserWebSocketSchema>({
     type,
     baseURL: getUserBaseURL(type),
@@ -108,20 +108,9 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
 
   const interceptors = [userInterceptor, notificationInterceptor, binaryInterceptor];
 
-  const userSockets = [
-    new WebSocketClient<UserWebSocketSchema>(userInterceptor.baseURL),
-    new WebSocketClient<UserWebSocketSchema>(userInterceptor.baseURL),
-  ];
-
-  const notificationSockets = [
-    new WebSocketClient<NotificationWebSocketSchema>(notificationInterceptor.baseURL),
-    new WebSocketClient<NotificationWebSocketSchema>(notificationInterceptor.baseURL),
-  ];
-
-  const binarySocket = new WebSocketClient<BinaryWebSocketSchema>(binaryInterceptor.baseURL);
-  binarySocket.binaryType = 'arraybuffer';
-
-  const sockets = [...userSockets, ...notificationSockets, binarySocket];
+  let userSockets: ClientTestSocket<UserWebSocketSchema>[] = [];
+  let notificationSockets: ClientTestSocket<NotificationWebSocketSchema>[] = [];
+  let binarySocket: ClientTestSocket<BinaryWebSocketSchema>;
 
   /* istanbul ignore next -- @preserve
    * This restriction only narrows the idle handler's message type. */
@@ -177,9 +166,18 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
     await Promise.resolve(notificationInterceptor.message().with(isNoNotificationMessage));
     await Promise.resolve(binaryInterceptor.message().with(isNoBinaryMessage));
 
-    for (const socket of sockets) {
-      await socket.open();
-    }
+    userSockets = [
+      await openSocket<UserWebSocketSchema>(userInterceptor.baseURL),
+      await openSocket<UserWebSocketSchema>(userInterceptor.baseURL),
+    ];
+
+    notificationSockets = [
+      await openSocket<NotificationWebSocketSchema>(notificationInterceptor.baseURL),
+      await openSocket<NotificationWebSocketSchema>(notificationInterceptor.baseURL),
+    ];
+
+    binarySocket = await openSocket<BinaryWebSocketSchema>(binaryInterceptor.baseURL);
+    binarySocket.binaryType = 'arraybuffer';
 
     await waitFor(() => {
       expect(userInterceptor.clients).toHaveLength(userSockets.length);
@@ -196,7 +194,8 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
         }),
       );
     } finally {
-      await Promise.all(sockets.map((socket) => socket.close()));
+      const sockets = [...userSockets, ...notificationSockets, binarySocket];
+      await Promise.all(sockets.map((socket) => closeWebSocketClient(socket)));
 
       await waitFor(() => {
         expect(userInterceptor.clients).toHaveLength(0);
@@ -221,15 +220,15 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
 
   describe('Connection listeners', () => {
     it('should notify a listener once per connection with the connected client', async () => {
-      await Promise.all(userSockets.map((socket) => socket.close()));
+      await Promise.all(userSockets.map((socket) => closeWebSocketClient(socket)));
       await waitFor(() => expect(userInterceptor.clients).toHaveLength(0));
 
       const listener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
       userInterceptor.on('connection', listener);
 
       try {
-        for (const [index, socket] of userSockets.entries()) {
-          await socket.open();
+        for (const index of userSockets.keys()) {
+          userSockets[index] = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
           await waitFor(() => expect(listener).toHaveBeenCalledTimes(index + 1));
           expect(listener).toHaveBeenNthCalledWith(index + 1, userInterceptor.clients[index]);
         }
@@ -254,7 +253,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
     });
 
     it('should stop notifying a connection listener after it is removed', async () => {
-      await Promise.all(userSockets.map((socket) => socket.close()));
+      await Promise.all(userSockets.map((socket) => closeWebSocketClient(socket)));
       await waitFor(() => expect(userInterceptor.clients).toHaveLength(0));
 
       const listener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
@@ -263,13 +262,13 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
       userInterceptor.on('connection', remainingListener);
 
       try {
-        await userSockets[0].open();
+        userSockets[0] = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
         await waitFor(() => expect(remainingListener).toHaveBeenCalledOnce());
         expect(listener).toHaveBeenCalledExactlyOnceWith(userInterceptor.clients[0]);
 
         userInterceptor.off('connection', listener);
 
-        await userSockets[1].open();
+        userSockets[1] = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
         await waitFor(() => expect(remainingListener).toHaveBeenCalledTimes(2));
         expect(listener).toHaveBeenCalledOnce();
         expect(remainingListener).toHaveBeenLastCalledWith(userInterceptor.clients[1]);
@@ -280,7 +279,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
     });
 
     it('should notify a one-time listener only for the first connection', async () => {
-      await Promise.all(userSockets.map((socket) => socket.close()));
+      await Promise.all(userSockets.map((socket) => closeWebSocketClient(socket)));
       await waitFor(() => expect(userInterceptor.clients).toHaveLength(0));
 
       const listener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
@@ -289,11 +288,11 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
       userInterceptor.on('connection', remainingListener);
 
       try {
-        await userSockets[0].open();
+        userSockets[0] = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
         await waitFor(() => expect(remainingListener).toHaveBeenCalledOnce());
         expect(listener).toHaveBeenCalledExactlyOnceWith(userInterceptor.clients[0]);
 
-        await userSockets[1].open();
+        userSockets[1] = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
         await waitFor(() => expect(remainingListener).toHaveBeenCalledTimes(2));
         expect(listener).toHaveBeenCalledOnce();
         expect(remainingListener).toHaveBeenLastCalledWith(userInterceptor.clients[1]);
@@ -896,11 +895,11 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
       }
     }
 
-    function waitForNotificationCreation(socket: WebSocketClient<NotificationWebSocketSchema>) {
+    function waitForNotificationCreation(socket: ClientTestSocket<NotificationWebSocketSchema>) {
       return waitForResponseMessage(socket, 'notification:create:success');
     }
 
-    function waitForNotificationUpdate(socket: WebSocketClient<NotificationWebSocketSchema>) {
+    function waitForNotificationUpdate(socket: ClientTestSocket<NotificationWebSocketSchema>) {
       return waitForResponseMessage(socket, 'notification:update:success');
     }
 
@@ -950,10 +949,10 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
     it.each(['single client', 'client array'] as const)(
       'should target server notifications to a %s and preserve broadcasts',
       async (target) => {
-        const thirdSocket = new WebSocketClient<NotificationWebSocketSchema>(notificationInterceptor.baseURL);
+        const thirdSocket = await openSocket<NotificationWebSocketSchema>(notificationInterceptor.baseURL);
         const sockets = [...notificationSockets, thirdSocket];
         const messageListeners = sockets.map(() =>
-          vi.fn<(event: WebSocketClient.MessageEvent<NotificationWebSocketSchema>) => void>(),
+          vi.fn<(event: ClientTestSocketMessageEvent<NotificationWebSocketSchema>) => void>(),
         );
         const message: NotificationWebSocketMessage<'notification:create:success'> = {
           type: 'notification:create:success',
@@ -965,7 +964,6 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
         };
 
         try {
-          await thirdSocket.open();
           await waitFor(() => expect(notificationInterceptor.clients).toHaveLength(sockets.length));
 
           for (const [index, socket] of sockets.entries()) {
@@ -991,7 +989,7 @@ export function declareWebSocketInterceptorTests({ platform, type }: ClientTestO
           for (const [index, socket] of sockets.entries()) {
             socket.removeEventListener('message', messageListeners[index]);
           }
-          await thirdSocket.close();
+          await closeWebSocketClient(thirdSocket);
         }
       },
     );
