@@ -319,6 +319,65 @@ export function declareTypeWebSocketMessageHandlerTests() {
     expectTypeOf(declarePrimitiveRestrictions).toBeFunction();
   });
 
+  it('should narrow string schema members through static restrictions equal to them', () => {
+    type TextSchema = WebSocketSchema<
+      'ping' | 'pong' | '41' | `40${string}` | `42["user:delete",${string}]` | `42["user:delete:success",${string}]`
+    >;
+    type DeleteMessage = Extract<TextSchema, `42["user:delete",${string}]`>;
+    type ConnectMessage = Extract<TextSchema, `40${string}`>;
+
+    function declareStringRestrictions(handler: LocalWebSocketMessageHandler<TextSchema>, pingOrPong: 'ping' | 'pong') {
+      const deleteHandler = handler.with('42["user:delete","{\\"id\\":\\"1\\"}"]');
+      expectTypeOf(deleteHandler.messages[0].data).toEqualTypeOf<DeleteMessage>();
+
+      const connectHandler = handler.with('40');
+      expectTypeOf(connectHandler.messages[0].data).toEqualTypeOf<ConnectMessage>();
+
+      handler.with('40', { exact: true }).effect((message) => {
+        expectTypeOf(message).toEqualTypeOf<ConnectMessage>();
+      });
+
+      handler.with('ping').effect((message) => {
+        expectTypeOf(message).toEqualTypeOf<Extract<TextSchema, 'ping'>>();
+      });
+
+      handler.with(pingOrPong).effect((message) => {
+        expectTypeOf(message).toEqualTypeOf<Extract<TextSchema, 'ping' | 'pong'>>();
+      });
+
+      handler
+        .with((message): message is `42["user:delete",${string}]` => message.startsWith('42["user:delete",'))
+        .effect((message) => {
+          expectTypeOf(message).toEqualTypeOf<`42["user:delete",${string}]`>();
+        });
+
+      // @ts-expect-error Restriction text must match a schema member.
+      handler.with('text');
+    }
+
+    expectTypeOf(declareStringRestrictions).toBeFunction();
+  });
+
+  it('should narrow mixed string, JSON, and binary schemas through static restrictions', () => {
+    type MixedSchema = WebSocketSchema<string | { type: 'a' } | Blob>;
+
+    function declareMixedRestrictions(handler: LocalWebSocketMessageHandler<MixedSchema>) {
+      handler.with('text').effect((message) => {
+        expectTypeOf(message).toEqualTypeOf<Extract<MixedSchema, string>>();
+      });
+
+      handler.with({ type: 'a' }).effect((message) => {
+        expectTypeOf(message).toEqualTypeOf<Extract<MixedSchema, { type: 'a' }>>();
+      });
+
+      handler.with(new Blob(['a'])).effect((message) => {
+        expectTypeOf(message).toEqualTypeOf<ArrayBuffer>();
+      });
+    }
+
+    expectTypeOf(declareMixedRestrictions).toBeFunction();
+  });
+
   it('should reject invalid message declarations', () => {
     function declareInvalidMessages(handler: LocalWebSocketMessageHandler<Schema>) {
       const restrictedHandler = handler

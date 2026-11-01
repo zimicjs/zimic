@@ -7,13 +7,13 @@ import { ReceivedWebSocketMessageData, UnparsedWebSocketJSONPrimitive } from '@/
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * A static restriction declared with `handler.with()`, matching messages that contain its partial data. Binary members
- * accept only whole binary values of any kind, compared byte by byte. Top-level number and boolean members accept only
- * their whole text as received, such as `'42'`.
+ * accept only whole binary values of any kind, compared byte by byte. String and top-level number and boolean members
+ * accept only their whole text as received, such as `'ping'` or `'42'`.
  */
 export type WebSocketMessageHandlerStaticRestriction<Schema extends WebSocketSchema> = Schema extends
   Blob | BufferSource
   ? Blob | BufferSource
-  : Schema extends UnparsedWebSocketJSONPrimitive
+  : Schema extends UnparsedWebSocketJSONPrimitive | string
     ? ReceivedWebSocketMessageData<Schema>
     : DeepPartial<Schema>;
 
