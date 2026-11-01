@@ -6,7 +6,11 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import WebSocketInterceptorWorker from '@/ws/interceptorWorker/WebSocketInterceptorWorker';
 import { usingIgnoredConsole } from '@tests/utils/console';
-import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import {
+  createInternalWebSocketInterceptor,
+  usingHttpInterceptor,
+  usingWebSocketInterceptor,
+} from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 import {
   createBinaryMessage,
@@ -32,6 +36,10 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
   const { platform, type, getBaseURL, getInterceptorOptions, startServer, stopServer } = options;
 
   const store = new WebSocketInterceptorStore();
+
+  // Local HTTP interceptors reject unhandled requests under their base URL, so one sharing the origin of the interceptor
+  // server would reject the WebSocket handshakes with it.
+  const httpBaseURL = 'http://localhost:3000';
 
   let baseURL: string;
   let interceptorOptions: WebSocketInterceptorOptions;
@@ -369,6 +377,48 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
         const message = await messagePromise;
         expect(message).toBeInstanceOf(ArrayBuffer);
         expect(await readBytes(message)).toEqual([0x00, 0xff]);
+      });
+    });
+  });
+
+  it('should apply the binary type set after open to intercepted messages while a restarted local HTTP interceptor is running', async () => {
+    await usingHttpInterceptor({ type: 'local', baseURL: httpBaseURL }, async (httpInterceptor) => {
+      await httpInterceptor.stop();
+      await httpInterceptor.start();
+      expect(httpInterceptor.isRunning).toBe(true);
+
+      await usingWebSocketInterceptor<BinaryMessageSchema>(interceptorOptions, async (interceptor) => {
+        await promiseIfRemote(interceptor.message().respond(createBinaryMessage(0x00, 0xff)), interceptor);
+
+        await usingWebSocketClient<BinaryMessageSchema>(baseURL, async (client) => {
+          expect(client.readyState).toBe(WebSocketClient.OPEN);
+          client.binaryType = 'arraybuffer';
+
+          const messagePromise = waitForWebSocketClientMessage(client);
+          client.send(createBinaryMessage(0xff, 0x00));
+
+          const message = await messagePromise;
+          expect(message).toBeInstanceOf(ArrayBuffer);
+          expect(await readBytes(message)).toEqual([0x00, 0xff]);
+        });
+      });
+    });
+  });
+
+  it('should keep intercepting messages after a local HTTP interceptor is restarted', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+      await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
+
+      await usingHttpInterceptor({ type: 'local', baseURL: httpBaseURL }, async (httpInterceptor) => {
+        await httpInterceptor.stop();
+        await httpInterceptor.start();
+        expect(httpInterceptor.isRunning).toBe(true);
+
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          const messagePromise = waitForWebSocketClientMessage(client);
+          client.send(JSON.stringify({ type: 'client', index: 1 }));
+          await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+        });
       });
     });
   });

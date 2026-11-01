@@ -102,6 +102,8 @@ class LocalMSWWorkerStore {
       native: nativeWebSocketDescriptor,
       intercepted: Object.getOwnPropertyDescriptor(globalThis, 'WebSocket'),
     };
+
+    this.restoreNativeWebSocket();
   }
 
   private async startMSWWorkerOnPlatform(mswWorker: MSWWorker, sharedOptions: MSWWorkerSharedOptions) {
@@ -137,9 +139,9 @@ class LocalMSWWorkerStore {
     }
   }
 
-  // MSW replaces the global WebSocket for as long as its worker runs, and browser workers are never stopped. Its
-  // replacement copies `binaryType` to passthrough sockets only when they connect, so sockets keep the native global
-  // while no local WebSocket interceptor needs the replacement.
+  // MSW replaces the global WebSocket when its worker starts, and browser workers are never stopped. Its replacement
+  // copies `binaryType` to passthrough sockets only when they connect, so the global stays native unless a local
+  // WebSocket interceptor is running.
   applyWebSocketInterception() {
     this.defineGlobalWebSocket(this.class.globalWebSocketDescriptors?.intercepted);
   }

@@ -2,11 +2,16 @@ import { HttpSchema } from '@zimic/http';
 import { expectFetchError } from '@zimic/utils/fetch';
 import { waitFor } from '@zimic/utils/time';
 import { joinURL } from '@zimic/utils/url';
+import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectBypassedResponse } from '@tests/utils/fetch';
-import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
+import {
+  createInternalHttpInterceptor,
+  usingHttpInterceptor,
+  usingWebSocketInterceptor,
+} from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 
 import NotRunningHttpInterceptorError from '../../errors/NotRunningHttpInterceptorError';
@@ -15,6 +20,8 @@ import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions, startServer, stopServer } = options;
+
+  const webSocketBaseURL = 'ws://localhost:3000';
 
   let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
@@ -187,6 +194,29 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
 
   // No HTTP counterpart for "should apply the binary type set after open to intercepted messages after a local
   // interceptor is stopped": binary types are a property of WebSocket connections, not HTTP responses.
+
+  // No HTTP counterpart for "should apply the binary type set after open to intercepted messages while a restarted local
+  // HTTP interceptor is running": binary types are a property of WebSocket connections, not HTTP responses.
+
+  it('should keep intercepting requests after a local WebSocket interceptor is restarted', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+
+      await usingWebSocketInterceptor<WebSocketSchema<string>>(
+        { type: 'local', baseURL: webSocketBaseURL },
+        async (webSocketInterceptor) => {
+          await webSocketInterceptor.stop();
+          await webSocketInterceptor.start();
+          expect(webSocketInterceptor.isRunning).toBe(true);
+
+          const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(204);
+        },
+      );
+    });
+  });
 
   it('should throw an error when trying to create a request handler if not running', async () => {
     const interceptor = createInternalHttpInterceptor(interceptorOptions);
