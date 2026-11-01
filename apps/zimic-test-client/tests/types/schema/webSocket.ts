@@ -96,3 +96,9 @@ export type NotificationWebSocketMessage<
 > = Extract<NotificationWebSocketSchema, { type: Type }>;
 
 export type BinaryWebSocketSchema = WebSocketSchema<ArrayBuffer | Uint8Array<ArrayBuffer> | Blob>;
+
+// socket.io frames start with an Engine.IO packet type, `0` (open) or `4` (message), followed for messages by a
+// socket.io packet type: `0` (connect), `1` (disconnect), or `2` (event).
+export type SocketIOWebSocketSchema = WebSocketSchema<
+  `0${string}` | `40${string}` | '41' | `42["user:delete",${string}]` | `42["user:delete:success",${string}]`
+>;
