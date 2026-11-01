@@ -10,10 +10,10 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.104.3",
+    "@tanstack/react-query": "^5.105.0",
     "@zimic/fetch": "latest",
     "@zimic/http": "latest",
-    "next": "^16.4.2",
+    "next": "^16.4.3",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "zod": "^4.6.7"
@@ -21,13 +21,13 @@
   "devDependencies": {
     "@playwright/test": "^1.64.1",
     "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@zimic/interceptor": "latest",
     "concurrently": "^10.0.6",
-    "dotenv-cli": "^11.0.0",
-    "postcss": "^8.5.30",
+    "dotenv-cli": "^11.1.0",
+    "postcss": "^8.5.32",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2"
   }
