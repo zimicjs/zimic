@@ -7,6 +7,7 @@ import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
 import { removeArrayElement } from '@/utils/arrays';
 import { isURLUnderBaseURL } from '@/utils/urls';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
+import { convertWebSocketMessageDataToBinaryType } from '@/ws/utils/messageData';
 
 import NotRunningWebSocketInterceptorError from '../interceptor/errors/NotRunningWebSocketInterceptorError';
 import UnknownWebSocketInterceptorPlatformError from '../interceptor/errors/UnknownWebSocketInterceptorPlatformError';
@@ -26,7 +27,7 @@ const importMSWBrowser = createCachedDynamicImport(() => import('msw/browser'));
 
 interface LocalWebSocketClientConnection {
   url: URL;
-  socket: Pick<WebSocket, 'readyState' | 'CONNECTING' | 'addEventListener'>;
+  socket: Pick<WebSocket, 'readyState' | 'CONNECTING' | 'binaryType' | 'addEventListener'>;
   send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => void;
   close: (code?: number, reason?: string) => void;
   addEventListener: ((
@@ -53,6 +54,9 @@ interface WebSocketClientRegistration {
   holders: LocalWebSocketConnectionHolder[];
   messageListener: (event: MessageEvent<string | ArrayBufferLike | Blob | ArrayBufferView>) => void;
   closeListener: () => void;
+  // Converting a `Blob` to the binary type of the client is asynchronous, so server messages and closes run in order
+  // through this chain.
+  deliveries: Promise<void>;
 }
 
 interface RegisteredWebSocketInterceptor {
@@ -210,8 +214,11 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     client: InternalWebSocketInterceptorClient<Schema>,
     data: WebSocketMessageData<Schema>,
   ) {
-    const registeredInterceptor = this.findRegisteredInterceptorByClient(client);
-    registeredInterceptor?.clients.get(client)?.connection.send(data);
+    const registration = this.findRegisteredInterceptorByClient(client)?.clients.get(client);
+
+    if (registration) {
+      this.deliverMessage(registration, data);
+    }
   }
 
   sendToClients<Schema extends WebSocketSchema>(
@@ -220,9 +227,18 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   ) {
     const registeredInterceptor = this.findRegisteredInterceptor(interceptor);
 
-    for (const client of registeredInterceptor?.clients.values() ?? []) {
-      client.connection.send(data);
+    for (const registration of registeredInterceptor?.clients.values() ?? []) {
+      this.deliverMessage(registration, data);
     }
+  }
+
+  // MSW dispatches server messages as sent, ignoring the `binaryType` of the client.
+  private deliverMessage(registration: WebSocketClientRegistration, data: string | Blob | BufferSource) {
+    const { connection } = registration;
+
+    registration.deliveries = registration.deliveries.then(async () => {
+      connection.send(await convertWebSocketMessageDataToBinaryType(data, connection.socket.binaryType));
+    });
   }
 
   // The close listener of the connection removes the client from every interceptor holding it.
@@ -231,11 +247,13 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     code?: number,
     reason?: string,
   ) {
-    const connection = this.findRegisteredInterceptorByClient(client)?.clients.get(client)?.connection;
+    const registration = this.findRegisteredInterceptorByClient(client)?.clients.get(client);
 
-    if (!connection) {
+    if (!registration) {
       return;
     }
+
+    const { connection } = registration;
 
     // MSW closes with 1000 when no code is given, unlike a server sending a close frame without a code.
     const closeCode = code ?? WEB_SOCKET_CLOSE_CODES.NO_STATUS_RECEIVED;
@@ -243,13 +261,15 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     // MSW delivers server messages in a later microtask and drops them once the connection is closing, and it never
     // opens a connection closed while opening. A real server opens the connection and delivers earlier messages before
     // closing it, so the close waits for both.
-    if (connection.socket.readyState === connection.socket.CONNECTING) {
-      connection.socket.addEventListener('open', () => queueMicrotask(() => connection.close(closeCode, reason)), {
-        once: true,
-      });
-    } else {
-      queueMicrotask(() => connection.close(closeCode, reason));
-    }
+    registration.deliveries = registration.deliveries.then(() => {
+      if (connection.socket.readyState === connection.socket.CONNECTING) {
+        connection.socket.addEventListener('open', () => queueMicrotask(() => connection.close(closeCode, reason)), {
+          once: true,
+        });
+      } else {
+        queueMicrotask(() => connection.close(closeCode, reason));
+      }
+    });
   }
 
   private routeConnection(connection: LocalWebSocketClientConnection, server: { connect: () => void }) {
@@ -292,6 +312,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       closeListener: () => {
         this.removeConnectionFromHolders(registration);
       },
+      deliveries: Promise.resolve(),
     };
 
     for (const { registeredInterceptor, client } of registration.holders) {

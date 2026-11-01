@@ -318,4 +318,54 @@ export function declareMessageDataWebSocketInterceptorTests(options: RuntimeShar
       await promiseIfRemote(interceptor.checkTimes(), interceptor);
     });
   });
+
+  it.each(
+    (
+      [
+        { binaryType: 'blob', receivedMessageType: Blob },
+        { binaryType: 'arraybuffer', receivedMessageType: ArrayBuffer },
+      ] as const
+    ).flatMap(({ binaryType, receivedMessageType }) => [
+      {
+        dataType: 'Blob',
+        createResponse: () => new Blob([createBinaryMessage(0x00, 0xff)]),
+        binaryType,
+        receivedMessageType,
+      },
+      {
+        dataType: 'ArrayBuffer',
+        createResponse: () => createBinaryMessage(0x00, 0xff),
+        binaryType,
+        receivedMessageType,
+      },
+      {
+        dataType: 'Uint8Array',
+        createResponse: () => new Uint8Array([0x01, 0x00, 0xff, 0x01]).subarray(1, 3),
+        binaryType,
+        receivedMessageType,
+      },
+    ]),
+  )(
+    'should deliver $dataType handler responses as the $binaryType binary type of clients',
+    async ({ createResponse, binaryType, receivedMessageType }) => {
+      type BinaryBufferSchema = WebSocketSchema<Blob | BufferSource>;
+
+      await usingWebSocketInterceptor<BinaryBufferSchema>(interceptorOptions, async (interceptor) => {
+        await promiseIfRemote(interceptor.message().respond(createResponse()).times(1), interceptor);
+
+        await usingWebSocketClient<BinaryBufferSchema>(baseURL, async (client) => {
+          client.binaryType = binaryType;
+
+          const responsePromise = waitForWebSocketClientMessage(client);
+          client.send(createBinaryMessage(0xff, 0x00));
+
+          const response = (await responsePromise) as Blob | ArrayBuffer;
+          expect(response).toBeInstanceOf(receivedMessageType);
+          expect(await readBytes(response)).toEqual([0x00, 0xff]);
+        });
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      });
+    },
+  );
 }

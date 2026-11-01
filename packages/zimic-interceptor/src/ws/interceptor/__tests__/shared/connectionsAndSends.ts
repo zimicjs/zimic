@@ -939,6 +939,58 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
     });
   });
 
+  it.each(
+    (
+      [
+        { binaryType: 'blob', receivedMessageType: Blob },
+        { binaryType: 'arraybuffer', receivedMessageType: ArrayBuffer },
+      ] as const
+    ).flatMap(({ binaryType, receivedMessageType }) => [
+      {
+        dataType: 'Blob',
+        createMessage: () => new Blob([createBinaryMessage(0x00, 0xff)]),
+        binaryType,
+        receivedMessageType,
+      },
+      {
+        dataType: 'ArrayBuffer',
+        createMessage: () => createBinaryMessage(0x00, 0xff),
+        binaryType,
+        receivedMessageType,
+      },
+      {
+        dataType: 'Uint8Array',
+        createMessage: () => new Uint8Array([0x01, 0x00, 0xff, 0x01]).subarray(1, 3),
+        binaryType,
+        receivedMessageType,
+      },
+    ]),
+  )(
+    'should deliver $dataType server messages as the $binaryType binary type of clients',
+    async ({ createMessage, binaryType, receivedMessageType }) => {
+      type BinaryBufferMessage = WebSocketSchema<Blob | BufferSource>;
+
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<BinaryBufferMessage>({ type, baseURL }, async (interceptor) => {
+        await usingWebSocketClient<BinaryBufferMessage>(baseURL, async (client) => {
+          client.binaryType = binaryType;
+
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(1);
+          });
+
+          const messagePromise = waitForWebSocketClientMessage(client);
+          interceptor.server.send(createMessage());
+
+          const message = (await messagePromise) as Blob | ArrayBuffer;
+          expect(message).toBeInstanceOf(receivedMessageType);
+          expect(await readBytes(message)).toEqual([0x00, 0xff]);
+        });
+      });
+    },
+  );
+
   it.each([
     {
       sender: 'server',

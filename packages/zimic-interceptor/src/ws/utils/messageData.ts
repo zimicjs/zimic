@@ -49,6 +49,22 @@ export function normalizeWebSocketBinaryMessageData(data: Blob | BufferSource): 
   return normalizeBufferSource(data);
 }
 
+// A real socket delivers binary frames as its current `binaryType`, whatever binary type the server sent.
+export async function convertWebSocketMessageDataToBinaryType(
+  data: string | Blob | BufferSource,
+  binaryType: BinaryType,
+): Promise<string | Blob | ArrayBuffer> {
+  if (!isWebSocketBinaryMessageData(data)) {
+    return data;
+  }
+
+  if (binaryType === 'blob') {
+    return data instanceof Blob ? data : new Blob([data]);
+  }
+
+  return data instanceof Blob ? data.arrayBuffer() : normalizeBufferSource(data);
+}
+
 export async function normalizeWebSocketMessageData<Schema extends WebSocketSchema>(
   data: Schema | WebSocketMessageData<Schema>,
 ): Promise<ReceivedWebSocketMessageData<Schema>> {
