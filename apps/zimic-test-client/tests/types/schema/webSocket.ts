@@ -95,7 +95,7 @@ export type NotificationWebSocketMessage<
   Type extends NotificationWebSocketSchema['type'] = NotificationWebSocketSchema['type'],
 > = Extract<NotificationWebSocketSchema, { type: Type }>;
 
-export type BinaryWebSocketSchema = WebSocketSchema<ArrayBuffer | Uint8Array<ArrayBuffer> | Blob>;
+export type BinaryWebSocketSchema = WebSocketSchema<BufferSource | Blob>;
 
 // socket.io frames start with an Engine.IO packet type, `0` (open) or `4` (message), followed for messages by a
 // socket.io packet type: `0` (connect), `1` (disconnect), or `2` (event).

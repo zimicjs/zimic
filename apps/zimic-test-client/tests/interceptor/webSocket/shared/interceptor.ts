@@ -92,8 +92,15 @@ async function waitForBinaryMessage(socket: ClientTestSocket<BinaryWebSocketSche
 
 // Node `Buffer`s, received by `ws` sockets with their default binary type, are `Uint8Array`s.
 async function readBytes(data: BinaryWebSocketSchema) {
-  const bytes = data instanceof Blob ? new Uint8Array(await data.arrayBuffer()) : new Uint8Array(data);
-  return Array.from(bytes);
+  if (data instanceof Blob) {
+    return Array.from(new Uint8Array(await data.arrayBuffer()));
+  }
+
+  if (ArrayBuffer.isView(data)) {
+    return Array.from(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+  }
+
+  return Array.from(new Uint8Array(data));
 }
 
 export function declareWebSocketInterceptorTests({ platform, type, openSocket }: ClientTestOptionsByWorkerType) {
