@@ -30,7 +30,12 @@ import {
 } from '@tests/types/schema/webSocket';
 import { serializeUser } from '@tests/utils/schema';
 
-import { ClientTestOptionsByWorkerType, ClientTestSocket, ClientTestSocketMessageEvent } from './client';
+import {
+  ClientTestOptionsByWorkerType,
+  ClientTestSocket,
+  ClientTestSocketCloseEvent,
+  ClientTestSocketMessageEvent,
+} from './client';
 
 function getUserBaseURL(type: WebSocketInterceptorType) {
   return type === 'local' ? 'ws://localhost:4000' : `ws://localhost:${ZIMIC_SERVER_PORT}/user-${crypto.randomUUID()}`;
@@ -743,6 +748,64 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
         expect(deleteHandler.messages).toHaveLength(1);
       } finally {
         await closeWebSocketClient(socket);
+      }
+    });
+  });
+
+  describe('Connection closes', () => {
+    it('should support reconnecting after the interceptor closes a connection', async () => {
+      const sockets: ClientTestSocket<UserWebSocketSchema>[] = [];
+
+      try {
+        const closedSocket = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
+        sockets.push(closedSocket);
+
+        await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length + 1));
+        const closedClient = userInterceptor.clients[userSockets.length];
+
+        const closeEventPromise = new Promise<ClientTestSocketCloseEvent>((resolve) => {
+          closedSocket.addEventListener('close', resolve);
+        });
+
+        closedClient.close(4000, 'Reconnect to continue.');
+
+        const closeEvent = await closeEventPromise;
+        expect(closeEvent.code).toBe(4000);
+        expect(closeEvent.reason).toBe('Reconnect to continue.');
+
+        await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length));
+        expect(userInterceptor.clients).not.toContain(closedClient);
+
+        const reconnectedSocket = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
+        sockets.push(reconnectedSocket);
+
+        await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length + 1));
+        const reconnectedClient = userInterceptor.clients[userSockets.length];
+
+        const response: UserWebSocketMessage<'user:delete:success'> = {
+          type: 'user:delete:success',
+          data: { id: crypto.randomUUID() },
+        };
+
+        const deleteHandler = await userInterceptor
+          .message()
+          .from(reconnectedClient)
+          .with({ type: 'user:delete' })
+          .respond(response)
+          .times(1);
+
+        await expect(
+          sendAndWaitForResponse(
+            reconnectedSocket,
+            { type: 'user:delete', data: { id: response.data.id } },
+            'user:delete:success',
+          ),
+        ).resolves.toEqual(response);
+
+        expect(deleteHandler.messages).toHaveLength(1);
+        expect(deleteHandler.messages[0].sender).toBe(reconnectedClient);
+      } finally {
+        await Promise.all(sockets.map((socket) => closeWebSocketClient(socket)));
       }
     });
   });

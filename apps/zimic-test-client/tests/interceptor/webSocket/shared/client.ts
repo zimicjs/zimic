@@ -12,10 +12,18 @@ type ClientTestSocketMessageListener<Schema extends WebSocketSchema> = (
   event: ClientTestSocketMessageEvent<Schema>,
 ) => void;
 
+export interface ClientTestSocketCloseEvent {
+  code: number;
+  reason: string;
+}
+
+type ClientTestSocketCloseListener = (event: ClientTestSocketCloseEvent) => void;
+
 type ClientTestSocketLifecycleListener = (event: unknown) => void;
 
 interface ClientTestSocketEventListenerMethod<Schema extends WebSocketSchema> {
   (type: 'message', listener: ClientTestSocketMessageListener<Schema>): void;
+  (type: 'close', listener: ClientTestSocketCloseListener): void;
   (type: 'close' | 'error', listener: ClientTestSocketLifecycleListener): void;
 }
 
