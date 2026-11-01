@@ -64,6 +64,16 @@ async function waitForResponseMessage<
   });
 }
 
+async function sendAndWaitForResponse<ResponseMessageType extends UserWebSocketSchema['type']>(
+  socket: ClientTestSocket<UserWebSocketSchema>,
+  message: UserWebSocketSchema,
+  responseMessageType: ResponseMessageType,
+) {
+  const responsePromise = waitForResponseMessage(socket, responseMessageType);
+  socket.send(JSON.stringify(message));
+  return responsePromise;
+}
+
 async function waitForBinaryMessage(socket: ClientTestSocket<BinaryWebSocketSchema>) {
   return new Promise<ArrayBuffer>((resolve) => {
     function messageListener(event: ClientTestSocketMessageEvent<BinaryWebSocketSchema>) {
@@ -324,32 +334,6 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
         }
       });
 
-      async function createUser(input: UserCreationInput) {
-        const responsePromise = waitForResponseMessage(userSockets[0], 'user:create:success');
-
-        const message: UserWebSocketMessage<'user:create'> = {
-          type: 'user:create',
-          data: input,
-        };
-
-        userSockets[0].send(JSON.stringify(message));
-
-        return responsePromise;
-      }
-
-      async function createUserError(input: UserCreationInput) {
-        const responsePromise = waitForResponseMessage(userSockets[0], 'user:create:error');
-
-        const message: UserWebSocketMessage<'user:create'> = {
-          type: 'user:create',
-          data: input,
-        };
-
-        userSockets[0].send(JSON.stringify(message));
-
-        return responsePromise;
-      }
-
       it('should support creating users notifying only the creator', async () => {
         const creatorClient = userInterceptor.clients[0];
 
@@ -373,7 +357,11 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
         userSockets[1].addEventListener('message', otherUserListener);
 
         try {
-          const response = await createUser(creationInput);
+          const response = await sendAndWaitForResponse(
+            userSockets[0],
+            { type: 'user:create', data: creationInput },
+            'user:create:success',
+          );
           expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:create:success'>>();
 
           expect(response.data).toEqual<JSONSerialized<User>>({
@@ -461,7 +449,11 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
           .respond({ type: 'user:create:error', data: validationError })
           .times(1);
 
-        const response = await createUserError(invalidInput);
+        const response = await sendAndWaitForResponse(
+          userSockets[0],
+          { type: 'user:create', data: invalidInput },
+          'user:create:error',
+        );
         expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:create:error'>>();
 
         expect(response).toEqual({ type: 'user:create:error', data: validationError });
@@ -484,7 +476,11 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
           .respond({ type: 'user:create:error', data: conflictError })
           .times(1);
 
-        const response = await createUserError(creationInput);
+        const response = await sendAndWaitForResponse(
+          userSockets[0],
+          { type: 'user:create', data: creationInput },
+          'user:create:error',
+        );
         expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:create:error'>>();
 
         expect(response).toEqual({ type: 'user:create:error', data: conflictError });
@@ -500,32 +496,6 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
         email: 'updated@email.com',
         birthDate: new Date().toISOString(),
       };
-
-      async function updateUser(userId: string, input: UserUpdateInput) {
-        const responsePromise = waitForResponseMessage(userSockets[0], 'user:update:success');
-
-        const message: UserWebSocketMessage<'user:update'> = {
-          type: 'user:update',
-          data: { id: userId, ...input },
-        };
-
-        userSockets[0].send(JSON.stringify(message));
-
-        return responsePromise;
-      }
-
-      async function updateUserError(userId: string, input: UserUpdateInput) {
-        const responsePromise = waitForResponseMessage(userSockets[0], 'user:update:error');
-
-        const message: UserWebSocketMessage<'user:update'> = {
-          type: 'user:update',
-          data: { id: userId, ...input },
-        };
-
-        userSockets[0].send(JSON.stringify(message));
-
-        return responsePromise;
-      }
 
       it('should support updating users', async () => {
         const creatorClient = userInterceptor.clients[0];
@@ -547,7 +517,11 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
           })
           .times(1);
 
-        const response = await updateUser(user.id, updateInput);
+        const response = await sendAndWaitForResponse(
+          userSockets[0],
+          { type: 'user:update', data: { id: user.id, ...updateInput } },
+          'user:update:success',
+        );
         expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:update:success'>>();
 
         expect(response.data).toEqual<JSONSerialized<User>>({
@@ -582,7 +556,11 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
           .respond({ type: 'user:update:error', data: notFoundError })
           .times(1);
 
-        const response = await updateUserError(unknownUserId, updateInput);
+        const response = await sendAndWaitForResponse(
+          userSockets[0],
+          { type: 'user:update', data: { id: unknownUserId, ...updateInput } },
+          'user:update:error',
+        );
         expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:update:error'>>();
 
         expect(response).toEqual({ type: 'user:update:error', data: notFoundError });
@@ -617,7 +595,11 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
           .respond({ type: 'user:update:error', data: validationError })
           .times(1);
 
-        const response = await updateUserError(user.id, invalidInput);
+        const response = await sendAndWaitForResponse(
+          userSockets[0],
+          { type: 'user:update', data: { id: user.id, ...invalidInput } },
+          'user:update:error',
+        );
         expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:update:error'>>();
 
         expect(response).toEqual({ type: 'user:update:error', data: validationError });
@@ -631,32 +613,6 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
     });
 
     describe('User deletion', () => {
-      async function deleteUserById(userId: string) {
-        const responsePromise = waitForResponseMessage(userSockets[0], 'user:delete:success');
-
-        const message: UserWebSocketMessage<'user:delete'> = {
-          type: 'user:delete',
-          data: { id: userId },
-        };
-
-        userSockets[0].send(JSON.stringify(message));
-
-        return responsePromise;
-      }
-
-      async function deleteUserByIdError(userId: string) {
-        const responsePromise = waitForResponseMessage(userSockets[0], 'user:delete:error');
-
-        const message: UserWebSocketMessage<'user:delete'> = {
-          type: 'user:delete',
-          data: { id: userId },
-        };
-
-        userSockets[0].send(JSON.stringify(message));
-
-        return responsePromise;
-      }
-
       it('should support deleting users by id', async () => {
         const creatorClient = userInterceptor.clients[0];
 
@@ -673,7 +629,11 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
           })
           .times(1);
 
-        const response = await deleteUserById(user.id);
+        const response = await sendAndWaitForResponse(
+          userSockets[0],
+          { type: 'user:delete', data: { id: user.id } },
+          'user:delete:success',
+        );
         expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:delete:success'>>();
 
         expect(response).toEqual({
@@ -706,7 +666,11 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
           .respond({ type: 'user:delete:error', data: notFoundError })
           .times(1);
 
-        const response = await deleteUserByIdError(user.id);
+        const response = await sendAndWaitForResponse(
+          userSockets[0],
+          { type: 'user:delete', data: { id: user.id } },
+          'user:delete:error',
+        );
         expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:delete:error'>>();
 
         expect(response).toEqual({ type: 'user:delete:error', data: notFoundError });
