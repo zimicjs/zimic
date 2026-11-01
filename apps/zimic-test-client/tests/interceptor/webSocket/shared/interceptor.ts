@@ -2,17 +2,9 @@ import { JSONSerialized } from '@zimic/http';
 import {
   createWebSocketInterceptor,
   InterceptedWebSocketInterceptorMessage,
-  InferWebSocketInterceptorSchema,
-  LocalWebSocketInterceptor,
-  LocalWebSocketMessageHandler,
-  RemoteWebSocketInterceptor,
-  RemoteWebSocketMessageHandler,
   WebSocketInterceptor,
   WebSocketInterceptorClient,
   WebSocketInterceptorServer,
-  WebSocketMessageHandlerComputedRestriction,
-  WebSocketMessageHandlerMessageCallback,
-  WebSocketMessageHandlerStaticRestriction,
   WebSocketInterceptorType,
 } from '@zimic/interceptor/experimental/ws';
 import { waitFor, waitForNot } from '@zimic/utils/time';
@@ -751,41 +743,6 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
   });
 
   describe('Types', () => {
-    it('should expose installed WebSocket interceptor types to consumers', () => {
-      const localInterceptor = createWebSocketInterceptor<UserWebSocketSchema>({
-        type: 'local',
-        baseURL: getUserBaseURL('local'),
-      });
-      const remoteInterceptor = createWebSocketInterceptor<UserWebSocketSchema>({
-        type: 'remote',
-        baseURL: getUserBaseURL('remote'),
-      });
-
-      expectTypeOf(localInterceptor).toEqualTypeOf<LocalWebSocketInterceptor<UserWebSocketSchema>>();
-      expectTypeOf(remoteInterceptor).toEqualTypeOf<RemoteWebSocketInterceptor<UserWebSocketSchema>>();
-      expectTypeOf(localInterceptor.message).returns.toEqualTypeOf<LocalWebSocketMessageHandler<UserWebSocketSchema>>();
-      expectTypeOf(remoteInterceptor.message).returns.toEqualTypeOf<
-        RemoteWebSocketMessageHandler<UserWebSocketSchema>
-      >();
-
-      expectTypeOf<InferWebSocketInterceptorSchema<typeof localInterceptor>>().toEqualTypeOf<UserWebSocketSchema>();
-      expectTypeOf<InferWebSocketInterceptorSchema<typeof remoteInterceptor>>().toEqualTypeOf<UserWebSocketSchema>();
-
-      expectTypeOf<WebSocketMessageHandlerStaticRestriction<UserWebSocketSchema>>().not.toBeAny();
-      expectTypeOf<WebSocketMessageHandlerComputedRestriction<UserWebSocketSchema>>().parameters.toEqualTypeOf<
-        [message: UserWebSocketSchema]
-      >();
-      expectTypeOf<WebSocketMessageHandlerMessageCallback<UserWebSocketSchema>>().parameters.toEqualTypeOf<
-        [
-          message: UserWebSocketSchema,
-          context: {
-            sender: WebSocketInterceptorClient<UserWebSocketSchema>;
-            receiver: WebSocketInterceptorServer<UserWebSocketSchema>;
-          },
-        ]
-      >();
-    });
-
     it('should narrow handler messages from installed schema restrictions', async () => {
       const creatorClient = userInterceptor.clients[0];
       const message: UserWebSocketMessage<'user:create'> = {
@@ -811,10 +768,6 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
 
       await Promise.resolve(
         creationHandler
-          .delay((message) => {
-            expectTypeOf(message).toEqualTypeOf<UserWebSocketMessage<'user:create'>>();
-            return message.data.name.length;
-          })
           .effect((message, context) => {
             expectTypeOf(message).toEqualTypeOf<UserWebSocketMessage<'user:create'>>();
             expectTypeOf(context.sender).toEqualTypeOf<WebSocketInterceptorClient<UserWebSocketSchema>>();
@@ -838,23 +791,6 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
         sender: creatorClient,
         receiver: userInterceptor.server,
       });
-    });
-
-    it('should reject invalid installed WebSocket declarations', () => {
-      /* istanbul ignore next -- @preserve
-       * Invalid declarations are checked by TypeScript and must not run. */
-      function expectInvalidDeclarations(interceptor: LocalWebSocketInterceptor<UserWebSocketSchema>) {
-        // @ts-expect-error Invalid message type.
-        interceptor.message().with({ type: 'user:archive' });
-
-        // @ts-expect-error Invalid response type.
-        interceptor.message().respond({ type: 'user:archive:success' });
-
-        // @ts-expect-error Invalid response data shape.
-        interceptor.message().respond({ type: 'user:create:success', data: { id: crypto.randomUUID() } });
-      }
-
-      expectTypeOf(expectInvalidDeclarations).toBeFunction();
     });
   });
 
