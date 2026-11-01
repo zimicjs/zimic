@@ -379,11 +379,8 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
       });
 
       it('should support creating users notifying all users', async () => {
-        const creatorClient = userInterceptor.clients[0];
-
         const creationHandler = await userInterceptor
           .message()
-          .from(creatorClient)
           .with({ type: 'user:create', data: creationInput })
           .effect((message, { receiver }) => {
             const createdUser: JSONSerialized<User> = {
@@ -428,10 +425,32 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
         expect(creationHandler.messages).toHaveLength(1);
       });
 
+      it('should support creating users from a socket sending right after connecting', async () => {
+        const creationHandler = await userInterceptor
+          .message()
+          .with({ type: 'user:create', data: creationInput })
+          .respond({ type: 'user:create:success', data: serializeUser(user) })
+          .times(1);
+
+        const socket = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
+
+        try {
+          const response = await sendAndWaitForResponse(
+            socket,
+            { type: 'user:create', data: creationInput },
+            'user:create:success',
+          );
+
+          expect(response).toEqual({ type: 'user:create:success', data: serializeUser(user) });
+          expect(creationHandler.messages).toHaveLength(1);
+        } finally {
+          await closeWebSocketClient(socket);
+        }
+      });
+
       it('should return an error if the input is not valid', async () => {
         // @ts-expect-error Forcing an invalid input
         const invalidInput: UserCreationInput = {};
-        const creatorClient = userInterceptor.clients[0];
 
         const validationError: ValidationError = {
           code: 'validation_error',
@@ -440,7 +459,6 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
 
         const creationHandler = await userInterceptor
           .message()
-          .from(creatorClient)
           .with({ type: 'user:create', data: invalidInput })
           .respond({ type: 'user:create:error', data: validationError })
           .times(1);
@@ -454,12 +472,14 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
 
         expect(response).toEqual({ type: 'user:create:error', data: validationError });
 
-        expectMessagedClients(userInterceptor, [creatorClient], { type: 'user:create', data: invalidInput });
+        expectMessagedClients(userInterceptor, [userInterceptor.clients[0]], {
+          type: 'user:create',
+          data: invalidInput,
+        });
         expect(creationHandler.messages).toHaveLength(1);
       });
 
       it('should return an error if the user already exists', async () => {
-        const creatorClient = userInterceptor.clients[0];
         const conflictError: ConflictError = {
           code: 'conflict',
           message: 'User already exists',
@@ -467,7 +487,6 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
 
         const creationHandler = await userInterceptor
           .message()
-          .from(creatorClient)
           .with({ type: 'user:create', data: creationInput })
           .respond({ type: 'user:create:error', data: conflictError })
           .times(1);
@@ -481,7 +500,10 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
 
         expect(response).toEqual({ type: 'user:create:error', data: conflictError });
 
-        expectMessagedClients(userInterceptor, [creatorClient], { type: 'user:create', data: creationInput });
+        expectMessagedClients(userInterceptor, [userInterceptor.clients[0]], {
+          type: 'user:create',
+          data: creationInput,
+        });
         expect(creationHandler.messages).toHaveLength(1);
       });
     });
@@ -494,11 +516,8 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
       };
 
       it('should support updating users', async () => {
-        const creatorClient = userInterceptor.clients[0];
-
         const updateHandler = await userInterceptor
           .message()
-          .from(creatorClient)
           .with({
             type: 'user:update',
             data: { id: user.id, ...updateInput },
@@ -525,7 +544,7 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
           ...updateInput,
         });
 
-        expectMessagedClients(userInterceptor, [creatorClient], {
+        expectMessagedClients(userInterceptor, [userInterceptor.clients[0]], {
           type: 'user:update',
           data: { id: user.id, ...updateInput },
         });
@@ -533,8 +552,6 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
       });
 
       it('should return an error if user not found', async () => {
-        const creatorClient = userInterceptor.clients[0];
-
         const unknownUserId = crypto.randomUUID();
 
         const notFoundError: NotFoundError = {
@@ -544,7 +561,6 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
 
         const updateHandler = await userInterceptor
           .message()
-          .from(creatorClient)
           .with({
             type: 'user:update',
             data: { id: unknownUserId, ...updateInput },
@@ -561,7 +577,7 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
 
         expect(response).toEqual({ type: 'user:update:error', data: notFoundError });
 
-        expectMessagedClients(userInterceptor, [creatorClient], {
+        expectMessagedClients(userInterceptor, [userInterceptor.clients[0]], {
           type: 'user:update',
           data: { id: unknownUserId, ...updateInput },
         });
@@ -569,8 +585,6 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
       });
 
       it('should return an error if input is invalid', async () => {
-        const creatorClient = userInterceptor.clients[0];
-
         const validationError: ValidationError = {
           code: 'validation_error',
           message: 'Invalid input',
@@ -583,7 +597,6 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
 
         const updateHandler = await userInterceptor
           .message()
-          .from(creatorClient)
           .with({
             type: 'user:update',
             data: { id: user.id, ...invalidInput },
@@ -600,7 +613,7 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
 
         expect(response).toEqual({ type: 'user:update:error', data: validationError });
 
-        expectMessagedClients(userInterceptor, [creatorClient], {
+        expectMessagedClients(userInterceptor, [userInterceptor.clients[0]], {
           type: 'user:update',
           data: { id: user.id, ...invalidInput },
         });
@@ -610,11 +623,8 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
 
     describe('User deletion', () => {
       it('should support deleting users by id', async () => {
-        const creatorClient = userInterceptor.clients[0];
-
         const deleteHandler = await userInterceptor
           .message()
-          .from(creatorClient)
           .with({
             type: 'user:delete',
             data: { id: user.id },
@@ -637,7 +647,7 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
           data: { id: user.id },
         });
 
-        expectMessagedClients(userInterceptor, [creatorClient], {
+        expectMessagedClients(userInterceptor, [userInterceptor.clients[0]], {
           type: 'user:delete',
           data: { id: user.id },
         });
@@ -645,8 +655,6 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
       });
 
       it('should return an error if the user was not found', async () => {
-        const creatorClient = userInterceptor.clients[0];
-
         const notFoundError: NotFoundError = {
           code: 'not_found',
           message: 'User not found',
@@ -654,7 +662,6 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
 
         const deleteHandler = await userInterceptor
           .message()
-          .from(creatorClient)
           .with({
             type: 'user:delete',
             data: { id: user.id },
@@ -671,7 +678,7 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
 
         expect(response).toEqual({ type: 'user:delete:error', data: notFoundError });
 
-        expectMessagedClients(userInterceptor, [creatorClient], {
+        expectMessagedClients(userInterceptor, [userInterceptor.clients[0]], {
           type: 'user:delete',
           data: { id: user.id },
         });
