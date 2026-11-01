@@ -104,24 +104,6 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
   let notificationSockets: ClientTestSocket<NotificationWebSocketSchema>[] = [];
   let binarySocket: ClientTestSocket<BinaryWebSocketSchema>;
 
-  /* istanbul ignore next -- @preserve
-   * This restriction only narrows the idle handler's message type. */
-  function isNoUserMessage(_message: UserWebSocketSchema): _message is never {
-    return false;
-  }
-
-  /* istanbul ignore next -- @preserve
-   * This restriction only narrows the idle handler's message type. */
-  function isNoNotificationMessage(_message: NotificationWebSocketSchema): _message is never {
-    return false;
-  }
-
-  /* istanbul ignore next -- @preserve
-   * This restriction only narrows the idle handler's message type. */
-  function isNoBinaryMessage(_message: BinaryWebSocketSchema): _message is never {
-    return false;
-  }
-
   function expectMessagedClients<Schema extends UserWebSocketSchema | NotificationWebSocketSchema>(
     interceptor: WebSocketInterceptor<Schema>,
     notifiedClients: WebSocketInterceptorClient<Schema>[],
@@ -153,10 +135,6 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
     await Promise.resolve(userInterceptor.clear());
     await Promise.resolve(notificationInterceptor.clear());
     await Promise.resolve(binaryInterceptor.clear());
-
-    await Promise.resolve(userInterceptor.message().with(isNoUserMessage));
-    await Promise.resolve(notificationInterceptor.message().with(isNoNotificationMessage));
-    await Promise.resolve(binaryInterceptor.message().with(isNoBinaryMessage));
 
     userSockets = [
       await openSocket<UserWebSocketSchema>(userInterceptor.baseURL),
