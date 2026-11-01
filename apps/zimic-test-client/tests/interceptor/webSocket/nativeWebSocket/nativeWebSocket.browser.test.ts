@@ -6,6 +6,7 @@ import { openNativeWebSocket } from './utils';
 describe('Native WebSocket client (Browser)', () => {
   declareClientTests({
     platform: 'browser',
+    defaultBinaryMessageType: Blob,
     openSocket: openNativeWebSocket,
   });
 });

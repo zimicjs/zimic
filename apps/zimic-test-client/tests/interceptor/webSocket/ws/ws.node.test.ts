@@ -9,6 +9,7 @@ describe("ws client (Node.js, type 'remote')", () => {
   declareWebSocketInterceptorTests({
     platform: 'node',
     type: 'remote',
+    defaultBinaryMessageType: Buffer,
     openSocket: async (url, protocols) => {
       const socket = new NodeWebSocket(url, protocols);
 

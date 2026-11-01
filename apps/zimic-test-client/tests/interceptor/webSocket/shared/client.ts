@@ -43,6 +43,7 @@ export interface ClientTestSocket<Schema extends WebSocketSchema> {
 
 export interface ClientTestOptions {
   platform: WebSocketInterceptorPlatform;
+  defaultBinaryMessageType: typeof Blob | typeof Buffer;
   openSocket: <Schema extends WebSocketSchema>(
     url: string,
     protocols?: string | string[],

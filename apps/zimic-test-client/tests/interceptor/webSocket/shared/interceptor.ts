@@ -103,7 +103,12 @@ async function readBytes(data: BinaryWebSocketSchema) {
   return Array.from(new Uint8Array(data));
 }
 
-export function declareWebSocketInterceptorTests({ platform, type, openSocket }: ClientTestOptionsByWorkerType) {
+export function declareWebSocketInterceptorTests({
+  platform,
+  type,
+  defaultBinaryMessageType,
+  openSocket,
+}: ClientTestOptionsByWorkerType) {
   const userInterceptor = createWebSocketInterceptor<UserWebSocketSchema>({
     type,
     baseURL: getUserBaseURL(type),
@@ -1052,7 +1057,10 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
   });
 
   describe('Binary messages', () => {
-    const receivedBinaryTypes = [{ binaryType: undefined }, { binaryType: 'arraybuffer' }] as const;
+    const receivedBinaryTypes = [
+      { binaryType: undefined, receivedMessageType: defaultBinaryMessageType },
+      { binaryType: 'arraybuffer', receivedMessageType: ArrayBuffer },
+    ] as const;
 
     const sentPayloads = [
       { payloadType: 'ArrayBuffer', createPayload: () => new Uint8Array([0x00, 0xff]).buffer },
@@ -1061,12 +1069,17 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
     ];
 
     it.each(
-      receivedBinaryTypes.flatMap(({ binaryType }) =>
-        sentPayloads.map((payload) => ({ ...payload, binaryType, binaryTypeName: binaryType ?? 'client default' })),
+      receivedBinaryTypes.flatMap(({ binaryType, receivedMessageType }) =>
+        sentPayloads.map((payload) => ({
+          ...payload,
+          binaryType,
+          binaryTypeName: binaryType ?? 'client default',
+          receivedMessageType,
+        })),
       ),
     )(
       'should support responding to $payloadType binary messages received with the $binaryTypeName binary type',
-      async ({ binaryType, createPayload }) => {
+      async ({ binaryType, receivedMessageType, createPayload }) => {
         binarySocket.binaryType = binaryType ?? binarySocket.binaryType;
 
         const binaryHandler = await binaryInterceptor
@@ -1078,7 +1091,9 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
         const responsePromise = waitForBinaryMessage(binarySocket);
         binarySocket.send(createPayload());
 
-        expect(await readBytes(await responsePromise)).toEqual([0xff, 0x00]);
+        const response = await responsePromise;
+        expect(response).toBeInstanceOf(receivedMessageType);
+        expect(await readBytes(response)).toEqual([0xff, 0x00]);
 
         expect(binaryHandler.messages).toHaveLength(1);
         expect(await readBytes(binaryHandler.messages[0].data)).toEqual([0x00, 0xff]);
