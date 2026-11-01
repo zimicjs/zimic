@@ -196,17 +196,16 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
 
   describe('Connection listeners', () => {
     it('should notify a listener once per connection with the connected client', async () => {
-      await Promise.all(userSockets.map((socket) => closeWebSocketClient(socket)));
-      await waitFor(() => expect(userInterceptor.clients).toHaveLength(0));
-
       const listener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
       userInterceptor.on('connection', listener);
 
+      const sockets: ClientTestSocket<UserWebSocketSchema>[] = [];
+
       try {
-        for (const index of userSockets.keys()) {
-          userSockets[index] = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
+        for (const index of [0, 1]) {
+          sockets.push(await openSocket<UserWebSocketSchema>(userInterceptor.baseURL));
           await waitFor(() => expect(listener).toHaveBeenCalledTimes(index + 1));
-          expect(listener).toHaveBeenNthCalledWith(index + 1, userInterceptor.clients[index]);
+          expect(listener).toHaveBeenNthCalledWith(index + 1, userInterceptor.clients[userSockets.length + index]);
         }
 
         const userId = crypto.randomUUID();
@@ -214,67 +213,68 @@ export function declareWebSocketInterceptorTests({ platform, type, openSocket }:
           type: 'user:delete:success',
           data: { id: userId },
         };
-        await userInterceptor.message().with({ type: 'user:delete' }).respond(response).times(userSockets.length);
+        await userInterceptor.message().with({ type: 'user:delete' }).respond(response).times(sockets.length);
 
-        for (const socket of userSockets) {
-          const responsePromise = waitForResponseMessage(socket, 'user:delete:success');
-          socket.send(JSON.stringify({ type: 'user:delete', data: { id: userId } }));
-          expect(await responsePromise).toEqual(response);
+        for (const socket of sockets) {
+          await expect(
+            sendAndWaitForResponse(socket, { type: 'user:delete', data: { id: userId } }, 'user:delete:success'),
+          ).resolves.toEqual(response);
         }
 
-        expect(listener).toHaveBeenCalledTimes(userSockets.length);
+        expect(listener).toHaveBeenCalledTimes(sockets.length);
       } finally {
         userInterceptor.off('connection', listener);
+        await Promise.all(sockets.map((socket) => closeWebSocketClient(socket)));
       }
     });
 
     it('should stop notifying a connection listener after it is removed', async () => {
-      await Promise.all(userSockets.map((socket) => closeWebSocketClient(socket)));
-      await waitFor(() => expect(userInterceptor.clients).toHaveLength(0));
-
       const listener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
       const remainingListener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
       userInterceptor.on('connection', listener);
       userInterceptor.on('connection', remainingListener);
 
+      const sockets: ClientTestSocket<UserWebSocketSchema>[] = [];
+
       try {
-        userSockets[0] = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
+        sockets.push(await openSocket<UserWebSocketSchema>(userInterceptor.baseURL));
         await waitFor(() => expect(remainingListener).toHaveBeenCalledOnce());
-        expect(listener).toHaveBeenCalledExactlyOnceWith(userInterceptor.clients[0]);
+        expect(listener).toHaveBeenCalledExactlyOnceWith(userInterceptor.clients[userSockets.length]);
 
         userInterceptor.off('connection', listener);
 
-        userSockets[1] = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
+        sockets.push(await openSocket<UserWebSocketSchema>(userInterceptor.baseURL));
         await waitFor(() => expect(remainingListener).toHaveBeenCalledTimes(2));
         expect(listener).toHaveBeenCalledOnce();
-        expect(remainingListener).toHaveBeenLastCalledWith(userInterceptor.clients[1]);
+        expect(remainingListener).toHaveBeenLastCalledWith(userInterceptor.clients[userSockets.length + 1]);
       } finally {
         userInterceptor.off('connection', listener);
         userInterceptor.off('connection', remainingListener);
+        await Promise.all(sockets.map((socket) => closeWebSocketClient(socket)));
       }
     });
 
     it('should notify a one-time listener only for the first connection', async () => {
-      await Promise.all(userSockets.map((socket) => closeWebSocketClient(socket)));
-      await waitFor(() => expect(userInterceptor.clients).toHaveLength(0));
-
       const listener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
       const remainingListener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
       userInterceptor.once('connection', listener);
       userInterceptor.on('connection', remainingListener);
 
-      try {
-        userSockets[0] = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
-        await waitFor(() => expect(remainingListener).toHaveBeenCalledOnce());
-        expect(listener).toHaveBeenCalledExactlyOnceWith(userInterceptor.clients[0]);
+      const sockets: ClientTestSocket<UserWebSocketSchema>[] = [];
 
-        userSockets[1] = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
+      try {
+        sockets.push(await openSocket<UserWebSocketSchema>(userInterceptor.baseURL));
+        await waitFor(() => expect(remainingListener).toHaveBeenCalledOnce());
+        expect(listener).toHaveBeenCalledExactlyOnceWith(userInterceptor.clients[userSockets.length]);
+
+        sockets.push(await openSocket<UserWebSocketSchema>(userInterceptor.baseURL));
         await waitFor(() => expect(remainingListener).toHaveBeenCalledTimes(2));
         expect(listener).toHaveBeenCalledOnce();
-        expect(remainingListener).toHaveBeenLastCalledWith(userInterceptor.clients[1]);
+        expect(remainingListener).toHaveBeenLastCalledWith(userInterceptor.clients[userSockets.length + 1]);
       } finally {
         userInterceptor.off('connection', listener);
         userInterceptor.off('connection', remainingListener);
+        await Promise.all(sockets.map((socket) => closeWebSocketClient(socket)));
       }
     });
   });
