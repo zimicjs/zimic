@@ -9,6 +9,8 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 import {
+  createBinaryMessage,
+  readBytes,
   usingWebSocketClient,
   waitForWebSocketClientClose,
   waitForWebSocketClientMessage,
@@ -24,6 +26,7 @@ import WebSocketInterceptorStore from '../../WebSocketInterceptorStore';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
+type BinaryMessageSchema = WebSocketSchema<ArrayBuffer>;
 
 export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions, startServer, stopServer } = options;
@@ -344,6 +347,28 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
           expect(firstInterceptor.clients).toHaveLength(0);
           expect(secondInterceptor.clients).toHaveLength(0);
         });
+      });
+    });
+  });
+
+  it('should apply the binary type set after open to intercepted messages after a local interceptor is stopped', async () => {
+    await usingWebSocketInterceptor<BinaryMessageSchema>({ type: 'local', baseURL }, (localInterceptor) => {
+      expect(localInterceptor.isRunning).toBe(true);
+    });
+
+    await usingWebSocketInterceptor<BinaryMessageSchema>(interceptorOptions, async (interceptor) => {
+      await promiseIfRemote(interceptor.message().respond(createBinaryMessage(0x00, 0xff)), interceptor);
+
+      await usingWebSocketClient<BinaryMessageSchema>(baseURL, async (client) => {
+        expect(client.readyState).toBe(WebSocketClient.OPEN);
+        client.binaryType = 'arraybuffer';
+
+        const messagePromise = waitForWebSocketClientMessage(client);
+        client.send(createBinaryMessage(0xff, 0x00));
+
+        const message = await messagePromise;
+        expect(message).toBeInstanceOf(ArrayBuffer);
+        expect(await readBytes(message)).toEqual([0x00, 0xff]);
       });
     });
   });

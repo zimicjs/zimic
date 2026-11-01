@@ -145,6 +145,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       }
 
       await this.store.startMSWWorker(mswWorker, sharedOptions);
+      this.store.applyWebSocketInterception();
       this.isRunning = true;
     });
   }
@@ -155,6 +156,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
       this.clearHandlers();
 
+      this.store.restoreNativeWebSocket();
       this.store.stopMSWWorker(mswWorker);
       this.isRunning = false;
     });

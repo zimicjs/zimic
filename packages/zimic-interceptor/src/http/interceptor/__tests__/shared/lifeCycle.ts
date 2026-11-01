@@ -185,6 +185,9 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
   // No HTTP counterpart for "should close connections shared with other interceptors after all of them are stopped":
   // WebSocket connections are long-lived, so one can outlive the stop of an interceptor holding it.
 
+  // No HTTP counterpart for "should apply the binary type set after open to intercepted messages after a local
+  // interceptor is stopped": binary types are a property of WebSocket connections, not HTTP responses.
+
   it('should throw an error when trying to create a request handler if not running', async () => {
     const interceptor = createInternalHttpInterceptor(interceptorOptions);
     expect(interceptor.isRunning).toBe(false);
