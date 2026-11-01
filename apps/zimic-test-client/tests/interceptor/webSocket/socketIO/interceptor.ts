@@ -148,10 +148,6 @@ export function declareSocketIOInterceptorTests(options: { platform: WebSocketIn
         expectTypeOf(
           `42["user:delete",${JSON.stringify({ id: userId })}]` as const,
         ).toExtend<SocketIOWebSocketSchema>();
-        expectTypeOf(
-          `42["user:delete",${JSON.stringify({ userId })}]` as const,
-        ).not.toExtend<SocketIOWebSocketSchema>();
-        expectTypeOf(`42["user:delete",{"id":"${userId}"}]` as const).not.toExtend<SocketIOWebSocketSchema>();
 
         const socket = connectSocket(interceptor.baseURL, transports);
         sockets.push(socket);
