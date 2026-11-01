@@ -384,6 +384,51 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
     });
   });
 
+  it.each([
+    { initialBinaryType: 'arraybuffer', binaryType: 'blob', receivedMessageType: Blob },
+    { initialBinaryType: 'blob', binaryType: 'arraybuffer', receivedMessageType: ArrayBuffer },
+  ] as const)(
+    'should deliver immediate connection listener messages as the $binaryType binary type set when clients open',
+    async ({ initialBinaryType, binaryType, receivedMessageType }) => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<BinaryMessage>({ type, baseURL }, async (interceptor) => {
+        interceptor.once('connection', (connectedClient) => connectedClient.send(createBinaryMessage(0x00, 0xff)));
+
+        // A `WebSocketClient` exposes its socket only after opening, so its open listeners cannot change the binary type
+        // of the socket.
+        const socket = new WebSocket(baseURL);
+        socket.binaryType = initialBinaryType;
+
+        socket.addEventListener(
+          'open',
+          () => {
+            socket.binaryType = binaryType;
+          },
+          { once: true },
+        );
+
+        const receivedMessage = new Promise<Blob | ArrayBuffer>((resolve) => {
+          socket.addEventListener('message', (event: MessageEvent<Blob | ArrayBuffer>) => resolve(event.data), {
+            once: true,
+          });
+        });
+
+        try {
+          const message = await receivedMessage;
+          expect(message).toBeInstanceOf(receivedMessageType);
+          expect(await readBytes(message)).toEqual([0x00, 0xff]);
+        } finally {
+          const closePromise = new Promise((resolve) => {
+            socket.addEventListener('close', resolve, { once: true });
+          });
+          socket.close();
+          await closePromise;
+        }
+      });
+    },
+  );
+
   it('should remove a once listener before delivering its event', async () => {
     const baseURL = getBaseURL();
 

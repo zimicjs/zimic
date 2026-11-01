@@ -105,6 +105,18 @@ function createConnectionURLRegex(baseURL: string) {
   return new RegExp(hasTrailingSlash ? `^${escapedBaseURL}(?:/|$)` : `^${escapedBaseURL}`);
 }
 
+// Resolves once a connection still opening opens or closes, so deliveries waiting on it never stall.
+async function waitForConnectionToSettle(connection: LocalWebSocketClientConnection) {
+  if (connection.socket.readyState !== connection.socket.CONNECTING) {
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    connection.socket.addEventListener('open', () => resolve(), { once: true });
+    connection.socket.addEventListener('close', () => resolve(), { once: true });
+  });
+}
+
 class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private store = new LocalMSWWorkerStore();
 
@@ -237,6 +249,8 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     const { connection } = registration;
 
     registration.deliveries = registration.deliveries.then(async () => {
+      // A real socket applies its `binaryType` when a message arrives, which is never before the socket opens.
+      await waitForConnectionToSettle(connection);
       connection.send(await convertWebSocketMessageDataToBinaryType(data, connection.socket.binaryType));
     });
   }
@@ -261,14 +275,9 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     // MSW delivers server messages in a later microtask and drops them once the connection is closing, and it never
     // opens a connection closed while opening. A real server opens the connection and delivers earlier messages before
     // closing it, so the close waits for both.
-    registration.deliveries = registration.deliveries.then(() => {
-      if (connection.socket.readyState === connection.socket.CONNECTING) {
-        connection.socket.addEventListener('open', () => queueMicrotask(() => connection.close(closeCode, reason)), {
-          once: true,
-        });
-      } else {
-        queueMicrotask(() => connection.close(closeCode, reason));
-      }
+    registration.deliveries = registration.deliveries.then(async () => {
+      await waitForConnectionToSettle(connection);
+      queueMicrotask(() => connection.close(closeCode, reason));
     });
   }
 
