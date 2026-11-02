@@ -81,11 +81,14 @@ await handler.from(client);
 
 Declares a restriction to intercepted message matches. If multiple restrictions are declared, all of them must be met, creating an AND condition.
 
+By default, static restrictions use `exact: false`, meaning that any JSON message **containing** the declared data will match the handler, regardless of having more properties or values. If you want to match only messages equal to the declared data, use `exact: true`.
+
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
 
 ```ts
 handler.with(restriction);
+handler.with(restriction, { exact: true });
 handler.with((message) => matchesMessage);
 ```
 
@@ -95,6 +98,7 @@ handler.with((message) => matchesMessage);
 
 ```ts
 await handler.with(restriction);
+await handler.with(restriction, { exact: true });
 await handler.with((message) => matchesMessage);
 ```
 
@@ -106,6 +110,41 @@ await handler.with((message) => matchesMessage);
 1. **restriction**: `WebSocketMessageHandlerRestriction<Schema>`
 
    The restriction to match intercepted messages. It can be static, declared as a partial message object, or computed, declared as a boolean predicate or type guard returning whether the message matches. Static restrictions match messages that contain the declared data.
+
+2. **options**: `WebSocketMessageHandlerStaticRestrictionOptions | undefined`
+
+   The options of a static restriction. Computed restrictions do not accept options.
+   - **exact**: `boolean | undefined` (default: `false`)
+
+     Whether JSON messages must be equal to the restriction instead of containing it. Binary restrictions always require messages with the same bytes.
+
+   Unlike HTTP, where `exact` is a field of the restriction, `exact` is a separate argument in WebSocket handlers. A WebSocket static restriction is the partial message itself, so an `exact` field would be ambiguous with the message data.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+// Matches { type: 'message', text: 'hello' } and { type: 'message', text: 'hello', sentAt: '...' }
+interceptor.message().with({ type: 'message', text: 'hello' }).respond({ type: 'ack' });
+
+// Matches only { type: 'message', text: 'hello' }
+interceptor.message().with({ type: 'message', text: 'hello' }, { exact: true }).respond({ type: 'ack' });
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+// Matches { type: 'message', text: 'hello' } and { type: 'message', text: 'hello', sentAt: '...' }
+await interceptor.message().with({ type: 'message', text: 'hello' }).respond({ type: 'ack' });
+
+// Matches only { type: 'message', text: 'hello' }
+await interceptor.message().with({ type: 'message', text: 'hello' }, { exact: true }).respond({ type: 'ack' });
+```
+
+  </TabItem>
+</Tabs>
 
 **Returns**: `WebSocketMessageHandler<Schema, RestrictedSchema>`
 
