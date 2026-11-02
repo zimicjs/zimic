@@ -32,9 +32,9 @@ import { serializeUser } from '@tests/utils/schema';
 
 import {
   ClientTestOptionsByWorkerType,
-  ClientTestSocket,
-  ClientTestSocketCloseEvent,
-  ClientTestSocketMessageEvent,
+  ClientTestWebSocket,
+  ClientTestWebSocketCloseEvent,
+  ClientTestWebSocketMessageEvent,
 } from './client';
 
 function getUserBaseURL(type: WebSocketInterceptorType) {
@@ -54,9 +54,9 @@ function getBinaryBaseURL(type: WebSocketInterceptorType) {
 async function waitForResponseMessage<
   Schema extends UserWebSocketSchema | NotificationWebSocketSchema,
   ResponseMessageType extends Schema['type'],
->(socket: ClientTestSocket<Schema>, responseMessageType: ResponseMessageType) {
+>(socket: ClientTestWebSocket<Schema>, responseMessageType: ResponseMessageType) {
   return new Promise<Extract<Schema, { type: ResponseMessageType }>>((resolve) => {
-    function messageListener(event: ClientTestSocketMessageEvent<Schema>) {
+    function messageListener(event: ClientTestWebSocketMessageEvent<Schema>) {
       const message = JSON.parse(event.data);
 
       if (message.type === responseMessageType) {
@@ -70,7 +70,7 @@ async function waitForResponseMessage<
 }
 
 async function sendAndWaitForResponse<ResponseMessageType extends UserWebSocketSchema['type']>(
-  socket: ClientTestSocket<UserWebSocketSchema>,
+  socket: ClientTestWebSocket<UserWebSocketSchema>,
   message: UserWebSocketSchema,
   responseMessageType: ResponseMessageType,
 ) {
@@ -79,9 +79,9 @@ async function sendAndWaitForResponse<ResponseMessageType extends UserWebSocketS
   return responsePromise;
 }
 
-async function waitForBinaryMessage(socket: ClientTestSocket<BinaryWebSocketSchema>) {
+async function waitForBinaryMessage(socket: ClientTestWebSocket<BinaryWebSocketSchema>) {
   return new Promise<BinaryWebSocketSchema>((resolve) => {
-    function messageListener(event: ClientTestSocketMessageEvent<BinaryWebSocketSchema>) {
+    function messageListener(event: ClientTestWebSocketMessageEvent<BinaryWebSocketSchema>) {
       socket.removeEventListener('message', messageListener);
       resolve(event.data);
     }
@@ -129,9 +129,9 @@ export function declareWebSocketInterceptorTests({
 
   const interceptors = [userInterceptor, notificationInterceptor, binaryInterceptor];
 
-  let userSockets: ClientTestSocket<UserWebSocketSchema>[] = [];
-  let notificationSockets: ClientTestSocket<NotificationWebSocketSchema>[] = [];
-  let binarySocket: ClientTestSocket<BinaryWebSocketSchema>;
+  let userSockets: ClientTestWebSocket<UserWebSocketSchema>[] = [];
+  let notificationSockets: ClientTestWebSocket<NotificationWebSocketSchema>[] = [];
+  let binarySocket: ClientTestWebSocket<BinaryWebSocketSchema>;
 
   function expectMessagedClients<Schema extends UserWebSocketSchema | NotificationWebSocketSchema>(
     interceptor: WebSocketInterceptor<Schema>,
@@ -217,7 +217,7 @@ export function declareWebSocketInterceptorTests({
       const listener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
       userInterceptor.on('connection', listener);
 
-      const sockets: ClientTestSocket<UserWebSocketSchema>[] = [];
+      const sockets: ClientTestWebSocket<UserWebSocketSchema>[] = [];
 
       try {
         for (const index of [0, 1]) {
@@ -252,7 +252,7 @@ export function declareWebSocketInterceptorTests({
       userInterceptor.on('connection', listener);
       userInterceptor.on('connection', remainingListener);
 
-      const sockets: ClientTestSocket<UserWebSocketSchema>[] = [];
+      const sockets: ClientTestWebSocket<UserWebSocketSchema>[] = [];
 
       try {
         sockets.push(await openSocket<UserWebSocketSchema>(userInterceptor.baseURL));
@@ -278,7 +278,7 @@ export function declareWebSocketInterceptorTests({
       userInterceptor.once('connection', listener);
       userInterceptor.on('connection', remainingListener);
 
-      const sockets: ClientTestSocket<UserWebSocketSchema>[] = [];
+      const sockets: ClientTestWebSocket<UserWebSocketSchema>[] = [];
 
       try {
         sockets.push(await openSocket<UserWebSocketSchema>(userInterceptor.baseURL));
@@ -766,7 +766,7 @@ export function declareWebSocketInterceptorTests({
 
   describe('Connection closes', () => {
     it('should support reconnecting after the interceptor closes a connection', async () => {
-      const sockets: ClientTestSocket<UserWebSocketSchema>[] = [];
+      const sockets: ClientTestWebSocket<UserWebSocketSchema>[] = [];
 
       try {
         const closedSocket = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
@@ -775,7 +775,7 @@ export function declareWebSocketInterceptorTests({
         await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length + 1));
         const closedClient = userInterceptor.clients[userSockets.length];
 
-        const closeEventPromise = new Promise<ClientTestSocketCloseEvent>((resolve) => {
+        const closeEventPromise = new Promise<ClientTestWebSocketCloseEvent>((resolve) => {
           closedSocket.addEventListener('close', resolve);
         });
 
@@ -911,11 +911,11 @@ export function declareWebSocketInterceptorTests({
       }
     }
 
-    function waitForNotificationCreation(socket: ClientTestSocket<NotificationWebSocketSchema>) {
+    function waitForNotificationCreation(socket: ClientTestWebSocket<NotificationWebSocketSchema>) {
       return waitForResponseMessage(socket, 'notification:create:success');
     }
 
-    function waitForNotificationUpdate(socket: ClientTestSocket<NotificationWebSocketSchema>) {
+    function waitForNotificationUpdate(socket: ClientTestWebSocket<NotificationWebSocketSchema>) {
       return waitForResponseMessage(socket, 'notification:update:success');
     }
 
@@ -987,7 +987,7 @@ export function declareWebSocketInterceptorTests({
         const thirdSocket = await openSocket<NotificationWebSocketSchema>(notificationInterceptor.baseURL);
         const sockets = [...notificationSockets, thirdSocket];
         const messageListeners = sockets.map(() =>
-          vi.fn<(event: ClientTestSocketMessageEvent<NotificationWebSocketSchema>) => void>(),
+          vi.fn<(event: ClientTestWebSocketMessageEvent<NotificationWebSocketSchema>) => void>(),
         );
         const message: NotificationWebSocketMessage<'notification:create:success'> = {
           type: 'notification:create:success',

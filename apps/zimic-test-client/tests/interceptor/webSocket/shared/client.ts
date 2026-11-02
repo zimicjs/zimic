@@ -4,31 +4,30 @@ import { describe } from 'vitest';
 
 import { declareWebSocketInterceptorTests } from './interceptor';
 
-export interface ClientTestSocketMessageEvent<Schema extends WebSocketSchema> {
+export interface ClientTestWebSocketMessageEvent<Schema extends WebSocketSchema> {
   data: WebSocketMessageData<Schema>;
 }
 
-type ClientTestSocketMessageListener<Schema extends WebSocketSchema> = (
-  event: ClientTestSocketMessageEvent<Schema>,
+type ClientTestWebSocketMessageListener<Schema extends WebSocketSchema> = (
+  event: ClientTestWebSocketMessageEvent<Schema>,
 ) => void;
 
-export interface ClientTestSocketCloseEvent {
+export interface ClientTestWebSocketCloseEvent {
   code: number;
   reason: string;
 }
 
-type ClientTestSocketCloseListener = (event: ClientTestSocketCloseEvent) => void;
+type ClientTestWebSocketCloseListener = (event: ClientTestWebSocketCloseEvent) => void;
 
-type ClientTestSocketLifecycleListener = (event: unknown) => void;
+type ClientTestWebSocketLifecycleListener = (event: unknown) => void;
 
-interface ClientTestSocketEventListenerMethod<Schema extends WebSocketSchema> {
-  (type: 'message', listener: ClientTestSocketMessageListener<Schema>): void;
-  (type: 'close', listener: ClientTestSocketCloseListener): void;
-  (type: 'close' | 'error', listener: ClientTestSocketLifecycleListener): void;
+interface ClientTestWebSocketEventListenerMethod<Schema extends WebSocketSchema> {
+  (type: 'message', listener: ClientTestWebSocketMessageListener<Schema>): void;
+  (type: 'close', listener: ClientTestWebSocketCloseListener): void;
+  (type: 'close' | 'error', listener: ClientTestWebSocketLifecycleListener): void;
 }
 
-// The native `WebSocket` members used by the shared cases, typed to also accept `WebSocketClient` and `ws` sockets.
-export interface ClientTestSocket<Schema extends WebSocketSchema> {
+export interface ClientTestWebSocket<Schema extends WebSocketSchema> {
   binaryType: string;
   readonly protocol: string;
   readonly url: string;
@@ -37,8 +36,8 @@ export interface ClientTestSocket<Schema extends WebSocketSchema> {
 
   send: (data: WebSocketMessageData<Schema>) => void;
   close: (code?: number, reason?: string) => void;
-  addEventListener: ClientTestSocketEventListenerMethod<Schema>;
-  removeEventListener: ClientTestSocketEventListenerMethod<Schema>;
+  addEventListener: ClientTestWebSocketEventListenerMethod<Schema>;
+  removeEventListener: ClientTestWebSocketEventListenerMethod<Schema>;
 }
 
 export interface ClientTestOptions {
@@ -47,7 +46,7 @@ export interface ClientTestOptions {
   openSocket: <Schema extends WebSocketSchema>(
     url: string,
     protocols?: string | string[],
-  ) => Promise<ClientTestSocket<Schema>>;
+  ) => Promise<ClientTestWebSocket<Schema>>;
 }
 
 export interface ClientTestOptionsByWorkerType extends ClientTestOptions {
