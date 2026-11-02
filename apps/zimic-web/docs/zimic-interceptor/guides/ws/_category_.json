@@ -1,0 +1,8 @@
+{
+  "label": "WebSocket",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "slug": "interceptor/guides/ws"
+  }
+}

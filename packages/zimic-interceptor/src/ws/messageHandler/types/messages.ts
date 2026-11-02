@@ -6,8 +6,7 @@ import { ReceivedWebSocketMessageData } from '@/ws/interceptor/types/messages';
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A function declared with `handler.delay()` that computes the delay in milliseconds for each matched message. Binary
- * messages arrive as `ArrayBuffer`.
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerdelay `handler.delay()` API reference}
  */
 export type WebSocketMessageHandlerDelayFactory<Schema extends WebSocketSchema> = (
   message: ReceivedWebSocketMessageData<Schema>,
