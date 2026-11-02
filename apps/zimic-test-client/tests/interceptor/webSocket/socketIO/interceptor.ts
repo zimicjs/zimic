@@ -1,44 +1,25 @@
 import {
   createWebSocketInterceptor,
-  WebSocketInterceptorClient,
   WebSocketInterceptorPlatform,
   WebSocketInterceptorType,
 } from '@zimic/interceptor/experimental/ws';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 import { waitFor } from '@zimic/utils/time';
-import { JSONStringified } from '@zimic/ws';
-import { io, ManagerOptions, Socket, WebSocket } from 'socket.io-client';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
+import { io, ManagerOptions, NodeXHR, Socket, XHR } from 'socket.io-client';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { ZIMIC_SERVER_PORT } from '@tests/constants';
-import { User } from '@tests/types/schema/entities';
-import { SocketIOWebSocketSchema } from '@tests/types/schema/webSocket';
+import { UserSocketIOEvents, UserSocketIOWebSocketSchema } from '@tests/types/schema/webSocket';
 
-const ENGINE_IO_OPEN_PACKET = `0${JSON.stringify({
-  sid: 'engine-io-session',
-  upgrades: [],
-  pingInterval: 60 * 1000,
-  pingTimeout: 60 * 1000,
-  maxPayload: 1000000,
-})}` as const;
+import { createSocketIOMock, GlobalWebSocketTransport, SocketIOHttpSchema } from './utils';
 
-const SOCKET_IO_CONNECT_PACKET = `40${JSON.stringify({ sid: 'socket-io-session' })}` as const;
+// Short enough for a test to observe a connection outliving `pingInterval + pingTimeout`, with margin for slow runs.
+// The shared matrix waits in real time because fake timers do not reach the remote interceptor server or browsers.
+const PING_INTERVAL = 300;
+const PING_TIMEOUT = 1000;
 
-// The built-in transports keep the `WebSocket` constructor they find when the module loads, before local interceptors
-// replace `globalThis.WebSocket`. Reading it on each connection lets local interceptors receive the socket.
-class GlobalWebSocketTransport extends WebSocket {
-  createSocket(url: string, protocols: string | string[] | undefined) {
-    return new globalThis.WebSocket(url, protocols);
-  }
-}
-
-function getBaseURL(type: WebSocketInterceptorType) {
-  return type === 'local'
-    ? 'ws://localhost:4003'
-    : `ws://localhost:${ZIMIC_SERVER_PORT}/socket-io-${crypto.randomUUID()}`;
-}
-
-function sendEngineIOOpenPacket(client: WebSocketInterceptorClient<SocketIOWebSocketSchema>) {
-  client.send(ENGINE_IO_OPEN_PACKET);
+function getBaseURLPath(type: WebSocketInterceptorType) {
+  return type === 'local' ? 'localhost:4003' : `localhost:${ZIMIC_SERVER_PORT}/socket-io-${crypto.randomUUID()}`;
 }
 
 function connectSocket(baseURL: string, transports: ManagerOptions['transports']) {
@@ -61,122 +42,278 @@ async function waitForConnection(socket: Socket) {
   });
 }
 
+// Receiving pings for longer than `pingInterval + pingTimeout` shows that the client did not time out.
+async function waitForPingsOutlivingPingTimeout(socket: Socket) {
+  const numberOfPingsOutlivingPingTimeout = Math.ceil((PING_INTERVAL + PING_TIMEOUT) / PING_INTERVAL) + 1;
+
+  let numberOfPings = 0;
+  socket.io.on('ping', () => numberOfPings++);
+
+  await waitFor(() => expect(numberOfPings).toBeGreaterThanOrEqual(numberOfPingsOutlivingPingTimeout), {
+    timeout: (numberOfPingsOutlivingPingTimeout + 2) * PING_INTERVAL + PING_TIMEOUT,
+  });
+}
+
+async function waitForUserDeleteSuccess(socket: Socket) {
+  return new Promise<UserSocketIOEvents['user:delete:success']>((resolve) => {
+    socket.once('user:delete:success', resolve);
+  });
+}
+
 export function declareSocketIOInterceptorTests(options: { platform: WebSocketInterceptorPlatform }) {
   const { platform } = options;
 
   const interceptorTypes: WebSocketInterceptorType[] = ['local', 'remote'];
 
   describe.each(interceptorTypes)("socket.io client (type '%s')", (type) => {
-    const interceptor = createWebSocketInterceptor<SocketIOWebSocketSchema>({
+    const baseURLPath = getBaseURLPath(type);
+
+    const webSocketInterceptor = createWebSocketInterceptor<UserSocketIOWebSocketSchema>({
       type,
-      baseURL: getBaseURL(type),
+      baseURL: `ws://${baseURLPath}`,
       messageSaving: { enabled: true },
     });
 
+    const httpInterceptor = createHttpInterceptor<SocketIOHttpSchema>({
+      type,
+      baseURL: `http://${baseURLPath}`,
+      requestSaving: { enabled: true },
+    });
+
+    // The built-in `websocket` transport bypasses local interceptors. It uses the `ws` package in Node.js and, in
+    // browsers, the `WebSocket` constructor found when the module loads, before local interceptors replace it. Since
+    // transport names and classes cannot be mixed, local interceptors also need the default polling class.
+    const defaultTransports: ManagerOptions['transports'] =
+      type === 'local' ? [platform === 'node' ? NodeXHR : XHR, GlobalWebSocketTransport] : undefined;
+
     const sockets: Socket[] = [];
 
-    beforeAll(async () => {
-      await interceptor.start();
-      expect(interceptor.isRunning).toBe(true);
-      expect(interceptor.platform).toBe(platform);
+    function connectTrackedSocket(transports: ManagerOptions['transports']) {
+      const socket = connectSocket(webSocketInterceptor.baseURL, transports);
+      sockets.push(socket);
+      return socket;
+    }
 
-      interceptor.on('connection', sendEngineIOOpenPacket);
+    beforeAll(async () => {
+      await webSocketInterceptor.start();
+      expect(webSocketInterceptor.isRunning).toBe(true);
+      expect(webSocketInterceptor.platform).toBe(platform);
     });
 
     beforeEach(async () => {
-      await Promise.resolve(interceptor.clear());
+      await Promise.resolve(webSocketInterceptor.clear());
     });
 
     afterEach(async () => {
       try {
-        await interceptor.checkTimes();
+        await webSocketInterceptor.checkTimes();
       } finally {
         for (const socket of sockets) {
           socket.disconnect();
         }
         sockets.length = 0;
 
-        await waitFor(() => expect(interceptor.clients).toHaveLength(0));
+        await waitFor(() => expect(webSocketInterceptor.clients).toHaveLength(0));
       }
     });
 
     afterAll(async () => {
-      interceptor.off('connection', sendEngineIOOpenPacket);
-
-      await interceptor.stop();
-      expect(interceptor.isRunning).toBe(false);
+      await webSocketInterceptor.stop();
+      expect(webSocketInterceptor.isRunning).toBe(false);
     });
 
-    const webSocketTransports: { transportName: string; transports: ManagerOptions['transports'] }[] = [
-      { transportName: 'GlobalWebSocketTransport', transports: [GlobalWebSocketTransport] },
-    ];
-
-    // The built-in transport bypasses local interceptors. It uses the `ws` package in Node.js and, in browsers, the
-    // `WebSocket` constructor found when the module loads, before local interceptors replace it.
-    if (type === 'remote') {
-      webSocketTransports.push({ transportName: "'websocket'", transports: ['websocket'] });
-    }
-
-    describe.each(webSocketTransports)('Transport $transportName', ({ transports }) => {
-      it('should connect after the handlers reply with the Engine.IO open and socket.io connect packets', async () => {
-        const connectHandler = await interceptor.message().with('40').respond(SOCKET_IO_CONNECT_PACKET).times(1);
-
-        const socket = connectSocket(interceptor.baseURL, transports);
-        sockets.push(socket);
-
-        await waitForConnection(socket);
-        expect(socket.connected).toBe(true);
-
-        expect(interceptor.clients).toHaveLength(1);
-        expect(interceptor.clients[0].url).toBe(`${interceptor.baseURL}/socket.io/?EIO=4&transport=websocket`);
-
-        expect(connectHandler.messages).toHaveLength(1);
-        expect(connectHandler.messages[0].data).toBe('40');
+    describe('Without an HTTP interceptor', () => {
+      const socketIOMock = createSocketIOMock<UserSocketIOEvents>({
+        webSocketInterceptor,
+        upgrades: [],
+        pingInterval: PING_INTERVAL,
+        pingTimeout: PING_TIMEOUT,
       });
 
-      it('should respond to emitted events with event frames', async () => {
-        const userId = crypto.randomUUID();
+      beforeAll(() => {
+        socketIOMock.start();
+      });
 
-        await interceptor.message().with('40').respond(SOCKET_IO_CONNECT_PACKET).times(1);
+      beforeEach(async () => {
+        await socketIOMock.declareHandlers();
+      });
 
-        const deleteHandler = await interceptor
-          .message()
-          .with(`42["user:delete",${JSON.stringify({ id: userId })}]`)
-          .respond(`42["user:delete:success",${JSON.stringify({ id: userId })}]` as const)
-          .times(1);
+      afterAll(() => {
+        socketIOMock.stop();
+      });
 
-        expectTypeOf(
-          `42["user:delete",${JSON.stringify({ id: userId })}]` as const,
-        ).toExtend<SocketIOWebSocketSchema>();
+      const webSocketTransports: { transportName: string; transports: ManagerOptions['transports'] }[] = [
+        { transportName: 'GlobalWebSocketTransport', transports: [GlobalWebSocketTransport] },
+      ];
 
-        const socket = connectSocket(interceptor.baseURL, transports);
-        sockets.push(socket);
-        await waitForConnection(socket);
+      // The built-in transport bypasses local interceptors, as the default transports above describe.
+      if (type === 'remote') {
+        webSocketTransports.push({ transportName: "'websocket'", transports: ['websocket'] });
+      }
 
-        const responsePromise = new Promise<{ id: string }>((resolve) => {
-          socket.once('user:delete:success', (data: { id: string }) => resolve(data));
+      describe.each(webSocketTransports)('Transport $transportName', ({ transports }) => {
+        it('should connect after the handlers reply with the Engine.IO open and socket.io connect packets', async () => {
+          const socket = connectTrackedSocket(transports);
+
+          await waitForConnection(socket);
+          expect(socket.connected).toBe(true);
+
+          expect(webSocketInterceptor.clients).toHaveLength(1);
+          expect(webSocketInterceptor.clients[0].url).toBe(
+            `${webSocketInterceptor.baseURL}/socket.io/?EIO=4&transport=websocket`,
+          );
+          expect(webSocketInterceptor.clients[0].messages[0].data).toBe('40');
         });
 
-        socket.emit('user:delete', { id: userId });
+        it('should respond to emitted events with event frames', async () => {
+          const userId = crypto.randomUUID();
 
-        expect(await responsePromise).toEqual({ id: userId });
+          const deleteHandler = await webSocketInterceptor
+            .message()
+            .with((frame) => socketIOMock.hasEvent(frame, 'user:delete'))
+            .respond(socketIOMock.encodeEvent('user:delete:success', { id: userId }))
+            .times(1);
 
-        expect(deleteHandler.messages).toHaveLength(1);
-        expectTypeOf(deleteHandler.messages[0].data).toEqualTypeOf<
-          Extract<SocketIOWebSocketSchema, `42["user:delete",${JSONStringified<{ id: User['id'] }>}]`>
-        >();
-        expect(deleteHandler.messages[0].data).toBe(`42["user:delete",${JSON.stringify({ id: userId })}]`);
-        expect(deleteHandler.messages[0].sender).toBe(interceptor.clients[0]);
+          const socket = connectTrackedSocket(transports);
+          await waitForConnection(socket);
+
+          const responsePromise = waitForUserDeleteSuccess(socket);
+          socket.emit('user:delete', { id: userId });
+
+          expect(await responsePromise).toEqual({ id: userId });
+
+          expect(deleteHandler.messages).toHaveLength(1);
+          expect(socketIOMock.decodeEvents(deleteHandler.messages[0].data)).toEqual([
+            { event: 'user:delete', data: { id: userId } },
+          ]);
+          expect(deleteHandler.messages[0].sender).toBe(webSocketInterceptor.clients[0]);
+        });
+
+        it('should stay connected past the ping timeout while the handlers ping the client', async () => {
+          const socket = connectTrackedSocket(transports);
+          await waitForConnection(socket);
+
+          await waitForPingsOutlivingPingTimeout(socket);
+          expect(socket.connected).toBe(true);
+        });
+      });
+
+      // Polling sends Engine.IO packets in HTTP requests, which WebSocket interceptors do not handle.
+      it('should not connect with the default transports', async () => {
+        const socket = connectTrackedSocket(defaultTransports);
+
+        await expect(waitForConnection(socket)).rejects.toThrow();
+        expect(webSocketInterceptor.clients).toHaveLength(0);
       });
     });
 
-    // Polling sends Engine.IO packets in HTTP requests, which WebSocket interceptors do not handle.
-    it('should not connect with the polling transport without an HTTP interceptor', async () => {
-      const socket = connectSocket(interceptor.baseURL, ['polling']);
-      sockets.push(socket);
+    describe.each([
+      { upgradeDescription: 'Polling without upgrades', upgrades: [] },
+      { upgradeDescription: 'Polling with upgrades', upgrades: ['websocket'] },
+    ] satisfies { upgradeDescription: string; upgrades: 'websocket'[] }[])('$upgradeDescription', ({ upgrades }) => {
+      const socketIOMock = createSocketIOMock<UserSocketIOEvents>({
+        webSocketInterceptor,
+        httpInterceptor,
+        upgrades,
+        pingInterval: PING_INTERVAL,
+        pingTimeout: PING_TIMEOUT,
+      });
 
-      await expect(waitForConnection(socket)).rejects.toThrow();
-      expect(interceptor.clients).toHaveLength(0);
+      beforeAll(async () => {
+        await httpInterceptor.start();
+        expect(httpInterceptor.isRunning).toBe(true);
+
+        socketIOMock.start();
+      });
+
+      beforeEach(async () => {
+        await httpInterceptor.clear();
+        await socketIOMock.declareHandlers();
+      });
+
+      afterEach(async () => {
+        await httpInterceptor.checkTimes();
+      });
+
+      afterAll(async () => {
+        socketIOMock.stop();
+
+        await httpInterceptor.stop();
+        expect(httpInterceptor.isRunning).toBe(false);
+      });
+
+      it('should stay connected past the ping timeout while the handlers ping the client', async () => {
+        const socket = connectTrackedSocket(defaultTransports);
+        await waitForConnection(socket);
+
+        await waitForPingsOutlivingPingTimeout(socket);
+        expect(socket.connected).toBe(true);
+      });
+
+      // Without upgrades, events stay on polling and reach HTTP handlers. With upgrades, they move to the WebSocket
+      // and reach WebSocket handlers.
+      if (upgrades.length === 0) {
+        it.each([
+          { transportName: "'polling'", transports: ['polling'] satisfies ManagerOptions['transports'] },
+          { transportName: 'the default transports', transports: defaultTransports },
+        ])('should respond to emitted events over polling with $transportName', async ({ transports }) => {
+          const userId = crypto.randomUUID();
+
+          const deleteHandler = await httpInterceptor
+            .post('/socket.io/')
+            .with((request) => socketIOMock.hasEvent(request.body, 'user:delete'))
+            .respond((request) => {
+              socketIOMock.send(
+                request.searchParams.get('sid'),
+                socketIOMock.encodeEvent('user:delete:success', { id: userId }),
+              );
+              return { status: 200, body: 'ok' };
+            })
+            .times(1);
+
+          const socket = connectTrackedSocket(transports);
+          await waitForConnection(socket);
+          expect(socket.io.engine.transport.name).toBe('polling');
+
+          const responsePromise = waitForUserDeleteSuccess(socket);
+          socket.emit('user:delete', { id: userId });
+
+          expect(await responsePromise).toEqual({ id: userId });
+          expect(socket.io.engine.transport.name).toBe('polling');
+
+          expect(deleteHandler.requests).toHaveLength(1);
+          expect(socketIOMock.decodeEvents(deleteHandler.requests[0].body)).toEqual([
+            { event: 'user:delete', data: { id: userId } },
+          ]);
+          expect(webSocketInterceptor.clients).toHaveLength(0);
+        });
+      } else {
+        it('should upgrade from polling and respond to emitted events over WebSocket with the default transports', async () => {
+          const userId = crypto.randomUUID();
+
+          const deleteHandler = await webSocketInterceptor
+            .message()
+            .with((frame) => socketIOMock.hasEvent(frame, 'user:delete'))
+            .respond(socketIOMock.encodeEvent('user:delete:success', { id: userId }))
+            .times(1);
+
+          const socket = connectTrackedSocket(defaultTransports);
+          await waitForConnection(socket);
+
+          await waitFor(() => expect(socket.io.engine.transport.name).toBe('websocket'));
+
+          const responsePromise = waitForUserDeleteSuccess(socket);
+          socket.emit('user:delete', { id: userId });
+
+          expect(await responsePromise).toEqual({ id: userId });
+
+          expect(webSocketInterceptor.clients).toHaveLength(1);
+          expect(new URL(webSocketInterceptor.clients[0].url).searchParams.get('sid')).toEqual(expect.any(String));
+
+          expect(deleteHandler.messages).toHaveLength(1);
+          expect(deleteHandler.messages[0].sender).toBe(webSocketInterceptor.clients[0]);
+        });
+      }
     });
   });
 }
