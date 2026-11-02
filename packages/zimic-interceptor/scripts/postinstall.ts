@@ -1,4 +1,5 @@
 import { Override } from '@zimic/utils/types';
+import crypto from 'crypto';
 import fs from 'fs';
 import type mswPackage from 'msw/package.json';
 import path from 'path';
@@ -32,7 +33,15 @@ async function patchMSWExports() {
   mswExports['./node'] = { browser: browserNodeExport, ...nodeExportsWithoutBrowser };
 
   const patchedMSWPackageContentAsString = JSON.stringify(mswPackageContent, null, 2);
-  await fs.promises.writeFile(MSW_PACKAGE_PATH, patchedMSWPackageContentAsString);
+  const temporaryPackagePath = `${MSW_PACKAGE_PATH}.${crypto.randomUUID()}.tmp`;
+
+  // Keep the manifest readable by other processes while the patched exports are written.
+  try {
+    await fs.promises.writeFile(temporaryPackagePath, patchedMSWPackageContentAsString);
+    await fs.promises.rename(temporaryPackagePath, MSW_PACKAGE_PATH);
+  } finally {
+    await fs.promises.rm(temporaryPackagePath, { force: true });
+  }
 }
 
 async function postinstall() {

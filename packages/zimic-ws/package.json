@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "0.2.0-canary.28",
+  "version": "0.2.0-canary.30",
   "homepage": "https://zimic.dev/docs/ws",
   "repository": {
     "type": "git",
@@ -87,7 +87,7 @@
     "ws": "8.22.0"
   },
   "devDependencies": {
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "@types/ws": "^8.18.2",
     "@typescript/native": "npm:typescript@^7.0.2",
     "@vitest/browser": "^5.0.5",
@@ -98,11 +98,12 @@
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
-    "dotenv-cli": "^11.0.0",
-    "eslint": "^10.12.0",
+    "dotenv-cli": "^11.1.0",
+    "eslint": "^10.14.0",
     "playwright": "^1.64.1",
     "tsup": "^9.0.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "vite": "^8.3.5",
     "vitest": "^5.0.5"
   },
   "peerDependencies": {

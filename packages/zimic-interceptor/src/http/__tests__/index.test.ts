@@ -5,7 +5,7 @@ vi.mock('@zimic/ws', () => {
 });
 
 describe('HTTP entrypoint', () => {
-  it('should not load the WebSocket peer dependency', async () => {
+  it('should not import @zimic/ws', async () => {
     await expect(import('@/http')).resolves.toBeDefined();
   });
 });
