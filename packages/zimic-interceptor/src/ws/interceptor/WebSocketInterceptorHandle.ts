@@ -15,7 +15,7 @@ export interface InternalWebSocketInterceptorClient<
 
 export const MAX_CLOSE_REASON_BYTE_LENGTH = 123;
 
-const MAX_UNSIGNED_SHORT = 65535;
+const MAX_UNSIGNED_SHORT = 2 ** 16 - 1;
 
 // The WebIDL `[Clamp] unsigned short` conversion `WebSocket.close()` applies to its code: NaN becomes 0, other values
 // are clamped to the unsigned short range and rounded to the nearest integer, with ties to even.
