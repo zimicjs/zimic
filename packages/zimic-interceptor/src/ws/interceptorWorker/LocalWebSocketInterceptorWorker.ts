@@ -246,7 +246,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private deliverMessage(registration: WebSocketClientRegistration, data: string | Blob | BufferSource) {
     const { connection } = registration;
 
-    registration.deliveries = registration.deliveries.then(async () => {
+    this.enqueueDelivery(registration, async () => {
       // A real socket applies its `binaryType` when a message arrives, which is never before the socket opens.
       await waitForConnectionToSettle(connection);
       connection.send(await convertWebSocketMessageDataToBinaryType(data, connection.socket.binaryType));
@@ -273,9 +273,21 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     // MSW delivers server messages in a later microtask and drops them once the connection is closing, and it never
     // opens a connection closed while opening. A real server opens the connection and delivers earlier messages before
     // closing it, so the close waits for both.
-    registration.deliveries = registration.deliveries.then(async () => {
+    this.enqueueDelivery(registration, async () => {
       await waitForConnectionToSettle(connection);
       queueMicrotask(() => connection.close(closeCode, reason));
+    });
+  }
+
+  // Failures are logged because the public send and close methods return nothing to reject, as native
+  // `WebSocket.send` and `WebSocket.close`.
+  private enqueueDelivery(registration: WebSocketClientRegistration, deliver: () => Promise<void>) {
+    registration.deliveries = registration.deliveries.then(async () => {
+      try {
+        await deliver();
+      } catch (error) {
+        console.error(error);
+      }
     });
   }
 

@@ -1127,6 +1127,40 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
     });
   });
 
+  it('should log binary send errors and keep sending later messages', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<BinaryOrTextMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<BinaryOrTextMessage>(baseURL, async (client) => {
+        client.binaryType = 'arraybuffer';
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const messages = collectWebSocketClientMessages(client);
+
+        // Reading a blob fails only when its backing data becomes unreadable, such as a file changed on disk, which no
+        // portable test can trigger.
+        const unreadableBlob = new Blob([createBinaryMessage(0x00, 0xff)]);
+        const readError = new DOMException('The blob could not be read.', 'NotReadableError');
+        vi.spyOn(unreadableBlob, 'arrayBuffer').mockRejectedValueOnce(readError);
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          interceptor.server.send(unreadableBlob);
+          interceptor.server.send('valid');
+
+          await waitFor(() => {
+            expect(messages).toEqual(['valid']);
+          });
+
+          expect(console.error).toHaveBeenCalledTimes(1);
+          expect(console.error).toHaveBeenCalledWith(readError);
+        });
+      });
+    });
+  });
+
   it('should not reject sends when the interceptor stops right after them', async () => {
     const baseURL = getBaseURL();
 
