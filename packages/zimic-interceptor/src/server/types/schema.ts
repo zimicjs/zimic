@@ -18,7 +18,6 @@ export interface WebSocketWorkerReset {
 
 export interface WebSocketClientDisconnection {
   clientId: string;
-  // Omitted to close the connection without a code, which the client receives as 1005.
   code?: number;
   reason?: string;
 }

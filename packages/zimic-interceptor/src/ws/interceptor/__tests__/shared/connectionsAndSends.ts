@@ -705,8 +705,7 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
     });
   });
 
-  // Codes are clamped to 0 through 65535 and rounded with ties to even before being checked, so the last five codes
-  // become 999, 5000, 0, 0, and 65535.
+  // Codes are clamped to 0 through 65535 and rounded with ties to even before being checked.
   it.each([999, 1001, 1005, 2999, 5000, 999.4, 4999.5, Number.NaN, -1, Number.POSITIVE_INFINITY])(
     'should throw an error when closing clients with an invalid code (%s)',
     async (code) => {

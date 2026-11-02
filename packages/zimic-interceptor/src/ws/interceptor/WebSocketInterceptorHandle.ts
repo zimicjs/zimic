@@ -59,7 +59,6 @@ class WebSocketInterceptorClientImplementation<
     this.#sendMessage(data);
   }
 
-  // Validates the arguments and throws the same errors as `WebSocket.close()`, even if the client is already closed.
   close(rawCode?: number, reason?: string) {
     const code = rawCode === undefined ? undefined : clampToUnsignedShort(rawCode);
 
@@ -77,7 +76,6 @@ class WebSocketInterceptorClientImplementation<
       );
     }
 
-    // A close frame without a code has no body, so the reason is sent only with a code.
     this.#closeConnection(code, code === undefined ? undefined : reason);
   }
 }
