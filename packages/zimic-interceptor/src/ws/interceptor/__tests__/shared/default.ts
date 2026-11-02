@@ -1,5 +1,6 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
+import { ValidationError } from '@zimic/utils/validation';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
@@ -95,12 +96,15 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
       // @ts-expect-error Forcing an unknown type.
       const unknownType: WebSocketInterceptorType = 'unknown';
 
+      const expectedError = new UnknownWebSocketInterceptorTypeError(unknownType);
+      expect(expectedError).toBeInstanceOf(ValidationError);
+
       expect(() => {
         createInternalWebSocketInterceptor({
           type: unknownType,
           baseURL,
         });
-      }).toThrow(new UnknownWebSocketInterceptorTypeError(unknownType));
+      }).toThrow(expectedError);
     });
   });
 
