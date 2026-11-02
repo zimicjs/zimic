@@ -27,6 +27,16 @@ Stopped interceptors can be pointed to another valid `ws:` or `wss:` URL, includ
 
 For remote interceptors, the next `start()` uses the current `baseURL` and authentication options.
 
+:::info INFO: <span>Interceptors sharing a base URL</span>
+
+A connection is shared by the running interceptors whose base URL is a prefix of the connection URL when it opens. Each of them lists the client in [`interceptor.clients`](#interceptorclients), notifies its [`connection` listeners](#interceptoron), and can send server messages to it. Interceptors started after the connection opens do not receive it. A base URL with a trailing slash does not match the same URL without it.
+
+A client message is tried by these interceptors from the **last** one started to the first, until one of them handles it, as HTTP requests are. If a handler throws an error, older interceptors are not tried. Clearing an interceptor releases only its own hold on the connection, which stays open until every interceptor sharing it is cleared or stopped.
+
+In [remote interceptors](/docs/interceptor/guides/ws/remote-interceptors), the [interceptor server](/docs/interceptor/cli/server) gives each connection to a single process and authentication token: the most recently connected one that has a matching running interceptor. Starting another interceptor in an older process or with an older token does not move new connections to it. Only the interceptors of that process and token share the connection.
+
+:::
+
 ## `interceptor.auth`
 
 The authentication options used by a remote interceptor when connecting to an interceptor server.
