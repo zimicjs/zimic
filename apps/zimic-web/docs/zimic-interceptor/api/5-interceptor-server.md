@@ -6,7 +6,7 @@ slug: /interceptor/api/interceptor-server
 
 # `InterceptorServer`
 
-An interceptor server can be used to handle requests and return mock responses in combination with [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md), which declare the responses the server should return for a given request. Interceptor servers and remote interceptors communicate with [remote-procedure calls](https://en.wikipedia.org/wiki/Remote_procedure_call) (RPC) over [WebSocket](https://developer.mozilla.org/docs/Web/API/WebSockets_API).
+An interceptor server handles HTTP requests and WebSocket connections in combination with [remote HTTP interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md) and [remote WebSocket interceptors](/docs/interceptor/guides/ws/remote-interceptors). These interceptors declare the responses and messages the server should send. Interceptor servers and remote interceptors communicate with [remote-procedure calls](https://en.wikipedia.org/wiki/Remote_procedure_call) (RPC) over [WebSocket](https://developer.mozilla.org/docs/Web/API/WebSockets_API).
 
 :::info NOTE: <span>Interceptor servers in development and testing</span>
 
@@ -16,7 +16,8 @@ Interceptor servers are development and test tools. Do not use them as productio
 
 **Related**:
 
-- [Using remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md)
+- [Using remote HTTP interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md)
+- [Using remote WebSocket interceptors](/docs/interceptor/guides/ws/remote-interceptors)
 - [`zimic-interceptor server` CLI reference](/docs/zimic-interceptor/cli/1-server.md)
 
 ## `server.hostname`

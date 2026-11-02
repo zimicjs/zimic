@@ -7,14 +7,14 @@ import { WebSocketInterceptorConnectionSaving, WebSocketInterceptorMessageSaving
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The type of a WebSocket interceptor, either `local` or `remote`.
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptortype `interceptor.type` API reference}
  */
 export type WebSocketInterceptorType = 'local' | 'remote';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The platform a WebSocket interceptor is running on, either `node` or `browser`.
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorplatform `interceptor.platform` API reference}
  */
 export type WebSocketInterceptorPlatform = 'node' | 'browser';
 
@@ -47,18 +47,15 @@ export namespace UnhandledMessageStrategy {
 export type UnhandledMessageStrategy =
   UnhandledMessageStrategy.Declaration | UnhandledMessageStrategy.DeclarationFactory;
 
-/** The options shared by local and remote WebSocket interceptors. */
+/** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
 export interface SharedWebSocketInterceptorOptions<Schema extends WebSocketSchema = WebSocketSchema> {
-  /** The type of the interceptor, either `local` or `remote`. Defaults to `local`. */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
   type?: WebSocketInterceptorType;
 
-  /**
-   * The URL matched by the interceptor. Any connection whose URL starts with this base URL is intercepted. For remote
-   * interceptors, it should point to an {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
   baseURL: string;
 
-  /** Configures if intercepted messages are saved and how they are handled. */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
   messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
 
   /** Configures if intercepted connections are saved and how they are handled. */
@@ -80,46 +77,46 @@ export interface SharedWebSocketInterceptorOptions<Schema extends WebSocketSchem
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The options to create a local WebSocket interceptor.
+ * @see {@link https://zimic.dev/docs/interceptor/guides/ws/local-interceptors#creating-a-local-websocket-interceptor Creating a local WebSocket interceptor}
+ * @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference}
  */
 export interface LocalWebSocketInterceptorOptions<
   Schema extends WebSocketSchema = WebSocketSchema,
 > extends SharedWebSocketInterceptorOptions<Schema> {
+  /** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
   type?: 'local';
 }
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The options to authenticate a remote interceptor when connecting to an
- * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
+ * @see {@link https://zimic.dev/docs/interceptor/guides/ws/remote-interceptors#interceptor-server-authentication Interceptor server authentication}
  */
 export interface WebSocketInterceptorAuthOptions {
-  /** The authentication token to use. */
+  /** @see {@link https://zimic.dev/docs/interceptor/guides/ws/remote-interceptors#interceptor-server-authentication Interceptor server authentication} */
   token: string;
 }
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The options to create a remote WebSocket interceptor.
+ * @see {@link https://zimic.dev/docs/interceptor/guides/ws/remote-interceptors#creating-a-remote-websocket-interceptor Creating a remote WebSocket interceptor}
+ * @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference}
  */
 export interface RemoteWebSocketInterceptorOptions<
   Schema extends WebSocketSchema = WebSocketSchema,
 > extends SharedWebSocketInterceptorOptions<Schema> {
+  /** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
   type: 'remote';
 
-  /**
-   * The options to authenticate the interceptor when connecting to an interceptor server. Required if the server was
-   * started with the `--tokens-dir` option.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/guides/ws/remote-interceptors#interceptor-server-authentication Interceptor server authentication} */
   auth?: WebSocketInterceptorAuthOptions;
 }
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The options to create a WebSocket interceptor.
+ * @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference}
  */
 export type WebSocketInterceptorOptions<Schema extends WebSocketSchema = WebSocketSchema> =
   LocalWebSocketInterceptorOptions<Schema> | RemoteWebSocketInterceptorOptions<Schema>;
