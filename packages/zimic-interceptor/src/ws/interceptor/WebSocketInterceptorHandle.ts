@@ -5,8 +5,6 @@ import type {
   WebSocketInterceptorClient,
   WebSocketInterceptorServer,
   WebSocketInterceptorServerSendOptions,
-  webSocketInterceptorClientRole,
-  webSocketInterceptorServerRole,
 } from './types/messages';
 
 export interface InternalWebSocketInterceptorClient<
@@ -46,8 +44,6 @@ class WebSocketInterceptorClientImplementation<
 > implements InternalWebSocketInterceptorClient<Schema> {
   #sendMessage: (data: WebSocketMessageData<Schema>) => void;
   #closeConnection: WebSocketInterceptorClientCloser;
-
-  declare readonly [webSocketInterceptorClientRole]: true;
 
   readonly messages: InterceptedWebSocketInterceptorMessage<Schema>[] = [];
 
@@ -106,8 +102,6 @@ class WebSocketInterceptorServerImplementation<
 > implements InternalWebSocketInterceptorServer<Schema> {
   #getURL: () => string;
   #sendMessage: (data: WebSocketMessageData<Schema>, options?: WebSocketInterceptorServerSendOptions<Schema>) => void;
-
-  declare readonly [webSocketInterceptorServerRole]: true;
 
   readonly messages: InterceptedWebSocketInterceptorMessage<Schema>[] = [];
 

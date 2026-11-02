@@ -1,9 +1,6 @@
 import { Replace } from '@zimic/utils/types';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
-export declare const webSocketInterceptorClientRole: unique symbol;
-export declare const webSocketInterceptorServerRole: unique symbol;
-
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
@@ -55,9 +52,6 @@ export interface InterceptedWebSocketInterceptorMessage<
  * A handle to a client connected to the interceptor.
  */
 export interface WebSocketInterceptorClient<Schema extends WebSocketSchema> {
-  /** Marks this handle as a client, distinguishing it from {@link WebSocketInterceptorServer server handles}. */
-  readonly [webSocketInterceptorClientRole]: true;
-
   /**
    * The URL used to open the client connection.
    *
@@ -107,9 +101,6 @@ export interface WebSocketInterceptorServerSendOptions<Schema extends WebSocketS
  * A handle to the interceptor's mock server, used to send messages to connected clients.
  */
 export interface WebSocketInterceptorServer<Schema extends WebSocketSchema> {
-  /** Marks this handle as a server, distinguishing it from {@link WebSocketInterceptorClient client handles}. */
-  readonly [webSocketInterceptorServerRole]: true;
-
   /**
    * The current base URL of the interceptor.
    *

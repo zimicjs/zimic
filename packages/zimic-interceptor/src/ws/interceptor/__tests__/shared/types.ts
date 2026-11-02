@@ -68,7 +68,6 @@ export function declareTypeWebSocketInterceptorTests(
         readonly InterceptedWebSocketInterceptorMessage<MessageSchema>[]
       >();
       expectTypeOf(interceptor.server).not.toExtend<WebSocketInterceptorClient<MessageSchema>>();
-      expectTypeOf<(typeof interceptor.clients)[number]>().not.toExtend<WebSocketInterceptorServer<MessageSchema>>();
 
       expectTypeOf(interceptor.message().from).parameter(0).toEqualTypeOf<WebSocketInterceptorClient<MessageSchema>>();
 
