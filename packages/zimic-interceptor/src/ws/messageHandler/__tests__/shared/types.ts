@@ -1,4 +1,4 @@
-import { WebSocketSchema } from '@zimic/ws';
+import { JSONStringified, WebSocketSchema } from '@zimic/ws';
 import { expectTypeOf, it } from 'vitest';
 
 import {
@@ -321,13 +321,18 @@ export function declareTypeWebSocketMessageHandlerTests() {
 
   it('should narrow string schema members through static restrictions equal to them', () => {
     type TextSchema = WebSocketSchema<
-      'ping' | 'pong' | '41' | `40${string}` | `42["user:delete",${string}]` | `42["user:delete:success",${string}]`
+      | 'ping'
+      | 'pong'
+      | '41'
+      | '40'
+      | `42["user:delete",${JSONStringified<{ id: string }>}]`
+      | `42["user:delete:success",${JSONStringified<{}>}]`
     >;
     type DeleteMessage = Extract<TextSchema, `42["user:delete",${string}]`>;
     type ConnectMessage = Extract<TextSchema, `40${string}`>;
 
     function declareStringRestrictions(handler: LocalWebSocketMessageHandler<TextSchema>, pingOrPong: 'ping' | 'pong') {
-      const deleteHandler = handler.with('42["user:delete","{\\"id\\":\\"1\\"}"]');
+      const deleteHandler = handler.with(`42["user:delete",${JSON.stringify({ id: '1' })}]`);
       expectTypeOf(deleteHandler.messages[0].data).toEqualTypeOf<DeleteMessage>();
 
       const connectHandler = handler.with('40');
@@ -346,9 +351,11 @@ export function declareTypeWebSocketMessageHandlerTests() {
       });
 
       handler
-        .with((message): message is `42["user:delete",${string}]` => message.startsWith('42["user:delete",'))
+        .with((message): message is Extract<TextSchema, `42["user:delete",${string}]`> =>
+          message.startsWith('42["user:delete",'),
+        )
         .effect((message) => {
-          expectTypeOf(message).toEqualTypeOf<`42["user:delete",${string}]`>();
+          expectTypeOf(message).toEqualTypeOf<Extract<TextSchema, `42["user:delete",${string}]`>>();
         });
 
       // @ts-expect-error Restriction text must match a schema member.
