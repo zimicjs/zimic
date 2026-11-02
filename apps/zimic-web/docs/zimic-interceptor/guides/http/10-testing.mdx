@@ -68,13 +68,13 @@ beforeAll(async () => {
   await interceptor.start();
 });
 
-beforeEach(() => {
+beforeEach(async () => {
   // Clear interceptors so that no tests affect each other
   // highlight-next-line
   await interceptor.clear();
 });
 
-afterEach(() => {
+afterEach(async () => {
   // Check that all expected requests were made
   // highlight-next-line
   await interceptor.checkTimes();
