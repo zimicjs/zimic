@@ -32,7 +32,7 @@ function clampToUnsignedShort(value: number) {
   return roundsUp ? integerPart + 1 : integerPart;
 }
 
-function isUserCloseCode(code: number) {
+export function isUserCloseCode(code: number) {
   return code === 1000 || (code >= 3000 && code <= 4999);
 }
 

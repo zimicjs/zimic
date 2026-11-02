@@ -12,7 +12,7 @@ import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
 import type { WebSocketEventMessage } from '@/utils/webSocket/types';
 import type WebSocketServer from '@/utils/webSocket/WebSocketServer';
-import { MAX_CLOSE_REASON_BYTE_LENGTH } from '@/ws/interceptor/WebSocketInterceptorHandle';
+import { isUserCloseCode, MAX_CLOSE_REASON_BYTE_LENGTH } from '@/ws/interceptor/WebSocketInterceptorHandle';
 import {
   deserializeWebSocketMessageDataFromTransport,
   serializeWebSocketMessageDataForTransport,
@@ -47,7 +47,10 @@ const webSocketMessageSendSchema = z.object({
 
 const webSocketClientDisconnectionSchema = z.object({
   clientId: z.string(),
-  code: z.union([z.literal(1000), z.int().min(3000).max(4999)]).optional(),
+  code: z
+    .int()
+    .refine(isUserCloseCode, { message: 'Close codes must be either 1000, or between 3000 and 4999.' })
+    .optional(),
   reason: z
     .string()
     .refine((reason) => Buffer.byteLength(reason) <= MAX_CLOSE_REASON_BYTE_LENGTH, {
