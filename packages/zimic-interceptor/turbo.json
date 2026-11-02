@@ -16,7 +16,7 @@
     },
 
     "test:turbo": {
-      "dependsOn": ["^build", "@zimic/http#build", "@zimic/ws#build"],
+      "dependsOn": ["build", "^build", "@zimic/http#build", "@zimic/ws#build"],
       "inputs": ["{src,tests,scripts}/**/*.{ts,json}", "{package,tsconfig}.json", "vitest.config.mts"]
     },
 
