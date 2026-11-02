@@ -13,8 +13,7 @@ export interface InternalWebSocketInterceptorClient<
   messages: InterceptedWebSocketInterceptorMessage<Schema>[];
 }
 
-// The limit of `WebSocket.close()`, so the reason fits in a control frame after the close code.
-const MAX_CLOSE_REASON_BYTE_LENGTH = 123;
+export const MAX_CLOSE_REASON_BYTE_LENGTH = 123;
 
 const MAX_UNSIGNED_SHORT = 65535;
 

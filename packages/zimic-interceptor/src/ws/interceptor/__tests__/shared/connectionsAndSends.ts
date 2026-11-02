@@ -19,6 +19,7 @@ import {
 import type { WebSocketInterceptorClient } from '../../types/messages';
 import type { WebSocketInterceptorType } from '../../types/options';
 import type { WebSocketInterceptor } from '../../types/public';
+import { MAX_CLOSE_REASON_BYTE_LENGTH } from '../../WebSocketInterceptorHandle';
 
 type ChatMessage = WebSocketSchema<{ type: 'server'; text: string }>;
 type BinaryMessage = WebSocketSchema<ArrayBuffer>;
@@ -728,7 +729,7 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
     },
   );
 
-  it('should throw an error when closing clients with a reason longer than 123 bytes', async () => {
+  it(`should throw an error when closing clients with a reason longer than ${MAX_CLOSE_REASON_BYTE_LENGTH} bytes`, async () => {
     const baseURL = getBaseURL();
 
     await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
@@ -739,6 +740,7 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
 
         // 62 two-byte characters, so the reason is short enough in characters but not in UTF-8 bytes.
         const reason = 'é'.repeat(62);
+        expect(new TextEncoder().encode(reason).byteLength).toBeGreaterThan(MAX_CLOSE_REASON_BYTE_LENGTH);
 
         expect(() => interceptor.clients[0].close(1000, reason)).toThrow(
           expect.objectContaining({ name: 'SyntaxError', constructor: DOMException }),

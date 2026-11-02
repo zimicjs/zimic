@@ -12,6 +12,7 @@ import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
 import type { WebSocketEventMessage } from '@/utils/webSocket/types';
 import type WebSocketServer from '@/utils/webSocket/WebSocketServer';
+import { MAX_CLOSE_REASON_BYTE_LENGTH } from '@/ws/interceptor/WebSocketInterceptorHandle';
 import {
   deserializeWebSocketMessageDataFromTransport,
   serializeWebSocketMessageDataForTransport,
@@ -43,9 +44,6 @@ const webSocketMessageSendSchema = z.object({
     z.object({ type: z.literal('binary'), data: z.base64() }),
   ]),
 });
-
-// The limit of `WebSocket.close()`, so the reason fits in a control frame after the close code.
-const MAX_CLOSE_REASON_BYTE_LENGTH = 123;
 
 const webSocketClientDisconnectionSchema = z.object({
   clientId: z.string(),
