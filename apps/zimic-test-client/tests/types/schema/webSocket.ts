@@ -113,8 +113,7 @@ interface SocketIOConnectPacketData {
 // socket.io packet type: `0` (connect), `1` (disconnect), or `2` (event). Clients without auth send `40` without data.
 export type SocketIOWebSocketSchema = WebSocketSchema<
   | `0${JSONStringified<EngineIOOpenPacketData>}`
-  | '40'
-  | `40${JSONStringified<SocketIOConnectPacketData>}`
+  | `40${JSONStringified<SocketIOConnectPacketData> | ''}`
   | '41'
   | `42["user:delete",${JSONStringified<UserWebSocketMessage<'user:delete'>['data']>}]`
   | `42["user:delete:success",${JSONStringified<UserWebSocketMessage<'user:delete:success'>['data']>}]`
