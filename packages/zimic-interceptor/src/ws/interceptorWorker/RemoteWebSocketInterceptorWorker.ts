@@ -30,7 +30,6 @@ import WebSocketInterceptorWorker from './WebSocketInterceptorWorker';
 
 interface RegisteredWebSocketInterceptor {
   id: string;
-  baseURL: string;
   interceptor: AnyWebSocketInterceptorImplementation;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   clients: Map<string, InternalWebSocketInterceptorClient<any>>;
@@ -120,7 +119,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     const registeredInterceptor: RegisteredWebSocketInterceptor = {
       id: crypto.randomUUID(),
-      baseURL: interceptor.baseURLAsString,
       interceptor,
       clients: new Map(),
       numberOfResetsWhenCleared: 0,
@@ -140,10 +138,10 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     client: InternalWebSocketInterceptorClient<Schema>,
     data: WebSocketMessageData<Schema>,
   ) {
-    const clientEntry = this.findClientEntry(client);
+    const clientId = this.findClientId(client);
 
-    if (clientEntry) {
-      await this.enqueueSend({ clientId: clientEntry.clientId }, data);
+    if (clientId) {
+      await this.enqueueSend({ clientId }, data);
     }
   }
 
@@ -163,13 +161,13 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     code?: number,
     reason?: string,
   ) {
-    const clientEntry = this.findClientEntry(client);
+    const clientId = this.findClientId(client);
 
-    if (clientEntry) {
+    if (clientId) {
       // Queued after earlier sends, so the client receives them before the connection closes, as in local mode.
       await this.enqueueServerEvent(() => {
         this.webSocketClient.send('interceptors/ws/clients/disconnect', {
-          clientId: clientEntry.clientId,
+          clientId,
           code,
           reason,
         });
@@ -284,11 +282,11 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     });
   }
 
-  private findClientEntry<Schema extends WebSocketSchema>(client: InternalWebSocketInterceptorClient<Schema>) {
+  private findClientId<Schema extends WebSocketSchema>(client: InternalWebSocketInterceptorClient<Schema>) {
     for (const registeredInterceptor of this.registeredInterceptors.values()) {
       for (const [clientId, interceptorClient] of registeredInterceptor.clients) {
         if (interceptorClient === client) {
-          return { registeredInterceptor, clientId };
+          return clientId;
         }
       }
     }
@@ -344,7 +342,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     const reset: WebSocketWorkerReset = {
       interceptors: Array.from(this.registeredInterceptors.values(), (registeredInterceptor) => ({
         id: registeredInterceptor.id,
-        baseURL: registeredInterceptor.baseURL,
+        baseURL: registeredInterceptor.interceptor.baseURLAsString,
       })),
       clearedInterceptorIds: clearedInterceptors.map((registeredInterceptor) => registeredInterceptor.id),
     };

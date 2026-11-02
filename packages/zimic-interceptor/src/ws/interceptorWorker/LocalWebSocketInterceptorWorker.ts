@@ -61,7 +61,6 @@ interface WebSocketClientRegistration {
 
 interface RegisteredWebSocketInterceptor {
   interceptor: AnyWebSocketInterceptorImplementation;
-  link: ReturnType<typeof ws.link>;
   mswHandler: MSWWebSocketHandler;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   clients: Map<InternalWebSocketInterceptorClient<any>, WebSocketClientRegistration>;
@@ -207,7 +206,6 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     const link = ws.link(createConnectionURLRegex(interceptor.baseURLAsString));
     const registeredInterceptor: RegisteredWebSocketInterceptor = {
       interceptor,
-      link,
       mswHandler: link.addEventListener('connection', ({ client, server }) => {
         // MSW types connections by their protocol, but they are `WebSocketClientConnection` instances, which expose
         // their socket.
