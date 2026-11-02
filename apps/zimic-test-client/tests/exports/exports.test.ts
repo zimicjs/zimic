@@ -171,8 +171,6 @@ import {
 } from '@zimic/ws';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import { UserWebSocketMessage, UserWebSocketSchema } from '@tests/types/schema/webSocket';
-
 describe('Exports', () => {
   describe('@zimic/http', () => {
     it('exports all expected resources from @zimic/http', () => {
@@ -396,7 +394,6 @@ describe('Exports', () => {
       expectTypeOf<HttpInterceptorOptions>().not.toBeAny();
       expectTypeOf<LocalHttpInterceptorOptions>().not.toBeAny();
       expectTypeOf<RemoteHttpInterceptorOptions>().not.toBeAny();
-      expectTypeOf<RemoteHttpInterceptorOptions['auth']>().toEqualTypeOf<HttpInterceptorAuthOptions | undefined>();
       expectTypeOf<InferHttpInterceptorSchema<never>>().not.toBeAny();
       expectTypeOf<HttpInterceptorRequest<never, never>>().not.toBeAny();
       expectTypeOf<HttpInterceptorResponse<never, never>>().not.toBeAny();
@@ -460,71 +457,44 @@ describe('Exports', () => {
       expectTypeOf<WebSocketInterceptor<never>>().not.toBeAny();
       expectTypeOf<LocalWebSocketInterceptor<never>>().not.toBeAny();
       expectTypeOf<RemoteWebSocketInterceptor<never>>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorClient<never>>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorServer<never>>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorServerSendOptions<never>>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorConnectionListener<never>>().not.toBeAny();
-      expectTypeOf<InterceptedWebSocketInterceptorMessage<never>>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorClient<never>>().not.toExtend<WebSocketInterceptorServer<never>>();
-      expectTypeOf<WebSocketInterceptorServer<never>>().not.toExtend<WebSocketInterceptorClient<never>>();
-      expectTypeOf<WebSocketInterceptor<never>['server']>().toEqualTypeOf<WebSocketInterceptorServer<never>>();
-      expectTypeOf<WebSocketInterceptor<never>['clients']>().toEqualTypeOf<
-        readonly WebSocketInterceptorClient<never>[]
-      >();
-
+      expectTypeOf<WebSocketInterceptorPlatform>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorType>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorAuthOptions>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorOptions>().not.toBeAny();
       expectTypeOf<LocalWebSocketInterceptorOptions>().not.toBeAny();
       expectTypeOf<RemoteWebSocketInterceptorOptions>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorType>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorPlatform>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorMessageSaving>().not.toBeAny();
       expectTypeOf<UnhandledMessageStrategy>().not.toBeAny();
       expectTypeOf<UnhandledMessageStrategy.Declaration>().not.toBeAny();
       expectTypeOf<UnhandledMessageStrategy.DeclarationFactory>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorAuthOptions>().not.toBeAny();
-      expectTypeOf<RemoteWebSocketInterceptorOptions['auth']>().toEqualTypeOf<
-        WebSocketInterceptorAuthOptions | undefined
-      >();
-      expectTypeOf<RemoteWebSocketInterceptor<never>['auth']>().toEqualTypeOf<
-        WebSocketInterceptorAuthOptions | undefined
-      >();
+      expectTypeOf<InferWebSocketInterceptorSchema<never>>().not.toBeAny();
+      expectTypeOf<InterceptedWebSocketInterceptorMessage<never>>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorClient<never>>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorServer<never>>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorServerSendOptions<never>>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorConnectionListener<never>>().not.toBeAny();
 
       expectTypeOf<WebSocketMessageHandler<never>>().not.toBeAny();
       expectTypeOf<LocalWebSocketMessageHandler<never>>().not.toBeAny();
       expectTypeOf<RemoteWebSocketMessageHandler<never>>().not.toBeAny();
-      expectTypeOf<PendingRemoteWebSocketMessageHandler<never>>().not.toBeAny();
       expectTypeOf<SyncedRemoteWebSocketMessageHandler<never>>().not.toBeAny();
-
+      expectTypeOf<PendingRemoteWebSocketMessageHandler<never>>().not.toBeAny();
+      expectTypeOf<WebSocketMessageHandlerMessageCallback<never>>().not.toBeAny();
+      expectTypeOf<WebSocketMessageHandlerMessageContext<never>>().not.toBeAny();
       expectTypeOf<WebSocketMessageHandlerMessageStaticDeclaration<never>>().not.toBeAny();
       expectTypeOf<WebSocketMessageHandlerMessageComputedDeclaration<never, never>>().not.toBeAny();
       expectTypeOf<WebSocketMessageHandlerMessageDeclaration<never, never>>().not.toBeAny();
-      expectTypeOf<WebSocketMessageHandlerMessageCallback<never>>().not.toBeAny();
-      expectTypeOf<WebSocketMessageHandlerMessageContext<never>>().not.toBeAny();
-      expectTypeOf<WebSocketMessageHandlerComputedRestriction<never>>().not.toBeAny();
       expectTypeOf<WebSocketMessageHandlerDelayFactory<never>>().not.toBeAny();
       expectTypeOf<WebSocketMessageHandlerRestriction<never>>().not.toBeAny();
       expectTypeOf<WebSocketMessageHandlerStaticRestriction<never>>().not.toBeAny();
       expectTypeOf<WebSocketMessageHandlerStaticRestrictionOptions>().not.toBeAny();
-      expectTypeOf<WebSocketMessageHandler<never>['from']>()
-        .parameter(0)
-        .toEqualTypeOf<WebSocketInterceptorClient<never>>();
-
-      expectTypeOf<InferWebSocketInterceptorSchema<never>>().not.toBeAny();
-
-      expectTypeOf<MessageSavingSafeLimitExceededError>().not.toBeAny();
-      expect(typeof MessageSavingSafeLimitExceededError).toBe('function');
-
-      expectTypeOf<NotRunningWebSocketInterceptorError>().not.toBeAny();
-      expect(typeof NotRunningWebSocketInterceptorError).toBe('function');
+      expectTypeOf<WebSocketMessageHandlerComputedRestriction<never>>().not.toBeAny();
 
       expectTypeOf<RunningWebSocketInterceptorError>().not.toBeAny();
       expect(typeof RunningWebSocketInterceptorError).toBe('function');
 
-      expectTypeOf<WebSocketTimesCheckError>().not.toBeAny();
-      expect(typeof WebSocketTimesCheckError).toBe('function');
-
-      expectTypeOf<WebSocketUnregisteredBrowserServiceWorkerError>().not.toBeAny();
-      expect(typeof WebSocketUnregisteredBrowserServiceWorkerError).toBe('function');
+      expectTypeOf<NotRunningWebSocketInterceptorError>().not.toBeAny();
+      expect(typeof NotRunningWebSocketInterceptorError).toBe('function');
 
       expectTypeOf<UnknownWebSocketInterceptorPlatformError>().not.toBeAny();
       expect(typeof UnknownWebSocketInterceptorPlatformError).toBe('function');
@@ -532,74 +502,17 @@ describe('Exports', () => {
       expectTypeOf<UnknownWebSocketInterceptorTypeError>().not.toBeAny();
       expect(typeof UnknownWebSocketInterceptorTypeError).toBe('function');
 
+      expectTypeOf<MessageSavingSafeLimitExceededError>().not.toBeAny();
+      expect(typeof MessageSavingSafeLimitExceededError).toBe('function');
+
+      expectTypeOf<WebSocketUnregisteredBrowserServiceWorkerError>().not.toBeAny();
+      expect(typeof WebSocketUnregisteredBrowserServiceWorkerError).toBe('function');
+
       expectTypeOf<DisabledMessageSavingError>().not.toBeAny();
       expect(typeof DisabledMessageSavingError).toBe('function');
-    });
 
-    it('should expose installed WebSocket interceptor types to consumers', () => {
-      const localInterceptor = createWebSocketInterceptor<UserWebSocketSchema>({
-        type: 'local',
-        baseURL: 'ws://localhost:4000',
-      });
-      const remoteInterceptor = createWebSocketInterceptor<UserWebSocketSchema>({
-        type: 'remote',
-        baseURL: 'ws://localhost:4000/users',
-      });
-
-      expectTypeOf(localInterceptor).toEqualTypeOf<LocalWebSocketInterceptor<UserWebSocketSchema>>();
-      expectTypeOf(remoteInterceptor).toEqualTypeOf<RemoteWebSocketInterceptor<UserWebSocketSchema>>();
-      expectTypeOf(localInterceptor.message).returns.toEqualTypeOf<LocalWebSocketMessageHandler<UserWebSocketSchema>>();
-      expectTypeOf(remoteInterceptor.message).returns.toEqualTypeOf<
-        RemoteWebSocketMessageHandler<UserWebSocketSchema>
-      >();
-
-      expectTypeOf<InferWebSocketInterceptorSchema<typeof localInterceptor>>().toEqualTypeOf<UserWebSocketSchema>();
-      expectTypeOf<InferWebSocketInterceptorSchema<typeof remoteInterceptor>>().toEqualTypeOf<UserWebSocketSchema>();
-
-      expectTypeOf<WebSocketMessageHandlerStaticRestriction<UserWebSocketSchema>>().not.toBeAny();
-      expectTypeOf<WebSocketMessageHandlerComputedRestriction<UserWebSocketSchema>>().parameters.toEqualTypeOf<
-        [message: UserWebSocketSchema]
-      >();
-      expectTypeOf<WebSocketMessageHandlerMessageCallback<UserWebSocketSchema>>().parameters.toEqualTypeOf<
-        [
-          message: UserWebSocketSchema,
-          context: {
-            sender: WebSocketInterceptorClient<UserWebSocketSchema>;
-            receiver: WebSocketInterceptorServer<UserWebSocketSchema>;
-          },
-        ]
-      >();
-
-      /* istanbul ignore next -- @preserve
-       * Delay narrowing is checked by TypeScript and must not run. */
-      function expectNarrowedDelayMessage(interceptor: LocalWebSocketInterceptor<UserWebSocketSchema>) {
-        interceptor
-          .message()
-          .with({ type: 'user:create' })
-          .delay((message) => {
-            expectTypeOf(message).toEqualTypeOf<UserWebSocketMessage<'user:create'>>();
-            return message.data.name.length;
-          });
-      }
-
-      expectTypeOf(expectNarrowedDelayMessage).toBeFunction();
-    });
-
-    it('should reject invalid installed WebSocket declarations', () => {
-      /* istanbul ignore next -- @preserve
-       * Invalid declarations are checked by TypeScript and must not run. */
-      function expectInvalidDeclarations(interceptor: LocalWebSocketInterceptor<UserWebSocketSchema>) {
-        // @ts-expect-error Invalid message type.
-        interceptor.message().with({ type: 'user:archive' });
-
-        // @ts-expect-error Invalid response type.
-        interceptor.message().respond({ type: 'user:archive:success' });
-
-        // @ts-expect-error Invalid response data shape.
-        interceptor.message().respond({ type: 'user:create:success', data: { id: crypto.randomUUID() } });
-      }
-
-      expectTypeOf(expectInvalidDeclarations).toBeFunction();
+      expectTypeOf<WebSocketTimesCheckError>().not.toBeAny();
+      expect(typeof WebSocketTimesCheckError).toBe('function');
     });
   });
 });

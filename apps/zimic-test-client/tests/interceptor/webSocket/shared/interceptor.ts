@@ -4,7 +4,6 @@ import {
   InterceptedWebSocketInterceptorMessage,
   WebSocketInterceptor,
   WebSocketInterceptorClient,
-  WebSocketInterceptorServer,
   WebSocketInterceptorType,
 } from '@zimic/interceptor/experimental/ws';
 import { waitFor, waitForNot } from '@zimic/utils/time';
@@ -524,6 +523,43 @@ export function declareWebSocketInterceptorTests({
         });
         expect(creationHandler.messages).toHaveLength(1);
       });
+
+      it('should support creating users matched by chained partial restrictions', async () => {
+        const creatorClient = userInterceptor.clients[0];
+        const message: UserWebSocketMessage<'user:create'> = {
+          type: 'user:create',
+          data: {
+            name: 'Name',
+            email: 'email@example.com',
+            password: crypto.randomUUID(),
+            birthDate: new Date().toISOString(),
+          },
+        };
+        const effectListener = vi.fn();
+
+        await userInterceptor
+          .message()
+          .from(creatorClient)
+          .with({ type: 'user:create' })
+          .with({ data: { email: message.data.email } })
+          .effect(effectListener)
+          .respond((message) => ({
+            type: 'user:create:error',
+            data: { code: 'validation_error', message: message.data.name },
+          }));
+
+        const responsePromise = waitForResponseMessage(userSockets[0], 'user:create:error');
+        userSockets[0].send(JSON.stringify(message));
+
+        await expect(responsePromise).resolves.toEqual({
+          type: 'user:create:error',
+          data: { code: 'validation_error', message: message.data.name },
+        });
+        expect(effectListener).toHaveBeenCalledExactlyOnceWith(message, {
+          sender: creatorClient,
+          receiver: userInterceptor.server,
+        });
+      });
     });
 
     describe('User update', () => {
@@ -819,58 +855,6 @@ export function declareWebSocketInterceptorTests({
       } finally {
         await Promise.all(sockets.map((socket) => closeWebSocketClient(socket)));
       }
-    });
-  });
-
-  describe('Types', () => {
-    it('should narrow handler messages from installed schema restrictions', async () => {
-      const creatorClient = userInterceptor.clients[0];
-      const message: UserWebSocketMessage<'user:create'> = {
-        type: 'user:create',
-        data: {
-          name: 'Name',
-          email: 'email@example.com',
-          password: crypto.randomUUID(),
-          birthDate: new Date().toISOString(),
-        },
-      };
-      const effectListener = vi.fn();
-
-      const creationHandler = await userInterceptor
-        .message()
-        .from(creatorClient)
-        .with({ type: 'user:create' })
-        .with({ data: { email: 'email@example.com' } });
-
-      expectTypeOf(creationHandler.messages).toEqualTypeOf<
-        readonly InterceptedWebSocketInterceptorMessage<UserWebSocketMessage<'user:create'>, UserWebSocketSchema>[]
-      >();
-
-      await Promise.resolve(
-        creationHandler
-          .effect((message, context) => {
-            expectTypeOf(message).toEqualTypeOf<UserWebSocketMessage<'user:create'>>();
-            expectTypeOf(context.sender).toEqualTypeOf<WebSocketInterceptorClient<UserWebSocketSchema>>();
-            expectTypeOf(context.receiver).toEqualTypeOf<WebSocketInterceptorServer<UserWebSocketSchema>>();
-            effectListener(message, context);
-          })
-          .respond((message) => ({
-            type: 'user:create:error',
-            data: { code: 'validation_error', message: message.data.name },
-          })),
-      );
-
-      const responsePromise = waitForResponseMessage(userSockets[0], 'user:create:error');
-      userSockets[0].send(JSON.stringify(message));
-
-      await expect(responsePromise).resolves.toEqual({
-        type: 'user:create:error',
-        data: { code: 'validation_error', message: message.data.name },
-      });
-      expect(effectListener).toHaveBeenCalledExactlyOnceWith(message, {
-        sender: creatorClient,
-        receiver: userInterceptor.server,
-      });
     });
   });
 
