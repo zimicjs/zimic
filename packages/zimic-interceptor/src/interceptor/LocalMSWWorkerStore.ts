@@ -23,6 +23,11 @@ class LocalMSWWorkerStore {
 
   private static numberOfRunningWorkers = 0;
 
+  private static globalWebSocketDescriptors?: {
+    native: PropertyDescriptor | undefined;
+    intercepted: PropertyDescriptor | undefined;
+  };
+
   static isMSWWorkerRunning = false;
 
   private class = LocalMSWWorkerStore;
@@ -89,6 +94,19 @@ class LocalMSWWorkerStore {
   }
 
   private async startMSWWorkerOnce(mswWorker: MSWWorker, sharedOptions: MSWWorkerSharedOptions) {
+    const nativeWebSocketDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'WebSocket');
+
+    await this.startMSWWorkerOnPlatform(mswWorker, sharedOptions);
+
+    this.class.globalWebSocketDescriptors = {
+      native: nativeWebSocketDescriptor,
+      intercepted: Object.getOwnPropertyDescriptor(globalThis, 'WebSocket'),
+    };
+
+    this.restoreNativeWebSocket();
+  }
+
+  private async startMSWWorkerOnPlatform(mswWorker: MSWWorker, sharedOptions: MSWWorkerSharedOptions) {
     if (this.isInternalBrowserWorker(mswWorker)) {
       try {
         await mswWorker.start({ ...sharedOptions, quiet: true });
@@ -118,6 +136,25 @@ class LocalMSWWorkerStore {
     } else {
       mswWorker.close();
       this.class.isMSWWorkerRunning = false;
+    }
+  }
+
+  // MSW replaces the global WebSocket when its worker starts, and browser workers are never stopped. Its replacement
+  // copies `binaryType` to passthrough sockets only when they connect, so the global stays native unless a local
+  // WebSocket interceptor is running.
+  applyWebSocketInterception() {
+    this.defineGlobalWebSocket(this.class.globalWebSocketDescriptors?.intercepted);
+  }
+
+  restoreNativeWebSocket() {
+    this.defineGlobalWebSocket(this.class.globalWebSocketDescriptors?.native);
+  }
+
+  private defineGlobalWebSocket(descriptor: PropertyDescriptor | undefined) {
+    /* istanbul ignore else -- @preserve
+     * Every supported runtime defines a global WebSocket, which MSW replaces when the worker starts. */
+    if (descriptor) {
+      Object.defineProperty(globalThis, 'WebSocket', descriptor);
     }
   }
 

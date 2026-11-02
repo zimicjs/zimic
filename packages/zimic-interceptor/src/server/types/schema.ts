@@ -16,6 +16,12 @@ export interface WebSocketWorkerReset {
   clearedInterceptorIds?: string[];
 }
 
+export interface WebSocketClientDisconnection {
+  clientId: string;
+  code?: number;
+  reason?: string;
+}
+
 export type InterceptorServerWebSocketSchema = WebSocketSchema<{
   'interceptors/http/workers/reset': {
     event: HttpWorkerReset;
@@ -55,6 +61,12 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
     event: {
       clientId: string;
     };
+  };
+
+  // Sent by workers to close a client connection, unlike `interceptors/ws/clients/close`, which the server sends after
+  // a client connection closes.
+  'interceptors/ws/clients/disconnect': {
+    event: WebSocketClientDisconnection;
   };
 
   'interceptors/ws/messages/handle': {

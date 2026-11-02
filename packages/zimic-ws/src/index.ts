@@ -1,4 +1,5 @@
 export type { WebSocketSchema, WebSocketMessageData } from './types/schema';
+export type { JSONStringified } from './types/json';
 
 export { WebSocketCloseTimeoutError, WebSocketOpenTimeoutError, WebSocketTimeoutError } from '@zimic/utils/ws';
 

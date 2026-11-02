@@ -1,6 +1,6 @@
 import { blobEquals, jsonContains, jsonEquals } from '@zimic/utils/data';
 import { waitForDelay } from '@zimic/utils/time';
-import { JSONValue, Range } from '@zimic/utils/types';
+import { Range } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
 import { random } from '@/utils/numbers';
@@ -301,9 +301,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
       return false;
     }
 
-    return options.exact
-      ? jsonEquals(message, restriction as JSONValue)
-      : jsonContains(message, restriction as JSONValue);
+    return options.exact ? jsonEquals(message, restriction) : jsonContains(message, restriction);
   }
 
   private async binaryMessageDataEquals(actual: Blob | BufferSource, expected: Blob | BufferSource) {

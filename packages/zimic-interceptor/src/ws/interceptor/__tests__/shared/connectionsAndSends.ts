@@ -4,6 +4,7 @@ import { ValidationError } from '@zimic/utils/validation';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { expect, it, vi } from 'vitest';
 
+import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
@@ -12,12 +13,14 @@ import {
   createBinaryMessage,
   readBytes,
   usingWebSocketClient,
+  waitForWebSocketClientClose,
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
 
 import type { WebSocketInterceptorClient } from '../../types/messages';
 import type { WebSocketInterceptorType } from '../../types/options';
 import type { WebSocketInterceptor } from '../../types/public';
+import { MAX_CLOSE_REASON_BYTE_LENGTH } from '../../WebSocketInterceptorHandle';
 
 type ChatMessage = WebSocketSchema<{ type: 'server'; text: string }>;
 type BinaryMessage = WebSocketSchema<ArrayBuffer>;
@@ -383,6 +386,51 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
     });
   });
 
+  it.each([
+    { initialBinaryType: 'arraybuffer', binaryType: 'blob', receivedMessageType: Blob },
+    { initialBinaryType: 'blob', binaryType: 'arraybuffer', receivedMessageType: ArrayBuffer },
+  ] as const)(
+    'should deliver immediate connection listener messages as the $binaryType binary type set when clients open',
+    async ({ initialBinaryType, binaryType, receivedMessageType }) => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<BinaryMessage>({ type, baseURL }, async (interceptor) => {
+        interceptor.once('connection', (connectedClient) => connectedClient.send(createBinaryMessage(0x00, 0xff)));
+
+        // A `WebSocketClient` exposes its socket only after opening, so its open listeners cannot change the binary type
+        // of the socket.
+        const socket = new WebSocket(baseURL);
+        socket.binaryType = initialBinaryType;
+
+        socket.addEventListener(
+          'open',
+          () => {
+            socket.binaryType = binaryType;
+          },
+          { once: true },
+        );
+
+        const receivedMessage = new Promise<Blob | ArrayBuffer>((resolve) => {
+          socket.addEventListener('message', (event: MessageEvent<Blob | ArrayBuffer>) => resolve(event.data), {
+            once: true,
+          });
+        });
+
+        try {
+          const message = await receivedMessage;
+          expect(message).toBeInstanceOf(receivedMessageType);
+          expect(await readBytes(message)).toEqual([0x00, 0xff]);
+        } finally {
+          const closePromise = new Promise((resolve) => {
+            socket.addEventListener('close', resolve, { once: true });
+          });
+          socket.close();
+          await closePromise;
+        }
+      });
+    },
+  );
+
   it('should remove a once listener before delivering its event', async () => {
     const baseURL = getBaseURL();
 
@@ -510,6 +558,300 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
           });
 
           expect(client.readyState).toBe(WebSocketClient.OPEN);
+        });
+      });
+    });
+  });
+
+  it('should close clients with a code and reason', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const closeEventPromise = waitForWebSocketClientClose(client);
+
+        const closeCode = 4000;
+        const closeReason = 'Closed by the interceptor.';
+
+        interceptor.clients[0].close(closeCode, closeReason);
+
+        const closeEvent = await closeEventPromise;
+        expect(closeEvent.code).toBe(closeCode);
+        expect(closeEvent.reason).toBe(closeReason);
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(0);
+        });
+      });
+    });
+  });
+
+  it('should close clients with no status code if no code is provided', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const closeEventPromise = waitForWebSocketClientClose(client);
+        interceptor.clients[0].close();
+
+        const closeEvent = await closeEventPromise;
+        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.NO_STATUS_RECEIVED);
+        expect(closeEvent.reason).toBe('');
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(0);
+        });
+      });
+    });
+  });
+
+  it('should deliver earlier server messages before closing clients', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<BinaryOrTextMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<BinaryOrTextMessage>(baseURL, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const messages = collectWebSocketClientMessages(client);
+        const closeEventPromise = waitForWebSocketClientClose(client);
+
+        interceptor.clients[0].send(new Blob([createBinaryMessage(0x00, 0xff)]));
+
+        const closeCode = 1000;
+        interceptor.clients[0].close(closeCode);
+
+        const closeEvent = await closeEventPromise;
+        expect(closeEvent.code).toBe(closeCode);
+        expect(messages).toHaveLength(1);
+        expect(await readBytes(messages[0] as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
+      });
+    });
+  });
+
+  it('should remove closed clients from every interceptor holding them', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (firstInterceptor) => {
+      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (secondInterceptor) => {
+        await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+          await waitFor(() => {
+            expect(firstInterceptor.clients).toHaveLength(1);
+            expect(secondInterceptor.clients).toHaveLength(1);
+          });
+
+          const closeEventPromise = waitForWebSocketClientClose(client);
+
+          const closeCode = 1000;
+          firstInterceptor.clients[0].close(closeCode);
+
+          expect((await closeEventPromise).code).toBe(closeCode);
+
+          await waitFor(() => {
+            expect(firstInterceptor.clients).toHaveLength(0);
+            expect(secondInterceptor.clients).toHaveLength(0);
+          });
+        });
+      });
+    });
+  });
+
+  it('should allow a connection listener to close its client immediately', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      const client = new WebSocketClient<ChatMessage>(baseURL);
+      const closeEventPromise = waitForWebSocketClientClose(client);
+
+      const closeCode = 4000;
+      const closeReason = 'Rejected.';
+
+      interceptor.once('connection', (client) => client.close(closeCode, closeReason));
+
+      try {
+        await client.open();
+
+        const closeEvent = await closeEventPromise;
+        expect(closeEvent.code).toBe(closeCode);
+        expect(closeEvent.reason).toBe(closeReason);
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(0);
+        });
+      } finally {
+        await client.close();
+      }
+    });
+  });
+
+  it.each([
+    { code: 3000.5, expectedCode: 3000 },
+    { code: 3001.5, expectedCode: 3002 },
+    { code: 999.6, expectedCode: 1000 },
+    { code: 4999.4, expectedCode: 4999 },
+  ])('should close clients with code $code rounded to $expectedCode', async ({ code, expectedCode }) => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const closeEventPromise = waitForWebSocketClientClose(client);
+
+        const closeReason = 'Rounded.';
+        interceptor.clients[0].close(code, closeReason);
+
+        const closeEvent = await closeEventPromise;
+        expect(closeEvent.code).toBe(expectedCode);
+        expect(closeEvent.reason).toBe(closeReason);
+      });
+    });
+  });
+
+  // Codes are clamped to 0 through 65535 and rounded with ties to even before being checked.
+  it.each([999, 1001, 1005, 2999, 5000, 999.4, 4999.5, Number.NaN, -1, Number.POSITIVE_INFINITY])(
+    'should throw an error when closing clients with an invalid code (%s)',
+    async (code) => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+        await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(1);
+          });
+
+          expect(() => interceptor.clients[0].close(code)).toThrow(
+            expect.objectContaining({ name: 'InvalidAccessError', constructor: DOMException }),
+          );
+
+          expect(interceptor.clients).toHaveLength(1);
+          expect(client.readyState).toBe(WebSocketClient.OPEN);
+        });
+      });
+    },
+  );
+
+  it(`should throw an error when closing clients with a reason longer than ${MAX_CLOSE_REASON_BYTE_LENGTH} bytes`, async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        // 62 two-byte characters, so the reason is short enough in characters but not in UTF-8 bytes.
+        const reason = 'é'.repeat(62);
+        expect(new TextEncoder().encode(reason).byteLength).toBeGreaterThan(MAX_CLOSE_REASON_BYTE_LENGTH);
+
+        expect(() => interceptor.clients[0].close(1000, reason)).toThrow(
+          expect.objectContaining({ name: 'SyntaxError', constructor: DOMException }),
+        );
+
+        expect(interceptor.clients).toHaveLength(1);
+        expect(client.readyState).toBe(WebSocketClient.OPEN);
+      });
+    });
+  });
+
+  it('should not affect other clients when closing a client already closed', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatMessage>(baseURL, async (closedClient) => {
+        await usingWebSocketClient<ChatMessage>(baseURL, async (openClient) => {
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(2);
+          });
+
+          const [closedClientHandle, openClientHandle] = interceptor.clients;
+
+          const closeEventPromise = waitForWebSocketClientClose(closedClient);
+          closedClientHandle.close(4000, 'First close.');
+          closedClientHandle.close(4001, 'Second close.');
+
+          const closeEvent = await closeEventPromise;
+          expect(closeEvent.code).toBe(4000);
+          expect(closeEvent.reason).toBe('First close.');
+
+          await waitFor(() => {
+            expect(interceptor.clients).toEqual([openClientHandle]);
+          });
+
+          closedClientHandle.close(4002, 'Third close.');
+
+          const messages = collectWebSocketClientMessages(openClient);
+          const marker = JSON.stringify({ type: 'server', text: 'marker' } satisfies ChatMessage);
+          interceptor.server.send(marker);
+
+          await waitFor(() => {
+            expect(messages).toEqual([marker]);
+          });
+          expect(openClient.readyState).toBe(WebSocketClient.OPEN);
+          expect(interceptor.clients).toEqual([openClientHandle]);
+        });
+      });
+    });
+  });
+
+  it.each([
+    {
+      action: 'clearing',
+      release: async (interceptor: WebSocketInterceptor<ChatMessage>) => {
+        await interceptor.clear();
+      },
+    },
+    {
+      action: 'restarting',
+      release: async (interceptor: WebSocketInterceptor<ChatMessage>) => {
+        await interceptor.stop();
+        await interceptor.start();
+      },
+    },
+  ])('should not affect other clients when closing a client after $action the interceptor', async ({ release }) => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatMessage>(baseURL, async (releasedClient) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const releasedClientHandle = interceptor.clients[0];
+
+        const closeEventPromise = waitForWebSocketClientClose(releasedClient);
+        await release(interceptor);
+        await closeEventPromise;
+
+        await usingWebSocketClient<ChatMessage>(baseURL, async (openClient) => {
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(1);
+          });
+
+          const openClientHandle = interceptor.clients[0];
+
+          releasedClientHandle.close(4000, 'Released close.');
+
+          const messages = collectWebSocketClientMessages(openClient);
+          const marker = JSON.stringify({ type: 'server', text: 'marker' } satisfies ChatMessage);
+          interceptor.server.send(marker);
+
+          await waitFor(() => {
+            expect(messages).toEqual([marker]);
+          });
+          expect(openClient.readyState).toBe(WebSocketClient.OPEN);
+          expect(interceptor.clients).toEqual([openClientHandle]);
         });
       });
     });
@@ -657,6 +999,58 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
     });
   });
 
+  it.each(
+    (
+      [
+        { binaryType: 'blob', receivedMessageType: Blob },
+        { binaryType: 'arraybuffer', receivedMessageType: ArrayBuffer },
+      ] as const
+    ).flatMap(({ binaryType, receivedMessageType }) => [
+      {
+        dataType: 'Blob',
+        createMessage: () => new Blob([createBinaryMessage(0x00, 0xff)]),
+        binaryType,
+        receivedMessageType,
+      },
+      {
+        dataType: 'ArrayBuffer',
+        createMessage: () => createBinaryMessage(0x00, 0xff),
+        binaryType,
+        receivedMessageType,
+      },
+      {
+        dataType: 'Uint8Array',
+        createMessage: () => new Uint8Array([0x01, 0x00, 0xff, 0x01]).subarray(1, 3),
+        binaryType,
+        receivedMessageType,
+      },
+    ]),
+  )(
+    'should deliver $dataType server messages as the $binaryType binary type of clients',
+    async ({ createMessage, binaryType, receivedMessageType }) => {
+      type BinaryBufferMessage = WebSocketSchema<Blob | BufferSource>;
+
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<BinaryBufferMessage>({ type, baseURL }, async (interceptor) => {
+        await usingWebSocketClient<BinaryBufferMessage>(baseURL, async (client) => {
+          client.binaryType = binaryType;
+
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(1);
+          });
+
+          const messagePromise = waitForWebSocketClientMessage(client);
+          interceptor.server.send(createMessage());
+
+          const message = (await messagePromise) as Blob | ArrayBuffer;
+          expect(message).toBeInstanceOf(receivedMessageType);
+          expect(await readBytes(message)).toEqual([0x00, 0xff]);
+        });
+      });
+    },
+  );
+
   it.each([
     {
       sender: 'server',
@@ -728,6 +1122,40 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
             expect(messages[1]).toBe('valid');
             expect(console.error).not.toHaveBeenCalled();
           }
+        });
+      });
+    });
+  });
+
+  it('should log binary send errors and keep sending later messages', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<BinaryOrTextMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<BinaryOrTextMessage>(baseURL, async (client) => {
+        client.binaryType = 'arraybuffer';
+
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const messages = collectWebSocketClientMessages(client);
+
+        // Reading a blob fails only when its backing data becomes unreadable, such as a file changed on disk, which no
+        // portable test can trigger.
+        const unreadableBlob = new Blob([createBinaryMessage(0x00, 0xff)]);
+        const readError = new DOMException('The blob could not be read.', 'NotReadableError');
+        vi.spyOn(unreadableBlob, 'arrayBuffer').mockRejectedValueOnce(readError);
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          interceptor.server.send(unreadableBlob);
+          interceptor.server.send('valid');
+
+          await waitFor(() => {
+            expect(messages).toEqual(['valid']);
+          });
+
+          expect(console.error).toHaveBeenCalledTimes(1);
+          expect(console.error).toHaveBeenCalledWith(readError);
         });
       });
     });

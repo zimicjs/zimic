@@ -22,7 +22,7 @@ interface WebSocketMessageHandler {
   implementation: AnyWebSocketMessageHandlerImplementation;
 }
 
-export interface WebSocketConnectionHolder<Schema extends WebSocketSchema> {
+interface WebSocketConnectionHolder<Schema extends WebSocketSchema> {
   interceptor: WebSocketInterceptorImplementation<Schema>;
   client: InternalWebSocketInterceptorClient<Schema>;
 }
@@ -38,7 +38,7 @@ abstract class WebSocketInterceptorWorker {
   isRunning = false;
 
   private startingPromise?: Promise<void>;
-  protected stoppingPromise?: Promise<void>;
+  private stoppingPromise?: Promise<void>;
 
   private runningInterceptors: AnyWebSocketInterceptorImplementation[] = [];
   private messageHandlers: WebSocketMessageHandler[] = [];
@@ -238,6 +238,12 @@ abstract class WebSocketInterceptorWorker {
   abstract sendToClients<Schema extends WebSocketSchema>(
     interceptor: AnyWebSocketInterceptorImplementation<Schema>,
     data: WebSocketMessageData<Schema>,
+  ): PossiblePromise<void>;
+
+  abstract closeClient<Schema extends WebSocketSchema>(
+    client: InternalWebSocketInterceptorClient<Schema>,
+    code?: number,
+    reason?: string,
   ): PossiblePromise<void>;
 
   abstract clearHandlers<Schema extends WebSocketSchema>(options?: {

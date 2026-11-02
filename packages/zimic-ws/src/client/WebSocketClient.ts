@@ -60,6 +60,7 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
   `${string}EventListener` | `on${string}`
 > {
   private socket?: WebSocket;
+  private openingSocket?: WebSocket;
 
   #url: string;
   #protocols?: string | string[];
@@ -138,8 +139,12 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
   set binaryType(value: 'blob' | 'arraybuffer') {
     this.#binaryType = value;
 
-    if (this.socket) {
-      this.socket.binaryType = value;
+    // The socket being opened is not exposed yet, but it decodes the messages it receives as soon as it opens, so
+    // it needs the binary type set while opening, such as in open listeners.
+    const socket = this.socket ?? this.openingSocket;
+
+    if (socket) {
+      socket.binaryType = value;
     }
   }
 
@@ -172,6 +177,7 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     await this.close();
 
     const socket = new WebSocket(this.#url, this.#protocols);
+    this.openingSocket = socket;
 
     try {
       if (socket.binaryType !== this.binaryType) {
@@ -184,6 +190,8 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     } catch (error) {
       socket.close();
       throw error;
+    } finally {
+      this.openingSocket = undefined;
     }
 
     this.socket = socket;

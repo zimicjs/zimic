@@ -1,3 +1,4 @@
+import type { PossiblePromise } from '@zimic/utils/types';
 import type { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
 import {
@@ -29,7 +30,6 @@ import WebSocketInterceptorWorker from './WebSocketInterceptorWorker';
 
 interface RegisteredWebSocketInterceptor {
   id: string;
-  baseURL: string;
   interceptor: AnyWebSocketInterceptorImplementation;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   clients: Map<string, InternalWebSocketInterceptorClient<any>>;
@@ -73,7 +73,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       });
 
       this.webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', this.connectClient);
-      this.webSocketClient.onChannel('event', 'interceptors/ws/clients/close', this.closeClient);
+      this.webSocketClient.onChannel('event', 'interceptors/ws/clients/close', this.removeClosedClient);
       this.webSocketClient.onChannel('event', 'interceptors/ws/messages/handle', this.handleMessage);
 
       this.platform = this.readPlatform();
@@ -97,7 +97,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   async stop() {
     await super.sharedStop(async () => {
       this.webSocketClient.offChannel('event', 'interceptors/ws/clients/connect', this.connectClient);
-      this.webSocketClient.offChannel('event', 'interceptors/ws/clients/close', this.closeClient);
+      this.webSocketClient.offChannel('event', 'interceptors/ws/clients/close', this.removeClosedClient);
       this.webSocketClient.offChannel('event', 'interceptors/ws/messages/handle', this.handleMessage);
 
       // Stopped interceptors already reset their registrations, so a reset is only needed for ones still registered.
@@ -119,7 +119,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     const registeredInterceptor: RegisteredWebSocketInterceptor = {
       id: crypto.randomUUID(),
-      baseURL: interceptor.baseURLAsString,
       interceptor,
       clients: new Map(),
       numberOfResetsWhenCleared: 0,
@@ -139,10 +138,10 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     client: InternalWebSocketInterceptorClient<Schema>,
     data: WebSocketMessageData<Schema>,
   ) {
-    const clientEntry = this.findClientEntry(client);
+    const clientId = this.findClientId(client);
 
-    if (clientEntry) {
-      await this.enqueueSend({ clientId: clientEntry.clientId }, data);
+    if (clientId) {
+      await this.enqueueSend({ clientId }, data);
     }
   }
 
@@ -157,18 +156,44 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
   }
 
-  // Serializing a Blob is asynchronous, so sends are chained to reach the server in call order, as in local mode.
-  // Failures are logged because the public send methods return nothing to reject, as native `WebSocket.send`.
+  async closeClient<Schema extends WebSocketSchema>(
+    client: InternalWebSocketInterceptorClient<Schema>,
+    code?: number,
+    reason?: string,
+  ) {
+    const clientId = this.findClientId(client);
+
+    if (clientId) {
+      // Queued after earlier sends, so the client receives them before the connection closes, as in local mode.
+      await this.enqueueServerEvent(() => {
+        this.webSocketClient.send('interceptors/ws/clients/disconnect', {
+          clientId,
+          code,
+          reason,
+        });
+      });
+    }
+  }
+
   private enqueueSend<Schema extends WebSocketSchema>(
     target: { clientId: string } | { interceptorId: string },
     data: WebSocketMessageData<Schema>,
   ) {
+    return this.enqueueServerEvent(async () => {
+      this.webSocketClient.send('interceptors/ws/messages/send', {
+        ...target,
+        data: await serializeWebSocketMessageDataForTransport(data),
+      });
+    });
+  }
+
+  // Serializing a Blob is asynchronous, so sends and closes are chained to reach the server in call order, as in local
+  // mode. Failures are logged because the public send and close methods return nothing to reject, as native
+  // `WebSocket.send` and `WebSocket.close`.
+  private enqueueServerEvent(sendEvent: () => PossiblePromise<void>) {
     this.sendQueue = this.sendQueue.then(async () => {
       try {
-        this.webSocketClient.send('interceptors/ws/messages/send', {
-          ...target,
-          data: await serializeWebSocketMessageDataForTransport(data),
-        });
+        await sendEvent();
       } catch (error) {
         console.error(error);
       }
@@ -195,8 +220,14 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
         continue;
       }
 
-      const client = createWebSocketInterceptorClient(connection.url, async (data) => {
-        await this.sendToClient(client, data);
+      const client = createWebSocketInterceptorClient({
+        url: connection.url,
+        send: async (data) => {
+          await this.sendToClient(client, data);
+        },
+        close: async (code, reason) => {
+          await this.closeClient(client, code, reason);
+        },
       });
 
       // The registry is intentionally schema-erased because one remote worker owns interceptors for any schema.
@@ -215,7 +246,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     return { acceptedInterceptorIds: holders.map(({ registeredInterceptor }) => registeredInterceptor.id) };
   };
 
-  private closeClient = ({
+  private removeClosedClient = ({
     data: connection,
   }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/clients/close'>) => {
     // A connection shared by several interceptors has one client in each of them.
@@ -251,11 +282,11 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     });
   }
 
-  private findClientEntry<Schema extends WebSocketSchema>(client: InternalWebSocketInterceptorClient<Schema>) {
+  private findClientId<Schema extends WebSocketSchema>(client: InternalWebSocketInterceptorClient<Schema>) {
     for (const registeredInterceptor of this.registeredInterceptors.values()) {
       for (const [clientId, interceptorClient] of registeredInterceptor.clients) {
         if (interceptorClient === client) {
-          return { registeredInterceptor, clientId };
+          return clientId;
         }
       }
     }
@@ -311,7 +342,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     const reset: WebSocketWorkerReset = {
       interceptors: Array.from(this.registeredInterceptors.values(), (registeredInterceptor) => ({
         id: registeredInterceptor.id,
-        baseURL: registeredInterceptor.baseURL,
+        baseURL: registeredInterceptor.interceptor.baseURLAsString,
       })),
       clearedInterceptorIds: clearedInterceptors.map((registeredInterceptor) => registeredInterceptor.id),
     };

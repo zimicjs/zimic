@@ -12,6 +12,7 @@ import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
 import type { WebSocketEventMessage } from '@/utils/webSocket/types';
 import type WebSocketServer from '@/utils/webSocket/WebSocketServer';
+import { isUserCloseCode, MAX_CLOSE_REASON_BYTE_LENGTH } from '@/ws/interceptor/WebSocketInterceptorHandle';
 import {
   deserializeWebSocketMessageDataFromTransport,
   serializeWebSocketMessageDataForTransport,
@@ -19,6 +20,7 @@ import {
 
 import type {
   InterceptorServerWebSocketSchema,
+  WebSocketClientDisconnection,
   WebSocketInterceptorRegistration,
   WebSocketWorkerReset,
 } from '../types/schema';
@@ -42,6 +44,20 @@ const webSocketMessageSendSchema = z.object({
     z.object({ type: z.literal('binary'), data: z.base64() }),
   ]),
 });
+
+const webSocketClientDisconnectionSchema = z.object({
+  clientId: z.string(),
+  code: z
+    .int()
+    .refine(isUserCloseCode, { message: 'Close codes must be either 1000, or between 3000 and 4999.' })
+    .optional(),
+  reason: z
+    .string()
+    .refine((reason) => Buffer.byteLength(reason) <= MAX_CLOSE_REASON_BYTE_LENGTH, {
+      message: `Close reasons must not be greater than ${MAX_CLOSE_REASON_BYTE_LENGTH} UTF-8 bytes.`,
+    })
+    .optional(),
+}) satisfies z.ZodType<WebSocketClientDisconnection>;
 
 const clientConnectionReplySchema = z.object({ acceptedInterceptorIds: z.array(z.string()) });
 
@@ -95,6 +111,7 @@ class WebSocketInterceptorServerRuntime {
 
     this.webSocketServer.onChannel('event', 'interceptors/ws/workers/reset', this.resetWorker);
     this.webSocketServer.onChannel('event', 'interceptors/ws/messages/send', this.sendMessage);
+    this.webSocketServer.onChannel('event', 'interceptors/ws/clients/disconnect', this.disconnectClient);
   }
 
   private assertWebSocketWorkerSocket(socket: Socket) {
@@ -391,6 +408,33 @@ class WebSocketInterceptorServerRuntime {
     }
   };
 
+  private disconnectClient = (
+    rawMessage: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/clients/disconnect'>,
+    workerSocket: Socket,
+  ) => {
+    this.assertWebSocketWorkerSocket(workerSocket);
+
+    const disconnection = parseInterceptorServerRPCData(webSocketClientDisconnectionSchema, rawMessage.data);
+
+    // A worker can close only its own connections. A connection listener may close a connection still being set up.
+    const targetEntry = [
+      ...this.activeUserWebSocketConnections.entries(),
+      ...this.pendingUserWebSocketConnections.entries(),
+    ].find(([, userConnection]) => {
+      return userConnection.workerSocket === workerSocket && userConnection.clientId === disconnection.clientId;
+    });
+
+    if (!targetEntry) {
+      return;
+    }
+
+    const [userSocket] = targetEntry;
+
+    // Connections being set up are paused, which would keep them from receiving the closing handshake reply.
+    userSocket.resume();
+    userSocket.close(disconnection.code, disconnection.reason);
+  };
+
   private findConnectionTargetByRequest(request: IncomingMessage) {
     const requestURL = excludeNonPathParams(this.getWebSocketRequestURL(request));
 
@@ -415,6 +459,7 @@ class WebSocketInterceptorServerRuntime {
   async stop() {
     this.webSocketServer.offChannel('event', 'interceptors/ws/workers/reset', this.resetWorker);
     this.webSocketServer.offChannel('event', 'interceptors/ws/messages/send', this.sendMessage);
+    this.webSocketServer.offChannel('event', 'interceptors/ws/clients/disconnect', this.disconnectClient);
 
     await this.closeUserWebSocketConnections();
 
