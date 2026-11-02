@@ -632,7 +632,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       await usingWebSocketInterceptorWorker(remoteWorkerOptions, async (worker) => {
         const interceptor = createDefaultWebSocketInterceptor();
         const send = vi.fn();
-        const client = createWebSocketInterceptorClient(baseURL, send, vi.fn());
+        const client = createWebSocketInterceptorClient({ url: baseURL, send, close: vi.fn() });
 
         await expect(
           worker.sendToClient(client, JSON.stringify({ type: 'server', text: 'ignored client' })),

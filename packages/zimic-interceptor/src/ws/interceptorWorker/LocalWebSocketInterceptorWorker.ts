@@ -303,15 +303,15 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       connection,
       holders: holderInterceptors.map((registeredInterceptor) => {
         // Sending through the holder lookup makes the client stop sending once its interceptor lets the connection go.
-        const client = createWebSocketInterceptorClient<WebSocketSchema>(
-          connection.url.href,
-          (data) => {
+        const client = createWebSocketInterceptorClient<WebSocketSchema>({
+          url: connection.url.href,
+          send: (data) => {
             this.sendToClient(client, data);
           },
-          (code, reason) => {
+          close: (code, reason) => {
             this.closeClient(client, code, reason);
           },
-        );
+        });
         return { registeredInterceptor, client };
       }),
       messageListener: (event) => {

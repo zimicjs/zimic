@@ -222,15 +222,15 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
         continue;
       }
 
-      const client = createWebSocketInterceptorClient(
-        connection.url,
-        async (data) => {
+      const client = createWebSocketInterceptorClient({
+        url: connection.url,
+        send: async (data) => {
           await this.sendToClient(client, data);
         },
-        async (code, reason) => {
+        close: async (code, reason) => {
           await this.closeClient(client, code, reason);
         },
-      );
+      });
 
       // The registry is intentionally schema-erased because one remote worker owns interceptors for any schema.
       registeredInterceptor.clients.set(connection.clientId, client);

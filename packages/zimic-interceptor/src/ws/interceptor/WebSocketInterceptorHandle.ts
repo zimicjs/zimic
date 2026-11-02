@@ -83,12 +83,12 @@ class WebSocketInterceptorClientImplementation<
   }
 }
 
-export function createWebSocketInterceptorClient<Schema extends WebSocketSchema>(
-  url: string,
-  send: (data: WebSocketMessageData<Schema>) => void,
-  close: WebSocketInterceptorClientCloser,
-): InternalWebSocketInterceptorClient<Schema> {
-  return new WebSocketInterceptorClientImplementation(url, send, close);
+export function createWebSocketInterceptorClient<Schema extends WebSocketSchema>(options: {
+  url: string;
+  send: (data: WebSocketMessageData<Schema>) => void;
+  close: WebSocketInterceptorClientCloser;
+}): InternalWebSocketInterceptorClient<Schema> {
+  return new WebSocketInterceptorClientImplementation(options.url, options.send, options.close);
 }
 
 export interface InternalWebSocketInterceptorServer<
