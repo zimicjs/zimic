@@ -4,6 +4,7 @@ import { ValidationError } from '@zimic/utils/validation';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { expect, it, vi } from 'vitest';
 
+import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
@@ -572,11 +573,15 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
         });
 
         const closeEventPromise = waitForWebSocketClientClose(client);
-        interceptor.clients[0].close(4000, 'Closed by the interceptor.');
+
+        const closeCode = 4000;
+        const closeReason = 'Closed by the interceptor.';
+
+        interceptor.clients[0].close(closeCode, closeReason);
 
         const closeEvent = await closeEventPromise;
-        expect(closeEvent.code).toBe(4000);
-        expect(closeEvent.reason).toBe('Closed by the interceptor.');
+        expect(closeEvent.code).toBe(closeCode);
+        expect(closeEvent.reason).toBe(closeReason);
 
         await waitFor(() => {
           expect(interceptor.clients).toHaveLength(0);
@@ -598,7 +603,7 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
         interceptor.clients[0].close();
 
         const closeEvent = await closeEventPromise;
-        expect(closeEvent.code).toBe(1005);
+        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.NO_STATUS_RECEIVED);
         expect(closeEvent.reason).toBe('');
 
         await waitFor(() => {
@@ -621,10 +626,12 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
         const closeEventPromise = waitForWebSocketClientClose(client);
 
         interceptor.clients[0].send(new Blob([createBinaryMessage(0x00, 0xff)]));
-        interceptor.clients[0].close(1000);
+
+        const closeCode = 1000;
+        interceptor.clients[0].close(closeCode);
 
         const closeEvent = await closeEventPromise;
-        expect(closeEvent.code).toBe(1000);
+        expect(closeEvent.code).toBe(closeCode);
         expect(messages).toHaveLength(1);
         expect(await readBytes(messages[0] as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
       });
@@ -643,9 +650,11 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
           });
 
           const closeEventPromise = waitForWebSocketClientClose(client);
-          firstInterceptor.clients[0].close(1000);
 
-          expect((await closeEventPromise).code).toBe(1000);
+          const closeCode = 1000;
+          firstInterceptor.clients[0].close(closeCode);
+
+          expect((await closeEventPromise).code).toBe(closeCode);
 
           await waitFor(() => {
             expect(firstInterceptor.clients).toHaveLength(0);
@@ -663,14 +672,17 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
       const client = new WebSocketClient<ChatMessage>(baseURL);
       const closeEventPromise = waitForWebSocketClientClose(client);
 
-      interceptor.once('connection', (connectedClient) => connectedClient.close(4000, 'Rejected.'));
+      const closeCode = 4000;
+      const closeReason = 'Rejected.';
+
+      interceptor.once('connection', (client) => client.close(closeCode, closeReason));
 
       try {
         await client.open();
 
         const closeEvent = await closeEventPromise;
-        expect(closeEvent.code).toBe(4000);
-        expect(closeEvent.reason).toBe('Rejected.');
+        expect(closeEvent.code).toBe(closeCode);
+        expect(closeEvent.reason).toBe(closeReason);
 
         await waitFor(() => {
           expect(interceptor.clients).toHaveLength(0);
@@ -696,11 +708,13 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
         });
 
         const closeEventPromise = waitForWebSocketClientClose(client);
-        interceptor.clients[0].close(code, 'Rounded.');
+
+        const closeReason = 'Rounded.';
+        interceptor.clients[0].close(code, closeReason);
 
         const closeEvent = await closeEventPromise;
         expect(closeEvent.code).toBe(expectedCode);
-        expect(closeEvent.reason).toBe('Rounded.');
+        expect(closeEvent.reason).toBe(closeReason);
       });
     });
   });
