@@ -19,9 +19,9 @@ A WebSocket message handler to observe client-to-server messages, run effects, a
 
 :::info INFO: <span>Incoming message parsing</span>
 
-Before matching restrictions or running callbacks, handlers parse text frames containing valid JSON. Other text and binary frames retain their original data.
+Before matching restrictions or running callbacks, handlers parse text frames containing a valid JSON object or array. Other text frames stay strings, including top-level JSON numbers, booleans, `null`, and strings. Binary frames retain their original data. Unlike HTTP bodies without a `content-type`, which are parsed as any JSON value, WebSocket frames have no content type to declare JSON, and string messages are sent as raw text.
 
-This means a text frame such as `'{"type":"message"}'` is exposed to handlers as `{ type: 'message' }`, including when the interceptor uses a string-based schema. Avoid JSON-looking text when the message must remain a string.
+This means a text frame such as `'{"type":"message"}'` is exposed to handlers as `{ type: 'message' }`, including when the interceptor uses a string-based schema. Avoid JSON object or array text when the message must remain a string. A frame such as `'42'` or `'true'` stays a string, even when the schema declares a number or a boolean, so handlers receive it typed as `` `${number}` `` or `'true' | 'false'`, and static restrictions match it by its text, such as `handler.with('42')`.
 
 :::
 
@@ -109,7 +109,7 @@ await handler.with((message) => matchesMessage);
 
 1. **restriction**: `WebSocketMessageHandlerRestriction<Schema>`
 
-   The restriction to match intercepted messages. It can be static, declared as a partial message object, or computed, declared as a boolean predicate or type guard returning whether the message matches. Static restrictions match messages that contain the declared data.
+   The restriction to match intercepted messages. It can be static, declared as a partial message object, or computed, declared as a boolean predicate or type guard returning whether the message matches. Static restrictions match messages that contain the declared data. Top-level number and boolean schema members arrive as text, so their static restrictions accept only the whole text, such as `'42'` or `'true'`.
 
 2. **options**: `WebSocketMessageHandlerStaticRestrictionOptions | undefined`
 

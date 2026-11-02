@@ -282,7 +282,7 @@ Server-originated sends are delivered to connected clients, but they are not add
 
 Remote WebSocket interceptors preserve the frame kind of each message. Text frames remain text, JSON messages remain JSON, and binary frames remain binary when they pass through the interceptor server. Zimic uses an internal transport envelope for remote messages, so user payloads such as `{ type: 'binary', data: '...' }` are still treated as JSON when they were sent as JSON, not as transport metadata.
 
-Before matching restrictions or running callbacks, handlers parse text frames containing valid JSON. Non-JSON text and binary frames retain their original data. For string-based schemas, JSON-looking text such as `'{"type":"message"}'` is therefore exposed as parsed JSON rather than as a string. Avoid JSON-looking text when the message must remain a string.
+Before matching restrictions or running callbacks, handlers parse text frames containing a valid JSON object or array. Other text frames stay strings, including top-level JSON numbers, booleans, `null`, and strings. Binary frames retain their original data. Unlike HTTP bodies without a `content-type`, which are parsed as any JSON value, WebSocket frames have no content type to declare JSON, and string messages are sent as raw text. For string-based schemas, text such as `'{"type":"message"}'` is therefore exposed as parsed JSON rather than as a string. Avoid JSON object or array text when the message must remain a string. A frame such as `'42'` stays a string, even when the schema declares a number, so restrict it by its text, such as `handler.with('42')`.
 
 Binary messages can be sent with `Blob`, `ArrayBuffer`, typed arrays, and `DataView` values.
 

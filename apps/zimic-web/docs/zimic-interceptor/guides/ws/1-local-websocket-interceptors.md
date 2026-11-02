@@ -233,6 +233,6 @@ Server-originated sends are delivered to connected clients, but they are not add
 
 ### Incoming message parsing
 
-Message handlers automatically parse text frames containing valid JSON before matching restrictions, running callbacks, or saving messages. Non-JSON text and binary frames retain their original data.
+Message handlers automatically parse text frames containing a valid JSON object or array before matching restrictions, running callbacks, or saving messages. Other text frames stay strings, including top-level JSON numbers, booleans, `null`, and strings. Binary frames retain their original data. Unlike HTTP bodies without a `content-type`, which are parsed as any JSON value, WebSocket frames have no content type to declare JSON, and string messages are sent as raw text.
 
-For string-based schemas, JSON-looking text such as `'{"type":"message"}'` is therefore exposed as parsed JSON rather than as a string. Avoid JSON-looking text when the message must remain a string.
+For string-based schemas, text such as `'{"type":"message"}'` is therefore exposed as parsed JSON rather than as a string. Avoid JSON object or array text when the message must remain a string. A frame such as `'42'` stays a string, even when the schema declares a number, so restrict it by its text, such as `handler.with('42')`.
