@@ -51,6 +51,16 @@ Configures if intercepted messages are saved and how they are handled.
 
   The safe number of messages to save in memory before logging warnings in the console. This option does not limit the number of messages saved in memory, only when to log warnings.
 
+## `interceptor.onUnhandledMessage`
+
+The strategy to use for [unhandled messages](/docs/interceptor/guides/ws/unhandled-messages). If a client message reaches the interceptor, but no matching handler exists, this strategy will be used. If a function is provided, it will be called with the unhandled message.
+
+**Type**: `UnhandledMessageStrategy | undefined`
+
+- **log**: `boolean | undefined` (default: `true`)
+
+  Whether to log unhandled messages to the console.
+
 ## `interceptor.type`
 
 The type of the interceptor, either `local` or `remote`.

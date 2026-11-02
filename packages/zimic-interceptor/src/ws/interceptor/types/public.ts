@@ -37,10 +37,7 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptormessagesaving `interceptor.messageSaving` API reference} */
   messageSaving: WebSocketInterceptorMessageSaving;
 
-  /**
-   * The strategy applied to client messages that no handler matches. Defaults to logging a warning for each unhandled
-   * message.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptoronunhandledmessage `interceptor.onUnhandledMessage` API reference} */
   onUnhandledMessage?: UnhandledMessageStrategy;
 
   /**

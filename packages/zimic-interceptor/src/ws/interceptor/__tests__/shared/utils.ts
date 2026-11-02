@@ -47,4 +47,6 @@ export async function verifyUnhandledMessageWarning(
   } else {
     expect(warnArguments).toContainEqual(data);
   }
+
+  expect(message).toContain('Learn more: https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages');
 }
