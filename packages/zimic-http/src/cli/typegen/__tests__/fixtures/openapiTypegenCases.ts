@@ -159,6 +159,32 @@ const openapiTypegenFixtureCases = {
     },
   ],
 
+  arrays: [
+    {
+      input: 'arrays.yaml',
+      expectedOutput: 'arrays.ts',
+      extraArguments: ['--no-comments'],
+    },
+    {
+      input: 'arrays.yaml',
+      expectedOutput: 'arrays.comments.ts',
+      extraArguments: [],
+    },
+  ],
+
+  specialCharacters: [
+    {
+      input: 'specialCharacters.yaml',
+      expectedOutput: 'specialCharacters.ts',
+      extraArguments: ['--no-comments'],
+    },
+    {
+      input: 'specialCharacters.yaml',
+      expectedOutput: 'specialCharacters.comments.ts',
+      extraArguments: [],
+    },
+  ],
+
   examples: [
     {
       input: 'examples.yaml',
