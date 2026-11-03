@@ -49,6 +49,7 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
       interceptorIds: string[];
       clientId: string;
       url: string;
+      protocols: string[];
       // The number of resets the server had processed from the worker when it sent the connection.
       numberOfResets: number;
     };

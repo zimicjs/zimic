@@ -60,6 +60,52 @@ export function declareConnectionAndSendWebSocketInterceptorTests(
     });
   });
 
+  it.each([
+    { requestedProtocols: ['graphql-transport-ws', 'chat'], expectedProtocols: ['graphql-transport-ws', 'chat'] },
+    { requestedProtocols: 'chat', expectedProtocols: ['chat'] },
+    { requestedProtocols: [], expectedProtocols: [] },
+    { requestedProtocols: undefined, expectedProtocols: [] },
+  ])(
+    'should expose the subprotocols requested by clients (requested: $requestedProtocols)',
+    async ({ requestedProtocols, expectedProtocols }) => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<ChatMessage>(
+        { type, baseURL, messageSaving: { enabled: true } },
+        async (interceptor) => {
+          const handler = await promiseIfRemote(interceptor.message(), interceptor);
+
+          const connectionListener = vi.fn<(client: WebSocketInterceptorClient<ChatMessage>) => void>();
+          interceptor.on('connection', connectionListener);
+
+          const client = new WebSocketClient<ChatMessage>(baseURL, requestedProtocols);
+
+          try {
+            await client.open();
+            expect(client.protocol).toBe(expectedProtocols[0] ?? '');
+
+            await waitFor(() => {
+              expect(interceptor.clients).toHaveLength(1);
+            });
+            expect(interceptor.clients[0].protocols).toEqual(expectedProtocols);
+
+            expect(connectionListener).toHaveBeenCalledTimes(1);
+            expect(connectionListener.mock.calls[0][0].protocols).toEqual(expectedProtocols);
+
+            client.send(JSON.stringify({ type: 'server', text: 'message' } satisfies ChatMessage));
+
+            await waitFor(() => {
+              expect(handler.messages).toHaveLength(1);
+            });
+            expect(handler.messages[0].sender.protocols).toEqual(expectedProtocols);
+          } finally {
+            await client.close();
+          }
+        },
+      );
+    },
+  );
+
   it('should accept connections without handlers after started and after cleared', async () => {
     const baseURL = getBaseURL();
 

@@ -222,6 +222,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
       const client = createWebSocketInterceptorClient({
         url: connection.url,
+        protocols: connection.protocols,
         send: async (data) => {
           await this.sendToClient(client, data);
         },

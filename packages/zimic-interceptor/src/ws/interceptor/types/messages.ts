@@ -60,6 +60,15 @@ export interface WebSocketInterceptorClient<Schema extends WebSocketSchema> {
   readonly url: string;
 
   /**
+   * The subprotocols requested by the client when opening the connection, in the order they were requested, as in
+   * {@link https://developer.mozilla.org/docs/Web/API/WebSocket/WebSocket#protocols `new WebSocket(url, protocols)`}.
+   * Empty if the client requested none. The interceptor selects the first requested subprotocol.
+   *
+   * @readonly
+   */
+  readonly protocols: readonly string[];
+
+  /**
    * The messages sent by this client and saved by matching handlers. Requires message saving to be enabled.
    *
    * @readonly
