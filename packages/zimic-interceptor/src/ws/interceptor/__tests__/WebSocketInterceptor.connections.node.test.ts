@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe } from 'vitest';
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
-import { declareConnectionAndSendWebSocketInterceptorTests } from './shared/connectionsAndSends';
+import { declareConnectionsWebSocketInterceptorTests } from './shared/connections';
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Connections and sends', ({ type }) => {
@@ -21,7 +21,7 @@ describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Connections and 
     }
   });
 
-  declareConnectionAndSendWebSocketInterceptorTests({
+  declareConnectionsWebSocketInterceptorTests({
     type,
     getBaseURL() {
       return getNodeBaseURL(type, server).replace(/^http/, 'ws');

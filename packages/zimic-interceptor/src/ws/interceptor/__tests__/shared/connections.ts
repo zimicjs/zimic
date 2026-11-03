@@ -26,13 +26,13 @@ type ChatMessage = WebSocketSchema<{ type: 'server'; text: string }>;
 type BinaryMessage = WebSocketSchema<ArrayBuffer>;
 type BinaryOrTextMessage = WebSocketSchema<Blob | string>;
 
-interface SharedWebSocketInterceptorConnectionAndSendTestsOptions {
+interface SharedWebSocketInterceptorConnectionsTestsOptions {
   type: WebSocketInterceptorType;
   getBaseURL: () => string;
 }
 
-export function declareConnectionAndSendWebSocketInterceptorTests(
-  options: SharedWebSocketInterceptorConnectionAndSendTestsOptions,
+export function declareConnectionsWebSocketInterceptorTests(
+  options: SharedWebSocketInterceptorConnectionsTestsOptions,
 ) {
   const { type, getBaseURL } = options;
 

@@ -2,7 +2,7 @@ import { beforeAll, describe } from 'vitest';
 
 import { getBrowserBaseURL } from '@tests/utils/interceptors';
 
-import { declareConnectionAndSendWebSocketInterceptorTests } from './shared/connectionsAndSends';
+import { declareConnectionsWebSocketInterceptorTests } from './shared/connections';
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('WebSocketInterceptor (browser, $type) > Connections and sends', ({ type }) => {
@@ -12,5 +12,5 @@ describe.each(testMatrix)('WebSocketInterceptor (browser, $type) > Connections a
     baseURL = getBrowserBaseURL(type).replace(/^http/, 'ws');
   });
 
-  declareConnectionAndSendWebSocketInterceptorTests({ type, getBaseURL: () => baseURL });
+  declareConnectionsWebSocketInterceptorTests({ type, getBaseURL: () => baseURL });
 });
