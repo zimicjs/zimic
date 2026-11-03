@@ -32,6 +32,9 @@ export function createHttpInterceptor<Schema extends HttpSchema>(
   options: HttpInterceptorOptions,
 ): PublicLocalHttpInterceptor<Schema> | PublicRemoteHttpInterceptor<Schema> {
   assertTypeOf('options.baseURL', options.baseURL, 'string');
+  assertTypeOf('options.requestSaving', options.requestSaving, 'object', { optional: true });
+  assertTypeOf('options.requestSaving.enabled', options.requestSaving?.enabled, 'boolean', { optional: true });
+  assertTypeOf('options.requestSaving.safeLimit', options.requestSaving?.safeLimit, 'number', { optional: true });
 
   const type = options.type;
 
