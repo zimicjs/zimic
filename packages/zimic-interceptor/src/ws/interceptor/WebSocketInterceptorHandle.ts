@@ -48,6 +48,7 @@ class WebSocketInterceptorClientImplementation<
 
   constructor(
     readonly url: string,
+    readonly protocols: readonly string[],
     sendMessage: (data: WebSocketMessageData<Schema>) => void,
     closeConnection: WebSocketInterceptorClientCloser,
   ) {
@@ -82,10 +83,11 @@ class WebSocketInterceptorClientImplementation<
 
 export function createWebSocketInterceptorClient<Schema extends WebSocketSchema>(options: {
   url: string;
+  protocols: readonly string[];
   send: (data: WebSocketMessageData<Schema>) => void;
   close: WebSocketInterceptorClientCloser;
 }): InternalWebSocketInterceptorClient<Schema> {
-  return new WebSocketInterceptorClientImplementation(options.url, options.send, options.close);
+  return new WebSocketInterceptorClientImplementation(options.url, options.protocols, options.send, options.close);
 }
 
 export interface InternalWebSocketInterceptorServer<
