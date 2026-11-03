@@ -12,5 +12,8 @@ describe.each(testMatrix)('WebSocketInterceptor (browser, $type) > Connections a
     baseURL = getBrowserBaseURL(type).replace(/^http/, 'ws');
   });
 
-  declareConnectionsWebSocketInterceptorTests({ type, getBaseURL: () => baseURL });
+  declareConnectionsWebSocketInterceptorTests({
+    type,
+    getBaseURL: () => baseURL,
+  });
 });

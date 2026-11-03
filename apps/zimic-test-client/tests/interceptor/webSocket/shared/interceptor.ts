@@ -776,7 +776,10 @@ export function declareWebSocketInterceptorTests({
       const deleteHandler = await userInterceptor
         .message()
         .with({ type: 'user:delete' })
-        .respond((_message, { sender }) => ({ type: 'user:delete:success', data: { id: sender.protocols.join(',') } }))
+        .respond((_message, { sender }) => ({
+          type: 'user:delete:success',
+          data: { id: sender.protocols.join(',') },
+        }))
         .times(1);
 
       const socket = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL, requestedProtocols);
@@ -784,10 +787,15 @@ export function declareWebSocketInterceptorTests({
       try {
         expect(socket.protocol).toBe('graphql-transport-ws');
 
-        await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length + 1));
+        await waitFor(() => {
+          expect(userInterceptor.clients).toHaveLength(userSockets.length + 1);
+        });
         expect(userInterceptor.clients[userSockets.length].protocols).toEqual(requestedProtocols);
 
-        const message: UserWebSocketMessage<'user:delete'> = { type: 'user:delete', data: { id: crypto.randomUUID() } };
+        const message: UserWebSocketMessage<'user:delete'> = {
+          type: 'user:delete',
+          data: { id: crypto.randomUUID() },
+        };
 
         await expect(sendAndWaitForResponse(socket, message, 'user:delete:success')).resolves.toEqual({
           type: 'user:delete:success',
@@ -806,7 +814,9 @@ export function declareWebSocketInterceptorTests({
       try {
         expect(socket.protocol).toBe('');
 
-        await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length + 1));
+        await waitFor(() => {
+          expect(userInterceptor.clients).toHaveLength(userSockets.length + 1);
+        });
         expect(userInterceptor.clients[userSockets.length].protocols).toEqual([]);
       } finally {
         await closeWebSocketClient(socket);

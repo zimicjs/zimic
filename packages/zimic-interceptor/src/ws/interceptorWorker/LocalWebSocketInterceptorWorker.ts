@@ -306,7 +306,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private routeConnection(
     connection: LocalWebSocketClientConnection,
     server: { connect: () => void },
-    { protocols }: { protocols: readonly string[] },
+    options: { protocols: string[] },
   ) {
     // Every link that received the connection runs this, but the connection must be routed only once.
     if (this.routedConnections.has(connection)) {
@@ -331,7 +331,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
         // Sending through the holder lookup makes the client stop sending once its interceptor lets the connection go.
         const client = createWebSocketInterceptorClient<WebSocketSchema>({
           url: connection.url.href,
-          protocols,
+          protocols: options.protocols,
           send: (data) => {
             this.sendToClient(client, data);
           },
