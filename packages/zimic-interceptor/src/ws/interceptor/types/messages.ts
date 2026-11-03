@@ -57,7 +57,7 @@ export interface WebSocketInterceptorClient<Schema extends WebSocketSchema> {
    *
    * @readonly
    */
-  readonly url: string;
+  url: string;
 
   /**
    * The subprotocols requested by the client when opening the connection, in the order they were requested, as in
@@ -66,14 +66,14 @@ export interface WebSocketInterceptorClient<Schema extends WebSocketSchema> {
    *
    * @readonly
    */
-  readonly protocols: readonly string[];
+  protocols: readonly string[];
 
   /**
    * The messages sent by this client and saved by matching handlers. Requires message saving to be enabled.
    *
    * @readonly
    */
-  readonly messages: readonly InterceptedWebSocketInterceptorMessage<Schema>[];
+  messages: readonly InterceptedWebSocketInterceptorMessage<Schema>[];
 
   /** Sends a server message to this client. */
   send: (data: WebSocketMessageData<Schema>) => void;
@@ -115,14 +115,14 @@ export interface WebSocketInterceptorServer<Schema extends WebSocketSchema> {
    *
    * @readonly
    */
-  readonly url: string;
+  url: string;
 
   /**
    * The client-to-server messages saved by matching handlers. Requires message saving to be enabled.
    *
    * @readonly
    */
-  readonly messages: readonly InterceptedWebSocketInterceptorMessage<Schema>[];
+  messages: readonly InterceptedWebSocketInterceptorMessage<Schema>[];
 
   /** Sends a message to the connected clients selected in `options.to`, or to all of them if omitted. */
   send: (data: WebSocketMessageData<Schema>, options?: WebSocketInterceptorServerSendOptions<Schema>) => void;
