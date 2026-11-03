@@ -71,13 +71,14 @@ const MSW_SOCKET_IO_PATH_REGEX = /^\/socket.io\//;
 
 const SOCKET_IO_PATH = '/socket.io/';
 
-// MSW passes the `protocols` argument of the `WebSocket` constructor as given.
+// MSW passes the `protocols` argument of the `WebSocket` constructor as given, so arrays are copied to keep later
+// changes by the caller out of the client.
 function normalizeRequestedProtocols(protocols: string | string[] | undefined) {
   if (protocols === undefined) {
     return [];
   }
 
-  return typeof protocols === 'string' ? [protocols] : protocols;
+  return typeof protocols === 'string' ? [protocols] : [...protocols];
 }
 
 function getMSWBaseURL(baseURL: string) {
