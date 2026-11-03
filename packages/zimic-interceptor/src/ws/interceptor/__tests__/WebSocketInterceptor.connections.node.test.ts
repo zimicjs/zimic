@@ -6,7 +6,7 @@ import { createInternalInterceptorServer } from '@tests/utils/interceptorServers
 import { declareConnectionsWebSocketInterceptorTests } from './shared/connections';
 import testMatrix from './shared/matrix';
 
-describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Connections and sends', ({ type }) => {
+describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Connections', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   beforeAll(async () => {
@@ -23,8 +23,6 @@ describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Connections and 
 
   declareConnectionsWebSocketInterceptorTests({
     type,
-    getBaseURL() {
-      return getNodeBaseURL(type, server).replace(/^http/, 'ws');
-    },
+    getBaseURL: () => getNodeBaseURL(type, server).replace(/^http/, 'ws'),
   });
 });

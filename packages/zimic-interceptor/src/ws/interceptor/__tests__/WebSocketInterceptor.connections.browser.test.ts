@@ -5,7 +5,7 @@ import { getBrowserBaseURL } from '@tests/utils/interceptors';
 import { declareConnectionsWebSocketInterceptorTests } from './shared/connections';
 import testMatrix from './shared/matrix';
 
-describe.each(testMatrix)('WebSocketInterceptor (browser, $type) > Connections and sends', ({ type }) => {
+describe.each(testMatrix)('WebSocketInterceptor (browser, $type) > Connections', ({ type }) => {
   let baseURL: string;
 
   beforeAll(() => {
