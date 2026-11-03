@@ -1,4 +1,5 @@
 import { waitFor } from '@zimic/utils/time';
+import { ValidationError } from '@zimic/utils/validation';
 import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -124,6 +125,34 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
         },
       );
     });
+
+    const invalidEnabledOptions = [
+      { label: 'null', value: null, expectedType: 'null' },
+      { label: 'a number', value: 1, expectedType: 'number' },
+      { label: 'a string', value: 'true', expectedType: 'string' },
+      { label: 'an object', value: {}, expectedType: 'object' },
+    ];
+
+    it.each(invalidEnabledOptions)(
+      'should throw an error if provided a message saving enabled option that is not a boolean ($label)',
+      async ({ value, expectedType }) => {
+        const handler = vi.fn();
+
+        // @ts-expect-error Forcing an invalid message saving enabled option type.
+        const invalidEnabled: boolean = value;
+
+        await expect(async () => {
+          await usingWebSocketInterceptor(
+            { ...interceptorOptions, messageSaving: { enabled: invalidEnabled } },
+            handler,
+          );
+        }).rejects.toThrow(
+          new ValidationError(`Expected options.messageSaving.enabled to be boolean, but got ${expectedType}.`),
+        );
+
+        expect(handler).not.toHaveBeenCalled();
+      },
+    );
   });
 
   describe('Safe limit', () => {
@@ -480,6 +509,34 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
         },
       );
     });
+
+    const invalidSafeLimits = [
+      { label: 'null', value: null, expectedType: 'null' },
+      { label: 'a string', value: '5', expectedType: 'string' },
+      { label: 'a boolean', value: true, expectedType: 'boolean' },
+      { label: 'an object', value: {}, expectedType: 'object' },
+    ];
+
+    it.each(invalidSafeLimits)(
+      'should throw an error if provided a message saving safe limit that is not a number ($label)',
+      async ({ value, expectedType }) => {
+        const handler = vi.fn();
+
+        // @ts-expect-error Forcing an invalid message saving safe limit type.
+        const invalidSafeLimit: number = value;
+
+        await expect(async () => {
+          await usingWebSocketInterceptor(
+            { ...interceptorOptions, messageSaving: { safeLimit: invalidSafeLimit } },
+            handler,
+          );
+        }).rejects.toThrow(
+          new ValidationError(`Expected options.messageSaving.safeLimit to be number, but got ${expectedType}.`),
+        );
+
+        expect(handler).not.toHaveBeenCalled();
+      },
+    );
   });
 
   it('should support changing the message saving configuration after created', async () => {
@@ -551,4 +608,27 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
       },
     );
   });
+
+  const invalidMessageSavings = [
+    { label: 'null', value: null, expectedType: 'null' },
+    { label: 'a boolean', value: true, expectedType: 'boolean' },
+    { label: 'a number', value: 5, expectedType: 'number' },
+    { label: 'a string', value: 'enabled', expectedType: 'string' },
+  ];
+
+  it.each(invalidMessageSavings)(
+    'should throw an error if provided a message saving configuration that is not an object ($label)',
+    async ({ value, expectedType }) => {
+      const handler = vi.fn();
+
+      // @ts-expect-error Forcing an invalid message saving type.
+      const invalidMessageSaving: Partial<WebSocketInterceptorMessageSaving> = value;
+
+      await expect(async () => {
+        await usingWebSocketInterceptor({ ...interceptorOptions, messageSaving: invalidMessageSaving }, handler);
+      }).rejects.toThrow(new ValidationError(`Expected options.messageSaving to be object, but got ${expectedType}.`));
+
+      expect(handler).not.toHaveBeenCalled();
+    },
+  );
 }
