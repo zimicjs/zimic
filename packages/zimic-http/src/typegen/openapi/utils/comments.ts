@@ -88,8 +88,9 @@ export function createJSDocComment(annotations: JSDocAnnotations | boolean, opti
   const isSingleLine = lines.length === 1 && !lines[0].includes('\n');
   const content = isSingleLine ? `* ${lines[0]} ` : `*\n * ${lines.join('\n * ')}\n `;
 
-  // Closing sequences inside the content would end the comment early.
-  const escapedContent = content.replace(/\*\//g, '*\\/');
+  // Closing sequences inside the content would end the comment early. Formatters, such as prettier-plugin-jsdoc,
+  // decode backslash escapes and HTML entities, so a space is the only separator they keep.
+  const escapedContent = content.replace(/\*\//g, '* /');
 
   return `/*${escapedContent}*/`
     .split('\n')
