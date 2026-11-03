@@ -78,7 +78,7 @@ export interface MyServiceComponents {
       id: number;
       name: string;
       /**
-       * Discriminator enum property added by openapi-typescript
+       * Discriminator enum property added by @zimic/http
        *
        * @enum {string}
        */
@@ -89,7 +89,7 @@ export interface MyServiceComponents {
       id: number;
       name: string;
       /**
-       * Discriminator enum property added by openapi-typescript
+       * Discriminator enum property added by @zimic/http
        *
        * @enum {string}
        */

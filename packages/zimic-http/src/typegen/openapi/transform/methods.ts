@@ -1,355 +1,220 @@
 import { isDefined } from '@zimic/utils/data';
-import { Override } from '@zimic/utils/types';
 import color from 'picocolors';
-import ts from 'typescript';
 
-import { HTTP_METHODS, HttpMethod } from '@/types/schema';
-import { logger } from '@/utils/logging';
-
-import { isUnknownType, isNeverType, isNullType } from '../utils/types';
-import { renameComponentReferences } from './components';
+import { parseReferencePointer, resolveReference } from '../document/references';
+import {
+  isReference,
+  OpenAPIHeader,
+  OpenAPIMediaType,
+  OpenAPIOperation,
+  OpenAPIParameter,
+  OpenAPIReferenceable,
+  OpenAPIRequestBody,
+  OpenAPIResponse,
+} from '../document/types';
+import { createJSDocComment } from '../utils/comments';
+import {
+  ANY_TYPE,
+  intersectionType,
+  literalType,
+  NULL_TYPE,
+  objectType,
+  propertyKey,
+  referenceType,
+  STRING_TYPE,
+  stringLiteral,
+  tupleType,
+  TypeExpression,
+  TypeMember,
+  typeMember,
+  unionType,
+} from '../utils/types';
 import { TypeTransformContext } from './context';
-import { createOperationsIdentifier } from './operations';
+import { createReferenceType } from './references';
+import { transformMediaTypeSchema, transformSchema } from './schemas';
 
-type Method = Override<
-  ts.PropertySignature,
-  {
-    type: ts.TypeLiteralNode | ts.IndexedAccessTypeNode;
-    name: ts.Identifier;
-  }
->;
+const BODY_WRAPPER_TYPE_BY_CONTENT_TYPE = {
+  'multipart/form-data': 'HttpFormData',
+  'application/x-www-form-urlencoded': 'HttpSearchParams',
+} as const;
 
-function isMethod(node: ts.Node): node is Method {
-  return (
-    ts.isPropertySignature(node) &&
-    ts.isIdentifier(node.name) &&
-    node.type !== undefined &&
-    (ts.isTypeLiteralNode(node.type) || ts.isIndexedAccessTypeNode(node.type))
-  );
+function isWrappedBodyContentType(contentType: string): contentType is keyof typeof BODY_WRAPPER_TYPE_BY_CONTENT_TYPE {
+  return Object.hasOwn(BODY_WRAPPER_TYPE_BY_CONTENT_TYPE, contentType);
 }
 
-type MethodMember = Override<
-  ts.PropertySignature,
-  {
-    name: ts.Identifier | ts.StringLiteral;
-    type: ts.TypeLiteralNode | ts.IndexedAccessTypeNode;
-  }
->;
-
-function isMethodMember(node: ts.Node): node is MethodMember {
-  return (
-    ts.isPropertySignature(node) &&
-    ts.isIdentifier(node.name) &&
-    node.type !== undefined &&
-    (ts.isTypeLiteralNode(node.type) || ts.isIndexedAccessTypeNode(node.type) || isNeverType(node.type))
-  );
-}
-
-type RequestMember = Override<
-  ts.PropertySignature,
-  {
-    name: ts.Identifier;
-    type: ts.TypeNode;
-  }
->;
-
-function isRequestMember(node: ts.Node): node is RequestMember {
-  return (
-    ts.isPropertySignature(node) && ts.isIdentifier(node.name) && node.type !== undefined && !isNeverType(node.type)
-  );
-}
-
-type RequestHeaders = Override<RequestMember, { type: ts.TypeLiteralNode }>;
-
-function isRequestHeaders(node: ts.Node): node is RequestHeaders {
-  return isRequestMember(node) && node.name.text === 'headers' && ts.isTypeLiteralNode(node.type);
-}
-
-type NormalizedRequestHeaders = Override<RequestHeaders, { type: ts.TypeLiteralNode }>;
-
-function isNormalizedRequestHeaders(node: ts.Node): node is NormalizedRequestHeaders {
-  return isRequestMember(node) && node.name.text === 'headers' && ts.isTypeLiteralNode(node.type);
-}
-
-type RequestParameters = Override<RequestMember, { type: ts.TypeLiteralNode }>;
-
-function isRequestParameters(node: ts.Node): node is RequestParameters {
-  return isRequestMember(node) && node.name.text === 'parameters' && ts.isTypeLiteralNode(node.type);
-}
-
-type Content = Override<RequestMember, { type: ts.TypeLiteralNode }>;
-
-function isContentPropertySignature(node: ts.Node): node is Content {
-  return isRequestMember(node) && node.name.text === 'content' && ts.isTypeLiteralNode(node.type);
-}
-
-type ContentMember = Override<
-  ts.PropertySignature,
-  {
-    name: ts.Identifier | ts.StringLiteral;
-    type: ts.TypeNode;
-  }
->;
-
-function isContentMember(node: ts.Node): node is ContentMember {
-  return (
-    ts.isPropertySignature(node) &&
-    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) &&
-    node.type !== undefined &&
-    !isNeverType(node.type)
-  );
-}
-
-type Response = Override<
-  ts.PropertySignature,
-  {
-    name: ts.Identifier | ts.StringLiteral | ts.NumericLiteral;
-    type: ts.TypeNode;
-  }
->;
-
-function isResponse(node: ts.Node): node is Response {
-  return (
-    ts.isPropertySignature(node) &&
-    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name) || ts.isNumericLiteral(node.name)) &&
-    node.type !== undefined
-  );
-}
-
-function removeRedundantNullUnionIfNecessary(type: ts.TypeNode) {
-  const containsRedundantNullUnion =
-    ts.isUnionTypeNode(type) &&
-    type.types.some((type) => {
-      const isNull = ts.isLiteralTypeNode(type) && isNullType(type.literal);
-      return isNull;
-    }) &&
-    type.types.some((type) => {
-      return (
-        ts.isParenthesizedTypeNode(type) &&
-        ts.isUnionTypeNode(type.type) &&
-        type.type.types.some((subType) => {
-          const isNull = ts.isLiteralTypeNode(subType) && isNullType(subType.literal);
-          return isNull;
-        })
-      );
-    });
-
-  if (!containsRedundantNullUnion) {
+/** Collapses `(T | null) | null`, which nullable schemas with nullable members generate, into `T | null`. */
+function removeRedundantNullUnion(type: TypeExpression) {
+  if (type.kind !== 'union') {
     return type;
   }
 
-  const typesWithoutRedundantNullUnion = type.types
-    .filter((type) => {
-      const isNull = ts.isLiteralTypeNode(type) && isNullType(type.literal);
-      return !isNull;
-    })
-    .flatMap((type) => {
-      /* istanbul ignore else -- @preserve */
-      if (ts.isParenthesizedTypeNode(type) && ts.isUnionTypeNode(type.type)) {
-        return type.type.types;
-      }
-      /* istanbul ignore next -- @preserve
-       * Member types are always expected to be a union type or a parenthesized union type. */
-      return [type];
-    });
+  const hasNullMember = type.members.includes(NULL_TYPE);
+  const hasNullableUnionMember = type.members.some(
+    (member) => member.kind === 'union' && member.members.includes(NULL_TYPE),
+  );
 
-  return ts.factory.createUnionTypeNode(typesWithoutRedundantNullUnion);
-}
-
-function wrapFormDataContentType(type: ts.TypeNode, context: TypeTransformContext) {
-  context.typeImports.http.add('HttpFormData');
-
-  return ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpFormData'), [
-    renameComponentReferences(type, context),
-  ]);
-}
-
-function wrapURLEncodedContentType(type: ts.TypeNode, context: TypeTransformContext) {
-  context.typeImports.http.add('HttpSearchParams');
-
-  return ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpSearchParams'), [
-    renameComponentReferences(type, context),
-  ]);
-}
-
-function normalizeRequestBodyMember(
-  requestBodyMember: ts.TypeElement,
-  context: TypeTransformContext,
-  options: { questionToken: ts.QuestionToken | undefined },
-) {
-  /* istanbul ignore if -- @preserve
-   * Request body members are always expected to be a request body. */
-  if (!isContentMember(requestBodyMember)) {
-    return undefined;
+  if (!hasNullMember || !hasNullableUnionMember) {
+    return type;
   }
 
-  const newIdentifier = ts.factory.createIdentifier('body');
+  return unionType(
+    type.members
+      .filter((member) => member !== NULL_TYPE)
+      .flatMap((member) => (member.kind === 'union' ? member.members : [member])),
+  );
+}
 
-  const contentType = requestBodyMember.name.text;
-  let newType = removeRedundantNullUnionIfNecessary(renameComponentReferences(requestBodyMember.type, context));
+interface BodyVariant {
+  contentType: string;
+  body: TypeMember;
+}
 
-  if (contentType === 'multipart/form-data') {
-    newType = wrapFormDataContentType(newType, context);
-  } else if (contentType === 'application/x-www-form-urlencoded') {
-    newType = wrapURLEncodedContentType(newType, context);
+function createBodyVariant(
+  contentType: string,
+  type: TypeExpression,
+  mediaType: OpenAPIReferenceable<OpenAPIMediaType>,
+  context: TypeTransformContext,
+  options: { isBodyOptional: boolean },
+): BodyVariant {
+  let bodyType = removeRedundantNullUnion(type);
+
+  if (isWrappedBodyContentType(contentType)) {
+    const wrapperTypeName = BODY_WRAPPER_TYPE_BY_CONTENT_TYPE[contentType];
+    context.dependencies.httpImports.add(wrapperTypeName);
+    bodyType = referenceType(wrapperTypeName, [bodyType]);
   }
 
   return {
-    contentTypeName: contentType,
-    propertySignature: ts.factory.updatePropertySignature(
-      requestBodyMember,
-      requestBodyMember.modifiers,
-      newIdentifier,
-      options.questionToken,
-      newType,
-    ),
+    contentType,
+    body: typeMember({
+      key: 'body',
+      type: bodyType,
+      isOptional: options.isBodyOptional,
+      comment: createJSDocComment(mediaType, context),
+    }),
   };
 }
 
-function normalizeHeaders(headers: ts.TypeLiteralNode, context: TypeTransformContext) {
-  const newHeaderMembers = headers.members.filter((header) => {
-    if (ts.isIndexSignatureDeclaration(header)) {
-      return false;
-    }
-    /* istanbul ignore else -- @preserve */
-    if (ts.isPropertySignature(header)) {
-      return header.type !== undefined && !isUnknownType(header.type);
-    }
-    /* istanbul ignore next -- @preserve
-     * Headers are always expected to be property signatures or index signatures. */
-    return true;
-  });
+function createContentTypeHeader(contentType: string) {
+  return typeMember({ key: stringLiteral('content-type'), type: literalType(contentType) });
+}
 
-  if (newHeaderMembers.length === 0) {
-    return undefined;
+function createHeadersMember(headerMembers: TypeMember[]) {
+  return headerMembers.length > 0 ? typeMember({ key: 'headers', type: objectType(headerMembers) }) : undefined;
+}
+
+/**
+ * Generates the type of a request or response with headers and a body. Bodies with multiple content types generate a
+ * union of variants, each with its `content-type` header.
+ */
+function createContentType(headerMembers: TypeMember[], bodyVariants: BodyVariant[]) {
+  if (bodyVariants.length === 0) {
+    return objectType([createHeadersMember(headerMembers)].filter(isDefined));
   }
 
-  return renameComponentReferences(
-    ts.factory.updateTypeLiteralNode(headers, ts.factory.createNodeArray(newHeaderMembers)),
-    context,
+  return unionType(
+    bodyVariants.map(({ contentType, body }) => {
+      const headers = typeMember({
+        key: 'headers',
+        type: objectType([createContentTypeHeader(contentType), ...headerMembers]),
+      });
+      return objectType([headers, body]);
+    }),
   );
 }
 
-function normalizeRequestHeaders(
-  requestHeader: ts.TypeElement,
+function transformRequestBodyVariants(
+  requestBody: OpenAPIRequestBody,
+  segments: string[],
   context: TypeTransformContext,
-): NormalizedRequestHeaders | undefined {
-  if (!isRequestHeaders(requestHeader)) {
-    return undefined;
-  }
+  options: { isBodyOptional: boolean },
+) {
+  return Object.entries(requestBody.content ?? {}).map(([contentType, mediaType]) => {
+    const mediaTypeSegments = [...segments, 'content', contentType];
 
-  const newType = normalizeHeaders(requestHeader.type, context);
+    const type = isReference(mediaType)
+      ? transformSchema(mediaType, mediaTypeSegments, context)
+      : transformMediaTypeSchema(mediaType, mediaTypeSegments, context);
 
-  if (!newType || !ts.isTypeLiteralNode(newType)) {
-    return undefined;
-  }
-
-  return ts.factory.updatePropertySignature(
-    requestHeader,
-    requestHeader.modifiers,
-    requestHeader.name,
-    requestHeader.questionToken,
-    newType satisfies NormalizedRequestHeaders['type'],
-  ) satisfies ts.PropertySignature as NormalizedRequestHeaders;
+    return createBodyVariant(contentType, type, mediaType, context, options);
+  });
 }
 
-function createHeaderForUnionByContentType(
-  existingHeader: NormalizedRequestHeaders | undefined,
-  contentTypeName: string,
+export function transformRequestBodyComponent(
+  requestBody: OpenAPIRequestBody,
+  segments: string[],
+  context: TypeTransformContext,
+  options: { isBodyOptional: boolean },
 ) {
-  const existingHeaderMembers = existingHeader?.type.members ?? [];
-
-  const contentTypeIdentifier = ts.factory.createIdentifier('"content-type"');
-  const contentTypeValue = ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral(contentTypeName));
-
-  const newHeaderType = ts.factory.createTypeLiteralNode([
-    ts.factory.createPropertySignature(undefined, contentTypeIdentifier, undefined, contentTypeValue),
-    ...existingHeaderMembers,
-  ]);
-
-  return ts.factory.createPropertySignature(
-    existingHeader?.modifiers,
-    ts.factory.createIdentifier('headers'),
-    undefined,
-    newHeaderType,
-  );
+  return createContentType([], transformRequestBodyVariants(requestBody, segments, context, options));
 }
 
-export function normalizeContentType(
-  contentType: ts.TypeNode,
-  context: TypeTransformContext,
-  options: { bodyQuestionToken: ts.QuestionToken | undefined },
-) {
-  const { bodyQuestionToken } = options;
-
-  if (ts.isIndexedAccessTypeNode(contentType)) {
-    return renameComponentReferences(contentType, context);
+export function transformHeader(header: OpenAPIHeader, segments: string[], context: TypeTransformContext) {
+  if (header.schema !== undefined) {
+    return transformSchema(header.schema, segments, context);
   }
 
-  if (!ts.isTypeLiteralNode(contentType)) {
-    return contentType;
+  if (!header.content) {
+    return ANY_TYPE;
   }
 
-  const newHeader = contentType.members.map((member) => normalizeRequestHeaders(member, context)).find(isDefined);
+  const members = Object.entries(header.content).map(([contentType, mediaType]) => {
+    const mediaTypeSegments = [...segments, contentType];
 
-  const newBodyMembers = contentType.members.flatMap((body) => {
-    if (isContentPropertySignature(body)) {
-      return body.type.members
-        .map((member) => normalizeRequestBodyMember(member, context, { questionToken: bodyQuestionToken }))
-        .filter(isDefined);
+    const type = isReference(mediaType)
+      ? transformSchema(mediaType, mediaTypeSegments, context)
+      : transformMediaTypeSchema(mediaType, mediaTypeSegments, context);
+
+    return typeMember({ key: propertyKey(contentType), type, comment: createJSDocComment(mediaType, context) });
+  });
+
+  return objectType(members);
+}
+
+function transformResponseHeaders(response: OpenAPIResponse, segments: string[], context: TypeTransformContext) {
+  return Object.entries(response.headers ?? {}).flatMap(([headerName, header]) => {
+    const type = isReference(header)
+      ? createReferenceType(header.$ref, context)
+      : transformHeader(header, [...segments, 'headers', headerName], context);
+
+    // Response headers already accept any header, so headers without a schema add nothing.
+    if (type === ANY_TYPE) {
+      return [];
     }
-    return [];
+
+    const isRequired = isReference(header) || header.required === true;
+
+    return [
+      typeMember({
+        key: propertyKey(headerName),
+        type,
+        isOptional: !isRequired,
+        comment: createJSDocComment(header, context),
+      }),
+    ];
   });
-
-  if (newBodyMembers.length === 0) {
-    const newMembers = [newHeader].filter(isDefined);
-
-    return ts.factory.updateTypeLiteralNode(contentType, ts.factory.createNodeArray(newMembers));
-  } else {
-    const bodyMemberUnionTypes = newBodyMembers.map((bodyMember) => {
-      const headerMember = createHeaderForUnionByContentType(newHeader, bodyMember.contentTypeName);
-      return ts.factory.createTypeLiteralNode([headerMember, bodyMember.propertySignature]);
-    });
-
-    return ts.factory.createUnionTypeNode(bodyMemberUnionTypes);
-  }
 }
 
-function normalizeRequest(request: MethodMember, context: TypeTransformContext) {
-  const newIdentifier = ts.factory.createIdentifier('request');
-
-  const newType = normalizeContentType(request.type, context, {
-    bodyQuestionToken: request.questionToken,
-  });
-
-  if (
-    request.questionToken &&
-    ts.isIndexedAccessTypeNode(request.type) &&
-    ts.isLiteralTypeNode(request.type.indexType) &&
-    (ts.isIdentifier(request.type.indexType.literal) || ts.isStringLiteral(request.type.indexType.literal))
-  ) {
-    const referencedComponentName = request.type.indexType.literal.text;
-    context.pendingActions.components.requests.toMarkBodyAsOptional.add(referencedComponentName);
-  }
-
-  return ts.factory.updatePropertySignature(request, request.modifiers, newIdentifier, undefined, newType);
-}
-
-function normalizeResponseType(
-  responseType: ts.TypeNode,
+export function transformResponse(
+  response: OpenAPIReferenceable<OpenAPIResponse>,
+  segments: string[],
   context: TypeTransformContext,
-  options: { questionToken?: ts.QuestionToken },
 ) {
-  const { questionToken } = options;
-
-  if (!ts.isTypeLiteralNode(responseType)) {
-    return responseType;
+  if (isReference(response)) {
+    return createReferenceType(response.$ref, context);
   }
 
-  return normalizeContentType(responseType, context, { bodyQuestionToken: questionToken });
+  const headerMembers = transformResponseHeaders(response, segments, context);
+
+  const bodyVariants = Object.entries(response.content ?? {}).map(([contentType, mediaType]) => {
+    const type = transformMediaTypeSchema(mediaType, [...segments, 'content', contentType], context);
+    return createBodyVariant(contentType, type, mediaType, context, { isBodyOptional: false });
+  });
+
+  return createContentType(headerMembers, bodyVariants);
 }
 
-const NON_NUMERIC_RESPONSE_STATUS_TO_MAPPED_TYPE: Record<string, string | undefined> = {
+const STATUS_CODE_PATTERN_TO_TYPE: Record<string, string | undefined> = {
   default: 'HttpStatusCode',
   '1xx': 'HttpStatusCode.Information',
   '2xx': 'HttpStatusCode.Success',
@@ -358,389 +223,254 @@ const NON_NUMERIC_RESPONSE_STATUS_TO_MAPPED_TYPE: Record<string, string | undefi
   '5xx': 'HttpStatusCode.ServerError',
 };
 
-export function normalizeResponse(
-  response: ts.TypeElement,
+interface StatusCodeResponse {
+  statusCode: string;
+  isNumericStatusCode: boolean;
+  member: TypeMember;
+}
+
+function transformStatusCodeResponse(
+  statusCode: string,
+  response: OpenAPIReferenceable<OpenAPIResponse>,
+  segments: string[],
   context: TypeTransformContext,
-  options: { isComponent?: boolean } = {},
-) {
-  const { isComponent = false } = options;
+): StatusCodeResponse | undefined {
+  const isNumericStatusCode = /^\d+$/.test(statusCode);
+  let key = propertyKey(statusCode);
 
-  /* istanbul ignore if -- @preserve
-   * Response members are always expected to be a response. */
-  if (!isResponse(response)) {
-    return undefined;
-  }
+  if (!isNumericStatusCode) {
+    const statusCodeType = STATUS_CODE_PATTERN_TO_TYPE[statusCode.toLowerCase()];
 
-  const newType = normalizeResponseType(response.type, context, {
-    questionToken: response.questionToken,
-  });
-
-  const statusCodeOrComponentName = response.name.text;
-  const isNumericStatusCode = /^\d+$/.test(statusCodeOrComponentName);
-  const shouldReuseIdentifier = isComponent || isNumericStatusCode;
-
-  let newSignature: ts.PropertySignature;
-
-  if (shouldReuseIdentifier) {
-    newSignature = ts.factory.updatePropertySignature(
-      response,
-      response.modifiers,
-      response.name,
-      response.questionToken,
-      newType,
-    );
-  } else {
-    const statusCode = statusCodeOrComponentName.toLowerCase();
-    const mappedType = NON_NUMERIC_RESPONSE_STATUS_TO_MAPPED_TYPE[statusCode];
-
-    if (!mappedType) {
-      logger.warn(
-        `Warning: Response has a non-standard status code: ${color.yellow(response.name.text)}. ` +
+    if (!statusCodeType) {
+      context.dependencies.warnings.push(
+        `Warning: Response has a non-standard status code: ${color.yellow(statusCode)}. ` +
           "Consider replacing it with a number (e.g. '200'), a pattern ('1xx', '2xx', '3xx', '4xx', or '5xx'), " +
           "or 'default'.",
       );
-
       return undefined;
     }
 
-    context.typeImports.http.add('HttpStatusCode');
-    const newIdentifier = ts.factory.createIdentifier(`[StatusCode in ${mappedType}]`);
-
-    newSignature = ts.factory.updatePropertySignature(
-      response,
-      response.modifiers,
-      newIdentifier,
-      response.questionToken,
-      newType,
-    );
+    context.dependencies.httpImports.add('HttpStatusCode');
+    key = `[StatusCode in ${statusCodeType}]`;
   }
 
+  const type = transformResponse(response, [...segments, 'responses', statusCode], context);
+
   return {
-    newSignature,
-    statusCode: {
-      value: statusCodeOrComponentName,
-      isNumeric: isNumericStatusCode,
-    },
+    statusCode,
+    isNumericStatusCode,
+    member: typeMember({ key, type, comment: createJSDocComment(response, context) }),
   };
 }
 
-export function normalizeResponses(responses: MethodMember, context: TypeTransformContext) {
-  if (isNeverType(responses.type) || !ts.isTypeLiteralNode(responses.type)) {
+function transformResponses(operation: OpenAPIOperation, segments: string[], context: TypeTransformContext) {
+  const responseEntries = Object.entries(operation.responses ?? {});
+
+  if (responseEntries.length === 0) {
     return undefined;
   }
 
-  const newIdentifier = ts.factory.createIdentifier('response');
-  const newQuestionToken = undefined;
-
-  const newMembers = responses.type.members.map((response) => normalizeResponse(response, context)).filter(isDefined);
-
-  const sortedNewMembers = Array.from(newMembers).sort((response, otherResponse) => {
-    return response.statusCode.value.localeCompare(otherResponse.statusCode.value);
-  });
-
-  const isEveryStatusCodeNumeric = sortedNewMembers.every((response) => response.statusCode.isNumeric);
-  let newType: ts.TypeLiteralNode | ts.TypeReferenceNode;
-
-  if (isEveryStatusCodeNumeric) {
-    newType = ts.factory.updateTypeLiteralNode(
-      responses.type,
-      ts.factory.createNodeArray(sortedNewMembers.map((response) => response.newSignature)),
-    );
-  } else {
-    context.typeImports.http.add('MergeHttpResponsesByStatusCode');
-
-    const typeMembersToMerge = sortedNewMembers.reduce<{
-      numeric: ts.PropertySignature[];
-      nonNumeric: ts.PropertySignature[];
-    }>(
-      (members, response) => {
-        if (response.statusCode.isNumeric) {
-          members.numeric.push(response.newSignature);
-        } else {
-          members.nonNumeric.push(response.newSignature);
-        }
-        return members;
-      },
-      { numeric: [], nonNumeric: [] },
-    );
-
-    const numericTypeLiteral = ts.factory.createTypeLiteralNode(typeMembersToMerge.numeric);
-    const nonNumericTypeLiterals = typeMembersToMerge.nonNumeric.map((response) =>
-      ts.factory.createTypeLiteralNode([response]),
-    );
-
-    const mergeWrapper = ts.factory.createIdentifier('MergeHttpResponsesByStatusCode');
-    newType = ts.factory.createTypeReferenceNode(mergeWrapper, [
-      ts.factory.createTupleTypeNode([numericTypeLiteral, ...nonNumericTypeLiterals]),
-    ]);
-  }
-
-  return ts.factory.updatePropertySignature(
-    responses,
-    responses.modifiers,
-    newIdentifier,
-    newQuestionToken,
-    renameComponentReferences(newType, context),
-  );
-}
-
-function normalizeMethodMember(methodMember: ts.TypeElement, context: TypeTransformContext) {
-  /* istanbul ignore else -- @preserve */
-  if (isMethodMember(methodMember)) {
-    if (methodMember.name.text === 'requestBody') {
-      return normalizeRequest(methodMember, context);
-    }
-    if (methodMember.name.text === 'responses') {
-      return normalizeResponses(methodMember, context);
-    }
-    return methodMember;
-  }
-
-  /* istanbul ignore next -- @preserve
-   * Method members are always expected as property signatures in methods. */
-  return undefined;
-}
-
-function normalizeRequestQueryWithParameters(requestMember: RequestMember, context: TypeTransformContext) {
-  const newIdentifier = ts.factory.createIdentifier('searchParams');
-  const newQuestionToken = undefined;
-
-  const newType = renameComponentReferences(requestMember.type, context);
-
-  return ts.factory.updatePropertySignature(
-    requestMember,
-    requestMember.modifiers,
-    newIdentifier,
-    newQuestionToken,
-    newType,
-  );
-}
-
-function normalizeRequestHeadersWithParameters(requestMember: RequestMember, context: TypeTransformContext) {
-  const newIdentifier = ts.factory.createIdentifier('headers');
-  const newQuestionToken = undefined;
-
-  const newType = renameComponentReferences(requestMember.type, context);
-
-  return ts.factory.updatePropertySignature(
-    requestMember,
-    requestMember.modifiers,
-    newIdentifier,
-    newQuestionToken,
-    newType,
-  );
-}
-
-function normalizeRequestMemberWithParameters(requestMember: ts.TypeElement, context: TypeTransformContext) {
-  if (!isRequestMember(requestMember) || requestMember.name.text === 'path') {
-    return undefined;
-  }
-
-  if (requestMember.name.text === 'query') {
-    return normalizeRequestQueryWithParameters(requestMember, context);
-  }
-  if (requestMember.name.text === 'header') {
-    return normalizeRequestHeadersWithParameters(requestMember, context);
-  }
-
-  return requestMember;
-}
-
-function mergeRequestHeadersMember(headers: NormalizedRequestHeaders, otherHeaders: NormalizedRequestHeaders) {
-  const newType = ts.factory.updateTypeLiteralNode(
-    headers.type,
-    ts.factory.createNodeArray([...otherHeaders.type.members, ...headers.type.members]),
-  );
-
-  return ts.factory.updatePropertySignature(
-    headers,
-    headers.modifiers,
-    headers.name,
-    headers.questionToken,
-    newType satisfies NormalizedRequestHeaders['type'],
-  ) satisfies ts.PropertySignature as NormalizedRequestHeaders;
-}
-
-function mergeRequestHeadersMembers(members: (ts.PropertySignature | undefined)[]) {
-  let mergedHeaders: NormalizedRequestHeaders | undefined;
-  let firstHeadersIndex: number | undefined;
-
-  const mergedHeadersMembers = members.map((member, index) => {
-    if (!member || !isNormalizedRequestHeaders(member)) {
-      return member;
-    }
-
-    if (firstHeadersIndex === undefined || !mergedHeaders) {
-      firstHeadersIndex = index;
-      mergedHeaders = member;
-      return member;
-    }
-
-    mergedHeaders = mergeRequestHeadersMember(mergedHeaders, member);
-    return undefined;
-  });
-
-  if (firstHeadersIndex !== undefined) {
-    mergedHeadersMembers[firstHeadersIndex] = mergedHeaders;
-  }
-
-  return mergedHeadersMembers.filter(isDefined);
-}
-
-function mergeRequestAndParameterTypes(
-  requestType: ts.TypeNode,
-  methodMembers: ts.TypeElement[],
-  context: TypeTransformContext,
-) {
-  const parameters = methodMembers.find(isRequestParameters);
-  /* istanbul ignore next -- @preserve
-   * Parameters member is always expected to be found. */
-  const parametersMembers = parameters ? parameters.type.members : [];
-
-  const requestMembers = ts.isTypeLiteralNode(requestType) ? requestType.members : [];
-
-  const newMembers = mergeRequestHeadersMembers(
-    [...parametersMembers, ...requestMembers].map((member) => {
-      return normalizeRequestMemberWithParameters(member, context);
-    }),
-  );
-
-  if (newMembers.length === 0) {
-    return undefined;
-  }
-
-  return ts.factory.createTypeLiteralNode(newMembers);
-}
-
-function normalizeRequestTypeWithParameters(
-  requestType: ts.TypeNode,
-  methodMembers: ts.TypeElement[],
-  context: TypeTransformContext,
-): ts.TypeNode | undefined {
-  if (ts.isUnionTypeNode(requestType)) {
-    const newTypes = requestType.types
-      .map((type) => normalizeRequestTypeWithParameters(type, methodMembers, context))
-      .filter(isDefined);
-    return ts.factory.updateUnionTypeNode(requestType, ts.factory.createNodeArray(newTypes));
-  }
-
-  if (ts.isIndexedAccessTypeNode(requestType)) {
-    const newType = normalizeRequestTypeWithParameters(ts.factory.createTypeLiteralNode([]), methodMembers, context);
-    return ts.factory.createIntersectionTypeNode([requestType, newType].filter(isDefined));
-  }
-
-  return mergeRequestAndParameterTypes(requestType, methodMembers, context);
-}
-
-function normalizeMethodMemberWithParameters(
-  methodMember: ts.PropertySignature,
-  methodMembers: ts.TypeElement[],
-  context: TypeTransformContext,
-) {
-  /* istanbul ignore if -- @preserve
-   * Method members are always expected to have a name and type at this point. */
-  if (!ts.isIdentifier(methodMember.name) || !methodMember.type) {
-    return undefined;
-  }
-
-  if (methodMember.name.text === 'request') {
-    const newType = normalizeRequestTypeWithParameters(methodMember.type, methodMembers, context);
-
-    if (!newType) {
-      return undefined;
-    }
-
-    return ts.factory.updatePropertySignature(
-      methodMember,
-      methodMember.modifiers,
-      methodMember.name,
-      undefined,
-      newType,
-    );
-  }
-
-  if (methodMember.name.text === 'response') {
-    return methodMember;
-  }
-
-  return undefined;
-}
-
-export function normalizeTypeLiteralMethodType(methodType: ts.TypeLiteralNode, context: TypeTransformContext) {
-  const newMembers = methodType.members
-    .map((member) => normalizeMethodMember(member, context))
+  const responses = responseEntries
+    .map(([statusCode, response]) => transformStatusCodeResponse(statusCode, response, segments, context))
     .filter(isDefined)
-    .map((member, _index, partialMembers) => normalizeMethodMemberWithParameters(member, partialMembers, context))
-    .filter(isDefined);
+    .sort((response, otherResponse) => response.statusCode.localeCompare(otherResponse.statusCode));
 
-  return ts.factory.updateTypeLiteralNode(methodType, ts.factory.createNodeArray(newMembers));
+  const numericResponses = responses.filter((response) => response.isNumericStatusCode);
+  const patternResponses = responses.filter((response) => !response.isNumericStatusCode);
+
+  if (patternResponses.length === 0) {
+    return objectType(numericResponses.map((response) => response.member));
+  }
+
+  // Each status code pattern is merged separately, so numeric status codes take precedence over the patterns.
+  context.dependencies.httpImports.add('MergeHttpResponsesByStatusCode');
+
+  return referenceType('MergeHttpResponsesByStatusCode', [
+    tupleType([
+      objectType(numericResponses.map((response) => response.member)),
+      ...patternResponses.map((response) => objectType([response.member])),
+    ]),
+  ]);
 }
 
-function normalizeIndexedAccessMethodType(methodType: ts.IndexedAccessTypeNode, context: TypeTransformContext) {
-  const isOperationsReference =
-    ts.isTypeReferenceNode(methodType.objectType) &&
-    ts.isIdentifier(methodType.objectType.typeName) &&
-    methodType.objectType.typeName.text === 'operations';
-
-  /* istanbul ignore if -- @preserve
-   * In indexed access method types, the reference is always expected to be an operation. */
-  if (!isOperationsReference) {
-    return methodType;
-  }
-
-  const newIdentifier = createOperationsIdentifier(context.serviceName);
-  const newObjectType = ts.factory.createTypeReferenceNode(newIdentifier, methodType.objectType.typeArguments);
-
-  const hasIndexTypeName =
-    ts.isLiteralTypeNode(methodType.indexType) &&
-    (ts.isIdentifier(methodType.indexType.literal) || ts.isStringLiteral(methodType.indexType.literal));
-
-  /* istanbul ignore else -- @preserve
-   * In indexed access method types referencing operations, an index type name is always expected. */
-  if (hasIndexTypeName) {
-    const operationName = methodType.indexType.literal.text;
-    context.referencedTypes.operations.add(operationName);
-  }
-
-  return ts.factory.updateIndexedAccessTypeNode(methodType, newObjectType, methodType.indexType);
+function resolveParameter(parameter: OpenAPIReferenceable<OpenAPIParameter>, context: TypeTransformContext) {
+  return isReference(parameter) ? resolveReference<OpenAPIParameter>(context.document, parameter.$ref) : parameter;
 }
 
-export function normalizeMethod(method: ts.TypeElement, context: TypeTransformContext, options: { pathName: string }) {
-  if (!isMethod(method)) {
-    return undefined;
+/** Combines the parameters of a path item and an operation, with the operation parameters taking precedence. */
+export function mergeParameters(
+  pathItemParameters: OpenAPIReferenceable<OpenAPIParameter>[],
+  operationParameters: OpenAPIReferenceable<OpenAPIParameter>[],
+  context: TypeTransformContext,
+) {
+  const parametersByLocationAndName = new Map<string, OpenAPIReferenceable<OpenAPIParameter>>();
+
+  for (const parameter of [...pathItemParameters, ...operationParameters]) {
+    const resolvedParameter = resolveParameter(parameter, context);
+    parametersByLocationAndName.set(`${resolvedParameter?.in}-${resolvedParameter?.name}`, parameter);
   }
 
-  const methodName = method.name.text.toUpperCase<HttpMethod>();
+  return Array.from(parametersByLocationAndName.values());
+}
 
-  if (!HTTP_METHODS.includes(methodName)) {
-    return undefined;
+type RequestParameterLocation = 'query' | 'header' | 'cookie';
+
+function transformParametersIn(
+  location: RequestParameterLocation,
+  parameters: OpenAPIReferenceable<OpenAPIParameter>[],
+  segments: string[],
+  context: TypeTransformContext,
+) {
+  return parameters.flatMap((parameter) => {
+    const resolvedParameter = resolveParameter(parameter, context);
+
+    if (resolvedParameter?.in !== location) {
+      return [];
+    }
+
+    let type: TypeExpression;
+
+    if (isReference(parameter)) {
+      type = createReferenceType(parameter.$ref, context);
+    } else if (parameter.schema === undefined) {
+      type = STRING_TYPE;
+    } else {
+      type = transformSchema(parameter.schema, [...segments, 'parameters', location, parameter.name], context);
+    }
+
+    const isOptional = resolvedParameter.required !== true;
+
+    const member = typeMember({
+      key: propertyKey(resolvedParameter.name),
+      type,
+      isOptional,
+      comment: createJSDocComment(resolvedParameter, context),
+    });
+
+    return [{ member, isOptional }];
+  });
+}
+
+interface RequestParameters {
+  searchParams?: TypeMember;
+  headerMembers: TypeMember[];
+  cookie?: TypeMember;
+}
+
+function transformRequestParameters(
+  parameters: OpenAPIReferenceable<OpenAPIParameter>[],
+  segments: string[],
+  context: TypeTransformContext,
+): RequestParameters {
+  const queryParameters = transformParametersIn('query', parameters, segments, context);
+  const headerParameters = transformParametersIn('header', parameters, segments, context);
+  const cookieParameters = transformParametersIn('cookie', parameters, segments, context);
+
+  const searchParams =
+    queryParameters.length > 0
+      ? typeMember({ key: 'searchParams', type: objectType(queryParameters.map((parameter) => parameter.member)) })
+      : undefined;
+
+  const cookie =
+    cookieParameters.length > 0
+      ? typeMember({
+          key: 'cookie',
+          type: objectType(cookieParameters.map((parameter) => parameter.member)),
+          isOptional: cookieParameters.every((parameter) => parameter.isOptional),
+        })
+      : undefined;
+
+  return {
+    searchParams,
+    headerMembers: headerParameters.map((parameter) => parameter.member),
+    cookie,
+  };
+}
+
+function createRequestMembers(parameters: RequestParameters, bodyVariant?: BodyVariant) {
+  const contentTypeHeaders = bodyVariant ? [createContentTypeHeader(bodyVariant.contentType)] : [];
+  const headers = createHeadersMember([...contentTypeHeaders, ...parameters.headerMembers]);
+
+  // The headers are placed where the header parameters are declared, if any.
+  const orderedMembers =
+    parameters.headerMembers.length > 0
+      ? [parameters.searchParams, headers, parameters.cookie, bodyVariant?.body]
+      : [parameters.searchParams, parameters.cookie, headers, bodyVariant?.body];
+
+  return orderedMembers.filter(isDefined);
+}
+
+function getRequestBodyComponentName(reference: string) {
+  const [rootName, componentGroupName, componentName] = parseReferencePointer(reference);
+  return rootName === 'components' && componentGroupName === 'requestBodies' ? componentName : undefined;
+}
+
+function transformReferencedRequest(reference: string, parameters: RequestParameters, context: TypeTransformContext) {
+  const requestBody = resolveReference<OpenAPIRequestBody>(context.document, reference);
+  const componentName = getRequestBodyComponentName(reference);
+
+  // Request components are shared, so their body is optional if any operation does not require it.
+  if (requestBody?.required !== true && componentName !== undefined) {
+    context.dependencies.optionalRequestComponents.add(componentName);
   }
 
-  const matchesPositiveFilters =
-    context.filters.paths.positive.length === 0 ||
-    context.filters.paths.positive.some(
-      (filter) => filter.methodRegex.test(methodName) && filter.pathRegex.test(options.pathName),
+  const parameterMembers = createRequestMembers(parameters);
+  const parametersType = parameterMembers.length > 0 ? [objectType(parameterMembers)] : [];
+
+  return intersectionType([createReferenceType(reference, context), ...parametersType]);
+}
+
+function transformRequest(
+  operation: OpenAPIOperation,
+  parameters: OpenAPIReferenceable<OpenAPIParameter>[],
+  segments: string[],
+  context: TypeTransformContext,
+) {
+  const requestParameters = transformRequestParameters(parameters, segments, context);
+  const { requestBody } = operation;
+
+  if (isReference(requestBody)) {
+    return transformReferencedRequest(requestBody.$ref, requestParameters, context);
+  }
+
+  const bodyVariants = requestBody
+    ? transformRequestBodyVariants(requestBody, [...segments, 'requestBody'], context, {
+        isBodyOptional: requestBody.required !== true,
+      })
+    : [];
+
+  if (bodyVariants.length > 0) {
+    return unionType(
+      bodyVariants.map((bodyVariant) => objectType(createRequestMembers(requestParameters, bodyVariant))),
     );
-
-  if (!matchesPositiveFilters) {
-    return undefined;
   }
 
-  const matchesNegativeFilters =
-    context.filters.paths.negative.length > 0 &&
-    context.filters.paths.negative.some(
-      (filter) => filter.methodRegex.test(methodName) && filter.pathRegex.test(options.pathName),
-    );
+  const members = createRequestMembers(requestParameters);
+  return members.length > 0 ? objectType(members) : undefined;
+}
 
-  if (matchesNegativeFilters) {
-    return undefined;
-  }
+/**
+ * Generates the type of an operation. The `parameters` include the parameters declared in its path item, merged with
+ * its own.
+ */
+export function transformOperation(
+  operation: OpenAPIOperation,
+  parameters: OpenAPIReferenceable<OpenAPIParameter>[],
+  segments: string[],
+  context: TypeTransformContext,
+) {
+  const requestType = transformRequest(operation, parameters, segments, context);
+  const responseType = transformResponses(operation, segments, context);
 
-  const newIdentifier = ts.factory.createIdentifier(methodName);
+  const requestMember =
+    requestType &&
+    typeMember({
+      key: 'request',
+      type: requestType,
+      comment: operation.requestBody && createJSDocComment(operation.requestBody, context),
+    });
 
-  const newType = ts.isTypeLiteralNode(method.type)
-    ? normalizeTypeLiteralMethodType(method.type, context)
-    : normalizeIndexedAccessMethodType(method.type, context);
+  const responseMember = responseType && typeMember({ key: 'response', type: responseType });
 
-  return ts.factory.updatePropertySignature(method, method.modifiers, newIdentifier, method.questionToken, newType);
+  return objectType([requestMember, responseMember].filter(isDefined));
 }

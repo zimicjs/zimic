@@ -1,109 +1,59 @@
-import { isDefined } from '@zimic/utils/data';
-import { Override } from '@zimic/utils/types';
-import ts from 'typescript';
-
+import {
+  isReference,
+  OPENAPI_PATH_ITEM_METHODS,
+  OpenAPIDocument,
+  OpenAPIOperation,
+  OpenAPIPathItem,
+} from '../document/types';
 import { TypeTransformContext } from './context';
-import { normalizeTypeLiteralMethodType } from './methods';
+import { mergeParameters, transformOperation } from './methods';
+import { getOperationName } from './paths';
 
-export function createOperationsIdentifierText(serviceName: string) {
-  return `${serviceName}Operations`;
+export interface DocumentOperation {
+  name: string;
+  operation: OpenAPIOperation;
+  pathItem: OpenAPIPathItem;
+  segments: string[];
 }
 
-export function createOperationsIdentifier(serviceName: string) {
-  return ts.factory.createIdentifier(createOperationsIdentifierText(serviceName));
+function collectPathItemOperations(pathItem: OpenAPIPathItem, segments: string[]) {
+  return OPENAPI_PATH_ITEM_METHODS.flatMap((method): DocumentOperation[] => {
+    const operation = pathItem[method];
+
+    if (operation?.operationId === undefined) {
+      return [];
+    }
+
+    return [{ name: getOperationName(operation.operationId), operation, pathItem, segments: [...segments, method] }];
+  });
 }
 
-type OperationsDeclaration = ts.InterfaceDeclaration;
+/** Lists the operations with an `operationId`, which are generated separately from the paths using them. */
+export function collectOperations(document: OpenAPIDocument) {
+  const pathItemsWithSegments = [
+    ...Object.entries(document.paths ?? {}).map(([pathName, pathItem]) => ({
+      pathItem,
+      segments: ['paths', pathName],
+    })),
+    ...Object.entries(document.webhooks ?? {}).map(([webhookName, pathItem]) => ({
+      pathItem,
+      segments: ['webhooks', webhookName],
+    })),
+    ...Object.entries(document.components?.pathItems ?? {}).map(([componentName, pathItem]) => ({
+      pathItem,
+      segments: ['components', 'pathItems', componentName],
+    })),
+  ];
 
-export function isOperationsDeclaration(node: ts.Node | undefined): node is OperationsDeclaration {
-  return node !== undefined && ts.isInterfaceDeclaration(node) && node.name.text === 'operations';
-}
-
-type Operation = Override<
-  ts.PropertySignature,
-  {
-    type: ts.TypeLiteralNode;
-    name: ts.Identifier | ts.StringLiteral;
-  }
->;
-
-function isOperation(node: ts.Node): node is Operation {
-  return (
-    ts.isPropertySignature(node) &&
-    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) &&
-    node.type !== undefined &&
-    ts.isTypeLiteralNode(node.type)
+  return pathItemsWithSegments.flatMap(({ pathItem, segments }) =>
+    isReference(pathItem) ? [] : collectPathItemOperations(pathItem, segments),
   );
 }
 
-function normalizeOperation(operation: ts.TypeElement, context: TypeTransformContext) {
-  /* istanbul ignore if -- @preserve
-   * Operation members are always expected to be an operation. */
-  if (!isOperation(operation)) {
-    return undefined;
-  }
-
-  const newType = normalizeTypeLiteralMethodType(operation.type, context);
-
-  return ts.factory.updatePropertySignature(
-    operation,
-    operation.modifiers,
-    operation.name,
-    operation.questionToken,
-    newType,
-  );
-}
-
-export function normalizeOperations(operations: OperationsDeclaration, context: TypeTransformContext) {
-  const newIdentifier = createOperationsIdentifier(context.serviceName);
-
-  const newMembers = operations.members.map((operation) => normalizeOperation(operation, context)).filter(isDefined);
-
-  return ts.factory.updateInterfaceDeclaration(
-    operations,
-    operations.modifiers,
-    newIdentifier,
-    operations.typeParameters,
-    operations.heritageClauses,
-    newMembers,
-  );
-}
-
-function removeOperationIfUnreferenced(operation: ts.TypeElement, context: TypeTransformContext) {
-  /* istanbul ignore if -- @preserve
-   * Operation members are always expected to be an operation. */
-  if (!isOperation(operation)) {
-    return undefined;
-  }
-
-  const operationName = operation.name.text;
-  const isReferenced = context.referencedTypes.operations.has(operationName);
-
-  if (isReferenced) {
-    context.referencedTypes.operations.delete(operationName);
-    return operation;
-  }
-
-  return undefined;
-}
-
-export function removeUnreferencedOperations(operations: OperationsDeclaration, context: TypeTransformContext) {
-  const newMembers = operations.members
-    .map((operation) => removeOperationIfUnreferenced(operation, context))
-    .filter(isDefined);
-
-  context.referencedTypes.operations.clear();
-
-  if (newMembers.length === 0) {
-    return undefined;
-  }
-
-  return ts.factory.updateInterfaceDeclaration(
-    operations,
-    operations.modifiers,
-    operations.name,
-    operations.typeParameters,
-    operations.heritageClauses,
-    newMembers,
-  );
+export function transformDocumentOperation(
+  { operation, pathItem, segments }: DocumentOperation,
+  context: TypeTransformContext,
+) {
+  const parameters = mergeParameters(pathItem.parameters ?? [], operation.parameters ?? [], context);
+  return transformOperation(operation, parameters, segments, context);
 }
