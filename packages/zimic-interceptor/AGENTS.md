@@ -36,4 +36,4 @@ Diverge between protocols only for a protocol reason, such as WebSocket connecti
 ## API reference
 
 - Mirror the structure, headings, and examples of HTTP reference pages and guides in their WebSocket counterparts.
-- Match the JSDoc of WebSocket declarations to their HTTP counterparts. Keep the experimental notice on WebSocket public entry points while the API is experimental.
+- Match the JSDoc of WebSocket declarations to their HTTP counterparts. Where an HTTP declaration links to a page or section, link the WebSocket one to the matching WebSocket page or section. Keep the experimental notice on WebSocket public entry points while the API is experimental.
