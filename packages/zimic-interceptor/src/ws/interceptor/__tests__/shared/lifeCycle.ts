@@ -257,9 +257,6 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
   it('should not accept connections opened while stopping', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (stoppingInterceptor) => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (otherInterceptor) => {
-        const connectionListener = vi.fn();
-        stoppingInterceptor.on('connection', connectionListener);
-
         const worker: WebSocketInterceptorWorker | undefined =
           type === 'local' ? store.localWorker : store.getRemoteWorker(new URL(baseURL), { auth: undefined });
         expect(worker).toBeDefined();
@@ -289,7 +286,6 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
             });
 
             expect(stoppingInterceptor.clients).toHaveLength(0);
-            expect(connectionListener).not.toHaveBeenCalled();
           });
         } finally {
           clearGatePromise.resolve();

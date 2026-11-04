@@ -206,9 +206,6 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, onUnhandledMessage: otherOnUnhandledMessage },
       async (otherInterceptor) => {
-        const otherConnectionListener = vi.fn();
-        otherInterceptor.on('connection', otherConnectionListener);
-
         const otherEffect = vi.fn();
         await promiseIfRemote(
           otherInterceptor.message().effect(otherEffect).respond({ type: 'server', index: 2 }),
@@ -244,7 +241,6 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
               expect(otherOnUnhandledMessage).not.toHaveBeenCalled();
 
               expect(otherInterceptor.clients).toHaveLength(0);
-              expect(otherConnectionListener).toHaveBeenCalledTimes(1);
             });
           },
         );
@@ -476,29 +472,24 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
 
   it('should keep connections open for the remaining interceptors if another one is cleared while they open', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
-      await promiseIfRemote(firstInterceptor.message().respond({ type: 'server', index: 1 }), firstInterceptor);
-
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (secondInterceptor) => {
-        const secondConnectionListener = vi.fn();
-        secondInterceptor.on('connection', secondConnectionListener);
-
         let secondClearResult: PossiblePromise<void> | undefined;
 
-        // The first interceptor started first, so its connection listeners run before the second one holds the
-        // connection.
-        firstInterceptor.once('connection', () => {
+        const firstConnectionEffect = vi.fn(() => {
           secondClearResult = secondInterceptor.clear();
         });
 
+        await promiseIfRemote(firstInterceptor.message().respond({ type: 'server', index: 1 }), firstInterceptor);
+        await promiseIfRemote(firstInterceptor.connection().effect(firstConnectionEffect), firstInterceptor);
+
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
           await waitFor(() => {
-            expect(firstInterceptor.clients).toHaveLength(1);
+            expect(firstConnectionEffect).toHaveBeenCalledTimes(1);
           });
 
           await promiseIfRemote(secondClearResult, secondInterceptor);
 
           expect(secondInterceptor.clients).toHaveLength(0);
-          expect(secondConnectionListener).not.toHaveBeenCalled();
 
           const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: 1 }));
@@ -515,10 +506,10 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
       let clearResult: PossiblePromise<void> | undefined;
 
-      const connectionListener = vi.fn(() => {
+      const connectionEffect = vi.fn(() => {
         clearResult = interceptor.clear();
       });
-      interceptor.once('connection', connectionListener);
+      await promiseIfRemote(interceptor.connection().effect(connectionEffect), interceptor);
 
       const client = new WebSocketClient<MessageSchema>(baseURL);
       const closeEventPromise = waitForWebSocketClientClose(client);
@@ -531,7 +522,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         const closeEvent = await closeEventPromise;
         expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
 
-        expect(connectionListener).toHaveBeenCalledTimes(1);
+        expect(connectionEffect).toHaveBeenCalledTimes(1);
         await promiseIfRemote(clearResult, interceptor);
         expect(interceptor.clients).toHaveLength(0);
       } finally {

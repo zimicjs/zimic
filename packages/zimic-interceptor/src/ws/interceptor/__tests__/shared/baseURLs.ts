@@ -854,9 +854,6 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
       await usingWebSocketInterceptor<MessageSchema>(
         { type: 'remote', baseURL: defaultBaseURL, auth: olderAuth, messageSaving: { enabled: true } },
         async (olderInterceptor) => {
-          const olderConnectionListener = vi.fn();
-          olderInterceptor.on('connection', olderConnectionListener);
-
           const olderHandler = await olderInterceptor
             .message()
             .with(olderRestriction)
@@ -875,7 +872,6 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
 
                 expect(interceptor.clients).toHaveLength(1);
                 expect(olderInterceptor.clients).toHaveLength(0);
-                expect(olderConnectionListener).not.toHaveBeenCalled();
               });
 
               expect(handler.messages).toHaveLength(1);

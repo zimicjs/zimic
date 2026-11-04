@@ -153,6 +153,7 @@ export function createSocketIOMock<Events>({
   }
 
   async function declareWebSocketHandlers() {
+    await webSocketInterceptor.connection().effect(sendOpenPacketToNewWebSocketClients);
     await webSocketInterceptor.message().with('40').respond(createConnectPacket);
     await webSocketInterceptor.message().with('3');
     await webSocketInterceptor.message().with('41');
@@ -227,7 +228,6 @@ export function createSocketIOMock<Events>({
     send,
 
     start() {
-      webSocketInterceptor.on('connection', sendOpenPacketToNewWebSocketClients);
       pingIntervalId = setInterval(sendPings, pingInterval);
     },
 
@@ -241,7 +241,6 @@ export function createSocketIOMock<Events>({
 
     stop() {
       clearInterval(pingIntervalId);
-      webSocketInterceptor.off('connection', sendOpenPacketToNewWebSocketClients);
 
       for (const sid of pollingSessions.keys()) {
         /* istanbul ignore next -- @preserve

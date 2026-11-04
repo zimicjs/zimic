@@ -264,24 +264,18 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
       // The registry is intentionally schema-erased because one remote worker owns interceptors for any schema.
       registeredInterceptor.clients.set(connection.clientId, client);
+      registeredInterceptor.interceptor.addClient(client);
       holders.push({ registeredInterceptor, client });
-    }
-
-    // Every holder lists the client before any connection listener runs, so a listener that clears another holder makes
-    // it let the connection go, as in local mode.
-    for (const { registeredInterceptor, client } of holders) {
-      if (registeredInterceptor.clients.has(connection.clientId)) {
-        registeredInterceptor.interceptor.addClient(client);
-      }
     }
 
     const acceptingHolder = holders.find(({ registeredInterceptor }) => {
       return registeredInterceptor.interceptor === handling.acceptingHandler?.interceptor;
     });
 
-    // A connection listener may have let the connection go before the effects run. Sends issued by effects before the
-    // server receives this reply are kept by the server until the handshake completes.
-    if (acceptingHolder?.registeredInterceptor.clients.has(connection.clientId)) {
+    // Every holder lists the client before the effects run, so an effect that clears another holder makes it let the
+    // connection go, as in local mode. Sends issued by effects before the server receives this reply are kept by the
+    // server until the handshake completes.
+    if (acceptingHolder) {
       void this.applyConnectionEffect(handling, acceptingHolder.client);
     }
 

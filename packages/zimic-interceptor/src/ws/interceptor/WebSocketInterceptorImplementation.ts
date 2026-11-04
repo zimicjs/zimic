@@ -27,7 +27,7 @@ import type {
   WebSocketInterceptorServerSendOptions,
 } from './types/messages';
 import type { UnhandledMessageStrategy } from './types/options';
-import type { WebSocketInterceptorConnectionListener, WebSocketInterceptorMessageSaving } from './types/public';
+import type { WebSocketInterceptorMessageSaving } from './types/public';
 import {
   createWebSocketInterceptorServer,
   InternalWebSocketInterceptorClient,
@@ -74,10 +74,6 @@ class WebSocketInterceptorImplementation<
 
   private _server: InternalWebSocketInterceptorServer<Schema>;
   private _clients: InternalWebSocketInterceptorClient<Schema>[] = [];
-  private connectionListeners: {
-    listener: WebSocketInterceptorConnectionListener<Schema>;
-    once: boolean;
-  }[] = [];
 
   private createWorker: () => WebSocketInterceptorWorker;
   private deleteWorker: () => void;
@@ -280,18 +276,6 @@ class WebSocketInterceptorImplementation<
     return this._clients;
   }
 
-  on(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
-    this.connectionListeners.push({ listener, once: false });
-  }
-
-  off(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
-    this.connectionListeners = this.connectionListeners.filter((entry) => entry.listener !== listener);
-  }
-
-  once(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
-    this.connectionListeners.push({ listener, once: true });
-  }
-
   message() {
     return this.createWebSocketMessageHandler();
   }
@@ -415,25 +399,6 @@ class WebSocketInterceptorImplementation<
 
   addClient(client: InternalWebSocketInterceptorClient<Schema>) {
     this._clients.push(client);
-
-    for (const entry of [...this.connectionListeners]) {
-      const listenerIndex = this.connectionListeners.indexOf(entry);
-
-      if (listenerIndex < 0) {
-        continue;
-      }
-
-      if (entry.once) {
-        this.connectionListeners.splice(listenerIndex, 1);
-      }
-
-      try {
-        const { listener } = entry;
-        listener(client);
-      } catch (error) {
-        console.error(error);
-      }
-    }
   }
 
   removeClient(client: InternalWebSocketInterceptorClient<Schema>) {

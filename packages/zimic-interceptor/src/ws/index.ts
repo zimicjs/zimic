@@ -71,7 +71,6 @@ export type {
   LocalWebSocketInterceptor,
   RemoteWebSocketInterceptor,
   WebSocketInterceptor,
-  WebSocketInterceptorConnectionListener,
   WebSocketInterceptorMessageSaving,
 } from './interceptor/types/public';
 

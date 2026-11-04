@@ -417,7 +417,9 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       return holder.registeredInterceptor.interceptor === handling.acceptingHandler?.interceptor;
     });
 
-    // A connection listener may have let the connection go before the effects run.
+    // Every holder lists the client before the effects run, so an effect that clears another holder makes it let the
+    // connection go, as in remote mode. Open listeners of the client run when the open is released and may have let
+    // the connection go before the effects run.
     if (acceptingHolder?.registeredInterceptor.clients.has(acceptingHolder.client)) {
       void this.applyConnectionEffect(handling, acceptingHolder.client);
     }
@@ -437,8 +439,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     options: { protocols: string[] },
   ) {
     // A connection is shared by every interceptor matching it when it opens, so each of them lists the client and can
-    // send to it. Interceptors started later do not hold it, because joining an open connection would fire connection
-    // listeners with no network counterpart.
+    // send to it. Interceptors started later do not hold it, because they never decided its connection attempt.
     const registration: WebSocketClientRegistration = {
       connection,
       holders: holderInterceptors.map((registeredInterceptor) => {
@@ -467,18 +468,11 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     for (const { registeredInterceptor, client } of registration.holders) {
       registeredInterceptor.clients.set(client, registration);
+      registeredInterceptor.interceptor.addClient(client);
     }
 
     connection.addEventListener('message', registration.messageListener);
     connection.addEventListener('close', registration.closeListener, { once: true });
-
-    // Every holder lists the client before any connection listener runs, so a listener that clears another holder makes
-    // it let the connection go, as in remote mode.
-    for (const { registeredInterceptor, client } of registration.holders) {
-      if (registeredInterceptor.clients.has(client)) {
-        registeredInterceptor.interceptor.addClient(client);
-      }
-    }
 
     return registration;
   }

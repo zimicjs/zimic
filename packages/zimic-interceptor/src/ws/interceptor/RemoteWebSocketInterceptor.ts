@@ -10,7 +10,6 @@ import {
 import { RemoteWebSocketInterceptorOptions, UnhandledMessageStrategy } from './types/options';
 import {
   RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor,
-  type WebSocketInterceptorConnectionListener,
   WebSocketInterceptorMessageSaving,
 } from './types/public';
 import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
@@ -124,18 +123,6 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
 
   get clients(): readonly PublicWebSocketInterceptorClient<Schema>[] {
     return this.implementation.clients;
-  }
-
-  on(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
-    this.implementation.on('connection', listener);
-  }
-
-  off(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
-    this.implementation.off('connection', listener);
-  }
-
-  once(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
-    this.implementation.once('connection', listener);
   }
 
   async start() {

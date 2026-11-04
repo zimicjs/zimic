@@ -714,11 +714,8 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           deleteWorker: vi.fn(),
         });
 
-        const firstConnectionListener = vi.fn();
-        firstInterceptor.on('connection', firstConnectionListener);
-
         // No public path clears an interceptor after the server sends a connection and before the worker receives it.
-        // A connection listener registered ahead of the worker's clears the first interceptor at that point. It never
+        // A connect event listener registered ahead of the worker's clears the first interceptor at that point. It never
         // replies before the test ends, leaving the reply to the worker.
         const connectionReplyPromise = createPromiseWithResolvers<WebSocketClientConnectionReply>();
         let firstClearPromise: Promise<void> | undefined;
@@ -741,7 +738,6 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
             await firstClearPromise;
 
             expect(firstInterceptor.clients).toHaveLength(0);
-            expect(firstConnectionListener).not.toHaveBeenCalled();
 
             const messagePromise = waitForWebSocketClientMessage(client);
             client.send(JSON.stringify({ type: 'client', text: 'one' }));

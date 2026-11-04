@@ -27,11 +27,6 @@ export interface WebSocketInterceptorMessageSaving {
   safeLimit: number;
 }
 
-/** A listener called with the client handle of each new connection to the interceptor. */
-export type WebSocketInterceptorConnectionListener<Schema extends WebSocketSchema> = (
-  client: WebSocketInterceptorClient<Schema>,
-) => void;
-
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
@@ -77,18 +72,6 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
    * @readonly
    */
   get clients(): readonly WebSocketInterceptorClient<Schema>[];
-
-  /** Registers a listener for new client connections. */
-  on: (event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) => void;
-
-  /** Removes a connection listener. Pass the same callback reference used to register it. */
-  off: (event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) => void;
-
-  /**
-   * Registers a listener that is called only for the next client connection and then removed. Otherwise, it behaves
-   * like `interceptor.on()`.
-   */
-  once: (event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) => void;
 
   /** Starts the interceptor, allowing it to intercept WebSocket connections and messages. */
   start: () => Promise<void>;

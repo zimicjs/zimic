@@ -292,11 +292,10 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
   // WebSocket connections are long-lived, so one can outlive the clear of an interceptor holding it.
 
   // No HTTP counterpart for "should keep connections open for the remaining interceptors if another one is cleared while
-  // they open": WebSocket connection listeners run while a connection opens, so they can clear an interceptor before it
-  // holds the connection.
+  // they open": WebSocket connection effects run while a connection opens, so they can clear an interceptor sharing it.
 
   // No HTTP counterpart for "should close connections if their only interceptor is cleared while they open": WebSocket
-  // connection listeners run while a connection opens, so they can clear an interceptor before it holds the connection.
+  // connection effects run while a connection opens, so they can clear the interceptor holding it.
 
   it('should not save intercepted requests after cleared while a request is being handled', async () => {
     await usingHttpInterceptor<{

@@ -467,7 +467,7 @@ class WebSocketInterceptorServerRuntime {
       }
     }
 
-    // A connection listener or effect may close a connection still being set up, after its earlier messages.
+    // A connection effect may close a connection still being set up, after its earlier messages.
     for (const userConnection of this.pendingUserWebSocketConnections.values()) {
       if (isTargetConnection(userConnection)) {
         userConnection.queuedDeliveries.push((socket) => {
