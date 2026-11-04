@@ -311,6 +311,47 @@ describe('Type generation (OpenAPI)', () => {
     expect(await pathExists(outputFilePath)).toBe(false);
   });
 
+  it('should not generate types from schemas with references outside components', async () => {
+    const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'referenceOutsideComponents.yaml');
+    const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');
+
+    await fs.promises.writeFile(
+      inputFilePath,
+      [
+        'openapi: 3.1.0',
+        'info: { title: Users, version: 1.0.0 }',
+        'paths:',
+        '  /users:',
+        '    get:',
+        "      responses: { '200': { description: Success } }",
+        '  /admins:',
+        '    get:',
+        "      responses: { '200': { $ref: '#/paths/~1users/get/responses/200' } }",
+      ].join('\n'),
+    );
+    await fs.promises.rm(outputFilePath, { force: true });
+
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'typegen',
+      'openapi',
+      inputFilePath,
+      '--output',
+      outputFilePath,
+      '--service-name',
+      'my-service',
+    ]);
+
+    await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+      await expect(runCLI()).rejects.toThrow(
+        'Unsupported $ref: #/paths/~1users/get/responses/200. Only references to #/components are supported.',
+      );
+    });
+
+    expect(await pathExists(outputFilePath)).toBe(false);
+  });
+
   it('should not generate types from schemas with unresolvable external references', async () => {
     const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'unresolvableExternalReference.yaml');
     const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');

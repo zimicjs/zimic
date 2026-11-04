@@ -28,34 +28,27 @@ export function createOperationsIdentifier(serviceName: string) {
 }
 
 /**
- * Creates the type of a local reference, such as `#/components/schemas/User`, as an indexed access to the generated
- * types. References to components are recorded as dependencies of the type being generated.
+ * Creates the type of a reference to a component, such as `#/components/schemas/User`, as an indexed access to the
+ * generated components. The component is recorded as a dependency of the type being generated.
  */
 export function createReferenceType(reference: string, context: TypeTransformContext) {
   const segments = parseReferencePointer(reference);
+  const [rootName, rawComponentGroupName, componentName, ...componentSegments] = segments;
+  const componentGroupName = normalizeComponentGroupName(rawComponentGroupName);
 
-  if (segments.length === 0) {
-    throw new Error(`Error parsing $ref: ${reference}. Is this a valid $ref?`);
+  // Other locations have no generated type to reference.
+  const isComponentReference =
+    segments.length >= 3 && rootName === 'components' && isComponentGroupName(componentGroupName);
+
+  if (!isComponentReference) {
+    throw new Error(`Unsupported $ref: ${reference}. Only references to #/components are supported.`);
   }
 
-  const [rootName, ...indexSegments] = segments;
+  context.dependencies.components.add(`${componentGroupName}.${componentName}`);
 
   // Object schemas are generated without their `properties` level, so references into them skip it.
-  const indexes = [
-    ...indexSegments.slice(0, 2),
-    ...indexSegments.slice(2).filter((segment) => segment !== 'properties'),
-  ];
-
-  if (rootName !== 'components' || indexes.length === 0) {
-    return indexedAccessType(referenceType(rootName), indexes);
-  }
-
-  const componentGroupName = normalizeComponentGroupName(indexes[0]);
-
-  if (indexes.length > 1 && isComponentGroupName(componentGroupName)) {
-    context.dependencies.components.add(`${componentGroupName}.${indexes[1]}`);
-  }
+  const componentIndexes = componentSegments.filter((segment) => segment !== 'properties');
 
   const componentsType = referenceType(createComponentsIdentifier(context.serviceName));
-  return indexedAccessType(componentsType, [componentGroupName, ...indexes.slice(1)]);
+  return indexedAccessType(componentsType, [componentGroupName, componentName, ...componentIndexes]);
 }
