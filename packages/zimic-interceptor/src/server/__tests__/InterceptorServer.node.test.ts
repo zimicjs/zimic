@@ -1927,7 +1927,7 @@ describe('Interceptor server', () => {
         });
       });
 
-      it('should close client connections when the worker rejects the connection', async () => {
+      it('should close client connections when the worker accepts the connection for none of its interceptors', async () => {
         server = createInternalInterceptorServer();
         await server.start();
 

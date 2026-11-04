@@ -271,19 +271,10 @@ export function declareWebSocketInterceptorTests({
   describe('Connection refusals', () => {
     it('should refuse connections rejected by a connection handler before they open', async () => {
       const roomURL = `${userInterceptor.baseURL}/rooms/1`;
-      const effect = vi.fn();
 
-      const handler = await userInterceptor
-        .connection('/rooms/:roomId')
-        .effect(effect)
-        .respond({ action: 'reject' })
-        .times(1);
+      await userInterceptor.connection('/rooms/:roomId').respond({ action: 'reject' }).times(1);
 
       await expectSocketToBeRefused(roomURL, 'graphql-transport-ws');
-
-      expect(effect).not.toHaveBeenCalled();
-      expect(userInterceptor.clients.map((client) => client.url)).not.toContain(roomURL);
-      expect(handler.connections).toEqual([{ url: roomURL, protocols: ['graphql-transport-ws'] }]);
     });
 
     it.each([

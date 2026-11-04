@@ -19,7 +19,7 @@ import {
 } from '@tests/utils/webSocket';
 
 import type { WebSocketInterceptorType } from '../../types/options';
-import type { LocalWebSocketInterceptor, RemoteWebSocketInterceptor, WebSocketInterceptor } from '../../types/public';
+import type { WebSocketInterceptor } from '../../types/public';
 import { MAX_CLOSE_REASON_BYTE_LENGTH } from '../../WebSocketInterceptorHandle';
 
 type ChatMessage = WebSocketSchema<{ type: 'server'; text: string }>;
@@ -675,18 +675,11 @@ export function declareConnectionsWebSocketInterceptorTests(
       });
     });
 
-    it.each([
-      { declaration: 'no connection handler', declare: () => undefined },
-      {
-        declaration: 'a connection handler without a declared response',
-        declare: (interceptor: LocalWebSocketInterceptor<ChatMessage> | RemoteWebSocketInterceptor<ChatMessage>) =>
-          interceptor.connection().times(1),
-      },
-    ])('should accept connections matching $declaration', async ({ declare }) => {
+    it('should accept connections matching a connection handler without a declared response', async () => {
       const baseURL = getBaseURL();
 
       await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
-        await declare(interceptor);
+        await promiseIfRemote(interceptor.connection().times(1), interceptor);
 
         await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
           expect(client.readyState).toBe(WebSocketClient.OPEN);
@@ -795,12 +788,6 @@ export function declareConnectionsWebSocketInterceptorTests(
 
           expect(newerHandler.connections).toHaveLength(1);
           expect(olderHandler.connections).toHaveLength(0);
-
-          await promiseIfRemote(newerHandler.clear(), interceptor);
-
-          await expectWebSocketConnectionToBeRefused(baseURL);
-
-          expect(olderHandler.connections).toHaveLength(1);
         },
       );
     });

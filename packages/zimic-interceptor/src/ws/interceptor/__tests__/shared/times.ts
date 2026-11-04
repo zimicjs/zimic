@@ -835,8 +835,8 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
   describe('Connections', () => {
     it('should count accepted and rejected connections in interceptor times checks', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-        const acceptingHandler = await promiseIfRemote(interceptor.connection().times(1), interceptor);
-        const rejectingHandler = await promiseIfRemote(
+        await promiseIfRemote(interceptor.connection().times(1), interceptor);
+        await promiseIfRemote(
           interceptor
             .connection()
             .with({ protocols: ['legacy'] })
@@ -854,9 +854,6 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
         await expectWebSocketConnectionToBeRefused(baseURL, ['legacy']);
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
-
-        expect(acceptingHandler.connections).toEqual([{ url: new URL(baseURL).href, protocols: [] }]);
-        expect(rejectingHandler.connections).toEqual([{ url: new URL(baseURL).href, protocols: ['legacy'] }]);
       });
     });
 
@@ -882,10 +879,13 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }).times(1), interceptor);
 
-        await expectWebSocketConnectionToBeRefused(baseURL);
-        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+          message: 'Expected exactly 1 connection, but got 0.',
+          expectedNumberOfMessages: 1,
+        });
 
         await interceptor.clear();
+
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
       });
     });

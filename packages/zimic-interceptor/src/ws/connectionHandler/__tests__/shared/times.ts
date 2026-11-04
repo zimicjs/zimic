@@ -3,7 +3,12 @@ import color from 'picocolors';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
-import { expectWebSocketTimesCheckError, openWebSocketUntilSettled } from '@tests/utils/webSocket';
+import {
+  expectWebSocketConnectionToBeRefused,
+  expectWebSocketConnectionToOpen,
+  expectWebSocketTimesCheckError,
+  openWebSocketUntilSettled,
+} from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import { Schema, SharedWebSocketConnectionHandlerTestOptions } from './utils';
@@ -33,12 +38,6 @@ export function declareTimesWebSocketConnectionHandlerTests(
     }
   });
 
-  async function openAndCloseWebSocket(url: string, protocols?: string[]) {
-    const { socket, eventTypes } = await openWebSocketUntilSettled(url, protocols);
-    socket.close();
-    return eventTypes;
-  }
-
   describe('Exact number of connections', () => {
     // Browsers open one connection to a host at a time, so a remote handshake waits for the previous one to be decided
     // and two connections are never matched concurrently. Local connections never reach the network.
@@ -67,9 +66,18 @@ export function declareTimesWebSocketConnectionHandlerTests(
               .respond({ action: 'reject' })
               .times(1);
 
-            const eventTypes = await Promise.all([openAndCloseWebSocket(baseURL), openAndCloseWebSocket(baseURL)]);
+            const attempts = await Promise.all([
+              openWebSocketUntilSettled(baseURL),
+              openWebSocketUntilSettled(baseURL),
+            ]);
 
-            expect(eventTypes).toEqual(expect.arrayContaining([['open'], ['error', 'close']]));
+            for (const { socket } of attempts) {
+              socket.close();
+            }
+
+            expect(attempts.map(({ eventTypes }) => eventTypes)).toEqual(
+              expect.arrayContaining([['open'], ['error', 'close']]),
+            );
             expect(limitedHandler.connections).toHaveLength(1);
             expect(fallbackHandler.connections).toHaveLength(1);
 
@@ -90,7 +98,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
             expectedNumberOfMessages: 1,
           });
 
-          expect(await openAndCloseWebSocket(baseURL)).toEqual(['error', 'close']);
+          await expectWebSocketConnectionToBeRefused(baseURL);
 
           await handler.checkTimes();
         },
@@ -103,7 +111,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
         async (interceptor) => {
           const handler = await interceptor.connection().times(2);
 
-          expect(await openAndCloseWebSocket(baseURL)).toEqual(['open']);
+          await expectWebSocketConnectionToOpen(baseURL);
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected exactly 2 connections, but got 1.',
@@ -119,10 +127,10 @@ export function declareTimesWebSocketConnectionHandlerTests(
         async (interceptor) => {
           const handler = await interceptor.connection().respond({ action: 'reject' }).times(1);
 
-          expect(await openAndCloseWebSocket(baseURL)).toEqual(['error', 'close']);
+          await expectWebSocketConnectionToBeRefused(baseURL);
           await handler.checkTimes();
 
-          expect(await openAndCloseWebSocket(baseURL)).toEqual(['open']);
+          await expectWebSocketConnectionToOpen(baseURL);
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected exactly 1 connection, but got 2.',
@@ -140,7 +148,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
           await handler.checkTimes();
 
-          expect(await openAndCloseWebSocket(baseURL)).toEqual(['open']);
+          await expectWebSocketConnectionToOpen(baseURL);
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected exactly 0 connections, but got 1.',
@@ -163,10 +171,10 @@ export function declareTimesWebSocketConnectionHandlerTests(
             expectedNumberOfMessages: { min: 1, max: 2 },
           });
 
-          expect(await openAndCloseWebSocket(baseURL)).toEqual(['error', 'close']);
+          await expectWebSocketConnectionToBeRefused(baseURL);
           await handler.checkTimes();
 
-          expect(await openAndCloseWebSocket(baseURL)).toEqual(['error', 'close']);
+          await expectWebSocketConnectionToBeRefused(baseURL);
           await handler.checkTimes();
         },
       );
@@ -178,8 +186,8 @@ export function declareTimesWebSocketConnectionHandlerTests(
         async (interceptor) => {
           const handler = await interceptor.connection().respond({ action: 'reject' }).times(0, 1);
 
-          expect(await openAndCloseWebSocket(baseURL)).toEqual(['error', 'close']);
-          expect(await openAndCloseWebSocket(baseURL)).toEqual(['open']);
+          await expectWebSocketConnectionToBeRefused(baseURL);
+          await expectWebSocketConnectionToOpen(baseURL);
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected at least 0 and at most 1 connection, but got 2.',
@@ -202,7 +210,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
               .respond({ action: 'reject' })
               .times(1);
 
-            expect(await openAndCloseWebSocket(baseURL)).toEqual(['open']);
+            await expectWebSocketConnectionToOpen(baseURL);
 
             await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
               message: [
