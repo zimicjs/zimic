@@ -91,8 +91,6 @@ interface UserWebSocketConnectionClosure {
 // A connection is pending from its upgrade request until its handshake completes, so it has no socket yet.
 interface PendingUserWebSocketConnection extends UserWebSocketConnection {
   requestSocketCloseListener: () => void;
-  // Whether the worker answered the connection request, after which it may list the client.
-  isDecidedByWorker: boolean;
   // Server messages and closes the worker sends before the handshake completes, such as from connection effects, are
   // delivered in order once it does.
   queuedDeliveries: ((socket: Socket) => void)[];
@@ -247,18 +245,19 @@ class WebSocketInterceptorServerRuntime {
       workerSocket: connectionTarget.worker.socket,
       holders: connectionTarget.holders,
       queuedDeliveries: [],
-      isDecidedByWorker: false,
       requestSocketCloseListener: () => {
         this.removePendingUserWebSocketConnection(request, connection);
-
-        // A worker still deciding the connection is told once it answers, so that it does not list the client after.
-        if (connection.isDecidedByWorker) {
-          this.notifyUserWebSocketClose(connection);
-        }
+        this.notifyUserWebSocketClose(connection);
       },
     };
 
+    // A socket with no reader does not report its peer closing, so it is read while the worker decides the connection.
+    // Clients send no frames before the handshake completes, so nothing is lost. HTTP server sockets stay half-open
+    // after the peer ends, so its end also counts as closing.
     request.socket.once('close', connection.requestSocketCloseListener);
+    request.socket.once('end', connection.requestSocketCloseListener);
+    request.socket.resume();
+
     this.pendingUserWebSocketConnections.set(request, connection);
 
     try {
@@ -300,17 +299,7 @@ class WebSocketInterceptorServerRuntime {
       connection.closure ??= CONNECTION_SETUP_FAILURE_CLOSURE;
     }
 
-    connection.isDecidedByWorker = true;
-
-    const isStillPending = this.pendingUserWebSocketConnections.get(request) === connection;
-
-    if (!isStillPending) {
-      // The client went away while the connection was decided. The worker may have accepted it, so it is told to
-      // forget the client.
-      this.notifyUserWebSocketClose(connection);
-    }
-
-    return isStillPending;
+    return this.pendingUserWebSocketConnections.get(request) === connection;
   };
 
   handleConnection = (socket: Socket, request: IncomingMessage) => {
@@ -367,6 +356,7 @@ class WebSocketInterceptorServerRuntime {
 
     this.pendingUserWebSocketConnections.delete(request);
     request.socket.off('close', connection.requestSocketCloseListener);
+    request.socket.off('end', connection.requestSocketCloseListener);
   }
 
   private createUserWebSocketMessageListener(connection: UserWebSocketConnection) {

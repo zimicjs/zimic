@@ -2191,6 +2191,72 @@ describe('Interceptor server', () => {
         });
       });
 
+      it('should not list clients of connections that time out while the worker decides them', async () => {
+        server = createInternalInterceptorServer();
+        await server.start();
+
+        const baseURL = `ws://${server.hostname}:${server.port}/chat`;
+        const otherBaseURL = `ws://${server.hostname}:${server.port}/other`;
+
+        const restrictionStartedPromise = createPromiseWithResolvers<void>();
+        const restrictionReleasedPromise = createPromiseWithResolvers<void>();
+        const effect = vi.fn();
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          await usingWebSocketInterceptor<ChatMessage>(
+            { type: 'remote', baseURL, messageSaving: { enabled: true } },
+            async (interceptor) => {
+              const handler = await interceptor
+                .connection()
+                .with(async () => {
+                  restrictionStartedPromise.resolve();
+                  await restrictionReleasedPromise;
+                  return true;
+                })
+                .effect(effect);
+
+              // A native socket is used because it sets no open timeout, which the faked clock would fire first.
+              const client = new WebSocket(baseURL);
+
+              const closeEventPromise = new Promise<CloseEvent>((resolve) => {
+                client.addEventListener('close', resolve, { once: true });
+              });
+
+              // The server message timeout is not configurable, so the clock is faked before the server sends the
+              // connection request.
+              vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+              try {
+                await restrictionStartedPromise;
+
+                await vi.advanceTimersByTimeAsync(DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT);
+              } finally {
+                vi.useRealTimers();
+              }
+
+              const closeEvent = await closeEventPromise;
+              expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
+
+              // Starting another interceptor gets a reply on the same worker socket, which arrives after the server
+              // notified the worker that the client closed.
+              await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL: otherBaseURL }, () => {
+                restrictionReleasedPromise.resolve();
+              });
+
+              await waitFor(() => {
+                expect(handler.connections).toHaveLength(1);
+              });
+
+              expect(interceptor.clients).toHaveLength(0);
+              expect(effect).not.toHaveBeenCalled();
+
+              expect(console.error).toHaveBeenCalledTimes(1);
+              expect(console.error).toHaveBeenCalledWith(expect.any(WebSocketMessageTimeoutError));
+            },
+          );
+        });
+      });
+
       it('should close only the pending client connections whose interceptors are removed by a worker reset', async () => {
         server = createInternalInterceptorServer();
         await server.start();
@@ -2397,11 +2463,17 @@ describe('Interceptor server', () => {
 
           clientSocket.terminate();
           await Promise.all([errorEventPromise, closeEventPromise]);
-          expect(closedClientIds).toEqual([]);
+
+          await waitFor(() => {
+            expect(closedClientIds).toEqual([clientId]);
+          });
 
           connectionPromise.resolve();
 
-          await waitFor(() => expect(closedClientIds).toEqual([clientId]));
+          // A reply from the same worker socket guarantees the server already processed the connection reply.
+          await worker.request('interceptors/ws/workers/reset', { interceptors: [] });
+
+          expect(closedClientIds).toEqual([clientId]);
         } finally {
           connectionPromise.resolve();
           client?.terminate();

@@ -43,6 +43,7 @@ interface RegisteredWebSocketInterceptor {
 
 class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private registeredInterceptors = new Map<RegisteredWebSocketInterceptor['id'], RegisteredWebSocketInterceptor>();
+  private decidingClientIds = new Set<string>();
   private numberOfResets = 0;
   private sendQueue = Promise.resolve();
   private auth?: RemoteWebSocketInterceptorWorkerOptions['auth'];
@@ -224,6 +225,8 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       return registeredInterceptor && isHolding(registeredInterceptor) ? [registeredInterceptor] : [];
     });
 
+    this.decidingClientIds.add(connection.clientId);
+
     const handling = await this.handleConnectionWithHandlers(
       { url: connection.url, protocols: connection.protocols },
       holderCandidates.map((registeredInterceptor) => registeredInterceptor.interceptor),
@@ -234,7 +237,10 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       },
     );
 
-    if (handling.action === 'reject') {
+    // The client closed while the connection was decided, or the server stopped waiting for the decision and closed it.
+    const wasClosedWhileDeciding = !this.decidingClientIds.delete(connection.clientId);
+
+    if (handling.action === 'reject' || wasClosedWhileDeciding) {
       return { action: 'reject' };
     }
 
@@ -285,6 +291,8 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private removeClosedClient = ({
     data: connection,
   }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/clients/close'>) => {
+    this.decidingClientIds.delete(connection.clientId);
+
     // A connection shared by several interceptors has one client in each of them.
     for (const registeredInterceptor of this.registeredInterceptors.values()) {
       const client = registeredInterceptor.clients.get(connection.clientId);
