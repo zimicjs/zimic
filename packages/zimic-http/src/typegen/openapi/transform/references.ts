@@ -28,6 +28,26 @@ export function createOperationsIdentifier(serviceName: string) {
 }
 
 /**
+ * Object schemas are generated without their `properties` level, so references into them skip it. The segment after a
+ * `properties` keyword is a property name, even if the property is also named `properties`.
+ */
+function removePropertiesKeywords(componentSegments: string[]) {
+  const componentIndexes: string[] = [];
+
+  for (let index = 0; index < componentSegments.length; index++) {
+    const isPropertiesKeyword = componentSegments[index] === 'properties' && index < componentSegments.length - 1;
+
+    if (isPropertiesKeyword) {
+      index++;
+    }
+
+    componentIndexes.push(componentSegments[index]);
+  }
+
+  return componentIndexes;
+}
+
+/**
  * Creates the type of a reference to a component, such as `#/components/schemas/User`, as an indexed access to the
  * generated components. The component is recorded as a dependency of the type being generated.
  */
@@ -46,8 +66,7 @@ export function createReferenceType(reference: string, context: TypeTransformCon
 
   context.dependencies.components.add(`${componentGroupName}.${componentName}`);
 
-  // Object schemas are generated without their `properties` level, so references into them skip it.
-  const componentIndexes = componentSegments.filter((segment) => segment !== 'properties');
+  const componentIndexes = removePropertiesKeywords(componentSegments);
 
   const componentsType = referenceType(createComponentsIdentifier(context.serviceName));
   return indexedAccessType(componentsType, [componentGroupName, componentName, ...componentIndexes]);
