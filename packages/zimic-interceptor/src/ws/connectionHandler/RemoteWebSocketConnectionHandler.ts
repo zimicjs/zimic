@@ -88,6 +88,10 @@ class RemoteWebSocketConnectionHandler<
     });
   }
 
+  get path() {
+    return this.implementation.path;
+  }
+
   clear() {
     this.implementation.clear();
     return this.pending;

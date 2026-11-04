@@ -50,6 +50,10 @@ class LocalWebSocketConnectionHandler<
     this.implementation.checkTimes();
   }
 
+  get path() {
+    return this.implementation.path;
+  }
+
   clear() {
     this.implementation.clear();
     return this;

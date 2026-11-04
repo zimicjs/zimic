@@ -46,6 +46,14 @@ export interface LocalWebSocketConnectionHandler<Schema extends WebSocketSchema>
   get type(): 'local';
 
   /**
+   * The path declared in `interceptor.connection(path)`, relative to the interceptor base URL. `undefined` if the
+   * handler matches every connection to its interceptor.
+   *
+   * @readonly
+   */
+  get path(): string | undefined;
+
+  /**
    * Declares a restriction to intercepted connection matches. If multiple restrictions are declared, all of them must
    * be met.
    */
@@ -100,6 +108,14 @@ export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocket
    * @readonly
    */
   get type(): 'remote';
+
+  /**
+   * The path declared in `interceptor.connection(path)`, relative to the interceptor base URL. `undefined` if the
+   * handler matches every connection to its interceptor.
+   *
+   * @readonly
+   */
+  get path(): string | undefined;
 
   /**
    * Declares a restriction to intercepted connection matches. If multiple restrictions are declared, all of them must

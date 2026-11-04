@@ -36,8 +36,16 @@ export function declareDefaultWebSocketConnectionHandlerTests(
     }
   });
 
-  // No WebSocket counterpart for "should provide access to the method and path": connection handlers have no method,
-  // and their path is matched by the worker, not exposed.
+  // Unlike HTTP requests, WebSocket connections have no method, so only the path is exposed.
+  it('should provide access to the path', async () => {
+    await usingWebSocketInterceptor<Schema>({ type, baseURL }, (interceptor) => {
+      const handler = interceptor.connection('/rooms/:roomId');
+      expect(handler.path).toBe('/rooms/:roomId');
+
+      const handlerWithoutPath = interceptor.connection();
+      expect(handlerWithoutPath.path).toBe(undefined);
+    });
+  });
 
   // Unlike HTTP requests, a connection needs no declared response, so a handler without one still matches and accepts.
   it('should match any connection if contains no declared response', async () => {
