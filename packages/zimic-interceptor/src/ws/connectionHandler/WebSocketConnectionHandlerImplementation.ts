@@ -278,8 +278,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema> {
 
     const restrictedProtocols = restriction.protocols;
 
-    // The server selects the first requested subprotocol, so the order of the requested subprotocols is part of an
-    // exact match.
+    // Requested subprotocols are listed in the client's order of preference, so their order is part of an exact match.
     const matchesRestriction = restriction.exact
       ? restrictedProtocols.length === connection.protocols.length &&
         restrictedProtocols.every((protocol, index) => connection.protocols[index] === protocol)
