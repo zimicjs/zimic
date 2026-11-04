@@ -25,9 +25,14 @@ import WebSocketInterceptorWorker from './WebSocketInterceptorWorker';
 const importMSWNode = createCachedDynamicImport(() => import('msw/node'));
 const importMSWBrowser = createCachedDynamicImport(() => import('msw/browser'));
 
+// MSW sockets are `WebSocketOverride` instances, whose ready state is a writable field.
+type MockedWebSocket = Pick<WebSocket, 'CONNECTING' | 'OPEN' | 'binaryType' | 'addEventListener' | 'dispatchEvent'> & {
+  readyState: number;
+};
+
 interface LocalWebSocketClientConnection {
   url: URL;
-  socket: Pick<WebSocket, 'readyState' | 'CONNECTING' | 'binaryType' | 'addEventListener'>;
+  socket: MockedWebSocket;
   send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => void;
   close: (code?: number, reason?: string) => void;
   addEventListener: ((
@@ -64,6 +69,16 @@ interface RegisteredWebSocketInterceptor {
   mswHandler: MSWWebSocketHandler;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   clients: Map<InternalWebSocketInterceptorClient<any>, WebSocketClientRegistration>;
+}
+
+interface PendingLocalWebSocketConnection {
+  // Kept in the order the interceptors started. Interceptors cleared while the connection is decided are removed.
+  holders: RegisteredWebSocketInterceptor[];
+  heldOpen: HeldMockedWebSocketOpen;
+}
+
+interface HeldMockedWebSocketOpen {
+  release: (options: { open: boolean }) => void;
 }
 
 // Same pattern MSW uses to remove a leading socket.io path from connection URLs, including its unescaped dot.
@@ -114,6 +129,37 @@ function createConnectionURLRegex(baseURL: string) {
   return new RegExp(hasTrailingSlash ? `^${escapedBaseURL}(?:/|$)` : `^${escapedBaseURL}`);
 }
 
+// MSW opens a mocked socket in a microtask after its connection event and does not wait for asynchronous link
+// listeners, so a connection decided asynchronously would open before the decision. The socket keeps its connecting
+// state and its `open` event is held until the decision is released.
+function holdMockedWebSocketOpen(socket: MockedWebSocket): HeldMockedWebSocketOpen {
+  const dispatchEvent = socket.dispatchEvent.bind(socket);
+  let heldOpenEvent: Event | undefined;
+
+  socket.dispatchEvent = (event) => {
+    if (event.type !== 'open') {
+      return dispatchEvent(event);
+    }
+
+    // MSW marks the socket as open synchronously before dispatching the event, so no listener sees the change.
+    socket.readyState = socket.CONNECTING;
+    heldOpenEvent = event;
+    return true;
+  };
+
+  return {
+    release({ open }) {
+      Reflect.deleteProperty(socket, 'dispatchEvent');
+
+      // If MSW has not dispatched the event yet, it opens the socket itself unless it was closed.
+      if (open && heldOpenEvent && socket.readyState === socket.CONNECTING) {
+        socket.readyState = socket.OPEN;
+        socket.dispatchEvent(heldOpenEvent);
+      }
+    },
+  };
+}
+
 // Resolves once a connection still opening opens or closes, so deliveries waiting on it never stall.
 async function waitForConnectionToSettle(connection: LocalWebSocketClientConnection) {
   if (connection.socket.readyState !== connection.socket.CONNECTING) {
@@ -131,6 +177,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
   private registeredInterceptors: RegisteredWebSocketInterceptor[] = [];
   private routedConnections = new WeakSet<LocalWebSocketClientConnection>();
+  private pendingConnections = new Map<LocalWebSocketClientConnection, PendingLocalWebSocketConnection>();
 
   constructor(_options: LocalWebSocketInterceptorWorkerOptions) {
     super();
@@ -322,6 +369,73 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       return;
     }
 
+    const pendingConnection: PendingLocalWebSocketConnection = {
+      holders: holderInterceptors,
+      heldOpen: holdMockedWebSocketOpen(connection.socket),
+    };
+
+    this.pendingConnections.set(connection, pendingConnection);
+
+    void this.decideConnection(connection, pendingConnection, options);
+  }
+
+  private async decideConnection(
+    connection: LocalWebSocketClientConnection,
+    pendingConnection: PendingLocalWebSocketConnection,
+    options: { protocols: string[] },
+  ) {
+    const handling = await this.handleConnectionWithHandlers(
+      { url: connection.url.href, protocols: options.protocols },
+      pendingConnection.holders.map((holder) => holder.interceptor),
+      (interceptor) => pendingConnection.holders.some((holder) => holder.interceptor === interceptor),
+    );
+
+    // The connection was already closed if its last holder let it go while it was decided.
+    if (this.pendingConnections.get(connection) !== pendingConnection) {
+      return;
+    }
+
+    this.pendingConnections.delete(connection);
+
+    const wasClosedByClient = connection.socket.readyState !== connection.socket.CONNECTING;
+
+    if (wasClosedByClient) {
+      pendingConnection.heldOpen.release({ open: false });
+      return;
+    }
+
+    if (handling.action === 'reject') {
+      pendingConnection.heldOpen.release({ open: false });
+      this.rejectConnection(connection);
+      return;
+    }
+
+    const registration = this.acceptConnection(connection, pendingConnection.holders, options);
+    pendingConnection.heldOpen.release({ open: true });
+
+    const acceptingHolder = registration.holders.find((holder) => {
+      return holder.registeredInterceptor.interceptor === handling.acceptingHandler?.interceptor;
+    });
+
+    // A connection listener may have let the connection go before the effects run.
+    if (acceptingHolder?.registeredInterceptor.clients.has(acceptingHolder.client)) {
+      void this.applyConnectionEffect(handling, acceptingHolder.client);
+    }
+  }
+
+  // A real server refusing the handshake fails the connection, so the client receives `error` and then `close` with
+  // 1006, without opening. MSW closes mocked sockets cleanly and keeps them closing until the close event, unlike a
+  // failed native connection, which is already closed and not clean when both events fire.
+  private rejectConnection(connection: LocalWebSocketClientConnection) {
+    connection.close(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
+    connection.socket.dispatchEvent(new Event('error'));
+  }
+
+  private acceptConnection(
+    connection: LocalWebSocketClientConnection,
+    holderInterceptors: RegisteredWebSocketInterceptor[],
+    options: { protocols: string[] },
+  ) {
     // A connection is shared by every interceptor matching it when it opens, so each of them lists the client and can
     // send to it. Interceptors started later do not hold it, because joining an open connection would fire connection
     // listeners with no network counterpart.
@@ -365,6 +479,8 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
         registeredInterceptor.interceptor.addClient(client);
       }
     }
+
+    return registration;
   }
 
   private findConnectionHolders(connectionURL: URL) {
@@ -415,11 +531,22 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       throw new NotRunningWebSocketInterceptorError();
     }
 
-    this.clearMessageHandlers(options?.interceptor);
+    this.clearInterceptorHandlers(options?.interceptor);
 
     const selectedInterceptors = this.registeredInterceptors.filter((registeredInterceptor) => {
       return options?.interceptor === undefined || registeredInterceptor.interceptor === options.interceptor;
     });
+
+    // As with open connections, a connection still being decided stays pending until its last holder lets it go.
+    for (const [connection, pendingConnection] of this.pendingConnections) {
+      pendingConnection.holders = pendingConnection.holders.filter((holder) => !selectedInterceptors.includes(holder));
+
+      if (pendingConnection.holders.length === 0) {
+        this.pendingConnections.delete(connection);
+        pendingConnection.heldOpen.release({ open: false });
+        connection.close(WEB_SOCKET_CLOSE_CODES.DEFAULT);
+      }
+    }
 
     for (const registeredInterceptor of selectedInterceptors) {
       for (const [client, registration] of registeredInterceptor.clients) {

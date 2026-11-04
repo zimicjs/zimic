@@ -1,7 +1,11 @@
 import { WebSocketSchema } from '@zimic/ws';
 
 import MessageSavingSafeLimitExceededError from './errors/MessageSavingSafeLimitExceededError';
-import type { InterceptedWebSocketInterceptorMessage, ReceivedWebSocketMessageData } from './types/messages';
+import type {
+  InterceptedWebSocketInterceptorConnection,
+  InterceptedWebSocketInterceptorMessage,
+  ReceivedWebSocketMessageData,
+} from './types/messages';
 import type {
   InternalWebSocketInterceptorClient,
   InternalWebSocketInterceptorServer,
@@ -21,10 +25,45 @@ export interface WebSocketInterceptorMessageHandlerIndex<
   records: Set<WebSocketInterceptorMessageRecord<Schema>>;
 }
 
+export interface WebSocketInterceptorConnectionHandlerIndex {
+  connections: InterceptedWebSocketInterceptorConnection[];
+}
+
 class WebSocketInterceptorMessageStore<Schema extends WebSocketSchema> {
   private records = new Set<WebSocketInterceptorMessageRecord<Schema>>();
 
+  // Saved connections count toward the safe limit with the saved messages, as both are kept in memory until cleared.
+  private numberOfSavedConnections = 0;
+
   constructor(private getSafeLimit: () => number) {}
+
+  createConnectionHandlerIndex(): WebSocketInterceptorConnectionHandlerIndex {
+    return { connections: [] };
+  }
+
+  saveConnection(
+    handlerIndex: WebSocketInterceptorConnectionHandlerIndex,
+    connection: InterceptedWebSocketInterceptorConnection,
+  ) {
+    handlerIndex.connections.push(connection);
+    this.numberOfSavedConnections++;
+
+    this.warnIfSafeLimitExceeded();
+  }
+
+  clearConnectionHandler(handlerIndex: WebSocketInterceptorConnectionHandlerIndex) {
+    this.numberOfSavedConnections -= handlerIndex.connections.length;
+    handlerIndex.connections.length = 0;
+  }
+
+  private warnIfSafeLimitExceeded() {
+    const numberOfSavedEntries = this.records.size + this.numberOfSavedConnections;
+    const safeLimit = this.getSafeLimit();
+
+    if (numberOfSavedEntries > safeLimit) {
+      console.warn(new MessageSavingSafeLimitExceededError(numberOfSavedEntries, safeLimit));
+    }
+  }
 
   createHandlerIndex<RestrictedSchema extends Schema>(): WebSocketInterceptorMessageHandlerIndex<
     Schema,
@@ -58,11 +97,7 @@ class WebSocketInterceptorMessageStore<Schema extends WebSocketSchema> {
     record.sender.messages.push(message);
     record.receiver.messages.push(message);
 
-    const safeLimit = this.getSafeLimit();
-
-    if (this.records.size > safeLimit) {
-      console.warn(new MessageSavingSafeLimitExceededError(this.records.size, safeLimit));
-    }
+    this.warnIfSafeLimitExceeded();
   }
 
   clearHandler<RestrictedSchema extends Schema>(

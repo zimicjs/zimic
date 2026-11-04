@@ -49,6 +49,23 @@ export interface InterceptedWebSocketInterceptorMessage<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
+ * A connection attempt to the interceptor, as matched by a connection handler before the handshake is answered.
+ */
+export interface InterceptedWebSocketInterceptorConnection {
+  /** The URL used to open the connection. */
+  url: string;
+
+  /**
+   * The subprotocols requested by the client when opening the connection, in the order they were requested, as in
+   * {@link https://developer.mozilla.org/docs/Web/API/WebSocket/WebSocket#protocols `new WebSocket(url, protocols)`}.
+   * Empty if the client requested none.
+   */
+  protocols: readonly string[];
+}
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
  * A handle to a client connected to the interceptor.
  */
 export interface WebSocketInterceptorClient<Schema extends WebSocketSchema> {

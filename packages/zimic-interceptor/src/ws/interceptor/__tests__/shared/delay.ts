@@ -8,6 +8,7 @@ import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import {
   collectWebSocketClientMessages,
   expectWebSocketTimesCheckError,
+  openWebSocketUntilSettled,
   usingWebSocketClient,
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
@@ -16,6 +17,7 @@ import type {
   LocalWebSocketMessageHandler,
   PendingRemoteWebSocketMessageHandler,
 } from '../../../messageHandler/types/public';
+import type { InterceptedWebSocketInterceptorConnection } from '../../types/messages';
 import type { UnhandledMessageStrategy, WebSocketInterceptorType } from '../../types/options';
 
 type MessageSchema = WebSocketSchema<{ type: 'create'; body: { text: string } } | { type: 'delete'; id: string }>;
@@ -384,5 +386,98 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
         });
       },
     );
+  });
+
+  describe('Connections', () => {
+    it('should apply a delay before answering the handshake of matched connections', async () => {
+      const baseURL = getBaseURL();
+      const delay = 100;
+
+      await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, async (interceptor) => {
+        const delayStartedPromise = createPromiseWithResolvers<void>();
+
+        const delayFactory = vi.fn((_connection: InterceptedWebSocketInterceptorConnection) => {
+          delayStartedPromise.resolve();
+          return delay;
+        });
+
+        await interceptor.connection().delay(delayFactory).respond({ action: 'reject' });
+
+        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+        try {
+          let isSettled = false;
+
+          const attemptPromise = openWebSocketUntilSettled(`${baseURL}?room=1`, ['chat']).finally(() => {
+            isSettled = true;
+          });
+
+          await delayStartedPromise;
+
+          // Lets the pending asynchronous steps schedule the delay timer.
+          await vi.advanceTimersByTimeAsync(0);
+
+          await vi.advanceTimersByTimeAsync(delay - 1);
+          expect(isSettled).toBe(false);
+
+          await vi.advanceTimersByTimeAsync(1);
+
+          const { eventTypes } = await attemptPromise;
+          expect(eventTypes).toEqual(['error', 'close']);
+
+          expect(delayFactory).toHaveBeenCalledTimes(1);
+          expect(delayFactory).toHaveBeenCalledWith({ url: new URL(`${baseURL}?room=1`).href, protocols: ['chat'] });
+        } finally {
+          vi.useRealTimers();
+        }
+      });
+    });
+
+    it('should not decide connections after cleared during their delay', async () => {
+      const baseURL = getBaseURL();
+      const delay = 200;
+
+      await usingWebSocketInterceptor<MessageSchema>(
+        { type, baseURL, messageSaving: { enabled: true } },
+        async (interceptor) => {
+          const delayStartedPromise = createPromiseWithResolvers<void>();
+          const effect = vi.fn();
+
+          const handler = await interceptor
+            .connection()
+            .delay(() => {
+              delayStartedPromise.resolve();
+              return delay;
+            })
+            .effect(effect)
+            .respond({ action: 'reject' });
+
+          vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+          try {
+            const attemptPromise = openWebSocketUntilSettled(baseURL);
+
+            await delayStartedPromise;
+
+            // Lets the pending asynchronous steps schedule the delay timer.
+            await vi.advanceTimersByTimeAsync(0);
+
+            await handler.clear();
+
+            await vi.advanceTimersByTimeAsync(delay);
+
+            // A connection no handler decides is accepted.
+            const { socket, eventTypes } = await attemptPromise;
+            socket.close();
+
+            expect(eventTypes).toEqual(['open']);
+            expect(effect).not.toHaveBeenCalled();
+            expect(handler.connections).toHaveLength(0);
+          } finally {
+            vi.useRealTimers();
+          }
+        },
+      );
+    });
   });
 }

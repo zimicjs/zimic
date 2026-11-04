@@ -168,10 +168,11 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
     if (!isWithinLimits) {
       throw new WebSocketTimesCheckError({
-        messageLimits: this.limits.numberOfMessages,
-        numberOfMatchedMessages: this.numberOfMatchedMessages,
+        subject: 'message',
+        limits: this.limits.numberOfMessages,
+        numberOfMatches: this.numberOfMatchedMessages,
         declarationPointer: this.timesPointer,
-        unmatchedMessageGroups: this.unmatchedMessageGroups,
+        unmatchedGroups: this.unmatchedMessageGroups,
         hasRestrictions: this.restrictions.length > 0 || this.restrictedSender !== undefined,
         messageSaving: this.interceptor.messageSaving,
       });

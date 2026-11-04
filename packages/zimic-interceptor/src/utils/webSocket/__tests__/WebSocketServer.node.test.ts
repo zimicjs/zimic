@@ -749,6 +749,57 @@ describe('Web socket server', () => {
       });
     });
 
+    it('should refuse handshakes that are not verified', async () => {
+      const handleConnection = vi.fn(() => ({ handled: false }));
+
+      server = new WebSocketServer({
+        httpServer,
+        verifyUpgrade: () => Promise.resolve(false),
+        handleConnection,
+      });
+      server.start();
+
+      rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+      const errorPromise = new Promise<Error>((resolve) => {
+        rawClient?.once('error', resolve);
+      });
+
+      const closeEvent = await waitForClientSocketClose(rawClient);
+      expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
+
+      const error = await errorPromise;
+      expect(error.message).toBe('Unexpected server response: 403');
+
+      expect(handleConnection).not.toHaveBeenCalled();
+    });
+
+    it('should log thrown upgrade verification failures and refuse the handshake as an internal error', async () => {
+      const error = new Error('Upgrade verification failed.');
+
+      server = new WebSocketServer({
+        httpServer,
+        verifyUpgrade: () => Promise.reject(error),
+      });
+      server.start();
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+        const clientErrorPromise = new Promise<Error>((resolve) => {
+          rawClient?.once('error', resolve);
+        });
+
+        const closeEvent = await waitForClientSocketClose(rawClient);
+        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
+
+        const clientError = await clientErrorPromise;
+        expect(clientError.message).toBe('Unexpected server response: 500');
+
+        expect(console.error).toHaveBeenCalledWith(error);
+      });
+    });
+
     it('should clean up a partially registered socket after setup fails', async () => {
       const error = new Error('Authentication confirmation failed.');
       let serverSocket!: ClientSocket;

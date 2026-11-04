@@ -866,4 +866,14 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
       expect(handler.requests).toHaveLength(1);
     });
   });
+
+  // No HTTP counterpart for "should support intercepting connections having path restrictions": HTTP handlers always
+  // declare their path, which the handler suites cover, while WebSocket connection handlers may omit it.
+
+  // No HTTP counterpart for "should support intercepting connections having partial protocols restrictions": HTTP
+  // requests negotiate no subprotocols.
+
+  // No HTTP counterpart for "should support intercepting connections having computed restrictions": computed request
+  // restrictions are covered by the request handler suites, and WebSocket connections have no headers or body to
+  // restrict statically instead.
 }

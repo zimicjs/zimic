@@ -10,6 +10,7 @@ import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 import {
   expectWebSocketTimesCheckError,
+  openWebSocketUntilSettled,
   usingWebSocketClient,
   waitForWebSocketClientClose,
   waitForWebSocketClientMessage,
@@ -522,8 +523,8 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
       const client = new WebSocketClient<MessageSchema>(baseURL);
       const closeEventPromise = waitForWebSocketClientClose(client);
 
-      // The interceptor server completes the handshake before connecting the client to its interceptors, so only
-      // remote clients open before closing. The close event is the outcome in both modes.
+      // The interceptor server completes the handshake of connections let go while they are set up and then closes
+      // them, so only remote clients open before closing. The close event is the outcome in both modes.
       const openPromise = client.open().catch(() => undefined);
 
       try {
@@ -538,6 +539,52 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         await client.close();
       }
     });
+  });
+
+  it('should close connections if their only interceptor is cleared while a connection handler decides them', async () => {
+    const restrictionStartedPromise = createPromiseWithResolvers<void>();
+    const restrictionReleasedPromise = createPromiseWithResolvers<void>();
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const effect = vi.fn();
+
+        const handler = await promiseIfRemote(
+          interceptor
+            .connection()
+            .with(async () => {
+              restrictionStartedPromise.resolve();
+              await restrictionReleasedPromise;
+              return true;
+            })
+            .effect(effect)
+            .respond({ action: 'reject' }),
+          interceptor,
+        );
+
+        const attemptPromise = openWebSocketUntilSettled(baseURL);
+        await restrictionStartedPromise;
+
+        await promiseIfRemote(interceptor.clear(), interceptor);
+        restrictionReleasedPromise.resolve();
+
+        // As when cleared while connections open, only remote clients open before closing, and the close event is the
+        // outcome in both modes.
+        const attempt = await attemptPromise;
+
+        const closeEvent =
+          attempt.closeEvent ??
+          (await new Promise<CloseEvent>((resolve) => {
+            attempt.socket.addEventListener('close', resolve, { once: true });
+          }));
+        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
+
+        expect(interceptor.clients).toHaveLength(0);
+        expect(handler.connections).toHaveLength(0);
+        expect(effect).not.toHaveBeenCalled();
+      },
+    );
   });
 
   it('should not save intercepted messages after cleared while a message is being handled', async () => {

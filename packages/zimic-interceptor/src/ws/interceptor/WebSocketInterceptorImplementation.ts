@@ -5,6 +5,10 @@ import { removeArrayElement } from '@/utils/arrays';
 import { isServerSide } from '@/utils/environment';
 import { logUnhandledMessageWarning } from '@/utils/logging';
 
+import LocalWebSocketConnectionHandler from '../connectionHandler/LocalWebSocketConnectionHandler';
+import RemoteWebSocketConnectionHandler from '../connectionHandler/RemoteWebSocketConnectionHandler';
+import { InternalWebSocketConnectionHandler, WebSocketConnectionHandler } from '../connectionHandler/types/public';
+import { AnyWebSocketConnectionHandlerImplementation } from '../connectionHandler/WebSocketConnectionHandlerImplementation';
 import WebSocketInterceptorWorker from '../interceptorWorker/WebSocketInterceptorWorker';
 import LocalWebSocketMessageHandler from '../messageHandler/LocalWebSocketMessageHandler';
 import RemoteWebSocketMessageHandler from '../messageHandler/RemoteWebSocketMessageHandler';
@@ -17,6 +21,7 @@ import { normalizeWebSocketMessageData } from '../utils/messageData';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
 import type {
+  InterceptedWebSocketInterceptorConnection,
   ReceivedWebSocketMessageData,
   WebSocketInterceptorClient,
   WebSocketInterceptorServerSendOptions,
@@ -45,6 +50,9 @@ function isWebSocketInterceptorClientArray<Schema extends WebSocketSchema>(
 
 export type WebSocketHandlerConstructor = typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
 
+export type WebSocketConnectionHandlerConstructor =
+  typeof LocalWebSocketConnectionHandler | typeof RemoteWebSocketConnectionHandler;
+
 class WebSocketInterceptorImplementation<
   Schema extends WebSocketSchema,
   HandlerConstructor extends WebSocketHandlerConstructor = WebSocketHandlerConstructor,
@@ -59,8 +67,10 @@ class WebSocketInterceptorImplementation<
   isRunning = false;
 
   private Handler: HandlerConstructor;
+  private ConnectionHandler: WebSocketConnectionHandlerConstructor;
 
-  private handlers: AnyWebSocketMessageHandlerImplementation[] = [];
+  // Kept in registration order, so times checks run in the order the handlers were declared.
+  private handlers: (AnyWebSocketMessageHandlerImplementation | AnyWebSocketConnectionHandlerImplementation)[] = [];
 
   private _server: InternalWebSocketInterceptorServer<Schema>;
   private _clients: InternalWebSocketInterceptorClient<Schema>[] = [];
@@ -83,6 +93,7 @@ class WebSocketInterceptorImplementation<
     messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
     onUnhandledMessage?: UnhandledMessageStrategy;
     Handler: HandlerConstructor;
+    ConnectionHandler: WebSocketConnectionHandlerConstructor;
     createWorker: () => WebSocketInterceptorWorker;
     deleteWorker: () => void;
   }) {
@@ -97,6 +108,7 @@ class WebSocketInterceptorImplementation<
     this.onUnhandledMessage = options.onUnhandledMessage;
 
     this.Handler = options.Handler;
+    this.ConnectionHandler = options.ConnectionHandler;
     this.createWorker = options.createWorker;
     this.deleteWorker = options.deleteWorker;
     this._server = createWebSocketInterceptorServer(
@@ -307,6 +319,52 @@ class WebSocketInterceptorImplementation<
     this.handlers.push(handler.implementation);
 
     this.workerOrThrow.useMessageHandler(this, handler.implementation);
+  }
+
+  connection(path?: string) {
+    return this.createWebSocketConnectionHandler(path);
+  }
+
+  private createWebSocketConnectionHandler(path: string | undefined): WebSocketConnectionHandler<Schema> {
+    const handler = new this.ConnectionHandler<Schema>(this, path);
+    this.registerConnectionHandler(handler);
+
+    return handler;
+  }
+
+  registerConnectionHandler(handler: InternalWebSocketConnectionHandler<Schema>) {
+    if (!this.isRunning || this.isStopping) {
+      throw new NotRunningWebSocketInterceptorError();
+    }
+
+    const isAlreadyRegistered = this.handlers.includes(handler.implementation);
+
+    if (isAlreadyRegistered) {
+      return;
+    }
+
+    this.handlers.push(handler.implementation);
+
+    this.workerOrThrow.useConnectionHandler(this, handler.implementation);
+  }
+
+  async handleMatchedConnection(
+    handler: AnyWebSocketConnectionHandlerImplementation,
+    connection: InterceptedWebSocketInterceptorConnection,
+  ) {
+    const messageSavingGeneration = this.messageSavingGeneration;
+
+    const action = await handler.applyDeclarations(connection);
+
+    if (action === null) {
+      return null;
+    }
+
+    if (this.messageSaving.enabled && messageSavingGeneration === this.messageSavingGeneration) {
+      handler.saveInterceptedConnection(connection);
+    }
+
+    return action;
   }
 
   async handleMatchedMessage(

@@ -661,4 +661,10 @@ export function declareRestrictionHttpRequestHandlerTests(
       }
     }
   });
+
+  // No HTTP counterpart for the "By path" WebSocket connection handler group: HTTP handlers are created for a required
+  // path, while WebSocket connection handlers match every connection to their interceptor if they omit it.
+
+  // No HTTP counterpart for the "By protocols" WebSocket connection handler group: HTTP requests negotiate no
+  // subprotocols.
 }

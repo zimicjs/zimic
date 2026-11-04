@@ -130,6 +130,7 @@ describe('Interceptor server > Missing HTTP peer', () => {
 
         const handledMessages: unknown[] = [];
         webSocketWorker.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => ({
+          action: 'accept',
           acceptedInterceptorIds: data.interceptorIds,
         }));
         webSocketWorker.onChannel('event', 'interceptors/ws/messages/handle', ({ data }) => {

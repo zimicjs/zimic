@@ -1,5 +1,6 @@
 import { WebSocketSchema } from '@zimic/ws';
 
+import RemoteWebSocketConnectionHandler from '../connectionHandler/RemoteWebSocketConnectionHandler';
 import RemoteWebSocketMessageHandler from '../messageHandler/RemoteWebSocketMessageHandler';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
 import {
@@ -28,6 +29,7 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
       messageSaving: options.messageSaving,
       onUnhandledMessage: options.onUnhandledMessage,
       Handler: RemoteWebSocketMessageHandler,
+      ConnectionHandler: RemoteWebSocketConnectionHandler,
       createWorker: () => {
         return this.store.getOrCreateRemoteWorker({
           serverURL: this.implementation.baseURL,
@@ -110,6 +112,10 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
 
   message() {
     return this.implementation.message() as RemoteWebSocketMessageHandler<Schema>;
+  }
+
+  connection(path?: string) {
+    return this.implementation.connection(path) as RemoteWebSocketConnectionHandler<Schema>;
   }
 
   get server(): PublicWebSocketInterceptorServer<Schema> {

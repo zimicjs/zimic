@@ -1174,4 +1174,7 @@ export function declareTimesHttpRequestHandlerTests(
     });
     await promiseIfRemote(handler.checkTimes(), handler);
   });
+
+  // No HTTP counterpart for "should consider connections unmatched due to protocols restrictions in times check errors":
+  // HTTP requests negotiate no subprotocols.
 }

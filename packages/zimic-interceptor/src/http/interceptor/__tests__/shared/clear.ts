@@ -493,4 +493,7 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
   // No HTTP counterpart for "should not apply the unhandled message strategy after cleared while a message is being
   // handled": clearing a WebSocket interceptor closes its connections, so a message being handled has no connection
   // left, while an HTTP request being handled still needs a response.
+
+  // No HTTP counterpart for "should close connections if their only interceptor is cleared while a connection handler
+  // decides them": HTTP requests open no connection that a cleared interceptor must close.
 }

@@ -1,7 +1,7 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
-import { expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingIgnoredConsole } from '@tests/utils/console';
@@ -10,6 +10,9 @@ import { promiseIfRemote } from '@tests/utils/promises';
 import {
   collectWebSocketClientMessages,
   createBinaryMessage,
+  expectWebSocketConnectionToBeRefused,
+  expectWebSocketConnectionToOpen,
+  openWebSocketUntilSettled,
   readBytes,
   usingWebSocketClient,
   waitForWebSocketClientClose,
@@ -18,7 +21,7 @@ import {
 
 import type { WebSocketInterceptorClient } from '../../types/messages';
 import type { WebSocketInterceptorType } from '../../types/options';
-import type { WebSocketInterceptor } from '../../types/public';
+import type { LocalWebSocketInterceptor, RemoteWebSocketInterceptor, WebSocketInterceptor } from '../../types/public';
 import { MAX_CLOSE_REASON_BYTE_LENGTH } from '../../WebSocketInterceptorHandle';
 
 type ChatMessage = WebSocketSchema<{ type: 'server'; text: string }>;
@@ -899,6 +902,124 @@ export function declareConnectionsWebSocketInterceptorTests(
           expect(interceptor.clients).toEqual([openClientHandle]);
         });
       });
+    });
+  });
+
+  describe('Connection handlers', () => {
+    it('should refuse connections rejected by a connection handler before they open', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+        const connectionListener = vi.fn();
+        interceptor.on('connection', connectionListener);
+
+        await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }), interceptor);
+
+        const { eventTypes, closeEvent } = await openWebSocketUntilSettled(baseURL);
+
+        expect(eventTypes).toEqual(['error', 'close']);
+        expect(closeEvent?.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
+
+        expect(interceptor.clients).toHaveLength(0);
+        expect(connectionListener).not.toHaveBeenCalled();
+      });
+    });
+
+    it.each([
+      { declaration: 'no connection handler', declare: () => undefined },
+      {
+        declaration: 'a connection handler without a declared response',
+        declare: (interceptor: LocalWebSocketInterceptor<ChatMessage> | RemoteWebSocketInterceptor<ChatMessage>) =>
+          interceptor.connection().times(1),
+      },
+    ])('should accept connections matching $declaration', async ({ declare }) => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+        await declare(interceptor);
+
+        await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+          expect(client.readyState).toBe(WebSocketClient.OPEN);
+
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(1);
+          });
+
+          const message = JSON.stringify({ type: 'server', text: 'accepted' } satisfies ChatMessage);
+          const messagePromise = waitForWebSocketClientMessage(client);
+          interceptor.server.send(message);
+          await expect(messagePromise).resolves.toBe(message);
+        });
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      });
+    });
+
+    it('should decide connections with the newest matching connection handler only', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<ChatMessage>(
+        { type, baseURL, messageSaving: { enabled: true } },
+        async (interceptor) => {
+          const olderHandler = await promiseIfRemote(
+            interceptor.connection().respond({ action: 'reject' }),
+            interceptor,
+          );
+          const newerHandler = await promiseIfRemote(interceptor.connection().times(1), interceptor);
+
+          await expectWebSocketConnectionToOpen(baseURL);
+
+          expect(newerHandler.connections).toHaveLength(1);
+          expect(olderHandler.connections).toHaveLength(0);
+
+          await promiseIfRemote(newerHandler.clear(), interceptor);
+
+          await expectWebSocketConnectionToBeRefused(baseURL);
+
+          expect(olderHandler.connections).toHaveLength(1);
+        },
+      );
+    });
+
+    it('should decide connections shared by interceptors with the newest connection handler of any of them', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<ChatMessage>(
+        { type, baseURL, messageSaving: { enabled: true } },
+        async (firstInterceptor) => {
+          await usingWebSocketInterceptor<ChatMessage>(
+            { type, baseURL, messageSaving: { enabled: true } },
+            async (secondInterceptor) => {
+              // The handler of the interceptor started last is older, so it does not decide the connection.
+              const secondHandler = await promiseIfRemote(
+                secondInterceptor.connection().respond({ action: 'reject' }),
+                secondInterceptor,
+              );
+              const firstHandler = await promiseIfRemote(firstInterceptor.connection().times(1), firstInterceptor);
+
+              await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+                expect(client.readyState).toBe(WebSocketClient.OPEN);
+
+                await waitFor(() => {
+                  expect(firstInterceptor.clients).toHaveLength(1);
+                  expect(secondInterceptor.clients).toHaveLength(1);
+                });
+              });
+
+              expect(firstHandler.connections).toHaveLength(1);
+              expect(secondHandler.connections).toHaveLength(0);
+
+              await promiseIfRemote(firstHandler.clear(), firstInterceptor);
+
+              await expectWebSocketConnectionToBeRefused(baseURL);
+
+              expect(secondHandler.connections).toHaveLength(1);
+              expect(firstInterceptor.clients).toHaveLength(0);
+              expect(secondInterceptor.clients).toHaveLength(0);
+            },
+          );
+        },
+      );
     });
   });
 }

@@ -3,6 +3,10 @@ import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, describe, expectTypeOf, it } from 'vitest';
 
 import type {
+  LocalWebSocketConnectionHandler,
+  RemoteWebSocketConnectionHandler,
+} from '@/ws/connectionHandler/types/public';
+import type {
   InterceptedWebSocketInterceptorMessage,
   WebSocketInterceptorClient,
   WebSocketInterceptorServer,
@@ -94,11 +98,14 @@ export function declareTypeWebSocketInterceptorTests(
   it('should correctly type local and remote sync return values', () => {
     const localInterceptor = createWebSocketInterceptor<MessageSchema>({ type: 'local', baseURL });
     expectTypeOf(localInterceptor.message).returns.toEqualTypeOf<LocalWebSocketMessageHandler<MessageSchema>>();
+    expectTypeOf(localInterceptor.connection).returns.toEqualTypeOf<LocalWebSocketConnectionHandler<MessageSchema>>();
+    expectTypeOf(localInterceptor.connection).parameters.toEqualTypeOf<[path?: string]>();
     expectTypeOf(localInterceptor.checkTimes).returns.toEqualTypeOf<void>();
     expectTypeOf(localInterceptor.clear).returns.toEqualTypeOf<void>();
 
     const remoteInterceptor = createWebSocketInterceptor<MessageSchema>({ type: 'remote', baseURL });
     expectTypeOf(remoteInterceptor.message).returns.toEqualTypeOf<RemoteWebSocketMessageHandler<MessageSchema>>();
+    expectTypeOf(remoteInterceptor.connection).returns.toEqualTypeOf<RemoteWebSocketConnectionHandler<MessageSchema>>();
     expectTypeOf(remoteInterceptor.checkTimes).returns.toEqualTypeOf<Promise<void>>();
     expectTypeOf(remoteInterceptor.clear).returns.toEqualTypeOf<Promise<void>>();
   });

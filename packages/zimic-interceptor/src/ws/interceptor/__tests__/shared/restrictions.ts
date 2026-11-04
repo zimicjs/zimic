@@ -1,16 +1,19 @@
 import { waitFor } from '@zimic/utils/time';
 import { WebSocketSchema } from '@zimic/ws';
-import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 import {
   createBinaryMessage,
+  expectWebSocketConnectionToBeRefused,
+  expectWebSocketConnectionToOpen,
   readBytes,
   usingWebSocketClient,
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
 
+import { InterceptedWebSocketInterceptorConnection } from '../../types/messages';
 import { WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
@@ -230,6 +233,99 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
       });
 
       await promiseIfRemote(interceptor.checkTimes(), interceptor);
+    });
+  });
+
+  describe('Connections', () => {
+    it('should support intercepting connections having path restrictions', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        await promiseIfRemote(
+          interceptor.connection('/rooms/:roomId').respond({ action: 'reject' }).times(1),
+          interceptor,
+        );
+
+        await expectWebSocketConnectionToOpen(`${baseURL}/users/1`);
+        await expectWebSocketConnectionToBeRefused(`${baseURL}/rooms/1`);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      });
+    });
+
+    it('should support intercepting connections having partial search params restrictions', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        await promiseIfRemote(
+          interceptor
+            .connection()
+            .with({ searchParams: { token: 'expired' } })
+            .respond({ action: 'reject' })
+            .times(1),
+          interceptor,
+        );
+
+        await expectWebSocketConnectionToOpen(`${baseURL}?token=valid`);
+        await expectWebSocketConnectionToBeRefused(`${baseURL}?token=expired&room=1`);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      });
+    });
+
+    it('should support intercepting connections having partial protocols restrictions', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        await promiseIfRemote(
+          interceptor
+            .connection()
+            .with({ protocols: ['legacy'] })
+            .respond({ action: 'reject' })
+            .times(1),
+          interceptor,
+        );
+
+        await expectWebSocketConnectionToOpen(baseURL, ['chat']);
+        await expectWebSocketConnectionToBeRefused(baseURL, ['chat', 'legacy']);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      });
+    });
+
+    it('should support intercepting connections having computed restrictions', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const restriction = vi.fn((connection: InterceptedWebSocketInterceptorConnection) => {
+          return new URL(connection.url).searchParams.has('blocked');
+        });
+
+        await promiseIfRemote(
+          interceptor.connection().with(restriction).respond({ action: 'reject' }).times(1),
+          interceptor,
+        );
+
+        await expectWebSocketConnectionToOpen(baseURL, ['chat']);
+        await expectWebSocketConnectionToBeRefused(`${baseURL}?blocked`);
+
+        expect(restriction).toHaveBeenCalledTimes(2);
+        expect(restriction).toHaveBeenNthCalledWith(1, { url: new URL(baseURL).href, protocols: ['chat'] });
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      });
+    });
+
+    it('should reset connection restrictions when cleared', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor
+            .connection()
+            .with({ protocols: ['legacy'] })
+            .respond({ action: 'reject' }),
+          interceptor,
+        );
+
+        await expectWebSocketConnectionToOpen(baseURL);
+
+        await promiseIfRemote(handler.clear().respond({ action: 'reject' }).times(1), interceptor);
+
+        await expectWebSocketConnectionToBeRefused(baseURL);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      });
     });
   });
 }

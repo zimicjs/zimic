@@ -1,5 +1,6 @@
 import { WebSocketSchema } from '@zimic/ws';
 
+import LocalWebSocketConnectionHandler from '../connectionHandler/LocalWebSocketConnectionHandler';
 import LocalWebSocketMessageHandler from '../messageHandler/LocalWebSocketMessageHandler';
 import {
   WebSocketInterceptorClient as PublicWebSocketInterceptorClient,
@@ -27,6 +28,7 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
       messageSaving: options.messageSaving,
       onUnhandledMessage: options.onUnhandledMessage,
       Handler: LocalWebSocketMessageHandler,
+      ConnectionHandler: LocalWebSocketConnectionHandler,
       createWorker: () => this.store.getOrCreateLocalWorker({}),
       deleteWorker: () => this.store.deleteLocalWorker(),
     });
@@ -70,6 +72,10 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
 
   message() {
     return this.implementation.message() as LocalWebSocketMessageHandler<Schema>;
+  }
+
+  connection(path?: string) {
+    return this.implementation.connection(path) as LocalWebSocketConnectionHandler<Schema>;
   }
 
   get server(): PublicWebSocketInterceptorServer<Schema> {

@@ -30,6 +30,24 @@ export type {
   WebSocketMessageHandlerComputedRestriction,
 } from './messageHandler/types/restrictions';
 
+export type { WebSocketConnectionHandlerDelayFactory } from './connectionHandler/types/connections';
+
+export type {
+  LocalWebSocketConnectionHandler,
+  RemoteWebSocketConnectionHandler,
+  WebSocketConnectionHandlerConnectionCallback,
+  WebSocketConnectionHandlerResponseDeclaration,
+  SyncedRemoteWebSocketConnectionHandler,
+  PendingRemoteWebSocketConnectionHandler,
+  WebSocketConnectionHandler,
+} from './connectionHandler/types/public';
+
+export type {
+  WebSocketConnectionHandlerRestriction,
+  WebSocketConnectionHandlerStaticRestriction,
+  WebSocketConnectionHandlerComputedRestriction,
+} from './connectionHandler/types/restrictions';
+
 export type {
   WebSocketInterceptorType,
   WebSocketInterceptorPlatform,
@@ -42,6 +60,7 @@ export type {
 
 export type { InferWebSocketInterceptorSchema } from './interceptor/types/schema';
 export type {
+  InterceptedWebSocketInterceptorConnection,
   InterceptedWebSocketInterceptorMessage,
   WebSocketInterceptorClient,
   WebSocketInterceptorServer,

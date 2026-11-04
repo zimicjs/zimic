@@ -1,10 +1,20 @@
 import { PossiblePromise } from '@zimic/utils/types';
+import { createRegexFromPath, excludeNonPathParams, validatePathParams } from '@zimic/utils/url';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
 import { removeArrayElement } from '@/utils/arrays';
 import { isClientSide } from '@/utils/environment';
 
-import { ReceivedWebSocketMessageData } from '../interceptor/types/messages';
+import type {
+  AnyWebSocketConnectionHandlerImplementation,
+  WebSocketConnectionHandlerAction,
+  WebSocketConnectionHandlerConnectionMatch,
+} from '../connectionHandler/WebSocketConnectionHandlerImplementation';
+import {
+  InterceptedWebSocketInterceptorConnection,
+  ReceivedWebSocketMessageData,
+  WebSocketInterceptorClient,
+} from '../interceptor/types/messages';
 import { WebSocketInterceptorPlatform } from '../interceptor/types/options';
 import { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
 import WebSocketInterceptorImplementation, {
@@ -33,6 +43,25 @@ interface FailedWebSocketMessageMatch {
   messageMatch: Extract<WebSocketMessageHandlerMessageMatch, { success: false }>;
 }
 
+interface WebSocketConnectionHandler {
+  interceptor: AnyWebSocketInterceptorImplementation;
+  implementation: AnyWebSocketConnectionHandlerImplementation;
+  pathRegex: RegExp | undefined;
+}
+
+interface FailedWebSocketConnectionMatch {
+  handler: WebSocketConnectionHandler;
+  connectionMatch: Extract<WebSocketConnectionHandlerConnectionMatch, { success: false }>;
+}
+
+export interface WebSocketConnectionHandling {
+  action: WebSocketConnectionHandlerAction;
+  // The handler that accepted the connection, whose effects run once its interceptor lists the client.
+  acceptingHandler?: WebSocketConnectionHandler;
+}
+
+const UNHANDLED_CONNECTION_HANDLING: WebSocketConnectionHandling = Object.freeze({ action: 'accept' });
+
 abstract class WebSocketInterceptorWorker {
   platform: WebSocketInterceptorPlatform | null = null;
   isRunning = false;
@@ -42,6 +71,7 @@ abstract class WebSocketInterceptorWorker {
 
   private runningInterceptors: AnyWebSocketInterceptorImplementation[] = [];
   private messageHandlers: WebSocketMessageHandler[] = [];
+  private connectionHandlers: WebSocketConnectionHandler[] = [];
 
   abstract start(): Promise<void>;
 
@@ -118,11 +148,142 @@ abstract class WebSocketInterceptorWorker {
     this.messageHandlers.push({ interceptor, implementation: handler });
   }
 
-  protected clearMessageHandlers<Schema extends WebSocketSchema>(
+  useConnectionHandler<Schema extends WebSocketSchema>(
+    interceptor: AnyWebSocketInterceptorImplementation<Schema>,
+    handler: AnyWebSocketConnectionHandlerImplementation,
+  ) {
+    if (handler.path !== undefined) {
+      validatePathParams(handler.path);
+    }
+
+    this.connectionHandlers.push({
+      interceptor,
+      implementation: handler,
+      pathRegex: handler.path === undefined ? undefined : createRegexFromPath(handler.path),
+    });
+  }
+
+  protected clearInterceptorHandlers<Schema extends WebSocketSchema>(
     interceptor: AnyWebSocketInterceptorImplementation<Schema> | undefined,
   ) {
     this.messageHandlers =
       interceptor === undefined ? [] : this.messageHandlers.filter((handler) => handler.interceptor !== interceptor);
+
+    this.connectionHandlers =
+      interceptor === undefined ? [] : this.connectionHandlers.filter((handler) => handler.interceptor !== interceptor);
+  }
+
+  // As with messages, the handlers of all interceptors that would hold the connection are tried together, from the last
+  // created to the first, and the first match decides the handshake. The connection is accepted if no handler handles
+  // it. Interceptors that let the connection go while it is decided no longer hold it, as reported by `isHolding`.
+  protected async handleConnectionWithHandlers(
+    connection: InterceptedWebSocketInterceptorConnection,
+    holders: AnyWebSocketInterceptorImplementation[],
+    isHolding: (interceptor: AnyWebSocketInterceptorImplementation) => boolean,
+  ): Promise<WebSocketConnectionHandling> {
+    const connectionURLWithoutNonPathParams = excludeNonPathParams(new URL(connection.url));
+
+    // Base URLs at the root path are bare origins, so a connection to the root path is compared without its slash.
+    const connectionURL =
+      connectionURLWithoutNonPathParams.href === `${connectionURLWithoutNonPathParams.origin}/`
+        ? connectionURLWithoutNonPathParams.origin
+        : connectionURLWithoutNonPathParams.href;
+
+    const failedConnectionMatches: FailedWebSocketConnectionMatch[] = [];
+
+    // Handlers can be added or cleared while a connection is decided, so the connection is matched against a copy.
+    for (const handler of this.connectionHandlers.toReversed()) {
+      const holder = holders.find((holder) => holder === handler.interceptor && isHolding(holder));
+
+      if (!holder || !this.matchesConnectionHandlerPath(connectionURL, handler)) {
+        continue;
+      }
+
+      try {
+        const connectionMatch = await handler.implementation.matchesConnection(connection);
+
+        // As with an HTTP handler cleared while matching a request, older handlers are not tried, whatever the match
+        // result.
+        if (!isHolding(holder)) {
+          return UNHANDLED_CONNECTION_HANDLING;
+        }
+
+        if (!connectionMatch.success) {
+          failedConnectionMatches.push({ handler, connectionMatch });
+          continue;
+        }
+
+        const reservation = handler.implementation.reserveConnection();
+
+        if (!reservation.success) {
+          failedConnectionMatches.push({ handler, connectionMatch: reservation });
+          continue;
+        }
+
+        const action = await holder.handleMatchedConnection(handler.implementation, connection);
+
+        if (action === null) {
+          return UNHANDLED_CONNECTION_HANDLING;
+        }
+
+        return { action, acceptingHandler: action === 'accept' ? handler : undefined };
+      } catch (error) {
+        console.error(error);
+
+        // A handler that threw may have already counted the connection, such as toward its `times` limit, so older
+        // handlers are not tried.
+        return UNHANDLED_CONNECTION_HANDLING;
+      }
+    }
+
+    this.markConnectionAsUnhandled(connection, failedConnectionMatches, isHolding);
+
+    return UNHANDLED_CONNECTION_HANDLING;
+  }
+
+  private matchesConnectionHandlerPath(connectionURL: string, handler: WebSocketConnectionHandler) {
+    if (handler.pathRegex === undefined) {
+      return true;
+    }
+
+    const connectionPath = connectionURL.replace(handler.interceptor.baseURLAsString, '');
+    return handler.pathRegex.test(connectionPath);
+  }
+
+  // Handlers that failed only on restrictions record their diffs. The newest handler that failed for any other cause,
+  // such as exceeding its `times` limit or being cleared, is still marked as matched to trigger a times check error, as
+  // in HTTP. Handlers whose interceptor let the connection go after their match record nothing.
+  private markConnectionAsUnhandled(
+    connection: InterceptedWebSocketInterceptorConnection,
+    failedConnectionMatches: FailedWebSocketConnectionMatch[],
+    isHolding: (interceptor: AnyWebSocketInterceptorImplementation) => boolean,
+  ) {
+    for (const { handler, connectionMatch } of failedConnectionMatches) {
+      if (!isHolding(handler.interceptor)) {
+        continue;
+      }
+
+      if (connectionMatch.cause === 'unmatchedRestrictions') {
+        handler.implementation.markConnectionAsUnmatched(connection, { diff: connectionMatch.diff });
+      } else {
+        handler.implementation.markConnectionAsMatched(connection);
+        break;
+      }
+    }
+  }
+
+  // Effects run once the interceptor of the accepting handler lists the client, and do not delay the handshake, so an
+  // effect waiting for a message from its client does not keep the connection from opening. Failures are logged because
+  // no caller awaits them.
+  protected async applyConnectionEffect<Schema extends WebSocketSchema>(
+    handling: WebSocketConnectionHandling,
+    client: WebSocketInterceptorClient<Schema>,
+  ) {
+    try {
+      await handling.acceptingHandler?.implementation.applyConnectionEffect(client);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   // The handlers of all interceptors holding the connection are tried together, from the last created to the first, so
