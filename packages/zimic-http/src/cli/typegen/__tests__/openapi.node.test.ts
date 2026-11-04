@@ -399,6 +399,42 @@ describe('Type generation (OpenAPI)', () => {
     expect(await pathExists(outputFilePath)).toBe(false);
   });
 
+  it('should not load plugins from the working directory', async () => {
+    const workingDirectory = path.join(typegenFixtures.openapi.generatedDirectory, 'workingDirectoryWithPlugin');
+    const pluginFilePath = path.join(workingDirectory, '@theme', 'plugin.js');
+    const inputFilePath = path.join(typegenFixtures.openapi.directory, 'simple.yaml');
+    const outputFilePath = path.join(workingDirectory, 'simple.output.ts');
+
+    await fs.promises.mkdir(path.dirname(pluginFilePath), { recursive: true });
+    await fs.promises.writeFile(pluginFilePath, "throw new Error('The plugin should not be loaded.');");
+    await fs.promises.rm(outputFilePath, { force: true });
+
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'typegen',
+      'openapi',
+      inputFilePath,
+      '--output',
+      outputFilePath,
+      '--service-name',
+      'my-service',
+    ]);
+
+    const originalWorkingDirectory = process.cwd();
+    process.chdir(workingDirectory);
+
+    try {
+      await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+        await runCLI();
+      });
+    } finally {
+      process.chdir(originalWorkingDirectory);
+    }
+
+    expect(await pathExists(outputFilePath)).toBe(true);
+  });
+
   function verifyFilterFileWarnings(console: Console & { warn: MockInstance }) {
     expect(console.warn).toHaveBeenCalledTimes(1);
 

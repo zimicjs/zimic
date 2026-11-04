@@ -58,9 +58,12 @@ export async function loadOpenAPIDocument(filePathOrURL: string) {
 
   // Other rules, such as `struct`, would reject documents that generate valid types, like OpenAPI 3.1 documents using
   // `nullable` or responses with non-standard status codes.
-  const config = await createConfig({
-    rules: { 'operation-operationId-unique': 'error' },
-  });
+  const config = await createConfig(
+    { rules: { 'operation-operationId-unique': 'error' } },
+    // Redocly imports default plugins from the directory of the config, which is the working directory if no path is
+    // provided. Using a path in this package prevents running plugins of the project. The file does not need to exist.
+    { configPath: path.join(__dirname, 'redocly.yaml') },
+  );
 
   const resolver = new BaseResolver(config.resolve);
   const document = await resolver.resolveDocument(null, resolveDocumentLocation(filePathOrURL), true);
