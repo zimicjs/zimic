@@ -68,25 +68,6 @@ This guide will help you get started with `@zimic/fetch`.
 }
 ```
 
-:::info INFO: <span>Using TypeScript 7</span>
-
-TypeScript 7.0 does not yet provide a programmatic API, which `@zimic/http` requires, so you still need TypeScript 6 alongside TypeScript 7.
-
-```json title='package.json'
-{
-  "devDependencies": {
-    // highlight-start
-    "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "@typescript/native": "npm:typescript@^7.0.2"
-    // highlight-end
-  }
-}
-```
-
-With this setup, type-checking uses the native TypeScript 7 compiler, while tools that use the programmatic API fall back to TypeScript 6. See the [official TypeScript 7 announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0) for more information.
-
-:::
-
   </TabItem>
 </Tabs>
 
@@ -144,25 +125,6 @@ With this setup, type-checking uses the native TypeScript 7 compiler, while tool
   }
 }
 ```
-
-:::info INFO: <span>Using TypeScript 7</span>
-
-TypeScript 7.0 does not yet provide a programmatic API, which `@zimic/http` requires, so you still need TypeScript 6 alongside TypeScript 7.
-
-```json title='package.json'
-{
-  "devDependencies": {
-    // highlight-start
-    "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "@typescript/native": "npm:typescript@^7.0.2"
-    // highlight-end
-  }
-}
-```
-
-With this setup, type-checking uses the native TypeScript 7 compiler, while tools that use the programmatic API fall back to TypeScript 6. See the [official TypeScript 7 announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0) for more information.
-
-:::
 
   </TabItem>
 </Tabs>
