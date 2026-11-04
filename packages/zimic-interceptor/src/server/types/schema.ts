@@ -84,8 +84,7 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
 
   'interceptors/ws/messages/send': {
     event: {
-      clientId?: string;
-      interceptorId?: string;
+      clientId: string;
       data: SerializedWebSocketMessageData;
     };
   };

@@ -38,8 +38,7 @@ const webSocketWorkerResetSchema = z.object({
 }) satisfies z.ZodType<WebSocketWorkerReset>;
 
 const webSocketMessageSendSchema = z.object({
-  clientId: z.string().optional(),
-  interceptorId: z.string().optional(),
+  clientId: z.string(),
   data: z.discriminatedUnion('type', [
     z.object({ type: z.literal('text'), data: z.string() }),
     z.object({ type: z.literal('binary'), data: z.base64() }),
@@ -420,14 +419,9 @@ class WebSocketInterceptorServerRuntime {
 
     const message = parseInterceptorServerRPCData(webSocketMessageSendSchema, rawMessage.data);
 
+    // A worker can send only to its own connections.
     function isTargetConnection(userConnection: UserWebSocketConnection) {
-      const isOwnedByWorker = userConnection.workerSocket === workerSocket;
-      const matchesClient = message.clientId === undefined || userConnection.clientId === message.clientId;
-      const matchesInterceptor =
-        message.interceptorId === undefined ||
-        userConnection.holders.some((holder) => holder.id === message.interceptorId);
-
-      return isOwnedByWorker && matchesClient && matchesInterceptor;
+      return userConnection.workerSocket === workerSocket && userConnection.clientId === message.clientId;
     }
 
     const runtimeMessageData = deserializeWebSocketMessageDataFromTransport(message.data);
@@ -435,6 +429,7 @@ class WebSocketInterceptorServerRuntime {
     for (const [socket, userConnection] of this.activeUserWebSocketConnections) {
       if (isTargetConnection(userConnection)) {
         socket.send(runtimeMessageData);
+        return;
       }
     }
 
@@ -443,6 +438,7 @@ class WebSocketInterceptorServerRuntime {
         userConnection.queuedDeliveries.push((socket) => {
           socket.send(runtimeMessageData);
         });
+        return;
       }
     }
   };

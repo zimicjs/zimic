@@ -932,49 +932,62 @@ describe('Interceptor server', () => {
 
       const baseURL = `ws://${server.hostname}:${server.port}/chat`;
 
-      await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
-        const client = new WebSocketClient<ChatMessage>(baseURL);
-        const otherWorkerClient = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
-          url: `ws://${server!.hostname}:${server!.port}`,
-        });
+      const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+        url: `ws://${server.hostname}:${server.port}`,
+      });
+      const otherWorker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+        url: `ws://${server.hostname}:${server.port}`,
+      });
 
-        try {
-          await client.open();
+      const connectionPromise = createPromiseWithResolvers<{ clientId: string }>();
 
-          await waitFor(() => {
-            expect(interceptor.clients).toHaveLength(1);
-          });
+      worker.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => {
+        connectionPromise.resolve(data);
+        return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
+      });
 
-          const receivedMessages = collectWebSocketClientMessages(client);
+      const client = new WebSocketClient<ChatMessage>(baseURL);
 
-          await otherWorkerClient.start({
+      try {
+        for (const workerClient of [worker, otherWorker]) {
+          await workerClient.start({
             parameters: {
               [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
               [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
             },
             waitForAuthentication: true,
           });
-
-          const otherWorkerMessage = JSON.stringify({ type: 'server', text: 'other worker' } satisfies ChatMessage);
-          otherWorkerClient.send('interceptors/ws/messages/send', {
-            data: { type: 'text', data: otherWorkerMessage },
-          });
-
-          // A reply from the same worker socket guarantees the server already processed the previous send.
-          await otherWorkerClient.request('interceptors/ws/workers/reset', { interceptors: [] });
-
-          const ownerMessage = JSON.stringify({ type: 'server', text: 'owner' } satisfies ChatMessage);
-          interceptor.server.send(ownerMessage);
-
-          await waitFor(() => {
-            expect(receivedMessages).toContain(ownerMessage);
-          });
-          expect(receivedMessages).toEqual([ownerMessage]);
-        } finally {
-          await otherWorkerClient.stop();
-          await client.close();
         }
-      });
+
+        await worker.request('interceptors/ws/workers/reset', {
+          interceptors: [{ id: crypto.randomUUID(), baseURL }],
+        });
+
+        const receivedMessages = collectWebSocketClientMessages(client);
+
+        await client.open();
+        const { clientId } = await connectionPromise;
+
+        const otherWorkerMessage = JSON.stringify({ type: 'server', text: 'other worker' } satisfies ChatMessage);
+        otherWorker.send('interceptors/ws/messages/send', {
+          clientId,
+          data: { type: 'text', data: otherWorkerMessage },
+        });
+
+        // A reply from the same worker socket guarantees the server already processed the previous send.
+        await otherWorker.request('interceptors/ws/workers/reset', { interceptors: [] });
+
+        const ownerMessage = JSON.stringify({ type: 'server', text: 'owner' } satisfies ChatMessage);
+        worker.send('interceptors/ws/messages/send', { clientId, data: { type: 'text', data: ownerMessage } });
+
+        await waitFor(() => {
+          expect(receivedMessages).toEqual([ownerMessage]);
+        });
+      } finally {
+        await client.close();
+        await otherWorker.stop();
+        await worker.stop();
+      }
     });
 
     it('should keep client connections of retained interceptors and close those of removed interceptors when a worker is reset', async () => {
@@ -1156,7 +1169,7 @@ describe('Interceptor server', () => {
         }
       });
 
-      it('should deliver messages only to the targeted interceptor or client', async () => {
+      it('should deliver messages only to the targeted client', async () => {
         server = createInternalInterceptorServer();
         await server.start();
 
@@ -1167,12 +1180,12 @@ describe('Interceptor server', () => {
           url: `ws://${server.hostname}:${server.port}`,
         });
 
+        const connectionPromise = createPromiseWithResolvers<{ clientId: string }>();
         const otherConnectionPromise = createPromiseWithResolvers<{ clientId: string }>();
 
         worker.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => {
-          if (data.url === otherBaseURL) {
-            otherConnectionPromise.resolve(data);
-          }
+          const targetConnectionPromise = data.url === otherBaseURL ? otherConnectionPromise : connectionPromise;
+          targetConnectionPromise.resolve(data);
           return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
         });
 
@@ -1188,12 +1201,10 @@ describe('Interceptor server', () => {
             waitForAuthentication: true,
           });
 
-          const interceptorId = crypto.randomUUID();
-          const otherInterceptorId = crypto.randomUUID();
           await worker.request('interceptors/ws/workers/reset', {
             interceptors: [
-              { id: interceptorId, baseURL },
-              { id: otherInterceptorId, baseURL: otherBaseURL },
+              { id: crypto.randomUUID(), baseURL },
+              { id: crypto.randomUUID(), baseURL: otherBaseURL },
             ],
           });
 
@@ -1207,21 +1218,18 @@ describe('Interceptor server', () => {
           });
 
           await Promise.all([client.open(), otherClient.open()]);
+          const { clientId } = await connectionPromise;
           const { clientId: otherClientId } = await otherConnectionPromise;
 
-          worker.send('interceptors/ws/messages/send', { interceptorId, data: { type: 'text', data: 'first' } });
-          worker.send('interceptors/ws/messages/send', {
-            interceptorId: otherInterceptorId,
-            data: { type: 'text', data: 'second' },
-          });
+          worker.send('interceptors/ws/messages/send', { clientId, data: { type: 'text', data: 'first' } });
           worker.send('interceptors/ws/messages/send', {
             clientId: otherClientId,
-            data: { type: 'text', data: 'third' },
+            data: { type: 'text', data: 'second' },
           });
 
           await waitFor(() => {
             expect(receivedMessages).toEqual(['first']);
-            expect(otherReceivedMessages).toEqual(['second', 'third']);
+            expect(otherReceivedMessages).toEqual(['second']);
           });
         } finally {
           await Promise.all([client.close(), otherClient.close()]);
@@ -1328,10 +1336,12 @@ describe('Interceptor server', () => {
           url: `ws://${server.hostname}:${server.port}`,
         });
 
-        worker.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => ({
-          action: 'accept',
-          acceptedInterceptorIds: data.interceptorIds,
-        }));
+        const connectionPromise = createPromiseWithResolvers<{ clientId: string }>();
+
+        worker.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => {
+          connectionPromise.resolve(data);
+          return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
+        });
 
         const rejectedRequests: Promise<unknown>[] = [];
         const client = new WebSocketClient<ChatMessage>(baseURL);
@@ -1371,8 +1381,10 @@ describe('Interceptor server', () => {
 
             expect(client.readyState).toBe(WebSocketClient.OPEN);
 
+            const { clientId } = await connectionPromise;
+
             const message = JSON.stringify({ type: 'server', text: 'retained' } satisfies ChatMessage);
-            worker.send('interceptors/ws/messages/send', { data: { type: 'text', data: message } });
+            worker.send('interceptors/ws/messages/send', { clientId, data: { type: 'text', data: message } });
 
             await waitFor(() => {
               expect(receivedMessages).toEqual([message]);
@@ -1451,10 +1463,12 @@ describe('Interceptor server', () => {
           messageTimeout: 500,
         });
 
-        worker.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => ({
-          action: 'accept',
-          acceptedInterceptorIds: data.interceptorIds,
-        }));
+        const connectionPromise = createPromiseWithResolvers<{ clientId: string }>();
+
+        worker.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => {
+          connectionPromise.resolve(data);
+          return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
+        });
 
         const client = new WebSocketClient<ChatMessage>(baseURL);
 
@@ -1473,18 +1487,22 @@ describe('Interceptor server', () => {
             });
 
             await client.open();
+            const { clientId } = await connectionPromise;
 
             const receivedMessages = collectWebSocketClientMessages(client);
 
-            worker.send('interceptors/ws/messages/send', { data: { type: 'binary', data: 'not base64!' } });
-            worker.send('interceptors/ws/messages/send', { data: { type: 'unknown', data: 'text' } as never });
+            worker.send('interceptors/ws/messages/send', { clientId, data: { type: 'binary', data: 'not base64!' } });
+            worker.send('interceptors/ws/messages/send', {
+              clientId,
+              data: { type: 'unknown', data: 'text' } as never,
+            });
             worker.send('interceptors/ws/messages/send', {
               clientId: 1 as never,
               data: { type: 'text', data: 'text' },
             });
 
             const validMessage = JSON.stringify({ type: 'server', text: 'valid' } satisfies ChatMessage);
-            worker.send('interceptors/ws/messages/send', { data: { type: 'text', data: validMessage } });
+            worker.send('interceptors/ws/messages/send', { clientId, data: { type: 'text', data: validMessage } });
 
             await waitFor(() => {
               expect(receivedMessages).toEqual([validMessage]);
@@ -1637,10 +1655,12 @@ describe('Interceptor server', () => {
           messageTimeout: 500,
         });
 
-        worker.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => ({
-          action: 'accept',
-          acceptedInterceptorIds: data.interceptorIds,
-        }));
+        const connectionPromise = createPromiseWithResolvers<{ clientId: string }>();
+
+        worker.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => {
+          connectionPromise.resolve(data);
+          return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
+        });
 
         const client = new WebSocketClient<ChatMessage>(baseURL);
 
@@ -1658,13 +1678,14 @@ describe('Interceptor server', () => {
           });
 
           await client.open();
+          const { clientId } = await connectionPromise;
 
           const receivedMessages = collectWebSocketClientMessages(client);
 
           const messages = ['not json {', '', '{"unrelated":[1,2,3]}', 'ação 🚀'];
 
           for (const message of messages) {
-            worker.send('interceptors/ws/messages/send', { data: { type: 'text', data: message } });
+            worker.send('interceptors/ws/messages/send', { clientId, data: { type: 'text', data: message } });
           }
 
           await waitFor(() => {
@@ -1688,9 +1709,11 @@ describe('Interceptor server', () => {
         });
 
         let connectionRequestsCount = 0;
+        const requestedClientIds: string[] = [];
 
         worker.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => {
           connectionRequestsCount++;
+          requestedClientIds.push(data.clientId);
           return connectionRequestsCount === 1
             ? ({ acceptedInterceptorIds: 'all' } as never)
             : { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
@@ -1729,7 +1752,10 @@ describe('Interceptor server', () => {
             await otherClient.open();
 
             const message = JSON.stringify({ type: 'server', text: 'accepted' } satisfies ChatMessage);
-            worker.send('interceptors/ws/messages/send', { data: { type: 'text', data: message } });
+            worker.send('interceptors/ws/messages/send', {
+              clientId: requestedClientIds[1],
+              data: { type: 'text', data: message },
+            });
 
             await waitFor(() => {
               expect(receivedMessages).toEqual([message]);
@@ -1818,7 +1844,10 @@ describe('Interceptor server', () => {
             await otherClient.open();
 
             const message = JSON.stringify({ type: 'server', text: 'accepted' } satisfies ChatMessage);
-            worker.send('interceptors/ws/messages/send', { data: { type: 'text', data: message } });
+            worker.send('interceptors/ws/messages/send', {
+              clientId: requestedClientIds[1],
+              data: { type: 'text', data: message },
+            });
 
             await waitFor(() => {
               expect(receivedMessages).toEqual([message]);
@@ -1865,7 +1894,10 @@ describe('Interceptor server', () => {
               });
 
               const httpWorkerMessage = JSON.stringify({ type: 'server', text: 'http worker' } satisfies ChatMessage);
-              httpWorker.send('interceptors/ws/messages/send', { data: { type: 'text', data: httpWorkerMessage } });
+              httpWorker.send('interceptors/ws/messages/send', {
+                clientId: crypto.randomUUID(),
+                data: { type: 'text', data: httpWorkerMessage },
+              });
 
               rejectedRequests.push(httpWorker.request('interceptors/ws/workers/reset', { interceptors: [] }));
 
@@ -2173,14 +2205,14 @@ describe('Interceptor server', () => {
         const connectionPromise = createPromiseWithResolvers<void>();
         const otherConnectionPromise = createPromiseWithResolvers<void>();
         const connectionReceivedPromise = createPromiseWithResolvers<void>();
-        const otherConnectionReceivedPromise = createPromiseWithResolvers<void>();
+        const otherConnectionReceivedPromise = createPromiseWithResolvers<{ clientId: string }>();
 
         worker.onChannel('event', 'interceptors/ws/clients/connect', async ({ data }) => {
           if (data.url === baseURL) {
             connectionReceivedPromise.resolve();
             await connectionPromise;
           } else {
-            otherConnectionReceivedPromise.resolve();
+            otherConnectionReceivedPromise.resolve(data);
             await otherConnectionPromise;
           }
 
@@ -2230,9 +2262,11 @@ describe('Interceptor server', () => {
           await otherOpenPromise;
           expect(otherClient.readyState).toBe(WebSocketClient.OPEN);
 
+          const { clientId: otherClientId } = await otherConnectionReceivedPromise;
+
           const message = JSON.stringify({ type: 'server', text: 'retained' } satisfies ChatMessage);
           worker.send('interceptors/ws/messages/send', {
-            interceptorId: otherInterceptorId,
+            clientId: otherClientId,
             data: { type: 'text', data: message },
           });
 
@@ -2385,7 +2419,7 @@ describe('Interceptor server', () => {
           url: `ws://${server.hostname}:${server.port}`,
         });
 
-        const connectionReceivedPromise = createPromiseWithResolvers<{ interceptorIds: string[]; clientId: string }>();
+        const connectionReceivedPromise = createPromiseWithResolvers<{ clientId: string }>();
         const messageStartedPromise = createPromiseWithResolvers<void>();
         const messageFinishedPromise = createPromiseWithResolvers<void>();
         const closedClientIds: string[] = [];
@@ -2419,10 +2453,7 @@ describe('Interceptor server', () => {
             });
 
             await client.open();
-            const {
-              interceptorIds: [interceptorId],
-              clientId,
-            } = await connectionReceivedPromise;
+            const { clientId } = await connectionReceivedPromise;
 
             client.send('in-flight');
             await messageStartedPromise;
@@ -2430,11 +2461,7 @@ describe('Interceptor server', () => {
             await client.close();
             await waitFor(() => expect(closedClientIds).toEqual([clientId]));
 
-            worker.send('interceptors/ws/messages/send', {
-              interceptorId,
-              clientId,
-              data: { type: 'text', data: 'late' },
-            });
+            worker.send('interceptors/ws/messages/send', { clientId, data: { type: 'text', data: 'late' } });
             messageFinishedPromise.resolve();
 
             // A reply from the same worker socket guarantees the server already processed the previous send.

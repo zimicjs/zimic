@@ -1,3 +1,4 @@
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { describe, expect, it, vi } from 'vitest';
@@ -701,6 +702,80 @@ export function declareConnectionsWebSocketInterceptorTests(
         });
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      });
+    });
+
+    it('should not deliver server messages sent while a connection is being decided', async () => {
+      const baseURL = getBaseURL();
+
+      const restrictionStartedPromise = createPromiseWithResolvers<void>();
+      const restrictionReleasedPromise = createPromiseWithResolvers<void>();
+
+      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+        await promiseIfRemote(
+          interceptor.connection().with(async () => {
+            restrictionStartedPromise.resolve();
+            await restrictionReleasedPromise;
+            return true;
+          }),
+          interceptor,
+        );
+
+        const client = new WebSocketClient<ChatMessage>(baseURL);
+        const receivedMessages = collectWebSocketClientMessages(client);
+
+        try {
+          const openPromise = client.open();
+          await restrictionStartedPromise;
+
+          interceptor.server.send(JSON.stringify({ type: 'server', text: 'deciding' } satisfies ChatMessage));
+          restrictionReleasedPromise.resolve();
+
+          await openPromise;
+
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(1);
+          });
+
+          // Messages on a socket are delivered in order, so this message being the first one received means that the
+          // message sent during the decision did not reach the client.
+          const acceptedMessage = JSON.stringify({ type: 'server', text: 'accepted' } satisfies ChatMessage);
+          interceptor.server.send(acceptedMessage);
+
+          await waitFor(() => {
+            expect(receivedMessages).toEqual([acceptedMessage]);
+          });
+        } finally {
+          await client.close();
+        }
+      });
+    });
+
+    it('should deliver server messages sent by connection effects', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+        const message = JSON.stringify({ type: 'server', text: 'welcome' } satisfies ChatMessage);
+
+        await promiseIfRemote(
+          interceptor.connection().effect(() => {
+            interceptor.server.send(message);
+          }),
+          interceptor,
+        );
+
+        const client = new WebSocketClient<ChatMessage>(baseURL);
+        const receivedMessages = collectWebSocketClientMessages(client);
+
+        try {
+          await client.open();
+
+          await waitFor(() => {
+            expect(receivedMessages).toEqual([message]);
+          });
+        } finally {
+          await client.close();
+        }
       });
     });
 

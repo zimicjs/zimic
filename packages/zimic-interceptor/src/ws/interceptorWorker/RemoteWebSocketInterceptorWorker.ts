@@ -145,19 +145,19 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     const clientId = this.findClientId(client);
 
     if (clientId) {
-      await this.enqueueSend({ clientId }, data);
+      await this.enqueueSend(clientId, data);
     }
   }
 
+  // Only clients already listed receive the message, as in local mode, so connections still being decided do not.
   async sendToClients<Schema extends WebSocketSchema>(
     interceptor: AnyWebSocketInterceptorImplementation<Schema>,
     data: WebSocketMessageData<Schema>,
   ) {
     const registeredInterceptor = this.findRegisteredInterceptor(interceptor);
+    const clientIds = registeredInterceptor?.clients.keys() ?? [];
 
-    if (registeredInterceptor) {
-      await this.enqueueSend({ interceptorId: registeredInterceptor.id }, data);
-    }
+    await Promise.all(Array.from(clientIds, (clientId) => this.enqueueSend(clientId, data)));
   }
 
   async closeClient<Schema extends WebSocketSchema>(
@@ -179,13 +179,10 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
   }
 
-  private enqueueSend<Schema extends WebSocketSchema>(
-    target: { clientId: string } | { interceptorId: string },
-    data: WebSocketMessageData<Schema>,
-  ) {
+  private enqueueSend<Schema extends WebSocketSchema>(clientId: string, data: WebSocketMessageData<Schema>) {
     return this.enqueueServerEvent(async () => {
       this.webSocketClient.send('interceptors/ws/messages/send', {
-        ...target,
+        clientId,
         data: await serializeWebSocketMessageDataForTransport(data),
       });
     });
