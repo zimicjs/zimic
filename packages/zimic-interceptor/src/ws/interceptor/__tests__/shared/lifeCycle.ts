@@ -436,6 +436,23 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     });
   });
 
+  it('should throw an error when trying to create a connection handler if not running', () => {
+    const interceptor = createInternalWebSocketInterceptor<MessageSchema>(interceptorOptions);
+    expect(interceptor.isRunning).toBe(false);
+
+    expect(() => interceptor.connection()).toThrow(new NotRunningWebSocketInterceptorError());
+  });
+
+  it('should throw an error when trying to create a connection handler while stopping', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+      const stopPromise = interceptor.stop();
+
+      expect(() => interceptor.connection()).toThrow(new NotRunningWebSocketInterceptorError());
+
+      await stopPromise;
+    });
+  });
+
   type DeclaredMessageHandler =
     LocalWebSocketMessageHandler<MessageSchema> | SyncedRemoteWebSocketMessageHandler<MessageSchema>;
 

@@ -4,6 +4,7 @@ import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { describe, expect, it, vi } from 'vitest';
 
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
+import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 import {
@@ -770,6 +771,86 @@ export function declareConnectionsWebSocketInterceptorTests(
           await client.close();
         }
       });
+    });
+
+    it('should not accept connections closed by the client while being decided', async () => {
+      const baseURL = getBaseURL();
+
+      const restrictionStartedPromise = createPromiseWithResolvers<void>();
+      const restrictionReleasedPromise = createPromiseWithResolvers<void>();
+      const effect = vi.fn();
+
+      await usingWebSocketInterceptor<ChatMessage>(
+        { type, baseURL, messageSaving: { enabled: true } },
+        async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor
+              .connection('/decided')
+              .with(async () => {
+                restrictionStartedPromise.resolve();
+                await restrictionReleasedPromise;
+                return true;
+              })
+              .effect(effect),
+            interceptor,
+          );
+
+          const socket = new WebSocket(`${baseURL}/decided`);
+
+          const closeEventPromise = new Promise<CloseEvent>((resolve) => {
+            socket.addEventListener('close', resolve, { once: true });
+          });
+
+          await restrictionStartedPromise;
+
+          socket.close();
+          await closeEventPromise;
+
+          // A remote worker learns about the close through the server, and a later connection reaching the worker means
+          // that the server already processed it.
+          await expectWebSocketConnectionToOpen(baseURL);
+
+          restrictionReleasedPromise.resolve();
+
+          await waitFor(() => {
+            expect(handler.connections).toHaveLength(1);
+            expect(interceptor.clients).toHaveLength(0);
+          });
+
+          expect(effect).not.toHaveBeenCalled();
+        },
+      );
+    });
+
+    it('should not try older connection handlers if the newest one throws while deciding a connection', async () => {
+      const baseURL = getBaseURL();
+      const error = new Error('Restriction failed.');
+
+      await usingWebSocketInterceptor<ChatMessage>(
+        { type, baseURL, messageSaving: { enabled: true } },
+        async (interceptor) => {
+          const olderHandler = await promiseIfRemote(
+            interceptor.connection().respond({ action: 'reject' }),
+            interceptor,
+          );
+
+          await promiseIfRemote(
+            interceptor.connection().with(() => {
+              throw error;
+            }),
+            interceptor,
+          );
+
+          await usingIgnoredConsole(['error'], async (console) => {
+            await expectWebSocketConnectionToOpen(baseURL);
+
+            expect(console.error).toHaveBeenCalledTimes(1);
+            expect(console.error).toHaveBeenCalledWith(error);
+          });
+
+          expect(olderHandler.connections).toHaveLength(0);
+        },
+      );
     });
 
     it('should decide connections with the newest matching connection handler only', async () => {

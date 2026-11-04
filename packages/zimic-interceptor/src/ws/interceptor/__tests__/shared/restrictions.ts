@@ -237,6 +237,9 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
   });
 
   describe('Connections', () => {
+    // No WebSocket counterpart for the "By headers" and "By body" HTTP groups: connection restrictions receive only the
+    // URL and requested subprotocols, because browsers cannot set handshake headers and a handshake has no body.
+
     it('should support intercepting connections having path restrictions', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         await promiseIfRemote(

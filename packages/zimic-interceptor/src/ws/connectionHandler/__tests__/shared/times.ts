@@ -180,6 +180,27 @@ export function declareTimesWebSocketConnectionHandlerTests(
       );
     });
 
+    it('should match less than the minimum number of connections limited in a range', async () => {
+      await usingWebSocketInterceptor<Schema>(
+        { type, baseURL, messageSaving: { enabled: true } },
+        async (interceptor) => {
+          const handler = await interceptor.connection().respond({ action: 'reject' }).times(2, 3);
+
+          await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+            message: 'Expected at least 2 and at most 3 connections, but got 0.',
+            expectedNumberOfMessages: { min: 2, max: 3 },
+          });
+
+          await expectWebSocketConnectionToBeRefused(baseURL);
+
+          await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+            message: 'Expected at least 2 and at most 3 connections, but got 1.',
+            expectedNumberOfMessages: { min: 2, max: 3 },
+          });
+        },
+      );
+    });
+
     it('should not match more than the maximum number of connections limited in a range', async () => {
       await usingWebSocketInterceptor<Schema>(
         { type, baseURL, messageSaving: { enabled: true } },
@@ -192,6 +213,32 @@ export function declareTimesWebSocketConnectionHandlerTests(
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected at least 0 and at most 1 connection, but got 2.',
             expectedNumberOfMessages: { min: 0, max: 1 },
+          });
+        },
+      );
+    });
+
+    it('should match the exact number of connections limited in a unitary range', async () => {
+      await usingWebSocketInterceptor<Schema>(
+        { type, baseURL, messageSaving: { enabled: true } },
+        async (interceptor) => {
+          const handler = await interceptor.connection().respond({ action: 'reject' }).times(1, 1);
+
+          await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+            message: 'Expected exactly 1 connection, but got 0.',
+            expectedNumberOfMessages: { min: 1, max: 1 },
+          });
+
+          await expectWebSocketConnectionToBeRefused(baseURL);
+
+          await handler.checkTimes();
+
+          // The over-limit connection opens because the handler no longer rejects it.
+          await expectWebSocketConnectionToOpen(baseURL);
+
+          await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+            message: 'Expected exactly 1 connection, but got 2.',
+            expectedNumberOfMessages: { min: 1, max: 1 },
           });
         },
       );

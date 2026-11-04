@@ -211,4 +211,7 @@ export function declareRestrictionWebSocketConnectionHandlerTests(
       await handler.checkTimes();
     });
   });
+
+  // No WebSocket counterpart for the "By headers" and "By body" HTTP groups: connection restrictions receive only the URL
+  // and requested subprotocols, because browsers cannot set handshake headers and a handshake has no body.
 }
