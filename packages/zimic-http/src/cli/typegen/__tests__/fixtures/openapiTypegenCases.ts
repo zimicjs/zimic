@@ -172,6 +172,19 @@ const openapiTypegenFixtureCases = {
     },
   ],
 
+  enums: [
+    {
+      input: 'enums.yaml',
+      expectedOutput: 'enums.ts',
+      extraArguments: ['--no-comments'],
+    },
+    {
+      input: 'enums.yaml',
+      expectedOutput: 'enums.comments.ts',
+      extraArguments: [],
+    },
+  ],
+
   specialCharacters: [
     {
       input: 'specialCharacters.yaml',
