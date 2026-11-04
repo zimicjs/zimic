@@ -229,7 +229,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     const handling = await this.handleConnectionWithHandlers(
       { url: connection.url, protocols: connection.protocols },
-      holderCandidates.map((registeredInterceptor) => registeredInterceptor.interceptor),
       (interceptor) => {
         return holderCandidates.some((registeredInterceptor) => {
           return registeredInterceptor.interceptor === interceptor && isHolding(registeredInterceptor);

@@ -178,7 +178,6 @@ abstract class WebSocketInterceptorWorker {
   // it. Interceptors that let the connection go while it is decided no longer hold it, as reported by `isHolding`.
   protected async handleConnectionWithHandlers(
     connection: InterceptedWebSocketInterceptorConnection,
-    holders: AnyWebSocketInterceptorImplementation[],
     isHolding: (interceptor: AnyWebSocketInterceptorImplementation) => boolean,
   ): Promise<WebSocketConnectionHandling> {
     const connectionURLWithoutNonPathParams = excludeNonPathParams(new URL(connection.url));
@@ -193,9 +192,9 @@ abstract class WebSocketInterceptorWorker {
 
     // Handlers can be added or cleared while a connection is decided, so the connection is matched against a copy.
     for (const handler of this.connectionHandlers.toReversed()) {
-      const holder = holders.find((holder) => holder === handler.interceptor && isHolding(holder));
+      const holder = handler.interceptor;
 
-      if (!holder || !this.matchesConnectionHandlerPath(connectionURL, handler)) {
+      if (!isHolding(holder) || !this.matchesConnectionHandlerPath(connectionURL, handler)) {
         continue;
       }
 

@@ -386,7 +386,6 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   ) {
     const handling = await this.handleConnectionWithHandlers(
       { url: connection.url.href, protocols: options.protocols },
-      pendingConnection.holders.map((holder) => holder.interceptor),
       (interceptor) => pendingConnection.holders.some((holder) => holder.interceptor === interceptor),
     );
 
