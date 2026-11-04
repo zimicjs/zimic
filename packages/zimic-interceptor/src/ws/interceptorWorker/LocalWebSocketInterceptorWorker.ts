@@ -71,6 +71,16 @@ const MSW_SOCKET_IO_PATH_REGEX = /^\/socket.io\//;
 
 const SOCKET_IO_PATH = '/socket.io/';
 
+// MSW passes the `protocols` argument of the `WebSocket` constructor as given, so arrays are copied to keep later
+// changes by the caller out of the client.
+function normalizeRequestedProtocols(protocols: string | string[] | undefined) {
+  if (protocols === undefined) {
+    return [];
+  }
+
+  return typeof protocols === 'string' ? [protocols] : [...protocols];
+}
+
 function getMSWBaseURL(baseURL: string) {
   const { origin, pathname } = new URL(baseURL);
   const mswPathname = pathname.replace(MSW_SOCKET_IO_PATH_REGEX, '/');
@@ -206,10 +216,12 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     const link = ws.link(createConnectionURLRegex(interceptor.baseURLAsString));
     const registeredInterceptor: RegisteredWebSocketInterceptor = {
       interceptor,
-      mswHandler: link.addEventListener('connection', ({ client, server }) => {
+      mswHandler: link.addEventListener('connection', ({ client, server, info }) => {
         // MSW types connections by their protocol, but they are `WebSocketClientConnection` instances, which expose
         // their socket.
-        this.routeConnection(client as typeof client & Pick<LocalWebSocketClientConnection, 'socket'>, server);
+        this.routeConnection(client as typeof client & Pick<LocalWebSocketClientConnection, 'socket'>, server, {
+          protocols: normalizeRequestedProtocols(info.protocols),
+        });
       }),
       clients: new Map(),
     };
@@ -291,7 +303,11 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     });
   }
 
-  private routeConnection(connection: LocalWebSocketClientConnection, server: { connect: () => void }) {
+  private routeConnection(
+    connection: LocalWebSocketClientConnection,
+    server: { connect: () => void },
+    options: { protocols: string[] },
+  ) {
     // Every link that received the connection runs this, but the connection must be routed only once.
     if (this.routedConnections.has(connection)) {
       return;
@@ -315,6 +331,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
         // Sending through the holder lookup makes the client stop sending once its interceptor lets the connection go.
         const client = createWebSocketInterceptorClient<WebSocketSchema>({
           url: connection.url.href,
+          protocols: options.protocols,
           send: (data) => {
             this.sendToClient(client, data);
           },

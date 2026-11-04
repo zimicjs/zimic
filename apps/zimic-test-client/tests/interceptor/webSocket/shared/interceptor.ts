@@ -768,6 +768,60 @@ export function declareWebSocketInterceptorTests({
         await closeWebSocketClient(socket);
       }
     });
+
+    it('should support responding based on the subprotocols requested by sockets', async () => {
+      const tokenProtocol = `token.${crypto.randomUUID()}`;
+      const requestedProtocols = ['graphql-transport-ws', tokenProtocol];
+
+      const deleteHandler = await userInterceptor
+        .message()
+        .with({ type: 'user:delete' })
+        .respond((_message, { sender }) => ({
+          type: 'user:delete:success',
+          data: { id: sender.protocols.join(',') },
+        }))
+        .times(1);
+
+      const socket = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL, requestedProtocols);
+
+      try {
+        expect(socket.protocol).toBe('graphql-transport-ws');
+
+        await waitFor(() => {
+          expect(userInterceptor.clients).toHaveLength(userSockets.length + 1);
+        });
+        expect(userInterceptor.clients[userSockets.length].protocols).toEqual(requestedProtocols);
+
+        const message: UserWebSocketMessage<'user:delete'> = {
+          type: 'user:delete',
+          data: { id: crypto.randomUUID() },
+        };
+
+        await expect(sendAndWaitForResponse(socket, message, 'user:delete:success')).resolves.toEqual({
+          type: 'user:delete:success',
+          data: { id: requestedProtocols.join(',') },
+        });
+
+        expect(deleteHandler.messages).toHaveLength(1);
+      } finally {
+        await closeWebSocketClient(socket);
+      }
+    });
+
+    it('should expose no subprotocols for sockets that requested none', async () => {
+      const socket = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
+
+      try {
+        expect(socket.protocol).toBe('');
+
+        await waitFor(() => {
+          expect(userInterceptor.clients).toHaveLength(userSockets.length + 1);
+        });
+        expect(userInterceptor.clients[userSockets.length].protocols).toEqual([]);
+      } finally {
+        await closeWebSocketClient(socket);
+      }
+    });
   });
 
   describe('Connection URLs', () => {

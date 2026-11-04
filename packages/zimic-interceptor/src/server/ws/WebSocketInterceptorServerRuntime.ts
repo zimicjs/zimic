@@ -252,6 +252,7 @@ class WebSocketInterceptorServerRuntime {
           interceptorIds: connection.holders.map((holder) => holder.id),
           clientId,
           url: this.getWebSocketRequestURL(request).href,
+          protocols: this.getWebSocketRequestProtocols(request),
           // Lets the worker tell which clears the server has not processed yet. Those holders let the connection go
           // before holding it, and the server drops them when their reset arrives, before the reply.
           numberOfResets: connectionTarget.worker.numberOfResets,
@@ -454,6 +455,16 @@ class WebSocketInterceptorServerRuntime {
     /* istanbul ignore next -- @preserve
      * Upgrade requests always include a URL in the supported Node runtimes. */
     return new URL(request.url ?? '/', `ws://${request.headers.host}`);
+  }
+
+  // Node joins repeated `Sec-WebSocket-Protocol` headers with commas, so one list covers them in order.
+  private getWebSocketRequestProtocols(request: IncomingMessage) {
+    const protocols = request.headers['sec-websocket-protocol'] ?? '';
+
+    return protocols
+      .split(',')
+      .map((protocol) => protocol.trim())
+      .filter(Boolean);
   }
 
   async stop() {
