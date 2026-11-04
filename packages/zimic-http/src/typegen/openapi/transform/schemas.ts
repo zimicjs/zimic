@@ -198,7 +198,7 @@ function transformProperty(
   segments: string[],
   context: TypeTransformContext,
 ) {
-  const propertyObject = typeof propertySchema === 'object' && !isReference(propertySchema) ? propertySchema : {};
+  const propertyObject = typeof propertySchema === 'object' ? propertySchema : {};
   const hasDefault = propertyObject.default !== undefined;
 
   const isRequired =
@@ -229,8 +229,7 @@ function transformDefinitions(
   context: TypeTransformContext,
 ) {
   const members = Object.entries(definitions).map(([name, definitionSchema]) => {
-    const isReadonly =
-      typeof definitionSchema === 'object' && !isReference(definitionSchema) && !!definitionSchema.readOnly;
+    const isReadonly = typeof definitionSchema === 'object' && definitionSchema.readOnly === true;
 
     return typeMember({
       key: propertyKey(name),

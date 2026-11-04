@@ -1,9 +1,12 @@
 import { JSDocAnnotations } from '../utils/comments';
 
+/** A reference, with the sibling keywords that OpenAPI 3.1 allows next to it. */
 export interface OpenAPIReference {
   $ref: string;
   summary?: string;
   description?: string;
+  default?: unknown;
+  readOnly?: boolean;
 }
 
 export type OpenAPIReferenceable<Value> = OpenAPIReference | Value;
