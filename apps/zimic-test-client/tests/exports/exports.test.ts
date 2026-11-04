@@ -106,6 +106,18 @@ import {
   type WebSocketMessageHandlerStaticRestriction,
   type WebSocketMessageHandlerStaticRestrictionOptions,
   type WebSocketMessageHandlerComputedRestriction,
+  type InterceptedWebSocketInterceptorConnection,
+  type WebSocketConnectionHandler,
+  type LocalWebSocketConnectionHandler,
+  type RemoteWebSocketConnectionHandler,
+  type SyncedRemoteWebSocketConnectionHandler,
+  type PendingRemoteWebSocketConnectionHandler,
+  type WebSocketConnectionHandlerConnectionCallback,
+  type WebSocketConnectionHandlerResponseDeclaration,
+  type WebSocketConnectionHandlerDelayFactory,
+  type WebSocketConnectionHandlerRestriction,
+  type WebSocketConnectionHandlerStaticRestriction,
+  type WebSocketConnectionHandlerComputedRestriction,
   type UnhandledMessageStrategy,
   RunningWebSocketInterceptorError,
   NotRunningWebSocketInterceptorError,
@@ -487,6 +499,19 @@ describe('Exports', () => {
       expectTypeOf<WebSocketMessageHandlerStaticRestriction<never>>().not.toBeAny();
       expectTypeOf<WebSocketMessageHandlerStaticRestrictionOptions>().not.toBeAny();
       expectTypeOf<WebSocketMessageHandlerComputedRestriction<never>>().not.toBeAny();
+
+      expectTypeOf<InterceptedWebSocketInterceptorConnection>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionHandler<never>>().not.toBeAny();
+      expectTypeOf<LocalWebSocketConnectionHandler<never>>().not.toBeAny();
+      expectTypeOf<RemoteWebSocketConnectionHandler<never>>().not.toBeAny();
+      expectTypeOf<SyncedRemoteWebSocketConnectionHandler<never>>().not.toBeAny();
+      expectTypeOf<PendingRemoteWebSocketConnectionHandler<never>>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionHandlerConnectionCallback<never>>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionHandlerResponseDeclaration>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionHandlerDelayFactory>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionHandlerRestriction>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionHandlerStaticRestriction>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionHandlerComputedRestriction>().not.toBeAny();
 
       expectTypeOf<RunningWebSocketInterceptorError>().not.toBeAny();
       expect(typeof RunningWebSocketInterceptorError).toBe('function');

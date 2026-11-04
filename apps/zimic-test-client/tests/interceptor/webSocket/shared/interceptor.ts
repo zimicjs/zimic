@@ -5,6 +5,7 @@ import {
   WebSocketInterceptor,
   WebSocketInterceptorClient,
   WebSocketInterceptorType,
+  WebSocketTimesCheckError,
 } from '@zimic/interceptor/experimental/ws';
 import { waitFor, waitForNot } from '@zimic/utils/time';
 import { closeWebSocketClient } from '@zimic/utils/ws';
@@ -102,12 +103,34 @@ async function readBytes(data: BinaryWebSocketSchema) {
   return Array.from(new Uint8Array(data));
 }
 
+// Close code of connections that closed without a close frame, such as refused connections.
+const ABNORMAL_CLOSURE_CODE = 1006;
+
 export function declareWebSocketInterceptorTests({
   platform,
   type,
   defaultBinaryMessageType,
   openSocket,
+  createSocket,
 }: ClientTestOptionsByWorkerType) {
+  // A refused connection fails without opening, as when a server answers its handshake with an error.
+  async function expectSocketToBeRefused(url: string, protocols?: string | string[]) {
+    const socket = createSocket<UserWebSocketSchema>(url, protocols);
+    const eventTypes: string[] = [];
+
+    for (const eventType of ['open', 'error', 'close'] as const) {
+      socket.addEventListener(eventType, () => eventTypes.push(eventType));
+    }
+
+    const closeEvent = await new Promise<ClientTestWebSocketCloseEvent | undefined>((resolve) => {
+      socket.addEventListener('open', () => resolve(undefined));
+      socket.addEventListener('close', resolve);
+    });
+
+    expect(eventTypes).toEqual(['error', 'close']);
+    expect(closeEvent?.code).toBe(ABNORMAL_CLOSURE_CODE);
+  }
+
   const userInterceptor = createWebSocketInterceptor<UserWebSocketSchema>({
     type,
     baseURL: getUserBaseURL(type),
@@ -241,6 +264,104 @@ export function declareWebSocketInterceptorTests({
         expect(effect).toHaveBeenCalledTimes(sockets.length);
       } finally {
         await Promise.all(sockets.map((socket) => closeWebSocketClient(socket)));
+      }
+    });
+  });
+
+  describe('Connection refusals', () => {
+    it('should refuse connections rejected by a connection handler before they open', async () => {
+      const roomURL = `${userInterceptor.baseURL}/rooms/1`;
+      const effect = vi.fn();
+
+      const handler = await userInterceptor
+        .connection('/rooms/:roomId')
+        .effect(effect)
+        .respond({ action: 'reject' })
+        .times(1);
+
+      await expectSocketToBeRefused(roomURL, 'graphql-transport-ws');
+
+      expect(effect).not.toHaveBeenCalled();
+      expect(userInterceptor.clients.map((client) => client.url)).not.toContain(roomURL);
+      expect(handler.connections).toEqual([{ url: roomURL, protocols: ['graphql-transport-ws'] }]);
+    });
+
+    it.each([
+      {
+        restriction: 'static search params',
+        rejectedQuery: '?token=expired',
+        acceptedQuery: '?token=valid',
+        rejectedProtocols: [],
+        acceptedProtocols: [],
+        declareHandler: () =>
+          userInterceptor
+            .connection()
+            .with({ searchParams: { token: 'expired' } })
+            .respond({ action: 'reject' }),
+      },
+      {
+        restriction: 'computed protocols',
+        rejectedQuery: '',
+        acceptedQuery: '',
+        rejectedProtocols: ['legacy-protocol'],
+        acceptedProtocols: ['graphql-transport-ws'],
+        declareHandler: () =>
+          userInterceptor
+            .connection()
+            .with((connection) => connection.protocols.includes('legacy-protocol'))
+            .respond({ action: 'reject' }),
+      },
+    ])(
+      'should refuse only connections matching the $restriction restriction of a connection handler',
+      async ({ rejectedQuery, acceptedQuery, rejectedProtocols, acceptedProtocols, declareHandler }) => {
+        const rejectedURL = `${userInterceptor.baseURL}/rooms/1${rejectedQuery}`;
+        const acceptedURL = `${userInterceptor.baseURL}/rooms/1${acceptedQuery}`;
+
+        const handler = await declareHandler().times(1);
+
+        await expectSocketToBeRefused(rejectedURL, rejectedProtocols);
+
+        const acceptedSocket = await openSocket<UserWebSocketSchema>(acceptedURL, acceptedProtocols);
+
+        try {
+          await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length + 1));
+          expect(userInterceptor.clients[userSockets.length].url).toBe(acceptedURL);
+          expect(userInterceptor.clients[userSockets.length].protocols).toEqual(acceptedProtocols);
+
+          expect(handler.connections).toEqual([{ url: rejectedURL, protocols: rejectedProtocols }]);
+        } finally {
+          await closeWebSocketClient(acceptedSocket);
+        }
+      },
+    );
+
+    it('should count connection attempts accepted and rejected by limited connection handlers', async () => {
+      const roomURL = `${userInterceptor.baseURL}/rooms/1`;
+
+      const acceptingHandler = await userInterceptor.connection().times(1);
+      const rejectingHandler = await userInterceptor.connection().respond({ action: 'reject' }).times(1);
+
+      await expect(async () => {
+        await rejectingHandler.checkTimes();
+      }).rejects.toThrow(WebSocketTimesCheckError);
+
+      await expectSocketToBeRefused(roomURL);
+
+      await rejectingHandler.checkTimes();
+      await expect(async () => {
+        await acceptingHandler.checkTimes();
+      }).rejects.toThrow(WebSocketTimesCheckError);
+
+      const reconnectedSocket = await openSocket<UserWebSocketSchema>(roomURL);
+
+      try {
+        await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length + 1));
+
+        const expectedConnection = { url: roomURL, protocols: [] };
+        expect(rejectingHandler.connections).toEqual([expectedConnection]);
+        expect(acceptingHandler.connections).toEqual([expectedConnection]);
+      } finally {
+        await closeWebSocketClient(reconnectedSocket);
       }
     });
   });
