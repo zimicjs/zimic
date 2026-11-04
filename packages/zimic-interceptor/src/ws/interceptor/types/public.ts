@@ -36,7 +36,7 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
   /** The base URL used by the interceptor. Running interceptors reject changes to it. */
   baseURL: string;
 
-  /** Configures if intercepted messages are saved and how they are handled. */
+  /** Configures if intercepted messages and connections are saved and how they are handled. */
   messageSaving: WebSocketInterceptorMessageSaving;
 
   /**

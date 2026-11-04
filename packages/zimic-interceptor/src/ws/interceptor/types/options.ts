@@ -57,7 +57,7 @@ export interface SharedWebSocketInterceptorOptions {
    */
   baseURL: string;
 
-  /** Configures if intercepted messages are saved and how they are handled. */
+  /** Configures if intercepted messages and connections are saved and how they are handled. */
   messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
 
   /**
