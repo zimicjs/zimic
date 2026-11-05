@@ -45,6 +45,16 @@ export function createWebSocketInterceptor<Schema extends WebSocketSchema>(
   options: WebSocketInterceptorOptions,
 ): PublicLocalWebSocketInterceptor<Schema> | PublicRemoteWebSocketInterceptor<Schema> {
   assertTypeOf('options.baseURL', options.baseURL, 'string');
+  assertTypeOf('options.messageSaving', options.messageSaving, 'object', { optional: true });
+  assertTypeOf('options.messageSaving.enabled', options.messageSaving?.enabled, 'boolean', { optional: true });
+  assertTypeOf('options.messageSaving.safeLimit', options.messageSaving?.safeLimit, 'number', { optional: true });
+
+  assertTypeOf('options.onUnhandledMessage', options.onUnhandledMessage, ['object', 'function'], { optional: true });
+
+  // Unlike HTTP, unhandled message declarations have no action to validate.
+  if (typeof options.onUnhandledMessage === 'object') {
+    assertTypeOf('options.onUnhandledMessage.log', options.onUnhandledMessage.log, 'boolean', { optional: true });
+  }
 
   const type = options.type;
 
