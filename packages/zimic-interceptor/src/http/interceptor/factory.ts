@@ -1,10 +1,15 @@
 import { HttpSchema } from '@zimic/http';
-import { assertTypeOf } from '@zimic/utils/validation';
+import { assertEnum, assertTypeOf } from '@zimic/utils/validation';
 
 import UnknownHttpInterceptorTypeError from './errors/UnknownHttpInterceptorTypeError';
 import LocalHttpInterceptor from './LocalHttpInterceptor';
 import RemoteHttpInterceptor from './RemoteHttpInterceptor';
-import { HttpInterceptorOptions, LocalHttpInterceptorOptions, RemoteHttpInterceptorOptions } from './types/options';
+import {
+  HttpInterceptorOptions,
+  LocalHttpInterceptorOptions,
+  RemoteHttpInterceptorOptions,
+  UnhandledRequestStrategy,
+} from './types/options';
 import {
   LocalHttpInterceptor as PublicLocalHttpInterceptor,
   RemoteHttpInterceptor as PublicRemoteHttpInterceptor,
@@ -35,6 +40,17 @@ export function createHttpInterceptor<Schema extends HttpSchema>(
   assertTypeOf('options.requestSaving', options.requestSaving, 'object', { optional: true });
   assertTypeOf('options.requestSaving.enabled', options.requestSaving?.enabled, 'boolean', { optional: true });
   assertTypeOf('options.requestSaving.safeLimit', options.requestSaving?.safeLimit, 'number', { optional: true });
+
+  assertTypeOf('options.onUnhandledRequest', options.onUnhandledRequest, ['object', 'function'], { optional: true });
+
+  if (typeof options.onUnhandledRequest === 'object') {
+    const validActions: UnhandledRequestStrategy.Action[] = isRemoteHttpInterceptorOptions(options)
+      ? ['reject']
+      : ['bypass', 'reject'];
+
+    assertEnum('options.onUnhandledRequest.action', options.onUnhandledRequest.action, validActions);
+    assertTypeOf('options.onUnhandledRequest.log', options.onUnhandledRequest.log, 'boolean', { optional: true });
+  }
 
   const type = options.type;
 

@@ -1,7 +1,8 @@
 import { HttpSearchParams, HttpSchema } from '@zimic/http';
 import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
-import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
+import { ValidationError } from '@zimic/utils/validation';
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectBypassedResponse } from '@tests/utils/fetch';
@@ -836,4 +837,110 @@ export function declareUnhandledRequestLoggingHttpInterceptorTests(options: Runt
       },
     );
   });
+
+  const invalidOnUnhandledRequests = [
+    { label: 'null', value: null, expectedType: 'null' },
+    { label: 'a boolean', value: true, expectedType: 'boolean' },
+    { label: 'a number', value: 1, expectedType: 'number' },
+    { label: 'a string', value: 'reject', expectedType: 'string' },
+  ];
+
+  it.each(invalidOnUnhandledRequests)(
+    'should throw an error if provided an unhandled request strategy that is not an object or a function ($label)',
+    async ({ value, expectedType }) => {
+      const handler = vi.fn();
+
+      // @ts-expect-error Forcing an invalid unhandled request strategy type.
+      const invalidOnUnhandledRequest: UnhandledRequestStrategy.Remote = value;
+
+      await expect(async () => {
+        await usingHttpInterceptor(
+          { ...interceptorOptions, type, onUnhandledRequest: invalidOnUnhandledRequest },
+          handler,
+        );
+      }).rejects.toThrow(
+        new ValidationError(`Expected options.onUnhandledRequest to be object or function, but got ${expectedType}.`),
+      );
+
+      expect(handler).not.toHaveBeenCalled();
+    },
+  );
+
+  const validUnhandledRequestActions = type === 'local' ? 'bypass, reject' : 'reject';
+
+  const invalidUnhandledRequestActions = [
+    { label: 'an unknown action', value: 'unknown' },
+    { label: 'undefined', value: undefined },
+  ];
+
+  it.each(invalidUnhandledRequestActions)(
+    'should throw an error if provided an unhandled request action that is not supported ($label)',
+    async ({ value }) => {
+      const handler = vi.fn();
+
+      // @ts-expect-error Forcing an invalid unhandled request action.
+      const invalidAction: UnhandledRequestStrategy.RemoteAction = value;
+
+      await expect(async () => {
+        await usingHttpInterceptor(
+          { ...interceptorOptions, type, onUnhandledRequest: { action: invalidAction } },
+          handler,
+        );
+      }).rejects.toThrow(
+        new ValidationError(
+          `Expected options.onUnhandledRequest.action to be one of ${validUnhandledRequestActions}, but got ${value}.`,
+        ),
+      );
+
+      expect(handler).not.toHaveBeenCalled();
+    },
+  );
+
+  // Remote interceptors cannot bypass unhandled requests, which reach the interceptor server instead of the original
+  // destination.
+  if (type === 'remote') {
+    it('should throw an error if provided a bypass unhandled request action in a remote interceptor', async () => {
+      const handler = vi.fn();
+
+      await expect(async () => {
+        await usingHttpInterceptor(
+          // @ts-expect-error Remote interceptors do not support the bypass action.
+          { ...interceptorOptions, type, onUnhandledRequest: { action: 'bypass' } },
+          handler,
+        );
+      }).rejects.toThrow(
+        new ValidationError('Expected options.onUnhandledRequest.action to be one of reject, but got bypass.'),
+      );
+
+      expect(handler).not.toHaveBeenCalled();
+    });
+  }
+
+  const invalidUnhandledRequestLogs = [
+    { label: 'null', value: null, expectedType: 'null' },
+    { label: 'a number', value: 1, expectedType: 'number' },
+    { label: 'a string', value: 'true', expectedType: 'string' },
+    { label: 'an object', value: {}, expectedType: 'object' },
+  ];
+
+  it.each(invalidUnhandledRequestLogs)(
+    'should throw an error if provided an unhandled request log option that is not a boolean ($label)',
+    async ({ value, expectedType }) => {
+      const handler = vi.fn();
+
+      // @ts-expect-error Forcing an invalid unhandled request log option type.
+      const invalidLog: boolean = value;
+
+      await expect(async () => {
+        await usingHttpInterceptor(
+          { ...interceptorOptions, type, onUnhandledRequest: { action: 'reject', log: invalidLog } },
+          handler,
+        );
+      }).rejects.toThrow(
+        new ValidationError(`Expected options.onUnhandledRequest.log to be boolean, but got ${expectedType}.`),
+      );
+
+      expect(handler).not.toHaveBeenCalled();
+    },
+  );
 }
