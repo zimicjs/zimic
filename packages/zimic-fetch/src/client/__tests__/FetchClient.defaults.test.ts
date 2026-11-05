@@ -1,6 +1,7 @@
 import { HttpSchema } from '@zimic/http';
 import { JSONStringified } from '@zimic/utils/types';
 import { joinURL } from '@zimic/utils/url';
+import { ValidationError } from '@zimic/utils/validation';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -349,6 +350,28 @@ describe('FetchClient > Defaults', () => {
       expect(response.request.signal).toBeInstanceOf(AbortSignal);
     });
   });
+
+  const invalidBaseURLs = [
+    { label: 'undefined', value: undefined, expectedType: 'undefined' },
+    { label: 'null', value: null, expectedType: 'null' },
+    { label: 'a number', value: 5, expectedType: 'number' },
+    { label: 'a boolean', value: true, expectedType: 'boolean' },
+    { label: 'an object', value: {}, expectedType: 'object' },
+    { label: 'an array', value: [], expectedType: 'object' },
+    { label: 'a URL', value: new URL(baseURL), expectedType: 'object' },
+  ];
+
+  it.each(invalidBaseURLs)(
+    'should throw an error if provided a base URL that is not a string ($label)',
+    ({ value, expectedType }) => {
+      // @ts-expect-error Forcing an invalid base URL type.
+      const invalidBaseURL: string = value;
+
+      expect(() => {
+        createFetch({ baseURL: invalidBaseURL });
+      }).toThrow(new ValidationError(`Expected options.baseURL to be string, but got ${expectedType}.`));
+    },
+  );
 
   it('should support changing a fetch client defaults after it was created', async () => {
     type Schema = HttpSchema<{
