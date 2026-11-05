@@ -56,6 +56,15 @@ export function createWebSocketInterceptor<Schema extends WebSocketSchema>(
     assertTypeOf('options.onUnhandledMessage.log', options.onUnhandledMessage.log, 'boolean', { optional: true });
   }
 
+  // Local interceptors do not authenticate, so they ignore the authentication option.
+  if (isRemoteWebSocketInterceptorOptions(options)) {
+    assertTypeOf('options.auth', options.auth, 'object', { optional: true });
+
+    if (options.auth) {
+      assertTypeOf('options.auth.token', options.auth.token, 'string');
+    }
+  }
+
   const type = options.type;
 
   if (isLocalWebSocketInterceptorOptions(options)) {
