@@ -37,18 +37,20 @@ function assertTypeOf<
 >(
   field: string,
   value: Value,
-  expectedType: ExpectedType,
+  expectedTypeOrTypes: ExpectedType | readonly ExpectedType[],
   options?: AssertTypeOfOptions<Nullable, Optional>,
 ): asserts value is AssertedType<Value, ExpectedType, Nullable, Optional> {
+  const expectedTypes = typeof expectedTypeOrTypes === 'string' ? [expectedTypeOrTypes] : expectedTypeOrTypes;
+
   // `typeof null` is 'object', so null gets its own type and is accepted only with the `nullable` option.
   const actualType = value === null ? 'null' : typeof value;
 
   if (
-    actualType !== expectedType &&
+    !expectedTypes.some((expectedType) => expectedType === actualType) &&
     !(options?.nullable && value === null) &&
     !(options?.optional && value === undefined)
   ) {
-    throw new ValidationError(`Expected ${field} to be ${expectedType}, but got ${actualType}.`);
+    throw new ValidationError(`Expected ${field} to be ${expectedTypes.join(' or ')}, but got ${actualType}.`);
   }
 }
 
