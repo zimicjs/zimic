@@ -1,5 +1,6 @@
+import { ValidationError } from '@zimic/utils/validation';
 import { WebSocketSchema } from '@zimic/ws';
-import { beforeEach, expect, it } from 'vitest';
+import { beforeEach, expect, it, vi } from 'vitest';
 
 import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
 import { usingIgnoredConsole } from '@tests/utils/console';
@@ -9,7 +10,7 @@ import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/util
 
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
-import { WebSocketInterceptorPlatform } from '../../types/options';
+import { WebSocketInterceptorAuthOptions, WebSocketInterceptorPlatform } from '../../types/options';
 
 type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
 
@@ -201,4 +202,51 @@ export function declareAuthenticationWebSocketInterceptorTests(
       await interceptor.stop();
     }
   });
+
+  const invalidAuths = [
+    { label: 'null', value: null, expectedType: 'null' },
+    { label: 'a boolean', value: true, expectedType: 'boolean' },
+    { label: 'a number', value: 1, expectedType: 'number' },
+    { label: 'a string', value: 'token', expectedType: 'string' },
+    { label: 'a function', value: () => ({ token: 'token' }), expectedType: 'function' },
+  ];
+
+  it.each(invalidAuths)(
+    'should throw an error if provided an authentication option that is not an object ($label)',
+    async ({ value, expectedType }) => {
+      const handler = vi.fn();
+
+      // @ts-expect-error Forcing an invalid authentication option type.
+      const invalidAuth: WebSocketInterceptorAuthOptions = value;
+
+      await expect(async () => {
+        await usingWebSocketInterceptor({ type: 'remote', baseURL, auth: invalidAuth }, handler);
+      }).rejects.toThrow(new ValidationError(`Expected options.auth to be object, but got ${expectedType}.`));
+
+      expect(handler).not.toHaveBeenCalled();
+    },
+  );
+
+  const invalidTokens = [
+    { label: 'undefined', value: undefined, expectedType: 'undefined' },
+    { label: 'null', value: null, expectedType: 'null' },
+    { label: 'a number', value: 1, expectedType: 'number' },
+    { label: 'an object', value: {}, expectedType: 'object' },
+  ];
+
+  it.each(invalidTokens)(
+    'should throw an error if provided an authentication token that is not a string ($label)',
+    async ({ value, expectedType }) => {
+      const handler = vi.fn();
+
+      // @ts-expect-error Forcing an invalid authentication token type.
+      const invalidToken: string = value;
+
+      await expect(async () => {
+        await usingWebSocketInterceptor({ type: 'remote', baseURL, auth: { token: invalidToken } }, handler);
+      }).rejects.toThrow(new ValidationError(`Expected options.auth.token to be string, but got ${expectedType}.`));
+
+      expect(handler).not.toHaveBeenCalled();
+    },
+  );
 }

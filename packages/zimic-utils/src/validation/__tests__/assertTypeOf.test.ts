@@ -13,7 +13,6 @@ describe('assertTypeOf', () => {
     { value: () => undefined, expectedType: 'function' },
     { value: class Example {}, expectedType: 'function' },
     { value: {}, expectedType: 'object' },
-    { value: null, expectedType: 'object' },
   ];
 
   it.each(validCases)(
@@ -31,11 +30,29 @@ describe('assertTypeOf', () => {
     }).toThrow(new ValidationError('Expected options.baseURL to be string, but got number.'));
   });
 
-  it('should not throw when the value is null and the nullable option is enabled', () => {
+  it.each([{ value: {} }, { value: () => undefined }])(
+    'should not throw when the value matches one of multiple expected types (value: $value)',
+    ({ value }) => {
+      expect(() => {
+        assertTypeOf('field', value, ['object', 'function']);
+      }).not.toThrow();
+    },
+  );
+
+  it('should throw a ValidationError when the value does not match any of multiple expected types', () => {
     expect(() => {
-      assertTypeOf('field', null, 'string', { nullable: true });
-    }).not.toThrow();
+      assertTypeOf('field', 'value', ['object', 'function']);
+    }).toThrow(new ValidationError('Expected field to be object or function, but got string.'));
   });
+
+  it.each<TypeOfResult>(['string', 'object'])(
+    'should not throw when the value is null and the nullable option is enabled (type: %s)',
+    (expectedType) => {
+      expect(() => {
+        assertTypeOf('field', null, expectedType, { nullable: true });
+      }).not.toThrow();
+    },
+  );
 
   it('should not throw when the value is undefined and the optional option is enabled', () => {
     expect(() => {
@@ -43,12 +60,17 @@ describe('assertTypeOf', () => {
     }).not.toThrow();
   });
 
-  it.each([false, undefined])(
-    'should throw when the value is null and the nullable option is disabled or omitted (nullable: %s)',
-    (nullable) => {
+  it.each<{ nullable: false | undefined; expectedType: TypeOfResult }>([
+    { nullable: false, expectedType: 'string' },
+    { nullable: undefined, expectedType: 'string' },
+    { nullable: false, expectedType: 'object' },
+    { nullable: undefined, expectedType: 'object' },
+  ])(
+    'should throw when the value is null and the nullable option is disabled or omitted (nullable: $nullable, type: $expectedType)',
+    ({ nullable, expectedType }) => {
       expect(() => {
-        assertTypeOf('field', null, 'string', { nullable });
-      }).toThrow(new ValidationError('Expected field to be string, but got null.'));
+        assertTypeOf('field', null, expectedType, { nullable });
+      }).toThrow(new ValidationError(`Expected field to be ${expectedType}, but got null.`));
     },
   );
 
@@ -114,6 +136,24 @@ describe('assertTypeOf', () => {
       }
 
       expect(() => test('example')).not.toThrow();
+    });
+
+    it('should remove null from object values when the nullable option is not enabled', () => {
+      function test(value: object | null) {
+        assertTypeOf('field', value, 'object');
+        expectTypeOf(value).toEqualTypeOf<object>();
+      }
+
+      expect(() => test({})).not.toThrow();
+    });
+
+    it('should narrow the value to the union of multiple expected types', () => {
+      function test(value: string | number | null) {
+        assertTypeOf('field', value, ['string', 'number']);
+        expectTypeOf(value).toEqualTypeOf<string | number>();
+      }
+
+      expect(() => test(1)).not.toThrow();
     });
 
     it('should narrow unknown values to the expected type', () => {
