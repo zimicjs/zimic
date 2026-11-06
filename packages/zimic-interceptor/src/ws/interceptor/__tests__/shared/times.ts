@@ -1139,6 +1139,31 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
         });
       });
 
+      it('should distribute connections to a matching handler of another interceptor when the maximum number of connections is reached', async () => {
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (olderInterceptor) => {
+          await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+            const handler = await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
+
+            const olderHandler = await promiseIfRemote(
+              olderInterceptor.connection().respond({ action: 'reject' }).times(1),
+              olderInterceptor,
+            );
+
+            await expectWebSocketConnectionToBeRefused(baseURL);
+
+            expect(olderHandler.connections).toHaveLength(1);
+            expect(handler.connections).toHaveLength(0);
+
+            await expectWebSocketConnectionToOpen(baseURL);
+
+            expect(olderHandler.connections).toHaveLength(1);
+            expect(handler.connections).toHaveLength(1);
+
+            await promiseIfRemote(olderInterceptor.checkTimes(), olderInterceptor);
+          });
+        });
+      });
+
       // Browsers open one connection to a host at a time, so a remote handshake waits for the previous one to be decided
       // and two connections are never matched concurrently. Local connections never reach the network.
       if (!(platform === 'browser' && type === 'remote')) {
@@ -1232,6 +1257,15 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
         });
       });
 
+      // No WebSocket counterpart for "should consider requests unmatched due to missing response declarations in times checks":
+      // a handshake needs no declared response, so a connection handler without one matches and accepts the connection.
+
+      // No WebSocket counterpart for "should consider requests with restrictions unmatched due to missing response declarations in times checks":
+      // a handshake needs no declared response, so a connection handler without one matches and accepts the connection.
+
+      // No WebSocket counterpart for "should consider requests unmatched due to missing response declarations when no requests are expected in times checks":
+      // a handshake needs no declared response, so a connection handler without one matches and accepts the connection.
+
       it('should consider connections unmatched by cleared handlers instead of older handlers in times checks', async () => {
         await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
           await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }).times(0), interceptor);
@@ -1243,6 +1277,36 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           socket.close();
 
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        });
+      });
+
+      it('should not consider connections handled by another interceptor unmatched in times checks', async () => {
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (olderInterceptor) => {
+          const olderHandler = await promiseIfRemote(
+            olderInterceptor.connection().respond({ action: 'accept' }),
+            olderInterceptor,
+          );
+
+          await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+            const handler = await promiseIfRemote(
+              interceptor
+                .connection()
+                .with({ protocols: ['legacy'] })
+                .respond({ action: 'reject' })
+                .times(1),
+              interceptor,
+            );
+
+            await expectWebSocketConnectionToOpen(baseURL);
+
+            expect(handler.connections).toHaveLength(0);
+            expect(olderHandler.connections).toHaveLength(1);
+
+            await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+              message: 'Expected exactly 1 matching connection, but got 0.',
+              expectedNumberOfMatches: 1,
+            });
+          });
         });
       });
     });

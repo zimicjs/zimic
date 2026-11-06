@@ -21,6 +21,7 @@ import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 type MessageSchema = WebSocketSchema<
   { type: 'create'; body: { text: string; priority?: number } } | { type: 'delete'; id: string }
 >;
+type TextSchema = WebSocketSchema<string>;
 type BinarySchema = WebSocketSchema<Blob>;
 
 export function declareRestrictionWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
@@ -33,6 +34,12 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
   });
+
+  // No WebSocket counterpart for "should support intercepting requests having partial headers restrictions": WebSocket
+  // frames have no headers.
+
+  // No WebSocket counterpart for "should support intercepting requests having partial search params restrictions":
+  // WebSocket frames have no URL, which belongs to the connection handshake.
 
   it('should support intercepting messages having static restrictions', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
@@ -65,6 +72,201 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
         client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
         await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'delete', id: '1' }));
+      });
+
+      await promiseIfRemote(interceptor.checkTimes(), interceptor);
+    });
+  });
+
+  it('should support intercepting messages having exact JSON restrictions', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+      const effect = vi.fn();
+
+      await promiseIfRemote(
+        interceptor
+          .message()
+          .with({ type: 'create', body: { text: 'hello' } }, { exact: true })
+          .effect(effect)
+          .times(1),
+        interceptor,
+      );
+
+      await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        client.send(JSON.stringify({ type: 'create', body: { text: 'hello', priority: 1 } }));
+        client.send(JSON.stringify({ type: 'create', body: { text: 'other' } }));
+        client.send(JSON.stringify({ type: 'delete', id: '1' }));
+        client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+        // Messages on a socket are handled in order, so the effect running only for the matching message means that the
+        // unmatched messages did not run it.
+        await waitFor(() => {
+          expect(effect).toHaveBeenCalledTimes(1);
+        });
+        expect(effect).toHaveBeenCalledWith({ type: 'create', body: { text: 'hello' } }, expect.any(Object));
+      });
+
+      await promiseIfRemote(interceptor.checkTimes(), interceptor);
+    });
+  });
+
+  it('should support intercepting messages having non-exact JSON restrictions', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+      const effect = vi.fn();
+
+      await promiseIfRemote(
+        interceptor
+          .message()
+          .with({ type: 'create', body: { text: 'hello' } }, { exact: false })
+          .effect(effect)
+          .times(2),
+        interceptor,
+      );
+
+      await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        client.send(JSON.stringify({ type: 'create', body: { text: 'other' } }));
+        client.send(JSON.stringify({ type: 'delete', id: '1' }));
+        client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+        client.send(JSON.stringify({ type: 'create', body: { text: 'hello', priority: 1 } }));
+
+        // Messages on a socket are handled in order, so the effect running only for the matching messages means that the
+        // unmatched messages did not run it.
+        await waitFor(() => {
+          expect(effect).toHaveBeenCalledTimes(2);
+        });
+        expect(effect).toHaveBeenNthCalledWith(1, { type: 'create', body: { text: 'hello' } }, expect.any(Object));
+        expect(effect).toHaveBeenNthCalledWith(
+          2,
+          { type: 'create', body: { text: 'hello', priority: 1 } },
+          expect.any(Object),
+        );
+      });
+
+      await promiseIfRemote(interceptor.checkTimes(), interceptor);
+    });
+  });
+
+  // No WebSocket counterpart for "should support intercepting requests having exact body form data restrictions":
+  // WebSocket frames carry only text or bytes, with no form data encoding.
+
+  // No WebSocket counterpart for "should support intercepting requests having non-exact body form data restrictions":
+  // WebSocket frames carry only text or bytes, with no form data encoding.
+
+  // No WebSocket counterpart for "should support intercepting requests having exact body search params restrictions":
+  // WebSocket frames carry only text or bytes, with no URL-encoded form encoding.
+
+  // No WebSocket counterpart for "should support intercepting requests having non-exact body search params restrictions":
+  // WebSocket frames carry only text or bytes, with no URL-encoded form encoding.
+
+  it('should support intercepting messages having exact text restrictions', async () => {
+    await usingWebSocketInterceptor<TextSchema>(interceptorOptions, async (interceptor) => {
+      const effect = vi.fn();
+
+      await promiseIfRemote(
+        interceptor.message().with('content', { exact: true }).effect(effect).times(1),
+        interceptor,
+      );
+
+      await usingWebSocketClient<TextSchema>(baseURL, async (client) => {
+        client.send('more-content');
+        client.send('cont');
+        client.send('');
+        client.send('content');
+
+        // Messages on a socket are handled in order, so the effect running only for the matching message means that the
+        // unmatched messages did not run it.
+        await waitFor(() => {
+          expect(effect).toHaveBeenCalledTimes(1);
+        });
+        expect(effect).toHaveBeenCalledWith('content', expect.any(Object));
+      });
+
+      await promiseIfRemote(interceptor.checkTimes(), interceptor);
+    });
+  });
+
+  // Unlike HTTP text bodies, which match if they include the restriction, a text frame has no structure to contain a
+  // part of, so non-exact text restrictions match only the same text.
+  it('should support intercepting messages having non-exact text restrictions', async () => {
+    await usingWebSocketInterceptor<TextSchema>(interceptorOptions, async (interceptor) => {
+      const effect = vi.fn();
+
+      await promiseIfRemote(
+        interceptor.message().with('content', { exact: false }).effect(effect).times(1),
+        interceptor,
+      );
+
+      await usingWebSocketClient<TextSchema>(baseURL, async (client) => {
+        client.send('more-content');
+        client.send('cont');
+        client.send('');
+        client.send('content');
+
+        // Messages on a socket are handled in order, so the effect running only for the matching message means that the
+        // unmatched messages did not run it.
+        await waitFor(() => {
+          expect(effect).toHaveBeenCalledTimes(1);
+        });
+        expect(effect).toHaveBeenCalledWith('content', expect.any(Object));
+      });
+
+      await promiseIfRemote(interceptor.checkTimes(), interceptor);
+    });
+  });
+
+  it('should support intercepting messages having exact blob restrictions', async () => {
+    await usingWebSocketInterceptor<BinarySchema>(interceptorOptions, async (interceptor) => {
+      const effect = vi.fn();
+
+      const binaryBlob = new Blob([createBinaryMessage(1, 2)]);
+
+      await promiseIfRemote(
+        interceptor.message().with(binaryBlob, { exact: true }).effect(effect).times(1),
+        interceptor,
+      );
+
+      await usingWebSocketClient<BinarySchema>(baseURL, async (client) => {
+        client.send(new Blob([new Uint8Array([1, 2, 3])]));
+        client.send(new Blob([createBinaryMessage(3, 4)]));
+        client.send(new Blob([new Uint8Array([1])]));
+        client.send(binaryBlob);
+
+        // Messages on a socket are handled in order, so the effect running only for the matching message means that the
+        // unmatched messages did not run it.
+        await waitFor(() => {
+          expect(effect).toHaveBeenCalledTimes(1);
+        });
+        expect(await readBytes(effect.mock.calls[0][0] as Blob | ArrayBuffer)).toEqual([1, 2]);
+      });
+
+      await promiseIfRemote(interceptor.checkTimes(), interceptor);
+    });
+  });
+
+  // Unlike HTTP blob bodies, which match if they include the restriction, a binary frame is opaque bytes without a
+  // structure to contain a part of, so non-exact binary restrictions match only the same bytes.
+  it('should support intercepting messages having non-exact blob restrictions', async () => {
+    await usingWebSocketInterceptor<BinarySchema>(interceptorOptions, async (interceptor) => {
+      const effect = vi.fn();
+
+      const binaryBlob = new Blob([createBinaryMessage(1, 2)]);
+
+      await promiseIfRemote(
+        interceptor.message().with(binaryBlob, { exact: false }).effect(effect).times(1),
+        interceptor,
+      );
+
+      await usingWebSocketClient<BinarySchema>(baseURL, async (client) => {
+        client.send(new Blob([new Uint8Array([1, 2, 3])]));
+        client.send(new Blob([createBinaryMessage(3, 4)]));
+        client.send(new Blob([new Uint8Array([1])]));
+        client.send(binaryBlob);
+
+        // Messages on a socket are handled in order, so the effect running only for the matching message means that the
+        // unmatched messages did not run it.
+        await waitFor(() => {
+          expect(effect).toHaveBeenCalledTimes(1);
+        });
+        expect(await readBytes(effect.mock.calls[0][0] as Blob | ArrayBuffer)).toEqual([1, 2]);
       });
 
       await promiseIfRemote(interceptor.checkTimes(), interceptor);
@@ -175,30 +377,6 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
     });
   });
 
-  it('should support intercepting binary blob messages having static restrictions', async () => {
-    await usingWebSocketInterceptor<BinarySchema>(interceptorOptions, async (interceptor) => {
-      const effect = vi.fn();
-
-      const binaryBlob = new Blob([createBinaryMessage(1, 2)]);
-
-      await promiseIfRemote(interceptor.message().with(binaryBlob).effect(effect).times(1), interceptor);
-
-      await usingWebSocketClient<BinarySchema>(baseURL, async (client) => {
-        client.send(new Blob([createBinaryMessage(3, 4)]));
-        client.send(binaryBlob);
-
-        // Messages on a socket are handled in order, so the effect running only for the matching message means that the
-        // unmatched message did not run it.
-        await waitFor(() => {
-          expect(effect).toHaveBeenCalledTimes(1);
-        });
-        expect(await readBytes(effect.mock.calls[0][0] as Blob | ArrayBuffer)).toEqual([1, 2]);
-      });
-
-      await promiseIfRemote(interceptor.checkTimes(), interceptor);
-    });
-  });
-
   it('should reset restrictions when cleared', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
       const handler = await promiseIfRemote(
@@ -238,8 +416,10 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
   });
 
   describe('Connections', () => {
-    // No WebSocket counterpart for the "By headers" and "By body" HTTP groups: connection restrictions receive only the
-    // URL and requested subprotocols, because browsers cannot set handshake headers and a handshake has no body.
+    // No WebSocket counterpart for "By headers": connection restrictions receive only the URL and requested subprotocols,
+    // because browsers cannot set handshake headers.
+
+    // No WebSocket counterpart for "By body": a handshake has no body.
 
     it('should support intercepting connections having partial search params restrictions', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
