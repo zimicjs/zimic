@@ -315,12 +315,10 @@ class WebSocketInterceptorServerRuntime {
 
     // A worker that disconnects or lets the connection go before this point has already set its closure, and a client
     // that goes away has already removed the pending connection.
-    const { closure } = connection;
-
-    if (closure) {
+    if (connection.closure) {
       socket.resume();
       this.deliverQueuedUserWebSocketDeliveries(socket, connection);
-      socket.close(closure.code, closure.reason);
+      socket.close(connection.closure.code, connection.closure.reason);
 
       // Some holders may have accepted the connection, so the worker is told to forget the client.
       this.notifyUserWebSocketClose(connection);
