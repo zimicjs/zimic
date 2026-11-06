@@ -371,6 +371,32 @@ export function declareTimesWebSocketConnectionHandlerTests(
         );
       });
     });
+
+    it('should not consider connections unmatched due to being cleared in times checks', async () => {
+      await usingWebSocketInterceptor<Schema>(
+        { type, baseURL, messageSaving: { enabled: true } },
+        async (interceptor) => {
+          const handler = await interceptor.connection().effect(vi.fn());
+
+          await handler.clear();
+
+          const { socket: socketWhileCleared } = await openWebSocketUntilSettled(baseURL);
+          socketWhileCleared.close();
+
+          await handler.times(1);
+
+          await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+            message: 'Expected exactly 1 connection, but got 0.',
+            expectedNumberOfMessages: 1,
+          });
+
+          await expectWebSocketConnectionToOpen(baseURL);
+
+          expect(handler.connections).toHaveLength(1);
+          await handler.checkTimes();
+        },
+      );
+    });
   });
 
   it('should reset the limits on the number of connections when cleared', async () => {

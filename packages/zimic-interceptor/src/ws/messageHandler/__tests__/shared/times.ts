@@ -13,7 +13,7 @@ import {
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
 
-import { WebSocketInterceptorType } from '../../../interceptor/types/options';
+import { UnhandledMessageStrategy, WebSocketInterceptorType } from '../../../interceptor/types/options';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './utils';
 
 export function declareTimesWebSocketMessageHandlerTests(
@@ -621,6 +621,47 @@ export function declareTimesWebSocketMessageHandlerTests(
           },
         );
       });
+    });
+
+    it('should not consider messages unmatched due to being cleared in times checks', async () => {
+      const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+
+      await usingWebSocketInterceptor<Schema>(
+        { type, baseURL, messageSaving: { enabled: true }, onUnhandledMessage },
+        async (interceptor) => {
+          const handler = await interceptor.message().respond({ type: 'delete', id: '1' });
+
+          await handler.clear();
+
+          await usingWebSocketClient<Schema>(baseURL, async (client) => {
+            await waitFor(() => {
+              expect(interceptor.clients).toHaveLength(1);
+            });
+
+            client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+            await waitFor(() => {
+              expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+            });
+
+            await handler.times(1);
+
+            await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+              message: 'Expected exactly 1 message, but got 0.',
+              expectedNumberOfMessages: 1,
+            });
+
+            client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+            await waitFor(() => {
+              expect(handler.messages).toHaveLength(1);
+            });
+
+            expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+            await handler.checkTimes();
+          });
+        },
+      );
     });
   });
 

@@ -1140,6 +1140,12 @@ export function declareTimesHttpRequestHandlerTests(
         expectedNumberOfRequests: 0,
       });
     });
+
+    // No HTTP counterpart for "should not consider messages unmatched due to being cleared in times checks": only
+    // `respond` makes a cleared HTTP handler match again, which resets its count.
+
+    // No HTTP counterpart for "should not consider connections unmatched due to being cleared in times checks": only
+    // `respond` makes a cleared HTTP handler match again, which resets its count.
   });
 
   it('should reset the limits on the number of requests when cleared', async () => {

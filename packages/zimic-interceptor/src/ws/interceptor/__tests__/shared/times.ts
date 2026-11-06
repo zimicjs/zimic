@@ -12,6 +12,7 @@ import {
   expectWebSocketConnectionToBeRefused,
   expectWebSocketConnectionToOpen,
   expectWebSocketTimesCheckError,
+  openWebSocketUntilSettled,
   readBytes,
   usingWebSocketClient,
   waitForWebSocketClientMessage,
@@ -870,6 +871,20 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         expect(newerHandler.connections).toHaveLength(1);
         expect(olderHandler.connections).toHaveLength(1);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      });
+    });
+
+    it('should consider connections unmatched by cleared handlers instead of older handlers in times checks', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }).times(0), interceptor);
+        const handler = await promiseIfRemote(interceptor.connection().times(1), interceptor);
+
+        await promiseIfRemote(handler.clear(), interceptor);
+
+        const { socket } = await openWebSocketUntilSettled(baseURL);
+        socket.close();
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
       });
