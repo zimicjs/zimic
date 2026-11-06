@@ -25,7 +25,7 @@ type MessageSchema = WebSocketSchema<{ type: 'create'; body: { text: string } } 
 type BinarySchema = WebSocketSchema<ArrayBuffer | Blob>;
 
 export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
-  const { type, getBaseURL, getInterceptorOptions } = options;
+  const { platform, type, getBaseURL, getInterceptorOptions } = options;
 
   let baseURL: string;
   let interceptorOptions: WebSocketInterceptorOptions;
@@ -838,6 +838,155 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
   }
 
   describe('Connections', () => {
+    describe('Exact number of connections', () => {
+      it('should intercept an exact number of limited connections', async () => {
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+          await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }).times(1), interceptor);
+
+          await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected exactly 1 connection, but got 0.',
+            expectedNumberOfMatches: 1,
+          });
+
+          await expectWebSocketConnectionToBeRefused(baseURL);
+
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        });
+      });
+
+      it('should intercept less than an exact number of limited connections', async () => {
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+          await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }).times(2), interceptor);
+
+          await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected exactly 2 connections, but got 0.',
+            expectedNumberOfMatches: 2,
+          });
+
+          await expectWebSocketConnectionToBeRefused(baseURL);
+
+          await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected exactly 2 connections, but got 1.',
+            expectedNumberOfMatches: 2,
+          });
+        });
+      });
+
+      it('should not intercept more than an exact number of limited connections', async () => {
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+          await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }).times(1), interceptor);
+
+          await expectWebSocketConnectionToBeRefused(baseURL);
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+          // A connection no handler decides is accepted, so the handler did not reject the over-limit connection.
+          await expectWebSocketConnectionToOpen(baseURL);
+
+          await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected exactly 1 connection, but got 2.',
+            expectedNumberOfMatches: 1,
+          });
+        });
+      });
+    });
+
+    describe('Range number of connections', () => {
+      it('should intercept the minimum number of connections limited in a range', async () => {
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+          await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }).times(0, 3), interceptor);
+
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+          await expectWebSocketConnectionToBeRefused(baseURL);
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+          await expectWebSocketConnectionToBeRefused(baseURL);
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        });
+      });
+
+      it('should intercept less than the minimum number of connections limited in a range', async () => {
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+          await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }).times(2, 3), interceptor);
+
+          await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected at least 2 and at most 3 connections, but got 0.',
+            expectedNumberOfMatches: { min: 2, max: 3 },
+          });
+
+          await expectWebSocketConnectionToBeRefused(baseURL);
+
+          await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected at least 2 and at most 3 connections, but got 1.',
+            expectedNumberOfMatches: { min: 2, max: 3 },
+          });
+        });
+      });
+
+      it('should intercept the maximum number of connections limited in a range', async () => {
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+          await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }).times(2, 3), interceptor);
+
+          await expectWebSocketConnectionToBeRefused(baseURL);
+          await expectWebSocketConnectionToBeRefused(baseURL);
+          await expectWebSocketConnectionToBeRefused(baseURL);
+
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        });
+      });
+
+      it('should not intercept more than the maximum number of connections limited in a range', async () => {
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+          await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }).times(2, 3), interceptor);
+
+          await expectWebSocketConnectionToBeRefused(baseURL);
+          await expectWebSocketConnectionToBeRefused(baseURL);
+          await expectWebSocketConnectionToBeRefused(baseURL);
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+          // A connection no handler decides is accepted, so the handler did not reject the over-limit connection.
+          await expectWebSocketConnectionToOpen(baseURL);
+
+          await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected at least 2 and at most 3 connections, but got 4.',
+            expectedNumberOfMatches: { min: 2, max: 3 },
+          });
+        });
+      });
+
+      it('should not intercept more than a singular maximum number of connections limited in a range', async () => {
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+          await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }).times(0, 1), interceptor);
+
+          await expectWebSocketConnectionToBeRefused(baseURL);
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+          // A connection no handler decides is accepted, so the handler did not reject the over-limit connection.
+          await expectWebSocketConnectionToOpen(baseURL);
+
+          await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected at least 0 and at most 1 connection, but got 2.',
+            expectedNumberOfMatches: { min: 0, max: 1 },
+          });
+        });
+      });
+
+      it('should intercept the exact number of connections limited in a range where the minimum and maximum are equal', async () => {
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+          await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }).times(1, 1), interceptor);
+
+          await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected exactly 1 connection, but got 0.',
+            expectedNumberOfMatches: { min: 1, max: 1 },
+          });
+
+          await expectWebSocketConnectionToBeRefused(baseURL);
+
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        });
+      });
+    });
+
     it('should count accepted and rejected connections in interceptor times checks', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         await promiseIfRemote(interceptor.connection().times(1), interceptor);
@@ -862,35 +1011,239 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
       });
     });
 
-    it('should distribute connections to the next matching handler when the maximum number of connections is reached and no restrictions are used', async () => {
-      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-        const olderHandler = await promiseIfRemote(interceptor.connection().times(1), interceptor);
-        const newerHandler = await promiseIfRemote(
-          interceptor.connection().respond({ action: 'reject' }).times(1),
-          interceptor,
-        );
+    describe('Connection distribution', () => {
+      it('should distribute connections to the next matching handler when the maximum number of connections is reached and no restrictions are used', async () => {
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+          const olderHandler = await promiseIfRemote(interceptor.connection().times(1), interceptor);
+          const newerHandler = await promiseIfRemote(
+            interceptor.connection().respond({ action: 'reject' }).times(1),
+            interceptor,
+          );
 
-        await expectWebSocketConnectionToBeRefused(baseURL);
-        await expectWebSocketConnectionToOpen(baseURL);
+          await expectWebSocketConnectionToBeRefused(baseURL);
+          await expectWebSocketConnectionToOpen(baseURL);
 
-        expect(newerHandler.connections).toHaveLength(1);
-        expect(olderHandler.connections).toHaveLength(1);
+          expect(newerHandler.connections).toHaveLength(1);
+          expect(olderHandler.connections).toHaveLength(1);
 
-        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        });
       });
+
+      it('should distribute connections to the next matching handler when the maximum number of connections is reached and restrictions are used', async () => {
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+          const handlers = [
+            await promiseIfRemote(
+              interceptor
+                .connection()
+                .with({ protocols: ['first'] })
+                .respond({ action: 'reject' })
+                .times(1),
+              interceptor,
+            ),
+            await promiseIfRemote(
+              interceptor
+                .connection()
+                .with({ protocols: ['second'] })
+                .respond({ action: 'reject' })
+                .times(1, 2),
+              interceptor,
+            ),
+            await promiseIfRemote(
+              interceptor
+                .connection()
+                .with({ protocols: ['second'] })
+                .respond({ action: 'reject' })
+                .times(2),
+              interceptor,
+            ),
+          ];
+
+          function expectConnectionCounts(expectedCounts: number[]) {
+            expect(handlers.map((handler) => handler.connections.length)).toEqual(expectedCounts);
+          }
+
+          await expectWebSocketConnectionToBeRefused(baseURL, ['second']);
+          expectConnectionCounts([0, 0, 1]);
+
+          await expectWebSocketTimesCheckError(() => handlers[2].checkTimes(), {
+            message: 'Expected exactly 2 matching connections, but got 1.',
+            expectedNumberOfMatches: 2,
+          });
+
+          await expectWebSocketConnectionToBeRefused(baseURL, ['first']);
+          expectConnectionCounts([1, 0, 1]);
+
+          await handlers[0].checkTimes();
+
+          const { socket } = await openWebSocketUntilSettled(baseURL, ['unknown']);
+          socket.close();
+          expectConnectionCounts([1, 0, 1]);
+
+          const unmatchedConnectionLines = [
+            '',
+            'Connections evaluated by this handler:',
+            '',
+            `  ${color.green('- Expected')}`,
+            `  ${color.red('+ Received')}`,
+            '',
+            `1: ${socket.url}`,
+            '     Protocols:',
+            `       ${color.green('- [ "second" ]')}`,
+            `       ${color.red('+ [ "unknown" ]')}`,
+          ];
+
+          await handlers[0].checkTimes();
+          await expectWebSocketTimesCheckError(() => handlers[1].checkTimes(), {
+            message: [
+              'Expected at least 1 and at most 2 matching connections, but got 0.',
+              ...unmatchedConnectionLines,
+            ].join('\n'),
+            expectedNumberOfMatches: { min: 1, max: 2 },
+          });
+          await expectWebSocketTimesCheckError(() => handlers[2].checkTimes(), {
+            message: ['Expected exactly 2 matching connections, but got 1.', ...unmatchedConnectionLines].join('\n'),
+            expectedNumberOfMatches: 2,
+          });
+
+          await expectWebSocketConnectionToBeRefused(baseURL, ['second']);
+          expectConnectionCounts([1, 0, 2]);
+
+          await handlers[2].checkTimes();
+
+          await expectWebSocketConnectionToBeRefused(baseURL, ['second']);
+          expectConnectionCounts([1, 1, 2]);
+
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+          await expectWebSocketConnectionToBeRefused(baseURL, ['second']);
+          expectConnectionCounts([1, 2, 2]);
+
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
+          // A connection no handler decides is accepted, so no handler rejected the over-limit connection.
+          await expectWebSocketConnectionToOpen(baseURL, ['second']);
+          expectConnectionCounts([1, 2, 2]);
+
+          await handlers[0].checkTimes();
+          await handlers[1].checkTimes();
+          await expectWebSocketTimesCheckError(() => handlers[2].checkTimes(), {
+            message: ['Expected exactly 2 matching connections, but got 3.', ...unmatchedConnectionLines].join('\n'),
+            expectedNumberOfMatches: 2,
+          });
+
+          await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: ['Expected exactly 2 matching connections, but got 3.', ...unmatchedConnectionLines].join('\n'),
+            expectedNumberOfMatches: 2,
+          });
+        });
+      });
+
+      // Browsers open one connection to a host at a time, so a remote handshake waits for the previous one to be decided
+      // and two connections are never matched concurrently. Local connections never reach the network.
+      if (!(platform === 'browser' && type === 'remote')) {
+        it('should distribute concurrent connections to the next matching handler when the maximum number of connections is reached', async () => {
+          const concurrentConnectionCount = 2;
+          const allConnectionsMatchingPromise = createPromiseWithResolvers<void>();
+
+          const restriction = vi.fn(async () => {
+            if (restriction.mock.calls.length === concurrentConnectionCount) {
+              allConnectionsMatchingPromise.resolve();
+            }
+
+            await allConnectionsMatchingPromise;
+            return true;
+          });
+
+          await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+            const fallbackHandler = await promiseIfRemote(
+              interceptor.connection().respond({ action: 'accept' }),
+              interceptor,
+            );
+
+            const limitedHandler = await promiseIfRemote(
+              interceptor.connection().with(restriction).respond({ action: 'reject' }).times(1),
+              interceptor,
+            );
+
+            const attempts = await Promise.all(
+              Array.from({ length: concurrentConnectionCount }, () => openWebSocketUntilSettled(baseURL)),
+            );
+
+            for (const { socket } of attempts) {
+              socket.close();
+            }
+
+            expect(attempts.map(({ eventTypes }) => eventTypes)).toEqual(
+              expect.arrayContaining([['open'], ['error', 'close']]),
+            );
+
+            expect(restriction).toHaveBeenCalledTimes(concurrentConnectionCount);
+            expect(limitedHandler.connections).toHaveLength(1);
+            expect(fallbackHandler.connections).toHaveLength(1);
+
+            await promiseIfRemote(interceptor.checkTimes(), interceptor);
+          });
+        });
+      }
     });
 
-    it('should consider connections unmatched by cleared handlers instead of older handlers in times checks', async () => {
-      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-        await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }).times(0), interceptor);
-        const handler = await promiseIfRemote(interceptor.connection().times(1), interceptor);
+    describe('Unmatched connections', () => {
+      it('should not consider connections unmatched due to restrictions in times checks', async () => {
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor
+              .connection()
+              .with({ protocols: ['legacy'] })
+              .respond({ action: 'reject' })
+              .times(1),
+            interceptor,
+          );
 
-        await promiseIfRemote(handler.clear(), interceptor);
+          expect(handler.connections).toHaveLength(0);
 
-        const { socket } = await openWebSocketUntilSettled(baseURL);
-        socket.close();
+          await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected exactly 1 matching connection, but got 0.',
+            expectedNumberOfMatches: 1,
+          });
 
-        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+          const { socket, eventTypes } = await openWebSocketUntilSettled(baseURL, ['chat']);
+          socket.close();
+
+          expect(eventTypes).toEqual(['open']);
+          expect(handler.connections).toHaveLength(0);
+
+          await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: [
+              'Expected exactly 1 matching connection, but got 0.',
+              '',
+              'Connections evaluated by this handler:',
+              '',
+              `  ${color.green('- Expected')}`,
+              `  ${color.red('+ Received')}`,
+              '',
+              `1: ${socket.url}`,
+              '     Protocols:',
+              `       ${color.green('- [ "legacy" ]')}`,
+              `       ${color.red('+ [ "chat" ]')}`,
+            ].join('\n'),
+            expectedNumberOfMatches: 1,
+          });
+        });
+      });
+
+      it('should consider connections unmatched by cleared handlers instead of older handlers in times checks', async () => {
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+          await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }).times(0), interceptor);
+          const handler = await promiseIfRemote(interceptor.connection().times(1), interceptor);
+
+          await promiseIfRemote(handler.clear(), interceptor);
+
+          const { socket } = await openWebSocketUntilSettled(baseURL);
+          socket.close();
+
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        });
       });
     });
 

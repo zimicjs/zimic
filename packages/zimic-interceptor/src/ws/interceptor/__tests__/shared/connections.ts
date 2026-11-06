@@ -6,7 +6,6 @@ import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { describe, expect, it, vi } from 'vitest';
 
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
-import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 import {
@@ -696,16 +695,6 @@ export function declareConnectionsWebSocketInterceptorTests(
   });
 
   describe('Connection handlers', () => {
-    it('should accept connections accepted by a connection handler', async () => {
-      const baseURL = getBaseURL();
-
-      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
-        await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
-
-        await expectWebSocketConnectionToOpen(baseURL);
-      });
-    });
-
     it('should not deliver server messages sent while a connection is being decided', async () => {
       const baseURL = getBaseURL();
 
@@ -827,27 +816,6 @@ export function declareConnectionsWebSocketInterceptorTests(
           expect(effect).not.toHaveBeenCalled();
         },
       );
-    });
-
-    it('should log an error if a connection is intercepted with a computed response and the handler throws', async () => {
-      const baseURL = getBaseURL();
-      const error = new Error('Response failed.');
-
-      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
-        await promiseIfRemote(
-          interceptor.connection().respond(() => {
-            throw error;
-          }),
-          interceptor,
-        );
-
-        await usingIgnoredConsole(['error'], async (console) => {
-          await expectWebSocketConnectionToOpen(baseURL);
-
-          expect(console.error).toHaveBeenCalledTimes(1);
-          expect(console.error).toHaveBeenCalledWith(error);
-        });
-      });
     });
   });
 }

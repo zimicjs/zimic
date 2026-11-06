@@ -3,12 +3,14 @@ import { waitFor } from '@zimic/utils/time';
 import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import color from 'picocolors';
-import { beforeEach, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 import {
+  expectWebSocketConnectionToBeRefused,
+  expectWebSocketConnectionToOpen,
   expectWebSocketTimesCheckError,
   openWebSocketUntilSettled,
   usingWebSocketClient,
@@ -16,6 +18,8 @@ import {
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
 
+import LocalWebSocketConnectionHandler from '../../../connectionHandler/LocalWebSocketConnectionHandler';
+import RemoteWebSocketConnectionHandler from '../../../connectionHandler/RemoteWebSocketConnectionHandler';
 import LocalWebSocketMessageHandler from '../../../messageHandler/LocalWebSocketMessageHandler';
 import RemoteWebSocketMessageHandler from '../../../messageHandler/RemoteWebSocketMessageHandler';
 import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../types/options';
@@ -31,6 +35,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
   let interceptorOptions: WebSocketInterceptorOptions;
 
   const Handler = type === 'local' ? LocalWebSocketMessageHandler : RemoteWebSocketMessageHandler;
+  const ConnectionHandler = type === 'local' ? LocalWebSocketConnectionHandler : RemoteWebSocketConnectionHandler;
 
   beforeEach(() => {
     baseURL = getBaseURL();
@@ -532,52 +537,6 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     });
   });
 
-  it('should close connections if their only interceptor is cleared while a connection handler decides them', async () => {
-    const restrictionStartedPromise = createPromiseWithResolvers<void>();
-    const restrictionReleasedPromise = createPromiseWithResolvers<void>();
-
-    await usingWebSocketInterceptor<MessageSchema>(
-      { ...interceptorOptions, connectionSaving: { enabled: true } },
-      async (interceptor) => {
-        const effect = vi.fn();
-
-        const handler = await promiseIfRemote(
-          interceptor
-            .connection()
-            .with(async () => {
-              restrictionStartedPromise.resolve();
-              await restrictionReleasedPromise;
-              return true;
-            })
-            .effect(effect)
-            .respond({ action: 'reject' }),
-          interceptor,
-        );
-
-        const attemptPromise = openWebSocketUntilSettled(baseURL);
-        await restrictionStartedPromise;
-
-        await promiseIfRemote(interceptor.clear(), interceptor);
-        restrictionReleasedPromise.resolve();
-
-        // As when cleared while connections open, only remote clients open before closing, and the close event is the
-        // outcome in both modes.
-        const attempt = await attemptPromise;
-
-        const closeEvent =
-          attempt.closeEvent ??
-          (await new Promise<CloseEvent>((resolve) => {
-            attempt.socket.addEventListener('close', resolve, { once: true });
-          }));
-        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
-
-        expect(interceptor.clients).toHaveLength(0);
-        expect(handler.connections).toHaveLength(0);
-        expect(effect).not.toHaveBeenCalled();
-      },
-    );
-  });
-
   it('should not save intercepted messages after cleared while a message is being handled', async () => {
     await usingWebSocketInterceptor<ChatMessage>(
       { ...interceptorOptions, messageSaving: { enabled: true } },
@@ -852,5 +811,308 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         });
       },
     );
+  });
+
+  describe('Connections', () => {
+    it('should ignore all handlers after cleared when intercepting connections', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, connectionSaving: { enabled: true } },
+        async (interceptor) => {
+          const handler = await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }), interceptor);
+          expect(handler.connections).toHaveLength(0);
+
+          await expectWebSocketConnectionToBeRefused(baseURL);
+
+          expect(handler.connections).toHaveLength(1);
+
+          await promiseIfRemote(interceptor.clear(), interceptor);
+
+          await expectWebSocketConnectionToOpen(baseURL);
+
+          expect(handler.connections).toHaveLength(0);
+        },
+      );
+    });
+
+    it('should support creating new handlers after cleared', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, connectionSaving: { enabled: true } },
+        async (interceptor) => {
+          await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
+
+          await promiseIfRemote(interceptor.clear(), interceptor);
+
+          const handler = await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }), interceptor);
+          expect(handler.connections).toHaveLength(0);
+
+          await expectWebSocketConnectionToBeRefused(baseURL);
+
+          expect(handler.connections).toHaveLength(1);
+        },
+      );
+    });
+
+    it('should support reusing previous handlers after cleared', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, connectionSaving: { enabled: true } },
+        async (interceptor) => {
+          const handler = await promiseIfRemote(interceptor.connection(), interceptor);
+
+          await promiseIfRemote(handler.respond({ action: 'accept' }), interceptor);
+
+          await promiseIfRemote(interceptor.clear(), interceptor);
+
+          const otherHandler = await promiseIfRemote(handler.respond({ action: 'reject' }), interceptor);
+          expect(otherHandler).toBeInstanceOf(ConnectionHandler);
+
+          expect(handler.connections).toHaveLength(0);
+
+          await expectWebSocketConnectionToBeRefused(baseURL);
+
+          expect(otherHandler.connections).toHaveLength(1);
+        },
+      );
+    });
+
+    it('should keep connections open for the remaining interceptors if another one is cleared while a connection handler decides them', async () => {
+      const restrictionStartedPromise = createPromiseWithResolvers<void>();
+      const restrictionReleasedPromise = createPromiseWithResolvers<void>();
+
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, connectionSaving: { enabled: true } },
+        async (remainingInterceptor) => {
+          await promiseIfRemote(
+            remainingInterceptor.message().respond({ type: 'server', index: 1 }),
+            remainingInterceptor,
+          );
+
+          // The remaining interceptor is not cleared, so its handler would refuse the connection if it were tried.
+          const remainingHandler = await promiseIfRemote(
+            remainingInterceptor.connection().respond({ action: 'reject' }),
+            remainingInterceptor,
+          );
+
+          await usingWebSocketInterceptor<MessageSchema>(
+            { ...interceptorOptions, connectionSaving: { enabled: true } },
+            async (clearedInterceptor) => {
+              const handler = await promiseIfRemote(
+                clearedInterceptor
+                  .connection()
+                  .with(async () => {
+                    restrictionStartedPromise.resolve();
+                    await restrictionReleasedPromise;
+                    return true;
+                  })
+                  .respond({ action: 'reject' }),
+                clearedInterceptor,
+              );
+
+              const client = new WebSocketClient<MessageSchema>(baseURL);
+
+              try {
+                const openPromise = client.open();
+                await restrictionStartedPromise;
+
+                await promiseIfRemote(clearedInterceptor.clear(), clearedInterceptor);
+                restrictionReleasedPromise.resolve();
+
+                await openPromise;
+
+                await waitFor(() => {
+                  expect(remainingInterceptor.clients).toHaveLength(1);
+                });
+
+                expect(clearedInterceptor.clients).toHaveLength(0);
+                expect(handler.connections).toHaveLength(0);
+                expect(remainingHandler.connections).toHaveLength(0);
+
+                const messagePromise = waitForWebSocketClientMessage(client);
+                client.send(JSON.stringify({ type: 'client', index: 1 }));
+                await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+              } finally {
+                await client.close();
+              }
+            },
+          );
+        },
+      );
+    });
+
+    it('should not save intercepted connections after cleared while a connection is being handled', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, connectionSaving: { enabled: true } },
+        async (interceptor) => {
+          const responseStartedPromise = createPromiseWithResolvers<void>();
+          const responseReleasedPromise = createPromiseWithResolvers<void>();
+
+          const handler = await promiseIfRemote(
+            interceptor.connection().respond(async (request) => {
+              if (request.searchParams.get('value') === 'pending') {
+                responseStartedPromise.resolve();
+                await responseReleasedPromise;
+              }
+              return { action: 'accept' };
+            }),
+            interceptor,
+          );
+
+          await expectWebSocketConnectionToOpen(baseURL);
+
+          const handlerConnections = handler.connections;
+          expect(handlerConnections).toHaveLength(1);
+
+          const pendingAttemptPromise = openWebSocketUntilSettled(`${baseURL}?value=pending`);
+          await responseStartedPromise;
+
+          await promiseIfRemote(interceptor.clear(), interceptor);
+
+          const nextHandler = await promiseIfRemote(
+            interceptor.connection().respond({ action: 'accept' }),
+            interceptor,
+          );
+
+          responseReleasedPromise.resolve();
+
+          const { socket: pendingSocket } = await pendingAttemptPromise;
+          pendingSocket.close();
+
+          await expectWebSocketConnectionToOpen(baseURL);
+
+          expect(nextHandler.connections).toHaveLength(1);
+
+          expect(handler.connections).toBe(handlerConnections);
+          expect(handlerConnections).toEqual([]);
+        },
+      );
+    });
+
+    it.each([{ restrictionResult: true }, { restrictionResult: false }])(
+      'should close connections if their only interceptor is cleared while a connection handler decides them (restriction result: $restrictionResult)',
+      async ({ restrictionResult }) => {
+        const restrictionStartedPromise = createPromiseWithResolvers<void>();
+        const restrictionReleasedPromise = createPromiseWithResolvers<void>();
+
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, connectionSaving: { enabled: true } },
+          async (interceptor) => {
+            const effect = vi.fn();
+
+            const handler = await promiseIfRemote(
+              interceptor
+                .connection()
+                .with(async () => {
+                  restrictionStartedPromise.resolve();
+                  await restrictionReleasedPromise;
+                  return restrictionResult;
+                })
+                .effect(effect)
+                .respond({ action: 'reject' }),
+              interceptor,
+            );
+
+            const attemptPromise = openWebSocketUntilSettled(baseURL);
+            await restrictionStartedPromise;
+
+            await promiseIfRemote(interceptor.clear(), interceptor);
+            restrictionReleasedPromise.resolve();
+
+            // As when cleared while connections open, only remote clients open before closing, and the close event is
+            // the outcome in both modes.
+            const attempt = await attemptPromise;
+
+            const closeEvent =
+              attempt.closeEvent ??
+              (await new Promise<CloseEvent>((resolve) => {
+                attempt.socket.addEventListener('close', resolve, { once: true });
+              }));
+            expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
+
+            expect(interceptor.clients).toHaveLength(0);
+            expect(handler.connections).toHaveLength(0);
+            expect(effect).not.toHaveBeenCalled();
+          },
+        );
+      },
+    );
+
+    it('should not record unmatched connections of handlers cleared while older handlers are matching them', async () => {
+      const olderRestrictionStartedPromise = createPromiseWithResolvers<void>();
+      const olderRestrictionReleasedPromise = createPromiseWithResolvers<void>();
+
+      const olderRestriction = vi.fn(async () => {
+        olderRestrictionStartedPromise.resolve();
+        await olderRestrictionReleasedPromise;
+        return false;
+      });
+
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, connectionSaving: { enabled: true } },
+        async (olderInterceptor) => {
+          const olderHandler = await promiseIfRemote(
+            olderInterceptor.connection().with(olderRestriction).respond({ action: 'reject' }).times(1),
+            olderInterceptor,
+          );
+
+          await usingWebSocketInterceptor<MessageSchema>(
+            { ...interceptorOptions, connectionSaving: { enabled: true } },
+            async (interceptor) => {
+              const handler = await promiseIfRemote(
+                interceptor
+                  .connection()
+                  .with({ protocols: ['legacy'] })
+                  .respond({ action: 'reject' })
+                  .times(1),
+                interceptor,
+              );
+
+              // The newer handler fails to match before the older one starts matching. Redeclaring it with a
+              // restriction and a times limit makes it save any unmatched connection still recorded for it.
+              const attemptPromise = openWebSocketUntilSettled(baseURL);
+              await olderRestrictionStartedPromise;
+
+              await promiseIfRemote(interceptor.clear(), interceptor);
+
+              await promiseIfRemote(
+                handler
+                  .with({ protocols: ['legacy'] })
+                  .respond({ action: 'reject' })
+                  .times(1),
+                interceptor,
+              );
+
+              olderRestrictionReleasedPromise.resolve();
+
+              const { socket, eventTypes } = await attemptPromise;
+              socket.close();
+
+              expect(eventTypes).toEqual(['open']);
+              expect(olderRestriction).toHaveBeenCalledTimes(1);
+
+              await expectWebSocketTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+                message: 'Expected exactly 1 matching connection, but got 0.',
+                expectedNumberOfMatches: 1,
+              });
+
+              await expectWebSocketTimesCheckError(() => promiseIfRemote(olderHandler.checkTimes(), olderHandler), {
+                message: [
+                  'Expected exactly 1 matching connection, but got 0.',
+                  '',
+                  'Connections evaluated by this handler:',
+                  '',
+                  `  ${color.green('- Expected')}`,
+                  `  ${color.red('+ Received')}`,
+                  '',
+                  `1: ${socket.url}`,
+                  '     Computed restriction:',
+                  `       ${color.green('- return true')}`,
+                  `       ${color.red('+ return false')}`,
+                ].join('\n'),
+                expectedNumberOfMatches: 1,
+              });
+            },
+          );
+        },
+      );
+    });
   });
 }

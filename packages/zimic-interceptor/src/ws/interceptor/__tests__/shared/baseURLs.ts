@@ -1538,6 +1538,66 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
       );
     });
 
+    it('should intercept connections with the last started interceptor if the newest handler of an older one does not match', async () => {
+      const olderRestriction = vi.fn(() => false);
+
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, connectionSaving: { enabled: true } },
+        async (olderInterceptor) => {
+          await usingWebSocketInterceptor<MessageSchema>(
+            { ...interceptorOptions, connectionSaving: { enabled: true } },
+            async (interceptor) => {
+              const handler = await promiseIfRemote(
+                interceptor.connection().respond({ action: 'reject' }),
+                interceptor,
+              );
+
+              const olderHandler = await promiseIfRemote(
+                olderInterceptor.connection().with(olderRestriction).respond({ action: 'accept' }),
+                olderInterceptor,
+              );
+
+              await expectWebSocketConnectionToBeRefused(defaultBaseURL);
+
+              expect(olderRestriction).toHaveBeenCalledTimes(1);
+              expect(handler.connections).toHaveLength(1);
+              expect(olderHandler.connections).toHaveLength(0);
+            },
+          );
+        },
+      );
+    });
+
+    it('should intercept connections with an older interceptor if the last started one has no matching handlers', async () => {
+      const restriction = vi.fn(() => false);
+
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, connectionSaving: { enabled: true } },
+        async (olderInterceptor) => {
+          const olderHandler = await promiseIfRemote(
+            olderInterceptor.connection().respond({ action: 'reject' }),
+            olderInterceptor,
+          );
+
+          await usingWebSocketInterceptor<MessageSchema>(
+            { ...interceptorOptions, connectionSaving: { enabled: true } },
+            async (interceptor) => {
+              const handler = await promiseIfRemote(
+                interceptor.connection().with(restriction).respond({ action: 'accept' }),
+                interceptor,
+              );
+
+              await expectWebSocketConnectionToBeRefused(defaultBaseURL);
+
+              expect(restriction).toHaveBeenCalledTimes(1);
+              expect(handler.connections).toHaveLength(0);
+              expect(olderHandler.connections).toHaveLength(1);
+            },
+          );
+        },
+      );
+    });
+
     it('should intercept connections with the last started interceptor if the newest handler of an older one is cleared', async () => {
       await usingWebSocketInterceptor<MessageSchema>(
         { ...interceptorOptions, connectionSaving: { enabled: true } },

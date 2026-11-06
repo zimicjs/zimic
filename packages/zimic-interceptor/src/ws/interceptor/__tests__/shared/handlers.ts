@@ -6,7 +6,12 @@ import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
-import { openWebSocketUntilSettled, usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
+import {
+  expectWebSocketConnectionToOpen,
+  openWebSocketUntilSettled,
+  usingWebSocketClient,
+  waitForWebSocketClientMessage,
+} from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions, verifyUnhandledMessageWarning } from './utils';
@@ -226,6 +231,34 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
         expect(closeEvent?.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
 
         expect(interceptor.clients).toHaveLength(0);
+      });
+    });
+
+    it('should accept connections accepted by a connection handler', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
+
+        await expectWebSocketConnectionToOpen(baseURL);
+      });
+    });
+
+    it('should log an error if a connection is intercepted with a computed response and the handler throws', async () => {
+      const error = new Error('Response failed.');
+
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        await promiseIfRemote(
+          interceptor.connection().respond(() => {
+            throw error;
+          }),
+          interceptor,
+        );
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          await expectWebSocketConnectionToOpen(baseURL);
+
+          expect(console.error).toHaveBeenCalledTimes(1);
+          expect(console.error).toHaveBeenCalledWith(error);
+        });
       });
     });
 
