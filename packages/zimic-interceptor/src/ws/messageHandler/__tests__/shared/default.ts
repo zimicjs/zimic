@@ -36,7 +36,9 @@ export function declareDefaultWebSocketMessageHandlerTests(
     }
   });
 
-  // No WebSocket counterpart for "should provide access to the method and path": WebSocket handlers have neither.
+  // No WebSocket message counterpart for "should provide access to the method and path": message handlers have neither.
+
+  // No WebSocket message counterpart for "should provide access to the path": message handlers have no path.
 
   // Unlike HTTP requests, a message needs no reply, so a handler without a declared response still matches.
   it('should match any message if contains no declared response', async () => {
@@ -180,6 +182,12 @@ export function declareDefaultWebSocketMessageHandlerTests(
 
   // No WebSocket counterparts for creating responses from static or computed declarations, or without a declared
   // response: WebSocket handlers send replies through the interceptor, so the interceptor handler suite covers them.
+
+  // No WebSocket message counterpart for "should decide connections with a $response computed response": a message has
+  // no handshake to accept or reject.
+
+  // No WebSocket message counterpart for "should not decide connections if $condition while computing their response":
+  // a message has no handshake to accept or reject.
 
   it('should keep track of the intercepted messages', async () => {
     await usingWebSocketInterceptor<Schema>(

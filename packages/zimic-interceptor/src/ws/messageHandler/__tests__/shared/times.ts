@@ -113,6 +113,9 @@ export function declareTimesWebSocketMessageHandlerTests(
       );
     });
 
+    // No WebSocket message counterpart for "should match an exact number of limited connections decided by a computed
+    // response ($action)": a message has no handshake to accept or reject.
+
     it('should match less than an exact number of limited messages', async () => {
       await usingWebSocketInterceptor<Schema>(
         { type, baseURL, messageSaving: { enabled: true } },
@@ -366,6 +369,13 @@ export function declareTimesWebSocketMessageHandlerTests(
 
             client.send(JSON.stringify({ type: 'create', body: { text: 'two' } }));
 
+            await waitFor(() =>
+              expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                message: 'Expected exactly 1 message, but got 2.',
+                expectedNumberOfMatches: { min: 1, max: 1 },
+              }),
+            );
+
             const probeResponse = waitForWebSocketClientMessage(client);
 
             client.send(JSON.stringify({ type: 'delete', id: 'unmatched' }));
@@ -504,7 +514,17 @@ export function declareTimesWebSocketMessageHandlerTests(
           },
         );
       });
-      it('should show unmatched JSON messages in times check errors', async () => {
+
+      // No WebSocket message counterpart for "should consider requests unmatched due to headers restrictions in times
+      // check errors": WebSocket frames have no headers.
+
+      // No WebSocket message counterpart for "should consider connections unmatched due to search params restrictions
+      // in times check errors": WebSocket frames have no URL.
+
+      // No WebSocket message counterpart for "should consider requests unmatched due to search params requests in times
+      // check errors": WebSocket frames have no URL.
+
+      it('should consider messages unmatched due to JSON data messages in times check errors', async () => {
         await usingWebSocketInterceptor<Schema>(
           { type, baseURL, messageSaving: { enabled: true } },
           async (interceptor) => {
@@ -540,7 +560,7 @@ export function declareTimesWebSocketMessageHandlerTests(
         );
       });
 
-      it('should show unmatched exact JSON messages in times check errors', async () => {
+      it('should consider messages unmatched due to exact JSON data messages in times check errors', async () => {
         await usingWebSocketInterceptor<Schema>(
           { type, baseURL, messageSaving: { enabled: true } },
           async (interceptor) => {
@@ -576,7 +596,7 @@ export function declareTimesWebSocketMessageHandlerTests(
         );
       });
 
-      it('should show unmatched array buffer messages in times check errors', async () => {
+      it('should consider messages unmatched due to array buffer data messages in times check errors', async () => {
         await usingWebSocketInterceptor<WebSocketSchema<ArrayBuffer>>(
           { type, baseURL, messageSaving: { enabled: true } },
           async (interceptor) => {
@@ -612,7 +632,13 @@ export function declareTimesWebSocketMessageHandlerTests(
         );
       });
 
-      it('should show unmatched blob messages in times check errors', async () => {
+      // No WebSocket message counterpart for "should consider requests unmatched due to search params matched requests
+      // in times check errors": WebSocket frames carry only text or binary data.
+
+      // No WebSocket message counterpart for "should consider requests unmatched due to form data matched requests in
+      // times check errors": WebSocket frames carry only text or binary data.
+
+      it('should consider messages unmatched due to blob data messages in times check errors', async () => {
         await usingWebSocketInterceptor<WebSocketSchema<Blob>>(
           { type, baseURL, messageSaving: { enabled: true } },
           async (interceptor) => {
@@ -651,7 +677,39 @@ export function declareTimesWebSocketMessageHandlerTests(
         );
       });
 
-      it('should show unmatched typed array messages in times check errors', async () => {
+      it('should consider messages unmatched due to plain-text matched messages in times check errors', async () => {
+        await usingWebSocketInterceptor<WebSocketSchema<string>>(
+          { type, baseURL, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const handler = await interceptor.message().with('example').respond('response').times(1);
+
+            await usingWebSocketClient<WebSocketSchema<string>>(baseURL, async (client) => {
+              client.send('text');
+
+              await waitFor(() =>
+                expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                  message: [
+                    'Expected exactly 1 matching message, but got 0.',
+                    '',
+                    'Messages evaluated by this handler:',
+                    '',
+                    `  ${color.green('- Expected')}`,
+                    `  ${color.red('+ Received')}`,
+                    '',
+                    '1: text',
+                    '     Data:',
+                    `       ${color.green('- example')}`,
+                    `       ${color.red('+ text')}`,
+                  ].join('\n'),
+                  expectedNumberOfMatches: 1,
+                }),
+              );
+            });
+          },
+        );
+      });
+
+      it('should consider messages unmatched due to typed array data messages in times check errors', async () => {
         await usingWebSocketInterceptor<WebSocketSchema<Uint8Array<ArrayBuffer>>>(
           { type, baseURL, messageSaving: { enabled: true } },
           async (interceptor) => {
@@ -735,12 +793,76 @@ export function declareTimesWebSocketMessageHandlerTests(
         );
       });
 
+      // No WebSocket message counterpart for "should consider connections unmatched due to protocols restrictions in
+      // times check errors": subprotocols are negotiated in the handshake, not per message.
+
+      // No WebSocket message counterpart for "should consider connections unmatched due to search params and protocols
+      // restrictions in times check errors": WebSocket frames have no URL, and subprotocols are negotiated in the
+      // handshake.
+
       // No WebSocket message counterpart for "should consider requests unmatched due to search params and headers
       // restrictions in times check errors": WebSocket frames have no URL or headers.
     });
 
-    // No WebSocket message counterpart for "Response declarations": a WebSocket message needs no reply, so a message
-    // handler without a declared response matches the message and sends nothing.
+    describe('Response declarations', () => {
+      // No WebSocket message counterpart for "should consider requests unmatched due to missing a response declaration
+      // in times check errors": a WebSocket message needs no reply, so a message handler without a declared response
+      // matches the message and sends nothing.
+
+      it('should consider messages with restrictions unmatched only due to restrictions if missing a response declaration in times checks', async () => {
+        await usingWebSocketInterceptor<Schema>(
+          { type, baseURL, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const handler = await interceptor.message().with({ type: 'delete' }).times(1);
+
+            await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+              message: 'Expected exactly 1 matching message, but got 0.',
+              expectedNumberOfMatches: 1,
+            });
+
+            const expectedUnmatchedEntry = [
+              'Messages evaluated by this handler:',
+              '',
+              `  ${color.green('- Expected')}`,
+              `  ${color.red('+ Received')}`,
+              '',
+              '1: { "type": "create", "body": { "text": "hello" } }',
+              '     Data:',
+              `       ${color.green('- { "type": "delete" }')}`,
+              `       ${color.red('+ { "type": "create", "body": { "text": "hello" } }')}`,
+            ];
+
+            await usingWebSocketClient<Schema>(baseURL, async (client) => {
+              client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+              await waitFor(() =>
+                expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                  message: ['Expected exactly 1 matching message, but got 0.', '', ...expectedUnmatchedEntry].join(
+                    '\n',
+                  ),
+                  expectedNumberOfMatches: 1,
+                }),
+              );
+
+              client.send(JSON.stringify({ type: 'delete', id: '1' }));
+
+              await waitFor(() => handler.checkTimes());
+
+              client.send(JSON.stringify({ type: 'delete', id: '2' }));
+
+              await waitFor(() =>
+                expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                  message: ['Expected exactly 1 matching message, but got 2.', '', ...expectedUnmatchedEntry].join(
+                    '\n',
+                  ),
+                  expectedNumberOfMatches: 1,
+                }),
+              );
+            });
+          },
+        );
+      });
+    });
 
     // No WebSocket message counterpart for "should consider requests unmatched due to missing a response declaration
     // when no requests are expected in times checks": a WebSocket message needs no reply, so a message handler without a
