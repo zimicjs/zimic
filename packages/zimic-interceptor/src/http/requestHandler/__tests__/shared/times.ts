@@ -1,4 +1,5 @@
 import { HttpFormData, HttpHeaders, HttpSearchParams } from '@zimic/http';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { joinURL } from '@zimic/utils/url';
 import color from 'picocolors';
 import { expect, it, beforeAll, afterAll, describe, afterEach, beforeEach } from 'vitest';
@@ -56,6 +57,46 @@ export function declareTimesHttpRequestHandlerTests(
   });
 
   describe('Exact number of requests', () => {
+    it('should not match more than an exact number of limited requests when requests are handled concurrently', async () => {
+      await usingHttpInterceptor<Schema>({ type, baseURL, requestSaving: { enabled: true } }, async (interceptor) => {
+        let numberOfEvaluatedRequests = 0;
+        const restrictionsReadyPromise = createPromiseWithResolvers<void>();
+
+        const fallbackHandler = await promiseIfRemote(
+          interceptor.post('/users').respond({ status: 200, body: { success: true } }),
+          interceptor,
+        );
+
+        const limitedHandler = await promiseIfRemote(
+          interceptor
+            .post('/users')
+            .with(async () => {
+              numberOfEvaluatedRequests++;
+
+              if (numberOfEvaluatedRequests === 2) {
+                restrictionsReadyPromise.resolve();
+              }
+
+              await restrictionsReadyPromise;
+              return true;
+            })
+            .respond({ status: 200, body: { success: true } })
+            .times(1),
+          interceptor,
+        );
+
+        await Promise.all([
+          fetch(joinURL(baseURL, '/users'), { method: 'POST' }),
+          fetch(joinURL(baseURL, '/users'), { method: 'POST' }),
+        ]);
+
+        expect(limitedHandler.requests).toHaveLength(1);
+        expect(fallbackHandler.requests).toHaveLength(1);
+
+        await promiseIfRemote(limitedHandler.checkTimes(), limitedHandler);
+      });
+    });
+
     it('should match an exact number of limited requests', async () => {
       const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .respond({ status: 200, body: { success: true } })
@@ -113,7 +154,7 @@ export function declareTimesHttpRequestHandlerTests(
       });
     });
 
-    it('should not match to more than an exact number of limited requests', async () => {
+    it('should not match more than an exact number of limited requests', async () => {
       const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .respond({ status: 200, body: { success: true } })
         .times(1);
@@ -147,6 +188,27 @@ export function declareTimesHttpRequestHandlerTests(
       await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 1 request, but got 3.',
         expectedNumberOfRequests: 1,
+      });
+    });
+
+    it('should match exactly zero requests', async () => {
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
+        .respond({ status: 200, body: { success: true } })
+        .times(0);
+
+      await promiseIfRemote(handler.checkTimes(), handler);
+
+      const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
+      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+        success: false,
+        cause: 'exceededNumberOfRequests',
+      });
+
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        message: 'Expected exactly 0 requests, but got 1.',
+        expectedNumberOfRequests: 0,
       });
     });
   });
@@ -210,7 +272,7 @@ export function declareTimesHttpRequestHandlerTests(
       await promiseIfRemote(handler.checkTimes(), handler);
     });
 
-    it('should not match to more than the maximum number of requests limited in a range', async () => {
+    it('should not match more than the maximum number of requests limited in a range', async () => {
       const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .respond({ status: 200, body: { success: true } })
         .times(2, 3);

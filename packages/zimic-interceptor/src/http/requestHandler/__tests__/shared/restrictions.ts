@@ -53,6 +53,9 @@ export function declareRestrictionHttpRequestHandlerTests(
     }
   });
 
+  // No HTTP counterpart for "By path": HTTP handlers always declare their path, while WebSocket connection handlers may
+  // omit it.
+
   describe('By search params', () => {
     it.each([{ exact: true }])(
       'should match only specific requests if contains a declared response, a static search param restriction, and exact $exact',
@@ -506,6 +509,40 @@ export function declareRestrictionHttpRequestHandlerTests(
     });
   });
 
+  // No HTTP counterpart for "By protocols": HTTP requests negotiate no subprotocols.
+
+  it('should match only specific requests if contains a declared response and asynchronous computed restrictions', async () => {
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
+      .with(async (request) => {
+        await Promise.resolve();
+        return request.searchParams.get('name') === 'User';
+      })
+      .respond({
+        status: 200,
+        body: { success: true },
+      });
+
+    const matchingRequest = new Request(joinURL(baseURL, '?name=User'));
+    const parsedMatchingRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
+
+    expect(await handler.matchesRequest(parsedMatchingRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+      success: true,
+    });
+
+    const mismatchingRequest = new Request(joinURL(baseURL, '?name=Other'));
+    const parsedMismatchingRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(
+      mismatchingRequest,
+    );
+
+    expect(await handler.matchesRequest(parsedMismatchingRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+      success: false,
+      cause: 'unmatchedRestrictions',
+      diff: {
+        computed: { expected: true, received: false },
+      },
+    });
+  });
+
   it('should match only specific requests if contains a declared response and multiple restrictions', async () => {
     const name = 'User';
     const contentLanguage = 'en';
@@ -661,10 +698,4 @@ export function declareRestrictionHttpRequestHandlerTests(
       }
     }
   });
-
-  // No HTTP counterpart for the "By path" WebSocket connection handler group: HTTP handlers are created for a required
-  // path, while WebSocket connection handlers match every connection to their interceptor if they omit it.
-
-  // No HTTP counterpart for the "By protocols" WebSocket connection handler group: HTTP requests negotiate no
-  // subprotocols.
 }

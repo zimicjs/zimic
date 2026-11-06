@@ -832,6 +832,35 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
     });
   });
 
+  it('should support intercepting requests having computed restrictions', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      const handler = await promiseIfRemote(
+        interceptor
+          .get('/users')
+          .with((request) => {
+            expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<RequestSearchParamsSchema>>();
+            return request.searchParams.get('tag') === 'admin';
+          })
+          .respond({ status: 204 }),
+        interceptor,
+      );
+
+      expect(handler.requests).toHaveLength(0);
+
+      const response = await fetch(joinURL(baseURL, '/users?tag=admin'), { method: 'GET' });
+      expect(response.status).toBe(204);
+
+      expect(handler.requests).toHaveLength(1);
+
+      const responsePromise = fetch(joinURL(baseURL, '/users?tag=other'), { method: 'GET' });
+      await expectFetchError(responsePromise);
+
+      expect(handler.requests).toHaveLength(1);
+    });
+  });
+
   // No HTTP counterpart for "should support intercepting messages from a restricted sender": HTTP requests have no
   // sender connection to restrict.
 
@@ -872,8 +901,4 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
 
   // No HTTP counterpart for "should support intercepting connections having partial protocols restrictions": HTTP
   // requests negotiate no subprotocols.
-
-  // No HTTP counterpart for "should support intercepting connections having computed restrictions": computed request
-  // restrictions are covered by the request handler suites, and WebSocket connections have no headers or body to
-  // restrict statically instead.
 }

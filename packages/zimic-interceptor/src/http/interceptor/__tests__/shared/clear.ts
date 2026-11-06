@@ -498,5 +498,6 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
   // left, while an HTTP request being handled still needs a response.
 
   // No HTTP counterpart for "should close connections if their only interceptor is cleared while a connection handler
-  // decides them": HTTP requests open no connection that a cleared interceptor must close.
+  // decides them (restriction result: $restrictionResult)": HTTP requests open no connection that a cleared interceptor
+  // must close.
 }
