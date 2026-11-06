@@ -373,7 +373,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     const registration = this.acceptConnection(pendingConnection);
 
     const acceptingHolder = registration.holders.find((holder) => {
-      return holder.registeredInterceptor.interceptor === handling.acceptingHandler?.interceptor;
+      return holder.registeredInterceptor.interceptor === handling.acceptance?.handler.interceptor;
     });
 
     // Every holder lists the client before the effects run, so an effect that clears another holder makes it let the

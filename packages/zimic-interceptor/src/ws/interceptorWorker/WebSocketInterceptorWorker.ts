@@ -58,8 +58,12 @@ interface FailedWebSocketConnectionMatch {
 
 export interface WebSocketConnectionHandling {
   action: WebSocketConnectionHandlerAction;
-  // The handler that accepted the connection, whose effects run once its interceptor lists the client.
-  acceptingHandler?: WebSocketConnectionHandler;
+  // The handler that accepted the connection, whose effects run with the request it parsed once its interceptor lists
+  // the client.
+  acceptance?: {
+    handler: WebSocketConnectionHandler;
+    request: WebSocketInterceptorConnectionRequest;
+  };
 }
 
 const UNHANDLED_CONNECTION_HANDLING: WebSocketConnectionHandling = Object.freeze({ action: 'accept' });
@@ -229,7 +233,7 @@ abstract class WebSocketInterceptorWorker {
           return UNHANDLED_CONNECTION_HANDLING;
         }
 
-        return { action, acceptingHandler: action === 'accept' ? handler : undefined };
+        return { action, acceptance: action === 'accept' ? { handler, request } : undefined };
       } catch (error) {
         console.error(error);
 
@@ -314,7 +318,7 @@ abstract class WebSocketInterceptorWorker {
     client: WebSocketInterceptorClient<Schema>,
   ) {
     try {
-      await handling.acceptingHandler?.implementation.applyConnectionEffect(client);
+      await handling.acceptance?.handler.implementation.applyConnectionEffect(client, handling.acceptance.request);
     } catch (error) {
       console.error(error);
     }

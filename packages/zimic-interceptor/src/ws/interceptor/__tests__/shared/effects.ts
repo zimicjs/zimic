@@ -1,5 +1,7 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
+import { HttpSearchParams } from '@zimic/utils/http';
 import { waitFor } from '@zimic/utils/time';
+import { joinURL } from '@zimic/utils/url';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -262,11 +264,50 @@ export function declareEffectWebSocketInterceptorTests(options: RuntimeSharedWeb
           await expect(welcomeMessage).resolves.toBe(JSON.stringify({ type: 'delete', id: 'welcome' }));
 
           expect(effect).toHaveBeenCalledTimes(1);
-          expect(effect).toHaveBeenCalledWith(interceptor.clients[0]);
+          expect(effect).toHaveBeenCalledWith(interceptor.clients[0], expect.any(Object));
           expect(clientsAtEffect).toEqual([[interceptor.clients[0]]]);
         } finally {
           await client.close();
         }
+      });
+    });
+
+    it('should run connection effects with the connection request', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const effect = vi.fn();
+
+        await interceptor.connection('/rooms/:roomId').effect(effect);
+
+        const connectionURL = `${joinURL(baseURL, '/rooms/1')}?token=abc`;
+
+        await usingWebSocketClient<MessageSchema>(connectionURL, async () => {
+          await waitFor(() => {
+            expect(effect).toHaveBeenCalledTimes(1);
+          });
+
+          expect(effect).toHaveBeenCalledWith(interceptor.clients[0], {
+            url: connectionURL,
+            protocols: [],
+            searchParams: new HttpSearchParams({ token: 'abc' }),
+            pathParams: { roomId: '1' },
+          });
+        });
+      });
+    });
+
+    it('should run connection effects with empty path params if the handler declares no path', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const effect = vi.fn();
+
+        await interceptor.connection().effect(effect);
+
+        await usingWebSocketClient<MessageSchema>(joinURL(baseURL, '/rooms/1'), async () => {
+          await waitFor(() => {
+            expect(effect).toHaveBeenCalledTimes(1);
+          });
+
+          expect(effect).toHaveBeenCalledWith(interceptor.clients[0], expect.objectContaining({ pathParams: {} }));
+        });
       });
     });
 

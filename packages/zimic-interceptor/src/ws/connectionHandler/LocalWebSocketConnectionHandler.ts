@@ -36,7 +36,7 @@ class LocalWebSocketConnectionHandler<
     return this;
   }
 
-  effect(callback: WebSocketConnectionHandlerConnectionCallback<Schema>) {
+  effect(callback: WebSocketConnectionHandlerConnectionCallback<Schema, Path>) {
     this.implementation.effect(callback);
     return this;
   }

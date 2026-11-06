@@ -22,8 +22,9 @@ export function declareTypeWebSocketConnectionHandlerTests() {
           expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
           return 0;
         })
-        .effect((client) => {
+        .effect((client, request) => {
           expectTypeOf(client).toEqualTypeOf<WebSocketInterceptorClient<Schema>>();
+          expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
         });
 
       expectTypeOf(handler.connections).toEqualTypeOf<readonly WebSocketInterceptorConnectionRequest[]>();
@@ -48,6 +49,12 @@ export function declareTypeWebSocketConnectionHandlerTests() {
         .delay((request) => {
           expectTypeOf(request.pathParams).toEqualTypeOf<{ roomId: string }>();
           return 0;
+        })
+        .effect((_client, request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<{ roomId: string }>();
+
+          // @ts-expect-error The path does not declare this param.
+          expectTypeOf(request.pathParams.userId).toBeString();
         });
 
       expectTypeOf(localInterceptor.connection('/rooms/:roomId').connections).toEqualTypeOf<
@@ -65,6 +72,12 @@ export function declareTypeWebSocketConnectionHandlerTests() {
         .delay((request) => {
           expectTypeOf(request.pathParams).toEqualTypeOf<{ roomId: string }>();
           return 0;
+        })
+        .effect((_client, request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<{ roomId: string }>();
+
+          // @ts-expect-error The path does not declare this param.
+          expectTypeOf(request.pathParams.userId).toBeString();
         });
 
       async function awaitRemoteHandler() {

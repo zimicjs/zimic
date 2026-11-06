@@ -103,6 +103,14 @@ export interface WebSocketInterceptorClient<Schema extends WebSocketSchema> {
   protocols: readonly string[];
 
   /**
+   * The search parameters of the URL used to open the client connection.
+   *
+   * @readonly
+   * @see {@link https://zimic.dev/docs/http/api/http-search-params `HttpSearchParams` API reference}
+   */
+  searchParams: HttpSearchParams;
+
+  /**
    * The messages sent by this client and saved by matching handlers. Requires message saving to be enabled.
    *
    * @readonly

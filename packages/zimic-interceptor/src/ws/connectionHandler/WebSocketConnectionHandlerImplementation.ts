@@ -58,7 +58,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 
   private createResponseDelay?: WebSocketConnectionHandlerDelayFactory<Path>;
 
-  private applyEffect?: WebSocketConnectionHandlerConnectionCallback<Schema>;
+  private applyEffect?: WebSocketConnectionHandlerConnectionCallback<Schema, Path>;
 
   private clearGeneration = {};
 
@@ -101,7 +101,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
     return this;
   }
 
-  effect(callback: WebSocketConnectionHandlerConnectionCallback<Schema>) {
+  effect(callback: WebSocketConnectionHandlerConnectionCallback<Schema, Path>) {
     this.applyEffect = callback;
     this.isCleared = false;
     this.resetMatchedConnections();
@@ -327,8 +327,11 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
     return this.responseDeclaration?.action ?? 'accept';
   }
 
-  async applyConnectionEffect(client: WebSocketInterceptorClient<Schema>) {
-    await this.applyEffect?.(client);
+  async applyConnectionEffect(
+    client: WebSocketInterceptorClient<Schema>,
+    request: WebSocketInterceptorConnectionRequest<Path>,
+  ) {
+    await this.applyEffect?.(client, request);
   }
 
   saveInterceptedConnection(request: WebSocketInterceptorConnectionRequest<Path>) {

@@ -1,5 +1,7 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
+import { HttpSearchParams } from '@zimic/utils/http';
 import { waitFor } from '@zimic/utils/time';
+import { joinURL } from '@zimic/utils/url';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -20,7 +22,7 @@ import {
 } from '@tests/utils/webSocket';
 
 import type { WebSocketInterceptorType } from '../../types/options';
-import type { WebSocketInterceptor } from '../../types/public';
+import type { LocalWebSocketInterceptor, RemoteWebSocketInterceptor, WebSocketInterceptor } from '../../types/public';
 import { MAX_CLOSE_REASON_BYTE_LENGTH } from '../../WebSocketInterceptorHandle';
 
 type ChatMessage = WebSocketSchema<{ type: 'server'; text: string }>;
@@ -100,6 +102,41 @@ export function declareConnectionsWebSocketInterceptorTests(
       );
     },
   );
+
+  it.each([
+    {
+      condition: 'a matching connection handler',
+      declare: (interceptor: LocalWebSocketInterceptor<ChatMessage> | RemoteWebSocketInterceptor<ChatMessage>) => {
+        return promiseIfRemote(interceptor.connection('/rooms/:roomId').times(1), interceptor);
+      },
+    },
+    {
+      condition: 'no matching connection handler',
+      declare: (interceptor: LocalWebSocketInterceptor<ChatMessage> | RemoteWebSocketInterceptor<ChatMessage>) => {
+        return promiseIfRemote(interceptor.connection('/other').times(0), interceptor);
+      },
+    },
+    {
+      condition: 'no connection handlers',
+      declare: () => undefined,
+    },
+  ])('should expose the search params of clients accepted with $condition', async ({ declare }) => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await declare(interceptor);
+
+      const connectionURL = `${joinURL(baseURL, '/rooms/1')}?room=1&tag=a&tag=b`;
+
+      await usingWebSocketClient<ChatMessage>(connectionURL, async () => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        expect(interceptor.clients[0].searchParams).toEqual(new HttpSearchParams({ room: '1', tag: ['a', 'b'] }));
+      });
+    });
+  });
 
   it('should accept connections without handlers after started and after cleared', async () => {
     const baseURL = getBaseURL();

@@ -14,11 +14,15 @@ export interface InternalWebSocketConnectionHandler<Schema extends WebSocketSche
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A side effect declared with `handler.effect()`, called with the client handle of each matched connection that is
- * accepted. Rejected connections have no client, so they run no effects.
+ * A side effect declared with `handler.effect()`, called with the client handle and the handshake request of each
+ * matched connection that is accepted. Rejected connections have no client, so they run no effects.
  */
-export type WebSocketConnectionHandlerConnectionCallback<Schema extends WebSocketSchema> = (
+export type WebSocketConnectionHandlerConnectionCallback<
+  Schema extends WebSocketSchema,
+  Path extends string = string,
+> = (
   client: WebSocketInterceptorClient<Schema>,
+  request: WebSocketInterceptorConnectionRequest<Path>,
 ) => PossiblePromise<void>;
 
 /**
@@ -64,7 +68,7 @@ export interface LocalWebSocketConnectionHandler<Schema extends WebSocketSchema,
     ((minMilliseconds: number, maxMilliseconds: number) => this);
 
   /** Declares a side effect to run when the handler matches a connection that is accepted. */
-  effect: (callback: WebSocketConnectionHandlerConnectionCallback<Schema>) => this;
+  effect: (callback: WebSocketConnectionHandlerConnectionCallback<Schema, Path>) => this;
 
   /**
    * Declares a handshake response for matched connections. Matched connections are accepted if the handler declares no
@@ -133,7 +137,7 @@ export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocket
 
   /** Declares a side effect to run when the handler matches a connection that is accepted. */
   effect: (
-    callback: WebSocketConnectionHandlerConnectionCallback<Schema>,
+    callback: WebSocketConnectionHandlerConnectionCallback<Schema, Path>,
   ) => PendingRemoteWebSocketConnectionHandler<Schema, Path>;
 
   /**

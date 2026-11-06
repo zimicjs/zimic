@@ -271,7 +271,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
 
     const acceptingHolder = holders.find(({ registeredInterceptor }) => {
-      return registeredInterceptor.interceptor === handling.acceptingHandler?.interceptor;
+      return registeredInterceptor.interceptor === handling.acceptance?.handler.interceptor;
     });
 
     // Every holder lists the client before the effects run, so an effect that clears another holder makes it let the
