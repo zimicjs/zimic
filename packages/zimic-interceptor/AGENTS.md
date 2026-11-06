@@ -15,7 +15,7 @@ WebSocket interceptors follow the mental model of HTTP interceptors. Keep these 
 - `times` semantics.
 - Saving controls for intercepted requests and messages.
 - Error classes, messages, and the conditions that throw them.
-- Test organization: `<Class>.<topic>.{node,browser}.test.ts` files that run shared cases from `__tests__/shared/<topic>.ts`, with matching describe blocks and test names.
+- Test organization: `<Class>.<topic>.{node,browser}.test.ts` files that run shared cases from `__tests__/shared/<topic>.ts`, with matching describe blocks and test names. Type tests are the exception, as stated under Testing.
 
 Local and remote interceptors behave identically for routing, fall-through, and unhandled strategies. Diverge only for a platform constraint such as MSW's URL handling, and state it next to the code.
 
@@ -35,7 +35,7 @@ Diverge between protocols only for a protocol reason, such as WebSocket connecti
 - Keep the same concept under the same topic name in both protocols. Map renamed topics explicitly: `requestSaving`/`messageSaving`, `unhandledRequests`/`unhandledMessages`, `bodies`/`messageData`. Give a protocol-only concept its own topic, such as `connections`, `sends`, or `effects`, instead of reusing a counterpart topic name.
 - Manage interceptors, workers, and clients with the `using*` utilities in `tests/utils`. Add the protocol counterpart of a utility when it is missing.
 - Chain handler declarations and await the chain once instead of awaiting a bare handler.
-- Keep type tests compile-only, without executing their callbacks, and place them in `__tests__/shared/types.ts`, which coverage excludes. When `types.ts` holds type tests, put the suite's shared schemas, options, and helpers in `__tests__/shared/utils.ts`.
+- Keep type tests compile-only, without executing their callbacks, and place them inline in one `<Class>.types.node.test.ts`, without a browser file or a `__tests__/shared/types.ts` module. `tsc` checks them once regardless of platform, and coverage excludes test files.
 
 ## API reference
 
