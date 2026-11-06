@@ -35,7 +35,7 @@ Diverge between protocols only for a protocol reason, such as WebSocket connecti
 - Keep the same concept under the same topic name in both protocols. Map renamed topics explicitly: `requestSaving`/`messageSaving`, `unhandledRequests`/`unhandledMessages`, `bodies`/`messageData`. Give a protocol-only concept its own topic, such as `connections`, `sends`, or `effects`, instead of reusing a counterpart topic name.
 - Manage interceptors, workers, and clients with the `using*` utilities in `tests/utils`. Add the protocol counterpart of a utility when it is missing.
 - Chain handler declarations and await the chain once instead of awaiting a bare handler.
-- Keep type tests compile-only, without executing their callbacks, and place them inline in one `<Class>.types.node.test.ts`, without a browser file or a `__tests__/shared/types.ts` module. `tsc` checks them once regardless of platform, and coverage excludes test files.
+- Keep type tests compile-only, without executing their callbacks, and place them inline in one `<Class>.types.node.test.ts`, without a browser file or a shared module of type test cases. `tsc` checks them once regardless of platform, and coverage excludes test files.
 
 ## API reference
 
