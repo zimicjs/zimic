@@ -162,6 +162,50 @@ export function declareTypeWebSocketConnectionHandlerTests() {
     expectTypeOf(declareStaticRestrictions).toBeFunction();
   });
 
+  it('should type connections while chaining static and computed restrictions', () => {
+    function declareChainedRestrictions(
+      localHandler: LocalWebSocketConnectionHandler<Schema>,
+      remoteHandler: PendingRemoteWebSocketConnectionHandler<Schema>,
+    ) {
+      const restrictedLocalHandler = localHandler.with({ protocols: ['chat'] }).with((request) => {
+        expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
+        return true;
+      });
+      expectTypeOf(restrictedLocalHandler).toEqualTypeOf<LocalWebSocketConnectionHandler<Schema>>();
+
+      const restrictedRemoteHandler = remoteHandler
+        .with((request) => {
+          expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
+          return true;
+        })
+        .with({ protocols: ['chat'] });
+      expectTypeOf(restrictedRemoteHandler).toEqualTypeOf<PendingRemoteWebSocketConnectionHandler<Schema>>();
+    }
+
+    expectTypeOf(declareChainedRestrictions).toBeFunction();
+  });
+
+  it('should accept exact options only in static restrictions', () => {
+    function declareExactRestrictions(
+      localHandler: LocalWebSocketConnectionHandler<Schema>,
+      remoteHandler: SyncedRemoteWebSocketConnectionHandler<Schema>,
+    ) {
+      localHandler.with(() => true);
+      remoteHandler.with(() => true);
+
+      // @ts-expect-error Computed restrictions do not accept options.
+      localHandler.with(() => true, { exact: true });
+
+      // @ts-expect-error Computed restrictions do not accept options.
+      remoteHandler.with(() => true, { exact: true });
+
+      // @ts-expect-error Invalid static restriction option.
+      localHandler.with({ protocols: ['chat'], exact: 'true' });
+    }
+
+    expectTypeOf(declareExactRestrictions).toBeFunction();
+  });
+
   it('should accept only accept and reject actions as responses', () => {
     function declareResponses(handler: LocalWebSocketConnectionHandler<Schema>) {
       handler.respond({ action: 'accept' });
@@ -209,6 +253,10 @@ export function declareTypeWebSocketConnectionHandlerTests() {
       async function awaitRemoteHandler() {
         const syncedHandler = await remoteHandler.delay(1, 2);
         expectTypeOf(syncedHandler).toEqualTypeOf<SyncedRemoteWebSocketConnectionHandler<Schema>>();
+
+        const clearedHandler = syncedHandler.clear();
+        expectTypeOf(clearedHandler).toEqualTypeOf<PendingRemoteWebSocketConnectionHandler<Schema>>();
+        expectTypeOf(await clearedHandler).toEqualTypeOf<SyncedRemoteWebSocketConnectionHandler<Schema>>();
       }
 
       expectTypeOf(awaitRemoteHandler).toBeFunction();
