@@ -792,4 +792,18 @@ export function declarePathParamsHttpInterceptorTests(options: RuntimeSharedHttp
 
   // No HTTP counterpart for "should provide empty path params to connection handlers without a declared path": HTTP
   // handlers always declare their path, while WebSocket connection handlers may omit it.
+
+  it('should not include search params in the path params of requests', async () => {
+    await usingHttpInterceptor<{
+      '/users/:userId': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      const handler = await promiseIfRemote(interceptor.get('/users/:userId').respond({ status: 204 }), interceptor);
+
+      const response = await fetch(`${joinURL(baseURL, '/users/1')}?token=value`, { method: 'GET' });
+      expect(response.status).toBe(204);
+
+      expect(handler.requests).toHaveLength(1);
+      expect(handler.requests[0].pathParams).toEqual({ userId: '1' });
+    });
+  });
 }

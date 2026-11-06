@@ -628,7 +628,8 @@ abstract class HttpInterceptorWorker {
     request: Request,
     options?: { baseURL: string; pathRegex: RegExp },
   ): InferPathParams<Path> {
-    const requestPath = request.url.replace(options?.baseURL ?? '', '');
+    const requestURL = excludeNonPathParams(new URL(request.url));
+    const requestPath = requestURL.href.replace(options?.baseURL ?? '', '');
     const paramsMatch = options?.pathRegex.exec(requestPath);
 
     const params: Record<string, string | undefined> = {};
