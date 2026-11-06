@@ -1,6 +1,7 @@
 import { JSONSerialized } from '@zimic/http';
 import {
   createWebSocketInterceptor,
+  InterceptedWebSocketInterceptorConnection,
   InterceptedWebSocketInterceptorMessage,
   WebSocketInterceptor,
   WebSocketInterceptorClient,
@@ -348,7 +349,11 @@ export function declareWebSocketInterceptorTests({
       try {
         await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length + 1));
 
-        const expectedConnection = { url: roomURL, protocols: [] };
+        const expectedConnection: InterceptedWebSocketInterceptorConnection = {
+          url: roomURL,
+          protocols: [],
+        };
+
         expect(rejectingHandler.connections).toEqual([expectedConnection]);
         expect(acceptingHandler.connections).toEqual([expectedConnection]);
       } finally {

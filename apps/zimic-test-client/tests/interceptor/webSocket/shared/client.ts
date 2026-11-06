@@ -48,7 +48,7 @@ export interface ClientTestOptions {
     protocols?: string | string[],
   ) => Promise<ClientTestWebSocket<Schema>>;
   // Starts connecting without waiting for the outcome, so tests can observe refused connections through their `open`,
-  // `error`, and `close` events. Listeners added synchronously after the call receive every event.
+  // `error`, and `close` events.
   createSocket: <Schema extends WebSocketSchema>(
     url: string,
     protocols?: string | string[],
