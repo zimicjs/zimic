@@ -44,7 +44,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
     if (!(platform === 'browser' && type === 'remote')) {
       it('should not match more than an exact number of limited connections when connections are handled concurrently', async () => {
         await usingWebSocketInterceptor<Schema>(
-          { type, baseURL, messageSaving: { enabled: true } },
+          { type, baseURL, connectionSaving: { enabled: true } },
           async (interceptor) => {
             let numberOfEvaluatedConnections = 0;
             const restrictionsReadyPromise = createPromiseWithResolvers<void>();
@@ -89,7 +89,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
     it('should match an exact number of limited connections', async () => {
       await usingWebSocketInterceptor<Schema>(
-        { type, baseURL, messageSaving: { enabled: true } },
+        { type, baseURL, connectionSaving: { enabled: true } },
         async (interceptor) => {
           const handler = await interceptor.connection().respond({ action: 'reject' }).times(1);
 
@@ -112,7 +112,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
       'should match an exact number of limited connections decided by a computed response ($action)',
       async ({ action, expectedEventTypes }) => {
         await usingWebSocketInterceptor<Schema>(
-          { type, baseURL, messageSaving: { enabled: true } },
+          { type, baseURL, connectionSaving: { enabled: true } },
           async (interceptor) => {
             const handler = await interceptor
               .connection()
@@ -137,7 +137,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
     it('should match less than an exact number of limited connections', async () => {
       await usingWebSocketInterceptor<Schema>(
-        { type, baseURL, messageSaving: { enabled: true } },
+        { type, baseURL, connectionSaving: { enabled: true } },
         async (interceptor) => {
           const handler = await interceptor.connection().times(2);
 
@@ -153,7 +153,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
     it('should not match more than an exact number of limited connections', async () => {
       await usingWebSocketInterceptor<Schema>(
-        { type, baseURL, messageSaving: { enabled: true } },
+        { type, baseURL, connectionSaving: { enabled: true } },
         async (interceptor) => {
           const handler = await interceptor.connection().respond({ action: 'reject' }).times(1);
 
@@ -172,7 +172,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
     it('should match exactly zero connections', async () => {
       await usingWebSocketInterceptor<Schema>(
-        { type, baseURL, messageSaving: { enabled: true } },
+        { type, baseURL, connectionSaving: { enabled: true } },
         async (interceptor) => {
           const handler = await interceptor.connection().respond({ action: 'reject' }).times(0);
 
@@ -192,7 +192,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
   describe('Range number of connections', () => {
     it('should match the minimum and maximum number of connections limited in a range', async () => {
       await usingWebSocketInterceptor<Schema>(
-        { type, baseURL, messageSaving: { enabled: true } },
+        { type, baseURL, connectionSaving: { enabled: true } },
         async (interceptor) => {
           const handler = await interceptor.connection().respond({ action: 'reject' }).times(1, 2);
 
@@ -212,7 +212,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
     it('should match less than the minimum number of connections limited in a range', async () => {
       await usingWebSocketInterceptor<Schema>(
-        { type, baseURL, messageSaving: { enabled: true } },
+        { type, baseURL, connectionSaving: { enabled: true } },
         async (interceptor) => {
           const handler = await interceptor.connection().respond({ action: 'reject' }).times(2, 3);
 
@@ -233,7 +233,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
     it('should not match more than the maximum number of connections limited in a range', async () => {
       await usingWebSocketInterceptor<Schema>(
-        { type, baseURL, messageSaving: { enabled: true } },
+        { type, baseURL, connectionSaving: { enabled: true } },
         async (interceptor) => {
           const handler = await interceptor.connection().respond({ action: 'reject' }).times(0, 1);
 
@@ -250,7 +250,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
     it('should match the exact number of connections limited in a unitary range', async () => {
       await usingWebSocketInterceptor<Schema>(
-        { type, baseURL, messageSaving: { enabled: true } },
+        { type, baseURL, connectionSaving: { enabled: true } },
         async (interceptor) => {
           const handler = await interceptor.connection().respond({ action: 'reject' }).times(1, 1);
 
@@ -277,9 +277,9 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
   describe('Unmatched connections', () => {
     describe('Restrictions', () => {
-      it('should not include the connections unmatched due to restrictions if not saving messages', async () => {
+      it('should not include the connections unmatched due to restrictions if not saving connections', async () => {
         await usingWebSocketInterceptor<Schema>(
-          { type, baseURL, messageSaving: { enabled: false } },
+          { type, baseURL, connectionSaving: { enabled: false } },
           async (interceptor) => {
             const handler = await interceptor
               .connection()
@@ -293,7 +293,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
               message: [
                 'Expected exactly 1 matching connection, but got 0.',
                 '',
-                'Tip: use `messageSaving.enabled: true` in your interceptor for more details about the unmatched ' +
+                'Tip: use `connectionSaving.enabled: true` in your interceptor for more details about the unmatched ' +
                   'connections.',
               ].join('\n'),
               expectedNumberOfMessages: 1,
@@ -304,7 +304,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
       it('should consider connections unmatched due to computed restrictions in times check errors', async () => {
         await usingWebSocketInterceptor<Schema>(
-          { type, baseURL, messageSaving: { enabled: true } },
+          { type, baseURL, connectionSaving: { enabled: true } },
           async (interceptor) => {
             const handler = await interceptor
               .connection()
@@ -337,7 +337,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
       it('should consider connections unmatched due to search params restrictions in times check errors', async () => {
         await usingWebSocketInterceptor<Schema>(
-          { type, baseURL, messageSaving: { enabled: true } },
+          { type, baseURL, connectionSaving: { enabled: true } },
           async (interceptor) => {
             const handler = await interceptor
               .connection()
@@ -370,7 +370,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
       it('should consider connections unmatched due to protocols restrictions in times check errors', async () => {
         await usingWebSocketInterceptor<Schema>(
-          { type, baseURL, messageSaving: { enabled: true } },
+          { type, baseURL, connectionSaving: { enabled: true } },
           async (interceptor) => {
             const handler = await interceptor
               .connection()
@@ -404,7 +404,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
     it('should not consider connections unmatched due to being cleared in times checks', async () => {
       await usingWebSocketInterceptor<Schema>(
-        { type, baseURL, messageSaving: { enabled: true } },
+        { type, baseURL, connectionSaving: { enabled: true } },
         async (interceptor) => {
           const handler = await interceptor.connection().effect(vi.fn());
 
@@ -431,7 +431,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
   it('should reset the limits on the number of connections when cleared', async () => {
     await usingWebSocketInterceptor<Schema>(
-      { type, baseURL, messageSaving: { enabled: true } },
+      { type, baseURL, connectionSaving: { enabled: true } },
       async (interceptor) => {
         const handler = await interceptor.connection().respond({ action: 'reject' }).times(1);
 

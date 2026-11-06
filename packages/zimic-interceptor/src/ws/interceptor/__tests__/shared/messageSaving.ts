@@ -1,4 +1,3 @@
-import { HttpSearchParams } from '@zimic/utils/http';
 import { waitFor } from '@zimic/utils/time';
 import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -7,12 +6,7 @@ import DisabledMessageSavingError from '@/ws/messageHandler/errors/DisabledMessa
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
-import {
-  expectWebSocketConnectionToBeRefused,
-  expectWebSocketConnectionToOpen,
-  usingWebSocketClient,
-  waitForWebSocketClientMessage,
-} from '@tests/utils/webSocket';
+import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import MessageSavingSafeLimitExceededError from '../../errors/MessageSavingSafeLimitExceededError';
 import { createWebSocketInterceptor } from '../../factory';
@@ -556,87 +550,5 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
         });
       },
     );
-  });
-
-  describe('Connections', () => {
-    it('should save intercepted connections if enabled', async () => {
-      await usingWebSocketInterceptor<MessageSchema>(
-        { ...interceptorOptions, messageSaving: { enabled: true } },
-        async (interceptor) => {
-          const acceptingHandler = await promiseIfRemote(interceptor.connection('/accepted'), interceptor);
-          const rejectingHandler = await promiseIfRemote(
-            interceptor.connection('/rejected').respond({ action: 'reject' }),
-            interceptor,
-          );
-
-          await expectWebSocketConnectionToOpen(`${baseURL}/accepted`, ['chat']);
-          await expectWebSocketConnectionToBeRefused(`${baseURL}/rejected`);
-
-          expect(acceptingHandler.connections).toEqual([
-            {
-              url: new URL(`${baseURL}/accepted`).href,
-              protocols: ['chat'],
-              searchParams: new HttpSearchParams(),
-              pathParams: {},
-            },
-          ]);
-          expect(rejectingHandler.connections).toEqual([
-            {
-              url: new URL(`${baseURL}/rejected`).href,
-              protocols: [],
-              searchParams: new HttpSearchParams(),
-              pathParams: {},
-            },
-          ]);
-        },
-      );
-    });
-
-    it('should not save intercepted connections if disabled', async () => {
-      await usingWebSocketInterceptor<MessageSchema>(
-        { ...interceptorOptions, messageSaving: { enabled: false } },
-        async (interceptor) => {
-          const handler = await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }), interceptor);
-
-          const error = new DisabledMessageSavingError();
-          expect(() => handler.connections).toThrow(error);
-
-          await expectWebSocketConnectionToBeRefused(baseURL);
-
-          expect(() => handler.connections).toThrow(error);
-
-          interceptor.messageSaving.enabled = true;
-          expect(handler.connections).toHaveLength(0);
-        },
-      );
-    });
-
-    it('should show a warning if the number of saved messages and connections exceeds the safe limit', async () => {
-      const safeLimit = 2;
-
-      await usingWebSocketInterceptor<MessageSchema>(
-        { ...interceptorOptions, messageSaving: { enabled: true, safeLimit } },
-        async (interceptor) => {
-          await promiseIfRemote(interceptor.connection().times(2), interceptor);
-          await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
-
-          await usingIgnoredConsole(['warn'], async (console) => {
-            await expectWebSocketConnectionToOpen(baseURL);
-            expect(console.warn).not.toHaveBeenCalled();
-
-            await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-              expect(console.warn).not.toHaveBeenCalled();
-
-              const messagePromise = waitForWebSocketClientMessage(client);
-              client.send(JSON.stringify({ type: 'client', index: 0 }));
-              await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
-
-              expect(console.warn).toHaveBeenCalledTimes(1);
-              expect(console.warn).toHaveBeenCalledWith(new MessageSavingSafeLimitExceededError(3, safeLimit));
-            });
-          });
-        },
-      );
-    });
   });
 }

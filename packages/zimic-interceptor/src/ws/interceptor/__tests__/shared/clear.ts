@@ -537,7 +537,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     const restrictionReleasedPromise = createPromiseWithResolvers<void>();
 
     await usingWebSocketInterceptor<MessageSchema>(
-      { ...interceptorOptions, messageSaving: { enabled: true } },
+      { ...interceptorOptions, connectionSaving: { enabled: true } },
       async (interceptor) => {
         const effect = vi.fn();
 

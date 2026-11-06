@@ -1,13 +1,13 @@
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * Error thrown when the safe limit of saved intercepted messages and connections is exceeded.
+ * Error thrown when the safe limit of saved intercepted messages is exceeded.
  */
 class MessageSavingSafeLimitExceededError extends TypeError {
-  constructor(numberOfSavedEntries: number, safeLimit: number) {
+  constructor(numberOfSavedMessages: number, safeLimit: number) {
     super(
-      `The number of intercepted messages and connections saved in memory (${numberOfSavedEntries}) exceeded the ` +
-        `safe limit of ${safeLimit}. Did you forget to call \`interceptor.clear()\`?\n\n` +
+      `The number of intercepted messages saved in memory (${numberOfSavedMessages}) exceeded the safe limit of ` +
+        `${safeLimit}. Did you forget to call \`interceptor.clear()\`?\n\n` +
         'If you need to save messages, make sure to regularly call `interceptor.clear()`. Alternatively, you can ' +
         'hide this warning by increasing `messageSaving.safeLimit` in your interceptor. Note that saving too many ' +
         'messages in memory can lead to performance issues.\n\n' +

@@ -136,6 +136,7 @@ export function declareWebSocketInterceptorTests({
     type,
     baseURL: getUserBaseURL(type),
     messageSaving: { enabled: true },
+    connectionSaving: { enabled: true },
   });
 
   const notificationInterceptor = createWebSocketInterceptor<NotificationWebSocketSchema>({

@@ -444,7 +444,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
       const delay = 200;
 
       await usingWebSocketInterceptor<MessageSchema>(
-        { type, baseURL, messageSaving: { enabled: true } },
+        { type, baseURL, connectionSaving: { enabled: true } },
         async (interceptor) => {
           const delayStartedPromise = createPromiseWithResolvers<void>();
           const effect = vi.fn();

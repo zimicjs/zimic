@@ -5,7 +5,7 @@ import color from 'picocolors';
 import { stringifyValueToLog } from '@/utils/logging';
 
 import { UnmatchedWebSocketInterceptorConnectionGroup } from '../connectionHandler/types/restrictions';
-import { WebSocketInterceptorMessageSaving } from '../interceptor/types/public';
+import { WebSocketInterceptorConnectionSaving, WebSocketInterceptorMessageSaving } from '../interceptor/types/public';
 import { UnmatchedWebSocketInterceptorMessageGroup } from '../messageHandler/types/restrictions';
 import WebSocketTimesDeclarationPointer from './WebSocketTimesDeclarationPointer';
 
@@ -14,10 +14,17 @@ type WebSocketTimesCheckErrorOptions = {
   numberOfMatches: number;
   declarationPointer: WebSocketTimesDeclarationPointer | undefined;
   hasRestrictions: boolean;
-  messageSaving: WebSocketInterceptorMessageSaving;
 } & (
-  | { subject: 'message'; unmatchedGroups: UnmatchedWebSocketInterceptorMessageGroup[] }
-  | { subject: 'connection'; unmatchedGroups: UnmatchedWebSocketInterceptorConnectionGroup[] }
+  | {
+      subject: 'message';
+      unmatchedGroups: UnmatchedWebSocketInterceptorMessageGroup[];
+      messageSaving: WebSocketInterceptorMessageSaving;
+    }
+  | {
+      subject: 'connection';
+      unmatchedGroups: UnmatchedWebSocketInterceptorConnectionGroup[];
+      connectionSaving: WebSocketInterceptorConnectionSaving;
+    }
 );
 
 function createMessageHeader({
@@ -125,9 +132,11 @@ function createUnmatchedConnectionDiffs(unmatchedConnectionGroups: UnmatchedWebS
 }
 
 function createMessageDiffs(options: WebSocketTimesCheckErrorOptions) {
-  if (!options.messageSaving.enabled) {
+  const saving = options.subject === 'message' ? options.messageSaving : options.connectionSaving;
+
+  if (!saving.enabled) {
     return (
-      'Tip: use `messageSaving.enabled: true` in your interceptor for more details about the unmatched ' +
+      `Tip: use \`${options.subject}Saving.enabled: true\` in your interceptor for more details about the unmatched ` +
       `${options.subject}s.`
     );
   }

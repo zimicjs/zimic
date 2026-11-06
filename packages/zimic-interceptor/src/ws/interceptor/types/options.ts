@@ -1,7 +1,7 @@
 import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
-import { WebSocketInterceptorMessageSaving } from './public';
+import { WebSocketInterceptorConnectionSaving, WebSocketInterceptorMessageSaving } from './public';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -57,8 +57,11 @@ export interface SharedWebSocketInterceptorOptions {
    */
   baseURL: string;
 
-  /** Configures if intercepted messages and connections are saved and how they are handled. */
+  /** Configures if intercepted messages are saved and how they are handled. */
   messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
+
+  /** Configures if intercepted connections are saved and how they are handled. */
+  connectionSaving?: Partial<WebSocketInterceptorConnectionSaving>;
 
   /**
    * The strategy applied to client messages that no handler matches. Defaults to logging a warning for each unhandled

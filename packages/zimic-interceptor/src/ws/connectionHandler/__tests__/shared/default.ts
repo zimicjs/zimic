@@ -52,7 +52,7 @@ export function declareDefaultWebSocketConnectionHandlerTests(
   // Unlike HTTP requests, a connection needs no declared response, so a handler without one still matches and accepts.
   it('should match any connection if contains no declared response', async () => {
     await usingWebSocketInterceptor<Schema>(
-      { type, baseURL, messageSaving: { enabled: true } },
+      { type, baseURL, connectionSaving: { enabled: true } },
       async (interceptor) => {
         const handler = await interceptor.connection().times(1);
 
@@ -82,7 +82,7 @@ export function declareDefaultWebSocketConnectionHandlerTests(
 
   it('should not match any connection if cleared', async () => {
     await usingWebSocketInterceptor<Schema>(
-      { type, baseURL, messageSaving: { enabled: true } },
+      { type, baseURL, connectionSaving: { enabled: true } },
       async (interceptor) => {
         await interceptor.connection().respond({ action: 'reject' });
         const handler = await interceptor.connection().effect(vi.fn());
@@ -112,7 +112,7 @@ export function declareDefaultWebSocketConnectionHandlerTests(
     const restrictionReleasedPromise = createPromiseWithResolvers<void>();
 
     await usingWebSocketInterceptor<Schema>(
-      { type, baseURL, messageSaving: { enabled: true } },
+      { type, baseURL, connectionSaving: { enabled: true } },
       async (interceptor) => {
         await interceptor.connection().respond({ action: 'reject' });
 
@@ -146,7 +146,7 @@ export function declareDefaultWebSocketConnectionHandlerTests(
     { declaration: 'times', declare: (handler) => handler.times(1) },
   ])('should match connections again if cleared and declared with $declaration', async ({ declare }) => {
     await usingWebSocketInterceptor<Schema>(
-      { type, baseURL, messageSaving: { enabled: true } },
+      { type, baseURL, connectionSaving: { enabled: true } },
       async (interceptor) => {
         const olderHandler = await interceptor.connection().effect(vi.fn());
         const handler = await interceptor.connection().effect(vi.fn());
@@ -240,7 +240,7 @@ export function declareDefaultWebSocketConnectionHandlerTests(
     const responseReleasedPromise = createPromiseWithResolvers<void>();
 
     await usingWebSocketInterceptor<Schema>(
-      { type, baseURL, messageSaving: { enabled: true } },
+      { type, baseURL, connectionSaving: { enabled: true } },
       async (interceptor) => {
         const effect = vi.fn();
 
@@ -289,7 +289,7 @@ export function declareDefaultWebSocketConnectionHandlerTests(
     },
   ])('should keep track of the intercepted connections ($response)', async ({ declare }) => {
     await usingWebSocketInterceptor<Schema>(
-      { type, baseURL, messageSaving: { enabled: true } },
+      { type, baseURL, connectionSaving: { enabled: true } },
       async (interceptor) => {
         const handler = await declare(interceptor.connection());
 
@@ -314,7 +314,7 @@ export function declareDefaultWebSocketConnectionHandlerTests(
 
   it('should clear the intercepted connections after cleared', async () => {
     await usingWebSocketInterceptor<Schema>(
-      { type, baseURL, messageSaving: { enabled: true } },
+      { type, baseURL, connectionSaving: { enabled: true } },
       async (interceptor) => {
         const handler = await interceptor.connection().respond({ action: 'reject' });
 

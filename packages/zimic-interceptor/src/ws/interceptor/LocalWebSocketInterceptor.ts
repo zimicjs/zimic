@@ -9,6 +9,7 @@ import {
 import { LocalWebSocketInterceptorOptions, UnhandledMessageStrategy } from './types/options';
 import {
   LocalWebSocketInterceptor as PublicLocalWebSocketInterceptor,
+  WebSocketInterceptorConnectionSaving,
   WebSocketInterceptorMessageSaving,
 } from './types/public';
 import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
@@ -25,6 +26,7 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
     this.implementation = new WebSocketInterceptorImplementation<Schema>({
       baseURL,
       messageSaving: options.messageSaving,
+      connectionSaving: options.connectionSaving,
       onUnhandledMessage: options.onUnhandledMessage,
       Handler: LocalWebSocketMessageHandler,
       ConnectionHandler: LocalWebSocketConnectionHandler,
@@ -59,6 +61,14 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
 
   set messageSaving(messageSaving: WebSocketInterceptorMessageSaving) {
     this.implementation.messageSaving = messageSaving;
+  }
+
+  get connectionSaving() {
+    return this.implementation.connectionSaving;
+  }
+
+  set connectionSaving(connectionSaving: WebSocketInterceptorConnectionSaving) {
+    this.implementation.connectionSaving = connectionSaving;
   }
 
   get onUnhandledMessage() {

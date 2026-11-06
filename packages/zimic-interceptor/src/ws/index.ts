@@ -3,9 +3,11 @@ export { default as NotRunningWebSocketInterceptorError } from './interceptor/er
 export { default as UnknownWebSocketInterceptorPlatformError } from './interceptor/errors/UnknownWebSocketInterceptorPlatformError';
 export { default as UnknownWebSocketInterceptorTypeError } from './interceptor/errors/UnknownWebSocketInterceptorTypeError';
 export { default as MessageSavingSafeLimitExceededError } from './interceptor/errors/MessageSavingSafeLimitExceededError';
+export { default as ConnectionSavingSafeLimitExceededError } from './interceptor/errors/ConnectionSavingSafeLimitExceededError';
 export { default as UnregisteredBrowserServiceWorkerError } from '@/interceptor/errors/UnregisteredBrowserServiceWorkerError';
 
 export { default as DisabledMessageSavingError } from './messageHandler/errors/DisabledMessageSavingError';
+export { default as DisabledConnectionSavingError } from './connectionHandler/errors/DisabledConnectionSavingError';
 export { default as WebSocketTimesCheckError } from './errors/WebSocketTimesCheckError';
 
 export type { WebSocketMessageHandlerDelayFactory } from './messageHandler/types/messages';
@@ -73,6 +75,7 @@ export type {
   RemoteWebSocketInterceptor,
   WebSocketInterceptor,
   WebSocketInterceptorMessageSaving,
+  WebSocketInterceptorConnectionSaving,
 } from './interceptor/types/public';
 
 export { createWebSocketInterceptor } from './interceptor/factory';

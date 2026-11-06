@@ -32,7 +32,11 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
   beforeEach(() => {
     baseURL = getBaseURL();
-    interceptorOptions = { ...getInterceptorOptions(), messageSaving: { enabled: true } };
+    interceptorOptions = {
+      ...getInterceptorOptions(),
+      messageSaving: { enabled: true },
+      connectionSaving: { enabled: true },
+    };
   });
 
   async function sendMatchingMessage(client: WebSocketClient<MessageSchema>, text = 'hello') {

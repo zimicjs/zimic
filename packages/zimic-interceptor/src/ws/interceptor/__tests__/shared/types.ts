@@ -66,6 +66,7 @@ export function declareTypeWebSocketInterceptorTests(
       expectTypeOf(interceptor).toExtend<WebSocketInterceptor<MessageSchema>>();
       expectTypeOf(interceptor.baseURL).toEqualTypeOf<string>();
       expectTypeOf(interceptor.messageSaving.enabled).toEqualTypeOf<boolean>();
+      expectTypeOf(interceptor.connectionSaving.enabled).toEqualTypeOf<boolean>();
       expectTypeOf(interceptor.server).toEqualTypeOf<WebSocketInterceptorServer<MessageSchema>>();
       expectTypeOf(interceptor.clients).toEqualTypeOf<readonly WebSocketInterceptorClient<MessageSchema>[]>();
       expectTypeOf(interceptor.server.messages).toEqualTypeOf<

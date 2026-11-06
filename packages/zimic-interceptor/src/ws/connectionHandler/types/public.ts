@@ -103,7 +103,7 @@ export interface LocalWebSocketConnectionHandler<Schema extends WebSocketSchema,
   clear: () => this;
 
   /**
-   * The connection attempts that matched this handler, whether accepted or rejected. Requires message saving to be
+   * The connection attempts that matched this handler, whether accepted or rejected. Requires connection saving to be
    * enabled.
    *
    * @readonly
@@ -179,7 +179,7 @@ export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocket
   clear: () => PendingRemoteWebSocketConnectionHandler<Schema, Path>;
 
   /**
-   * The connection attempts that matched this handler, whether accepted or rejected. Requires message saving to be
+   * The connection attempts that matched this handler, whether accepted or rejected. Requires connection saving to be
    * enabled.
    *
    * @readonly

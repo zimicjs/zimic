@@ -828,7 +828,7 @@ export function declareConnectionsWebSocketInterceptorTests(
       const effect = vi.fn();
 
       await usingWebSocketInterceptor<ChatMessage>(
-        { type, baseURL, messageSaving: { enabled: true } },
+        { type, baseURL, connectionSaving: { enabled: true } },
         async (interceptor) => {
           const handler = await promiseIfRemote(
             interceptor
@@ -874,7 +874,7 @@ export function declareConnectionsWebSocketInterceptorTests(
       const error = new Error('Restriction failed.');
 
       await usingWebSocketInterceptor<ChatMessage>(
-        { type, baseURL, messageSaving: { enabled: true } },
+        { type, baseURL, connectionSaving: { enabled: true } },
         async (interceptor) => {
           const olderHandler = await promiseIfRemote(
             interceptor.connection().respond({ action: 'reject' }),
@@ -925,7 +925,7 @@ export function declareConnectionsWebSocketInterceptorTests(
       const baseURL = getBaseURL();
 
       await usingWebSocketInterceptor<ChatMessage>(
-        { type, baseURL, messageSaving: { enabled: true } },
+        { type, baseURL, connectionSaving: { enabled: true } },
         async (interceptor) => {
           const olderHandler = await promiseIfRemote(
             interceptor.connection().respond({ action: 'reject' }),
@@ -945,10 +945,10 @@ export function declareConnectionsWebSocketInterceptorTests(
       const baseURL = getBaseURL();
 
       await usingWebSocketInterceptor<ChatMessage>(
-        { type, baseURL, messageSaving: { enabled: true } },
+        { type, baseURL, connectionSaving: { enabled: true } },
         async (firstInterceptor) => {
           await usingWebSocketInterceptor<ChatMessage>(
-            { type, baseURL, messageSaving: { enabled: true } },
+            { type, baseURL, connectionSaving: { enabled: true } },
             async (secondInterceptor) => {
               // The handler of the interceptor started last is older, so it does not decide the connection.
               const secondHandler = await promiseIfRemote(

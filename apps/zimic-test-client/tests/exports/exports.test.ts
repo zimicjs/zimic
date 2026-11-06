@@ -86,6 +86,7 @@ import {
   type LocalWebSocketInterceptorOptions,
   type RemoteWebSocketInterceptorOptions,
   type WebSocketInterceptorMessageSaving,
+  type WebSocketInterceptorConnectionSaving,
   type InferWebSocketInterceptorSchema,
   type InterceptedWebSocketInterceptorMessage,
   type WebSocketInterceptorClient,
@@ -125,8 +126,10 @@ import {
   UnknownWebSocketInterceptorPlatformError,
   UnknownWebSocketInterceptorTypeError,
   MessageSavingSafeLimitExceededError,
+  ConnectionSavingSafeLimitExceededError,
   UnregisteredBrowserServiceWorkerError as WebSocketUnregisteredBrowserServiceWorkerError,
   DisabledMessageSavingError,
+  DisabledConnectionSavingError,
   WebSocketTimesCheckError,
 } from '@zimic/interceptor/experimental/ws';
 import {
@@ -476,6 +479,7 @@ describe('Exports', () => {
       expectTypeOf<LocalWebSocketInterceptorOptions>().not.toBeAny();
       expectTypeOf<RemoteWebSocketInterceptorOptions>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorMessageSaving>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorConnectionSaving>().not.toBeAny();
       expectTypeOf<UnhandledMessageStrategy>().not.toBeAny();
       expectTypeOf<UnhandledMessageStrategy.Declaration>().not.toBeAny();
       expectTypeOf<UnhandledMessageStrategy.DeclarationFactory>().not.toBeAny();
@@ -530,11 +534,17 @@ describe('Exports', () => {
       expectTypeOf<MessageSavingSafeLimitExceededError>().not.toBeAny();
       expect(typeof MessageSavingSafeLimitExceededError).toBe('function');
 
+      expectTypeOf<ConnectionSavingSafeLimitExceededError>().not.toBeAny();
+      expect(typeof ConnectionSavingSafeLimitExceededError).toBe('function');
+
       expectTypeOf<WebSocketUnregisteredBrowserServiceWorkerError>().not.toBeAny();
       expect(typeof WebSocketUnregisteredBrowserServiceWorkerError).toBe('function');
 
       expectTypeOf<DisabledMessageSavingError>().not.toBeAny();
       expect(typeof DisabledMessageSavingError).toBe('function');
+
+      expectTypeOf<DisabledConnectionSavingError>().not.toBeAny();
+      expect(typeof DisabledConnectionSavingError).toBe('function');
 
       expectTypeOf<WebSocketTimesCheckError>().not.toBeAny();
       expect(typeof WebSocketTimesCheckError).toBe('function');

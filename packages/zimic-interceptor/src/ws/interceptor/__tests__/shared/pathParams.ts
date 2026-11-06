@@ -34,7 +34,7 @@ export function declarePathParamsWebSocketInterceptorTests(options: RuntimeShare
   beforeEach(() => {
     baseURL = getBaseURL();
     // Saving is disabled by default in browsers, and these tests read the path params of the saved connections.
-    interceptorOptions = { ...getInterceptorOptions(), messageSaving: { enabled: true } };
+    interceptorOptions = { ...getInterceptorOptions(), connectionSaving: { enabled: true } };
   });
 
   it('should support generic and specific handlers when intercepting connections with path parameters', async () => {

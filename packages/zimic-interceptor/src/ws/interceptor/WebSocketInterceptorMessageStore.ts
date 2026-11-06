@@ -1,11 +1,7 @@
 import { WebSocketSchema } from '@zimic/ws';
 
 import MessageSavingSafeLimitExceededError from './errors/MessageSavingSafeLimitExceededError';
-import type {
-  InterceptedWebSocketInterceptorMessage,
-  ReceivedWebSocketMessageData,
-  WebSocketInterceptorConnectionRequest,
-} from './types/messages';
+import type { InterceptedWebSocketInterceptorMessage, ReceivedWebSocketMessageData } from './types/messages';
 import type {
   InternalWebSocketInterceptorClient,
   InternalWebSocketInterceptorServer,
@@ -25,43 +21,17 @@ export interface WebSocketInterceptorMessageHandlerIndex<
   records: Set<WebSocketInterceptorMessageRecord<Schema>>;
 }
 
-export interface WebSocketInterceptorConnectionHandlerIndex<Path extends string = string> {
-  connections: WebSocketInterceptorConnectionRequest<Path>[];
-}
-
 class WebSocketInterceptorMessageStore<Schema extends WebSocketSchema> {
   private records = new Set<WebSocketInterceptorMessageRecord<Schema>>();
 
-  // Saved connections count toward the safe limit with the saved messages, as both are kept in memory until cleared.
-  private numberOfSavedConnections = 0;
-
   constructor(private getSafeLimit: () => number) {}
 
-  createConnectionHandlerIndex<Path extends string>(): WebSocketInterceptorConnectionHandlerIndex<Path> {
-    return { connections: [] };
-  }
-
-  saveConnection<Path extends string>(
-    handlerIndex: WebSocketInterceptorConnectionHandlerIndex<Path>,
-    request: WebSocketInterceptorConnectionRequest<Path>,
-  ) {
-    handlerIndex.connections.push(request);
-    this.numberOfSavedConnections++;
-
-    this.warnIfSafeLimitExceeded();
-  }
-
-  clearConnectionHandler<Path extends string>(handlerIndex: WebSocketInterceptorConnectionHandlerIndex<Path>) {
-    this.numberOfSavedConnections -= handlerIndex.connections.length;
-    handlerIndex.connections.length = 0;
-  }
-
   private warnIfSafeLimitExceeded() {
-    const numberOfSavedEntries = this.records.size + this.numberOfSavedConnections;
+    const numberOfSavedMessages = this.records.size;
     const safeLimit = this.getSafeLimit();
 
-    if (numberOfSavedEntries > safeLimit) {
-      console.warn(new MessageSavingSafeLimitExceededError(numberOfSavedEntries, safeLimit));
+    if (numberOfSavedMessages > safeLimit) {
+      console.warn(new MessageSavingSafeLimitExceededError(numberOfSavedMessages, safeLimit));
     }
   }
 

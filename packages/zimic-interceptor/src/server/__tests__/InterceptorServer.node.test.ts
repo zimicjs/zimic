@@ -2204,7 +2204,7 @@ describe('Interceptor server', () => {
 
         await usingIgnoredConsole(['error'], async (console) => {
           await usingWebSocketInterceptor<ChatMessage>(
-            { type: 'remote', baseURL, messageSaving: { enabled: true } },
+            { type: 'remote', baseURL, connectionSaving: { enabled: true } },
             async (interceptor) => {
               const handler = await interceptor
                 .connection()

@@ -10,6 +10,7 @@ import {
 import { RemoteWebSocketInterceptorOptions, UnhandledMessageStrategy } from './types/options';
 import {
   RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor,
+  WebSocketInterceptorConnectionSaving,
   WebSocketInterceptorMessageSaving,
 } from './types/public';
 import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
@@ -26,6 +27,7 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
     this.implementation = new WebSocketInterceptorImplementation<Schema>({
       baseURL,
       messageSaving: options.messageSaving,
+      connectionSaving: options.connectionSaving,
       onUnhandledMessage: options.onUnhandledMessage,
       Handler: RemoteWebSocketMessageHandler,
       ConnectionHandler: RemoteWebSocketConnectionHandler,
@@ -99,6 +101,14 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
 
   set messageSaving(messageSaving: WebSocketInterceptorMessageSaving) {
     this.implementation.messageSaving = messageSaving;
+  }
+
+  get connectionSaving() {
+    return this.implementation.connectionSaving;
+  }
+
+  set connectionSaving(connectionSaving: WebSocketInterceptorConnectionSaving) {
+    this.implementation.connectionSaving = connectionSaving;
   }
 
   get onUnhandledMessage() {

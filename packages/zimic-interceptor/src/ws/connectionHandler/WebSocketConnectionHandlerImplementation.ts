@@ -9,8 +9,7 @@ import WebSocketTimesCheckError from '../errors/WebSocketTimesCheckError';
 import WebSocketTimesDeclarationPointer from '../errors/WebSocketTimesDeclarationPointer';
 import { WebSocketInterceptorClient, WebSocketInterceptorConnectionRequest } from '../interceptor/types/messages';
 import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
-import type { WebSocketInterceptorConnectionHandlerIndex } from '../interceptor/WebSocketInterceptorMessageStore';
-import DisabledMessageSavingError from '../messageHandler/errors/DisabledMessageSavingError';
+import DisabledConnectionSavingError from './errors/DisabledConnectionSavingError';
 import { WebSocketConnectionHandlerDelayFactory } from './types/connections';
 import {
   InternalWebSocketConnectionHandler,
@@ -53,7 +52,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 
   private numberOfMatchedConnections = 0;
   private unmatchedConnectionGroups: UnmatchedWebSocketInterceptorConnectionGroup[] = [];
-  private savedConnectionIndex: WebSocketInterceptorConnectionHandlerIndex<Path>;
+  private savedConnections: WebSocketInterceptorConnectionRequest<Path>[] = [];
 
   private createResponseDeclaration?: WebSocketConnectionHandlerResponseComputedDeclaration<Path>;
 
@@ -71,9 +70,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
     private interceptor: WebSocketInterceptorImplementation<Schema>,
     readonly path: string | undefined,
     private handler: InternalWebSocketConnectionHandler<Schema, Path>,
-  ) {
-    this.savedConnectionIndex = this.interceptor.messageStore.createConnectionHandlerIndex<Path>();
-  }
+  ) {}
 
   with(restriction: WebSocketConnectionHandlerRestriction<Path>) {
     this.restrictions.push(restriction);
@@ -153,7 +150,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
         declarationPointer: this.timesPointer,
         unmatchedGroups: this.unmatchedConnectionGroups,
         hasRestrictions: this.restrictions.length > 0,
-        messageSaving: this.interceptor.messageSaving,
+        connectionSaving: this.interceptor.connectionSaving,
       });
     }
   }
@@ -182,7 +179,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
   private resetMatchedConnections() {
     this.numberOfMatchedConnections = 0;
     this.unmatchedConnectionGroups.length = 0;
-    this.interceptor.messageStore.clearConnectionHandler(this.savedConnectionIndex);
+    this.clearInterceptedConnections();
   }
 
   async matchesConnection(
@@ -308,7 +305,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
     options: { diff: WebSocketConnectionHandlerRestrictionDiffs },
   ) {
     const shouldSaveUnmatchedConnections =
-      this.interceptor.messageSaving.enabled && this.restrictions.length > 0 && this.timesPointer !== undefined;
+      this.interceptor.connectionSaving.enabled && this.restrictions.length > 0 && this.timesPointer !== undefined;
 
     if (shouldSaveUnmatchedConnections) {
       this.unmatchedConnectionGroups.push({ request, diff: options.diff });
@@ -354,14 +351,20 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
   }
 
   saveInterceptedConnection(request: WebSocketInterceptorConnectionRequest<Path>) {
-    this.interceptor.messageStore.saveConnection(this.savedConnectionIndex, request);
+    this.savedConnections.push(request);
+    this.interceptor.incrementNumberOfSavedConnections(1);
+  }
+
+  private clearInterceptedConnections() {
+    this.interceptor.incrementNumberOfSavedConnections(-this.savedConnections.length);
+    this.savedConnections.length = 0;
   }
 
   get connections() {
-    if (!this.interceptor.messageSaving.enabled) {
-      throw new DisabledMessageSavingError();
+    if (!this.interceptor.connectionSaving.enabled) {
+      throw new DisabledConnectionSavingError();
     }
-    return this.savedConnectionIndex.connections;
+    return this.savedConnections;
   }
 }
 

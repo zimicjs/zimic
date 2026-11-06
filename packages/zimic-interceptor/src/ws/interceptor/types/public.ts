@@ -10,19 +10,37 @@ import { RemoteWebSocketInterceptorOptions, UnhandledMessageStrategy, WebSocketI
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * Configures if intercepted messages and connections are saved and how they are handled.
+ * Configures if intercepted messages are saved and how they are handled.
  */
 export interface WebSocketInterceptorMessageSaving {
   /**
    * Whether message handlers should save their matched client-to-server messages in memory and make them accessible
-   * through `handler.messages`, and connection handlers their matched connection attempts through
-   * `handler.connections`. Defaults to `process.env.NODE_ENV === 'test'` in Node.js and `false` in browsers.
+   * through `handler.messages`. Defaults to `process.env.NODE_ENV === 'test'` in Node.js and `false` in browsers.
    */
   enabled: boolean;
 
   /**
-   * The number of saved messages and connections after which the interceptor logs warnings in the console. It does not
-   * limit how many are saved. Defaults to `1000`.
+   * The number of saved messages after which the interceptor logs warnings in the console. It does not limit how many
+   * messages are saved. Defaults to `1000`.
+   */
+  safeLimit: number;
+}
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * Configures if intercepted connections are saved and how they are handled.
+ */
+export interface WebSocketInterceptorConnectionSaving {
+  /**
+   * Whether connection handlers should save their matched connection attempts in memory and make them accessible
+   * through `handler.connections`. Defaults to `process.env.NODE_ENV === 'test'` in Node.js and `false` in browsers.
+   */
+  enabled: boolean;
+
+  /**
+   * The number of saved connections after which the interceptor logs warnings in the console. It does not limit how
+   * many connections are saved. Defaults to `1000`.
    */
   safeLimit: number;
 }
@@ -36,8 +54,11 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
   /** The base URL used by the interceptor. Running interceptors reject changes to it. */
   baseURL: string;
 
-  /** Configures if intercepted messages and connections are saved and how they are handled. */
+  /** Configures if intercepted messages are saved and how they are handled. */
   messageSaving: WebSocketInterceptorMessageSaving;
+
+  /** Configures if intercepted connections are saved and how they are handled. */
+  connectionSaving: WebSocketInterceptorConnectionSaving;
 
   /**
    * The strategy applied to client messages that no handler matches. Defaults to logging a warning for each unhandled

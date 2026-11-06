@@ -18,6 +18,7 @@ import {
   WebSocketMessageHandlerApplyContext,
 } from '../messageHandler/WebSocketMessageHandlerImplementation';
 import { normalizeWebSocketMessageData } from '../utils/messageData';
+import ConnectionSavingSafeLimitExceededError from './errors/ConnectionSavingSafeLimitExceededError';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
 import type {
@@ -27,7 +28,7 @@ import type {
   WebSocketInterceptorServerSendOptions,
 } from './types/messages';
 import type { UnhandledMessageStrategy } from './types/options';
-import type { WebSocketInterceptorMessageSaving } from './types/public';
+import type { WebSocketInterceptorConnectionSaving, WebSocketInterceptorMessageSaving } from './types/public';
 import {
   createWebSocketInterceptorServer,
   InternalWebSocketInterceptorClient,
@@ -37,6 +38,7 @@ import WebSocketInterceptorMessageStore from './WebSocketInterceptorMessageStore
 
 export const SUPPORTED_BASE_URL_PROTOCOLS = Object.freeze(['ws', 'wss']);
 export const DEFAULT_MESSAGE_SAVING_SAFE_LIMIT = 1000;
+export const DEFAULT_CONNECTION_SAVING_SAFE_LIMIT = DEFAULT_MESSAGE_SAVING_SAFE_LIMIT;
 
 const DEFAULT_UNHANDLED_MESSAGE_STRATEGY = Object.freeze({
   log: true,
@@ -62,6 +64,9 @@ class WebSocketInterceptorImplementation<
   messageSaving: WebSocketInterceptorMessageSaving;
   readonly messageStore: WebSocketInterceptorMessageStore<Schema>;
 
+  connectionSaving: WebSocketInterceptorConnectionSaving;
+  private numberOfSavedConnections = 0;
+
   onUnhandledMessage?: UnhandledMessageStrategy;
 
   isRunning = false;
@@ -83,10 +88,12 @@ class WebSocketInterceptorImplementation<
   private numberOfPendingStops = 0;
   private lifecycleQueue: Promise<void> = Promise.resolve();
   private messageSavingGeneration = {};
+  private connectionSavingGeneration = {};
 
   constructor(options: {
     baseURL: URL;
     messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
+    connectionSaving?: Partial<WebSocketInterceptorConnectionSaving>;
     onUnhandledMessage?: UnhandledMessageStrategy;
     Handler: HandlerConstructor;
     ConnectionHandler: WebSocketConnectionHandlerConstructor;
@@ -96,10 +103,15 @@ class WebSocketInterceptorImplementation<
     this.baseURL = options.baseURL;
 
     this.messageSaving = {
-      enabled: options.messageSaving?.enabled ?? this.getDefaultMessageSavingEnabled(),
+      enabled: options.messageSaving?.enabled ?? this.getDefaultSavingEnabled(),
       safeLimit: options.messageSaving?.safeLimit ?? DEFAULT_MESSAGE_SAVING_SAFE_LIMIT,
     };
     this.messageStore = new WebSocketInterceptorMessageStore(() => this.messageSaving.safeLimit);
+
+    this.connectionSaving = {
+      enabled: options.connectionSaving?.enabled ?? this.getDefaultSavingEnabled(),
+      safeLimit: options.connectionSaving?.safeLimit ?? DEFAULT_CONNECTION_SAVING_SAFE_LIMIT,
+    };
 
     this.onUnhandledMessage = options.onUnhandledMessage;
 
@@ -126,7 +138,7 @@ class WebSocketInterceptorImplementation<
     );
   }
 
-  private getDefaultMessageSavingEnabled(): boolean {
+  private getDefaultSavingEnabled(): boolean {
     return isServerSide() ? process.env.NODE_ENV === 'test' : false;
   }
 
@@ -338,7 +350,7 @@ class WebSocketInterceptorImplementation<
     handler: AnyWebSocketConnectionHandlerImplementation,
     request: WebSocketInterceptorConnectionRequest,
   ) {
-    const messageSavingGeneration = this.messageSavingGeneration;
+    const connectionSavingGeneration = this.connectionSavingGeneration;
 
     const action = await handler.applyDeclarations(request);
 
@@ -346,11 +358,25 @@ class WebSocketInterceptorImplementation<
       return null;
     }
 
-    if (this.messageSaving.enabled && messageSavingGeneration === this.messageSavingGeneration) {
+    if (this.connectionSaving.enabled && connectionSavingGeneration === this.connectionSavingGeneration) {
       handler.saveInterceptedConnection(request);
     }
 
     return action;
+  }
+
+  incrementNumberOfSavedConnections(increment: number) {
+    this.numberOfSavedConnections += increment;
+
+    const exceedsSafeLimit = this.numberOfSavedConnections > this.connectionSaving.safeLimit;
+
+    if (increment > 0 && exceedsSafeLimit) {
+      const error = new ConnectionSavingSafeLimitExceededError(
+        this.numberOfSavedConnections,
+        this.connectionSaving.safeLimit,
+      );
+      console.warn(error);
+    }
   }
 
   async handleMatchedMessage(
@@ -421,6 +447,7 @@ class WebSocketInterceptorImplementation<
     const worker = this.workerOrThrow;
 
     this.messageSavingGeneration = {};
+    this.connectionSavingGeneration = {};
 
     const clearResult = worker.clearHandlers({ interceptor: this, ...options });
 
