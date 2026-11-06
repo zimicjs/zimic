@@ -774,7 +774,7 @@ describe('Web socket server', () => {
       expect(handleConnection).not.toHaveBeenCalled();
     });
 
-    it('should log thrown upgrade verification failures and refuse the handshake as an internal error', async () => {
+    it('should log thrown upgrade verification failures', async () => {
       const error = new Error('Upgrade verification failed.');
 
       server = new WebSocketServer({
@@ -790,13 +790,31 @@ describe('Web socket server', () => {
           rawClient?.once('error', resolve);
         });
 
+        await clientErrorPromise;
+
+        expect(console.error).toHaveBeenCalledWith(error);
+      });
+    });
+
+    it('should refuse handshakes as internal errors if upgrade verification throws', async () => {
+      server = new WebSocketServer({
+        httpServer,
+        verifyUpgrade: () => Promise.reject(new Error('Upgrade verification failed.')),
+      });
+      server.start();
+
+      await usingIgnoredConsole(['error'], async () => {
+        rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+        const clientErrorPromise = new Promise<Error>((resolve) => {
+          rawClient?.once('error', resolve);
+        });
+
         const closeEvent = await waitForClientSocketClose(rawClient);
         expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
 
         const clientError = await clientErrorPromise;
         expect(clientError.message).toBe('Unexpected server response: 500');
-
-        expect(console.error).toHaveBeenCalledWith(error);
       });
     });
 

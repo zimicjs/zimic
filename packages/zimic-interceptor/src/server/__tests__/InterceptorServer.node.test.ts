@@ -2347,7 +2347,219 @@ describe('Interceptor server', () => {
 
       // Remote interceptors send through a queue, so whether their sends reach the server before or after it receives
       // the connection reply depends on timing. A worker replying after its sends makes the pending case deterministic.
-      it('should deliver messages and closes sent by the worker while client connections are pending once they are accepted', async () => {
+      it('should deliver messages sent by the worker while client connections are pending once they are accepted', async () => {
+        server = createInternalInterceptorServer();
+        await server.start();
+
+        const baseURL = `ws://${server.hostname}:${server.port}/chat`;
+
+        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+          url: `ws://${server.hostname}:${server.port}`,
+        });
+
+        const message = 'sent while pending';
+
+        worker.onChannel('event', 'interceptors/ws/clients/connect', ({ data }) => {
+          worker.send('interceptors/ws/messages/send', {
+            clientId: data.clientId,
+            data: { type: 'text', data: message },
+          });
+
+          return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
+        });
+
+        const client = new WebSocketClient<WebSocketSchema<string>>(baseURL);
+        const messagePromise = waitForWebSocketClientMessage(client);
+
+        try {
+          await worker.start({
+            parameters: {
+              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
+            },
+            waitForAuthentication: true,
+          });
+
+          await worker.request('interceptors/ws/workers/reset', {
+            interceptors: [{ id: crypto.randomUUID(), baseURL }],
+          });
+
+          await client.open();
+
+          await expect(messagePromise).resolves.toBe(message);
+        } finally {
+          await client.close();
+          await worker.stop();
+        }
+      });
+
+      it('should deliver messages sent by the worker only to the targeted pending client connection', async () => {
+        server = createInternalInterceptorServer();
+        await server.start();
+
+        const baseURL = `ws://${server.hostname}:${server.port}/chat`;
+        const firstURL = `${baseURL}/first`;
+        const secondURL = `${baseURL}/second`;
+
+        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+          url: `ws://${server.hostname}:${server.port}`,
+        });
+
+        const repliesReleasedPromise = createPromiseWithResolvers<void>();
+        const firstConnectionReceivedPromise = createPromiseWithResolvers<{ clientId: string }>();
+        const secondConnectionReceivedPromise = createPromiseWithResolvers<{ clientId: string }>();
+
+        worker.onChannel('event', 'interceptors/ws/clients/connect', async ({ data }) => {
+          if (data.url === firstURL) {
+            firstConnectionReceivedPromise.resolve(data);
+          } else {
+            secondConnectionReceivedPromise.resolve(data);
+          }
+
+          await repliesReleasedPromise;
+
+          return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
+        });
+
+        const firstClient = new WebSocketClient<WebSocketSchema<string>>(firstURL);
+        const secondClient = new WebSocketClient<WebSocketSchema<string>>(secondURL);
+
+        const firstClientMessages = collectWebSocketClientMessages(firstClient);
+        const firstMessagePromise = waitForWebSocketClientMessage(firstClient);
+        const secondMessagePromise = waitForWebSocketClientMessage(secondClient);
+
+        try {
+          await worker.start({
+            parameters: {
+              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
+            },
+            waitForAuthentication: true,
+          });
+
+          await worker.request('interceptors/ws/workers/reset', {
+            interceptors: [{ id: crypto.randomUUID(), baseURL }],
+          });
+
+          // The server answers the handshakes only after the worker replies, so both clients are pending. Opening them
+          // in sequence makes the server look at the first client before reaching the target.
+          const firstOpenPromise = firstClient.open();
+          const { clientId: firstClientId } = await firstConnectionReceivedPromise;
+
+          const secondOpenPromise = secondClient.open();
+          const { clientId: secondClientId } = await secondConnectionReceivedPromise;
+
+          const targetedMessage = 'sent to second while pending';
+          worker.send('interceptors/ws/messages/send', {
+            clientId: secondClientId,
+            data: { type: 'text', data: targetedMessage },
+          });
+
+          repliesReleasedPromise.resolve();
+          await Promise.all([firstOpenPromise, secondOpenPromise]);
+
+          await expect(secondMessagePromise).resolves.toBe(targetedMessage);
+
+          // A message queued for the first client would arrive before this one, which is sent after it opened.
+          const messageAfterOpen = 'sent to first after open';
+          worker.send('interceptors/ws/messages/send', {
+            clientId: firstClientId,
+            data: { type: 'text', data: messageAfterOpen },
+          });
+
+          await firstMessagePromise;
+          expect(firstClientMessages).toEqual([messageAfterOpen]);
+        } finally {
+          repliesReleasedPromise.resolve();
+          await Promise.all([firstClient.close(), secondClient.close()]);
+          await worker.stop();
+        }
+      });
+
+      it('should apply closes sent by the worker only to the targeted pending client connection', async () => {
+        server = createInternalInterceptorServer();
+        await server.start();
+
+        const baseURL = `ws://${server.hostname}:${server.port}/chat`;
+        const firstURL = `${baseURL}/first`;
+        const secondURL = `${baseURL}/second`;
+
+        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+          url: `ws://${server.hostname}:${server.port}`,
+        });
+
+        const repliesReleasedPromise = createPromiseWithResolvers<void>();
+        const firstConnectionReceivedPromise = createPromiseWithResolvers<{ clientId: string }>();
+        const secondConnectionReceivedPromise = createPromiseWithResolvers<{ clientId: string }>();
+
+        worker.onChannel('event', 'interceptors/ws/clients/connect', async ({ data }) => {
+          if (data.url === firstURL) {
+            firstConnectionReceivedPromise.resolve(data);
+          } else {
+            secondConnectionReceivedPromise.resolve(data);
+          }
+
+          await repliesReleasedPromise;
+
+          return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
+        });
+
+        const firstClient = new WebSocketClient<WebSocketSchema<string>>(firstURL);
+        const secondClient = new WebSocketClient<WebSocketSchema<string>>(secondURL);
+
+        const firstMessagePromise = waitForWebSocketClientMessage(firstClient);
+        const secondCloseEventPromise = waitForWebSocketClientClose(secondClient);
+
+        try {
+          await worker.start({
+            parameters: {
+              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
+            },
+            waitForAuthentication: true,
+          });
+
+          await worker.request('interceptors/ws/workers/reset', {
+            interceptors: [{ id: crypto.randomUUID(), baseURL }],
+          });
+
+          // The server answers the handshakes only after the worker replies, so both clients are pending. Opening them
+          // in sequence makes the server look at the first client before reaching the target.
+          const firstOpenPromise = firstClient.open();
+          const { clientId: firstClientId } = await firstConnectionReceivedPromise;
+
+          const secondOpenPromise = secondClient.open();
+          const { clientId: secondClientId } = await secondConnectionReceivedPromise;
+
+          worker.send('interceptors/ws/clients/disconnect', {
+            clientId: secondClientId,
+            code: 3000,
+            reason: 'closed while pending',
+          });
+
+          repliesReleasedPromise.resolve();
+          await Promise.all([firstOpenPromise, secondOpenPromise]);
+
+          const secondCloseEvent = await secondCloseEventPromise;
+          expect(secondCloseEvent.code).toBe(3000);
+
+          // A close queued for the first client would be applied before this message could reach it.
+          const messageAfterOpen = 'sent to first after open';
+          worker.send('interceptors/ws/messages/send', {
+            clientId: firstClientId,
+            data: { type: 'text', data: messageAfterOpen },
+          });
+
+          await expect(firstMessagePromise).resolves.toBe(messageAfterOpen);
+          expect(firstClient.readyState).toBe(WebSocketClient.OPEN);
+        } finally {
+          repliesReleasedPromise.resolve();
+          await Promise.all([firstClient.close(), secondClient.close()]);
+          await worker.stop();
+        }
+      });
+
+      it('should apply closes sent by the worker while client connections are pending once they are accepted', async () => {
         server = createInternalInterceptorServer();
         await server.start();
 
