@@ -710,7 +710,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
 
               await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
                 message: 'Expected exactly 1 message, but got 0.',
-                expectedNumberOfMessages: 1,
+                expectedNumberOfMatches: 1,
               });
             },
           );
@@ -780,7 +780,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
 
             await expectWebSocketTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
               message: 'Expected exactly 1 matching message, but got 0.',
-              expectedNumberOfMessages: 1,
+              expectedNumberOfMatches: 1,
             });
 
             await expectWebSocketTimesCheckError(() => promiseIfRemote(olderHandler.checkTimes(), olderHandler), {
@@ -797,7 +797,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
                 `       ${color.green('- return true')}`,
                 `       ${color.red('+ return false')}`,
               ].join('\n'),
-              expectedNumberOfMessages: 1,
+              expectedNumberOfMatches: 1,
             });
           },
         );

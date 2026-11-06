@@ -383,7 +383,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
 
         await expectWebSocketTimesCheckError(() => interceptor.checkTimes(), {
           message: 'Expected exactly 1 message, but got 0.',
-          expectedNumberOfMessages: 1,
+          expectedNumberOfMatches: 1,
         });
       },
     );

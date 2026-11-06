@@ -97,7 +97,7 @@ export async function expectWebSocketTimesCheckError(
   callback: () => PossiblePromise<void>,
   options: {
     message: string;
-    expectedNumberOfMessages: number | { min: number; max: number };
+    expectedNumberOfMatches: number | { min: number; max: number };
   },
 ) {
   let timesCheckError: WebSocketTimesCheckError | undefined;
@@ -119,11 +119,11 @@ export async function expectWebSocketTimesCheckError(
   const timesDeclarationPointer = timesCheckError!.cause! as WebSocketTimesDeclarationPointer;
   expect(timesDeclarationPointer).toBeInstanceOf(WebSocketTimesDeclarationPointer);
 
-  if (typeof options.expectedNumberOfMessages === 'number') {
-    expect(timesDeclarationPointer.name).toBe(`handler.times(${options.expectedNumberOfMessages})`);
+  if (typeof options.expectedNumberOfMatches === 'number') {
+    expect(timesDeclarationPointer.name).toBe(`handler.times(${options.expectedNumberOfMatches})`);
   } else {
     expect(timesDeclarationPointer.name).toBe(
-      `handler.times(${options.expectedNumberOfMessages.min}, ${options.expectedNumberOfMessages.max})`,
+      `handler.times(${options.expectedNumberOfMatches.min}, ${options.expectedNumberOfMatches.max})`,
     );
   }
 

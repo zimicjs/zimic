@@ -95,7 +95,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected exactly 1 connection, but got 0.',
-            expectedNumberOfMessages: 1,
+            expectedNumberOfMatches: 1,
           });
 
           await expectWebSocketConnectionToBeRefused(baseURL);
@@ -121,7 +121,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
             await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
               message: 'Expected exactly 1 connection, but got 0.',
-              expectedNumberOfMessages: 1,
+              expectedNumberOfMatches: 1,
             });
 
             const { socket, eventTypes } = await openWebSocketUntilSettled(baseURL);
@@ -145,7 +145,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected exactly 2 connections, but got 1.',
-            expectedNumberOfMessages: 2,
+            expectedNumberOfMatches: 2,
           });
         },
       );
@@ -164,7 +164,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected exactly 1 connection, but got 2.',
-            expectedNumberOfMessages: 1,
+            expectedNumberOfMatches: 1,
           });
         },
       );
@@ -182,7 +182,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected exactly 0 connections, but got 1.',
-            expectedNumberOfMessages: 0,
+            expectedNumberOfMatches: 0,
           });
         },
       );
@@ -198,7 +198,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected at least 1 and at most 2 connections, but got 0.',
-            expectedNumberOfMessages: { min: 1, max: 2 },
+            expectedNumberOfMatches: { min: 1, max: 2 },
           });
 
           await expectWebSocketConnectionToBeRefused(baseURL);
@@ -218,14 +218,14 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected at least 2 and at most 3 connections, but got 0.',
-            expectedNumberOfMessages: { min: 2, max: 3 },
+            expectedNumberOfMatches: { min: 2, max: 3 },
           });
 
           await expectWebSocketConnectionToBeRefused(baseURL);
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected at least 2 and at most 3 connections, but got 1.',
-            expectedNumberOfMessages: { min: 2, max: 3 },
+            expectedNumberOfMatches: { min: 2, max: 3 },
           });
         },
       );
@@ -242,7 +242,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected at least 0 and at most 1 connection, but got 2.',
-            expectedNumberOfMessages: { min: 0, max: 1 },
+            expectedNumberOfMatches: { min: 0, max: 1 },
           });
         },
       );
@@ -256,7 +256,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected exactly 1 connection, but got 0.',
-            expectedNumberOfMessages: { min: 1, max: 1 },
+            expectedNumberOfMatches: { min: 1, max: 1 },
           });
 
           await expectWebSocketConnectionToBeRefused(baseURL);
@@ -268,7 +268,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected exactly 1 connection, but got 2.',
-            expectedNumberOfMessages: { min: 1, max: 1 },
+            expectedNumberOfMatches: { min: 1, max: 1 },
           });
         },
       );
@@ -296,7 +296,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
                 'Tip: use `connectionSaving.enabled: true` in your interceptor for more details about the unmatched ' +
                   'connections.',
               ].join('\n'),
-              expectedNumberOfMessages: 1,
+              expectedNumberOfMatches: 1,
             });
           },
         );
@@ -329,7 +329,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
                 `       ${color.green('- return true')}`,
                 `       ${color.red('+ return false')}`,
               ].join('\n'),
-              expectedNumberOfMessages: 1,
+              expectedNumberOfMatches: 1,
             });
           },
         );
@@ -362,7 +362,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
                 `       ${color.green('- { "room": "1" }')}`,
                 `       ${color.red('+ { "room": "2", "tag": [ "a", "b" ] }')}`,
               ].join('\n'),
-              expectedNumberOfMessages: 1,
+              expectedNumberOfMatches: 1,
             });
           },
         );
@@ -395,7 +395,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
                 `       ${color.green('- [ "chat" ]')}`,
                 `       ${color.red('+ [ "json" ]')}`,
               ].join('\n'),
-              expectedNumberOfMessages: 1,
+              expectedNumberOfMatches: 1,
             });
           },
         );
@@ -417,7 +417,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected exactly 1 connection, but got 0.',
-            expectedNumberOfMessages: 1,
+            expectedNumberOfMatches: 1,
           });
 
           await expectWebSocketConnectionToOpen(baseURL);
@@ -437,7 +437,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
         await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
           message: 'Expected exactly 1 connection, but got 0.',
-          expectedNumberOfMessages: 1,
+          expectedNumberOfMatches: 1,
         });
 
         await handler.clear();

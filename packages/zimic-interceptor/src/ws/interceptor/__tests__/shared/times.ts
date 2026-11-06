@@ -54,7 +54,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 message, but got 0.',
-          expectedNumberOfMessages: 1,
+          expectedNumberOfMatches: 1,
         });
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
@@ -71,7 +71,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 2 messages, but got 0.',
-          expectedNumberOfMessages: 2,
+          expectedNumberOfMatches: 2,
         });
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
@@ -80,7 +80,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 2 messages, but got 1.',
-          expectedNumberOfMessages: 2,
+          expectedNumberOfMatches: 2,
         });
       });
     });
@@ -111,7 +111,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 message, but got 2.',
-          expectedNumberOfMessages: 1,
+          expectedNumberOfMatches: 1,
         });
       });
     });
@@ -140,7 +140,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected at least 2 and at most 3 messages, but got 0.',
-          expectedNumberOfMessages: { min: 2, max: 3 },
+          expectedNumberOfMatches: { min: 2, max: 3 },
         });
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
@@ -149,7 +149,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected at least 2 and at most 3 messages, but got 1.',
-          expectedNumberOfMessages: { min: 2, max: 3 },
+          expectedNumberOfMatches: { min: 2, max: 3 },
         });
       });
     });
@@ -196,7 +196,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected at least 2 and at most 3 messages, but got 4.',
-          expectedNumberOfMessages: { min: 2, max: 3 },
+          expectedNumberOfMatches: { min: 2, max: 3 },
         });
       });
     });
@@ -227,7 +227,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected at least 0 and at most 1 message, but got 2.',
-          expectedNumberOfMessages: { min: 0, max: 1 },
+          expectedNumberOfMatches: { min: 0, max: 1 },
         });
       });
     });
@@ -238,7 +238,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 message, but got 0.',
-          expectedNumberOfMessages: { min: 1, max: 1 },
+          expectedNumberOfMatches: { min: 1, max: 1 },
         });
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
@@ -319,20 +319,20 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         await expectWebSocketTimesCheckError(() => handlers[0].checkTimes(), {
           message: 'Expected exactly 1 matching message, but got 0.',
-          expectedNumberOfMessages: 1,
+          expectedNumberOfMatches: 1,
         });
         await expectWebSocketTimesCheckError(() => handlers[1].checkTimes(), {
           message: 'Expected at least 1 and at most 2 matching messages, but got 0.',
-          expectedNumberOfMessages: { min: 1, max: 2 },
+          expectedNumberOfMatches: { min: 1, max: 2 },
         });
         await expectWebSocketTimesCheckError(() => handlers[2].checkTimes(), {
           message: 'Expected exactly 2 matching messages, but got 0.',
-          expectedNumberOfMessages: 2,
+          expectedNumberOfMatches: 2,
         });
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 matching message, but got 0.',
-          expectedNumberOfMessages: 1,
+          expectedNumberOfMatches: 1,
         });
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
@@ -346,7 +346,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
           await expectWebSocketTimesCheckError(() => handlers[2].checkTimes(), {
             message: 'Expected exactly 2 matching messages, but got 1.',
-            expectedNumberOfMessages: 2,
+            expectedNumberOfMatches: 2,
           });
 
           messagePromise = waitForWebSocketClientMessage(client);
@@ -361,7 +361,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
           await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
             message: 'Expected at least 1 and at most 2 matching messages, but got 0.',
-            expectedNumberOfMessages: { min: 1, max: 2 },
+            expectedNumberOfMatches: { min: 1, max: 2 },
           });
 
           messagePromise = waitForWebSocketClientMessage(client);
@@ -381,18 +381,18 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
             message: ['Expected at least 1 and at most 2 matching messages, but got 0.', ...unmatchedMessageLines].join(
               '\n',
             ),
-            expectedNumberOfMessages: { min: 1, max: 2 },
+            expectedNumberOfMatches: { min: 1, max: 2 },
           });
           await expectWebSocketTimesCheckError(() => handlers[2].checkTimes(), {
             message: ['Expected exactly 2 matching messages, but got 1.', ...unmatchedMessageLines].join('\n'),
-            expectedNumberOfMessages: 2,
+            expectedNumberOfMatches: 2,
           });
 
           await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
             message: ['Expected at least 1 and at most 2 matching messages, but got 0.', ...unmatchedMessageLines].join(
               '\n',
             ),
-            expectedNumberOfMessages: { min: 1, max: 2 },
+            expectedNumberOfMatches: { min: 1, max: 2 },
           });
 
           messagePromise = waitForWebSocketClientMessage(client);
@@ -438,12 +438,12 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
         await handlers[1].checkTimes();
         await expectWebSocketTimesCheckError(() => handlers[2].checkTimes(), {
           message: ['Expected exactly 2 matching messages, but got 3.', ...unmatchedMessageLines].join('\n'),
-          expectedNumberOfMessages: 2,
+          expectedNumberOfMatches: 2,
         });
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: ['Expected exactly 2 matching messages, but got 3.', ...unmatchedMessageLines].join('\n'),
-          expectedNumberOfMessages: 2,
+          expectedNumberOfMatches: 2,
         });
       });
     });
@@ -580,7 +580,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
             `       ${color.green('- { "type": "delete" }')}`,
             `       ${color.red('+ { "type": "create", "body": { "text": "hello" } }')}`,
           ].join('\n'),
-          expectedNumberOfMessages: 1,
+          expectedNumberOfMatches: 1,
         });
       });
     });
@@ -635,7 +635,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
             `       ${color.green('- ArrayBuffer { byteLength: 2 }')}`,
             `       ${color.red('+ ArrayBuffer { byteLength: 2 }')}`,
           ].join('\n'),
-          expectedNumberOfMessages: 1,
+          expectedNumberOfMatches: 1,
         });
       });
     });
@@ -649,7 +649,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 message, but got 0.',
-          expectedNumberOfMessages: 1,
+          expectedNumberOfMatches: 1,
         });
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
@@ -672,7 +672,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 message, but got 2.',
-          expectedNumberOfMessages: 1,
+          expectedNumberOfMatches: 1,
         });
       });
     });
@@ -706,7 +706,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
               `       ${color.green('- { "type": "delete" }')}`,
               `       ${color.red('+ { "type": "create", "body": { "text": "other" } }')}`,
             ].join('\n'),
-            expectedNumberOfMessages: 1,
+            expectedNumberOfMatches: 1,
           });
 
           expect(handler.messages).toHaveLength(0);
@@ -744,7 +744,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 0 messages, but got 1.',
-          expectedNumberOfMessages: 0,
+          expectedNumberOfMatches: 0,
         });
       });
     });
@@ -798,7 +798,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
           await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
             message: 'Expected exactly 1 matching message, but got 0.',
-            expectedNumberOfMessages: 1,
+            expectedNumberOfMatches: 1,
           });
         });
       });
@@ -831,7 +831,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         await expectWebSocketTimesCheckError(() => timesCheckPromise, {
           message: 'Expected exactly 1 message, but got 0.',
-          expectedNumberOfMessages: 1,
+          expectedNumberOfMatches: 1,
         });
       });
     });
@@ -852,7 +852,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 connection, but got 0.',
-          expectedNumberOfMessages: 1,
+          expectedNumberOfMatches: 1,
         });
 
         await expectWebSocketConnectionToOpen(baseURL);
@@ -900,7 +900,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
           message: 'Expected exactly 1 connection, but got 0.',
-          expectedNumberOfMessages: 1,
+          expectedNumberOfMatches: 1,
         });
 
         await interceptor.clear();

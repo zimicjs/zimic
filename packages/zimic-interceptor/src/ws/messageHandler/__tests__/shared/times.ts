@@ -98,7 +98,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected exactly 1 message, but got 0.',
-            expectedNumberOfMessages: 1,
+            expectedNumberOfMatches: 1,
           });
 
           await usingWebSocketClient<Schema>(baseURL, async (client) => {
@@ -121,7 +121,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected exactly 2 messages, but got 0.',
-            expectedNumberOfMessages: 2,
+            expectedNumberOfMatches: 2,
           });
 
           await usingWebSocketClient<Schema>(baseURL, async (client) => {
@@ -132,7 +132,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
             await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
               message: 'Expected exactly 2 messages, but got 1.',
-              expectedNumberOfMessages: 2,
+              expectedNumberOfMatches: 2,
             });
           });
         },
@@ -160,7 +160,7 @@ export function declareTimesWebSocketMessageHandlerTests(
             await waitFor(() =>
               expectWebSocketTimesCheckError(() => handler.checkTimes(), {
                 message: 'Expected exactly 1 message, but got 2.',
-                expectedNumberOfMessages: 1,
+                expectedNumberOfMatches: 1,
               }),
             );
 
@@ -189,7 +189,7 @@ export function declareTimesWebSocketMessageHandlerTests(
             await waitFor(() =>
               expectWebSocketTimesCheckError(() => handler.checkTimes(), {
                 message: 'Expected exactly 0 messages, but got 1.',
-                expectedNumberOfMessages: 0,
+                expectedNumberOfMatches: 0,
               }),
             );
           });
@@ -229,7 +229,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected at least 2 and at most 3 messages, but got 0.',
-            expectedNumberOfMessages: { min: 2, max: 3 },
+            expectedNumberOfMatches: { min: 2, max: 3 },
           });
 
           await usingWebSocketClient<Schema>(baseURL, async (client) => {
@@ -240,7 +240,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
             await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
               message: 'Expected at least 2 and at most 3 messages, but got 1.',
-              expectedNumberOfMessages: { min: 2, max: 3 },
+              expectedNumberOfMatches: { min: 2, max: 3 },
             });
           });
         },
@@ -266,7 +266,7 @@ export function declareTimesWebSocketMessageHandlerTests(
             await waitFor(() =>
               expectWebSocketTimesCheckError(() => handler.checkTimes(), {
                 message: 'Expected at least 0 and at most 1 message, but got 2.',
-                expectedNumberOfMessages: { min: 0, max: 1 },
+                expectedNumberOfMatches: { min: 0, max: 1 },
               }),
             );
 
@@ -291,7 +291,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
             message: 'Expected exactly 1 message, but got 0.',
-            expectedNumberOfMessages: { min: 1, max: 1 },
+            expectedNumberOfMatches: { min: 1, max: 1 },
           });
 
           await usingWebSocketClient<Schema>(baseURL, async (client) => {
@@ -338,7 +338,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
             await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
               message: expectedMessage,
-              expectedNumberOfMessages: 1,
+              expectedNumberOfMatches: 1,
             });
 
             await usingWebSocketClient<Schema>(baseURL, async (client) => {
@@ -349,7 +349,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
               await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
                 message: expectedMessage,
-                expectedNumberOfMessages: 1,
+                expectedNumberOfMatches: 1,
               });
             });
           },
@@ -384,7 +384,7 @@ export function declareTimesWebSocketMessageHandlerTests(
                     `       ${color.green('- return true')}`,
                     `       ${color.red('+ return false')}`,
                   ].join('\n'),
-                  expectedNumberOfMessages: 1,
+                  expectedNumberOfMatches: 1,
                 }),
               );
             });
@@ -419,7 +419,7 @@ export function declareTimesWebSocketMessageHandlerTests(
                     `       ${color.green('- { "type": "delete" }')}`,
                     `       ${color.red('+ { "type": "create", "body": { "text": "hello" } }')}`,
                   ].join('\n'),
-                  expectedNumberOfMessages: 1,
+                  expectedNumberOfMatches: 1,
                 }),
               );
             });
@@ -455,7 +455,7 @@ export function declareTimesWebSocketMessageHandlerTests(
                     `       ${color.green('- { "type": "create", "body": { "text": "hello" } }')}`,
                     `       ${color.red('+ { "type": "create", "body": { "text": "hello", "priority": "1" } }')}`,
                   ].join('\n'),
-                  expectedNumberOfMessages: 1,
+                  expectedNumberOfMatches: 1,
                 }),
               );
             });
@@ -491,7 +491,7 @@ export function declareTimesWebSocketMessageHandlerTests(
                     `       ${color.green('- ArrayBuffer { byteLength: 2 }')}`,
                     `       ${color.red('+ ArrayBuffer { byteLength: 2 }')}`,
                   ].join('\n'),
-                  expectedNumberOfMessages: 1,
+                  expectedNumberOfMatches: 1,
                 }),
               );
             });
@@ -530,7 +530,7 @@ export function declareTimesWebSocketMessageHandlerTests(
                     `       ${color.green("- Blob { type: 'application/octet-stream', size: 1 }")}`,
                     `       ${color.red('+ ArrayBuffer { byteLength: 4 }')}`,
                   ].join('\n'),
-                  expectedNumberOfMessages: 1,
+                  expectedNumberOfMatches: 1,
                 }),
               );
             });
@@ -566,7 +566,7 @@ export function declareTimesWebSocketMessageHandlerTests(
                     `       ${color.green('- Uint8Array { byteLength: 2 }')}`,
                     `       ${color.red('+ ArrayBuffer { byteLength: 2 }')}`,
                   ].join('\n'),
-                  expectedNumberOfMessages: 1,
+                  expectedNumberOfMatches: 1,
                 }),
               );
             });
@@ -613,7 +613,7 @@ export function declareTimesWebSocketMessageHandlerTests(
                       `       ${color.green('- client from handler.from()')}`,
                       `       ${color.red('+ another client')}`,
                     ].join('\n'),
-                    expectedNumberOfMessages: 1,
+                    expectedNumberOfMatches: 1,
                   }),
                 );
               });
@@ -648,7 +648,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
             await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
               message: 'Expected exactly 1 message, but got 0.',
-              expectedNumberOfMessages: 1,
+              expectedNumberOfMatches: 1,
             });
 
             client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
@@ -673,7 +673,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
         await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
           message: 'Expected exactly 1 message, but got 0.',
-          expectedNumberOfMessages: 1,
+          expectedNumberOfMatches: 1,
         });
 
         handler.clear();
