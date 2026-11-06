@@ -773,8 +773,8 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
       );
     });
 
-    // No WebSocket counterpart for "should not consider requests unmatched due to unmocked path in times checks":
-    // WebSocket handlers have no per-handler path.
+    // No WebSocket message counterpart for "should not consider requests unmatched due to unmocked path in times checks":
+    // message handlers have no per-handler paths.
 
     it('should not consider messages handled by another interceptor unmatched in times checks', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (olderInterceptor) => {
@@ -1277,6 +1277,35 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           socket.close();
 
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
+        });
+      });
+
+      it('should not consider connections unmatched due to unmocked path in times checks', async () => {
+        await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor
+              .connection('/users')
+              .with({ searchParams: { value: '1' } })
+              .respond({ action: 'reject' })
+              .times(1),
+            interceptor,
+          );
+
+          expect(handler.connections).toHaveLength(0);
+
+          await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected exactly 1 matching connection, but got 0.',
+            expectedNumberOfMatches: 1,
+          });
+
+          await expectWebSocketConnectionToOpen(`${baseURL}/users/other`);
+
+          expect(handler.connections).toHaveLength(0);
+
+          await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+            message: 'Expected exactly 1 matching connection, but got 0.',
+            expectedNumberOfMatches: 1,
+          });
         });
       });
 

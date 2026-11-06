@@ -148,11 +148,11 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     );
   });
 
-  // No WebSocket counterpart for "should not consider handlers from before cleared when multiple paths matched
-  // requests": WebSocket handlers have no per-handler paths.
+  // No WebSocket message counterpart for "should not consider handlers from before cleared when multiple paths matched
+  // requests": message handlers have no per-handler paths.
 
-  // No WebSocket counterpart for "should handle requests once after cleared and redeclared when multiple paths matched
-  // requests": WebSocket handlers have no per-handler paths.
+  // No WebSocket message counterpart for "should handle requests once after cleared and redeclared when multiple paths
+  // matched requests": message handlers have no per-handler paths.
 
   it('should handle messages once if another interceptor is cleared while they are being handled', async () => {
     const restrictionStartedPromise = createPromiseWithResolvers<void>();
@@ -870,6 +870,54 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
           await expectWebSocketConnectionToBeRefused(baseURL);
 
           expect(otherHandler.connections).toHaveLength(1);
+        },
+      );
+    });
+
+    it('should not consider handlers from before cleared when multiple paths matched connections', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, connectionSaving: { enabled: true } },
+        async (interceptor) => {
+          await promiseIfRemote(interceptor.connection('/users').respond({ action: 'reject' }), interceptor);
+          await promiseIfRemote(interceptor.connection('/:resource').respond({ action: 'reject' }), interceptor);
+
+          await promiseIfRemote(interceptor.clear(), interceptor);
+
+          const handler = await promiseIfRemote(
+            interceptor
+              .connection('/users')
+              .with({ searchParams: { value: '1' } })
+              .respond({ action: 'reject' }),
+            interceptor,
+          );
+
+          await expectWebSocketConnectionToOpen(`${baseURL}/users?value=2`);
+
+          expect(handler.connections).toHaveLength(0);
+        },
+      );
+    });
+
+    it('should handle connections once after cleared and redeclared when multiple paths matched connections', async () => {
+      const restriction = vi.fn(() => false);
+
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, connectionSaving: { enabled: true } },
+        async (interceptor) => {
+          await promiseIfRemote(interceptor.connection('/users').respond({ action: 'reject' }), interceptor);
+          await promiseIfRemote(interceptor.connection('/:resource').respond({ action: 'reject' }), interceptor);
+
+          await promiseIfRemote(interceptor.clear(), interceptor);
+
+          const handler = await promiseIfRemote(
+            interceptor.connection('/:resource').with(restriction).respond({ action: 'reject' }),
+            interceptor,
+          );
+
+          await expectWebSocketConnectionToOpen(`${baseURL}/users`);
+
+          expect(restriction).toHaveBeenCalledTimes(1);
+          expect(handler.connections).toHaveLength(0);
         },
       );
     });
