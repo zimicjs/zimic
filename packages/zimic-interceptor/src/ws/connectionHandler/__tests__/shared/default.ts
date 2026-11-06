@@ -2,11 +2,16 @@ import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { HttpSearchParams } from '@zimic/utils/http';
 import { joinURL } from '@zimic/utils/url';
 import { WebSocketClient } from '@zimic/ws';
+import color from 'picocolors';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
-import { openWebSocketUntilSettled, usingWebSocketClient } from '@tests/utils/webSocket';
+import {
+  expectWebSocketTimesCheckError,
+  openWebSocketUntilSettled,
+  usingWebSocketClient,
+} from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import RemoteWebSocketConnectionHandler from '../../RemoteWebSocketConnectionHandler';
@@ -103,6 +108,19 @@ export function declareDefaultWebSocketConnectionHandlerTests(
           expect(client.readyState).toBe(WebSocketClient.OPEN);
         });
         expect(handler.connections).toHaveLength(1);
+
+        await handler.clear();
+
+        const secondAttempt = await openWebSocketUntilSettled(baseURL);
+        expect(secondAttempt.eventTypes).toEqual(['error', 'close']);
+        expect(handler.connections).toHaveLength(0);
+
+        await handler.effect(vi.fn());
+
+        await usingWebSocketClient<Schema>(baseURL, (client) => {
+          expect(client.readyState).toBe(WebSocketClient.OPEN);
+        });
+        expect(handler.connections).toHaveLength(1);
       },
     );
   });
@@ -165,8 +183,11 @@ export function declareDefaultWebSocketConnectionHandlerTests(
     );
   });
 
-  // No WebSocket counterparts for creating responses from static declarations, or without a declared response:
-  // connection handlers answer handshakes through the interceptor, so the interceptor suites cover them.
+  // No WebSocket counterpart for "should create response with declared status and body": a connection response declares
+  // only an action to accept or reject the handshake, without a status or body.
+
+  // No WebSocket counterpart for "should not throw an error if trying to create a response without a declared response":
+  // a connection handler without a response matches and accepts the connection.
 
   it.each<{
     response: string;
@@ -295,19 +316,30 @@ export function declareDefaultWebSocketConnectionHandlerTests(
 
         expect(handler.connections).toEqual([]);
 
-        const { socket } = await openWebSocketUntilSettled(`${baseURL}?room=1`, ['chat', 'json']);
+        const { socket: firstSocket } = await openWebSocketUntilSettled(`${baseURL}?room=1`, ['chat', 'json']);
+        firstSocket.close();
 
-        try {
-          expect(handler.connections).toHaveLength(1);
-          expect(handler.connections[0]).toEqual({
-            url: socket.url,
-            protocols: ['chat', 'json'],
-            searchParams: new HttpSearchParams({ room: '1' }),
+        const firstConnection = {
+          url: firstSocket.url,
+          protocols: ['chat', 'json'],
+          searchParams: new HttpSearchParams({ room: '1' }),
+          pathParams: {},
+        };
+
+        expect(handler.connections).toEqual([firstConnection]);
+
+        const { socket: secondSocket } = await openWebSocketUntilSettled(`${baseURL}?room=2`, ['chat']);
+        secondSocket.close();
+
+        expect(handler.connections).toEqual([
+          firstConnection,
+          {
+            url: secondSocket.url,
+            protocols: ['chat'],
+            searchParams: new HttpSearchParams({ room: '2' }),
             pathParams: {},
-          });
-        } finally {
-          socket.close();
-        }
+          },
+        ]);
       },
     );
   });
@@ -331,26 +363,57 @@ export function declareDefaultWebSocketConnectionHandlerTests(
     );
   });
 
-  // No WebSocket counterparts for accessing raw intercepted requests and responses or their hidden properties:
-  // intercepted connections carry only their URL and subprotocols.
+  // No WebSocket counterpart for "should provide access to the raw intercepted requests and responses": a handshake has
+  // no body to read and answers with no response body, so saved connections have no raw request or response.
+
+  // No WebSocket counterpart for "should provide no access to hidden properties in raw intercepted requests and responses":
+  // a handshake has no body to read and answers with no response body, so saved connections have no raw request or
+  // response to hide properties from.
 
   it('should clear restrictions after cleared', async () => {
-    await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
-      const handler = await interceptor
-        .connection()
-        .with({ protocols: ['chat'] })
-        .respond({ action: 'reject' });
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, connectionSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await interceptor
+          .connection()
+          .with(() => false)
+          .respond({ action: 'reject' })
+          .times(1);
 
-      await usingWebSocketClient<Schema>(baseURL, (client) => {
-        expect(client.readyState).toBe(WebSocketClient.OPEN);
-      });
+        const { socket } = await openWebSocketUntilSettled(baseURL);
+        socket.close();
 
-      await handler.clear().respond({ action: 'reject' });
+        await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+          message: [
+            'Expected exactly 1 matching connection, but got 0.',
+            '',
+            'Connections evaluated by this handler:',
+            '',
+            `  ${color.green('- Expected')}`,
+            `  ${color.red('+ Received')}`,
+            '',
+            `1: ${socket.url}`,
+            '     Computed restriction:',
+            `       ${color.green('- return true')}`,
+            `       ${color.red('+ return false')}`,
+          ].join('\n'),
+          expectedNumberOfMatches: 1,
+        });
 
-      const attempt = await openWebSocketUntilSettled(baseURL);
-      expect(attempt.eventTypes).toEqual(['error', 'close']);
-      expect(attempt.closeEvent?.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
-    });
+        await handler.clear().respond({ action: 'reject' }).times(1);
+
+        await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+          message: 'Expected exactly 1 connection, but got 0.',
+          expectedNumberOfMatches: 1,
+        });
+
+        const attempt = await openWebSocketUntilSettled(baseURL);
+        expect(attempt.eventTypes).toEqual(['error', 'close']);
+        expect(attempt.closeEvent?.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
+
+        await handler.checkTimes();
+      },
+    );
   });
 
   if (type === 'remote') {

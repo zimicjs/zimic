@@ -11,26 +11,52 @@ import { Schema } from './utils';
 
 // The handlers below are only type-checked. The functions declaring them are never called.
 export function declareTypeWebSocketConnectionHandlerTests() {
-  it('should type connection attempts in computed restrictions, delays, and responses, and clients in effects', () => {
+  it('should type connections in computed restrictions', () => {
     function declareLocalHandler(handler: LocalWebSocketConnectionHandler<Schema>) {
-      handler
-        .with((request) => {
-          expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
-          return request.protocols.includes('chat');
-        })
-        .delay((request) => {
-          expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
-          return 0;
-        })
-        .respond((request) => {
-          expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
-          return { action: 'accept' };
-        })
-        .effect((client, request) => {
-          expectTypeOf(client).toEqualTypeOf<WebSocketInterceptorClient<Schema>>();
-          expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
-        });
+      handler.with((request) => {
+        expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
+        return request.protocols.includes('chat');
+      });
+    }
 
+    expectTypeOf(declareLocalHandler).toBeFunction();
+  });
+
+  it('should type connections in computed delays', () => {
+    function declareLocalHandler(handler: LocalWebSocketConnectionHandler<Schema>) {
+      handler.delay((request) => {
+        expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
+        return 0;
+      });
+    }
+
+    expectTypeOf(declareLocalHandler).toBeFunction();
+  });
+
+  it('should type connections in computed responses', () => {
+    function declareLocalHandler(handler: LocalWebSocketConnectionHandler<Schema>) {
+      handler.respond((request) => {
+        expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
+        return { action: 'accept' };
+      });
+    }
+
+    expectTypeOf(declareLocalHandler).toBeFunction();
+  });
+
+  it('should type clients in effects', () => {
+    function declareLocalHandler(handler: LocalWebSocketConnectionHandler<Schema>) {
+      handler.effect((client, request) => {
+        expectTypeOf(client).toEqualTypeOf<WebSocketInterceptorClient<Schema>>();
+        expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
+      });
+    }
+
+    expectTypeOf(declareLocalHandler).toBeFunction();
+  });
+
+  it('should type saved connections', () => {
+    function declareLocalHandler(handler: LocalWebSocketConnectionHandler<Schema>) {
       expectTypeOf(handler.connections).toEqualTypeOf<readonly WebSocketInterceptorConnectionRequest[]>();
     }
 
