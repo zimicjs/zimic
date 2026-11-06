@@ -716,7 +716,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
         { type, baseURL, connectionSaving: { enabled: true } },
         async (interceptor) => {
           const delayStartedPromise = createPromiseWithResolvers<void>();
-          const respond = vi.fn(() => ({ action: 'reject' as const }));
+          const respond = vi.fn<() => { action: 'reject' }>();
 
           const handler = await interceptor
             .connection()
@@ -739,7 +739,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
             await handler.clear();
 
             // Redeclaring the cleared handler would apply its new response to the connection in its delay.
-            const redeclaredRespond = vi.fn(() => ({ action: 'reject' as const }));
+            const redeclaredRespond = vi.fn<() => { action: 'reject' }>();
             await handler.respond(redeclaredRespond).times(1);
 
             await vi.advanceTimersByTimeAsync(delay);
