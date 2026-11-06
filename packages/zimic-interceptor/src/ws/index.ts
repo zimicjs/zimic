@@ -60,7 +60,7 @@ export type {
 
 export type { InferWebSocketInterceptorSchema } from './interceptor/types/schema';
 export type {
-  InterceptedWebSocketInterceptorConnection,
+  WebSocketInterceptorConnectionRequest,
   InterceptedWebSocketInterceptorMessage,
   WebSocketInterceptorClient,
   WebSocketInterceptorServer,

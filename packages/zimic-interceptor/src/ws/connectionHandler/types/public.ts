@@ -1,14 +1,14 @@
 import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
-import { InterceptedWebSocketInterceptorConnection, WebSocketInterceptorClient } from '@/ws/interceptor/types/messages';
+import { WebSocketInterceptorClient, WebSocketInterceptorConnectionRequest } from '@/ws/interceptor/types/messages';
 
 import WebSocketConnectionHandlerImplementation from '../WebSocketConnectionHandlerImplementation';
 import { WebSocketConnectionHandlerDelayFactory } from './connections';
 import { WebSocketConnectionHandlerRestriction } from './restrictions';
 
-export interface InternalWebSocketConnectionHandler<Schema extends WebSocketSchema> {
-  implementation: WebSocketConnectionHandlerImplementation<Schema>;
+export interface InternalWebSocketConnectionHandler<Schema extends WebSocketSchema, Path extends string = string> {
+  implementation: WebSocketConnectionHandlerImplementation<Schema, Path>;
 }
 
 /**
@@ -37,7 +37,7 @@ export interface WebSocketConnectionHandlerResponseDeclaration {
  *
  * A local WebSocket connection handler. In a local handler, the mocking operations are synchronous.
  */
-export interface LocalWebSocketConnectionHandler<Schema extends WebSocketSchema> {
+export interface LocalWebSocketConnectionHandler<Schema extends WebSocketSchema, Path extends string = string> {
   /**
    * The type of the handler.
    *
@@ -57,10 +57,10 @@ export interface LocalWebSocketConnectionHandler<Schema extends WebSocketSchema>
    * Declares a restriction to intercepted connection matches. If multiple restrictions are declared, all of them must
    * be met.
    */
-  with: (restriction: WebSocketConnectionHandlerRestriction) => this;
+  with: (restriction: WebSocketConnectionHandlerRestriction<Path>) => this;
 
   /** Declares a delay to wait before answering the handshake of matched connections. */
-  delay: ((milliseconds: number | WebSocketConnectionHandlerDelayFactory) => this) &
+  delay: ((milliseconds: number | WebSocketConnectionHandlerDelayFactory<Path>) => this) &
     ((minMilliseconds: number, maxMilliseconds: number) => this);
 
   /** Declares a side effect to run when the handler matches a connection that is accepted. */
@@ -91,7 +91,7 @@ export interface LocalWebSocketConnectionHandler<Schema extends WebSocketSchema>
    *
    * @readonly
    */
-  get connections(): readonly InterceptedWebSocketInterceptorConnection[];
+  get connections(): readonly WebSocketInterceptorConnectionRequest<Path>[];
 }
 
 /**
@@ -101,7 +101,7 @@ export interface LocalWebSocketConnectionHandler<Schema extends WebSocketSchema>
  * mocking operations were committed to the connected
  * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
  */
-export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocketSchema> {
+export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocketSchema, Path extends string = string> {
   /**
    * The type of the handler.
    *
@@ -121,18 +121,20 @@ export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocket
    * Declares a restriction to intercepted connection matches. If multiple restrictions are declared, all of them must
    * be met.
    */
-  with: (restriction: WebSocketConnectionHandlerRestriction) => PendingRemoteWebSocketConnectionHandler<Schema>;
+  with: (
+    restriction: WebSocketConnectionHandlerRestriction<Path>,
+  ) => PendingRemoteWebSocketConnectionHandler<Schema, Path>;
 
   /** Declares a delay to wait before answering the handshake of matched connections. */
   delay: ((
-    milliseconds: number | WebSocketConnectionHandlerDelayFactory,
-  ) => PendingRemoteWebSocketConnectionHandler<Schema>) &
-    ((minMilliseconds: number, maxMilliseconds: number) => PendingRemoteWebSocketConnectionHandler<Schema>);
+    milliseconds: number | WebSocketConnectionHandlerDelayFactory<Path>,
+  ) => PendingRemoteWebSocketConnectionHandler<Schema, Path>) &
+    ((minMilliseconds: number, maxMilliseconds: number) => PendingRemoteWebSocketConnectionHandler<Schema, Path>);
 
   /** Declares a side effect to run when the handler matches a connection that is accepted. */
   effect: (
     callback: WebSocketConnectionHandlerConnectionCallback<Schema>,
-  ) => PendingRemoteWebSocketConnectionHandler<Schema>;
+  ) => PendingRemoteWebSocketConnectionHandler<Schema, Path>;
 
   /**
    * Declares a handshake response for matched connections. Matched connections are accepted if the handler declares no
@@ -140,14 +142,14 @@ export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocket
    */
   respond: (
     declaration: WebSocketConnectionHandlerResponseDeclaration,
-  ) => PendingRemoteWebSocketConnectionHandler<Schema>;
+  ) => PendingRemoteWebSocketConnectionHandler<Schema, Path>;
 
   /** Declares a number of intercepted connections that the handler will be able to match. */
-  times: ((numberOfConnections: number) => PendingRemoteWebSocketConnectionHandler<Schema>) &
+  times: ((numberOfConnections: number) => PendingRemoteWebSocketConnectionHandler<Schema, Path>) &
     ((
       minNumberOfConnections: number,
       maxNumberOfConnections: number,
-    ) => PendingRemoteWebSocketConnectionHandler<Schema>);
+    ) => PendingRemoteWebSocketConnectionHandler<Schema, Path>);
 
   /** Checks if the handler has matched the expected number of connections declared with `handler.times()`. */
   checkTimes: () => Promise<void>;
@@ -156,7 +158,7 @@ export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocket
    * Clears the declared responses, effects, restrictions, connection count limits, and saved connections of the
    * handler.
    */
-  clear: () => PendingRemoteWebSocketConnectionHandler<Schema>;
+  clear: () => PendingRemoteWebSocketConnectionHandler<Schema, Path>;
 
   /**
    * The connection attempts that matched this handler, whether accepted or rejected. Requires message saving to be
@@ -164,7 +166,7 @@ export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocket
    *
    * @readonly
    */
-  get connections(): readonly InterceptedWebSocketInterceptorConnection[];
+  get connections(): readonly WebSocketInterceptorConnectionRequest<Path>[];
 }
 
 /**
@@ -179,14 +181,15 @@ export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocket
  */
 export interface PendingRemoteWebSocketConnectionHandler<
   Schema extends WebSocketSchema,
-> extends SyncedRemoteWebSocketConnectionHandler<Schema> {
+  Path extends string = string,
+> extends SyncedRemoteWebSocketConnectionHandler<Schema, Path> {
   /**
    * Waits for the remote handler to be synced with the connected
    * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
    */
-  then: <FulfilledResult = SyncedRemoteWebSocketConnectionHandler<Schema>, RejectedResult = never>(
+  then: <FulfilledResult = SyncedRemoteWebSocketConnectionHandler<Schema, Path>, RejectedResult = never>(
     onFulfilled?:
-      ((handler: SyncedRemoteWebSocketConnectionHandler<Schema>) => PossiblePromise<FulfilledResult>) | null,
+      ((handler: SyncedRemoteWebSocketConnectionHandler<Schema, Path>) => PossiblePromise<FulfilledResult>) | null,
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ) => Promise<FulfilledResult | RejectedResult>;
 
@@ -196,13 +199,13 @@ export interface PendingRemoteWebSocketConnectionHandler<
    */
   catch: <RejectedResult = never>(
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
-  ) => Promise<SyncedRemoteWebSocketConnectionHandler<Schema> | RejectedResult>;
+  ) => Promise<SyncedRemoteWebSocketConnectionHandler<Schema, Path> | RejectedResult>;
 
   /**
    * Waits for the remote handler to be synced with the connected
    * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
    */
-  finally: (onFinally?: (() => void) | null) => Promise<SyncedRemoteWebSocketConnectionHandler<Schema>>;
+  finally: (onFinally?: (() => void) | null) => Promise<SyncedRemoteWebSocketConnectionHandler<Schema, Path>>;
 }
 
 /**
@@ -211,13 +214,15 @@ export interface PendingRemoteWebSocketConnectionHandler<
  * A remote WebSocket connection handler. In a remote handler, the mocking operations are asynchronous and include
  * remote calls to the connected {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
  */
-export type RemoteWebSocketConnectionHandler<Schema extends WebSocketSchema> =
-  PendingRemoteWebSocketConnectionHandler<Schema>;
+export type RemoteWebSocketConnectionHandler<
+  Schema extends WebSocketSchema,
+  Path extends string = string,
+> = PendingRemoteWebSocketConnectionHandler<Schema, Path>;
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * A WebSocket connection handler, either local or remote.
  */
-export type WebSocketConnectionHandler<Schema extends WebSocketSchema> =
-  LocalWebSocketConnectionHandler<Schema> | RemoteWebSocketConnectionHandler<Schema>;
+export type WebSocketConnectionHandler<Schema extends WebSocketSchema, Path extends string = string> =
+  LocalWebSocketConnectionHandler<Schema, Path> | RemoteWebSocketConnectionHandler<Schema, Path>;

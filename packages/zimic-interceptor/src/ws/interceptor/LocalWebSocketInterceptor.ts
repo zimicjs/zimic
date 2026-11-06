@@ -73,8 +73,8 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
     return this.implementation.message() as LocalWebSocketMessageHandler<Schema>;
   }
 
-  connection(path?: string) {
-    return this.implementation.connection(path) as LocalWebSocketConnectionHandler<Schema>;
+  connection<Path extends string = string>(path?: Path) {
+    return this.implementation.connection(path) as LocalWebSocketConnectionHandler<Schema, Path>;
   }
 
   get server(): PublicWebSocketInterceptorServer<Schema> {

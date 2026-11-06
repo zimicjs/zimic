@@ -1,4 +1,5 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
+import { HttpSearchParams } from '@zimic/utils/http';
 import { waitForDelay } from '@zimic/utils/time';
 import { WebSocketSchema } from '@zimic/ws';
 import { describe, expect, it, Mock, MockInstance, vi } from 'vitest';
@@ -17,7 +18,7 @@ import type {
   LocalWebSocketMessageHandler,
   PendingRemoteWebSocketMessageHandler,
 } from '../../../messageHandler/types/public';
-import type { InterceptedWebSocketInterceptorConnection } from '../../types/messages';
+import type { WebSocketInterceptorConnectionRequest } from '../../types/messages';
 import type { UnhandledMessageStrategy, WebSocketInterceptorType } from '../../types/options';
 
 type MessageSchema = WebSocketSchema<{ type: 'create'; body: { text: string } } | { type: 'delete'; id: string }>;
@@ -396,7 +397,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
       await usingWebSocketInterceptor<MessageSchema>({ type, baseURL }, async (interceptor) => {
         const delayStartedPromise = createPromiseWithResolvers<void>();
 
-        const delayFactory = vi.fn((_connection: InterceptedWebSocketInterceptorConnection) => {
+        const delayFactory = vi.fn((_request: WebSocketInterceptorConnectionRequest) => {
           delayStartedPromise.resolve();
           return delay;
         });
@@ -426,7 +427,12 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
           expect(eventTypes).toEqual(['error', 'close']);
 
           expect(delayFactory).toHaveBeenCalledTimes(1);
-          expect(delayFactory).toHaveBeenCalledWith({ url: new URL(`${baseURL}?room=1`).href, protocols: ['chat'] });
+          expect(delayFactory).toHaveBeenCalledWith({
+            url: new URL(`${baseURL}?room=1`).href,
+            protocols: ['chat'],
+            searchParams: new HttpSearchParams({ room: '1' }),
+            pathParams: {},
+          });
         } finally {
           vi.useRealTimers();
         }

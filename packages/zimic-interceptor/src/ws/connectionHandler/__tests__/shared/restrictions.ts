@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { expectWebSocketConnectionToBeRefused, expectWebSocketConnectionToOpen } from '@tests/utils/webSocket';
 
-import { InterceptedWebSocketInterceptorConnection } from '../../../interceptor/types/messages';
+import { WebSocketInterceptorConnectionRequest } from '../../../interceptor/types/messages';
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import { Schema, SharedWebSocketConnectionHandlerTestOptions } from './utils';
 
@@ -105,9 +105,9 @@ export function declareRestrictionWebSocketConnectionHandlerTests(
       await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
         const handler = await interceptor
           .connection()
-          .with((connection) => {
-            expectTypeOf(connection).toEqualTypeOf<InterceptedWebSocketInterceptorConnection>();
-            return new URL(connection.url).searchParams.get('room') === '1';
+          .with((request) => {
+            expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
+            return new URL(request.url).searchParams.get('room') === '1';
           })
           .respond({ action: 'reject' })
           .times(1);
@@ -164,7 +164,7 @@ export function declareRestrictionWebSocketConnectionHandlerTests(
       await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
         const handler = await interceptor
           .connection()
-          .with((connection) => connection.protocols[0] === 'chat')
+          .with((request) => request.protocols[0] === 'chat')
           .respond({ action: 'reject' })
           .times(1);
 
@@ -178,9 +178,9 @@ export function declareRestrictionWebSocketConnectionHandlerTests(
 
   it('should match only specific connections if contains a declared response and asynchronous computed restrictions', async () => {
     await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
-      const restriction = vi.fn(async (connection: InterceptedWebSocketInterceptorConnection) => {
+      const restriction = vi.fn(async (request: WebSocketInterceptorConnectionRequest) => {
         await Promise.resolve();
-        return connection.url.endsWith('/rejected');
+        return request.url.endsWith('/rejected');
       });
 
       const handler = await interceptor.connection().with(restriction).respond({ action: 'reject' }).times(1);
@@ -199,7 +199,7 @@ export function declareRestrictionWebSocketConnectionHandlerTests(
         .connection()
         .with({ searchParams: { room: '1' } })
         .with({ protocols: ['chat'] })
-        .with((connection) => !connection.url.includes('ignored'))
+        .with((request) => !request.url.includes('ignored'))
         .respond({ action: 'reject' })
         .times(1);
 

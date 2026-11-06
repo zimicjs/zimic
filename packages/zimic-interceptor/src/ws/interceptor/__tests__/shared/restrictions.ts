@@ -1,3 +1,4 @@
+import { HttpSearchParams } from '@zimic/utils/http';
 import { waitFor } from '@zimic/utils/time';
 import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
@@ -13,7 +14,7 @@ import {
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
 
-import { InterceptedWebSocketInterceptorConnection } from '../../types/messages';
+import { WebSocketInterceptorConnectionRequest } from '../../types/messages';
 import { WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
@@ -240,20 +241,6 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
     // No WebSocket counterpart for the "By headers" and "By body" HTTP groups: connection restrictions receive only the
     // URL and requested subprotocols, because browsers cannot set handshake headers and a handshake has no body.
 
-    it('should support intercepting connections having path restrictions', async () => {
-      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-        await promiseIfRemote(
-          interceptor.connection('/rooms/:roomId').respond({ action: 'reject' }).times(1),
-          interceptor,
-        );
-
-        await expectWebSocketConnectionToOpen(`${baseURL}/users/1`);
-        await expectWebSocketConnectionToBeRefused(`${baseURL}/rooms/1`);
-
-        await promiseIfRemote(interceptor.checkTimes(), interceptor);
-      });
-    });
-
     it('should support intercepting connections having partial search params restrictions', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         await promiseIfRemote(
@@ -292,8 +279,8 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
 
     it('should support intercepting connections having computed restrictions', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-        const restriction = vi.fn((connection: InterceptedWebSocketInterceptorConnection) => {
-          return new URL(connection.url).searchParams.has('blocked');
+        const restriction = vi.fn((request: WebSocketInterceptorConnectionRequest) => {
+          return request.searchParams.has('blocked');
         });
 
         await promiseIfRemote(
@@ -305,7 +292,12 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
         await expectWebSocketConnectionToBeRefused(`${baseURL}?blocked`);
 
         expect(restriction).toHaveBeenCalledTimes(2);
-        expect(restriction).toHaveBeenNthCalledWith(1, { url: new URL(baseURL).href, protocols: ['chat'] });
+        expect(restriction).toHaveBeenNthCalledWith(1, {
+          url: new URL(baseURL).href,
+          protocols: ['chat'],
+          searchParams: new HttpSearchParams(),
+          pathParams: {},
+        });
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
       });

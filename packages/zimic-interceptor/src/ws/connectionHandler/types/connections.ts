@@ -1,6 +1,6 @@
 import { PossiblePromise } from '@zimic/utils/types';
 
-import { InterceptedWebSocketInterceptorConnection } from '@/ws/interceptor/types/messages';
+import { WebSocketInterceptorConnectionRequest } from '@/ws/interceptor/types/messages';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -8,6 +8,6 @@ import { InterceptedWebSocketInterceptorConnection } from '@/ws/interceptor/type
  * A function declared with `handler.delay()` that computes the delay in milliseconds for each matched connection
  * attempt, before the handshake is answered.
  */
-export type WebSocketConnectionHandlerDelayFactory = (
-  connection: InterceptedWebSocketInterceptorConnection,
+export type WebSocketConnectionHandlerDelayFactory<Path extends string = string> = (
+  request: WebSocketInterceptorConnectionRequest<Path>,
 ) => PossiblePromise<number>;

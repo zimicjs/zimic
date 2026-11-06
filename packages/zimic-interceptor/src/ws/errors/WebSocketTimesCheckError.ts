@@ -88,10 +88,10 @@ function createUnmatchedMessageDiffs(unmatchedMessageGroups: UnmatchedWebSocketI
 }
 
 function createUnmatchedConnectionDiffs(unmatchedConnectionGroups: UnmatchedWebSocketInterceptorConnectionGroup[]) {
-  return unmatchedConnectionGroups.map(({ connection, diff }, index) => {
+  return unmatchedConnectionGroups.map(({ request, diff }, index) => {
     const connectionNumber = index + 1;
 
-    const connectionParts = [`${connectionNumber}: ${connection.url}`];
+    const connectionParts = [`${connectionNumber}: ${request.url}`];
 
     if (diff.computed) {
       connectionParts.push('Computed restriction:');

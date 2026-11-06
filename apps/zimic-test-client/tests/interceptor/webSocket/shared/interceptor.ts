@@ -1,10 +1,10 @@
 import { JSONSerialized } from '@zimic/http';
 import {
   createWebSocketInterceptor,
-  InterceptedWebSocketInterceptorConnection,
   InterceptedWebSocketInterceptorMessage,
   WebSocketInterceptor,
   WebSocketInterceptorClient,
+  WebSocketInterceptorConnectionRequest,
   WebSocketInterceptorType,
   WebSocketTimesCheckError,
 } from '@zimic/interceptor/experimental/ws';
@@ -300,7 +300,7 @@ export function declareWebSocketInterceptorTests({
         declareHandler: () =>
           userInterceptor
             .connection()
-            .with((connection) => connection.protocols.includes('legacy-protocol'))
+            .with((request) => request.protocols.includes('legacy-protocol'))
             .respond({ action: 'reject' }),
       },
     ])(
@@ -320,7 +320,10 @@ export function declareWebSocketInterceptorTests({
           expect(userInterceptor.clients[userSockets.length].url).toBe(acceptedURL);
           expect(userInterceptor.clients[userSockets.length].protocols).toEqual(acceptedProtocols);
 
-          expect(handler.connections).toEqual([{ url: rejectedURL, protocols: rejectedProtocols }]);
+          expect(handler.connections).toHaveLength(1);
+          expect(handler.connections[0].url).toBe(rejectedURL);
+          expect(handler.connections[0].protocols).toEqual(rejectedProtocols);
+          expect(handler.connections[0].pathParams).toEqual({});
         } finally {
           await closeWebSocketClient(acceptedSocket);
         }
@@ -349,13 +352,14 @@ export function declareWebSocketInterceptorTests({
       try {
         await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length + 1));
 
-        const expectedConnection: InterceptedWebSocketInterceptorConnection = {
+        const expectedRequest: Partial<WebSocketInterceptorConnectionRequest> = {
           url: roomURL,
           protocols: [],
+          pathParams: {},
         };
 
-        expect(rejectingHandler.connections).toEqual([expectedConnection]);
-        expect(acceptingHandler.connections).toEqual([expectedConnection]);
+        expect(rejectingHandler.connections).toMatchObject([expectedRequest]);
+        expect(acceptingHandler.connections).toMatchObject([expectedRequest]);
       } finally {
         await closeWebSocketClient(reconnectedSocket);
       }

@@ -1,3 +1,4 @@
+import { HttpSearchParams } from '@zimic/utils/http';
 import { waitFor } from '@zimic/utils/time';
 import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -572,9 +573,21 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
           await expectWebSocketConnectionToBeRefused(`${baseURL}/rejected`);
 
           expect(acceptingHandler.connections).toEqual([
-            { url: new URL(`${baseURL}/accepted`).href, protocols: ['chat'] },
+            {
+              url: new URL(`${baseURL}/accepted`).href,
+              protocols: ['chat'],
+              searchParams: new HttpSearchParams(),
+              pathParams: {},
+            },
           ]);
-          expect(rejectingHandler.connections).toEqual([{ url: new URL(`${baseURL}/rejected`).href, protocols: [] }]);
+          expect(rejectingHandler.connections).toEqual([
+            {
+              url: new URL(`${baseURL}/rejected`).href,
+              protocols: [],
+              searchParams: new HttpSearchParams(),
+              pathParams: {},
+            },
+          ]);
         },
       );
     });

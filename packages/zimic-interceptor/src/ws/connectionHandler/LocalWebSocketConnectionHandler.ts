@@ -12,21 +12,26 @@ import WebSocketConnectionHandlerImplementation from './WebSocketConnectionHandl
 
 class LocalWebSocketConnectionHandler<
   Schema extends WebSocketSchema,
-> implements PublicLocalWebSocketConnectionHandler<Schema> {
+  Path extends string = string,
+> implements PublicLocalWebSocketConnectionHandler<Schema, Path> {
   readonly type = 'local';
 
-  implementation: WebSocketConnectionHandlerImplementation<Schema>;
+  implementation: WebSocketConnectionHandlerImplementation<Schema, Path>;
 
-  constructor(interceptorImplementation: WebSocketInterceptorImplementation<Schema>, path: string | undefined) {
-    this.implementation = new WebSocketConnectionHandlerImplementation<Schema>(interceptorImplementation, path, this);
+  constructor(interceptorImplementation: WebSocketInterceptorImplementation<Schema>, path: Path | undefined) {
+    this.implementation = new WebSocketConnectionHandlerImplementation<Schema, Path>(
+      interceptorImplementation,
+      path,
+      this,
+    );
   }
 
-  with(restriction: WebSocketConnectionHandlerRestriction) {
+  with(restriction: WebSocketConnectionHandlerRestriction<Path>) {
     this.implementation.with(restriction);
     return this;
   }
 
-  delay(minMilliseconds: number | WebSocketConnectionHandlerDelayFactory, maxMilliseconds?: number) {
+  delay(minMilliseconds: number | WebSocketConnectionHandlerDelayFactory<Path>, maxMilliseconds?: number) {
     this.implementation.delay(minMilliseconds, maxMilliseconds);
     return this;
   }

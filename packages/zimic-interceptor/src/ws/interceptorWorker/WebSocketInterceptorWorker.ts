@@ -1,3 +1,4 @@
+import { HttpSearchParams } from '@zimic/utils/http';
 import { PossiblePromise } from '@zimic/utils/types';
 import { createRegexFromPath, excludeNonPathParams, validatePathParams } from '@zimic/utils/url';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
@@ -11,9 +12,9 @@ import type {
   WebSocketConnectionHandlerConnectionMatch,
 } from '../connectionHandler/WebSocketConnectionHandlerImplementation';
 import {
-  InterceptedWebSocketInterceptorConnection,
   ReceivedWebSocketMessageData,
   WebSocketInterceptorClient,
+  WebSocketInterceptorConnectionRequest,
 } from '../interceptor/types/messages';
 import { WebSocketInterceptorPlatform } from '../interceptor/types/options';
 import { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
@@ -51,6 +52,7 @@ interface WebSocketConnectionHandler {
 
 interface FailedWebSocketConnectionMatch {
   handler: WebSocketConnectionHandler;
+  request: WebSocketInterceptorConnectionRequest;
   connectionMatch: Extract<WebSocketConnectionHandlerConnectionMatch, { success: false }>;
 }
 
@@ -177,7 +179,7 @@ abstract class WebSocketInterceptorWorker {
   // created to the first, and the first match decides the handshake. The connection is accepted if no handler handles
   // it. Interceptors that let the connection go while it is decided no longer hold it, as reported by `isHolding`.
   protected async handleConnectionWithHandlers(
-    connection: InterceptedWebSocketInterceptorConnection,
+    connection: Pick<WebSocketInterceptorConnectionRequest, 'url' | 'protocols'>,
     isHolding: (interceptor: AnyWebSocketInterceptorImplementation) => boolean,
   ): Promise<WebSocketConnectionHandling> {
     const connectionURLWithoutNonPathParams = excludeNonPathParams(new URL(connection.url));
@@ -199,7 +201,9 @@ abstract class WebSocketInterceptorWorker {
       }
 
       try {
-        const connectionMatch = await handler.implementation.matchesConnection(connection);
+        const request = this.parseConnectionRequest(connection, connectionURL, handler);
+
+        const connectionMatch = await handler.implementation.matchesConnection(request);
 
         // As with an HTTP handler cleared while matching a request, older handlers are not tried, whatever the match
         // result.
@@ -208,18 +212,18 @@ abstract class WebSocketInterceptorWorker {
         }
 
         if (!connectionMatch.success) {
-          failedConnectionMatches.push({ handler, connectionMatch });
+          failedConnectionMatches.push({ handler, request, connectionMatch });
           continue;
         }
 
         const reservation = handler.implementation.reserveConnection();
 
         if (!reservation.success) {
-          failedConnectionMatches.push({ handler, connectionMatch: reservation });
+          failedConnectionMatches.push({ handler, request, connectionMatch: reservation });
           continue;
         }
 
-        const action = await holder.handleMatchedConnection(handler.implementation, connection);
+        const action = await holder.handleMatchedConnection(handler.implementation, request);
 
         if (action === null) {
           return UNHANDLED_CONNECTION_HANDLING;
@@ -235,7 +239,7 @@ abstract class WebSocketInterceptorWorker {
       }
     }
 
-    this.markConnectionAsUnhandled(connection, failedConnectionMatches, isHolding);
+    this.markConnectionAsUnhandled(failedConnectionMatches, isHolding);
 
     return UNHANDLED_CONNECTION_HANDLING;
   }
@@ -249,28 +253,53 @@ abstract class WebSocketInterceptorWorker {
     return handler.pathRegex.test(connectionPath);
   }
 
+  private parseConnectionRequest(
+    connection: Pick<WebSocketInterceptorConnectionRequest, 'url' | 'protocols'>,
+    connectionURL: string,
+    handler: WebSocketConnectionHandler,
+  ): WebSocketInterceptorConnectionRequest {
+    return {
+      url: connection.url,
+      protocols: connection.protocols,
+      searchParams: new HttpSearchParams(new URL(connection.url).searchParams),
+      pathParams: this.parseConnectionPathParams(connectionURL, handler),
+    };
+  }
+
+  private parseConnectionPathParams(connectionURL: string, handler: WebSocketConnectionHandler) {
+    const connectionPath = connectionURL.replace(handler.interceptor.baseURLAsString, '');
+    const paramsMatch = handler.pathRegex?.exec(connectionPath);
+
+    const params: Record<string, string | undefined> = {};
+
+    for (const [paramName, paramValue] of Object.entries(paramsMatch?.groups ?? {})) {
+      params[paramName] = typeof paramValue === 'string' ? decodeURIComponent(paramValue) : undefined;
+    }
+
+    return params;
+  }
+
   // Handlers that failed only on restrictions record their diffs. The newest handler that failed for any other cause
   // keeps older handlers from being counted. If it exceeded its `times` limit, it is still marked as matched to trigger
   // a times check error, as in HTTP. A cleared handler is not counted: unlike HTTP, where only `respond` re-enables it
   // and resets the count, `with`, `delay`, and `times` re-enable it without resetting, so the count would satisfy its
   // later limits. Handlers whose interceptor let the connection go after their match record nothing.
   private markConnectionAsUnhandled(
-    connection: InterceptedWebSocketInterceptorConnection,
     failedConnectionMatches: FailedWebSocketConnectionMatch[],
     isHolding: (interceptor: AnyWebSocketInterceptorImplementation) => boolean,
   ) {
-    for (const { handler, connectionMatch } of failedConnectionMatches) {
+    for (const { handler, request, connectionMatch } of failedConnectionMatches) {
       if (!isHolding(handler.interceptor)) {
         continue;
       }
 
       if (connectionMatch.cause === 'unmatchedRestrictions') {
-        handler.implementation.markConnectionAsUnmatched(connection, { diff: connectionMatch.diff });
+        handler.implementation.markConnectionAsUnmatched(request, { diff: connectionMatch.diff });
         continue;
       }
 
       if (connectionMatch.cause !== 'clearedHandler') {
-        handler.implementation.markConnectionAsMatched(connection);
+        handler.implementation.markConnectionAsMatched(request);
       }
 
       break;

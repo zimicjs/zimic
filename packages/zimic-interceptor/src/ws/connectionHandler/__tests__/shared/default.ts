@@ -1,4 +1,5 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
+import { HttpSearchParams } from '@zimic/utils/http';
 import { WebSocketClient } from '@zimic/ws';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -184,7 +185,12 @@ export function declareDefaultWebSocketConnectionHandlerTests(
 
         try {
           expect(handler.connections).toHaveLength(1);
-          expect(handler.connections[0]).toEqual({ url: socket.url, protocols: ['chat', 'json'] });
+          expect(handler.connections[0]).toEqual({
+            url: socket.url,
+            protocols: ['chat', 'json'],
+            searchParams: new HttpSearchParams({ room: '1' }),
+            pathParams: {},
+          });
         } finally {
           socket.close();
         }

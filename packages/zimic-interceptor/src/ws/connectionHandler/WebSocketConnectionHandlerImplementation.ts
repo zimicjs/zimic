@@ -7,7 +7,7 @@ import { random } from '@/utils/numbers';
 
 import WebSocketTimesCheckError from '../errors/WebSocketTimesCheckError';
 import WebSocketTimesDeclarationPointer from '../errors/WebSocketTimesDeclarationPointer';
-import { InterceptedWebSocketInterceptorConnection, WebSocketInterceptorClient } from '../interceptor/types/messages';
+import { WebSocketInterceptorClient, WebSocketInterceptorConnectionRequest } from '../interceptor/types/messages';
 import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
 import type { WebSocketInterceptorConnectionHandlerIndex } from '../interceptor/WebSocketInterceptorMessageStore';
 import DisabledMessageSavingError from '../messageHandler/errors/DisabledMessageSavingError';
@@ -41,8 +41,8 @@ export type WebSocketConnectionHandlerAction = 'accept' | 'reject';
 type StaticRestrictionFieldMatch<Value> =
   { success: true } | { success: false; diff: WebSocketConnectionHandlerRestrictionDiff<Value> };
 
-class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema> {
-  private restrictions: WebSocketConnectionHandlerRestriction[] = [];
+class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, Path extends string = string> {
+  private restrictions: WebSocketConnectionHandlerRestriction<Path>[] = [];
 
   private limits = {
     numberOfConnections: DEFAULT_NUMBER_OF_CONNECTION_LIMITS,
@@ -52,11 +52,11 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema> {
 
   private numberOfMatchedConnections = 0;
   private unmatchedConnectionGroups: UnmatchedWebSocketInterceptorConnectionGroup[] = [];
-  private savedConnectionIndex: WebSocketInterceptorConnectionHandlerIndex;
+  private savedConnectionIndex: WebSocketInterceptorConnectionHandlerIndex<Path>;
 
   private responseDeclaration?: WebSocketConnectionHandlerResponseDeclaration;
 
-  private createResponseDelay?: WebSocketConnectionHandlerDelayFactory;
+  private createResponseDelay?: WebSocketConnectionHandlerDelayFactory<Path>;
 
   private applyEffect?: WebSocketConnectionHandlerConnectionCallback<Schema>;
 
@@ -69,18 +69,18 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema> {
   constructor(
     private interceptor: WebSocketInterceptorImplementation<Schema>,
     readonly path: string | undefined,
-    private handler: InternalWebSocketConnectionHandler<Schema>,
+    private handler: InternalWebSocketConnectionHandler<Schema, Path>,
   ) {
-    this.savedConnectionIndex = this.interceptor.messageStore.createConnectionHandlerIndex();
+    this.savedConnectionIndex = this.interceptor.messageStore.createConnectionHandlerIndex<Path>();
   }
 
-  with(restriction: WebSocketConnectionHandlerRestriction) {
+  with(restriction: WebSocketConnectionHandlerRestriction<Path>) {
     this.restrictions.push(restriction);
     this.isCleared = false;
     return this;
   }
 
-  delay(minMilliseconds: number | WebSocketConnectionHandlerDelayFactory, maxMilliseconds?: number): this {
+  delay(minMilliseconds: number | WebSocketConnectionHandlerDelayFactory<Path>, maxMilliseconds?: number): this {
     this.isCleared = false;
 
     if (minMilliseconds === maxMilliseconds) {
@@ -175,9 +175,9 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema> {
   }
 
   async matchesConnection(
-    connection: InterceptedWebSocketInterceptorConnection,
+    request: WebSocketInterceptorConnectionRequest<Path>,
   ): Promise<WebSocketConnectionHandlerConnectionMatch> {
-    const restrictionsMatch = await this.matchesRestrictions(connection);
+    const restrictionsMatch = await this.matchesRestrictions(request);
 
     // Checked after the restrictions because the handler may be cleared while they are matched asynchronously.
     if (this.isCleared) {
@@ -211,11 +211,11 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema> {
   }
 
   private async matchesRestrictions(
-    connection: InterceptedWebSocketInterceptorConnection,
+    request: WebSocketInterceptorConnectionRequest<Path>,
   ): Promise<WebSocketConnectionHandlerRestrictionMatch> {
     for (const restriction of this.restrictions) {
       if (this.isComputedConnectionRestriction(restriction)) {
-        const matchesComputedRestriction = await restriction(connection);
+        const matchesComputedRestriction = await restriction(request);
 
         if (!matchesComputedRestriction) {
           return {
@@ -227,8 +227,8 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema> {
         continue;
       }
 
-      const matchesSearchParamsRestriction = this.matchesSearchParamsRestriction(connection, restriction);
-      const matchesProtocolsRestriction = this.matchesProtocolsRestriction(connection, restriction);
+      const matchesSearchParamsRestriction = this.matchesSearchParamsRestriction(request, restriction);
+      const matchesProtocolsRestriction = this.matchesProtocolsRestriction(request, restriction);
 
       if (!matchesSearchParamsRestriction.success || !matchesProtocolsRestriction.success) {
         return {
@@ -244,12 +244,12 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema> {
     return { success: true };
   }
 
-  private isComputedConnectionRestriction(restriction: WebSocketConnectionHandlerRestriction) {
+  private isComputedConnectionRestriction(restriction: WebSocketConnectionHandlerRestriction<Path>) {
     return typeof restriction === 'function';
   }
 
   private matchesSearchParamsRestriction(
-    connection: InterceptedWebSocketInterceptorConnection,
+    request: WebSocketInterceptorConnectionRequest<Path>,
     restriction: WebSocketConnectionHandlerStaticRestriction,
   ): StaticRestrictionFieldMatch<HttpSearchParams> {
     if (restriction.searchParams === undefined) {
@@ -257,19 +257,18 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema> {
     }
 
     const restrictedSearchParams: HttpSearchParams = new HttpSearchParams(restriction.searchParams);
-    const searchParams: HttpSearchParams = new HttpSearchParams(new URL(connection.url).searchParams);
 
     const matchesRestriction = restriction.exact
-      ? searchParams.equals(restrictedSearchParams)
-      : searchParams.contains(restrictedSearchParams);
+      ? request.searchParams.equals(restrictedSearchParams)
+      : request.searchParams.contains(restrictedSearchParams);
 
     return matchesRestriction
       ? { success: true }
-      : { success: false, diff: { expected: restrictedSearchParams, received: searchParams } };
+      : { success: false, diff: { expected: restrictedSearchParams, received: request.searchParams } };
   }
 
   private matchesProtocolsRestriction(
-    connection: InterceptedWebSocketInterceptorConnection,
+    request: WebSocketInterceptorConnectionRequest<Path>,
     restriction: WebSocketConnectionHandlerStaticRestriction,
   ): StaticRestrictionFieldMatch<readonly string[]> {
     if (restriction.protocols === undefined) {
@@ -280,40 +279,40 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema> {
 
     // Requested subprotocols are listed in the client's order of preference, so their order is part of an exact match.
     const matchesRestriction = restriction.exact
-      ? restrictedProtocols.length === connection.protocols.length &&
-        restrictedProtocols.every((protocol, index) => connection.protocols[index] === protocol)
-      : restrictedProtocols.every((protocol) => connection.protocols.includes(protocol));
+      ? restrictedProtocols.length === request.protocols.length &&
+        restrictedProtocols.every((protocol, index) => request.protocols[index] === protocol)
+      : restrictedProtocols.every((protocol) => request.protocols.includes(protocol));
 
     return matchesRestriction
       ? { success: true }
-      : { success: false, diff: { expected: restrictedProtocols, received: connection.protocols } };
+      : { success: false, diff: { expected: restrictedProtocols, received: request.protocols } };
   }
 
-  markConnectionAsMatched(_connection: InterceptedWebSocketInterceptorConnection) {
+  markConnectionAsMatched(_request: WebSocketInterceptorConnectionRequest<Path>) {
     this.numberOfMatchedConnections++;
   }
 
   markConnectionAsUnmatched(
-    connection: InterceptedWebSocketInterceptorConnection,
+    request: WebSocketInterceptorConnectionRequest<Path>,
     options: { diff: WebSocketConnectionHandlerRestrictionDiffs },
   ) {
     const shouldSaveUnmatchedConnections =
       this.interceptor.messageSaving.enabled && this.restrictions.length > 0 && this.timesPointer !== undefined;
 
     if (shouldSaveUnmatchedConnections) {
-      this.unmatchedConnectionGroups.push({ connection, diff: options.diff });
+      this.unmatchedConnectionGroups.push({ request, diff: options.diff });
     }
   }
 
   // Called in the same synchronous step that reserves the connection, so the captured generation is the one the
   // connection was counted in. Returns the action to apply to the connection, or `null` if it was not handled.
   async applyDeclarations(
-    connection: InterceptedWebSocketInterceptorConnection,
+    request: WebSocketInterceptorConnectionRequest<Path>,
   ): Promise<WebSocketConnectionHandlerAction | null> {
     const clearGeneration = this.clearGeneration;
 
     if (this.createResponseDelay) {
-      const delay = await this.createResponseDelay(connection);
+      const delay = await this.createResponseDelay(request);
 
       if (delay > 0) {
         await waitForDelay(delay);
@@ -332,8 +331,8 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema> {
     await this.applyEffect?.(client);
   }
 
-  saveInterceptedConnection(connection: InterceptedWebSocketInterceptorConnection) {
-    this.interceptor.messageStore.saveConnection(this.savedConnectionIndex, connection);
+  saveInterceptedConnection(request: WebSocketInterceptorConnectionRequest<Path>) {
+    this.interceptor.messageStore.saveConnection(this.savedConnectionIndex, request);
   }
 
   get connections() {
@@ -345,6 +344,6 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema> {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyWebSocketConnectionHandlerImplementation = WebSocketConnectionHandlerImplementation<any>;
+export type AnyWebSocketConnectionHandlerImplementation = WebSocketConnectionHandlerImplementation<any, any>;
 
 export default WebSocketConnectionHandlerImplementation;

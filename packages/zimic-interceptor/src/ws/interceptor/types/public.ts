@@ -118,7 +118,7 @@ export interface LocalWebSocketInterceptor<Schema extends WebSocketSchema> exten
    * @param path The path of the connections to match, relative to the base URL of the interceptor, such as
    *   `/rooms/:roomId`. If omitted, the handler matches every connection to the interceptor.
    */
-  connection: (path?: string) => LocalWebSocketConnectionHandler<Schema>;
+  connection: <Path extends string = string>(path?: Path) => LocalWebSocketConnectionHandler<Schema, Path>;
 
   /**
    * Checks if all handlers created by this interceptor have matched the number of messages or connections declared with
@@ -160,7 +160,7 @@ export interface RemoteWebSocketInterceptor<Schema extends WebSocketSchema> exte
    * @param path The path of the connections to match, relative to the base URL of the interceptor, such as
    *   `/rooms/:roomId`. If omitted, the handler matches every connection to the interceptor.
    */
-  connection: (path?: string) => RemoteWebSocketConnectionHandler<Schema>;
+  connection: <Path extends string = string>(path?: Path) => RemoteWebSocketConnectionHandler<Schema, Path>;
 
   /**
    * Checks if all handlers created by this interceptor have matched the number of messages or connections declared with

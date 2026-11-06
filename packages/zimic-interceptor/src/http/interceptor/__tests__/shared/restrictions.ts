@@ -867,8 +867,8 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
     });
   });
 
-  // No HTTP counterpart for "should support intercepting connections having path restrictions": HTTP handlers always
-  // declare their path, which the handler suites cover, while WebSocket connection handlers may omit it.
+  // No HTTP counterpart for "should intercept only connections to the path declared by the handler": HTTP handlers
+  // always declare their path, while WebSocket connection handlers may omit it.
 
   // No HTTP counterpart for "should support intercepting connections having partial protocols restrictions": HTTP
   // requests negotiate no subprotocols.

@@ -1,7 +1,7 @@
 import { HttpSearchParams } from '@zimic/utils/http';
 import { PossiblePromise } from '@zimic/utils/types';
 
-import { InterceptedWebSocketInterceptorConnection } from '@/ws/interceptor/types/messages';
+import { WebSocketInterceptorConnectionRequest } from '@/ws/interceptor/types/messages';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -33,8 +33,8 @@ export interface WebSocketConnectionHandlerStaticRestriction {
  *
  * A computed restriction declared with `handler.with()`, returning whether a connection attempt matches.
  */
-export type WebSocketConnectionHandlerComputedRestriction = (
-  connection: InterceptedWebSocketInterceptorConnection,
+export type WebSocketConnectionHandlerComputedRestriction<Path extends string = string> = (
+  request: WebSocketInterceptorConnectionRequest<Path>,
 ) => PossiblePromise<boolean>;
 
 /**
@@ -42,8 +42,8 @@ export type WebSocketConnectionHandlerComputedRestriction = (
  *
  * A restriction declared with `handler.with()`, either static or computed.
  */
-export type WebSocketConnectionHandlerRestriction =
-  WebSocketConnectionHandlerStaticRestriction | WebSocketConnectionHandlerComputedRestriction;
+export type WebSocketConnectionHandlerRestriction<Path extends string = string> =
+  WebSocketConnectionHandlerStaticRestriction | WebSocketConnectionHandlerComputedRestriction<Path>;
 
 export interface WebSocketConnectionHandlerRestrictionDiff<Value> {
   expected: Value;
@@ -60,6 +60,6 @@ export type WebSocketConnectionHandlerRestrictionMatch =
   { success: true } | { success: false; diff: WebSocketConnectionHandlerRestrictionDiffs };
 
 export interface UnmatchedWebSocketInterceptorConnectionGroup {
-  connection: InterceptedWebSocketInterceptorConnection;
+  request: WebSocketInterceptorConnectionRequest;
   diff: WebSocketConnectionHandlerRestrictionDiffs;
 }

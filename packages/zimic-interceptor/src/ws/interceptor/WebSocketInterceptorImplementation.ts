@@ -21,9 +21,9 @@ import { normalizeWebSocketMessageData } from '../utils/messageData';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
 import type {
-  InterceptedWebSocketInterceptorConnection,
   ReceivedWebSocketMessageData,
   WebSocketInterceptorClient,
+  WebSocketInterceptorConnectionRequest,
   WebSocketInterceptorServerSendOptions,
 } from './types/messages';
 import type { UnhandledMessageStrategy } from './types/options';
@@ -305,18 +305,20 @@ class WebSocketInterceptorImplementation<
     this.workerOrThrow.useMessageHandler(this, handler.implementation);
   }
 
-  connection(path?: string) {
-    return this.createWebSocketConnectionHandler(path);
+  connection<Path extends string = string>(path?: Path) {
+    return this.createWebSocketConnectionHandler<Path>(path);
   }
 
-  private createWebSocketConnectionHandler(path: string | undefined): WebSocketConnectionHandler<Schema> {
-    const handler = new this.ConnectionHandler<Schema>(this, path);
+  private createWebSocketConnectionHandler<Path extends string>(
+    path: Path | undefined,
+  ): WebSocketConnectionHandler<Schema, Path> {
+    const handler = new this.ConnectionHandler<Schema, Path>(this, path);
     this.registerConnectionHandler(handler);
 
     return handler;
   }
 
-  registerConnectionHandler(handler: InternalWebSocketConnectionHandler<Schema>) {
+  registerConnectionHandler<Path extends string>(handler: InternalWebSocketConnectionHandler<Schema, Path>) {
     if (!this.isRunning || this.isStopping) {
       throw new NotRunningWebSocketInterceptorError();
     }
@@ -334,18 +336,18 @@ class WebSocketInterceptorImplementation<
 
   async handleMatchedConnection(
     handler: AnyWebSocketConnectionHandlerImplementation,
-    connection: InterceptedWebSocketInterceptorConnection,
+    request: WebSocketInterceptorConnectionRequest,
   ) {
     const messageSavingGeneration = this.messageSavingGeneration;
 
-    const action = await handler.applyDeclarations(connection);
+    const action = await handler.applyDeclarations(request);
 
     if (action === null) {
       return null;
     }
 
     if (this.messageSaving.enabled && messageSavingGeneration === this.messageSavingGeneration) {
-      handler.saveInterceptedConnection(connection);
+      handler.saveInterceptedConnection(request);
     }
 
     return action;

@@ -2,9 +2,9 @@ import { WebSocketSchema } from '@zimic/ws';
 
 import MessageSavingSafeLimitExceededError from './errors/MessageSavingSafeLimitExceededError';
 import type {
-  InterceptedWebSocketInterceptorConnection,
   InterceptedWebSocketInterceptorMessage,
   ReceivedWebSocketMessageData,
+  WebSocketInterceptorConnectionRequest,
 } from './types/messages';
 import type {
   InternalWebSocketInterceptorClient,
@@ -25,8 +25,8 @@ export interface WebSocketInterceptorMessageHandlerIndex<
   records: Set<WebSocketInterceptorMessageRecord<Schema>>;
 }
 
-export interface WebSocketInterceptorConnectionHandlerIndex {
-  connections: InterceptedWebSocketInterceptorConnection[];
+export interface WebSocketInterceptorConnectionHandlerIndex<Path extends string = string> {
+  connections: WebSocketInterceptorConnectionRequest<Path>[];
 }
 
 class WebSocketInterceptorMessageStore<Schema extends WebSocketSchema> {
@@ -37,21 +37,21 @@ class WebSocketInterceptorMessageStore<Schema extends WebSocketSchema> {
 
   constructor(private getSafeLimit: () => number) {}
 
-  createConnectionHandlerIndex(): WebSocketInterceptorConnectionHandlerIndex {
+  createConnectionHandlerIndex<Path extends string>(): WebSocketInterceptorConnectionHandlerIndex<Path> {
     return { connections: [] };
   }
 
-  saveConnection(
-    handlerIndex: WebSocketInterceptorConnectionHandlerIndex,
-    connection: InterceptedWebSocketInterceptorConnection,
+  saveConnection<Path extends string>(
+    handlerIndex: WebSocketInterceptorConnectionHandlerIndex<Path>,
+    request: WebSocketInterceptorConnectionRequest<Path>,
   ) {
-    handlerIndex.connections.push(connection);
+    handlerIndex.connections.push(request);
     this.numberOfSavedConnections++;
 
     this.warnIfSafeLimitExceeded();
   }
 
-  clearConnectionHandler(handlerIndex: WebSocketInterceptorConnectionHandlerIndex) {
+  clearConnectionHandler<Path extends string>(handlerIndex: WebSocketInterceptorConnectionHandlerIndex<Path>) {
     this.numberOfSavedConnections -= handlerIndex.connections.length;
     handlerIndex.connections.length = 0;
   }

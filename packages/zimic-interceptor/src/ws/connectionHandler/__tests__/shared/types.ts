@@ -1,9 +1,7 @@
 import { expectTypeOf, it } from 'vitest';
 
-import {
-  InterceptedWebSocketInterceptorConnection,
-  WebSocketInterceptorClient,
-} from '../../../interceptor/types/messages';
+import { WebSocketInterceptorClient, WebSocketInterceptorConnectionRequest } from '../../../interceptor/types/messages';
+import type { LocalWebSocketInterceptor, RemoteWebSocketInterceptor } from '../../../interceptor/types/public';
 import type {
   LocalWebSocketConnectionHandler,
   PendingRemoteWebSocketConnectionHandler,
@@ -16,22 +14,82 @@ export function declareTypeWebSocketConnectionHandlerTests() {
   it('should type connection attempts in computed restrictions and delays, and clients in effects', () => {
     function declareLocalHandler(handler: LocalWebSocketConnectionHandler<Schema>) {
       handler
-        .with((connection) => {
-          expectTypeOf(connection).toEqualTypeOf<InterceptedWebSocketInterceptorConnection>();
-          return connection.protocols.includes('chat');
+        .with((request) => {
+          expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
+          return request.protocols.includes('chat');
         })
-        .delay((connection) => {
-          expectTypeOf(connection).toEqualTypeOf<InterceptedWebSocketInterceptorConnection>();
+        .delay((request) => {
+          expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
           return 0;
         })
         .effect((client) => {
           expectTypeOf(client).toEqualTypeOf<WebSocketInterceptorClient<Schema>>();
         });
 
-      expectTypeOf(handler.connections).toEqualTypeOf<readonly InterceptedWebSocketInterceptorConnection[]>();
+      expectTypeOf(handler.connections).toEqualTypeOf<readonly WebSocketInterceptorConnectionRequest[]>();
     }
 
     expectTypeOf(declareLocalHandler).toBeFunction();
+  });
+
+  it('should type path params from the declared path', () => {
+    function declareHandlers(
+      localInterceptor: LocalWebSocketInterceptor<Schema>,
+      remoteInterceptor: RemoteWebSocketInterceptor<Schema>,
+    ) {
+      localInterceptor
+        .connection('/rooms/:roomId')
+        .with((request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<{ roomId: string }>();
+
+          // @ts-expect-error The path does not declare this param.
+          return request.pathParams.userId === '1';
+        })
+        .delay((request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<{ roomId: string }>();
+          return 0;
+        });
+
+      expectTypeOf(localInterceptor.connection('/rooms/:roomId').connections).toEqualTypeOf<
+        readonly WebSocketInterceptorConnectionRequest<'/rooms/:roomId'>[]
+      >();
+
+      remoteInterceptor
+        .connection('/rooms/:roomId')
+        .with((request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<{ roomId: string }>();
+
+          // @ts-expect-error The path does not declare this param.
+          return request.pathParams.userId === '1';
+        })
+        .delay((request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<{ roomId: string }>();
+          return 0;
+        });
+
+      async function awaitRemoteHandler() {
+        const syncedHandler = await remoteInterceptor.connection('/rooms/:roomId');
+        expectTypeOf(syncedHandler.connections).toEqualTypeOf<
+          readonly WebSocketInterceptorConnectionRequest<'/rooms/:roomId'>[]
+        >();
+      }
+
+      expectTypeOf(awaitRemoteHandler).toBeFunction();
+
+      const roomId = '1' as string;
+
+      localInterceptor.connection(`/rooms/${roomId}`).with((request) => {
+        expectTypeOf(request.pathParams).toEqualTypeOf<{}>();
+        return true;
+      });
+
+      localInterceptor.connection().with((request) => {
+        expectTypeOf(request.pathParams).toEqualTypeOf<{}>();
+        return true;
+      });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
   });
 
   it('should accept static restrictions with search params, protocols, and exact', () => {

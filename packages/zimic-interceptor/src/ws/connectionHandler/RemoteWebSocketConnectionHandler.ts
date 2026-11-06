@@ -16,16 +16,21 @@ const PENDING_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Pr
 
 class RemoteWebSocketConnectionHandler<
   Schema extends WebSocketSchema,
-> implements PublicPendingRemoteWebSocketConnectionHandler<Schema> {
+  Path extends string = string,
+> implements PublicPendingRemoteWebSocketConnectionHandler<Schema, Path> {
   readonly type = 'remote';
 
-  implementation: WebSocketConnectionHandlerImplementation<Schema>;
+  implementation: WebSocketConnectionHandlerImplementation<Schema, Path>;
 
   private pending: this;
   private synced: this;
 
-  constructor(interceptorImplementation: WebSocketInterceptorImplementation<Schema>, path: string | undefined) {
-    this.implementation = new WebSocketConnectionHandlerImplementation<Schema>(interceptorImplementation, path, this);
+  constructor(interceptorImplementation: WebSocketInterceptorImplementation<Schema>, path: Path | undefined) {
+    this.implementation = new WebSocketConnectionHandlerImplementation<Schema, Path>(
+      interceptorImplementation,
+      path,
+      this,
+    );
     this.pending = this;
     this.synced = this.createSyncedProxy();
   }
@@ -52,12 +57,12 @@ class RemoteWebSocketConnectionHandler<
     return PENDING_PROPERTIES.has(property);
   }
 
-  with(restriction: WebSocketConnectionHandlerRestriction) {
+  with(restriction: WebSocketConnectionHandlerRestriction<Path>) {
     this.implementation.with(restriction);
     return this.pending;
   }
 
-  delay(minMilliseconds: number | WebSocketConnectionHandlerDelayFactory, maxMilliseconds?: number) {
+  delay(minMilliseconds: number | WebSocketConnectionHandlerDelayFactory<Path>, maxMilliseconds?: number) {
     this.implementation.delay(minMilliseconds, maxMilliseconds);
     return this.pending;
   }
@@ -101,9 +106,10 @@ class RemoteWebSocketConnectionHandler<
     return this.implementation.connections;
   }
 
-  then<FulfilledResult = PublicSyncedRemoteWebSocketConnectionHandler<Schema>, RejectedResult = never>(
+  then<FulfilledResult = PublicSyncedRemoteWebSocketConnectionHandler<Schema, Path>, RejectedResult = never>(
     onFulfilled?:
-      ((handler: PublicSyncedRemoteWebSocketConnectionHandler<Schema>) => PossiblePromise<FulfilledResult>) | null,
+      | ((handler: PublicSyncedRemoteWebSocketConnectionHandler<Schema, Path>) => PossiblePromise<FulfilledResult>)
+      | null,
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ): Promise<FulfilledResult | RejectedResult> {
     // Declarations stay in this process and the interceptor registers with the server when it starts, so the handler
@@ -113,11 +119,11 @@ class RemoteWebSocketConnectionHandler<
 
   catch<RejectedResult = never>(
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
-  ): Promise<PublicSyncedRemoteWebSocketConnectionHandler<Schema> | RejectedResult> {
+  ): Promise<PublicSyncedRemoteWebSocketConnectionHandler<Schema, Path> | RejectedResult> {
     return this.then().catch(onRejected);
   }
 
-  finally(onFinally?: (() => void) | null): Promise<PublicSyncedRemoteWebSocketConnectionHandler<Schema>> {
+  finally(onFinally?: (() => void) | null): Promise<PublicSyncedRemoteWebSocketConnectionHandler<Schema, Path>> {
     return this.then().finally(onFinally);
   }
 }

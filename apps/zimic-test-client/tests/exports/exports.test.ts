@@ -106,7 +106,7 @@ import {
   type WebSocketMessageHandlerStaticRestriction,
   type WebSocketMessageHandlerStaticRestrictionOptions,
   type WebSocketMessageHandlerComputedRestriction,
-  type InterceptedWebSocketInterceptorConnection,
+  type WebSocketInterceptorConnectionRequest,
   type WebSocketConnectionHandler,
   type LocalWebSocketConnectionHandler,
   type RemoteWebSocketConnectionHandler,
@@ -500,7 +500,7 @@ describe('Exports', () => {
       expectTypeOf<WebSocketMessageHandlerStaticRestrictionOptions>().not.toBeAny();
       expectTypeOf<WebSocketMessageHandlerComputedRestriction<never>>().not.toBeAny();
 
-      expectTypeOf<InterceptedWebSocketInterceptorConnection>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorConnectionRequest>().not.toBeAny();
       expectTypeOf<WebSocketConnectionHandler<never>>().not.toBeAny();
       expectTypeOf<LocalWebSocketConnectionHandler<never>>().not.toBeAny();
       expectTypeOf<RemoteWebSocketConnectionHandler<never>>().not.toBeAny();

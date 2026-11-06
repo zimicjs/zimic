@@ -113,8 +113,8 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
     return this.implementation.message() as RemoteWebSocketMessageHandler<Schema>;
   }
 
-  connection(path?: string) {
-    return this.implementation.connection(path) as RemoteWebSocketConnectionHandler<Schema>;
+  connection<Path extends string = string>(path?: Path) {
+    return this.implementation.connection(path) as RemoteWebSocketConnectionHandler<Schema, Path>;
   }
 
   get server(): PublicWebSocketInterceptorServer<Schema> {

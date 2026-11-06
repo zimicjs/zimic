@@ -789,4 +789,7 @@ export function declarePathParamsHttpInterceptorTests(options: RuntimeSharedHttp
       expect(request.pathParams).toEqual<Partial<PathParams>>({});
     });
   });
+
+  // No HTTP counterpart for "should provide empty path params to connection handlers without a declared path": HTTP
+  // handlers always declare their path, while WebSocket connection handlers may omit it.
 }

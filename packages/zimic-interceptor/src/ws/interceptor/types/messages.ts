@@ -1,3 +1,4 @@
+import { HttpSearchParams, InferPathParams } from '@zimic/utils/http';
 import { Replace } from '@zimic/utils/types';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
@@ -49,9 +50,10 @@ export interface InterceptedWebSocketInterceptorMessage<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A connection attempt to the interceptor, as matched by a connection handler before the handshake is answered.
+ * The handshake of a connection attempt to the interceptor, as matched by a connection handler before it is answered.
+ * It describes the attempt and is not a native `Request`.
  */
-export interface InterceptedWebSocketInterceptorConnection {
+export interface WebSocketInterceptorConnectionRequest<Path extends string = string> {
   /** The URL used to open the connection. */
   url: string;
 
@@ -61,6 +63,21 @@ export interface InterceptedWebSocketInterceptorConnection {
    * Empty if the client requested none.
    */
   protocols: readonly string[];
+
+  /**
+   * The search parameters of the connection URL.
+   *
+   * @see {@link https://zimic.dev/docs/http/api/http-search-params `HttpSearchParams` API reference}
+   */
+  searchParams: HttpSearchParams;
+
+  /**
+   * The URI-decoded path parameters of the connection URL, parsed from the path declared in
+   * `interceptor.connection(path)`. Empty if the handler declares no path.
+   *
+   * @see {@link https://zimic.dev/docs/http/api/http-schema#inferpathparams `InferPathParams` API reference}
+   */
+  pathParams: InferPathParams<Path>;
 }
 
 /**
