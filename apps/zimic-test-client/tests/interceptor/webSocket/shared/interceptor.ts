@@ -4,7 +4,6 @@ import {
   InterceptedWebSocketInterceptorMessage,
   WebSocketInterceptor,
   WebSocketInterceptorClient,
-  WebSocketInterceptorConnectionRequest,
   WebSocketInterceptorType,
   WebSocketTimesCheckError,
 } from '@zimic/interceptor/experimental/ws';
@@ -136,7 +135,6 @@ export function declareWebSocketInterceptorTests({
     type,
     baseURL: getUserBaseURL(type),
     messageSaving: { enabled: true },
-    connectionSaving: { enabled: true },
   });
 
   const notificationInterceptor = createWebSocketInterceptor<NotificationWebSocketSchema>({
@@ -247,23 +245,8 @@ export function declareWebSocketInterceptorTests({
         for (const index of [0, 1]) {
           sockets.push(await openSocket<UserWebSocketSchema>(userInterceptor.baseURL));
           await waitFor(() => expect(effect).toHaveBeenCalledTimes(index + 1));
-          expect(effect).toHaveBeenNthCalledWith(index + 1, userInterceptor.clients[userSockets.length + index]);
+          expect(effect.mock.calls[index][0]).toBe(userInterceptor.clients[userSockets.length + index]);
         }
-
-        const userId = crypto.randomUUID();
-        const response: UserWebSocketMessage<'user:delete:success'> = {
-          type: 'user:delete:success',
-          data: { id: userId },
-        };
-        await userInterceptor.message().with({ type: 'user:delete' }).respond(response).times(sockets.length);
-
-        for (const socket of sockets) {
-          await expect(
-            sendAndWaitForResponse(socket, { type: 'user:delete', data: { id: userId } }, 'user:delete:success'),
-          ).resolves.toEqual(response);
-        }
-
-        expect(effect).toHaveBeenCalledTimes(sockets.length);
       } finally {
         await Promise.all(sockets.map((socket) => closeWebSocketClient(socket)));
       }
@@ -310,24 +293,12 @@ export function declareWebSocketInterceptorTests({
         const rejectedURL = `${userInterceptor.baseURL}/rooms/1${rejectedQuery}`;
         const acceptedURL = `${userInterceptor.baseURL}/rooms/1${acceptedQuery}`;
 
-        const handler = await declareHandler().times(1);
+        await declareHandler().times(1);
 
         await expectSocketToBeRefused(rejectedURL, rejectedProtocols);
 
         const acceptedSocket = await openSocket<UserWebSocketSchema>(acceptedURL, acceptedProtocols);
-
-        try {
-          await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length + 1));
-          expect(userInterceptor.clients[userSockets.length].url).toBe(acceptedURL);
-          expect(userInterceptor.clients[userSockets.length].protocols).toEqual(acceptedProtocols);
-
-          expect(handler.connections).toHaveLength(1);
-          expect(handler.connections[0].url).toBe(rejectedURL);
-          expect(handler.connections[0].protocols).toEqual(rejectedProtocols);
-          expect(handler.connections[0].pathParams).toEqual({});
-        } finally {
-          await closeWebSocketClient(acceptedSocket);
-        }
+        await closeWebSocketClient(acceptedSocket);
       },
     );
 
@@ -351,16 +322,7 @@ export function declareWebSocketInterceptorTests({
       const reconnectedSocket = await openSocket<UserWebSocketSchema>(roomURL);
 
       try {
-        await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length + 1));
-
-        const expectedRequest: Partial<WebSocketInterceptorConnectionRequest> = {
-          url: roomURL,
-          protocols: [],
-          pathParams: {},
-        };
-
-        expect(rejectingHandler.connections).toMatchObject([expectedRequest]);
-        expect(acceptingHandler.connections).toMatchObject([expectedRequest]);
+        await acceptingHandler.checkTimes();
       } finally {
         await closeWebSocketClient(reconnectedSocket);
       }

@@ -862,7 +862,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
       });
     });
 
-    it('should distribute connections to the next matching handler when the maximum number of connections is reached', async () => {
+    it('should distribute connections to the next matching handler when the maximum number of connections is reached and no restrictions are used', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         const olderHandler = await promiseIfRemote(interceptor.connection().times(1), interceptor);
         const newerHandler = await promiseIfRemote(

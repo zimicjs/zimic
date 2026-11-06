@@ -244,28 +244,51 @@ export function declareEffectWebSocketInterceptorTests(options: RuntimeSharedWeb
   });
 
   describe('Connections', () => {
-    it('should run connection effects with the handle of accepted clients after they are listed', async () => {
+    it('should call connection effects with the client handle of the accepted connection', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-        const clientsAtEffect: unknown[][] = [];
-
-        const effect = vi.fn((client: WebSocketInterceptorClient<MessageSchema>) => {
-          clientsAtEffect.push([...interceptor.clients]);
-          client.send(JSON.stringify({ type: 'delete', id: 'welcome' }));
-        });
+        const effect = vi.fn<(client: WebSocketInterceptorClient<MessageSchema>) => void>();
 
         await interceptor.connection().effect(effect);
 
+        await usingWebSocketClient<MessageSchema>(baseURL, async () => {
+          await waitFor(() => {
+            expect(effect).toHaveBeenCalledTimes(1);
+          });
+
+          expect(effect.mock.calls[0][0]).toBe(interceptor.clients[0]);
+        });
+      });
+    });
+
+    it('should add accepted clients to interceptor.clients before running connection effects', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const isClientAddedPromise = createPromiseWithResolvers<boolean>();
+
+        await interceptor.connection().effect((client) => {
+          isClientAddedPromise.resolve(interceptor.clients.includes(client));
+        });
+
+        await usingWebSocketClient<MessageSchema>(baseURL, async () => {
+          await expect(isClientAddedPromise).resolves.toBe(true);
+        });
+      });
+    });
+
+    it('should deliver messages sent to the client handle by connection effects', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const message = JSON.stringify({ type: 'create', body: { text: 'sent by effect' } } satisfies MessageSchema);
+
+        await interceptor.connection().effect((client) => {
+          client.send(message);
+        });
+
         const client = new WebSocketClient<MessageSchema>(baseURL);
-        const welcomeMessage = waitForWebSocketClientMessage(client);
+        const messagePromise = waitForWebSocketClientMessage(client);
 
         try {
           await client.open();
 
-          await expect(welcomeMessage).resolves.toBe(JSON.stringify({ type: 'delete', id: 'welcome' }));
-
-          expect(effect).toHaveBeenCalledTimes(1);
-          expect(effect).toHaveBeenCalledWith(interceptor.clients[0], expect.any(Object));
-          expect(clientsAtEffect).toEqual([[interceptor.clients[0]]]);
+          await expect(messagePromise).resolves.toBe(message);
         } finally {
           await client.close();
         }

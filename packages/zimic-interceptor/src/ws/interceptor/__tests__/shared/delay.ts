@@ -390,7 +390,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
   });
 
   describe('Connections', () => {
-    it('should apply a delay before answering the handshake of matched connections', async () => {
+    it('should apply a computed synchronous delay', async () => {
       const baseURL = getBaseURL();
       const delay = 100;
 
@@ -439,7 +439,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
       });
     });
 
-    it('should not decide connections after cleared during their delay', async () => {
+    it('should not handle connections after cleared during their delay', async () => {
       const baseURL = getBaseURL();
       const delay = 200;
 

@@ -303,7 +303,7 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
       });
     });
 
-    it('should reset connection restrictions when cleared', async () => {
+    it('should reset restrictions when cleared', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         const handler = await promiseIfRemote(
           interceptor

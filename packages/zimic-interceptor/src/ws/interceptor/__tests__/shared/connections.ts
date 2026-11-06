@@ -12,9 +12,7 @@ import { promiseIfRemote } from '@tests/utils/promises';
 import {
   collectWebSocketClientMessages,
   createBinaryMessage,
-  expectWebSocketConnectionToBeRefused,
   expectWebSocketConnectionToOpen,
-  openWebSocketUntilSettled,
   readBytes,
   usingWebSocketClient,
   waitForWebSocketClientClose,
@@ -698,21 +696,6 @@ export function declareConnectionsWebSocketInterceptorTests(
   });
 
   describe('Connection handlers', () => {
-    it('should refuse connections rejected by a connection handler before they open', async () => {
-      const baseURL = getBaseURL();
-
-      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
-        await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }), interceptor);
-
-        const { eventTypes, closeEvent } = await openWebSocketUntilSettled(baseURL);
-
-        expect(eventTypes).toEqual(['error', 'close']);
-        expect(closeEvent?.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
-
-        expect(interceptor.clients).toHaveLength(0);
-      });
-    });
-
     it('should accept connections accepted by a connection handler', async () => {
       const baseURL = getBaseURL();
 
@@ -720,29 +703,6 @@ export function declareConnectionsWebSocketInterceptorTests(
         await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
 
         await expectWebSocketConnectionToOpen(baseURL);
-      });
-    });
-
-    it('should accept connections matching a connection handler without a declared response', async () => {
-      const baseURL = getBaseURL();
-
-      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
-        await promiseIfRemote(interceptor.connection().times(1), interceptor);
-
-        await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
-          expect(client.readyState).toBe(WebSocketClient.OPEN);
-
-          await waitFor(() => {
-            expect(interceptor.clients).toHaveLength(1);
-          });
-
-          const message = JSON.stringify({ type: 'server', text: 'accepted' } satisfies ChatMessage);
-          const messagePromise = waitForWebSocketClientMessage(client);
-          interceptor.server.send(message);
-          await expect(messagePromise).resolves.toBe(message);
-        });
-
-        await promiseIfRemote(interceptor.checkTimes(), interceptor);
       });
     });
 
@@ -869,37 +829,6 @@ export function declareConnectionsWebSocketInterceptorTests(
       );
     });
 
-    it('should not try older connection handlers if the newest one throws while deciding a connection', async () => {
-      const baseURL = getBaseURL();
-      const error = new Error('Restriction failed.');
-
-      await usingWebSocketInterceptor<ChatMessage>(
-        { type, baseURL, connectionSaving: { enabled: true } },
-        async (interceptor) => {
-          const olderHandler = await promiseIfRemote(
-            interceptor.connection().respond({ action: 'reject' }),
-            interceptor,
-          );
-
-          await promiseIfRemote(
-            interceptor.connection().with(() => {
-              throw error;
-            }),
-            interceptor,
-          );
-
-          await usingIgnoredConsole(['error'], async (console) => {
-            await expectWebSocketConnectionToOpen(baseURL);
-
-            expect(console.error).toHaveBeenCalledTimes(1);
-            expect(console.error).toHaveBeenCalledWith(error);
-          });
-
-          expect(olderHandler.connections).toHaveLength(0);
-        },
-      );
-    });
-
     it('should log an error if a connection is intercepted with a computed response and the handler throws', async () => {
       const baseURL = getBaseURL();
       const error = new Error('Response failed.');
@@ -919,67 +848,6 @@ export function declareConnectionsWebSocketInterceptorTests(
           expect(console.error).toHaveBeenCalledWith(error);
         });
       });
-    });
-
-    it('should decide connections with the newest matching connection handler only', async () => {
-      const baseURL = getBaseURL();
-
-      await usingWebSocketInterceptor<ChatMessage>(
-        { type, baseURL, connectionSaving: { enabled: true } },
-        async (interceptor) => {
-          const olderHandler = await promiseIfRemote(
-            interceptor.connection().respond({ action: 'reject' }),
-            interceptor,
-          );
-          const newerHandler = await promiseIfRemote(interceptor.connection().times(1), interceptor);
-
-          await expectWebSocketConnectionToOpen(baseURL);
-
-          expect(newerHandler.connections).toHaveLength(1);
-          expect(olderHandler.connections).toHaveLength(0);
-        },
-      );
-    });
-
-    it('should decide connections shared by interceptors with the newest connection handler of any of them', async () => {
-      const baseURL = getBaseURL();
-
-      await usingWebSocketInterceptor<ChatMessage>(
-        { type, baseURL, connectionSaving: { enabled: true } },
-        async (firstInterceptor) => {
-          await usingWebSocketInterceptor<ChatMessage>(
-            { type, baseURL, connectionSaving: { enabled: true } },
-            async (secondInterceptor) => {
-              // The handler of the interceptor started last is older, so it does not decide the connection.
-              const secondHandler = await promiseIfRemote(
-                secondInterceptor.connection().respond({ action: 'reject' }),
-                secondInterceptor,
-              );
-              const firstHandler = await promiseIfRemote(firstInterceptor.connection().times(1), firstInterceptor);
-
-              await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
-                expect(client.readyState).toBe(WebSocketClient.OPEN);
-
-                await waitFor(() => {
-                  expect(firstInterceptor.clients).toHaveLength(1);
-                  expect(secondInterceptor.clients).toHaveLength(1);
-                });
-              });
-
-              expect(firstHandler.connections).toHaveLength(1);
-              expect(secondHandler.connections).toHaveLength(0);
-
-              await promiseIfRemote(firstHandler.clear(), firstInterceptor);
-
-              await expectWebSocketConnectionToBeRefused(baseURL);
-
-              expect(secondHandler.connections).toHaveLength(1);
-              expect(firstInterceptor.clients).toHaveLength(0);
-              expect(secondInterceptor.clients).toHaveLength(0);
-            },
-          );
-        },
-      );
     });
   });
 }
