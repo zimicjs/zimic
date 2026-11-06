@@ -282,6 +282,9 @@ export function declareRestrictionWebSocketMessageHandlerTests(
     );
   });
 
+  // No WebSocket message counterpart for "should match only specific requests if contains a declared response, a static
+  // restriction of search params and headers, and exact $exact": WebSocket frames have no URL or headers.
+
   it('should match only messages satisfying multiple restrictions', async () => {
     await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
       const effect = vi.fn();

@@ -457,6 +457,25 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
       });
     });
 
+    it('should support intercepting connections having static restrictions', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        await promiseIfRemote(
+          interceptor
+            .connection()
+            .with({ searchParams: { token: 'expired' }, protocols: ['legacy'] })
+            .respond({ action: 'reject' })
+            .times(1),
+          interceptor,
+        );
+
+        await expectWebSocketConnectionToOpen(`${baseURL}?token=valid`, ['legacy']);
+        await expectWebSocketConnectionToOpen(`${baseURL}?token=expired`, ['chat']);
+        await expectWebSocketConnectionToBeRefused(`${baseURL}?token=expired`, ['legacy']);
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      });
+    });
+
     it('should support intercepting connections having computed restrictions', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         const restriction = vi.fn((request: WebSocketInterceptorConnectionRequest) => {
@@ -478,6 +497,26 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
           searchParams: new HttpSearchParams(),
           pathParams: {},
         });
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
+      });
+    });
+
+    it('should support intercepting connections satisfying multiple restrictions', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        await promiseIfRemote(
+          interceptor
+            .connection()
+            .with({ protocols: ['legacy'] })
+            .with((request) => request.searchParams.has('blocked'))
+            .respond({ action: 'reject' })
+            .times(1),
+          interceptor,
+        );
+
+        await expectWebSocketConnectionToOpen(baseURL, ['legacy']);
+        await expectWebSocketConnectionToOpen(`${baseURL}?blocked`, ['chat']);
+        await expectWebSocketConnectionToBeRefused(`${baseURL}?blocked`, ['legacy']);
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
       });

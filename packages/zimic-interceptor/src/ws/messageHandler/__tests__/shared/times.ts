@@ -199,7 +199,7 @@ export function declareTimesWebSocketMessageHandlerTests(
   });
 
   describe('Range number of messages', () => {
-    it('should match the minimum and maximum number of messages limited in a range', async () => {
+    it('should match the minimum number of messages limited in a range', async () => {
       await usingWebSocketInterceptor<Schema>(
         { type, baseURL, messageSaving: { enabled: true } },
         async (interceptor) => {
@@ -247,7 +247,65 @@ export function declareTimesWebSocketMessageHandlerTests(
       );
     });
 
+    it('should match the maximum number of messages limited in a range', async () => {
+      await usingWebSocketInterceptor<Schema>(
+        { type, baseURL, messageSaving: { enabled: true } },
+        async (interceptor) => {
+          const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(2, 3);
+
+          await usingWebSocketClient<Schema>(baseURL, async (client) => {
+            for (const text of ['one', 'two', 'three']) {
+              const response = waitForWebSocketClientMessage(client);
+
+              client.send(JSON.stringify({ type: 'create', body: { text } }));
+              await response;
+            }
+
+            await handler.checkTimes();
+          });
+        },
+      );
+    });
+
     it('should not match more than the maximum number of messages limited in a range', async () => {
+      await usingWebSocketInterceptor<Schema>(
+        { type, baseURL, messageSaving: { enabled: true } },
+        async (interceptor) => {
+          await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' });
+
+          const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(2, 3);
+
+          await usingWebSocketClient<Schema>(baseURL, async (client) => {
+            for (const text of ['one', 'two', 'three']) {
+              const response = waitForWebSocketClientMessage(client);
+
+              client.send(JSON.stringify({ type: 'create', body: { text } }));
+              expect(await response).toBe(JSON.stringify({ type: 'delete', id: '1' }));
+            }
+
+            await handler.checkTimes();
+
+            client.send(JSON.stringify({ type: 'create', body: { text: 'four' } }));
+
+            await waitFor(() =>
+              expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                message: 'Expected at least 2 and at most 3 messages, but got 4.',
+                expectedNumberOfMatches: { min: 2, max: 3 },
+              }),
+            );
+
+            const probeResponse = waitForWebSocketClientMessage(client);
+
+            client.send(JSON.stringify({ type: 'delete', id: 'unmatched' }));
+
+            // The next message received is the probe response, so the over-limit message got no response.
+            expect(await probeResponse).toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
+          });
+        },
+      );
+    });
+
+    it('should match the exact number of messages limited in a range including zero', async () => {
       await usingWebSocketInterceptor<Schema>(
         { type, baseURL, messageSaving: { enabled: true } },
         async (interceptor) => {
@@ -255,11 +313,15 @@ export function declareTimesWebSocketMessageHandlerTests(
 
           const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(0, 1);
 
+          await handler.checkTimes();
+
           await usingWebSocketClient<Schema>(baseURL, async (client) => {
             const response = waitForWebSocketClientMessage(client);
 
             client.send(JSON.stringify({ type: 'create', body: { text: 'one' } }));
             expect(await response).toBe(JSON.stringify({ type: 'delete', id: '1' }));
+
+            await handler.checkTimes();
 
             client.send(JSON.stringify({ type: 'create', body: { text: 'two' } }));
 
@@ -303,6 +365,57 @@ export function declareTimesWebSocketMessageHandlerTests(
             await handler.checkTimes();
 
             client.send(JSON.stringify({ type: 'create', body: { text: 'two' } }));
+
+            const probeResponse = waitForWebSocketClientMessage(client);
+
+            client.send(JSON.stringify({ type: 'delete', id: 'unmatched' }));
+
+            // The next message received is the probe response, so the over-limit message got no response.
+            expect(await probeResponse).toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
+          });
+        },
+      );
+    });
+
+    it('should match the exact number of messages limited in a non-unitary range', async () => {
+      await usingWebSocketInterceptor<Schema>(
+        { type, baseURL, messageSaving: { enabled: true } },
+        async (interceptor) => {
+          await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' });
+
+          const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(2, 2);
+
+          await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+            message: 'Expected exactly 2 messages, but got 0.',
+            expectedNumberOfMatches: { min: 2, max: 2 },
+          });
+
+          await usingWebSocketClient<Schema>(baseURL, async (client) => {
+            let response = waitForWebSocketClientMessage(client);
+
+            client.send(JSON.stringify({ type: 'create', body: { text: 'one' } }));
+            expect(await response).toBe(JSON.stringify({ type: 'delete', id: '1' }));
+
+            await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+              message: 'Expected exactly 2 messages, but got 1.',
+              expectedNumberOfMatches: { min: 2, max: 2 },
+            });
+
+            response = waitForWebSocketClientMessage(client);
+
+            client.send(JSON.stringify({ type: 'create', body: { text: 'two' } }));
+            expect(await response).toBe(JSON.stringify({ type: 'delete', id: '1' }));
+
+            await handler.checkTimes();
+
+            client.send(JSON.stringify({ type: 'create', body: { text: 'three' } }));
+
+            await waitFor(() =>
+              expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                message: 'Expected exactly 2 messages, but got 3.',
+                expectedNumberOfMatches: { min: 2, max: 2 },
+              }),
+            );
 
             const probeResponse = waitForWebSocketClientMessage(client);
 
@@ -621,7 +734,17 @@ export function declareTimesWebSocketMessageHandlerTests(
           },
         );
       });
+
+      // No WebSocket message counterpart for "should consider requests unmatched due to search params and headers
+      // restrictions in times check errors": WebSocket frames have no URL or headers.
     });
+
+    // No WebSocket message counterpart for "Response declarations": a WebSocket message needs no reply, so a message
+    // handler without a declared response matches the message and sends nothing.
+
+    // No WebSocket message counterpart for "should consider requests unmatched due to missing a response declaration
+    // when no requests are expected in times checks": a WebSocket message needs no reply, so a message handler without a
+    // declared response matches the message and sends nothing.
 
     it('should not consider messages unmatched due to being cleared in times checks', async () => {
       const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));

@@ -1076,6 +1076,56 @@ export function declareTimesHttpRequestHandlerTests(
           expectedNumberOfRequests: 1,
         });
       });
+
+      it('should consider requests unmatched due to search params and headers restrictions in times check errors', async () => {
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
+          .with({ searchParams: { value: '1' }, headers: { accept: 'application/json' } })
+          .respond({ status: 200, body: { success: true } })
+          .times(1);
+
+        const searchParams = new HttpSearchParams({ value: '2' });
+
+        const request = new Request(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+          method: 'POST',
+          headers: { accept: 'text/html' },
+        });
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            headers: {
+              expected: new HttpHeaders({ accept: 'application/json' }),
+              received: new HttpHeaders({ accept: 'text/html' }),
+            },
+            searchParams: {
+              expected: new HttpSearchParams({ value: '1' }),
+              received: searchParams,
+            },
+          },
+        });
+
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+          message: [
+            'Expected exactly 1 matching request, but got 0.',
+            '',
+            'Requests evaluated by this handler:',
+            '',
+            `  ${color.green('- Expected')}`,
+            `  ${color.red('+ Received')}`,
+            '',
+            `1: POST ${joinURL(baseURL, `/users?${searchParams.toString()}`)}`,
+            '     Headers:',
+            `       ${color.green('- { "accept": "application/json" }')}`,
+            `       ${color.red('+ { "accept": "text/html" }')}`,
+            '     Search params:',
+            `       ${color.green('- { "value": "1" }')}`,
+            `       ${color.red('+ { "value": "2" }')}`,
+          ].join('\n'),
+          expectedNumberOfRequests: 1,
+        });
+      });
     });
 
     describe('Response declarations', () => {
