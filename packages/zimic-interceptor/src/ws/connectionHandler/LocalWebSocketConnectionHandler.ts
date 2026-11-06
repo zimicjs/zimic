@@ -5,6 +5,7 @@ import { WebSocketConnectionHandlerDelayFactory } from './types/connections';
 import {
   LocalWebSocketConnectionHandler as PublicLocalWebSocketConnectionHandler,
   WebSocketConnectionHandlerConnectionCallback,
+  WebSocketConnectionHandlerResponseComputedDeclaration,
   WebSocketConnectionHandlerResponseDeclaration,
 } from './types/public';
 import { WebSocketConnectionHandlerRestriction } from './types/restrictions';
@@ -41,7 +42,10 @@ class LocalWebSocketConnectionHandler<
     return this;
   }
 
-  respond(declaration: WebSocketConnectionHandlerResponseDeclaration) {
+  respond(
+    declaration:
+      WebSocketConnectionHandlerResponseDeclaration | WebSocketConnectionHandlerResponseComputedDeclaration<Path>,
+  ) {
     this.implementation.respond(declaration);
     return this;
   }

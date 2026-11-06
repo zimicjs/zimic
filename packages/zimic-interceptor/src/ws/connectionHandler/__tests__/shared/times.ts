@@ -105,6 +105,36 @@ export function declareTimesWebSocketConnectionHandlerTests(
       );
     });
 
+    it.each<{ action: 'accept' | 'reject'; expectedEventTypes: string[] }>([
+      { action: 'accept', expectedEventTypes: ['open'] },
+      { action: 'reject', expectedEventTypes: ['error', 'close'] },
+    ])(
+      'should match an exact number of limited connections decided by a computed response ($action)',
+      async ({ action, expectedEventTypes }) => {
+        await usingWebSocketInterceptor<Schema>(
+          { type, baseURL, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const handler = await interceptor
+              .connection()
+              .respond(() => ({ action }))
+              .times(1);
+
+            await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+              message: 'Expected exactly 1 connection, but got 0.',
+              expectedNumberOfMessages: 1,
+            });
+
+            const { socket, eventTypes } = await openWebSocketUntilSettled(baseURL);
+            socket.close();
+
+            expect(eventTypes).toEqual(expectedEventTypes);
+
+            await handler.checkTimes();
+          },
+        );
+      },
+    );
+
     it('should match less than an exact number of limited connections', async () => {
       await usingWebSocketInterceptor<Schema>(
         { type, baseURL, messageSaving: { enabled: true } },

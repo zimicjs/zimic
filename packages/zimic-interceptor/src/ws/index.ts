@@ -37,6 +37,7 @@ export type {
   RemoteWebSocketConnectionHandler,
   WebSocketConnectionHandlerConnectionCallback,
   WebSocketConnectionHandlerResponseDeclaration,
+  WebSocketConnectionHandlerResponseComputedDeclaration,
   SyncedRemoteWebSocketConnectionHandler,
   PendingRemoteWebSocketConnectionHandler,
   WebSocketConnectionHandler,

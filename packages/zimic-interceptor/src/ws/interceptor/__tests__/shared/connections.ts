@@ -713,6 +713,16 @@ export function declareConnectionsWebSocketInterceptorTests(
       });
     });
 
+    it('should accept connections accepted by a connection handler', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+        await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
+
+        await expectWebSocketConnectionToOpen(baseURL);
+      });
+    });
+
     it('should accept connections matching a connection handler without a declared response', async () => {
       const baseURL = getBaseURL();
 
@@ -888,6 +898,27 @@ export function declareConnectionsWebSocketInterceptorTests(
           expect(olderHandler.connections).toHaveLength(0);
         },
       );
+    });
+
+    it('should log an error if a connection is intercepted with a computed response and the handler throws', async () => {
+      const baseURL = getBaseURL();
+      const error = new Error('Response failed.');
+
+      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+        await promiseIfRemote(
+          interceptor.connection().respond(() => {
+            throw error;
+          }),
+          interceptor,
+        );
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          await expectWebSocketConnectionToOpen(baseURL);
+
+          expect(console.error).toHaveBeenCalledTimes(1);
+          expect(console.error).toHaveBeenCalledWith(error);
+        });
+      });
     });
 
     it('should decide connections with the newest matching connection handler only', async () => {

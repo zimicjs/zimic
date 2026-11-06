@@ -7,6 +7,7 @@ import {
   SyncedRemoteWebSocketConnectionHandler as PublicSyncedRemoteWebSocketConnectionHandler,
   PendingRemoteWebSocketConnectionHandler as PublicPendingRemoteWebSocketConnectionHandler,
   WebSocketConnectionHandlerConnectionCallback,
+  WebSocketConnectionHandlerResponseComputedDeclaration,
   WebSocketConnectionHandlerResponseDeclaration,
 } from './types/public';
 import { WebSocketConnectionHandlerRestriction } from './types/restrictions';
@@ -72,7 +73,10 @@ class RemoteWebSocketConnectionHandler<
     return this.pending;
   }
 
-  respond(declaration: WebSocketConnectionHandlerResponseDeclaration) {
+  respond(
+    declaration:
+      WebSocketConnectionHandlerResponseDeclaration | WebSocketConnectionHandlerResponseComputedDeclaration<Path>,
+  ) {
     this.implementation.respond(declaration);
     return this.pending;
   }

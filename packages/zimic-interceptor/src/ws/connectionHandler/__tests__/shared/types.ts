@@ -11,7 +11,7 @@ import { Schema } from './utils';
 
 // The handlers below are only type-checked. The functions declaring them are never called.
 export function declareTypeWebSocketConnectionHandlerTests() {
-  it('should type connection attempts in computed restrictions and delays, and clients in effects', () => {
+  it('should type connection attempts in computed restrictions, delays, and responses, and clients in effects', () => {
     function declareLocalHandler(handler: LocalWebSocketConnectionHandler<Schema>) {
       handler
         .with((request) => {
@@ -21,6 +21,10 @@ export function declareTypeWebSocketConnectionHandlerTests() {
         .delay((request) => {
           expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
           return 0;
+        })
+        .respond((request) => {
+          expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
+          return { action: 'accept' };
         })
         .effect((client, request) => {
           expectTypeOf(client).toEqualTypeOf<WebSocketInterceptorClient<Schema>>();
@@ -50,6 +54,10 @@ export function declareTypeWebSocketConnectionHandlerTests() {
           expectTypeOf(request.pathParams).toEqualTypeOf<{ roomId: string }>();
           return 0;
         })
+        .respond((request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<{ roomId: string }>();
+          return { action: 'accept' };
+        })
         .effect((_client, request) => {
           expectTypeOf(request.pathParams).toEqualTypeOf<{ roomId: string }>();
 
@@ -72,6 +80,10 @@ export function declareTypeWebSocketConnectionHandlerTests() {
         .delay((request) => {
           expectTypeOf(request.pathParams).toEqualTypeOf<{ roomId: string }>();
           return 0;
+        })
+        .respond((request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<{ roomId: string }>();
+          return { action: 'accept' };
         })
         .effect((_client, request) => {
           expectTypeOf(request.pathParams).toEqualTypeOf<{ roomId: string }>();
@@ -124,18 +136,30 @@ export function declareTypeWebSocketConnectionHandlerTests() {
     expectTypeOf(declareStaticRestrictions).toBeFunction();
   });
 
-  it('should accept only reject actions as responses', () => {
+  it('should accept only accept and reject actions as responses', () => {
     function declareResponses(handler: LocalWebSocketConnectionHandler<Schema>) {
+      handler.respond({ action: 'accept' });
       handler.respond({ action: 'reject' });
+
+      handler.respond(() => ({ action: 'accept' }));
+      handler.respond(() => ({ action: 'reject' }));
+      handler.respond(() => Promise.resolve({ action: 'accept' }));
+      handler.respond(async () => {
+        await Promise.resolve();
+        return { action: 'reject' };
+      });
 
       // @ts-expect-error Connections cannot be bypassed, because remote interceptors have no real server.
       handler.respond({ action: 'bypass' });
 
+      // @ts-expect-error Connections cannot be bypassed, because remote interceptors have no real server.
+      handler.respond(() => ({ action: 'bypass' }));
+
       // @ts-expect-error Connection responses carry no message data.
       handler.respond({ type: 'chat', text: 'hello' });
 
-      // @ts-expect-error Connection responses are not computed.
-      handler.respond(() => ({ action: 'reject' }));
+      // @ts-expect-error Connection responses carry no message data.
+      handler.respond(() => ({ type: 'chat', text: 'hello' }));
     }
 
     expectTypeOf(declareResponses).toBeFunction();

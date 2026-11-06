@@ -323,6 +323,40 @@ export function declareEffectWebSocketInterceptorTests(options: RuntimeSharedWeb
       });
     });
 
+    it('should run connection effects for connections accepted by a computed response', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const effect = vi.fn();
+
+        await interceptor
+          .connection()
+          .effect(effect)
+          .respond(() => ({ action: 'accept' }));
+
+        await usingWebSocketClient<MessageSchema>(baseURL, async () => {
+          await waitFor(() => {
+            expect(effect).toHaveBeenCalledTimes(1);
+          });
+
+          expect(effect).toHaveBeenCalledWith(interceptor.clients[0], expect.any(Object));
+        });
+      });
+    });
+
+    it('should not run connection effects for connections rejected by a computed response', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const effect = vi.fn();
+
+        await interceptor
+          .connection()
+          .effect(effect)
+          .respond(() => ({ action: 'reject' }));
+
+        await expectWebSocketConnectionToBeRefused(baseURL);
+
+        expect(effect).not.toHaveBeenCalled();
+      });
+    });
+
     it('should log connection effect errors and keep the connection open', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         const error = new Error('Effect failed.');

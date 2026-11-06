@@ -15,6 +15,7 @@ import { WebSocketConnectionHandlerDelayFactory } from './types/connections';
 import {
   InternalWebSocketConnectionHandler,
   WebSocketConnectionHandlerConnectionCallback,
+  WebSocketConnectionHandlerResponseComputedDeclaration,
   WebSocketConnectionHandlerResponseDeclaration,
 } from './types/public';
 import {
@@ -54,7 +55,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
   private unmatchedConnectionGroups: UnmatchedWebSocketInterceptorConnectionGroup[] = [];
   private savedConnectionIndex: WebSocketInterceptorConnectionHandlerIndex<Path>;
 
-  private responseDeclaration?: WebSocketConnectionHandlerResponseDeclaration;
+  private createResponseDeclaration?: WebSocketConnectionHandlerResponseComputedDeclaration<Path>;
 
   private createResponseDelay?: WebSocketConnectionHandlerDelayFactory<Path>;
 
@@ -109,12 +110,22 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
     return this;
   }
 
-  respond(declaration: WebSocketConnectionHandlerResponseDeclaration) {
-    this.responseDeclaration = declaration;
+  respond(
+    declaration:
+      WebSocketConnectionHandlerResponseDeclaration | WebSocketConnectionHandlerResponseComputedDeclaration<Path>,
+  ) {
+    this.createResponseDeclaration = this.isResponseDeclarationFactory(declaration) ? declaration : () => declaration;
     this.isCleared = false;
     this.resetMatchedConnections();
     this.interceptor.registerConnectionHandler(this.handler);
     return this;
+  }
+
+  private isResponseDeclarationFactory(
+    declaration:
+      WebSocketConnectionHandlerResponseDeclaration | WebSocketConnectionHandlerResponseComputedDeclaration<Path>,
+  ) {
+    return typeof declaration === 'function';
   }
 
   times(minNumberOfConnections: number, maxNumberOfConnections?: number) {
@@ -161,7 +172,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 
     this.resetMatchedConnections();
 
-    this.responseDeclaration = undefined;
+    this.createResponseDeclaration = undefined;
     this.createResponseDelay = undefined;
     this.applyEffect = undefined;
 
@@ -324,7 +335,15 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
       return null;
     }
 
-    return this.responseDeclaration?.action ?? 'accept';
+    const responseDeclaration = await this.createResponseDeclaration?.(request);
+
+    // A connection whose handler was cleared while computing its response is not handled either, so a response that
+    // outlives the clear does not save into the cleared handler.
+    if (clearGeneration !== this.clearGeneration) {
+      return null;
+    }
+
+    return responseDeclaration?.action ?? 'accept';
   }
 
   async applyConnectionEffect(

@@ -1,5 +1,6 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { HttpSearchParams } from '@zimic/utils/http';
+import { joinURL } from '@zimic/utils/url';
 import { WebSocketClient } from '@zimic/ws';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -9,7 +10,7 @@ import { openWebSocketUntilSettled, usingWebSocketClient } from '@tests/utils/we
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import RemoteWebSocketConnectionHandler from '../../RemoteWebSocketConnectionHandler';
-import { WebSocketConnectionHandler } from '../../types/public';
+import { WebSocketConnectionHandler, WebSocketConnectionHandlerResponseComputedDeclaration } from '../../types/public';
 import { Schema, SharedWebSocketConnectionHandlerTestOptions } from './utils';
 
 export function declareDefaultWebSocketConnectionHandlerTests(
@@ -164,14 +165,127 @@ export function declareDefaultWebSocketConnectionHandlerTests(
     );
   });
 
-  // No WebSocket counterparts for creating responses from static or computed declarations, or without a declared
-  // response: connection handlers answer handshakes through the interceptor, so the interceptor suites cover them.
+  // No WebSocket counterparts for creating responses from static declarations, or without a declared response:
+  // connection handlers answer handshakes through the interceptor, so the interceptor suites cover them.
+
+  it.each<{
+    response: string;
+    computeResponse: WebSocketConnectionHandlerResponseComputedDeclaration;
+    expectedEventTypes: string[];
+  }>([
+    {
+      response: 'synchronous accept',
+      computeResponse: () => ({ action: 'accept' }),
+      expectedEventTypes: ['open'],
+    },
+    {
+      response: 'asynchronous accept',
+      computeResponse: () => Promise.resolve({ action: 'accept' }),
+      expectedEventTypes: ['open'],
+    },
+    {
+      response: 'synchronous reject',
+      computeResponse: () => ({ action: 'reject' }),
+      expectedEventTypes: ['error', 'close'],
+    },
+    {
+      response: 'asynchronous reject',
+      computeResponse: () => Promise.resolve({ action: 'reject' }),
+      expectedEventTypes: ['error', 'close'],
+    },
+  ])(
+    'should decide connections with a $response computed response',
+    async ({ computeResponse, expectedEventTypes }) => {
+      await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+        await interceptor.connection().respond(computeResponse);
+
+        const { socket, eventTypes } = await openWebSocketUntilSettled(baseURL);
+        socket.close();
+
+        expect(eventTypes).toEqual(expectedEventTypes);
+      });
+    },
+  );
+
+  it('should compute responses with the connection request', async () => {
+    await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+      const responseFactory = vi.fn<WebSocketConnectionHandlerResponseComputedDeclaration<'/rooms/:roomId'>>(() => ({
+        action: 'reject',
+      }));
+
+      await interceptor.connection('/rooms/:roomId').respond(responseFactory);
+
+      const connectionURL = `${joinURL(baseURL, '/rooms/1')}?token=abc`;
+
+      await openWebSocketUntilSettled(connectionURL, ['chat']);
+
+      expect(responseFactory).toHaveBeenCalledTimes(1);
+      expect(responseFactory).toHaveBeenCalledWith({
+        url: connectionURL,
+        protocols: ['chat'],
+        searchParams: new HttpSearchParams({ token: 'abc' }),
+        pathParams: { roomId: '1' },
+      });
+    });
+  });
+
+  it.each<{
+    condition: string;
+    declareAfterClear: (handler: WebSocketConnectionHandler<Schema>) => unknown;
+  }>([
+    { condition: 'cleared', declareAfterClear: (handler) => handler },
+    { condition: 'cleared and redeclared', declareAfterClear: (handler) => handler.respond({ action: 'reject' }) },
+  ])('should not decide connections if $condition while computing their response', async ({ declareAfterClear }) => {
+    const responseStartedPromise = createPromiseWithResolvers<void>();
+    const responseReleasedPromise = createPromiseWithResolvers<void>();
+
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const effect = vi.fn();
+
+        const handler = await interceptor
+          .connection()
+          .effect(effect)
+          .respond(async () => {
+            responseStartedPromise.resolve();
+            await responseReleasedPromise;
+            return { action: 'reject' };
+          });
+
+        const attemptPromise = openWebSocketUntilSettled(baseURL);
+        await responseStartedPromise;
+
+        await declareAfterClear(handler.clear());
+        responseReleasedPromise.resolve();
+
+        // A connection no handler decides is accepted.
+        const { socket, eventTypes } = await attemptPromise;
+        socket.close();
+
+        expect(eventTypes).toEqual(['open']);
+        expect(effect).not.toHaveBeenCalled();
+        expect(handler.connections).toHaveLength(0);
+
+        await handler.times(0);
+        await handler.checkTimes();
+      },
+    );
+  });
 
   it.each([
     { response: 'accepted', declare: (handler: WebSocketConnectionHandler<Schema>) => handler.effect(vi.fn()) },
     {
       response: 'rejected',
       declare: (handler: WebSocketConnectionHandler<Schema>) => handler.respond({ action: 'reject' }),
+    },
+    {
+      response: 'accepted by a computed response',
+      declare: (handler: WebSocketConnectionHandler<Schema>) => handler.respond(() => ({ action: 'accept' })),
+    },
+    {
+      response: 'rejected by a computed response',
+      declare: (handler: WebSocketConnectionHandler<Schema>) => handler.respond(() => ({ action: 'reject' })),
     },
   ])('should keep track of the intercepted connections ($response)', async ({ declare }) => {
     await usingWebSocketInterceptor<Schema>(
