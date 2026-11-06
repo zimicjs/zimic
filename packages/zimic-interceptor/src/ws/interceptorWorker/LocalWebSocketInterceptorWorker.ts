@@ -25,14 +25,9 @@ import WebSocketInterceptorWorker from './WebSocketInterceptorWorker';
 const importMSWNode = createCachedDynamicImport(() => import('msw/node'));
 const importMSWBrowser = createCachedDynamicImport(() => import('msw/browser'));
 
-// MSW sockets are `WebSocketOverride` instances, whose ready state is a writable field.
-type MockedWebSocket = Pick<WebSocket, 'CONNECTING' | 'OPEN' | 'binaryType' | 'addEventListener' | 'dispatchEvent'> & {
-  readyState: number;
-};
-
 interface LocalWebSocketClientConnection {
   url: URL;
-  socket: MockedWebSocket;
+  socket: Pick<WebSocket, 'CONNECTING' | 'readyState' | 'binaryType' | 'addEventListener' | 'dispatchEvent'>;
   send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => void;
   close: (code?: number, reason?: string) => void;
   addEventListener: ((
@@ -72,13 +67,10 @@ interface RegisteredWebSocketInterceptor {
 }
 
 interface PendingLocalWebSocketConnection {
+  connection: LocalWebSocketClientConnection;
+  protocols: string[];
   // Kept in the order the interceptors started. Interceptors cleared while the connection is decided are removed.
   holders: RegisteredWebSocketInterceptor[];
-  heldOpen: HeldMockedWebSocketOpen;
-}
-
-interface HeldMockedWebSocketOpen {
-  release: (options: { open: boolean }) => void;
 }
 
 // Same pattern MSW uses to remove a leading socket.io path from connection URLs, including its unescaped dot.
@@ -129,37 +121,6 @@ function createConnectionURLRegex(baseURL: string) {
   return new RegExp(hasTrailingSlash ? `^${escapedBaseURL}(?:/|$)` : `^${escapedBaseURL}`);
 }
 
-// MSW opens a mocked socket in a microtask after its connection event and does not wait for asynchronous link
-// listeners, so a connection decided asynchronously would open before the decision. The socket keeps its connecting
-// state and its `open` event is held until the decision is released.
-function holdMockedWebSocketOpen(socket: MockedWebSocket): HeldMockedWebSocketOpen {
-  const dispatchEvent = socket.dispatchEvent.bind(socket);
-  let heldOpenEvent: Event | undefined;
-
-  socket.dispatchEvent = (event) => {
-    if (event.type !== 'open') {
-      return dispatchEvent(event);
-    }
-
-    // MSW marks the socket as open synchronously before dispatching the event, so no listener sees the change.
-    socket.readyState = socket.CONNECTING;
-    heldOpenEvent = event;
-    return true;
-  };
-
-  return {
-    release({ open }) {
-      Reflect.deleteProperty(socket, 'dispatchEvent');
-
-      // If MSW has not dispatched the event yet, it opens the socket itself unless it was closed.
-      if (open && heldOpenEvent && socket.readyState === socket.CONNECTING) {
-        socket.readyState = socket.OPEN;
-        socket.dispatchEvent(heldOpenEvent);
-      }
-    },
-  };
-}
-
 // Resolves once a connection still opening opens or closes, so deliveries waiting on it never stall.
 async function waitForConnectionToSettle(connection: LocalWebSocketClientConnection) {
   if (connection.socket.readyState !== connection.socket.CONNECTING) {
@@ -177,7 +138,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
   private registeredInterceptors: RegisteredWebSocketInterceptor[] = [];
   private routedConnections = new WeakSet<LocalWebSocketClientConnection>();
-  private pendingConnections = new Map<LocalWebSocketClientConnection, PendingLocalWebSocketConnection>();
+  private pendingConnections = new Set<PendingLocalWebSocketConnection>();
 
   constructor(_options: LocalWebSocketInterceptorWorkerOptions) {
     super();
@@ -261,22 +222,32 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
 
     const link = ws.link(createConnectionURLRegex(interceptor.baseURLAsString));
-    const registeredInterceptor: RegisteredWebSocketInterceptor = {
-      interceptor,
-      mswHandler: link.addEventListener('connection', ({ client, server, info }) => {
+    const mswHandler = link.addEventListener('connection', () => undefined);
+
+    // MSW does not wait for link listeners, but it awaits `run` before opening a mocked socket, so a connection decided
+    // here does not open before its decision.
+    const runMSWHandler = mswHandler.run.bind(mswHandler);
+
+    mswHandler.run = async (connection, resolutionContext) => {
+      const handlerConnection = await runMSWHandler(connection, resolutionContext);
+
+      if (handlerConnection) {
+        const { client, server, info } = handlerConnection;
+
         // MSW types connections by their protocol, but they are `WebSocketClientConnection` instances, which expose
         // their socket.
-        this.routeConnection(client as typeof client & Pick<LocalWebSocketClientConnection, 'socket'>, server, {
+        await this.routeConnection(client as typeof client & Pick<LocalWebSocketClientConnection, 'socket'>, server, {
           protocols: normalizeRequestedProtocols(info.protocols),
         });
-      }),
-      clients: new Map(),
+      }
+
+      return handlerConnection;
     };
 
-    this.registeredInterceptors.push(registeredInterceptor);
+    this.registeredInterceptors.push({ interceptor, mswHandler, clients: new Map() });
 
     const mswWorker = this.mswWorkerOrThrow;
-    mswWorker.use(registeredInterceptor.mswHandler);
+    mswWorker.use(mswHandler);
   }
 
   sendToClient<Schema extends WebSocketSchema>(
@@ -350,7 +321,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     });
   }
 
-  private routeConnection(
+  private async routeConnection(
     connection: LocalWebSocketClientConnection,
     server: { connect: () => void },
     options: { protocols: string[] },
@@ -370,56 +341,44 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
 
     const pendingConnection: PendingLocalWebSocketConnection = {
+      connection,
+      protocols: options.protocols,
       holders: holderInterceptors,
-      heldOpen: holdMockedWebSocketOpen(connection.socket),
     };
 
-    this.pendingConnections.set(connection, pendingConnection);
+    this.pendingConnections.add(pendingConnection);
 
-    void this.decideConnection(connection, pendingConnection, options);
+    await this.decideConnection(pendingConnection);
   }
 
-  private async decideConnection(
-    connection: LocalWebSocketClientConnection,
-    pendingConnection: PendingLocalWebSocketConnection,
-    options: { protocols: string[] },
-  ) {
-    const handling = await this.handleConnectionWithHandlers(
-      { url: connection.url.href, protocols: options.protocols },
-      (interceptor) => pendingConnection.holders.some((holder) => holder.interceptor === interceptor),
+  private async decideConnection(pendingConnection: PendingLocalWebSocketConnection) {
+    const { connection, protocols } = pendingConnection;
+
+    const handling = await this.handleConnectionWithHandlers({ url: connection.url.href, protocols }, (interceptor) =>
+      pendingConnection.holders.some((holder) => holder.interceptor === interceptor),
     );
 
-    // The connection was already closed if its last holder let it go while it was decided.
-    if (this.pendingConnections.get(connection) !== pendingConnection) {
-      return;
-    }
+    this.pendingConnections.delete(pendingConnection);
 
-    this.pendingConnections.delete(connection);
-
-    const wasClosedByClient = connection.socket.readyState !== connection.socket.CONNECTING;
-
-    if (wasClosedByClient) {
-      pendingConnection.heldOpen.release({ open: false });
+    // Closed by the client, or by its last holder letting it go.
+    if (connection.socket.readyState !== connection.socket.CONNECTING) {
       return;
     }
 
     if (handling.action === 'reject') {
-      pendingConnection.heldOpen.release({ open: false });
       this.rejectConnection(connection);
       return;
     }
 
-    const registration = this.acceptConnection(connection, pendingConnection.holders, options);
-    pendingConnection.heldOpen.release({ open: true });
+    const registration = this.acceptConnection(pendingConnection);
 
     const acceptingHolder = registration.holders.find((holder) => {
       return holder.registeredInterceptor.interceptor === handling.acceptingHandler?.interceptor;
     });
 
     // Every holder lists the client before the effects run, so an effect that clears another holder makes it let the
-    // connection go, as in remote mode. Open listeners of the client run when the open is released and may have let
-    // the connection go before the effects run.
-    if (acceptingHolder?.registeredInterceptor.clients.has(acceptingHolder.client)) {
+    // connection go, as in remote mode.
+    if (acceptingHolder) {
       void this.applyConnectionEffect(handling, acceptingHolder.client);
     }
   }
@@ -432,20 +391,16 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     connection.socket.dispatchEvent(new Event('error'));
   }
 
-  private acceptConnection(
-    connection: LocalWebSocketClientConnection,
-    holderInterceptors: RegisteredWebSocketInterceptor[],
-    options: { protocols: string[] },
-  ) {
+  private acceptConnection({ connection, protocols, holders }: PendingLocalWebSocketConnection) {
     // A connection is shared by every interceptor matching it when it opens, so each of them lists the client and can
     // send to it. Interceptors started later do not hold it, because they never decided its connection attempt.
     const registration: WebSocketClientRegistration = {
       connection,
-      holders: holderInterceptors.map((registeredInterceptor) => {
+      holders: holders.map((registeredInterceptor) => {
         // Sending through the holder lookup makes the client stop sending once its interceptor lets the connection go.
         const client = createWebSocketInterceptorClient<WebSocketSchema>({
           url: connection.url.href,
-          protocols: options.protocols,
+          protocols,
           send: (data) => {
             this.sendToClient(client, data);
           },
@@ -531,13 +486,12 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     });
 
     // As with open connections, a connection still being decided stays pending until its last holder lets it go.
-    for (const [connection, pendingConnection] of this.pendingConnections) {
+    for (const pendingConnection of this.pendingConnections) {
       pendingConnection.holders = pendingConnection.holders.filter((holder) => !selectedInterceptors.includes(holder));
 
       if (pendingConnection.holders.length === 0) {
-        this.pendingConnections.delete(connection);
-        pendingConnection.heldOpen.release({ open: false });
-        connection.close(WEB_SOCKET_CLOSE_CODES.DEFAULT);
+        this.pendingConnections.delete(pendingConnection);
+        pendingConnection.connection.close(WEB_SOCKET_CLOSE_CODES.DEFAULT);
       }
     }
 
