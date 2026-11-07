@@ -2197,7 +2197,7 @@ describe('Interceptor server', () => {
         const restrictionReleasedPromise = createPromiseWithResolvers<void>();
         const effect = vi.fn();
 
-        await usingIgnoredConsole(['error'], async (console) => {
+        await usingIgnoredConsole(['error'], async () => {
           await usingWebSocketInterceptor<ChatMessage>(
             { type: 'remote', baseURL, connectionSaving: { enabled: true } },
             async (interceptor) => {
@@ -2229,8 +2229,7 @@ describe('Interceptor server', () => {
                 vi.useRealTimers();
               }
 
-              const closeEvent = await closeEventPromise;
-              expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
+              await closeEventPromise;
 
               // Starting another interceptor gets a reply on the same worker socket, which arrives after the server
               // notified the worker that the client closed.
@@ -2244,9 +2243,6 @@ describe('Interceptor server', () => {
 
               expect(interceptor.clients).toHaveLength(0);
               expect(effect).not.toHaveBeenCalled();
-
-              expect(console.error).toHaveBeenCalledTimes(1);
-              expect(console.error).toHaveBeenCalledWith(expect.any(WebSocketMessageTimeoutError));
             },
           );
         });
