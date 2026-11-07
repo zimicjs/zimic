@@ -1,30 +1,21 @@
 import { HttpHeaders, HttpSearchParams, HttpSchema, HttpStatusCode, MergeHttpResponsesByStatusCode } from '@zimic/http';
-import { beforeEach, describe, expectTypeOf, it } from 'vitest';
+import { describe, expectTypeOf, it } from 'vitest';
 
 import { HttpRequestHandlerPath } from '@/http/requestHandler/types/utils';
 
-import { createHttpInterceptor } from '../../factory';
-import { UnhandledRequestStrategy } from '../../types/options';
-import { HttpInterceptor } from '../../types/public';
-import { InferHttpInterceptorSchema } from '../../types/schema';
-import { declareHttpInterceptorTypes, RuntimeSharedHttpInterceptorTestsOptions } from './utils';
+import { createHttpInterceptor } from '../factory';
+import { HttpInterceptorType, UnhandledRequestStrategy } from '../types/options';
+import { HttpInterceptor } from '../types/public';
+import { InferHttpInterceptorSchema } from '../types/schema';
+import { declareHttpInterceptorTypes } from './shared/utils';
 
-export function declareTypeHttpInterceptorTests(
-  options: Omit<RuntimeSharedHttpInterceptorTestsOptions, 'getInterceptorOptions'>,
-) {
-  const { type, getBaseURL } = options;
-
+// The interceptors below are only type-checked. The functions declaring them are never called.
+describe('HttpInterceptor > Types', () => {
   interface User {
     name: string;
   }
 
   const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
-
-  let baseURL: string;
-
-  beforeEach(() => {
-    baseURL = getBaseURL();
-  });
 
   it('should correctly type requests', () => {
     declareHttpInterceptorTypes<{
@@ -1004,25 +995,6 @@ export function declareTypeHttpInterceptorTests(
   });
 
   it('should support declaring schemas using type composition', () => {
-    const _inlineInterceptor = createHttpInterceptor<{
-      '/users': {
-        POST: {
-          request: { body: User };
-          response: {
-            201: { body: User };
-          };
-        };
-      };
-
-      '/users/:id': {
-        GET: {
-          response: {
-            200: { body: User };
-          };
-        };
-      };
-    }>({ type, baseURL });
-
     type UserCreationRequest = HttpSchema.Request<{
       body: User;
     }>;
@@ -1070,12 +1042,35 @@ export function declareTypeHttpInterceptorTests(
 
     type InterceptorSchema = HttpSchema<UserPaths & UserByIdPaths>;
 
-    const _compositeInterceptor = createHttpInterceptor<InterceptorSchema>({ type, baseURL });
+    function declareInterceptors(type: HttpInterceptorType, baseURL: string) {
+      const _inlineInterceptor = createHttpInterceptor<{
+        '/users': {
+          POST: {
+            request: { body: User };
+            response: {
+              201: { body: User };
+            };
+          };
+        };
 
-    type CompositeInterceptorSchema = InferHttpInterceptorSchema<typeof _compositeInterceptor>;
-    type InlineInterceptorSchema = InferHttpInterceptorSchema<typeof _inlineInterceptor>;
+        '/users/:id': {
+          GET: {
+            response: {
+              200: { body: User };
+            };
+          };
+        };
+      }>({ type, baseURL });
 
-    expectTypeOf<CompositeInterceptorSchema>().toMatchObjectType<InlineInterceptorSchema>();
+      const _compositeInterceptor = createHttpInterceptor<InterceptorSchema>({ type, baseURL });
+
+      type CompositeInterceptorSchema = InferHttpInterceptorSchema<typeof _compositeInterceptor>;
+      type InlineInterceptorSchema = InferHttpInterceptorSchema<typeof _inlineInterceptor>;
+
+      expectTypeOf<CompositeInterceptorSchema>().toMatchObjectType<InlineInterceptorSchema>();
+    }
+
+    expectTypeOf(declareInterceptors).toBeFunction();
   });
 
   describe('Dynamic paths', () => {
@@ -1470,14 +1465,18 @@ export function declareTypeHttpInterceptorTests(
 
   describe('Unhandled requests', () => {
     it('should correctly type the unhandled request strategy', () => {
-      const interceptor: HttpInterceptor<{}> = createHttpInterceptor<{}>({ type, baseURL });
-      expectTypeOf(interceptor.onUnhandledRequest).toEqualTypeOf<UnhandledRequestStrategy | undefined>();
+      function declareInterceptors(type: HttpInterceptorType, baseURL: string) {
+        const interceptor: HttpInterceptor<{}> = createHttpInterceptor<{}>({ type, baseURL });
+        expectTypeOf(interceptor.onUnhandledRequest).toEqualTypeOf<UnhandledRequestStrategy | undefined>();
 
-      const localInterceptor = createHttpInterceptor<{}>({ type: 'local', baseURL });
-      expectTypeOf(localInterceptor.onUnhandledRequest).toEqualTypeOf<UnhandledRequestStrategy.Local | undefined>();
+        const localInterceptor = createHttpInterceptor<{}>({ type: 'local', baseURL });
+        expectTypeOf(localInterceptor.onUnhandledRequest).toEqualTypeOf<UnhandledRequestStrategy.Local | undefined>();
 
-      const remoteInterceptor = createHttpInterceptor<{}>({ type: 'remote', baseURL });
-      expectTypeOf(remoteInterceptor.onUnhandledRequest).toEqualTypeOf<UnhandledRequestStrategy.Remote | undefined>();
+        const remoteInterceptor = createHttpInterceptor<{}>({ type: 'remote', baseURL });
+        expectTypeOf(remoteInterceptor.onUnhandledRequest).toEqualTypeOf<UnhandledRequestStrategy.Remote | undefined>();
+      }
+
+      expectTypeOf(declareInterceptors).toBeFunction();
     });
   });
-}
+});

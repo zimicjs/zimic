@@ -168,10 +168,11 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
     if (!isWithinLimits) {
       throw new WebSocketTimesCheckError({
-        messageLimits: this.limits.numberOfMessages,
-        numberOfMatchedMessages: this.numberOfMatchedMessages,
+        subject: 'message',
+        limits: this.limits.numberOfMessages,
+        numberOfMatches: this.numberOfMatchedMessages,
         declarationPointer: this.timesPointer,
-        unmatchedMessageGroups: this.unmatchedMessageGroups,
+        unmatchedGroups: this.unmatchedMessageGroups,
         hasRestrictions: this.restrictions.length > 0 || this.restrictedSender !== undefined,
         messageSaving: this.interceptor.messageSaving,
       });
@@ -301,6 +302,10 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
       return false;
     }
 
+    if (typeof message === 'string' && typeof restriction === 'string') {
+      return options.exact ? message === restriction : message.includes(restriction);
+    }
+
     return options.exact ? jsonEquals(message, restriction) : jsonContains(message, restriction);
   }
 
@@ -362,7 +367,17 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
     await this.applyEffect?.(restrictedMessage, context);
 
+    // A response redeclared while the effect ran must not be computed for a message received before the clear.
+    if (clearGeneration !== this.clearGeneration) {
+      return false;
+    }
+
     const response = await this.createResponseDeclaration?.(restrictedMessage, context);
+
+    // A response that outlives a clear is not sent or saved into the cleared handler.
+    if (clearGeneration !== this.clearGeneration) {
+      return false;
+    }
 
     if (response !== undefined) {
       context.sender.send(serializeWebSocketMessageDataForSocket(response));

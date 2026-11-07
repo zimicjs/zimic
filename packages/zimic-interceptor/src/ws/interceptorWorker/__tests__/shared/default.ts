@@ -6,7 +6,9 @@ import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
+import type { WebSocketClientConnectionReply } from '@/server/types/schema';
 import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
+import RemoteWebSocketConnectionHandler from '@/ws/connectionHandler/RemoteWebSocketConnectionHandler';
 import { createWebSocketInterceptorClient } from '@/ws/interceptor/WebSocketInterceptorHandle';
 import WebSocketInterceptorImplementation from '@/ws/interceptor/WebSocketInterceptorImplementation';
 import LocalWebSocketInterceptorWorker from '@/ws/interceptorWorker/LocalWebSocketInterceptorWorker';
@@ -581,6 +583,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         const interceptor = new WebSocketInterceptorImplementation<ChatMessage, typeof RemoteWebSocketMessageHandler>({
           baseURL: new URL(baseURL),
           Handler: RemoteWebSocketMessageHandler,
+          ConnectionHandler: RemoteWebSocketConnectionHandler,
           createWorker: () => worker,
           deleteWorker: vi.fn(),
         });
@@ -662,6 +665,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         >({
           baseURL: new URL(`${baseURL}/second`),
           Handler: RemoteWebSocketMessageHandler,
+          ConnectionHandler: RemoteWebSocketConnectionHandler,
           createWorker: () => worker,
           deleteWorker: vi.fn(),
         });
@@ -694,6 +698,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         >({
           baseURL: new URL(baseURL),
           Handler: RemoteWebSocketMessageHandler,
+          ConnectionHandler: RemoteWebSocketConnectionHandler,
           createWorker: () => worker,
           deleteWorker: vi.fn(),
         });
@@ -704,17 +709,15 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         >({
           baseURL: new URL(baseURL),
           Handler: RemoteWebSocketMessageHandler,
+          ConnectionHandler: RemoteWebSocketConnectionHandler,
           createWorker: () => worker,
           deleteWorker: vi.fn(),
         });
 
-        const firstConnectionListener = vi.fn();
-        firstInterceptor.on('connection', firstConnectionListener);
-
         // No public path clears an interceptor after the server sends a connection and before the worker receives it.
-        // A connection listener registered ahead of the worker's clears the first interceptor at that point. It never
+        // A connect event listener registered ahead of the worker's clears the first interceptor at that point. It never
         // replies before the test ends, leaving the reply to the worker.
-        const connectionReplyPromise = createPromiseWithResolvers<{ acceptedInterceptorIds: string[] }>();
+        const connectionReplyPromise = createPromiseWithResolvers<WebSocketClientConnectionReply>();
         let firstClearPromise: Promise<void> | undefined;
 
         worker.webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', () => {
@@ -735,14 +738,13 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
             await firstClearPromise;
 
             expect(firstInterceptor.clients).toHaveLength(0);
-            expect(firstConnectionListener).not.toHaveBeenCalled();
 
             const messagePromise = waitForWebSocketClientMessage(client);
             client.send(JSON.stringify({ type: 'client', text: 'one' }));
             await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', text: 'second' }));
           });
         } finally {
-          connectionReplyPromise.resolve({ acceptedInterceptorIds: [] });
+          connectionReplyPromise.resolve({ action: 'accept', acceptedInterceptorIds: [] });
           await secondInterceptor.stop();
           await firstInterceptor.stop();
         }
@@ -761,6 +763,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           baseURL: new URL(baseURL),
           onUnhandledMessage: firstOnUnhandledMessage,
           Handler: RemoteWebSocketMessageHandler,
+          ConnectionHandler: RemoteWebSocketConnectionHandler,
           createWorker: () => worker,
           deleteWorker: vi.fn(),
         });
@@ -772,6 +775,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           baseURL: new URL(baseURL),
           onUnhandledMessage: secondOnUnhandledMessage,
           Handler: RemoteWebSocketMessageHandler,
+          ConnectionHandler: RemoteWebSocketConnectionHandler,
           createWorker: () => worker,
           deleteWorker: vi.fn(),
         });

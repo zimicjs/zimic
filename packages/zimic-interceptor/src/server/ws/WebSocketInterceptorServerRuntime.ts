@@ -20,6 +20,7 @@ import {
 
 import type {
   InterceptorServerWebSocketSchema,
+  WebSocketClientConnectionReply,
   WebSocketClientDisconnection,
   WebSocketInterceptorRegistration,
   WebSocketWorkerReset,
@@ -37,8 +38,7 @@ const webSocketWorkerResetSchema = z.object({
 }) satisfies z.ZodType<WebSocketWorkerReset>;
 
 const webSocketMessageSendSchema = z.object({
-  clientId: z.string().optional(),
-  interceptorId: z.string().optional(),
+  clientId: z.string(),
   data: z.discriminatedUnion('type', [
     z.object({ type: z.literal('text'), data: z.string() }),
     z.object({ type: z.literal('binary'), data: z.base64() }),
@@ -59,7 +59,10 @@ const webSocketClientDisconnectionSchema = z.object({
     .optional(),
 }) satisfies z.ZodType<WebSocketClientDisconnection>;
 
-const clientConnectionReplySchema = z.object({ acceptedInterceptorIds: z.array(z.string()) });
+const clientConnectionReplySchema = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('accept'), acceptedInterceptorIds: z.array(z.string()) }),
+  z.object({ action: z.literal('reject') }),
+]) satisfies z.ZodType<WebSocketClientConnectionReply>;
 
 interface RegisteredWebSocketInterceptor {
   id: string;
@@ -80,14 +83,31 @@ interface UserWebSocketConnection {
   holders: RegisteredWebSocketInterceptor[];
 }
 
+interface UserWebSocketConnectionClosure {
+  code: number;
+  reason?: string;
+}
+
+// A connection is pending from its upgrade request until its handshake completes, so it has no socket yet.
 interface PendingUserWebSocketConnection extends UserWebSocketConnection {
-  closeListener: () => void;
+  requestSocketCloseListener: () => void;
+  // Server messages and closes the worker sends before the handshake completes, such as from connection effects, are
+  // delivered in order once it does.
+  queuedDeliveries: ((socket: Socket) => void)[];
+  // Set when the connection can no longer be activated, such as after its last holder lets it go. Its handshake still
+  // completes and the connection closes right after, so the client receives the close code and reason.
+  closure?: UserWebSocketConnectionClosure;
 }
 
 const WEB_SOCKET_CLOSE_REASONS = Object.freeze({
   CONNECTION_SETUP_FAILED: 'Could not connect to the WebSocket interceptor.',
   NO_REGISTERED_INTERCEPTOR: 'No WebSocket interceptor is registered for this URL.',
 } as const);
+
+const CONNECTION_SETUP_FAILURE_CLOSURE: UserWebSocketConnectionClosure = Object.freeze({
+  code: WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR,
+  reason: WEB_SOCKET_CLOSE_REASONS.CONNECTION_SETUP_FAILED,
+});
 
 interface WebSocketInterceptorServerRuntimeOptions {
   webSocketServer: WebSocketServer<InterceptorServerWebSocketSchema>;
@@ -102,7 +122,7 @@ class WebSocketInterceptorServerRuntime {
   // that holds a connection. Each worker keeps that position until its socket disconnects, even if all of its
   // interceptors stop.
   private webSocketWorkersBySocket = new Map<Socket, WebSocketWorker>();
-  private pendingUserWebSocketConnections = new Map<Socket, PendingUserWebSocketConnection>();
+  private pendingUserWebSocketConnections = new Map<IncomingMessage, PendingUserWebSocketConnection>();
   private activeUserWebSocketConnections = new Map<Socket, UserWebSocketConnection>();
 
   constructor(options: WebSocketInterceptorServerRuntimeOptions) {
@@ -170,10 +190,7 @@ class WebSocketInterceptorServerRuntime {
 
   removeWorkerBySocket(socket: Socket) {
     for (const interceptor of this.webSocketWorkersBySocket.get(socket)?.interceptors ?? []) {
-      this.detachWebSocketInterceptorConnections(interceptor, {
-        pendingCloseCode: WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR,
-        pendingCloseReason: WEB_SOCKET_CLOSE_REASONS.CONNECTION_SETUP_FAILED,
-      });
+      this.detachWebSocketInterceptorConnections(interceptor, { pendingClosure: CONNECTION_SETUP_FAILURE_CLOSURE });
     }
 
     this.webSocketWorkersBySocket.delete(socket);
@@ -183,12 +200,9 @@ class WebSocketInterceptorServerRuntime {
   // holder lets it go, whether or not the connection is still being set up.
   private detachWebSocketInterceptorConnections(
     interceptor: RegisteredWebSocketInterceptor,
-    options: {
-      pendingCloseCode?: number;
-      pendingCloseReason?: string;
-    } = {},
+    options: { pendingClosure?: UserWebSocketConnectionClosure } = {},
   ) {
-    for (const [userSocket, userConnection] of this.pendingUserWebSocketConnections) {
+    for (const userConnection of this.pendingUserWebSocketConnections.values()) {
       if (userConnection.holders.includes(interceptor)) {
         userConnection.holders = userConnection.holders.filter((holder) => holder !== interceptor);
 
@@ -199,7 +213,7 @@ class WebSocketInterceptorServerRuntime {
               request.data.clientId === userConnection.clientId,
           });
 
-          this.closePendingUserWebSocketConnection(userSocket, userConnection, options);
+          userConnection.closure ??= options.pendingClosure ?? { code: WEB_SOCKET_CLOSE_CODES.DEFAULT };
         }
       }
     }
@@ -216,41 +230,44 @@ class WebSocketInterceptorServerRuntime {
     }
   }
 
-  handleConnection = async (socket: Socket, request: IncomingMessage) => {
+  // Resolves with whether to complete the handshake of a user connection. The worker decides it first, so a connection
+  // its handlers reject is refused without opening. Connections that cannot be set up complete the handshake and then
+  // close, which tells the client why.
+  verifyUpgrade = async (request: IncomingMessage) => {
     const connectionTarget = this.findConnectionTargetByRequest(request);
 
     if (!connectionTarget) {
-      socket.resume();
-      socket.close(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR, WEB_SOCKET_CLOSE_REASONS.NO_REGISTERED_INTERCEPTOR);
-      return;
+      return true;
     }
 
-    const clientId = crypto.randomUUID();
-
     const connection: PendingUserWebSocketConnection = {
-      clientId,
+      clientId: crypto.randomUUID(),
       workerSocket: connectionTarget.worker.socket,
       holders: connectionTarget.holders,
-      closeListener: () => {
-        this.removePendingUserWebSocketConnection(socket, connection);
+      queuedDeliveries: [],
+      requestSocketCloseListener: () => {
+        this.removePendingUserWebSocketConnection(request, connection);
+        this.notifyUserWebSocketClose(connection);
       },
     };
 
-    socket.pause();
-    socket.addEventListener('close', connection.closeListener, { once: true });
+    // A socket with no reader does not report its peer closing, so it is read while the worker decides the connection.
+    // Clients send no frames before the handshake completes, so nothing is lost. HTTP server sockets stay half-open
+    // after the peer ends, so its end also counts as closing.
+    request.socket.once('close', connection.requestSocketCloseListener);
+    request.socket.once('end', connection.requestSocketCloseListener);
+    request.socket.resume();
 
-    this.pendingUserWebSocketConnections.set(socket, connection);
-
-    let isActivated = false;
+    this.pendingUserWebSocketConnections.set(request, connection);
 
     try {
       // One request connects every holder, so the worker lists the client in all of them before any connection
       // listener runs, as in local mode.
-      const reply = await this.webSocketServer.request(
+      const rawReply = await this.webSocketServer.request(
         'interceptors/ws/clients/connect',
         {
           interceptorIds: connection.holders.map((holder) => holder.id),
-          clientId,
+          clientId: connection.clientId,
           url: this.getWebSocketRequestURL(request).href,
           protocols: this.getWebSocketRequestProtocols(request),
           // Lets the worker tell which clears the server has not processed yet. Those holders let the connection go
@@ -260,83 +277,84 @@ class WebSocketInterceptorServerRuntime {
         { sockets: [connection.workerSocket] },
       );
 
-      const { acceptedInterceptorIds } = parseInterceptorServerRPCData(clientConnectionReplySchema, reply);
+      const reply = parseInterceptorServerRPCData(clientConnectionReplySchema, rawReply);
 
-      // Holders that let the connection go while it was being set up were already dropped.
-      const accepted = connection.holders.every((holder) => acceptedInterceptorIds.includes(holder.id));
-
-      if (!accepted || !this.canActivatePendingUserWebSocketConnection(socket, connection)) {
-        return;
+      if (reply.action === 'reject') {
+        this.removePendingUserWebSocketConnection(request, connection);
+        return false;
       }
 
-      const messageListener = this.createUserWebSocketMessageListener(connection);
+      // Holders that let the connection go while it was being set up were already dropped.
+      const accepted = connection.holders.every((holder) => reply.acceptedInterceptorIds.includes(holder.id));
 
-      socket.addEventListener('close', () => {
-        this.activeUserWebSocketConnections.delete(socket);
-        socket.removeEventListener('message', messageListener);
-        this.notifyUserWebSocketClose(connection);
-      });
-
-      socket.addEventListener('message', messageListener);
-
-      this.activeUserWebSocketConnections.set(socket, connection);
-      this.removePendingUserWebSocketConnection(socket, connection);
-
-      socket.resume();
-
-      isActivated = true;
+      if (!accepted) {
+        connection.closure ??= CONNECTION_SETUP_FAILURE_CLOSURE;
+      }
     } catch (error) {
       // Aborts are expected when the last holder lets the connection go or the worker disconnects.
       if (!(error instanceof WebSocketMessageAbortError)) {
         console.error(error);
       }
-    } finally {
-      if (!isActivated) {
-        this.closePendingUserWebSocketConnection(socket, connection, {
-          pendingCloseCode: WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR,
-          pendingCloseReason: WEB_SOCKET_CLOSE_REASONS.CONNECTION_SETUP_FAILED,
-        });
 
-        // Some holders may have accepted the connection, so the worker is told to forget the client.
-        this.notifyUserWebSocketClose(connection);
-      }
+      connection.closure ??= CONNECTION_SETUP_FAILURE_CLOSURE;
     }
+
+    return this.pendingUserWebSocketConnections.get(request) === connection;
   };
 
-  private canActivatePendingUserWebSocketConnection(socket: Socket, connection: PendingUserWebSocketConnection) {
-    return (
-      this.pendingUserWebSocketConnections.get(socket) === connection &&
-      this.isWebSocketWorkerSocket(connection.workerSocket) &&
-      connection.workerSocket.readyState === ClientSocket.OPEN &&
-      socket.readyState === ClientSocket.OPEN
-    );
-  }
+  handleConnection = (socket: Socket, request: IncomingMessage) => {
+    const connection = this.pendingUserWebSocketConnections.get(request);
 
-  private removePendingUserWebSocketConnection(socket: Socket, connection: PendingUserWebSocketConnection) {
-    if (this.pendingUserWebSocketConnections.get(socket) !== connection) {
-      return false;
-    }
-
-    this.pendingUserWebSocketConnections.delete(socket);
-    socket.removeEventListener('close', connection.closeListener);
-
-    return true;
-  }
-
-  private closePendingUserWebSocketConnection(
-    socket: Socket,
-    connection: PendingUserWebSocketConnection,
-    options: {
-      pendingCloseCode?: number;
-      pendingCloseReason?: string;
-    },
-  ) {
-    if (!this.removePendingUserWebSocketConnection(socket, connection)) {
+    if (!connection) {
+      socket.resume();
+      socket.close(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR, WEB_SOCKET_CLOSE_REASONS.NO_REGISTERED_INTERCEPTOR);
       return;
     }
 
+    this.removePendingUserWebSocketConnection(request, connection);
+
+    // A worker that disconnects or lets the connection go before this point has already set its closure, and a client
+    // that goes away has already removed the pending connection.
+    if (connection.closure) {
+      socket.resume();
+      this.deliverQueuedUserWebSocketDeliveries(socket, connection);
+      socket.close(connection.closure.code, connection.closure.reason);
+
+      // Some holders may have accepted the connection, so the worker is told to forget the client.
+      this.notifyUserWebSocketClose(connection);
+      return;
+    }
+
+    const messageListener = this.createUserWebSocketMessageListener(connection);
+
+    socket.addEventListener('close', () => {
+      this.activeUserWebSocketConnections.delete(socket);
+      socket.removeEventListener('message', messageListener);
+      this.notifyUserWebSocketClose(connection);
+    });
+
+    socket.addEventListener('message', messageListener);
+
+    this.activeUserWebSocketConnections.set(socket, connection);
+
     socket.resume();
-    socket.close(options.pendingCloseCode ?? WEB_SOCKET_CLOSE_CODES.DEFAULT, options.pendingCloseReason);
+    this.deliverQueuedUserWebSocketDeliveries(socket, connection);
+  };
+
+  private deliverQueuedUserWebSocketDeliveries(socket: Socket, connection: PendingUserWebSocketConnection) {
+    for (const deliver of connection.queuedDeliveries) {
+      deliver(socket);
+    }
+  }
+
+  private removePendingUserWebSocketConnection(request: IncomingMessage, connection: PendingUserWebSocketConnection) {
+    if (this.pendingUserWebSocketConnections.get(request) !== connection) {
+      return;
+    }
+
+    this.pendingUserWebSocketConnections.delete(request);
+    request.socket.off('close', connection.requestSocketCloseListener);
+    request.socket.off('end', connection.requestSocketCloseListener);
   }
 
   private createUserWebSocketMessageListener(connection: UserWebSocketConnection) {
@@ -389,23 +407,27 @@ class WebSocketInterceptorServerRuntime {
 
     const message = parseInterceptorServerRPCData(webSocketMessageSendSchema, rawMessage.data);
 
-    const targetSockets = [
-      ...this.activeUserWebSocketConnections.entries(),
-      ...this.pendingUserWebSocketConnections.entries(),
-    ].filter(([, userConnection]) => {
-      const isOwnedByWorker = userConnection.workerSocket === workerSocket;
-      const matchesClient = message.clientId === undefined || userConnection.clientId === message.clientId;
-      const matchesInterceptor =
-        message.interceptorId === undefined ||
-        userConnection.holders.some((holder) => holder.id === message.interceptorId);
-
-      return isOwnedByWorker && matchesClient && matchesInterceptor;
-    });
+    // A worker can send only to its own connections.
+    function isTargetConnection(userConnection: UserWebSocketConnection) {
+      return userConnection.workerSocket === workerSocket && userConnection.clientId === message.clientId;
+    }
 
     const runtimeMessageData = deserializeWebSocketMessageDataFromTransport(message.data);
 
-    for (const [socket] of targetSockets) {
-      socket.send(runtimeMessageData);
+    for (const [socket, userConnection] of this.activeUserWebSocketConnections) {
+      if (isTargetConnection(userConnection)) {
+        socket.send(runtimeMessageData);
+        return;
+      }
+    }
+
+    for (const userConnection of this.pendingUserWebSocketConnections.values()) {
+      if (isTargetConnection(userConnection)) {
+        userConnection.queuedDeliveries.push((socket) => {
+          socket.send(runtimeMessageData);
+        });
+        return;
+      }
     }
   };
 
@@ -417,23 +439,27 @@ class WebSocketInterceptorServerRuntime {
 
     const disconnection = parseInterceptorServerRPCData(webSocketClientDisconnectionSchema, rawMessage.data);
 
-    // A worker can close only its own connections. A connection listener may close a connection still being set up.
-    const targetEntry = [
-      ...this.activeUserWebSocketConnections.entries(),
-      ...this.pendingUserWebSocketConnections.entries(),
-    ].find(([, userConnection]) => {
+    // A worker can close only its own connections.
+    function isTargetConnection(userConnection: UserWebSocketConnection) {
       return userConnection.workerSocket === workerSocket && userConnection.clientId === disconnection.clientId;
-    });
-
-    if (!targetEntry) {
-      return;
     }
 
-    const [userSocket] = targetEntry;
+    for (const [userSocket, userConnection] of this.activeUserWebSocketConnections) {
+      if (isTargetConnection(userConnection)) {
+        userSocket.close(disconnection.code, disconnection.reason);
+        return;
+      }
+    }
 
-    // Connections being set up are paused, which would keep them from receiving the closing handshake reply.
-    userSocket.resume();
-    userSocket.close(disconnection.code, disconnection.reason);
+    // A connection effect may close a connection still being set up, after its earlier messages.
+    for (const userConnection of this.pendingUserWebSocketConnections.values()) {
+      if (isTargetConnection(userConnection)) {
+        userConnection.queuedDeliveries.push((socket) => {
+          socket.close(disconnection.code, disconnection.reason);
+        });
+        return;
+      }
+    }
   };
 
   private findConnectionTargetByRequest(request: IncomingMessage) {
@@ -478,16 +504,12 @@ class WebSocketInterceptorServerRuntime {
   }
 
   private async closeUserWebSocketConnections() {
-    for (const socket of this.pendingUserWebSocketConnections.keys()) {
-      socket.resume();
+    // Pending connections have not completed their handshake, so there is no closing handshake to wait for.
+    for (const request of this.pendingUserWebSocketConnections.keys()) {
+      request.socket.destroy();
     }
 
-    const userSockets = new Set([
-      ...this.pendingUserWebSocketConnections.keys(),
-      ...this.activeUserWebSocketConnections.keys(),
-    ]);
-
-    const closingPromises = Array.from(userSockets, (socket) =>
+    const closingPromises = Array.from(this.activeUserWebSocketConnections.keys(), (socket) =>
       closeWebSocketClient(socket, { timeout: this.webSocketServer.socketTimeout }),
     );
 

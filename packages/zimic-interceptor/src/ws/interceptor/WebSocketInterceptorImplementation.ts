@@ -5,6 +5,10 @@ import { removeArrayElement } from '@/utils/arrays';
 import { isServerSide } from '@/utils/environment';
 import { logUnhandledMessageWarning } from '@/utils/logging';
 
+import LocalWebSocketConnectionHandler from '../connectionHandler/LocalWebSocketConnectionHandler';
+import RemoteWebSocketConnectionHandler from '../connectionHandler/RemoteWebSocketConnectionHandler';
+import { InternalWebSocketConnectionHandler, WebSocketConnectionHandler } from '../connectionHandler/types/public';
+import { AnyWebSocketConnectionHandlerImplementation } from '../connectionHandler/WebSocketConnectionHandlerImplementation';
 import WebSocketInterceptorWorker from '../interceptorWorker/WebSocketInterceptorWorker';
 import LocalWebSocketMessageHandler from '../messageHandler/LocalWebSocketMessageHandler';
 import RemoteWebSocketMessageHandler from '../messageHandler/RemoteWebSocketMessageHandler';
@@ -14,15 +18,17 @@ import {
   WebSocketMessageHandlerApplyContext,
 } from '../messageHandler/WebSocketMessageHandlerImplementation';
 import { normalizeWebSocketMessageData } from '../utils/messageData';
+import ConnectionSavingSafeLimitExceededError from './errors/ConnectionSavingSafeLimitExceededError';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
 import type {
   ReceivedWebSocketMessageData,
   WebSocketInterceptorClient,
+  WebSocketInterceptorConnectionRequest,
   WebSocketInterceptorServerSendOptions,
 } from './types/messages';
 import type { UnhandledMessageStrategy } from './types/options';
-import type { WebSocketInterceptorConnectionListener, WebSocketInterceptorMessageSaving } from './types/public';
+import type { WebSocketInterceptorConnectionSaving, WebSocketInterceptorMessageSaving } from './types/public';
 import {
   createWebSocketInterceptorServer,
   InternalWebSocketInterceptorClient,
@@ -32,6 +38,7 @@ import WebSocketInterceptorMessageStore from './WebSocketInterceptorMessageStore
 
 export const SUPPORTED_BASE_URL_PROTOCOLS = Object.freeze(['ws', 'wss']);
 export const DEFAULT_MESSAGE_SAVING_SAFE_LIMIT = 1000;
+export const DEFAULT_CONNECTION_SAVING_SAFE_LIMIT = DEFAULT_MESSAGE_SAVING_SAFE_LIMIT;
 
 const DEFAULT_UNHANDLED_MESSAGE_STRATEGY = Object.freeze({
   log: true,
@@ -45,6 +52,9 @@ function isWebSocketInterceptorClientArray<Schema extends WebSocketSchema>(
 
 export type WebSocketHandlerConstructor = typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
 
+export type WebSocketConnectionHandlerConstructor =
+  typeof LocalWebSocketConnectionHandler | typeof RemoteWebSocketConnectionHandler;
+
 class WebSocketInterceptorImplementation<
   Schema extends WebSocketSchema,
   HandlerConstructor extends WebSocketHandlerConstructor = WebSocketHandlerConstructor,
@@ -54,20 +64,21 @@ class WebSocketInterceptorImplementation<
   messageSaving: WebSocketInterceptorMessageSaving;
   readonly messageStore: WebSocketInterceptorMessageStore<Schema>;
 
+  connectionSaving: WebSocketInterceptorConnectionSaving;
+  private numberOfSavedConnections = 0;
+
   onUnhandledMessage?: UnhandledMessageStrategy;
 
   isRunning = false;
 
   private Handler: HandlerConstructor;
+  private ConnectionHandler: WebSocketConnectionHandlerConstructor;
 
-  private handlers: AnyWebSocketMessageHandlerImplementation[] = [];
+  // Kept in registration order, so times checks run in the order the handlers were declared.
+  private handlers: (AnyWebSocketMessageHandlerImplementation | AnyWebSocketConnectionHandlerImplementation)[] = [];
 
   private _server: InternalWebSocketInterceptorServer<Schema>;
   private _clients: InternalWebSocketInterceptorClient<Schema>[] = [];
-  private connectionListeners: {
-    listener: WebSocketInterceptorConnectionListener<Schema>;
-    once: boolean;
-  }[] = [];
 
   private createWorker: () => WebSocketInterceptorWorker;
   private deleteWorker: () => void;
@@ -77,26 +88,35 @@ class WebSocketInterceptorImplementation<
   private numberOfPendingStops = 0;
   private lifecycleQueue: Promise<void> = Promise.resolve();
   private messageSavingGeneration = {};
+  private connectionSavingGeneration = {};
 
   constructor(options: {
     baseURL: URL;
     messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
+    connectionSaving?: Partial<WebSocketInterceptorConnectionSaving>;
     onUnhandledMessage?: UnhandledMessageStrategy;
     Handler: HandlerConstructor;
+    ConnectionHandler: WebSocketConnectionHandlerConstructor;
     createWorker: () => WebSocketInterceptorWorker;
     deleteWorker: () => void;
   }) {
     this.baseURL = options.baseURL;
 
     this.messageSaving = {
-      enabled: options.messageSaving?.enabled ?? this.getDefaultMessageSavingEnabled(),
+      enabled: options.messageSaving?.enabled ?? this.getDefaultSavingEnabled(),
       safeLimit: options.messageSaving?.safeLimit ?? DEFAULT_MESSAGE_SAVING_SAFE_LIMIT,
     };
     this.messageStore = new WebSocketInterceptorMessageStore(() => this.messageSaving.safeLimit);
 
+    this.connectionSaving = {
+      enabled: options.connectionSaving?.enabled ?? this.getDefaultSavingEnabled(),
+      safeLimit: options.connectionSaving?.safeLimit ?? DEFAULT_CONNECTION_SAVING_SAFE_LIMIT,
+    };
+
     this.onUnhandledMessage = options.onUnhandledMessage;
 
     this.Handler = options.Handler;
+    this.ConnectionHandler = options.ConnectionHandler;
     this.createWorker = options.createWorker;
     this.deleteWorker = options.deleteWorker;
     this._server = createWebSocketInterceptorServer(
@@ -118,7 +138,7 @@ class WebSocketInterceptorImplementation<
     );
   }
 
-  private getDefaultMessageSavingEnabled(): boolean {
+  private getDefaultSavingEnabled(): boolean {
     return isServerSide() ? process.env.NODE_ENV === 'test' : false;
   }
 
@@ -268,18 +288,6 @@ class WebSocketInterceptorImplementation<
     return this._clients;
   }
 
-  on(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
-    this.connectionListeners.push({ listener, once: false });
-  }
-
-  off(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
-    this.connectionListeners = this.connectionListeners.filter((entry) => entry.listener !== listener);
-  }
-
-  once(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
-    this.connectionListeners.push({ listener, once: true });
-  }
-
   message() {
     return this.createWebSocketMessageHandler();
   }
@@ -307,6 +315,68 @@ class WebSocketInterceptorImplementation<
     this.handlers.push(handler.implementation);
 
     this.workerOrThrow.useMessageHandler(this, handler.implementation);
+  }
+
+  connection<Path extends string = string>(path?: Path) {
+    return this.createWebSocketConnectionHandler<Path>(path);
+  }
+
+  private createWebSocketConnectionHandler<Path extends string>(
+    path: Path | undefined,
+  ): WebSocketConnectionHandler<Schema, Path> {
+    const handler = new this.ConnectionHandler<Schema, Path>(this, path);
+    this.registerConnectionHandler(handler);
+
+    return handler;
+  }
+
+  registerConnectionHandler<Path extends string>(handler: InternalWebSocketConnectionHandler<Schema, Path>) {
+    if (!this.isRunning || this.isStopping) {
+      throw new NotRunningWebSocketInterceptorError();
+    }
+
+    const isAlreadyRegistered = this.handlers.includes(handler.implementation);
+
+    if (isAlreadyRegistered) {
+      return;
+    }
+
+    this.handlers.push(handler.implementation);
+
+    this.workerOrThrow.useConnectionHandler(this, handler.implementation);
+  }
+
+  async handleMatchedConnection(
+    handler: AnyWebSocketConnectionHandlerImplementation,
+    request: WebSocketInterceptorConnectionRequest,
+  ) {
+    const connectionSavingGeneration = this.connectionSavingGeneration;
+
+    const action = await handler.applyDeclarations(request);
+
+    if (action === null) {
+      return null;
+    }
+
+    if (this.connectionSaving.enabled && connectionSavingGeneration === this.connectionSavingGeneration) {
+      handler.saveInterceptedConnection(request);
+    }
+
+    return action;
+  }
+
+  incrementNumberOfSavedConnections(increment: number) {
+    this.numberOfSavedConnections += increment;
+
+    const exceedsSafeLimit = this.numberOfSavedConnections > this.connectionSaving.safeLimit;
+
+    if (increment > 0 && exceedsSafeLimit) {
+      const error = new ConnectionSavingSafeLimitExceededError(
+        this.numberOfSavedConnections,
+        this.connectionSaving.safeLimit,
+      );
+      console.warn(error);
+    }
   }
 
   async handleMatchedMessage(
@@ -357,25 +427,6 @@ class WebSocketInterceptorImplementation<
 
   addClient(client: InternalWebSocketInterceptorClient<Schema>) {
     this._clients.push(client);
-
-    for (const entry of [...this.connectionListeners]) {
-      const listenerIndex = this.connectionListeners.indexOf(entry);
-
-      if (listenerIndex < 0) {
-        continue;
-      }
-
-      if (entry.once) {
-        this.connectionListeners.splice(listenerIndex, 1);
-      }
-
-      try {
-        const { listener } = entry;
-        listener(client);
-      } catch (error) {
-        console.error(error);
-      }
-    }
   }
 
   removeClient(client: InternalWebSocketInterceptorClient<Schema>) {
@@ -396,6 +447,7 @@ class WebSocketInterceptorImplementation<
     const worker = this.workerOrThrow;
 
     this.messageSavingGeneration = {};
+    this.connectionSavingGeneration = {};
 
     const clearResult = worker.clearHandlers({ interceptor: this, ...options });
 

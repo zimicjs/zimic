@@ -2,6 +2,7 @@ import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { expect } from 'vitest';
 
+import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import WebSocketTimesCheckError from '@/ws/errors/WebSocketTimesCheckError';
 import WebSocketTimesDeclarationPointer from '@/ws/errors/WebSocketTimesDeclarationPointer';
 
@@ -41,6 +42,44 @@ export function waitForWebSocketClientClose<Schema extends WebSocketSchema>(clie
   });
 }
 
+// A native socket exposes the events of a connection that fails to open, which `WebSocketClient.open()` reports only as
+// a rejection. Resolves once the connection opens or closes, so callers close the sockets that opened.
+export async function openWebSocketUntilSettled(url: string, protocols?: string | string[]) {
+  const socket = new WebSocket(url, protocols);
+  const eventTypes: string[] = [];
+
+  for (const type of ['open', 'error', 'close'] as const) {
+    socket.addEventListener(type, () => {
+      eventTypes.push(type);
+    });
+  }
+
+  const closeEvent = await new Promise<CloseEvent | undefined>((resolve) => {
+    socket.addEventListener('open', () => resolve(undefined), { once: true });
+    socket.addEventListener('close', resolve, { once: true });
+  });
+
+  return { socket, eventTypes: [...eventTypes], closeEvent };
+}
+
+// A refused connection fails without opening, as when a server answers its handshake with an error.
+export async function expectWebSocketConnectionToBeRefused(url: string, protocols?: string | string[]) {
+  const { eventTypes, closeEvent } = await openWebSocketUntilSettled(url, protocols);
+
+  expect(eventTypes).toEqual(['error', 'close']);
+  expect(closeEvent?.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
+}
+
+export async function expectWebSocketConnectionToOpen(url: string, protocols?: string | string[]) {
+  const { socket, eventTypes } = await openWebSocketUntilSettled(url, protocols);
+
+  try {
+    expect(eventTypes).toEqual(['open']);
+  } finally {
+    socket.close();
+  }
+}
+
 export function createBinaryMessage(firstByte: number, secondByte: number) {
   const message = new ArrayBuffer(2);
   const messageView = new Uint8Array(message);
@@ -58,7 +97,7 @@ export async function expectWebSocketTimesCheckError(
   callback: () => PossiblePromise<void>,
   options: {
     message: string;
-    expectedNumberOfMessages: number | { min: number; max: number };
+    expectedNumberOfMatches: number | { min: number; max: number };
   },
 ) {
   let timesCheckError: WebSocketTimesCheckError | undefined;
@@ -80,11 +119,11 @@ export async function expectWebSocketTimesCheckError(
   const timesDeclarationPointer = timesCheckError!.cause! as WebSocketTimesDeclarationPointer;
   expect(timesDeclarationPointer).toBeInstanceOf(WebSocketTimesDeclarationPointer);
 
-  if (typeof options.expectedNumberOfMessages === 'number') {
-    expect(timesDeclarationPointer.name).toBe(`handler.times(${options.expectedNumberOfMessages})`);
+  if (typeof options.expectedNumberOfMatches === 'number') {
+    expect(timesDeclarationPointer.name).toBe(`handler.times(${options.expectedNumberOfMatches})`);
   } else {
     expect(timesDeclarationPointer.name).toBe(
-      `handler.times(${options.expectedNumberOfMessages.min}, ${options.expectedNumberOfMessages.max})`,
+      `handler.times(${options.expectedNumberOfMatches.min}, ${options.expectedNumberOfMatches.max})`,
     );
   }
 

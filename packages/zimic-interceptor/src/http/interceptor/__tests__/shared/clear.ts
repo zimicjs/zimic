@@ -292,11 +292,14 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
   // WebSocket connections are long-lived, so one can outlive the clear of an interceptor holding it.
 
   // No HTTP counterpart for "should keep connections open for the remaining interceptors if another one is cleared while
-  // they open": WebSocket connection listeners run while a connection opens, so they can clear an interceptor before it
-  // holds the connection.
+  // they open": WebSocket connection effects run while a connection opens, so they can clear an interceptor sharing it.
+
+  // No HTTP counterpart for "should keep connections open for the remaining interceptors if another one is cleared while
+  // a connection handler decides them": WebSocket connections are long-lived, so one can outlive the clear of an
+  // interceptor holding it.
 
   // No HTTP counterpart for "should close connections if their only interceptor is cleared while they open": WebSocket
-  // connection listeners run while a connection opens, so they can clear an interceptor before it holds the connection.
+  // connection effects run while a connection opens, so they can clear the interceptor holding it.
 
   it('should not save intercepted requests after cleared while a request is being handled', async () => {
     await usingHttpInterceptor<{
@@ -335,8 +338,7 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
 
       responseReleasedPromise.resolve();
 
-      const pendingResponse = await pendingResponsePromise;
-      expect(pendingResponse.status).toBe(204);
+      await expectFetchError(pendingResponsePromise);
 
       const nextResponse = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
       expect(nextResponse.status).toBe(204);
@@ -493,4 +495,8 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
   // No HTTP counterpart for "should not apply the unhandled message strategy after cleared while a message is being
   // handled": clearing a WebSocket interceptor closes its connections, so a message being handled has no connection
   // left, while an HTTP request being handled still needs a response.
+
+  // No HTTP counterpart for "should close connections if their only interceptor is cleared while a connection handler
+  // decides them (restriction result: $restrictionResult)": HTTP requests open no connection that a cleared interceptor
+  // must close.
 }

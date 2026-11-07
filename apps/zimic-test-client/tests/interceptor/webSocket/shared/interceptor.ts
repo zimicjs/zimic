@@ -5,6 +5,7 @@ import {
   WebSocketInterceptor,
   WebSocketInterceptorClient,
   WebSocketInterceptorType,
+  WebSocketTimesCheckError,
 } from '@zimic/interceptor/experimental/ws';
 import { waitFor, waitForNot } from '@zimic/utils/time';
 import { closeWebSocketClient } from '@zimic/utils/ws';
@@ -102,12 +103,34 @@ async function readBytes(data: BinaryWebSocketSchema) {
   return Array.from(new Uint8Array(data));
 }
 
+// Close code of connections that closed without a close frame, such as refused connections.
+const ABNORMAL_CLOSURE_CODE = 1006;
+
 export function declareWebSocketInterceptorTests({
   platform,
   type,
   defaultBinaryMessageType,
   openSocket,
+  createSocket,
 }: ClientTestOptionsByWorkerType) {
+  // A refused connection fails without opening, as when a server answers its handshake with an error.
+  async function expectSocketToBeRefused(url: string, protocols?: string | string[]) {
+    const socket = createSocket<UserWebSocketSchema>(url, protocols);
+    const eventTypes: string[] = [];
+
+    for (const eventType of ['open', 'error', 'close'] as const) {
+      socket.addEventListener(eventType, () => eventTypes.push(eventType));
+    }
+
+    const closeEvent = await new Promise<ClientTestWebSocketCloseEvent | undefined>((resolve) => {
+      socket.addEventListener('open', () => resolve(undefined));
+      socket.addEventListener('close', resolve);
+    });
+
+    expect(eventTypes).toEqual(['error', 'close']);
+    expect(closeEvent?.code).toBe(ABNORMAL_CLOSURE_CODE);
+  }
+
   const userInterceptor = createWebSocketInterceptor<UserWebSocketSchema>({
     type,
     baseURL: getUserBaseURL(type),
@@ -211,87 +234,97 @@ export function declareWebSocketInterceptorTests({
     );
   });
 
-  describe('Connection listeners', () => {
-    it('should notify a listener once per connection with the connected client', async () => {
-      const listener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
-      userInterceptor.on('connection', listener);
+  describe('Connection effects', () => {
+    it('should run a connection effect once per connection with the connected client', async () => {
+      const effect = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
+      await userInterceptor.connection().effect(effect);
 
       const sockets: ClientTestWebSocket<UserWebSocketSchema>[] = [];
 
       try {
         for (const index of [0, 1]) {
           sockets.push(await openSocket<UserWebSocketSchema>(userInterceptor.baseURL));
-          await waitFor(() => expect(listener).toHaveBeenCalledTimes(index + 1));
-          expect(listener).toHaveBeenNthCalledWith(index + 1, userInterceptor.clients[userSockets.length + index]);
+          await waitFor(() => expect(effect).toHaveBeenCalledTimes(index + 1));
+          expect(effect.mock.calls[index][0]).toBe(userInterceptor.clients[userSockets.length + index]);
         }
-
-        const userId = crypto.randomUUID();
-        const response: UserWebSocketMessage<'user:delete:success'> = {
-          type: 'user:delete:success',
-          data: { id: userId },
-        };
-        await userInterceptor.message().with({ type: 'user:delete' }).respond(response).times(sockets.length);
-
-        for (const socket of sockets) {
-          await expect(
-            sendAndWaitForResponse(socket, { type: 'user:delete', data: { id: userId } }, 'user:delete:success'),
-          ).resolves.toEqual(response);
-        }
-
-        expect(listener).toHaveBeenCalledTimes(sockets.length);
       } finally {
-        userInterceptor.off('connection', listener);
         await Promise.all(sockets.map((socket) => closeWebSocketClient(socket)));
       }
     });
+  });
 
-    it('should stop notifying a connection listener after it is removed', async () => {
-      const listener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
-      const remainingListener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
-      userInterceptor.on('connection', listener);
-      userInterceptor.on('connection', remainingListener);
+  describe('Connection refusals', () => {
+    it('should refuse connections rejected by a connection handler before they open', async () => {
+      const roomURL = `${userInterceptor.baseURL}/rooms/1`;
 
-      const sockets: ClientTestWebSocket<UserWebSocketSchema>[] = [];
+      await userInterceptor.connection('/rooms/:roomId').respond({ action: 'reject' }).times(1);
 
-      try {
-        sockets.push(await openSocket<UserWebSocketSchema>(userInterceptor.baseURL));
-        await waitFor(() => expect(remainingListener).toHaveBeenCalledOnce());
-        expect(listener).toHaveBeenCalledExactlyOnceWith(userInterceptor.clients[userSockets.length]);
-
-        userInterceptor.off('connection', listener);
-
-        sockets.push(await openSocket<UserWebSocketSchema>(userInterceptor.baseURL));
-        await waitFor(() => expect(remainingListener).toHaveBeenCalledTimes(2));
-        expect(listener).toHaveBeenCalledOnce();
-        expect(remainingListener).toHaveBeenLastCalledWith(userInterceptor.clients[userSockets.length + 1]);
-      } finally {
-        userInterceptor.off('connection', listener);
-        userInterceptor.off('connection', remainingListener);
-        await Promise.all(sockets.map((socket) => closeWebSocketClient(socket)));
-      }
+      await expectSocketToBeRefused(roomURL, 'graphql-transport-ws');
     });
 
-    it('should notify a one-time listener only for the first connection', async () => {
-      const listener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
-      const remainingListener = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
-      userInterceptor.once('connection', listener);
-      userInterceptor.on('connection', remainingListener);
+    it.each([
+      {
+        restriction: 'static search params',
+        rejectedQuery: '?token=expired',
+        acceptedQuery: '?token=valid',
+        rejectedProtocols: [],
+        acceptedProtocols: [],
+        declareHandler: () =>
+          userInterceptor
+            .connection()
+            .with({ searchParams: { token: 'expired' } })
+            .respond({ action: 'reject' }),
+      },
+      {
+        restriction: 'computed protocols',
+        rejectedQuery: '',
+        acceptedQuery: '',
+        rejectedProtocols: ['legacy-protocol'],
+        acceptedProtocols: ['graphql-transport-ws'],
+        declareHandler: () =>
+          userInterceptor
+            .connection()
+            .with((request) => request.protocols.includes('legacy-protocol'))
+            .respond({ action: 'reject' }),
+      },
+    ])(
+      'should refuse only connections matching the $restriction restriction of a connection handler',
+      async ({ rejectedQuery, acceptedQuery, rejectedProtocols, acceptedProtocols, declareHandler }) => {
+        const rejectedURL = `${userInterceptor.baseURL}/rooms/1${rejectedQuery}`;
+        const acceptedURL = `${userInterceptor.baseURL}/rooms/1${acceptedQuery}`;
 
-      const sockets: ClientTestWebSocket<UserWebSocketSchema>[] = [];
+        await declareHandler().times(1);
+
+        await expectSocketToBeRefused(rejectedURL, rejectedProtocols);
+
+        const acceptedSocket = await openSocket<UserWebSocketSchema>(acceptedURL, acceptedProtocols);
+        await closeWebSocketClient(acceptedSocket);
+      },
+    );
+
+    it('should count connection attempts accepted and rejected by limited connection handlers', async () => {
+      const roomURL = `${userInterceptor.baseURL}/rooms/1`;
+
+      const acceptingHandler = await userInterceptor.connection().times(1);
+      const rejectingHandler = await userInterceptor.connection().respond({ action: 'reject' }).times(1);
+
+      await expect(async () => {
+        await rejectingHandler.checkTimes();
+      }).rejects.toThrow(WebSocketTimesCheckError);
+
+      await expectSocketToBeRefused(roomURL);
+
+      await rejectingHandler.checkTimes();
+      await expect(async () => {
+        await acceptingHandler.checkTimes();
+      }).rejects.toThrow(WebSocketTimesCheckError);
+
+      const reconnectedSocket = await openSocket<UserWebSocketSchema>(roomURL);
 
       try {
-        sockets.push(await openSocket<UserWebSocketSchema>(userInterceptor.baseURL));
-        await waitFor(() => expect(remainingListener).toHaveBeenCalledOnce());
-        expect(listener).toHaveBeenCalledExactlyOnceWith(userInterceptor.clients[userSockets.length]);
-
-        sockets.push(await openSocket<UserWebSocketSchema>(userInterceptor.baseURL));
-        await waitFor(() => expect(remainingListener).toHaveBeenCalledTimes(2));
-        expect(listener).toHaveBeenCalledOnce();
-        expect(remainingListener).toHaveBeenLastCalledWith(userInterceptor.clients[userSockets.length + 1]);
+        await acceptingHandler.checkTimes();
       } finally {
-        userInterceptor.off('connection', listener);
-        userInterceptor.off('connection', remainingListener);
-        await Promise.all(sockets.map((socket) => closeWebSocketClient(socket)));
+        await closeWebSocketClient(reconnectedSocket);
       }
     });
   });

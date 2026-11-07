@@ -1,5 +1,6 @@
 import { WebSocketSchema } from '@zimic/ws';
 
+import LocalWebSocketConnectionHandler from '../connectionHandler/LocalWebSocketConnectionHandler';
 import LocalWebSocketMessageHandler from '../messageHandler/LocalWebSocketMessageHandler';
 import {
   WebSocketInterceptorClient as PublicWebSocketInterceptorClient,
@@ -8,7 +9,7 @@ import {
 import { LocalWebSocketInterceptorOptions, UnhandledMessageStrategy } from './types/options';
 import {
   LocalWebSocketInterceptor as PublicLocalWebSocketInterceptor,
-  type WebSocketInterceptorConnectionListener,
+  WebSocketInterceptorConnectionSaving,
   WebSocketInterceptorMessageSaving,
 } from './types/public';
 import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
@@ -25,8 +26,10 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
     this.implementation = new WebSocketInterceptorImplementation<Schema>({
       baseURL,
       messageSaving: options.messageSaving,
+      connectionSaving: options.connectionSaving,
       onUnhandledMessage: options.onUnhandledMessage,
       Handler: LocalWebSocketMessageHandler,
+      ConnectionHandler: LocalWebSocketConnectionHandler,
       createWorker: () => this.store.getOrCreateLocalWorker({}),
       deleteWorker: () => this.store.deleteLocalWorker(),
     });
@@ -60,6 +63,14 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
     this.implementation.messageSaving = messageSaving;
   }
 
+  get connectionSaving() {
+    return this.implementation.connectionSaving;
+  }
+
+  set connectionSaving(connectionSaving: WebSocketInterceptorConnectionSaving) {
+    this.implementation.connectionSaving = connectionSaving;
+  }
+
   get onUnhandledMessage() {
     return this.implementation.onUnhandledMessage;
   }
@@ -72,24 +83,16 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
     return this.implementation.message() as LocalWebSocketMessageHandler<Schema>;
   }
 
+  connection<Path extends string = string>(path?: Path) {
+    return this.implementation.connection(path) as LocalWebSocketConnectionHandler<Schema, Path>;
+  }
+
   get server(): PublicWebSocketInterceptorServer<Schema> {
     return this.implementation.server;
   }
 
   get clients(): readonly PublicWebSocketInterceptorClient<Schema>[] {
     return this.implementation.clients;
-  }
-
-  on(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
-    this.implementation.on('connection', listener);
-  }
-
-  off(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
-    this.implementation.off('connection', listener);
-  }
-
-  once(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
-    this.implementation.once('connection', listener);
   }
 
   async start() {

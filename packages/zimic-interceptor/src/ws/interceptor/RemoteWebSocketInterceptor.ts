@@ -1,5 +1,6 @@
 import { WebSocketSchema } from '@zimic/ws';
 
+import RemoteWebSocketConnectionHandler from '../connectionHandler/RemoteWebSocketConnectionHandler';
 import RemoteWebSocketMessageHandler from '../messageHandler/RemoteWebSocketMessageHandler';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
 import {
@@ -9,7 +10,7 @@ import {
 import { RemoteWebSocketInterceptorOptions, UnhandledMessageStrategy } from './types/options';
 import {
   RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor,
-  type WebSocketInterceptorConnectionListener,
+  WebSocketInterceptorConnectionSaving,
   WebSocketInterceptorMessageSaving,
 } from './types/public';
 import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
@@ -26,8 +27,10 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
     this.implementation = new WebSocketInterceptorImplementation<Schema>({
       baseURL,
       messageSaving: options.messageSaving,
+      connectionSaving: options.connectionSaving,
       onUnhandledMessage: options.onUnhandledMessage,
       Handler: RemoteWebSocketMessageHandler,
+      ConnectionHandler: RemoteWebSocketConnectionHandler,
       createWorker: () => {
         return this.store.getOrCreateRemoteWorker({
           serverURL: this.implementation.baseURL,
@@ -100,6 +103,14 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
     this.implementation.messageSaving = messageSaving;
   }
 
+  get connectionSaving() {
+    return this.implementation.connectionSaving;
+  }
+
+  set connectionSaving(connectionSaving: WebSocketInterceptorConnectionSaving) {
+    this.implementation.connectionSaving = connectionSaving;
+  }
+
   get onUnhandledMessage() {
     return this.implementation.onUnhandledMessage;
   }
@@ -112,24 +123,16 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
     return this.implementation.message() as RemoteWebSocketMessageHandler<Schema>;
   }
 
+  connection<Path extends string = string>(path?: Path) {
+    return this.implementation.connection(path) as RemoteWebSocketConnectionHandler<Schema, Path>;
+  }
+
   get server(): PublicWebSocketInterceptorServer<Schema> {
     return this.implementation.server;
   }
 
   get clients(): readonly PublicWebSocketInterceptorClient<Schema>[] {
     return this.implementation.clients;
-  }
-
-  on(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
-    this.implementation.on('connection', listener);
-  }
-
-  off(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
-    this.implementation.off('connection', listener);
-  }
-
-  once(_event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) {
-    this.implementation.once('connection', listener);
   }
 
   async start() {
