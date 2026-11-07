@@ -1,14 +1,13 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { startHttpServer, stopHttpServer } from '@zimic/utils/server';
 import { waitFor } from '@zimic/utils/time';
-import { closeWebSocketClient, WebSocketCloseTimeoutError } from '@zimic/utils/ws';
+import { closeWebSocketClient, WEB_SOCKET_CLOSE_CODES, WebSocketCloseTimeoutError } from '@zimic/utils/ws';
 import { createServer } from 'http';
 import ClientSocket from 'isomorphic-ws';
 import { AddressInfo } from 'net';
 import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 
 import { waitForOpenClientSocket, WebSocketMessageAbortError, WebSocketMessageTimeoutError } from '@/utils/webSocket';
-import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
 import InvalidWebSocketMessageError from '../errors/InvalidWebSocketMessageError';

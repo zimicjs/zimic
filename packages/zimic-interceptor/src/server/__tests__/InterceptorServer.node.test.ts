@@ -2,6 +2,7 @@ import { HttpSchema } from '@zimic/http';
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { expectFetchError } from '@zimic/utils/fetch';
 import { waitFor } from '@zimic/utils/time';
+import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { once } from 'events';
 import ClientSocket from 'isomorphic-ws';
@@ -18,7 +19,6 @@ import {
   INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER,
 } from '@/interceptor/constants';
 import { DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT, WebSocketMessageTimeoutError } from '@/utils/webSocket';
-import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
 import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
 import InterceptorServerWebSocketClient from '@/utils/webSocket/WebSocketClient';

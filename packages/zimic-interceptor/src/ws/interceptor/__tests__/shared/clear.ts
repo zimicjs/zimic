@@ -1,11 +1,11 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
 import { PossiblePromise } from '@zimic/utils/types';
+import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import color from 'picocolors';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 import {

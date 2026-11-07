@@ -2,12 +2,12 @@ import { HttpSchema } from '@zimic/http';
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
 import { PossiblePromise } from '@zimic/utils/types';
+import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
 import type { WebSocketClientConnectionReply } from '@/server/types/schema';
-import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import RemoteWebSocketConnectionHandler from '@/ws/connectionHandler/RemoteWebSocketConnectionHandler';
 import { createWebSocketInterceptorClient } from '@/ws/interceptor/WebSocketInterceptorHandle';
 import WebSocketInterceptorImplementation from '@/ws/interceptor/WebSocketInterceptorImplementation';

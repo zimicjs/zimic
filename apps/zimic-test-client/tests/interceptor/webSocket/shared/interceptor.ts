@@ -8,7 +8,7 @@ import {
   WebSocketTimesCheckError,
 } from '@zimic/interceptor/experimental/ws';
 import { waitFor, waitForNot } from '@zimic/utils/time';
-import { closeWebSocketClient } from '@zimic/utils/ws';
+import { closeWebSocketClient, WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { ZIMIC_SERVER_PORT } from '@tests/constants';
@@ -103,9 +103,6 @@ async function readBytes(data: BinaryWebSocketSchema) {
   return Array.from(new Uint8Array(data));
 }
 
-// Close code of connections that closed without a close frame, such as refused connections.
-const ABNORMAL_CLOSURE_CODE = 1006;
-
 export function declareWebSocketInterceptorTests({
   platform,
   type,
@@ -123,7 +120,7 @@ export function declareWebSocketInterceptorTests({
       ? { eventTypes: ['error'], closeCodes: [], settlingEventTypes: ['open', 'error', 'close'] as const }
       : {
           eventTypes: ['error', 'close'],
-          closeCodes: [ABNORMAL_CLOSURE_CODE],
+          closeCodes: [WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE],
           settlingEventTypes: ['open', 'close'] as const,
         };
 

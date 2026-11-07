@@ -1,6 +1,7 @@
 import { normalizeNodeRequest } from '@whatwg-node/server';
 import { createCachedDynamicImport } from '@zimic/utils/import';
 import { startHttpServer, stopHttpServer, getHttpServerPort } from '@zimic/utils/server';
+import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
 import { IncomingMessage, Server as HttpServer, createServer, ServerResponse } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
 import color from 'picocolors';
@@ -15,7 +16,6 @@ import {
 } from '@/interceptor/constants';
 import { isLoopbackHostname } from '@/utils/http';
 import { logger, logUnhandledRequestWarning } from '@/utils/logging';
-import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import WebSocketServer, {
   type WebSocketServerAuthenticate,
   type WebSocketServerConnectionHandler,

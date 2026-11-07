@@ -1,12 +1,12 @@
 import { createCachedDynamicImport } from '@zimic/utils/import';
 import { excludeNonPathParams } from '@zimic/utils/url';
+import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 import { SharedOptions as MSWWorkerSharedOptions, ws } from 'msw';
 
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
 import { removeArrayElement } from '@/utils/arrays';
 import { isURLUnderBaseURL } from '@/utils/urls';
-import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { convertWebSocketMessageDataToBinaryType } from '@/ws/utils/messageData';
 
 import NotRunningWebSocketInterceptorError from '../interceptor/errors/NotRunningWebSocketInterceptorError';

@@ -1,11 +1,12 @@
 import {
   DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT,
+  WEB_SOCKET_CLOSE_CODES,
   WebSocketOpenTimeoutError,
   WebSocketTimeoutError,
 } from '@zimic/utils/ws';
 import ClientSocket from 'isomorphic-ws';
 
-import { WEB_SOCKET_CLOSE_CODES, WebSocketControlMessage } from '@/utils/webSocket/constants';
+import { WebSocketControlMessage } from '@/utils/webSocket/constants';
 import InternalWebSocketServerError from '@/utils/webSocket/errors/InternalWebSocketServerError';
 import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
 

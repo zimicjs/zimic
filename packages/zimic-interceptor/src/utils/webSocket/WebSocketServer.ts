@@ -1,9 +1,9 @@
 import { PossiblePromise } from '@zimic/utils/types';
-import { closeWebSocketServer } from '@zimic/utils/ws';
+import { closeWebSocketServer, WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
 import { Server as HttpServer, IncomingMessage } from 'http';
 import ClientSocket from 'isomorphic-ws';
 
-import { WEB_SOCKET_CLOSE_CODES, WebSocketControlMessage } from './constants';
+import { WebSocketControlMessage } from './constants';
 import { WebSocketSchema } from './types';
 import WebSocketHandler from './WebSocketHandler';
 

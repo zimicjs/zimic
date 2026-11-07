@@ -1,5 +1,5 @@
 import { excludeNonPathParams } from '@zimic/utils/url';
-import { closeWebSocketClient } from '@zimic/utils/ws';
+import { closeWebSocketClient, WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
 import type { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 import type { IncomingMessage } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
@@ -8,7 +8,6 @@ import * as z from 'zod';
 
 import { isURLUnderBaseURL } from '@/utils/urls';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
-import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
 import type { WebSocketEventMessage } from '@/utils/webSocket/types';
 import type WebSocketServer from '@/utils/webSocket/WebSocketServer';

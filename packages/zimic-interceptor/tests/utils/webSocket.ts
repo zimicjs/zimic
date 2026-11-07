@@ -1,9 +1,9 @@
 import { PossiblePromise } from '@zimic/utils/types';
+import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { expect } from 'vitest';
 
 import { isServerSide } from '@/utils/environment';
-import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import WebSocketTimesCheckError from '@/ws/errors/WebSocketTimesCheckError';
 import WebSocketTimesDeclarationPointer from '@/ws/errors/WebSocketTimesDeclarationPointer';
 
