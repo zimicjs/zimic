@@ -8,7 +8,11 @@ import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/util
 import { WebSocketInterceptorClient } from '../../../interceptor/types/messages';
 import { UnhandledMessageStrategy, WebSocketInterceptorType } from '../../../interceptor/types/options';
 import RemoteWebSocketMessageHandler from '../../RemoteWebSocketMessageHandler';
-import { WebSocketMessageHandler, WebSocketMessageHandlerMessageComputedDeclaration } from '../../types/public';
+import {
+  InternalWebSocketMessageHandler,
+  WebSocketMessageHandler,
+  WebSocketMessageHandlerMessageComputedDeclaration,
+} from '../../types/public';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './utils';
 
 export function declareDefaultWebSocketMessageHandlerTests(
@@ -282,8 +286,52 @@ export function declareDefaultWebSocketMessageHandlerTests(
     );
   });
 
-  // No WebSocket message counterpart for "should not respond to requests if cleared while reading their response body":
-  // a message response is data sent through the socket, without a body to read.
+  // Unlike an HTTP response, a message response has no body to read before the message is saved, so the handler is
+  // cleared right after computing the response instead.
+  it('should not respond to messages if cleared after computing their response', async () => {
+    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true }, onUnhandledMessage },
+      async (interceptor) => {
+        const handler = await interceptor.message().respond({ type: 'delete', id: '1' });
+
+        await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' });
+
+        // No public callback runs between computing the response and saving the message, so the handler is cleared when
+        // its declarations resolve.
+        const { implementation } = handler as unknown as InternalWebSocketMessageHandler<Schema>;
+        const applyDeclarations = implementation.applyDeclarations.bind(implementation);
+
+        vi.spyOn(implementation, 'applyDeclarations').mockImplementationOnce(async (message, context) => {
+          const declaration = await applyDeclarations(message, context);
+          await handler.clear();
+          return declaration;
+        });
+
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
+          const firstResponse = waitForWebSocketClientMessage(client);
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'pending' } }));
+
+          await waitFor(() => {
+            expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+          });
+
+          client.send(JSON.stringify({ type: 'delete', id: '2' }));
+
+          // Messages on a socket are delivered in order, so the probe response arriving first means that the pending
+          // message got no response.
+          await expect(firstResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
+
+          expect(handler.messages).toHaveLength(0);
+
+          await handler.times(0);
+          await handler.checkTimes();
+        });
+      },
+    );
+  });
 
   it.each<{
     condition: string;

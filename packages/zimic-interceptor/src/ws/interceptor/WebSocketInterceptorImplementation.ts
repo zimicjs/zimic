@@ -352,10 +352,12 @@ class WebSocketInterceptorImplementation<
     request: WebSocketInterceptorConnectionRequest,
   ) {
     const connectionSavingGeneration = this.connectionSavingGeneration;
+    const clearGeneration = handler.clearGeneration;
 
     const action = await handler.applyDeclarations(request);
 
-    if (action === null) {
+    // A handler cleared after deciding the connection does not apply its action or save it.
+    if (action === null || clearGeneration !== handler.clearGeneration) {
       return null;
     }
 
@@ -386,11 +388,17 @@ class WebSocketInterceptorImplementation<
     context: WebSocketMessageHandlerApplyContext<Schema>,
   ) {
     const messageSavingGeneration = this.messageSavingGeneration;
+    const clearGeneration = handler.clearGeneration;
 
-    const wasHandled = await handler.applyDeclarations(message, context);
+    const declaration = await handler.applyDeclarations(message, context);
 
-    if (!wasHandled) {
+    // A handler cleared after computing its response does not send it or save the message.
+    if (declaration === null || clearGeneration !== handler.clearGeneration) {
       return false;
+    }
+
+    if (declaration.response !== undefined) {
+      handler.sendResponse(declaration.response, context);
     }
 
     if (this.messageSaving.enabled && messageSavingGeneration === this.messageSavingGeneration) {

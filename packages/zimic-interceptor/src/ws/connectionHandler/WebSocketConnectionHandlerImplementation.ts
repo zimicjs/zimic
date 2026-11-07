@@ -60,7 +60,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 
   private applyEffect?: WebSocketConnectionHandlerConnectionCallback<Schema, Path>;
 
-  private clearGeneration = {};
+  #clearGeneration = {};
 
   // Handlers match connections without a declared response, so a cleared handler would keep shadowing older handlers.
   // As with a cleared HTTP handler, it stops matching until it is declared again.
@@ -149,8 +149,12 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
     }
   }
 
+  get clearGeneration() {
+    return this.#clearGeneration;
+  }
+
   clear() {
-    this.clearGeneration = {};
+    this.#clearGeneration = {};
     this.isCleared = true;
 
     this.restrictions.length = 0;
@@ -179,13 +183,13 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
   async matchesConnection(
     request: WebSocketInterceptorConnectionRequest<Path>,
   ): Promise<WebSocketConnectionHandlerConnectionMatch> {
-    const clearGeneration = this.clearGeneration;
+    const clearGeneration = this.#clearGeneration;
 
     const restrictionsMatch = await this.matchesRestrictions(request);
 
     // Checked after the restrictions because the handler may be cleared while they are matched asynchronously, even if
     // it is redeclared afterward.
-    if (this.isCleared || clearGeneration !== this.clearGeneration) {
+    if (this.isCleared || clearGeneration !== this.#clearGeneration) {
       return { success: false, cause: 'clearedHandler' };
     }
 
@@ -314,7 +318,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
   async applyDeclarations(
     request: WebSocketInterceptorConnectionRequest<Path>,
   ): Promise<WebSocketConnectionHandlerAction | null> {
-    const clearGeneration = this.clearGeneration;
+    const clearGeneration = this.#clearGeneration;
 
     if (this.createResponseDelay) {
       const delay = await this.createResponseDelay(request);
@@ -325,7 +329,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
     }
 
     // A connection whose handler was cleared during its delay is not handled, even if the handler was redeclared.
-    if (clearGeneration !== this.clearGeneration) {
+    if (clearGeneration !== this.#clearGeneration) {
       return null;
     }
 
@@ -333,7 +337,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 
     // A connection whose handler was cleared while computing its response is not handled either, so a response that
     // outlives the clear does not save into the cleared handler.
-    if (clearGeneration !== this.clearGeneration) {
+    if (clearGeneration !== this.#clearGeneration) {
       return null;
     }
 
