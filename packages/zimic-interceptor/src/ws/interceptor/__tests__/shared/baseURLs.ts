@@ -1625,31 +1625,38 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     });
 
     it('should not try older handlers if the newest one throws while handling a connection', async () => {
-      const error = new Error('Restriction failed.');
-
       await usingWebSocketInterceptor<MessageSchema>(
         { ...interceptorOptions, connectionSaving: { enabled: true } },
-        async (interceptor) => {
-          const olderHandler = await promiseIfRemote(
-            interceptor.connection().respond({ action: 'reject' }),
-            interceptor,
+        async (olderInterceptor) => {
+          await usingWebSocketInterceptor<MessageSchema>(
+            { ...interceptorOptions, connectionSaving: { enabled: true } },
+            async (interceptor) => {
+              const handler = await promiseIfRemote(
+                interceptor.connection().respond({ action: 'reject' }),
+                interceptor,
+              );
+
+              const error = new Error('An error occurred.');
+
+              const olderHandler = await promiseIfRemote(
+                olderInterceptor.connection().respond(() => {
+                  throw error;
+                }),
+                olderInterceptor,
+              );
+
+              await usingIgnoredConsole(['error', 'warn'], async (console) => {
+                await expectWebSocketConnectionToOpen(defaultBaseURL);
+
+                expect(console.error).toHaveBeenCalledTimes(1);
+                expect(console.warn).toHaveBeenCalledTimes(0);
+                expect(console.error.mock.calls[0]).toEqual([error]);
+              });
+
+              expect(handler.connections).toHaveLength(0);
+              expect(olderHandler.connections).toHaveLength(0);
+            },
           );
-
-          await promiseIfRemote(
-            interceptor.connection().with(() => {
-              throw error;
-            }),
-            interceptor,
-          );
-
-          await usingIgnoredConsole(['error'], async (console) => {
-            await expectWebSocketConnectionToOpen(defaultBaseURL);
-
-            expect(console.error).toHaveBeenCalledTimes(1);
-            expect(console.error).toHaveBeenCalledWith(error);
-          });
-
-          expect(olderHandler.connections).toHaveLength(0);
         },
       );
     });
