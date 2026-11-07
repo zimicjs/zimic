@@ -341,6 +341,22 @@ export function declareDefaultWebSocketConnectionHandlerTests(
     );
   });
 
+  it('should respond to connections if redeclared while computing their response', async () => {
+    await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+      const handler = await interceptor.connection().respond(async () => {
+        await handler.respond({ action: 'reject' });
+        return { action: 'accept' };
+      });
+
+      const firstAttempt = await openWebSocketUntilSettled(baseURL);
+      firstAttempt.socket.close();
+      expect(firstAttempt.eventTypes).toEqual(['open']);
+
+      const secondAttempt = await openWebSocketUntilSettled(baseURL);
+      expect(secondAttempt.eventTypes).toEqual(['error']);
+    });
+  });
+
   // No WebSocket connection counterpart for "should not respond to messages if $condition while running their effect":
   // a connection effect runs after the handshake is accepted, so clearing the handler during it cannot change the
   // handshake.

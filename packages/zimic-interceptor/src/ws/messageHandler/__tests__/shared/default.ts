@@ -333,6 +333,25 @@ export function declareDefaultWebSocketMessageHandlerTests(
     );
   });
 
+  it('should respond to messages if redeclared while computing their response', async () => {
+    await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+      const handler = await interceptor.message().respond(async () => {
+        await handler.respond({ type: 'delete', id: 'redeclared' });
+        return { type: 'delete', id: 'computed' };
+      });
+
+      await usingWebSocketClient<Schema>(baseURL, async (client) => {
+        const firstResponse = waitForWebSocketClientMessage(client);
+        client.send(JSON.stringify({ type: 'create', body: { text: 'first' } }));
+        await expect(firstResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'computed' }));
+
+        const secondResponse = waitForWebSocketClientMessage(client);
+        client.send(JSON.stringify({ type: 'create', body: { text: 'second' } }));
+        await expect(secondResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'redeclared' }));
+      });
+    });
+  });
+
   it.each<{
     condition: string;
     declareAfterClear: (

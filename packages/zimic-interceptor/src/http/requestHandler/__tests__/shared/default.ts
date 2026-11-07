@@ -269,6 +269,31 @@ export function declareDefaultHttpRequestHandlerTests(
     );
   });
 
+  it('should respond to requests if redeclared while computing their response', async () => {
+    type RedeclaredMethodSchema = HttpSchema.Method<{
+      response: { 200: {}; 401: {} };
+    }>;
+
+    await usingHttpInterceptor<{ '/users': { POST: RedeclaredMethodSchema } }>(
+      { type, baseURL },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor.post('/users').respond(async () => {
+            await promiseIfRemote(handler.respond({ status: 401 }), interceptor);
+            return { status: 200 };
+          }),
+          interceptor,
+        );
+
+        const firstResponse = await fetch(joinURL(baseURL, '/users'), { method: 'POST' });
+        expect(firstResponse.status).toBe(200);
+
+        const secondResponse = await fetch(joinURL(baseURL, '/users'), { method: 'POST' });
+        expect(secondResponse.status).toBe(401);
+      },
+    );
+  });
+
   it('should create response with declared status and body', async () => {
     const responseStatus = 200;
     const responseBody = { success: true } as const;
