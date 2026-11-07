@@ -464,6 +464,12 @@ class HttpRequestHandlerImplementation<
     }
 
     const appliedDeclaration = await this.createResponseDeclaration?.(request);
+
+    // A response that outlives a clear is not returned or saved into the cleared handler.
+    if (clearGeneration !== this.clearGeneration) {
+      return undefined;
+    }
+
     return appliedDeclaration;
   }
 

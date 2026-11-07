@@ -174,6 +174,37 @@ export function declareDefaultHttpRequestHandlerTests(
   // No HTTP counterpart for "should match connections again if cleared and declared with $declaration": a request needs
   // a response, so only `respond` makes a cleared HTTP handler match again, as covered above.
 
+  it.each([
+    { condition: 'cleared', declareAfterClear: () => undefined },
+    {
+      condition: 'cleared and redeclared',
+      declareAfterClear: (handler: { respond: (declaration: { status: 200; body: { success: true } }) => unknown }) =>
+        handler.respond({ status: 200, body: { success: true } }),
+    },
+  ])('should not respond to requests if $condition while computing their response', async ({ declareAfterClear }) => {
+    const responseStartedPromise = createPromiseWithResolvers<void>();
+    const responseReleasedPromise = createPromiseWithResolvers<void>();
+
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users').respond(
+      async () => {
+        responseStartedPromise.resolve();
+        await responseReleasedPromise;
+        return { status: 200, body: { success: true } };
+      },
+    );
+
+    const request = new Request(baseURL);
+    const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+    const responseDeclarationPromise = handler.applyResponseDeclaration(parsedRequest);
+
+    await responseStartedPromise;
+    await promiseIfRemote(handler.clear(), interceptor);
+    await declareAfterClear(handler);
+    responseReleasedPromise.resolve();
+
+    expect(await responseDeclarationPromise).toBe(undefined);
+  });
+
   it('should create response with declared status and body', async () => {
     const responseStatus = 200;
     const responseBody = { success: true } as const;

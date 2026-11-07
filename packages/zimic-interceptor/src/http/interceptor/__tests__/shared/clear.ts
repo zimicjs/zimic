@@ -338,8 +338,7 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
 
       responseReleasedPromise.resolve();
 
-      const pendingResponse = await pendingResponsePromise;
-      expect(pendingResponse.status).toBe(204);
+      await expectFetchError(pendingResponsePromise);
 
       const nextResponse = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
       expect(nextResponse.status).toBe(204);
