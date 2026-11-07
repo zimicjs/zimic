@@ -28,10 +28,11 @@ export type WebSocketConnectionHandlerConnectionCallback<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A handshake response declared with `handler.respond()`. The `accept` action opens matched connections. The `reject`
- * action refuses them before they open, so clients receive an `error` event and a `close` event with code 1006.
+ * A static handshake response declared with `handler.respond()`. The `accept` action opens matched connections. The
+ * `reject` action refuses them before they open, so clients receive an `error` event and a `close` event with code
+ * 1006.
  */
-export interface WebSocketConnectionHandlerResponseDeclaration {
+export interface WebSocketConnectionHandlerResponseStaticDeclaration {
   /** The action to apply to matched connections. */
   action: 'accept' | 'reject';
 }
@@ -44,7 +45,15 @@ export interface WebSocketConnectionHandlerResponseDeclaration {
  */
 export type WebSocketConnectionHandlerResponseComputedDeclaration<Path extends string = string> = (
   request: WebSocketInterceptorConnectionRequest<Path>,
-) => PossiblePromise<WebSocketConnectionHandlerResponseDeclaration>;
+) => PossiblePromise<WebSocketConnectionHandlerResponseStaticDeclaration>;
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * A handshake response declared with `handler.respond()`, either static or computed.
+ */
+export type WebSocketConnectionHandlerResponseDeclaration<Path extends string = string> =
+  WebSocketConnectionHandlerResponseStaticDeclaration | WebSocketConnectionHandlerResponseComputedDeclaration<Path>;
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -84,10 +93,7 @@ export interface LocalWebSocketConnectionHandler<Schema extends WebSocketSchema,
    * Declares a handshake response for matched connections. Matched connections are accepted if the handler declares no
    * response.
    */
-  respond: (
-    declaration:
-      WebSocketConnectionHandlerResponseDeclaration | WebSocketConnectionHandlerResponseComputedDeclaration<Path>,
-  ) => this;
+  respond: (declaration: WebSocketConnectionHandlerResponseDeclaration<Path>) => this;
 
   /** Declares a number of intercepted connections that the handler will be able to match. */
   times: ((numberOfConnections: number) => this) &
@@ -158,8 +164,7 @@ export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocket
    * response.
    */
   respond: (
-    declaration:
-      WebSocketConnectionHandlerResponseDeclaration | WebSocketConnectionHandlerResponseComputedDeclaration<Path>,
+    declaration: WebSocketConnectionHandlerResponseDeclaration<Path>,
   ) => PendingRemoteWebSocketConnectionHandler<Schema, Path>;
 
   /** Declares a number of intercepted connections that the handler will be able to match. */

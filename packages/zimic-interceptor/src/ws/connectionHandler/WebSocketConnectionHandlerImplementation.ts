@@ -107,10 +107,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
     return this;
   }
 
-  respond(
-    declaration:
-      WebSocketConnectionHandlerResponseDeclaration | WebSocketConnectionHandlerResponseComputedDeclaration<Path>,
-  ) {
+  respond(declaration: WebSocketConnectionHandlerResponseDeclaration<Path>) {
     this.createResponseDeclaration = this.isResponseDeclarationFactory(declaration) ? declaration : () => declaration;
     this.isCleared = false;
     this.resetMatchedConnections();
@@ -118,10 +115,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
     return this;
   }
 
-  private isResponseDeclarationFactory(
-    declaration:
-      WebSocketConnectionHandlerResponseDeclaration | WebSocketConnectionHandlerResponseComputedDeclaration<Path>,
-  ) {
+  private isResponseDeclarationFactory(declaration: WebSocketConnectionHandlerResponseDeclaration<Path>) {
     return typeof declaration === 'function';
   }
 

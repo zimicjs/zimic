@@ -114,8 +114,9 @@ import {
   type SyncedRemoteWebSocketConnectionHandler,
   type PendingRemoteWebSocketConnectionHandler,
   type WebSocketConnectionHandlerConnectionCallback,
-  type WebSocketConnectionHandlerResponseDeclaration,
+  type WebSocketConnectionHandlerResponseStaticDeclaration,
   type WebSocketConnectionHandlerResponseComputedDeclaration,
+  type WebSocketConnectionHandlerResponseDeclaration,
   type WebSocketConnectionHandlerDelayFactory,
   type WebSocketConnectionHandlerRestriction,
   type WebSocketConnectionHandlerStaticRestriction,
@@ -512,8 +513,9 @@ describe('Exports', () => {
       expectTypeOf<SyncedRemoteWebSocketConnectionHandler<never>>().not.toBeAny();
       expectTypeOf<PendingRemoteWebSocketConnectionHandler<never>>().not.toBeAny();
       expectTypeOf<WebSocketConnectionHandlerConnectionCallback<never>>().not.toBeAny();
-      expectTypeOf<WebSocketConnectionHandlerResponseDeclaration>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionHandlerResponseStaticDeclaration>().not.toBeAny();
       expectTypeOf<WebSocketConnectionHandlerResponseComputedDeclaration>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionHandlerResponseDeclaration>().not.toBeAny();
       expectTypeOf<WebSocketConnectionHandlerDelayFactory>().not.toBeAny();
       expectTypeOf<WebSocketConnectionHandlerRestriction>().not.toBeAny();
       expectTypeOf<WebSocketConnectionHandlerStaticRestriction>().not.toBeAny();
