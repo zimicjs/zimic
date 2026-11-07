@@ -188,6 +188,253 @@ describe('Type generation (OpenAPI)', () => {
     });
   });
 
+  it.each([
+    {
+      version: 'Swagger 2.x',
+      versionField: "swagger: '2.0'",
+      message: 'Unsupported Swagger version: 2.x. Use OpenAPI 3.x instead.',
+    },
+    { version: 'OpenAPI 2.x', versionField: 'openapi: 2.0.0', message: 'Unsupported OpenAPI version: 2.0.0' },
+    { version: 'OpenAPI 4.x', versionField: 'openapi: 4.0.0', message: 'Unsupported OpenAPI version: 4.0.0' },
+    { version: 'no version', versionField: '', message: 'Unsupported schema format, expected `openapi: 3.x`' },
+  ])('should not generate types from schemas with $version', async ({ versionField, message }) => {
+    const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'unsupportedVersion.yaml');
+    const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');
+
+    await fs.promises.writeFile(
+      inputFilePath,
+      [versionField, 'info: { title: Users, version: 1.0.0 }', 'paths: {}'].join('\n'),
+    );
+    await fs.promises.rm(outputFilePath, { force: true });
+
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'typegen',
+      'openapi',
+      inputFilePath,
+      '--output',
+      outputFilePath,
+      '--service-name',
+      'my-service',
+    ]);
+
+    await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+      await expect(runCLI()).rejects.toThrow(message);
+    });
+
+    expect(await pathExists(outputFilePath)).toBe(false);
+  });
+
+  it('should not generate types from schemas with duplicate operation ids', async () => {
+    const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'duplicateOperationIds.yaml');
+    const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');
+
+    await fs.promises.writeFile(
+      inputFilePath,
+      [
+        'openapi: 3.1.0',
+        'info: { title: Users, version: 1.0.0 }',
+        'paths:',
+        '  /users:',
+        '    get:',
+        '      operationId: getUsers',
+        "      responses: { '200': { description: Success } }",
+        '    post:',
+        '      operationId: getUsers',
+        "      responses: { '201': { description: Created } }",
+      ].join('\n'),
+    );
+    await fs.promises.rm(outputFilePath, { force: true });
+
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'typegen',
+      'openapi',
+      inputFilePath,
+      '--output',
+      outputFilePath,
+      '--service-name',
+      'my-service',
+    ]);
+
+    await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+      await expect(runCLI()).rejects.toThrow(
+        'Every operation must have a unique `operationId`. at #/paths/~1users/post/getUsers',
+      );
+    });
+
+    expect(await pathExists(outputFilePath)).toBe(false);
+  });
+
+  it('should not generate types from schemas with unresolvable local references', async () => {
+    const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'unresolvableLocalReference.yaml');
+    const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');
+
+    await fs.promises.writeFile(
+      inputFilePath,
+      [
+        'openapi: 3.1.0',
+        'info: { title: Users, version: 1.0.0 }',
+        'paths:',
+        '  /users:',
+        '    get:',
+        '      responses:',
+        "        '200':",
+        '          description: Success',
+        '          content:',
+        '            application/json:',
+        "              schema: { $ref: '#/components/schemas/Unknown' }",
+      ].join('\n'),
+    );
+    await fs.promises.rm(outputFilePath, { force: true });
+
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'typegen',
+      'openapi',
+      inputFilePath,
+      '--output',
+      outputFilePath,
+      '--service-name',
+      'my-service',
+    ]);
+
+    await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+      await expect(runCLI()).rejects.toThrow(
+        "Can't resolve $ref at #/paths/~1users/get/responses/200/content/application~1json/schema",
+      );
+    });
+
+    expect(await pathExists(outputFilePath)).toBe(false);
+  });
+
+  it('should not generate types from schemas with references outside components', async () => {
+    const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'referenceOutsideComponents.yaml');
+    const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');
+
+    await fs.promises.writeFile(
+      inputFilePath,
+      [
+        'openapi: 3.1.0',
+        'info: { title: Users, version: 1.0.0 }',
+        'paths:',
+        '  /users:',
+        '    get:',
+        "      responses: { '200': { description: Success } }",
+        '  /admins:',
+        '    get:',
+        "      responses: { '200': { $ref: '#/paths/~1users/get/responses/200' } }",
+      ].join('\n'),
+    );
+    await fs.promises.rm(outputFilePath, { force: true });
+
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'typegen',
+      'openapi',
+      inputFilePath,
+      '--output',
+      outputFilePath,
+      '--service-name',
+      'my-service',
+    ]);
+
+    await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+      await expect(runCLI()).rejects.toThrow(
+        'Unsupported $ref: #/paths/~1users/get/responses/200. Only references to #/components are supported.',
+      );
+    });
+
+    expect(await pathExists(outputFilePath)).toBe(false);
+  });
+
+  it('should not generate types from schemas with unresolvable external references', async () => {
+    const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'unresolvableExternalReference.yaml');
+    const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');
+    const missingFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'unknown.yaml');
+
+    await fs.promises.writeFile(
+      inputFilePath,
+      [
+        'openapi: 3.1.0',
+        'info: { title: Users, version: 1.0.0 }',
+        'paths:',
+        '  /users:',
+        '    get:',
+        '      responses:',
+        "        '200':",
+        '          description: Success',
+        '          content:',
+        '            application/json:',
+        "              schema: { $ref: './unknown.yaml#/User' }",
+      ].join('\n'),
+    );
+    await fs.promises.rm(outputFilePath, { force: true });
+
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'typegen',
+      'openapi',
+      inputFilePath,
+      '--output',
+      outputFilePath,
+      '--service-name',
+      'my-service',
+    ]);
+
+    expect(await pathExists(missingFilePath)).toBe(false);
+
+    await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+      await expect(runCLI()).rejects.toThrow(
+        `Can't resolve $ref: ENOENT: no such file or directory '${missingFilePath}' ` +
+          'at #/paths/~1users/get/responses/200/content/application~1json/schema',
+      );
+    });
+
+    expect(await pathExists(outputFilePath)).toBe(false);
+  });
+
+  it('should not load plugins from the working directory', async () => {
+    const workingDirectory = path.join(typegenFixtures.openapi.generatedDirectory, 'workingDirectoryWithPlugin');
+    const pluginFilePath = path.join(workingDirectory, '@theme', 'plugin.js');
+    const inputFilePath = path.join(typegenFixtures.openapi.directory, 'simple.yaml');
+    const outputFilePath = path.join(workingDirectory, 'simple.output.ts');
+
+    await fs.promises.mkdir(path.dirname(pluginFilePath), { recursive: true });
+    await fs.promises.writeFile(pluginFilePath, "throw new Error('The plugin should not be loaded.');");
+    await fs.promises.rm(outputFilePath, { force: true });
+
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'typegen',
+      'openapi',
+      inputFilePath,
+      '--output',
+      outputFilePath,
+      '--service-name',
+      'my-service',
+    ]);
+
+    const originalWorkingDirectory = process.cwd();
+    process.chdir(workingDirectory);
+
+    try {
+      await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+        await runCLI();
+      });
+    } finally {
+      process.chdir(originalWorkingDirectory);
+    }
+
+    expect(await pathExists(outputFilePath)).toBe(true);
+  });
+
   function verifyFilterFileWarnings(console: Console & { warn: MockInstance }) {
     expect(console.warn).toHaveBeenCalledTimes(1);
 

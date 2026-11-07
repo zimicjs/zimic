@@ -48,6 +48,7 @@ const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => {
     name: `node-${format}`,
     platform: 'node',
     format: [format],
+    shims: true,
     dts: format === 'cjs' ? { entry: dtsEntry, resolve: true } : false,
     entry,
   };

@@ -1,0 +1,95 @@
+openapi: 3.1.0
+
+info:
+  title: Arrays
+  version: 1.0.0
+
+paths:
+  /items:
+    get:
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Items'
+
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+
+    Friend:
+      type: object
+      required:
+        - userId
+      properties:
+        userId:
+          type: string
+
+    Items:
+      type: object
+      properties:
+        oneOfItems:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/User'
+              - $ref: '#/components/schemas/Friend'
+        anyOfItems:
+          type: array
+          items:
+            anyOf:
+              - type: string
+              - type: number
+        allOfItems:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/User'
+              - $ref: '#/components/schemas/Friend'
+        nullableItems:
+          type: array
+          items:
+            type:
+              - string
+              - 'null'
+        enumItems:
+          type: array
+          items:
+            type: string
+            enum:
+              - user
+              - friend
+        nestedOneOfItems:
+          type: array
+          items:
+            type: array
+            items:
+              oneOf:
+                - $ref: '#/components/schemas/User'
+                - $ref: '#/components/schemas/Friend'
+        intersectionWithUnionItems:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/User'
+            oneOf:
+              - $ref: '#/components/schemas/Friend'
+              - type: object
+                properties:
+                  name:
+                    type: string
+        tupleItems:
+          type: array
+          prefixItems:
+            - type: string
+            - oneOf:
+                - type: number
+                - type: boolean
