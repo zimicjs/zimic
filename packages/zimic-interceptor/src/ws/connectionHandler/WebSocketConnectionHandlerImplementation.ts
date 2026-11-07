@@ -290,7 +290,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
       : { success: false, diff: { expected: restrictedProtocols, received: request.protocols } };
   }
 
-  markConnectionAsMatched(_request: WebSocketInterceptorConnectionRequest<Path>) {
+  markConnectionAsMatched() {
     this.numberOfMatchedConnections++;
   }
 

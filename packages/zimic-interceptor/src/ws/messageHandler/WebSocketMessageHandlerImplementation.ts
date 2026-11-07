@@ -325,7 +325,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     return message as ReceivedWebSocketMessageData<RestrictedSchema>;
   }
 
-  markMessageAsMatched(_message: ReceivedWebSocketMessageData<Schema>) {
+  markMessageAsMatched() {
     this.numberOfMatchedMessages++;
   }
 

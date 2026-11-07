@@ -290,7 +290,7 @@ abstract class WebSocketInterceptorWorker {
       }
 
       if (connectionMatch.cause !== 'clearedHandler') {
-        handler.implementation.markConnectionAsMatched(request);
+        handler.implementation.markConnectionAsMatched();
       }
 
       break;
@@ -429,7 +429,7 @@ abstract class WebSocketInterceptorWorker {
       }
 
       if (messageMatch.cause !== 'clearedHandler') {
-        handler.markMessageAsMatched(message);
+        handler.markMessageAsMatched();
       }
 
       break;

@@ -229,7 +229,7 @@ class HttpRequestHandlerImplementation<
     return this.numberOfMatchedRequests < this.limits.numberOfRequests.max;
   }
 
-  markRequestAsMatched(_request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) {
+  markRequestAsMatched() {
     this.numberOfMatchedRequests++;
   }
 

@@ -301,7 +301,7 @@ abstract class HttpInterceptorWorker {
       if (requestMatch.cause === 'unmatchedRestrictions') {
         handler.implementation.markRequestAsUnmatched(request, { diff: requestMatch.diff });
       } else {
-        handler.implementation.markRequestAsMatched(request);
+        handler.implementation.markRequestAsMatched();
         break;
       }
     }
