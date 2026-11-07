@@ -793,14 +793,16 @@ export function declareConnectionsWebSocketInterceptorTests(
 
           const socket = new WebSocket(`${baseURL}/decided`);
 
-          const closeEventPromise = new Promise<CloseEvent>((resolve) => {
-            socket.addEventListener('close', resolve, { once: true });
+          // Some runtimes, such as Node 22, dispatch only `error` when a connecting socket is closed.
+          const settledPromise = new Promise<void>((resolve) => {
+            socket.addEventListener('close', () => resolve(), { once: true });
+            socket.addEventListener('error', () => resolve(), { once: true });
           });
 
           await restrictionStartedPromise;
 
           socket.close();
-          await closeEventPromise;
+          await settledPromise;
 
           // A remote worker learns about the close through the server, and a later connection reaching the worker means
           // that the server already processed it.
