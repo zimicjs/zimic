@@ -14,11 +14,7 @@ import {
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import RemoteWebSocketConnectionHandler from '../../RemoteWebSocketConnectionHandler';
-import {
-  InternalWebSocketConnectionHandler,
-  WebSocketConnectionHandler,
-  WebSocketConnectionHandlerResponseComputedDeclaration,
-} from '../../types/public';
+import { WebSocketConnectionHandler, WebSocketConnectionHandlerResponseComputedDeclaration } from '../../types/public';
 import { Schema, SharedWebSocketConnectionHandlerTestOptions } from './utils';
 
 export function declareDefaultWebSocketConnectionHandlerTests(
@@ -309,37 +305,8 @@ export function declareDefaultWebSocketConnectionHandlerTests(
     },
   );
 
-  // Unlike an HTTP response, a connection response has no body to read before the connection is saved, so the handler
-  // is cleared right after computing the response instead.
-  it('should not respond to connections if cleared after computing their response', async () => {
-    await usingWebSocketInterceptor<Schema>(
-      { type, baseURL, connectionSaving: { enabled: true } },
-      async (interceptor) => {
-        const handler = await interceptor.connection().respond({ action: 'reject' });
-
-        // No public callback runs between computing the response and saving the connection, so the handler is cleared
-        // when its declarations resolve.
-        const { implementation } = handler as unknown as InternalWebSocketConnectionHandler<Schema>;
-        const applyDeclarations = implementation.applyDeclarations.bind(implementation);
-
-        vi.spyOn(implementation, 'applyDeclarations').mockImplementationOnce(async (request) => {
-          const action = await applyDeclarations(request);
-          await handler.clear();
-          return action;
-        });
-
-        // A connection no handler decides is accepted.
-        const { socket, eventTypes } = await openWebSocketUntilSettled(baseURL);
-        socket.close();
-
-        expect(eventTypes).toEqual(['open']);
-        expect(handler.connections).toHaveLength(0);
-
-        await handler.times(0);
-        await handler.checkTimes();
-      },
-    );
-  });
+  // No WebSocket counterpart for "should not respond to requests if cleared while reading their response body": a
+  // connection response declares only an action, without a body to read.
 
   it('should respond to connections if redeclared while computing their response', async () => {
     await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {

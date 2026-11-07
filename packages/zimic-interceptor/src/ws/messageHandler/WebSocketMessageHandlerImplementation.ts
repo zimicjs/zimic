@@ -375,18 +375,13 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
     await this.applyEffect?.(restrictedMessage, context);
 
-    // A response redeclared while the effect ran must not be computed for a message received before the clear.
+    // A message whose handler was cleared while its effect ran is not handled, even if the handler was redeclared.
     if (clearGeneration !== this.#clearGeneration) {
       return null;
     }
 
+    // The interceptor checks the clear generation again after the response is computed.
     const response = await this.createResponseDeclaration?.(restrictedMessage, context);
-
-    // A response that outlives a clear is not sent or saved into the cleared handler.
-    if (clearGeneration !== this.#clearGeneration) {
-      return null;
-    }
-
     return { response };
   }
 

@@ -333,14 +333,8 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
       return null;
     }
 
+    // The interceptor checks the clear generation again after the response is computed.
     const responseDeclaration = await this.createResponseDeclaration?.(request);
-
-    // A connection whose handler was cleared while computing its response is not handled either, so a response that
-    // outlives the clear does not save into the cleared handler.
-    if (clearGeneration !== this.#clearGeneration) {
-      return null;
-    }
-
     return responseDeclaration?.action ?? 'accept';
   }
 

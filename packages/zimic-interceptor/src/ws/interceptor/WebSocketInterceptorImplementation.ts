@@ -356,7 +356,7 @@ class WebSocketInterceptorImplementation<
 
     const action = await handler.applyDeclarations(request);
 
-    // A handler cleared after deciding the connection does not apply its action or save it.
+    // A handler cleared while deciding the connection does not apply its action or save it, even if redeclared.
     if (action === null || clearGeneration !== handler.clearGeneration) {
       return null;
     }
@@ -392,7 +392,7 @@ class WebSocketInterceptorImplementation<
 
     const declaration = await handler.applyDeclarations(message, context);
 
-    // A handler cleared after computing its response does not send it or save the message.
+    // A handler cleared while computing its response does not send it or save the message, even if redeclared.
     if (declaration === null || clearGeneration !== handler.clearGeneration) {
       return false;
     }
