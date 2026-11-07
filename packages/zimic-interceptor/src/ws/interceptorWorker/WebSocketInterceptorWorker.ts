@@ -39,6 +39,11 @@ interface WebSocketConnectionHolder<Schema extends WebSocketSchema> {
   client: InternalWebSocketInterceptorClient<Schema>;
 }
 
+interface RegisteredWebSocketConnectionHolder {
+  registeredInterceptor: { interceptor: AnyWebSocketInterceptorImplementation };
+  client: WebSocketInterceptorClient<WebSocketSchema>;
+}
+
 interface FailedWebSocketMessageMatch {
   handler: AnyWebSocketMessageHandlerImplementation;
   holder: WebSocketConnectionHolder<WebSocketSchema>;
@@ -295,12 +300,26 @@ abstract class WebSocketInterceptorWorker {
   // Effects run once the interceptor of the accepting handler lists the client, and do not delay the handshake, so an
   // effect waiting for a message from its client does not keep the connection from opening. Failures are logged because
   // no caller awaits them.
-  protected async applyConnectionEffect<Schema extends WebSocketSchema>(
+  protected async applyConnectionEffect(
     handling: WebSocketConnectionHandling,
-    client: WebSocketInterceptorClient<Schema>,
+    holders: RegisteredWebSocketConnectionHolder[],
   ) {
+    const { acceptance } = handling;
+
+    if (!acceptance) {
+      return;
+    }
+
+    const acceptingHolder = holders.find((holder) => {
+      return holder.registeredInterceptor.interceptor === acceptance.handler.interceptor;
+    });
+
+    if (!acceptingHolder) {
+      return;
+    }
+
     try {
-      await handling.acceptance?.handler.implementation.applyConnectionEffect(client, handling.acceptance.request);
+      await acceptance.handler.implementation.applyConnectionEffect(acceptingHolder.client, acceptance.request);
     } catch (error) {
       console.error(error);
     }

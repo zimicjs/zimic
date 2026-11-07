@@ -270,16 +270,10 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       holders.push({ registeredInterceptor, client });
     }
 
-    const acceptingHolder = holders.find(({ registeredInterceptor }) => {
-      return registeredInterceptor.interceptor === handling.acceptance?.handler.interceptor;
-    });
-
     // Every holder lists the client before the effects run, so an effect that clears another holder makes it let the
     // connection go, as in local mode. Sends issued by effects before the server receives this reply are kept by the
     // server until the handshake completes.
-    if (acceptingHolder) {
-      void this.applyConnectionEffect(handling, acceptingHolder.client);
-    }
+    void this.applyConnectionEffect(handling, holders);
 
     return {
       action: 'accept',
