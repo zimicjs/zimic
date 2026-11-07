@@ -6,6 +6,7 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 import {
+  expectWebSocketAttemptToBeRefused,
   expectWebSocketConnectionToOpen,
   openWebSocketUntilSettled,
   usingWebSocketClient,
@@ -224,8 +225,7 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }), interceptor);
 
-        const { eventTypes } = await openWebSocketUntilSettled(baseURL);
-        expect(eventTypes).toEqual(['error']);
+        expectWebSocketAttemptToBeRefused(await openWebSocketUntilSettled(baseURL));
 
         expect(interceptor.clients).toHaveLength(0);
       });

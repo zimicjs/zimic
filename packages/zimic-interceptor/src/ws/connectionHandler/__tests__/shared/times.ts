@@ -8,6 +8,7 @@ import {
   expectWebSocketConnectionToOpen,
   expectWebSocketTimesCheckError,
   openWebSocketUntilSettled,
+  REFUSED_WEB_SOCKET_EVENT_TYPES,
 } from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
@@ -75,7 +76,9 @@ export function declareTimesWebSocketConnectionHandlerTests(
               socket.close();
             }
 
-            expect(attempts.map(({ eventTypes }) => eventTypes)).toEqual(expect.arrayContaining([['open'], ['error']]));
+            expect(attempts.map(({ eventTypes }) => eventTypes)).toEqual(
+              expect.arrayContaining([['open'], REFUSED_WEB_SOCKET_EVENT_TYPES]),
+            );
             expect(limitedHandler.connections).toHaveLength(1);
             expect(fallbackHandler.connections).toHaveLength(1);
 
@@ -113,7 +116,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
     it.each<{ action: 'accept' | 'reject'; expectedEventTypes: string[] }>([
       { action: 'accept', expectedEventTypes: ['open'] },
-      { action: 'reject', expectedEventTypes: ['error'] },
+      { action: 'reject', expectedEventTypes: REFUSED_WEB_SOCKET_EVENT_TYPES },
     ])(
       'should match an exact number of limited connections decided by a computed response ($action)',
       async ({ action, expectedEventTypes }) => {

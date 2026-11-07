@@ -2,6 +2,8 @@ import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { expect } from 'vitest';
 
+import { isServerSide } from '@/utils/environment';
+import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import WebSocketTimesCheckError from '@/ws/errors/WebSocketTimesCheckError';
 import WebSocketTimesDeclarationPointer from '@/ws/errors/WebSocketTimesDeclarationPointer';
 
@@ -41,29 +43,67 @@ export function waitForWebSocketClientClose<Schema extends WebSocketSchema>(clie
   });
 }
 
+interface RefusedWebSocketBehavior {
+  eventTypes: string[];
+  closeCode: number | undefined;
+  settlingEventTypes: ('open' | 'error' | 'close')[];
+}
+
+// Node 22's native WebSocket dispatches only `error` when a server refuses the handshake. Browsers and Node 24+ follow
+// the spec and dispatch `error`, then `close` with an abnormal closure code. Remove this check when Node 22 support ends.
+/* istanbul ignore next -- @preserve
+ * Ignoring because each test run covers only the behavior of its Node.js version. */
+const refusedWebSocketBehavior: RefusedWebSocketBehavior =
+  isServerSide() && Number(process.versions.node.split('.')[0]) < 24
+    ? { eventTypes: ['error'], closeCode: undefined, settlingEventTypes: ['open', 'error', 'close'] }
+    : {
+        eventTypes: ['error', 'close'],
+        closeCode: WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE,
+        settlingEventTypes: ['open', 'close'],
+      };
+
+export const REFUSED_WEB_SOCKET_EVENT_TYPES = refusedWebSocketBehavior.eventTypes;
+export const REFUSED_WEB_SOCKET_CLOSE_CODE = refusedWebSocketBehavior.closeCode;
+
 // A native socket exposes the events of a connection that fails to open, which `WebSocketClient.open()` reports only as
-// a rejection. Resolves on the first event of the connection, so callers close the sockets that opened. A refusal
-// settles on `error` because some runtimes, such as Node 22, never dispatch `close` for a refused handshake.
+// a rejection. Resolves once the connection opens, closes, or has its refusal settled, so callers close the sockets
+// that opened.
 export async function openWebSocketUntilSettled(url: string, protocols?: string | string[]) {
   const socket = new WebSocket(url, protocols);
+  const eventTypes: string[] = [];
 
-  const settlingEvent = await new Promise<Event>((resolve) => {
-    for (const type of ['open', 'error', 'close'] as const) {
-      socket.addEventListener(type, resolve, { once: true });
+  for (const type of ['open', 'error', 'close'] as const) {
+    socket.addEventListener(type, () => {
+      eventTypes.push(type);
+    });
+  }
+
+  // Snapshots the event types when the connection settles, because local interceptors may dispatch `close` in the same
+  // tick as `error`.
+  const settled = await new Promise<{ event: Event; eventTypes: string[] }>((resolve) => {
+    for (const type of refusedWebSocketBehavior.settlingEventTypes) {
+      socket.addEventListener(type, (event) => resolve({ event, eventTypes: [...eventTypes] }), { once: true });
     }
   });
 
   return {
     socket,
-    eventTypes: [settlingEvent.type],
-    closeEvent: settlingEvent.type === 'close' ? (settlingEvent as CloseEvent) : undefined,
+    eventTypes: settled.eventTypes,
+    closeEvent: settled.event.type === 'close' ? (settled.event as CloseEvent) : undefined,
   };
+}
+
+export function expectWebSocketAttemptToBeRefused({
+  eventTypes,
+  closeEvent,
+}: Awaited<ReturnType<typeof openWebSocketUntilSettled>>) {
+  expect(eventTypes).toEqual(REFUSED_WEB_SOCKET_EVENT_TYPES);
+  expect(closeEvent?.code).toBe(REFUSED_WEB_SOCKET_CLOSE_CODE);
 }
 
 // A refused connection fails without opening, as when a server answers its handshake with an error.
 export async function expectWebSocketConnectionToBeRefused(url: string, protocols?: string | string[]) {
-  const { eventTypes } = await openWebSocketUntilSettled(url, protocols);
-  expect(eventTypes).toEqual(['error']);
+  expectWebSocketAttemptToBeRefused(await openWebSocketUntilSettled(url, protocols));
 }
 
 export async function expectWebSocketConnectionToOpen(url: string, protocols?: string | string[]) {

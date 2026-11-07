@@ -7,8 +7,10 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import {
+  expectWebSocketAttemptToBeRefused,
   expectWebSocketTimesCheckError,
   openWebSocketUntilSettled,
+  REFUSED_WEB_SOCKET_EVENT_TYPES,
   usingWebSocketClient,
 } from '@tests/utils/webSocket';
 
@@ -75,12 +77,12 @@ export function declareDefaultWebSocketConnectionHandlerTests(
       const handler = await interceptor.connection().respond({ action: 'reject' });
 
       let attempt = await openWebSocketUntilSettled(baseURL);
-      expect(attempt.eventTypes).toEqual(['error']);
+      expectWebSocketAttemptToBeRefused(attempt);
 
       await handler.with({});
 
       attempt = await openWebSocketUntilSettled(baseURL);
-      expect(attempt.eventTypes).toEqual(['error']);
+      expectWebSocketAttemptToBeRefused(attempt);
     });
   });
 
@@ -98,7 +100,7 @@ export function declareDefaultWebSocketConnectionHandlerTests(
         await handler.clear();
 
         const attempt = await openWebSocketUntilSettled(baseURL);
-        expect(attempt.eventTypes).toEqual(['error']);
+        expectWebSocketAttemptToBeRefused(attempt);
         expect(handler.connections).toHaveLength(0);
 
         await handler.effect(vi.fn());
@@ -111,7 +113,7 @@ export function declareDefaultWebSocketConnectionHandlerTests(
         await handler.clear();
 
         const secondAttempt = await openWebSocketUntilSettled(baseURL);
-        expect(secondAttempt.eventTypes).toEqual(['error']);
+        expectWebSocketAttemptToBeRefused(secondAttempt);
         expect(handler.connections).toHaveLength(0);
 
         await handler.effect(vi.fn());
@@ -152,7 +154,7 @@ export function declareDefaultWebSocketConnectionHandlerTests(
         restrictionReleasedPromise.resolve();
 
         const attempt = await attemptPromise;
-        expect(attempt.eventTypes).toEqual(['error']);
+        expectWebSocketAttemptToBeRefused(attempt);
         expect(handler.connections).toHaveLength(0);
 
         await handler.times(0);
@@ -215,12 +217,12 @@ export function declareDefaultWebSocketConnectionHandlerTests(
     {
       response: 'synchronous reject',
       computeResponse: () => ({ action: 'reject' }),
-      expectedEventTypes: ['error'],
+      expectedEventTypes: REFUSED_WEB_SOCKET_EVENT_TYPES,
     },
     {
       response: 'asynchronous reject',
       computeResponse: () => Promise.resolve({ action: 'reject' }),
-      expectedEventTypes: ['error'],
+      expectedEventTypes: REFUSED_WEB_SOCKET_EVENT_TYPES,
     },
   ])(
     'should decide connections with a $response computed response',
@@ -320,7 +322,7 @@ export function declareDefaultWebSocketConnectionHandlerTests(
       expect(firstAttempt.eventTypes).toEqual(['open']);
 
       const secondAttempt = await openWebSocketUntilSettled(baseURL);
-      expect(secondAttempt.eventTypes).toEqual(['error']);
+      expectWebSocketAttemptToBeRefused(secondAttempt);
     });
   });
 
@@ -442,7 +444,7 @@ export function declareDefaultWebSocketConnectionHandlerTests(
         });
 
         const attempt = await openWebSocketUntilSettled(baseURL);
-        expect(attempt.eventTypes).toEqual(['error']);
+        expectWebSocketAttemptToBeRefused(attempt);
 
         await handler.checkTimes();
       },

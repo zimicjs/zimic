@@ -33,6 +33,7 @@ import {
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 import {
   collectWebSocketClientMessages,
+  REFUSED_WEB_SOCKET_CLOSE_CODE,
   waitForWebSocketClientClose,
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
@@ -1150,6 +1151,8 @@ describe('Interceptor server', () => {
             interceptors: [{ id: crypto.randomUUID(), baseURL }],
           });
 
+          const closeEventPromise = waitForWebSocketClientClose(client);
+
           // The server answers the handshake only after the worker decides the connection, so the client never opens.
           const openRejectionExpectation = expect(client.open()).rejects.toBeInstanceOf(Event);
           await connectionReceivedPromise;
@@ -1157,6 +1160,13 @@ describe('Interceptor server', () => {
           await server.stop();
 
           await openRejectionExpectation;
+
+          // Node 22 dispatches no close event for a refused handshake.
+          if (REFUSED_WEB_SOCKET_CLOSE_CODE !== undefined) {
+            const closeEvent = await closeEventPromise;
+            expect(closeEvent.code).toBe(REFUSED_WEB_SOCKET_CLOSE_CODE);
+          }
+
           expect(client.readyState).toBe(WebSocketClient.CLOSED);
         } finally {
           await client.close();

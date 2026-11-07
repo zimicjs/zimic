@@ -8,6 +8,7 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import {
   collectWebSocketClientMessages,
+  expectWebSocketAttemptToBeRefused,
   expectWebSocketConnectionToBeRefused,
   expectWebSocketTimesCheckError,
   openWebSocketUntilSettled,
@@ -472,8 +473,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
 
         await advanceThroughDelay(respond, delay);
 
-        const { eventTypes } = await attemptPromise;
-        expect(eventTypes).toEqual(['error']);
+        expectWebSocketAttemptToBeRefused(await attemptPromise);
 
         expect(handler.connections).toHaveLength(1);
       });
@@ -487,8 +487,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
         const { attemptPromise } = await openConnection();
         expect(respond).toHaveBeenCalledTimes(1);
 
-        const { eventTypes } = await attemptPromise;
-        expect(eventTypes).toEqual(['error']);
+        expectWebSocketAttemptToBeRefused(await attemptPromise);
 
         expect(handler.connections).toHaveLength(1);
       });
@@ -540,8 +539,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
 
               await advanceThroughDelay(respond, expectedDelay);
 
-              const { eventTypes } = await attemptPromise;
-              expect(eventTypes).toEqual(['error']);
+              expectWebSocketAttemptToBeRefused(await attemptPromise);
             }
 
             expect(handler.connections).toHaveLength(expectedDelays.length);
@@ -599,8 +597,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
 
             await vi.advanceTimersByTimeAsync(1);
 
-            const { eventTypes } = await attemptPromise;
-            expect(eventTypes).toEqual(['error']);
+            expectWebSocketAttemptToBeRefused(await attemptPromise);
 
             expect(delayFactory).toHaveBeenCalledTimes(1);
             expect(delayFactory).toHaveBeenCalledWith({

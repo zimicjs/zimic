@@ -103,6 +103,9 @@ async function readBytes(data: BinaryWebSocketSchema) {
   return Array.from(new Uint8Array(data));
 }
 
+// Close code of connections that closed without a close frame, such as refused connections.
+const ABNORMAL_CLOSURE_CODE = 1006;
+
 export function declareWebSocketInterceptorTests({
   platform,
   type,
@@ -110,17 +113,42 @@ export function declareWebSocketInterceptorTests({
   openSocket,
   createSocket,
 }: ClientTestOptionsByWorkerType) {
-  // A refused connection fails without opening, as when a server answers its handshake with an error. Settles on the
-  // first event because some runtimes, such as Node 22, never dispatch `close` for a refused handshake.
+  // Node 22's native WebSocket dispatches only `error` when a server refuses the handshake. Browsers and Node 24+
+  // follow the spec and dispatch `error`, then `close` with an abnormal closure code. Remove this check when Node 22
+  // support ends.
+  /* istanbul ignore next -- @preserve
+   * Ignoring because each test run covers only the behavior of its Node.js version. */
+  const refusedSocketBehavior =
+    platform === 'node' && Number(process.versions.node.split('.')[0]) < 24
+      ? { eventTypes: ['error'], closeCodes: [], settlingEventTypes: ['open', 'error', 'close'] as const }
+      : {
+          eventTypes: ['error', 'close'],
+          closeCodes: [ABNORMAL_CLOSURE_CODE],
+          settlingEventTypes: ['open', 'close'] as const,
+        };
+
+  // A refused connection fails without opening, as when a server answers its handshake with an error.
   async function expectSocketToBeRefused(url: string, protocols?: string | string[]) {
     const socket = createSocket<UserWebSocketSchema>(url, protocols);
-    const settlingEventType = await new Promise<string>((resolve) => {
-      for (const eventType of ['open', 'error', 'close'] as const) {
-        socket.addEventListener(eventType, () => resolve(eventType));
+    const eventTypes: string[] = [];
+    const closeCodes: number[] = [];
+
+    for (const eventType of ['open', 'error', 'close'] as const) {
+      socket.addEventListener(eventType, () => eventTypes.push(eventType));
+    }
+
+    socket.addEventListener('close', (event: ClientTestWebSocketCloseEvent) => closeCodes.push(event.code));
+
+    // Snapshots the events when the connection settles, because local interceptors may dispatch `close` in the same
+    // tick as `error`.
+    const settled = await new Promise<{ eventTypes: string[]; closeCodes: number[] }>((resolve) => {
+      for (const eventType of refusedSocketBehavior.settlingEventTypes) {
+        socket.addEventListener(eventType, () => resolve({ eventTypes: [...eventTypes], closeCodes: [...closeCodes] }));
       }
     });
 
-    expect(settlingEventType).toBe('error');
+    expect(settled.eventTypes).toEqual(refusedSocketBehavior.eventTypes);
+    expect(settled.closeCodes).toEqual(refusedSocketBehavior.closeCodes);
   }
 
   const userInterceptor = createWebSocketInterceptor<UserWebSocketSchema>({

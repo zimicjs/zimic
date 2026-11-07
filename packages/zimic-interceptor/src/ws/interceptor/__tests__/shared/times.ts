@@ -14,6 +14,7 @@ import {
   expectWebSocketTimesCheckError,
   openWebSocketUntilSettled,
   readBytes,
+  REFUSED_WEB_SOCKET_EVENT_TYPES,
   usingWebSocketClient,
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
@@ -1199,7 +1200,9 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
               socket.close();
             }
 
-            expect(attempts.map(({ eventTypes }) => eventTypes)).toEqual(expect.arrayContaining([['open'], ['error']]));
+            expect(attempts.map(({ eventTypes }) => eventTypes)).toEqual(
+              expect.arrayContaining([['open'], REFUSED_WEB_SOCKET_EVENT_TYPES]),
+            );
 
             expect(restriction).toHaveBeenCalledTimes(concurrentConnectionCount);
             expect(limitedHandler.connections).toHaveLength(1);
