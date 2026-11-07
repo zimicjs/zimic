@@ -102,9 +102,27 @@ export function declareTimesWebSocketMessageHandlerTests(
           });
 
           await usingWebSocketClient<Schema>(baseURL, async (client) => {
-            const response = waitForWebSocketClientMessage(client);
+            let response = waitForWebSocketClientMessage(client);
 
-            client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+            client.send(JSON.stringify({ type: 'create', body: { text: 'one' } }));
+            await response;
+
+            await handler.checkTimes();
+
+            await handler.times(2);
+
+            response = waitForWebSocketClientMessage(client);
+
+            client.send(JSON.stringify({ type: 'create', body: { text: 'two' } }));
+            await response;
+
+            await handler.checkTimes();
+
+            await handler.times(3);
+
+            response = waitForWebSocketClientMessage(client);
+
+            client.send(JSON.stringify({ type: 'create', body: { text: 'three' } }));
             await response;
 
             await handler.checkTimes();
@@ -128,14 +146,33 @@ export function declareTimesWebSocketMessageHandlerTests(
           });
 
           await usingWebSocketClient<Schema>(baseURL, async (client) => {
-            const response = waitForWebSocketClientMessage(client);
+            let response = waitForWebSocketClientMessage(client);
 
-            client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+            client.send(JSON.stringify({ type: 'create', body: { text: 'one' } }));
             await response;
 
             await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
               message: 'Expected exactly 2 messages, but got 1.',
               expectedNumberOfMatches: 2,
+            });
+
+            response = waitForWebSocketClientMessage(client);
+
+            client.send(JSON.stringify({ type: 'create', body: { text: 'two' } }));
+            await response;
+
+            await handler.checkTimes();
+
+            await handler.times(4);
+
+            response = waitForWebSocketClientMessage(client);
+
+            client.send(JSON.stringify({ type: 'create', body: { text: 'three' } }));
+            await response;
+
+            await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+              message: 'Expected exactly 4 messages, but got 3.',
+              expectedNumberOfMatches: 4,
             });
           });
         },
@@ -911,8 +948,10 @@ export function declareTimesWebSocketMessageHandlerTests(
   });
 
   it('should reset the limits on the number of messages when cleared', async () => {
+    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+
     await usingWebSocketInterceptor<Schema>(
-      { type, baseURL, messageSaving: { enabled: true } },
+      { type, baseURL, messageSaving: { enabled: true }, onUnhandledMessage },
       async (interceptor) => {
         const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(1);
 
@@ -921,9 +960,32 @@ export function declareTimesWebSocketMessageHandlerTests(
           expectedNumberOfMatches: 1,
         });
 
-        handler.clear();
+        await handler.clear();
 
         await handler.checkTimes();
+
+        await handler.respond({ type: 'delete', id: '1' }).times(1);
+
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
+          const response = waitForWebSocketClientMessage(client);
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'one' } }));
+          await response;
+
+          await handler.checkTimes();
+
+          await handler.clear();
+
+          await handler.checkTimes();
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'two' } }));
+
+          await waitFor(() => {
+            expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+          });
+
+          await handler.checkTimes();
+        });
       },
     );
   });

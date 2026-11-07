@@ -8,7 +8,7 @@ import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/util
 import { WebSocketInterceptorClient } from '../../../interceptor/types/messages';
 import { UnhandledMessageStrategy, WebSocketInterceptorType } from '../../../interceptor/types/options';
 import RemoteWebSocketMessageHandler from '../../RemoteWebSocketMessageHandler';
-import { WebSocketMessageHandler } from '../../types/public';
+import { WebSocketMessageHandler, WebSocketMessageHandlerMessageComputedDeclaration } from '../../types/public';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './utils';
 
 export function declareDefaultWebSocketMessageHandlerTests(
@@ -180,11 +180,41 @@ export function declareDefaultWebSocketMessageHandlerTests(
     );
   });
 
-  // No WebSocket counterparts for creating responses from static or computed declarations, or without a declared
-  // response: WebSocket handlers send replies through the interceptor, so the interceptor handler suite covers them.
+  // No WebSocket message counterpart for "should create response with declared status and body": a message response is
+  // data sent through the socket, without a status or a response object to create.
+
+  // No WebSocket message counterpart for "should create response with declared status and body factory": a message
+  // response is data sent through the socket, without a status or a response object to create.
+
+  // No WebSocket message counterpart for "should not throw an error if trying to create a response without a declared
+  // response": a message needs no reply, so a handler without a declared response matches and sends nothing.
 
   // No WebSocket message counterpart for "should decide connections with a $response computed response": a message has
   // no handshake to accept or reject.
+
+  it('should compute responses with the message', async () => {
+    await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+      const responseFactory = vi.fn<WebSocketMessageHandlerMessageComputedDeclaration<Schema, Schema>>(() => ({
+        type: 'delete',
+        id: '1',
+      }));
+
+      await interceptor.message().respond(responseFactory);
+
+      await usingWebSocketClient<Schema>(baseURL, async (client) => {
+        const response = waitForWebSocketClientMessage(client);
+
+        client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+        await response;
+
+        expect(responseFactory).toHaveBeenCalledTimes(1);
+        expect(responseFactory).toHaveBeenCalledWith(
+          { type: 'create', body: { text: 'hello' } },
+          { sender: interceptor.clients[0], receiver: interceptor.server },
+        );
+      });
+    });
+  });
 
   it.each<{
     condition: string;
@@ -362,8 +392,11 @@ export function declareDefaultWebSocketMessageHandlerTests(
     );
   });
 
-  // No WebSocket counterparts for accessing raw intercepted requests and responses or their hidden properties:
+  // No WebSocket message counterpart for "should provide access to the raw intercepted requests and responses":
   // intercepted messages carry parsed data, with no raw request or response objects.
+
+  // No WebSocket message counterpart for "should provide no access to hidden properties in raw intercepted requests and
+  // responses": intercepted messages carry parsed data, with no raw request or response objects to hide properties of.
 
   it('should clear restrictions after cleared', async () => {
     await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {

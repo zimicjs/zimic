@@ -536,7 +536,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
       // No WebSocket counterpart for "should consider requests unmatched due to blob body requests in times check errors":
       // a handshake has no body.
 
-      // No WebSocket counterpart for "should consider list unmatched due to plain-text matched requests in times check errors":
+      // No WebSocket counterpart for "should consider requests unmatched due to plain-text matched requests in times check errors":
       // a handshake has no body.
 
       it('should consider connections unmatched due to protocols restrictions in times check errors', async () => {

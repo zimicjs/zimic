@@ -712,6 +712,12 @@ export function declareTimesHttpRequestHandlerTests(
         });
       });
 
+      // No HTTP counterpart for "should consider messages unmatched due to exact JSON data messages in times check
+      // errors": an HTTP static restriction declares `exact` as one of its fields, not as an option next to the data.
+
+      // No HTTP counterpart for "should consider messages unmatched due to array buffer data messages in times check
+      // errors": binary HTTP bodies arrive as `Blob`, while WebSocket binary frames arrive as `ArrayBuffer`.
+
       it('should consider requests unmatched due to search params matched requests in times check errors', async () => {
         const restrictedSearchParams = new HttpSearchParams({ name: '1' });
 
@@ -994,7 +1000,7 @@ export function declareTimesHttpRequestHandlerTests(
         });
       });
 
-      it('should consider list unmatched due to plain-text matched requests in times check errors', async () => {
+      it('should consider requests unmatched due to plain-text matched requests in times check errors', async () => {
         const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
           .with({ body: 'example' })
           .respond({ status: 200, body: { success: true } })
@@ -1076,6 +1082,13 @@ export function declareTimesHttpRequestHandlerTests(
           expectedNumberOfRequests: 1,
         });
       });
+
+      // No HTTP counterpart for "should consider messages unmatched due to typed array data messages in times check
+      // errors": HTTP body restrictions accept no typed arrays, while WebSocket frames can be sent from any
+      // `BufferSource`.
+
+      // No HTTP counterpart for "should consider messages unmatched due to sender restrictions in times check errors":
+      // an HTTP request has no long-lived connected client to restrict it to.
 
       it('should consider requests unmatched due to search params and headers restrictions in times check errors', async () => {
         const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')

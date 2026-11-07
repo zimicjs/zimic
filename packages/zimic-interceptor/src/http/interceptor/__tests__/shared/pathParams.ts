@@ -806,4 +806,7 @@ export function declarePathParamsHttpInterceptorTests(options: RuntimeSharedHttp
       expect(handler.requests[0].pathParams).toEqual({ userId: '1' });
     });
   });
+
+  // No HTTP counterpart for "should intercept only connections to the path declared by the handler": HTTP handlers
+  // always declare their path, while WebSocket connection handlers may omit it.
 }
