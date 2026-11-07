@@ -76,7 +76,7 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
       server: this.httpServer,
       verifyClient:
         verifyUpgrade &&
-        ((info: { req: IncomingMessage }, completeVerification: (isAccepted: boolean, code: number) => void) => {
+        (((info, completeVerification) => {
           void verifyUpgrade(info.req).then(
             (isAccepted) => {
               completeVerification(isAccepted, REFUSED_UPGRADE_STATUS_CODE);
@@ -86,7 +86,7 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
               webSocketServer.emit('error', error);
             },
           );
-        }),
+        }) satisfies ClientSocket.VerifyClientCallbackAsync<IncomingMessage>),
     });
 
     webSocketServer.on('error', (error) => {
