@@ -255,43 +255,46 @@ export function declareDefaultWebSocketConnectionHandlerTests(
   }>([
     { condition: 'cleared', declareAfterClear: (handler) => handler },
     { condition: 'cleared and redeclared', declareAfterClear: (handler) => handler.respond({ action: 'reject' }) },
-  ])('should not decide connections if $condition while computing their response', async ({ declareAfterClear }) => {
-    const responseStartedPromise = createPromiseWithResolvers<void>();
-    const responseReleasedPromise = createPromiseWithResolvers<void>();
+  ])(
+    'should not respond to connections if $condition while computing their response',
+    async ({ declareAfterClear }) => {
+      const responseStartedPromise = createPromiseWithResolvers<void>();
+      const responseReleasedPromise = createPromiseWithResolvers<void>();
 
-    await usingWebSocketInterceptor<Schema>(
-      { type, baseURL, connectionSaving: { enabled: true } },
-      async (interceptor) => {
-        const effect = vi.fn();
+      await usingWebSocketInterceptor<Schema>(
+        { type, baseURL, connectionSaving: { enabled: true } },
+        async (interceptor) => {
+          const effect = vi.fn();
 
-        const handler = await interceptor
-          .connection()
-          .effect(effect)
-          .respond(async () => {
-            responseStartedPromise.resolve();
-            await responseReleasedPromise;
-            return { action: 'reject' };
-          });
+          const handler = await interceptor
+            .connection()
+            .effect(effect)
+            .respond(async () => {
+              responseStartedPromise.resolve();
+              await responseReleasedPromise;
+              return { action: 'reject' };
+            });
 
-        const attemptPromise = openWebSocketUntilSettled(baseURL);
-        await responseStartedPromise;
+          const attemptPromise = openWebSocketUntilSettled(baseURL);
+          await responseStartedPromise;
 
-        await declareAfterClear(handler.clear());
-        responseReleasedPromise.resolve();
+          await declareAfterClear(handler.clear());
+          responseReleasedPromise.resolve();
 
-        // A connection no handler decides is accepted.
-        const { socket, eventTypes } = await attemptPromise;
-        socket.close();
+          // A connection no handler decides is accepted.
+          const { socket, eventTypes } = await attemptPromise;
+          socket.close();
 
-        expect(eventTypes).toEqual(['open']);
-        expect(effect).not.toHaveBeenCalled();
-        expect(handler.connections).toHaveLength(0);
+          expect(eventTypes).toEqual(['open']);
+          expect(effect).not.toHaveBeenCalled();
+          expect(handler.connections).toHaveLength(0);
 
-        await handler.times(0);
-        await handler.checkTimes();
-      },
-    );
-  });
+          await handler.times(0);
+          await handler.checkTimes();
+        },
+      );
+    },
+  );
 
   // No WebSocket connection counterpart for "should not respond to messages if $condition while running their effect":
   // a connection effect runs after the handshake is accepted, so clearing the handler during it cannot change the
