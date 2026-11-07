@@ -1,16 +1,12 @@
-export function createSavingSafeLimitExceededMessage({
-  resourceName,
-  optionName,
-  numberOfSavedResources,
-  safeLimit,
-  learnMoreURL,
-}: {
+export function createInterceptorSavingSafeLimitExceededMessage(options: {
   resourceName: string;
   optionName: string;
   numberOfSavedResources: number;
   safeLimit: number;
   learnMoreURL?: string;
 }) {
+  const { resourceName, optionName, numberOfSavedResources, safeLimit, learnMoreURL } = options;
+
   const message =
     `The number of intercepted ${resourceName} saved in memory (${numberOfSavedResources}) exceeded the safe limit ` +
     `of ${safeLimit}. Did you forget to call \`interceptor.clear()\`?\n\n` +

@@ -27,7 +27,7 @@ type WebSocketTimesCheckErrorOptions = {
     }
 );
 
-function createErrorHeader({
+function createTimesCheckErrorHeader({
   subject,
   limits,
   hasRestrictions,
@@ -131,7 +131,7 @@ function createUnmatchedConnectionDiffs(unmatchedConnectionGroups: UnmatchedWebS
   });
 }
 
-function createUnmatchedDiffs(options: WebSocketTimesCheckErrorOptions) {
+function createTimesCheckUnmatchedDiffs(options: WebSocketTimesCheckErrorOptions) {
   const saving = options.subject === 'message' ? options.messageSaving : options.connectionSaving;
 
   if (!saving.enabled) {
@@ -149,9 +149,9 @@ function createUnmatchedDiffs(options: WebSocketTimesCheckErrorOptions) {
   return diffs.join('\n\n');
 }
 
-function createErrorMessage(options: WebSocketTimesCheckErrorOptions) {
-  const errorHeader = createErrorHeader(options);
-  const unmatchedDiffs = createUnmatchedDiffs(options);
+function createTimesCheckErrorMessage(options: WebSocketTimesCheckErrorOptions) {
+  const errorHeader = createTimesCheckErrorHeader(options);
+  const unmatchedDiffs = createTimesCheckUnmatchedDiffs(options);
 
   return [errorHeader, unmatchedDiffs].filter(isNonEmpty).join('\n\n');
 }
@@ -164,7 +164,7 @@ function createErrorMessage(options: WebSocketTimesCheckErrorOptions) {
  */
 class WebSocketTimesCheckError extends TypeError {
   constructor(options: WebSocketTimesCheckErrorOptions) {
-    const message = createErrorMessage(options);
+    const message = createTimesCheckErrorMessage(options);
     super(message);
 
     this.name = 'WebSocketTimesCheckError';

@@ -266,7 +266,11 @@ abstract class WebSocketInterceptorWorker {
       url: connection.url,
       protocols: connection.protocols,
       searchParams: new HttpSearchParams(new URL(connection.url).searchParams),
-      pathParams: parsePathParams(connectionURL, handler.interceptor.baseURLAsString, handler.pathRegex),
+      pathParams: parsePathParams({
+        url: connectionURL,
+        baseURL: handler.interceptor.baseURLAsString,
+        pathRegex: handler.pathRegex,
+      }),
     };
   }
 

@@ -15,7 +15,9 @@ export function createPathMatchingURL(url: string) {
     : urlWithoutNonPathParams.href;
 }
 
-export function parsePathParams(url: string, baseURL: string, pathRegex: RegExp | undefined) {
+export function parsePathParams(options: { url: string; baseURL: string; pathRegex: RegExp | undefined }) {
+  const { url, baseURL, pathRegex } = options;
+
   const path = url.replace(baseURL, '');
   const paramsMatch = pathRegex?.exec(path);
 

@@ -1,4 +1,4 @@
-import { createSavingSafeLimitExceededMessage } from '@/interceptor/errors/savingSafeLimit';
+import { createInterceptorSavingSafeLimitExceededMessage } from '@/interceptor/errors/savingSafeLimit';
 
 /**
  * Error thrown when the safe limit of saved intercepted requests is exceeded.
@@ -8,7 +8,7 @@ import { createSavingSafeLimitExceededMessage } from '@/interceptor/errors/savin
 class RequestSavingSafeLimitExceededError extends TypeError {
   constructor(numberOfSavedRequests: number, safeLimit: number) {
     super(
-      createSavingSafeLimitExceededMessage({
+      createInterceptorSavingSafeLimitExceededMessage({
         resourceName: 'requests',
         optionName: 'requestSaving',
         numberOfSavedResources: numberOfSavedRequests,

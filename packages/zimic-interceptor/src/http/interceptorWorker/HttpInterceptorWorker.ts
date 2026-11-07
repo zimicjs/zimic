@@ -632,7 +632,11 @@ abstract class HttpInterceptorWorker {
     request: Request,
     options?: { baseURL: string; pathRegex: RegExp },
   ): InferPathParams<Path> {
-    const params = parsePathParams(createPathMatchingURL(request.url), options?.baseURL ?? '', options?.pathRegex);
+    const params = parsePathParams({
+      url: createPathMatchingURL(request.url),
+      baseURL: options?.baseURL ?? '',
+      pathRegex: options?.pathRegex,
+    });
     return params as InferPathParams<Path>;
   }
 }

@@ -17,7 +17,7 @@ interface HttpTimesCheckErrorOptions {
   requestSaving: HttpInterceptorRequestSaving;
 }
 
-function createErrorHeader({
+function createTimesCheckErrorHeader({
   requestLimits,
   hasRestrictions,
   numberOfMatchedRequests,
@@ -52,7 +52,7 @@ function createErrorHeader({
     .join('');
 }
 
-function createUnmatchedDiffs({ requestSaving, unmatchedRequestGroups }: HttpTimesCheckErrorOptions) {
+function createTimesCheckUnmatchedDiffs({ requestSaving, unmatchedRequestGroups }: HttpTimesCheckErrorOptions) {
   if (!requestSaving.enabled) {
     return 'Tip: use `requestSaving.enabled: true` in your interceptor for more details about the unmatched requests.';
   }
@@ -112,14 +112,14 @@ function createUnmatchedDiffs({ requestSaving, unmatchedRequestGroups }: HttpTim
     .join('\n\n');
 }
 
-function createErrorFooter() {
+function createTimesCheckErrorFooter() {
   return 'Learn more: https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes';
 }
 
-function createErrorMessage(options: HttpTimesCheckErrorOptions) {
-  const errorHeader = createErrorHeader(options);
-  const unmatchedDiffs = createUnmatchedDiffs(options);
-  const errorFooter = createErrorFooter();
+function createTimesCheckErrorMessage(options: HttpTimesCheckErrorOptions) {
+  const errorHeader = createTimesCheckErrorHeader(options);
+  const unmatchedDiffs = createTimesCheckUnmatchedDiffs(options);
+  const errorFooter = createTimesCheckErrorFooter();
 
   return [errorHeader, unmatchedDiffs, errorFooter].filter(isNonEmpty).join('\n\n');
 }
@@ -131,7 +131,7 @@ function createErrorMessage(options: HttpTimesCheckErrorOptions) {
  */
 export class TimesCheckError extends TypeError {
   constructor(options: HttpTimesCheckErrorOptions) {
-    const message = createErrorMessage(options);
+    const message = createTimesCheckErrorMessage(options);
     super(message);
 
     this.name = 'TimesCheckError';

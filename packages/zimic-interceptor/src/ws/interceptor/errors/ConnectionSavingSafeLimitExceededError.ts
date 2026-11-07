@@ -1,4 +1,4 @@
-import { createSavingSafeLimitExceededMessage } from '@/interceptor/errors/savingSafeLimit';
+import { createInterceptorSavingSafeLimitExceededMessage } from '@/interceptor/errors/savingSafeLimit';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -8,7 +8,7 @@ import { createSavingSafeLimitExceededMessage } from '@/interceptor/errors/savin
 class ConnectionSavingSafeLimitExceededError extends TypeError {
   constructor(numberOfSavedConnections: number, safeLimit: number) {
     super(
-      createSavingSafeLimitExceededMessage({
+      createInterceptorSavingSafeLimitExceededMessage({
         resourceName: 'connections',
         optionName: 'connectionSaving',
         numberOfSavedResources: numberOfSavedConnections,
