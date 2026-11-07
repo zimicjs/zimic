@@ -29,8 +29,8 @@ export type WebSocketConnectionHandlerConnectionCallback<
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * A static handshake response declared with `handler.respond()`. The `accept` action opens matched connections. The
- * `reject` action refuses them before they open, so clients receive an `error` event and a `close` event with code
- * 1006.
+ * `reject` action refuses them before they open, so clients receive an `error` event, followed by a `close` event with
+ * code 1006 in runtimes that dispatch it.
  */
 export interface WebSocketConnectionHandlerResponseStaticDeclaration {
   /** The action to apply to matched connections. */
