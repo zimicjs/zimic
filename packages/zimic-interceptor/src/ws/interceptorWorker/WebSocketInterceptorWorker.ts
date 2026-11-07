@@ -1,10 +1,11 @@
 import { HttpSearchParams } from '@zimic/utils/http';
 import { PossiblePromise } from '@zimic/utils/types';
-import { createRegexFromPath, excludeNonPathParams, validatePathParams } from '@zimic/utils/url';
+import { createRegexFromPath, validatePathParams } from '@zimic/utils/url';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
 import { removeArrayElement } from '@/utils/arrays';
 import { isClientSide } from '@/utils/environment';
+import { createPathMatchingURL, parsePathParams } from '@/utils/urls';
 
 import type {
   AnyWebSocketConnectionHandlerImplementation,
@@ -186,13 +187,7 @@ abstract class WebSocketInterceptorWorker {
     connection: Pick<WebSocketInterceptorConnectionRequest, 'url' | 'protocols'>,
     isHolding: (interceptor: AnyWebSocketInterceptorImplementation) => boolean,
   ): Promise<WebSocketConnectionHandling> {
-    const connectionURLWithoutNonPathParams = excludeNonPathParams(new URL(connection.url));
-
-    // Base URLs at the root path are bare origins, so a connection to the root path is compared without its slash.
-    const connectionURL =
-      connectionURLWithoutNonPathParams.href === `${connectionURLWithoutNonPathParams.origin}/`
-        ? connectionURLWithoutNonPathParams.origin
-        : connectionURLWithoutNonPathParams.href;
+    const connectionURL = createPathMatchingURL(connection.url);
 
     const failedConnectionMatches: FailedWebSocketConnectionMatch[] = [];
 
@@ -266,21 +261,8 @@ abstract class WebSocketInterceptorWorker {
       url: connection.url,
       protocols: connection.protocols,
       searchParams: new HttpSearchParams(new URL(connection.url).searchParams),
-      pathParams: this.parseConnectionPathParams(connectionURL, handler),
+      pathParams: parsePathParams(connectionURL, handler.interceptor.baseURLAsString, handler.pathRegex),
     };
-  }
-
-  private parseConnectionPathParams(connectionURL: string, handler: WebSocketConnectionHandler) {
-    const connectionPath = connectionURL.replace(handler.interceptor.baseURLAsString, '');
-    const paramsMatch = handler.pathRegex?.exec(connectionPath);
-
-    const params: Record<string, string | undefined> = {};
-
-    for (const [paramName, paramValue] of Object.entries(paramsMatch?.groups ?? {})) {
-      params[paramName] = typeof paramValue === 'string' ? decodeURIComponent(paramValue) : undefined;
-    }
-
-    return params;
   }
 
   // Handlers that failed only on restrictions record their diffs. The newest handler that failed for any other cause

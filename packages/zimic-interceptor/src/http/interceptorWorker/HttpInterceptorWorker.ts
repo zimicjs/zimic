@@ -17,13 +17,13 @@ import {
 } from '@zimic/http';
 import { isDefined } from '@zimic/utils/data';
 import { Default, PossiblePromise } from '@zimic/utils/types';
-import { createRegexFromPath, excludeNonPathParams, validatePathParams } from '@zimic/utils/url';
+import { createRegexFromPath, validatePathParams } from '@zimic/utils/url';
 
 import { removeArrayElement } from '@/utils/arrays';
 import { isClientSide } from '@/utils/environment';
 import { methodCanHaveResponseBody } from '@/utils/http';
 import { logUnhandledRequestWarning, logger } from '@/utils/logging';
-import { isURLUnderBaseURL } from '@/utils/urls';
+import { createPathMatchingURL, isURLUnderBaseURL, parsePathParams } from '@/utils/urls';
 
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import HttpInterceptorImplementation, {
@@ -189,8 +189,7 @@ abstract class HttpInterceptorWorker {
   // The handlers of all interceptors in the worker are tried together, from the last created to the first, so a newer
   // handler wins regardless of the start order of its interceptor or the path it was declared with.
   protected async createResponseWithHandlers(request: HttpRequest): Promise<HttpRequestHandling> {
-    const requestURL = excludeNonPathParams(new URL(request.url));
-    const requestURLAsString = requestURL.href === `${requestURL.origin}/` ? requestURL.origin : requestURL.href;
+    const requestURL = createPathMatchingURL(request.url);
 
     const failedRequestMatches: FailedHttpRequestMatch[] = [];
     let matchedSomeHandler = false;
@@ -203,7 +202,7 @@ abstract class HttpInterceptorWorker {
 
     // Handlers can be added or cleared while a response is created, so the request is matched against a copy.
     for (const handler of methodHandlers.toReversed()) {
-      if (!this.isHandlerRegistered(method, handler) || !this.matchesHandlerRoute(requestURLAsString, handler)) {
+      if (!this.isHandlerRegistered(method, handler) || !this.matchesHandlerRoute(requestURL, handler)) {
         continue;
       }
 
@@ -628,16 +627,7 @@ abstract class HttpInterceptorWorker {
     request: Request,
     options?: { baseURL: string; pathRegex: RegExp },
   ): InferPathParams<Path> {
-    const requestURL = excludeNonPathParams(new URL(request.url));
-    const requestPath = requestURL.href.replace(options?.baseURL ?? '', '');
-    const paramsMatch = options?.pathRegex.exec(requestPath);
-
-    const params: Record<string, string | undefined> = {};
-
-    for (const [paramName, paramValue] of Object.entries(paramsMatch?.groups ?? {})) {
-      params[paramName] = typeof paramValue === 'string' ? decodeURIComponent(paramValue) : undefined;
-    }
-
+    const params = parsePathParams(createPathMatchingURL(request.url), options?.baseURL ?? '', options?.pathRegex);
     return params as InferPathParams<Path>;
   }
 }
