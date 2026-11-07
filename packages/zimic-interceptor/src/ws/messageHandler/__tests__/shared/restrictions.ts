@@ -121,6 +121,81 @@ export function declareRestrictionWebSocketMessageHandlerTests(
     },
   );
 
+  it.each([{ exact: true }])(
+    'should match only specific messages if contains a static text restriction and exact $exact',
+    async ({ exact }) => {
+      type TextSchema = WebSocketSchema<string>;
+
+      await usingWebSocketInterceptor<TextSchema>({ type, baseURL }, async (interceptor) => {
+        await interceptor.message().respond('fallback');
+
+        await interceptor.message().with('content', { exact }).respond('restricted');
+
+        await usingWebSocketClient<TextSchema>(baseURL, async (client) => {
+          const matchedResponse = waitForWebSocketClientMessage(client);
+          client.send('content');
+          await expect(matchedResponse).resolves.toBe('restricted');
+
+          for (const mismatchingMessage of ['more-content', '"content"', 'cont', '']) {
+            const response = waitForWebSocketClientMessage(client);
+            client.send(mismatchingMessage);
+            await expect(response).resolves.toBe('fallback');
+          }
+        });
+      });
+    },
+  );
+
+  it.each([{ exact: false }, { exact: undefined }])(
+    'should match only specific messages if contains a static text restriction and exact $exact',
+    async ({ exact }) => {
+      type TextSchema = WebSocketSchema<string>;
+
+      await usingWebSocketInterceptor<TextSchema>({ type, baseURL }, async (interceptor) => {
+        await interceptor.message().respond('fallback');
+
+        await interceptor.message().with('content', { exact }).respond('restricted');
+
+        await usingWebSocketClient<TextSchema>(baseURL, async (client) => {
+          for (const matchingMessage of ['content', 'more-content', '"content"']) {
+            const response = waitForWebSocketClientMessage(client);
+            client.send(matchingMessage);
+            await expect(response).resolves.toBe('restricted');
+          }
+
+          for (const mismatchingMessage of ['cont', '']) {
+            const response = waitForWebSocketClientMessage(client);
+            client.send(mismatchingMessage);
+            await expect(response).resolves.toBe('fallback');
+          }
+        });
+      });
+    },
+  );
+
+  it.each([{ exact: true }, { exact: false }])(
+    'should not match JSON messages if contains a static text restriction and exact $exact',
+    async ({ exact }) => {
+      type MixedSchema = WebSocketSchema<string | { type: string }>;
+
+      await usingWebSocketInterceptor<MixedSchema>({ type, baseURL }, async (interceptor) => {
+        await interceptor.message().respond('fallback');
+
+        const jsonMessage = JSON.stringify({ type: 'content' });
+
+        const handler = await interceptor.message().with(jsonMessage, { exact }).respond('restricted').times(0);
+
+        await usingWebSocketClient<MixedSchema>(baseURL, async (client) => {
+          const response = waitForWebSocketClientMessage(client);
+          client.send(jsonMessage);
+          await expect(response).resolves.toBe('fallback');
+
+          await handler.checkTimes();
+        });
+      });
+    },
+  );
+
   it('should not match JSON messages if contains static binary restrictions', async () => {
     type BinarySchema = WebSocketSchema<{ type: 'a' | 'b' } | ArrayBuffer>;
 

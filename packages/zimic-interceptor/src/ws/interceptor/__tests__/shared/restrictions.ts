@@ -184,29 +184,28 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
     });
   });
 
-  // Unlike HTTP text bodies, which match if they include the restriction, a text frame has no structure to contain a
-  // part of, so non-exact text restrictions match only the same text.
   it('should support intercepting messages having non-exact text restrictions', async () => {
     await usingWebSocketInterceptor<TextSchema>(interceptorOptions, async (interceptor) => {
       const effect = vi.fn();
 
       await promiseIfRemote(
-        interceptor.message().with('content', { exact: false }).effect(effect).times(1),
+        interceptor.message().with('content', { exact: false }).effect(effect).times(2),
         interceptor,
       );
 
       await usingWebSocketClient<TextSchema>(baseURL, async (client) => {
-        client.send('more-content');
         client.send('cont');
         client.send('');
         client.send('content');
+        client.send('more-content');
 
-        // Messages on a socket are handled in order, so the effect running only for the matching message means that the
+        // Messages on a socket are handled in order, so the effect running only for the matching messages means that the
         // unmatched messages did not run it.
         await waitFor(() => {
-          expect(effect).toHaveBeenCalledTimes(1);
+          expect(effect).toHaveBeenCalledTimes(2);
         });
-        expect(effect).toHaveBeenCalledWith('content', expect.any(Object));
+        expect(effect).toHaveBeenNthCalledWith(1, 'content', expect.any(Object));
+        expect(effect).toHaveBeenNthCalledWith(2, 'more-content', expect.any(Object));
       });
 
       await promiseIfRemote(interceptor.checkTimes(), interceptor);
@@ -242,8 +241,8 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
     });
   });
 
-  // Unlike HTTP blob bodies, which match if they include the restriction, a binary frame is opaque bytes without a
-  // structure to contain a part of, so non-exact binary restrictions match only the same bytes.
+  // Whole bytes apply in both protocols, so non-exact binary restrictions match only the same bytes, as with HTTP blob
+  // bodies.
   it('should support intercepting messages having non-exact blob restrictions', async () => {
     await usingWebSocketInterceptor<BinarySchema>(interceptorOptions, async (interceptor) => {
       const effect = vi.fn();

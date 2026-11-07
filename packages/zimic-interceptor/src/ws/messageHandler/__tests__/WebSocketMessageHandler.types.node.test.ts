@@ -291,15 +291,15 @@ describe('WebSocketMessageHandler > Types', () => {
       mixedText: '42' | 'true',
     ) {
       handler.with('42').effect((message) => {
-        expectTypeOf(message).toEqualTypeOf<`${number}`>();
+        expectTypeOf(message).toEqualTypeOf<`${number}` | 'true' | 'false'>();
       });
 
       handler.with('true').effect((message) => {
-        expectTypeOf(message).toEqualTypeOf<'true'>();
+        expectTypeOf(message).toEqualTypeOf<`${number}` | 'true' | 'false'>();
       });
 
       handler.with(mixedText).effect((message) => {
-        expectTypeOf(message).toEqualTypeOf<`${number}` | 'true'>();
+        expectTypeOf(message).toEqualTypeOf<`${number}` | 'true' | 'false'>();
       });
 
       handler.with({ type: 'a' }).effect((message) => {
@@ -319,7 +319,7 @@ describe('WebSocketMessageHandler > Types', () => {
     expectTypeOf(declarePrimitiveRestrictions).toBeFunction();
   });
 
-  it('should narrow string schema members through static restrictions equal to them', () => {
+  it('should keep every text schema member through static text restrictions', () => {
     type TextSchema = WebSocketSchema<
       | 'ping'
       | 'pong'
@@ -328,26 +328,24 @@ describe('WebSocketMessageHandler > Types', () => {
       | `42["user:delete",${JSONStringified<{ id: string }>}]`
       | `42["user:delete:success",${JSONStringified<{}>}]`
     >;
-    type DeleteMessage = Extract<TextSchema, `42["user:delete",${string}]`>;
-    type ConnectMessage = Extract<TextSchema, `40${string}`>;
 
     function declareStringRestrictions(handler: LocalWebSocketMessageHandler<TextSchema>, pingOrPong: 'ping' | 'pong') {
       const deleteHandler = handler.with(`42["user:delete",${JSON.stringify({ id: '1' })}]`);
-      expectTypeOf(deleteHandler.messages[0].data).toEqualTypeOf<DeleteMessage>();
+      expectTypeOf(deleteHandler.messages[0].data).toEqualTypeOf<TextSchema>();
 
       const connectHandler = handler.with('40');
-      expectTypeOf(connectHandler.messages[0].data).toEqualTypeOf<ConnectMessage>();
+      expectTypeOf(connectHandler.messages[0].data).toEqualTypeOf<TextSchema>();
 
       handler.with('40', { exact: true }).effect((message) => {
-        expectTypeOf(message).toEqualTypeOf<ConnectMessage>();
+        expectTypeOf(message).toEqualTypeOf<TextSchema>();
       });
 
       handler.with('ping').effect((message) => {
-        expectTypeOf(message).toEqualTypeOf<Extract<TextSchema, 'ping'>>();
+        expectTypeOf(message).toEqualTypeOf<TextSchema>();
       });
 
       handler.with(pingOrPong).effect((message) => {
-        expectTypeOf(message).toEqualTypeOf<Extract<TextSchema, 'ping' | 'pong'>>();
+        expectTypeOf(message).toEqualTypeOf<TextSchema>();
       });
 
       handler

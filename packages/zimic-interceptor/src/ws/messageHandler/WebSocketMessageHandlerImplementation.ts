@@ -302,6 +302,10 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
       return false;
     }
 
+    if (typeof message === 'string' && typeof restriction === 'string') {
+      return options.exact ? message === restriction : message.includes(restriction);
+    }
+
     return options.exact ? jsonEquals(message, restriction) : jsonContains(message, restriction);
   }
 
