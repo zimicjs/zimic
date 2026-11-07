@@ -258,7 +258,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
       return { success: true };
     }
 
-    const restrictedSearchParams: HttpSearchParams = new HttpSearchParams(restriction.searchParams);
+    const restrictedSearchParams = new HttpSearchParams(restriction.searchParams);
 
     const matchesRestriction = restriction.exact
       ? request.searchParams.equals(restrictedSearchParams)
