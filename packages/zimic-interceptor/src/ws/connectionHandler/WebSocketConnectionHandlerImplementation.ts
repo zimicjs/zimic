@@ -364,6 +364,6 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyWebSocketConnectionHandlerImplementation = WebSocketConnectionHandlerImplementation<any, any>;
+export type AnyWebSocketConnectionHandlerImplementation = WebSocketConnectionHandlerImplementation<any>;
 
 export default WebSocketConnectionHandlerImplementation;
