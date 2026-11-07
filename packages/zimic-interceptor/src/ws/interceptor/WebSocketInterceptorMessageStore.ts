@@ -21,19 +21,13 @@ export interface WebSocketInterceptorMessageHandlerIndex<
   records: Set<WebSocketInterceptorMessageRecord<Schema>>;
 }
 
+// Each saved message is listed by its handler, its sender client, and the interceptor server, and clearing a handler
+// must remove its messages from all of them. Connections and requests are listed only by their handler, so a counter
+// is enough for them.
 class WebSocketInterceptorMessageStore<Schema extends WebSocketSchema> {
   private records = new Set<WebSocketInterceptorMessageRecord<Schema>>();
 
   constructor(private getSafeLimit: () => number) {}
-
-  private warnIfSafeLimitExceeded() {
-    const numberOfSavedMessages = this.records.size;
-    const safeLimit = this.getSafeLimit();
-
-    if (numberOfSavedMessages > safeLimit) {
-      console.warn(new MessageSavingSafeLimitExceededError(numberOfSavedMessages, safeLimit));
-    }
-  }
 
   createHandlerIndex<RestrictedSchema extends Schema>(): WebSocketInterceptorMessageHandlerIndex<
     Schema,
@@ -67,7 +61,11 @@ class WebSocketInterceptorMessageStore<Schema extends WebSocketSchema> {
     record.sender.messages.push(message);
     record.receiver.messages.push(message);
 
-    this.warnIfSafeLimitExceeded();
+    const safeLimit = this.getSafeLimit();
+
+    if (this.records.size > safeLimit) {
+      console.warn(new MessageSavingSafeLimitExceededError(this.records.size, safeLimit));
+    }
   }
 
   clearHandler<RestrictedSchema extends Schema>(
