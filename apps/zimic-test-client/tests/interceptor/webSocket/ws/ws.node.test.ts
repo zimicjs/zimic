@@ -20,5 +20,6 @@ describe("ws client (Node.js, type 'remote')", () => {
 
       return socket;
     },
+    createSocket: (url, protocols) => new NodeWebSocket(url, protocols),
   });
 });

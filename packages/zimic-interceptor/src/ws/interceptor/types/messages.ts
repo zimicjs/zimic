@@ -1,3 +1,4 @@
+import { HttpSearchParams, InferPathParams } from '@zimic/utils/http';
 import { Replace } from '@zimic/utils/types';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
@@ -49,6 +50,39 @@ export interface InterceptedWebSocketInterceptorMessage<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
+ * The handshake of a connection attempt to the interceptor, as matched by a connection handler before it is answered.
+ * It describes the attempt and is not a native `Request`.
+ */
+export interface WebSocketInterceptorConnectionRequest<Path extends string = string> {
+  /** The URL used to open the connection. */
+  url: string;
+
+  /**
+   * The subprotocols requested by the client when opening the connection, in the order they were requested, as in
+   * {@link https://developer.mozilla.org/docs/Web/API/WebSocket/WebSocket#protocols `new WebSocket(url, protocols)`}.
+   * Empty if the client requested none.
+   */
+  protocols: readonly string[];
+
+  /**
+   * The search parameters of the connection URL.
+   *
+   * @see {@link https://zimic.dev/docs/http/api/http-search-params `HttpSearchParams` API reference}
+   */
+  searchParams: HttpSearchParams;
+
+  /**
+   * The URI-decoded path parameters of the connection URL, parsed from the path declared in
+   * `interceptor.connection(path)`. Empty if the handler declares no path.
+   *
+   * @see {@link https://zimic.dev/docs/http/api/http-schema#inferpathparams `InferPathParams` API reference}
+   */
+  pathParams: InferPathParams<Path>;
+}
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
  * A handle to a client connected to the interceptor.
  */
 export interface WebSocketInterceptorClient<Schema extends WebSocketSchema> {
@@ -67,6 +101,14 @@ export interface WebSocketInterceptorClient<Schema extends WebSocketSchema> {
    * @readonly
    */
   protocols: readonly string[];
+
+  /**
+   * The search parameters of the URL used to open the client connection.
+   *
+   * @readonly
+   * @see {@link https://zimic.dev/docs/http/api/http-search-params `HttpSearchParams` API reference}
+   */
+  searchParams: HttpSearchParams;
 
   /**
    * The messages sent by this client and saved by matching handlers. Requires message saving to be enabled.

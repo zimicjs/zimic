@@ -1,14 +1,13 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { startHttpServer, stopHttpServer } from '@zimic/utils/server';
 import { waitFor } from '@zimic/utils/time';
-import { closeWebSocketClient, WebSocketCloseTimeoutError } from '@zimic/utils/ws';
+import { closeWebSocketClient, WEB_SOCKET_CLOSE_CODES, WebSocketCloseTimeoutError } from '@zimic/utils/ws';
 import { createServer } from 'http';
 import ClientSocket from 'isomorphic-ws';
 import { AddressInfo } from 'net';
 import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 
 import { waitForOpenClientSocket, WebSocketMessageAbortError, WebSocketMessageTimeoutError } from '@/utils/webSocket';
-import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
 import InvalidWebSocketMessageError from '../errors/InvalidWebSocketMessageError';
@@ -746,6 +745,75 @@ describe('Web socket server', () => {
 
         expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.INTERNAL_ERROR);
         expect(console.error).toHaveBeenCalledWith(error);
+      });
+    });
+
+    it('should refuse handshakes that are not verified', async () => {
+      const handleConnection = vi.fn(() => ({ handled: false }));
+
+      server = new WebSocketServer({
+        httpServer,
+        verifyUpgrade: () => Promise.resolve(false),
+        handleConnection,
+      });
+      server.start();
+
+      rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+      const errorPromise = new Promise<Error>((resolve) => {
+        rawClient?.once('error', resolve);
+      });
+
+      const closeEvent = await waitForClientSocketClose(rawClient);
+      expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
+
+      const error = await errorPromise;
+      expect(error.message).toBe('Unexpected server response: 403');
+
+      expect(handleConnection).not.toHaveBeenCalled();
+    });
+
+    it('should log thrown upgrade verification failures', async () => {
+      const error = new Error('Upgrade verification failed.');
+
+      server = new WebSocketServer({
+        httpServer,
+        verifyUpgrade: () => Promise.reject(error),
+      });
+      server.start();
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+        const clientErrorPromise = new Promise<Error>((resolve) => {
+          rawClient?.once('error', resolve);
+        });
+
+        await clientErrorPromise;
+
+        expect(console.error).toHaveBeenCalledWith(error);
+      });
+    });
+
+    it('should refuse handshakes as internal errors if upgrade verification throws', async () => {
+      server = new WebSocketServer({
+        httpServer,
+        verifyUpgrade: () => Promise.reject(new Error('Upgrade verification failed.')),
+      });
+      server.start();
+
+      await usingIgnoredConsole(['error'], async () => {
+        rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+        const clientErrorPromise = new Promise<Error>((resolve) => {
+          rawClient?.once('error', resolve);
+        });
+
+        const closeEvent = await waitForClientSocketClose(rawClient);
+        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
+
+        const clientError = await clientErrorPromise;
+        expect(clientError.message).toBe('Unexpected server response: 500');
       });
     });
 

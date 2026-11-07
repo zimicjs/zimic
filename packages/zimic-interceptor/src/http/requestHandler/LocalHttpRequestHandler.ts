@@ -79,11 +79,11 @@ class LocalHttpRequestHandler<
     const requestMatch = await this.implementation.matchesRequest(request);
 
     if (requestMatch.success) {
-      this.implementation.markRequestAsMatched(request);
+      this.implementation.markRequestAsMatched();
     } else if (requestMatch.cause === 'unmatchedRestrictions') {
       this.implementation.markRequestAsUnmatched(request, { diff: requestMatch.diff });
     } else {
-      this.implementation.markRequestAsMatched(request);
+      this.implementation.markRequestAsMatched();
     }
 
     return requestMatch;
