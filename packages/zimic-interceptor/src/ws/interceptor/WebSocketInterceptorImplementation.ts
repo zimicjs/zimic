@@ -50,14 +50,15 @@ function isWebSocketInterceptorClientArray<Schema extends WebSocketSchema>(
   return Array.isArray(clients);
 }
 
-export type WebSocketHandlerConstructor = typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
+export type WebSocketMessageHandlerConstructor =
+  typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
 
 export type WebSocketConnectionHandlerConstructor =
   typeof LocalWebSocketConnectionHandler | typeof RemoteWebSocketConnectionHandler;
 
 class WebSocketInterceptorImplementation<
   Schema extends WebSocketSchema,
-  HandlerConstructor extends WebSocketHandlerConstructor = WebSocketHandlerConstructor,
+  MessageHandlerConstructor extends WebSocketMessageHandlerConstructor = WebSocketMessageHandlerConstructor,
 > {
   #baseURL!: URL;
 
@@ -71,7 +72,7 @@ class WebSocketInterceptorImplementation<
 
   isRunning = false;
 
-  private Handler: HandlerConstructor;
+  private MessageHandler: MessageHandlerConstructor;
   private ConnectionHandler: WebSocketConnectionHandlerConstructor;
 
   // Kept in registration order, so times checks run in the order the handlers were declared.
@@ -95,7 +96,7 @@ class WebSocketInterceptorImplementation<
     messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
     connectionSaving?: Partial<WebSocketInterceptorConnectionSaving>;
     onUnhandledMessage?: UnhandledMessageStrategy;
-    Handler: HandlerConstructor;
+    MessageHandler: MessageHandlerConstructor;
     ConnectionHandler: WebSocketConnectionHandlerConstructor;
     createWorker: () => WebSocketInterceptorWorker;
     deleteWorker: () => void;
@@ -115,7 +116,7 @@ class WebSocketInterceptorImplementation<
 
     this.onUnhandledMessage = options.onUnhandledMessage;
 
-    this.Handler = options.Handler;
+    this.MessageHandler = options.MessageHandler;
     this.ConnectionHandler = options.ConnectionHandler;
     this.createWorker = options.createWorker;
     this.deleteWorker = options.deleteWorker;
@@ -293,7 +294,7 @@ class WebSocketInterceptorImplementation<
   }
 
   private createWebSocketMessageHandler(): WebSocketMessageHandler<Schema> {
-    const handler = new this.Handler<Schema>(this);
+    const handler = new this.MessageHandler<Schema>(this);
     this.registerMessageHandler(handler);
 
     return handler;

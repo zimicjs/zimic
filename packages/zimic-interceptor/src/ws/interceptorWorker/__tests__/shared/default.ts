@@ -582,7 +582,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       await usingWebSocketInterceptorWorker(remoteWorkerOptions, { start: false }, async (worker) => {
         const interceptor = new WebSocketInterceptorImplementation<ChatMessage, typeof RemoteWebSocketMessageHandler>({
           baseURL: new URL(baseURL),
-          Handler: RemoteWebSocketMessageHandler,
+          MessageHandler: RemoteWebSocketMessageHandler,
           ConnectionHandler: RemoteWebSocketConnectionHandler,
           createWorker: () => worker,
           deleteWorker: vi.fn(),
@@ -664,7 +664,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           typeof RemoteWebSocketMessageHandler
         >({
           baseURL: new URL(`${baseURL}/second`),
-          Handler: RemoteWebSocketMessageHandler,
+          MessageHandler: RemoteWebSocketMessageHandler,
           ConnectionHandler: RemoteWebSocketConnectionHandler,
           createWorker: () => worker,
           deleteWorker: vi.fn(),
@@ -697,7 +697,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           typeof RemoteWebSocketMessageHandler
         >({
           baseURL: new URL(baseURL),
-          Handler: RemoteWebSocketMessageHandler,
+          MessageHandler: RemoteWebSocketMessageHandler,
           ConnectionHandler: RemoteWebSocketConnectionHandler,
           createWorker: () => worker,
           deleteWorker: vi.fn(),
@@ -708,7 +708,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           typeof RemoteWebSocketMessageHandler
         >({
           baseURL: new URL(baseURL),
-          Handler: RemoteWebSocketMessageHandler,
+          MessageHandler: RemoteWebSocketMessageHandler,
           ConnectionHandler: RemoteWebSocketConnectionHandler,
           createWorker: () => worker,
           deleteWorker: vi.fn(),
@@ -762,7 +762,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         >({
           baseURL: new URL(baseURL),
           onUnhandledMessage: firstOnUnhandledMessage,
-          Handler: RemoteWebSocketMessageHandler,
+          MessageHandler: RemoteWebSocketMessageHandler,
           ConnectionHandler: RemoteWebSocketConnectionHandler,
           createWorker: () => worker,
           deleteWorker: vi.fn(),
@@ -774,7 +774,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         >({
           baseURL: new URL(baseURL),
           onUnhandledMessage: secondOnUnhandledMessage,
-          Handler: RemoteWebSocketMessageHandler,
+          MessageHandler: RemoteWebSocketMessageHandler,
           ConnectionHandler: RemoteWebSocketConnectionHandler,
           createWorker: () => worker,
           deleteWorker: vi.fn(),

@@ -29,7 +29,7 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
       messageSaving: options.messageSaving,
       connectionSaving: options.connectionSaving,
       onUnhandledMessage: options.onUnhandledMessage,
-      Handler: RemoteWebSocketMessageHandler,
+      MessageHandler: RemoteWebSocketMessageHandler,
       ConnectionHandler: RemoteWebSocketConnectionHandler,
       createWorker: () => {
         return this.store.getOrCreateRemoteWorker({

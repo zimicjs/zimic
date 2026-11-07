@@ -28,7 +28,7 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
       messageSaving: options.messageSaving,
       connectionSaving: options.connectionSaving,
       onUnhandledMessage: options.onUnhandledMessage,
-      Handler: LocalWebSocketMessageHandler,
+      MessageHandler: LocalWebSocketMessageHandler,
       ConnectionHandler: LocalWebSocketConnectionHandler,
       createWorker: () => this.store.getOrCreateLocalWorker({}),
       deleteWorker: () => this.store.deleteLocalWorker(),
