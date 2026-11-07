@@ -369,6 +369,12 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
     const response = await this.createResponseDeclaration?.(restrictedMessage, context);
 
+    // A message whose handler was cleared while running its effect or computing its response is not handled either, so
+    // a response that outlives the clear is not sent or saved into the cleared handler.
+    if (clearGeneration !== this.clearGeneration) {
+      return false;
+    }
+
     if (response !== undefined) {
       context.sender.send(serializeWebSocketMessageDataForSocket(response));
     }

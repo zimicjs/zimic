@@ -6,7 +6,7 @@ import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@
 import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorClient } from '../../../interceptor/types/messages';
-import { WebSocketInterceptorType } from '../../../interceptor/types/options';
+import { UnhandledMessageStrategy, WebSocketInterceptorType } from '../../../interceptor/types/options';
 import RemoteWebSocketMessageHandler from '../../RemoteWebSocketMessageHandler';
 import { WebSocketMessageHandler } from '../../types/public';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './utils';
@@ -186,8 +186,115 @@ export function declareDefaultWebSocketMessageHandlerTests(
   // No WebSocket message counterpart for "should decide connections with a $response computed response": a message has
   // no handshake to accept or reject.
 
-  // No WebSocket message counterpart for "should not decide connections if $condition while computing their response":
-  // a message has no handshake to accept or reject.
+  it.each<{
+    condition: string;
+    declareAfterClear: (handler: WebSocketMessageHandler<Schema>) => unknown;
+  }>([
+    { condition: 'cleared', declareAfterClear: (handler) => handler },
+    {
+      condition: 'cleared and redeclared',
+      declareAfterClear: (handler) => handler.with({ type: 'create' }).respond({ type: 'delete', id: 'redeclared' }),
+    },
+  ])('should not respond to messages if $condition while computing their response', async ({ declareAfterClear }) => {
+    const responseStartedPromise = createPromiseWithResolvers<void>();
+    const responseReleasedPromise = createPromiseWithResolvers<void>();
+
+    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true }, onUnhandledMessage },
+      async (interceptor) => {
+        const handler = await interceptor.message().respond(async () => {
+          responseStartedPromise.resolve();
+          await responseReleasedPromise;
+          return { type: 'delete', id: '1' };
+        });
+
+        await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' });
+
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
+          const firstResponse = waitForWebSocketClientMessage(client);
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'pending' } }));
+          await responseStartedPromise;
+
+          await declareAfterClear(handler.clear());
+          responseReleasedPromise.resolve();
+
+          await waitFor(() => {
+            expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+          });
+
+          client.send(JSON.stringify({ type: 'delete', id: '2' }));
+
+          // Messages on a socket are delivered in order, so the probe response arriving first means that the pending
+          // message got no response.
+          await expect(firstResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
+
+          expect(handler.messages).toHaveLength(0);
+
+          await handler.times(0);
+          await handler.checkTimes();
+        });
+      },
+    );
+  });
+
+  it.each<{
+    condition: string;
+    declareAfterClear: (handler: WebSocketMessageHandler<Schema>) => unknown;
+  }>([
+    { condition: 'cleared', declareAfterClear: (handler) => handler },
+    {
+      condition: 'cleared and redeclared',
+      declareAfterClear: (handler) => handler.with({ type: 'create' }).respond({ type: 'delete', id: 'redeclared' }),
+    },
+  ])('should not respond to messages if $condition while running their effect', async ({ declareAfterClear }) => {
+    const effectStartedPromise = createPromiseWithResolvers<void>();
+    const effectReleasedPromise = createPromiseWithResolvers<void>();
+
+    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true }, onUnhandledMessage },
+      async (interceptor) => {
+        const handler = await interceptor
+          .message()
+          .effect(async () => {
+            effectStartedPromise.resolve();
+            await effectReleasedPromise;
+          })
+          .respond({ type: 'delete', id: '1' });
+
+        await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' });
+
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
+          const firstResponse = waitForWebSocketClientMessage(client);
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'pending' } }));
+          await effectStartedPromise;
+
+          await declareAfterClear(handler.clear());
+          effectReleasedPromise.resolve();
+
+          await waitFor(() => {
+            expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+          });
+
+          client.send(JSON.stringify({ type: 'delete', id: '2' }));
+
+          // Messages on a socket are delivered in order, so the probe response arriving first means that the pending
+          // message got no response.
+          await expect(firstResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
+
+          expect(handler.messages).toHaveLength(0);
+
+          await handler.times(0);
+          await handler.checkTimes();
+        });
+      },
+    );
+  });
 
   it('should keep track of the intercepted messages', async () => {
     await usingWebSocketInterceptor<Schema>(
