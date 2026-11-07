@@ -132,7 +132,6 @@ export type MyServiceSchema = HttpSchema<{
           };
           body: HttpSearchParams<{
             search?: (string | null) | string[];
-            /** @enum {string} */
             order?: 'asc' | 'desc';
             /** Format: int32 */
             limit?: number | null;
@@ -148,11 +147,7 @@ export type MyServiceSchema = HttpSchema<{
 export interface MyServiceComponents {
   schemas: {
     search: (string | null) | string[];
-    /**
-     * The sort order
-     *
-     * @enum {string}
-     */
+    /** The sort order */
     order: 'asc' | 'desc';
     /**
      * Format: int32

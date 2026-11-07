@@ -58,9 +58,7 @@ export interface MyServiceComponents {
       café?: string;
       名前?: string;
       '🚀'?: string;
-      /** @enum {string} */
       status?: '"quoted"' | 'back\\slash' | '*/' | 'café' | '名前 🚀';
-      /** @constant */
       title?: 'It\'s "constant" */';
     };
   };

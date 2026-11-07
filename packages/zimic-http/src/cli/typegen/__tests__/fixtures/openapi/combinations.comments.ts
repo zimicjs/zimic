@@ -77,22 +77,12 @@ export interface MyServiceComponents {
       /** Format: int64 */
       id: number;
       name: string;
-      /**
-       * Discriminator enum property added by @zimic/http
-       *
-       * @enum {string}
-       */
       type: 'user';
     };
     Friend: {
       /** Format: int64 */
       id: number;
       name: string;
-      /**
-       * Discriminator enum property added by @zimic/http
-       *
-       * @enum {string}
-       */
       type: 'friend';
       /** Format: int64 */
       userId: number;

@@ -21,7 +21,6 @@ export type MyServiceSchema = HttpSchema<{
 
 export interface MyServiceComponents {
   schemas: {
-    /** @enum {object} */
     Error:
       | {
           code: 1;

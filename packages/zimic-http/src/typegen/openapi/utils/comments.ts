@@ -11,27 +11,11 @@ export interface JSDocAnnotations {
   default?: unknown;
   example?: unknown;
   examples?: unknown;
-  const?: unknown;
-  enum?: unknown[];
-  type?: string | string[];
-  nullable?: boolean;
 }
 
 function formatAnnotationValue(value: unknown) {
   const serializedValue = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
   return serializedValue.trim().replace(LINE_BREAK_REGEX, CONTINUATION_LINE_PREFIX);
-}
-
-function formatEnumAnnotation(annotations: JSDocAnnotations) {
-  let enumType = 'unknown';
-
-  if (Array.isArray(annotations.type)) {
-    enumType = annotations.type.join('|');
-  } else if (typeof annotations.type === 'string') {
-    enumType = annotations.type;
-  }
-
-  return `@enum {${enumType}${annotations.nullable ? '|null' : ''}}`;
 }
 
 function collectAnnotationLines(annotations: JSDocAnnotations) {
@@ -62,12 +46,6 @@ function collectAnnotationLines(annotations: JSDocAnnotations) {
     for (const example of annotations.examples) {
       lines.push(`@example ${formatAnnotationValue(example)}`);
     }
-  }
-  if ('const' in annotations) {
-    lines.push('@constant');
-  }
-  if (annotations.enum) {
-    lines.push(formatEnumAnnotation(annotations));
   }
 
   return lines;

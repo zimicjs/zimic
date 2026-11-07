@@ -1,5 +1,5 @@
 import { createPointer, resolveReference } from './references';
-import { isReference, OpenAPIDiscriminator, OpenAPIDocument, OpenAPISchema, OpenAPISchemaObject } from './types';
+import { isReference, OpenAPIDiscriminator, OpenAPIDocument, OpenAPISchema } from './types';
 
 export interface DocumentDiscriminators {
   /** The discriminator applying to each schema, keyed by the schema pointer. */
@@ -47,18 +47,6 @@ function getDiscriminator(value: unknown): OpenAPIDiscriminator | undefined {
   return isDiscriminator ? (discriminator as OpenAPIDiscriminator) : undefined;
 }
 
-function createDiscriminatorEnumSchema(values: string[], previousSchema?: OpenAPISchema): OpenAPISchemaObject {
-  const previousDescription = typeof previousSchema === 'object' ? previousSchema.description : undefined;
-
-  return {
-    type: 'string',
-    enum: values,
-    description: previousDescription
-      ? `${previousDescription} (enum property replaced by @zimic/http)`
-      : 'discriminator enum property added by @zimic/http',
-  };
-}
-
 /** Adds the discriminator property, restricted to the mapped values, to the schema at a pointer. */
 function patchDiscriminatorProperty(
   document: OpenAPIDocument,
@@ -78,7 +66,7 @@ function patchDiscriminatorProperty(
     schema.allOf.push({
       type: 'object',
       required: [propertyName],
-      properties: { [propertyName]: createDiscriminatorEnumSchema(values) },
+      properties: { [propertyName]: { type: 'string', enum: values } },
     });
     return true;
   }
@@ -94,7 +82,7 @@ function patchDiscriminatorProperty(
     schema.required.push(propertyName);
   }
 
-  schema.properties[propertyName] = createDiscriminatorEnumSchema(values, schema.properties[propertyName]);
+  schema.properties[propertyName] = { type: 'string', enum: values };
   return true;
 }
 

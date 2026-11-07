@@ -30,7 +30,6 @@ export type MyServiceSchema = HttpSchema<{
 
 export interface MyServiceComponents {
   schemas: {
-    /** @enum {string} */
     UserStatus: 'active' | 'inactive';
     User: {
       /**

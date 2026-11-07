@@ -78,11 +78,7 @@ export type MyServiceSchema = HttpSchema<{
                 'content-type': 'application/json';
               };
               body: {
-                /**
-                 * The type of the response
-                 *
-                 * @enum {string}
-                 */
+                /** The type of the response */
                 type: 'user-as-json';
                 value: MyServiceComponents['schemas']['User'];
               };
@@ -92,11 +88,7 @@ export type MyServiceSchema = HttpSchema<{
                 'content-type': 'application/xml';
               };
               body: {
-                /**
-                 * The type of the response
-                 *
-                 * @enum {string}
-                 */
+                /** The type of the response */
                 type: 'user-as-xml';
                 value: MyServiceComponents['schemas']['User'];
               };
@@ -116,11 +108,7 @@ export type MyServiceSchema = HttpSchema<{
                 'x-value'?: string;
               };
               body: {
-                /**
-                 * The type of the response
-                 *
-                 * @enum {string}
-                 */
+                /** The type of the response */
                 type: 'user-as-json';
                 value: MyServiceComponents['schemas']['User'];
               };
@@ -131,11 +119,7 @@ export type MyServiceSchema = HttpSchema<{
                 'x-value'?: string;
               };
               body: {
-                /**
-                 * The type of the response
-                 *
-                 * @enum {string}
-                 */
+                /** The type of the response */
                 type: 'user-as-xml';
                 value: MyServiceComponents['schemas']['User'];
               };
@@ -189,11 +173,7 @@ export interface MyServiceComponents {
             'content-type': 'application/json';
           };
           body: {
-            /**
-             * The type of the response
-             *
-             * @enum {string}
-             */
+            /** The type of the response */
             type?: 'user-as-json';
             value?: MyServiceComponents['schemas']['User'];
           };
@@ -203,11 +183,7 @@ export interface MyServiceComponents {
             'content-type': 'application/xml';
           };
           body: {
-            /**
-             * The type of the response
-             *
-             * @enum {string}
-             */
+            /** The type of the response */
             type?: 'user-as-xml';
             value?: MyServiceComponents['schemas']['User'];
           };
@@ -221,11 +197,7 @@ export interface MyServiceComponents {
             'x-request-id': MyServiceComponents['headers']['X-Request-Id'];
           };
           body: {
-            /**
-             * The type of the response
-             *
-             * @enum {string}
-             */
+            /** The type of the response */
             type?: 'user-as-application-x-yaml';
             value?: MyServiceComponents['schemas']['User'];
           };
@@ -237,11 +209,7 @@ export interface MyServiceComponents {
             'x-request-id': MyServiceComponents['headers']['X-Request-Id'];
           };
           body: {
-            /**
-             * The type of the response
-             *
-             * @enum {string}
-             */
+            /** The type of the response */
             type?: 'user-as-text-x-yaml';
             value?: MyServiceComponents['schemas']['User'];
           };
@@ -254,7 +222,6 @@ export interface MyServiceComponents {
       body: {
         /** A message describing the error */
         message: string;
-        /** @enum {string} */
         code?: 'NOT_FOUND';
       };
     };
@@ -266,7 +233,6 @@ export interface MyServiceComponents {
       body: {
         /** A message describing the error */
         message: string;
-        /** @enum {string} */
         code?: 'VALIDATION_ERROR';
       };
     };
@@ -278,7 +244,6 @@ export interface MyServiceComponents {
       body: {
         /** A message describing the error */
         message: string;
-        /** @enum {string} */
         code?: 'CLIENT_ERROR';
       };
     };
@@ -290,7 +255,6 @@ export interface MyServiceComponents {
       body: {
         /** A message describing the error */
         message: string;
-        /** @enum {string} */
         code?: 'SERVER_ERROR';
       };
     };

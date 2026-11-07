@@ -18,6 +18,9 @@ export interface OpenAPIDiscriminator {
 
 export interface OpenAPISchemaObject extends JSDocAnnotations {
   type?: string | string[];
+  nullable?: boolean;
+  const?: unknown;
+  enum?: unknown[];
   properties?: Record<string, OpenAPISchema>;
   additionalProperties?: OpenAPISchema;
   patternProperties?: Record<string, OpenAPISchema>;
