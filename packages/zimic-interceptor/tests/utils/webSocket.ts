@@ -2,7 +2,6 @@ import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { expect } from 'vitest';
 
-import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import WebSocketTimesCheckError from '@/ws/errors/WebSocketTimesCheckError';
 import WebSocketTimesDeclarationPointer from '@/ws/errors/WebSocketTimesDeclarationPointer';
 
@@ -43,31 +42,28 @@ export function waitForWebSocketClientClose<Schema extends WebSocketSchema>(clie
 }
 
 // A native socket exposes the events of a connection that fails to open, which `WebSocketClient.open()` reports only as
-// a rejection. Resolves once the connection opens or closes, so callers close the sockets that opened.
+// a rejection. Resolves on the first event of the connection, so callers close the sockets that opened. A refusal
+// settles on `error` because some runtimes, such as Node 22, never dispatch `close` for a refused handshake.
 export async function openWebSocketUntilSettled(url: string, protocols?: string | string[]) {
   const socket = new WebSocket(url, protocols);
-  const eventTypes: string[] = [];
 
-  for (const type of ['open', 'error', 'close'] as const) {
-    socket.addEventListener(type, () => {
-      eventTypes.push(type);
-    });
-  }
-
-  const closeEvent = await new Promise<CloseEvent | undefined>((resolve) => {
-    socket.addEventListener('open', () => resolve(undefined), { once: true });
-    socket.addEventListener('close', resolve, { once: true });
+  const settlingEvent = await new Promise<Event>((resolve) => {
+    for (const type of ['open', 'error', 'close'] as const) {
+      socket.addEventListener(type, resolve, { once: true });
+    }
   });
 
-  return { socket, eventTypes: [...eventTypes], closeEvent };
+  return {
+    socket,
+    eventTypes: [settlingEvent.type],
+    closeEvent: settlingEvent.type === 'close' ? (settlingEvent as CloseEvent) : undefined,
+  };
 }
 
 // A refused connection fails without opening, as when a server answers its handshake with an error.
 export async function expectWebSocketConnectionToBeRefused(url: string, protocols?: string | string[]) {
-  const { eventTypes, closeEvent } = await openWebSocketUntilSettled(url, protocols);
-
-  expect(eventTypes).toEqual(['error', 'close']);
-  expect(closeEvent?.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
+  const { eventTypes } = await openWebSocketUntilSettled(url, protocols);
+  expect(eventTypes).toEqual(['error']);
 }
 
 export async function expectWebSocketConnectionToOpen(url: string, protocols?: string | string[]) {

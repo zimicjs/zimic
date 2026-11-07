@@ -1199,9 +1199,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
               socket.close();
             }
 
-            expect(attempts.map(({ eventTypes }) => eventTypes)).toEqual(
-              expect.arrayContaining([['open'], ['error', 'close']]),
-            );
+            expect(attempts.map(({ eventTypes }) => eventTypes)).toEqual(expect.arrayContaining([['open'], ['error']]));
 
             expect(restriction).toHaveBeenCalledTimes(concurrentConnectionCount);
             expect(limitedHandler.connections).toHaveLength(1);

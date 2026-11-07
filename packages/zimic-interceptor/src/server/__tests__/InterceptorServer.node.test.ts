@@ -1150,8 +1150,6 @@ describe('Interceptor server', () => {
             interceptors: [{ id: crypto.randomUUID(), baseURL }],
           });
 
-          const closeEventPromise = waitForWebSocketClientClose(client);
-
           // The server answers the handshake only after the worker decides the connection, so the client never opens.
           const openRejectionExpectation = expect(client.open()).rejects.toBeInstanceOf(Event);
           await connectionReceivedPromise;
@@ -1159,9 +1157,6 @@ describe('Interceptor server', () => {
           await server.stop();
 
           await openRejectionExpectation;
-
-          const closeEvent = await closeEventPromise;
-          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
           expect(client.readyState).toBe(WebSocketClient.CLOSED);
         } finally {
           await client.close();

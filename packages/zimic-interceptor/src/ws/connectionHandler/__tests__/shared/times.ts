@@ -75,9 +75,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
               socket.close();
             }
 
-            expect(attempts.map(({ eventTypes }) => eventTypes)).toEqual(
-              expect.arrayContaining([['open'], ['error', 'close']]),
-            );
+            expect(attempts.map(({ eventTypes }) => eventTypes)).toEqual(expect.arrayContaining([['open'], ['error']]));
             expect(limitedHandler.connections).toHaveLength(1);
             expect(fallbackHandler.connections).toHaveLength(1);
 
@@ -115,7 +113,7 @@ export function declareTimesWebSocketConnectionHandlerTests(
 
     it.each<{ action: 'accept' | 'reject'; expectedEventTypes: string[] }>([
       { action: 'accept', expectedEventTypes: ['open'] },
-      { action: 'reject', expectedEventTypes: ['error', 'close'] },
+      { action: 'reject', expectedEventTypes: ['error'] },
     ])(
       'should match an exact number of limited connections decided by a computed response ($action)',
       async ({ action, expectedEventTypes }) => {

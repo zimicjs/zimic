@@ -473,7 +473,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
         await advanceThroughDelay(respond, delay);
 
         const { eventTypes } = await attemptPromise;
-        expect(eventTypes).toEqual(['error', 'close']);
+        expect(eventTypes).toEqual(['error']);
 
         expect(handler.connections).toHaveLength(1);
       });
@@ -488,7 +488,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
         expect(respond).toHaveBeenCalledTimes(1);
 
         const { eventTypes } = await attemptPromise;
-        expect(eventTypes).toEqual(['error', 'close']);
+        expect(eventTypes).toEqual(['error']);
 
         expect(handler.connections).toHaveLength(1);
       });
@@ -541,7 +541,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
               await advanceThroughDelay(respond, expectedDelay);
 
               const { eventTypes } = await attemptPromise;
-              expect(eventTypes).toEqual(['error', 'close']);
+              expect(eventTypes).toEqual(['error']);
             }
 
             expect(handler.connections).toHaveLength(expectedDelays.length);
@@ -600,7 +600,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
             await vi.advanceTimersByTimeAsync(1);
 
             const { eventTypes } = await attemptPromise;
-            expect(eventTypes).toEqual(['error', 'close']);
+            expect(eventTypes).toEqual(['error']);
 
             expect(delayFactory).toHaveBeenCalledTimes(1);
             expect(delayFactory).toHaveBeenCalledWith({

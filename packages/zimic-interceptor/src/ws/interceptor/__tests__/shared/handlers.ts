@@ -2,7 +2,6 @@ import { waitFor } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
@@ -225,10 +224,8 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }), interceptor);
 
-        const { eventTypes, closeEvent } = await openWebSocketUntilSettled(baseURL);
-
-        expect(eventTypes).toEqual(['error', 'close']);
-        expect(closeEvent?.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
+        const { eventTypes } = await openWebSocketUntilSettled(baseURL);
+        expect(eventTypes).toEqual(['error']);
 
         expect(interceptor.clients).toHaveLength(0);
       });

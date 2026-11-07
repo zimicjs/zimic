@@ -5,7 +5,6 @@ import { WebSocketClient } from '@zimic/ws';
 import color from 'picocolors';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import {
   expectWebSocketTimesCheckError,
@@ -76,12 +75,12 @@ export function declareDefaultWebSocketConnectionHandlerTests(
       const handler = await interceptor.connection().respond({ action: 'reject' });
 
       let attempt = await openWebSocketUntilSettled(baseURL);
-      expect(attempt.eventTypes).toEqual(['error', 'close']);
+      expect(attempt.eventTypes).toEqual(['error']);
 
       await handler.with({});
 
       attempt = await openWebSocketUntilSettled(baseURL);
-      expect(attempt.eventTypes).toEqual(['error', 'close']);
+      expect(attempt.eventTypes).toEqual(['error']);
     });
   });
 
@@ -99,7 +98,7 @@ export function declareDefaultWebSocketConnectionHandlerTests(
         await handler.clear();
 
         const attempt = await openWebSocketUntilSettled(baseURL);
-        expect(attempt.eventTypes).toEqual(['error', 'close']);
+        expect(attempt.eventTypes).toEqual(['error']);
         expect(handler.connections).toHaveLength(0);
 
         await handler.effect(vi.fn());
@@ -112,7 +111,7 @@ export function declareDefaultWebSocketConnectionHandlerTests(
         await handler.clear();
 
         const secondAttempt = await openWebSocketUntilSettled(baseURL);
-        expect(secondAttempt.eventTypes).toEqual(['error', 'close']);
+        expect(secondAttempt.eventTypes).toEqual(['error']);
         expect(handler.connections).toHaveLength(0);
 
         await handler.effect(vi.fn());
@@ -147,7 +146,7 @@ export function declareDefaultWebSocketConnectionHandlerTests(
         restrictionReleasedPromise.resolve();
 
         const attempt = await attemptPromise;
-        expect(attempt.eventTypes).toEqual(['error', 'close']);
+        expect(attempt.eventTypes).toEqual(['error']);
         expect(handler.connections).toHaveLength(0);
       },
     );
@@ -207,12 +206,12 @@ export function declareDefaultWebSocketConnectionHandlerTests(
     {
       response: 'synchronous reject',
       computeResponse: () => ({ action: 'reject' }),
-      expectedEventTypes: ['error', 'close'],
+      expectedEventTypes: ['error'],
     },
     {
       response: 'asynchronous reject',
       computeResponse: () => Promise.resolve({ action: 'reject' }),
-      expectedEventTypes: ['error', 'close'],
+      expectedEventTypes: ['error'],
     },
   ])(
     'should decide connections with a $response computed response',
@@ -412,8 +411,7 @@ export function declareDefaultWebSocketConnectionHandlerTests(
         });
 
         const attempt = await openWebSocketUntilSettled(baseURL);
-        expect(attempt.eventTypes).toEqual(['error', 'close']);
-        expect(attempt.closeEvent?.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
+        expect(attempt.eventTypes).toEqual(['error']);
 
         await handler.checkTimes();
       },
