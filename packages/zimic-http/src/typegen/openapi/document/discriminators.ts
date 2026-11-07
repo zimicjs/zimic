@@ -1,4 +1,4 @@
-import { createPointer, resolveReference } from './references';
+import { createPointer, normalizeReference, parseReferencePointer, resolveReference } from './references';
 import { isReference, OpenAPIDiscriminator, OpenAPIDocument, OpenAPISchema } from './types';
 
 export interface DocumentDiscriminators {
@@ -99,18 +99,20 @@ function collectOneOfMappingValues(oneOf: unknown[], discriminator: OpenAPIDiscr
       continue;
     }
 
-    const inferredValue = item.$ref.split('/').pop();
+    const reference = normalizeReference(item.$ref);
+    const inferredValue = parseReferencePointer(reference).at(-1);
 
     if (inferredValue) {
-      valuesByReference.set(item.$ref, { ...valuesByReference.get(item.$ref), inferred: inferredValue });
+      valuesByReference.set(reference, { ...valuesByReference.get(reference), inferred: inferredValue });
     }
   }
 
-  for (const [mappedValue, mappedReference] of Object.entries(discriminator.mapping ?? {})) {
-    if (!mappedReference) {
+  for (const [mappedValue, rawMappedReference] of Object.entries(discriminator.mapping ?? {})) {
+    if (!rawMappedReference) {
       continue;
     }
 
+    const mappedReference = normalizeReference(rawMappedReference);
     const definedValues = valuesByReference.get(mappedReference)?.defined ?? [];
 
     // Defined values replace the inferred one, which may not be an actual discriminator value.
@@ -172,14 +174,14 @@ export function scanDiscriminators(document: OpenAPIDocument): DocumentDiscrimin
 
       for (const item of object.allOf) {
         if (isReference(item)) {
-          const inheritedDiscriminator = discriminators.bySchemaPointer.get(item.$ref);
+          const inheritedDiscriminator = discriminators.bySchemaPointer.get(normalizeReference(item.$ref));
 
           if (!inheritedDiscriminator) {
-            return;
+            continue;
           }
 
           const mappedValues = Object.entries(inheritedDiscriminator.mapping ?? {})
-            .filter(([, mappedReference]) => mappedReference === schemaPointer)
+            .filter(([, mappedReference]) => normalizeReference(mappedReference) === schemaPointer)
             .map(([mappedValue]) => mappedValue);
 
           if (

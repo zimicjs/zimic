@@ -22,6 +22,11 @@ export function parseReferencePointer(reference: string) {
     .filter((segment) => segment.length > 0);
 }
 
+/** Converts a local reference to the pointer created from its segments, so equivalent encodings compare equal. */
+export function normalizeReference(reference: string) {
+  return createPointer(parseReferencePointer(reference));
+}
+
 /** Resolves a local reference, following chained references. */
 export function resolveReference<Value>(
   document: OpenAPIDocument,

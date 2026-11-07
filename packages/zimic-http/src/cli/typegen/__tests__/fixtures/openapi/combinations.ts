@@ -52,6 +52,18 @@ export type MyServiceSchema = HttpSchema<{
       };
     };
   };
+  '/pets': {
+    GET: {
+      response: {
+        200: {
+          headers: {
+            'content-type': 'application/json';
+          };
+          body: MyServiceComponents['schemas']['Cat'] | MyServiceComponents['schemas']['Dog'];
+        };
+      };
+    };
+  };
   '/not-user': {
     GET: {
       response: {
@@ -91,6 +103,19 @@ export interface MyServiceComponents {
     DiscriminatedUserOrFriend: MyServiceComponents['schemas']['User'] | MyServiceComponents['schemas']['Friend'];
     AnyOfUsersOrFriends: MyServiceComponents['schemas']['Users'] | MyServiceComponents['schemas']['Friends'];
     AllOfUsersAndFriends: MyServiceComponents['schemas']['Users'] & MyServiceComponents['schemas']['Friends'];
+    Named: {
+      name: string;
+    };
+    Pet: {
+      petType: string;
+    };
+    Cat: MyServiceComponents['schemas']['Named'] &
+      Omit<MyServiceComponents['schemas']['Pet'], 'petType'> & {
+        petType: 'cat';
+      };
+    Dog: Omit<MyServiceComponents['schemas']['Pet'], 'petType'> & {
+      petType: 'dog';
+    };
     NotUser: any;
   };
 }

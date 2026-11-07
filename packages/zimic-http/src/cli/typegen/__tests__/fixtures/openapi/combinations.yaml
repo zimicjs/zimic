@@ -45,6 +45,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/AllOfUsersAndFriends'
 
+  /pets:
+    get:
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Cat'
+                  - $ref: '#/components/schemas/Dog'
+
   /not-user:
     get:
       responses:
@@ -147,6 +159,36 @@ components:
       allOf:
         - $ref: '#/components/schemas/Users'
         - $ref: '#/components/schemas/Friends'
+
+    Named:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+
+    Pet:
+      type: object
+      required:
+        - petType
+      properties:
+        petType:
+          type: string
+      discriminator:
+        propertyName: petType
+        mapping:
+          cat: '#/components/schemas/Cat'
+          dog: '#/components/schemas/D%6Fg'
+
+    Cat:
+      allOf:
+        - $ref: '#/components/schemas/Named'
+        - $ref: '#/components/schemas/Pet'
+
+    Dog:
+      allOf:
+        - $ref: '#/components/schemas/P%65t'
 
     NotUser:
       not:

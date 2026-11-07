@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define -- Schemas are nested, so their transforms are recursive. */
 import { isDefined } from '@zimic/utils/data';
 
-import { createPointer, parseReferencePointer, resolveReference } from '../document/references';
+import { createPointer, normalizeReference, parseReferencePointer, resolveReference } from '../document/references';
 import {
   isReference,
   OpenAPIDiscriminator,
@@ -64,7 +64,7 @@ function createDiscriminatorMember(discriminator: OpenAPIDiscriminator, segments
 
 function getItemDiscriminator(item: OpenAPISchema, context: TypeTransformContext) {
   if (isReference(item)) {
-    return context.discriminators.bySchemaPointer.get(item.$ref);
+    return context.discriminators.bySchemaPointer.get(normalizeReference(item.$ref));
   }
   return typeof item === 'object' ? item.discriminator : undefined;
 }
@@ -80,7 +80,7 @@ function getRequiredReferencedProperties(reference: string, required: string[], 
   const canRequireProperties =
     typeof resolvedSchema === 'object' &&
     !isReference(resolvedSchema) &&
-    !context.discriminators.patchedSchemaPointers.has(reference);
+    !context.discriminators.patchedSchemaPointers.has(normalizeReference(reference));
 
   if (!canRequireProperties) {
     return [];
