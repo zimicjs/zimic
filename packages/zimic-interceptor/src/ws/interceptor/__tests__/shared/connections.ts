@@ -165,6 +165,26 @@ export function declareConnectionsWebSocketInterceptorTests(
     });
   });
 
+  // Remote interceptors refuse handshakes through a real server, and Node 22 dispatches only `error` for a refused
+  // handshake, without a `close` event to assert.
+  if (type === 'local') {
+    it('should close rejected connections with an abnormal closure code', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+        interceptor.connection().respond({ action: 'reject' });
+
+        const socket = new WebSocket(baseURL);
+
+        const closeEvent = await new Promise<CloseEvent>((resolve) => {
+          socket.addEventListener('close', resolve, { once: true });
+        });
+
+        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
+      });
+    });
+  }
+
   it('should share connections with the same base URL between running interceptors', async () => {
     const baseURL = getBaseURL();
 
