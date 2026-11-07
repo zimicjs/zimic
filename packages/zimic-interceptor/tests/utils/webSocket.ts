@@ -49,18 +49,25 @@ interface RefusedWebSocketBehavior {
   settlingEventTypes: ('open' | 'error' | 'close')[];
 }
 
+const nodeMajorVersion = isServerSide() ? Number(process.versions.node.split('.')[0]) : null;
+
 // Node 22's native WebSocket dispatches only `error` when a server refuses the handshake. Browsers and Node 24+ follow
 // the spec and dispatch `error`, then `close` with an abnormal closure code. Remove this check when Node 22 support ends.
+export const isCloseDispatchedOnRefusedWebSocket = nodeMajorVersion === null || nodeMajorVersion >= 24;
+
 /* istanbul ignore next -- @preserve
  * Ignoring because each test run covers only the behavior of its Node.js version. */
-const refusedWebSocketBehavior: RefusedWebSocketBehavior =
-  isServerSide() && Number(process.versions.node.split('.')[0]) < 24
-    ? { eventTypes: ['error'], closeCode: undefined, settlingEventTypes: ['open', 'error', 'close'] }
-    : {
-        eventTypes: ['error', 'close'],
-        closeCode: WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE,
-        settlingEventTypes: ['open', 'close'],
-      };
+const refusedWebSocketBehavior: RefusedWebSocketBehavior = isCloseDispatchedOnRefusedWebSocket
+  ? {
+      eventTypes: ['error', 'close'],
+      closeCode: WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE,
+      settlingEventTypes: ['open', 'close'],
+    }
+  : {
+      eventTypes: ['error'],
+      closeCode: undefined,
+      settlingEventTypes: ['open', 'error', 'close'],
+    };
 
 export const REFUSED_WEB_SOCKET_EVENT_TYPES = refusedWebSocketBehavior.eventTypes;
 export const REFUSED_WEB_SOCKET_CLOSE_CODE = refusedWebSocketBehavior.closeCode;

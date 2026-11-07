@@ -33,7 +33,7 @@ import {
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 import {
   collectWebSocketClientMessages,
-  REFUSED_WEB_SOCKET_CLOSE_CODE,
+  isCloseDispatchedOnRefusedWebSocket,
   waitForWebSocketClientClose,
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
@@ -1162,9 +1162,9 @@ describe('Interceptor server', () => {
           await openRejectionExpectation;
 
           // Node 22 dispatches no close event for a refused handshake.
-          if (REFUSED_WEB_SOCKET_CLOSE_CODE !== undefined) {
+          if (isCloseDispatchedOnRefusedWebSocket) {
             const closeEvent = await closeEventPromise;
-            expect(closeEvent.code).toBe(REFUSED_WEB_SOCKET_CLOSE_CODE);
+            expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
           }
 
           expect(client.readyState).toBe(WebSocketClient.CLOSED);

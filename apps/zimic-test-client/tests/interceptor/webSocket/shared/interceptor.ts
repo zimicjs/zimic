@@ -110,19 +110,26 @@ export function declareWebSocketInterceptorTests({
   openSocket,
   createSocket,
 }: ClientTestOptionsByWorkerType) {
+  const nodeMajorVersion = platform === 'node' ? Number(process.versions.node.split('.')[0]) : null;
+
   // Node 22's native WebSocket dispatches only `error` when a server refuses the handshake. Browsers and Node 24+
   // follow the spec and dispatch `error`, then `close` with an abnormal closure code. Remove this check when Node 22
   // support ends.
+  const isCloseDispatchedOnRefusedSocket = nodeMajorVersion === null || nodeMajorVersion >= 24;
+
   /* istanbul ignore next -- @preserve
    * Ignoring because each test run covers only the behavior of its Node.js version. */
-  const refusedSocketBehavior =
-    platform === 'node' && Number(process.versions.node.split('.')[0]) < 24
-      ? { eventTypes: ['error'], closeCodes: [], settlingEventTypes: ['open', 'error', 'close'] as const }
-      : {
-          eventTypes: ['error', 'close'],
-          closeCodes: [WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE],
-          settlingEventTypes: ['open', 'close'] as const,
-        };
+  const refusedSocketBehavior = isCloseDispatchedOnRefusedSocket
+    ? {
+        eventTypes: ['error', 'close'],
+        closeCodes: [WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE],
+        settlingEventTypes: ['open', 'close'] as const,
+      }
+    : {
+        eventTypes: ['error'],
+        closeCodes: [],
+        settlingEventTypes: ['open', 'error', 'close'] as const,
+      };
 
   // A refused connection fails without opening, as when a server answers its handshake with an error.
   async function expectSocketToBeRefused(url: string, protocols?: string | string[]) {
