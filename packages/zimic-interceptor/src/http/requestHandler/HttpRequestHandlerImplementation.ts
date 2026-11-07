@@ -45,7 +45,7 @@ const DEFAULT_NUMBER_OF_REQUEST_LIMITS: Range<number> = Object.freeze({
 
 export type HttpRequestHandlerRequestMatch =
   | { success: true }
-  | { success: false; cause: 'missingResponseDeclaration' | 'exceededNumberOfRequests' }
+  | { success: false; cause: 'clearedHandler' | 'missingResponseDeclaration' | 'exceededNumberOfRequests' }
   | { success: false; cause: 'unmatchedRestrictions'; diff: RestrictionDiffs };
 
 class HttpRequestHandlerImplementation<
@@ -199,7 +199,15 @@ class HttpRequestHandlerImplementation<
   async matchesRequest(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
   ): Promise<HttpRequestHandlerRequestMatch> {
+    const clearGeneration = this.#clearGeneration;
+
     const restrictionsMatch = await this.matchesRestrictions(request);
+
+    // Checked after the restrictions because the handler may be cleared while they are matched asynchronously, even if
+    // it is redeclared afterward.
+    if (clearGeneration !== this.#clearGeneration) {
+      return { success: false, cause: 'clearedHandler' };
+    }
 
     if (!restrictionsMatch.success) {
       return { success: false, cause: 'unmatchedRestrictions', diff: restrictionsMatch.diff };

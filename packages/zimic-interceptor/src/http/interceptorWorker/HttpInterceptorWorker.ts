@@ -289,9 +289,10 @@ abstract class HttpInterceptorWorker {
     return handler.pathRegex.test(requestPath);
   }
 
-  // Handlers that failed only on restrictions record their diffs. The newest handler that failed for any other cause,
-  // such as exceeding its `times` limit, is still marked as matched to trigger a times check error. Handlers cleared
-  // after their match record nothing.
+  // Handlers that failed only on restrictions record their diffs. The newest handler that failed for any other cause
+  // keeps older handlers from being counted. If it exceeded its `times` limit or has no response declaration, it is
+  // still marked as matched to trigger a times check error. A handler cleared while matching the request is not
+  // counted, because the request started before the clear. Handlers cleared after their match record nothing.
   private markRequestAsUnhandled(method: HttpMethod, failedRequestMatches: FailedHttpRequestMatch[]) {
     for (const { handler, request, requestMatch } of failedRequestMatches) {
       if (!this.isHandlerRegistered(method, handler)) {
@@ -300,10 +301,14 @@ abstract class HttpInterceptorWorker {
 
       if (requestMatch.cause === 'unmatchedRestrictions') {
         handler.implementation.markRequestAsUnmatched(request, { diff: requestMatch.diff });
-      } else {
-        handler.implementation.markRequestAsMatched();
-        break;
+        continue;
       }
+
+      if (requestMatch.cause !== 'clearedHandler') {
+        handler.implementation.markRequestAsMatched();
+      }
+
+      break;
     }
   }
 

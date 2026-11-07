@@ -179,10 +179,13 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
   async matchesConnection(
     request: WebSocketInterceptorConnectionRequest<Path>,
   ): Promise<WebSocketConnectionHandlerConnectionMatch> {
+    const clearGeneration = this.clearGeneration;
+
     const restrictionsMatch = await this.matchesRestrictions(request);
 
-    // Checked after the restrictions because the handler may be cleared while they are matched asynchronously.
-    if (this.isCleared) {
+    // Checked after the restrictions because the handler may be cleared while they are matched asynchronously, even if
+    // it is redeclared afterward.
+    if (this.isCleared || clearGeneration !== this.clearGeneration) {
       return { success: false, cause: 'clearedHandler' };
     }
 

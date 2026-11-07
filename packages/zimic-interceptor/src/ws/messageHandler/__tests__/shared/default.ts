@@ -110,7 +110,16 @@ export function declareDefaultWebSocketMessageHandlerTests(
     );
   });
 
-  it('should not match messages if cleared while they are being matched', async () => {
+  it.each<{
+    condition: string;
+    declareAfterClear: (handler: WebSocketMessageHandler<Schema>) => unknown;
+  }>([
+    { condition: 'cleared', declareAfterClear: (handler) => handler },
+    {
+      condition: 'cleared and redeclared',
+      declareAfterClear: (handler) => handler.respond({ type: 'delete', id: 'redeclared' }),
+    },
+  ])('should not match messages if $condition while they are being matched', async ({ declareAfterClear }) => {
     const restrictionStartedPromise = createPromiseWithResolvers<void>();
     const restrictionReleasedPromise = createPromiseWithResolvers<void>();
 
@@ -133,11 +142,14 @@ export function declareDefaultWebSocketMessageHandlerTests(
           client.send(JSON.stringify({ type: 'create', body: { text: 'pending' } }));
           await restrictionStartedPromise;
 
-          await handler.clear();
+          await declareAfterClear(handler.clear());
           restrictionReleasedPromise.resolve();
 
           await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'older' }));
           expect(handler.messages).toHaveLength(0);
+
+          await handler.times(0);
+          await handler.checkTimes();
         });
       },
     );

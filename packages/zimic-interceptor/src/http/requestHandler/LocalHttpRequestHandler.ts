@@ -82,7 +82,7 @@ class LocalHttpRequestHandler<
       this.implementation.markRequestAsMatched();
     } else if (requestMatch.cause === 'unmatchedRestrictions') {
       this.implementation.markRequestAsUnmatched(request, { diff: requestMatch.diff });
-    } else {
+    } else if (requestMatch.cause !== 'clearedHandler') {
       this.implementation.markRequestAsMatched();
     }
 

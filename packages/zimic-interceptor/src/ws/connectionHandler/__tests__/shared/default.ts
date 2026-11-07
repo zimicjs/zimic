@@ -124,7 +124,13 @@ export function declareDefaultWebSocketConnectionHandlerTests(
     );
   });
 
-  it('should not match connections if cleared while they are being matched', async () => {
+  it.each<{
+    condition: string;
+    declareAfterClear: (handler: WebSocketConnectionHandler<Schema>) => unknown;
+  }>([
+    { condition: 'cleared', declareAfterClear: (handler) => handler },
+    { condition: 'cleared and redeclared', declareAfterClear: (handler) => handler.respond({ action: 'accept' }) },
+  ])('should not match connections if $condition while they are being matched', async ({ declareAfterClear }) => {
     const restrictionStartedPromise = createPromiseWithResolvers<void>();
     const restrictionReleasedPromise = createPromiseWithResolvers<void>();
 
@@ -142,12 +148,15 @@ export function declareDefaultWebSocketConnectionHandlerTests(
         const attemptPromise = openWebSocketUntilSettled(baseURL);
         await restrictionStartedPromise;
 
-        await handler.clear();
+        await declareAfterClear(handler.clear());
         restrictionReleasedPromise.resolve();
 
         const attempt = await attemptPromise;
         expect(attempt.eventTypes).toEqual(['error']);
         expect(handler.connections).toHaveLength(0);
+
+        await handler.times(0);
+        await handler.checkTimes();
       },
     );
   });

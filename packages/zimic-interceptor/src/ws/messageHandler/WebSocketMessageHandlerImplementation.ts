@@ -211,10 +211,13 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     message: ReceivedWebSocketMessageData<Schema>,
     context: WebSocketMessageHandlerApplyContext<Schema>,
   ): Promise<WebSocketMessageHandlerMessageMatch> {
+    const clearGeneration = this.clearGeneration;
+
     const restrictionsMatch = await this.matchesRestrictions(message, context);
 
-    // Checked after the restrictions because the handler may be cleared while they are matched asynchronously.
-    if (this.isCleared) {
+    // Checked after the restrictions because the handler may be cleared while they are matched asynchronously, even if
+    // it is redeclared afterward.
+    if (this.isCleared || clearGeneration !== this.clearGeneration) {
       return { success: false, cause: 'clearedHandler' };
     }
 

@@ -143,30 +143,53 @@ export function declareDefaultHttpRequestHandlerTests(
     expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
   });
 
-  it('should not match requests if cleared while they are being matched', async () => {
+  it.each([
+    { condition: 'cleared', declareAfterClear: () => undefined },
+    {
+      condition: 'cleared and redeclared',
+      declareAfterClear: (handler: { respond: (declaration: { status: 200; body: { success: true } }) => unknown }) =>
+        handler.respond({ status: 200, body: { success: true } }),
+    },
+  ])('should not match requests if $condition while they are being matched', async ({ declareAfterClear }) => {
     const restrictionStartedPromise = createPromiseWithResolvers<void>();
     const restrictionReleasedPromise = createPromiseWithResolvers<void>();
 
-    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
-      .with(async () => {
-        restrictionStartedPromise.resolve();
-        await restrictionReleasedPromise;
-        return true;
-      })
-      .respond({ status: 200, body: { success: true } });
+    const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
 
-    const request = new Request(baseURL);
-    const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-    const matchPromise = handler.matchesRequest(parsedRequest);
+    await usingHttpInterceptor<Schema>(
+      { type, baseURL, requestSaving: { enabled: true }, onUnhandledRequest },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor
+            .post('/users')
+            .with(async () => {
+              restrictionStartedPromise.resolve();
+              await restrictionReleasedPromise;
+              return true;
+            })
+            .respond({ status: 200, body: { success: true } }),
+          interceptor,
+        );
 
-    await restrictionStartedPromise;
-    await promiseIfRemote(handler.clear(), interceptor);
-    restrictionReleasedPromise.resolve();
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'POST' });
+        await restrictionStartedPromise;
 
-    expect(await matchPromise).toEqual<HttpRequestHandlerRequestMatch>({
-      success: false,
-      cause: 'missingResponseDeclaration',
-    });
+        await promiseIfRemote(handler.clear(), interceptor);
+        await declareAfterClear(handler);
+        restrictionReleasedPromise.resolve();
+
+        await expectFetchError(responsePromise);
+
+        expect(handler.requests).toHaveLength(0);
+        expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+
+        handler.times(0);
+        await promiseIfRemote(handler.checkTimes(), handler);
+      },
+    );
   });
 
   // No HTTP counterpart for "should match messages again if cleared and declared with $declaration": a request needs a
