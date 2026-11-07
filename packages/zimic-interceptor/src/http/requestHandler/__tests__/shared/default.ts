@@ -229,6 +229,9 @@ export function declareDefaultHttpRequestHandlerTests(
     await expect(responseDeclarationPromise).resolves.toBe(undefined);
   });
 
+  // No HTTP counterpart for "should not respond to messages if $condition while running their effect": HTTP handlers
+  // declare no effects, because a request has no open socket for an effect to act on.
+
   it('should keep track of the intercepted requests and responses', async () => {
     const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users').respond({
       status: 200,

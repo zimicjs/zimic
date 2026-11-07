@@ -712,8 +712,47 @@ export function declareTimesHttpRequestHandlerTests(
         });
       });
 
-      // No HTTP counterpart for "should consider messages unmatched due to exact JSON data messages in times check
-      // errors": an HTTP static restriction declares `exact` as one of its fields, not as an option next to the data.
+      it('should consider requests unmatched due to exact JSON body requests in times check errors', async () => {
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
+          .with({ body: { name: '1' }, exact: true })
+          .respond({ status: 200, body: { success: true } })
+          .times(1);
+
+        const request = new Request(joinURL(baseURL, '/users'), {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ name: '1', value: [1] }),
+        });
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            body: {
+              expected: { name: '1' },
+              received: { name: '1', value: [1] },
+            },
+          },
+        });
+
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+          message: [
+            'Expected exactly 1 matching request, but got 0.',
+            '',
+            'Requests evaluated by this handler:',
+            '',
+            `  ${color.green('- Expected')}`,
+            `  ${color.red('+ Received')}`,
+            '',
+            `1: POST ${joinURL(baseURL, '/users')}`,
+            '     Body:',
+            `       ${color.green('- { "name": "1" }')}`,
+            `       ${color.red('+ { "name": "1", "value": [ "1" ] }')}`,
+          ].join('\n'),
+          expectedNumberOfRequests: 1,
+        });
+      });
 
       // No HTTP counterpart for "should consider messages unmatched due to array buffer data messages in times check
       // errors": binary HTTP bodies arrive as `Blob`, while WebSocket binary frames arrive as `ArrayBuffer`.

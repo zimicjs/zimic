@@ -168,6 +168,12 @@ export function declareRestrictionWebSocketConnectionHandlerTests(
 
   // No WebSocket counterpart for "By body": a handshake has no body.
 
+  // No WebSocket connection counterpart for "should match only specific messages if contains a static text restriction
+  // and exact $exact": a handshake carries no message data.
+
+  // No WebSocket connection counterpart for "should not match JSON messages if contains a static text restriction and
+  // exact $exact": a handshake carries no message data.
+
   describe('By protocols', () => {
     it.each([{ exact: true }])(
       'should match only specific connections if contains a declared response, a static protocol restriction, and exact $exact',

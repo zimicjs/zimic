@@ -294,6 +294,10 @@ export function declareDefaultWebSocketConnectionHandlerTests(
     );
   });
 
+  // No WebSocket connection counterpart for "should not respond to messages if $condition while running their effect":
+  // a connection effect runs after the handshake is accepted, so clearing the handler during it cannot change the
+  // handshake.
+
   it.each([
     { response: 'accepted', declare: (handler: WebSocketConnectionHandler<Schema>) => handler.effect(vi.fn()) },
     {

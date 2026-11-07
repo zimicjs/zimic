@@ -457,6 +457,111 @@ export function declareRestrictionHttpRequestHandlerTests(
       },
     );
 
+    it.each([{ exact: true }])(
+      'should match only specific requests if contains a static text restriction and exact $exact',
+      async ({ exact }) => {
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
+          .with({ body: 'content', exact })
+          .respond({ status: 200, body: { success: true } });
+
+        const matchingRequest = new Request(baseURL, {
+          method: 'POST',
+          headers: { 'content-type': 'text/plain' },
+          body: 'content',
+        });
+        const parsedMatchingRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(
+          matchingRequest,
+        );
+
+        expect(await handler.matchesRequest(parsedMatchingRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: true,
+        });
+
+        for (const mismatchingBody of ['more-content', '"content"', 'cont']) {
+          const request = new Request(baseURL, {
+            method: 'POST',
+            headers: { 'content-type': 'text/plain' },
+            body: mismatchingBody,
+          });
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+
+          expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+            success: false,
+            cause: 'unmatchedRestrictions',
+            diff: {
+              body: { expected: 'content', received: mismatchingBody },
+            },
+          });
+        }
+      },
+    );
+
+    it.each([{ exact: false }, { exact: undefined }])(
+      'should match only specific requests if contains a static text restriction and exact $exact',
+      async ({ exact }) => {
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
+          .with({ body: 'content', exact })
+          .respond({ status: 200, body: { success: true } });
+
+        for (const matchingBody of ['content', 'more-content', '"content"']) {
+          const request = new Request(baseURL, {
+            method: 'POST',
+            headers: { 'content-type': 'text/plain' },
+            body: matchingBody,
+          });
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+
+          expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+            success: true,
+          });
+        }
+
+        const mismatchingBody = 'cont';
+
+        const request = new Request(baseURL, {
+          method: 'POST',
+          headers: { 'content-type': 'text/plain' },
+          body: mismatchingBody,
+        });
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            body: { expected: 'content', received: mismatchingBody },
+          },
+        });
+      },
+    );
+
+    it.each([{ exact: true }, { exact: false }])(
+      'should not match JSON requests if contains a static text restriction and exact $exact',
+      async ({ exact }) => {
+        const jsonBody = { name: 'content' };
+        const jsonBodyAsText = JSON.stringify(jsonBody);
+
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
+          .with({ body: jsonBodyAsText, exact })
+          .respond({ status: 200, body: { success: true } });
+
+        const request = new Request(baseURL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: jsonBodyAsText,
+        });
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            body: { expected: jsonBodyAsText, received: jsonBody },
+          },
+        });
+      },
+    );
+
     it('should match only specific requests if contains a declared response and a computed body restriction', async () => {
       const name = 'User';
 
