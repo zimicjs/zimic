@@ -406,29 +406,11 @@ class WebSocketInterceptorServerRuntime {
     this.assertWebSocketWorkerSocket(workerSocket);
 
     const message = parseInterceptorServerRPCData(webSocketMessageSendSchema, rawMessage.data);
-
-    // A worker can send only to its own connections.
-    function isTargetConnection(userConnection: UserWebSocketConnection) {
-      return userConnection.workerSocket === workerSocket && userConnection.clientId === message.clientId;
-    }
-
     const runtimeMessageData = deserializeWebSocketMessageDataFromTransport(message.data);
 
-    for (const [socket, userConnection] of this.activeUserWebSocketConnections) {
-      if (isTargetConnection(userConnection)) {
-        socket.send(runtimeMessageData);
-        return;
-      }
-    }
-
-    for (const userConnection of this.pendingUserWebSocketConnections.values()) {
-      if (isTargetConnection(userConnection)) {
-        userConnection.queuedDeliveries.push((socket) => {
-          socket.send(runtimeMessageData);
-        });
-        return;
-      }
-    }
+    this.deliverToUserWebSocketConnection(workerSocket, message.clientId, (socket) => {
+      socket.send(runtimeMessageData);
+    });
   };
 
   private disconnectClient = (
@@ -439,28 +421,32 @@ class WebSocketInterceptorServerRuntime {
 
     const disconnection = parseInterceptorServerRPCData(webSocketClientDisconnectionSchema, rawMessage.data);
 
-    // A worker can close only its own connections.
+    this.deliverToUserWebSocketConnection(workerSocket, disconnection.clientId, (socket) => {
+      socket.close(disconnection.code, disconnection.reason);
+    });
+  };
+
+  private deliverToUserWebSocketConnection(workerSocket: Socket, clientId: string, deliver: (socket: Socket) => void) {
+    // A worker can reach only its own connections.
     function isTargetConnection(userConnection: UserWebSocketConnection) {
-      return userConnection.workerSocket === workerSocket && userConnection.clientId === disconnection.clientId;
+      return userConnection.workerSocket === workerSocket && userConnection.clientId === clientId;
     }
 
-    for (const [userSocket, userConnection] of this.activeUserWebSocketConnections) {
+    for (const [socket, userConnection] of this.activeUserWebSocketConnections) {
       if (isTargetConnection(userConnection)) {
-        userSocket.close(disconnection.code, disconnection.reason);
+        deliver(socket);
         return;
       }
     }
 
-    // A connection effect may close a connection still being set up, after its earlier messages.
+    // A connection effect may send to or close a connection still being set up, after its earlier deliveries.
     for (const userConnection of this.pendingUserWebSocketConnections.values()) {
       if (isTargetConnection(userConnection)) {
-        userConnection.queuedDeliveries.push((socket) => {
-          socket.close(disconnection.code, disconnection.reason);
-        });
+        userConnection.queuedDeliveries.push(deliver);
         return;
       }
     }
-  };
+  }
 
   private findConnectionTargetByRequest(request: IncomingMessage) {
     const requestURL = excludeNonPathParams(this.getWebSocketRequestURL(request));
