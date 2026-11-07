@@ -45,12 +45,12 @@ class WebSocketInterceptorClientImplementation<
   #sendMessage: (data: WebSocketMessageData<Schema>) => void;
   #closeConnection: WebSocketInterceptorClientCloser;
 
-  readonly searchParams: HttpSearchParams;
-  readonly messages: InterceptedWebSocketInterceptorMessage<Schema>[] = [];
+  searchParams: HttpSearchParams;
+  messages: InterceptedWebSocketInterceptorMessage<Schema>[] = [];
 
   constructor(
-    readonly url: string,
-    readonly protocols: readonly string[],
+    public url: string,
+    public protocols: readonly string[],
     sendMessage: (data: WebSocketMessageData<Schema>) => void,
     closeConnection: WebSocketInterceptorClientCloser,
   ) {
