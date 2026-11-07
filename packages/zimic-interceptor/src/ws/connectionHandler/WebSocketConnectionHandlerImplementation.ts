@@ -68,7 +68,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 
   constructor(
     private interceptor: WebSocketInterceptorImplementation<Schema>,
-    readonly path: string | undefined,
+    readonly path: Path | undefined,
     private handler: InternalWebSocketConnectionHandler<Schema, Path>,
   ) {}
 

@@ -143,6 +143,19 @@ describe('WebSocketConnectionHandler > Types', () => {
     expectTypeOf(declareHandlers).toBeFunction();
   });
 
+  it('should type the declared path', () => {
+    function declareHandlers(
+      localInterceptor: LocalWebSocketInterceptor<Schema>,
+      remoteInterceptor: RemoteWebSocketInterceptor<Schema>,
+    ) {
+      expectTypeOf(localInterceptor.connection('/rooms/:roomId').path).toEqualTypeOf<'/rooms/:roomId' | undefined>();
+      expectTypeOf(remoteInterceptor.connection('/rooms/:roomId').path).toEqualTypeOf<'/rooms/:roomId' | undefined>();
+      expectTypeOf(localInterceptor.connection().path).toEqualTypeOf<string | undefined>();
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
   it('should accept static restrictions with search params, protocols, and exact', () => {
     function declareStaticRestrictions(handler: LocalWebSocketConnectionHandler<Schema>) {
       handler.with({ searchParams: { room: '1', tag: ['a', 'b'] } });

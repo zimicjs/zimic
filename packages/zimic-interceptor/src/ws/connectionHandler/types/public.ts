@@ -74,7 +74,7 @@ export interface LocalWebSocketConnectionHandler<Schema extends WebSocketSchema,
    *
    * @readonly
    */
-  get path(): string | undefined;
+  get path(): Path | undefined;
 
   /**
    * Declares a restriction to intercepted connection matches. If multiple restrictions are declared, all of them must
@@ -138,7 +138,7 @@ export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocket
    *
    * @readonly
    */
-  get path(): string | undefined;
+  get path(): Path | undefined;
 
   /**
    * Declares a restriction to intercepted connection matches. If multiple restrictions are declared, all of them must
