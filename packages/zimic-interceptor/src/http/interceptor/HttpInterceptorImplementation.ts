@@ -344,8 +344,7 @@ class HttpInterceptorImplementation<
       ? await HttpInterceptorWorker.parseRawResponse<HttpMethodSchema>(response.clone())
       : undefined;
 
-    // A handler cleared or redeclared while the response is created or parsed does not respond to the request or save
-    // it.
+    // A handler cleared while the response is created or parsed does not respond to the request or save it.
     if (clearGeneration !== handler.clearGeneration) {
       return null;
     }

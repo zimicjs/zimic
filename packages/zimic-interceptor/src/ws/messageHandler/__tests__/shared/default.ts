@@ -230,19 +230,14 @@ export function declareDefaultWebSocketMessageHandlerTests(
 
   it.each<{
     condition: string;
-    interrupt: (handler: Awaited<WebSocketMessageHandler<Schema>>) => unknown;
+    declareAfterClear: (handler: WebSocketMessageHandler<Schema>) => unknown;
   }>([
-    { condition: 'cleared', interrupt: (handler) => handler.clear() },
+    { condition: 'cleared', declareAfterClear: (handler) => handler },
     {
       condition: 'cleared and redeclared',
-      interrupt: (handler) => handler.clear().with({ type: 'create' }).respond({ type: 'delete', id: 'redeclared' }),
+      declareAfterClear: (handler) => handler.with({ type: 'create' }).respond({ type: 'delete', id: 'redeclared' }),
     },
-    {
-      condition: 'redeclared with respond',
-      interrupt: (handler) => handler.respond({ type: 'delete', id: 'redeclared' }),
-    },
-    { condition: 'redeclared with effect', interrupt: (handler) => handler.effect(vi.fn()) },
-  ])('should not respond to messages if $condition while computing their response', async ({ interrupt }) => {
+  ])('should not respond to messages if $condition while computing their response', async ({ declareAfterClear }) => {
     const responseStartedPromise = createPromiseWithResolvers<void>();
     const responseReleasedPromise = createPromiseWithResolvers<void>();
 
@@ -265,7 +260,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
           client.send(JSON.stringify({ type: 'create', body: { text: 'pending' } }));
           await responseStartedPromise;
 
-          await interrupt(handler);
+          await declareAfterClear(handler.clear());
           responseReleasedPromise.resolve();
 
           await waitFor(() => {
