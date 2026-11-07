@@ -22,10 +22,7 @@ export function parseReferencePointer(reference: string) {
     .filter((segment) => segment.length > 0);
 }
 
-/**
- * Resolves a local reference, following chained references. The document is trusted to follow the OpenAPI
- * specification, so a reference resolves to the kind of object its location expects.
- */
+/** Resolves a local reference, following chained references. */
 export function resolveReference<Value>(
   document: OpenAPIDocument,
   reference: string,

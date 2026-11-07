@@ -16,9 +16,8 @@ function walkObjects(value: unknown, visit: (object: WalkedObject, segments: str
   }
 
   if (Array.isArray(value)) {
-    // Visiting can append items, so the length is read on each iteration.
-    for (let index = 0; index < value.length; index++) {
-      walkObjects(value[index], visit, [...segments, String(index)]);
+    for (const [index, item] of value.entries()) {
+      walkObjects(item, visit, [...segments, String(index)]);
     }
     return;
   }

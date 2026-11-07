@@ -37,7 +37,6 @@ import { createReferenceType } from './references';
 
 const PRIMITIVE_SCHEMA_TYPES = new Set(['boolean', 'string', 'number', 'integer', 'null']);
 
-/** Binary schemas are represented as `Blob`, which is how binary request and response bodies are handled. */
 export function createBinaryType(schema: OpenAPISchemaObject) {
   const blobType = referenceType('Blob');
   return schema.nullable ? nullableType(blobType) : blobType;
