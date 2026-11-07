@@ -48,6 +48,7 @@ const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => {
     name: `node-${format}`,
     platform: 'node',
     format: [format],
+    // The typegen loader uses `__dirname` for the Redocly config path, which the ESM output does not define.
     shims: true,
     dts: format === 'cjs' ? { entry: dtsEntry, resolve: true } : false,
     entry,
