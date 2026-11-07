@@ -360,8 +360,10 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     this.pendingConnections.delete(pendingConnection);
 
-    // Closed by the client, or by its last holder letting it go.
-    if (connection.socket.readyState !== connection.socket.CONNECTING) {
+    // The client closed while the connection was decided, or its last holder let it go.
+    const wasClosedWhileDeciding = connection.socket.readyState !== connection.socket.CONNECTING;
+
+    if (wasClosedWhileDeciding) {
       return;
     }
 

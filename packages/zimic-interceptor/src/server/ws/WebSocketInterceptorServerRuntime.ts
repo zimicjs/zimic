@@ -299,7 +299,8 @@ class WebSocketInterceptorServerRuntime {
       connection.closure ??= CONNECTION_SETUP_FAILURE_CLOSURE;
     }
 
-    return this.pendingUserWebSocketConnections.get(request) === connection;
+    const isClientStillWaiting = this.pendingUserWebSocketConnections.get(request) === connection;
+    return isClientStillWaiting;
   };
 
   handleConnection = (socket: Socket, request: IncomingMessage) => {
