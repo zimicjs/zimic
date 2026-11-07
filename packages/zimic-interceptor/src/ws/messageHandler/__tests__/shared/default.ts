@@ -326,6 +326,38 @@ export function declareDefaultWebSocketMessageHandlerTests(
     );
   });
 
+  it('should not compute responses redeclared while running the effect of a message', async () => {
+    const effectStartedPromise = createPromiseWithResolvers<void>();
+    const effectReleasedPromise = createPromiseWithResolvers<void>();
+
+    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+    const redeclaredResponse = vi.fn(() => ({ type: 'delete' as const, id: 'redeclared' }));
+
+    await usingWebSocketInterceptor<Schema>({ type, baseURL, onUnhandledMessage }, async (interceptor) => {
+      const handler = await interceptor
+        .message()
+        .effect(async () => {
+          effectStartedPromise.resolve();
+          await effectReleasedPromise;
+        })
+        .respond({ type: 'delete', id: '1' });
+
+      await usingWebSocketClient<Schema>(baseURL, async (client) => {
+        client.send(JSON.stringify({ type: 'create', body: { text: 'pending' } }));
+        await effectStartedPromise;
+
+        await handler.clear().respond(redeclaredResponse);
+        effectReleasedPromise.resolve();
+
+        await waitFor(() => {
+          expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+        });
+
+        expect(redeclaredResponse).not.toHaveBeenCalled();
+      });
+    });
+  });
+
   it('should keep track of the intercepted messages', async () => {
     await usingWebSocketInterceptor<Schema>(
       { type, baseURL, messageSaving: { enabled: true } },
