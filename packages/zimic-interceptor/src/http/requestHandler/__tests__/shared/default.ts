@@ -198,14 +198,21 @@ export function declareDefaultHttpRequestHandlerTests(
   // No HTTP counterpart for "should match connections again if cleared and declared with $declaration": a request needs
   // a response, so only `respond` makes a cleared HTTP handler match again, as covered above.
 
-  it.each([
-    { condition: 'cleared', declareAfterClear: () => undefined },
+  interface RedeclarableHandler {
+    respond: (declaration: { status: 200; body: { success: true } }) => unknown;
+  }
+
+  it.each<{
+    condition: string;
+    interrupt: (handler: RedeclarableHandler & { clear: () => RedeclarableHandler }) => unknown;
+  }>([
+    { condition: 'cleared', interrupt: (handler) => handler.clear() },
     {
       condition: 'cleared and redeclared',
-      declareAfterClear: (handler: { respond: (declaration: { status: 200; body: { success: true } }) => unknown }) =>
-        handler.respond({ status: 200, body: { success: true } }),
+      interrupt: (handler) => handler.clear().respond({ status: 200, body: { success: true } }),
     },
-  ])('should not respond to requests if $condition while computing their response', async ({ declareAfterClear }) => {
+    { condition: 'redeclared', interrupt: (handler) => handler.respond({ status: 200, body: { success: true } }) },
+  ])('should not respond to requests if $condition while computing their response', async ({ interrupt }) => {
     const responseStartedPromise = createPromiseWithResolvers<void>();
     const responseReleasedPromise = createPromiseWithResolvers<void>();
 
@@ -222,8 +229,7 @@ export function declareDefaultHttpRequestHandlerTests(
     const responseDeclarationPromise = handler.applyResponseDeclaration(parsedRequest);
 
     await responseStartedPromise;
-    await promiseIfRemote(handler.clear(), interceptor);
-    await declareAfterClear(handler);
+    await interrupt(handler);
     responseReleasedPromise.resolve();
 
     expect(await responseDeclarationPromise).toBe(undefined);

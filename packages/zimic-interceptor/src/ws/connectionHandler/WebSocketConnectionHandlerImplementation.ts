@@ -60,6 +60,8 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 
   private applyEffect?: WebSocketConnectionHandlerConnectionCallback<Schema, Path>;
 
+  // Replaced when the handler is cleared or its response or effect is redeclared, so connections being handled at that
+  // point are not handled.
   private clearGeneration = {};
 
   // Handlers match connections without a declared response, so a cleared handler would keep shadowing older handlers.
@@ -101,6 +103,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 
   effect(callback: WebSocketConnectionHandlerConnectionCallback<Schema, Path>) {
     this.applyEffect = callback;
+    this.clearGeneration = {};
     this.isCleared = false;
     this.resetMatchedConnections();
     this.interceptor.registerConnectionHandler(this.handler);
@@ -109,6 +112,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 
   respond(declaration: WebSocketConnectionHandlerResponseDeclaration<Path>) {
     this.createResponseDeclaration = this.isResponseDeclarationFactory(declaration) ? declaration : () => declaration;
+    this.clearGeneration = {};
     this.isCleared = false;
     this.resetMatchedConnections();
     this.interceptor.registerConnectionHandler(this.handler);
@@ -183,8 +187,8 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 
     const restrictionsMatch = await this.matchesRestrictions(request);
 
-    // Checked after the restrictions because the handler may be cleared while they are matched asynchronously, even if
-    // it is redeclared afterward.
+    // Checked after the restrictions because the handler may be cleared or redeclared while they are matched
+    // asynchronously.
     if (this.isCleared || clearGeneration !== this.clearGeneration) {
       return { success: false, cause: 'clearedHandler' };
     }
@@ -324,15 +328,15 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
       }
     }
 
-    // A connection whose handler was cleared during its delay is not handled, even if the handler was redeclared.
+    // A connection whose handler was cleared or redeclared during its delay is not handled.
     if (clearGeneration !== this.clearGeneration) {
       return null;
     }
 
     const responseDeclaration = await this.createResponseDeclaration?.(request);
 
-    // A connection whose handler was cleared while computing its response is not handled either, so a response that
-    // outlives the clear does not save into the cleared handler.
+    // A connection whose handler was cleared or redeclared while computing its response is not handled either, so a
+    // response that outlives the clear or the redeclaration does not save into the handler.
     if (clearGeneration !== this.clearGeneration) {
       return null;
     }

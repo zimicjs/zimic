@@ -75,6 +75,8 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
   private applyEffect?: WebSocketMessageHandlerMessageCallback<Schema, RestrictedSchema>;
 
+  // Replaced when the handler is cleared or its response or effect is redeclared, so messages being handled at that point
+  // are not handled.
   private clearGeneration = {};
 
   // Handlers match messages without a declared response, so a cleared handler would keep shadowing older handlers. As
@@ -129,6 +131,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
   effect(callback: WebSocketMessageHandlerMessageCallback<Schema, RestrictedSchema>) {
     this.applyEffect = callback;
+    this.clearGeneration = {};
     this.isCleared = false;
     this.resetMatchedMessages();
     this.interceptor.registerMessageHandler(this.handler);
@@ -137,6 +140,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
   respond(declaration: WebSocketMessageHandlerMessageDeclaration<Schema, RestrictedSchema>) {
     this.createResponseDeclaration = this.isResponseDeclarationFactory(declaration) ? declaration : () => declaration;
+    this.clearGeneration = {};
     this.isCleared = false;
     this.resetMatchedMessages();
     this.interceptor.registerMessageHandler(this.handler);
@@ -215,8 +219,8 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
     const restrictionsMatch = await this.matchesRestrictions(message, context);
 
-    // Checked after the restrictions because the handler may be cleared while they are matched asynchronously, even if
-    // it is redeclared afterward.
+    // Checked after the restrictions because the handler may be cleared or redeclared while they are matched
+    // asynchronously.
     if (this.isCleared || clearGeneration !== this.clearGeneration) {
       return { success: false, cause: 'clearedHandler' };
     }
@@ -363,21 +367,21 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
       }
     }
 
-    // A message whose handler was cleared during its delay is not handled, even if the handler was redeclared.
+    // A message whose handler was cleared or redeclared during its delay is not handled.
     if (clearGeneration !== this.clearGeneration) {
       return false;
     }
 
     await this.applyEffect?.(restrictedMessage, context);
 
-    // A response redeclared while the effect ran must not be computed for a message received before the clear.
+    // A response redeclared while the effect ran must not be computed for a message received before it.
     if (clearGeneration !== this.clearGeneration) {
       return false;
     }
 
     const response = await this.createResponseDeclaration?.(restrictedMessage, context);
 
-    // A response that outlives a clear is not sent or saved into the cleared handler.
+    // A response that outlives a clear or a redeclaration is not sent or saved into the handler.
     if (clearGeneration !== this.clearGeneration) {
       return false;
     }

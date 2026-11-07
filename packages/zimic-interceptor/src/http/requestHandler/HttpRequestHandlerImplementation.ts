@@ -78,6 +78,8 @@ class HttpRequestHandlerImplementation<
 
   private createResponseDelay?: HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>;
 
+  // Replaced when the handler is cleared or its response is redeclared, so requests being handled at that point are not
+  // handled.
   #clearGeneration = {};
 
   constructor(
@@ -118,6 +120,8 @@ class HttpRequestHandlerImplementation<
     declaration: HttpRequestHandlerResponseDeclarationInput<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ): HttpRequestHandlerImplementation<Schema, Method, Path, NewStatusCode> {
     const newThis = this as unknown as HttpRequestHandlerImplementation<Schema, Method, Path, NewStatusCode>;
+
+    this.#clearGeneration = {};
 
     newThis.createResponseDeclaration = this.isResponseDeclarationFactory(declaration)
       ? declaration
@@ -203,8 +207,8 @@ class HttpRequestHandlerImplementation<
 
     const restrictionsMatch = await this.matchesRestrictions(request);
 
-    // Checked after the restrictions because the handler may be cleared while they are matched asynchronously, even if
-    // it is redeclared afterward.
+    // Checked after the restrictions because the handler may be cleared or redeclared while they are matched
+    // asynchronously.
     if (clearGeneration !== this.#clearGeneration) {
       return { success: false, cause: 'clearedHandler' };
     }
@@ -470,14 +474,14 @@ class HttpRequestHandlerImplementation<
       }
     }
 
-    // A request whose handler was cleared during its delay is not handled, even if the handler was redeclared.
+    // A request whose handler was cleared or redeclared during its delay is not handled.
     if (clearGeneration !== this.#clearGeneration) {
       return undefined;
     }
 
     const appliedDeclaration = await this.createResponseDeclaration?.(request);
 
-    // A response that outlives a clear is not returned or saved into the cleared handler.
+    // A response that outlives a clear or a redeclaration is not returned or saved into the handler.
     if (clearGeneration !== this.#clearGeneration) {
       return undefined;
     }
