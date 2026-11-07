@@ -20,6 +20,7 @@ import {
 
 import LocalWebSocketConnectionHandler from '../../../connectionHandler/LocalWebSocketConnectionHandler';
 import RemoteWebSocketConnectionHandler from '../../../connectionHandler/RemoteWebSocketConnectionHandler';
+import { InternalWebSocketConnectionHandler } from '../../../connectionHandler/types/public';
 import LocalWebSocketMessageHandler from '../../../messageHandler/LocalWebSocketMessageHandler';
 import RemoteWebSocketMessageHandler from '../../../messageHandler/RemoteWebSocketMessageHandler';
 import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../types/options';
@@ -984,6 +985,52 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
           );
         },
       );
+    });
+
+    it('should keep connections open for the remaining interceptors if another one is cleared after a connection handler decides them', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (remainingInterceptor) => {
+        await promiseIfRemote(
+          remainingInterceptor.message().respond({ type: 'server', index: 1 }),
+          remainingInterceptor,
+        );
+
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, connectionSaving: { enabled: true } },
+          async (clearedInterceptor) => {
+            const effect = vi.fn();
+
+            const handler = await promiseIfRemote(
+              clearedInterceptor.connection().effect(effect).respond({ action: 'accept' }),
+              clearedInterceptor,
+            );
+
+            // No public callback runs between the last check of the decision and the worker listing the client, so
+            // the interceptor is cleared when the decided connection is saved, right before the decision returns.
+            const { implementation } = handler as unknown as InternalWebSocketConnectionHandler<MessageSchema>;
+            const saveInterceptedConnection = implementation.saveInterceptedConnection.bind(implementation);
+
+            vi.spyOn(implementation, 'saveInterceptedConnection').mockImplementationOnce((request) => {
+              saveInterceptedConnection(request);
+              void clearedInterceptor.clear();
+            });
+
+            await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+              await waitFor(() => {
+                expect(remainingInterceptor.clients).toHaveLength(1);
+              });
+
+              expect(clearedInterceptor.clients).toHaveLength(0);
+              expect(handler.connections).toHaveLength(0);
+
+              const messagePromise = waitForWebSocketClientMessage(client);
+              client.send(JSON.stringify({ type: 'client', index: 1 }));
+              await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+
+              expect(effect).not.toHaveBeenCalled();
+            });
+          },
+        );
+      });
     });
 
     it('should not save intercepted connections after cleared while a connection is being handled', async () => {

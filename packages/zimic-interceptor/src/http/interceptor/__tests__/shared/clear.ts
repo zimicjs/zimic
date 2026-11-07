@@ -298,6 +298,10 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
   // a connection handler decides them": WebSocket connections are long-lived, so one can outlive the clear of an
   // interceptor holding it.
 
+  // No HTTP counterpart for "should keep connections open for the remaining interceptors if another one is cleared after
+  // a connection handler decides them": WebSocket connections are long-lived, so one can outlive the clear of an
+  // interceptor holding it.
+
   // No HTTP counterpart for "should close connections if their only interceptor is cleared while they open": WebSocket
   // connection effects run while a connection opens, so they can clear the interceptor holding it.
 
