@@ -78,7 +78,7 @@ class HttpRequestHandlerImplementation<
 
   private createResponseDelay?: HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>;
 
-  private clearGeneration = {};
+  #clearGeneration = {};
 
   constructor(
     private interceptor: HttpInterceptorImplementation<Schema>,
@@ -170,8 +170,12 @@ class HttpRequestHandlerImplementation<
     }
   }
 
+  get clearGeneration() {
+    return this.#clearGeneration;
+  }
+
   clear(): this {
-    this.clearGeneration = {};
+    this.#clearGeneration = {};
 
     this.restrictions.length = 0;
 
@@ -448,7 +452,7 @@ class HttpRequestHandlerImplementation<
   }
 
   async applyResponseDeclaration(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) {
-    const clearGeneration = this.clearGeneration;
+    const clearGeneration = this.#clearGeneration;
 
     if (this.createResponseDelay) {
       const delay = await this.createResponseDelay(request);
@@ -459,14 +463,14 @@ class HttpRequestHandlerImplementation<
     }
 
     // A request whose handler was cleared during its delay is not handled, even if the handler was redeclared.
-    if (clearGeneration !== this.clearGeneration) {
+    if (clearGeneration !== this.#clearGeneration) {
       return undefined;
     }
 
     const appliedDeclaration = await this.createResponseDeclaration?.(request);
 
     // A response that outlives a clear is not returned or saved into the cleared handler.
-    if (clearGeneration !== this.clearGeneration) {
+    if (clearGeneration !== this.#clearGeneration) {
       return undefined;
     }
 

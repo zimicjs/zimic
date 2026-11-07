@@ -296,6 +296,9 @@ export function declareDefaultWebSocketConnectionHandlerTests(
     },
   );
 
+  // No WebSocket counterpart for "should not respond to requests if cleared while reading their response body": a
+  // connection response declares only an action, without a body to read.
+
   // No WebSocket connection counterpart for "should not respond to messages if $condition while running their effect":
   // a connection effect runs after the handshake is accepted, so clearing the handler during it cannot change the
   // handshake.

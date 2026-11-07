@@ -1,15 +1,16 @@
-import { HttpRequest, HttpResponse, StrictFormData } from '@zimic/http';
+import { HttpRequest, HttpResponse, HttpSchema, StrictFormData } from '@zimic/http';
 import { createPromiseWithResolvers } from '@zimic/utils/data';
+import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
 import { expectTypeOf, expect, vi, it, beforeAll, afterAll, describe, beforeEach, afterEach } from 'vitest';
 
 import { SharedHttpInterceptorImplementation } from '@/http/interceptor/HttpInterceptorImplementation';
 import LocalHttpInterceptor from '@/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/http/interceptor/RemoteHttpInterceptor';
-import { HttpInterceptorType } from '@/http/interceptor/types/options';
+import { HttpInterceptorType, UnhandledRequestStrategy } from '@/http/interceptor/types/options';
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '@/http/interceptorWorker/LocalHttpInterceptorWorker';
-import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
+import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpRequestHandlerRequestMatch } from '../../HttpRequestHandlerImplementation';
@@ -203,6 +204,46 @@ export function declareDefaultHttpRequestHandlerTests(
     responseReleasedPromise.resolve();
 
     expect(await responseDeclarationPromise).toBe(undefined);
+  });
+
+  it('should not respond to requests if cleared while reading their response body', async () => {
+    type StreamMethodSchema = HttpSchema.Method<{
+      response: { 200: { body: ReadableStream } };
+    }>;
+
+    const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
+
+    await usingHttpInterceptor<{ '/users': { POST: StreamMethodSchema } }>(
+      { type, baseURL, requestSaving: { enabled: true }, onUnhandledRequest },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor.post('/users').respond(() => ({
+            status: 200,
+            // Saving the request reads the response body, which pulls from this stream only after the response is
+            // created.
+            body: new ReadableStream<Uint8Array>(
+              {
+                async pull(controller) {
+                  await promiseIfRemote(handler.clear(), interceptor);
+                  controller.enqueue(new TextEncoder().encode('body'));
+                  controller.close();
+                },
+              },
+              { highWaterMark: 0 },
+            ),
+          })),
+          interceptor,
+        );
+
+        await expectFetchError(fetch(joinURL(baseURL, '/users'), { method: 'POST' }));
+
+        expect(handler.requests).toHaveLength(0);
+        expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+      },
+    );
   });
 
   it('should create response with declared status and body', async () => {

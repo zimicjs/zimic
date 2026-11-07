@@ -270,6 +270,9 @@ export function declareDefaultWebSocketMessageHandlerTests(
     );
   });
 
+  // No WebSocket message counterpart for "should not respond to requests if cleared while reading their response body":
+  // a message response is data sent through the socket, without a body to read.
+
   it.each<{
     condition: string;
     declareAfterClear: (
