@@ -1,5 +1,6 @@
-import { parseReferencePointer } from '../document/references';
-import { indexedAccessType, referenceType } from '../utils/types';
+import { parseReferencePointer, resolveReference } from '../document/references';
+import { OpenAPISchema } from '../document/types';
+import { indexedAccessType, NEVER_TYPE, referenceType } from '../utils/types';
 import { ComponentGroupName, TypeTransformContext } from './context';
 
 const COMPONENT_GROUP_NAMES = new Set<string>([
@@ -62,6 +63,11 @@ export function createReferenceType(reference: string, context: TypeTransformCon
 
   if (!isComponentReference) {
     throw new Error(`Unsupported $ref: ${reference}. Only references to #/components are supported.`);
+  }
+
+  // A `false` schema generates no component to reference.
+  if (resolveReference<OpenAPISchema>(context.document, reference) === false) {
+    return NEVER_TYPE;
   }
 
   context.dependencies.components.add(`${componentGroupName}.${componentName}`);

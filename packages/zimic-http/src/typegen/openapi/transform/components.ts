@@ -10,7 +10,7 @@ import {
   OpenAPISchema,
 } from '../document/types';
 import { createJSDocComment } from '../utils/comments';
-import { NEVER_TYPE, propertyKey, STRING_TYPE, TypeExpression, typeMember } from '../utils/types';
+import { propertyKey, STRING_TYPE, TypeExpression, typeMember } from '../utils/types';
 import { ComponentGroupName, ComponentName, ComponentPath, TypeTransformContext } from './context';
 import { transformHeader, transformRequestBodyComponent, transformResponse } from './methods';
 import { transformPathItem } from './paths';
@@ -113,7 +113,7 @@ export function transformComponent(
 ) {
   const type = transformComponentType(component, context, options);
 
-  if (type === undefined || type === NEVER_TYPE) {
+  if (type === undefined || component.value === false) {
     return undefined;
   }
 

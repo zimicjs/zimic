@@ -17,6 +17,12 @@ paths:
 
 components:
   schemas:
+    Nothing: false
+
+    NothingWrapper:
+      allOf:
+        - $ref: '#/components/schemas/Nothing'
+
     Objects:
       type: object
       properties:
@@ -69,6 +75,10 @@ components:
           properties:
             anything: true
             nothing: false
+        referenceToNothing:
+          $ref: '#/components/schemas/Nothing'
+        referenceToNothingWrapper:
+          $ref: '#/components/schemas/NothingWrapper'
         nullValue:
           type: 'null'
         emptyObject:

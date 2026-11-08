@@ -20,6 +20,7 @@ export type MyServiceSchema = HttpSchema<{
 
 export interface MyServiceComponents {
   schemas: {
+    NothingWrapper: never;
     Objects: {
       additionalPropertiesSchema?: {
         [key: string]: string;
@@ -53,6 +54,8 @@ export interface MyServiceComponents {
         anything?: any;
         nothing?: never;
       };
+      referenceToNothing?: never;
+      referenceToNothingWrapper?: MyServiceComponents['schemas']['NothingWrapper'];
       nullValue?: null;
       emptyObject?: Record<string, any>;
     };
