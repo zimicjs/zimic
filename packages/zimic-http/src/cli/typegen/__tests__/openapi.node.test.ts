@@ -414,6 +414,49 @@ describe('Type generation (OpenAPI)', () => {
     },
   );
 
+  it('should not generate types from schemas with operation ids generating the same name', async () => {
+    const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'duplicateOperationName.yaml');
+    const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');
+
+    await fs.promises.writeFile(
+      inputFilePath,
+      [
+        'openapi: 3.1.0',
+        'info: { title: Users, version: 1.0.0 }',
+        'paths:',
+        '  /users:',
+        '    get:',
+        '      operationId: users#list',
+        "      responses: { '204': { description: Success } }",
+        '  /admins:',
+        '    get:',
+        '      operationId: users/list',
+        "      responses: { '204': { description: Success } }",
+      ].join('\n'),
+    );
+    await fs.promises.rm(outputFilePath, { force: true });
+
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'typegen',
+      'openapi',
+      inputFilePath,
+      '--output',
+      outputFilePath,
+      '--service-name',
+      'my-service',
+    ]);
+
+    await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+      await expect(runCLI()).rejects.toThrow(
+        'Duplicate operation name: users/list. Each `operationId` must generate a unique name.',
+      );
+    });
+
+    expect(await pathExists(outputFilePath)).toBe(false);
+  });
+
   it('should not generate types from schemas with unresolvable external references', async () => {
     const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'unresolvableExternalReference.yaml');
     const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');

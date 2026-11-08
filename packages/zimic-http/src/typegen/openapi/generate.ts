@@ -54,7 +54,6 @@ interface GeneratedType<Type> {
  * other operations and components, are generated.
  */
 class DocumentTypeGenerator {
-  private operationsByName: Map<OperationName, DocumentOperation>;
   private componentsByPath: Map<ComponentPath, DocumentComponent>;
 
   readonly generatedOperations = new Map<OperationName, GeneratedType<TypeExpression>>();
@@ -65,8 +64,6 @@ class DocumentTypeGenerator {
     readonly componentGroups: DocumentComponentGroup[],
     private context: TypeTransformContext,
   ) {
-    this.operationsByName = new Map(operations.map((operation) => [operation.name, operation]));
-
     this.componentsByPath = new Map(
       componentGroups.flatMap((group) => group.components).map((component) => [component.path, component]),
     );
@@ -86,10 +83,8 @@ class DocumentTypeGenerator {
     const pendingDependencies = [rootDependencies];
 
     for (let dependencies = pendingDependencies.pop(); dependencies; dependencies = pendingDependencies.pop()) {
-      for (const operationName of dependencies.operations) {
-        const operation = this.operationsByName.get(operationName);
-
-        if (operation && !this.generatedOperations.has(operationName)) {
+      for (const operation of this.operations) {
+        if (dependencies.operations.has(operation.name)) {
           pendingDependencies.push(this.generateOperation(operation).dependencies);
         }
       }
