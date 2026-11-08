@@ -41,6 +41,8 @@ export interface MyServiceComponents {
               name?: string;
             }
         ))[];
+      itemsListTuple?: [string, number];
+      untypedItems?: any[];
       tupleItems?: [string, number | boolean];
     };
   };

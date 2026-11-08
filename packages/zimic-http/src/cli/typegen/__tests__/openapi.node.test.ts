@@ -6,6 +6,7 @@ import { load as parseYaml } from 'js-yaml';
 import path from 'path';
 import color from 'picocolors';
 import prettier, { Options } from 'prettier';
+import { pathToFileURL } from 'url';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 
 import runCLI from '@/cli/cli';
@@ -226,6 +227,35 @@ describe('Type generation (OpenAPI)', () => {
     expect(await pathExists(outputFilePath)).toBe(false);
   });
 
+  it.each([
+    { description: 'an empty document', content: '' },
+    { description: 'a scalar document', content: 'not an object' },
+  ])('should not generate types from $description', async ({ content }) => {
+    const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'nonObjectDocument.yaml');
+    const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');
+
+    await fs.promises.writeFile(inputFilePath, content);
+    await fs.promises.rm(outputFilePath, { force: true });
+
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'typegen',
+      'openapi',
+      inputFilePath,
+      '--output',
+      outputFilePath,
+      '--service-name',
+      'my-service',
+    ]);
+
+    await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+      await expect(runCLI()).rejects.toThrow('Unsupported schema format, expected `openapi: 3.x`');
+    });
+
+    expect(await pathExists(outputFilePath)).toBe(false);
+  });
+
   it('should not generate types from schemas with duplicate operation ids', async () => {
     const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'duplicateOperationIds.yaml');
     const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');
@@ -311,46 +341,78 @@ describe('Type generation (OpenAPI)', () => {
     expect(await pathExists(outputFilePath)).toBe(false);
   });
 
-  it('should not generate types from schemas with references outside components', async () => {
-    const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'referenceOutsideComponents.yaml');
-    const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');
+  it.each([
+    {
+      location: 'a response',
+      reference: '#/paths/~1users/get/responses/200',
+      adminOperationLines: ["      responses: { '200': { $ref: '#/paths/~1users/get/responses/200' } }"],
+    },
+    {
+      location: 'a request body',
+      reference: '#/paths/~1users/post/requestBody',
+      adminOperationLines: [
+        "      requestBody: { $ref: '#/paths/~1users/post/requestBody' }",
+        "      responses: { '204': { description: Success } }",
+      ],
+    },
+    {
+      location: 'a discriminated union pointing at the document root',
+      reference: '#',
+      adminOperationLines: [
+        '      responses:',
+        "        '200':",
+        '          description: Success',
+        '          content:',
+        '            application/json:',
+        "              schema: { oneOf: [{ $ref: '#' }], discriminator: { propertyName: type } }",
+      ],
+    },
+  ])(
+    'should not generate types from schemas with references outside components in $location',
+    async ({ reference, adminOperationLines }) => {
+      const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'referenceOutsideComponents.yaml');
+      const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');
 
-    await fs.promises.writeFile(
-      inputFilePath,
-      [
-        'openapi: 3.1.0',
-        'info: { title: Users, version: 1.0.0 }',
-        'paths:',
-        '  /users:',
-        '    get:',
-        "      responses: { '200': { description: Success } }",
-        '  /admins:',
-        '    get:',
-        "      responses: { '200': { $ref: '#/paths/~1users/get/responses/200' } }",
-      ].join('\n'),
-    );
-    await fs.promises.rm(outputFilePath, { force: true });
-
-    processArgvSpy.mockReturnValue([
-      'node',
-      './dist/cli.js',
-      'typegen',
-      'openapi',
-      inputFilePath,
-      '--output',
-      outputFilePath,
-      '--service-name',
-      'my-service',
-    ]);
-
-    await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
-      await expect(runCLI()).rejects.toThrow(
-        'Unsupported $ref: #/paths/~1users/get/responses/200. Only references to #/components are supported.',
+      await fs.promises.writeFile(
+        inputFilePath,
+        [
+          'openapi: 3.1.0',
+          'info: { title: Users, version: 1.0.0 }',
+          'paths:',
+          '  /users:',
+          '    get:',
+          "      responses: { '200': { description: Success } }",
+          '    post:',
+          '      requestBody: { content: { application/json: { schema: { type: string } } } }',
+          "      responses: { '204': { description: Success } }",
+          '  /admins:',
+          '    get:',
+          ...adminOperationLines,
+        ].join('\n'),
       );
-    });
+      await fs.promises.rm(outputFilePath, { force: true });
 
-    expect(await pathExists(outputFilePath)).toBe(false);
-  });
+      processArgvSpy.mockReturnValue([
+        'node',
+        './dist/cli.js',
+        'typegen',
+        'openapi',
+        inputFilePath,
+        '--output',
+        outputFilePath,
+        '--service-name',
+        'my-service',
+      ]);
+
+      await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+        await expect(runCLI()).rejects.toThrow(
+          `Unsupported $ref: ${reference}. Only references to #/components are supported.`,
+        );
+      });
+
+      expect(await pathExists(outputFilePath)).toBe(false);
+    },
+  );
 
   it('should not generate types from schemas with unresolvable external references', async () => {
     const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'unresolvableExternalReference.yaml');
@@ -517,6 +579,7 @@ describe('Type generation (OpenAPI)', () => {
           extraArguments: additionalArguments,
           stdout: shouldWriteToStdout,
           url: shouldUseURLAsInput,
+          fileURL: shouldUseFileURLAsInput,
           outputDirectoryExists: shouldOutputDirectoryExist = true,
         } = fixtureCase;
 
@@ -525,9 +588,11 @@ describe('Type generation (OpenAPI)', () => {
           replaceFileExtension(inputFileName, fileExtension),
         );
 
+        const localInput = shouldUseFileURLAsInput ? pathToFileURL(inputFilePath).href : inputFilePath;
+
         const inputFilePathOrURL = shouldUseURLAsInput
           ? joinURL(schemaInterceptor.baseURL, 'spec', fixtureName)
-          : inputFilePath;
+          : localInput;
 
         const inputFileBuffer = await fs.promises.readFile(inputFilePath);
 

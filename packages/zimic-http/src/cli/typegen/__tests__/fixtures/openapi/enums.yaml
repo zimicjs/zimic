@@ -15,6 +15,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /statuses:
+    get:
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nullableKeyword:
+                    type: string
+                    nullable: true
+                    enum:
+                      - active
+                      - inactive
+                  nullableTypeList:
+                    type:
+                      - string
+                      - 'null'
+                    enum:
+                      - active
+                      - inactive
+
 components:
   schemas:
     Error:

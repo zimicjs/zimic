@@ -16,6 +16,21 @@ export type MyServiceSchema = HttpSchema<{
       };
     };
   };
+  '/statuses': {
+    GET: {
+      response: {
+        200: {
+          headers: {
+            'content-type': 'application/json';
+          };
+          body: {
+            nullableKeyword?: 'active' | 'inactive' | null;
+            nullableTypeList?: 'active' | 'inactive' | null;
+          };
+        };
+      };
+    };
+  };
 }>;
 
 export interface MyServiceComponents {

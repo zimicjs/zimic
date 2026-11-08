@@ -20,6 +20,21 @@ paths:
                 name:
                   type: string
                   example: John
+                discriminatorInExample:
+                  type: object
+                  example:
+                    oneOf: []
+                    discriminator:
+                      propertyName: kind
+                      mapping:
+                        kind: '#/info/title/kind'
+                nickname:
+                  type: string
+                  title: Nickname
+                  deprecated: true
+                  examples:
+                    - Johnny
+                    - JD
                 email:
                   type: string
                   example: john@email.com

@@ -142,6 +142,20 @@ export type MyServiceSchema = HttpSchema<{
       };
     };
   };
+  '/users-with-content-search-params': {
+    GET: {
+      request: {
+        searchParams: {
+          filter?: string;
+          contentFilter?: MyServiceComponents['parameters']['content-filter'];
+        };
+      };
+      response: {
+        /** Success */
+        204: {};
+      };
+    };
+  };
 }>;
 
 export interface MyServiceComponents {
@@ -163,6 +177,7 @@ export interface MyServiceComponents {
     archived: boolean;
   };
   parameters: {
+    'content-filter': string;
     /** The search text */
     literalSearch: (string | null) | string[];
     /** The sort order */

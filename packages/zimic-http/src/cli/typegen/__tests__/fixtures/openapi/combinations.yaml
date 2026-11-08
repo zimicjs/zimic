@@ -67,8 +67,222 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotUser'
 
+  /discriminators:
+    get:
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unmappedAnimal:
+                    $ref: '#/components/schemas/UnmappedAnimal'
+                  repeatedAnimal:
+                    $ref: '#/components/schemas/RepeatedAnimal'
+                  truck:
+                    $ref: '#/components/schemas/Truck'
+                  car:
+                    $ref: '#/components/schemas/Car'
+                  bike:
+                    $ref: '#/components/schemas/Bike'
+                  circle:
+                    $ref: '#/components/schemas/Circle'
+                  inlineDiscriminator:
+                    $ref: '#/components/schemas/InlineDiscriminator'
+                  unionWithInvalidMapping:
+                    $ref: '#/components/schemas/UnionWithInvalidMapping'
+
+  /compositions:
+    get:
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  requiredReferencedProperties:
+                    $ref: '#/components/schemas/RequiredReferencedProperties'
+                  requiredChainedReferenceProperties:
+                    $ref: '#/components/schemas/RequiredChainedReferenceProperties'
+                  requiredAnyProperties:
+                    $ref: '#/components/schemas/RequiredAnyProperties'
+                  referenceThroughChainedReference:
+                    $ref: '#/components/schemas/ReferenceThroughChainedReference'
+                  inlineAllOf:
+                    $ref: '#/components/schemas/InlineAllOf'
+                  booleanAllOf:
+                    $ref: '#/components/schemas/BooleanAllOf'
+                  multipleTypesWithOneOf:
+                    $ref: '#/components/schemas/MultipleTypesWithOneOf'
+
 components:
   schemas:
+    Bird:
+      type: object
+      required:
+        - kind
+      properties:
+        kind:
+          type: string
+
+    Fish:
+      type: object
+      properties:
+        kind:
+          type: string
+        discriminator:
+          type: string
+
+    UntypedAnimal:
+      properties:
+        legs:
+          type: number
+
+    AnyAnimal: true
+
+    UnmappedAnimal:
+      oneOf:
+        - $ref: '#/components/schemas/Bird'
+        - $ref: '#/components/schemas/Fish'
+        - $ref: '#/components/schemas/UntypedAnimal'
+        - $ref: '#/components/schemas/AnyAnimal'
+        - type: object
+          properties:
+            name:
+              type: string
+      discriminator:
+        propertyName: kind
+
+    RepeatedAnimal:
+      oneOf:
+        - $ref: '#/components/schemas/Bird'
+        - $ref: '#/components/schemas/Fish'
+      discriminator:
+        propertyName: kind
+
+    UnionWithInvalidMapping:
+      oneOf:
+        - $ref: '#/components/schemas/InvalidMappingMember'
+      discriminator:
+        propertyName: kind
+        mapping:
+          invalid-kind: null
+
+    InvalidMappingMember:
+      type: object
+      properties:
+        kind:
+          type: string
+
+    Vehicle:
+      type: object
+      properties:
+        kind:
+          type: string
+        wheels:
+          type: number
+      discriminator:
+        propertyName: kind
+        mapping:
+          truck: Truck
+          car: '#/components/schemas/Car'
+
+    Truck:
+      allOf:
+        - $ref: '#/components/schemas/Vehicle'
+
+    Car:
+      allOf:
+        - $ref: '#/components/schemas/Vehicle'
+
+    Bike:
+      allOf:
+        - $ref: '#/components/schemas/Vehicle'
+
+    Shape:
+      type: object
+      properties:
+        kind:
+          type: string
+      discriminator:
+        propertyName: kind
+
+    Circle:
+      allOf:
+        - $ref: '#/components/schemas/Shape'
+
+    InlineDiscriminator:
+      allOf:
+        - type: object
+          properties:
+            kind:
+              type: string
+          discriminator:
+            propertyName: kind
+        - type: object
+          properties:
+            name:
+              type: string
+
+    Profile:
+      type: object
+      properties:
+        name:
+          type: string
+        nickname:
+          type: string
+        removed: false
+
+    ProfileAlias:
+      $ref: '#/components/schemas/Profile'
+
+    RequiredReferencedProperties:
+      required:
+        - name
+        - removed
+        - undeclared
+      allOf:
+        - $ref: '#/components/schemas/Profile'
+
+    RequiredChainedReferenceProperties:
+      required:
+        - nickname
+      allOf:
+        - $ref: '#/components/schemas/ProfileAlias'
+
+    RequiredAnyProperties:
+      required:
+        - name
+      allOf:
+        - $ref: '#/components/schemas/AnyAnimal'
+
+    ReferenceThroughChainedReference:
+      allOf:
+        - $ref: '#/components/schemas/ProfileAlias/properties/name'
+
+    InlineAllOf:
+      allOf:
+        - type: object
+          properties:
+            name:
+              type: string
+
+    BooleanAllOf:
+      allOf:
+        - true
+
+    MultipleTypesWithOneOf:
+      type:
+        - string
+        - number
+      oneOf:
+        - type: string
+          maxLength: 3
+
     UserType:
       type: string
       enum:

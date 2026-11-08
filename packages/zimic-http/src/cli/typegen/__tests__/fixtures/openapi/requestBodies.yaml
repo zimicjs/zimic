@@ -297,6 +297,25 @@ paths:
           '200':
             description: Success
 
+  /users-with-request-body-without-content:
+    post:
+      requestBody:
+        description: A request body without content
+      responses:
+        '204':
+          description: Success
+
+  /users-with-referenced-request-body-content:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            $ref: '#/components/schemas/CreateUserBody'
+      responses:
+        '204':
+          description: Success
+
 components:
   schemas:
     CreateUserBody:

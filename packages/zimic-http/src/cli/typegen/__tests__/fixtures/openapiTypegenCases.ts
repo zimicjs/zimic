@@ -38,7 +38,26 @@ const openapiTypegenFixtureCases = {
       input: 'simple.yaml',
       expectedOutput: 'simple.ts',
       extraArguments: ['--no-comments'],
+      fileURL: true,
+    },
+    {
+      input: 'simple.yaml',
+      expectedOutput: 'simple.ts',
+      extraArguments: ['--no-comments'],
       outputDirectoryExists: false,
+    },
+  ],
+
+  objects: [
+    {
+      input: 'objects.yaml',
+      expectedOutput: 'objects.ts',
+      extraArguments: ['--no-comments'],
+    },
+    {
+      input: 'objects.yaml',
+      expectedOutput: 'objects.comments.ts',
+      extraArguments: [],
     },
   ],
 

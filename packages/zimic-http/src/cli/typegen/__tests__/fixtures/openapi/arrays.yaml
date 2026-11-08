@@ -86,6 +86,13 @@ components:
                 properties:
                   name:
                     type: string
+        itemsListTuple:
+          type: array
+          items:
+            - type: string
+            - type: number
+        untypedItems:
+          type: array
         tupleItems:
           type: array
           prefixItems:
