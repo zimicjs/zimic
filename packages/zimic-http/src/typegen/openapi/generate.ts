@@ -4,7 +4,6 @@ import path from 'path';
 import { logger } from '@/utils/logging';
 
 import { loadOpenAPIDocument } from './document/load';
-import { OpenAPIDocument } from './document/types';
 import {
   collectComponentGroups,
   DocumentComponent,
@@ -107,16 +106,14 @@ class DocumentTypeGenerator {
 
   /** Makes the body of request components optional if a generated operation does not require it. */
   applyOptionalRequestBodies(dependencies: TypeDependencies[]) {
-    const optionalRequestComponentPaths = new Set(
+    const optionalRequestComponentPaths = new Set<ComponentPath>(
       dependencies.flatMap((typeDependencies) =>
         Array.from(typeDependencies.optionalRequestComponents, (componentName) => `requests.${componentName}` as const),
       ),
     );
 
-    for (const componentPath of optionalRequestComponentPaths) {
-      const component = this.componentsByPath.get(componentPath);
-
-      if (component && this.generatedComponents.has(componentPath)) {
+    for (const component of this.componentsByPath.values()) {
+      if (optionalRequestComponentPaths.has(component.path)) {
         this.generateComponent(component, { isBodyOptional: true });
       }
     }
@@ -142,15 +139,10 @@ class DocumentTypeGenerator {
 }
 
 function createComponentsDeclaration(
-  document: OpenAPIDocument,
   generator: DocumentTypeGenerator,
   context: TypeTransformContext,
   options: { prune: boolean },
 ) {
-  if (typeof document.components !== 'object') {
-    return undefined;
-  }
-
   const groupMembers = generator.componentGroups.flatMap((group) => {
     const generatedComponents = group.components
       .map((component) => generator.generatedComponents.get(component.path))
@@ -254,7 +246,7 @@ async function generateTypesFromOpenAPI({
   const declarations = [
     createImportDeclaration(mergeHttpImports(allDependencies)),
     typeAliasDeclaration(createSchemaIdentifier(context.serviceName), paths.type),
-    createComponentsDeclaration(document, generator, context, { prune }),
+    createComponentsDeclaration(generator, context, { prune }),
     createOperationsDeclaration(generator, context),
     allDependencies.some((dependencies) => dependencies.usesWithRequiredHelper)
       ? WITH_REQUIRED_HELPER_DECLARATION

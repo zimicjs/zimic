@@ -39,7 +39,7 @@ export function collectOperations(document: OpenAPIDocument) {
       pathItem,
       segments: ['webhooks', webhookName],
     })),
-    ...Object.entries(document.components?.pathItems ?? {}).map(([componentName, pathItem]) => ({
+    ...Object.entries(document.components.pathItems ?? {}).map(([componentName, pathItem]) => ({
       pathItem,
       segments: ['components', 'pathItems', componentName],
     })),

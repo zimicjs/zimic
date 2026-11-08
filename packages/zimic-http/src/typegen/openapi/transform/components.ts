@@ -54,7 +54,7 @@ function collectGroupComponents<GroupName extends ComponentGroupName>(
 
 /** Lists the component groups with at least one component, in the order they are generated. */
 export function collectComponentGroups(document: OpenAPIDocument): DocumentComponentGroup[] {
-  const { components = {} } = document;
+  const { components } = document;
 
   const groups: DocumentComponentGroup[] = [
     { name: 'schemas', components: collectGroupComponents('schemas', components.schemas) },

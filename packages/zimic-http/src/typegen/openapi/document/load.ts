@@ -1,4 +1,4 @@
-import type { NormalizedProblem } from '@redocly/openapi-core';
+import type { Document, NormalizedProblem } from '@redocly/openapi-core';
 import { createCachedDynamicImport } from '@zimic/utils/import';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -48,8 +48,8 @@ function throwIfHasErrors(problems: NormalizedProblem[]) {
     return;
   }
 
-  const errorPointer = lastError.location.at(0)?.pointer;
-  throw new Error(errorPointer ? `${lastError.message} at ${errorPointer}` : lastError.message);
+  // Parse errors without a pointer are always followed by an unresolved reference error with one.
+  throw new Error(`${lastError.message} at ${String(lastError.location[0].pointer)}`);
 }
 
 /** Loads an OpenAPI document from a file or URL, validates it, and bundles its external references. */
@@ -66,11 +66,8 @@ export async function loadOpenAPIDocument(filePathOrURL: string) {
   );
 
   const resolver = new BaseResolver(config.resolve);
-  const document = await resolver.resolveDocument(null, resolveDocumentLocation(filePathOrURL), true);
-
-  if (!('parsed' in document)) {
-    throw document.originalError;
-  }
+  // The declared return type includes errors, but the resolver rejects with them instead of returning them.
+  const document = (await resolver.resolveDocument(null, resolveDocumentLocation(filePathOrURL), true)) as Document;
 
   validateDocumentVersion(document.parsed);
 

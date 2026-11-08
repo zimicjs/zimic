@@ -28,11 +28,7 @@ export function normalizeReference(reference: string) {
 }
 
 /** Resolves a local reference, following chained references. */
-export function resolveReference<Value>(
-  document: OpenAPIDocument,
-  reference: string,
-  visitedReferences: string[] = [],
-): Value | undefined {
+export function resolveReference<Value>(document: OpenAPIDocument, reference: string): Value | undefined {
   let value: unknown = document;
 
   for (const segment of parseReferencePointer(reference)) {
@@ -49,9 +45,5 @@ export function resolveReference<Value>(
     return value as Value;
   }
 
-  if (visitedReferences.includes(value.$ref)) {
-    return undefined;
-  }
-
-  return resolveReference<Value>(document, value.$ref, [...visitedReferences, value.$ref]);
+  return resolveReference<Value>(document, value.$ref);
 }

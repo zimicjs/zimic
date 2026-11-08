@@ -30,6 +30,11 @@ function walkObjects(value: unknown, visit: (object: WalkedObject, segments: str
   }
 }
 
+// The loader does not validate the document structure, so a mapping can contain values other than strings.
+function isMappingOfStrings(mapping: unknown) {
+  return Object.values(mapping ?? {}).every((value) => typeof value === 'string');
+}
+
 function getDiscriminator(value: unknown): OpenAPIDiscriminator | undefined {
   if (typeof value !== 'object' || value === null || !('discriminator' in value)) {
     return undefined;
@@ -42,7 +47,8 @@ function getDiscriminator(value: unknown): OpenAPIDiscriminator | undefined {
     discriminator !== null &&
     'propertyName' in discriminator &&
     typeof discriminator.propertyName === 'string' &&
-    discriminator.propertyName.length > 0;
+    discriminator.propertyName.length > 0 &&
+    isMappingOfStrings(Reflect.get(discriminator, 'mapping'));
 
   return isDiscriminator ? (discriminator as OpenAPIDiscriminator) : undefined;
 }
@@ -86,13 +92,8 @@ function patchDiscriminatorProperty(
   return true;
 }
 
-interface DiscriminatorMappingValues {
-  inferred?: string;
-  defined?: string[];
-}
-
 function collectOneOfMappingValues(oneOf: unknown[], discriminator: OpenAPIDiscriminator) {
-  const valuesByReference = new Map<string, DiscriminatorMappingValues>();
+  const inferredValuesByReference = new Map<string, string[]>();
 
   for (const item of oneOf) {
     if (!isReference(item)) {
@@ -103,23 +104,20 @@ function collectOneOfMappingValues(oneOf: unknown[], discriminator: OpenAPIDiscr
     const inferredValue = parseReferencePointer(reference).at(-1);
 
     if (inferredValue) {
-      valuesByReference.set(reference, { ...valuesByReference.get(reference), inferred: inferredValue });
+      inferredValuesByReference.set(reference, [inferredValue]);
     }
   }
+
+  const definedValuesByReference = new Map<string, string[]>();
 
   for (const [mappedValue, rawMappedReference] of Object.entries(discriminator.mapping ?? {})) {
-    if (!rawMappedReference) {
-      continue;
-    }
-
     const mappedReference = normalizeReference(rawMappedReference);
-    const definedValues = valuesByReference.get(mappedReference)?.defined ?? [];
-
-    // Defined values replace the inferred one, which may not be an actual discriminator value.
-    valuesByReference.set(mappedReference, { defined: [...definedValues, mappedValue] });
+    const definedValues = definedValuesByReference.get(mappedReference) ?? [];
+    definedValuesByReference.set(mappedReference, [...definedValues, mappedValue]);
   }
 
-  return valuesByReference;
+  // Defined values replace the inferred one, which may not be an actual discriminator value.
+  return new Map([...inferredValuesByReference, ...definedValuesByReference]);
 }
 
 /**
@@ -147,10 +145,8 @@ export function scanDiscriminators(document: OpenAPIDocument): DocumentDiscrimin
         return;
       }
 
-      for (const [mappedReference, { inferred, defined }] of collectOneOfMappingValues(object.oneOf, discriminator)) {
-        const mappedValues = defined ?? (inferred === undefined ? [] : [inferred]);
-
-        if (discriminators.patchedSchemaPointers.has(mappedReference) || mappedValues.length === 0) {
+      for (const [mappedReference, mappedValues] of collectOneOfMappingValues(object.oneOf, discriminator)) {
+        if (discriminators.patchedSchemaPointers.has(mappedReference)) {
           continue;
         }
 
