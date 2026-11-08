@@ -91,6 +91,7 @@ export type MyServiceSchema = HttpSchema<{
             bike?: MyServiceComponents['schemas']['Bike'];
             circle?: MyServiceComponents['schemas']['Circle'];
             inlineDiscriminator?: MyServiceComponents['schemas']['InlineDiscriminator'];
+            unionWithSchemaNameMapping?: MyServiceComponents['schemas']['UnionWithSchemaNameMapping'];
             unionWithInvalidMapping?: MyServiceComponents['schemas']['UnionWithInvalidMapping'];
           };
         };
@@ -141,6 +142,10 @@ export interface MyServiceComponents {
           name?: string;
         };
     RepeatedAnimal: MyServiceComponents['schemas']['Bird'] | MyServiceComponents['schemas']['Fish'];
+    UnionWithSchemaNameMapping: MyServiceComponents['schemas']['SchemaNameMappingMember'];
+    SchemaNameMappingMember: {
+      kind: 'mapped-kind';
+    };
     UnionWithInvalidMapping: MyServiceComponents['schemas']['InvalidMappingMember'];
     InvalidMappingMember: {
       kind?: string;
@@ -149,9 +154,9 @@ export interface MyServiceComponents {
       kind?: string;
       wheels?: number;
     };
-    Truck: {
+    Truck: Omit<MyServiceComponents['schemas']['Vehicle'], 'kind'> & {
       kind: 'truck';
-    } & Omit<MyServiceComponents['schemas']['Vehicle'], 'kind'>;
+    };
     Car: Omit<MyServiceComponents['schemas']['Vehicle'], 'kind'> & {
       kind: 'car';
     };

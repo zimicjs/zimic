@@ -91,6 +91,8 @@ paths:
                     $ref: '#/components/schemas/Circle'
                   inlineDiscriminator:
                     $ref: '#/components/schemas/InlineDiscriminator'
+                  unionWithSchemaNameMapping:
+                    $ref: '#/components/schemas/UnionWithSchemaNameMapping'
                   unionWithInvalidMapping:
                     $ref: '#/components/schemas/UnionWithInvalidMapping'
 
@@ -163,6 +165,20 @@ components:
         - $ref: '#/components/schemas/Fish'
       discriminator:
         propertyName: kind
+
+    UnionWithSchemaNameMapping:
+      oneOf:
+        - $ref: '#/components/schemas/SchemaNameMappingMember'
+      discriminator:
+        propertyName: kind
+        mapping:
+          mapped-kind: SchemaNameMappingMember
+
+    SchemaNameMappingMember:
+      type: object
+      properties:
+        kind:
+          type: string
 
     UnionWithInvalidMapping:
       oneOf:

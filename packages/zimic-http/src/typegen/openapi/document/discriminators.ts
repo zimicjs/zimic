@@ -53,6 +53,13 @@ function getDiscriminator(value: unknown): OpenAPIDiscriminator | undefined {
   return isDiscriminator ? (discriminator as OpenAPIDiscriminator) : undefined;
 }
 
+/** Returns the pointer of a discriminator mapping value, which is either a reference or the name of a schema. */
+function normalizeMappedReference(mappedReference: string) {
+  return mappedReference.startsWith('#')
+    ? normalizeReference(mappedReference)
+    : createPointer(['components', 'schemas', mappedReference]);
+}
+
 /** Adds the discriminator property, restricted to the mapped values, to the schema at a pointer. */
 function patchDiscriminatorProperty(
   document: OpenAPIDocument,
@@ -111,7 +118,7 @@ function collectOneOfMappingValues(oneOf: unknown[], discriminator: OpenAPIDiscr
   const definedValuesByReference = new Map<string, string[]>();
 
   for (const [mappedValue, rawMappedReference] of Object.entries(discriminator.mapping ?? {})) {
-    const mappedReference = normalizeReference(rawMappedReference);
+    const mappedReference = normalizeMappedReference(rawMappedReference);
     const definedValues = definedValuesByReference.get(mappedReference) ?? [];
     definedValuesByReference.set(mappedReference, [...definedValues, mappedValue]);
   }
@@ -177,7 +184,7 @@ export function scanDiscriminators(document: OpenAPIDocument): DocumentDiscrimin
           }
 
           const mappedValues = Object.entries(inheritedDiscriminator.mapping ?? {})
-            .filter(([, mappedReference]) => normalizeReference(mappedReference) === schemaPointer)
+            .filter(([, mappedReference]) => normalizeMappedReference(mappedReference) === schemaPointer)
             .map(([mappedValue]) => mappedValue);
 
           if (
