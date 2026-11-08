@@ -84,6 +84,13 @@ export type MyServiceSchema = HttpSchema<{
       };
     };
   };
+  '/users-with-cookies': {
+    GET: {
+      response: {
+        204: {};
+      };
+    };
+  };
   '/users-with-headers-without-schemas': {
     GET: {
       response: {

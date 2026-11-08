@@ -313,7 +313,7 @@ export function mergeParameters(
   return Array.from(parametersByLocationAndName.values());
 }
 
-type RequestParameterLocation = 'query' | 'header' | 'cookie';
+type RequestParameterLocation = 'query' | 'header';
 
 function transformParametersIn(
   location: RequestParameterLocation,
@@ -354,7 +354,6 @@ function transformParametersIn(
 interface RequestParameters {
   searchParams?: TypeMember;
   headerMembers: TypeMember[];
-  cookie?: TypeMember;
 }
 
 function transformRequestParameters(
@@ -364,26 +363,15 @@ function transformRequestParameters(
 ): RequestParameters {
   const queryParameters = transformParametersIn('query', parameters, segments, context);
   const headerParameters = transformParametersIn('header', parameters, segments, context);
-  const cookieParameters = transformParametersIn('cookie', parameters, segments, context);
 
   const searchParams =
     queryParameters.length > 0
       ? typeMember({ key: 'searchParams', type: objectType(queryParameters.map((parameter) => parameter.member)) })
       : undefined;
 
-  const cookie =
-    cookieParameters.length > 0
-      ? typeMember({
-          key: 'cookie',
-          type: objectType(cookieParameters.map((parameter) => parameter.member)),
-          isOptional: cookieParameters.every((parameter) => parameter.isOptional),
-        })
-      : undefined;
-
   return {
     searchParams,
     headerMembers: headerParameters.map((parameter) => parameter.member),
-    cookie,
   };
 }
 
@@ -391,13 +379,7 @@ function createRequestMembers(parameters: RequestParameters, bodyVariant?: BodyV
   const contentTypeHeaders = bodyVariant ? [createContentTypeHeader(bodyVariant.contentType)] : [];
   const headers = createHeadersMember([...contentTypeHeaders, ...parameters.headerMembers]);
 
-  // The headers are placed where the header parameters are declared, if any.
-  const orderedMembers =
-    parameters.headerMembers.length > 0
-      ? [parameters.searchParams, headers, parameters.cookie, bodyVariant?.body]
-      : [parameters.searchParams, parameters.cookie, headers, bodyVariant?.body];
-
-  return orderedMembers.filter(isDefined);
+  return [parameters.searchParams, headers, bodyVariant?.body].filter(isDefined);
 }
 
 function getRequestBodyComponentName(reference: string) {
