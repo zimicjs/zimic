@@ -1,5 +1,5 @@
 import { waitFor } from '@zimic/utils/time';
-import { io, type ManagerOptions, Socket } from 'socket.io-client';
+import { io, type ManagerOptions, type NodeXHR, Socket, type XHR } from 'socket.io-client';
 import msgpackParser from 'socket.io-msgpack-parser';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
@@ -29,7 +29,7 @@ type AnySchema = SocketIOSchema;
 interface SharedSocketIOTestsOptions {
   type: WebSocketInterceptorType;
   getBaseURL: () => string;
-  PollingTransport: NonNullable<ManagerOptions['transports']>[number];
+  PollingTransport: typeof NodeXHR | typeof XHR;
 }
 
 const PING_INTERVAL = 50;
@@ -66,13 +66,11 @@ async function waitForSocketConnection(socket: Socket) {
 export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions) {
   const { type, getBaseURL, PollingTransport } = options;
 
-  const transportCases = [
+  const transportCases: { transportName: string; transports: ManagerOptions['transports'] }[] = [
     { transportName: 'websocket', transports: [GlobalWebSocketTransport] },
     { transportName: 'polling', transports: [PollingTransport] },
     { transportName: 'polling with upgrade', transports: [PollingTransport, GlobalWebSocketTransport] },
-  ] as ManagerOptions['transports'] extends infer _T
-    ? { transportName: string; transports: ManagerOptions['transports'] }[]
-    : never;
+  ];
 
   describe.each(transportCases)('Transport: $transportName', ({ transports }) => {
     it('should normalize the first argument as data and omit args when there are no others', async () => {
