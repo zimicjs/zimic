@@ -16,7 +16,7 @@ export namespace WebSocketServer {
 
   export interface EventListenerParameters<Schema extends WebSocketSchema> {
     // A server accepts connections to any path of its schema, so its clients can exchange the messages of any of them.
-    connection: [client: WebSocketClient<Schema, WebSocketSchemaPath<Schema>>, request: IncomingMessage];
+    connection: [client: WebSocketClient<Schema, WebSocketSchemaPath.Literal<Schema>>, request: IncomingMessage];
     error: [error: Error];
     close: [];
     listening: [];
@@ -154,7 +154,7 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
               ? rawClient
               : (new WebSocketClient<WebSocketSchema>(rawClient) as unknown as WebSocketClient<
                   Schema,
-                  WebSocketSchemaPath<Schema>
+                  WebSocketSchemaPath.Literal<Schema>
                 >);
 
           typedListener.call(this, wrappedClient, ...parameters);

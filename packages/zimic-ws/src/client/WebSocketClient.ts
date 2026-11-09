@@ -10,7 +10,9 @@ import { openWebSocketClient, WebSocketClientCloseOptions, WebSocketClientOpenOp
  * multiple paths and the client cannot tell which one it connects to.
  */
 export type WebSocketClientDefaultPath<Schema extends WebSocketSchema> =
-  UnionHasMoreThanOneType<WebSocketSchemaPath<Schema>> extends true ? never : WebSocketSchemaPath<Schema>;
+  UnionHasMoreThanOneType<WebSocketSchemaPath.Literal<Schema>> extends true
+    ? never
+    : WebSocketSchemaPath.Literal<Schema>;
 
 // URLs are plain strings, so a client cannot infer its path from them. Replacing the type of the first constructor
 // argument makes the compiler show this text when the path is missing.
@@ -31,7 +33,7 @@ export namespace WebSocketClient {
 
   export type MessageEvent<
     Schema extends WebSocketSchema,
-    Path extends WebSocketSchemaPath<Schema> = WebSocketClientDefaultPath<Schema>,
+    Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketClientDefaultPath<Schema>,
   > = globalThis.MessageEvent<WebSocketMessageData<WebSocketSchemaMessage<Schema, Path>>>;
 
   // The schema is not used in the event types, but it's included for consistency and future extensibility.
@@ -44,7 +46,7 @@ export namespace WebSocketClient {
 
   interface Events<
     Schema extends WebSocketSchema = WebSocketSchema,
-    Path extends WebSocketSchemaPath<Schema> = WebSocketClientDefaultPath<Schema>,
+    Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketClientDefaultPath<Schema>,
   > {
     open: OpenEvent<Schema>;
     message: MessageEvent<Schema, Path>;
@@ -57,10 +59,10 @@ export namespace WebSocketClient {
   export type Event<
     Schema extends WebSocketSchema = WebSocketSchema,
     Type extends EventType = EventType,
-    Path extends WebSocketSchemaPath<Schema> = WebSocketClientDefaultPath<Schema>,
+    Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketClientDefaultPath<Schema>,
   > = Events<Schema, Path>[Type];
 
-  interface EventListenerParameters<Schema extends WebSocketSchema, Path extends WebSocketSchemaPath<Schema>> {
+  interface EventListenerParameters<Schema extends WebSocketSchema, Path extends WebSocketSchemaPath.Literal<Schema>> {
     open: [event: Event<Schema, 'open', Path>];
     message: [event: Event<Schema, 'message', Path>];
     close: [event: Event<Schema, 'close', Path>];
@@ -70,7 +72,7 @@ export namespace WebSocketClient {
   export type EventListener<
     Schema extends WebSocketSchema,
     Type extends EventType,
-    Path extends WebSocketSchemaPath<Schema> = WebSocketClientDefaultPath<Schema>,
+    Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketClientDefaultPath<Schema>,
   > = (
     this: WebSocketClient<Schema, Path>,
     ...parameters: EventListenerParameters<Schema, Path>[Type]
@@ -85,7 +87,7 @@ type WebSocketClientRawEventListener = (this: WebSocket, event: Event) => Possib
  */
 export class WebSocketClient<
   Schema extends WebSocketSchema,
-  Path extends WebSocketSchemaPath<Schema> = WebSocketClientDefaultPath<Schema>,
+  Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketClientDefaultPath<Schema>,
 > implements Omit<WebSocket, `${string}EventListener` | `on${string}`> {
   private socket?: WebSocket;
   private openingSocket?: WebSocket;
