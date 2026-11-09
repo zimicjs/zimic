@@ -1,5 +1,4 @@
 import { ValidationError } from '@zimic/utils/validation';
-import { WebSocketSchema } from '@zimic/ws';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -44,7 +43,7 @@ describe('normalizeWebSocketMessageData', () => {
 
   it('should preserve ArrayBuffer message data', async () => {
     const data = new Uint8Array([1, 2, 3]).buffer;
-    await expect(normalizeWebSocketMessageData<WebSocketSchema<ArrayBuffer>>(data)).resolves.toBe(data);
+    await expect(normalizeWebSocketMessageData<ArrayBuffer>(data)).resolves.toBe(data);
   });
 
   it.each([
@@ -52,7 +51,7 @@ describe('normalizeWebSocketMessageData', () => {
     { type: 'Uint8Array with offset', data: new Uint8Array([0, 1, 2, 3, 0]).subarray(1, 4) },
     { type: 'DataView with offset', data: new DataView(new Uint8Array([0, 1, 2, 3, 0]).buffer, 1, 3) },
   ])('should convert $type message data to ArrayBuffer', async ({ data }) => {
-    const normalizedData = await normalizeWebSocketMessageData<WebSocketSchema<typeof data>>(data);
+    const normalizedData = await normalizeWebSocketMessageData<typeof data>(data);
 
     expect(normalizedData).toBeInstanceOf(ArrayBuffer);
     expect(normalizedData).toEqual(new Uint8Array([1, 2, 3]).buffer);

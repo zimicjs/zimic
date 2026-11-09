@@ -1,4 +1,4 @@
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketSchema, WebSocketSchemaMessage, WebSocketSchemaPath } from '@zimic/ws';
 
 import LocalWebSocketConnectionHandler from '../connectionHandler/LocalWebSocketConnectionHandler';
 import LocalWebSocketMessageHandler from '../messageHandler/LocalWebSocketMessageHandler';
@@ -12,18 +12,19 @@ import {
   WebSocketInterceptorConnectionSaving,
   WebSocketInterceptorMessageSaving,
 } from './types/public';
+import { WebSocketInterceptorHandlerPath, WebSocketInterceptorPathMessage } from './types/schema';
 import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
 import WebSocketInterceptorStore from './WebSocketInterceptorStore';
 
 class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements PublicLocalWebSocketInterceptor<Schema> {
   private store = new WebSocketInterceptorStore();
 
-  implementation: WebSocketInterceptorImplementation<Schema>;
+  implementation: WebSocketInterceptorImplementation<WebSocketSchemaMessage<Schema>>;
 
   constructor(options: LocalWebSocketInterceptorOptions) {
     const baseURL = new URL(options.baseURL);
 
-    this.implementation = new WebSocketInterceptorImplementation<Schema>({
+    this.implementation = new WebSocketInterceptorImplementation<WebSocketSchemaMessage<Schema>>({
       baseURL,
       messageSaving: options.messageSaving,
       connectionSaving: options.connectionSaving,
@@ -79,19 +80,23 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
     this.implementation.onUnhandledMessage = onUnhandledMessage;
   }
 
-  message() {
-    return this.implementation.message() as LocalWebSocketMessageHandler<Schema>;
+  message<Path extends WebSocketSchemaPath.NonLiteral<Schema> = never>(path?: Path) {
+    return this.implementation.message(path) as unknown as LocalWebSocketMessageHandler<
+      WebSocketInterceptorPathMessage<Schema, WebSocketInterceptorHandlerPath<Schema, Path>>
+    >;
   }
 
-  connection<Path extends string = string>(path?: Path) {
-    return this.implementation.connection(path) as LocalWebSocketConnectionHandler<Schema, Path>;
+  connection<Path extends WebSocketSchemaPath.NonLiteral<Schema> = never>(path?: Path) {
+    return this.implementation.connection<Schema, WebSocketInterceptorHandlerPath<Schema, Path>>(
+      path,
+    ) as LocalWebSocketConnectionHandler<Schema, WebSocketInterceptorHandlerPath<Schema, Path>>;
   }
 
-  get server(): PublicWebSocketInterceptorServer<Schema> {
+  get server(): PublicWebSocketInterceptorServer<WebSocketSchemaMessage<Schema>> {
     return this.implementation.server;
   }
 
-  get clients(): readonly PublicWebSocketInterceptorClient<Schema>[] {
+  get clients(): readonly PublicWebSocketInterceptorClient<WebSocketSchemaMessage<Schema>>[] {
     return this.implementation.clients;
   }
 

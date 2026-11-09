@@ -1,5 +1,5 @@
 import { PossiblePromise } from '@zimic/utils/types';
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageSchema } from '@zimic/ws';
 
 import { WebSocketInterceptorConnectionSaving, WebSocketInterceptorMessageSaving } from './public';
 
@@ -34,7 +34,7 @@ export namespace UnhandledMessageStrategy {
    * A function that receives the data of an unhandled client message and returns the strategy declaration to apply to
    * it. If it throws, the error is logged and the default declaration is applied.
    */
-  export type DeclarationFactory = (message: WebSocketSchema) => PossiblePromise<Declaration>;
+  export type DeclarationFactory = (message: WebSocketMessageSchema) => PossiblePromise<Declaration>;
 }
 
 /**

@@ -1,4 +1,4 @@
-import { JSONStringified, WebSocketSchema } from '@zimic/ws';
+import { JSONStringified } from '@zimic/ws';
 import { describe, expectTypeOf, it } from 'vitest';
 
 import {
@@ -11,14 +11,14 @@ import type {
   PendingRemoteWebSocketMessageHandler,
   SyncedRemoteWebSocketMessageHandler,
 } from '../types/public';
-import { Schema } from './shared/utils';
+import { ChatMessage } from './shared/utils';
 
-type CreateMessage = Extract<Schema, { type: 'create' }>;
+type CreateMessage = Extract<ChatMessage, { type: 'create' }>;
 type PrioritizedCreateMessage = CreateMessage & {
   body: CreateMessage['body'] & { priority: number };
 };
 
-type NestedSchema = WebSocketSchema<
+type NestedSchema =
   | {
       type: 'create';
       body: {
@@ -33,13 +33,12 @@ type NestedSchema = WebSocketSchema<
         details?: { label: string };
       };
     }
-  | { type: 'delete'; id: string }
->;
+  | { type: 'delete'; id: string };
 
 // The handlers below are only type-checked. The functions declaring them are never called.
 describe('WebSocketMessageHandler > Types', () => {
   it('should narrow message schemas through static restrictions', () => {
-    function declareStaticRestriction(handler: LocalWebSocketMessageHandler<Schema>) {
+    function declareStaticRestriction(handler: LocalWebSocketMessageHandler<ChatMessage>) {
       handler.with({ type: 'create' }).effect((message) => {
         expectTypeOf(message).toEqualTypeOf<CreateMessage>();
         expectTypeOf(message.body.text).toEqualTypeOf<string>();
@@ -71,35 +70,35 @@ describe('WebSocketMessageHandler > Types', () => {
   });
 
   it('should reset cleared handler return types to the root schema', () => {
-    function declareLocalClear(handler: LocalWebSocketMessageHandler<Schema, CreateMessage>) {
+    function declareLocalClear(handler: LocalWebSocketMessageHandler<ChatMessage, CreateMessage>) {
       const clearedHandler = handler.clear();
-      expectTypeOf(clearedHandler).toEqualTypeOf<LocalWebSocketMessageHandler<Schema, Schema>>();
+      expectTypeOf(clearedHandler).toEqualTypeOf<LocalWebSocketMessageHandler<ChatMessage, ChatMessage>>();
 
       clearedHandler
         .with({ type: 'delete' })
         .delay((message) => message.id.length)
         .effect((message) => {
-          expectTypeOf(message).toEqualTypeOf<Extract<Schema, { type: 'delete' }>>();
+          expectTypeOf(message).toEqualTypeOf<Extract<ChatMessage, { type: 'delete' }>>();
         })
         .respond({ type: 'create', body: { text: 'response' } })
         .times(1);
     }
 
-    function declarePendingRemoteClear(handler: PendingRemoteWebSocketMessageHandler<Schema, CreateMessage>) {
+    function declarePendingRemoteClear(handler: PendingRemoteWebSocketMessageHandler<ChatMessage, CreateMessage>) {
       const clearedHandler = handler.clear();
-      expectTypeOf(clearedHandler).toEqualTypeOf<PendingRemoteWebSocketMessageHandler<Schema, Schema>>();
+      expectTypeOf(clearedHandler).toEqualTypeOf<PendingRemoteWebSocketMessageHandler<ChatMessage, ChatMessage>>();
 
       clearedHandler.respond({ type: 'delete', id: '1' }).effect((message) => {
-        expectTypeOf(message).toEqualTypeOf<Schema>();
+        expectTypeOf(message).toEqualTypeOf<ChatMessage>();
       });
     }
 
-    async function declareSyncedRemoteClear(handler: SyncedRemoteWebSocketMessageHandler<Schema, CreateMessage>) {
+    async function declareSyncedRemoteClear(handler: SyncedRemoteWebSocketMessageHandler<ChatMessage, CreateMessage>) {
       const clearedHandler = handler.clear();
-      expectTypeOf(clearedHandler).toEqualTypeOf<PendingRemoteWebSocketMessageHandler<Schema, Schema>>();
+      expectTypeOf(clearedHandler).toEqualTypeOf<PendingRemoteWebSocketMessageHandler<ChatMessage, ChatMessage>>();
 
       const syncedHandler = await clearedHandler;
-      expectTypeOf(syncedHandler).toEqualTypeOf<SyncedRemoteWebSocketMessageHandler<Schema, Schema>>();
+      expectTypeOf(syncedHandler).toEqualTypeOf<SyncedRemoteWebSocketMessageHandler<ChatMessage, ChatMessage>>();
     }
 
     expectTypeOf(declareLocalClear).toBeFunction();
@@ -112,7 +111,7 @@ describe('WebSocketMessageHandler > Types', () => {
       return message.body.priority !== undefined;
     }
 
-    function declareChainedRestrictions(handler: LocalWebSocketMessageHandler<Schema>) {
+    function declareChainedRestrictions(handler: LocalWebSocketMessageHandler<ChatMessage>) {
       const restrictedHandler = handler.with({ type: 'create' }).with(hasPriority);
 
       restrictedHandler.delay((message) => {
@@ -122,20 +121,20 @@ describe('WebSocketMessageHandler > Types', () => {
 
       restrictedHandler.effect((message, context) => {
         expectTypeOf(message).toEqualTypeOf<PrioritizedCreateMessage>();
-        expectTypeOf(context.sender).toEqualTypeOf<WebSocketInterceptorClient<Schema>>();
-        expectTypeOf(context.receiver).toEqualTypeOf<WebSocketInterceptorServer<Schema>>();
+        expectTypeOf(context.sender).toEqualTypeOf<WebSocketInterceptorClient<ChatMessage>>();
+        expectTypeOf(context.receiver).toEqualTypeOf<WebSocketInterceptorServer<ChatMessage>>();
       });
 
       restrictedHandler.respond((message, context) => {
         expectTypeOf(message).toEqualTypeOf<PrioritizedCreateMessage>();
-        expectTypeOf(context.sender).toEqualTypeOf<WebSocketInterceptorClient<Schema>>();
-        expectTypeOf(context.receiver).toEqualTypeOf<WebSocketInterceptorServer<Schema>>();
+        expectTypeOf(context.sender).toEqualTypeOf<WebSocketInterceptorClient<ChatMessage>>();
+        expectTypeOf(context.receiver).toEqualTypeOf<WebSocketInterceptorServer<ChatMessage>>();
 
         return { type: 'delete', id: message.body.text };
       });
 
       expectTypeOf<typeof restrictedHandler.messages>().toEqualTypeOf<
-        readonly InterceptedWebSocketInterceptorMessage<PrioritizedCreateMessage, Schema>[]
+        readonly InterceptedWebSocketInterceptorMessage<PrioritizedCreateMessage, ChatMessage>[]
       >();
     }
 
@@ -144,8 +143,8 @@ describe('WebSocketMessageHandler > Types', () => {
 
   it('should accept exact options only in static restrictions', () => {
     function declareExactRestrictions(
-      localHandler: LocalWebSocketMessageHandler<Schema>,
-      remoteHandler: SyncedRemoteWebSocketMessageHandler<Schema>,
+      localHandler: LocalWebSocketMessageHandler<ChatMessage>,
+      remoteHandler: SyncedRemoteWebSocketMessageHandler<ChatMessage>,
     ) {
       localHandler.with({ type: 'create' }, { exact: true }).effect((message) => {
         expectTypeOf(message).toEqualTypeOf<CreateMessage>();
@@ -158,7 +157,7 @@ describe('WebSocketMessageHandler > Types', () => {
       localHandler.with({ type: 'create' }, {});
       localHandler.with({ type: 'create' });
 
-      function isCreateMessage(message: Schema): message is CreateMessage {
+      function isCreateMessage(message: ChatMessage): message is CreateMessage {
         return message.type === 'create';
       }
 
@@ -178,11 +177,11 @@ describe('WebSocketMessageHandler > Types', () => {
   });
 
   it('should accept boolean computed restrictions without narrowing message schemas', () => {
-    function declareBooleanRestriction(handler: LocalWebSocketMessageHandler<Schema>) {
+    function declareBooleanRestriction(handler: LocalWebSocketMessageHandler<ChatMessage>) {
       handler
         .with((message): boolean => message.type === 'create')
         .effect((message) => {
-          expectTypeOf(message).toEqualTypeOf<Schema>();
+          expectTypeOf(message).toEqualTypeOf<ChatMessage>();
         });
     }
 
@@ -190,7 +189,7 @@ describe('WebSocketMessageHandler > Types', () => {
   });
 
   it('should receive binary schema members as ArrayBuffer', () => {
-    type BinarySchema = WebSocketSchema<Blob | { type: 'a' }>;
+    type BinarySchema = Blob | { type: 'a' };
     type ReceivedBinaryMessage = ArrayBuffer | Extract<BinarySchema, { type: 'a' }>;
 
     function declareBinaryHandlers(handler: LocalWebSocketMessageHandler<BinarySchema>) {
@@ -226,7 +225,7 @@ describe('WebSocketMessageHandler > Types', () => {
   });
 
   it('should accept only whole binary values in static restrictions', () => {
-    type BinarySchema = WebSocketSchema<Blob | ArrayBuffer | { type: 'a'; id: string }>;
+    type BinarySchema = Blob | ArrayBuffer | { type: 'a'; id: string };
 
     function declareBinaryRestrictions(handler: LocalWebSocketMessageHandler<BinarySchema>) {
       handler.with(new Blob(['a']));
@@ -252,7 +251,7 @@ describe('WebSocketMessageHandler > Types', () => {
   });
 
   it('should receive top-level number and boolean schema members as text', () => {
-    type PrimitiveSchema = WebSocketSchema<number | boolean | { type: 'a' }>;
+    type PrimitiveSchema = number | boolean | { type: 'a' };
     type ReceivedPrimitiveMessage = `${number}` | 'true' | 'false' | Extract<PrimitiveSchema, { type: 'a' }>;
 
     function declarePrimitiveHandlers(handler: LocalWebSocketMessageHandler<PrimitiveSchema>) {
@@ -284,7 +283,7 @@ describe('WebSocketMessageHandler > Types', () => {
   });
 
   it('should accept only the text of top-level number and boolean members in static restrictions', () => {
-    type PrimitiveSchema = WebSocketSchema<number | boolean | { type: 'a'; id: string }>;
+    type PrimitiveSchema = number | boolean | { type: 'a'; id: string };
 
     function declarePrimitiveRestrictions(
       handler: LocalWebSocketMessageHandler<PrimitiveSchema>,
@@ -320,14 +319,13 @@ describe('WebSocketMessageHandler > Types', () => {
   });
 
   it('should keep every text schema member through static text restrictions', () => {
-    type TextSchema = WebSocketSchema<
+    type TextSchema =
       | 'ping'
       | 'pong'
       | '41'
       | '40'
       | `42["user:delete",${JSONStringified<{ id: string }>}]`
-      | `42["user:delete:success",${JSONStringified<{}>}]`
-    >;
+      | `42["user:delete:success",${JSONStringified<{}>}]`;
 
     function declareStringRestrictions(handler: LocalWebSocketMessageHandler<TextSchema>, pingOrPong: 'ping' | 'pong') {
       const deleteHandler = handler.with(`42["user:delete",${JSON.stringify({ id: '1' })}]`);
@@ -364,7 +362,7 @@ describe('WebSocketMessageHandler > Types', () => {
   });
 
   it('should narrow mixed string, JSON, and binary schemas through static restrictions', () => {
-    type MixedSchema = WebSocketSchema<string | { type: 'a' } | Blob>;
+    type MixedSchema = string | { type: 'a' } | Blob;
 
     function declareMixedRestrictions(handler: LocalWebSocketMessageHandler<MixedSchema>) {
       handler.with('text').effect((message) => {
@@ -384,7 +382,7 @@ describe('WebSocketMessageHandler > Types', () => {
   });
 
   it('should reject invalid message declarations', () => {
-    function declareInvalidMessages(handler: LocalWebSocketMessageHandler<Schema>) {
+    function declareInvalidMessages(handler: LocalWebSocketMessageHandler<ChatMessage>) {
       const restrictedHandler = handler
         .with({ type: 'create' })
         .with((message): message is CreateMessage => message.body.text.length > 0);

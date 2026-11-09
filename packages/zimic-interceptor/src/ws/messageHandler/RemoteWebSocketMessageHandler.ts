@@ -1,5 +1,5 @@
 import { PossiblePromise } from '@zimic/utils/types';
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageSchema } from '@zimic/ws';
 
 import { WebSocketInterceptorClient } from '../interceptor/types/messages';
 import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
@@ -20,7 +20,7 @@ import WebSocketMessageHandlerImplementation from './WebSocketMessageHandlerImpl
 const PENDING_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Promise<unknown>)[]);
 
 class RemoteWebSocketMessageHandler<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
   RestrictedSchema extends Schema = Schema,
 > implements PublicPendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema> {
   readonly type = 'remote';
@@ -30,13 +30,18 @@ class RemoteWebSocketMessageHandler<
   private pending: this;
   private synced: this;
 
-  constructor(interceptorImplementation: WebSocketInterceptorImplementation<Schema>) {
+  constructor(interceptorImplementation: WebSocketInterceptorImplementation<Schema>, path: string | undefined) {
     this.implementation = new WebSocketMessageHandlerImplementation<Schema, RestrictedSchema>(
       interceptorImplementation,
+      path,
       this,
     );
     this.pending = this;
     this.synced = this.createSyncedProxy();
+  }
+
+  get path() {
+    return this.implementation.path;
   }
 
   private createSyncedProxy() {

@@ -1,7 +1,7 @@
 import { blobEquals, jsonContains, jsonEquals } from '@zimic/utils/data';
 import { waitForDelay } from '@zimic/utils/time';
 import { Range } from '@zimic/utils/types';
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageSchema } from '@zimic/ws';
 
 import { random } from '@/utils/numbers';
 
@@ -29,6 +29,7 @@ import {
 } from './types/public';
 import {
   UnmatchedWebSocketInterceptorMessageGroup,
+  WebSocketMessageHandlerComputedRestriction,
   WebSocketMessageHandlerRestriction,
   WebSocketMessageHandlerRestrictionDiffs,
   WebSocketMessageHandlerRestrictionMatch,
@@ -44,14 +45,21 @@ const DEFAULT_NUMBER_OF_MESSAGE_LIMITS: Range<number> = Object.freeze({
 export type WebSocketMessageHandlerMessageMatch =
   | { success: true }
   | { success: false; cause: 'clearedHandler' | 'exceededNumberOfMessages' }
-  | { success: false; cause: 'unmatchedRestrictions'; diff: WebSocketMessageHandlerRestrictionDiffs<WebSocketSchema> };
+  | {
+      success: false;
+      cause: 'unmatchedRestrictions';
+      diff: WebSocketMessageHandlerRestrictionDiffs<WebSocketMessageSchema>;
+    };
 
-export interface WebSocketMessageHandlerApplyContext<Schema extends WebSocketSchema> {
+export interface WebSocketMessageHandlerApplyContext<Schema extends WebSocketMessageSchema> {
   sender: InternalWebSocketInterceptorClient<Schema>;
   receiver: InternalWebSocketInterceptorServer<Schema>;
 }
 
-class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, RestrictedSchema extends Schema = Schema> {
+class WebSocketMessageHandlerImplementation<
+  Schema extends WebSocketMessageSchema,
+  RestrictedSchema extends Schema = Schema,
+> {
   private restrictions: {
     restriction: WebSocketMessageHandlerRestriction<RestrictedSchema>;
     options: WebSocketMessageHandlerStaticRestrictionOptions;
@@ -83,6 +91,7 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
 
   constructor(
     private interceptor: WebSocketInterceptorImplementation<Schema>,
+    readonly path: string | undefined,
     private handler: InternalWebSocketMessageHandler<Schema, RestrictedSchema>,
   ) {
     this.savedMessageIndex = this.interceptor.messageStore.createHandlerIndex<RestrictedSchema>();
@@ -288,7 +297,9 @@ class WebSocketMessageHandlerImplementation<Schema extends WebSocketSchema, Rest
     return { success: true };
   }
 
-  private isComputedMessageRestriction(restriction: WebSocketMessageHandlerRestriction<RestrictedSchema>) {
+  private isComputedMessageRestriction(
+    restriction: WebSocketMessageHandlerRestriction<RestrictedSchema>,
+  ): restriction is WebSocketMessageHandlerComputedRestriction<RestrictedSchema> {
     return typeof restriction === 'function';
   }
 

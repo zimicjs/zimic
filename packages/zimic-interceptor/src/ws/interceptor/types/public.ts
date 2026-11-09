@@ -1,11 +1,12 @@
 import { PossiblePromise } from '@zimic/utils/types';
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketSchema, WebSocketSchemaMessage, WebSocketSchemaPath } from '@zimic/ws';
 
 import { LocalWebSocketConnectionHandler, RemoteWebSocketConnectionHandler } from '@/ws/connectionHandler/types/public';
 import { LocalWebSocketMessageHandler, RemoteWebSocketMessageHandler } from '@/ws/messageHandler/types/public';
 
 import { WebSocketInterceptorClient, WebSocketInterceptorServer } from './messages';
 import { RemoteWebSocketInterceptorOptions, UnhandledMessageStrategy, WebSocketInterceptorPlatform } from './options';
+import { WebSocketInterceptorHandlerPath, WebSocketInterceptorPathMessage } from './schema';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -85,14 +86,14 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
    *
    * @readonly
    */
-  get server(): WebSocketInterceptorServer<Schema>;
+  get server(): WebSocketInterceptorServer<WebSocketSchemaMessage<Schema>>;
 
   /**
    * The currently connected client handles.
    *
    * @readonly
    */
-  get clients(): readonly WebSocketInterceptorClient<Schema>[];
+  get clients(): readonly WebSocketInterceptorClient<WebSocketSchemaMessage<Schema>>[];
 
   /** Starts the interceptor, allowing it to intercept WebSocket connections and messages. */
   start: () => Promise<void>;
@@ -129,8 +130,18 @@ export interface LocalWebSocketInterceptor<Schema extends WebSocketSchema> exten
    */
   get type(): 'local';
 
-  /** Creates a message handler for client-to-server messages. */
-  message: () => LocalWebSocketMessageHandler<Schema>;
+  /**
+   * Creates a message handler for client-to-server messages.
+   *
+   * @param path The path of the connections whose messages to match, relative to the base URL of the interceptor, such
+   *   as `/rooms/:roomId`. If omitted, the handler matches the messages of every connection and is typed with the
+   *   messages of all paths.
+   */
+  message: <Path extends WebSocketSchemaPath.NonLiteral<Schema> = never>(
+    path?: Path,
+  ) => LocalWebSocketMessageHandler<
+    WebSocketInterceptorPathMessage<Schema, WebSocketInterceptorHandlerPath<Schema, Path>>
+  >;
 
   /**
    * Creates a connection handler for connection attempts to the interceptor, which can accept or reject them before
@@ -139,7 +150,9 @@ export interface LocalWebSocketInterceptor<Schema extends WebSocketSchema> exten
    * @param path The path of the connections to match, relative to the base URL of the interceptor, such as
    *   `/rooms/:roomId`. If omitted, the handler matches every connection to the interceptor.
    */
-  connection: <Path extends string = string>(path?: Path) => LocalWebSocketConnectionHandler<Schema, Path>;
+  connection: <Path extends WebSocketSchemaPath.NonLiteral<Schema> = never>(
+    path?: Path,
+  ) => LocalWebSocketConnectionHandler<Schema, WebSocketInterceptorHandlerPath<Schema, Path>>;
 
   /**
    * Checks if all handlers created by this interceptor have matched the number of messages or connections declared with
@@ -171,8 +184,18 @@ export interface RemoteWebSocketInterceptor<Schema extends WebSocketSchema> exte
   /** The options used to authenticate the interceptor when connecting to an interceptor server. */
   auth?: RemoteWebSocketInterceptorOptions['auth'];
 
-  /** Creates a message handler for client-to-server messages. */
-  message: () => RemoteWebSocketMessageHandler<Schema>;
+  /**
+   * Creates a message handler for client-to-server messages.
+   *
+   * @param path The path of the connections whose messages to match, relative to the base URL of the interceptor, such
+   *   as `/rooms/:roomId`. If omitted, the handler matches the messages of every connection and is typed with the
+   *   messages of all paths.
+   */
+  message: <Path extends WebSocketSchemaPath.NonLiteral<Schema> = never>(
+    path?: Path,
+  ) => RemoteWebSocketMessageHandler<
+    WebSocketInterceptorPathMessage<Schema, WebSocketInterceptorHandlerPath<Schema, Path>>
+  >;
 
   /**
    * Creates a connection handler for connection attempts to the interceptor, which can accept or reject them before
@@ -181,7 +204,9 @@ export interface RemoteWebSocketInterceptor<Schema extends WebSocketSchema> exte
    * @param path The path of the connections to match, relative to the base URL of the interceptor, such as
    *   `/rooms/:roomId`. If omitted, the handler matches every connection to the interceptor.
    */
-  connection: <Path extends string = string>(path?: Path) => RemoteWebSocketConnectionHandler<Schema, Path>;
+  connection: <Path extends WebSocketSchemaPath.NonLiteral<Schema> = never>(
+    path?: Path,
+  ) => RemoteWebSocketConnectionHandler<Schema, WebSocketInterceptorHandlerPath<Schema, Path>>;
 
   /**
    * Checks if all handlers created by this interceptor have matched the number of messages or connections declared with

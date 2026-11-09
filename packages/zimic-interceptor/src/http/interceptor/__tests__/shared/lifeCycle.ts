@@ -203,7 +203,7 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
     }>(interceptorOptions, async (interceptor) => {
       await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
 
-      await usingWebSocketInterceptor<WebSocketSchema<string>>(
+      await usingWebSocketInterceptor<WebSocketSchema<{ '/': { message: string } }>>(
         { type: 'local', baseURL: webSocketBaseURL },
         async (webSocketInterceptor) => {
           await webSocketInterceptor.stop();

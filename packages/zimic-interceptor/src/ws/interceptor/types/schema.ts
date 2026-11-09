@@ -1,3 +1,11 @@
+import { IfNever } from '@zimic/utils/types';
+import {
+  LiteralWebSocketSchemaPathFromNonLiteral,
+  WebSocketSchema,
+  WebSocketSchemaMessage,
+  WebSocketSchemaPath,
+} from '@zimic/ws';
+
 import { LocalWebSocketInterceptor, RemoteWebSocketInterceptor } from './public';
 
 /**
@@ -13,12 +21,14 @@ import { LocalWebSocketInterceptor, RemoteWebSocketInterceptor } from './public'
  *   } from '@zimic/interceptor/experimental/ws';
  *   import { type WebSocketSchema } from '@zimic/ws';
  *
- *   const interceptor = createWebSocketInterceptor<WebSocketSchema<{ type: 'ping' } | { type: 'pong' }>>({
+ *   const interceptor = createWebSocketInterceptor<
+ *     WebSocketSchema<{ '/rooms/:roomId': { message: { type: 'ping' } | { type: 'pong' } } }>
+ *   >({
  *     baseURL: 'ws://localhost:3000',
  *   });
  *
  *   type Schema = InferWebSocketInterceptorSchema<typeof interceptor>;
- *   // WebSocketSchema<{ type: 'ping' } | { type: 'pong' }>
+ *   // WebSocketSchema<{ '/rooms/:roomId': { message: { type: 'ping' } | { type: 'pong' } } }>
  */
 export type InferWebSocketInterceptorSchema<Interceptor> =
   Interceptor extends LocalWebSocketInterceptor<infer Schema>
@@ -26,3 +36,25 @@ export type InferWebSocketInterceptorSchema<Interceptor> =
     : Interceptor extends RemoteWebSocketInterceptor<infer Schema>
       ? Schema
       : never;
+
+/**
+ * The path type of a handler declared with a path argument. Handlers declared without one, where the argument is
+ * inferred as `never`, have the path type `string`.
+ */
+export type WebSocketInterceptorHandlerPath<Schema extends WebSocketSchema, NonLiteralPath extends string> = IfNever<
+  NonLiteralPath,
+  string,
+  LiteralWebSocketSchemaPathFromNonLiteral<Schema, NonLiteralPath>
+>;
+
+/** The schema paths described by a handler path. A handler without a path, typed as `string`, describes all of them. */
+export type DeclaredWebSocketInterceptorPath<Schema extends WebSocketSchema, Path extends string> = Extract<
+  Path extends WebSocketSchemaPath.Literal<Schema> ? Path : WebSocketSchemaPath.Literal<Schema>,
+  WebSocketSchemaPath.Literal<Schema>
+>;
+
+/** The messages of the schema paths described by a handler path. */
+export type WebSocketInterceptorPathMessage<
+  Schema extends WebSocketSchema,
+  Path extends string,
+> = WebSocketSchemaMessage<Schema, DeclaredWebSocketInterceptorPath<Schema, Path>>;

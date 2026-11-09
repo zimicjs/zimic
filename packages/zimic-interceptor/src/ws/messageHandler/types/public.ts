@@ -1,5 +1,5 @@
 import { PossiblePromise } from '@zimic/utils/types';
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageSchema } from '@zimic/ws';
 
 import {
   InterceptedWebSocketInterceptorMessage,
@@ -19,7 +19,7 @@ import {
 } from './restrictions';
 
 export interface InternalWebSocketMessageHandler<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
   RestrictedSchema extends Schema = Schema,
 > {
   implementation: WebSocketMessageHandlerImplementation<Schema, RestrictedSchema>;
@@ -30,7 +30,7 @@ export interface InternalWebSocketMessageHandler<
  *
  * The context of a matched message, passed to effects and computed responses.
  */
-export interface WebSocketMessageHandlerMessageContext<Schema extends WebSocketSchema> {
+export interface WebSocketMessageHandlerMessageContext<Schema extends WebSocketMessageSchema> {
   /** The client that sent the matched message. */
   sender: WebSocketInterceptorClient<Schema>;
 
@@ -45,7 +45,7 @@ export interface WebSocketMessageHandlerMessageContext<Schema extends WebSocketS
  * arrive as `ArrayBuffer`.
  */
 export type WebSocketMessageHandlerMessageCallback<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
   RestrictedSchema extends Schema = Schema,
 > = (
   message: ReceivedWebSocketMessageData<RestrictedSchema>,
@@ -57,7 +57,7 @@ export type WebSocketMessageHandlerMessageCallback<
  *
  * A static server message declared with `handler.respond()`.
  */
-export type WebSocketMessageHandlerMessageStaticDeclaration<Schema extends WebSocketSchema> = Schema;
+export type WebSocketMessageHandlerMessageStaticDeclaration<Schema extends WebSocketMessageSchema> = Schema;
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -66,7 +66,7 @@ export type WebSocketMessageHandlerMessageStaticDeclaration<Schema extends WebSo
  * context. Binary messages arrive as `ArrayBuffer`.
  */
 export type WebSocketMessageHandlerMessageComputedDeclaration<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
   RestrictedSchema extends Schema,
 > = (
   message: ReceivedWebSocketMessageData<RestrictedSchema>,
@@ -78,12 +78,15 @@ export type WebSocketMessageHandlerMessageComputedDeclaration<
  *
  * A server message declared with `handler.respond()`, either static or computed.
  */
-export type WebSocketMessageHandlerMessageDeclaration<Schema extends WebSocketSchema, RestrictedSchema extends Schema> =
+export type WebSocketMessageHandlerMessageDeclaration<
+  Schema extends WebSocketMessageSchema,
+  RestrictedSchema extends Schema,
+> =
   | WebSocketMessageHandlerMessageStaticDeclaration<Schema>
   | WebSocketMessageHandlerMessageComputedDeclaration<Schema, RestrictedSchema>;
 
 type WebSocketMessageHandlerSchemaCompatibleWithStaticRestriction<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
   Restriction,
 > = Schema extends unknown
   ? [Schema, Restriction] extends [Blob | BufferSource, Exclude<Restriction, Blob | BufferSource>]
@@ -104,7 +107,7 @@ type WebSocketMessageHandlerSchemaCompatibleWithStaticRestriction<
  * the text of several members, such as `'42' | 'true'`.
  */
 type WebSocketMessageHandlerPrimitiveSchemaMatchingText<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
   Text,
 > = Schema extends UnparsedWebSocketJSONPrimitive
   ? [Extract<Text, ReceivedWebSocketMessageData<Schema>>] extends [never]
@@ -117,7 +120,7 @@ type WebSocketMessageHandlerPrimitiveSchemaMatchingText<
  * accepting `ArrayBuffer` keeps every binary schema member. They also receive top-level number and boolean members as
  * text, so a predicate accepting that text keeps the member.
  */
-type WebSocketMessageHandlerSchemaCompatibleWithTypeGuard<Schema extends WebSocketSchema, Predicate> =
+type WebSocketMessageHandlerSchemaCompatibleWithTypeGuard<Schema extends WebSocketMessageSchema, Predicate> =
   | Extract<Predicate, Schema>
   | ([Extract<Predicate, ArrayBuffer>] extends [never] ? never : Extract<Schema, Blob | BufferSource>)
   | WebSocketMessageHandlerPrimitiveSchemaMatchingText<Schema, Predicate>;
@@ -127,7 +130,7 @@ type WebSocketMessageHandlerSchemaCompatibleWithTypeGuard<Schema extends WebSock
  * static restrictions narrow to the schema members compatible with them. Text restrictions keep every member received
  * as text, because any of them may include the restriction. Other restrictions keep the current type.
  */
-export type WebSocketMessageHandlerSchemaWithRestriction<Schema extends WebSocketSchema, Restriction> =
+export type WebSocketMessageHandlerSchemaWithRestriction<Schema extends WebSocketMessageSchema, Restriction> =
   Restriction extends WebSocketMessageHandlerComputedTypeGuardRestriction<Schema, infer Predicate>
     ? [Predicate] extends [never]
       ? Schema
@@ -142,7 +145,7 @@ export type WebSocketMessageHandlerSchemaWithRestriction<Schema extends WebSocke
  * A local WebSocket message handler. In a local handler, the mocking operations are synchronous.
  */
 export interface LocalWebSocketMessageHandler<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
   RestrictedSchema extends Schema = Schema,
 > {
   /**
@@ -151,6 +154,14 @@ export interface LocalWebSocketMessageHandler<
    * @readonly
    */
   get type(): 'local';
+
+  /**
+   * The path declared in `interceptor.message(path)`, relative to the interceptor base URL. `undefined` if the handler
+   * matches the messages of every connection to its interceptor.
+   *
+   * @readonly
+   */
+  get path(): string | undefined;
 
   /** Restricts the handler to messages sent by a specific connected client. */
   from: (sender: WebSocketInterceptorClient<Schema>) => this;
@@ -203,7 +214,7 @@ export interface LocalWebSocketMessageHandler<
  * operations were committed to the connected {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
  */
 export interface SyncedRemoteWebSocketMessageHandler<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
   RestrictedSchema extends Schema = Schema,
 > {
   /**
@@ -212,6 +223,14 @@ export interface SyncedRemoteWebSocketMessageHandler<
    * @readonly
    */
   get type(): 'remote';
+
+  /**
+   * The path declared in `interceptor.message(path)`, relative to the interceptor base URL. `undefined` if the handler
+   * matches the messages of every connection to its interceptor.
+   *
+   * @readonly
+   */
+  get path(): string | undefined;
 
   /** Restricts the handler to messages sent by a specific connected client. */
   from: (sender: WebSocketInterceptorClient<Schema>) => PendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema>;
@@ -281,7 +300,7 @@ export interface SyncedRemoteWebSocketMessageHandler<
  * {@link catch handler.catch()}, and {@link finally handler.finally()}.
  */
 export interface PendingRemoteWebSocketMessageHandler<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
   RestrictedSchema extends Schema = Schema,
 > extends SyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema> {
   /**
@@ -317,7 +336,7 @@ export interface PendingRemoteWebSocketMessageHandler<
  * calls to the connected {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
  */
 export type RemoteWebSocketMessageHandler<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
   RestrictedSchema extends Schema = Schema,
 > = PendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema>;
 
@@ -326,5 +345,5 @@ export type RemoteWebSocketMessageHandler<
  *
  * A WebSocket message handler, either local or remote.
  */
-export type WebSocketMessageHandler<Schema extends WebSocketSchema, RestrictedSchema extends Schema = Schema> =
+export type WebSocketMessageHandler<Schema extends WebSocketMessageSchema, RestrictedSchema extends Schema = Schema> =
   LocalWebSocketMessageHandler<Schema, RestrictedSchema> | RemoteWebSocketMessageHandler<Schema, RestrictedSchema>;

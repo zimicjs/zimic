@@ -1,5 +1,5 @@
 import { HttpSearchParams } from '@zimic/utils/http';
-import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageData, WebSocketMessageSchema } from '@zimic/ws';
 
 import type {
   InterceptedWebSocketInterceptorMessage,
@@ -9,7 +9,7 @@ import type {
 } from './types/messages';
 
 export interface InternalWebSocketInterceptorClient<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
 > extends WebSocketInterceptorClient<Schema> {
   messages: InterceptedWebSocketInterceptorMessage<Schema>[];
 }
@@ -40,7 +40,7 @@ export function isUserCloseCode(code: number) {
 type WebSocketInterceptorClientCloser = (code?: number, reason?: string) => void;
 
 class WebSocketInterceptorClientImplementation<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
 > implements InternalWebSocketInterceptorClient<Schema> {
   #sendMessage: (data: WebSocketMessageData<Schema>) => void;
   #closeConnection: WebSocketInterceptorClientCloser;
@@ -84,7 +84,7 @@ class WebSocketInterceptorClientImplementation<
   }
 }
 
-export function createWebSocketInterceptorClient<Schema extends WebSocketSchema>(options: {
+export function createWebSocketInterceptorClient<Schema extends WebSocketMessageSchema>(options: {
   url: string;
   protocols: readonly string[];
   send: (data: WebSocketMessageData<Schema>) => void;
@@ -94,13 +94,13 @@ export function createWebSocketInterceptorClient<Schema extends WebSocketSchema>
 }
 
 export interface InternalWebSocketInterceptorServer<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
 > extends WebSocketInterceptorServer<Schema> {
   messages: InterceptedWebSocketInterceptorMessage<Schema>[];
 }
 
 class WebSocketInterceptorServerImplementation<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
 > implements InternalWebSocketInterceptorServer<Schema> {
   #getURL: () => string;
   #sendMessage: (data: WebSocketMessageData<Schema>, options?: WebSocketInterceptorServerSendOptions<Schema>) => void;
@@ -124,7 +124,7 @@ class WebSocketInterceptorServerImplementation<
   }
 }
 
-export function createWebSocketInterceptorServer<Schema extends WebSocketSchema>(
+export function createWebSocketInterceptorServer<Schema extends WebSocketMessageSchema>(
   getURL: () => string,
   send: (data: WebSocketMessageData<Schema>, options?: WebSocketInterceptorServerSendOptions<Schema>) => void,
 ): InternalWebSocketInterceptorServer<Schema> {

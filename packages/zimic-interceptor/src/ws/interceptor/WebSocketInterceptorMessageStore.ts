@@ -1,4 +1,4 @@
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageSchema } from '@zimic/ws';
 
 import MessageSavingSafeLimitExceededError from './errors/MessageSavingSafeLimitExceededError';
 import type { InterceptedWebSocketInterceptorMessage, ReceivedWebSocketMessageData } from './types/messages';
@@ -7,14 +7,14 @@ import type {
   InternalWebSocketInterceptorServer,
 } from './WebSocketInterceptorHandle';
 
-interface WebSocketInterceptorMessageRecord<Schema extends WebSocketSchema> {
+interface WebSocketInterceptorMessageRecord<Schema extends WebSocketMessageSchema> {
   message: InterceptedWebSocketInterceptorMessage<Schema>;
   sender: InternalWebSocketInterceptorClient<Schema>;
   receiver: InternalWebSocketInterceptorServer<Schema>;
 }
 
 export interface WebSocketInterceptorMessageHandlerIndex<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
   RestrictedSchema extends Schema = Schema,
 > {
   messages: InterceptedWebSocketInterceptorMessage<RestrictedSchema, Schema>[];
@@ -24,7 +24,7 @@ export interface WebSocketInterceptorMessageHandlerIndex<
 // Each saved message is listed by its handler, its sender client, and the interceptor server, and clearing a handler
 // must remove its messages from all of them. Connections and requests are listed only by their handler, so a counter
 // is enough for them.
-class WebSocketInterceptorMessageStore<Schema extends WebSocketSchema> {
+class WebSocketInterceptorMessageStore<Schema extends WebSocketMessageSchema> {
   private records = new Set<WebSocketInterceptorMessageRecord<Schema>>();
 
   constructor(private getSafeLimit: () => number) {}

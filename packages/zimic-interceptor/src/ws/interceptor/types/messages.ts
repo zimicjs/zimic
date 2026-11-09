@@ -1,6 +1,14 @@
 import { HttpSearchParams, InferPathParams } from '@zimic/utils/http';
 import { Replace } from '@zimic/utils/types';
-import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import {
+  WebSocketConnectionProtocolSchema,
+  WebSocketConnectionSearchParamsSchema,
+  WebSocketMessageData,
+  WebSocketMessageSchema,
+  WebSocketSchema,
+} from '@zimic/ws';
+
+import { DeclaredWebSocketInterceptorPath } from './schema';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -10,18 +18,18 @@ import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
  * `'true'`. Binary messages arrive as `ArrayBuffer`, regardless of whether the client sent a `Blob`, an `ArrayBuffer`,
  * or an `ArrayBufferView`, because WebSocket binary frames carry only raw bytes.
  */
-export type ReceivedWebSocketMessageData<Schema extends WebSocketSchema> = Schema extends UnparsedWebSocketJSONPrimitive
-  ? UnparsedWebSocketJSONPrimitiveText<Schema>
-  : Replace<Schema, Blob | ArrayBufferView, ArrayBuffer>;
+export type ReceivedWebSocketMessageData<Schema extends WebSocketMessageSchema> =
+  Schema extends UnparsedWebSocketJSONPrimitive
+    ? UnparsedWebSocketJSONPrimitiveText<Schema>
+    : Replace<Schema, Blob | ArrayBufferView, ArrayBuffer>;
 
 /**
  * The top-level JSON values that text messages keep as text, because only objects and arrays are parsed. Top-level
- * `null` is absent because a branded `WebSocketSchema` member cannot be `null`.
+ * `null` is absent because a `WebSocketMessageSchema` cannot be `null`.
  */
 export type UnparsedWebSocketJSONPrimitive = number | boolean;
 
-// Template literal types cannot stringify branded schema members, so each kind maps to its text explicitly. Numeric
-// literal members widen to any numeric text for the same reason.
+// Each kind maps to its text explicitly, so numeric literal members widen to any numeric text.
 type UnparsedWebSocketJSONPrimitiveText<Schema extends UnparsedWebSocketJSONPrimitive> = Schema extends true
   ? 'true'
   : Schema extends false
@@ -34,8 +42,8 @@ type UnparsedWebSocketJSONPrimitiveText<Schema extends UnparsedWebSocketJSONPrim
  * A client-to-server message saved by a message handler, along with its sender and receiver handles.
  */
 export interface InterceptedWebSocketInterceptorMessage<
-  MessageSchema extends WebSocketSchema,
-  ClientSchema extends WebSocketSchema = MessageSchema,
+  MessageSchema extends WebSocketMessageSchema,
+  ClientSchema extends WebSocketMessageSchema = MessageSchema,
 > {
   /** The client that sent the message. */
   sender: WebSocketInterceptorClient<ClientSchema>;
@@ -47,13 +55,28 @@ export interface InterceptedWebSocketInterceptorMessage<
   data: ReceivedWebSocketMessageData<MessageSchema>;
 }
 
+/** The search params declared for connections to a handler path. `never` if the schema declares none. */
+export type WebSocketInterceptorConnectionSearchParamsSchema<
+  Schema extends WebSocketSchema,
+  Path extends string,
+> = WebSocketConnectionSearchParamsSchema<Schema[DeclaredWebSocketInterceptorPath<Schema, Path>]>;
+
+/** The subprotocols declared for connections to a handler path. `never` if the schema declares none. */
+export type WebSocketInterceptorConnectionProtocol<
+  Schema extends WebSocketSchema,
+  Path extends string,
+> = WebSocketConnectionProtocolSchema<Schema[DeclaredWebSocketInterceptorPath<Schema, Path>]>;
+
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * The handshake of a connection attempt to the interceptor, as matched by a connection handler before it is answered.
  * It describes the attempt and is not a native `Request`.
  */
-export interface WebSocketInterceptorConnectionRequest<Path extends string = string> {
+export interface WebSocketInterceptorConnectionRequest<
+  Schema extends WebSocketSchema = WebSocketSchema,
+  Path extends string = string,
+> {
   /** The URL used to open the connection. */
   url: string;
 
@@ -62,14 +85,14 @@ export interface WebSocketInterceptorConnectionRequest<Path extends string = str
    * {@link https://developer.mozilla.org/docs/Web/API/WebSocket/WebSocket#protocols `new WebSocket(url, protocols)`}.
    * Empty if the client requested none.
    */
-  protocols: readonly string[];
+  protocols: readonly WebSocketInterceptorConnectionProtocol<Schema, Path>[];
 
   /**
    * The search parameters of the connection URL.
    *
    * @see {@link https://zimic.dev/docs/http/api/http-search-params `HttpSearchParams` API reference}
    */
-  searchParams: HttpSearchParams;
+  searchParams: HttpSearchParams<WebSocketInterceptorConnectionSearchParamsSchema<Schema, Path>>;
 
   /**
    * The URI-decoded path parameters of the connection URL, parsed from the path declared in
@@ -85,7 +108,7 @@ export interface WebSocketInterceptorConnectionRequest<Path extends string = str
  *
  * A handle to a client connected to the interceptor.
  */
-export interface WebSocketInterceptorClient<Schema extends WebSocketSchema> {
+export interface WebSocketInterceptorClient<Schema extends WebSocketMessageSchema> {
   /**
    * The URL used to open the client connection.
    *
@@ -138,7 +161,7 @@ export interface WebSocketInterceptorClient<Schema extends WebSocketSchema> {
 }
 
 /** Options for sending a message with `interceptor.server.send()`. */
-export interface WebSocketInterceptorServerSendOptions<Schema extends WebSocketSchema> {
+export interface WebSocketInterceptorServerSendOptions<Schema extends WebSocketMessageSchema> {
   /**
    * The connected clients that should receive the message. If omitted, the message is broadcast to all connected
    * clients.
@@ -151,7 +174,7 @@ export interface WebSocketInterceptorServerSendOptions<Schema extends WebSocketS
  *
  * A handle to the interceptor's mock server, used to send messages to connected clients.
  */
-export interface WebSocketInterceptorServer<Schema extends WebSocketSchema> {
+export interface WebSocketInterceptorServer<Schema extends WebSocketMessageSchema> {
   /**
    * The current base URL of the interceptor.
    *

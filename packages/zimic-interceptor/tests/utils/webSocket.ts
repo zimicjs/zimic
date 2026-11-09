@@ -1,17 +1,18 @@
 import { PossiblePromise } from '@zimic/utils/types';
 import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
-import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+import { WebSocketClient, WebSocketSchema, WebSocketSchemaPath } from '@zimic/ws';
 import { expect } from 'vitest';
 
 import { isServerSide } from '@/utils/environment';
 import WebSocketTimesCheckError from '@/ws/errors/WebSocketTimesCheckError';
 import WebSocketTimesDeclarationPointer from '@/ws/errors/WebSocketTimesDeclarationPointer';
 
-export async function usingWebSocketClient<Schema extends WebSocketSchema>(
-  url: string,
-  callback: (client: WebSocketClient<Schema>) => PossiblePromise<void>,
-) {
-  const client = new WebSocketClient<Schema>(url);
+export async function usingWebSocketClient<
+  Schema extends WebSocketSchema,
+  Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketSchemaPath.Literal<Schema>,
+>(url: string, callback: (client: WebSocketClient<Schema, Path>) => PossiblePromise<void>) {
+  // The constructor type stays unresolved for a generic path, so the compiler cannot accept a plain URL here.
+  const client = new WebSocketClient<Schema, Path>(url as never);
 
   try {
     await client.open();
@@ -21,14 +22,20 @@ export async function usingWebSocketClient<Schema extends WebSocketSchema>(
   }
 }
 
-export function waitForWebSocketClientMessage<Schema extends WebSocketSchema>(client: WebSocketClient<Schema>) {
-  return new Promise<WebSocketClient.MessageEvent<Schema>['data']>((resolve) => {
+export function waitForWebSocketClientMessage<
+  Schema extends WebSocketSchema,
+  Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketSchemaPath.Literal<Schema>,
+>(client: WebSocketClient<Schema, Path>) {
+  return new Promise<WebSocketClient.MessageEvent<Schema, Path>['data']>((resolve) => {
     client.addEventListener('message', (event) => resolve(event.data), { once: true });
   });
 }
 
-export function collectWebSocketClientMessages<Schema extends WebSocketSchema>(client: WebSocketClient<Schema>) {
-  const messages: WebSocketClient.MessageEvent<Schema>['data'][] = [];
+export function collectWebSocketClientMessages<
+  Schema extends WebSocketSchema,
+  Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketSchemaPath.Literal<Schema>,
+>(client: WebSocketClient<Schema, Path>) {
+  const messages: WebSocketClient.MessageEvent<Schema, Path>['data'][] = [];
 
   client.addEventListener('message', (event) => {
     messages.push(event.data);
@@ -37,7 +44,10 @@ export function collectWebSocketClientMessages<Schema extends WebSocketSchema>(c
   return messages;
 }
 
-export function waitForWebSocketClientClose<Schema extends WebSocketSchema>(client: WebSocketClient<Schema>) {
+export function waitForWebSocketClientClose<
+  Schema extends WebSocketSchema,
+  Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketSchemaPath.Literal<Schema>,
+>(client: WebSocketClient<Schema, Path>) {
   return new Promise<WebSocketClient.CloseEvent<Schema>>((resolve) => {
     client.addEventListener('close', resolve, { once: true });
   });

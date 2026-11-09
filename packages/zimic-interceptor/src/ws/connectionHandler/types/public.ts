@@ -2,6 +2,7 @@ import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
 import { WebSocketInterceptorClient, WebSocketInterceptorConnectionRequest } from '@/ws/interceptor/types/messages';
+import { WebSocketInterceptorPathMessage } from '@/ws/interceptor/types/schema';
 
 import WebSocketConnectionHandlerImplementation from '../WebSocketConnectionHandlerImplementation';
 import { WebSocketConnectionHandlerDelayFactory } from './connections';
@@ -21,8 +22,8 @@ export type WebSocketConnectionHandlerConnectionCallback<
   Schema extends WebSocketSchema,
   Path extends string = string,
 > = (
-  client: WebSocketInterceptorClient<Schema>,
-  request: WebSocketInterceptorConnectionRequest<Path>,
+  client: WebSocketInterceptorClient<WebSocketInterceptorPathMessage<Schema, Path>>,
+  request: WebSocketInterceptorConnectionRequest<Schema, Path>,
 ) => PossiblePromise<void>;
 
 /**
@@ -43,8 +44,11 @@ export interface WebSocketConnectionHandlerResponseStaticDeclaration {
  * A function declared with `handler.respond()` that computes the handshake response from the handshake request of each
  * matched connection.
  */
-export type WebSocketConnectionHandlerResponseComputedDeclaration<Path extends string = string> = (
-  request: WebSocketInterceptorConnectionRequest<Path>,
+export type WebSocketConnectionHandlerResponseComputedDeclaration<
+  Schema extends WebSocketSchema = WebSocketSchema,
+  Path extends string = string,
+> = (
+  request: WebSocketInterceptorConnectionRequest<Schema, Path>,
 ) => PossiblePromise<WebSocketConnectionHandlerResponseStaticDeclaration>;
 
 /**
@@ -52,8 +56,12 @@ export type WebSocketConnectionHandlerResponseComputedDeclaration<Path extends s
  *
  * A handshake response declared with `handler.respond()`, either static or computed.
  */
-export type WebSocketConnectionHandlerResponseDeclaration<Path extends string = string> =
-  WebSocketConnectionHandlerResponseStaticDeclaration | WebSocketConnectionHandlerResponseComputedDeclaration<Path>;
+export type WebSocketConnectionHandlerResponseDeclaration<
+  Schema extends WebSocketSchema = WebSocketSchema,
+  Path extends string = string,
+> =
+  | WebSocketConnectionHandlerResponseStaticDeclaration
+  | WebSocketConnectionHandlerResponseComputedDeclaration<Schema, Path>;
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -80,10 +88,10 @@ export interface LocalWebSocketConnectionHandler<Schema extends WebSocketSchema,
    * Declares a restriction to intercepted connection matches. If multiple restrictions are declared, all of them must
    * be met.
    */
-  with: (restriction: WebSocketConnectionHandlerRestriction<Path>) => this;
+  with: (restriction: WebSocketConnectionHandlerRestriction<Schema, Path>) => this;
 
   /** Declares a delay to wait before answering the handshake of matched connections. */
-  delay: ((milliseconds: number | WebSocketConnectionHandlerDelayFactory<Path>) => this) &
+  delay: ((milliseconds: number | WebSocketConnectionHandlerDelayFactory<Schema, Path>) => this) &
     ((minMilliseconds: number, maxMilliseconds: number) => this);
 
   /** Declares a side effect to run when the handler matches a connection that is accepted. */
@@ -93,7 +101,7 @@ export interface LocalWebSocketConnectionHandler<Schema extends WebSocketSchema,
    * Declares a handshake response for matched connections. Matched connections are accepted if the handler declares no
    * response.
    */
-  respond: (declaration: WebSocketConnectionHandlerResponseDeclaration<Path>) => this;
+  respond: (declaration: WebSocketConnectionHandlerResponseDeclaration<Schema, Path>) => this;
 
   /** Declares a number of intercepted connections that the handler will be able to match. */
   times: ((numberOfConnections: number) => this) &
@@ -114,7 +122,7 @@ export interface LocalWebSocketConnectionHandler<Schema extends WebSocketSchema,
    *
    * @readonly
    */
-  get connections(): readonly WebSocketInterceptorConnectionRequest<Path>[];
+  get connections(): readonly WebSocketInterceptorConnectionRequest<Schema, Path>[];
 }
 
 /**
@@ -145,12 +153,12 @@ export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocket
    * be met.
    */
   with: (
-    restriction: WebSocketConnectionHandlerRestriction<Path>,
+    restriction: WebSocketConnectionHandlerRestriction<Schema, Path>,
   ) => PendingRemoteWebSocketConnectionHandler<Schema, Path>;
 
   /** Declares a delay to wait before answering the handshake of matched connections. */
   delay: ((
-    milliseconds: number | WebSocketConnectionHandlerDelayFactory<Path>,
+    milliseconds: number | WebSocketConnectionHandlerDelayFactory<Schema, Path>,
   ) => PendingRemoteWebSocketConnectionHandler<Schema, Path>) &
     ((minMilliseconds: number, maxMilliseconds: number) => PendingRemoteWebSocketConnectionHandler<Schema, Path>);
 
@@ -164,7 +172,7 @@ export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocket
    * response.
    */
   respond: (
-    declaration: WebSocketConnectionHandlerResponseDeclaration<Path>,
+    declaration: WebSocketConnectionHandlerResponseDeclaration<Schema, Path>,
   ) => PendingRemoteWebSocketConnectionHandler<Schema, Path>;
 
   /** Declares a number of intercepted connections that the handler will be able to match. */
@@ -189,7 +197,7 @@ export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocket
    *
    * @readonly
    */
-  get connections(): readonly WebSocketInterceptorConnectionRequest<Path>[];
+  get connections(): readonly WebSocketInterceptorConnectionRequest<Schema, Path>[];
 }
 
 /**

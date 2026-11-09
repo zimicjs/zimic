@@ -1,4 +1,4 @@
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageSchema } from '@zimic/ws';
 
 import { WebSocketInterceptorClient } from '../interceptor/types/messages';
 import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
@@ -16,18 +16,23 @@ import {
 import WebSocketMessageHandlerImplementation from './WebSocketMessageHandlerImplementation';
 
 class LocalWebSocketMessageHandler<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
   RestrictedSchema extends Schema = Schema,
 > implements PublicLocalWebSocketMessageHandler<Schema, RestrictedSchema> {
   readonly type = 'local';
 
   implementation: WebSocketMessageHandlerImplementation<Schema, RestrictedSchema>;
 
-  constructor(interceptorImplementation: WebSocketInterceptorImplementation<Schema>) {
+  constructor(interceptorImplementation: WebSocketInterceptorImplementation<Schema>, path: string | undefined) {
     this.implementation = new WebSocketMessageHandlerImplementation<Schema, RestrictedSchema>(
       interceptorImplementation,
+      path,
       this,
     );
+  }
+
+  get path() {
+    return this.implementation.path;
   }
 
   from(sender: WebSocketInterceptorClient<Schema>) {

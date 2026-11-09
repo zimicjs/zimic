@@ -1,5 +1,5 @@
 import { excludeNonPathParams, validateURLProtocol } from '@zimic/utils/url';
-import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema } from '@zimic/ws';
 
 import { removeArrayElement } from '@/utils/arrays';
 import { isServerSide } from '@/utils/environment';
@@ -44,7 +44,7 @@ const DEFAULT_UNHANDLED_MESSAGE_STRATEGY = Object.freeze({
   log: true,
 }) satisfies UnhandledMessageStrategy.Declaration;
 
-function isWebSocketInterceptorClientArray<Schema extends WebSocketSchema>(
+function isWebSocketInterceptorClientArray<Schema extends WebSocketMessageSchema>(
   clients: WebSocketInterceptorServerSendOptions<Schema>['to'],
 ): clients is readonly WebSocketInterceptorClient<Schema>[] {
   return Array.isArray(clients);
@@ -57,7 +57,7 @@ export type WebSocketConnectionHandlerConstructor =
   typeof LocalWebSocketConnectionHandler | typeof RemoteWebSocketConnectionHandler;
 
 class WebSocketInterceptorImplementation<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
   MessageHandlerConstructor extends WebSocketMessageHandlerConstructor = WebSocketMessageHandlerConstructor,
 > {
   #baseURL!: URL;
@@ -289,12 +289,12 @@ class WebSocketInterceptorImplementation<
     return this._clients;
   }
 
-  message() {
-    return this.createWebSocketMessageHandler();
+  message(path: string | undefined) {
+    return this.createWebSocketMessageHandler(path);
   }
 
-  private createWebSocketMessageHandler(): WebSocketMessageHandler<Schema> {
-    const handler = new this.MessageHandler<Schema>(this);
+  private createWebSocketMessageHandler(path: string | undefined): WebSocketMessageHandler<Schema> {
+    const handler = new this.MessageHandler<Schema>(this, path);
     this.registerMessageHandler(handler);
 
     return handler;
@@ -318,20 +318,23 @@ class WebSocketInterceptorImplementation<
     this.workerOrThrow.useMessageHandler(this, handler.implementation);
   }
 
-  connection<Path extends string = string>(path?: Path) {
-    return this.createWebSocketConnectionHandler<Path>(path);
+  // As in HTTP, handlers declared with a concrete path are typed with the declared path it belongs to.
+  connection<ConnectionSchema extends WebSocketSchema, Path extends string>(path: string | undefined) {
+    return this.createWebSocketConnectionHandler<ConnectionSchema, Path>(path as Path | undefined);
   }
 
-  private createWebSocketConnectionHandler<Path extends string>(
+  private createWebSocketConnectionHandler<ConnectionSchema extends WebSocketSchema, Path extends string>(
     path: Path | undefined,
-  ): WebSocketConnectionHandler<Schema, Path> {
-    const handler = new this.ConnectionHandler<Schema, Path>(this, path);
+  ): WebSocketConnectionHandler<ConnectionSchema, Path> {
+    const handler = new this.ConnectionHandler<ConnectionSchema, Path>(this, path);
     this.registerConnectionHandler(handler);
 
     return handler;
   }
 
-  registerConnectionHandler<Path extends string>(handler: InternalWebSocketConnectionHandler<Schema, Path>) {
+  registerConnectionHandler<ConnectionSchema extends WebSocketSchema, Path extends string>(
+    handler: InternalWebSocketConnectionHandler<ConnectionSchema, Path>,
+  ) {
     if (!this.isRunning || this.isStopping) {
       throw new NotRunningWebSocketInterceptorError();
     }
@@ -384,7 +387,7 @@ class WebSocketInterceptorImplementation<
 
   async handleMatchedMessage(
     handler: AnyWebSocketMessageHandlerImplementation,
-    message: ReceivedWebSocketMessageData<WebSocketSchema>,
+    message: ReceivedWebSocketMessageData<WebSocketMessageSchema>,
     context: WebSocketMessageHandlerApplyContext<Schema>,
   ) {
     const messageSavingGeneration = this.messageSavingGeneration;
@@ -471,7 +474,7 @@ class WebSocketInterceptorImplementation<
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyWebSocketInterceptorImplementation<Schema extends WebSocketSchema = any> =
+export type AnyWebSocketInterceptorImplementation<Schema extends WebSocketMessageSchema = any> =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   WebSocketInterceptorImplementation<Schema, any>;
 

@@ -16,7 +16,8 @@ import {
 import { WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions, verifyUnhandledMessageWarning } from './utils';
 
-type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
+type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
+type MessageSchema = WebSocketSchema<{ '/': { message: Message } }>;
 
 export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { platform, getBaseURL, getInterceptorOptions } = options;
@@ -50,7 +51,7 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
 
   it('should support intercepting messages with a computed response', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-      const responseFactory = vi.fn((message: MessageSchema) => ({ type: 'server' as const, index: message.index }));
+      const responseFactory = vi.fn((message: Message) => ({ type: 'server' as const, index: message.index }));
 
       await promiseIfRemote(interceptor.message().respond(responseFactory), interceptor);
 
@@ -88,7 +89,7 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
           await usingIgnoredConsole(['error', 'warn'], async (console) => {
-            const message: MessageSchema = { type: 'client', index: 1 };
+            const message: Message = { type: 'client', index: 1 };
             client.send(JSON.stringify(message));
 
             // The message logs the handler error and the unhandled message.
@@ -272,7 +273,7 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
             expect(interceptor.clients).toHaveLength(1);
           });
 
-          const message = JSON.stringify({ type: 'server', index: 1 } satisfies MessageSchema);
+          const message = JSON.stringify({ type: 'server', index: 1 } satisfies Message);
           const messagePromise = waitForWebSocketClientMessage(client);
           interceptor.server.send(message);
           await expect(messagePromise).resolves.toBe(message);

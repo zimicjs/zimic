@@ -1,6 +1,6 @@
 import { excludeNonPathParams } from '@zimic/utils/url';
 import { closeWebSocketClient, WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
-import type { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import type { WebSocketMessageData, WebSocketMessageSchema } from '@zimic/ws';
 import type { IncomingMessage } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
 import { WebSocket as ClientSocket } from 'ws';
@@ -388,7 +388,9 @@ class WebSocketInterceptorServerRuntime {
     // the client.
     const { holders } = connection;
 
-    const data = await serializeWebSocketMessageDataForTransport(message.data as WebSocketMessageData<WebSocketSchema>);
+    const data = await serializeWebSocketMessageDataForTransport(
+      message.data as WebSocketMessageData<WebSocketMessageSchema>,
+    );
 
     // The message is sent to the worker once with all holders, so the worker tries their handlers together by creation
     // order and applies the unhandled message strategy of the newest holder still holding the connection.

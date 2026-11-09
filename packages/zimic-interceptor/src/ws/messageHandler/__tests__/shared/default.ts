@@ -9,7 +9,7 @@ import { WebSocketInterceptorClient } from '../../../interceptor/types/messages'
 import { UnhandledMessageStrategy, WebSocketInterceptorType } from '../../../interceptor/types/options';
 import RemoteWebSocketMessageHandler from '../../RemoteWebSocketMessageHandler';
 import { WebSocketMessageHandler, WebSocketMessageHandlerMessageComputedDeclaration } from '../../types/public';
-import { Schema, SharedWebSocketMessageHandlerTestOptions } from './utils';
+import { ChatMessage, Schema, SharedWebSocketMessageHandlerTestOptions } from './utils';
 
 export function declareDefaultWebSocketMessageHandlerTests(
   options: SharedWebSocketMessageHandlerTestOptions & {
@@ -36,9 +36,16 @@ export function declareDefaultWebSocketMessageHandlerTests(
     }
   });
 
-  // No WebSocket message counterpart for "should provide access to the method and path": message handlers have neither.
+  // Unlike HTTP requests, WebSocket messages have no method, so only the path is exposed.
+  it('should provide access to the path', async () => {
+    await usingWebSocketInterceptor<Schema>({ type, baseURL }, (interceptor) => {
+      const handler = interceptor.message('/rooms/:roomId');
+      expect(handler.path).toBe('/rooms/:roomId');
 
-  // No WebSocket message counterpart for "should provide access to the path": message handlers have no path.
+      const handlerWithoutPath = interceptor.message();
+      expect(handlerWithoutPath.path).toBe(undefined);
+    });
+  });
 
   // Unlike HTTP requests, a message needs no reply, so a handler without a declared response still matches.
   it('should match any message if contains no declared response', async () => {
@@ -112,7 +119,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
 
   it.each<{
     condition: string;
-    declareAfterClear: (handler: WebSocketMessageHandler<Schema>) => unknown;
+    declareAfterClear: (handler: WebSocketMessageHandler<ChatMessage>) => unknown;
   }>([
     { condition: 'cleared', declareAfterClear: (handler) => handler },
     {
@@ -157,7 +164,10 @@ export function declareDefaultWebSocketMessageHandlerTests(
 
   it.each<{
     declaration: string;
-    declare: (handler: WebSocketMessageHandler<Schema>, sender: WebSocketInterceptorClient<Schema>) => unknown;
+    declare: (
+      handler: WebSocketMessageHandler<ChatMessage>,
+      sender: WebSocketInterceptorClient<ChatMessage>,
+    ) => unknown;
   }>([
     { declaration: 'with', declare: (handler) => handler.with({ type: 'create' }) },
     { declaration: 'from', declare: (handler, sender) => handler.from(sender) },
@@ -206,10 +216,12 @@ export function declareDefaultWebSocketMessageHandlerTests(
 
   it('should compute responses with the message', async () => {
     await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
-      const responseFactory = vi.fn<WebSocketMessageHandlerMessageComputedDeclaration<Schema, Schema>>(() => ({
-        type: 'delete',
-        id: '1',
-      }));
+      const responseFactory = vi.fn<WebSocketMessageHandlerMessageComputedDeclaration<ChatMessage, ChatMessage>>(
+        () => ({
+          type: 'delete',
+          id: '1',
+        }),
+      );
 
       await interceptor.message().respond(responseFactory);
 
@@ -230,7 +242,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
 
   it.each<{
     condition: string;
-    declareAfterClear: (handler: WebSocketMessageHandler<Schema>) => unknown;
+    declareAfterClear: (handler: WebSocketMessageHandler<ChatMessage>) => unknown;
   }>([
     { condition: 'cleared', declareAfterClear: (handler) => handler },
     {
@@ -307,8 +319,8 @@ export function declareDefaultWebSocketMessageHandlerTests(
   it.each<{
     condition: string;
     declareAfterClear: (
-      handler: WebSocketMessageHandler<Schema>,
-      redeclaredResponse: WebSocketMessageHandlerMessageComputedDeclaration<Schema, Schema>,
+      handler: WebSocketMessageHandler<ChatMessage>,
+      redeclaredResponse: WebSocketMessageHandlerMessageComputedDeclaration<ChatMessage, ChatMessage>,
     ) => unknown;
   }>([
     { condition: 'cleared', declareAfterClear: (handler) => handler },
@@ -321,7 +333,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
     const effectReleasedPromise = createPromiseWithResolvers<void>();
 
     const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
-    const redeclaredResponse = vi.fn<WebSocketMessageHandlerMessageComputedDeclaration<Schema, Schema>>();
+    const redeclaredResponse = vi.fn<WebSocketMessageHandlerMessageComputedDeclaration<ChatMessage, ChatMessage>>();
 
     await usingWebSocketInterceptor<Schema>(
       { type, baseURL, messageSaving: { enabled: true }, onUnhandledMessage },
@@ -477,7 +489,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
       });
 
       it('should be then-able', async () => {
-        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation);
+        const handler = new RemoteWebSocketMessageHandler<ChatMessage>(interceptor.implementation, undefined);
         await handler.respond({ type: 'delete', id: '1' });
 
         expect(handler).toHaveProperty('then', expect.any(Function));
@@ -501,7 +513,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
       });
 
       it('should be catch-able', async () => {
-        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation);
+        const handler = new RemoteWebSocketMessageHandler<ChatMessage>(interceptor.implementation, undefined);
         await handler.respond({ type: 'delete', id: '1' });
 
         expect(handler).toHaveProperty('then', expect.any(Function));
@@ -518,7 +530,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
       });
 
       it('should be finally-able', async () => {
-        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation);
+        const handler = new RemoteWebSocketMessageHandler<ChatMessage>(interceptor.implementation, undefined);
         await handler.respond({ type: 'delete', id: '1' });
 
         expect(handler).toHaveProperty('then', expect.any(Function));
