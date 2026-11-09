@@ -1,6 +1,6 @@
 import { HttpSchema } from '@zimic/http';
 import { joinURL } from '@zimic/utils/url';
-import { ValidationError } from '@zimic/utils/validation';
+import { createInvalidTypeOfCases, ValidationError } from '@zimic/utils/validation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import DisabledRequestSavingError from '@/http/requestHandler/errors/DisabledRequestSavingError';
@@ -165,16 +165,11 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
       });
     });
 
-    const invalidEnabledOptions = [
-      { label: 'null', value: null, expectedType: 'null' },
-      { label: 'a number', value: 1, expectedType: 'number' },
-      { label: 'a string', value: 'true', expectedType: 'string' },
-      { label: 'an object', value: {}, expectedType: 'object' },
-    ];
+    const invalidEnabledOptions = createInvalidTypeOfCases('boolean', { optional: true });
 
     it.each(invalidEnabledOptions)(
       'should throw an error if provided a request saving enabled option that is not a boolean ($label)',
-      async ({ value, expectedType }) => {
+      async ({ value, actualType }) => {
         const handler = vi.fn();
 
         // @ts-expect-error Forcing an invalid request saving enabled option type.
@@ -183,7 +178,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
         await expect(async () => {
           await usingHttpInterceptor({ ...interceptorOptions, requestSaving: { enabled: invalidEnabled } }, handler);
         }).rejects.toThrow(
-          new ValidationError(`Expected options.requestSaving.enabled to be boolean, but got ${expectedType}.`),
+          new ValidationError(`Expected options.requestSaving.enabled to be boolean, but got ${actualType}.`),
         );
 
         expect(handler).not.toHaveBeenCalled();
@@ -467,16 +462,11 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
     // No HTTP counterpart for "should show a warning if the number of saved messages exceeds the safe limit,
     // considering disconnected clients": HTTP requests have no long-lived client connection that can disconnect.
 
-    const invalidSafeLimits = [
-      { label: 'null', value: null, expectedType: 'null' },
-      { label: 'a string', value: '5', expectedType: 'string' },
-      { label: 'a boolean', value: true, expectedType: 'boolean' },
-      { label: 'an object', value: {}, expectedType: 'object' },
-    ];
+    const invalidSafeLimits = createInvalidTypeOfCases('number', { optional: true });
 
     it.each(invalidSafeLimits)(
       'should throw an error if provided a request saving safe limit that is not a number ($label)',
-      async ({ value, expectedType }) => {
+      async ({ value, actualType }) => {
         const handler = vi.fn();
 
         // @ts-expect-error Forcing an invalid request saving safe limit type.
@@ -488,7 +478,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
             handler,
           );
         }).rejects.toThrow(
-          new ValidationError(`Expected options.requestSaving.safeLimit to be number, but got ${expectedType}.`),
+          new ValidationError(`Expected options.requestSaving.safeLimit to be number, but got ${actualType}.`),
         );
 
         expect(handler).not.toHaveBeenCalled();
@@ -582,16 +572,11 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
     });
   });
 
-  const invalidRequestSavings = [
-    { label: 'null', value: null, expectedType: 'null' },
-    { label: 'a boolean', value: true, expectedType: 'boolean' },
-    { label: 'a number', value: 5, expectedType: 'number' },
-    { label: 'a string', value: 'enabled', expectedType: 'string' },
-  ];
+  const invalidRequestSavings = createInvalidTypeOfCases('object', { optional: true });
 
   it.each(invalidRequestSavings)(
     'should throw an error if provided a request saving configuration that is not an object ($label)',
-    async ({ value, expectedType }) => {
+    async ({ value, actualType }) => {
       const handler = vi.fn();
 
       // @ts-expect-error Forcing an invalid request saving type.
@@ -599,7 +584,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
 
       await expect(async () => {
         await usingHttpInterceptor({ ...interceptorOptions, requestSaving: invalidRequestSaving }, handler);
-      }).rejects.toThrow(new ValidationError(`Expected options.requestSaving to be object, but got ${expectedType}.`));
+      }).rejects.toThrow(new ValidationError(`Expected options.requestSaving to be object, but got ${actualType}.`));
 
       expect(handler).not.toHaveBeenCalled();
     },

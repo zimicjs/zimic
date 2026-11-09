@@ -1,6 +1,6 @@
 import { waitFor, waitForNot } from '@zimic/utils/time';
 import { UnsupportedURLProtocolError, joinURL } from '@zimic/utils/url';
-import { ValidationError } from '@zimic/utils/validation';
+import { createInvalidTypeOfCases, ValidationError } from '@zimic/utils/validation';
 import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, expect, it, vi } from 'vitest';
 
@@ -1380,18 +1380,13 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
   });
 
   const invalidBaseURLs = [
-    { label: 'undefined', value: undefined, expectedType: 'undefined' },
-    { label: 'null', value: null, expectedType: 'null' },
-    { label: 'a number', value: 5, expectedType: 'number' },
-    { label: 'a boolean', value: true, expectedType: 'boolean' },
-    { label: 'an object', value: {}, expectedType: 'object' },
-    { label: 'an array', value: [], expectedType: 'object' },
-    { label: 'a URL', value: new URL('ws://localhost:3000'), expectedType: 'object' },
+    ...createInvalidTypeOfCases('string'),
+    { label: 'a URL', value: new URL('ws://localhost:3000'), actualType: 'object' },
   ];
 
   it.each(invalidBaseURLs)(
     'should throw an error if provided a base URL that is not a string ($label)',
-    async ({ value, expectedType }) => {
+    async ({ value, actualType }) => {
       const handler = vi.fn();
 
       // @ts-expect-error Forcing an invalid base URL type.
@@ -1399,7 +1394,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
 
       await expect(async () => {
         await usingWebSocketInterceptor({ ...interceptorOptions, baseURL: invalidBaseURL }, handler);
-      }).rejects.toThrow(new ValidationError(`Expected options.baseURL to be string, but got ${expectedType}.`));
+      }).rejects.toThrow(new ValidationError(`Expected options.baseURL to be string, but got ${actualType}.`));
 
       expect(handler).not.toHaveBeenCalled();
     },

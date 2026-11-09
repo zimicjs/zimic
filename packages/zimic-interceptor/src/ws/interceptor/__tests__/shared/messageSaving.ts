@@ -1,5 +1,5 @@
 import { waitFor } from '@zimic/utils/time';
-import { ValidationError } from '@zimic/utils/validation';
+import { createInvalidTypeOfCases, ValidationError } from '@zimic/utils/validation';
 import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -126,16 +126,11 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
       );
     });
 
-    const invalidEnabledOptions = [
-      { label: 'null', value: null, expectedType: 'null' },
-      { label: 'a number', value: 1, expectedType: 'number' },
-      { label: 'a string', value: 'true', expectedType: 'string' },
-      { label: 'an object', value: {}, expectedType: 'object' },
-    ];
+    const invalidEnabledOptions = createInvalidTypeOfCases('boolean', { optional: true });
 
     it.each(invalidEnabledOptions)(
       'should throw an error if provided a message saving enabled option that is not a boolean ($label)',
-      async ({ value, expectedType }) => {
+      async ({ value, actualType }) => {
         const handler = vi.fn();
 
         // @ts-expect-error Forcing an invalid message saving enabled option type.
@@ -147,7 +142,7 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
             handler,
           );
         }).rejects.toThrow(
-          new ValidationError(`Expected options.messageSaving.enabled to be boolean, but got ${expectedType}.`),
+          new ValidationError(`Expected options.messageSaving.enabled to be boolean, but got ${actualType}.`),
         );
 
         expect(handler).not.toHaveBeenCalled();
@@ -510,16 +505,11 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
       );
     });
 
-    const invalidSafeLimits = [
-      { label: 'null', value: null, expectedType: 'null' },
-      { label: 'a string', value: '5', expectedType: 'string' },
-      { label: 'a boolean', value: true, expectedType: 'boolean' },
-      { label: 'an object', value: {}, expectedType: 'object' },
-    ];
+    const invalidSafeLimits = createInvalidTypeOfCases('number', { optional: true });
 
     it.each(invalidSafeLimits)(
       'should throw an error if provided a message saving safe limit that is not a number ($label)',
-      async ({ value, expectedType }) => {
+      async ({ value, actualType }) => {
         const handler = vi.fn();
 
         // @ts-expect-error Forcing an invalid message saving safe limit type.
@@ -531,7 +521,7 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
             handler,
           );
         }).rejects.toThrow(
-          new ValidationError(`Expected options.messageSaving.safeLimit to be number, but got ${expectedType}.`),
+          new ValidationError(`Expected options.messageSaving.safeLimit to be number, but got ${actualType}.`),
         );
 
         expect(handler).not.toHaveBeenCalled();
@@ -609,16 +599,11 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
     );
   });
 
-  const invalidMessageSavings = [
-    { label: 'null', value: null, expectedType: 'null' },
-    { label: 'a boolean', value: true, expectedType: 'boolean' },
-    { label: 'a number', value: 5, expectedType: 'number' },
-    { label: 'a string', value: 'enabled', expectedType: 'string' },
-  ];
+  const invalidMessageSavings = createInvalidTypeOfCases('object', { optional: true });
 
   it.each(invalidMessageSavings)(
     'should throw an error if provided a message saving configuration that is not an object ($label)',
-    async ({ value, expectedType }) => {
+    async ({ value, actualType }) => {
       const handler = vi.fn();
 
       // @ts-expect-error Forcing an invalid message saving type.
@@ -626,7 +611,7 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
 
       await expect(async () => {
         await usingWebSocketInterceptor({ ...interceptorOptions, messageSaving: invalidMessageSaving }, handler);
-      }).rejects.toThrow(new ValidationError(`Expected options.messageSaving to be object, but got ${expectedType}.`));
+      }).rejects.toThrow(new ValidationError(`Expected options.messageSaving to be object, but got ${actualType}.`));
 
       expect(handler).not.toHaveBeenCalled();
     },
