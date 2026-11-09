@@ -7,13 +7,13 @@ import { random } from '@/utils/numbers';
 
 import WebSocketTimesCheckError from '../errors/WebSocketTimesCheckError';
 import WebSocketTimesDeclarationPointer from '../errors/WebSocketTimesDeclarationPointer';
-import { WebSocketInterceptorClient, WebSocketInterceptorConnectionRequest } from '../interceptor/types/messages';
-import { WebSocketInterceptorPathMessage } from '../interceptor/types/schema';
+import { WebSocketInterceptorConnectionRequest } from '../interceptor/types/messages';
 import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
 import DisabledConnectionSavingError from './errors/DisabledConnectionSavingError';
 import { WebSocketConnectionHandlerDelayFactory } from './types/connections';
 import {
   InternalWebSocketConnectionHandler,
+  WebSocketConnectionHandlerClient,
   WebSocketConnectionHandlerConnectionCallback,
   WebSocketConnectionHandlerResponseComputedDeclaration,
   WebSocketConnectionHandlerResponseDeclaration,
@@ -347,7 +347,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
   }
 
   async applyConnectionEffect(
-    client: WebSocketInterceptorClient<WebSocketInterceptorPathMessage<Schema, Path>>,
+    client: WebSocketConnectionHandlerClient<Schema, Path>,
     request: WebSocketInterceptorConnectionRequest<Schema, Path>,
   ) {
     await this.applyEffect?.(client, request);

@@ -1,13 +1,14 @@
 import { HttpSearchParams } from '@zimic/utils/http';
-import { WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
+import { WebSocketMessageData, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 import { describe, expectTypeOf, it } from 'vitest';
 
-import { WebSocketInterceptorClient, WebSocketInterceptorConnectionRequest } from '../../interceptor/types/messages';
+import { WebSocketInterceptorConnectionRequest } from '../../interceptor/types/messages';
 import type { LocalWebSocketInterceptor, RemoteWebSocketInterceptor } from '../../interceptor/types/public';
 import type {
   LocalWebSocketConnectionHandler,
   PendingRemoteWebSocketConnectionHandler,
   SyncedRemoteWebSocketConnectionHandler,
+  WebSocketConnectionHandlerClient,
 } from '../types/public';
 import { Schema } from './shared/utils';
 
@@ -18,8 +19,6 @@ type PathKeyedSchema = WebSocketSchema<{
   };
   '/health': { message: { type: 'ping' } };
 }>;
-
-type RoomMessage = WebSocketSchemaMessage<PathKeyedSchema, '/rooms/:roomId'>;
 
 // The handlers below are only type-checked. The functions declaring them are never called.
 describe('WebSocketConnectionHandler > Types', () => {
@@ -89,10 +88,33 @@ describe('WebSocketConnectionHandler > Types', () => {
     expectTypeOf(declareHandlers).toBeFunction();
   });
 
+  it('should type client search params from the declared path', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      interceptor.connection('/rooms/:roomId').effect((client) => {
+        expectTypeOf(client.searchParams.get('token')).toEqualTypeOf<string>();
+
+        // @ts-expect-error The search param is not declared in the schema.
+        client.searchParams.has('undeclared');
+      });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
+  it('should type client protocols from the declared path', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      interceptor.connection('/rooms/:roomId').effect((client) => {
+        expectTypeOf(client.protocols).toEqualTypeOf<readonly ('chat' | 'json')[]>();
+      });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
   it('should type concrete paths from their declared path', () => {
     function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
       interceptor.connection('/rooms/1').effect((client) => {
-        expectTypeOf(client).toEqualTypeOf<WebSocketInterceptorClient<RoomMessage>>();
+        expectTypeOf(client).toEqualTypeOf<WebSocketConnectionHandlerClient<PathKeyedSchema, '/rooms/:roomId'>>();
       });
     }
 
@@ -102,7 +124,7 @@ describe('WebSocketConnectionHandler > Types', () => {
   it('should type clients with the messages of the declared path', () => {
     function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
       interceptor.connection('/rooms/:roomId').effect((client) => {
-        expectTypeOf(client).toEqualTypeOf<WebSocketInterceptorClient<RoomMessage>>();
+        expectTypeOf(client).toEqualTypeOf<WebSocketConnectionHandlerClient<PathKeyedSchema, '/rooms/:roomId'>>();
       });
     }
 
@@ -112,7 +134,10 @@ describe('WebSocketConnectionHandler > Types', () => {
   it('should type clients with the messages of all paths if no path is declared', () => {
     function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
       interceptor.connection().effect((client) => {
-        expectTypeOf(client).toEqualTypeOf<WebSocketInterceptorClient<WebSocketSchemaMessage<PathKeyedSchema>>>();
+        expectTypeOf(client).toEqualTypeOf<WebSocketConnectionHandlerClient<PathKeyedSchema>>();
+        expectTypeOf<Parameters<typeof client.send>[0]>().toEqualTypeOf<
+          WebSocketMessageData<WebSocketSchemaMessage<PathKeyedSchema>>
+        >();
       });
     }
 
@@ -155,7 +180,7 @@ describe('WebSocketConnectionHandler > Types', () => {
   it('should type clients in effects', () => {
     function declareLocalHandler(handler: LocalWebSocketConnectionHandler<Schema>) {
       handler.effect((client, request) => {
-        expectTypeOf(client).toEqualTypeOf<WebSocketInterceptorClient<WebSocketSchemaMessage<Schema>>>();
+        expectTypeOf(client).toEqualTypeOf<WebSocketConnectionHandlerClient<Schema>>();
         expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest<Schema>>();
       });
     }

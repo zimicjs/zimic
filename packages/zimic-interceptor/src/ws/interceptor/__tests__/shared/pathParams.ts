@@ -786,6 +786,53 @@ export function declarePathParamsWebSocketInterceptorTests(options: RuntimeShare
     );
   });
 
+  it('should not consider search params when intercepting messages of connections by path', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(interceptor.message('/rooms/:roomId'), interceptor);
+
+        await usingWebSocketClient<MessageSchema>(`${baseURL}/rooms/1?token=value`, async (client) => {
+          client.send(JSON.stringify({ type: 'message' }));
+
+          await waitFor(() => {
+            expect(handler.messages).toHaveLength(1);
+          });
+        });
+      },
+    );
+  });
+
+  it('should support generic and specific handlers when intercepting messages by path', async () => {
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const genericHandler = await promiseIfRemote(interceptor.message('/rooms/:roomId'), interceptor);
+        const specificHandler = await promiseIfRemote(interceptor.message('/rooms/1'), interceptor);
+
+        await usingWebSocketClient<MessageSchema>(`${baseURL}/rooms/1`, async (specificClient) => {
+          specificClient.send(JSON.stringify({ type: 'message' }));
+
+          await waitFor(() => {
+            expect(specificHandler.messages).toHaveLength(1);
+          });
+        });
+
+        expect(genericHandler.messages).toHaveLength(0);
+
+        await usingWebSocketClient<MessageSchema>(`${baseURL}/rooms/2`, async (genericClient) => {
+          genericClient.send(JSON.stringify({ type: 'message' }));
+
+          await waitFor(() => {
+            expect(genericHandler.messages).toHaveLength(1);
+          });
+        });
+
+        expect(specificHandler.messages).toHaveLength(1);
+      },
+    );
+  });
+
   it('should intercept messages of connections to any path if the handler declares no path', async () => {
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, messageSaving: { enabled: true } },

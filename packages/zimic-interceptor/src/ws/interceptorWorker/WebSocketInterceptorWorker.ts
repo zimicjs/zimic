@@ -333,7 +333,11 @@ abstract class WebSocketInterceptorWorker {
     }
 
     try {
-      await acceptance.handler.implementation.applyConnectionEffect(acceptingHolder.client, acceptance.request);
+      // The worker keeps handlers of any schema, so it cannot name the schema that types this client.
+      await acceptance.handler.implementation.applyConnectionEffect(
+        acceptingHolder.client as never,
+        acceptance.request,
+      );
     } catch (error) {
       console.error(error);
     }
