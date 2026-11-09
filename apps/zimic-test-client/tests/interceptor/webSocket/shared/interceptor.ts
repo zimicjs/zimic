@@ -293,45 +293,58 @@ export function declareWebSocketInterceptorTests({
     });
   });
 
-  describe.runIf(supportsRawWebSocketFeatures)('Connection refusals', () => {
-    it('should refuse connections rejected by a connection handler before they open', async () => {
-      const roomURL = `${userInterceptor.baseURL}/rooms/1`;
+  describe('Connection refusals', () => {
+    // Framed protocols such as Socket.IO connect through their own path, so they cannot connect to a room path.
+    function getRoomURL(query = '') {
+      const roomPath = supportsRawWebSocketFeatures ? '/rooms/1' : '';
+      return `${userInterceptor.baseURL}${roomPath}${query}`;
+    }
 
-      await userInterceptor.connection('/rooms/:roomId').respond({ action: 'reject' }).times(1);
+    it.runIf(supportsRawWebSocketFeatures)(
+      'should refuse connections rejected by a connection handler before they open',
+      async () => {
+        const roomURL = `${userInterceptor.baseURL}/rooms/1`;
 
-      await expectSocketToBeRefused(roomURL, 'graphql-transport-ws');
-    });
+        await userInterceptor.connection('/rooms/:roomId').respond({ action: 'reject' }).times(1);
 
-    it.each([
-      {
-        restriction: 'static search params',
-        rejectedQuery: '?token=expired',
-        acceptedQuery: '?token=valid',
-        rejectedProtocols: [],
-        acceptedProtocols: [],
-        declareHandler: () =>
-          userInterceptor
-            .connection()
-            .with({ searchParams: { token: 'expired' } })
-            .respond({ action: 'reject' }),
+        await expectSocketToBeRefused(roomURL, 'graphql-transport-ws');
       },
-      {
-        restriction: 'computed protocols',
-        rejectedQuery: '',
-        acceptedQuery: '',
-        rejectedProtocols: ['legacy-protocol'],
-        acceptedProtocols: ['graphql-transport-ws'],
-        declareHandler: () =>
-          userInterceptor
-            .connection()
-            .with((request) => request.protocols.includes('legacy-protocol'))
-            .respond({ action: 'reject' }),
-      },
-    ])(
+    );
+
+    it.each(
+      [
+        {
+          restriction: 'static search params',
+          rejectedQuery: '?token=expired',
+          acceptedQuery: '?token=valid',
+          rejectedProtocols: [],
+          acceptedProtocols: [],
+          declareHandler: () =>
+            userInterceptor
+              .connection()
+              .with({ searchParams: { token: 'expired' } })
+              .respond({ action: 'reject' }),
+          requiresSubprotocols: false,
+        },
+        {
+          restriction: 'computed protocols',
+          rejectedQuery: '',
+          acceptedQuery: '',
+          rejectedProtocols: ['legacy-protocol'],
+          acceptedProtocols: ['graphql-transport-ws'],
+          declareHandler: () =>
+            userInterceptor
+              .connection()
+              .with((request) => request.protocols.includes('legacy-protocol'))
+              .respond({ action: 'reject' }),
+          requiresSubprotocols: true,
+        },
+      ].filter((testCase) => supportsRawWebSocketFeatures || !testCase.requiresSubprotocols),
+    )(
       'should refuse only connections matching the $restriction restriction of a connection handler',
       async ({ rejectedQuery, acceptedQuery, rejectedProtocols, acceptedProtocols, declareHandler }) => {
-        const rejectedURL = `${userInterceptor.baseURL}/rooms/1${rejectedQuery}`;
-        const acceptedURL = `${userInterceptor.baseURL}/rooms/1${acceptedQuery}`;
+        const rejectedURL = getRoomURL(rejectedQuery);
+        const acceptedURL = getRoomURL(acceptedQuery);
 
         await declareHandler().times(1);
 
@@ -343,7 +356,7 @@ export function declareWebSocketInterceptorTests({
     );
 
     it('should count connection attempts accepted and rejected by limited connection handlers', async () => {
-      const roomURL = `${userInterceptor.baseURL}/rooms/1`;
+      const roomURL = getRoomURL();
 
       const acceptingHandler = await userInterceptor.connection().times(1);
       const rejectingHandler = await userInterceptor.connection().respond({ action: 'reject' }).times(1);
@@ -930,7 +943,7 @@ export function declareWebSocketInterceptorTests({
     });
   });
 
-  describe.runIf(supportsRawWebSocketFeatures)('Connection closes', () => {
+  describe('Connection closes', () => {
     it('should support reconnecting after the interceptor closes a connection', async () => {
       const sockets: ClientTestWebSocket<UserWebSocketSchema>[] = [];
 
@@ -948,8 +961,12 @@ export function declareWebSocketInterceptorTests({
         closedClient.close(4000, 'Reconnect to continue.');
 
         const closeEvent = await closeEventPromise;
-        expect(closeEvent.code).toBe(4000);
-        expect(closeEvent.reason).toBe('Reconnect to continue.');
+
+        // Framed protocols such as Socket.IO do not expose the close code and reason of the connection to the client.
+        if (supportsRawWebSocketFeatures) {
+          expect(closeEvent.code).toBe(4000);
+          expect(closeEvent.reason).toBe('Reconnect to continue.');
+        }
 
         await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length));
         expect(userInterceptor.clients).not.toContain(closedClient);
