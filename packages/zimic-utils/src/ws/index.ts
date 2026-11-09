@@ -6,3 +6,4 @@ export {
   WebSocketOpenTimeoutError,
   WebSocketCloseTimeoutError,
 } from './lifecycle';
+export { WEB_SOCKET_CLOSE_CODES } from './constants';
