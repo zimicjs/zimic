@@ -86,3 +86,32 @@ type RecursiveInferPathParams<Path extends string> = Path extends `${infer Prefi
 
 /** @see {@link https://zimic.dev/docs/http/api/http-schema#inferpathparams `InferPathParams` API reference} */
 export type InferPathParams<Path extends string> = Prettify<RecursiveInferPathParams<Path>>;
+
+export type WithoutEscapedColons<Path extends string> = Path extends `${infer Prefix}\\:${infer Suffix}`
+  ? WithoutEscapedColons<`${Prefix}:${Suffix}`>
+  : Path;
+
+type ConvertPathParamToString<PathParam extends string> = PathParam extends `${infer PathParamWithoutSlash}/`
+  ? `${ConvertPathParamToString<PathParamWithoutSlash>}/`
+  : PathParam extends `${infer PathParamWithoutSlash}\\:`
+    ? `${ConvertPathParamToString<PathParamWithoutSlash>}:`
+    : string;
+
+export type AllowAnyStringInPathParams<Path extends string> =
+  Path extends `${infer Prefix}:${infer PathParamWithRemainingPath}`
+    ? PathParamWithRemainingPath extends `${infer PathParam}/${infer RemainingPath}`
+      ? Prefix extends `${infer PrefixPrefix}\\`
+        ? `${PrefixPrefix}:${AllowAnyStringInPathParams<PathParamWithRemainingPath>}`
+        : `${Prefix}${ConvertPathParamToString<PathParam>}/${AllowAnyStringInPathParams<RemainingPath>}`
+      : PathParamWithRemainingPath extends `${infer PathParam}\\:${infer RemainingPath}`
+        ? Prefix extends `${infer PrefixPrefix}\\`
+          ? `${PrefixPrefix}:${AllowAnyStringInPathParams<PathParamWithRemainingPath>}`
+          : `${Prefix}${ConvertPathParamToString<PathParam>}:${AllowAnyStringInPathParams<RemainingPath>}`
+        : PathParamWithRemainingPath extends `${infer PathParam}:${infer RemainingPath}`
+          ? Prefix extends `${infer PrefixPrefix}\\`
+            ? `${PrefixPrefix}:${AllowAnyStringInPathParams<PathParamWithRemainingPath>}`
+            : `${Prefix}${ConvertPathParamToString<PathParam>}${AllowAnyStringInPathParams<`:${RemainingPath}`>}`
+          : Prefix extends `${infer PrefixPrefix}\\`
+            ? `${PrefixPrefix}:${PathParamWithRemainingPath}`
+            : `${Prefix}${ConvertPathParamToString<PathParamWithRemainingPath>}`
+    : Path;

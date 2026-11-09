@@ -1,10 +1,12 @@
 import type {
+  AllowAnyStringInPathParams,
   HttpBody,
   HttpFormDataSchema,
   HttpHeadersSchema,
   HttpPathParamsSchema,
   HttpSearchParamsSchema,
   InferPathParams as InferPathParamsFromPath,
+  WithoutEscapedColons,
 } from '@zimic/utils/http';
 import { IfAny, UnionToIntersection, UnionHasMoreThanOneType, NonEmptyArray, Branded } from '@zimic/utils/types';
 
@@ -250,35 +252,6 @@ export type InferPathParams<
 > = InferPathParamsFromPath<
   PathOrSchema extends HttpSchema ? OptionalPath : PathOrSchema extends string ? PathOrSchema : never
 >;
-
-type WithoutEscapedColons<Path extends string> = Path extends `${infer Prefix}\\:${infer Suffix}`
-  ? WithoutEscapedColons<`${Prefix}:${Suffix}`>
-  : Path;
-
-type ConvertPathParamToString<PathParam extends string> = PathParam extends `${infer PathParamWithoutSlash}/`
-  ? `${ConvertPathParamToString<PathParamWithoutSlash>}/`
-  : PathParam extends `${infer PathParamWithoutSlash}\\:`
-    ? `${ConvertPathParamToString<PathParamWithoutSlash>}:`
-    : string;
-
-export type AllowAnyStringInPathParams<Path extends string> =
-  Path extends `${infer Prefix}:${infer PathParamWithRemainingPath}`
-    ? PathParamWithRemainingPath extends `${infer PathParam}/${infer RemainingPath}`
-      ? Prefix extends `${infer PrefixPrefix}\\`
-        ? `${PrefixPrefix}:${AllowAnyStringInPathParams<PathParamWithRemainingPath>}`
-        : `${Prefix}${ConvertPathParamToString<PathParam>}/${AllowAnyStringInPathParams<RemainingPath>}`
-      : PathParamWithRemainingPath extends `${infer PathParam}\\:${infer RemainingPath}`
-        ? Prefix extends `${infer PrefixPrefix}\\`
-          ? `${PrefixPrefix}:${AllowAnyStringInPathParams<PathParamWithRemainingPath>}`
-          : `${Prefix}${ConvertPathParamToString<PathParam>}:${AllowAnyStringInPathParams<RemainingPath>}`
-        : PathParamWithRemainingPath extends `${infer PathParam}:${infer RemainingPath}`
-          ? Prefix extends `${infer PrefixPrefix}\\`
-            ? `${PrefixPrefix}:${AllowAnyStringInPathParams<PathParamWithRemainingPath>}`
-            : `${Prefix}${ConvertPathParamToString<PathParam>}${AllowAnyStringInPathParams<`:${RemainingPath}`>}`
-          : Prefix extends `${infer PrefixPrefix}\\`
-            ? `${PrefixPrefix}:${PathParamWithRemainingPath}`
-            : `${Prefix}${ConvertPathParamToString<PathParamWithRemainingPath>}`
-    : Path;
 
 /** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemapath `HttpSchemaPath` API reference} */
 export namespace HttpSchemaPath {

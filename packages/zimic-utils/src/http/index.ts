@@ -19,6 +19,12 @@ export type {
 export { default as HttpFormData } from './formData/HttpFormData';
 export type { HttpFormDataSchema, HttpFormDataSchemaName, HttpFormDataSerialized } from './formData/types';
 
-export type { HttpPathParamsSchema, HttpPathParamsSerialized, InferPathParams } from './pathParams/types';
+export type {
+  AllowAnyStringInPathParams,
+  HttpPathParamsSchema,
+  HttpPathParamsSerialized,
+  InferPathParams,
+  WithoutEscapedColons,
+} from './pathParams/types';
 export type { HttpBody } from './types/body';
 export { InvalidFormDataError, InvalidJSONError, parseHttpBody } from './utils/bodies';
