@@ -6,9 +6,10 @@ import type {
   HttpPathParamsSchema,
   HttpSearchParamsSchema,
   InferPathParams as InferPathParamsFromPath,
+  PreferMostStaticLiteralPath,
   WithoutEscapedColons,
 } from '@zimic/utils/http';
-import { IfAny, UnionToIntersection, UnionHasMoreThanOneType, NonEmptyArray, Branded } from '@zimic/utils/types';
+import { IfAny, UnionToIntersection, NonEmptyArray, Branded } from '@zimic/utils/types';
 
 export const HTTP_METHODS = Object.freeze(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const);
 /**
@@ -276,16 +277,6 @@ export type HttpSchemaPath<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
 > = HttpSchemaPath.Literal<Schema, Method> | HttpSchemaPath.NonLiteral<Schema, Method>;
-
-type LargestPathPrefix<Path extends string> = Path extends `${infer Prefix}/${infer Suffix}`
-  ? `${Prefix}/${Suffix extends `${string}/${string}` ? LargestPathPrefix<Suffix> : ''}`
-  : Path;
-
-type ExcludeNonLiteralPathsSupersededByLiteralPath<Path extends string> =
-  Path extends `${LargestPathPrefix<Path>}:${string}` ? never : Path;
-
-export type PreferMostStaticLiteralPath<Path extends string> =
-  UnionHasMoreThanOneType<Path> extends true ? ExcludeNonLiteralPathsSupersededByLiteralPath<Path> : Path;
 
 type RecursiveInferHttpSchemaPath<
   Schema extends HttpSchema,

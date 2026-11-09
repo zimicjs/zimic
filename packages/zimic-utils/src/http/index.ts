@@ -24,6 +24,7 @@ export type {
   HttpPathParamsSchema,
   HttpPathParamsSerialized,
   InferPathParams,
+  PreferMostStaticLiteralPath,
   WithoutEscapedColons,
 } from './pathParams/types';
 export type { HttpBody } from './types/body';

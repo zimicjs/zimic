@@ -1,4 +1,4 @@
-import { IfNever, Prettify } from '../../types';
+import { IfNever, Prettify, UnionHasMoreThanOneType } from '../../types';
 
 export interface HttpPathParamsSchema {
   [paramName: string]: string | undefined;
@@ -86,6 +86,16 @@ type RecursiveInferPathParams<Path extends string> = Path extends `${infer Prefi
 
 /** @see {@link https://zimic.dev/docs/http/api/http-schema#inferpathparams `InferPathParams` API reference} */
 export type InferPathParams<Path extends string> = Prettify<RecursiveInferPathParams<Path>>;
+
+type LargestPathPrefix<Path extends string> = Path extends `${infer Prefix}/${infer Suffix}`
+  ? `${Prefix}/${Suffix extends `${string}/${string}` ? LargestPathPrefix<Suffix> : ''}`
+  : Path;
+
+type ExcludeNonLiteralPathsSupersededByLiteralPath<Path extends string> =
+  Path extends `${LargestPathPrefix<Path>}:${string}` ? never : Path;
+
+export type PreferMostStaticLiteralPath<Path extends string> =
+  UnionHasMoreThanOneType<Path> extends true ? ExcludeNonLiteralPathsSupersededByLiteralPath<Path> : Path;
 
 export type WithoutEscapedColons<Path extends string> = Path extends `${infer Prefix}\\:${infer Suffix}`
   ? WithoutEscapedColons<`${Prefix}:${Suffix}`>
