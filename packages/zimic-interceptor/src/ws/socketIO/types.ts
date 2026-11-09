@@ -112,6 +112,8 @@ type SocketIOAckMessages<Events extends object> = {
  *     baseURL: 'ws://localhost:3000',
  *     protocol: createSocketIOProtocol(),
  *   });
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#socketioschema `SocketIOSchema` API reference}
  */
 export type SocketIOSchema<
   ServerToClientEvents extends object = SocketIOEventsMap,
@@ -125,19 +127,37 @@ export type SocketIOSchema<
   };
 }>;
 
-/** A parser with the same shape as the `parser` option of `socket.io-client`, such as `socket.io-msgpack-parser`. */
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * A parser with the same shape as the `parser` option of `socket.io-client`, such as `socket.io-msgpack-parser`.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#custom-parsers Custom parsers}
+ */
 export interface SocketIOParser {
+  /** Encodes a Socket.IO packet into string or binary chunks. */
   Encoder: new () => { encode: (packet: SocketIOPacket) => unknown[] };
+
+  /** Decodes string or binary chunks, emitting `decoded` with each complete Socket.IO packet. */
   Decoder: new () => {
     add: (chunk: unknown) => void;
     on: (event: 'decoded', listener: (packet: SocketIOPacket) => void) => unknown;
   };
 }
 
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * A Socket.IO protocol packet, as read and written by a {@link SocketIOParser}.
+ */
 export interface SocketIOPacket {
+  /** The packet type: 0 connect, 1 disconnect, 2 event, 3 ack, 4 connect error, 5 binary event, or 6 binary ack. */
   type: number;
+  /** The namespace of the packet. */
   nsp: string;
+  /** The acknowledgement ID of the packet, if any. */
   id?: number;
+  /** The payload of the packet. */
   data?: unknown;
 }
 
@@ -145,6 +165,8 @@ export interface SocketIOPacket {
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * The options of {@link createSocketIOProtocol}.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#createsocketioprotocol `createSocketIOProtocol` API reference}
  */
 export interface SocketIOProtocolOptions {
   /** The namespace handled by the interceptor. Frames of other namespaces are ignored. Defaults to `'/'`. */

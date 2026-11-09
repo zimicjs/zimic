@@ -50,12 +50,21 @@ class SocketIOProtocol implements InternalWebSocketInterceptorProtocol<SocketIOM
   }
 
   async start(host: WebSocketInterceptorProtocolHost) {
+    if (this.engine) {
+      throw new Error('A Socket.IO protocol can be used by only one running interceptor. Create one for each of them.');
+    }
+
     this.host = host;
     this.engine = getOrCreateSocketIOEngine(host, this.options);
     await this.engine.attach(this);
   }
 
-  async stop() {
+  // A failed start also stops the protocol, which must not affect the interceptor already using it.
+  async stop(host: WebSocketInterceptorProtocolHost) {
+    if (host !== this.host) {
+      return;
+    }
+
     await this.engine?.detach(this);
     this.engine = undefined;
   }
@@ -201,15 +210,18 @@ class SocketIOProtocol implements InternalWebSocketInterceptorProtocol<SocketIOM
  * Engine.IO and Socket.IO handshakes and pings. Supports Socket.IO v3 and v4 (Engine.IO protocol 4, Socket.IO protocol
  * 5).
  *
- * Polling, enabled by default, intercepts HTTP requests to `<base URL>/socket.io/`. Each namespace needs its own
- * interceptor. Interceptors of namespaces on the same base URL share a connection, and the first one started sets the
- * `polling`, `pingInterval`, and `pingTimeout` options.
+ * Polling, enabled by default, intercepts HTTP requests to `<base URL>/socket.io/`. Use one protocol and one
+ * interceptor for each namespace and base URL. Interceptors of namespaces on the same base URL share a connection, and
+ * the first one started sets the `polling`, `pingInterval`, and `pingTimeout` options.
  *
  * @example
  *   const interceptor = createWebSocketInterceptor<SocketIOSchema<ServerToClientEvents, ClientToServerEvents>>({
  *     baseURL: 'ws://localhost:3000',
  *     protocol: createSocketIOProtocol(),
  *   });
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#createsocketioprotocol `createSocketIOProtocol` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io Mocking Socket.IO servers}
  */
 export function createSocketIOProtocol(options: SocketIOProtocolOptions = {}): WebSocketInterceptorProtocol {
   return new SocketIOProtocol({
