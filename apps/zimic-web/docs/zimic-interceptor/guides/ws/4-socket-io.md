@@ -17,7 +17,7 @@ The Socket.IO adapter lets you mock a Socket.IO server with WebSocket intercepto
 Install the parsers the adapter uses. `@zimic/http` is also required, because the adapter intercepts HTTP polling requests:
 
 ```bash
-npm install --save-dev socket.io-parser engine.io-parser @zimic/http
+npm install --save-dev socket.io-client socket.io-parser engine.io-parser @zimic/http
 ```
 
 ## Creating an interceptor
@@ -46,7 +46,7 @@ The interceptor answers the Engine.IO open packet, the Socket.IO connect packet,
 
 ## Connecting local interceptors
 
-The built-in `websocket` transport of `socket.io-client` keeps the `WebSocket` constructor it finds when its module loads, before local interceptors replace it. Pass the exported `GlobalWebSocketTransport` instead. Since transport names and classes cannot be mixed, also pass the polling class to keep polling enabled, which is `NodeXHR` in Node.js and `XHR` in browsers:
+The built-in `websocket` transport of `socket.io-client` keeps the `WebSocket` constructor it finds when its module loads, before local interceptors replace it. Pass the exported `GlobalWebSocketTransport` instead, which requires `socket.io-client` 4.8 or later. Since transport names and classes cannot be mixed, also pass the polling class to keep polling enabled, which is `NodeXHR` in Node.js and `XHR` in browsers:
 
 ```ts
 import { GlobalWebSocketTransport } from '@zimic/interceptor/experimental/socket.io';
@@ -101,7 +101,7 @@ const adminInterceptor = createWebSocketInterceptor<AdminSchema>({
 });
 ```
 
-Interceptors of the same base URL share each connection, and the first one started decides the `polling`, `pingInterval`, and `pingTimeout` options. Dynamic namespaces are not supported.
+Interceptors of the same base URL share each connection, and the first one started decides the `polling`, `pingInterval`, and `pingTimeout` options. Unlike other WebSocket interceptors sharing a connection, each one handles its namespace independently, so use a single interceptor for each namespace and a new `createSocketIOProtocol()` for each interceptor. Dynamic namespaces are not supported.
 
 ## Polling
 
