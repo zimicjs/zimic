@@ -1,5 +1,5 @@
 import type { PossiblePromise } from '@zimic/utils/types';
-import type { WebSocketMessageData, WebSocketMessageSchema } from '@zimic/ws';
+import type { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 
 import {
   INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
@@ -117,7 +117,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     });
   }
 
-  async use<Schema extends WebSocketMessageSchema>(interceptor: AnyWebSocketInterceptorImplementation<Schema>) {
+  async use<Schema extends WebSocketSchema>(interceptor: AnyWebSocketInterceptorImplementation<Schema>) {
     if (!this.isRunning) {
       throw new NotRunningWebSocketInterceptorError();
     }
@@ -139,9 +139,9 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
   }
 
-  async sendToClient<Schema extends WebSocketMessageSchema>(
+  async sendToClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
-    data: WebSocketMessageData<Schema>,
+    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   ) {
     const clientId = this.findClientId(client);
 
@@ -151,9 +151,9 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   }
 
   // Only clients already listed receive the message, as in local mode, so connections still being decided do not.
-  async sendToClients<Schema extends WebSocketMessageSchema>(
+  async sendToClients<Schema extends WebSocketSchema>(
     interceptor: AnyWebSocketInterceptorImplementation<Schema>,
-    data: WebSocketMessageData<Schema>,
+    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   ) {
     const registeredInterceptor = this.findRegisteredInterceptor(interceptor);
     const clientIds = registeredInterceptor?.clients.keys() ?? [];
@@ -161,7 +161,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     await Promise.all(Array.from(clientIds, (clientId) => this.enqueueSend(clientId, data)));
   }
 
-  async closeClient<Schema extends WebSocketMessageSchema>(
+  async closeClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
     code?: number,
     reason?: string,
@@ -245,7 +245,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     const holders: {
       registeredInterceptor: RegisteredWebSocketInterceptor;
-      client: InternalWebSocketInterceptorClient<WebSocketMessageSchema>;
+      client: InternalWebSocketInterceptorClient;
     }[] = [];
 
     for (const registeredInterceptor of holderCandidates) {
@@ -311,7 +311,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     await this.handleMessageWithHandlers(deserializedMessageData, holders);
   };
 
-  private findRegisteredInterceptor<Schema extends WebSocketMessageSchema>(
+  private findRegisteredInterceptor<Schema extends WebSocketSchema>(
     interceptor: AnyWebSocketInterceptorImplementation<Schema>,
   ) {
     return Array.from(this.registeredInterceptors.values()).find((registeredInterceptor) => {
@@ -319,7 +319,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     });
   }
 
-  private findClientId<Schema extends WebSocketMessageSchema>(client: InternalWebSocketInterceptorClient<Schema>) {
+  private findClientId<Schema extends WebSocketSchema>(client: InternalWebSocketInterceptorClient<Schema>) {
     for (const registeredInterceptor of this.registeredInterceptors.values()) {
       for (const [clientId, interceptorClient] of registeredInterceptor.clients) {
         if (interceptorClient === client) {
@@ -331,7 +331,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     return undefined;
   }
 
-  async clearHandlers<Schema extends WebSocketMessageSchema>(
+  async clearHandlers<Schema extends WebSocketSchema>(
     options: {
       interceptor?: AnyWebSocketInterceptorImplementation<Schema>;
       preserveInterceptorRegistration?: boolean;

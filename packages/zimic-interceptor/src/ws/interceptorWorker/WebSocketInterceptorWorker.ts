@@ -1,7 +1,7 @@
 import { HttpSearchParams } from '@zimic/utils/http';
 import { PossiblePromise } from '@zimic/utils/types';
 import { createRegexFromPath, validatePathParams } from '@zimic/utils/url';
-import { WebSocketMessageData, WebSocketMessageSchema } from '@zimic/ws';
+import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 
 import { removeArrayElement } from '@/utils/arrays';
 import { isClientSide } from '@/utils/environment';
@@ -35,19 +35,19 @@ interface WebSocketMessageHandler {
   pathRegex: RegExp | undefined;
 }
 
-interface WebSocketConnectionHolder<Schema extends WebSocketMessageSchema> {
-  interceptor: WebSocketInterceptorImplementation<Schema>;
-  client: InternalWebSocketInterceptorClient<Schema>;
+interface WebSocketConnectionHolder {
+  interceptor: WebSocketInterceptorImplementation<WebSocketSchema>;
+  client: InternalWebSocketInterceptorClient;
 }
 
 interface RegisteredWebSocketConnectionHolder {
   registeredInterceptor: { interceptor: AnyWebSocketInterceptorImplementation };
-  client: WebSocketInterceptorClient<WebSocketMessageSchema>;
+  client: WebSocketInterceptorClient;
 }
 
 interface FailedWebSocketMessageMatch {
   handler: AnyWebSocketMessageHandlerImplementation;
-  holder: WebSocketConnectionHolder<WebSocketMessageSchema>;
+  holder: WebSocketConnectionHolder;
   messageMatch: Extract<WebSocketMessageHandlerMessageMatch, { success: false }>;
 }
 
@@ -150,11 +150,11 @@ abstract class WebSocketInterceptorWorker {
     return this.runningInterceptors.length;
   }
 
-  abstract use<Schema extends WebSocketMessageSchema>(
+  abstract use<Schema extends WebSocketSchema>(
     interceptor: AnyWebSocketInterceptorImplementation<Schema>,
   ): PossiblePromise<void>;
 
-  useMessageHandler<Schema extends WebSocketMessageSchema>(
+  useMessageHandler<Schema extends WebSocketSchema>(
     interceptor: AnyWebSocketInterceptorImplementation<Schema>,
     handler: AnyWebSocketMessageHandlerImplementation,
   ) {
@@ -174,7 +174,7 @@ abstract class WebSocketInterceptorWorker {
     return createRegexFromPath(handler.path);
   }
 
-  useConnectionHandler<Schema extends WebSocketMessageSchema>(
+  useConnectionHandler<Schema extends WebSocketSchema>(
     interceptor: AnyWebSocketInterceptorImplementation<Schema>,
     handler: AnyWebSocketConnectionHandlerImplementation,
   ) {
@@ -185,7 +185,7 @@ abstract class WebSocketInterceptorWorker {
     });
   }
 
-  protected clearInterceptorHandlers<Schema extends WebSocketMessageSchema>(
+  protected clearInterceptorHandlers<Schema extends WebSocketSchema>(
     interceptor: AnyWebSocketInterceptorImplementation<Schema> | undefined,
   ) {
     this.messageHandlers =
@@ -333,11 +333,7 @@ abstract class WebSocketInterceptorWorker {
     }
 
     try {
-      // The worker keeps handlers of any schema, so it cannot name the schema that types this client.
-      await acceptance.handler.implementation.applyConnectionEffect(
-        acceptingHolder.client as never,
-        acceptance.request,
-      );
+      await acceptance.handler.implementation.applyConnectionEffect(acceptingHolder.client, acceptance.request);
     } catch (error) {
       console.error(error);
     }
@@ -347,7 +343,7 @@ abstract class WebSocketInterceptorWorker {
   // a newer handler wins regardless of the start order of its interceptor. Holders are ordered from oldest to newest.
   protected async handleMessageWithHandlers(
     data: WebSocketMessageData<WebSocketMessageSchema>,
-    holders: WebSocketConnectionHolder<WebSocketMessageSchema>[],
+    holders: WebSocketConnectionHolder[],
   ) {
     const message = await normalizeWebSocketMessageData<WebSocketMessageSchema>(data);
     const failedMessageMatches: FailedWebSocketMessageMatch[] = [];
@@ -363,7 +359,7 @@ abstract class WebSocketInterceptorWorker {
         continue;
       }
 
-      const context: WebSocketMessageHandlerApplyContext<WebSocketMessageSchema> = {
+      const context: WebSocketMessageHandlerApplyContext = {
         sender: holder.client,
         receiver: holder.interceptor.server,
       };
@@ -416,14 +412,14 @@ abstract class WebSocketInterceptorWorker {
   // handling.
   private async logUnhandledMessageIfNecessary(
     data: WebSocketMessageData<WebSocketMessageSchema>,
-    holders: WebSocketConnectionHolder<WebSocketMessageSchema>[],
+    holders: WebSocketConnectionHolder[],
   ) {
     const newestHolder = holders.findLast((holder) => this.isHoldingConnection(holder));
     await newestHolder?.interceptor.logUnhandledMessageIfNecessary(data, newestHolder.client.url);
   }
 
   // A holder lists the client from the moment it accepts the connection until it lets the connection go.
-  private isHoldingConnection(holder: WebSocketConnectionHolder<WebSocketMessageSchema>) {
+  private isHoldingConnection(holder: WebSocketConnectionHolder) {
     return holder.interceptor.clients.includes(holder.client);
   }
 
@@ -454,23 +450,23 @@ abstract class WebSocketInterceptorWorker {
     }
   }
 
-  abstract sendToClient<Schema extends WebSocketMessageSchema>(
+  abstract sendToClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
-    data: WebSocketMessageData<Schema>,
+    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   ): PossiblePromise<void>;
 
-  abstract sendToClients<Schema extends WebSocketMessageSchema>(
+  abstract sendToClients<Schema extends WebSocketSchema>(
     interceptor: AnyWebSocketInterceptorImplementation<Schema>,
-    data: WebSocketMessageData<Schema>,
+    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   ): PossiblePromise<void>;
 
-  abstract closeClient<Schema extends WebSocketMessageSchema>(
+  abstract closeClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
     code?: number,
     reason?: string,
   ): PossiblePromise<void>;
 
-  abstract clearHandlers<Schema extends WebSocketMessageSchema>(options?: {
+  abstract clearHandlers<Schema extends WebSocketSchema>(options?: {
     interceptor?: AnyWebSocketInterceptorImplementation<Schema>;
     preserveInterceptorRegistration?: boolean;
   }): PossiblePromise<void>;

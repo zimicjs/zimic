@@ -2,7 +2,6 @@ import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
 import { WebSocketInterceptorClient, WebSocketInterceptorConnectionRequest } from '@/ws/interceptor/types/messages';
-import { WebSocketInterceptorPathMessage } from '@/ws/interceptor/types/schema';
 
 import WebSocketConnectionHandlerImplementation from '../WebSocketConnectionHandlerImplementation';
 import { WebSocketConnectionHandlerDelayFactory } from './connections';
@@ -15,18 +14,6 @@ export interface InternalWebSocketConnectionHandler<Schema extends WebSocketSche
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The client handle passed to connection handler effects, with its messages, search params, and subprotocols typed from
- * the handler path.
- */
-export type WebSocketConnectionHandlerClient<Schema extends WebSocketSchema, Path extends string = string> = Omit<
-  WebSocketInterceptorClient<WebSocketInterceptorPathMessage<Schema, Path>>,
-  'protocols' | 'searchParams'
-> &
-  Pick<WebSocketInterceptorConnectionRequest<Schema, Path>, 'protocols' | 'searchParams'>;
-
-/**
- * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
- *
  * A side effect declared with `handler.effect()`, called with the client handle and the handshake request of each
  * matched connection that is accepted. Rejected connections have no client, so they run no effects.
  */
@@ -34,7 +21,7 @@ export type WebSocketConnectionHandlerConnectionCallback<
   Schema extends WebSocketSchema,
   Path extends string = string,
 > = (
-  client: WebSocketConnectionHandlerClient<Schema, Path>,
+  client: WebSocketInterceptorClient<Schema, Path>,
   request: WebSocketInterceptorConnectionRequest<Schema, Path>,
 ) => PossiblePromise<void>;
 

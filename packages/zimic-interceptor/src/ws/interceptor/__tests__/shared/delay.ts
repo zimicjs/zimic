@@ -30,7 +30,8 @@ import type { UnhandledMessageStrategy, WebSocketInterceptorType } from '../../t
 type Message = { type: 'create'; body: { text: string } } | { type: 'delete'; id: string };
 type MessageSchema = WebSocketSchema<{ '/': { message: Message } }>;
 
-type DelayableHandler = LocalWebSocketMessageHandler<Message> | PendingRemoteWebSocketMessageHandler<Message>;
+type DelayableHandler =
+  LocalWebSocketMessageHandler<MessageSchema> | PendingRemoteWebSocketMessageHandler<MessageSchema>;
 
 type DelayableConnectionHandler =
   LocalWebSocketConnectionHandler<MessageSchema> | PendingRemoteWebSocketConnectionHandler<MessageSchema>;

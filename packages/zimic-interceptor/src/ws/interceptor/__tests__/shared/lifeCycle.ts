@@ -460,7 +460,8 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     });
   });
 
-  type DeclaredMessageHandler = LocalWebSocketMessageHandler<Message> | SyncedRemoteWebSocketMessageHandler<Message>;
+  type DeclaredMessageHandler =
+    LocalWebSocketMessageHandler<MessageSchema> | SyncedRemoteWebSocketMessageHandler<MessageSchema>;
 
   const redeclarations = [
     ['respond', (handler: DeclaredMessageHandler) => handler.respond({ type: 'server', index: 2 })],

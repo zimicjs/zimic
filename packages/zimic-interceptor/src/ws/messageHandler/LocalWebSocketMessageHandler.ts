@@ -1,7 +1,8 @@
-import { WebSocketMessageSchema } from '@zimic/ws';
+import { WebSocketSchema } from '@zimic/ws';
 
 import { WebSocketInterceptorClient } from '../interceptor/types/messages';
-import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
+import { WebSocketInterceptorPathMessage } from '../interceptor/types/schema';
+import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
 import { WebSocketMessageHandlerDelayFactory } from './types/messages';
 import {
   LocalWebSocketMessageHandler as PublicLocalWebSocketMessageHandler,
@@ -16,15 +17,19 @@ import {
 import WebSocketMessageHandlerImplementation from './WebSocketMessageHandlerImplementation';
 
 class LocalWebSocketMessageHandler<
-  Schema extends WebSocketMessageSchema,
-  RestrictedSchema extends Schema = Schema,
-> implements PublicLocalWebSocketMessageHandler<Schema, RestrictedSchema> {
+  Schema extends WebSocketSchema,
+  Path extends string = string,
+  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path> = WebSocketInterceptorPathMessage<
+    Schema,
+    Path
+  >,
+> implements PublicLocalWebSocketMessageHandler<Schema, Path, RestrictedMessage> {
   readonly type = 'local';
 
-  implementation: WebSocketMessageHandlerImplementation<Schema, RestrictedSchema>;
+  implementation: WebSocketMessageHandlerImplementation<Schema, Path, RestrictedMessage>;
 
-  constructor(interceptorImplementation: WebSocketInterceptorImplementation<Schema>, path: string | undefined) {
-    this.implementation = new WebSocketMessageHandlerImplementation<Schema, RestrictedSchema>(
+  constructor(interceptorImplementation: AnyWebSocketInterceptorImplementation, path: Path | undefined) {
+    this.implementation = new WebSocketMessageHandlerImplementation<Schema, Path, RestrictedMessage>(
       interceptorImplementation,
       path,
       this,
@@ -40,30 +45,35 @@ class LocalWebSocketMessageHandler<
     return this;
   }
 
-  with<Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
+  with<Restriction extends WebSocketMessageHandlerRestriction<RestrictedMessage>>(
     restriction: Restriction,
-    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<RestrictedSchema, Restriction>
-  ): LocalWebSocketMessageHandler<Schema, WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>> {
+    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<RestrictedMessage, Restriction>
+  ): LocalWebSocketMessageHandler<
+    Schema,
+    Path,
+    WebSocketMessageHandlerSchemaWithRestriction<RestrictedMessage, Restriction>
+  > {
     this.implementation.with(restriction, ...options);
 
     const newThis = this as unknown as LocalWebSocketMessageHandler<
       Schema,
-      WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>
+      Path,
+      WebSocketMessageHandlerSchemaWithRestriction<RestrictedMessage, Restriction>
     >;
     return newThis;
   }
 
-  delay(minMilliseconds: number | WebSocketMessageHandlerDelayFactory<RestrictedSchema>, maxMilliseconds?: number) {
+  delay(minMilliseconds: number | WebSocketMessageHandlerDelayFactory<RestrictedMessage>, maxMilliseconds?: number) {
     this.implementation.delay(minMilliseconds, maxMilliseconds);
     return this;
   }
 
-  effect(callback: WebSocketMessageHandlerMessageCallback<Schema, RestrictedSchema>) {
+  effect(callback: WebSocketMessageHandlerMessageCallback<Schema, Path, RestrictedMessage>) {
     this.implementation.effect(callback);
     return this;
   }
 
-  respond(declaration: WebSocketMessageHandlerMessageDeclaration<Schema, RestrictedSchema>) {
+  respond(declaration: WebSocketMessageHandlerMessageDeclaration<Schema, Path, RestrictedMessage>) {
     this.implementation.respond(declaration);
     return this;
   }
@@ -77,9 +87,9 @@ class LocalWebSocketMessageHandler<
     this.implementation.checkTimes();
   }
 
-  clear(): PublicLocalWebSocketMessageHandler<Schema, Schema> {
+  clear(): PublicLocalWebSocketMessageHandler<Schema, Path> {
     this.implementation.clear();
-    return this as unknown as PublicLocalWebSocketMessageHandler<Schema, Schema>;
+    return this as PublicLocalWebSocketMessageHandler<Schema, Path>;
   }
 
   get messages() {

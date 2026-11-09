@@ -37,7 +37,6 @@ export type { WebSocketConnectionHandlerDelayFactory } from './connectionHandler
 export type {
   LocalWebSocketConnectionHandler,
   RemoteWebSocketConnectionHandler,
-  WebSocketConnectionHandlerClient,
   WebSocketConnectionHandlerConnectionCallback,
   WebSocketConnectionHandlerResponseStaticDeclaration,
   WebSocketConnectionHandlerResponseComputedDeclaration,

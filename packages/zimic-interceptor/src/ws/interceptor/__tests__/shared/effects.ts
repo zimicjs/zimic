@@ -250,7 +250,7 @@ export function declareEffectWebSocketInterceptorTests(options: RuntimeSharedWeb
   describe('Connections', () => {
     it('should call connection effects with the client handle of the accepted connection', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-        const effect = vi.fn<(client: WebSocketInterceptorClient<Message>) => void>();
+        const effect = vi.fn<(client: WebSocketInterceptorClient<MessageSchema>) => void>();
 
         await interceptor.connection().effect(effect);
 

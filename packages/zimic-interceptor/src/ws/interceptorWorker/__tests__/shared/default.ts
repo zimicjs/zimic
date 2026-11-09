@@ -577,7 +577,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
     // Remote-only: local workers have no interceptor server to reset.
     it('should send one reset when the last remote interceptor stops', async () => {
       await usingWebSocketInterceptorWorker(remoteWorkerOptions, { start: false }, async (worker) => {
-        const interceptor = new WebSocketInterceptorImplementation<ChatMessage, typeof RemoteWebSocketMessageHandler>({
+        const interceptor = new WebSocketInterceptorImplementation<ChatSchema, typeof RemoteWebSocketMessageHandler>({
           baseURL: new URL(baseURL),
           MessageHandler: RemoteWebSocketMessageHandler,
           ConnectionHandler: RemoteWebSocketConnectionHandler,
@@ -657,7 +657,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
 
         // Runs the second interceptor on the same worker as the first one, so clearing the first resets the second.
         const secondInterceptor = new WebSocketInterceptorImplementation<
-          ChatMessage,
+          ChatSchema,
           typeof RemoteWebSocketMessageHandler
         >({
           baseURL: new URL(`${baseURL}/second`),
@@ -690,7 +690,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
     it('should not connect remote clients to interceptors cleared after the server sent the connection', async () => {
       await usingWebSocketInterceptorWorker(remoteWorkerOptions, { start: false }, async (worker) => {
         const firstInterceptor = new WebSocketInterceptorImplementation<
-          ChatMessage,
+          ChatSchema,
           typeof RemoteWebSocketMessageHandler
         >({
           baseURL: new URL(baseURL),
@@ -701,7 +701,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         });
 
         const secondInterceptor = new WebSocketInterceptorImplementation<
-          ChatMessage,
+          ChatSchema,
           typeof RemoteWebSocketMessageHandler
         >({
           baseURL: new URL(baseURL),
@@ -754,7 +754,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         const secondOnUnhandledMessage = vi.fn();
 
         const firstInterceptor = new WebSocketInterceptorImplementation<
-          ChatMessage,
+          ChatSchema,
           typeof RemoteWebSocketMessageHandler
         >({
           baseURL: new URL(baseURL),
@@ -766,7 +766,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         });
 
         const secondInterceptor = new WebSocketInterceptorImplementation<
-          ChatMessage,
+          ChatSchema,
           typeof RemoteWebSocketMessageHandler
         >({
           baseURL: new URL(baseURL),

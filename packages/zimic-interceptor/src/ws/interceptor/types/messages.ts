@@ -6,9 +6,10 @@ import {
   WebSocketMessageData,
   WebSocketMessageSchema,
   WebSocketSchema,
+  WebSocketSchemaMessage,
 } from '@zimic/ws';
 
-import { DeclaredWebSocketInterceptorPath } from './schema';
+import { DeclaredWebSocketInterceptorPath, WebSocketInterceptorPathMessage } from './schema';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -39,20 +40,26 @@ type UnparsedWebSocketJSONPrimitiveText<Schema extends UnparsedWebSocketJSONPrim
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A client-to-server message saved by a message handler, along with its sender and receiver handles.
+ * A client-to-server message saved by a message handler, along with its sender and receiver handles. The sender is
+ * typed from the handler path and the receiver with the messages of all paths, because the interceptor server holds and
+ * broadcasts them all.
  */
 export interface InterceptedWebSocketInterceptorMessage<
-  MessageSchema extends WebSocketMessageSchema,
-  ClientSchema extends WebSocketMessageSchema = MessageSchema,
+  Schema extends WebSocketSchema,
+  Path extends string = string,
+  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path> = WebSocketInterceptorPathMessage<
+    Schema,
+    Path
+  >,
 > {
   /** The client that sent the message. */
-  sender: WebSocketInterceptorClient<ClientSchema>;
+  sender: WebSocketInterceptorClient<Schema, Path>;
 
   /** The interceptor server that received the message. */
-  receiver: WebSocketInterceptorServer<ClientSchema>;
+  receiver: WebSocketInterceptorServer<Schema>;
 
   /** The message data, as matched by the handler. Binary messages arrive as `ArrayBuffer`. */
-  data: ReceivedWebSocketMessageData<MessageSchema>;
+  data: ReceivedWebSocketMessageData<RestrictedMessage>;
 }
 
 /** The search params declared for connections to a handler path. `never` if the schema declares none. */
@@ -106,9 +113,13 @@ export interface WebSocketInterceptorConnectionRequest<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A handle to a client connected to the interceptor.
+ * A handle to a client connected to the interceptor, with its messages, search params, and subprotocols typed from the
+ * path of its connection. Without a path, it is typed with the messages, search params, and subprotocols of all paths.
  */
-export interface WebSocketInterceptorClient<Schema extends WebSocketMessageSchema> {
+export interface WebSocketInterceptorClient<
+  Schema extends WebSocketSchema = WebSocketSchema,
+  Path extends string = string,
+> {
   /**
    * The URL used to open the client connection.
    *
@@ -123,7 +134,7 @@ export interface WebSocketInterceptorClient<Schema extends WebSocketMessageSchem
    *
    * @readonly
    */
-  protocols: readonly string[];
+  protocols: readonly WebSocketInterceptorConnectionProtocol<Schema, Path>[];
 
   /**
    * The search parameters of the URL used to open the client connection.
@@ -131,17 +142,17 @@ export interface WebSocketInterceptorClient<Schema extends WebSocketMessageSchem
    * @readonly
    * @see {@link https://zimic.dev/docs/http/api/http-search-params `HttpSearchParams` API reference}
    */
-  searchParams: HttpSearchParams;
+  searchParams: HttpSearchParams<WebSocketInterceptorConnectionSearchParamsSchema<Schema, Path>>;
 
   /**
    * The messages sent by this client and saved by matching handlers. Requires message saving to be enabled.
    *
    * @readonly
    */
-  messages: readonly InterceptedWebSocketInterceptorMessage<Schema>[];
+  messages: readonly InterceptedWebSocketInterceptorMessage<Schema, Path>[];
 
   /** Sends a server message to this client. */
-  send: (data: WebSocketMessageData<Schema>) => void;
+  send: (data: WebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>) => void;
 
   /**
    * Closes the connection of this client, as if the server closed it, and removes the client from every interceptor
@@ -161,10 +172,10 @@ export interface WebSocketInterceptorClient<Schema extends WebSocketMessageSchem
 }
 
 /** Options for sending a message with `interceptor.server.send()`. */
-export interface WebSocketInterceptorServerSendOptions<Schema extends WebSocketMessageSchema> {
+export interface WebSocketInterceptorServerSendOptions<Schema extends WebSocketSchema> {
   /**
-   * The connected clients that should receive the message. If omitted, the message is broadcast to all connected
-   * clients.
+   * The connected clients that should receive the message, of any path of the schema. If omitted, the message is
+   * broadcast to all connected clients.
    */
   to?: WebSocketInterceptorClient<Schema> | readonly WebSocketInterceptorClient<Schema>[];
 }
@@ -172,9 +183,10 @@ export interface WebSocketInterceptorServerSendOptions<Schema extends WebSocketM
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A handle to the interceptor's mock server, used to send messages to connected clients.
+ * A handle to the interceptor's mock server, used to send messages to connected clients. It is typed with the messages
+ * of all paths of the schema, because it holds and broadcasts them all.
  */
-export interface WebSocketInterceptorServer<Schema extends WebSocketMessageSchema> {
+export interface WebSocketInterceptorServer<Schema extends WebSocketSchema = WebSocketSchema> {
   /**
    * The current base URL of the interceptor.
    *
@@ -190,5 +202,8 @@ export interface WebSocketInterceptorServer<Schema extends WebSocketMessageSchem
   messages: readonly InterceptedWebSocketInterceptorMessage<Schema>[];
 
   /** Sends a message to the connected clients selected in `options.to`, or to all of them if omitted. */
-  send: (data: WebSocketMessageData<Schema>, options?: WebSocketInterceptorServerSendOptions<Schema>) => void;
+  send: (
+    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+    options?: WebSocketInterceptorServerSendOptions<Schema>,
+  ) => void;
 }

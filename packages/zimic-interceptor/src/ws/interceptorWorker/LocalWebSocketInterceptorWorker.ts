@@ -1,7 +1,7 @@
 import { createCachedDynamicImport } from '@zimic/utils/import';
 import { excludeNonPathParams } from '@zimic/utils/url';
 import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
-import { WebSocketMessageData, WebSocketMessageSchema } from '@zimic/ws';
+import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 import { SharedOptions as MSWWorkerSharedOptions, ws } from 'msw';
 
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
@@ -216,7 +216,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     return !this.hasInternalBrowserWorker();
   }
 
-  use<Schema extends WebSocketMessageSchema>(interceptor: WebSocketInterceptorImplementation<Schema>) {
+  use<Schema extends WebSocketSchema>(interceptor: WebSocketInterceptorImplementation<Schema>) {
     if (!this.isRunning) {
       throw new NotRunningWebSocketInterceptorError();
     }
@@ -250,9 +250,9 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     mswWorker.use(mswHandler);
   }
 
-  sendToClient<Schema extends WebSocketMessageSchema>(
+  sendToClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
-    data: WebSocketMessageData<Schema>,
+    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   ) {
     const registration = this.findRegisteredInterceptorByClient(client)?.clients.get(client);
 
@@ -261,9 +261,9 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
   }
 
-  sendToClients<Schema extends WebSocketMessageSchema>(
+  sendToClients<Schema extends WebSocketSchema>(
     interceptor: AnyWebSocketInterceptorImplementation<Schema>,
-    data: WebSocketMessageData<Schema>,
+    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   ) {
     const registeredInterceptor = this.findRegisteredInterceptor(interceptor);
 
@@ -284,7 +284,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   }
 
   // The close listener of the connection removes the client from every interceptor holding it.
-  closeClient<Schema extends WebSocketMessageSchema>(
+  closeClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
     code?: number,
     reason?: string,
@@ -394,7 +394,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       connection,
       holders: holders.map((registeredInterceptor) => {
         // Sending through the holder lookup makes the client stop sending once its interceptor lets the connection go.
-        const client = createWebSocketInterceptorClient<WebSocketMessageSchema>({
+        const client: InternalWebSocketInterceptorClient = createWebSocketInterceptorClient({
           url: connection.url.href,
           protocols,
           send: (data) => {
@@ -453,13 +453,13 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
   }
 
-  private findRegisteredInterceptorByClient<Schema extends WebSocketMessageSchema>(
+  private findRegisteredInterceptorByClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
   ) {
     return this.registeredInterceptors.find((registeredInterceptor) => registeredInterceptor.clients.has(client));
   }
 
-  private findRegisteredInterceptor<Schema extends WebSocketMessageSchema>(
+  private findRegisteredInterceptor<Schema extends WebSocketSchema>(
     interceptor: AnyWebSocketInterceptorImplementation<Schema>,
   ) {
     return this.registeredInterceptors.find(
@@ -467,7 +467,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     );
   }
 
-  clearHandlers<Schema extends WebSocketMessageSchema>(options?: {
+  clearHandlers<Schema extends WebSocketSchema>(options?: {
     interceptor?: WebSocketInterceptorImplementation<Schema>;
     preserveInterceptorRegistration?: boolean;
   }) {

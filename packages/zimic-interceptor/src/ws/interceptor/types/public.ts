@@ -1,12 +1,12 @@
 import { PossiblePromise } from '@zimic/utils/types';
-import { WebSocketSchema, WebSocketSchemaMessage, WebSocketSchemaPath } from '@zimic/ws';
+import { WebSocketSchema, WebSocketSchemaPath } from '@zimic/ws';
 
 import { LocalWebSocketConnectionHandler, RemoteWebSocketConnectionHandler } from '@/ws/connectionHandler/types/public';
 import { LocalWebSocketMessageHandler, RemoteWebSocketMessageHandler } from '@/ws/messageHandler/types/public';
 
 import { WebSocketInterceptorClient, WebSocketInterceptorServer } from './messages';
 import { RemoteWebSocketInterceptorOptions, UnhandledMessageStrategy, WebSocketInterceptorPlatform } from './options';
-import { WebSocketInterceptorHandlerPath, WebSocketInterceptorPathMessage } from './schema';
+import { WebSocketInterceptorHandlerPath } from './schema';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -86,14 +86,14 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
    *
    * @readonly
    */
-  get server(): WebSocketInterceptorServer<WebSocketSchemaMessage<Schema>>;
+  get server(): WebSocketInterceptorServer<Schema>;
 
   /**
    * The currently connected client handles.
    *
    * @readonly
    */
-  get clients(): readonly WebSocketInterceptorClient<WebSocketSchemaMessage<Schema>>[];
+  get clients(): readonly WebSocketInterceptorClient<Schema>[];
 
   /** Starts the interceptor, allowing it to intercept WebSocket connections and messages. */
   start: () => Promise<void>;
@@ -139,9 +139,7 @@ export interface LocalWebSocketInterceptor<Schema extends WebSocketSchema> exten
    */
   message: <Path extends WebSocketSchemaPath.NonLiteral<Schema> = never>(
     path?: Path,
-  ) => LocalWebSocketMessageHandler<
-    WebSocketInterceptorPathMessage<Schema, WebSocketInterceptorHandlerPath<Schema, Path>>
-  >;
+  ) => LocalWebSocketMessageHandler<Schema, WebSocketInterceptorHandlerPath<Schema, Path>>;
 
   /**
    * Creates a connection handler for connection attempts to the interceptor, which can accept or reject them before
@@ -193,9 +191,7 @@ export interface RemoteWebSocketInterceptor<Schema extends WebSocketSchema> exte
    */
   message: <Path extends WebSocketSchemaPath.NonLiteral<Schema> = never>(
     path?: Path,
-  ) => RemoteWebSocketMessageHandler<
-    WebSocketInterceptorPathMessage<Schema, WebSocketInterceptorHandlerPath<Schema, Path>>
-  >;
+  ) => RemoteWebSocketMessageHandler<Schema, WebSocketInterceptorHandlerPath<Schema, Path>>;
 
   /**
    * Creates a connection handler for connection attempts to the interceptor, which can accept or reject them before

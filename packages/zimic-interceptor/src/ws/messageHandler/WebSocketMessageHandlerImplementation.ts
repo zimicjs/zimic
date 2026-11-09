@@ -1,19 +1,23 @@
 import { blobEquals, jsonContains, jsonEquals } from '@zimic/utils/data';
 import { waitForDelay } from '@zimic/utils/time';
 import { Range } from '@zimic/utils/types';
-import { WebSocketMessageSchema } from '@zimic/ws';
+import { WebSocketMessageSchema, WebSocketSchema } from '@zimic/ws';
 
 import { random } from '@/utils/numbers';
 
 import WebSocketTimesCheckError from '../errors/WebSocketTimesCheckError';
 import WebSocketTimesDeclarationPointer from '../errors/WebSocketTimesDeclarationPointer';
 import { ReceivedWebSocketMessageData, WebSocketInterceptorClient } from '../interceptor/types/messages';
+import { WebSocketInterceptorPathMessage } from '../interceptor/types/schema';
 import {
   InternalWebSocketInterceptorClient,
   InternalWebSocketInterceptorServer,
 } from '../interceptor/WebSocketInterceptorHandle';
-import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
-import type { WebSocketInterceptorMessageHandlerIndex } from '../interceptor/WebSocketInterceptorMessageStore';
+import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
+import {
+  createWebSocketInterceptorMessageHandlerIndex,
+  type WebSocketInterceptorMessageHandlerIndex,
+} from '../interceptor/WebSocketInterceptorMessageStore';
 import {
   isWebSocketBinaryMessageData,
   normalizeWebSocketBinaryMessageData,
@@ -51,17 +55,24 @@ export type WebSocketMessageHandlerMessageMatch =
       diff: WebSocketMessageHandlerRestrictionDiffs<WebSocketMessageSchema>;
     };
 
-export interface WebSocketMessageHandlerApplyContext<Schema extends WebSocketMessageSchema> {
-  sender: InternalWebSocketInterceptorClient<Schema>;
+export interface WebSocketMessageHandlerApplyContext<
+  Schema extends WebSocketSchema = WebSocketSchema,
+  Path extends string = string,
+> {
+  sender: InternalWebSocketInterceptorClient<Schema, Path>;
   receiver: InternalWebSocketInterceptorServer<Schema>;
 }
 
 class WebSocketMessageHandlerImplementation<
-  Schema extends WebSocketMessageSchema,
-  RestrictedSchema extends Schema = Schema,
+  Schema extends WebSocketSchema,
+  Path extends string = string,
+  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path> = WebSocketInterceptorPathMessage<
+    Schema,
+    Path
+  >,
 > {
   private restrictions: {
-    restriction: WebSocketMessageHandlerRestriction<RestrictedSchema>;
+    restriction: WebSocketMessageHandlerRestriction<RestrictedMessage>;
     options: WebSocketMessageHandlerStaticRestrictionOptions;
   }[] = [];
 
@@ -74,14 +85,20 @@ class WebSocketMessageHandlerImplementation<
   private timesPointer?: WebSocketTimesDeclarationPointer;
 
   private numberOfMatchedMessages = 0;
-  private unmatchedMessageGroups: UnmatchedWebSocketInterceptorMessageGroup<Schema>[] = [];
-  private savedMessageIndex: WebSocketInterceptorMessageHandlerIndex<Schema, RestrictedSchema>;
+  private unmatchedMessageGroups: UnmatchedWebSocketInterceptorMessageGroup<
+    WebSocketInterceptorPathMessage<Schema, Path>
+  >[] = [];
+  private savedMessageIndex: WebSocketInterceptorMessageHandlerIndex<Schema, Path, RestrictedMessage>;
 
-  private createResponseDeclaration?: WebSocketMessageHandlerMessageComputedDeclaration<Schema, RestrictedSchema>;
+  private createResponseDeclaration?: WebSocketMessageHandlerMessageComputedDeclaration<
+    Schema,
+    Path,
+    RestrictedMessage
+  >;
 
-  private createResponseDelay?: WebSocketMessageHandlerDelayFactory<RestrictedSchema>;
+  private createResponseDelay?: WebSocketMessageHandlerDelayFactory<RestrictedMessage>;
 
-  private applyEffect?: WebSocketMessageHandlerMessageCallback<Schema, RestrictedSchema>;
+  private applyEffect?: WebSocketMessageHandlerMessageCallback<Schema, Path, RestrictedMessage>;
 
   #clearGeneration = {};
 
@@ -90,11 +107,11 @@ class WebSocketMessageHandlerImplementation<
   private isCleared = false;
 
   constructor(
-    private interceptor: WebSocketInterceptorImplementation<Schema>,
-    readonly path: string | undefined,
-    private handler: InternalWebSocketMessageHandler<Schema, RestrictedSchema>,
+    private interceptor: AnyWebSocketInterceptorImplementation,
+    readonly path: Path | undefined,
+    private handler: InternalWebSocketMessageHandler<Schema, Path, RestrictedMessage>,
   ) {
-    this.savedMessageIndex = this.interceptor.messageStore.createHandlerIndex<RestrictedSchema>();
+    this.savedMessageIndex = createWebSocketInterceptorMessageHandlerIndex<Schema, Path, RestrictedMessage>();
   }
 
   from(sender: WebSocketInterceptorClient<Schema>) {
@@ -104,7 +121,7 @@ class WebSocketMessageHandlerImplementation<
   }
 
   with(
-    restriction: WebSocketMessageHandlerRestriction<RestrictedSchema>,
+    restriction: WebSocketMessageHandlerRestriction<RestrictedMessage>,
     options: WebSocketMessageHandlerStaticRestrictionOptions = {},
   ) {
     this.restrictions.push({ restriction, options });
@@ -113,7 +130,7 @@ class WebSocketMessageHandlerImplementation<
   }
 
   delay(
-    minMilliseconds: number | WebSocketMessageHandlerDelayFactory<RestrictedSchema>,
+    minMilliseconds: number | WebSocketMessageHandlerDelayFactory<RestrictedMessage>,
     maxMilliseconds?: number,
   ): this {
     this.isCleared = false;
@@ -136,7 +153,7 @@ class WebSocketMessageHandlerImplementation<
     return this;
   }
 
-  effect(callback: WebSocketMessageHandlerMessageCallback<Schema, RestrictedSchema>) {
+  effect(callback: WebSocketMessageHandlerMessageCallback<Schema, Path, RestrictedMessage>) {
     this.applyEffect = callback;
     this.isCleared = false;
     this.resetMatchedMessages();
@@ -144,7 +161,7 @@ class WebSocketMessageHandlerImplementation<
     return this;
   }
 
-  respond(declaration: WebSocketMessageHandlerMessageDeclaration<Schema, RestrictedSchema>) {
+  respond(declaration: WebSocketMessageHandlerMessageDeclaration<Schema, Path, RestrictedMessage>) {
     this.createResponseDeclaration = this.isResponseDeclarationFactory(declaration) ? declaration : () => declaration;
     this.isCleared = false;
     this.resetMatchedMessages();
@@ -153,7 +170,7 @@ class WebSocketMessageHandlerImplementation<
   }
 
   private isResponseDeclarationFactory(
-    declaration: WebSocketMessageHandlerMessageDeclaration<Schema, RestrictedSchema>,
+    declaration: WebSocketMessageHandlerMessageDeclaration<Schema, Path, RestrictedMessage>,
   ) {
     return typeof declaration === 'function';
   }
@@ -221,8 +238,8 @@ class WebSocketMessageHandlerImplementation<
   }
 
   async matchesMessage(
-    message: ReceivedWebSocketMessageData<Schema>,
-    context: WebSocketMessageHandlerApplyContext<Schema>,
+    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
+    context: WebSocketMessageHandlerApplyContext<Schema, Path>,
   ): Promise<WebSocketMessageHandlerMessageMatch> {
     const clearGeneration = this.#clearGeneration;
 
@@ -261,9 +278,9 @@ class WebSocketMessageHandlerImplementation<
   }
 
   private async matchesRestrictions(
-    message: ReceivedWebSocketMessageData<Schema>,
-    context: WebSocketMessageHandlerApplyContext<Schema>,
-  ): Promise<WebSocketMessageHandlerRestrictionMatch<Schema>> {
+    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
+    context: WebSocketMessageHandlerApplyContext<Schema, Path>,
+  ): Promise<WebSocketMessageHandlerRestrictionMatch<WebSocketInterceptorPathMessage<Schema, Path>>> {
     if (this.restrictedSender && context.sender !== this.restrictedSender) {
       return {
         success: false,
@@ -298,14 +315,14 @@ class WebSocketMessageHandlerImplementation<
   }
 
   private isComputedMessageRestriction(
-    restriction: WebSocketMessageHandlerRestriction<RestrictedSchema>,
-  ): restriction is WebSocketMessageHandlerComputedRestriction<RestrictedSchema> {
+    restriction: WebSocketMessageHandlerRestriction<RestrictedMessage>,
+  ): restriction is WebSocketMessageHandlerComputedRestriction<RestrictedMessage> {
     return typeof restriction === 'function';
   }
 
   private async matchesStaticMessageRestriction(
-    message: ReceivedWebSocketMessageData<Schema>,
-    restriction: WebSocketMessageHandlerStaticRestriction<RestrictedSchema>,
+    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
+    restriction: WebSocketMessageHandlerStaticRestriction<RestrictedMessage>,
     options: WebSocketMessageHandlerStaticRestrictionOptions,
   ) {
     if (isWebSocketBinaryMessageData(restriction)) {
@@ -339,8 +356,10 @@ class WebSocketMessageHandlerImplementation<
     return normalizedData instanceof Blob ? normalizedData : new Blob([normalizedData]);
   }
 
-  private assumeMessageMatchesRestrictions(message: ReceivedWebSocketMessageData<Schema>) {
-    return message as ReceivedWebSocketMessageData<RestrictedSchema>;
+  private assumeMessageMatchesRestrictions(
+    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
+  ) {
+    return message as ReceivedWebSocketMessageData<RestrictedMessage>;
   }
 
   markMessageAsMatched() {
@@ -348,8 +367,8 @@ class WebSocketMessageHandlerImplementation<
   }
 
   markMessageAsUnmatched(
-    message: ReceivedWebSocketMessageData<Schema>,
-    options: { diff: WebSocketMessageHandlerRestrictionDiffs<Schema> },
+    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
+    options: { diff: WebSocketMessageHandlerRestrictionDiffs<WebSocketInterceptorPathMessage<Schema, Path>> },
   ) {
     const shouldSaveUnmatchedMessages =
       this.interceptor.messageSaving.enabled &&
@@ -365,9 +384,9 @@ class WebSocketMessageHandlerImplementation<
   // was counted in. Returns the response to send, which is `undefined` if none is declared, or `null` if the message was
   // not handled.
   async applyDeclarations(
-    message: ReceivedWebSocketMessageData<Schema>,
-    context: WebSocketMessageHandlerApplyContext<Schema>,
-  ): Promise<{ response: Schema | undefined } | null> {
+    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
+    context: WebSocketMessageHandlerApplyContext<Schema, Path>,
+  ): Promise<{ response: WebSocketInterceptorPathMessage<Schema, Path> | undefined } | null> {
     const clearGeneration = this.#clearGeneration;
     const restrictedMessage = this.assumeMessageMatchesRestrictions(message);
 
@@ -396,13 +415,16 @@ class WebSocketMessageHandlerImplementation<
     return { response };
   }
 
-  sendResponse(response: Schema, context: WebSocketMessageHandlerApplyContext<Schema>) {
+  sendResponse(
+    response: WebSocketInterceptorPathMessage<Schema, Path>,
+    context: WebSocketMessageHandlerApplyContext<Schema, Path>,
+  ) {
     context.sender.send(serializeWebSocketMessageDataForSocket(response));
   }
 
   saveInterceptedMessage(
-    message: ReceivedWebSocketMessageData<Schema>,
-    context: WebSocketMessageHandlerApplyContext<Schema>,
+    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
+    context: WebSocketMessageHandlerApplyContext<Schema, Path>,
   ) {
     this.interceptor.messageStore.save(this.savedMessageIndex, this.assumeMessageMatchesRestrictions(message), context);
   }
@@ -420,6 +442,6 @@ class WebSocketMessageHandlerImplementation<
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyWebSocketMessageHandlerImplementation = WebSocketMessageHandlerImplementation<any, any>;
+export type AnyWebSocketMessageHandlerImplementation = WebSocketMessageHandlerImplementation<any, any, any>;
 
 export default WebSocketMessageHandlerImplementation;
