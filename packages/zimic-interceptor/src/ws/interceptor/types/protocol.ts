@@ -29,6 +29,8 @@ export interface WebSocketInterceptorProtocolClient extends WebSocketInterceptor
  *
  * Translates between the raw frames of a framed protocol and the messages seen by interceptor handlers. The protocol
  * runs inside the interceptor in local and remote modes, and the interceptor server relays raw frames.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#protocol-option `protocol` option}
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- `any` lets protocols of any message be passed as options.
 export interface WebSocketInterceptorProtocol<Message = any> {
@@ -92,7 +94,7 @@ export interface WebSocketInterceptorProtocolHost {
  */
 export interface InternalWebSocketInterceptorProtocol<Message = unknown> extends WebSocketInterceptorProtocol<Message> {
   start: (host: WebSocketInterceptorProtocolHost) => PossiblePromise<void>;
-  stop: () => PossiblePromise<void>;
+  stop: (host: WebSocketInterceptorProtocolHost) => PossiblePromise<void>;
   closeClients: () => void;
   claimConnection: (
     url: string,

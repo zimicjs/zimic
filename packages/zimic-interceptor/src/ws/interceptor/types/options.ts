@@ -73,6 +73,8 @@ export interface SharedWebSocketInterceptorOptions {
   /**
    * Translates the raw frames of a framed protocol into the messages seen by handlers. Experimental. Without it,
    * handlers receive WebSocket frames as messages.
+   *
+   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#protocol-option `protocol` option}
    */
   protocol?: WebSocketInterceptorProtocol;
 }

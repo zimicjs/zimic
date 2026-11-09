@@ -36,7 +36,7 @@ interface SocketIOPollingErrorBody {
 }
 
 type SocketIOPollingHttpSchema = HttpSchema<{
-  '/socket.io/': {
+  '/': {
     GET: {
       request: { searchParams: { EIO?: string; transport?: string; sid?: string } };
       response: {
@@ -143,7 +143,8 @@ class SocketIOEngine {
   ) {
     this.options = options;
 
-    const baseURL = host.baseURL.replace(/^ws/, 'http');
+    // Scoped to the Socket.IO path, because HTTP interceptors decide the unhandled requests under their base URL.
+    const baseURL = `${host.baseURL.replace(/^ws/, 'http').replace(/\/$/, '')}/socket.io`;
 
     this.httpInterceptor =
       host.type === 'local'
@@ -166,15 +167,15 @@ class SocketIOEngine {
     await this.httpInterceptor.start();
 
     if (this.options.polling) {
-      await this.httpInterceptor.get('/socket.io/').respond((request) => this.handlePoll(request));
-      await this.httpInterceptor.post('/socket.io/').respond((request) => this.handlePollingPacket(request));
+      await this.httpInterceptor.get('/').respond((request) => this.handlePoll(request));
+      await this.httpInterceptor.post('/').respond((request) => this.handlePollingPacket(request));
     } else {
       await this.httpInterceptor
-        .get('/socket.io/')
+        .get('/')
         .with({ searchParams: { transport: 'polling' } })
         .respond(() => this.rejectDisabledPolling());
       await this.httpInterceptor
-        .post('/socket.io/')
+        .post('/')
         .with({ searchParams: { transport: 'polling' } })
         .respond(() => this.rejectDisabledPolling());
     }

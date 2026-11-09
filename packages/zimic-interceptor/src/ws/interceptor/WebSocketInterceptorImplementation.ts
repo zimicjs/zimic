@@ -284,7 +284,7 @@ class WebSocketInterceptorImplementation<
 
       this.isRunning = true;
     } catch (error) {
-      await this.internalProtocol?.stop();
+      await this.internalProtocol?.stop(this.protocolHost);
       await this.stopWorker();
       throw error;
     }
@@ -314,7 +314,7 @@ class WebSocketInterceptorImplementation<
       return;
     }
 
-    await this.internalProtocol?.stop();
+    await this.internalProtocol?.stop(this.protocolHost);
 
     // Clearing and unregistering in one worker call sends a single reset to a remote server, so no connection opened
     // during the stop reaches an interceptor that is cleared but still registered.

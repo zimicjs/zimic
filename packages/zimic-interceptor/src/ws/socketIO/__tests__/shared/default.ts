@@ -1,10 +1,11 @@
+import type { HttpSchema } from '@zimic/http';
 import { waitFor } from '@zimic/utils/time';
 import { io, type ManagerOptions, type NodeXHR, Socket, type XHR } from 'socket.io-client';
 import msgpackParser from 'socket.io-msgpack-parser';
-import { describe, expect, expectTypeOf, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
-import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { usingHttpInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
 import type { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import { createSocketIOProtocol } from '../../createSocketIOProtocol';
@@ -25,6 +26,8 @@ interface ClientToServerEvents {
 type ChatSchema = SocketIOSchema<ServerToClientEvents, ClientToServerEvents>;
 
 type AnySchema = SocketIOSchema;
+
+type HealthSchema = HttpSchema<{ '/health': { GET: { response: { 204: { body: null } } } } }>;
 
 interface SharedSocketIOTestsOptions {
   type: WebSocketInterceptorType;
@@ -804,23 +807,43 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     });
   });
 
-  it('should type event messages and acks from the event declarations', async () => {
-    const baseURL = getBaseURL();
+  describe('Protocol instances', () => {
+    it('should not allow one protocol instance to be used by two running interceptors', async () => {
+      const baseURL = getBaseURL();
+      const protocol = createSocketIOProtocol();
+      const otherBaseURL = `${baseURL}/other`;
 
-    await usingWebSocketInterceptor<ChatSchema>(
-      {
-        type,
-        baseURL,
-        messageSaving: { enabled: true },
-        connectionSaving: { enabled: true },
-        protocol: createSocketIOProtocol(),
-      },
-      async (interceptor) => {
-        const handler = await interceptor.message().with({ type: 'user:create' }).times(0);
+      await usingWebSocketInterceptor<AnySchema>({ type, baseURL, protocol }, async (interceptor) => {
+        await usingIgnoredConsole(['error'], async () => {
+          await expect(
+            usingWebSocketInterceptor<AnySchema>({ type, baseURL: otherBaseURL, protocol }, () => undefined),
+          ).rejects.toThrow('A Socket.IO protocol can be used by only one running interceptor.');
+        });
 
-        expectTypeOf(handler.messages[0]?.data.type).toEqualTypeOf<'user:create'>();
-        expectTypeOf(handler.messages[0]?.data.data).toEqualTypeOf<{ name: string }>();
-      },
-    );
+        await usingSocket(baseURL, { transports: [GlobalWebSocketTransport] }, async (socket) => {
+          await waitForSocketConnection(socket);
+          expect(interceptor.clients).toHaveLength(1);
+        });
+      });
+    });
+  });
+
+  describe('HTTP requests outside the Socket.IO path', () => {
+    it('should not decide requests to other paths under the base URL', async () => {
+      const baseURL = getBaseURL();
+      const httpBaseURL = baseURL.replace(/^ws/, 'http');
+
+      await usingWebSocketInterceptor<AnySchema>({ type, baseURL, protocol: createSocketIOProtocol() }, async () => {
+        await usingHttpInterceptor<HealthSchema>(
+          { type, baseURL: httpBaseURL, onUnhandledRequest: { action: 'reject', log: false } },
+          async (httpInterceptor) => {
+            await httpInterceptor.get('/health').respond({ status: 204, body: null }).times(1);
+
+            const response = await fetch(`${httpBaseURL}/health`);
+            expect(response.status).toBe(204);
+          },
+        );
+      });
+    });
   });
 }

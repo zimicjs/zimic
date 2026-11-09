@@ -350,7 +350,8 @@ abstract class WebSocketInterceptorWorker {
   }
 
   // A protocol decides what each frame means to its interceptor, as interceptors may decode different messages from one
-  // frame, such as Socket.IO namespaces sharing a connection. Frames reach holders without a protocol as messages.
+  // frame, such as Socket.IO namespaces sharing a connection. So, unlike messages of holders without a protocol, which
+  // are tried together, each protocol holder handles what it decodes.
   async handleFrameWithHandlers(
     frame: WebSocketMessageData<WebSocketMessageSchema>,
     holders: WebSocketConnectionHolder[],
@@ -369,7 +370,7 @@ abstract class WebSocketInterceptorWorker {
   private async handleProtocolFrame(
     frame: WebSocketMessageData<WebSocketMessageSchema>,
     holder: WebSocketConnectionHolder,
-    protocol: WebSocketInterceptorProtocol,
+    protocol: WebSocketInterceptorProtocol<unknown>,
   ) {
     try {
       const messages = await this.decodeFrameInOrder(frame, holder, protocol);
@@ -387,7 +388,7 @@ abstract class WebSocketInterceptorWorker {
   private decodeFrameInOrder(
     frame: WebSocketMessageData<WebSocketMessageSchema>,
     holder: WebSocketConnectionHolder,
-    protocol: WebSocketInterceptorProtocol,
+    protocol: WebSocketInterceptorProtocol<unknown>,
   ) {
     const client = holder.client as WebSocketInterceptorProtocolClient;
 
