@@ -185,6 +185,7 @@ import {
   WebSocketCloseTimeoutError,
   type JSONStringified as WebSocketJSONStringified,
   type LiteralWebSocketSchemaPathFromNonLiteral,
+  type InferPathParams as WebSocketInferPathParams,
   type WebSocketConnectionProtocolSchema,
   type WebSocketConnectionSchema,
   type WebSocketConnectionSearchParamsSchema,
@@ -383,6 +384,7 @@ describe('Exports', () => {
       expectTypeOf<WebSocketJSONStringified<never>>().not.toBeAny();
       expectTypeOf<WebSocketSchemaPath<never>>().not.toBeAny();
       expectTypeOf<WebSocketSchemaMessage<never>>().not.toBeAny();
+      expectTypeOf<WebSocketInferPathParams<never>>().not.toBeAny();
       expectTypeOf<WebSocketPathSchema>().not.toBeAny();
       expectTypeOf<WebSocketConnectionSchema>().not.toBeAny();
       expectTypeOf<WebSocketMessageSchema>().not.toBeAny();
