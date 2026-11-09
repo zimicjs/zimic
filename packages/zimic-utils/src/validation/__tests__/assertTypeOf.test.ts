@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import assertTypeOf, { TypeOfResult } from '../assertTypeOf';
+import assertTypeOf, { AssertTypeOfOptions, TypeOfResult } from '../assertTypeOf';
+import createInvalidTypeOfCases from '../createInvalidTypeOfCases';
 import ValidationError from '../ValidationError';
 
 describe('assertTypeOf', () => {
@@ -13,6 +14,7 @@ describe('assertTypeOf', () => {
     { value: () => undefined, expectedType: 'function' },
     { value: class Example {}, expectedType: 'function' },
     { value: {}, expectedType: 'object' },
+    { value: [], expectedType: 'object' },
   ];
 
   it.each(validCases)(
@@ -79,6 +81,32 @@ describe('assertTypeOf', () => {
       assertTypeOf('field', 123, 'string', { optional: true });
     }).toThrow(new ValidationError('Expected field to be string, but got number.'));
   });
+
+  const typeOfResults: TypeOfResult[] = ['undefined', 'boolean', 'number', 'bigint', 'string', 'function', 'object'];
+  const invalidTypeOfCasesOptions: (AssertTypeOfOptions<boolean, boolean> | undefined)[] = [
+    undefined,
+    { nullable: true },
+    { optional: true },
+  ];
+
+  it.each(
+    typeOfResults.flatMap((expectedType) =>
+      invalidTypeOfCasesOptions.flatMap((options) =>
+        createInvalidTypeOfCases(expectedType, options).map((invalidCase) => ({
+          ...invalidCase,
+          expectedType,
+          options,
+        })),
+      ),
+    ),
+  )(
+    'should throw for each invalid case created for the expected type (type: $expectedType, options: $options, value: $label)',
+    ({ value, actualType, expectedType, options }) => {
+      expect(() => {
+        assertTypeOf('field', value, expectedType, options);
+      }).toThrow(new ValidationError(`Expected field to be ${expectedType}, but got ${actualType}.`));
+    },
+  );
 
   describe('Types', () => {
     // The values under test are received as parameters so that TypeScript cannot narrow them from an initializer. A
