@@ -574,6 +574,24 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
       );
     });
 
+    it('should not connect WebSocket connections with an unknown session ID', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<AnySchema>(
+        { type, baseURL, protocol: createSocketIOProtocol() },
+        async (interceptor) => {
+          const socket = new WebSocket(`${baseURL}/socket.io/?EIO=4&transport=websocket&sid=unknown`);
+
+          const closeEvent = await new Promise<CloseEvent>((resolve) => {
+            socket.addEventListener('close', resolve, { once: true });
+          });
+
+          expect(closeEvent.reason).toBe('Session ID unknown');
+          expect(interceptor.clients).toHaveLength(0);
+        },
+      );
+    });
+
     it('should expose polling clients to server sends', async () => {
       const baseURL = getBaseURL();
 

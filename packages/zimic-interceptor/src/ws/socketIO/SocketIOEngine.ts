@@ -30,6 +30,9 @@ const UPGRADE_PROBE_PACKET = '2probe';
 const UPGRADE_PROBE_REPLY_PACKET = '3probe';
 const UPGRADE_PACKET = '5';
 
+// A code in the application range, because Socket.IO has no close code for an unknown session.
+const UNKNOWN_SESSION_CLOSE_CODE = 4001;
+
 interface SocketIOPollingErrorBody {
   code: number;
   message: string;
@@ -367,10 +370,18 @@ class SocketIOEngine {
     url: string,
     connection: WebSocketInterceptorProtocolRawConnection,
   ): WebSocketInterceptorProtocolConnectionClaim | undefined {
-    const session = this.sessions.get(new URL(url).searchParams.get('sid') ?? '');
+    const sessionId = new URL(url).searchParams.get('sid');
 
-    if (!session || !(session.transport instanceof SocketIOPollingTransport)) {
+    if (sessionId === null) {
       return undefined;
+    }
+
+    const session = this.sessions.get(sessionId);
+
+    // As a Socket.IO server refuses unknown session IDs, an upgrade of a session closed in the meantime does not connect.
+    if (!session || !(session.transport instanceof SocketIOPollingTransport)) {
+      connection.close(UNKNOWN_SESSION_CLOSE_CODE, 'Session ID unknown');
+      return { onFrame: () => undefined, onClose: () => undefined };
     }
 
     const pollingTransport = session.transport;
