@@ -184,6 +184,15 @@ import {
   WebSocketOpenTimeoutError,
   WebSocketCloseTimeoutError,
   type JSONStringified as WebSocketJSONStringified,
+  type LiteralWebSocketSchemaPathFromNonLiteral,
+  type WebSocketConnectionProtocolSchema,
+  type WebSocketConnectionSchema,
+  type WebSocketConnectionSearchParamsSchema,
+  type WebSocketMessageSchema,
+  type WebSocketPathSchema,
+  type WebSocketSchema,
+  type WebSocketSchemaMessage,
+  type WebSocketSchemaPath,
 } from '@zimic/ws';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
@@ -372,6 +381,19 @@ describe('Exports', () => {
       expect(typeof WebSocketCloseTimeoutError).toBe('function');
 
       expectTypeOf<WebSocketJSONStringified<never>>().not.toBeAny();
+      expectTypeOf<WebSocketSchemaPath<never>>().not.toBeAny();
+      expectTypeOf<WebSocketSchemaMessage<never>>().not.toBeAny();
+      expectTypeOf<WebSocketPathSchema>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionSchema>().not.toBeAny();
+      expectTypeOf<WebSocketMessageSchema>().not.toBeAny();
+      expectTypeOf<LiteralWebSocketSchemaPathFromNonLiteral<never, never>>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionSearchParamsSchema<never>>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionProtocolSchema<never>>().not.toBeAny();
+      expectTypeOf<WebSocketSchema.Path<never>>().not.toBeAny();
+      expectTypeOf<WebSocketSchema.Connection<never>>().not.toBeAny();
+      expectTypeOf<WebSocketSchema.Message<never>>().not.toBeAny();
+      expectTypeOf<WebSocketSchema.SearchParams<never>>().not.toBeAny();
+      expectTypeOf<WebSocketSchema.PathParams<never>>().not.toBeAny();
     });
   });
 

@@ -1,6 +1,6 @@
-import { WebSocketClient } from '@zimic/ws';
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 
-export function createZimicWebSocket(url: string, protocols?: string | string[]) {
+export function createZimicWebSocket(url: string, protocols?: string | string[]): WebSocketClient<WebSocketSchema> {
   const socket = new WebSocketClient(url, protocols);
 
   // `open()` rejects if the connection fails, and tests observe that outcome through the socket events instead.
@@ -11,7 +11,10 @@ export function createZimicWebSocket(url: string, protocols?: string | string[])
   return socket;
 }
 
-export async function openZimicWebSocket(url: string, protocols?: string | string[]) {
+export async function openZimicWebSocket(
+  url: string,
+  protocols?: string | string[],
+): Promise<WebSocketClient<WebSocketSchema>> {
   const socket = new WebSocketClient(url, protocols);
   await socket.open();
   return socket;
