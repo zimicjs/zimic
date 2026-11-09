@@ -120,7 +120,12 @@ export function declareWebSocketInterceptorTests({
   defaultBinaryMessageType,
   openSocket,
   createSocket,
+  createProtocol,
 }: ClientTestOptionsByWorkerType) {
+  // Framed protocols choose their own connection path and cannot express raw WebSocket features: close codes and
+  // reasons, subprotocols, and binary frames sent as messages.
+  const supportsRawWebSocketFeatures = createProtocol === undefined;
+
   const nodeMajorVersion = platform === 'node' ? Number(process.versions.node.split('.')[0]) : null;
 
   // Node 22's native WebSocket dispatches only `error` when a server refuses the handshake. Browsers and Node 24+
@@ -170,18 +175,21 @@ export function declareWebSocketInterceptorTests({
     type,
     baseURL: getUserBaseURL(type),
     messageSaving: { enabled: true },
+    protocol: createProtocol?.(),
   });
 
   const notificationInterceptor = createWebSocketInterceptor<NotificationWebSocketSchema>({
     type,
     baseURL: getNotificationBaseURL(type),
     messageSaving: { enabled: true },
+    protocol: createProtocol?.(),
   });
 
   const binaryInterceptor = createWebSocketInterceptor<BinaryWebSocketSchema>({
     type,
     baseURL: getBinaryBaseURL(type),
     messageSaving: { enabled: true },
+    protocol: createProtocol?.(),
   });
 
   const interceptors = [userInterceptor, notificationInterceptor, binaryInterceptor];
@@ -288,7 +296,7 @@ export function declareWebSocketInterceptorTests({
     });
   });
 
-  describe('Connection refusals', () => {
+  describe.runIf(supportsRawWebSocketFeatures)('Connection refusals', () => {
     it('should refuse connections rejected by a connection handler before they open', async () => {
       const roomURL = `${userInterceptor.baseURL}/rooms/1`;
 
@@ -809,7 +817,7 @@ export function declareWebSocketInterceptorTests({
     });
   });
 
-  describe('Subprotocols', () => {
+  describe.runIf(supportsRawWebSocketFeatures)('Subprotocols', () => {
     it('should support messages from sockets connected with a subprotocol', async () => {
       const userId = crypto.randomUUID();
       const response: UserWebSocketMessage<'user:delete:success'> = {
@@ -892,7 +900,7 @@ export function declareWebSocketInterceptorTests({
     });
   });
 
-  describe('Connection URLs', () => {
+  describe.runIf(supportsRawWebSocketFeatures)('Connection URLs', () => {
     it('should support responding based on the path and search params of the connection URL', async () => {
       const roomURL = `${userInterceptor.baseURL}/rooms/1?token=${crypto.randomUUID()}`;
 
@@ -922,7 +930,7 @@ export function declareWebSocketInterceptorTests({
     });
   });
 
-  describe('Connection closes', () => {
+  describe.runIf(supportsRawWebSocketFeatures)('Connection closes', () => {
     it('should support reconnecting after the interceptor closes a connection', async () => {
       const sockets: ClientTestWebSocket<UserWebSocketSchema>[] = [];
 
@@ -1162,7 +1170,7 @@ export function declareWebSocketInterceptorTests({
     });
   });
 
-  describe('Binary messages', () => {
+  describe.runIf(supportsRawWebSocketFeatures)('Binary messages', () => {
     const receivedBinaryTypes = [
       { binaryType: undefined, receivedMessageType: defaultBinaryMessageType },
       { binaryType: 'arraybuffer', receivedMessageType: ArrayBuffer },
