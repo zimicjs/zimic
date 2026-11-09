@@ -67,7 +67,7 @@ export function createSocketIOMock<Events>({
   pingInterval,
   pingTimeout,
 }: SocketIOMockOptions<Events>) {
-  type Client = WebSocketInterceptorClient<SocketIOFrame<Events>>;
+  type Client = WebSocketInterceptorClient<SocketIOWebSocketSchema<Events>>;
   type EventName = keyof Events & string;
 
   const pollingSessions = new Map<string, SocketIOPollingSession<Events>>();

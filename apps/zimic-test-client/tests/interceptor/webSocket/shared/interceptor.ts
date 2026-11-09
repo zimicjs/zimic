@@ -271,7 +271,7 @@ export function declareWebSocketInterceptorTests({
 
   describe('Connection effects', () => {
     it('should run a connection effect once per connection with the connected client', async () => {
-      const effect = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketMessage>) => void>();
+      const effect = vi.fn<(client: WebSocketInterceptorClient<UserWebSocketSchema>) => void>();
       await userInterceptor.connection().effect(effect);
 
       const sockets: ClientTestWebSocket<UserWebSocketSchema>[] = [];
@@ -403,7 +403,7 @@ export function declareWebSocketInterceptorTests({
             expect(responseListener).toHaveBeenCalled();
           });
 
-          expect(passiveHandler.messages[0]).toEqual<InterceptedWebSocketInterceptorMessage<UserWebSocketMessage>>({
+          expect(passiveHandler.messages[0]).toEqual<InterceptedWebSocketInterceptorMessage<UserWebSocketSchema>>({
             data: message,
             sender: creatorClient,
             receiver: userInterceptor.server,
@@ -1071,10 +1071,10 @@ export function declareWebSocketInterceptorTests({
     it.each<{
       target: string;
       selectRecipients: (
-        clients: readonly WebSocketInterceptorClient<NotificationWebSocketMessage>[],
+        clients: readonly WebSocketInterceptorClient<NotificationWebSocketSchema>[],
       ) =>
-        | WebSocketInterceptorClient<NotificationWebSocketMessage>
-        | readonly WebSocketInterceptorClient<NotificationWebSocketMessage>[];
+        | WebSocketInterceptorClient<NotificationWebSocketSchema>
+        | readonly WebSocketInterceptorClient<NotificationWebSocketSchema>[];
       expectedThirdSocketMessageTypes: NotificationWebSocketMessage['type'][];
     }>([
       {
