@@ -28,7 +28,7 @@ function collectPathItemOperations(pathItem: OpenAPIPathItem, segments: string[]
   });
 }
 
-function throwIfHasDuplicateOperationNames(operations: DocumentOperation[]) {
+function ensureNoDuplicateOperationNames(operations: DocumentOperation[]) {
   const operationNames = new Set<string>();
 
   for (const { name } of operations) {
@@ -62,7 +62,7 @@ export function collectOperations(document: OpenAPIDocument) {
     isReference(pathItem) ? [] : collectPathItemOperations(pathItem, segments),
   );
 
-  throwIfHasDuplicateOperationNames(operations);
+  ensureNoDuplicateOperationNames(operations);
 
   return operations;
 }

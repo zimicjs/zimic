@@ -102,7 +102,6 @@ export interface OpenAPIComponents {
 export interface OpenAPIDocument {
   paths?: Record<string, OpenAPIReferenceable<OpenAPIPathItem>>;
   webhooks?: Record<string, OpenAPIPathItem>;
-  /** Always defined because the bundler adds it to documents without components. */
   components: OpenAPIComponents;
 }
 
