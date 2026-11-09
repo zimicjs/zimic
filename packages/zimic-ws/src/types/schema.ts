@@ -2,6 +2,7 @@ import {
   AllowAnyStringInPathParams,
   HttpPathParamsSchema,
   HttpSearchParamsSchema,
+  InferPathParams as InferPathParamsFromPath,
   PreferMostStaticLiteralPath,
   WithoutEscapedColons,
 } from '@zimic/utils/http';
@@ -104,6 +105,22 @@ export type LiteralWebSocketSchemaPathFromNonLiteral<
   LiteralPath extends WebSocketSchemaPath.Literal<Schema> = WebSocketSchemaPath.Literal<Schema>,
 > = PreferMostStaticLiteralPath<
   LiteralPath extends LiteralPath ? RecursiveInferWebSocketSchemaPath<NonLiteralPath, LiteralPath> : never
+>;
+
+/**
+ * Infers the path params of a path, or of a path declared in a {@link WebSocketSchema}.
+ *
+ * @example
+ *   import { type InferPathParams } from '@zimic/ws';
+ *
+ *   type Params = InferPathParams<'/rooms/:roomId'>; // { roomId: string }
+ */
+export type InferPathParams<
+  PathOrSchema extends string | WebSocketSchema,
+  OptionalPath extends (PathOrSchema extends WebSocketSchema ? WebSocketSchemaPath.Literal<PathOrSchema> : never) =
+    never,
+> = InferPathParamsFromPath<
+  PathOrSchema extends WebSocketSchema ? OptionalPath : PathOrSchema extends string ? PathOrSchema : never
 >;
 
 /**

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'v
 
 import { WebSocketServer } from '@/server';
 import { JSONStringified } from '@/types/json';
-import { WebSocketSchema, WebSocketSchemaMessage } from '@/types/schema';
+import { InferPathParams, WebSocketSchema, WebSocketSchemaMessage } from '@/types/schema';
 
 import { openWebSocketClient } from '../utils/lifecycle';
 import { WebSocketClient } from '../WebSocketClient';
@@ -753,6 +753,14 @@ describe('WebSocketClient', () => {
     it('should not accept undeclared paths', () => {
       // @ts-expect-error The path is not declared in the schema.
       expectTypeOf<WebSocketClient<MultiPathSchema, '/unknown'>>().not.toBeAny();
+    });
+
+    it('should infer path params from a path', () => {
+      expectTypeOf<InferPathParams<'/rooms/:roomId'>>().toEqualTypeOf<{ roomId: string }>();
+    });
+
+    it('should infer path params from a path declared in a schema', () => {
+      expectTypeOf<InferPathParams<MultiPathSchema, '/users/:userId'>>().toEqualTypeOf<{ userId: string }>();
     });
   });
 });

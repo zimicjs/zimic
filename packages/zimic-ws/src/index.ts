@@ -3,6 +3,7 @@ export type {
   WebSocketSchemaPath,
   WebSocketSchemaMessage,
   LiteralWebSocketSchemaPathFromNonLiteral,
+  InferPathParams,
   WebSocketPathSchema,
   WebSocketConnectionSchema,
   WebSocketConnectionSearchParamsSchema,
