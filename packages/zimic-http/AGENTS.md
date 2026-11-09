@@ -5,4 +5,4 @@
   - `HttpSearchParams` object inits append array values as one entry per item, so schema arrays map to repeated parameters.
 - The `.` entry point runs in Node and browser. The `./typegen` entry point and the `zimic-http` CLI (`src/cli`, `bin`) are Node-only.
 - `@zimic/fetch` and `@zimic/interceptor` declare this package as a peer dependency and build on its schema types. When changing schema or request/response types, type check both consumers.
-- Typegen tests compare against expected outputs in `src/cli/typegen/__tests__/fixtures`. Regenerate them with the `typegen:fixtures` script instead of editing them by hand.
+- Typegen tests compare against expected outputs in `src/cli/typegen/__tests__/fixtures`. Regenerate them with the `typegen:fixtures` script instead of editing them by hand. The script runs `dist/cli.js`, so first build with `npm_lifecycle_event=dev ./node_modules/.bin/tsup` to keep the `@/index` import, then run `style:format` on the generated files. Run `build` again afterward.

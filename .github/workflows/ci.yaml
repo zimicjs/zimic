@@ -198,14 +198,8 @@ jobs:
           - '5.8'
           - '5.9'
           - '6.0'
-          # TypeScript 7.0 does not yet provide a programmatic API, which is used by @zimic/http. The API is expected
-          # only in TypeScript 7.1. For now, let's skip TypeScript 7.0 in the matrix. The Zimic monorepo already uses
-          # 7.0 for `tsc` with a compatibility layer to the programmatic API of TypeScript 6.0.
-          #
-          # See https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0.
-          #
-          # Uncomment the following line when TypeScript 7.1 is released and @zimic/http is updated to support it.
-          # - '7.1'
+          - '7.0'
+          # TODO: Add '7.1' when TypeScript 7.1 is stable.
 
     steps:
       - name: Checkout code
@@ -270,6 +264,14 @@ jobs:
             --filter '!zimic-web' \
             $([[ '${{ matrix.typescript-version }}' =~ ^(5\.0) ]] && echo ${filterOptionsOfPackagesUsingServerComponents[@]}) \
             ${{ env.TURBO_FILTERS }}
+
+      - name: Check types of generated fixtures
+        if: ${{ steps.should-check-types.outputs.value == 'true' }}
+        run: |
+          # The fixtures resolve @zimic/http to its built declarations, so they can be checked with the matrix compiler
+          # without compiling the package source.
+          pnpm dlx --package typescript@${{ matrix.typescript-version }} \
+            tsc --project packages/zimic-http/src/cli/typegen/__tests__/fixtures/tsconfig.openapi.json
 
       - name: Save turbo cache
         if: ${{ always() }}
