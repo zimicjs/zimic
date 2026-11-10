@@ -19,16 +19,18 @@ const TYPE_OF_CASES: InvalidTypeOfCase[] = [
 ];
 
 /**
- * Creates the values that `assertTypeOf` rejects for an expected type, to use as invalid cases in tests. Pass the same
- * `nullable` and `optional` options as the assertion.
+ * Creates the values that `assertTypeOf` rejects for one or more expected types, to use as invalid cases in tests. Pass
+ * the same expected types and `nullable` and `optional` options as the assertion.
  */
 function createInvalidTypeOfCases(
-  expectedType: TypeOfResult,
+  expectedTypeOrTypes: TypeOfResult | readonly TypeOfResult[],
   options: AssertTypeOfOptions<boolean, boolean> = {},
 ): InvalidTypeOfCase[] {
+  const expectedTypes = typeof expectedTypeOrTypes === 'string' ? [expectedTypeOrTypes] : expectedTypeOrTypes;
+
   return TYPE_OF_CASES.filter(
     ({ value, actualType }) =>
-      actualType !== expectedType &&
+      !expectedTypes.some((expectedType) => expectedType === actualType) &&
       !(options.nullable && value === null) &&
       !(options.optional && value === undefined),
   );

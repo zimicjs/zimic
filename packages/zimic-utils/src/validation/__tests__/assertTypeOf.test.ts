@@ -32,6 +32,21 @@ describe('assertTypeOf', () => {
     }).toThrow(new ValidationError('Expected options.baseURL to be string, but got number.'));
   });
 
+  it.each([{ value: {} }, { value: () => undefined }])(
+    'should not throw when the value matches one of multiple expected types (value: $value)',
+    ({ value }) => {
+      expect(() => {
+        assertTypeOf('field', value, ['object', 'function']);
+      }).not.toThrow();
+    },
+  );
+
+  it('should throw a ValidationError when the value does not match any of multiple expected types', () => {
+    expect(() => {
+      assertTypeOf('field', 'value', ['object', 'function']);
+    }).toThrow(new ValidationError('Expected field to be object or function, but got string.'));
+  });
+
   it.each<TypeOfResult>(['string', 'object'])(
     'should not throw when the value is null and the nullable option is enabled (type: %s)',
     (expectedType) => {
@@ -82,7 +97,16 @@ describe('assertTypeOf', () => {
     }).toThrow(new ValidationError('Expected field to be string, but got number.'));
   });
 
-  const typeOfResults: TypeOfResult[] = ['undefined', 'boolean', 'number', 'bigint', 'string', 'function', 'object'];
+  const expectedTypesList: (TypeOfResult | TypeOfResult[])[] = [
+    'undefined',
+    'boolean',
+    'number',
+    'bigint',
+    'string',
+    'function',
+    'object',
+    ['object', 'function'],
+  ];
   const invalidTypeOfCasesOptions: (AssertTypeOfOptions<boolean, boolean> | undefined)[] = [
     undefined,
     { nullable: true },
@@ -90,21 +114,23 @@ describe('assertTypeOf', () => {
   ];
 
   it.each(
-    typeOfResults.flatMap((expectedType) =>
+    expectedTypesList.flatMap((expectedTypes) =>
       invalidTypeOfCasesOptions.flatMap((options) =>
-        createInvalidTypeOfCases(expectedType, options).map((invalidCase) => ({
+        createInvalidTypeOfCases(expectedTypes, options).map((invalidCase) => ({
           ...invalidCase,
-          expectedType,
+          expectedTypes,
           options,
         })),
       ),
     ),
   )(
-    'should throw for each invalid case created for the expected type (type: $expectedType, options: $options, value: $label)',
-    ({ value, actualType, expectedType, options }) => {
+    'should throw for each invalid case created for the expected types (types: $expectedTypes, options: $options, value: $label)',
+    ({ value, actualType, expectedTypes, options }) => {
       expect(() => {
-        assertTypeOf('field', value, expectedType, options);
-      }).toThrow(new ValidationError(`Expected field to be ${expectedType}, but got ${actualType}.`));
+        assertTypeOf('field', value, expectedTypes, options);
+      }).toThrow(
+        new ValidationError(`Expected field to be ${[expectedTypes].flat().join(' or ')}, but got ${actualType}.`),
+      );
     },
   );
 
@@ -158,6 +184,15 @@ describe('assertTypeOf', () => {
       }
 
       expect(() => test({})).not.toThrow();
+    });
+
+    it('should narrow the value to the union of multiple expected types', () => {
+      function test(value: string | number | null) {
+        assertTypeOf('field', value, ['string', 'number']);
+        expectTypeOf(value).toEqualTypeOf<string | number>();
+      }
+
+      expect(() => test(1)).not.toThrow();
     });
 
     it('should narrow unknown values to the expected type', () => {
