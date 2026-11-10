@@ -128,6 +128,30 @@ export type MyServiceSchema = HttpSchema<{
   '/users-with-no-request-or-response': {
     POST: {};
   };
+  '/users-with-response-content-without-schema': {
+    GET: {
+      response: {
+        200: {
+          headers: {
+            'content-type': 'application/json';
+          };
+          body: any;
+        };
+      };
+    };
+  };
+  '/users-with-nullable-union-response': {
+    GET: {
+      response: {
+        200: {
+          headers: {
+            'content-type': 'application/json';
+          };
+          body: string | null | number;
+        };
+      };
+    };
+  };
 }>;
 
 export interface MyServiceComponents {

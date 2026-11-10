@@ -504,4 +504,7 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
 
   // No HTTP counterpart for "should reply only to the sender of an intercepted message": an HTTP response always goes
   // to the client that sent the request, while a WebSocket server can send to any connected client.
+
+  // No HTTP counterpart for "should accept connections accepted by a connection handler": a WebSocket handshake is
+  // accepted or refused as a whole, while an HTTP handler responds with any status.
 }

@@ -6,9 +6,11 @@ import { ReceivedWebSocketMessageData, UnparsedWebSocketJSONPrimitive } from '@/
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A static restriction declared with `handler.with()`, matching messages that contain its partial data. Binary members
- * accept only whole binary values of any kind, compared byte by byte. String and top-level number and boolean members
- * accept only their whole text as received, such as `'ping'` or `'42'`.
+ * A static restriction declared with `handler.with()`. JSON restrictions match messages that contain their partial data
+ * and text restrictions match text messages that include them, without matching messages parsed as JSON objects or
+ * arrays. Binary members accept only whole binary values of any kind, compared byte by byte. A text restriction must be
+ * assignable to a string, number, or boolean member as received, such as `'ping'` or `'42'`, as HTTP text bodies must.
+ * Use a computed restriction to match partial text of a member with a literal type.
  */
 export type WebSocketMessageHandlerStaticRestriction<Schema extends WebSocketSchema> = Schema extends
   Blob | BufferSource
@@ -26,8 +28,8 @@ export type WebSocketMessageHandlerStaticRestriction<Schema extends WebSocketSch
  */
 export interface WebSocketMessageHandlerStaticRestrictionOptions {
   /**
-   * Whether JSON messages must be equal to the restriction instead of containing it. Defaults to `false`. Binary
-   * restrictions always require messages with the same bytes.
+   * Whether JSON and text messages must be equal to the restriction instead of containing or including it. Defaults to
+   * `false`. Binary restrictions always require messages with the same bytes.
    */
   exact?: boolean;
 }

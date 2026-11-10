@@ -1,13 +1,18 @@
 import { waitFor, waitForNot } from '@zimic/utils/time';
 import { UnsupportedURLProtocolError, joinURL } from '@zimic/utils/url';
 import { createInvalidTypeOfCases, ValidationError } from '@zimic/utils/validation';
-import { WebSocketSchema } from '@zimic/ws';
-import { beforeEach, expect, it, vi } from 'vitest';
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
-import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
+import {
+  expectWebSocketConnectionToBeRefused,
+  expectWebSocketConnectionToOpen,
+  usingWebSocketClient,
+  waitForWebSocketClientMessage,
+} from '@tests/utils/webSocket';
 
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
@@ -854,9 +859,6 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
       await usingWebSocketInterceptor<MessageSchema>(
         { type: 'remote', baseURL: defaultBaseURL, auth: olderAuth, messageSaving: { enabled: true } },
         async (olderInterceptor) => {
-          const olderConnectionListener = vi.fn();
-          olderInterceptor.on('connection', olderConnectionListener);
-
           const olderHandler = await olderInterceptor
             .message()
             .with(olderRestriction)
@@ -875,7 +877,6 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
 
                 expect(interceptor.clients).toHaveLength(1);
                 expect(olderInterceptor.clients).toHaveLength(0);
-                expect(olderConnectionListener).not.toHaveBeenCalled();
               });
 
               expect(handler.messages).toHaveLength(1);
@@ -1481,5 +1482,178 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     });
 
     expect(interceptor.baseURL).toBe(defaultBaseURL.replace(/\/$/, ''));
+  });
+
+  describe('Connections', () => {
+    it('should intercept connections with the newest matching handler', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, connectionSaving: { enabled: true } },
+        async (interceptor) => {
+          const olderHandler = await promiseIfRemote(
+            interceptor.connection().respond({ action: 'reject' }),
+            interceptor,
+          );
+          const newerHandler = await promiseIfRemote(interceptor.connection().times(1), interceptor);
+
+          await expectWebSocketConnectionToOpen(defaultBaseURL);
+
+          expect(newerHandler.connections).toHaveLength(1);
+          expect(olderHandler.connections).toHaveLength(0);
+        },
+      );
+    });
+
+    it('should intercept connections with an older interceptor if it declares the newest handler', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, connectionSaving: { enabled: true } },
+        async (olderInterceptor) => {
+          await usingWebSocketInterceptor<MessageSchema>(
+            { ...interceptorOptions, connectionSaving: { enabled: true } },
+            async (interceptor) => {
+              const handler = await promiseIfRemote(
+                interceptor.connection().respond({ action: 'reject' }),
+                interceptor,
+              );
+              const olderHandler = await promiseIfRemote(olderInterceptor.connection().times(1), olderInterceptor);
+
+              await usingWebSocketClient<MessageSchema>(defaultBaseURL, async (client) => {
+                expect(client.readyState).toBe(WebSocketClient.OPEN);
+
+                await waitFor(() => {
+                  expect(olderInterceptor.clients).toHaveLength(1);
+                  expect(interceptor.clients).toHaveLength(1);
+                });
+              });
+
+              expect(handler.connections).toHaveLength(0);
+              expect(olderHandler.connections).toHaveLength(1);
+            },
+          );
+        },
+      );
+    });
+
+    it('should intercept connections with the last started interceptor if the newest handler of an older one does not match', async () => {
+      const olderRestriction = vi.fn(() => false);
+
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, connectionSaving: { enabled: true } },
+        async (olderInterceptor) => {
+          await usingWebSocketInterceptor<MessageSchema>(
+            { ...interceptorOptions, connectionSaving: { enabled: true } },
+            async (interceptor) => {
+              const handler = await promiseIfRemote(
+                interceptor.connection().respond({ action: 'reject' }),
+                interceptor,
+              );
+
+              const olderHandler = await promiseIfRemote(
+                olderInterceptor.connection().with(olderRestriction).respond({ action: 'accept' }),
+                olderInterceptor,
+              );
+
+              await expectWebSocketConnectionToBeRefused(defaultBaseURL);
+
+              expect(olderRestriction).toHaveBeenCalledTimes(1);
+              expect(handler.connections).toHaveLength(1);
+              expect(olderHandler.connections).toHaveLength(0);
+            },
+          );
+        },
+      );
+    });
+
+    it('should intercept connections with an older interceptor if the last started one has no matching handlers', async () => {
+      const restriction = vi.fn(() => false);
+
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, connectionSaving: { enabled: true } },
+        async (olderInterceptor) => {
+          const olderHandler = await promiseIfRemote(
+            olderInterceptor.connection().respond({ action: 'reject' }),
+            olderInterceptor,
+          );
+
+          await usingWebSocketInterceptor<MessageSchema>(
+            { ...interceptorOptions, connectionSaving: { enabled: true } },
+            async (interceptor) => {
+              const handler = await promiseIfRemote(
+                interceptor.connection().with(restriction).respond({ action: 'accept' }),
+                interceptor,
+              );
+
+              await expectWebSocketConnectionToBeRefused(defaultBaseURL);
+
+              expect(restriction).toHaveBeenCalledTimes(1);
+              expect(handler.connections).toHaveLength(0);
+              expect(olderHandler.connections).toHaveLength(1);
+            },
+          );
+        },
+      );
+    });
+
+    it('should intercept connections with the last started interceptor if the newest handler of an older one is cleared', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, connectionSaving: { enabled: true } },
+        async (olderInterceptor) => {
+          await usingWebSocketInterceptor<MessageSchema>(
+            { ...interceptorOptions, connectionSaving: { enabled: true } },
+            async (interceptor) => {
+              const handler = await promiseIfRemote(
+                interceptor.connection().respond({ action: 'reject' }),
+                interceptor,
+              );
+              const olderHandler = await promiseIfRemote(olderInterceptor.connection().times(1), olderInterceptor);
+
+              await promiseIfRemote(olderHandler.clear(), olderInterceptor);
+
+              await expectWebSocketConnectionToBeRefused(defaultBaseURL);
+
+              expect(handler.connections).toHaveLength(1);
+              expect(olderInterceptor.clients).toHaveLength(0);
+              expect(interceptor.clients).toHaveLength(0);
+            },
+          );
+        },
+      );
+    });
+
+    it('should not try older handlers if the newest one throws while handling a connection', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(
+        { ...interceptorOptions, connectionSaving: { enabled: true } },
+        async (olderInterceptor) => {
+          await usingWebSocketInterceptor<MessageSchema>(
+            { ...interceptorOptions, connectionSaving: { enabled: true } },
+            async (interceptor) => {
+              const handler = await promiseIfRemote(
+                interceptor.connection().respond({ action: 'reject' }),
+                interceptor,
+              );
+
+              const error = new Error('An error occurred.');
+
+              const olderHandler = await promiseIfRemote(
+                olderInterceptor.connection().respond(() => {
+                  throw error;
+                }),
+                olderInterceptor,
+              );
+
+              await usingIgnoredConsole(['error', 'warn'], async (console) => {
+                await expectWebSocketConnectionToOpen(defaultBaseURL);
+
+                expect(console.error).toHaveBeenCalledTimes(1);
+                expect(console.warn).toHaveBeenCalledTimes(0);
+                expect(console.error.mock.calls[0]).toEqual([error]);
+              });
+
+              expect(handler.connections).toHaveLength(0);
+              expect(olderHandler.connections).toHaveLength(0);
+            },
+          );
+        },
+      );
+    });
   });
 }

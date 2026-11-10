@@ -78,6 +78,8 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
+    // The prebundle cache key ignores rebuilds of linked workspace packages, so a reused cache would run stale code.
+    force: true,
     // Vite does not pre-bundle linked workspace packages by default, unlike packages installed from the registry.
     // Including every entry point of the Zimic packages makes browser tests load them as consumers do.
     include: ['@vitest/coverage-istanbul', ...zimicRuntimePackageNames.map((packageName) => `${packageName}/**`)],
