@@ -1,7 +1,9 @@
 import { PossiblePromise } from '@zimic/utils/types';
+import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { expect } from 'vitest';
 
+import { isServerSide } from '@/utils/environment';
 import WebSocketTimesCheckError from '@/ws/errors/WebSocketTimesCheckError';
 import WebSocketTimesDeclarationPointer from '@/ws/errors/WebSocketTimesDeclarationPointer';
 
@@ -41,6 +43,86 @@ export function waitForWebSocketClientClose<Schema extends WebSocketSchema>(clie
   });
 }
 
+interface RefusedWebSocketBehavior {
+  eventTypes: string[];
+  closeCode: number | undefined;
+  settlingEventTypes: ('open' | 'error' | 'close')[];
+}
+
+const nodeMajorVersion = isServerSide() ? Number(process.versions.node.split('.')[0]) : null;
+
+// Node 22's native WebSocket dispatches only `error` when a server refuses the handshake. Browsers and Node 24+ follow
+// the spec and dispatch `error`, then `close` with an abnormal closure code. Remove this check when Node 22 support ends.
+export const isCloseDispatchedOnRefusedWebSocket = nodeMajorVersion === null || nodeMajorVersion >= 24;
+
+/* istanbul ignore next -- @preserve
+ * Ignoring because each test run covers only the behavior of its Node.js version. */
+const refusedWebSocketBehavior: RefusedWebSocketBehavior = isCloseDispatchedOnRefusedWebSocket
+  ? {
+      eventTypes: ['error', 'close'],
+      closeCode: WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE,
+      settlingEventTypes: ['open', 'close'],
+    }
+  : {
+      eventTypes: ['error'],
+      closeCode: undefined,
+      settlingEventTypes: ['open', 'error', 'close'],
+    };
+
+export const REFUSED_WEB_SOCKET_EVENT_TYPES = refusedWebSocketBehavior.eventTypes;
+export const REFUSED_WEB_SOCKET_CLOSE_CODE = refusedWebSocketBehavior.closeCode;
+
+// A native socket exposes the events of a connection that fails to open, which `WebSocketClient.open()` reports only as
+// a rejection. Resolves once the connection opens, closes, or has its refusal settled, so callers close the sockets
+// that opened.
+export async function openWebSocketUntilSettled(url: string, protocols?: string | string[]) {
+  const socket = new WebSocket(url, protocols);
+  const eventTypes: string[] = [];
+
+  for (const type of ['open', 'error', 'close'] as const) {
+    socket.addEventListener(type, () => {
+      eventTypes.push(type);
+    });
+  }
+
+  // Snapshots the event types when the connection settles, because local interceptors may dispatch `close` in the same
+  // tick as `error`.
+  const settled = await new Promise<{ event: Event; eventTypes: string[] }>((resolve) => {
+    for (const type of refusedWebSocketBehavior.settlingEventTypes) {
+      socket.addEventListener(type, (event) => resolve({ event, eventTypes: [...eventTypes] }), { once: true });
+    }
+  });
+
+  return {
+    socket,
+    eventTypes: settled.eventTypes,
+    closeEvent: settled.event.type === 'close' ? (settled.event as CloseEvent) : undefined,
+  };
+}
+
+export function expectWebSocketAttemptToBeRefused({
+  eventTypes,
+  closeEvent,
+}: Awaited<ReturnType<typeof openWebSocketUntilSettled>>) {
+  expect(eventTypes).toEqual(REFUSED_WEB_SOCKET_EVENT_TYPES);
+  expect(closeEvent?.code).toBe(REFUSED_WEB_SOCKET_CLOSE_CODE);
+}
+
+// A refused connection fails without opening, as when a server answers its handshake with an error.
+export async function expectWebSocketConnectionToBeRefused(url: string, protocols?: string | string[]) {
+  expectWebSocketAttemptToBeRefused(await openWebSocketUntilSettled(url, protocols));
+}
+
+export async function expectWebSocketConnectionToOpen(url: string, protocols?: string | string[]) {
+  const { socket, eventTypes } = await openWebSocketUntilSettled(url, protocols);
+
+  try {
+    expect(eventTypes).toEqual(['open']);
+  } finally {
+    socket.close();
+  }
+}
+
 export function createBinaryMessage(firstByte: number, secondByte: number) {
   const message = new ArrayBuffer(2);
   const messageView = new Uint8Array(message);
@@ -58,7 +140,7 @@ export async function expectWebSocketTimesCheckError(
   callback: () => PossiblePromise<void>,
   options: {
     message: string;
-    expectedNumberOfMessages: number | { min: number; max: number };
+    expectedNumberOfMatches: number | { min: number; max: number };
   },
 ) {
   let timesCheckError: WebSocketTimesCheckError | undefined;
@@ -80,11 +162,11 @@ export async function expectWebSocketTimesCheckError(
   const timesDeclarationPointer = timesCheckError!.cause! as WebSocketTimesDeclarationPointer;
   expect(timesDeclarationPointer).toBeInstanceOf(WebSocketTimesDeclarationPointer);
 
-  if (typeof options.expectedNumberOfMessages === 'number') {
-    expect(timesDeclarationPointer.name).toBe(`handler.times(${options.expectedNumberOfMessages})`);
+  if (typeof options.expectedNumberOfMatches === 'number') {
+    expect(timesDeclarationPointer.name).toBe(`handler.times(${options.expectedNumberOfMatches})`);
   } else {
     expect(timesDeclarationPointer.name).toBe(
-      `handler.times(${options.expectedNumberOfMessages.min}, ${options.expectedNumberOfMessages.max})`,
+      `handler.times(${options.expectedNumberOfMatches.min}, ${options.expectedNumberOfMatches.max})`,
     );
   }
 

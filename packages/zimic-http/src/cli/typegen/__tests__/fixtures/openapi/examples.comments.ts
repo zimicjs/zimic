@@ -18,6 +18,30 @@ export type MyServiceSchema = HttpSchema<{
           name?: string;
           /**
            * @example
+           *   {
+           *     "oneOf": [],
+           *     "discriminator": {
+           *       "propertyName": "kind",
+           *       "mapping": {
+           *         "kind": "#/info/title/kind"
+           *       }
+           *     }
+           *   }
+           */
+          discriminatorInExample?: Record<string, any>;
+          /**
+           * Nickname
+           *
+           * @deprecated
+           * @example
+           *   Johnny;
+           *
+           * @example
+           *   JD;
+           */
+          nickname?: string;
+          /**
+           * @example
            *   john@email.com
            */
           email: string;
