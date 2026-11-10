@@ -52,6 +52,15 @@ export function createHttpInterceptor<Schema extends HttpSchema>(
     assertTypeOf('options.onUnhandledRequest.log', options.onUnhandledRequest.log, 'boolean', { optional: true });
   }
 
+  // Local interceptors do not authenticate, so they ignore the authentication option.
+  if (isRemoteHttpInterceptorOptions(options)) {
+    assertTypeOf('options.auth', options.auth, 'object', { optional: true });
+
+    if (options.auth) {
+      assertTypeOf('options.auth.token', options.auth.token, 'string');
+    }
+  }
+
   const type = options.type;
 
   if (isLocalHttpInterceptorOptions(options)) {
