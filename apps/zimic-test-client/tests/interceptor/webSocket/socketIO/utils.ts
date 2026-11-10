@@ -153,14 +153,15 @@ export function createSocketIOMock<Events>({
   }
 
   async function declareWebSocketHandlers() {
-    await webSocketInterceptor.message().with('40').respond(createConnectPacket);
-    await webSocketInterceptor.message().with('3');
-    await webSocketInterceptor.message().with('41');
+    await webSocketInterceptor.connection().effect(sendOpenPacketToNewWebSocketClients);
+    await webSocketInterceptor.message().with('40', { exact: true }).respond(createConnectPacket);
+    await webSocketInterceptor.message().with('3', { exact: true });
+    await webSocketInterceptor.message().with('41', { exact: true });
 
     // The noop completes the pending poll so the client can pause polling before finishing the upgrade.
     await webSocketInterceptor
       .message()
-      .with('2probe')
+      .with('2probe', { exact: true })
       .respond((_message, { sender }) => {
         send(getPollingSessionId(sender), '6');
         return '3probe';
@@ -169,7 +170,7 @@ export function createSocketIOMock<Events>({
     // Packets queued for the polling session while the client upgraded are delivered through the WebSocket.
     await webSocketInterceptor
       .message()
-      .with('5')
+      .with('5', { exact: true })
       .effect((_message, { sender }) => {
         const sid = getPollingSessionId(sender);
         pollingSessions.get(sid)?.pendingPackets.forEach(
@@ -227,7 +228,6 @@ export function createSocketIOMock<Events>({
     send,
 
     start() {
-      webSocketInterceptor.on('connection', sendOpenPacketToNewWebSocketClients);
       pingIntervalId = setInterval(sendPings, pingInterval);
     },
 
@@ -241,7 +241,6 @@ export function createSocketIOMock<Events>({
 
     stop() {
       clearInterval(pingIntervalId);
-      webSocketInterceptor.off('connection', sendOpenPacketToNewWebSocketClients);
 
       for (const sid of pollingSessions.keys()) {
         /* istanbul ignore next -- @preserve

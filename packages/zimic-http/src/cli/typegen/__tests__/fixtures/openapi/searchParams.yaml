@@ -170,6 +170,20 @@ paths:
                     type: boolean
                     default: false
 
+  /users-with-content-search-params:
+    get:
+      parameters:
+        - name: filter
+          in: query
+          content:
+            application/json:
+              schema:
+                type: object
+        - $ref: '#/components/parameters/content-filter'
+      responses:
+        '204':
+          description: Success
+
 components:
   schemas:
     search:
@@ -199,6 +213,14 @@ components:
       default: false
 
   parameters:
+    content-filter:
+      name: contentFilter
+      in: query
+      content:
+        application/json:
+          schema:
+            type: object
+
     literalSearch:
       name: search
       in: query

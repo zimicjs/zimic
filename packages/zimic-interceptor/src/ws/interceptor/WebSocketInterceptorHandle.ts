@@ -1,3 +1,4 @@
+import { HttpSearchParams } from '@zimic/utils/http';
 import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
 
 import type {
@@ -44,14 +45,16 @@ class WebSocketInterceptorClientImplementation<
   #sendMessage: (data: WebSocketMessageData<Schema>) => void;
   #closeConnection: WebSocketInterceptorClientCloser;
 
-  readonly messages: InterceptedWebSocketInterceptorMessage<Schema>[] = [];
+  searchParams: HttpSearchParams;
+  messages: InterceptedWebSocketInterceptorMessage<Schema>[] = [];
 
   constructor(
-    readonly url: string,
-    readonly protocols: readonly string[],
+    public url: string,
+    public protocols: readonly string[],
     sendMessage: (data: WebSocketMessageData<Schema>) => void,
     closeConnection: WebSocketInterceptorClientCloser,
   ) {
+    this.searchParams = new HttpSearchParams(new URL(url).searchParams);
     this.#sendMessage = sendMessage;
     this.#closeConnection = closeConnection;
   }

@@ -132,7 +132,6 @@ export type MyServiceSchema = HttpSchema<{
           };
           body: HttpSearchParams<{
             search?: (string | null) | string[];
-            /** @enum {string} */
             order?: 'asc' | 'desc';
             /** Format: int32 */
             limit?: number | null;
@@ -143,16 +142,26 @@ export type MyServiceSchema = HttpSchema<{
       };
     };
   };
+  '/users-with-content-search-params': {
+    GET: {
+      request: {
+        searchParams: {
+          filter?: string;
+          contentFilter?: MyServiceComponents['parameters']['content-filter'];
+        };
+      };
+      response: {
+        /** Success */
+        204: {};
+      };
+    };
+  };
 }>;
 
 export interface MyServiceComponents {
   schemas: {
     search: (string | null) | string[];
-    /**
-     * The sort order
-     *
-     * @enum {string}
-     */
+    /** The sort order */
     order: 'asc' | 'desc';
     /**
      * Format: int32
@@ -168,6 +177,7 @@ export interface MyServiceComponents {
     archived: boolean;
   };
   parameters: {
+    'content-filter': string;
     /** The search text */
     literalSearch: (string | null) | string[];
     /** The sort order */

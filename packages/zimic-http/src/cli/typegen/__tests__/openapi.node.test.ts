@@ -6,6 +6,7 @@ import { load as parseYaml } from 'js-yaml';
 import path from 'path';
 import color from 'picocolors';
 import prettier, { Options } from 'prettier';
+import { pathToFileURL } from 'url';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 
 import runCLI from '@/cli/cli';
@@ -188,6 +189,357 @@ describe('Type generation (OpenAPI)', () => {
     });
   });
 
+  it.each([
+    {
+      version: 'Swagger 2.x',
+      versionField: "swagger: '2.0'",
+      message: 'Unsupported Swagger version: 2.x. Use OpenAPI 3.x instead.',
+    },
+    { version: 'OpenAPI 2.x', versionField: 'openapi: 2.0.0', message: 'Unsupported OpenAPI version: 2.0.0' },
+    { version: 'OpenAPI 4.x', versionField: 'openapi: 4.0.0', message: 'Unsupported OpenAPI version: 4.0.0' },
+    { version: 'no version', versionField: '', message: 'Unsupported schema format, expected `openapi: 3.x`' },
+  ])('should not generate types from schemas with $version', async ({ versionField, message }) => {
+    const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'unsupportedVersion.yaml');
+    const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');
+
+    await fs.promises.writeFile(
+      inputFilePath,
+      [versionField, 'info: { title: Users, version: 1.0.0 }', 'paths: {}'].join('\n'),
+    );
+    await fs.promises.rm(outputFilePath, { force: true });
+
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'typegen',
+      'openapi',
+      inputFilePath,
+      '--output',
+      outputFilePath,
+      '--service-name',
+      'my-service',
+    ]);
+
+    await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+      await expect(runCLI()).rejects.toThrow(message);
+    });
+
+    expect(await pathExists(outputFilePath)).toBe(false);
+  });
+
+  it.each([
+    { description: 'an empty document', content: '' },
+    { description: 'a scalar document', content: 'not an object' },
+  ])('should not generate types from $description', async ({ content }) => {
+    const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'nonObjectDocument.yaml');
+    const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');
+
+    await fs.promises.writeFile(inputFilePath, content);
+    await fs.promises.rm(outputFilePath, { force: true });
+
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'typegen',
+      'openapi',
+      inputFilePath,
+      '--output',
+      outputFilePath,
+      '--service-name',
+      'my-service',
+    ]);
+
+    await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+      await expect(runCLI()).rejects.toThrow('Unsupported schema format, expected `openapi: 3.x`');
+    });
+
+    expect(await pathExists(outputFilePath)).toBe(false);
+  });
+
+  it('should not generate types from schemas with duplicate operation ids', async () => {
+    const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'duplicateOperationIds.yaml');
+    const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');
+
+    await fs.promises.writeFile(
+      inputFilePath,
+      [
+        'openapi: 3.1.0',
+        'info: { title: Users, version: 1.0.0 }',
+        'paths:',
+        '  /users:',
+        '    get:',
+        '      operationId: getUsers',
+        "      responses: { '200': { description: Success } }",
+        '    post:',
+        '      operationId: getUsers',
+        "      responses: { '201': { description: Created } }",
+      ].join('\n'),
+    );
+    await fs.promises.rm(outputFilePath, { force: true });
+
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'typegen',
+      'openapi',
+      inputFilePath,
+      '--output',
+      outputFilePath,
+      '--service-name',
+      'my-service',
+    ]);
+
+    await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+      await expect(runCLI()).rejects.toThrow(
+        'Every operation must have a unique `operationId`. at #/paths/~1users/post/getUsers',
+      );
+    });
+
+    expect(await pathExists(outputFilePath)).toBe(false);
+  });
+
+  it('should not generate types from schemas with unresolvable local references', async () => {
+    const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'unresolvableLocalReference.yaml');
+    const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');
+
+    await fs.promises.writeFile(
+      inputFilePath,
+      [
+        'openapi: 3.1.0',
+        'info: { title: Users, version: 1.0.0 }',
+        'paths:',
+        '  /users:',
+        '    get:',
+        '      responses:',
+        "        '200':",
+        '          description: Success',
+        '          content:',
+        '            application/json:',
+        "              schema: { $ref: '#/components/schemas/Unknown' }",
+      ].join('\n'),
+    );
+    await fs.promises.rm(outputFilePath, { force: true });
+
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'typegen',
+      'openapi',
+      inputFilePath,
+      '--output',
+      outputFilePath,
+      '--service-name',
+      'my-service',
+    ]);
+
+    await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+      await expect(runCLI()).rejects.toThrow(
+        "Can't resolve $ref at #/paths/~1users/get/responses/200/content/application~1json/schema",
+      );
+    });
+
+    expect(await pathExists(outputFilePath)).toBe(false);
+  });
+
+  it.each([
+    {
+      location: 'a response',
+      reference: '#/paths/~1users/get/responses/200',
+      adminOperationLines: ["      responses: { '200': { $ref: '#/paths/~1users/get/responses/200' } }"],
+    },
+    {
+      location: 'a request body',
+      reference: '#/paths/~1users/post/requestBody',
+      adminOperationLines: [
+        "      requestBody: { $ref: '#/paths/~1users/post/requestBody' }",
+        "      responses: { '204': { description: Success } }",
+      ],
+    },
+    {
+      location: 'a discriminated union pointing at the document root',
+      reference: '#',
+      adminOperationLines: [
+        '      responses:',
+        "        '200':",
+        '          description: Success',
+        '          content:',
+        '            application/json:',
+        "              schema: { oneOf: [{ $ref: '#' }], discriminator: { propertyName: type } }",
+      ],
+    },
+  ])(
+    'should not generate types from schemas with references outside components in $location',
+    async ({ reference, adminOperationLines }) => {
+      const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'referenceOutsideComponents.yaml');
+      const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');
+
+      await fs.promises.writeFile(
+        inputFilePath,
+        [
+          'openapi: 3.1.0',
+          'info: { title: Users, version: 1.0.0 }',
+          'paths:',
+          '  /users:',
+          '    get:',
+          "      responses: { '200': { description: Success } }",
+          '    post:',
+          '      requestBody: { content: { application/json: { schema: { type: string } } } }',
+          "      responses: { '204': { description: Success } }",
+          '  /admins:',
+          '    get:',
+          ...adminOperationLines,
+        ].join('\n'),
+      );
+      await fs.promises.rm(outputFilePath, { force: true });
+
+      processArgvSpy.mockReturnValue([
+        'node',
+        './dist/cli.js',
+        'typegen',
+        'openapi',
+        inputFilePath,
+        '--output',
+        outputFilePath,
+        '--service-name',
+        'my-service',
+      ]);
+
+      await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+        await expect(runCLI()).rejects.toThrow(
+          `Unsupported $ref: ${reference}. Only references to #/components are supported.`,
+        );
+      });
+
+      expect(await pathExists(outputFilePath)).toBe(false);
+    },
+  );
+
+  it('should not generate types from schemas with operation ids generating the same name', async () => {
+    const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'duplicateOperationName.yaml');
+    const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');
+
+    await fs.promises.writeFile(
+      inputFilePath,
+      [
+        'openapi: 3.1.0',
+        'info: { title: Users, version: 1.0.0 }',
+        'paths:',
+        '  /users:',
+        '    get:',
+        '      operationId: users#list',
+        "      responses: { '204': { description: Success } }",
+        '  /admins:',
+        '    get:',
+        '      operationId: users/list',
+        "      responses: { '204': { description: Success } }",
+      ].join('\n'),
+    );
+    await fs.promises.rm(outputFilePath, { force: true });
+
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'typegen',
+      'openapi',
+      inputFilePath,
+      '--output',
+      outputFilePath,
+      '--service-name',
+      'my-service',
+    ]);
+
+    await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+      await expect(runCLI()).rejects.toThrow(
+        'Duplicate operation name: users/list. Each `operationId` must generate a unique name.',
+      );
+    });
+
+    expect(await pathExists(outputFilePath)).toBe(false);
+  });
+
+  it('should not generate types from schemas with unresolvable external references', async () => {
+    const inputFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'unresolvableExternalReference.yaml');
+    const outputFilePath = replaceFileExtension(inputFilePath, 'output.ts');
+    const missingFilePath = path.join(typegenFixtures.openapi.generatedDirectory, 'unknown.yaml');
+
+    await fs.promises.writeFile(
+      inputFilePath,
+      [
+        'openapi: 3.1.0',
+        'info: { title: Users, version: 1.0.0 }',
+        'paths:',
+        '  /users:',
+        '    get:',
+        '      responses:',
+        "        '200':",
+        '          description: Success',
+        '          content:',
+        '            application/json:',
+        "              schema: { $ref: './unknown.yaml#/User' }",
+      ].join('\n'),
+    );
+    await fs.promises.rm(outputFilePath, { force: true });
+
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'typegen',
+      'openapi',
+      inputFilePath,
+      '--output',
+      outputFilePath,
+      '--service-name',
+      'my-service',
+    ]);
+
+    expect(await pathExists(missingFilePath)).toBe(false);
+
+    await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+      await expect(runCLI()).rejects.toThrow(
+        `Can't resolve $ref: ENOENT: no such file or directory '${missingFilePath}' ` +
+          'at #/paths/~1users/get/responses/200/content/application~1json/schema',
+      );
+    });
+
+    expect(await pathExists(outputFilePath)).toBe(false);
+  });
+
+  it('should not load plugins from the working directory', async () => {
+    const workingDirectory = path.join(typegenFixtures.openapi.generatedDirectory, 'workingDirectoryWithPlugin');
+    const pluginFilePath = path.join(workingDirectory, '@theme', 'plugin.js');
+    const inputFilePath = path.join(typegenFixtures.openapi.directory, 'simple.yaml');
+    const outputFilePath = path.join(workingDirectory, 'simple.output.ts');
+
+    await fs.promises.mkdir(path.dirname(pluginFilePath), { recursive: true });
+    await fs.promises.writeFile(pluginFilePath, "throw new Error('The plugin should not be loaded.');");
+    await fs.promises.rm(outputFilePath, { force: true });
+
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'typegen',
+      'openapi',
+      inputFilePath,
+      '--output',
+      outputFilePath,
+      '--service-name',
+      'my-service',
+    ]);
+
+    const originalWorkingDirectory = process.cwd();
+    process.chdir(workingDirectory);
+
+    try {
+      await usingIgnoredConsole(['log', 'warn', 'error'], async () => {
+        await runCLI();
+      });
+    } finally {
+      process.chdir(originalWorkingDirectory);
+    }
+
+    expect(await pathExists(outputFilePath)).toBe(true);
+  });
+
   function verifyFilterFileWarnings(console: Console & { warn: MockInstance }) {
     expect(console.warn).toHaveBeenCalledTimes(1);
 
@@ -270,6 +622,7 @@ describe('Type generation (OpenAPI)', () => {
           extraArguments: additionalArguments,
           stdout: shouldWriteToStdout,
           url: shouldUseURLAsInput,
+          fileURL: shouldUseFileURLAsInput,
           outputDirectoryExists: shouldOutputDirectoryExist = true,
         } = fixtureCase;
 
@@ -278,9 +631,11 @@ describe('Type generation (OpenAPI)', () => {
           replaceFileExtension(inputFileName, fileExtension),
         );
 
+        const localInput = shouldUseFileURLAsInput ? pathToFileURL(inputFilePath).href : inputFilePath;
+
         const inputFilePathOrURL = shouldUseURLAsInput
           ? joinURL(schemaInterceptor.baseURL, 'spec', fixtureName)
-          : inputFilePath;
+          : localInput;
 
         const inputFileBuffer = await fs.promises.readFile(inputFilePath);
 

@@ -88,8 +88,10 @@ type WebSocketMessageHandlerSchemaCompatibleWithStaticRestriction<
 > = Schema extends unknown
   ? [Schema, Restriction] extends [Blob | BufferSource, Exclude<Restriction, Blob | BufferSource>]
     ? never
-    : Schema extends UnparsedWebSocketJSONPrimitive
-      ? WebSocketMessageHandlerPrimitiveSchemaMatchingText<Schema, Restriction>
+    : Schema extends UnparsedWebSocketJSONPrimitive | string
+      ? [Extract<Restriction, string>] extends [never]
+        ? never
+        : Schema
       : Schema extends Restriction
         ? Schema
         : Restriction extends WebSocketMessageHandlerStaticRestriction<Schema>
@@ -98,8 +100,8 @@ type WebSocketMessageHandlerSchemaCompatibleWithStaticRestriction<
   : never;
 
 /**
- * The top-level number and boolean schema members whose received text overlaps a restriction, which may mix the text of
- * several members, such as `'42' | 'true'`.
+ * The top-level number and boolean schema members whose received text overlaps a type-guard predicate, which may mix
+ * the text of several members, such as `'42' | 'true'`.
  */
 type WebSocketMessageHandlerPrimitiveSchemaMatchingText<
   Schema extends WebSocketSchema,
@@ -122,7 +124,8 @@ type WebSocketMessageHandlerSchemaCompatibleWithTypeGuard<Schema extends WebSock
 
 /**
  * The message type of a handler after applying a restriction. Type-guard restrictions narrow to their predicate and
- * static restrictions narrow to the schema members compatible with them. Other restrictions keep the current type.
+ * static restrictions narrow to the schema members compatible with them. Text restrictions keep every member received
+ * as text, because any of them may include the restriction. Other restrictions keep the current type.
  */
 export type WebSocketMessageHandlerSchemaWithRestriction<Schema extends WebSocketSchema, Restriction> =
   Restriction extends WebSocketMessageHandlerComputedTypeGuardRestriction<Schema, infer Predicate>
@@ -154,7 +157,8 @@ export interface LocalWebSocketMessageHandler<
 
   /**
    * Declares a restriction to intercepted message matches. If multiple restrictions are declared, all of them must be
-   * met. Static restrictions match JSON messages containing them, or equal to them with `{ exact: true }`.
+   * met. Static restrictions match JSON messages containing them and text messages including them, or messages equal to
+   * them with `{ exact: true }`.
    */
   with: <Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
     restriction: Restriction,
@@ -214,7 +218,8 @@ export interface SyncedRemoteWebSocketMessageHandler<
 
   /**
    * Declares a restriction to intercepted message matches. If multiple restrictions are declared, all of them must be
-   * met. Static restrictions match JSON messages containing them, or equal to them with `{ exact: true }`.
+   * met. Static restrictions match JSON messages containing them and text messages including them, or messages equal to
+   * them with `{ exact: true }`.
    */
   with: <Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
     restriction: Restriction,

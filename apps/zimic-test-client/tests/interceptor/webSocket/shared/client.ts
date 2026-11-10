@@ -24,7 +24,7 @@ type ClientTestWebSocketLifecycleListener = (event: unknown) => void;
 interface ClientTestWebSocketEventListenerMethod<Schema extends WebSocketSchema> {
   (type: 'message', listener: ClientTestWebSocketMessageListener<Schema>): void;
   (type: 'close', listener: ClientTestWebSocketCloseListener): void;
-  (type: 'close' | 'error', listener: ClientTestWebSocketLifecycleListener): void;
+  (type: 'open' | 'close' | 'error', listener: ClientTestWebSocketLifecycleListener): void;
 }
 
 export interface ClientTestWebSocket<Schema extends WebSocketSchema> {
@@ -47,6 +47,12 @@ export interface ClientTestOptions {
     url: string,
     protocols?: string | string[],
   ) => Promise<ClientTestWebSocket<Schema>>;
+  // Starts connecting without waiting for the outcome, so tests can observe refused connections through their `open`,
+  // `error`, and `close` events.
+  createSocket: <Schema extends WebSocketSchema>(
+    url: string,
+    protocols?: string | string[],
+  ) => ClientTestWebSocket<Schema>;
 }
 
 export interface ClientTestOptionsByWorkerType extends ClientTestOptions {

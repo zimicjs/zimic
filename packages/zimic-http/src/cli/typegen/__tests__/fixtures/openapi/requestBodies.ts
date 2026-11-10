@@ -231,6 +231,26 @@ export type MyServiceSchema = HttpSchema<{
       };
     };
   };
+  '/users-with-request-body-without-content': {
+    POST: {
+      response: {
+        204: {};
+      };
+    };
+  };
+  '/users-with-referenced-request-body-content': {
+    POST: {
+      request: {
+        headers: {
+          'content-type': 'application/json';
+        };
+        body: MyServiceComponents['schemas']['CreateUserBody'];
+      };
+      response: {
+        204: {};
+      };
+    };
+  };
 }>;
 
 export interface MyServiceComponents {
