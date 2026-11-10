@@ -31,7 +31,7 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
       onUnhandledMessage: options.onUnhandledMessage,
       protocol: options.protocol,
       type: 'local',
-      getAuth: () => undefined,
+      getAuth: undefined,
       MessageHandler: LocalWebSocketMessageHandler,
       ConnectionHandler: LocalWebSocketConnectionHandler,
       createWorker: () => this.store.getOrCreateLocalWorker({}),

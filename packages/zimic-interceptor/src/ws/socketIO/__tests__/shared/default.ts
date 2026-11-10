@@ -2,7 +2,7 @@ import type { HttpSchema } from '@zimic/http';
 import { waitFor } from '@zimic/utils/time';
 import { io, type ManagerOptions, type NodeXHR, Socket, type XHR } from 'socket.io-client';
 import msgpackParser from 'socket.io-msgpack-parser';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
@@ -592,6 +592,23 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
       );
     });
 
+    it('should ignore polling packets without a session ID', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<AnySchema>(
+        { type, baseURL, protocol: createSocketIOProtocol() },
+        async (interceptor) => {
+          const response = await fetch(`${baseURL.replace(/^ws/, 'http')}/socket.io/?EIO=4&transport=polling`, {
+            method: 'POST',
+            body: '40',
+          });
+
+          expect(response.status).toBe(200);
+          expect(interceptor.clients).toHaveLength(0);
+        },
+      );
+    });
+
     it('should expose polling clients to server sends', async () => {
       const baseURL = getBaseURL();
 
@@ -776,6 +793,22 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
       });
     });
 
+    it('should close WebSocket connections without an Engine.IO version', async () => {
+      const baseURL = getBaseURL();
+
+      await usingIgnoredConsole(['warn'], async () => {
+        await usingWebSocketInterceptor<AnySchema>({ type, baseURL, protocol: createSocketIOProtocol() }, async () => {
+          const socket = new WebSocket(`${baseURL}/socket.io/?transport=websocket`);
+
+          const closeEvent = await new Promise<CloseEvent>((resolve) => {
+            socket.addEventListener('close', resolve, { once: true });
+          });
+
+          expect(closeEvent.reason).toBe('Engine.IO protocol version unknown is not supported. Use version 4.');
+        });
+      });
+    });
+
     it('should reject messages without a type or ack ID', async () => {
       const baseURL = getBaseURL();
 
@@ -834,7 +867,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
       await usingWebSocketInterceptor<AnySchema>({ type, baseURL, protocol }, async (interceptor) => {
         await usingIgnoredConsole(['error'], async () => {
           await expect(
-            usingWebSocketInterceptor<AnySchema>({ type, baseURL: otherBaseURL, protocol }, () => undefined),
+            usingWebSocketInterceptor<AnySchema>({ type, baseURL: otherBaseURL, protocol }, vi.fn()),
           ).rejects.toThrow('A Socket.IO protocol can be used by only one running interceptor.');
         });
 

@@ -155,7 +155,7 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
 
   it('should not report consumed control frames as unhandled', async () => {
     const baseURL = getBaseURL();
-    const onUnhandledMessage = vi.fn(() => ({ log: false }));
+    const onUnhandledMessage = vi.fn<() => { log: boolean }>();
 
     await usingWebSocketInterceptor<ChatSchema>(
       { type, baseURL, messageSaving: { enabled: true }, protocol, onUnhandledMessage },
@@ -237,7 +237,7 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
   it('should keep the connection open if decoding a frame fails', async () => {
     const baseURL = getBaseURL();
     const decodingError = new Error('Invalid frame');
-    const onUnhandledMessage = vi.fn(() => ({ log: false }));
+    const onUnhandledMessage = vi.fn<() => { log: boolean }>();
 
     const failingProtocol: WebSocketInterceptorProtocol<ChatMessage> = {
       ...protocol,
