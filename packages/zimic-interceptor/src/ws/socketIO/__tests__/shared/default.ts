@@ -181,7 +181,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
           await usingSocket(baseURL, { transports }, async (socket) => {
             await waitForSocketConnection(socket);
 
-            socket.emit('user:create', { name: 'Name' }, () => undefined);
+            socket.emit('user:create', { name: 'Name' }, vi.fn());
 
             await waitFor(() => expect(handler.messages).toHaveLength(1));
             expect(handler.messages[0].data).toEqual({
