@@ -1,6 +1,7 @@
 import { normalizeNodeRequest } from '@whatwg-node/server';
 import { createCachedDynamicImport } from '@zimic/utils/import';
 import { startHttpServer, stopHttpServer, getHttpServerPort } from '@zimic/utils/server';
+import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
 import { IncomingMessage, Server as HttpServer, createServer, ServerResponse } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
 import color from 'picocolors';
@@ -15,10 +16,10 @@ import {
 } from '@/interceptor/constants';
 import { isLoopbackHostname } from '@/utils/http';
 import { logger, logUnhandledRequestWarning } from '@/utils/logging';
-import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import WebSocketServer, {
   type WebSocketServerAuthenticate,
   type WebSocketServerConnectionHandler,
+  type WebSocketServerUpgradeVerifier,
 } from '@/utils/webSocket/WebSocketServer';
 
 import {
@@ -150,6 +151,7 @@ class InterceptorServer implements PublicInterceptorServer {
       httpServer: this.httpServer,
       authenticate: this.authenticateWebSocketConnection,
       handleConnection: this.handleWebSocketConnection,
+      verifyUpgrade: this.verifyWebSocketUpgrade,
     });
 
     this.startWebSocketServer();
@@ -346,6 +348,15 @@ class InterceptorServer implements PublicInterceptorServer {
     }
   }
 
+  // Workers are authenticated after their handshake. User connections are decided by their worker before it.
+  private verifyWebSocketUpgrade: WebSocketServerUpgradeVerifier = async (request) => {
+    if (this.isWebSocketRPCRequest(request)) {
+      return true;
+    }
+
+    return this.webSocketRuntimeOrThrow.verifyUpgrade(request);
+  };
+
   private handleWebSocketConnection: WebSocketServerConnectionHandler = async (socket, request) => {
     if (this.isWebSocketRPCRequest(request)) {
       const workerRPCVersion = this.getWebSocketRequestParameterValue(
@@ -393,7 +404,7 @@ class InterceptorServer implements PublicInterceptorServer {
       return { handled: false };
     }
 
-    await this.webSocketRuntimeOrThrow.handleConnection(socket, request);
+    this.webSocketRuntimeOrThrow.handleConnection(socket, request);
 
     return { handled: true };
   };

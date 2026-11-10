@@ -7,7 +7,7 @@ export interface ExpectedTypeByTypeOfResult {
   bigint: bigint;
   string: string;
   function: (...parameters: never[]) => unknown;
-  object: object | null;
+  object: object;
 }
 
 export type TypeOfResult = keyof ExpectedTypeByTypeOfResult;
@@ -40,15 +40,15 @@ function assertTypeOf<
   expectedType: ExpectedType,
   options?: AssertTypeOfOptions<Nullable, Optional>,
 ): asserts value is AssertedType<Value, ExpectedType, Nullable, Optional> {
-  const actualType = typeof value;
+  // `typeof null` is 'object', so null gets its own type and is accepted only with the `nullable` option.
+  const actualType = value === null ? 'null' : typeof value;
 
   if (
     actualType !== expectedType &&
     !(options?.nullable && value === null) &&
     !(options?.optional && value === undefined)
   ) {
-    const receivedType = value === null ? 'null' : actualType;
-    throw new ValidationError(`Expected ${field} to be ${expectedType}, but got ${receivedType}.`);
+    throw new ValidationError(`Expected ${field} to be ${expectedType}, but got ${actualType}.`);
   }
 }
 

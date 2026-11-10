@@ -21,6 +21,9 @@ export interface WebSocketInterceptorMessageHandlerIndex<
   records: Set<WebSocketInterceptorMessageRecord<Schema>>;
 }
 
+// Each saved message is listed by its handler, its sender client, and the interceptor server, and clearing a handler
+// must remove its messages from all of them. Connections and requests are listed only by their handler, so a counter
+// is enough for them.
 class WebSocketInterceptorMessageStore<Schema extends WebSocketSchema> {
   private records = new Set<WebSocketInterceptorMessageRecord<Schema>>();
 

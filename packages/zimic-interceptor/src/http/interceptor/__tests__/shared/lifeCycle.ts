@@ -183,8 +183,7 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
   // No HTTP counterpart for "should not handle messages from existing clients after stopped": WebSocket connections are
   // long-lived, so a client can stay open after its interceptor stops.
 
-  // No HTTP counterpart for "should not accept connections opened while stopping": HTTP interceptors have no connections
-  // or connection listeners.
+  // No HTTP counterpart for "should not accept connections opened while stopping": HTTP interceptors have no connections.
 
   // No HTTP counterpart for "should keep connections shared with another interceptor open after stopped": WebSocket
   // connections are long-lived, so one can outlive the stop of an interceptor holding it.
