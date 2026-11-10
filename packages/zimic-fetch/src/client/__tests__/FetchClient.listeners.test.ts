@@ -2,7 +2,7 @@ import { HttpHeaders, HttpSchema, HttpSearchParams, StrictHeaders } from '@zimic
 import { expectFetchError } from '@zimic/utils/fetch';
 import { Default } from '@zimic/utils/types';
 import { joinURL } from '@zimic/utils/url';
-import { ValidationError } from '@zimic/utils/validation';
+import { createInvalidTypeOfCases, ValidationError } from '@zimic/utils/validation';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -504,22 +504,17 @@ describe('FetchClient > Listeners', () => {
     );
   });
 
-  const invalidListeners = [
-    { label: 'null', value: null, expectedType: 'null' },
-    { label: 'a boolean', value: true, expectedType: 'boolean' },
-    { label: 'a string', value: 'listener', expectedType: 'string' },
-    { label: 'an object', value: {}, expectedType: 'object' },
-  ];
+  const invalidListeners = createInvalidTypeOfCases('function', { optional: true });
 
   it.each(invalidListeners)(
     'should throw an error if provided an `onRequest` listener that is not a function ($label)',
-    ({ value, expectedType }) => {
+    ({ value, actualType }) => {
       // @ts-expect-error Forcing an invalid `onRequest` listener type.
       const invalidOnRequest: FetchOptions<HttpSchema>['onRequest'] = value;
 
       expect(() => {
         createFetch({ baseURL, onRequest: invalidOnRequest });
-      }).toThrow(new ValidationError(`Expected options.onRequest to be function, but got ${expectedType}.`));
+      }).toThrow(new ValidationError(`Expected options.onRequest to be function, but got ${actualType}.`));
     },
   );
 
@@ -961,13 +956,13 @@ describe('FetchClient > Listeners', () => {
 
   it.each(invalidListeners)(
     'should throw an error if provided an `onResponse` listener that is not a function ($label)',
-    ({ value, expectedType }) => {
+    ({ value, actualType }) => {
       // @ts-expect-error Forcing an invalid `onResponse` listener type.
       const invalidOnResponse: FetchOptions<HttpSchema>['onResponse'] = value;
 
       expect(() => {
         createFetch({ baseURL, onResponse: invalidOnResponse });
-      }).toThrow(new ValidationError(`Expected options.onResponse to be function, but got ${expectedType}.`));
+      }).toThrow(new ValidationError(`Expected options.onResponse to be function, but got ${actualType}.`));
     },
   );
 });
