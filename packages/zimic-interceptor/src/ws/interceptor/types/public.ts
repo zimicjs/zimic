@@ -1,6 +1,7 @@
 import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
+import { LocalWebSocketConnectionHandler, RemoteWebSocketConnectionHandler } from '@/ws/connectionHandler/types/public';
 import { LocalWebSocketMessageHandler, RemoteWebSocketMessageHandler } from '@/ws/messageHandler/types/public';
 
 import { WebSocketInterceptorClient, WebSocketInterceptorServer } from './messages';
@@ -25,10 +26,24 @@ export interface WebSocketInterceptorMessageSaving {
   safeLimit: number;
 }
 
-/** A listener called with the client handle of each new connection to the interceptor. */
-export type WebSocketInterceptorConnectionListener<Schema extends WebSocketSchema> = (
-  client: WebSocketInterceptorClient<Schema>,
-) => void;
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * Configures if intercepted connections are saved and how they are handled.
+ */
+export interface WebSocketInterceptorConnectionSaving {
+  /**
+   * Whether connection handlers should save their matched connection attempts in memory and make them accessible
+   * through `handler.connections`. Defaults to `process.env.NODE_ENV === 'test'` in Node.js and `false` in browsers.
+   */
+  enabled: boolean;
+
+  /**
+   * The number of saved connections after which the interceptor logs warnings in the console. It does not limit how
+   * many connections are saved. Defaults to `1000`.
+   */
+  safeLimit: number;
+}
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -41,6 +56,9 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
 
   /** Configures if intercepted messages are saved and how they are handled. */
   messageSaving: WebSocketInterceptorMessageSaving;
+
+  /** Configures if intercepted connections are saved and how they are handled. */
+  connectionSaving: WebSocketInterceptorConnectionSaving;
 
   /**
    * The strategy applied to client messages that no handler matches. Defaults to logging a warning for each unhandled
@@ -76,18 +94,6 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
    */
   get clients(): readonly WebSocketInterceptorClient<Schema>[];
 
-  /** Registers a listener for new client connections. */
-  on: (event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) => void;
-
-  /** Removes a connection listener. Pass the same callback reference used to register it. */
-  off: (event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) => void;
-
-  /**
-   * Registers a listener that is called only for the next client connection and then removed. Otherwise, it behaves
-   * like `interceptor.on()`.
-   */
-  once: (event: 'connection', listener: WebSocketInterceptorConnectionListener<Schema>) => void;
-
   /** Starts the interceptor, allowing it to intercept WebSocket connections and messages. */
   start: () => Promise<void>;
 
@@ -98,14 +104,14 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
   stop: () => Promise<void>;
 
   /**
-   * Checks if all handlers created by this interceptor have matched the number of messages declared with
+   * Checks if all handlers created by this interceptor have matched the number of messages or connections declared with
    * `handler.times()`.
    */
   checkTimes: () => PossiblePromise<void>;
 
   /**
-   * Clears the interceptor and all of its message handlers, including their responses, effects, restrictions, connected
-   * clients, and saved messages.
+   * Clears the interceptor and all of its message and connection handlers, including their responses, effects,
+   * restrictions, connected clients, and saved messages and connections.
    */
   clear: () => PossiblePromise<void>;
 }
@@ -127,14 +133,23 @@ export interface LocalWebSocketInterceptor<Schema extends WebSocketSchema> exten
   message: () => LocalWebSocketMessageHandler<Schema>;
 
   /**
-   * Checks if all handlers created by this interceptor have matched the number of messages declared with
+   * Creates a connection handler for connection attempts to the interceptor, which can accept or reject them before
+   * they open.
+   *
+   * @param path The path of the connections to match, relative to the base URL of the interceptor, such as
+   *   `/rooms/:roomId`. If omitted, the handler matches every connection to the interceptor.
+   */
+  connection: <Path extends string = string>(path?: Path) => LocalWebSocketConnectionHandler<Schema, Path>;
+
+  /**
+   * Checks if all handlers created by this interceptor have matched the number of messages or connections declared with
    * `handler.times()`.
    */
   checkTimes: () => void;
 
   /**
-   * Clears the interceptor and all of its message handlers, including their responses, effects, restrictions, connected
-   * clients, and saved messages.
+   * Clears the interceptor and all of its message and connection handlers, including their responses, effects,
+   * restrictions, connected clients, and saved messages and connections.
    */
   clear: () => void;
 }
@@ -160,14 +175,23 @@ export interface RemoteWebSocketInterceptor<Schema extends WebSocketSchema> exte
   message: () => RemoteWebSocketMessageHandler<Schema>;
 
   /**
-   * Checks if all handlers created by this interceptor have matched the number of messages declared with
+   * Creates a connection handler for connection attempts to the interceptor, which can accept or reject them before
+   * they open.
+   *
+   * @param path The path of the connections to match, relative to the base URL of the interceptor, such as
+   *   `/rooms/:roomId`. If omitted, the handler matches every connection to the interceptor.
+   */
+  connection: <Path extends string = string>(path?: Path) => RemoteWebSocketConnectionHandler<Schema, Path>;
+
+  /**
+   * Checks if all handlers created by this interceptor have matched the number of messages or connections declared with
    * `handler.times()`.
    */
   checkTimes: () => Promise<void>;
 
   /**
-   * Clears the interceptor and all of its message handlers, including their responses, effects, restrictions, connected
-   * clients, and saved messages.
+   * Clears the interceptor and all of its message and connection handlers, including their responses, effects,
+   * restrictions, connected clients, and saved messages and connections.
    */
   clear: () => Promise<void>;
 }

@@ -1,0 +1,45 @@
+openapi: 3.1.0
+
+info:
+  title: Reference Siblings
+  version: 1.0.0
+
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  $ref: '#/components/schemas/UserStatus'
+                  default: active
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+components:
+  schemas:
+    UserStatus:
+      type: string
+      enum:
+        - active
+        - inactive
+
+    User:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/UserStatus'
+          description: The status of the user.
+          default: active
+        createdStatus:
+          $ref: '#/components/schemas/UserStatus'
+          readOnly: true

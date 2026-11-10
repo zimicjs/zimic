@@ -10,5 +10,6 @@ export interface TypegenFixtureCase {
   extraArguments: string[];
   stdout?: boolean;
   url?: boolean;
+  fileURL?: boolean;
   outputDirectoryExists?: boolean;
 }

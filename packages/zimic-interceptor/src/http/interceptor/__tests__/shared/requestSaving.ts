@@ -165,6 +165,12 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
       });
     });
 
+    // No HTTP counterpart for "should save intercepted connections if message saving is disabled": HTTP interceptors
+    // save only requests.
+
+    // No HTTP counterpart for "should save intercepted messages if connection saving is disabled": HTTP interceptors
+    // save only requests.
+
     const invalidEnabledOptions = createInvalidTypeOfCases('boolean', { optional: true });
 
     it.each(invalidEnabledOptions)(
@@ -461,6 +467,15 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
 
     // No HTTP counterpart for "should show a warning if the number of saved messages exceeds the safe limit,
     // considering disconnected clients": HTTP requests have no long-lived client connection that can disconnect.
+
+    // No HTTP counterpart for "should show a warning if the number of saved connections exceeds the safe limit,
+    // considering disconnected clients": HTTP requests have no long-lived client connection that can disconnect.
+
+    // No HTTP counterpart for "should show a warning if the number of saved connections exceeds the safe limit,
+    // ignoring saved messages": HTTP interceptors save only requests.
+
+    // No HTTP counterpart for "should show a warning if the number of saved messages exceeds the safe limit, ignoring
+    // saved connections": HTTP interceptors save only requests.
 
     const invalidSafeLimits = createInvalidTypeOfCases('number', { optional: true });
 

@@ -323,6 +323,7 @@ class HttpInterceptorImplementation<
     parsedRequest: HttpInterceptorRequest<string, HttpMethodSchema>,
   ): Promise<HttpResponse | null> {
     const requestSavingGeneration = this.requestSavingGeneration;
+    const clearGeneration = handler.clearGeneration;
 
     const responseDeclaration = await handler.applyResponseDeclaration(parsedRequest);
 
@@ -339,11 +340,16 @@ class HttpInterceptorImplementation<
       response &&
       !HttpInterceptorWorker.isRejectedResponse(response);
 
-    if (shouldSaveInterceptedRequest) {
-      const responseClone = response.clone();
+    const parsedResponse = shouldSaveInterceptedRequest
+      ? await HttpInterceptorWorker.parseRawResponse<HttpMethodSchema>(response.clone())
+      : undefined;
 
-      const parsedResponse = await HttpInterceptorWorker.parseRawResponse<HttpMethodSchema>(responseClone);
+    // A handler cleared while the response is created or parsed does not respond to the request or save it.
+    if (clearGeneration !== handler.clearGeneration) {
+      return null;
+    }
 
+    if (parsedResponse) {
       handler.saveInterceptedRequest(parsedRequest, parsedResponse);
     }
 

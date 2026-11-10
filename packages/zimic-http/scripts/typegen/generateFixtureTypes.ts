@@ -74,7 +74,7 @@ interface FixtureTypegenOptions {
 async function generateFixtureCasesTypes({ fixtureType, fixtureNames }: FixtureTypegenOptions) {
   const fixtureCases = fixtureNames
     .flatMap<TypegenFixtureCase>((fixtureName) => typegenFixtures[fixtureType].cases[fixtureName])
-    .filter((fixtureCase) => !fixtureCase.stdout && !fixtureCase.url);
+    .filter((fixtureCase) => !fixtureCase.stdout && !fixtureCase.url && !fixtureCase.fileURL);
 
   const outputFilePaths: string[] = [];
 
