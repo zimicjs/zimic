@@ -1,4 +1,5 @@
 import { HttpFormData, HttpHeaders, HttpSearchParams } from '@zimic/http';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { joinURL } from '@zimic/utils/url';
 import color from 'picocolors';
 import { expect, it, beforeAll, afterAll, describe, afterEach, beforeEach } from 'vitest';
@@ -56,6 +57,46 @@ export function declareTimesHttpRequestHandlerTests(
   });
 
   describe('Exact number of requests', () => {
+    it('should not match more than an exact number of limited requests when requests are handled concurrently', async () => {
+      await usingHttpInterceptor<Schema>({ type, baseURL, requestSaving: { enabled: true } }, async (interceptor) => {
+        let numberOfEvaluatedRequests = 0;
+        const restrictionsReadyPromise = createPromiseWithResolvers<void>();
+
+        const fallbackHandler = await promiseIfRemote(
+          interceptor.post('/users').respond({ status: 200, body: { success: true } }),
+          interceptor,
+        );
+
+        const limitedHandler = await promiseIfRemote(
+          interceptor
+            .post('/users')
+            .with(async () => {
+              numberOfEvaluatedRequests++;
+
+              if (numberOfEvaluatedRequests === 2) {
+                restrictionsReadyPromise.resolve();
+              }
+
+              await restrictionsReadyPromise;
+              return true;
+            })
+            .respond({ status: 200, body: { success: true } })
+            .times(1),
+          interceptor,
+        );
+
+        await Promise.all([
+          fetch(joinURL(baseURL, '/users'), { method: 'POST' }),
+          fetch(joinURL(baseURL, '/users'), { method: 'POST' }),
+        ]);
+
+        expect(limitedHandler.requests).toHaveLength(1);
+        expect(fallbackHandler.requests).toHaveLength(1);
+
+        await promiseIfRemote(limitedHandler.checkTimes(), limitedHandler);
+      });
+    });
+
     it('should match an exact number of limited requests', async () => {
       const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .respond({ status: 200, body: { success: true } })
@@ -113,7 +154,7 @@ export function declareTimesHttpRequestHandlerTests(
       });
     });
 
-    it('should not match to more than an exact number of limited requests', async () => {
+    it('should not match more than an exact number of limited requests', async () => {
       const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .respond({ status: 200, body: { success: true } })
         .times(1);
@@ -147,6 +188,27 @@ export function declareTimesHttpRequestHandlerTests(
       await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
         message: 'Expected exactly 1 request, but got 3.',
         expectedNumberOfRequests: 1,
+      });
+    });
+
+    it('should match exactly zero requests', async () => {
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
+        .respond({ status: 200, body: { success: true } })
+        .times(0);
+
+      await promiseIfRemote(handler.checkTimes(), handler);
+
+      const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
+      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+
+      expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+        success: false,
+        cause: 'exceededNumberOfRequests',
+      });
+
+      await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+        message: 'Expected exactly 0 requests, but got 1.',
+        expectedNumberOfRequests: 0,
       });
     });
   });
@@ -210,7 +272,7 @@ export function declareTimesHttpRequestHandlerTests(
       await promiseIfRemote(handler.checkTimes(), handler);
     });
 
-    it('should not match to more than the maximum number of requests limited in a range', async () => {
+    it('should not match more than the maximum number of requests limited in a range', async () => {
       const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
         .respond({ status: 200, body: { success: true } })
         .times(2, 3);
@@ -650,6 +712,51 @@ export function declareTimesHttpRequestHandlerTests(
         });
       });
 
+      it('should consider requests unmatched due to exact JSON body requests in times check errors', async () => {
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
+          .with({ body: { name: '1' }, exact: true })
+          .respond({ status: 200, body: { success: true } })
+          .times(1);
+
+        const request = new Request(joinURL(baseURL, '/users'), {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ name: '1', value: [1] }),
+        });
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            body: {
+              expected: { name: '1' },
+              received: { name: '1', value: [1] },
+            },
+          },
+        });
+
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+          message: [
+            'Expected exactly 1 matching request, but got 0.',
+            '',
+            'Requests evaluated by this handler:',
+            '',
+            `  ${color.green('- Expected')}`,
+            `  ${color.red('+ Received')}`,
+            '',
+            `1: POST ${joinURL(baseURL, '/users')}`,
+            '     Body:',
+            `       ${color.green('- { "name": "1" }')}`,
+            `       ${color.red('+ { "name": "1", "value": [ "1" ] }')}`,
+          ].join('\n'),
+          expectedNumberOfRequests: 1,
+        });
+      });
+
+      // No HTTP counterpart for "should consider messages unmatched due to array buffer data messages in times check
+      // errors": binary HTTP bodies arrive as `Blob`, while WebSocket binary frames arrive as `ArrayBuffer`.
+
       it('should consider requests unmatched due to search params matched requests in times check errors', async () => {
         const restrictedSearchParams = new HttpSearchParams({ name: '1' });
 
@@ -932,7 +1039,7 @@ export function declareTimesHttpRequestHandlerTests(
         });
       });
 
-      it('should consider list unmatched due to plain-text matched requests in times check errors', async () => {
+      it('should consider requests unmatched due to plain-text matched requests in times check errors', async () => {
         const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
           .with({ body: 'example' })
           .respond({ status: 200, body: { success: true } })
@@ -1010,6 +1117,63 @@ export function declareTimesHttpRequestHandlerTests(
             '     Body:',
             `       ${color.green('- example')}`,
             `       ${color.red('+ text')}`,
+          ].join('\n'),
+          expectedNumberOfRequests: 1,
+        });
+      });
+
+      // No HTTP counterpart for "should consider messages unmatched due to typed array data messages in times check
+      // errors": HTTP body restrictions accept no typed arrays, while WebSocket frames can be sent from any
+      // `BufferSource`.
+
+      // No HTTP counterpart for "should consider messages unmatched due to sender restrictions in times check errors":
+      // an HTTP request has no long-lived connected client to restrict it to.
+
+      it('should consider requests unmatched due to search params and headers restrictions in times check errors', async () => {
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
+          .with({ searchParams: { value: '1' }, headers: { accept: 'application/json' } })
+          .respond({ status: 200, body: { success: true } })
+          .times(1);
+
+        const searchParams = new HttpSearchParams({ value: '2' });
+
+        const request = new Request(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+          method: 'POST',
+          headers: { accept: 'text/html' },
+        });
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+
+        expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({
+          success: false,
+          cause: 'unmatchedRestrictions',
+          diff: {
+            headers: {
+              expected: new HttpHeaders({ accept: 'application/json' }),
+              received: new HttpHeaders({ accept: 'text/html' }),
+            },
+            searchParams: {
+              expected: new HttpSearchParams({ value: '1' }),
+              received: searchParams,
+            },
+          },
+        });
+
+        await expectHttpTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+          message: [
+            'Expected exactly 1 matching request, but got 0.',
+            '',
+            'Requests evaluated by this handler:',
+            '',
+            `  ${color.green('- Expected')}`,
+            `  ${color.red('+ Received')}`,
+            '',
+            `1: POST ${joinURL(baseURL, `/users?${searchParams.toString()}`)}`,
+            '     Headers:',
+            `       ${color.green('- { "accept": "application/json" }')}`,
+            `       ${color.red('+ { "accept": "text/html" }')}`,
+            '     Search params:',
+            `       ${color.green('- { "value": "1" }')}`,
+            `       ${color.red('+ { "value": "2" }')}`,
           ].join('\n'),
           expectedNumberOfRequests: 1,
         });
@@ -1140,6 +1304,12 @@ export function declareTimesHttpRequestHandlerTests(
         expectedNumberOfRequests: 0,
       });
     });
+
+    // No HTTP counterpart for "should not consider messages unmatched due to being cleared in times checks": only
+    // `respond` makes a cleared HTTP handler match again, which resets its count.
+
+    // No HTTP counterpart for "should not consider connections unmatched due to being cleared in times checks": only
+    // `respond` makes a cleared HTTP handler match again, which resets its count.
   });
 
   it('should reset the limits on the number of requests when cleared', async () => {
@@ -1174,4 +1344,7 @@ export function declareTimesHttpRequestHandlerTests(
     });
     await promiseIfRemote(handler.checkTimes(), handler);
   });
+
+  // No HTTP counterpart for "should consider connections unmatched due to protocols restrictions in times check errors":
+  // HTTP requests negotiate no subprotocols.
 }

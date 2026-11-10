@@ -113,6 +113,19 @@ export type MyServiceSchema = HttpSchema<{
       };
     };
   };
+  '/users-with-content-search-params': {
+    GET: {
+      request: {
+        searchParams: {
+          filter?: string;
+          contentFilter?: MyServiceComponents['parameters']['content-filter'];
+        };
+      };
+      response: {
+        204: {};
+      };
+    };
+  };
 }>;
 
 export interface MyServiceComponents {
@@ -123,6 +136,7 @@ export interface MyServiceComponents {
     archived: boolean;
   };
   parameters: {
+    'content-filter': string;
     literalSearch: (string | null) | string[];
     literalOrder: MyServiceComponents['schemas']['order'];
     literalLimit: number | null;

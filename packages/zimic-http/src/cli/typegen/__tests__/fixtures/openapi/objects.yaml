@@ -1,0 +1,85 @@
+openapi: 3.1.0
+
+info:
+  title: Objects
+  version: 1.0.0
+
+paths:
+  /objects:
+    get:
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Objects'
+
+components:
+  schemas:
+    Nothing: false
+
+    NothingWrapper:
+      allOf:
+        - $ref: '#/components/schemas/Nothing'
+
+    Objects:
+      type: object
+      properties:
+        additionalPropertiesSchema:
+          type: object
+          additionalProperties:
+            type: string
+        additionalPropertiesTrue:
+          type: object
+          additionalProperties: true
+        additionalPropertiesEmptySchema:
+          type: object
+          additionalProperties: {}
+        additionalPropertiesFalse:
+          type: object
+          additionalProperties: false
+        propertiesWithAdditionalProperties:
+          type: object
+          properties:
+            id:
+              type: string
+          additionalProperties:
+            type: number
+        patternProperties:
+          type: object
+          patternProperties:
+            '^x-':
+              type: string
+        emptyPatternProperties:
+          type: object
+          patternProperties: {}
+        definitions:
+          type: object
+          properties:
+            id:
+              type: string
+          $defs:
+            name:
+              type: string
+              description: A name
+            readOnlyName:
+              type: string
+              readOnly: true
+            anything: true
+        emptyDefinitions:
+          type: object
+          $defs: {}
+        booleanProperties:
+          type: object
+          properties:
+            anything: true
+            nothing: false
+        referenceToNothing:
+          $ref: '#/components/schemas/Nothing'
+        referenceToNothingWrapper:
+          $ref: '#/components/schemas/NothingWrapper'
+        nullValue:
+          type: 'null'
+        emptyObject:
+          type: object

@@ -1136,4 +1136,8 @@ export function declareTimesHttpInterceptorTests(options: RuntimeSharedHttpInter
       });
     });
   }
+
+  // No HTTP counterpart for "should count accepted and rejected connections in interceptor times checks": an HTTP
+  // handler answers every request it matches, while a WebSocket connection handler without a response accepts the
+  // connection.
 }
