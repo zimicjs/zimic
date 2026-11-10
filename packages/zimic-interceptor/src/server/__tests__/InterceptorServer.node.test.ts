@@ -2,7 +2,7 @@ import { HttpSchema } from '@zimic/http';
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { expectFetchError } from '@zimic/utils/fetch';
 import { waitFor } from '@zimic/utils/time';
-import { ValidationError } from '@zimic/utils/validation';
+import { createInvalidTypeOfCases, ValidationError } from '@zimic/utils/validation';
 import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { once } from 'events';
@@ -2975,22 +2975,17 @@ describe('Interceptor server', () => {
       expect(server.hostname).not.toBe(newHostname);
     });
 
-    const invalidHostnames = [
-      { label: 'null', value: null, expectedType: 'null' },
-      { label: 'a number', value: 1, expectedType: 'number' },
-      { label: 'a boolean', value: true, expectedType: 'boolean' },
-      { label: 'an object', value: {}, expectedType: 'object' },
-    ];
+    const invalidHostnames = createInvalidTypeOfCases('string', { optional: true });
 
     it.each(invalidHostnames)(
       'should throw an error if provided a hostname that is not a string ($label)',
-      ({ value, expectedType }) => {
+      ({ value, actualType }) => {
         // @ts-expect-error Forcing an invalid hostname type.
         const invalidHostname: string = value;
 
         expect(() => {
           createInternalInterceptorServer({ hostname: invalidHostname });
-        }).toThrow(new ValidationError(`Expected options.hostname to be string, but got ${expectedType}.`));
+        }).toThrow(new ValidationError(`Expected options.hostname to be string, but got ${actualType}.`));
       },
     );
   });
@@ -3081,22 +3076,17 @@ describe('Interceptor server', () => {
       expect(server.port).not.toBe(newPort);
     });
 
-    const invalidPorts = [
-      { label: 'null', value: null, expectedType: 'null' },
-      { label: 'a string', value: '8080', expectedType: 'string' },
-      { label: 'a boolean', value: true, expectedType: 'boolean' },
-      { label: 'an object', value: {}, expectedType: 'object' },
-    ];
+    const invalidPorts = createInvalidTypeOfCases('number', { optional: true });
 
     it.each(invalidPorts)(
       'should throw an error if provided a port that is not a number ($label)',
-      ({ value, expectedType }) => {
+      ({ value, actualType }) => {
         // @ts-expect-error Forcing an invalid port type.
         const invalidPort: number = value;
 
         expect(() => {
           createInternalInterceptorServer({ port: invalidPort });
-        }).toThrow(new ValidationError(`Expected options.port to be number, but got ${expectedType}.`));
+        }).toThrow(new ValidationError(`Expected options.port to be number, but got ${actualType}.`));
       },
     );
   });
@@ -3150,24 +3140,17 @@ describe('Interceptor server', () => {
       expect(server.logUnhandledRequests).toBe(newLogUnhandledRequests);
     });
 
-    const invalidLogUnhandledRequestsSettings = [
-      { label: 'null', value: null, expectedType: 'null' },
-      { label: 'a number', value: 1, expectedType: 'number' },
-      { label: 'a string', value: 'true', expectedType: 'string' },
-      { label: 'an object', value: {}, expectedType: 'object' },
-    ];
+    const invalidLogUnhandledRequestsSettings = createInvalidTypeOfCases('boolean', { optional: true });
 
     it.each(invalidLogUnhandledRequestsSettings)(
       'should throw an error if provided a log unhandled requests setting that is not a boolean ($label)',
-      ({ value, expectedType }) => {
+      ({ value, actualType }) => {
         // @ts-expect-error Forcing an invalid log unhandled requests setting type.
         const invalidLogUnhandledRequests: boolean = value;
 
         expect(() => {
           createInternalInterceptorServer({ logUnhandledRequests: invalidLogUnhandledRequests });
-        }).toThrow(
-          new ValidationError(`Expected options.logUnhandledRequests to be boolean, but got ${expectedType}.`),
-        );
+        }).toThrow(new ValidationError(`Expected options.logUnhandledRequests to be boolean, but got ${actualType}.`));
       },
     );
   });
@@ -3221,22 +3204,17 @@ describe('Interceptor server', () => {
       expect(server.tokensDirectory).toBe(newTokensDirectory);
     });
 
-    const invalidTokensDirectories = [
-      { label: 'null', value: null, expectedType: 'null' },
-      { label: 'a number', value: 1, expectedType: 'number' },
-      { label: 'a boolean', value: true, expectedType: 'boolean' },
-      { label: 'an object', value: {}, expectedType: 'object' },
-    ];
+    const invalidTokensDirectories = createInvalidTypeOfCases('string', { optional: true });
 
     it.each(invalidTokensDirectories)(
       'should throw an error if provided a tokens directory that is not a string ($label)',
-      ({ value, expectedType }) => {
+      ({ value, actualType }) => {
         // @ts-expect-error Forcing an invalid tokens directory type.
         const invalidTokensDirectory: string = value;
 
         expect(() => {
           createInternalInterceptorServer({ tokensDirectory: invalidTokensDirectory });
-        }).toThrow(new ValidationError(`Expected options.tokensDirectory to be string, but got ${expectedType}.`));
+        }).toThrow(new ValidationError(`Expected options.tokensDirectory to be string, but got ${actualType}.`));
       },
     );
   });
