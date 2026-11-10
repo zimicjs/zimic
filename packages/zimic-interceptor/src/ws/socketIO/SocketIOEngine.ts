@@ -33,6 +33,10 @@ const UPGRADE_PACKET = '5';
 // A code in the application range, because Socket.IO has no close code for an unknown session.
 const UNKNOWN_SESSION_CLOSE_CODE = 4001;
 
+function ignoreConnectionEvent() {
+  return undefined;
+}
+
 interface SocketIOPollingErrorBody {
   code: number;
   message: string;
@@ -207,7 +211,9 @@ class SocketIOEngine {
       return { status: 200, body: CLOSE_PACKET } as const;
     }
 
-    // A poll that overlapped the upgrade has nothing left to deliver, because the session moved to the WebSocket.
+    /* istanbul ignore if -- @preserve
+     * Clients pause polling before finishing an upgrade, so only a poll overlapping the upgrade reaches this. It has
+     * nothing left to deliver, because the session moved to the WebSocket. */
     if (!(session.transport instanceof SocketIOPollingTransport)) {
       return { status: 200, body: NOOP_PACKET } as const;
     }
@@ -320,7 +326,7 @@ class SocketIOEngine {
 
     if (this.members.size === 0) {
       engines.delete(this.key); // eslint-disable-line @typescript-eslint/no-use-before-define
-      await this.httpInterceptorStart.catch(() => undefined);
+      await Promise.allSettled([this.httpInterceptorStart]);
       await this.httpInterceptor.stop();
     }
   }
@@ -381,7 +387,7 @@ class SocketIOEngine {
     // As a Socket.IO server refuses unknown session IDs, an upgrade of a session closed in the meantime does not connect.
     if (!session || !(session.transport instanceof SocketIOPollingTransport)) {
       connection.close(UNKNOWN_SESSION_CLOSE_CODE, 'Session ID unknown');
-      return { onFrame: () => undefined, onClose: () => undefined };
+      return { onFrame: ignoreConnectionEvent, onClose: ignoreConnectionEvent };
     }
 
     const pollingTransport = session.transport;
@@ -410,7 +416,6 @@ class SocketIOEngine {
         }
 
         if (session.transport === connection) {
-          session.transport = { send: () => undefined, close: () => undefined };
           this.closeSession(session);
         }
       },

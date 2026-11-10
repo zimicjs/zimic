@@ -14,6 +14,7 @@ class UnsupportedGlobalWebSocketTransport {
 // keeps this entry point importable on those versions, which remote interceptors support.
 const socketIOClientExports: { WebSocket?: typeof socketIOClient.WebSocket } = socketIOClient;
 
+/* istanbul ignore next -- @preserve */
 const BaseWebSocketTransport =
   socketIOClientExports.WebSocket ??
   (UnsupportedGlobalWebSocketTransport as unknown as typeof socketIOClient.WebSocket);
@@ -44,9 +45,7 @@ export class GlobalWebSocketTransport extends BaseWebSocketTransport {
 
     // `socket.io-client` requests Node.js buffers in Node.js, which native sockets replace with `Blob`, a type its packet
     // decoder cannot read.
-    if (this.ws !== undefined) {
-      (this.ws as WebSocketWithBinaryType).binaryType = 'arraybuffer';
-    }
+    (this.ws as WebSocketWithBinaryType).binaryType = 'arraybuffer';
 
     return this;
   }

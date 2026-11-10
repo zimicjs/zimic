@@ -23,11 +23,17 @@ function createSocketIOTestSocket<Schema extends WebSocketSchema>(
     reconnection: false,
   });
 
-  const listeners = new Map<string, Set<ClientTestListener>>();
+  const listeners = {
+    open: new Set<ClientTestListener>(),
+    error: new Set<ClientTestListener>(),
+    close: new Set<ClientTestListener>(),
+    message: new Set<ClientTestListener>(),
+  };
+
   let readyState = CONNECTING;
 
-  function dispatch(type: string, event: unknown) {
-    for (const listener of listeners.get(type) ?? []) {
+  function dispatch(type: keyof typeof listeners, event: unknown) {
+    for (const listener of listeners[type]) {
       listener(event as never);
     }
   }
@@ -71,14 +77,12 @@ function createSocketIOTestSocket<Schema extends WebSocketSchema>(
       socket.disconnect();
     },
 
-    addEventListener(type: string, listener: ClientTestListener) {
-      const typeListeners = listeners.get(type) ?? new Set();
-      typeListeners.add(listener);
-      listeners.set(type, typeListeners);
+    addEventListener(type: keyof typeof listeners, listener: ClientTestListener) {
+      listeners[type].add(listener);
     },
 
-    removeEventListener(type: string, listener: ClientTestListener) {
-      listeners.get(type)?.delete(listener);
+    removeEventListener(type: keyof typeof listeners, listener: ClientTestListener) {
+      listeners[type].delete(listener);
     },
   };
 

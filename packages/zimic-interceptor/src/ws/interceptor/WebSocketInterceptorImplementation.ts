@@ -110,7 +110,7 @@ class WebSocketInterceptorImplementation<
     onUnhandledMessage?: UnhandledMessageStrategy;
     protocol: WebSocketInterceptorProtocol | undefined;
     type: WebSocketInterceptorType;
-    getAuth: () => WebSocketInterceptorProtocolHost['auth'];
+    getAuth: (() => WebSocketInterceptorProtocolHost['auth']) | undefined;
     MessageHandler: MessageHandlerConstructor;
     ConnectionHandler: WebSocketConnectionHandlerConstructor;
     createWorker: () => WebSocketInterceptorWorker;
@@ -169,7 +169,7 @@ class WebSocketInterceptorImplementation<
 
   private createProtocolHost(
     type: WebSocketInterceptorType,
-    getAuth: () => WebSocketInterceptorProtocolHost['auth'],
+    getAuth: (() => WebSocketInterceptorProtocolHost['auth']) | undefined,
   ): WebSocketInterceptorProtocolHost {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const interceptor = this;
@@ -182,7 +182,7 @@ class WebSocketInterceptorImplementation<
       },
 
       get auth() {
-        return getAuth();
+        return getAuth?.();
       },
 
       openClient: (options) => this.workerOrThrow.openProtocolClient(this, options),
