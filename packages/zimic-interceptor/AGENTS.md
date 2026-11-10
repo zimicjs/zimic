@@ -36,6 +36,7 @@ Diverge between protocols only for a protocol reason, such as WebSocket connecti
 - Manage interceptors, workers, and clients with the `using*` utilities in `tests/utils`. Add the protocol counterpart of a utility when it is missing.
 - Chain handler declarations and await the chain once instead of awaiting a bare handler.
 - Keep type tests compile-only, without executing their callbacks, and place them inline in one `<Class>.types.test.ts`.
+- Build invalid-type cases for validated options with `createInvalidTypeOfCases` from `@zimic/utils/validation`, passing the same `nullable` and `optional` options as the assertion. Add by hand only cases specific to the option, such as a `URL` passed as a base URL.
 
 ## API reference
 
