@@ -1,4 +1,5 @@
 import { waitFor } from '@zimic/utils/time';
+import { createInvalidTypeOfCases, ValidationError } from '@zimic/utils/validation';
 import { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -126,6 +127,29 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
         },
       );
     });
+
+    const invalidEnabledOptions = createInvalidTypeOfCases('boolean', { optional: true });
+
+    it.each(invalidEnabledOptions)(
+      'should throw an error if provided a message saving enabled option that is not a boolean ($label)',
+      async ({ value, actualType }) => {
+        const handler = vi.fn();
+
+        // @ts-expect-error Forcing an invalid message saving enabled option type.
+        const invalidEnabled: boolean = value;
+
+        await expect(async () => {
+          await usingWebSocketInterceptor(
+            { ...interceptorOptions, messageSaving: { enabled: invalidEnabled } },
+            handler,
+          );
+        }).rejects.toThrow(
+          new ValidationError(`Expected options.messageSaving.enabled to be boolean, but got ${actualType}.`),
+        );
+
+        expect(handler).not.toHaveBeenCalled();
+      },
+    );
   });
 
   describe('Safe limit', () => {
@@ -482,6 +506,29 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
         },
       );
     });
+
+    const invalidSafeLimits = createInvalidTypeOfCases('number', { optional: true });
+
+    it.each(invalidSafeLimits)(
+      'should throw an error if provided a message saving safe limit that is not a number ($label)',
+      async ({ value, actualType }) => {
+        const handler = vi.fn();
+
+        // @ts-expect-error Forcing an invalid message saving safe limit type.
+        const invalidSafeLimit: number = value;
+
+        await expect(async () => {
+          await usingWebSocketInterceptor(
+            { ...interceptorOptions, messageSaving: { safeLimit: invalidSafeLimit } },
+            handler,
+          );
+        }).rejects.toThrow(
+          new ValidationError(`Expected options.messageSaving.safeLimit to be number, but got ${actualType}.`),
+        );
+
+        expect(handler).not.toHaveBeenCalled();
+      },
+    );
   });
 
   it('should support changing the message saving configuration after created', async () => {
@@ -553,4 +600,22 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
       },
     );
   });
+
+  const invalidMessageSavings = createInvalidTypeOfCases('object', { optional: true });
+
+  it.each(invalidMessageSavings)(
+    'should throw an error if provided a message saving configuration that is not an object ($label)',
+    async ({ value, actualType }) => {
+      const handler = vi.fn();
+
+      // @ts-expect-error Forcing an invalid message saving type.
+      const invalidMessageSaving: Partial<WebSocketInterceptorMessageSaving> = value;
+
+      await expect(async () => {
+        await usingWebSocketInterceptor({ ...interceptorOptions, messageSaving: invalidMessageSaving }, handler);
+      }).rejects.toThrow(new ValidationError(`Expected options.messageSaving to be object, but got ${actualType}.`));
+
+      expect(handler).not.toHaveBeenCalled();
+    },
+  );
 }
