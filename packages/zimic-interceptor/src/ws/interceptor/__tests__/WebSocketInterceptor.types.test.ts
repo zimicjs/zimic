@@ -20,14 +20,22 @@ import { InferWebSocketInterceptorSchema } from '../types/schema';
 import { declareWebSocketInterceptorTypes } from './shared/utils';
 
 type Message = { type: 'create'; body: { text: string } } | { type: 'delete'; id: string };
-type MessageSchema = WebSocketSchema<{ '/': { message: Message } }>;
 
-type PathKeyedSchema = WebSocketSchema<{
-  '/rooms/:roomId': { message: { type: 'chat'; text: string } };
-  '/health': { message: { type: 'ping' } };
+type MessageSchema = WebSocketSchema<{
+  '/': {
+    message: Message;
+  };
 }>;
 
-// The interceptors below are only type-checked. The functions declaring them are never called.
+type PathKeyedSchema = WebSocketSchema<{
+  '/rooms/:roomId': {
+    message: { type: 'chat'; text: string };
+  };
+  '/health': {
+    message: { type: 'ping' };
+  };
+}>;
+
 describe('WebSocketInterceptor > Types', () => {
   it('should type message handlers with the messages of the declared path', () => {
     function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {

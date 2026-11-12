@@ -29,7 +29,12 @@ import WebSocketInterceptorStore from '../../WebSocketInterceptorStore';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
-type MessageSchema = WebSocketSchema<{ '/': { message: Message } }>;
+
+type MessageSchema = WebSocketSchema<{
+  '/': {
+    message: Message;
+  };
+}>;
 
 export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;

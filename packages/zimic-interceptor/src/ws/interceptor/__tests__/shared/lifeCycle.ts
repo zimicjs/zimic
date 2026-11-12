@@ -36,8 +36,17 @@ import WebSocketInterceptorStore from '../../WebSocketInterceptorStore';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
-type MessageSchema = WebSocketSchema<{ '/': { message: Message } }>;
-type BinaryMessageSchema = WebSocketSchema<{ '/': { message: ArrayBuffer } }>;
+
+type MessageSchema = WebSocketSchema<{
+  '/': {
+    message: Message;
+  };
+}>;
+type BinaryMessageSchema = WebSocketSchema<{
+  '/': {
+    message: ArrayBuffer;
+  };
+}>;
 
 export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions, startServer, stopServer } = options;

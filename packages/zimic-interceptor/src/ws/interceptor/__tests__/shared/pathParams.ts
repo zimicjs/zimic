@@ -16,9 +16,9 @@ import {
 import { WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
-interface PathSchema {
+type PathSchema = WebSocketSchema.Path<{
   message: { type: 'message' };
-}
+}>;
 
 type MessageSchema = WebSocketSchema<{
   '/users/:userId': PathSchema;

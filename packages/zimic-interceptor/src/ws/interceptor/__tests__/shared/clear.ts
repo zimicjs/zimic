@@ -27,13 +27,25 @@ import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../typ
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
+
 type MessageSchema = WebSocketSchema<{
-  '/': { connection: { searchParams: { value?: string }; protocols: 'legacy' }; message: Message };
-  '/users': { connection: { searchParams: { value?: string } }; message: Message };
-  '/:resource': { message: Message };
+  '/': {
+    connection: { searchParams: { value?: string }; protocols: 'legacy' };
+    message: Message;
+  };
+  '/users': {
+    connection: { searchParams: { value?: string } };
+    message: Message;
+  };
+  '/:resource': {
+    message: Message;
+  };
 }>;
+
 type ChatMessage = WebSocketSchema<{
-  '/': { message: { type: 'client'; text: string } | { type: 'server'; text: string } };
+  '/': {
+    message: { type: 'client'; text: string } | { type: 'server'; text: string };
+  };
 }>;
 
 export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {

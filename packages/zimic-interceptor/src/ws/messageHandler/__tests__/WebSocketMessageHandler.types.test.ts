@@ -15,12 +15,17 @@ import type {
 } from '../types/public';
 import { ChatMessage, Schema } from './shared/utils';
 
-type SinglePathSchema<Message extends WebSocketMessageSchema> = WebSocketSchema<{ '/': { message: Message } }>;
+type SinglePathSchema<Message extends WebSocketMessageSchema> = WebSocketSchema<{
+  '/': {
+    message: Message;
+  };
+}>;
 
 interface RoomMessage {
   type: 'chat';
   text: string;
 }
+
 interface HealthMessage {
   type: 'ping';
 }
@@ -30,10 +35,13 @@ type PathKeyedSchema = WebSocketSchema<{
     connection: { searchParams: { token: string }; protocols: 'chat' };
     message: RoomMessage;
   };
-  '/health': { message: HealthMessage };
+  '/health': {
+    message: HealthMessage;
+  };
 }>;
 
 type CreateMessage = Extract<ChatMessage, { type: 'create' }>;
+
 type PrioritizedCreateMessage = CreateMessage & {
   body: CreateMessage['body'] & { priority: number };
 };
@@ -55,7 +63,6 @@ type NestedSchema =
     }
   | { type: 'delete'; id: string };
 
-// The handlers below are only type-checked. The functions declaring them are never called.
 describe('WebSocketMessageHandler > Types', () => {
   it('should type the receiver of a path-specific handler with the messages of all paths', () => {
     function declareHandler(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {

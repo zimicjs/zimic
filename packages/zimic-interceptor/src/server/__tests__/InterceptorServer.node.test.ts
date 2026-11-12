@@ -877,7 +877,11 @@ describe('Interceptor server', () => {
   });
 
   describe('WebSocket connections', () => {
-    type ChatSchema = WebSocketSchema<{ '/': { message: { type: 'client' | 'server'; text: string } } }>;
+    type ChatSchema = WebSocketSchema<{
+      '/': {
+        message: { type: 'client' | 'server'; text: string };
+      };
+    }>;
     type ChatMessage = WebSocketSchemaMessage<ChatSchema>;
 
     it('should not register WebSocket interceptors reset by HTTP interceptor workers', async () => {
@@ -2005,7 +2009,9 @@ describe('Interceptor server', () => {
           encodeURIComponent(`${INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER}=${INTERCEPTOR_SERVER_RPC_VERSION}`),
         ]);
 
-        const client = new WebSocketClient<WebSocketSchema<{ '/': { message: string } }>>(baseURL);
+        type Schema = WebSocketSchema<{ '/': { message: string } }>;
+
+        const client = new WebSocketClient<Schema>(baseURL);
 
         try {
           const [authenticationMessage] = (await once(otherWorker, 'message')) as [Buffer];

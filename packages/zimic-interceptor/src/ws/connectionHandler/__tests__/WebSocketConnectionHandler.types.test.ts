@@ -16,7 +16,9 @@ type PathKeyedSchema = WebSocketSchema<{
     connection: { searchParams: { token: string }; protocols: 'chat' | 'json' };
     message: { type: 'chat'; text: string };
   };
-  '/health': { message: { type: 'ping' } };
+  '/health': {
+    message: { type: 'ping' };
+  };
 }>;
 
 // The handlers below are only type-checked. The functions declaring them are never called.
@@ -102,7 +104,10 @@ describe('WebSocketConnectionHandler > Types', () => {
 
   it('should type client search params as declared if no path is declared in a schema with one path', () => {
     type SinglePathSchema = WebSocketSchema<{
-      '/rooms/:roomId': { connection: { searchParams: { token: string } }; message: { type: 'chat'; text: string } };
+      '/rooms/:roomId': {
+        connection: { searchParams: { token: string } };
+        message: { type: 'chat'; text: string };
+      };
     }>;
 
     function declareHandlers(interceptor: LocalWebSocketInterceptor<SinglePathSchema>) {
@@ -116,9 +121,17 @@ describe('WebSocketConnectionHandler > Types', () => {
 
   it('should type client search params of all paths as optional if no path is declared in a schema with multiple paths', () => {
     type MultiplePathSchema = WebSocketSchema<{
-      '/rooms/:roomId': { connection: { searchParams: { token: string } }; message: { type: 'chat'; text: string } };
-      '/logs': { connection: { searchParams: { level: string } }; message: { type: 'log' } };
-      '/health': { message: { type: 'ping' } };
+      '/rooms/:roomId': {
+        connection: { searchParams: { token: string } };
+        message: { type: 'chat'; text: string };
+      };
+      '/logs': {
+        connection: { searchParams: { level: string } };
+        message: { type: 'log' };
+      };
+      '/health': {
+        message: { type: 'ping' };
+      };
     }>;
 
     function declareHandlers(interceptor: LocalWebSocketInterceptor<MultiplePathSchema>) {

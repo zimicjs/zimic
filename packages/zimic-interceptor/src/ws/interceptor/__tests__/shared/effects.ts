@@ -18,9 +18,15 @@ import { WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions, verifyUnhandledMessageWarning } from './utils';
 
 type Message = { type: 'create'; body: { text: string } } | { type: 'delete'; id: string };
+
 type MessageSchema = WebSocketSchema<{
-  '/': { message: Message };
-  '/rooms/:roomId': { connection: { searchParams: { token: string }; protocols: 'chat' }; message: Message };
+  '/': {
+    message: Message;
+  };
+  '/rooms/:roomId': {
+    connection: { searchParams: { token: string }; protocols: 'chat' };
+    message: Message;
+  };
 }>;
 
 export function declareEffectWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {

@@ -17,7 +17,12 @@ import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../typ
 import { RuntimeSharedWebSocketInterceptorTestsOptions, verifyUnhandledMessageWarning } from './utils';
 
 type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
-type MessageSchema = WebSocketSchema<{ '/': { message: Message } }>;
+
+type MessageSchema = WebSocketSchema<{
+  '/': {
+    message: Message;
+  };
+}>;
 
 // HTTP splits each case into bypassed and rejected variants. Unhandled messages have no action, so each pair has one
 // WebSocket counterpart.
@@ -74,32 +79,37 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
     });
 
     it('should show a warning when logging is enabled and binary messages are unhandled', async () => {
-      await usingWebSocketInterceptor<WebSocketSchema<{ '/': { message: ArrayBuffer } }>>(
-        { ...interceptorOptions, onUnhandledMessage },
-        async (interceptor) => {
-          expect(interceptor.onUnhandledMessage).toBe(onUnhandledMessage);
+      await usingWebSocketInterceptor<
+        WebSocketSchema<{
+          '/': { message: ArrayBuffer };
+        }>
+      >({ ...interceptorOptions, onUnhandledMessage }, async (interceptor) => {
+        expect(interceptor.onUnhandledMessage).toBe(onUnhandledMessage);
 
-          await usingWebSocketClient<WebSocketSchema<{ '/': { message: ArrayBuffer } }>>(baseURL, async (client) => {
-            await usingIgnoredConsole(['warn', 'error'], async (console) => {
-              const message = createBinaryMessage(1, 2);
-              client.send(message);
+        await usingWebSocketClient<
+          WebSocketSchema<{
+            '/': { message: ArrayBuffer };
+          }>
+        >(baseURL, async (client) => {
+          await usingIgnoredConsole(['warn', 'error'], async (console) => {
+            const message = createBinaryMessage(1, 2);
+            client.send(message);
 
-              await waitFor(() => {
-                expect(console.warn).toHaveBeenCalledTimes(1);
-              });
-              expect(console.error).toHaveBeenCalledTimes(0);
-
-              await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
-                data: message,
-                url: client.url,
-                platform,
-              });
-
-              expect(client.readyState).toBe(WebSocketClient.OPEN);
+            await waitFor(() => {
+              expect(console.warn).toHaveBeenCalledTimes(1);
             });
+            expect(console.error).toHaveBeenCalledTimes(0);
+
+            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+              data: message,
+              url: client.url,
+              platform,
+            });
+
+            expect(client.readyState).toBe(WebSocketClient.OPEN);
           });
-        },
-      );
+        });
+      });
     });
 
     it('should show a warning when logging is enabled and messages are unhandled due to restrictions', async () => {

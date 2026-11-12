@@ -34,7 +34,11 @@ import { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '../../..
 import { RemoteWebSocketInterceptorWorkerOptions, WebSocketInterceptorWorkerOptions } from '../../types/options';
 
 type ChatMessage = { type: 'client'; text: string } | { type: 'server'; text: string };
-type ChatSchema = WebSocketSchema<{ '/': { message: ChatMessage } }>;
+type ChatSchema = WebSocketSchema<{
+  '/': {
+    message: ChatMessage;
+  };
+}>;
 
 type HttpSchemaWithUsers = HttpSchema<{
   '/users': {

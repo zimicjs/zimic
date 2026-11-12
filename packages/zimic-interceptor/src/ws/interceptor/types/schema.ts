@@ -16,19 +16,21 @@ import { LocalWebSocketInterceptor, RemoteWebSocketInterceptor } from './public'
  *
  * @example
  *   import {
- *     createWebSocketInterceptor,
- *     type InferWebSocketInterceptorSchema,
+ *   createWebSocketInterceptor,
+ *   type InferWebSocketInterceptorSchema,
  *   } from '@zimic/interceptor/experimental/ws';
  *   import { type WebSocketSchema } from '@zimic/ws';
  *
  *   const interceptor = createWebSocketInterceptor<
- *     WebSocketSchema<{ '/rooms/:roomId': { message: { type: 'ping' } | { type: 'pong' } } }>
+ *   WebSocketSchema<{ '/rooms/:roomId': {
+ *   message: { type: 'ping' } | { type: 'pong' } } }>
  *   >({
- *     baseURL: 'ws://localhost:3000',
+ *   baseURL: 'ws://localhost:3000',
  *   });
  *
  *   type Schema = InferWebSocketInterceptorSchema<typeof interceptor>;
- *   // WebSocketSchema<{ '/rooms/:roomId': { message: { type: 'ping' } | { type: 'pong' } } }>
+ *   // WebSocketSchema<{ '/rooms/:roomId': {
+ *   message: { type: 'ping' } | { type: 'pong' } } }>
  */
 export type InferWebSocketInterceptorSchema<Interceptor> =
   Interceptor extends LocalWebSocketInterceptor<infer Schema>

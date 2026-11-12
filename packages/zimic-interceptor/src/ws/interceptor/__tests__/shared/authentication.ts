@@ -13,7 +13,12 @@ import { createWebSocketInterceptor } from '../../factory';
 import { WebSocketInterceptorAuthOptions, WebSocketInterceptorPlatform } from '../../types/options';
 
 type ChatMessage = { type: 'client'; text: string } | { type: 'server'; text: string };
-type ChatSchema = WebSocketSchema<{ '/': { message: ChatMessage } }>;
+
+type ChatSchema = WebSocketSchema<{
+  '/': {
+    message: ChatMessage;
+  };
+}>;
 
 interface SharedAuthenticationWebSocketInterceptorTestsOptions {
   platform: WebSocketInterceptorPlatform;

@@ -19,14 +19,25 @@ import { WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type Message = { type: 'create'; body: { text: string; priority?: number } } | { type: 'delete'; id: string };
+
 type MessageSchema = WebSocketSchema<{
   '/': {
     connection: { searchParams: { token?: string; blocked?: string }; protocols: 'chat' | 'legacy' };
     message: Message;
   };
 }>;
-type TextSchema = WebSocketSchema<{ '/': { message: string } }>;
-type BinarySchema = WebSocketSchema<{ '/': { message: Blob } }>;
+
+type TextSchema = WebSocketSchema<{
+  '/': {
+    message: string;
+  };
+}>;
+
+type BinarySchema = WebSocketSchema<{
+  '/': {
+    message: Blob;
+  };
+}>;
 
 export function declareRestrictionWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { getBaseURL, getInterceptorOptions } = options;

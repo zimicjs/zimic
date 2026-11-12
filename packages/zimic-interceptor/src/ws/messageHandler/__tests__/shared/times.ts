@@ -634,39 +634,48 @@ export function declareTimesWebSocketMessageHandlerTests(
       });
 
       it('should consider messages unmatched due to array buffer data messages in times check errors', async () => {
-        await usingWebSocketInterceptor<WebSocketSchema<{ '/': { message: ArrayBuffer } }>>(
-          { type, baseURL, messageSaving: { enabled: true } },
-          async (interceptor) => {
-            const handler = await interceptor
-              .message()
-              .with(createBinaryMessage(1, 2))
-              .respond(createBinaryMessage(5, 6))
-              .times(1);
+        await usingWebSocketInterceptor<
+          WebSocketSchema<{
+            '/': {
+              message: ArrayBuffer;
+            };
+          }>
+        >({ type, baseURL, messageSaving: { enabled: true } }, async (interceptor) => {
+          const handler = await interceptor
+            .message()
+            .with(createBinaryMessage(1, 2))
+            .respond(createBinaryMessage(5, 6))
+            .times(1);
 
-            await usingWebSocketClient<WebSocketSchema<{ '/': { message: ArrayBuffer } }>>(baseURL, async (client) => {
-              client.send(createBinaryMessage(3, 4));
+          await usingWebSocketClient<
+            WebSocketSchema<{
+              '/': {
+                message: ArrayBuffer;
+              };
+            }>
+          >(baseURL, async (client) => {
+            client.send(createBinaryMessage(3, 4));
 
-              await waitFor(() =>
-                expectWebSocketTimesCheckError(() => handler.checkTimes(), {
-                  message: [
-                    'Expected exactly 1 matching message, but got 0.',
-                    '',
-                    'Messages evaluated by this handler:',
-                    '',
-                    `  ${color.green('- Expected')}`,
-                    `  ${color.red('+ Received')}`,
-                    '',
-                    '1: ArrayBuffer { byteLength: 2 }',
-                    '     Data:',
-                    `       ${color.green('- ArrayBuffer { byteLength: 2 }')}`,
-                    `       ${color.red('+ ArrayBuffer { byteLength: 2 }')}`,
-                  ].join('\n'),
-                  expectedNumberOfMatches: 1,
-                }),
-              );
-            });
-          },
-        );
+            await waitFor(() =>
+              expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                message: [
+                  'Expected exactly 1 matching message, but got 0.',
+                  '',
+                  'Messages evaluated by this handler:',
+                  '',
+                  `  ${color.green('- Expected')}`,
+                  `  ${color.red('+ Received')}`,
+                  '',
+                  '1: ArrayBuffer { byteLength: 2 }',
+                  '     Data:',
+                  `       ${color.green('- ArrayBuffer { byteLength: 2 }')}`,
+                  `       ${color.red('+ ArrayBuffer { byteLength: 2 }')}`,
+                ].join('\n'),
+                expectedNumberOfMatches: 1,
+              }),
+            );
+          });
+        });
       });
 
       // No WebSocket message counterpart for "should consider requests unmatched due to search params matched requests
@@ -676,113 +685,137 @@ export function declareTimesWebSocketMessageHandlerTests(
       // times check errors": WebSocket frames carry only text or binary data.
 
       it('should consider messages unmatched due to blob data messages in times check errors', async () => {
-        await usingWebSocketInterceptor<WebSocketSchema<{ '/': { message: Blob } }>>(
-          { type, baseURL, messageSaving: { enabled: true } },
-          async (interceptor) => {
-            const restrictedBlob = new Blob(['1'], { type: 'application/octet-stream' });
-            const blob = new Blob(['blob'], { type: 'text/plain' });
+        await usingWebSocketInterceptor<
+          WebSocketSchema<{
+            '/': {
+              message: Blob;
+            };
+          }>
+        >({ type, baseURL, messageSaving: { enabled: true } }, async (interceptor) => {
+          const restrictedBlob = new Blob(['1'], { type: 'application/octet-stream' });
+          const blob = new Blob(['blob'], { type: 'text/plain' });
 
-            const handler = await interceptor
-              .message()
-              .with(restrictedBlob)
-              .respond(new Blob(['response']))
-              .times(1);
+          const handler = await interceptor
+            .message()
+            .with(restrictedBlob)
+            .respond(new Blob(['response']))
+            .times(1);
 
-            await usingWebSocketClient<WebSocketSchema<{ '/': { message: Blob } }>>(baseURL, async (client) => {
-              client.send(blob);
+          await usingWebSocketClient<
+            WebSocketSchema<{
+              '/': {
+                message: Blob;
+              };
+            }>
+          >(baseURL, async (client) => {
+            client.send(blob);
 
-              await waitFor(() =>
-                expectWebSocketTimesCheckError(() => handler.checkTimes(), {
-                  message: [
-                    'Expected exactly 1 matching message, but got 0.',
-                    '',
-                    'Messages evaluated by this handler:',
-                    '',
-                    `  ${color.green('- Expected')}`,
-                    `  ${color.red('+ Received')}`,
-                    '',
-                    '1: ArrayBuffer { byteLength: 4 }',
-                    '     Data:',
-                    `       ${color.green("- Blob { type: 'application/octet-stream', size: 1 }")}`,
-                    `       ${color.red('+ ArrayBuffer { byteLength: 4 }')}`,
-                  ].join('\n'),
-                  expectedNumberOfMatches: 1,
-                }),
-              );
-            });
-          },
-        );
+            await waitFor(() =>
+              expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                message: [
+                  'Expected exactly 1 matching message, but got 0.',
+                  '',
+                  'Messages evaluated by this handler:',
+                  '',
+                  `  ${color.green('- Expected')}`,
+                  `  ${color.red('+ Received')}`,
+                  '',
+                  '1: ArrayBuffer { byteLength: 4 }',
+                  '     Data:',
+                  `       ${color.green("- Blob { type: 'application/octet-stream', size: 1 }")}`,
+                  `       ${color.red('+ ArrayBuffer { byteLength: 4 }')}`,
+                ].join('\n'),
+                expectedNumberOfMatches: 1,
+              }),
+            );
+          });
+        });
       });
 
       it('should consider messages unmatched due to plain-text matched messages in times check errors', async () => {
-        await usingWebSocketInterceptor<WebSocketSchema<{ '/': { message: string } }>>(
-          { type, baseURL, messageSaving: { enabled: true } },
-          async (interceptor) => {
-            const handler = await interceptor.message().with('example').respond('response').times(1);
+        await usingWebSocketInterceptor<
+          WebSocketSchema<{
+            '/': {
+              message: string;
+            };
+          }>
+        >({ type, baseURL, messageSaving: { enabled: true } }, async (interceptor) => {
+          const handler = await interceptor.message().with('example').respond('response').times(1);
 
-            await usingWebSocketClient<WebSocketSchema<{ '/': { message: string } }>>(baseURL, async (client) => {
-              client.send('text');
+          await usingWebSocketClient<
+            WebSocketSchema<{
+              '/': {
+                message: string;
+              };
+            }>
+          >(baseURL, async (client) => {
+            client.send('text');
 
-              await waitFor(() =>
-                expectWebSocketTimesCheckError(() => handler.checkTimes(), {
-                  message: [
-                    'Expected exactly 1 matching message, but got 0.',
-                    '',
-                    'Messages evaluated by this handler:',
-                    '',
-                    `  ${color.green('- Expected')}`,
-                    `  ${color.red('+ Received')}`,
-                    '',
-                    '1: text',
-                    '     Data:',
-                    `       ${color.green('- example')}`,
-                    `       ${color.red('+ text')}`,
-                  ].join('\n'),
-                  expectedNumberOfMatches: 1,
-                }),
-              );
-            });
-          },
-        );
+            await waitFor(() =>
+              expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                message: [
+                  'Expected exactly 1 matching message, but got 0.',
+                  '',
+                  'Messages evaluated by this handler:',
+                  '',
+                  `  ${color.green('- Expected')}`,
+                  `  ${color.red('+ Received')}`,
+                  '',
+                  '1: text',
+                  '     Data:',
+                  `       ${color.green('- example')}`,
+                  `       ${color.red('+ text')}`,
+                ].join('\n'),
+                expectedNumberOfMatches: 1,
+              }),
+            );
+          });
+        });
       });
 
       it('should consider messages unmatched due to typed array data messages in times check errors', async () => {
-        await usingWebSocketInterceptor<WebSocketSchema<{ '/': { message: Uint8Array<ArrayBuffer> } }>>(
-          { type, baseURL, messageSaving: { enabled: true } },
-          async (interceptor) => {
-            const handler = await interceptor
-              .message()
-              .with(new Uint8Array([1, 2]))
-              .respond(new Uint8Array([5, 6]))
-              .times(1);
+        await usingWebSocketInterceptor<
+          WebSocketSchema<{
+            '/': {
+              message: Uint8Array<ArrayBuffer>;
+            };
+          }>
+        >({ type, baseURL, messageSaving: { enabled: true } }, async (interceptor) => {
+          const handler = await interceptor
+            .message()
+            .with(new Uint8Array([1, 2]))
+            .respond(new Uint8Array([5, 6]))
+            .times(1);
 
-            await usingWebSocketClient<WebSocketSchema<{ '/': { message: Uint8Array<ArrayBuffer> } }>>(
-              baseURL,
-              async (client) => {
-                client.send(new Uint8Array([3, 4]));
+          await usingWebSocketClient<
+            WebSocketSchema<{
+              '/': {
+                message: Uint8Array<ArrayBuffer>;
+              };
+            }>
+          >(baseURL, async (client) => {
+            client.send(new Uint8Array([3, 4]));
 
-                await waitFor(() =>
-                  expectWebSocketTimesCheckError(() => handler.checkTimes(), {
-                    message: [
-                      'Expected exactly 1 matching message, but got 0.',
-                      '',
-                      'Messages evaluated by this handler:',
-                      '',
-                      `  ${color.green('- Expected')}`,
-                      `  ${color.red('+ Received')}`,
-                      '',
-                      '1: ArrayBuffer { byteLength: 2 }',
-                      '     Data:',
-                      `       ${color.green('- Uint8Array { byteLength: 2 }')}`,
-                      `       ${color.red('+ ArrayBuffer { byteLength: 2 }')}`,
-                    ].join('\n'),
-                    expectedNumberOfMatches: 1,
-                  }),
-                );
-              },
+            await waitFor(() =>
+              expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                message: [
+                  'Expected exactly 1 matching message, but got 0.',
+                  '',
+                  'Messages evaluated by this handler:',
+                  '',
+                  `  ${color.green('- Expected')}`,
+                  `  ${color.red('+ Received')}`,
+                  '',
+                  '1: ArrayBuffer { byteLength: 2 }',
+                  '     Data:',
+                  `       ${color.green('- Uint8Array { byteLength: 2 }')}`,
+                  `       ${color.red('+ ArrayBuffer { byteLength: 2 }')}`,
+                ].join('\n'),
+                expectedNumberOfMatches: 1,
+              }),
             );
-          },
-        );
+          });
+        });
       });
 
       it('should consider messages unmatched due to sender restrictions in times check errors', async () => {

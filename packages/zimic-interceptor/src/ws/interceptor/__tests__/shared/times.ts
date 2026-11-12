@@ -23,11 +23,23 @@ import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../typ
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
 type Message = { type: 'create'; body: { text: string } } | { type: 'delete'; id: string };
+
 type MessageSchema = WebSocketSchema<{
-  '/': { connection: { protocols: 'legacy' | 'first' | 'second' }; message: Message };
-  '/users': { connection: { searchParams: { value?: string } }; message: Message };
+  '/': {
+    connection: { protocols: 'legacy' | 'first' | 'second' };
+    message: Message;
+  };
+  '/users': {
+    connection: { searchParams: { value?: string } };
+    message: Message;
+  };
 }>;
-type BinarySchema = WebSocketSchema<{ '/': { message: ArrayBuffer | Blob } }>;
+
+type BinarySchema = WebSocketSchema<{
+  '/': {
+    message: ArrayBuffer | Blob;
+  };
+}>;
 
 export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;

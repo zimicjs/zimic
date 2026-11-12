@@ -21,8 +21,12 @@ import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../WebSocketInterceptorImplemen
 import { RuntimeSharedWebSocketInterceptorTestsOptions, verifyUnhandledMessageWarning } from './utils';
 
 type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
+
 // These tests connect to generated URLs under each base URL, so the schema accepts any path.
-type MessageSchema = WebSocketSchema<{ [path: string]: { message: Message } }>;
+
+type MessageSchema = WebSocketSchema<{
+  [path: string]: { message: Message };
+}>;
 
 export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getOtherBaseURL, getInterceptorOptions } = options;

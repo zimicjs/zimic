@@ -1,6 +1,6 @@
 import { waitFor } from '@zimic/utils/time';
 import { ValidationError } from '@zimic/utils/validation';
-import { WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
+import { WebSocketSchema } from '@zimic/ws';
 import { expect, it, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
@@ -16,10 +16,28 @@ import {
 import type { WebSocketInterceptorType } from '../../types/options';
 import type { WebSocketInterceptor } from '../../types/public';
 
-type ChatSchema = WebSocketSchema<{ '/': { message: { type: 'server'; text: string } } }>;
-type ChatMessage = WebSocketSchemaMessage<ChatSchema>;
-type BinaryMessage = WebSocketSchema<{ '/': { message: ArrayBuffer } }>;
-type BinaryOrTextMessage = WebSocketSchema<{ '/': { message: Blob | string } }>;
+interface ChatMessage {
+  type: 'server';
+  text: string;
+}
+
+type ChatSchema = WebSocketSchema<{
+  '/': {
+    message: ChatMessage;
+  };
+}>;
+
+type BinaryMessage = WebSocketSchema<{
+  '/': {
+    message: ArrayBuffer;
+  };
+}>;
+
+type BinaryOrTextMessage = WebSocketSchema<{
+  '/': {
+    message: Blob | string;
+  };
+}>;
 
 interface SharedWebSocketInterceptorSendsTestsOptions {
   type: WebSocketInterceptorType;
@@ -200,7 +218,11 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
   )(
     'should deliver $dataType server messages as the $binaryType binary type of clients',
     async ({ createMessage, binaryType, receivedMessageType }) => {
-      type BinaryBufferMessage = WebSocketSchema<{ '/': { message: Blob | BufferSource } }>;
+      type BinaryBufferMessage = WebSocketSchema<{
+        '/': {
+          message: Blob | BufferSource;
+        };
+      }>;
 
       const baseURL = getBaseURL();
 

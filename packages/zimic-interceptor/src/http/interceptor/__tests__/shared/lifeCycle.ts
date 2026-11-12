@@ -203,17 +203,20 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
     }>(interceptorOptions, async (interceptor) => {
       await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
 
-      await usingWebSocketInterceptor<WebSocketSchema<{ '/': { message: string } }>>(
-        { type: 'local', baseURL: webSocketBaseURL },
-        async (webSocketInterceptor) => {
-          await webSocketInterceptor.stop();
-          await webSocketInterceptor.start();
-          expect(webSocketInterceptor.isRunning).toBe(true);
+      await usingWebSocketInterceptor<
+        WebSocketSchema<{
+          '/': {
+            message: string;
+          };
+        }>
+      >({ type: 'local', baseURL: webSocketBaseURL }, async (webSocketInterceptor) => {
+        await webSocketInterceptor.stop();
+        await webSocketInterceptor.start();
+        expect(webSocketInterceptor.isRunning).toBe(true);
 
-          const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-          expect(response.status).toBe(204);
-        },
-      );
+        const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        expect(response.status).toBe(204);
+      });
     });
   });
 

@@ -11,7 +11,12 @@ import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../typ
 import { RuntimeSharedWebSocketInterceptorTestsOptions, verifyUnhandledMessageWarning } from './utils';
 
 type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
-type MessageSchema = WebSocketSchema<{ '/': { message: Message } }>;
+
+type MessageSchema = WebSocketSchema<{
+  '/': {
+    message: Message;
+  };
+}>;
 
 export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
   options: RuntimeSharedWebSocketInterceptorTestsOptions,

@@ -23,14 +23,33 @@ import type { LocalWebSocketInterceptor, RemoteWebSocketInterceptor, WebSocketIn
 import { MAX_CLOSE_REASON_BYTE_LENGTH } from '../../WebSocketInterceptorHandle';
 
 type ChatSchema = WebSocketSchema<{
-  '/': { message: { type: 'server'; text: string } };
-  '/rooms/:roomId': { message: { type: 'server'; text: string } };
-  '/other': { message: { type: 'server'; text: string } };
-  '/decided': { message: { type: 'server'; text: string } };
+  '/': {
+    message: { type: 'server'; text: string };
+  };
+  '/rooms/:roomId': {
+    message: { type: 'server'; text: string };
+  };
+  '/other': {
+    message: { type: 'server'; text: string };
+  };
+  '/decided': {
+    message: { type: 'server'; text: string };
+  };
 }>;
+
 type ChatMessage = WebSocketSchemaMessage<ChatSchema>;
-type BinaryMessage = WebSocketSchema<{ '/': { message: ArrayBuffer } }>;
-type BinaryOrTextMessage = WebSocketSchema<{ '/': { message: Blob | string } }>;
+
+type BinaryMessage = WebSocketSchema<{
+  '/': {
+    message: ArrayBuffer;
+  };
+}>;
+
+type BinaryOrTextMessage = WebSocketSchema<{
+  '/': {
+    message: Blob | string;
+  };
+}>;
 
 interface SharedWebSocketInterceptorConnectionsTestsOptions {
   type: WebSocketInterceptorType;
