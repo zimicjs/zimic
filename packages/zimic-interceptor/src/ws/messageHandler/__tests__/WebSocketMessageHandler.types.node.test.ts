@@ -112,6 +112,30 @@ describe('WebSocketMessageHandler > Types', () => {
     expectTypeOf(declareHandler).toBeFunction();
   });
 
+  it('should type messages from the handler path', () => {
+    function declareHandler(
+      interceptor: LocalWebSocketInterceptor<PathKeyedSchema>,
+      healthMessageData: WebSocketMessageData<HealthMessage>,
+    ) {
+      const handler = interceptor.message('/rooms/:roomId');
+
+      handler.effect((message, context) => {
+        expectTypeOf(message).toEqualTypeOf<RoomMessage>();
+        expectTypeOf(context.sender.send).parameter(0).toEqualTypeOf<WebSocketMessageData<RoomMessage>>();
+
+        // @ts-expect-error The message belongs to another path.
+        context.sender.send(healthMessageData);
+      });
+
+      handler.respond({ type: 'chat', text: 'hello' });
+
+      // @ts-expect-error The message belongs to another path.
+      handler.respond({ type: 'ping' });
+    }
+
+    expectTypeOf(declareHandler).toBeFunction();
+  });
+
   it('should type the handler path from the declared path', () => {
     function declareHandler(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
       expectTypeOf(interceptor.message('/rooms/:roomId').path).toEqualTypeOf<'/rooms/:roomId' | undefined>();

@@ -163,9 +163,17 @@ describe('WebSocketConnectionHandler > Types', () => {
   });
 
   it('should type clients with the messages of the declared path', () => {
-    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+    function declareHandlers(
+      interceptor: LocalWebSocketInterceptor<PathKeyedSchema>,
+      healthMessage: WebSocketMessageData<{ type: 'ping' }>,
+    ) {
       interceptor.connection('/rooms/:roomId').effect((client) => {
-        expectTypeOf(client).toEqualTypeOf<WebSocketInterceptorClient<PathKeyedSchema, '/rooms/:roomId'>>();
+        expectTypeOf<Parameters<typeof client.send>[0]>().toEqualTypeOf<
+          WebSocketMessageData<{ type: 'chat'; text: string }>
+        >();
+
+        // @ts-expect-error The message belongs to another path.
+        client.send(healthMessage);
       });
     }
 
