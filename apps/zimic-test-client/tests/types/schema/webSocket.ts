@@ -14,7 +14,7 @@ import {
   ValidationError,
 } from './entities';
 
-type AnyUserWebSocketMessage =
+export type UserWebSocketMessage =
   | {
       type: 'user:create';
       data: UserCreationInput;
@@ -53,17 +53,22 @@ type AnyUserWebSocketMessage =
     };
 
 export type UserWebSocketSchema = WebSocketSchema<{
-  '/': { message: AnyUserWebSocketMessage };
+  '/': {
+    message: UserWebSocketMessage;
+  };
+
   '/rooms/:roomId': {
     connection: { searchParams: { token?: string }; protocols: 'legacy-protocol' };
-    message: AnyUserWebSocketMessage;
+    message: UserWebSocketMessage;
   };
 }>;
 
-export type UserWebSocketMessage<Type extends AnyUserWebSocketMessage['type'] = AnyUserWebSocketMessage['type']> =
-  Extract<AnyUserWebSocketMessage, { type: Type }>;
+export type UserWebSocketMessageOfType<Type extends UserWebSocketMessage['type']> = Extract<
+  UserWebSocketMessage,
+  { type: Type }
+>;
 
-type AnyNotificationWebSocketMessage =
+export type NotificationWebSocketMessage =
   | {
       type: 'notification:create:success';
       data: JSONSerialized<Notification>;
@@ -97,19 +102,28 @@ type AnyNotificationWebSocketMessage =
       data: ValidationError | InternalServerError;
     };
 
-export type NotificationWebSocketSchema = WebSocketSchema<{ '/': { message: AnyNotificationWebSocketMessage } }>;
+export type NotificationWebSocketSchema = WebSocketSchema<{
+  '/': {
+    message: NotificationWebSocketMessage;
+  };
+}>;
 
-export type NotificationWebSocketMessage<
-  Type extends AnyNotificationWebSocketMessage['type'] = AnyNotificationWebSocketMessage['type'],
-> = Extract<AnyNotificationWebSocketMessage, { type: Type }>;
+export type NotificationWebSocketMessageOfType<Type extends NotificationWebSocketMessage['type']> = Extract<
+  NotificationWebSocketMessage,
+  { type: Type }
+>;
 
 export type BinaryWebSocketMessage = BufferSource | Blob;
 
-export type BinaryWebSocketSchema = WebSocketSchema<{ '/': { message: BinaryWebSocketMessage } }>;
+export type BinaryWebSocketSchema = WebSocketSchema<{
+  '/': {
+    message: BinaryWebSocketMessage;
+  };
+}>;
 
 export interface UserSocketIOEvents {
-  'user:delete': UserWebSocketMessage<'user:delete'>['data'];
-  'user:delete:success': UserWebSocketMessage<'user:delete:success'>['data'];
+  'user:delete': UserWebSocketMessageOfType<'user:delete'>['data'];
+  'user:delete:success': UserWebSocketMessageOfType<'user:delete:success'>['data'];
 }
 
 export type UserSocketIOWebSocketSchema = SocketIOWebSocketSchema<UserSocketIOEvents>;

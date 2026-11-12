@@ -19,7 +19,9 @@ export type SocketIOEventFrame<Events, Event extends keyof Events & string = key
 
 type SocketIOFrame<Events> = SocketIOEngineFrame | SocketIOConnectFrame | SocketIOEventFrame<Events>;
 
-export type SocketIOWebSocketSchema<Events> = WebSocketSchema<{ '/socket.io/': { message: SocketIOFrame<Events> } }>;
+export type SocketIOWebSocketSchema<Events> = WebSocketSchema<{
+  '/socket.io/': { message: SocketIOFrame<Events> };
+}>;
 
 export type SocketIOHttpSchema = HttpSchema<{
   '/socket.io/': {
