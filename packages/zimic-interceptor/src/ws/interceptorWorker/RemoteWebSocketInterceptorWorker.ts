@@ -180,7 +180,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
   }
 
-  private enqueueSend<Schema extends WebSocketMessageSchema>(clientId: string, data: WebSocketMessageData<Schema>) {
+  private enqueueSend<Message extends WebSocketMessageSchema>(clientId: string, data: WebSocketMessageData<Message>) {
     return this.enqueueServerEvent(async () => {
       this.webSocketClient.send('interceptors/ws/messages/send', {
         clientId,

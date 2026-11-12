@@ -10,7 +10,7 @@ import {
   PendingRemoteWebSocketMessageHandler as PublicPendingRemoteWebSocketMessageHandler,
   WebSocketMessageHandlerMessageCallback,
   WebSocketMessageHandlerMessageDeclaration,
-  WebSocketMessageHandlerSchemaWithRestriction,
+  WebSocketMessageHandlerMessageWithRestriction,
 } from './types/public';
 import {
   WebSocketMessageHandlerRestriction,
@@ -82,14 +82,14 @@ class RemoteWebSocketMessageHandler<
   ): RemoteWebSocketMessageHandler<
     Schema,
     Path,
-    WebSocketMessageHandlerSchemaWithRestriction<RestrictedMessage, Restriction>
+    WebSocketMessageHandlerMessageWithRestriction<RestrictedMessage, Restriction>
   > {
     this.implementation.with(restriction, ...options);
 
     const pending = this.pending as unknown as RemoteWebSocketMessageHandler<
       Schema,
       Path,
-      WebSocketMessageHandlerSchemaWithRestriction<RestrictedMessage, Restriction>
+      WebSocketMessageHandlerMessageWithRestriction<RestrictedMessage, Restriction>
     >;
     return pending;
   }

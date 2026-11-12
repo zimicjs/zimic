@@ -19,10 +19,10 @@ import { DeclaredWebSocketInterceptorPath, WebSocketInterceptorPathMessage } fro
  * `'true'`. Binary messages arrive as `ArrayBuffer`, regardless of whether the client sent a `Blob`, an `ArrayBuffer`,
  * or an `ArrayBufferView`, because WebSocket binary frames carry only raw bytes.
  */
-export type ReceivedWebSocketMessageData<Schema extends WebSocketMessageSchema> =
-  Schema extends UnparsedWebSocketJSONPrimitive
-    ? UnparsedWebSocketJSONPrimitiveText<Schema>
-    : Replace<Schema, Blob | ArrayBufferView, ArrayBuffer>;
+export type ReceivedWebSocketMessageData<Message extends WebSocketMessageSchema> =
+  Message extends UnparsedWebSocketJSONPrimitive
+    ? UnparsedWebSocketJSONPrimitiveText<Message>
+    : Replace<Message, Blob | ArrayBufferView, ArrayBuffer>;
 
 /**
  * The top-level JSON values that text messages keep as text, because only objects and arrays are parsed. Top-level
@@ -31,9 +31,9 @@ export type ReceivedWebSocketMessageData<Schema extends WebSocketMessageSchema> 
 export type UnparsedWebSocketJSONPrimitive = number | boolean;
 
 // Each kind maps to its text explicitly, so numeric literal members widen to any numeric text.
-type UnparsedWebSocketJSONPrimitiveText<Schema extends UnparsedWebSocketJSONPrimitive> = Schema extends true
+type UnparsedWebSocketJSONPrimitiveText<Message extends UnparsedWebSocketJSONPrimitive> = Message extends true
   ? 'true'
-  : Schema extends false
+  : Message extends false
     ? 'false'
     : `${number}`;
 

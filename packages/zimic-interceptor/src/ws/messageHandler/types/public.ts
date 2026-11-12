@@ -107,20 +107,20 @@ export type WebSocketMessageHandlerMessageDeclaration<
   | WebSocketMessageHandlerMessageStaticDeclaration<Schema, Path>
   | WebSocketMessageHandlerMessageComputedDeclaration<Schema, Path, RestrictedMessage>;
 
-type WebSocketMessageHandlerSchemaCompatibleWithStaticRestriction<
-  Schema extends WebSocketMessageSchema,
+type WebSocketMessageHandlerMessageCompatibleWithStaticRestriction<
+  Message extends WebSocketMessageSchema,
   Restriction,
-> = Schema extends unknown
-  ? [Schema, Restriction] extends [Blob | BufferSource, Exclude<Restriction, Blob | BufferSource>]
+> = Message extends unknown
+  ? [Message, Restriction] extends [Blob | BufferSource, Exclude<Restriction, Blob | BufferSource>]
     ? never
-    : Schema extends UnparsedWebSocketJSONPrimitive | string
+    : Message extends UnparsedWebSocketJSONPrimitive | string
       ? [Extract<Restriction, string>] extends [never]
         ? never
-        : Schema
-      : Schema extends Restriction
-        ? Schema
-        : Restriction extends WebSocketMessageHandlerStaticRestriction<Schema>
-          ? Schema
+        : Message
+      : Message extends Restriction
+        ? Message
+        : Restriction extends WebSocketMessageHandlerStaticRestriction<Message>
+          ? Message
           : never
   : never;
 
@@ -128,13 +128,13 @@ type WebSocketMessageHandlerSchemaCompatibleWithStaticRestriction<
  * The top-level number and boolean schema members whose received text overlaps a type-guard predicate, which may mix
  * the text of several members, such as `'42' | 'true'`.
  */
-type WebSocketMessageHandlerPrimitiveSchemaMatchingText<
-  Schema extends WebSocketMessageSchema,
+type WebSocketMessageHandlerPrimitiveMessageMatchingText<
+  Message extends WebSocketMessageSchema,
   Text,
-> = Schema extends UnparsedWebSocketJSONPrimitive
-  ? [Extract<Text, ReceivedWebSocketMessageData<Schema>>] extends [never]
+> = Message extends UnparsedWebSocketJSONPrimitive
+  ? [Extract<Text, ReceivedWebSocketMessageData<Message>>] extends [never]
     ? never
-    : Schema
+    : Message
   : never;
 
 /**
@@ -142,24 +142,24 @@ type WebSocketMessageHandlerPrimitiveSchemaMatchingText<
  * accepting `ArrayBuffer` keeps every binary schema member. They also receive top-level number and boolean members as
  * text, so a predicate accepting that text keeps the member.
  */
-type WebSocketMessageHandlerSchemaCompatibleWithTypeGuard<Schema extends WebSocketMessageSchema, Predicate> =
-  | Extract<Predicate, Schema>
-  | ([Extract<Predicate, ArrayBuffer>] extends [never] ? never : Extract<Schema, Blob | BufferSource>)
-  | WebSocketMessageHandlerPrimitiveSchemaMatchingText<Schema, Predicate>;
+type WebSocketMessageHandlerMessageCompatibleWithTypeGuard<Message extends WebSocketMessageSchema, Predicate> =
+  | Extract<Predicate, Message>
+  | ([Extract<Predicate, ArrayBuffer>] extends [never] ? never : Extract<Message, Blob | BufferSource>)
+  | WebSocketMessageHandlerPrimitiveMessageMatchingText<Message, Predicate>;
 
 /**
  * The message type of a handler after applying a restriction. Type-guard restrictions narrow to their predicate and
  * static restrictions narrow to the schema members compatible with them. Text restrictions keep every member received
  * as text, because any of them may include the restriction. Other restrictions keep the current type.
  */
-export type WebSocketMessageHandlerSchemaWithRestriction<Schema extends WebSocketMessageSchema, Restriction> =
-  Restriction extends WebSocketMessageHandlerComputedTypeGuardRestriction<Schema, infer Predicate>
+export type WebSocketMessageHandlerMessageWithRestriction<Message extends WebSocketMessageSchema, Restriction> =
+  Restriction extends WebSocketMessageHandlerComputedTypeGuardRestriction<Message, infer Predicate>
     ? [Predicate] extends [never]
-      ? Schema
-      : WebSocketMessageHandlerSchemaCompatibleWithTypeGuard<Schema, Predicate>
-    : Restriction extends WebSocketMessageHandlerStaticRestriction<Schema>
-      ? WebSocketMessageHandlerSchemaCompatibleWithStaticRestriction<Schema, Restriction>
-      : Schema;
+      ? Message
+      : WebSocketMessageHandlerMessageCompatibleWithTypeGuard<Message, Predicate>
+    : Restriction extends WebSocketMessageHandlerStaticRestriction<Message>
+      ? WebSocketMessageHandlerMessageCompatibleWithStaticRestriction<Message, Restriction>
+      : Message;
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -206,7 +206,7 @@ export interface LocalWebSocketMessageHandler<
   ) => LocalWebSocketMessageHandler<
     Schema,
     Path,
-    WebSocketMessageHandlerSchemaWithRestriction<RestrictedMessage, Restriction>
+    WebSocketMessageHandlerMessageWithRestriction<RestrictedMessage, Restriction>
   >;
 
   /** Declares a delay to wait before running effects or responding to matched messages. */
@@ -285,7 +285,7 @@ export interface SyncedRemoteWebSocketMessageHandler<
   ) => PendingRemoteWebSocketMessageHandler<
     Schema,
     Path,
-    WebSocketMessageHandlerSchemaWithRestriction<RestrictedMessage, Restriction>
+    WebSocketMessageHandlerMessageWithRestriction<RestrictedMessage, Restriction>
   >;
 
   /** Declares a delay to wait before running effects or responding to matched messages. */

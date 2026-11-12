@@ -65,36 +65,36 @@ export async function convertWebSocketMessageDataToBinaryType(
   return data instanceof Blob ? data.arrayBuffer() : normalizeBufferSource(data);
 }
 
-export async function normalizeWebSocketMessageData<Schema extends WebSocketMessageSchema>(
-  data: Schema | WebSocketMessageData<Schema>,
-): Promise<ReceivedWebSocketMessageData<Schema>> {
+export async function normalizeWebSocketMessageData<Message extends WebSocketMessageSchema>(
+  data: Message | WebSocketMessageData<Message>,
+): Promise<ReceivedWebSocketMessageData<Message>> {
   if (typeof data === 'string') {
     const normalizedStringData = tryParseJSONMessageData(data);
-    return normalizedStringData as ReceivedWebSocketMessageData<Schema>;
+    return normalizedStringData as ReceivedWebSocketMessageData<Message>;
   }
 
   // WebSocket binary frames carry only raw bytes, so a real server never receives a `Blob` or a typed array view.
   if (data instanceof Blob) {
-    return (await data.arrayBuffer()) as ReceivedWebSocketMessageData<Schema>;
+    return (await data.arrayBuffer()) as ReceivedWebSocketMessageData<Message>;
   }
 
   if (isWebSocketBinaryMessageData(data)) {
-    return normalizeBufferSource(data as BufferSource) as ReceivedWebSocketMessageData<Schema>;
+    return normalizeBufferSource(data as BufferSource) as ReceivedWebSocketMessageData<Message>;
   }
 
-  return data as ReceivedWebSocketMessageData<Schema>;
+  return data as ReceivedWebSocketMessageData<Message>;
 }
 
-export function serializeWebSocketMessageDataForSocket<Schema extends WebSocketMessageSchema>(
-  data: Schema | WebSocketMessageData<Schema> | undefined,
-): WebSocketMessageData<Schema> {
+export function serializeWebSocketMessageDataForSocket<Message extends WebSocketMessageSchema>(
+  data: Message | WebSocketMessageData<Message> | undefined,
+): WebSocketMessageData<Message> {
   if (isWebSocketBinaryMessageData(data) || typeof data === 'string') {
-    return data as WebSocketMessageData<Schema>;
+    return data as WebSocketMessageData<Message>;
   }
 
   const serializedData = JSON.stringify(data);
   assertTypeOf('serialized WebSocket message data', serializedData, 'string');
-  return serializedData as unknown as WebSocketMessageData<Schema>;
+  return serializedData as unknown as WebSocketMessageData<Message>;
 }
 
 export async function serializeWebSocketMessageDataForTransport(
