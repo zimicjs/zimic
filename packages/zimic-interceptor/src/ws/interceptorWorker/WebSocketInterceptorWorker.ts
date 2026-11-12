@@ -18,7 +18,16 @@ import {
   WebSocketInterceptorConnectionRequest,
 } from '../interceptor/types/messages';
 import { WebSocketInterceptorPlatform } from '../interceptor/types/options';
-import { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
+import type {
+  WebSocketInterceptorProtocol,
+  WebSocketInterceptorProtocolClient,
+  WebSocketInterceptorProtocolClientOptions,
+  WebSocketInterceptorProtocolFrame,
+} from '../interceptor/types/protocol';
+import {
+  createWebSocketInterceptorClient,
+  InternalWebSocketInterceptorClient,
+} from '../interceptor/WebSocketInterceptorHandle';
 import WebSocketInterceptorImplementation, {
   AnyWebSocketInterceptorImplementation,
 } from '../interceptor/WebSocketInterceptorImplementation';
@@ -85,6 +94,7 @@ abstract class WebSocketInterceptorWorker {
   private runningInterceptors: AnyWebSocketInterceptorImplementation[] = [];
   private messageHandlers: WebSocketMessageHandler[] = [];
   private connectionHandlers: WebSocketConnectionHandler[] = [];
+  private protocolFrameDecodings = new WeakMap<InternalWebSocketInterceptorClient, Promise<unknown>>();
 
   abstract start(): Promise<void>;
 
@@ -337,6 +347,95 @@ abstract class WebSocketInterceptorWorker {
     } catch (error) {
       console.error(error);
     }
+  }
+
+  // A protocol decides what each frame means to its interceptor, as interceptors may decode different messages from one
+  // frame, such as Socket.IO namespaces sharing a connection. So, unlike messages of holders without a protocol, which
+  // are tried together, each protocol holder handles what it decodes.
+  async handleFrameWithHandlers(
+    frame: WebSocketMessageData<WebSocketMessageSchema>,
+    holders: WebSocketConnectionHolder[],
+  ) {
+    const plainHolders = holders.filter((holder) => !holder.interceptor.protocol);
+
+    await Promise.all([
+      plainHolders.length > 0 ? this.handleMessageWithHandlers(frame, plainHolders) : undefined,
+      ...holders.map(async (holder) => {
+        const { protocol } = holder.interceptor;
+        return protocol ? this.handleProtocolFrame(frame, holder, protocol) : undefined;
+      }),
+    ]);
+  }
+
+  private async handleProtocolFrame(
+    frame: WebSocketMessageData<WebSocketMessageSchema>,
+    holder: WebSocketConnectionHolder,
+    protocol: WebSocketInterceptorProtocol<unknown>,
+  ) {
+    try {
+      const messages = await this.decodeFrameInOrder(frame, holder, protocol);
+
+      for (const message of messages) {
+        await this.handleMessageWithHandlers(message as WebSocketMessageData<WebSocketMessageSchema>, [holder]);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  // Protocols may keep decoding state between frames, as with Socket.IO binary attachments, and reading a `Blob` frame
+  // takes longer than reading a later text frame.
+  private decodeFrameInOrder(
+    frame: WebSocketMessageData<WebSocketMessageSchema>,
+    holder: WebSocketConnectionHolder,
+    protocol: WebSocketInterceptorProtocol<unknown>,
+  ) {
+    const client = holder.client as WebSocketInterceptorProtocolClient;
+
+    const previousDecoding = this.protocolFrameDecodings.get(holder.client) ?? Promise.resolve();
+
+    const decoding = previousDecoding.then(async () => {
+      // Text frames are decoded by the protocol, so they stay unparsed.
+      const normalizedFrame =
+        typeof frame === 'string' ? frame : await normalizeWebSocketMessageData<WebSocketMessageSchema>(frame);
+      return protocol.decode(normalizedFrame as unknown as WebSocketInterceptorProtocolFrame, client);
+    });
+
+    this.protocolFrameDecodings.set(
+      holder.client,
+      decoding.catch(() => undefined),
+    );
+
+    return decoding;
+  }
+
+  // Runs the connection handlers of one interceptor for a client on a transport other than a WebSocket connection.
+  async openProtocolClient(
+    interceptor: AnyWebSocketInterceptorImplementation,
+    options: WebSocketInterceptorProtocolClientOptions,
+  ): Promise<InternalWebSocketInterceptorClient | null> {
+    const handling = await this.handleConnectionWithHandlers(
+      { url: options.url, protocols: [] },
+      (candidate) => candidate === interceptor,
+    );
+
+    if (handling.action === 'reject') {
+      return null;
+    }
+
+    const client = createWebSocketInterceptorClient({
+      url: options.url,
+      protocols: [],
+      connectionId: options.connectionId,
+      send: (frame) => options.sendFrame(frame as WebSocketInterceptorProtocolFrame),
+      close: options.close,
+      protocol: interceptor.protocol,
+    });
+
+    interceptor.addClient(client);
+    void this.applyConnectionEffect(handling, [{ registeredInterceptor: { interceptor }, client }]);
+
+    return client;
   }
 
   // The handlers of all interceptors holding the connection are tried together, from the last created to the first, so

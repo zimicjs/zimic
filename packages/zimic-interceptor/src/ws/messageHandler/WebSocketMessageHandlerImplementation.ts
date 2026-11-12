@@ -1,7 +1,7 @@
 import { blobEquals, jsonContains, jsonEquals } from '@zimic/utils/data';
 import { waitForDelay } from '@zimic/utils/time';
 import { Range } from '@zimic/utils/types';
-import { WebSocketMessageSchema, WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema } from '@zimic/ws';
 
 import { random } from '@/utils/numbers';
 
@@ -419,7 +419,12 @@ class WebSocketMessageHandlerImplementation<
     response: WebSocketInterceptorPathMessage<Schema, Path>,
     context: WebSocketMessageHandlerApplyContext<Schema, Path>,
   ) {
-    context.sender.send(serializeWebSocketMessageDataForSocket(response));
+    // A protocol encodes the message itself, including binary values JSON would lose.
+    context.sender.send(
+      this.interceptor.protocol
+        ? (response as WebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>)
+        : serializeWebSocketMessageDataForSocket(response),
+    );
   }
 
   saveInterceptedMessage(

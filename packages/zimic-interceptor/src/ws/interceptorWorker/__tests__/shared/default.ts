@@ -579,6 +579,9 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       await usingWebSocketInterceptorWorker(remoteWorkerOptions, { start: false }, async (worker) => {
         const interceptor = new WebSocketInterceptorImplementation<ChatSchema, typeof RemoteWebSocketMessageHandler>({
           baseURL: new URL(baseURL),
+          protocol: undefined,
+          type: 'remote',
+          getAuth: undefined,
           MessageHandler: RemoteWebSocketMessageHandler,
           ConnectionHandler: RemoteWebSocketConnectionHandler,
           createWorker: () => worker,
@@ -632,7 +635,14 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       await usingWebSocketInterceptorWorker(remoteWorkerOptions, async (worker) => {
         const interceptor = createDefaultWebSocketInterceptor();
         const send = vi.fn();
-        const client = createWebSocketInterceptorClient({ url: baseURL, protocols: [], send, close: vi.fn() });
+        const client = createWebSocketInterceptorClient({
+          url: baseURL,
+          protocols: [],
+          connectionId: crypto.randomUUID(),
+          send,
+          close: vi.fn(),
+          protocol: undefined,
+        });
 
         await expect(
           worker.sendToClient(client, JSON.stringify({ type: 'server', text: 'ignored client' })),
@@ -661,6 +671,9 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           typeof RemoteWebSocketMessageHandler
         >({
           baseURL: new URL(`${baseURL}/second`),
+          protocol: undefined,
+          type: 'remote',
+          getAuth: undefined,
           MessageHandler: RemoteWebSocketMessageHandler,
           ConnectionHandler: RemoteWebSocketConnectionHandler,
           createWorker: () => worker,
@@ -694,6 +707,9 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           typeof RemoteWebSocketMessageHandler
         >({
           baseURL: new URL(baseURL),
+          protocol: undefined,
+          type: 'remote',
+          getAuth: undefined,
           MessageHandler: RemoteWebSocketMessageHandler,
           ConnectionHandler: RemoteWebSocketConnectionHandler,
           createWorker: () => worker,
@@ -705,6 +721,9 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           typeof RemoteWebSocketMessageHandler
         >({
           baseURL: new URL(baseURL),
+          protocol: undefined,
+          type: 'remote',
+          getAuth: undefined,
           MessageHandler: RemoteWebSocketMessageHandler,
           ConnectionHandler: RemoteWebSocketConnectionHandler,
           createWorker: () => worker,
@@ -759,6 +778,9 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         >({
           baseURL: new URL(baseURL),
           onUnhandledMessage: firstOnUnhandledMessage,
+          protocol: undefined,
+          type: 'remote',
+          getAuth: undefined,
           MessageHandler: RemoteWebSocketMessageHandler,
           ConnectionHandler: RemoteWebSocketConnectionHandler,
           createWorker: () => worker,
@@ -771,6 +793,9 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         >({
           baseURL: new URL(baseURL),
           onUnhandledMessage: secondOnUnhandledMessage,
+          protocol: undefined,
+          type: 'remote',
+          getAuth: undefined,
           MessageHandler: RemoteWebSocketMessageHandler,
           ConnectionHandler: RemoteWebSocketConnectionHandler,
           createWorker: () => worker,

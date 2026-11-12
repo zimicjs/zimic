@@ -28,7 +28,7 @@ export function normalizeBufferSource(bufferSource: BufferSource): ArrayBuffer {
 // Unlike HTTP bodies without a content type, which are parsed as any JSON value, only objects and arrays are parsed.
 // WebSocket frames have no content type to declare JSON, and string schema members are sent as raw text, so text such
 // as `'42'`, `'true'`, `'null'`, or `'"message"'` stays a string.
-function tryParseJSONMessageData(data: string): unknown {
+export function tryParseJSONMessageData(data: string): unknown {
   const firstCharacter = data.trimStart()[0];
 
   if (firstCharacter !== '{' && firstCharacter !== '[') {

@@ -1,4 +1,8 @@
-import type { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '@zimic/interceptor/experimental/ws';
+import type {
+  WebSocketInterceptorPlatform,
+  WebSocketInterceptorProtocol,
+  WebSocketInterceptorType,
+} from '@zimic/interceptor/experimental/ws';
 import type { WebSocketMessageData, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 import { describe } from 'vitest';
 
@@ -53,6 +57,8 @@ export interface ClientTestOptions {
     url: string,
     protocols?: string | string[],
   ) => ClientTestWebSocket<Schema>;
+  // Creates the protocol of each interceptor, for clients of a framed protocol.
+  createProtocol?: () => WebSocketInterceptorProtocol;
 }
 
 export interface ClientTestOptionsByWorkerType extends ClientTestOptions {

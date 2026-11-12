@@ -81,6 +81,12 @@
       "require": "./dist/experimental/ws.js",
       "default": "./dist/experimental/ws.js"
     },
+    "./experimental/socket.io": {
+      "types": "./experimental/socket.io.d.ts",
+      "import": "./dist/experimental/socket.io.mjs",
+      "require": "./dist/experimental/socket.io.js",
+      "default": "./dist/experimental/socket.io.js"
+    },
     "./server": {
       "types": "./server.d.ts",
       "import": "./dist/server.mjs",
@@ -130,8 +136,12 @@
     "@zimic/utils": "workspace:*",
     "concurrently": "^10.0.6",
     "dotenv-cli": "^11.1.0",
+    "engine.io-parser": "^5.2.3",
     "eslint": "^10.14.0",
     "playwright": "^1.64.1",
+    "socket.io-client": "^4.8.4",
+    "socket.io-msgpack-parser": "^3.0.2",
+    "socket.io-parser": "^4.2.7",
     "tsup": "^9.0.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vite": "^8.3.5",
@@ -140,6 +150,9 @@
   "peerDependencies": {
     "@zimic/http": "workspace:^1.2.0",
     "@zimic/ws": "workspace:^0.2.0-canary.0",
+    "engine.io-parser": "^5.0.0",
+    "socket.io-client": "^3.0.0 || ^4.0.0",
+    "socket.io-parser": "^4.0.0",
     "typescript": "^5.0.0 || ^6.0.0 || ^7.0.0"
   },
   "peerDependenciesMeta": {
@@ -147,6 +160,15 @@
       "optional": true
     },
     "@zimic/ws": {
+      "optional": true
+    },
+    "engine.io-parser": {
+      "optional": true
+    },
+    "socket.io-client": {
+      "optional": true
+    },
+    "socket.io-parser": {
       "optional": true
     },
     "typescript": {
