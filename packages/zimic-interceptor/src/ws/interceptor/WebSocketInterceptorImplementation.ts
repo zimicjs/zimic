@@ -1,5 +1,5 @@
 import { excludeNonPathParams, validateURLProtocol } from '@zimic/utils/url';
-import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
+import { WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 
 import { removeArrayElement } from '@/utils/arrays';
 import { isServerSide } from '@/utils/environment';
@@ -17,7 +17,7 @@ import {
   AnyWebSocketMessageHandlerImplementation,
   WebSocketMessageHandlerApplyContext,
 } from '../messageHandler/WebSocketMessageHandlerImplementation';
-import { normalizeWebSocketMessageData } from '../utils/messageData';
+import { serializeWebSocketMessageDataForSocket } from '../utils/messageData';
 import ConnectionSavingSafeLimitExceededError from './errors/ConnectionSavingSafeLimitExceededError';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
@@ -151,8 +151,10 @@ class WebSocketInterceptorImplementation<
           return;
         }
 
+        const serializedData = serializeWebSocketMessageDataForSocket(data);
+
         if (options?.to === undefined) {
-          void this.worker?.sendToClients(this, data);
+          void this.worker?.sendToClients(this, serializedData);
           return;
         }
 
@@ -160,7 +162,7 @@ class WebSocketInterceptorImplementation<
 
         for (const client of this._clients) {
           if (clients.includes(client)) {
-            void this.worker?.sendToClient(client, data);
+            void this.worker?.sendToClient(client, serializedData);
           }
         }
       },
@@ -487,8 +489,10 @@ class WebSocketInterceptorImplementation<
 
   // Unlike HTTP, unhandled messages have no bypass or reject action. WebSocket is not request-response, so a message
   // needs no reply and the connection stays open.
-  async logUnhandledMessageIfNecessary(data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>, url: string) {
-    const message = await normalizeWebSocketMessageData(data);
+  async logUnhandledMessageIfNecessary(
+    message: ReceivedWebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+    url: string,
+  ) {
     const strategy = await this.getUnhandledMessageStrategy(message);
 
     if (strategy.log ?? DEFAULT_UNHANDLED_MESSAGE_STRATEGY.log) {

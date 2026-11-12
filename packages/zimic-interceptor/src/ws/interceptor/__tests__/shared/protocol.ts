@@ -41,6 +41,22 @@ const protocol: WebSocketInterceptorProtocol<ChatMessage> = {
   },
 };
 
+type TextSchema = WebSocketSchema<{ '/': { message: string } }>;
+
+const TEXT_FRAME_PREFIX = 'text:';
+const JSON_LIKE_TEXT = '{"text":"raw"}';
+
+// A frame holds one text message, which may look like JSON.
+const textProtocol: WebSocketInterceptorProtocol<string> = {
+  decode(frame) {
+    return [(frame as string).slice(TEXT_FRAME_PREFIX.length)];
+  },
+
+  encode(message) {
+    return [`${TEXT_FRAME_PREFIX}${message}`];
+  },
+};
+
 interface SharedWebSocketInterceptorProtocolTestsOptions {
   type: WebSocketInterceptorType;
   getBaseURL: () => string;
@@ -97,7 +113,7 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
           await waitFor(() => expect(interceptor.clients).toHaveLength(1));
 
           const messagePromise = waitForWebSocketClientMessage(client);
-          interceptor.clients[0].send(JSON.stringify({ text: 'hello' }));
+          interceptor.clients[0].send({ text: 'hello' });
 
           expect(await messagePromise).toBe(encodeFrame({ text: 'hello' }));
         });
@@ -119,7 +135,7 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
               collectWebSocketClientMessages(firstClient),
               collectWebSocketClientMessages(secondClient),
             ];
-            interceptor.server.send(JSON.stringify({ text: 'broadcast' }));
+            interceptor.server.send({ text: 'broadcast' });
 
             await waitFor(() => {
               expect(messages).toEqual([[encodeFrame({ text: 'broadcast' })], [encodeFrame({ text: 'broadcast' })]]);
@@ -143,7 +159,7 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
             const firstMessages = collectWebSocketClientMessages(firstClient);
             const secondMessages = collectWebSocketClientMessages(secondClient);
 
-            interceptor.server.send(JSON.stringify({ text: 'selected' }), { to: interceptor.clients[0] });
+            interceptor.server.send({ text: 'selected' }, { to: interceptor.clients[0] });
 
             await waitFor(() => expect(firstMessages).toHaveLength(1));
             await waitForNot(() => expect(secondMessages).not.toHaveLength(0));
@@ -184,6 +200,77 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
           client.send(encodeFrame({ text: 'unhandled' }));
 
           await waitFor(() => expect(onUnhandledMessage).toHaveBeenCalledExactlyOnceWith({ text: 'unhandled' }));
+        });
+      },
+    );
+  });
+
+  it('should match decoded messages that look like JSON without parsing them', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<TextSchema>(
+      { type, baseURL, messageSaving: { enabled: true }, protocol: textProtocol },
+      async (interceptor) => {
+        const handler = await interceptor.message().times(1);
+
+        await usingWebSocketClient<TextSchema>(baseURL, async (client) => {
+          client.send(`${TEXT_FRAME_PREFIX}${JSON_LIKE_TEXT}`);
+
+          await waitFor(() => {
+            expect(handler.messages.map((message) => message.data)).toEqual([JSON_LIKE_TEXT]);
+          });
+        });
+      },
+    );
+  });
+
+  it('should report decoded messages that look like JSON as unhandled without parsing them', async () => {
+    const baseURL = getBaseURL();
+    const onUnhandledMessage = vi.fn(() => ({ log: false }));
+
+    await usingWebSocketInterceptor<TextSchema>(
+      { type, baseURL, messageSaving: { enabled: true }, protocol: textProtocol, onUnhandledMessage },
+      async () => {
+        await usingWebSocketClient<TextSchema>(baseURL, async (client) => {
+          client.send(`${TEXT_FRAME_PREFIX}${JSON_LIKE_TEXT}`);
+
+          await waitFor(() => expect(onUnhandledMessage).toHaveBeenCalledExactlyOnceWith(JSON_LIKE_TEXT));
+        });
+      },
+    );
+  });
+
+  it('should encode messages that look like JSON sent to a client without parsing them', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<TextSchema>(
+      { type, baseURL, messageSaving: { enabled: true }, protocol: textProtocol },
+      async (interceptor) => {
+        await usingWebSocketClient<TextSchema>(baseURL, async (client) => {
+          await waitFor(() => expect(interceptor.clients).toHaveLength(1));
+
+          const messagePromise = waitForWebSocketClientMessage(client);
+          interceptor.clients[0].send(JSON_LIKE_TEXT);
+
+          expect(await messagePromise).toBe(`${TEXT_FRAME_PREFIX}${JSON_LIKE_TEXT}`);
+        });
+      },
+    );
+  });
+
+  it('should encode messages that look like JSON sent by the server without parsing them', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<TextSchema>(
+      { type, baseURL, messageSaving: { enabled: true }, protocol: textProtocol },
+      async (interceptor) => {
+        await usingWebSocketClient<TextSchema>(baseURL, async (client) => {
+          await waitFor(() => expect(interceptor.clients).toHaveLength(1));
+
+          const messagePromise = waitForWebSocketClientMessage(client);
+          interceptor.server.send(JSON_LIKE_TEXT);
+
+          expect(await messagePromise).toBe(`${TEXT_FRAME_PREFIX}${JSON_LIKE_TEXT}`);
         });
       },
     );

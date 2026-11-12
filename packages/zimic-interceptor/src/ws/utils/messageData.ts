@@ -1,4 +1,4 @@
-import { assertTypeOf, ValidationError } from '@zimic/utils/validation';
+import { assertTypeOf } from '@zimic/utils/validation';
 import { WebSocketMessageData, WebSocketMessageSchema } from '@zimic/ws';
 
 import { convertArrayBufferToBase64, convertBase64ToArrayBuffer } from '@/utils/data';
@@ -98,12 +98,8 @@ export function serializeWebSocketMessageDataForSocket<Message extends WebSocket
 }
 
 export async function serializeWebSocketMessageDataForTransport(
-  data: WebSocketMessageData<WebSocketMessageSchema> | undefined,
+  data: WebSocketMessageData<WebSocketMessageSchema>,
 ): Promise<SerializedWebSocketMessageData> {
-  if (data === undefined) {
-    throw new ValidationError('WebSocket message data must not be undefined.');
-  }
-
   if (isWebSocketBinaryMessageData(data)) {
     const normalizedData = normalizeWebSocketBinaryMessageData(data);
     const arrayBuffer = normalizedData instanceof Blob ? await normalizedData.arrayBuffer() : normalizedData;

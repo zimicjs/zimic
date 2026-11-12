@@ -359,7 +359,7 @@ abstract class WebSocketInterceptorWorker {
     const plainHolders = holders.filter((holder) => !holder.interceptor.protocol);
 
     await Promise.all([
-      plainHolders.length > 0 ? this.handleMessageWithHandlers(frame, plainHolders) : undefined,
+      plainHolders.length > 0 ? this.handlePlainFrame(frame, plainHolders) : undefined,
       ...holders.map(async (holder) => {
         const { protocol } = holder.interceptor;
         return protocol ? this.handleProtocolFrame(frame, holder, protocol) : undefined;
@@ -367,6 +367,15 @@ abstract class WebSocketInterceptorWorker {
     ]);
   }
 
+  private async handlePlainFrame(
+    frame: WebSocketMessageData<WebSocketMessageSchema>,
+    holders: WebSocketConnectionHolder[],
+  ) {
+    const message = await normalizeWebSocketMessageData<WebSocketMessageSchema>(frame);
+    await this.handleMessageWithHandlers(message, holders);
+  }
+
+  // Decoded messages reach handlers unchanged, because the protocol already decided what each message is.
   private async handleProtocolFrame(
     frame: WebSocketMessageData<WebSocketMessageSchema>,
     holder: WebSocketConnectionHolder,
@@ -376,7 +385,7 @@ abstract class WebSocketInterceptorWorker {
       const messages = await this.decodeFrameInOrder(frame, holder, protocol);
 
       for (const message of messages) {
-        await this.handleMessageWithHandlers(message as WebSocketMessageData<WebSocketMessageSchema>, [holder]);
+        await this.handleMessageWithHandlers(message as ReceivedWebSocketMessageData<WebSocketMessageSchema>, [holder]);
       }
     } catch (error) {
       console.error(error);
@@ -441,10 +450,9 @@ abstract class WebSocketInterceptorWorker {
   // The handlers of all interceptors holding the connection are tried together, from the last created to the first, so
   // a newer handler wins regardless of the start order of its interceptor. Holders are ordered from oldest to newest.
   protected async handleMessageWithHandlers(
-    data: WebSocketMessageData<WebSocketMessageSchema>,
+    message: ReceivedWebSocketMessageData<WebSocketMessageSchema>,
     holders: WebSocketConnectionHolder[],
   ) {
-    const message = await normalizeWebSocketMessageData<WebSocketMessageSchema>(data);
     const failedMessageMatches: FailedWebSocketMessageMatch[] = [];
 
     // Handlers can be added or cleared while a message is handled, so the message is matched against a copy.
@@ -469,7 +477,7 @@ abstract class WebSocketInterceptorWorker {
         // A holder that let the connection go while its handler was matching the message does not handle it. As with
         // an HTTP handler cleared while matching a request, older handlers are not tried, whatever the match result.
         if (!this.isHoldingConnection(holder)) {
-          await this.logUnhandledMessageIfNecessary(data, holders);
+          await this.logUnhandledMessageIfNecessary(message, holders);
           return;
         }
 
@@ -488,7 +496,7 @@ abstract class WebSocketInterceptorWorker {
         const wasHandled = await holder.interceptor.handleMatchedMessage(handler.implementation, message, context);
 
         if (!wasHandled) {
-          await this.logUnhandledMessageIfNecessary(data, holders);
+          await this.logUnhandledMessageIfNecessary(message, holders);
         }
 
         return;
@@ -497,24 +505,24 @@ abstract class WebSocketInterceptorWorker {
 
         // A handler that threw may have already counted the message, such as toward its `times` limit, so older
         // handlers are not tried.
-        await this.logUnhandledMessageIfNecessary(data, holders);
+        await this.logUnhandledMessageIfNecessary(message, holders);
         return;
       }
     }
 
     this.markMessageAsUnhandled(message, failedMessageMatches);
-    await this.logUnhandledMessageIfNecessary(data, holders);
+    await this.logUnhandledMessageIfNecessary(message, holders);
   }
 
   // Holders that let the connection go while the message was handled no longer decide its strategy. If none is left,
   // the connection is closed and the message is dropped, as a cleared interceptor does not save the messages it was
   // handling.
   private async logUnhandledMessageIfNecessary(
-    data: WebSocketMessageData<WebSocketMessageSchema>,
+    message: ReceivedWebSocketMessageData<WebSocketMessageSchema>,
     holders: WebSocketConnectionHolder[],
   ) {
     const newestHolder = holders.findLast((holder) => this.isHoldingConnection(holder));
-    await newestHolder?.interceptor.logUnhandledMessageIfNecessary(data, newestHolder.client.url);
+    await newestHolder?.interceptor.logUnhandledMessageIfNecessary(message, newestHolder.client.url);
   }
 
   // A holder lists the client from the moment it accepts the connection until it lets the connection go.

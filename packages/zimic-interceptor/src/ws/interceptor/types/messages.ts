@@ -172,8 +172,15 @@ export interface WebSocketInterceptorClient<
    */
   messages: readonly InterceptedWebSocketInterceptorMessage<Schema, Path>[];
 
-  /** Sends a server message to this client. */
-  send: (data: WebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>) => void;
+  /**
+   * Sends a server message to this client. Without a protocol, messages other than strings and binary data are sent as
+   * their JSON text. With a protocol, the protocol encodes the message as received.
+   */
+  send: (
+    data:
+      | WebSocketInterceptorPathMessage<Schema, Path>
+      | WebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
+  ) => void;
 
   /**
    * Closes the connection of this client, as if the server closed it, and removes the client from every interceptor
@@ -222,9 +229,13 @@ export interface WebSocketInterceptorServer<Schema extends WebSocketSchema = Web
    */
   messages: readonly InterceptedWebSocketInterceptorMessage<Schema>[];
 
-  /** Sends a message to the connected clients selected in `options.to`, or to all of them if omitted. */
+  /**
+   * Sends a message to the connected clients selected in `options.to`, or to all of them if omitted. Without a
+   * protocol, messages other than strings and binary data are sent as their JSON text. With a protocol, the protocol
+   * encodes the message as received for each client.
+   */
   send: (
-    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+    data: WebSocketSchemaMessage<Schema> | WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
     options?: WebSocketInterceptorServerSendOptions<Schema>,
   ) => void;
 }

@@ -248,6 +248,37 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
   it.each([
     {
       sender: 'server',
+      send: (interceptor: WebSocketInterceptor<ChatSchema>, message: ChatMessage) => {
+        interceptor.server.send(message);
+      },
+    },
+    {
+      sender: 'client',
+      send: (interceptor: WebSocketInterceptor<ChatSchema>, message: ChatMessage) => {
+        interceptor.clients[0].send(message);
+      },
+    },
+  ])('should send $sender object messages as their JSON text', async ({ send }) => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatSchema>(baseURL, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const messagePromise = waitForWebSocketClientMessage(client);
+
+        send(interceptor, { type: 'server', text: 'object' });
+
+        expect(await messagePromise).toBe('{"type":"server","text":"object"}');
+      });
+    });
+  });
+
+  it.each([
+    {
+      sender: 'server',
       send: (interceptor: WebSocketInterceptor<BinaryOrTextMessage>, data: Blob | string) => {
         interceptor.server.send(data);
       },
@@ -283,7 +314,7 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
     });
   });
 
-  it('should log send errors and keep sending later messages', async () => {
+  it('should reject invalid server messages and keep sending later messages', async () => {
     const baseURL = getBaseURL();
 
     await usingWebSocketInterceptor<BinaryOrTextMessage>({ type, baseURL }, async (interceptor) => {
@@ -294,28 +325,15 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
 
         const messages = collectWebSocketClientMessages(client);
 
-        await usingIgnoredConsole(['error'], async (console) => {
+        expect(() => {
           // Simulates an invalid runtime value, which typed code cannot send.
           interceptor.server.send(undefined as unknown as string);
-          interceptor.server.send('valid');
+        }).toThrow(new ValidationError('Expected serialized WebSocket message data to be string, but got undefined.'));
 
-          await waitFor(() => {
-            expect(messages).toContain('valid');
-          });
+        interceptor.server.send('valid');
 
-          // Remote interceptors serialize messages to send them through the interceptor server, which rejects invalid
-          // data. Local interceptors pass the data to the client connection as is.
-          if (type === 'remote') {
-            expect(messages).toEqual(['valid']);
-            expect(console.error).toHaveBeenCalledTimes(1);
-            expect(console.error).toHaveBeenCalledWith(
-              new ValidationError('WebSocket message data must not be undefined.'),
-            );
-          } else {
-            expect(messages).toHaveLength(2);
-            expect(messages[1]).toBe('valid');
-            expect(console.error).not.toHaveBeenCalled();
-          }
+        await waitFor(() => {
+          expect(messages).toEqual(['valid']);
         });
       });
     });

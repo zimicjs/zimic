@@ -1,7 +1,7 @@
 import { HttpSearchParams } from '@zimic/utils/http';
 import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 
-import { tryParseJSONMessageData } from '../utils/messageData';
+import { serializeWebSocketMessageDataForSocket } from '../utils/messageData';
 import type {
   InterceptedWebSocketInterceptorMessage,
   WebSocketInterceptorClient,
@@ -69,15 +69,14 @@ class WebSocketInterceptorClientImplementation implements InternalWebSocketInter
     this.#protocol = protocol;
   }
 
-  send(data: WebSocketMessageData<WebSocketMessageSchema>) {
+  send(data: WebSocketMessageSchema | WebSocketMessageData<WebSocketMessageSchema>) {
+    // A protocol encodes the message itself, including binary values JSON would lose.
     if (!this.#protocol) {
-      this.#sendMessage(data);
+      this.#sendMessage(serializeWebSocketMessageDataForSocket<WebSocketMessageSchema>(data));
       return;
     }
 
-    const message = typeof data === 'string' ? tryParseJSONMessageData(data) : data;
-
-    for (const frame of this.#protocol.encode(message, this)) {
+    for (const frame of this.#protocol.encode(data, this)) {
       this.sendFrame(frame);
     }
   }
@@ -132,7 +131,7 @@ export interface InternalWebSocketInterceptorServer<
 }
 
 type SendWebSocketInterceptorServerMessage<Schema extends WebSocketSchema> = (
-  data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+  data: WebSocketSchemaMessage<Schema> | WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   options?: WebSocketInterceptorServerSendOptions<Schema>,
 ) => void;
 
@@ -154,7 +153,7 @@ class WebSocketInterceptorServerImplementation<
   }
 
   send(
-    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+    data: WebSocketSchemaMessage<Schema> | WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
     options?: WebSocketInterceptorServerSendOptions<Schema>,
   ) {
     this.#sendMessage(data, options);
