@@ -16,6 +16,10 @@ export interface WebSocketWorkerReset {
   clearedInterceptorIds?: string[];
 }
 
+// A rejected connection has no holders, because the server refuses its handshake.
+export type WebSocketClientConnectionReply =
+  { action: 'accept'; acceptedInterceptorIds: string[] } | { action: 'reject' };
+
 export interface WebSocketClientDisconnection {
   clientId: string;
   code?: number;
@@ -44,17 +48,17 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
     reply: {};
   };
 
+  // Sent before the server answers the handshake of a client connection, so the worker can reject it.
   'interceptors/ws/clients/connect': {
     event: {
       interceptorIds: string[];
       clientId: string;
       url: string;
+      protocols: string[];
       // The number of resets the server had processed from the worker when it sent the connection.
       numberOfResets: number;
     };
-    reply: {
-      acceptedInterceptorIds: string[];
-    };
+    reply: WebSocketClientConnectionReply;
   };
 
   'interceptors/ws/clients/close': {
@@ -80,8 +84,7 @@ export type InterceptorServerWebSocketSchema = WebSocketSchema<{
 
   'interceptors/ws/messages/send': {
     event: {
-      clientId?: string;
-      interceptorId?: string;
+      clientId: string;
       data: SerializedWebSocketMessageData;
     };
   };

@@ -1,16 +1,23 @@
 import { waitFor } from '@zimic/utils/time';
-import { WebSocketSchema } from '@zimic/ws';
-import { beforeEach, expect, it, vi } from 'vitest';
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
-import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
+import {
+  expectWebSocketAttemptToBeRefused,
+  expectWebSocketConnectionToOpen,
+  openWebSocketUntilSettled,
+  usingWebSocketClient,
+  waitForWebSocketClientMessage,
+} from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions, verifyUnhandledMessageWarning } from './utils';
 
-type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
+type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
+type MessageSchema = WebSocketSchema<{ '/': { message: Message } }>;
 
 export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { platform, getBaseURL, getInterceptorOptions } = options;
@@ -44,7 +51,7 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
 
   it('should support intercepting messages with a computed response', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-      const responseFactory = vi.fn((message: MessageSchema) => ({ type: 'server' as const, index: message.index }));
+      const responseFactory = vi.fn((message: Message) => ({ type: 'server' as const, index: message.index }));
 
       await promiseIfRemote(interceptor.message().respond(responseFactory), interceptor);
 
@@ -82,7 +89,7 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
           await usingIgnoredConsole(['error', 'warn'], async (console) => {
-            const message: MessageSchema = { type: 'client', index: 1 };
+            const message: Message = { type: 'client', index: 1 };
             client.send(JSON.stringify(message));
 
             // The message logs the handler error and the unhandled message.
@@ -210,6 +217,69 @@ export function declareHandlerWebSocketInterceptorTests(options: RuntimeSharedWe
 
           await expect(secondMessagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
         });
+      });
+    });
+  });
+
+  describe('Connections', () => {
+    it('should support intercepting connections with a static response', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        await promiseIfRemote(interceptor.connection().respond({ action: 'reject' }), interceptor);
+
+        expectWebSocketAttemptToBeRefused(await openWebSocketUntilSettled(baseURL));
+
+        expect(interceptor.clients).toHaveLength(0);
+      });
+    });
+
+    it('should accept connections accepted by a connection handler', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
+
+        await expectWebSocketConnectionToOpen(baseURL);
+      });
+    });
+
+    it('should log an error if a connection is intercepted with a computed response and the handler throws', async () => {
+      const error = new Error('Response failed.');
+
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        await promiseIfRemote(
+          interceptor.connection().respond(() => {
+            throw error;
+          }),
+          interceptor,
+        );
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          await expectWebSocketConnectionToOpen(baseURL);
+
+          expect(console.error).toHaveBeenCalledTimes(1);
+          expect(console.error).toHaveBeenCalledWith(error);
+        });
+      });
+    });
+
+    // Unlike HTTP requests, a connection opens by default, so a handler without a registered response still intercepts
+    // it.
+    it('should intercept connections without a registered response', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        await promiseIfRemote(interceptor.connection().times(1), interceptor);
+
+        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          expect(client.readyState).toBe(WebSocketClient.OPEN);
+
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(1);
+          });
+
+          const message = JSON.stringify({ type: 'server', index: 1 } satisfies Message);
+          const messagePromise = waitForWebSocketClientMessage(client);
+          interceptor.server.send(message);
+          await expect(messagePromise).resolves.toBe(message);
+        });
+
+        await promiseIfRemote(interceptor.checkTimes(), interceptor);
       });
     });
   });

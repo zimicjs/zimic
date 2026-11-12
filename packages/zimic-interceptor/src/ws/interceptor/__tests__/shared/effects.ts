@@ -1,15 +1,27 @@
+import { createPromiseWithResolvers } from '@zimic/utils/data';
+import { HttpSearchParams } from '@zimic/utils/http';
 import { waitFor } from '@zimic/utils/time';
-import { WebSocketSchema } from '@zimic/ws';
-import { beforeEach, expect, it, vi } from 'vitest';
+import { joinURL } from '@zimic/utils/url';
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
-import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
+import {
+  expectWebSocketConnectionToBeRefused,
+  usingWebSocketClient,
+  waitForWebSocketClientMessage,
+} from '@tests/utils/webSocket';
 
+import { WebSocketInterceptorClient } from '../../types/messages';
 import { WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions, verifyUnhandledMessageWarning } from './utils';
 
-type MessageSchema = WebSocketSchema<{ type: 'create'; body: { text: string } } | { type: 'delete'; id: string }>;
+type Message = { type: 'create'; body: { text: string } } | { type: 'delete'; id: string };
+type MessageSchema = WebSocketSchema<{
+  '/': { message: Message };
+  '/rooms/:roomId': { connection: { searchParams: { token: string }; protocols: 'chat' }; message: Message };
+}>;
 
 export function declareEffectWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { platform, getBaseURL, getInterceptorOptions } = options;
@@ -29,7 +41,7 @@ export function declareEffectWebSocketInterceptorTests(options: RuntimeSharedWeb
       await interceptor.message().effect(effect);
       await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' });
 
-      await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+      await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
         const firstReceivedMessage = waitForWebSocketClientMessage(client);
 
         client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
@@ -54,12 +66,12 @@ export function declareEffectWebSocketInterceptorTests(options: RuntimeSharedWeb
         sender.send(JSON.stringify({ type: 'delete', id: message.type }));
       });
 
-      await usingWebSocketClient<MessageSchema>(baseURL, async (otherClient) => {
+      await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (otherClient) => {
         await waitFor(() => {
           expect(interceptor.clients).toHaveLength(1);
         });
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (senderClient) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (senderClient) => {
           await waitFor(() => {
             expect(interceptor.clients).toHaveLength(2);
           });
@@ -87,12 +99,12 @@ export function declareEffectWebSocketInterceptorTests(options: RuntimeSharedWeb
         receiver.send(JSON.stringify({ type: 'delete', id: message.type }));
       });
 
-      await usingWebSocketClient<MessageSchema>(baseURL, async (otherClient) => {
+      await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (otherClient) => {
         await waitFor(() => {
           expect(interceptor.clients).toHaveLength(1);
         });
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (senderClient) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (senderClient) => {
           await waitFor(() => {
             expect(interceptor.clients).toHaveLength(2);
           });
@@ -126,9 +138,9 @@ export function declareEffectWebSocketInterceptorTests(options: RuntimeSharedWeb
 
         await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: '2' });
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           await usingIgnoredConsole(['error', 'warn'], async (console) => {
-            const message: MessageSchema = { type: 'create', body: { text: 'hello' } };
+            const message: Message = { type: 'create', body: { text: 'hello' } };
             client.send(JSON.stringify(message));
 
             // The message logs the effect error and the unhandled message.
@@ -171,7 +183,7 @@ export function declareEffectWebSocketInterceptorTests(options: RuntimeSharedWeb
 
       await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' });
 
-      await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+      await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
         await usingIgnoredConsole(['error', 'warn'], async (console) => {
           const firstReceivedMessage = waitForWebSocketClientMessage(client);
 
@@ -192,8 +204,8 @@ export function declareEffectWebSocketInterceptorTests(options: RuntimeSharedWeb
 
   it('should handle asynchronous effects concurrently', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-      const startedMessages: MessageSchema[] = [];
-      const completedMessages: MessageSchema[] = [];
+      const startedMessages: Message[] = [];
+      const completedMessages: Message[] = [];
       const finishEffects: (() => void)[] = [];
 
       await interceptor.message().effect(async (message) => {
@@ -206,7 +218,7 @@ export function declareEffectWebSocketInterceptorTests(options: RuntimeSharedWeb
         completedMessages.push(message);
       });
 
-      await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+      await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
         client.send(JSON.stringify({ type: 'create', body: { text: 'first' } }));
         client.send(JSON.stringify({ type: 'create', body: { text: 'second' } }));
 
@@ -231,6 +243,188 @@ export function declareEffectWebSocketInterceptorTests(options: RuntimeSharedWeb
             { type: 'create', body: { text: 'second' } },
           ]),
         );
+      });
+    });
+  });
+
+  describe('Connections', () => {
+    it('should call connection effects with the client handle of the accepted connection', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const effect = vi.fn<(client: WebSocketInterceptorClient<MessageSchema>) => void>();
+
+        await interceptor.connection().effect(effect);
+
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async () => {
+          await waitFor(() => {
+            expect(effect).toHaveBeenCalledTimes(1);
+          });
+
+          expect(effect.mock.calls[0][0]).toBe(interceptor.clients[0]);
+        });
+      });
+    });
+
+    it('should add accepted clients to interceptor.clients before running connection effects', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const isClientAddedPromise = createPromiseWithResolvers<boolean>();
+
+        await interceptor.connection().effect((client) => {
+          isClientAddedPromise.resolve(interceptor.clients.includes(client));
+        });
+
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async () => {
+          await expect(isClientAddedPromise).resolves.toBe(true);
+        });
+      });
+    });
+
+    it('should deliver messages sent to the client handle by connection effects', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const message = JSON.stringify({ type: 'create', body: { text: 'sent by effect' } } satisfies Message);
+
+        await interceptor.connection().effect((client) => {
+          client.send(message);
+        });
+
+        const client = new WebSocketClient<MessageSchema, '/'>(baseURL);
+        const messagePromise = waitForWebSocketClientMessage(client);
+
+        try {
+          await client.open();
+
+          await expect(messagePromise).resolves.toBe(message);
+        } finally {
+          await client.close();
+        }
+      });
+    });
+
+    it('should run connection effects with the connection request', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const effect = vi.fn();
+
+        await interceptor.connection('/rooms/:roomId').effect(effect);
+
+        const connectionURL = `${joinURL(baseURL, '/rooms/1')}?token=abc`;
+
+        await usingWebSocketClient<MessageSchema, '/'>(connectionURL, async () => {
+          await waitFor(() => {
+            expect(effect).toHaveBeenCalledTimes(1);
+          });
+
+          expect(effect).toHaveBeenCalledWith(interceptor.clients[0], {
+            url: connectionURL,
+            protocols: [],
+            searchParams: new HttpSearchParams({ token: 'abc' }),
+            pathParams: { roomId: '1' },
+          });
+        });
+      });
+    });
+
+    it('should run connection effects with empty path params if the handler declares no path', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const effect = vi.fn();
+
+        await interceptor.connection().effect(effect);
+
+        await usingWebSocketClient<MessageSchema, '/'>(joinURL(baseURL, '/rooms/1'), async () => {
+          await waitFor(() => {
+            expect(effect).toHaveBeenCalledTimes(1);
+          });
+
+          expect(effect).toHaveBeenCalledWith(interceptor.clients[0], expect.objectContaining({ pathParams: {} }));
+        });
+      });
+    });
+
+    it('should not run connection effects for rejected connections', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const effect = vi.fn();
+
+        await interceptor.connection().effect(effect).respond({ action: 'reject' });
+
+        await expectWebSocketConnectionToBeRefused(baseURL);
+
+        expect(effect).not.toHaveBeenCalled();
+      });
+    });
+
+    it('should run connection effects for connections accepted by a computed response', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const effect = vi.fn();
+
+        await interceptor
+          .connection()
+          .effect(effect)
+          .respond(() => ({ action: 'accept' }));
+
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async () => {
+          await waitFor(() => {
+            expect(effect).toHaveBeenCalledTimes(1);
+          });
+
+          expect(effect).toHaveBeenCalledWith(interceptor.clients[0], expect.any(Object));
+        });
+      });
+    });
+
+    it('should not run connection effects for connections rejected by a computed response', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const effect = vi.fn();
+
+        await interceptor
+          .connection()
+          .effect(effect)
+          .respond(() => ({ action: 'reject' }));
+
+        await expectWebSocketConnectionToBeRefused(baseURL);
+
+        expect(effect).not.toHaveBeenCalled();
+      });
+    });
+
+    it('should log connection effect errors and keep the connection open', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const error = new Error('Effect failed.');
+
+        await interceptor.connection().effect(() => {
+          throw error;
+        });
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
+            await waitFor(() => {
+              expect(console.error).toHaveBeenCalledTimes(1);
+            });
+            expect(console.error.mock.calls[0]).toEqual([error]);
+
+            const message = JSON.stringify({ type: 'delete', id: 'after-error' } satisfies Message);
+            const messagePromise = waitForWebSocketClientMessage(client);
+            interceptor.server.send(message);
+            await expect(messagePromise).resolves.toBe(message);
+          });
+        });
+      });
+    });
+
+    // Effects do not delay the handshake, so an effect waiting for a message from its client can receive it.
+    it('should not wait for asynchronous connection effects before opening connections', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        const clientMessagePromise = createPromiseWithResolvers<Message>();
+        const connectionEffectCompletedPromise = createPromiseWithResolvers<Message>();
+
+        await interceptor.connection().effect(async () => {
+          connectionEffectCompletedPromise.resolve(await clientMessagePromise);
+        });
+        await interceptor.message().effect((message) => {
+          clientMessagePromise.resolve(message);
+        });
+
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
+          client.send(JSON.stringify({ type: 'delete', id: 'from-client' }));
+          await expect(connectionEffectCompletedPromise).resolves.toEqual({ type: 'delete', id: 'from-client' });
+        });
       });
     });
   });

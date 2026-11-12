@@ -3,19 +3,16 @@ import { afterAll, beforeAll, describe } from 'vitest';
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
+import { declareConnectionsWebSocketInterceptorTests } from './shared/connections';
 import testMatrix from './shared/matrix';
-import { declareTypeHttpInterceptorTests } from './shared/types';
 
-describe.each(testMatrix)('HttpInterceptor (node, $type) > Types', ({ type }) => {
+describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Connections', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
-
-  let baseURL: string;
 
   beforeAll(async () => {
     if (type === 'remote') {
       await server.start();
     }
-    baseURL = getNodeBaseURL(type, server);
   });
 
   afterAll(async () => {
@@ -24,9 +21,8 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Types', ({ type }) =>
     }
   });
 
-  declareTypeHttpInterceptorTests({
-    platform: 'node',
+  declareConnectionsWebSocketInterceptorTests({
     type,
-    getBaseURL: () => baseURL,
+    getBaseURL: () => getNodeBaseURL(type, server).replace(/^http/, 'ws'),
   });
 });

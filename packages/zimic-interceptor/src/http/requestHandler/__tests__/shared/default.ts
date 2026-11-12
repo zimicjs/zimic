@@ -1,15 +1,16 @@
-import { HttpRequest, HttpResponse, StrictFormData } from '@zimic/http';
+import { HttpRequest, HttpResponse, HttpSchema, StrictFormData } from '@zimic/http';
 import { createPromiseWithResolvers } from '@zimic/utils/data';
+import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
 import { expectTypeOf, expect, vi, it, beforeAll, afterAll, describe, beforeEach, afterEach } from 'vitest';
 
 import { SharedHttpInterceptorImplementation } from '@/http/interceptor/HttpInterceptorImplementation';
 import LocalHttpInterceptor from '@/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/http/interceptor/RemoteHttpInterceptor';
-import { HttpInterceptorType } from '@/http/interceptor/types/options';
+import { HttpInterceptorType, UnhandledRequestStrategy } from '@/http/interceptor/types/options';
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '@/http/interceptorWorker/LocalHttpInterceptorWorker';
-import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
+import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpRequestHandlerRequestMatch } from '../../HttpRequestHandlerImplementation';
@@ -142,34 +143,156 @@ export function declareDefaultHttpRequestHandlerTests(
     expect(await handler.matchesRequest(parsedRequest)).toEqual<HttpRequestHandlerRequestMatch>({ success: true });
   });
 
-  it('should not match requests if cleared while they are being matched', async () => {
+  it.each([
+    { condition: 'cleared', declareAfterClear: () => undefined },
+    {
+      condition: 'cleared and redeclared',
+      declareAfterClear: (handler: { respond: (declaration: { status: 200; body: { success: true } }) => unknown }) =>
+        handler.respond({ status: 200, body: { success: true } }),
+    },
+  ])('should not match requests if $condition while they are being matched', async ({ declareAfterClear }) => {
     const restrictionStartedPromise = createPromiseWithResolvers<void>();
     const restrictionReleasedPromise = createPromiseWithResolvers<void>();
 
-    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
-      .with(async () => {
-        restrictionStartedPromise.resolve();
-        await restrictionReleasedPromise;
-        return true;
-      })
-      .respond({ status: 200, body: { success: true } });
+    const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
 
-    const request = new Request(baseURL);
-    const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-    const matchPromise = handler.matchesRequest(parsedRequest);
+    await usingHttpInterceptor<Schema>(
+      { type, baseURL, requestSaving: { enabled: true }, onUnhandledRequest },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor
+            .post('/users')
+            .with(async () => {
+              restrictionStartedPromise.resolve();
+              await restrictionReleasedPromise;
+              return true;
+            })
+            .respond({ status: 200, body: { success: true } }),
+          interceptor,
+        );
 
-    await restrictionStartedPromise;
-    await promiseIfRemote(handler.clear(), interceptor);
-    restrictionReleasedPromise.resolve();
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'POST' });
+        await restrictionStartedPromise;
 
-    expect(await matchPromise).toEqual<HttpRequestHandlerRequestMatch>({
-      success: false,
-      cause: 'missingResponseDeclaration',
-    });
+        await promiseIfRemote(handler.clear(), interceptor);
+        await declareAfterClear(handler);
+        restrictionReleasedPromise.resolve();
+
+        await expectFetchError(responsePromise);
+
+        expect(handler.requests).toHaveLength(0);
+        expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+
+        handler.times(0);
+        await promiseIfRemote(handler.checkTimes(), handler);
+      },
+    );
   });
 
   // No HTTP counterpart for "should match messages again if cleared and declared with $declaration": a request needs a
   // response, so only `respond` makes a cleared HTTP handler match again, as covered above.
+
+  // No HTTP counterpart for "should match connections again if cleared and declared with $declaration": a request needs
+  // a response, so only `respond` makes a cleared HTTP handler match again, as covered above.
+
+  it.each([
+    { condition: 'cleared', declareAfterClear: () => undefined },
+    {
+      condition: 'cleared and redeclared',
+      declareAfterClear: (handler: { respond: (declaration: { status: 200; body: { success: true } }) => unknown }) =>
+        handler.respond({ status: 200, body: { success: true } }),
+    },
+  ])('should not respond to requests if $condition while computing their response', async ({ declareAfterClear }) => {
+    const responseStartedPromise = createPromiseWithResolvers<void>();
+    const responseReleasedPromise = createPromiseWithResolvers<void>();
+
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users').respond(
+      async () => {
+        responseStartedPromise.resolve();
+        await responseReleasedPromise;
+        return { status: 200, body: { success: true } };
+      },
+    );
+
+    const request = new Request(baseURL);
+    const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+    const responseDeclarationPromise = handler.applyResponseDeclaration(parsedRequest);
+
+    await responseStartedPromise;
+    await promiseIfRemote(handler.clear(), interceptor);
+    await declareAfterClear(handler);
+    responseReleasedPromise.resolve();
+
+    expect(await responseDeclarationPromise).toBe(undefined);
+  });
+
+  it('should not respond to requests if cleared while reading their response body', async () => {
+    type StreamMethodSchema = HttpSchema.Method<{
+      response: { 200: { body: ReadableStream } };
+    }>;
+
+    const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
+
+    await usingHttpInterceptor<{ '/users': { POST: StreamMethodSchema } }>(
+      { type, baseURL, requestSaving: { enabled: true }, onUnhandledRequest },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor.post('/users').respond(() => ({
+            status: 200,
+            // Saving the request reads the response body, which pulls from this stream only after the response is
+            // created.
+            body: new ReadableStream<Uint8Array>(
+              {
+                async pull(controller) {
+                  await promiseIfRemote(handler.clear(), interceptor);
+                  controller.enqueue(new TextEncoder().encode('body'));
+                  controller.close();
+                },
+              },
+              { highWaterMark: 0 },
+            ),
+          })),
+          interceptor,
+        );
+
+        await expectFetchError(fetch(joinURL(baseURL, '/users'), { method: 'POST' }));
+
+        expect(handler.requests).toHaveLength(0);
+        expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+      },
+    );
+  });
+
+  it('should respond to requests if redeclared while computing their response', async () => {
+    type RedeclaredMethodSchema = HttpSchema.Method<{
+      response: { 200: {}; 401: {} };
+    }>;
+
+    await usingHttpInterceptor<{ '/users': { POST: RedeclaredMethodSchema } }>(
+      { type, baseURL },
+      async (interceptor) => {
+        const handler = await promiseIfRemote(
+          interceptor.post('/users').respond(async () => {
+            await promiseIfRemote(handler.respond({ status: 401 }), interceptor);
+            return { status: 200 };
+          }),
+          interceptor,
+        );
+
+        const firstResponse = await fetch(joinURL(baseURL, '/users'), { method: 'POST' });
+        expect(firstResponse.status).toBe(200);
+
+        const secondResponse = await fetch(joinURL(baseURL, '/users'), { method: 'POST' });
+        expect(secondResponse.status).toBe(401);
+      },
+    );
+  });
 
   it('should create response with declared status and body', async () => {
     const responseStatus = 200;
@@ -225,6 +348,9 @@ export function declareDefaultHttpRequestHandlerTests(
     const responseDeclarationPromise = handler.applyResponseDeclaration(parsedRequest);
     await expect(responseDeclarationPromise).resolves.toBe(undefined);
   });
+
+  // No HTTP counterpart for "should not respond to messages if $condition while running their effect": HTTP handlers
+  // declare no effects, because a request has no open socket for an effect to act on.
 
   it('should keep track of the intercepted requests and responses', async () => {
     const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users').respond({

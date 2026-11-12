@@ -1,5 +1,5 @@
 import { PossiblePromise } from '@zimic/utils/types';
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageSchema } from '@zimic/ws';
 
 import { ReceivedWebSocketMessageData } from '@/ws/interceptor/types/messages';
 
@@ -8,6 +8,6 @@ import { ReceivedWebSocketMessageData } from '@/ws/interceptor/types/messages';
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerdelay `handler.delay()` API reference}
  */
-export type WebSocketMessageHandlerDelayFactory<Schema extends WebSocketSchema> = (
+export type WebSocketMessageHandlerDelayFactory<Schema extends WebSocketMessageSchema> = (
   message: ReceivedWebSocketMessageData<Schema>,
 ) => PossiblePromise<number>;

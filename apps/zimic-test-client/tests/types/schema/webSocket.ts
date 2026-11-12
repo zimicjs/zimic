@@ -1,8 +1,6 @@
 import { JSONSerialized } from '@zimic/http';
 import { WebSocketSchema } from '@zimic/ws';
 
-import { SocketIOWebSocketSchema } from '@tests/interceptor/webSocket/socketIO/utils';
-
 import {
   ConflictError,
   InternalServerError,
@@ -14,7 +12,7 @@ import {
   ValidationError,
 } from './entities';
 
-export type UserWebSocketSchema = WebSocketSchema<
+type AnyUserWebSocketMessage =
   | {
       type: 'user:create';
       data: UserCreationInput;
@@ -50,15 +48,20 @@ export type UserWebSocketSchema = WebSocketSchema<
   | {
       type: 'user:delete:error';
       data: NotFoundError | InternalServerError;
-    }
->;
+    };
 
-export type UserWebSocketMessage<Type extends UserWebSocketSchema['type'] = UserWebSocketSchema['type']> = Extract<
-  UserWebSocketSchema,
-  { type: Type }
->;
+export type UserWebSocketSchema = WebSocketSchema<{
+  '/': { message: AnyUserWebSocketMessage };
+  '/rooms/:roomId': {
+    connection: { searchParams: { token?: string }; protocols: 'legacy-protocol' };
+    message: AnyUserWebSocketMessage;
+  };
+}>;
 
-export type NotificationWebSocketSchema = WebSocketSchema<
+export type UserWebSocketMessage<Type extends AnyUserWebSocketMessage['type'] = AnyUserWebSocketMessage['type']> =
+  Extract<AnyUserWebSocketMessage, { type: Type }>;
+
+type AnyNotificationWebSocketMessage =
   | {
       type: 'notification:create:success';
       data: JSONSerialized<Notification>;
@@ -90,18 +93,14 @@ export type NotificationWebSocketSchema = WebSocketSchema<
   | {
       type: 'notification:unread:error';
       data: ValidationError | InternalServerError;
-    }
->;
+    };
+
+export type NotificationWebSocketSchema = WebSocketSchema<{ '/': { message: AnyNotificationWebSocketMessage } }>;
 
 export type NotificationWebSocketMessage<
-  Type extends NotificationWebSocketSchema['type'] = NotificationWebSocketSchema['type'],
-> = Extract<NotificationWebSocketSchema, { type: Type }>;
+  Type extends AnyNotificationWebSocketMessage['type'] = AnyNotificationWebSocketMessage['type'],
+> = Extract<AnyNotificationWebSocketMessage, { type: Type }>;
 
-export type BinaryWebSocketSchema = WebSocketSchema<BufferSource | Blob>;
+export type BinaryWebSocketMessage = BufferSource | Blob;
 
-export interface UserSocketIOEvents {
-  'user:delete': UserWebSocketMessage<'user:delete'>['data'];
-  'user:delete:success': UserWebSocketMessage<'user:delete:success'>['data'];
-}
-
-export type UserSocketIOWebSocketSchema = SocketIOWebSocketSchema<UserSocketIOEvents>;
+export type BinaryWebSocketSchema = WebSocketSchema<{ '/': { message: BinaryWebSocketMessage } }>;

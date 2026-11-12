@@ -1,5 +1,5 @@
 import { assertTypeOf, ValidationError } from '@zimic/utils/validation';
-import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageData, WebSocketMessageSchema } from '@zimic/ws';
 
 import { convertArrayBufferToBase64, convertBase64ToArrayBuffer } from '@/utils/data';
 import { ReceivedWebSocketMessageData } from '@/ws/interceptor/types/messages';
@@ -28,7 +28,7 @@ export function normalizeBufferSource(bufferSource: BufferSource): ArrayBuffer {
 // Unlike HTTP bodies without a content type, which are parsed as any JSON value, only objects and arrays are parsed.
 // WebSocket frames have no content type to declare JSON, and string schema members are sent as raw text, so text such
 // as `'42'`, `'true'`, `'null'`, or `'"message"'` stays a string.
-function tryParseJSONMessageData(data: string): unknown {
+export function tryParseJSONMessageData(data: string): unknown {
   const firstCharacter = data.trimStart()[0];
 
   if (firstCharacter !== '{' && firstCharacter !== '[') {
@@ -65,7 +65,7 @@ export async function convertWebSocketMessageDataToBinaryType(
   return data instanceof Blob ? data.arrayBuffer() : normalizeBufferSource(data);
 }
 
-export async function normalizeWebSocketMessageData<Schema extends WebSocketSchema>(
+export async function normalizeWebSocketMessageData<Schema extends WebSocketMessageSchema>(
   data: Schema | WebSocketMessageData<Schema>,
 ): Promise<ReceivedWebSocketMessageData<Schema>> {
   if (typeof data === 'string') {
@@ -79,13 +79,13 @@ export async function normalizeWebSocketMessageData<Schema extends WebSocketSche
   }
 
   if (isWebSocketBinaryMessageData(data)) {
-    return normalizeBufferSource(data) as ReceivedWebSocketMessageData<Schema>;
+    return normalizeBufferSource(data as BufferSource) as ReceivedWebSocketMessageData<Schema>;
   }
 
   return data as ReceivedWebSocketMessageData<Schema>;
 }
 
-export function serializeWebSocketMessageDataForSocket<Schema extends WebSocketSchema>(
+export function serializeWebSocketMessageDataForSocket<Schema extends WebSocketMessageSchema>(
   data: Schema | WebSocketMessageData<Schema> | undefined,
 ): WebSocketMessageData<Schema> {
   if (isWebSocketBinaryMessageData(data) || typeof data === 'string') {
@@ -98,7 +98,7 @@ export function serializeWebSocketMessageDataForSocket<Schema extends WebSocketS
 }
 
 export async function serializeWebSocketMessageDataForTransport(
-  data: WebSocketMessageData<WebSocketSchema> | undefined,
+  data: WebSocketMessageData<WebSocketMessageSchema> | undefined,
 ): Promise<SerializedWebSocketMessageData> {
   if (data === undefined) {
     throw new ValidationError('WebSocket message data must not be undefined.');

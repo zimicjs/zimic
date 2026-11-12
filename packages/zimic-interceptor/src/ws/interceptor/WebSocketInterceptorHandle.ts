@@ -1,16 +1,22 @@
-import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import { HttpSearchParams } from '@zimic/utils/http';
+import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 
+import { tryParseJSONMessageData } from '../utils/messageData';
 import type {
   InterceptedWebSocketInterceptorMessage,
   WebSocketInterceptorClient,
   WebSocketInterceptorServer,
   WebSocketInterceptorServerSendOptions,
 } from './types/messages';
+import type { WebSocketInterceptorProtocol, WebSocketInterceptorProtocolFrame } from './types/protocol';
 
 export interface InternalWebSocketInterceptorClient<
-  Schema extends WebSocketSchema,
-> extends WebSocketInterceptorClient<Schema> {
-  messages: InterceptedWebSocketInterceptorMessage<Schema>[];
+  Schema extends WebSocketSchema = WebSocketSchema,
+  Path extends string = string,
+> extends WebSocketInterceptorClient<Schema, Path> {
+  messages: InterceptedWebSocketInterceptorMessage<Schema, Path>[];
+  readonly connectionId: string;
+  sendFrame: (frame: WebSocketInterceptorProtocolFrame) => void;
 }
 
 export const MAX_CLOSE_REASON_BYTE_LENGTH = 123;
@@ -38,25 +44,46 @@ export function isUserCloseCode(code: number) {
 
 type WebSocketInterceptorClientCloser = (code?: number, reason?: string) => void;
 
-class WebSocketInterceptorClientImplementation<
-  Schema extends WebSocketSchema,
-> implements InternalWebSocketInterceptorClient<Schema> {
-  #sendMessage: (data: WebSocketMessageData<Schema>) => void;
-  #closeConnection: WebSocketInterceptorClientCloser;
+type SendWebSocketInterceptorClientMessage = (data: WebSocketMessageData<WebSocketMessageSchema>) => void;
 
-  readonly messages: InterceptedWebSocketInterceptorMessage<Schema>[] = [];
+// Workers create clients for connections of any path and interceptor, so a client is schema-erased when created.
+class WebSocketInterceptorClientImplementation implements InternalWebSocketInterceptorClient {
+  #sendMessage: SendWebSocketInterceptorClientMessage;
+  #closeConnection: WebSocketInterceptorClientCloser;
+  #protocol: WebSocketInterceptorProtocol | undefined;
+
+  searchParams: HttpSearchParams;
+  messages: InterceptedWebSocketInterceptorMessage<WebSocketSchema>[] = [];
 
   constructor(
-    readonly url: string,
-    sendMessage: (data: WebSocketMessageData<Schema>) => void,
+    public url: string,
+    public protocols: readonly string[],
+    public connectionId: string,
+    sendMessage: SendWebSocketInterceptorClientMessage,
     closeConnection: WebSocketInterceptorClientCloser,
+    protocol: WebSocketInterceptorProtocol | undefined,
   ) {
+    this.searchParams = new HttpSearchParams(new URL(url).searchParams);
     this.#sendMessage = sendMessage;
     this.#closeConnection = closeConnection;
+    this.#protocol = protocol;
   }
 
-  send(data: WebSocketMessageData<Schema>) {
-    this.#sendMessage(data);
+  send(data: WebSocketMessageData<WebSocketMessageSchema>) {
+    if (!this.#protocol) {
+      this.#sendMessage(data);
+      return;
+    }
+
+    const message = typeof data === 'string' ? tryParseJSONMessageData(data) : data;
+
+    for (const frame of this.#protocol.encode(message, this)) {
+      this.sendFrame(frame);
+    }
+  }
+
+  sendFrame(frame: WebSocketInterceptorProtocolFrame) {
+    this.#sendMessage(frame);
   }
 
   close(rawCode?: number, reason?: string) {
@@ -80,12 +107,22 @@ class WebSocketInterceptorClientImplementation<
   }
 }
 
-export function createWebSocketInterceptorClient<Schema extends WebSocketSchema>(options: {
+export function createWebSocketInterceptorClient(options: {
   url: string;
-  send: (data: WebSocketMessageData<Schema>) => void;
+  protocols: readonly string[];
+  connectionId: string;
+  send: SendWebSocketInterceptorClientMessage;
   close: WebSocketInterceptorClientCloser;
-}): InternalWebSocketInterceptorClient<Schema> {
-  return new WebSocketInterceptorClientImplementation(options.url, options.send, options.close);
+  protocol: WebSocketInterceptorProtocol | undefined;
+}): InternalWebSocketInterceptorClient {
+  return new WebSocketInterceptorClientImplementation(
+    options.url,
+    options.protocols,
+    options.connectionId,
+    options.send,
+    options.close,
+    options.protocol,
+  );
 }
 
 export interface InternalWebSocketInterceptorServer<
@@ -94,18 +131,20 @@ export interface InternalWebSocketInterceptorServer<
   messages: InterceptedWebSocketInterceptorMessage<Schema>[];
 }
 
+type SendWebSocketInterceptorServerMessage<Schema extends WebSocketSchema> = (
+  data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+  options?: WebSocketInterceptorServerSendOptions<Schema>,
+) => void;
+
 class WebSocketInterceptorServerImplementation<
   Schema extends WebSocketSchema,
 > implements InternalWebSocketInterceptorServer<Schema> {
   #getURL: () => string;
-  #sendMessage: (data: WebSocketMessageData<Schema>, options?: WebSocketInterceptorServerSendOptions<Schema>) => void;
+  #sendMessage: SendWebSocketInterceptorServerMessage<Schema>;
 
   readonly messages: InterceptedWebSocketInterceptorMessage<Schema>[] = [];
 
-  constructor(
-    getURL: () => string,
-    sendMessage: (data: WebSocketMessageData<Schema>, options?: WebSocketInterceptorServerSendOptions<Schema>) => void,
-  ) {
+  constructor(getURL: () => string, sendMessage: SendWebSocketInterceptorServerMessage<Schema>) {
     this.#getURL = getURL;
     this.#sendMessage = sendMessage;
   }
@@ -114,14 +153,17 @@ class WebSocketInterceptorServerImplementation<
     return this.#getURL();
   }
 
-  send(data: WebSocketMessageData<Schema>, options?: WebSocketInterceptorServerSendOptions<Schema>) {
+  send(
+    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+    options?: WebSocketInterceptorServerSendOptions<Schema>,
+  ) {
     this.#sendMessage(data, options);
   }
 }
 
 export function createWebSocketInterceptorServer<Schema extends WebSocketSchema>(
   getURL: () => string,
-  send: (data: WebSocketMessageData<Schema>, options?: WebSocketInterceptorServerSendOptions<Schema>) => void,
+  send: SendWebSocketInterceptorServerMessage<Schema>,
 ): InternalWebSocketInterceptorServer<Schema> {
   return new WebSocketInterceptorServerImplementation(getURL, send);
 }

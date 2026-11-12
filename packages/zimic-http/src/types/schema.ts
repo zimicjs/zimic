@@ -1,18 +1,15 @@
 import type {
+  AllowAnyStringInPathParams,
   HttpBody,
   HttpFormDataSchema,
   HttpHeadersSchema,
   HttpPathParamsSchema,
   HttpSearchParamsSchema,
+  InferPathParams as InferPathParamsFromPath,
+  PreferMostStaticLiteralPath,
+  WithoutEscapedColons,
 } from '@zimic/utils/http';
-import {
-  IfAny,
-  UnionToIntersection,
-  UnionHasMoreThanOneType,
-  Prettify,
-  NonEmptyArray,
-  Branded,
-} from '@zimic/utils/types';
+import { IfAny, UnionToIntersection, NonEmptyArray, Branded } from '@zimic/utils/types';
 
 export const HTTP_METHODS = Object.freeze(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const);
 /**
@@ -249,75 +246,13 @@ export type HttpSchemaMethod<Schema extends HttpSchema> = IfAny<
   keyof UnionToIntersection<Schema[keyof Schema]> & HttpMethod
 >;
 
-type RepeatingPathParamModifier = '+';
-type OptionalPathParamModifier = '?' | '*';
-
-type ConvertPathParamToRecord<PathParam extends string> = PathParam extends `${infer PathParamWithoutSlash}/`
-  ? ConvertPathParamToRecord<PathParamWithoutSlash>
-  : PathParam extends `${infer PathParamWithoutSlash}\\:`
-    ? ConvertPathParamToRecord<PathParamWithoutSlash>
-    : PathParam extends `${infer PathParamWithoutModifier}${OptionalPathParamModifier}`
-      ? { [Name in PathParamWithoutModifier]?: string }
-      : PathParam extends `${infer PathParamWithoutModifier}${RepeatingPathParamModifier}`
-        ? { [Name in PathParamWithoutModifier]: string }
-        : { [Name in PathParam]: string };
-
-type RecursiveInferPathParams<Path extends string> = Path extends `${infer Prefix}:${infer PathParamWithRemainingPath}`
-  ? PathParamWithRemainingPath extends `${infer PathParam}/${infer RemainingPath}`
-    ? Prefix extends `${string}\\`
-      ? RecursiveInferPathParams<RemainingPath>
-      : ConvertPathParamToRecord<PathParam> & RecursiveInferPathParams<RemainingPath>
-    : PathParamWithRemainingPath extends `${infer PathParam}\\:${infer RemainingPath}`
-      ? Prefix extends `${string}\\`
-        ? RecursiveInferPathParams<`\\:${RemainingPath}`>
-        : ConvertPathParamToRecord<PathParam> & RecursiveInferPathParams<`\\:${RemainingPath}`>
-      : PathParamWithRemainingPath extends `${infer PathParam}:${infer RemainingPath}`
-        ? Prefix extends `${string}\\`
-          ? RecursiveInferPathParams<RemainingPath>
-          : ConvertPathParamToRecord<PathParam> & RecursiveInferPathParams<`:${RemainingPath}`>
-        : Prefix extends `${string}\\`
-          ? {}
-          : ConvertPathParamToRecord<PathParamWithRemainingPath>
-  : {};
-
 /** @see {@link https://zimic.dev/docs/http/api/http-schema#inferpathparams `InferPathParams` API reference} */
 export type InferPathParams<
   PathOrSchema extends string | HttpSchema,
   OptionalPath extends (PathOrSchema extends HttpSchema ? HttpSchemaPath.Literal<PathOrSchema> : never) = never,
-> = Prettify<
-  RecursiveInferPathParams<
-    PathOrSchema extends HttpSchema ? OptionalPath : PathOrSchema extends string ? PathOrSchema : never
-  >
+> = InferPathParamsFromPath<
+  PathOrSchema extends HttpSchema ? OptionalPath : PathOrSchema extends string ? PathOrSchema : never
 >;
-
-type WithoutEscapedColons<Path extends string> = Path extends `${infer Prefix}\\:${infer Suffix}`
-  ? WithoutEscapedColons<`${Prefix}:${Suffix}`>
-  : Path;
-
-type ConvertPathParamToString<PathParam extends string> = PathParam extends `${infer PathParamWithoutSlash}/`
-  ? `${ConvertPathParamToString<PathParamWithoutSlash>}/`
-  : PathParam extends `${infer PathParamWithoutSlash}\\:`
-    ? `${ConvertPathParamToString<PathParamWithoutSlash>}:`
-    : string;
-
-export type AllowAnyStringInPathParams<Path extends string> =
-  Path extends `${infer Prefix}:${infer PathParamWithRemainingPath}`
-    ? PathParamWithRemainingPath extends `${infer PathParam}/${infer RemainingPath}`
-      ? Prefix extends `${infer PrefixPrefix}\\`
-        ? `${PrefixPrefix}:${AllowAnyStringInPathParams<PathParamWithRemainingPath>}`
-        : `${Prefix}${ConvertPathParamToString<PathParam>}/${AllowAnyStringInPathParams<RemainingPath>}`
-      : PathParamWithRemainingPath extends `${infer PathParam}\\:${infer RemainingPath}`
-        ? Prefix extends `${infer PrefixPrefix}\\`
-          ? `${PrefixPrefix}:${AllowAnyStringInPathParams<PathParamWithRemainingPath>}`
-          : `${Prefix}${ConvertPathParamToString<PathParam>}:${AllowAnyStringInPathParams<RemainingPath>}`
-        : PathParamWithRemainingPath extends `${infer PathParam}:${infer RemainingPath}`
-          ? Prefix extends `${infer PrefixPrefix}\\`
-            ? `${PrefixPrefix}:${AllowAnyStringInPathParams<PathParamWithRemainingPath>}`
-            : `${Prefix}${ConvertPathParamToString<PathParam>}${AllowAnyStringInPathParams<`:${RemainingPath}`>}`
-          : Prefix extends `${infer PrefixPrefix}\\`
-            ? `${PrefixPrefix}:${PathParamWithRemainingPath}`
-            : `${Prefix}${ConvertPathParamToString<PathParamWithRemainingPath>}`
-    : Path;
 
 /** @see {@link https://zimic.dev/docs/http/api/http-schema#httpschemapath `HttpSchemaPath` API reference} */
 export namespace HttpSchemaPath {
@@ -342,16 +277,6 @@ export type HttpSchemaPath<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
 > = HttpSchemaPath.Literal<Schema, Method> | HttpSchemaPath.NonLiteral<Schema, Method>;
-
-type LargestPathPrefix<Path extends string> = Path extends `${infer Prefix}/${infer Suffix}`
-  ? `${Prefix}/${Suffix extends `${string}/${string}` ? LargestPathPrefix<Suffix> : ''}`
-  : Path;
-
-type ExcludeNonLiteralPathsSupersededByLiteralPath<Path extends string> =
-  Path extends `${LargestPathPrefix<Path>}:${string}` ? never : Path;
-
-export type PreferMostStaticLiteralPath<Path extends string> =
-  UnionHasMoreThanOneType<Path> extends true ? ExcludeNonLiteralPathsSupersededByLiteralPath<Path> : Path;
 
 type RecursiveInferHttpSchemaPath<
   Schema extends HttpSchema,

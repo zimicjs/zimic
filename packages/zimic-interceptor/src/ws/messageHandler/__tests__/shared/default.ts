@@ -6,9 +6,9 @@ import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@
 import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorClient } from '../../../interceptor/types/messages';
-import { WebSocketInterceptorType } from '../../../interceptor/types/options';
+import { UnhandledMessageStrategy, WebSocketInterceptorType } from '../../../interceptor/types/options';
 import RemoteWebSocketMessageHandler from '../../RemoteWebSocketMessageHandler';
-import { WebSocketMessageHandler } from '../../types/public';
+import { WebSocketMessageHandler, WebSocketMessageHandlerMessageComputedDeclaration } from '../../types/public';
 import { Schema, SharedWebSocketMessageHandlerTestOptions } from './utils';
 
 export function declareDefaultWebSocketMessageHandlerTests(
@@ -36,7 +36,16 @@ export function declareDefaultWebSocketMessageHandlerTests(
     }
   });
 
-  // No WebSocket counterpart for "should provide access to the method and path": WebSocket handlers have neither.
+  // Unlike HTTP requests, WebSocket messages have no method, so only the path is exposed.
+  it('should provide access to the path', async () => {
+    await usingWebSocketInterceptor<Schema>({ type, baseURL }, (interceptor) => {
+      const handler = interceptor.message('/rooms/:roomId');
+      expect(handler.path).toBe('/rooms/:roomId');
+
+      const handlerWithoutPath = interceptor.message();
+      expect(handlerWithoutPath.path).toBe(undefined);
+    });
+  });
 
   // Unlike HTTP requests, a message needs no reply, so a handler without a declared response still matches.
   it('should match any message if contains no declared response', async () => {
@@ -108,7 +117,16 @@ export function declareDefaultWebSocketMessageHandlerTests(
     );
   });
 
-  it('should not match messages if cleared while they are being matched', async () => {
+  it.each<{
+    condition: string;
+    declareAfterClear: (handler: WebSocketMessageHandler<Schema>) => unknown;
+  }>([
+    { condition: 'cleared', declareAfterClear: (handler) => handler },
+    {
+      condition: 'cleared and redeclared',
+      declareAfterClear: (handler) => handler.respond({ type: 'delete', id: 'redeclared' }),
+    },
+  ])('should not match messages if $condition while they are being matched', async ({ declareAfterClear }) => {
     const restrictionStartedPromise = createPromiseWithResolvers<void>();
     const restrictionReleasedPromise = createPromiseWithResolvers<void>();
 
@@ -131,11 +149,14 @@ export function declareDefaultWebSocketMessageHandlerTests(
           client.send(JSON.stringify({ type: 'create', body: { text: 'pending' } }));
           await restrictionStartedPromise;
 
-          await handler.clear();
+          await declareAfterClear(handler.clear());
           restrictionReleasedPromise.resolve();
 
           await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'older' }));
           expect(handler.messages).toHaveLength(0);
+
+          await handler.times(0);
+          await handler.checkTimes();
         });
       },
     );
@@ -178,8 +199,178 @@ export function declareDefaultWebSocketMessageHandlerTests(
     );
   });
 
-  // No WebSocket counterparts for creating responses from static or computed declarations, or without a declared
-  // response: WebSocket handlers send replies through the interceptor, so the interceptor handler suite covers them.
+  // No WebSocket message counterpart for "should create response with declared status and body": a message response is
+  // data sent through the socket, without a status or a response object to create.
+
+  // No WebSocket message counterpart for "should create response with declared status and body factory": a message
+  // response is data sent through the socket, without a status or a response object to create.
+
+  // No WebSocket message counterpart for "should not throw an error if trying to create a response without a declared
+  // response": a message needs no reply, so a handler without a declared response matches and sends nothing.
+
+  // No WebSocket message counterpart for "should decide connections with a $response computed response": a message has
+  // no handshake to accept or reject.
+
+  it('should compute responses with the message', async () => {
+    await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+      const responseFactory = vi.fn<WebSocketMessageHandlerMessageComputedDeclaration<Schema>>(() => ({
+        type: 'delete',
+        id: '1',
+      }));
+
+      await interceptor.message().respond(responseFactory);
+
+      await usingWebSocketClient<Schema>(baseURL, async (client) => {
+        const response = waitForWebSocketClientMessage(client);
+
+        client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+        await response;
+
+        expect(responseFactory).toHaveBeenCalledTimes(1);
+        expect(responseFactory).toHaveBeenCalledWith(
+          { type: 'create', body: { text: 'hello' } },
+          { sender: interceptor.clients[0], receiver: interceptor.server },
+        );
+      });
+    });
+  });
+
+  it.each<{
+    condition: string;
+    declareAfterClear: (handler: WebSocketMessageHandler<Schema>) => unknown;
+  }>([
+    { condition: 'cleared', declareAfterClear: (handler) => handler },
+    {
+      condition: 'cleared and redeclared',
+      declareAfterClear: (handler) => handler.with({ type: 'create' }).respond({ type: 'delete', id: 'redeclared' }),
+    },
+  ])('should not respond to messages if $condition while computing their response', async ({ declareAfterClear }) => {
+    const responseStartedPromise = createPromiseWithResolvers<void>();
+    const responseReleasedPromise = createPromiseWithResolvers<void>();
+
+    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true }, onUnhandledMessage },
+      async (interceptor) => {
+        const handler = await interceptor.message().respond(async () => {
+          responseStartedPromise.resolve();
+          await responseReleasedPromise;
+          return { type: 'delete', id: '1' };
+        });
+
+        await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' });
+
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
+          const firstResponse = waitForWebSocketClientMessage(client);
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'pending' } }));
+          await responseStartedPromise;
+
+          await declareAfterClear(handler.clear());
+          responseReleasedPromise.resolve();
+
+          await waitFor(() => {
+            expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+          });
+
+          client.send(JSON.stringify({ type: 'delete', id: '2' }));
+
+          // Messages on a socket are delivered in order, so the probe response arriving first means that the pending
+          // message got no response.
+          await expect(firstResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
+
+          expect(handler.messages).toHaveLength(0);
+
+          await handler.times(0);
+          await handler.checkTimes();
+        });
+      },
+    );
+  });
+
+  // No WebSocket message counterpart for "should not respond to requests if cleared while reading their response body":
+  // a message response is data sent through the socket, without a body to read.
+
+  it('should respond to messages if redeclared while computing their response', async () => {
+    await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+      const handler = await interceptor.message().respond(async () => {
+        await handler.respond({ type: 'delete', id: 'redeclared' });
+        return { type: 'delete', id: 'computed' };
+      });
+
+      await usingWebSocketClient<Schema>(baseURL, async (client) => {
+        const firstResponse = waitForWebSocketClientMessage(client);
+        client.send(JSON.stringify({ type: 'create', body: { text: 'first' } }));
+        await expect(firstResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'computed' }));
+
+        const secondResponse = waitForWebSocketClientMessage(client);
+        client.send(JSON.stringify({ type: 'create', body: { text: 'second' } }));
+        await expect(secondResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'redeclared' }));
+      });
+    });
+  });
+
+  it.each<{
+    condition: string;
+    declareAfterClear: (
+      handler: WebSocketMessageHandler<Schema>,
+      redeclaredResponse: WebSocketMessageHandlerMessageComputedDeclaration<Schema>,
+    ) => unknown;
+  }>([
+    { condition: 'cleared', declareAfterClear: (handler) => handler },
+    {
+      condition: 'cleared and redeclared',
+      declareAfterClear: (handler, redeclaredResponse) => handler.with({ type: 'create' }).respond(redeclaredResponse),
+    },
+  ])('should not respond to messages if $condition while running their effect', async ({ declareAfterClear }) => {
+    const effectStartedPromise = createPromiseWithResolvers<void>();
+    const effectReleasedPromise = createPromiseWithResolvers<void>();
+
+    const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
+    const redeclaredResponse = vi.fn<WebSocketMessageHandlerMessageComputedDeclaration<Schema>>();
+
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true }, onUnhandledMessage },
+      async (interceptor) => {
+        const handler = await interceptor
+          .message()
+          .effect(async () => {
+            effectStartedPromise.resolve();
+            await effectReleasedPromise;
+          })
+          .respond({ type: 'delete', id: '1' });
+
+        await interceptor.message().with({ type: 'delete' }).respond({ type: 'delete', id: 'probe' });
+
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
+          const firstResponse = waitForWebSocketClientMessage(client);
+
+          client.send(JSON.stringify({ type: 'create', body: { text: 'pending' } }));
+          await effectStartedPromise;
+
+          await declareAfterClear(handler.clear(), redeclaredResponse);
+          effectReleasedPromise.resolve();
+
+          await waitFor(() => {
+            expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
+          });
+
+          client.send(JSON.stringify({ type: 'delete', id: '2' }));
+
+          // Messages on a socket are delivered in order, so the probe response arriving first means that the pending
+          // message got no response.
+          await expect(firstResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'probe' }));
+
+          expect(handler.messages).toHaveLength(0);
+          expect(redeclaredResponse).not.toHaveBeenCalled();
+
+          await handler.times(0);
+          await handler.checkTimes();
+        });
+      },
+    );
+  });
 
   it('should keep track of the intercepted messages', async () => {
     await usingWebSocketInterceptor<Schema>(
@@ -247,8 +438,11 @@ export function declareDefaultWebSocketMessageHandlerTests(
     );
   });
 
-  // No WebSocket counterparts for accessing raw intercepted requests and responses or their hidden properties:
+  // No WebSocket message counterpart for "should provide access to the raw intercepted requests and responses":
   // intercepted messages carry parsed data, with no raw request or response objects.
+
+  // No WebSocket message counterpart for "should provide no access to hidden properties in raw intercepted requests and
+  // responses": intercepted messages carry parsed data, with no raw request or response objects to hide properties of.
 
   it('should clear restrictions after cleared', async () => {
     await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
@@ -290,7 +484,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
       });
 
       it('should be then-able', async () => {
-        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation);
+        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation, undefined);
         await handler.respond({ type: 'delete', id: '1' });
 
         expect(handler).toHaveProperty('then', expect.any(Function));
@@ -314,7 +508,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
       });
 
       it('should be catch-able', async () => {
-        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation);
+        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation, undefined);
         await handler.respond({ type: 'delete', id: '1' });
 
         expect(handler).toHaveProperty('then', expect.any(Function));
@@ -331,7 +525,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
       });
 
       it('should be finally-able', async () => {
-        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation);
+        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation, undefined);
         await handler.respond({ type: 'delete', id: '1' });
 
         expect(handler).toHaveProperty('then', expect.any(Function));

@@ -1,12 +1,13 @@
+import { NodeXHR } from 'socket.io-client';
 import { afterAll, beforeAll, describe } from 'vitest';
 
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
-import { declareConnectionAndSendWebSocketInterceptorTests } from './shared/connectionsAndSends';
-import testMatrix from './shared/matrix';
+import testMatrix from '../../interceptor/__tests__/shared/matrix';
+import { declareSocketIOProtocolTests } from './shared/default';
 
-describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Connections and sends', ({ type }) => {
+describe.each(testMatrix)('SocketIOProtocol (node, $type)', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   beforeAll(async () => {
@@ -21,10 +22,9 @@ describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Connections and 
     }
   });
 
-  declareConnectionAndSendWebSocketInterceptorTests({
+  declareSocketIOProtocolTests({
     type,
-    getBaseURL() {
-      return getNodeBaseURL(type, server).replace(/^http/, 'ws');
-    },
+    getBaseURL: () => getNodeBaseURL(type, server).replace(/^http/, 'ws'),
+    PollingTransport: NodeXHR,
   });
 });

@@ -25,3 +25,19 @@ paths:
                 description: The file uploaded
                 format: binary
                 nullable: true
+
+  /binary-component:
+    get:
+      responses:
+        '200':
+          description: Success
+          content:
+            application/octet-stream:
+              schema:
+                $ref: '#/components/schemas/File'
+
+components:
+  schemas:
+    File:
+      type: string
+      format: binary

@@ -136,6 +136,48 @@ paths:
               schema:
                 type: boolean
 
+  /users-with-cookies:
+    get:
+      parameters:
+        - name: session
+          in: cookie
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Success
+
+  /users-with-headers-without-schemas:
+    get:
+      responses:
+        '204':
+          description: Success
+          headers:
+            x-empty-schema:
+              schema: {}
+            x-description-only:
+              description: A header without a schema or content
+
+  /users-with-content-headers:
+    get:
+      responses:
+        '204':
+          description: Success
+          headers:
+            x-content:
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+            x-referenced-content:
+              content:
+                application/json:
+                  $ref: '#/components/schemas/x-rate-limit-remaining'
+
 components:
   schemas:
     content-type:

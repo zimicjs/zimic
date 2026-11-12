@@ -1,7 +1,8 @@
 import { PossiblePromise } from '@zimic/utils/types';
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageSchema } from '@zimic/ws';
 
-import { WebSocketInterceptorMessageSaving } from './public';
+import type { WebSocketInterceptorProtocol } from './protocol';
+import { WebSocketInterceptorConnectionSaving, WebSocketInterceptorMessageSaving } from './public';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -30,7 +31,7 @@ export namespace UnhandledMessageStrategy {
   }
 
   /** @see {@link https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages Unhandled messages} */
-  export type DeclarationFactory = (message: WebSocketSchema) => PossiblePromise<Declaration>;
+  export type DeclarationFactory = (message: WebSocketMessageSchema) => PossiblePromise<Declaration>;
 }
 
 /**
@@ -52,8 +53,19 @@ export interface SharedWebSocketInterceptorOptions {
   /** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
   messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
 
+  /** Configures if intercepted connections are saved and how they are handled. */
+  connectionSaving?: Partial<WebSocketInterceptorConnectionSaving>;
+
   /** @see {@link https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages Unhandled messages} */
   onUnhandledMessage?: UnhandledMessageStrategy;
+
+  /**
+   * Translates the raw frames of a framed protocol into the messages seen by handlers. Experimental. Without it,
+   * handlers receive WebSocket frames as messages.
+   *
+   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#protocol-option `protocol` option}
+   */
+  protocol?: WebSocketInterceptorProtocol;
 }
 
 /**

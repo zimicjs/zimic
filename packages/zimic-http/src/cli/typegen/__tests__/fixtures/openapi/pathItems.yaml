@@ -8,8 +8,14 @@ paths:
   /users-with-path-item-component:
     $ref: '#/components/pathItems/users'
 
+  /users-with-path-item-component-reference:
+    $ref: '#/components/pathItems/usersReference'
+
 components:
   pathItems:
+    usersReference:
+      $ref: '#/components/pathItems/users'
+
     users:
       description: User paths
       post:

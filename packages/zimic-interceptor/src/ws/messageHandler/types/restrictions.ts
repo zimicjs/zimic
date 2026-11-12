@@ -1,5 +1,5 @@
 import { DeepPartial, PossiblePromise } from '@zimic/utils/types';
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageSchema } from '@zimic/ws';
 
 import { ReceivedWebSocketMessageData, UnparsedWebSocketJSONPrimitive } from '@/ws/interceptor/types/messages';
 
@@ -8,7 +8,7 @@ import { ReceivedWebSocketMessageData, UnparsedWebSocketJSONPrimitive } from '@/
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
  */
-export type WebSocketMessageHandlerStaticRestriction<Schema extends WebSocketSchema> = Schema extends
+export type WebSocketMessageHandlerStaticRestriction<Schema extends WebSocketMessageSchema> = Schema extends
   Blob | BufferSource
   ? Blob | BufferSource
   : Schema extends UnparsedWebSocketJSONPrimitive | string
@@ -28,13 +28,13 @@ export interface WebSocketMessageHandlerStaticRestrictionOptions {
 }
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
-type WebSocketMessageHandlerComputedBooleanRestriction<Schema extends WebSocketSchema> = (
+type WebSocketMessageHandlerComputedBooleanRestriction<Schema extends WebSocketMessageSchema> = (
   message: ReceivedWebSocketMessageData<Schema>,
 ) => PossiblePromise<boolean>;
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
 export type WebSocketMessageHandlerComputedTypeGuardRestriction<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
   PredicateSchema extends ReceivedWebSocketMessageData<Schema> = ReceivedWebSocketMessageData<Schema>,
 > = (message: ReceivedWebSocketMessageData<Schema>) => message is PredicateSchema;
 
@@ -44,7 +44,7 @@ export type WebSocketMessageHandlerComputedTypeGuardRestriction<
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
  */
 export type WebSocketMessageHandlerComputedRestriction<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketMessageSchema,
   PredicateSchema extends ReceivedWebSocketMessageData<Schema> = ReceivedWebSocketMessageData<Schema>,
 > =
   | WebSocketMessageHandlerComputedBooleanRestriction<Schema>
@@ -55,11 +55,11 @@ export type WebSocketMessageHandlerComputedRestriction<
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
  */
-export type WebSocketMessageHandlerRestriction<Schema extends WebSocketSchema> =
+export type WebSocketMessageHandlerRestriction<Schema extends WebSocketMessageSchema> =
   WebSocketMessageHandlerStaticRestriction<Schema> | WebSocketMessageHandlerComputedRestriction<Schema>;
 
 /** The arguments accepted by `handler.with()` after a restriction. Only static restrictions accept options. */
-export type WebSocketMessageHandlerRestrictionOptionsArguments<Schema extends WebSocketSchema, Restriction> =
+export type WebSocketMessageHandlerRestrictionOptionsArguments<Schema extends WebSocketMessageSchema, Restriction> =
   Restriction extends WebSocketMessageHandlerComputedRestriction<Schema>
     ? []
     : [options?: WebSocketMessageHandlerStaticRestrictionOptions];
@@ -69,7 +69,9 @@ export interface WebSocketMessageHandlerRestrictionDiff<Value> {
   received: Value;
 }
 
-export interface WebSocketMessageHandlerRestrictionDiffs<Schema extends WebSocketSchema = WebSocketSchema> {
+export interface WebSocketMessageHandlerRestrictionDiffs<
+  Schema extends WebSocketMessageSchema = WebSocketMessageSchema,
+> {
   sender?: WebSocketMessageHandlerRestrictionDiff<boolean>;
   computed?: WebSocketMessageHandlerRestrictionDiff<boolean>;
   data?: WebSocketMessageHandlerRestrictionDiff<
@@ -77,10 +79,12 @@ export interface WebSocketMessageHandlerRestrictionDiffs<Schema extends WebSocke
   >;
 }
 
-export type WebSocketMessageHandlerRestrictionMatch<Schema extends WebSocketSchema = WebSocketSchema> =
+export type WebSocketMessageHandlerRestrictionMatch<Schema extends WebSocketMessageSchema = WebSocketMessageSchema> =
   { success: true } | { success: false; diff: WebSocketMessageHandlerRestrictionDiffs<Schema> };
 
-export interface UnmatchedWebSocketInterceptorMessageGroup<Schema extends WebSocketSchema = WebSocketSchema> {
+export interface UnmatchedWebSocketInterceptorMessageGroup<
+  Schema extends WebSocketMessageSchema = WebSocketMessageSchema,
+> {
   message: ReceivedWebSocketMessageData<Schema>;
   diff: WebSocketMessageHandlerRestrictionDiffs<Schema>;
 }

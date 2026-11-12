@@ -6,7 +6,7 @@ import { Server as HttpsServer } from 'https';
 import { WebSocketServer as NodeWebSocketServer } from 'ws';
 
 import { WebSocketClient } from '@/client/WebSocketClient';
-import { WebSocketSchema } from '@/types/schema';
+import { WebSocketSchema, WebSocketSchemaPath } from '@/types/schema';
 
 import ClosedWebSocketServerError from './errors/ClosedWebSocketServerError';
 import { openWebSocketServer, WebSocketServerCloseOptions, WebSocketServerOpenOptions } from './utils/lifecycle';
@@ -15,7 +15,8 @@ export namespace WebSocketServer {
   export type EventType = 'listening' | 'connection' | 'error' | 'close';
 
   export interface EventListenerParameters<Schema extends WebSocketSchema> {
-    connection: [client: WebSocketClient<Schema>, request: IncomingMessage];
+    // A server accepts connections to any path of its schema, so its clients can exchange the messages of any of them.
+    connection: [client: WebSocketClient<Schema, WebSocketSchemaPath.Literal<Schema>>, request: IncomingMessage];
     error: [error: Error];
     close: [];
     listening: [];
@@ -149,7 +150,12 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
 
         return ((...[rawClient, ...parameters]: WebSocketServerRawEventListenerParameters['connection']) => {
           const wrappedClient =
-            rawClient instanceof WebSocketClient ? rawClient : new WebSocketClient<Schema>(rawClient);
+            rawClient instanceof WebSocketClient
+              ? rawClient
+              : (new WebSocketClient<WebSocketSchema>(rawClient) as unknown as WebSocketClient<
+                  Schema,
+                  WebSocketSchemaPath.Literal<Schema>
+                >);
 
           typedListener.call(this, wrappedClient, ...parameters);
         }) as WebSocketServerRawEventListener<Type>;
