@@ -209,8 +209,9 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     return this.sendQueue;
   }
 
-  // A connection claimed by a protocol continues a client that already exists, so it is not decided by the connection
-  // handlers and has no client of its own.
+  // A connection claimed by a protocol opens its clients through the protocol, so it is not decided by the connection
+  // handlers and has no client of its own. The protocol closes it, so the server keeps it open after its holders let
+  // it go.
   private claimConnectionForProtocol(clientId: string, url: string, holders: RegisteredWebSocketInterceptor[]) {
     const rawConnection = {
       send: (frame: WebSocketInterceptorProtocolFrame) => {
@@ -257,10 +258,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     });
 
     if (this.claimConnectionForProtocol(connection.clientId, connection.url, holderCandidates)) {
-      return {
-        action: 'accept',
-        acceptedInterceptorIds: holderCandidates.map((registeredInterceptor) => registeredInterceptor.id),
-      };
+      return { action: 'claim' };
     }
 
     this.decidingClientIds.add(connection.clientId);

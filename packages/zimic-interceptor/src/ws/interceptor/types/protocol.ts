@@ -67,9 +67,15 @@ export interface WebSocketInterceptorProtocolConnectionClaim {
 export interface WebSocketInterceptorProtocolClientOptions {
   url: string;
   connectionId: string;
+  // Aborted when the protocol lets the client go while the connection handlers decide it, such as when its connection
+  // closes or its interceptor is cleared or stopped.
+  signal: AbortSignal;
   sendFrame: (frame: WebSocketInterceptorProtocolFrame) => void;
   close: (code?: number, reason?: string) => void;
 }
+
+export type WebSocketInterceptorProtocolClientOpening =
+  { action: 'accept'; client: WebSocketInterceptorProtocolClient } | { action: 'reject' };
 
 /** What an interceptor exposes to the protocols implemented by this package. */
 export interface WebSocketInterceptorProtocolHost {
@@ -78,14 +84,15 @@ export interface WebSocketInterceptorProtocolHost {
   readonly auth?: { token: string };
 
   /**
-   * Opens a client on a transport other than a WebSocket connection, deciding it with the connection handlers. Resolves
-   * to `null` if a handler rejects it.
+   * Opens a client on a connection claimed by the protocol, deciding it with the connection handlers. Resolves to
+   * `null` if the opening was aborted while it was decided.
    */
   openClient: (
     options: WebSocketInterceptorProtocolClientOptions,
-  ) => Promise<WebSocketInterceptorProtocolClient | null>;
+  ) => Promise<WebSocketInterceptorProtocolClientOpening | null>;
   removeClient: (client: WebSocketInterceptorProtocolClient) => void;
-  handleFrame: (client: WebSocketInterceptorProtocolClient, frame: WebSocketInterceptorUnnormalizedFrame) => void;
+  /** Handles a message the protocol decoded from a frame of the client. */
+  handleMessage: (client: WebSocketInterceptorProtocolClient, message: unknown) => void;
 }
 
 /**

@@ -369,7 +369,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     await this.decideConnection(pendingConnection);
   }
 
-  // A connection claimed by a protocol continues a client that already exists, so it is not decided by the connection
+  // A connection claimed by a protocol opens its clients through the protocol, so it is not decided by the connection
   // handlers and has no client of its own.
   private claimConnectionForProtocol(
     connection: LocalWebSocketClientConnection,

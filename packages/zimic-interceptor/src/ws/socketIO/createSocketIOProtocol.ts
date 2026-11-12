@@ -2,7 +2,6 @@ import { decodePacket } from 'engine.io-parser';
 import * as defaultParser from 'socket.io-parser';
 
 import { isServerSide } from '@/utils/environment';
-import { logger } from '@/utils/logging';
 import { isWebSocketBinaryMessageData, normalizeBufferSource } from '@/ws/utils/messageData';
 
 import type {
@@ -14,11 +13,10 @@ import type {
   WebSocketInterceptorProtocolRawConnection,
 } from '../interceptor/types/protocol';
 import {
-  createUnsupportedEngineIOVersionMessage,
   getOrCreateSocketIOEngine,
   SocketIOEngine,
   SocketIOEngineMember,
-  SUPPORTED_ENGINE_IO_VERSION,
+  SocketIOEngineSession,
 } from './SocketIOEngine';
 import type { SocketIOMessage, SocketIOPacket, SocketIOParser, SocketIOProtocolOptions } from './types';
 
@@ -27,9 +25,6 @@ const { PacketType } = defaultParser;
 const DEFAULT_NAMESPACE = '/';
 const DEFAULT_PING_INTERVAL = 25000;
 const DEFAULT_PING_TIMEOUT = 20000;
-
-// A code in the application range, because Socket.IO has no close code for a refused protocol version.
-const UNSUPPORTED_VERSION_CLOSE_CODE = 4000;
 
 const ENGINE_IO_MESSAGE_PACKET_PREFIX = '4';
 
@@ -43,10 +38,14 @@ class SocketIOProtocol implements InternalWebSocketInterceptorProtocol<SocketIOM
 
   private engine?: SocketIOEngine;
   private encoder: InstanceType<SocketIOParser['Encoder']>;
-  private decoderStates = new WeakMap<WebSocketInterceptorProtocolClient, SocketIODecoderState>();
+  private decoderStates = new WeakMap<SocketIOEngineSession, SocketIODecoderState>();
 
   constructor(private options: Required<Omit<SocketIOProtocolOptions, 'parser'>> & { parser: SocketIOParser }) {
     this.encoder = new options.parser.Encoder();
+  }
+
+  get namespace() {
+    return this.options.namespace;
   }
 
   async start(host: WebSocketInterceptorProtocolHost) {
@@ -78,28 +77,25 @@ class SocketIOProtocol implements InternalWebSocketInterceptorProtocol<SocketIOM
   }
 
   onConnection = (client: WebSocketInterceptorProtocolClient) => {
-    const version = new URL(client.url).searchParams.get('EIO');
-
-    if (version !== SUPPORTED_ENGINE_IO_VERSION) {
-      const message = createUnsupportedEngineIOVersionMessage(version);
-      logger.warn(message);
-      client.close(UNSUPPORTED_VERSION_CLOSE_CODE, message);
-      return undefined;
-    }
-
     return this.engine?.connectClient(this, client);
   };
 
-  decode(frame: WebSocketInterceptorProtocolFrame, client: WebSocketInterceptorProtocolClient): SocketIOMessage[] {
+  // The engine claims every connection while the protocol runs and decodes its frames with `receiveFrame`, so the
+  // interceptor has no frames to decode.
+  decode(): SocketIOMessage[] {
+    return [];
+  }
+
+  receiveFrame(session: SocketIOEngineSession, frame: WebSocketInterceptorProtocolFrame) {
     const packet = decodePacket(frame, 'arraybuffer');
 
     if (packet.type !== 'message') {
-      return [];
+      return;
     }
 
-    return this.decodeSocketPackets(this.convertChunkForParser(packet.data), client).flatMap((socketPacket) => {
-      return socketPacket.nsp === this.options.namespace ? this.handleSocketPacket(socketPacket, client) : [];
-    });
+    for (const socketPacket of this.decodeSocketPackets(this.convertChunkForParser(packet.data), session)) {
+      this.handleSocketPacket(socketPacket, session);
+    }
   }
 
   // On Node.js, custom parsers such as `socket.io-msgpack-parser` read binary chunks as buffers, as a Socket.IO server
@@ -110,14 +106,14 @@ class SocketIOProtocol implements InternalWebSocketInterceptorProtocol<SocketIOM
   }
 
   // Decoders emit each packet when it is complete, which spans several frames for binary attachments.
-  private decodeSocketPackets(chunk: unknown, client: WebSocketInterceptorProtocolClient) {
-    const state = this.getOrCreateDecoderState(client);
+  private decodeSocketPackets(chunk: unknown, session: SocketIOEngineSession) {
+    const state = this.getOrCreateDecoderState(session);
     state.decoder.add(chunk);
     return state.decodedPackets.splice(0);
   }
 
-  private getOrCreateDecoderState(client: WebSocketInterceptorProtocolClient) {
-    const existingState = this.decoderStates.get(client);
+  private getOrCreateDecoderState(session: SocketIOEngineSession) {
+    const existingState = this.decoderStates.get(session);
 
     if (existingState) {
       return existingState;
@@ -126,28 +122,32 @@ class SocketIOProtocol implements InternalWebSocketInterceptorProtocol<SocketIOM
     const state: SocketIODecoderState = { decoder: new this.options.parser.Decoder(), decodedPackets: [] };
     state.decoder.on('decoded', (packet) => state.decodedPackets.push(packet));
 
-    this.decoderStates.set(client, state);
+    this.decoderStates.set(session, state);
     return state;
   }
 
-  private handleSocketPacket(packet: SocketIOPacket, client: WebSocketInterceptorProtocolClient): SocketIOMessage[] {
+  private handleSocketPacket(packet: SocketIOPacket, session: SocketIOEngineSession) {
     if (packet.type === PacketType.CONNECT) {
-      this.sendConnectReply(client);
-      return [];
+      this.engine?.handleConnectPacket(this, session, packet.nsp);
+      return;
     }
 
-    if (packet.type === PacketType.EVENT || packet.type === PacketType.BINARY_EVENT) {
-      return [this.createEventMessage(packet)];
+    const client = packet.nsp === this.options.namespace ? session.clients.get(this) : undefined;
+
+    if (!client) {
+      return;
     }
 
-    return [];
+    if (packet.type === PacketType.DISCONNECT) {
+      this.host.removeClient(client);
+    } else if (packet.type === PacketType.EVENT || packet.type === PacketType.BINARY_EVENT) {
+      this.host.handleMessage(client, this.createEventMessage(packet));
+    }
   }
 
-  private sendConnectReply(client: WebSocketInterceptorProtocolClient) {
-    const reply = { type: PacketType.CONNECT, nsp: this.options.namespace, data: { sid: crypto.randomUUID() } };
-
-    for (const frame of this.encodeSocketPacket(reply)) {
-      client.sendFrame(frame);
+  sendSocketPacket(session: SocketIOEngineSession, packet: SocketIOPacket) {
+    for (const frame of this.encodeSocketPacket(packet)) {
+      session.transport.send(frame);
     }
   }
 
@@ -212,7 +212,8 @@ class SocketIOProtocol implements InternalWebSocketInterceptorProtocol<SocketIOM
  *
  * Polling, enabled by default, intercepts HTTP requests to `<base URL>/socket.io/`. Use one protocol and one
  * interceptor for each namespace and base URL. Interceptors of namespaces on the same base URL share a connection, and
- * the first one started sets the `polling`, `pingInterval`, and `pingTimeout` options.
+ * the first one started sets the `polling`, `pingInterval`, and `pingTimeout` options. Each interceptor lists a client
+ * for each socket that joins its namespace.
  *
  * @example
  *   const interceptor = createWebSocketInterceptor<SocketIOSchema<ServerToClientEvents, ClientToServerEvents>>({

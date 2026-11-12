@@ -187,7 +187,7 @@ export interface WebSocketInterceptorClient<
    * holding it. The arguments follow the native
    * {@link https://developer.mozilla.org/docs/Web/API/WebSocket/close `WebSocket.close()`}: if `code` is omitted, the
    * client receives the close code 1005 and no reason. Closing a client that is already closed, or no longer held by a
-   * running interceptor, does nothing.
+   * running interceptor, does nothing. Clients of a Socket.IO interceptor disconnect only from its namespace.
    *
    * @param code The close code, either 1000 or between 3000 and 4999. As in `WebSocket.close()`, it is clamped to 0
    *   through 65535 and rounded to the nearest integer, with ties to even, before being checked.
@@ -195,6 +195,7 @@ export interface WebSocketInterceptorClient<
    * @throws {DOMException} An `InvalidAccessError` if `code`, after clamping and rounding, is not 1000 or between 3000
    *   and 4999.
    * @throws {DOMException} A `SyntaxError` if `reason` is longer than 123 bytes when encoded as UTF-8.
+   * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#clients Socket.IO clients}
    */
   close: (code?: number, reason?: string) => void;
 }

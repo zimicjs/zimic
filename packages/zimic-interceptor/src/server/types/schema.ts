@@ -16,9 +16,10 @@ export interface WebSocketWorkerReset {
   clearedInterceptorIds?: string[];
 }
 
-// A rejected connection has no holders, because the server refuses its handshake.
+// A rejected connection has no holders, because the server refuses its handshake. A claimed connection is held by a
+// protocol of the worker, which closes it with `interceptors/ws/clients/disconnect`, so it outlives its holders.
 export type WebSocketClientConnectionReply =
-  { action: 'accept'; acceptedInterceptorIds: string[] } | { action: 'reject' };
+  { action: 'accept'; acceptedInterceptorIds: string[] } | { action: 'claim' } | { action: 'reject' };
 
 export interface WebSocketClientDisconnection {
   clientId: string;

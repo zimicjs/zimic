@@ -1,13 +1,16 @@
 import type { HttpSchema } from '@zimic/http';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
-import { io, type ManagerOptions, type NodeXHR, Socket, type XHR } from 'socket.io-client';
+import { io, Manager, type ManagerOptions, type NodeXHR, Socket, type XHR } from 'socket.io-client';
 import msgpackParser from 'socket.io-msgpack-parser';
 import { describe, expect, it, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
+import type { WebSocketInterceptorClient } from '../../../interceptor/types/messages';
 import type { WebSocketInterceptorType } from '../../../interceptor/types/options';
+import type { WebSocketInterceptor } from '../../../interceptor/types/public';
 import { createSocketIOProtocol } from '../../createSocketIOProtocol';
 import { GlobalWebSocketTransport } from '../../GlobalWebSocketTransport';
 import type { SocketIOMessage, SocketIOParser, SocketIOSchema } from '../../types';
@@ -26,6 +29,8 @@ interface ClientToServerEvents {
 type ChatSchema = SocketIOSchema<ServerToClientEvents, ClientToServerEvents>;
 
 type AnySchema = SocketIOSchema;
+
+type SocketIOTestInterceptor = Pick<WebSocketInterceptor<AnySchema>, 'clear' | 'stop'>;
 
 type HealthSchema = HttpSchema<{ '/health': { GET: { response: { 204: { body: null } } } } }>;
 
@@ -56,6 +61,27 @@ async function usingSocket(
     await callback(socket);
   } finally {
     socket.disconnect();
+  }
+}
+
+// Sockets of one manager share its Engine.IO connection, each on its own namespace.
+async function usingSocketManager(
+  baseURL: string,
+  options: Partial<ManagerOptions>,
+  callback: (manager: Manager) => Promise<void>,
+) {
+  const { origin, pathname } = new URL(baseURL);
+
+  const manager = new Manager(origin.replace(/^ws/, 'http'), {
+    path: `${pathname.replace(/\/$/, '')}/socket.io/`,
+    reconnection: false,
+    ...options,
+  });
+
+  try {
+    await callback(manager);
+  } finally {
+    manager.engine.close();
   }
 }
 
@@ -377,6 +403,533 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
       );
     });
 
+    it('should list a client only in the interceptors of the namespaces it joined', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<AnySchema>(
+        {
+          type,
+          baseURL,
+          messageSaving: { enabled: true },
+          connectionSaving: { enabled: true },
+          protocol: createSocketIOProtocol(),
+        },
+        async (rootInterceptor) => {
+          await usingWebSocketInterceptor<AnySchema>(
+            {
+              type,
+              baseURL,
+              messageSaving: { enabled: true },
+              connectionSaving: { enabled: true },
+              protocol: createSocketIOProtocol({ namespace: '/admin' }),
+            },
+            async (adminInterceptor) => {
+              await usingSocketManager(baseURL, { transports }, async (manager) => {
+                await waitForSocketConnection(manager.socket('/'));
+
+                expect(rootInterceptor.clients).toHaveLength(1);
+                expect(adminInterceptor.clients).toHaveLength(0);
+
+                await waitForSocketConnection(manager.socket('/admin'));
+
+                expect(rootInterceptor.clients).toHaveLength(1);
+                expect(adminInterceptor.clients).toHaveLength(1);
+              });
+            },
+          );
+        },
+      );
+    });
+
+    it('should run connection handlers only for the namespaces a client joined', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<AnySchema>(
+        {
+          type,
+          baseURL,
+          messageSaving: { enabled: true },
+          connectionSaving: { enabled: true },
+          protocol: createSocketIOProtocol(),
+        },
+        async (rootInterceptor) => {
+          await usingWebSocketInterceptor<AnySchema>(
+            {
+              type,
+              baseURL,
+              messageSaving: { enabled: true },
+              connectionSaving: { enabled: true },
+              protocol: createSocketIOProtocol({ namespace: '/admin' }),
+            },
+            async (adminInterceptor) => {
+              const rootHandler = await rootInterceptor.connection().times(1);
+              const adminHandler = await adminInterceptor.connection().times(1);
+
+              await usingSocketManager(baseURL, { transports }, async (manager) => {
+                await waitForSocketConnection(manager.socket('/'));
+
+                expect(rootHandler.connections).toHaveLength(1);
+                expect(adminHandler.connections).toHaveLength(0);
+
+                await waitForSocketConnection(manager.socket('/admin'));
+
+                expect(rootHandler.connections).toHaveLength(1);
+                expect(adminHandler.connections).toHaveLength(1);
+              });
+            },
+          );
+        },
+      );
+    });
+
+    it('should open one Engine.IO connection for the namespaces of a manager', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<AnySchema>(
+        {
+          type,
+          baseURL,
+          messageSaving: { enabled: true },
+          connectionSaving: { enabled: true },
+          protocol: createSocketIOProtocol(),
+        },
+        async () => {
+          await usingWebSocketInterceptor<AnySchema>(
+            {
+              type,
+              baseURL,
+              messageSaving: { enabled: true },
+              connectionSaving: { enabled: true },
+              protocol: createSocketIOProtocol({ namespace: '/admin' }),
+            },
+            async () => {
+              await usingSocketManager(baseURL, { transports }, async (manager) => {
+                let numberOfOpenPackets = 0;
+
+                manager.engine.on('packet', (packet) => {
+                  if (packet.type === 'open') {
+                    numberOfOpenPackets++;
+                  }
+                });
+
+                await Promise.all([
+                  waitForSocketConnection(manager.socket('/')),
+                  waitForSocketConnection(manager.socket('/admin')),
+                ]);
+
+                expect(numberOfOpenPackets).toBe(1);
+              });
+            },
+          );
+        },
+      );
+    });
+
+    it('should remove only the client of the namespace a socket disconnects from', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<AnySchema>(
+        {
+          type,
+          baseURL,
+          messageSaving: { enabled: true },
+          connectionSaving: { enabled: true },
+          protocol: createSocketIOProtocol(),
+        },
+        async (rootInterceptor) => {
+          await usingWebSocketInterceptor<AnySchema>(
+            {
+              type,
+              baseURL,
+              messageSaving: { enabled: true },
+              connectionSaving: { enabled: true },
+              protocol: createSocketIOProtocol({ namespace: '/admin' }),
+            },
+            async (adminInterceptor) => {
+              const rootHandler = await rootInterceptor.message().with({ type: 'event' }).times(1);
+
+              await usingSocketManager(baseURL, { transports }, async (manager) => {
+                const rootSocket = manager.socket('/');
+                const adminSocket = manager.socket('/admin');
+
+                await Promise.all([waitForSocketConnection(rootSocket), waitForSocketConnection(adminSocket)]);
+
+                adminSocket.disconnect();
+
+                await waitFor(() => expect(adminInterceptor.clients).toHaveLength(0));
+                expect(rootInterceptor.clients).toHaveLength(1);
+
+                rootSocket.emit('event', 'data');
+                await waitFor(() => expect(rootHandler.messages).toHaveLength(1));
+              });
+            },
+          );
+        },
+      );
+    });
+
+    it('should keep other namespaces connected when the interceptor of one namespace is cleared', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<AnySchema>(
+        {
+          type,
+          baseURL,
+          messageSaving: { enabled: true },
+          connectionSaving: { enabled: true },
+          protocol: createSocketIOProtocol(),
+        },
+        async (rootInterceptor) => {
+          await usingWebSocketInterceptor<AnySchema>(
+            {
+              type,
+              baseURL,
+              messageSaving: { enabled: true },
+              connectionSaving: { enabled: true },
+              protocol: createSocketIOProtocol({ namespace: '/admin' }),
+            },
+            async (adminInterceptor) => {
+              const rootHandler = await rootInterceptor.message().with({ type: 'event' }).times(1);
+
+              await usingSocketManager(baseURL, { transports }, async (manager) => {
+                const rootSocket = manager.socket('/');
+                const adminSocket = manager.socket('/admin');
+
+                await Promise.all([waitForSocketConnection(rootSocket), waitForSocketConnection(adminSocket)]);
+
+                const adminDisconnectPromise = new Promise<void>((resolve) => {
+                  adminSocket.once('disconnect', () => resolve());
+                });
+
+                await Promise.resolve(adminInterceptor.clear());
+                await adminDisconnectPromise;
+
+                expect(rootSocket.connected).toBe(true);
+
+                rootSocket.emit('event', 'data');
+                await waitFor(() => expect(rootHandler.messages).toHaveLength(1));
+              });
+            },
+          );
+        },
+      );
+    });
+
+    it.each([
+      { lifecycleAction: 'cleared', letGo: (interceptor: SocketIOTestInterceptor) => interceptor.clear() },
+      { lifecycleAction: 'stopped', letGo: (interceptor: SocketIOTestInterceptor) => interceptor.stop() },
+    ])(
+      'should keep namespaces joined after the connection opened when the interceptor that held it is $lifecycleAction',
+      async ({ letGo }) => {
+        const baseURL = getBaseURL();
+
+        await usingWebSocketInterceptor<AnySchema>(
+          {
+            type,
+            baseURL,
+            messageSaving: { enabled: true },
+            connectionSaving: { enabled: true },
+            protocol: createSocketIOProtocol(),
+          },
+          async (rootInterceptor) => {
+            await usingSocketManager(baseURL, { transports }, async (manager) => {
+              const rootSocket = manager.socket('/');
+              await waitForSocketConnection(rootSocket);
+
+              // Started after the connection opened, so the root interceptor was its only holder when it connected.
+              await usingWebSocketInterceptor<AnySchema>(
+                {
+                  type,
+                  baseURL,
+                  messageSaving: { enabled: true },
+                  connectionSaving: { enabled: true },
+                  protocol: createSocketIOProtocol({ namespace: '/admin' }),
+                },
+                async (adminInterceptor) => {
+                  const adminHandler = await adminInterceptor.message().with({ type: 'event' }).times(1);
+
+                  const adminSocket = manager.socket('/admin');
+                  await waitForSocketConnection(adminSocket);
+
+                  const rootDisconnectPromise = new Promise<void>((resolve) => {
+                    rootSocket.once('disconnect', () => resolve());
+                  });
+
+                  await letGo(rootInterceptor);
+                  await rootDisconnectPromise;
+
+                  adminSocket.emit('event', 'data');
+                  await waitFor(() => expect(adminHandler.messages).toHaveLength(1));
+
+                  expect(adminSocket.connected).toBe(true);
+                },
+              );
+            });
+          },
+        );
+      },
+    );
+
+    it('should close connections that joined no namespace when the last interceptor stops', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<AnySchema>(
+        {
+          type,
+          baseURL,
+          messageSaving: { enabled: true },
+          connectionSaving: { enabled: true },
+          protocol: createSocketIOProtocol(),
+        },
+        async (interceptor) => {
+          // A manager without sockets opens its Engine.IO connection without joining any namespace.
+          await usingSocketManager(baseURL, { transports }, async (manager) => {
+            await new Promise<void>((resolve) => {
+              manager.once('open', () => resolve());
+            });
+
+            const closePromise = new Promise<void>((resolve) => {
+              manager.once('close', () => resolve());
+            });
+
+            await interceptor.stop();
+            await closePromise;
+
+            expect(manager.engine.readyState).toBe('closed');
+          });
+        },
+      );
+    });
+
+    it.each([
+      {
+        method: 'send',
+        callRetainedClient: (client: WebSocketInterceptorClient<AnySchema>) => {
+          client.send({ type: 'event', data: 'retained' });
+        },
+      },
+      {
+        method: 'close',
+        callRetainedClient: (client: WebSocketInterceptorClient<AnySchema>) => {
+          client.close();
+        },
+      },
+    ])(
+      'should ignore $method calls of a client retained after its interceptor is cleared',
+      async ({ callRetainedClient }) => {
+        const baseURL = getBaseURL();
+
+        await usingWebSocketInterceptor<AnySchema>(
+          {
+            type,
+            baseURL,
+            messageSaving: { enabled: true },
+            connectionSaving: { enabled: true },
+            protocol: createSocketIOProtocol(),
+          },
+          async () => {
+            await usingWebSocketInterceptor<AnySchema>(
+              {
+                type,
+                baseURL,
+                messageSaving: { enabled: true },
+                connectionSaving: { enabled: true },
+                protocol: createSocketIOProtocol({ namespace: '/admin' }),
+              },
+              async (adminInterceptor) => {
+                // The root namespace keeps the connection open after the admin namespace is cleared.
+                await usingSocketManager(baseURL, { transports }, async (manager) => {
+                  const rootSocket = manager.socket('/');
+                  const adminSocket = manager.socket('/admin');
+
+                  await Promise.all([waitForSocketConnection(rootSocket), waitForSocketConnection(adminSocket)]);
+
+                  const retainedClient = adminInterceptor.clients[0];
+
+                  const adminDisconnectPromise = new Promise<void>((resolve) => {
+                    adminSocket.once('disconnect', () => resolve());
+                  });
+
+                  await Promise.resolve(adminInterceptor.clear());
+                  await adminDisconnectPromise;
+
+                  adminSocket.connect();
+                  await waitForSocketConnection(adminSocket);
+
+                  const receivedEventTypes: string[] = [];
+                  adminSocket.onAny((eventType: string) => receivedEventTypes.push(eventType));
+
+                  callRetainedClient(retainedClient);
+
+                  const markerPromise = new Promise<void>((resolve) => {
+                    adminSocket.once('marker', () => resolve());
+                  });
+                  adminInterceptor.server.send({ type: 'marker', data: 'admin' });
+
+                  await markerPromise;
+
+                  // Packets on a connection arrive in order, so the marker being the only event received means that the
+                  // retained client sent nothing to the reconnected socket before it.
+                  expect(receivedEventTypes).toEqual(['marker']);
+                  expect(adminSocket.connected).toBe(true);
+                });
+              },
+            );
+          },
+        );
+      },
+    );
+
+    it('should fail with connect_error only the namespace whose connection handler rejects it', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<AnySchema>(
+        {
+          type,
+          baseURL,
+          messageSaving: { enabled: true },
+          connectionSaving: { enabled: true },
+          protocol: createSocketIOProtocol(),
+        },
+        async () => {
+          await usingWebSocketInterceptor<AnySchema>(
+            {
+              type,
+              baseURL,
+              messageSaving: { enabled: true },
+              connectionSaving: { enabled: true },
+              protocol: createSocketIOProtocol({ namespace: '/admin' }),
+            },
+            async (adminInterceptor) => {
+              await adminInterceptor.connection().respond({ action: 'reject' }).times(1);
+
+              await usingSocketManager(baseURL, { transports }, async (manager) => {
+                const rootSocket = manager.socket('/');
+                const adminSocket = manager.socket('/admin');
+
+                await Promise.all([
+                  expect(waitForSocketConnection(rootSocket)).resolves.toBeUndefined(),
+                  expect(waitForSocketConnection(adminSocket)).rejects.toThrow('Connection rejected'),
+                ]);
+
+                expect(adminInterceptor.clients).toHaveLength(0);
+                expect(rootSocket.connected).toBe(true);
+              });
+            },
+          );
+        },
+      );
+    });
+
+    it('should fail with connect_error the connections to a namespace without an interceptor', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<AnySchema>(
+        {
+          type,
+          baseURL,
+          messageSaving: { enabled: true },
+          connectionSaving: { enabled: true },
+          protocol: createSocketIOProtocol(),
+        },
+        async (interceptor) => {
+          await usingSocket(baseURL, { transports, nsp: '/unknown' }, async (socket) => {
+            await expect(waitForSocketConnection(socket)).rejects.toThrow('Invalid namespace');
+            expect(interceptor.clients).toHaveLength(0);
+          });
+        },
+      );
+    });
+
+    it.each([
+      { lifecycleAction: 'cleared', letGo: (interceptor: SocketIOTestInterceptor) => interceptor.clear() },
+      { lifecycleAction: 'stopped', letGo: (interceptor: SocketIOTestInterceptor) => interceptor.stop() },
+    ])(
+      'should not list a client whose interceptor is $lifecycleAction while its connection is decided',
+      async ({ letGo }) => {
+        const baseURL = getBaseURL();
+
+        const decisionStartedPromise = createPromiseWithResolvers<void>();
+        const decisionReleasedPromise = createPromiseWithResolvers<void>();
+
+        await usingWebSocketInterceptor<AnySchema>(
+          {
+            type,
+            baseURL,
+            messageSaving: { enabled: true },
+            connectionSaving: { enabled: true },
+            protocol: createSocketIOProtocol(),
+          },
+          async (interceptor) => {
+            await interceptor.connection().with(async () => {
+              decisionStartedPromise.resolve();
+              await decisionReleasedPromise;
+              return true;
+            });
+
+            await usingSocket(baseURL, { transports }, async () => {
+              await decisionStartedPromise;
+              await letGo(interceptor);
+              decisionReleasedPromise.resolve();
+            });
+
+            // A stopped interceptor starts again to accept the next connection.
+            await interceptor.start();
+
+            await usingSocket(baseURL, { transports }, async (nextSocket) => {
+              await waitForSocketConnection(nextSocket);
+
+              // The next connection opens after the decision of the first one ends, so only its client is listed.
+              expect(interceptor.clients).toHaveLength(1);
+            });
+          },
+        );
+      },
+    );
+
+    it.each([
+      { lifecycleAction: 'cleared', letGo: (interceptor: SocketIOTestInterceptor) => interceptor.clear() },
+      { lifecycleAction: 'stopped', letGo: (interceptor: SocketIOTestInterceptor) => interceptor.stop() },
+    ])(
+      'should close connections whose only namespace is $lifecycleAction while its connection is decided',
+      async ({ letGo }) => {
+        const baseURL = getBaseURL();
+
+        const decisionStartedPromise = createPromiseWithResolvers<void>();
+        const decisionReleasedPromise = createPromiseWithResolvers<void>();
+
+        await usingWebSocketInterceptor<AnySchema>(
+          {
+            type,
+            baseURL,
+            messageSaving: { enabled: true },
+            connectionSaving: { enabled: true },
+            protocol: createSocketIOProtocol(),
+          },
+          async (interceptor) => {
+            await interceptor.connection().with(async () => {
+              decisionStartedPromise.resolve();
+              await decisionReleasedPromise;
+              return true;
+            });
+
+            await usingSocket(baseURL, { transports }, async (socket) => {
+              const closePromise = new Promise<void>((resolve) => {
+                socket.io.once('close', () => resolve());
+              });
+
+              await decisionStartedPromise;
+              await letGo(interceptor);
+              decisionReleasedPromise.resolve();
+
+              await closePromise;
+              expect(socket.io.engine.readyState).toBe('closed');
+            });
+          },
+        );
+      },
+    );
+
     it('should send pings without user handlers', async () => {
       const baseURL = getBaseURL();
 
@@ -548,6 +1101,16 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     it('should deliver messages sent while a client upgrades', async () => {
       const baseURL = getBaseURL();
 
+      const socketConnectionPromise = createPromiseWithResolvers<void>();
+
+      // The upgrade starts only once the socket joined its namespace, so the interceptor lists a client to send to.
+      class UpgradeAfterConnectionTransport extends GlobalWebSocketTransport {
+        doOpen() {
+          void socketConnectionPromise.then(() => super.doOpen());
+          return this;
+        }
+      }
+
       await usingWebSocketInterceptor<AnySchema>(
         {
           type,
@@ -557,12 +1120,16 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
           protocol: createSocketIOProtocol(),
         },
         async (interceptor) => {
-          await usingSocket(baseURL, { transports: upgradingTransports }, async (socket) => {
+          const transports = [PollingTransport, UpgradeAfterConnectionTransport];
+
+          await usingSocket(baseURL, { transports }, async (socket) => {
+            socket.once('connect', () => socketConnectionPromise.resolve());
+
             const receivedEvents: unknown[] = [];
             socket.on('event', (data: unknown) => receivedEvents.push(data));
 
             socket.io.engine.once('upgrading', () => {
-              interceptor.server.send({ type: 'event', data: 'during upgrade' } as never);
+              interceptor.server.send({ type: 'event', data: 'during upgrade' });
             });
 
             await waitForSocketConnection(socket);
@@ -627,31 +1194,9 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
             const eventPromise = new Promise<string>((resolve) => {
               socket.once('event', resolve);
             });
-            interceptor.server.send({ type: 'event', data: 'polling' } as never);
+            interceptor.server.send({ type: 'event', data: 'polling' });
 
             expect(await eventPromise).toBe('polling');
-          });
-        },
-      );
-    });
-
-    it('should refuse polling sessions rejected by a connection handler', async () => {
-      const baseURL = getBaseURL();
-
-      await usingWebSocketInterceptor<AnySchema>(
-        {
-          type,
-          baseURL,
-          messageSaving: { enabled: true },
-          connectionSaving: { enabled: true },
-          protocol: createSocketIOProtocol(),
-        },
-        async (interceptor) => {
-          await interceptor.connection().respond({ action: 'reject' }).times(1);
-
-          await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
-            await expect(waitForSocketConnection(socket)).rejects.toThrow();
-            expect(interceptor.clients).toHaveLength(0);
           });
         },
       );
@@ -671,7 +1216,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
         async (interceptor) => {
           const handler = await interceptor
             .connection()
-            .effect((client) => client.send({ type: 'welcome', data: 'hello' } as never))
+            .effect((client) => client.send({ type: 'welcome', data: 'hello' }))
             .times(1);
 
           await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
@@ -735,6 +1280,39 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
           });
         },
       );
+    });
+
+    it('should follow the polling option of the first interceptor started on a base URL', async () => {
+      const baseURL = getBaseURL();
+
+      await usingIgnoredConsole(['warn'], async () => {
+        await usingWebSocketInterceptor<AnySchema>(
+          {
+            type,
+            baseURL,
+            messageSaving: { enabled: true },
+            connectionSaving: { enabled: true },
+            protocol: createSocketIOProtocol({ polling: false }),
+          },
+          async () => {
+            await usingWebSocketInterceptor<AnySchema>(
+              {
+                type,
+                baseURL,
+                messageSaving: { enabled: true },
+                connectionSaving: { enabled: true },
+                protocol: createSocketIOProtocol({ namespace: '/admin', polling: true }),
+              },
+              async (adminInterceptor) => {
+                await usingSocket(baseURL, { transports: pollingTransports, nsp: '/admin' }, async (socket) => {
+                  await expect(waitForSocketConnection(socket)).rejects.toThrow('xhr poll error');
+                  expect(adminInterceptor.clients).toHaveLength(0);
+                });
+              },
+            );
+          },
+        );
+      });
     });
 
     it('should answer polling requests with the supported protocol error for EIO=3', async () => {
@@ -808,7 +1386,9 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
         });
       });
     });
+  });
 
+  describe('Outgoing messages', () => {
     it('should reject messages without a type or ack ID', async () => {
       const baseURL = getBaseURL();
 
@@ -850,7 +1430,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
             await waitForSocketConnection(socket);
 
             expect(() => {
-              interceptor.clients[0].send({ type: 'file', data: new Blob(['data']) } as never);
+              interceptor.clients[0].send({ type: 'file', data: new Blob(['data']) });
             }).toThrow('Socket.IO binary attachments sent by interceptors must be ArrayBuffers or views.');
           });
         },

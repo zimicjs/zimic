@@ -101,13 +101,22 @@ const adminInterceptor = createWebSocketInterceptor<AdminSchema>({
 });
 ```
 
-Interceptors of the same base URL share each connection, and the first one started decides the `polling`, `pingInterval`, and `pingTimeout` options. Unlike other WebSocket interceptors sharing a connection, each one handles its namespace independently, so use a single interceptor for each namespace and a new `createSocketIOProtocol()` for each interceptor. Dynamic namespaces are not supported.
+Interceptors of the same base URL share each connection, and the first one started decides the `polling`, `pingInterval`, and `pingTimeout` options. Unlike other WebSocket interceptors sharing a connection, each one handles its namespace independently, so use a single interceptor for each namespace and a new `createSocketIOProtocol()` for each interceptor. A socket connecting to a namespace without an interceptor fails with a `connect_error` of message `Invalid namespace`. Dynamic namespaces are not supported.
+
+## Clients
+
+As with the `connection` event of a Socket.IO server, an interceptor lists a client in `interceptor.clients` and runs its connection handlers only when a socket joins its namespace. The `url` of the client is the Engine.IO connection URL, `<base URL>/socket.io/?EIO=4&transport=...`.
+
+- A connection handler rejecting a socket fails it with a `connect_error` of message `Connection rejected`. Other namespaces on the same connection stay connected.
+- `socket.disconnect()` in the client removes its client from the interceptor of its namespace.
+- `client.close()` disconnects the socket from the namespace, as `socket.disconnect()` in a Socket.IO server. Socket.IO has no close codes, so the code and reason are ignored.
+- `interceptor.clear()` and `interceptor.stop()` disconnect the sockets of the namespace and close each of their connections that no other namespace uses. Sockets whose connection handlers are still running receive no reply.
 
 ## Polling
 
 Polling is enabled by default. While the interceptor runs, the adapter intercepts HTTP requests to `<base URL>/socket.io/` with an internal HTTP interceptor of the same `type`, which `interceptor.clear()` does not remove.
 
-A polling session is one client in `interceptor.clients`, and it keeps the same client when it upgrades to WebSocket. Events sent over polling reach the same handlers, and messages sent to the client wait for its next poll.
+A socket keeps the same client when its polling session upgrades to WebSocket. Events sent over polling reach the same handlers, and messages sent to the client wait for its next poll.
 
 Pass `polling: false` if your clients only use WebSocket. Polling clients then fail with `connect_error`, and the interceptor logs a warning naming the fix.
 

@@ -191,8 +191,8 @@ class WebSocketInterceptorImplementation<
       // Protocols receive the clients created by the workers, which are schema-erased when created.
       removeClient: (client) => this.removeClient(client as unknown as InternalWebSocketInterceptorClient<Schema>),
 
-      handleFrame: (client, frame) => {
-        void this.worker?.handleFrameWithHandlers(frame, [
+      handleMessage: (client, message) => {
+        void this.worker?.handleMessageWithHandlers(message as ReceivedWebSocketMessageData<WebSocketMessageSchema>, [
           {
             interceptor: this as unknown as WebSocketInterceptorImplementation<WebSocketSchema>,
             client: client as InternalWebSocketInterceptorClient,
