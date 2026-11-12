@@ -17,19 +17,15 @@ describe('WebSocketClient', () => {
 
   type Schema = WebSocketSchema<{
     '/': {
-      message:
-        | {
-            type: 'message';
-            data: string;
-          }
-        | {
-            type: 'count';
-            data: number;
-          };
+      message: { type: 'message'; data: string } | { type: 'count'; data: number };
     };
   }>;
 
-  type BinarySchema = WebSocketSchema<{ '/': { message: Blob | ArrayBuffer } }>;
+  type BinarySchema = WebSocketSchema<{
+    '/': {
+      message: Blob | ArrayBuffer;
+    };
+  }>;
 
   let webSocketServer: WebSocketServer<Schema>;
   let webSocketClient: WebSocketClient<Schema> | undefined;
@@ -702,11 +698,14 @@ describe('WebSocketClient', () => {
     });
   });
 
-  // The clients below are only type-checked. The functions declaring them are never called.
   describe('Types', () => {
     type MultiPathSchema = WebSocketSchema<{
-      '/rooms/:roomId': { message: { type: 'chat'; text: string } };
-      '/users/:userId': { message: { type: 'presence'; online: boolean } };
+      '/rooms/:roomId': {
+        message: { type: 'chat'; text: string };
+      };
+      '/users/:userId': {
+        message: { type: 'presence'; online: boolean };
+      };
     }>;
 
     type UserMessage = WebSocketSchemaMessage<MultiPathSchema, '/users/:userId'>;
