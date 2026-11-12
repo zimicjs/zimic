@@ -99,6 +99,19 @@ describe('WebSocketMessageHandler > Types', () => {
     expectTypeOf(declareHandler).toBeFunction();
   });
 
+  it('should type the sender search params of all paths as optional if no path is declared', () => {
+    function declareHandler(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      interceptor.message().effect((_message, context) => {
+        expectTypeOf(context.sender.searchParams.get('token')).toEqualTypeOf<string | null>();
+
+        // @ts-expect-error The search param is not declared in the schema.
+        context.sender.searchParams.has('undeclared');
+      });
+    }
+
+    expectTypeOf(declareHandler).toBeFunction();
+  });
+
   it('should type the handler path from the declared path', () => {
     function declareHandler(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
       expectTypeOf(interceptor.message('/rooms/:roomId').path).toEqualTypeOf<'/rooms/:roomId' | undefined>();

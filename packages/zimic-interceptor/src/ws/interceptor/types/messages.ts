@@ -1,5 +1,5 @@
 import { HttpSearchParams, InferPathParams } from '@zimic/utils/http';
-import { Replace } from '@zimic/utils/types';
+import { IfNever, Replace, UnionHasMoreThanOneType, UnionToIntersection } from '@zimic/utils/types';
 import {
   WebSocketConnectionProtocolSchema,
   WebSocketConnectionSearchParamsSchema,
@@ -7,6 +7,7 @@ import {
   WebSocketMessageSchema,
   WebSocketSchema,
   WebSocketSchemaMessage,
+  WebSocketSchemaPath,
 } from '@zimic/ws';
 
 import { DeclaredWebSocketInterceptorPath, WebSocketInterceptorPathMessage } from './schema';
@@ -62,11 +63,30 @@ export interface InterceptedWebSocketInterceptorMessage<
   data: ReceivedWebSocketMessageData<RestrictedMessage>;
 }
 
-/** The search params declared for connections to a handler path. `never` if the schema declares none. */
-export type WebSocketInterceptorConnectionSearchParamsSchema<
+/** Whether a handler declares no path in a schema with more than one, so its connections may go to any of them. */
+type IsWebSocketInterceptorHandlerOfMultiplePaths<Schema extends WebSocketSchema, Path extends string> =
+  Path extends WebSocketSchemaPath.Literal<Schema>
+    ? false
+    : UnionHasMoreThanOneType<WebSocketSchemaPath.Literal<Schema>>;
+
+type DeclaredWebSocketInterceptorSearchParamsSchema<
   Schema extends WebSocketSchema,
   Path extends string,
 > = WebSocketConnectionSearchParamsSchema<Schema[DeclaredWebSocketInterceptorPath<Schema, Path>]>;
+
+/**
+ * The search params declared for connections to a handler path. A handler without a path in a schema with more than one
+ * receives connections to any of them, so the search params of all paths are optional. `never` if the schema declares
+ * none.
+ */
+export type WebSocketInterceptorConnectionSearchParamsSchema<Schema extends WebSocketSchema, Path extends string> =
+  IsWebSocketInterceptorHandlerOfMultiplePaths<Schema, Path> extends true
+    ? IfNever<
+        DeclaredWebSocketInterceptorSearchParamsSchema<Schema, Path>,
+        never,
+        Partial<UnionToIntersection<DeclaredWebSocketInterceptorSearchParamsSchema<Schema, Path>>>
+      >
+    : DeclaredWebSocketInterceptorSearchParamsSchema<Schema, Path>;
 
 /** The subprotocols declared for connections to a handler path. `never` if the schema declares none. */
 export type WebSocketInterceptorConnectionProtocol<
@@ -114,7 +134,8 @@ export interface WebSocketInterceptorConnectionRequest<
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * A handle to a client connected to the interceptor, with its messages, search params, and subprotocols typed from the
- * path of its connection. Without a path, it is typed with the messages, search params, and subprotocols of all paths.
+ * path of its connection. Without a path, it is typed with the messages and subprotocols of all paths, and with their
+ * search params as optional.
  */
 export interface WebSocketInterceptorClient<
   Schema extends WebSocketSchema = WebSocketSchema,

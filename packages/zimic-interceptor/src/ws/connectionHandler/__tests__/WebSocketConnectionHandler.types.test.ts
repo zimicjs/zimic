@@ -100,6 +100,48 @@ describe('WebSocketConnectionHandler > Types', () => {
     expectTypeOf(declareHandlers).toBeFunction();
   });
 
+  it('should type client search params as declared if no path is declared in a schema with one path', () => {
+    type SinglePathSchema = WebSocketSchema<{
+      '/rooms/:roomId': { connection: { searchParams: { token: string } }; message: { type: 'chat'; text: string } };
+    }>;
+
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<SinglePathSchema>) {
+      interceptor.connection().effect((client) => {
+        expectTypeOf(client.searchParams.get('token')).toEqualTypeOf<string>();
+      });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
+  it('should type client search params of all paths as optional if no path is declared in a schema with multiple paths', () => {
+    type MultiplePathSchema = WebSocketSchema<{
+      '/rooms/:roomId': { connection: { searchParams: { token: string } }; message: { type: 'chat'; text: string } };
+      '/logs': { connection: { searchParams: { level: string } }; message: { type: 'log' } };
+      '/health': { message: { type: 'ping' } };
+    }>;
+
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<MultiplePathSchema>) {
+      const handler = interceptor.connection();
+
+      handler.with({ searchParams: { token: 'value' } });
+      handler.with({ searchParams: { level: 'debug' } });
+
+      // @ts-expect-error The search param is not declared in the schema.
+      handler.with({ searchParams: { undeclared: 'value' } });
+
+      handler.effect((client) => {
+        expectTypeOf(client.searchParams.get('token')).toEqualTypeOf<string | null>();
+        expectTypeOf(client.searchParams.get('level')).toEqualTypeOf<string | null>();
+
+        // @ts-expect-error The search param is not declared in the schema.
+        client.searchParams.has('undeclared');
+      });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
   it('should type client protocols from the declared path', () => {
     function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
       interceptor.connection('/rooms/:roomId').effect((client) => {
