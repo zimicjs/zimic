@@ -152,8 +152,65 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
       );
     });
 
-    // No WebSocket counterparts for the cases with unmocked paths, unknown methods, and array search params: WebSocket
-    // handlers have no per-handler path or method and messages have no search params.
+    it('should show a warning when logging is enabled and messages are unhandled due to unmocked path', async () => {
+      type PathKeyedSchema = WebSocketSchema<{
+        '/rooms/:roomId': { message: Message };
+        '/users/:userId': { message: Message };
+      }>;
+
+      await usingWebSocketInterceptor<PathKeyedSchema>(
+        { ...interceptorOptions, onUnhandledMessage },
+        async (interceptor) => {
+          expect(interceptor.onUnhandledMessage).toBe(onUnhandledMessage);
+
+          const message: Message = { type: 'client', index: 1 };
+
+          await promiseIfRemote(
+            interceptor.message('/rooms/:roomId').with(message).respond({ type: 'server', index: 1 }),
+            interceptor,
+          );
+
+          await usingWebSocketClient<PathKeyedSchema>(`${baseURL}/rooms/1`, async (roomClient) => {
+            await usingWebSocketClient<PathKeyedSchema>(`${baseURL}/users/1`, async (userClient) => {
+              await usingIgnoredConsole(['warn', 'error'], async (console) => {
+                const responsePromise = waitForWebSocketClientMessage(roomClient);
+                roomClient.send(JSON.stringify(message));
+                await expect(responsePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+
+                expect(console.warn).toHaveBeenCalledTimes(0);
+                expect(console.error).toHaveBeenCalledTimes(0);
+
+                userClient.send(JSON.stringify(message));
+
+                await waitFor(() => {
+                  expect(console.warn).toHaveBeenCalledTimes(1);
+                });
+                expect(console.error).toHaveBeenCalledTimes(0);
+
+                await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+                  data: message,
+                  url: userClient.url,
+                  platform,
+                });
+
+                expect(userClient.readyState).toBe(WebSocketClient.OPEN);
+              });
+            });
+          });
+        },
+      );
+    });
+
+    // No WebSocket counterpart for "should show a warning when logging is enabled and requests with array search params
+    // are unhandled and bypassed": message warnings log the connection URL as received, without formatting its search
+    // params.
+
+    // No WebSocket counterpart for "should show an error when logging is enabled and requests with an unknown method are
+    // unhandled and rejected": messages have no method.
+
+    // No WebSocket counterpart for "should show an error when logging is enabled and requests with array search params
+    // are unhandled and rejected": message warnings log the connection URL as received, without formatting its search
+    // params.
   });
 
   describe.each([{ declarationType: 'static' as const }, { declarationType: 'factory' as const }])(
