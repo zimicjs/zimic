@@ -149,11 +149,16 @@ function createTimesCheckUnmatchedDiffs(options: WebSocketTimesCheckErrorOptions
   return diffs.join('\n\n');
 }
 
+function createTimesCheckErrorFooter() {
+  return 'Learn more: https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertimes';
+}
+
 function createTimesCheckErrorMessage(options: WebSocketTimesCheckErrorOptions) {
   const errorHeader = createTimesCheckErrorHeader(options);
   const unmatchedDiffs = createTimesCheckUnmatchedDiffs(options);
+  const errorFooter = createTimesCheckErrorFooter();
 
-  return [errorHeader, unmatchedDiffs].filter(isNonEmpty).join('\n\n');
+  return [errorHeader, unmatchedDiffs, errorFooter].filter(isNonEmpty).join('\n\n');
 }
 
 /**
@@ -161,6 +166,8 @@ function createTimesCheckErrorMessage(options: WebSocketTimesCheckErrorOptions) 
  *
  * Error thrown when the number of messages or connections matched by a handler does not satisfy its `handler.times()`
  * declaration.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerchecktimes `handler.checkTimes()` API reference}
  */
 class WebSocketTimesCheckError extends TypeError {
   constructor(options: WebSocketTimesCheckErrorOptions) {
