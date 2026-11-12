@@ -1,5 +1,5 @@
 import { PossiblePromise } from '@zimic/utils/types';
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 import { describe, expectTypeOf, it } from 'vitest';
 
 import type {
@@ -19,10 +19,60 @@ import { LocalWebSocketInterceptor, RemoteWebSocketInterceptor, WebSocketInterce
 import { InferWebSocketInterceptorSchema } from '../types/schema';
 import { declareWebSocketInterceptorTypes } from './shared/utils';
 
-type MessageSchema = WebSocketSchema<{ type: 'create'; body: { text: string } } | { type: 'delete'; id: string }>;
+type Message = { type: 'create'; body: { text: string } } | { type: 'delete'; id: string };
+type MessageSchema = WebSocketSchema<{ '/': { message: Message } }>;
+
+type PathKeyedSchema = WebSocketSchema<{
+  '/rooms/:roomId': { message: { type: 'chat'; text: string } };
+  '/health': { message: { type: 'ping' } };
+}>;
 
 // The interceptors below are only type-checked. The functions declaring them are never called.
 describe('WebSocketInterceptor > Types', () => {
+  it('should type message handlers with the messages of the declared path', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      expectTypeOf(interceptor.message('/rooms/:roomId')).toEqualTypeOf<
+        LocalWebSocketMessageHandler<PathKeyedSchema, '/rooms/:roomId'>
+      >();
+
+      expectTypeOf(interceptor.message('/rooms/1')).toEqualTypeOf<
+        LocalWebSocketMessageHandler<PathKeyedSchema, '/rooms/:roomId'>
+      >();
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
+  it('should type message handlers with the messages of all paths if no path is declared', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      expectTypeOf(interceptor.message()).toEqualTypeOf<LocalWebSocketMessageHandler<PathKeyedSchema>>();
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
+  it('should accept a client from a path-specific effect as the target of a server message', () => {
+    function declareSend(
+      interceptor: LocalWebSocketInterceptor<PathKeyedSchema>,
+      data: WebSocketMessageData<WebSocketSchemaMessage<PathKeyedSchema>>,
+    ) {
+      interceptor.connection('/rooms/:roomId').effect((client) => {
+        interceptor.server.send(data, { to: client });
+      });
+    }
+
+    expectTypeOf(declareSend).toBeFunction();
+  });
+
+  it('should not accept undeclared paths in message handlers', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      // @ts-expect-error The path is not declared in the schema.
+      interceptor.message('/unknown');
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
   it('should correctly type local and remote factory return values', () => {
     function declareInterceptors(type: WebSocketInterceptorType, baseURL: string) {
       const localInterceptor = createWebSocketInterceptor<MessageSchema>({ baseURL });
@@ -50,7 +100,7 @@ describe('WebSocketInterceptor > Types', () => {
     function declareInterceptor(baseURL: string) {
       const interceptor = createWebSocketInterceptor<MessageSchema>({ baseURL });
 
-      expectTypeOf(interceptor.message).parameters.toEqualTypeOf<[]>();
+      expectTypeOf(interceptor.message).parameters.toEqualTypeOf<[path?: '/']>();
       expectTypeOf(interceptor.checkTimes).returns.toEqualTypeOf<void>();
       expectTypeOf(interceptor.clear).returns.toEqualTypeOf<void>();
     }
@@ -96,16 +146,20 @@ describe('WebSocketInterceptor > Types', () => {
   it('should correctly type local and remote sync return values', () => {
     function declareInterceptors(baseURL: string) {
       const localInterceptor = createWebSocketInterceptor<MessageSchema>({ type: 'local', baseURL });
-      expectTypeOf(localInterceptor.message).returns.toEqualTypeOf<LocalWebSocketMessageHandler<MessageSchema>>();
-      expectTypeOf(localInterceptor.connection).returns.toEqualTypeOf<LocalWebSocketConnectionHandler<MessageSchema>>();
-      expectTypeOf(localInterceptor.connection).parameters.toEqualTypeOf<[path?: string]>();
+      expectTypeOf(localInterceptor.message).returns.toEqualTypeOf<LocalWebSocketMessageHandler<MessageSchema, '/'>>();
+      expectTypeOf(localInterceptor.connection).returns.toEqualTypeOf<
+        LocalWebSocketConnectionHandler<MessageSchema, '/'>
+      >();
+      expectTypeOf(localInterceptor.connection).parameters.toEqualTypeOf<[path?: '/']>();
       expectTypeOf(localInterceptor.checkTimes).returns.toEqualTypeOf<void>();
       expectTypeOf(localInterceptor.clear).returns.toEqualTypeOf<void>();
 
       const remoteInterceptor = createWebSocketInterceptor<MessageSchema>({ type: 'remote', baseURL });
-      expectTypeOf(remoteInterceptor.message).returns.toEqualTypeOf<RemoteWebSocketMessageHandler<MessageSchema>>();
+      expectTypeOf(remoteInterceptor.message).returns.toEqualTypeOf<
+        RemoteWebSocketMessageHandler<MessageSchema, '/'>
+      >();
       expectTypeOf(remoteInterceptor.connection).returns.toEqualTypeOf<
-        RemoteWebSocketConnectionHandler<MessageSchema>
+        RemoteWebSocketConnectionHandler<MessageSchema, '/'>
       >();
       expectTypeOf(remoteInterceptor.checkTimes).returns.toEqualTypeOf<Promise<void>>();
       expectTypeOf(remoteInterceptor.clear).returns.toEqualTypeOf<Promise<void>>();
@@ -120,7 +174,7 @@ describe('WebSocketInterceptor > Types', () => {
         .message()
         .with({ type: 'create' })
         .respond((message, context) => {
-          expectTypeOf(message).toEqualTypeOf<Extract<MessageSchema, { type: 'create' }>>();
+          expectTypeOf(message).toEqualTypeOf<Extract<Message, { type: 'create' }>>();
           expectTypeOf(context.sender).toEqualTypeOf<WebSocketInterceptorClient<MessageSchema>>();
           expectTypeOf(context.receiver).toEqualTypeOf<WebSocketInterceptorServer<MessageSchema>>();
 
@@ -128,7 +182,7 @@ describe('WebSocketInterceptor > Types', () => {
         });
 
       interceptor.message().effect((message, context) => {
-        expectTypeOf(message).toEqualTypeOf<MessageSchema>();
+        expectTypeOf(message).toEqualTypeOf<Message>();
         expectTypeOf(context.receiver.send).toEqualTypeOf<WebSocketInterceptorServer<MessageSchema>['send']>();
         expectTypeOf(context.sender.send).toEqualTypeOf<WebSocketInterceptorClient<MessageSchema>['send']>();
       });
@@ -164,7 +218,7 @@ describe('WebSocketInterceptor > Types', () => {
       expectTypeOf(declareInterceptors).toBeFunction();
 
       expectTypeOf<UnhandledMessageStrategy.Declaration>().toEqualTypeOf<{ log?: boolean }>();
-      expectTypeOf<UnhandledMessageStrategy.DeclarationFactory>().parameters.toEqualTypeOf<[WebSocketSchema]>();
+      expectTypeOf<UnhandledMessageStrategy.DeclarationFactory>().parameters.toEqualTypeOf<[WebSocketMessageSchema]>();
       expectTypeOf<UnhandledMessageStrategy.DeclarationFactory>().returns.toEqualTypeOf<
         PossiblePromise<UnhandledMessageStrategy.Declaration>
       >();

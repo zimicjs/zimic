@@ -21,6 +21,8 @@ Local and remote interceptors behave identically for routing, fall-through, and 
 
 Diverge between protocols only for a protocol reason, such as WebSocket connections being long-lived and bidirectional. State that reason in a comment next to the divergent code, and in the docs when users can observe the difference.
 
+`@zimic/http` and `@zimic/ws` are independent, and each bundles its own copy of `@zimic/utils`. Import classes such as `HttpSearchParams` from `@zimic/http` in `src/http` and from `@zimic/utils/http` in `src/ws`. Keep a separate copy of each type that references these classes in `src/http` and `src/ws` instead of sharing one, because TypeScript treats the bundled declarations as distinct.
+
 ## Testing
 
 - Interceptor suites test behavior through the interceptor. Handler suites test the handler contract: matching, restrictions, times, clearing, saved entries, types, and promise-like remote handlers, as the HTTP request handler suites do.

@@ -1,5 +1,5 @@
 import type { PossiblePromise } from '@zimic/utils/types';
-import type { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import type { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 
 import {
   INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER,
@@ -141,7 +141,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
   async sendToClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
-    data: WebSocketMessageData<Schema>,
+    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   ) {
     const clientId = this.findClientId(client);
 
@@ -153,7 +153,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   // Only clients already listed receive the message, as in local mode, so connections still being decided do not.
   async sendToClients<Schema extends WebSocketSchema>(
     interceptor: AnyWebSocketInterceptorImplementation<Schema>,
-    data: WebSocketMessageData<Schema>,
+    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   ) {
     const registeredInterceptor = this.findRegisteredInterceptor(interceptor);
     const clientIds = registeredInterceptor?.clients.keys() ?? [];
@@ -180,7 +180,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
   }
 
-  private enqueueSend<Schema extends WebSocketSchema>(clientId: string, data: WebSocketMessageData<Schema>) {
+  private enqueueSend<Schema extends WebSocketMessageSchema>(clientId: string, data: WebSocketMessageData<Schema>) {
     return this.enqueueServerEvent(async () => {
       this.webSocketClient.send('interceptors/ws/messages/send', {
         clientId,
@@ -245,7 +245,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     const holders: {
       registeredInterceptor: RegisteredWebSocketInterceptor;
-      client: InternalWebSocketInterceptorClient<WebSocketSchema>;
+      client: InternalWebSocketInterceptorClient;
     }[] = [];
 
     for (const registeredInterceptor of holderCandidates) {

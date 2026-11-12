@@ -1,7 +1,7 @@
 import { createCachedDynamicImport } from '@zimic/utils/import';
 import { excludeNonPathParams } from '@zimic/utils/url';
 import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
-import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 import { SharedOptions as MSWWorkerSharedOptions, ws } from 'msw';
 
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
@@ -252,7 +252,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
   sendToClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
-    data: WebSocketMessageData<Schema>,
+    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   ) {
     const registration = this.findRegisteredInterceptorByClient(client)?.clients.get(client);
 
@@ -263,7 +263,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
   sendToClients<Schema extends WebSocketSchema>(
     interceptor: AnyWebSocketInterceptorImplementation<Schema>,
-    data: WebSocketMessageData<Schema>,
+    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   ) {
     const registeredInterceptor = this.findRegisteredInterceptor(interceptor);
 
@@ -394,7 +394,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       connection,
       holders: holders.map((registeredInterceptor) => {
         // Sending through the holder lookup makes the client stop sending once its interceptor lets the connection go.
-        const client = createWebSocketInterceptorClient<WebSocketSchema>({
+        const client: InternalWebSocketInterceptorClient = createWebSocketInterceptorClient({
           url: connection.url.href,
           protocols,
           send: (data) => {
@@ -408,7 +408,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       }),
       messageListener: (event) => {
         event.preventDefault();
-        void this.handleConnectionMessage(registration, event.data as WebSocketMessageData<WebSocketSchema>);
+        void this.handleConnectionMessage(registration, event.data as WebSocketMessageData<WebSocketMessageSchema>);
       },
       closeListener: () => {
         this.removeConnectionFromHolders(registration);
@@ -437,7 +437,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
   private async handleConnectionMessage(
     registration: WebSocketClientRegistration,
-    data: WebSocketMessageData<WebSocketSchema>,
+    data: WebSocketMessageData<WebSocketMessageSchema>,
   ) {
     const holders = registration.holders.map(({ registeredInterceptor, client }) => ({
       interceptor: registeredInterceptor.interceptor,

@@ -1,11 +1,11 @@
 import type { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '@zimic/interceptor/experimental/ws';
-import type { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import type { WebSocketMessageData, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 import { describe } from 'vitest';
 
 import { declareWebSocketInterceptorTests } from './interceptor';
 
 export interface ClientTestWebSocketMessageEvent<Schema extends WebSocketSchema> {
-  data: WebSocketMessageData<Schema>;
+  data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>;
 }
 
 type ClientTestWebSocketMessageListener<Schema extends WebSocketSchema> = (
@@ -34,7 +34,7 @@ export interface ClientTestWebSocket<Schema extends WebSocketSchema> {
   readonly readyState: number;
   readonly CLOSED: number;
 
-  send: (data: WebSocketMessageData<Schema>) => void;
+  send: (data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>) => void;
   close: (code?: number, reason?: string) => void;
   addEventListener: ClientTestWebSocketEventListenerMethod<Schema>;
   removeEventListener: ClientTestWebSocketEventListenerMethod<Schema>;

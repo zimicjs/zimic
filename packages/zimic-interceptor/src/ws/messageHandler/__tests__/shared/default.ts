@@ -36,9 +36,16 @@ export function declareDefaultWebSocketMessageHandlerTests(
     }
   });
 
-  // No WebSocket message counterpart for "should provide access to the method and path": message handlers have neither.
+  // Unlike HTTP requests, WebSocket messages have no method, so only the path is exposed.
+  it('should provide access to the path', async () => {
+    await usingWebSocketInterceptor<Schema>({ type, baseURL }, (interceptor) => {
+      const handler = interceptor.message('/rooms/:roomId');
+      expect(handler.path).toBe('/rooms/:roomId');
 
-  // No WebSocket message counterpart for "should provide access to the path": message handlers have no path.
+      const handlerWithoutPath = interceptor.message();
+      expect(handlerWithoutPath.path).toBe(undefined);
+    });
+  });
 
   // Unlike HTTP requests, a message needs no reply, so a handler without a declared response still matches.
   it('should match any message if contains no declared response', async () => {
@@ -206,7 +213,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
 
   it('should compute responses with the message', async () => {
     await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
-      const responseFactory = vi.fn<WebSocketMessageHandlerMessageComputedDeclaration<Schema, Schema>>(() => ({
+      const responseFactory = vi.fn<WebSocketMessageHandlerMessageComputedDeclaration<Schema>>(() => ({
         type: 'delete',
         id: '1',
       }));
@@ -308,7 +315,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
     condition: string;
     declareAfterClear: (
       handler: WebSocketMessageHandler<Schema>,
-      redeclaredResponse: WebSocketMessageHandlerMessageComputedDeclaration<Schema, Schema>,
+      redeclaredResponse: WebSocketMessageHandlerMessageComputedDeclaration<Schema>,
     ) => unknown;
   }>([
     { condition: 'cleared', declareAfterClear: (handler) => handler },
@@ -321,7 +328,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
     const effectReleasedPromise = createPromiseWithResolvers<void>();
 
     const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: false }));
-    const redeclaredResponse = vi.fn<WebSocketMessageHandlerMessageComputedDeclaration<Schema, Schema>>();
+    const redeclaredResponse = vi.fn<WebSocketMessageHandlerMessageComputedDeclaration<Schema>>();
 
     await usingWebSocketInterceptor<Schema>(
       { type, baseURL, messageSaving: { enabled: true }, onUnhandledMessage },
@@ -477,7 +484,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
       });
 
       it('should be then-able', async () => {
-        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation);
+        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation, undefined);
         await handler.respond({ type: 'delete', id: '1' });
 
         expect(handler).toHaveProperty('then', expect.any(Function));
@@ -501,7 +508,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
       });
 
       it('should be catch-able', async () => {
-        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation);
+        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation, undefined);
         await handler.respond({ type: 'delete', id: '1' });
 
         expect(handler).toHaveProperty('then', expect.any(Function));
@@ -518,7 +525,7 @@ export function declareDefaultWebSocketMessageHandlerTests(
       });
 
       it('should be finally-able', async () => {
-        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation);
+        const handler = new RemoteWebSocketMessageHandler<Schema>(interceptor.implementation, undefined);
         await handler.respond({ type: 'delete', id: '1' });
 
         expect(handler).toHaveProperty('then', expect.any(Function));

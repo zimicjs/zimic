@@ -2,13 +2,15 @@ import { JSONSerialized } from '@zimic/http';
 import {
   createWebSocketInterceptor,
   InterceptedWebSocketInterceptorMessage,
-  WebSocketInterceptor,
+  LocalWebSocketInterceptor,
+  RemoteWebSocketInterceptor,
   WebSocketInterceptorClient,
   WebSocketInterceptorType,
   WebSocketTimesCheckError,
 } from '@zimic/interceptor/experimental/ws';
 import { waitFor, waitForNot } from '@zimic/utils/time';
 import { closeWebSocketClient, WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
+import { WebSocketSchemaMessage } from '@zimic/ws';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { ZIMIC_SERVER_PORT } from '@tests/constants';
@@ -22,6 +24,7 @@ import {
   ValidationError,
 } from '@tests/types/schema/entities';
 import {
+  BinaryWebSocketMessage,
   BinaryWebSocketSchema,
   UserWebSocketSchema,
   NotificationWebSocketSchema,
@@ -51,13 +54,21 @@ function getBinaryBaseURL(type: WebSocketInterceptorType) {
   return type === 'local' ? 'ws://localhost:4002' : `ws://localhost:${ZIMIC_SERVER_PORT}/binary-${crypto.randomUUID()}`;
 }
 
+type JSONWebSocketMessage<Schema extends UserWebSocketSchema | NotificationWebSocketSchema> = Extract<
+  WebSocketSchemaMessage<Schema>,
+  { type: string }
+>;
+
 async function waitForResponseMessage<
   Schema extends UserWebSocketSchema | NotificationWebSocketSchema,
-  ResponseMessageType extends Schema['type'],
+  ResponseMessageType extends JSONWebSocketMessage<Schema>['type'],
 >(socket: ClientTestWebSocket<Schema>, responseMessageType: ResponseMessageType) {
-  return new Promise<Extract<Schema, { type: ResponseMessageType }>>((resolve) => {
+  return new Promise<Extract<JSONWebSocketMessage<Schema>, { type: ResponseMessageType }>>((resolve) => {
     function messageListener(event: ClientTestWebSocketMessageEvent<Schema>) {
-      const message = JSON.parse(event.data);
+      const message = JSON.parse(event.data as string) as Extract<
+        JSONWebSocketMessage<Schema>,
+        { type: ResponseMessageType }
+      >;
 
       if (message.type === responseMessageType) {
         socket.removeEventListener('message', messageListener);
@@ -69,9 +80,9 @@ async function waitForResponseMessage<
   });
 }
 
-async function sendAndWaitForResponse<ResponseMessageType extends UserWebSocketSchema['type']>(
+async function sendAndWaitForResponse<ResponseMessageType extends UserWebSocketMessage['type']>(
   socket: ClientTestWebSocket<UserWebSocketSchema>,
-  message: UserWebSocketSchema,
+  message: UserWebSocketMessage,
   responseMessageType: ResponseMessageType,
 ) {
   const responsePromise = waitForResponseMessage(socket, responseMessageType);
@@ -80,7 +91,7 @@ async function sendAndWaitForResponse<ResponseMessageType extends UserWebSocketS
 }
 
 async function waitForBinaryMessage(socket: ClientTestWebSocket<BinaryWebSocketSchema>) {
-  return new Promise<BinaryWebSocketSchema>((resolve) => {
+  return new Promise<BinaryWebSocketMessage>((resolve) => {
     function messageListener(event: ClientTestWebSocketMessageEvent<BinaryWebSocketSchema>) {
       socket.removeEventListener('message', messageListener);
       resolve(event.data);
@@ -91,7 +102,7 @@ async function waitForBinaryMessage(socket: ClientTestWebSocket<BinaryWebSocketS
 }
 
 // Node `Buffer`s, received by `ws` sockets with their default binary type, are `Uint8Array`s.
-async function readBytes(data: BinaryWebSocketSchema) {
+async function readBytes(data: BinaryWebSocketMessage) {
   if (data instanceof Blob) {
     return Array.from(new Uint8Array(await data.arrayBuffer()));
   }
@@ -180,9 +191,9 @@ export function declareWebSocketInterceptorTests({
   let binarySocket: ClientTestWebSocket<BinaryWebSocketSchema>;
 
   function expectMessagedClients<Schema extends UserWebSocketSchema | NotificationWebSocketSchema>(
-    interceptor: WebSocketInterceptor<Schema>,
-    notifiedClients: WebSocketInterceptorClient<Schema>[],
-    expectedClientMessage: Schema,
+    interceptor: LocalWebSocketInterceptor<Schema> | RemoteWebSocketInterceptor<Schema>,
+    notifiedClients: readonly unknown[],
+    expectedClientMessage: JSONWebSocketMessage<Schema>,
   ) {
     for (const client of interceptor.clients) {
       if (notifiedClients.includes(client)) {
@@ -992,7 +1003,7 @@ export function declareWebSocketInterceptorTests({
       readAt: null,
     };
 
-    function sendNotificationFromServer(message: NotificationWebSocketSchema) {
+    function sendNotificationFromServer(message: NotificationWebSocketMessage) {
       const serializedMessage = JSON.stringify(message);
 
       notificationInterceptor.server.send(serializedMessage);
@@ -1064,7 +1075,7 @@ export function declareWebSocketInterceptorTests({
       ) =>
         | WebSocketInterceptorClient<NotificationWebSocketSchema>
         | readonly WebSocketInterceptorClient<NotificationWebSocketSchema>[];
-      expectedThirdSocketMessageTypes: NotificationWebSocketSchema['type'][];
+      expectedThirdSocketMessageTypes: NotificationWebSocketMessage['type'][];
     }>([
       {
         target: 'single client',

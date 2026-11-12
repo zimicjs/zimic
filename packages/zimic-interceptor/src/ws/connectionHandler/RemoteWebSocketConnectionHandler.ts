@@ -1,7 +1,7 @@
 import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
-import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
+import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
 import { WebSocketConnectionHandlerDelayFactory } from './types/connections';
 import {
   SyncedRemoteWebSocketConnectionHandler as PublicSyncedRemoteWebSocketConnectionHandler,
@@ -25,7 +25,7 @@ class RemoteWebSocketConnectionHandler<
   private pending: this;
   private synced: this;
 
-  constructor(interceptorImplementation: WebSocketInterceptorImplementation<Schema>, path: Path | undefined) {
+  constructor(interceptorImplementation: AnyWebSocketInterceptorImplementation, path: Path | undefined) {
     this.implementation = new WebSocketConnectionHandlerImplementation<Schema, Path>(
       interceptorImplementation,
       path,
@@ -57,12 +57,12 @@ class RemoteWebSocketConnectionHandler<
     return PENDING_PROPERTIES.has(property);
   }
 
-  with(restriction: WebSocketConnectionHandlerRestriction<Path>) {
+  with(restriction: WebSocketConnectionHandlerRestriction<Schema, Path>) {
     this.implementation.with(restriction);
     return this.pending;
   }
 
-  delay(minMilliseconds: number | WebSocketConnectionHandlerDelayFactory<Path>, maxMilliseconds?: number) {
+  delay(minMilliseconds: number | WebSocketConnectionHandlerDelayFactory<Schema, Path>, maxMilliseconds?: number) {
     this.implementation.delay(minMilliseconds, maxMilliseconds);
     return this.pending;
   }
@@ -72,7 +72,7 @@ class RemoteWebSocketConnectionHandler<
     return this.pending;
   }
 
-  respond(declaration: WebSocketConnectionHandlerResponseDeclaration<Path>) {
+  respond(declaration: WebSocketConnectionHandlerResponseDeclaration<Schema, Path>) {
     this.implementation.respond(declaration);
     return this.pending;
   }

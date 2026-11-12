@@ -22,8 +22,12 @@ import {
 import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
-type MessageSchema = WebSocketSchema<{ type: 'create'; body: { text: string } } | { type: 'delete'; id: string }>;
-type BinarySchema = WebSocketSchema<ArrayBuffer | Blob>;
+type Message = { type: 'create'; body: { text: string } } | { type: 'delete'; id: string };
+type MessageSchema = WebSocketSchema<{
+  '/': { connection: { protocols: 'legacy' | 'first' | 'second' }; message: Message };
+  '/users': { connection: { searchParams: { value?: string } }; message: Message };
+}>;
+type BinarySchema = WebSocketSchema<{ '/': { message: ArrayBuffer | Blob } }>;
 
 export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
@@ -40,7 +44,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
     };
   });
 
-  async function sendMatchingMessage(client: WebSocketClient<MessageSchema>, text = 'hello') {
+  async function sendMatchingMessage(client: WebSocketClient<MessageSchema, '/'>, text = 'hello') {
     const messagePromise = waitForWebSocketClientMessage(client);
 
     client.send(JSON.stringify({ type: 'create', body: { text } }));
@@ -58,7 +62,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           expectedNumberOfMatches: 1,
         });
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           await sendMatchingMessage(client);
         });
 
@@ -75,7 +79,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           expectedNumberOfMatches: 2,
         });
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           await sendMatchingMessage(client);
         });
 
@@ -95,7 +99,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           interceptor,
         );
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           await sendMatchingMessage(client);
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
@@ -125,7 +129,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           await sendMatchingMessage(client, 'one');
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
@@ -144,7 +148,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           expectedNumberOfMatches: { min: 2, max: 3 },
         });
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           await sendMatchingMessage(client);
         });
 
@@ -159,7 +163,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
         await promiseIfRemote(interceptor.message().respond({ type: 'delete', id: '1' }).times(2, 3), interceptor);
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           await sendMatchingMessage(client, 'one');
           await sendMatchingMessage(client, 'two');
           await sendMatchingMessage(client, 'three');
@@ -178,7 +182,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           interceptor,
         );
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           await sendMatchingMessage(client, 'one');
           await sendMatchingMessage(client, 'two');
           await sendMatchingMessage(client, 'three');
@@ -211,7 +215,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           interceptor,
         );
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           await sendMatchingMessage(client, 'one');
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
@@ -242,7 +246,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           expectedNumberOfMatches: { min: 1, max: 1 },
         });
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           await sendMatchingMessage(client);
         });
 
@@ -263,7 +267,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           interceptor,
         );
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           let messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'create', body: { text: 'one' } }));
           await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'delete', id: 'second' }));
@@ -281,9 +285,9 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
     it('should distribute messages to the next matching handler when the maximum number of messages is reached and restrictions are used', async () => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-        const firstMessage: MessageSchema = { type: 'create', body: { text: '1' } };
-        const secondMessage: MessageSchema = { type: 'create', body: { text: '2' } };
-        const unknownMessage: MessageSchema = { type: 'create', body: { text: 'unknown' } };
+        const firstMessage: Message = { type: 'create', body: { text: '1' } };
+        const secondMessage: Message = { type: 'create', body: { text: '2' } };
+        const unknownMessage: Message = { type: 'create', body: { text: 'unknown' } };
 
         const handlers = [
           await promiseIfRemote(
@@ -336,7 +340,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           expectedNumberOfMatches: 1,
         });
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           let messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify(secondMessage));
           await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'delete', id: '2' }));
@@ -462,7 +466,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
             olderInterceptor,
           );
 
-          await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
             let messagePromise = waitForWebSocketClientMessage(client);
             client.send(JSON.stringify({ type: 'create', body: { text: 'one' } }));
             await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'delete', id: 'older-interceptor' }));
@@ -507,7 +511,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           interceptor,
         );
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           const receivedMessages = collectWebSocketClientMessages(client);
 
           for (let index = 0; index < concurrentMessageCount; index++) {
@@ -549,7 +553,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           interceptor,
         );
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           const probeResponse = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
@@ -653,7 +657,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
           expectedNumberOfMatches: 1,
         });
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           client.send(JSON.stringify({ type: 'create', body: { text: 'one' } }));
 
           await waitFor(() => {
@@ -684,7 +688,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         expect(handler.messages).toHaveLength(0);
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           client.send(JSON.stringify({ type: 'create', body: { text: 'other' } }));
 
           await waitFor(async () => {
@@ -731,7 +735,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
           await waitFor(async () => {
@@ -761,7 +765,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
 
           await promiseIfRemote(handler.clear(), interceptor);
 
-          await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
             client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
 
             await waitFor(() => {
@@ -790,7 +794,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
             interceptor,
           );
 
-          await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
             await sendMatchingMessage(client);
           });
 
@@ -810,7 +814,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
       await promiseIfRemote(interceptor.message().respond({ type: 'delete', id: '1' }).times(1), interceptor);
 
-      await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+      await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
         await sendMatchingMessage(client);
       });
 

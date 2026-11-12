@@ -19,7 +19,7 @@ export type SocketIOEventFrame<Events, Event extends keyof Events & string = key
 
 type SocketIOFrame<Events> = SocketIOEngineFrame | SocketIOConnectFrame | SocketIOEventFrame<Events>;
 
-export type SocketIOWebSocketSchema<Events> = WebSocketSchema<SocketIOFrame<Events>>;
+export type SocketIOWebSocketSchema<Events> = WebSocketSchema<{ '/socket.io/': { message: SocketIOFrame<Events> } }>;
 
 export type SocketIOHttpSchema = HttpSchema<{
   '/socket.io/': {
@@ -46,7 +46,7 @@ export class GlobalWebSocketTransport extends WebSocket {
 }
 
 interface SocketIOPollingSession<Events> {
-  pendingPackets: WebSocketMessageData<SocketIOWebSocketSchema<Events>>[];
+  pendingPackets: WebSocketMessageData<SocketIOFrame<Events>>[];
   resolvePoll?: (body: string) => void;
 }
 
@@ -112,7 +112,7 @@ export function createSocketIOMock<Events>({
     }
   }
 
-  function send(sid: string, packet: WebSocketMessageData<SocketIOWebSocketSchema<Events>>) {
+  function send(sid: string, packet: WebSocketMessageData<SocketIOFrame<Events>>) {
     const session = pollingSessions.get(sid);
 
     if (session?.resolvePoll) {

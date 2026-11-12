@@ -240,9 +240,11 @@ export function declareDefaultWebSocketConnectionHandlerTests(
 
   it('should compute responses with the connection request', async () => {
     await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
-      const responseFactory = vi.fn<WebSocketConnectionHandlerResponseComputedDeclaration<'/rooms/:roomId'>>(() => ({
-        action: 'reject',
-      }));
+      const responseFactory = vi.fn<WebSocketConnectionHandlerResponseComputedDeclaration<Schema, '/rooms/:roomId'>>(
+        () => ({
+          action: 'reject',
+        }),
+      );
 
       await interceptor.connection('/rooms/:roomId').respond(responseFactory);
 

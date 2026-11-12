@@ -5,7 +5,8 @@ import { createServer as createHttpServer, Server as HttpServer } from 'http';
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { WebSocketServer } from '@/server';
-import { WebSocketSchema } from '@/types/schema';
+import { JSONStringified } from '@/types/json';
+import { InferPathParams, WebSocketSchema, WebSocketSchemaMessage } from '@/types/schema';
 
 import { openWebSocketClient } from '../utils/lifecycle';
 import { WebSocketClient } from '../WebSocketClient';
@@ -14,16 +15,21 @@ import { delayWebSocketClose, delayWebSocketListenerTrigger } from './utils';
 describe('WebSocketClient', () => {
   let httpServer: HttpServer;
 
-  type Schema = WebSocketSchema<
-    | {
-        type: 'message';
-        data: string;
-      }
-    | {
-        type: 'count';
-        data: number;
-      }
-  >;
+  type Schema = WebSocketSchema<{
+    '/': {
+      message:
+        | {
+            type: 'message';
+            data: string;
+          }
+        | {
+            type: 'count';
+            data: number;
+          };
+    };
+  }>;
+
+  type BinarySchema = WebSocketSchema<{ '/': { message: Blob | ArrayBuffer } }>;
 
   let webSocketServer: WebSocketServer<Schema>;
   let webSocketClient: WebSocketClient<Schema> | undefined;
@@ -221,7 +227,7 @@ describe('WebSocketClient', () => {
         });
       });
 
-      const binaryWebSocketClient = new WebSocketClient<WebSocketSchema<Blob | ArrayBuffer>>(webSocketServer.baseURL);
+      const binaryWebSocketClient = new WebSocketClient<BinarySchema>(webSocketServer.baseURL);
 
       try {
         expect(binaryWebSocketClient.binaryType).toBe('blob');
@@ -230,7 +236,7 @@ describe('WebSocketClient', () => {
           binaryWebSocketClient.binaryType = 'arraybuffer';
         });
 
-        const messageListener = vi.fn<WebSocketClient.EventListener<WebSocketSchema<Blob | ArrayBuffer>, 'message'>>();
+        const messageListener = vi.fn<WebSocketClient.EventListener<BinarySchema, 'message'>>();
         binaryWebSocketClient.addEventListener('message', messageListener);
 
         await binaryWebSocketClient.open();
@@ -251,7 +257,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should apply the binary type set while opening to received messages', async () => {
-      const binaryWebSocketClient = new WebSocketClient<WebSocketSchema<Blob | ArrayBuffer>>(webSocketServer.baseURL);
+      const binaryWebSocketClient = new WebSocketClient<BinarySchema>(webSocketServer.baseURL);
 
       // The server accepts the connection only after the client created its socket, so this sets the binary type
       // while the client is still opening.
@@ -267,7 +273,7 @@ describe('WebSocketClient', () => {
       try {
         expect(binaryWebSocketClient.binaryType).toBe('blob');
 
-        const messageListener = vi.fn<WebSocketClient.EventListener<WebSocketSchema<Blob | ArrayBuffer>, 'message'>>();
+        const messageListener = vi.fn<WebSocketClient.EventListener<BinarySchema, 'message'>>();
         binaryWebSocketClient.addEventListener('message', messageListener);
 
         await binaryWebSocketClient.open();
@@ -309,7 +315,7 @@ describe('WebSocketClient', () => {
         serverWebSocketClient.addEventListener('message', (event) => {
           const message = JSON.parse(event.data);
 
-          expectTypeOf(message).toEqualTypeOf<Schema>();
+          expectTypeOf(message).toEqualTypeOf<WebSocketSchemaMessage<Schema>>();
           expectTypeOf(message.type).toEqualTypeOf<'message' | 'count'>();
           expectTypeOf(message.data).toEqualTypeOf<string | number>();
 
@@ -693,6 +699,68 @@ describe('WebSocketClient', () => {
       } finally {
         delayedWebSocketClose.restore();
       }
+    });
+  });
+
+  // The clients below are only type-checked. The functions declaring them are never called.
+  describe('Types', () => {
+    type MultiPathSchema = WebSocketSchema<{
+      '/rooms/:roomId': { message: { type: 'chat'; text: string } };
+      '/users/:userId': { message: { type: 'presence'; online: boolean } };
+    }>;
+
+    type UserMessage = WebSocketSchemaMessage<MultiPathSchema, '/users/:userId'>;
+
+    it('should not require a path type argument if the schema has a single path', () => {
+      function declareClient(url: string, socket: WebSocket) {
+        const client = new WebSocketClient<Schema>(url);
+        new WebSocketClient<Schema>(socket);
+
+        client.send(JSON.stringify({ type: 'count', data: 1 }));
+
+        // @ts-expect-error The message is not declared in the schema.
+        client.send(JSON.stringify({ type: 'unknown' }) as JSONStringified<{ type: 'unknown' }>);
+      }
+
+      expectTypeOf(declareClient).toBeFunction();
+    });
+
+    it('should require a path type argument if the schema has multiple paths', () => {
+      function declareClient(url: string, socket: WebSocket) {
+        // @ts-expect-error The schema has multiple paths, so the client must declare its path.
+        new WebSocketClient<MultiPathSchema>(url);
+
+        // @ts-expect-error The schema has multiple paths, so the client must declare its path.
+        new WebSocketClient<MultiPathSchema>(socket);
+      }
+
+      expectTypeOf(declareClient).toBeFunction();
+    });
+
+    it('should type messages from the declared path', () => {
+      function declareClient(url: string) {
+        const client = new WebSocketClient<MultiPathSchema, '/rooms/:roomId'>(url);
+
+        client.send(JSON.stringify({ type: 'chat', text: 'hello' }));
+
+        // @ts-expect-error The message belongs to another path.
+        client.send(JSON.stringify({ type: 'presence', online: true }) as JSONStringified<UserMessage>);
+      }
+
+      expectTypeOf(declareClient).toBeFunction();
+    });
+
+    it('should not accept undeclared paths', () => {
+      // @ts-expect-error The path is not declared in the schema.
+      expectTypeOf<WebSocketClient<MultiPathSchema, '/unknown'>>().not.toBeAny();
+    });
+
+    it('should infer path params from a path', () => {
+      expectTypeOf<InferPathParams<'/rooms/:roomId'>>().toEqualTypeOf<{ roomId: string }>();
+    });
+
+    it('should infer path params from a path declared in a schema', () => {
+      expectTypeOf<InferPathParams<MultiPathSchema, '/users/:userId'>>().toEqualTypeOf<{ userId: string }>();
     });
   });
 });

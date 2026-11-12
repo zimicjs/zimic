@@ -1,4 +1,4 @@
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketSchema, WebSocketSchemaPath } from '@zimic/ws';
 
 import RemoteWebSocketConnectionHandler from '../connectionHandler/RemoteWebSocketConnectionHandler';
 import RemoteWebSocketMessageHandler from '../messageHandler/RemoteWebSocketMessageHandler';
@@ -13,6 +13,7 @@ import {
   WebSocketInterceptorConnectionSaving,
   WebSocketInterceptorMessageSaving,
 } from './types/public';
+import { WebSocketInterceptorHandlerPath } from './types/schema';
 import WebSocketInterceptorImplementation from './WebSocketInterceptorImplementation';
 import WebSocketInterceptorStore from './WebSocketInterceptorStore';
 
@@ -119,12 +120,16 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
     this.implementation.onUnhandledMessage = onUnhandledMessage;
   }
 
-  message() {
-    return this.implementation.message() as RemoteWebSocketMessageHandler<Schema>;
+  message<Path extends WebSocketSchemaPath.NonLiteral<Schema> = never>(path?: Path) {
+    return this.implementation.message<WebSocketInterceptorHandlerPath<Schema, Path>>(
+      path,
+    ) as RemoteWebSocketMessageHandler<Schema, WebSocketInterceptorHandlerPath<Schema, Path>>;
   }
 
-  connection<Path extends string = string>(path?: Path) {
-    return this.implementation.connection(path) as RemoteWebSocketConnectionHandler<Schema, Path>;
+  connection<Path extends WebSocketSchemaPath.NonLiteral<Schema> = never>(path?: Path) {
+    return this.implementation.connection<WebSocketInterceptorHandlerPath<Schema, Path>>(
+      path,
+    ) as RemoteWebSocketConnectionHandler<Schema, WebSocketInterceptorHandlerPath<Schema, Path>>;
   }
 
   get server(): PublicWebSocketInterceptorServer<Schema> {

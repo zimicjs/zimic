@@ -1,5 +1,5 @@
 import { waitFor } from '@zimic/utils/time';
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
@@ -14,11 +14,13 @@ import {
 import { WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
-type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
-type BinaryLikeJSONMessage = WebSocketSchema<{ type: 'binary'; data: string }>;
-type TextMessage = WebSocketSchema<string>;
-type BinaryMessage = WebSocketSchema<ArrayBuffer>;
-type BinarySchema = WebSocketSchema<ArrayBuffer | Blob>;
+type ChatMessage = WebSocketSchema<{
+  '/': { message: { type: 'client'; text: string } | { type: 'server'; text: string } };
+}>;
+type BinaryLikeJSONMessage = WebSocketSchema<{ '/': { message: { type: 'binary'; data: string } } }>;
+type TextMessage = WebSocketSchema<{ '/': { message: string } }>;
+type BinaryMessage = WebSocketSchema<{ '/': { message: ArrayBuffer } }>;
+type BinarySchema = WebSocketSchema<{ '/': { message: ArrayBuffer | Blob } }>;
 
 export function declareMessageDataWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { getBaseURL, getInterceptorOptions } = options;
@@ -59,7 +61,7 @@ export function declareMessageDataWebSocketInterceptorTests(options: RuntimeShar
 
   it('should preserve JSON messages shaped like binary envelopes', async () => {
     await usingWebSocketInterceptor<BinaryLikeJSONMessage>(interceptorOptions, async (interceptor) => {
-      const responseMessage: BinaryLikeJSONMessage = { type: 'binary', data: 'response' };
+      const responseMessage: WebSocketSchemaMessage<BinaryLikeJSONMessage> = { type: 'binary', data: 'response' };
 
       await promiseIfRemote(
         interceptor.message().with({ type: 'binary', data: 'request' }).respond(responseMessage).times(1),
@@ -88,7 +90,7 @@ export function declareMessageDataWebSocketInterceptorTests(options: RuntimeShar
     await usingWebSocketInterceptor<ChatMessage>(
       { ...interceptorOptions, messageSaving: { enabled: true } },
       async (interceptor) => {
-        const requestMessage: ChatMessage = { type: 'client', text: 'hello' };
+        const requestMessage: WebSocketSchemaMessage<ChatMessage> = { type: 'client', text: 'hello' };
         const effect = vi.fn();
         const handler = await promiseIfRemote(interceptor.message().effect(effect).times(1), interceptor);
 
@@ -149,7 +151,7 @@ export function declareMessageDataWebSocketInterceptorTests(options: RuntimeShar
     { text: 'null', expectedData: 'null' },
     { text: ' [1, 2]', expectedData: [1, 2] },
   ])('should receive the text message $text as $expectedData in handlers', async ({ text, expectedData }) => {
-    type PrimitiveOrArrayMessage = WebSocketSchema<string | number[]>;
+    type PrimitiveOrArrayMessage = WebSocketSchema<{ '/': { message: string | number[] } }>;
 
     await usingWebSocketInterceptor<PrimitiveOrArrayMessage>(
       { ...interceptorOptions, messageSaving: { enabled: true } },
@@ -181,7 +183,7 @@ export function declareMessageDataWebSocketInterceptorTests(options: RuntimeShar
   ] as const)(
     'should receive the JSON primitive message $value as its text in handlers',
     async ({ value, expectedData }) => {
-      type PrimitiveMessage = WebSocketSchema<number | boolean>;
+      type PrimitiveMessage = WebSocketSchema<{ '/': { message: number | boolean } }>;
 
       await usingWebSocketInterceptor<PrimitiveMessage>(
         { ...interceptorOptions, messageSaving: { enabled: true } },
@@ -251,7 +253,7 @@ export function declareMessageDataWebSocketInterceptorTests(options: RuntimeShar
   ])(
     'should receive incoming $dataType messages as ArrayBuffer in handler callbacks and saved messages',
     async ({ data }) => {
-      type BinaryBufferSchema = WebSocketSchema<Blob | BufferSource>;
+      type BinaryBufferSchema = WebSocketSchema<{ '/': { message: Blob | BufferSource } }>;
 
       await usingWebSocketInterceptor<BinaryBufferSchema>(
         { ...interceptorOptions, messageSaving: { enabled: true } },
@@ -312,7 +314,7 @@ export function declareMessageDataWebSocketInterceptorTests(options: RuntimeShar
 
         client.send(createRequestMessage());
 
-        expect(await readBytes((await response) as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
+        expect(await readBytes(await response)).toEqual([0x00, 0xff]);
       });
 
       await promiseIfRemote(interceptor.checkTimes(), interceptor);
@@ -348,7 +350,7 @@ export function declareMessageDataWebSocketInterceptorTests(options: RuntimeShar
   )(
     'should deliver $dataType handler responses as the $binaryType binary type of clients',
     async ({ createResponse, binaryType, receivedMessageType }) => {
-      type BinaryBufferSchema = WebSocketSchema<Blob | BufferSource>;
+      type BinaryBufferSchema = WebSocketSchema<{ '/': { message: Blob | BufferSource } }>;
 
       await usingWebSocketInterceptor<BinaryBufferSchema>(interceptorOptions, async (interceptor) => {
         await promiseIfRemote(interceptor.message().respond(createResponse()).times(1), interceptor);

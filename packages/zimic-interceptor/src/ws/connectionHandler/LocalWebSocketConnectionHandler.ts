@@ -1,6 +1,6 @@
 import { WebSocketSchema } from '@zimic/ws';
 
-import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
+import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
 import { WebSocketConnectionHandlerDelayFactory } from './types/connections';
 import {
   LocalWebSocketConnectionHandler as PublicLocalWebSocketConnectionHandler,
@@ -18,7 +18,7 @@ class LocalWebSocketConnectionHandler<
 
   implementation: WebSocketConnectionHandlerImplementation<Schema, Path>;
 
-  constructor(interceptorImplementation: WebSocketInterceptorImplementation<Schema>, path: Path | undefined) {
+  constructor(interceptorImplementation: AnyWebSocketInterceptorImplementation, path: Path | undefined) {
     this.implementation = new WebSocketConnectionHandlerImplementation<Schema, Path>(
       interceptorImplementation,
       path,
@@ -26,12 +26,12 @@ class LocalWebSocketConnectionHandler<
     );
   }
 
-  with(restriction: WebSocketConnectionHandlerRestriction<Path>) {
+  with(restriction: WebSocketConnectionHandlerRestriction<Schema, Path>) {
     this.implementation.with(restriction);
     return this;
   }
 
-  delay(minMilliseconds: number | WebSocketConnectionHandlerDelayFactory<Path>, maxMilliseconds?: number) {
+  delay(minMilliseconds: number | WebSocketConnectionHandlerDelayFactory<Schema, Path>, maxMilliseconds?: number) {
     this.implementation.delay(minMilliseconds, maxMilliseconds);
     return this;
   }
@@ -41,7 +41,7 @@ class LocalWebSocketConnectionHandler<
     return this;
   }
 
-  respond(declaration: WebSocketConnectionHandlerResponseDeclaration<Path>) {
+  respond(declaration: WebSocketConnectionHandlerResponseDeclaration<Schema, Path>) {
     this.implementation.respond(declaration);
     return this;
   }

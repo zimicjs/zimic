@@ -4,7 +4,7 @@ import { expectFetchError } from '@zimic/utils/fetch';
 import { waitFor } from '@zimic/utils/time';
 import { createInvalidTypeOfCases, ValidationError } from '@zimic/utils/validation';
 import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
-import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+import { WebSocketClient, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 import { once } from 'events';
 import ClientSocket from 'isomorphic-ws';
 import { connect } from 'net';
@@ -877,7 +877,8 @@ describe('Interceptor server', () => {
   });
 
   describe('WebSocket connections', () => {
-    type ChatMessage = WebSocketSchema<{ type: 'client' | 'server'; text: string }>;
+    type ChatSchema = WebSocketSchema<{ '/': { message: { type: 'client' | 'server'; text: string } } }>;
+    type ChatMessage = WebSocketSchemaMessage<ChatSchema>;
 
     it('should not register WebSocket interceptors reset by HTTP interceptor workers', async () => {
       server = createInternalInterceptorServer();
@@ -913,7 +914,7 @@ describe('Interceptor server', () => {
             );
           });
 
-          const client = new WebSocketClient<ChatMessage>(baseURL);
+          const client = new WebSocketClient<ChatSchema>(baseURL);
           const closeEventPromise = waitForWebSocketClientClose(client);
 
           await client.open();
@@ -948,7 +949,7 @@ describe('Interceptor server', () => {
         return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
       });
 
-      const client = new WebSocketClient<ChatMessage>(baseURL);
+      const client = new WebSocketClient<ChatSchema>(baseURL);
 
       try {
         for (const workerClient of [worker, otherWorker]) {
@@ -999,11 +1000,11 @@ describe('Interceptor server', () => {
       const serverURL = new URL(`ws://${server.hostname}:${server.port}`);
 
       await usingWebSocketInterceptorWorker({ type: 'remote', serverURL }, async (worker) => {
-        const removedInterceptor = createInternalWebSocketInterceptor<ChatMessage>({
+        const removedInterceptor = createInternalWebSocketInterceptor<ChatSchema>({
           type: 'remote',
           baseURL: `ws://${server!.hostname}:${server!.port}/removed`,
         });
-        const retainedInterceptor = createInternalWebSocketInterceptor<ChatMessage>({
+        const retainedInterceptor = createInternalWebSocketInterceptor<ChatSchema>({
           type: 'remote',
           baseURL: `ws://${server!.hostname}:${server!.port}/retained`,
         });
@@ -1011,8 +1012,8 @@ describe('Interceptor server', () => {
         await worker.use(removedInterceptor.implementation);
         await worker.use(retainedInterceptor.implementation);
 
-        const removedClient = new WebSocketClient<ChatMessage>(removedInterceptor.baseURL);
-        const retainedClient = new WebSocketClient<ChatMessage>(retainedInterceptor.baseURL);
+        const removedClient = new WebSocketClient<ChatSchema>(removedInterceptor.baseURL);
+        const retainedClient = new WebSocketClient<ChatSchema>(retainedInterceptor.baseURL);
 
         try {
           await removedClient.open();
@@ -1052,8 +1053,8 @@ describe('Interceptor server', () => {
 
       const baseURL = `ws://${server.hostname}:${server.port}/chat`;
 
-      await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
-        const client = new WebSocketClient<ChatMessage>(baseURL);
+      await usingWebSocketInterceptor<ChatSchema>({ type: 'remote', baseURL }, async (interceptor) => {
+        const client = new WebSocketClient<ChatSchema>(baseURL);
 
         try {
           await client.open();
@@ -1082,8 +1083,8 @@ describe('Interceptor server', () => {
 
       const baseURL = `ws://${server.hostname}:${server.port}/chat`;
 
-      await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
-        const client = new WebSocketClient<ChatMessage>(baseURL, ['v1%beta']);
+      await usingWebSocketInterceptor<ChatSchema>({ type: 'remote', baseURL }, async (interceptor) => {
+        const client = new WebSocketClient<ChatSchema>(baseURL, ['v1%beta']);
 
         try {
           await client.open();
@@ -1137,7 +1138,7 @@ describe('Interceptor server', () => {
           });
         });
 
-        const client = new WebSocketClient<ChatMessage>(baseURL);
+        const client = new WebSocketClient<ChatSchema>(baseURL);
 
         try {
           await worker.start({
@@ -1195,8 +1196,8 @@ describe('Interceptor server', () => {
           return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
         });
 
-        const client = new WebSocketClient<ChatMessage>(baseURL);
-        const otherClient = new WebSocketClient<ChatMessage>(otherBaseURL);
+        const client = new WebSocketClient<ChatSchema>(baseURL);
+        const otherClient = new WebSocketClient<ChatSchema>(otherBaseURL);
 
         try {
           await worker.start({
@@ -1261,7 +1262,7 @@ describe('Interceptor server', () => {
           return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
         });
 
-        const client = new WebSocketClient<ChatMessage>(baseURL);
+        const client = new WebSocketClient<ChatSchema>(baseURL);
 
         try {
           await worker.start({
@@ -1302,7 +1303,7 @@ describe('Interceptor server', () => {
         );
         worker.onChannel('event', 'interceptors/ws/clients/connect', connectionListener);
 
-        const client = new WebSocketClient<ChatMessage>(`ws://${server.hostname}:${server.port}/`);
+        const client = new WebSocketClient<ChatSchema>(`ws://${server.hostname}:${server.port}/`);
 
         try {
           await worker.start({
@@ -1350,8 +1351,8 @@ describe('Interceptor server', () => {
         });
 
         const rejectedRequests: Promise<unknown>[] = [];
-        const client = new WebSocketClient<ChatMessage>(baseURL);
-        const otherClient = new WebSocketClient<ChatMessage>(otherBaseURL);
+        const client = new WebSocketClient<ChatSchema>(baseURL);
+        const otherClient = new WebSocketClient<ChatSchema>(otherBaseURL);
 
         await usingIgnoredConsole(['error'], async (console) => {
           try {
@@ -1422,7 +1423,7 @@ describe('Interceptor server', () => {
         });
 
         const rejectedRequests: Promise<unknown>[] = [];
-        const client = new WebSocketClient<ChatMessage>(baseURL);
+        const client = new WebSocketClient<ChatSchema>(baseURL);
 
         await usingIgnoredConsole(['error'], async (console) => {
           try {
@@ -1476,7 +1477,7 @@ describe('Interceptor server', () => {
           return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
         });
 
-        const client = new WebSocketClient<ChatMessage>(baseURL);
+        const client = new WebSocketClient<ChatSchema>(baseURL);
 
         await usingIgnoredConsole(['error'], async (console) => {
           try {
@@ -1542,7 +1543,7 @@ describe('Interceptor server', () => {
           return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
         });
 
-        const client = new WebSocketClient<ChatMessage>(baseURL);
+        const client = new WebSocketClient<ChatSchema>(baseURL);
 
         try {
           for (const workerClient of [worker, otherWorker]) {
@@ -1606,7 +1607,7 @@ describe('Interceptor server', () => {
           return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
         });
 
-        const client = new WebSocketClient<ChatMessage>(baseURL);
+        const client = new WebSocketClient<ChatSchema>(baseURL);
 
         await usingIgnoredConsole(['error'], async (console) => {
           try {
@@ -1668,7 +1669,7 @@ describe('Interceptor server', () => {
           return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
         });
 
-        const client = new WebSocketClient<ChatMessage>(baseURL);
+        const client = new WebSocketClient<ChatSchema>(baseURL);
 
         try {
           await worker.start({
@@ -1725,8 +1726,8 @@ describe('Interceptor server', () => {
             : { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
         });
 
-        const client = new WebSocketClient<ChatMessage>(baseURL);
-        const otherClient = new WebSocketClient<ChatMessage>(baseURL);
+        const client = new WebSocketClient<ChatSchema>(baseURL);
+        const otherClient = new WebSocketClient<ChatSchema>(baseURL);
 
         await usingIgnoredConsole(['error'], async (console) => {
           try {
@@ -1802,8 +1803,8 @@ describe('Interceptor server', () => {
           closedClientIds.push(data.clientId);
         });
 
-        const client = new WebSocketClient<ChatMessage>(baseURL);
-        const otherClient = new WebSocketClient<ChatMessage>(baseURL);
+        const client = new WebSocketClient<ChatSchema>(baseURL);
+        const otherClient = new WebSocketClient<ChatSchema>(baseURL);
 
         await usingIgnoredConsole(['error'], async (console) => {
           try {
@@ -1873,8 +1874,8 @@ describe('Interceptor server', () => {
 
         const baseURL = `ws://${server.hostname}:${server.port}/chat`;
 
-        await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL }, async (interceptor) => {
-          const client = new WebSocketClient<ChatMessage>(baseURL);
+        await usingWebSocketInterceptor<ChatSchema>({ type: 'remote', baseURL }, async (interceptor) => {
+          const client = new WebSocketClient<ChatSchema>(baseURL);
           const httpWorker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
             url: `ws://${server!.hostname}:${server!.port}`,
           });
@@ -1947,7 +1948,7 @@ describe('Interceptor server', () => {
           acceptedInterceptorIds: [],
         }));
 
-        const client = new WebSocketClient<ChatMessage>(baseURL);
+        const client = new WebSocketClient<ChatSchema>(baseURL);
 
         try {
           await worker.start({
@@ -2004,7 +2005,7 @@ describe('Interceptor server', () => {
           encodeURIComponent(`${INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER}=${INTERCEPTOR_SERVER_RPC_VERSION}`),
         ]);
 
-        const client = new WebSocketClient<WebSocketSchema<string>>(baseURL);
+        const client = new WebSocketClient<WebSocketSchema<{ '/': { message: string } }>>(baseURL);
 
         try {
           const [authenticationMessage] = (await once(otherWorker, 'message')) as [Buffer];
@@ -2091,7 +2092,7 @@ describe('Interceptor server', () => {
           });
         });
 
-        const client = new WebSocketClient<ChatMessage>(baseURL);
+        const client = new WebSocketClient<ChatSchema>(baseURL);
 
         await usingIgnoredConsole(['error'], async (console) => {
           try {
@@ -2209,7 +2210,7 @@ describe('Interceptor server', () => {
         const effect = vi.fn();
 
         await usingIgnoredConsole(['error'], async () => {
-          await usingWebSocketInterceptor<ChatMessage>(
+          await usingWebSocketInterceptor<ChatSchema>(
             { type: 'remote', baseURL, connectionSaving: { enabled: true } },
             async (interceptor) => {
               const handler = await interceptor
@@ -2244,7 +2245,7 @@ describe('Interceptor server', () => {
 
               // Starting another interceptor gets a reply on the same worker socket, which arrives after the server
               // notified the worker that the client closed.
-              await usingWebSocketInterceptor<ChatMessage>({ type: 'remote', baseURL: otherBaseURL }, () => {
+              await usingWebSocketInterceptor<ChatSchema>({ type: 'remote', baseURL: otherBaseURL }, () => {
                 restrictionReleasedPromise.resolve();
               });
 
@@ -2287,8 +2288,8 @@ describe('Interceptor server', () => {
           return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
         });
 
-        const client = new WebSocketClient<ChatMessage>(baseURL);
-        const otherClient = new WebSocketClient<ChatMessage>(otherBaseURL);
+        const client = new WebSocketClient<ChatSchema>(baseURL);
+        const otherClient = new WebSocketClient<ChatSchema>(otherBaseURL);
 
         try {
           await worker.start({
@@ -2370,7 +2371,7 @@ describe('Interceptor server', () => {
           return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
         });
 
-        const client = new WebSocketClient<WebSocketSchema<string>>(baseURL);
+        const client = new WebSocketClient<WebSocketSchema<{ '/': { message: string } }>>(baseURL);
         const messagePromise = waitForWebSocketClientMessage(client);
 
         try {
@@ -2423,8 +2424,8 @@ describe('Interceptor server', () => {
           return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
         });
 
-        const firstClient = new WebSocketClient<WebSocketSchema<string>>(firstURL);
-        const secondClient = new WebSocketClient<WebSocketSchema<string>>(secondURL);
+        const firstClient = new WebSocketClient<WebSocketSchema<{ '/': { message: string } }>>(firstURL);
+        const secondClient = new WebSocketClient<WebSocketSchema<{ '/': { message: string } }>>(secondURL);
 
         const firstClientMessages = collectWebSocketClientMessages(firstClient);
         const firstMessagePromise = waitForWebSocketClientMessage(firstClient);
@@ -2506,8 +2507,8 @@ describe('Interceptor server', () => {
           return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
         });
 
-        const firstClient = new WebSocketClient<WebSocketSchema<string>>(firstURL);
-        const secondClient = new WebSocketClient<WebSocketSchema<string>>(secondURL);
+        const firstClient = new WebSocketClient<WebSocketSchema<{ '/': { message: string } }>>(firstURL);
+        const secondClient = new WebSocketClient<WebSocketSchema<{ '/': { message: string } }>>(secondURL);
 
         const firstMessagePromise = waitForWebSocketClientMessage(firstClient);
         const secondCloseEventPromise = waitForWebSocketClientClose(secondClient);
@@ -2591,7 +2592,7 @@ describe('Interceptor server', () => {
           return { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
         });
 
-        const client = new WebSocketClient<WebSocketSchema<string>>(baseURL);
+        const client = new WebSocketClient<WebSocketSchema<{ '/': { message: string } }>>(baseURL);
         const receivedMessages = collectWebSocketClientMessages(client);
         const closeEventPromise = waitForWebSocketClientClose(client);
 
@@ -2722,7 +2723,7 @@ describe('Interceptor server', () => {
           closedClientIds.push(data.clientId);
         });
 
-        const client = new WebSocketClient<WebSocketSchema<string>>(baseURL);
+        const client = new WebSocketClient<WebSocketSchema<{ '/': { message: string } }>>(baseURL);
 
         await usingIgnoredConsole(['error'], async (console) => {
           try {

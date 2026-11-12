@@ -22,7 +22,15 @@ import { WebSocketInterceptorConnectionSaving } from '../../types/public';
 import { DEFAULT_CONNECTION_SAVING_SAFE_LIMIT } from '../../WebSocketInterceptorImplementation';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
-type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
+type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
+
+type MessageSchema = WebSocketSchema<{
+  '/': { message: Message };
+  '/accepted': { connection: { protocols: 'chat' }; message: Message };
+  '/rejected': { message: Message };
+  '/first': { message: Message };
+  '/second': { message: Message };
+}>;
 
 export function declareConnectionSavingWebSocketInterceptorTests(
   options: RuntimeSharedWebSocketInterceptorTestsOptions,

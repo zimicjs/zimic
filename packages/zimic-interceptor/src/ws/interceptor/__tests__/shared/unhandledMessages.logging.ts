@@ -16,7 +16,8 @@ import {
 import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions, verifyUnhandledMessageWarning } from './utils';
 
-type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
+type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
+type MessageSchema = WebSocketSchema<{ '/': { message: Message } }>;
 
 // HTTP splits each case into bypassed and rejected variants. Unhandled messages have no action, so each pair has one
 // WebSocket counterpart.
@@ -51,7 +52,7 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
 
           await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
             await usingIgnoredConsole(['warn', 'error'], async (console) => {
-              const message: MessageSchema = { type: 'client', index: 1 };
+              const message: Message = { type: 'client', index: 1 };
               client.send(JSON.stringify(message));
 
               await waitFor(() => {
@@ -73,12 +74,12 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
     });
 
     it('should show a warning when logging is enabled and binary messages are unhandled', async () => {
-      await usingWebSocketInterceptor<WebSocketSchema<ArrayBuffer>>(
+      await usingWebSocketInterceptor<WebSocketSchema<{ '/': { message: ArrayBuffer } }>>(
         { ...interceptorOptions, onUnhandledMessage },
         async (interceptor) => {
           expect(interceptor.onUnhandledMessage).toBe(onUnhandledMessage);
 
-          await usingWebSocketClient<WebSocketSchema<ArrayBuffer>>(baseURL, async (client) => {
+          await usingWebSocketClient<WebSocketSchema<{ '/': { message: ArrayBuffer } }>>(baseURL, async (client) => {
             await usingIgnoredConsole(['warn', 'error'], async (console) => {
               const message = createBinaryMessage(1, 2);
               client.send(message);
@@ -107,7 +108,7 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
         async (interceptor) => {
           expect(interceptor.onUnhandledMessage).toBe(onUnhandledMessage);
 
-          const matchedMessage: MessageSchema = { type: 'client', index: 1 };
+          const matchedMessage: Message = { type: 'client', index: 1 };
 
           await promiseIfRemote(
             interceptor.message().with(matchedMessage).respond({ type: 'server', index: 1 }),
@@ -123,7 +124,7 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
               expect(console.warn).toHaveBeenCalledTimes(0);
               expect(console.error).toHaveBeenCalledTimes(0);
 
-              const unmatchedMessage: MessageSchema = { type: 'client', index: 2 };
+              const unmatchedMessage: Message = { type: 'client', index: 2 };
               client.send(JSON.stringify(unmatchedMessage));
 
               await waitFor(() => {
@@ -168,7 +169,7 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
           async (interceptor) => {
             expect(interceptor.onUnhandledMessage).toBe(onUnhandledMessage);
 
-            const matchedMessage: MessageSchema = { type: 'client', index: 1 };
+            const matchedMessage: Message = { type: 'client', index: 1 };
 
             await promiseIfRemote(
               interceptor.message().with(matchedMessage).respond({ type: 'server', index: 1 }),
@@ -210,7 +211,7 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
       async (interceptor) => {
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
           await usingIgnoredConsole(['warn', 'error'], async (console) => {
-            const message: MessageSchema = { type: 'client', index: 1 };
+            const message: Message = { type: 'client', index: 1 };
             client.send(JSON.stringify(message));
 
             await waitFor(() => {
@@ -257,7 +258,7 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
         );
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          const message: MessageSchema = { type: 'client', index: 1 };
+          const message: Message = { type: 'client', index: 1 };
 
           await usingIgnoredConsole(['warn', 'error'], async (console) => {
             client.send(JSON.stringify(message));

@@ -16,7 +16,9 @@ import { WebSocketInterceptorMessageSaving } from '../../types/public';
 import { DEFAULT_MESSAGE_SAVING_SAFE_LIMIT } from '../../WebSocketInterceptorImplementation';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
-type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
+type MessageSchema = WebSocketSchema<{
+  '/': { message: { type: 'client'; index: number } | { type: 'server'; index: number } };
+}>;
 
 export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { platform, getBaseURL, getInterceptorOptions } = options;
