@@ -1,6 +1,7 @@
 import { waitFor } from '@zimic/utils/time';
+import { createInvalidTypeOfCases, ValidationError } from '@zimic/utils/validation';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
@@ -296,4 +297,53 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
       },
     );
   });
+
+  const invalidOnUnhandledMessages = createInvalidTypeOfCases(['object', 'function'], { optional: true });
+
+  it.each(invalidOnUnhandledMessages)(
+    'should throw an error if provided an unhandled message strategy that is not an object or a function ($label)',
+    async ({ value, actualType }) => {
+      const handler = vi.fn();
+
+      // @ts-expect-error Forcing an invalid unhandled message strategy type.
+      const invalidOnUnhandledMessage: UnhandledMessageStrategy = value;
+
+      await expect(async () => {
+        await usingWebSocketInterceptor(
+          { ...interceptorOptions, onUnhandledMessage: invalidOnUnhandledMessage },
+          handler,
+        );
+      }).rejects.toThrow(
+        new ValidationError(`Expected options.onUnhandledMessage to be object or function, but got ${actualType}.`),
+      );
+
+      expect(handler).not.toHaveBeenCalled();
+    },
+  );
+
+  // No WebSocket counterpart for "should throw an error if provided an unhandled request action that is not supported
+  // ($label)": unhandled messages have no action.
+
+  // No WebSocket counterpart for "should throw an error if provided a bypass unhandled request action in a remote
+  // interceptor": unhandled messages have no action.
+
+  const invalidUnhandledMessageLogs = createInvalidTypeOfCases('boolean', { optional: true });
+
+  it.each(invalidUnhandledMessageLogs)(
+    'should throw an error if provided an unhandled message log option that is not a boolean ($label)',
+    async ({ value, actualType }) => {
+      const handler = vi.fn();
+
+      // @ts-expect-error Forcing an invalid unhandled message log option type.
+      const invalidLog: boolean = value;
+
+      await expect(async () => {
+        await usingWebSocketInterceptor({ ...interceptorOptions, onUnhandledMessage: { log: invalidLog } }, handler);
+      }).rejects.toThrow(
+        new ValidationError(`Expected options.onUnhandledMessage.log to be boolean, but got ${actualType}.`),
+      );
+
+      expect(handler).not.toHaveBeenCalled();
+    },
+  );
 }
