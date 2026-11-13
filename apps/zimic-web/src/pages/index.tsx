@@ -1,5 +1,7 @@
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
 
 import ZimicLogo from '@@/public/images/logo.svg';
 
@@ -14,7 +16,8 @@ import FeatureCard from './components/FeatureCard';
 import GetStartedLink from './components/GetStartedLink';
 import GradientBackground from './components/GradientBackground';
 import HomeSection from './components/HomeSection';
-import ProjectCard from './components/ProjectCard';
+import PackagePanel from './components/PackagePanel';
+import { packages } from './components/packages';
 import SponsorsImage from './components/SponsorsImage';
 
 const GITHUB_SPONSORS_URL = 'https://github.com/sponsors/zimicjs';
@@ -43,62 +46,68 @@ function HomePage() {
             </h1>
 
             <span className="text-2xl font-medium">{siteConfig.tagline}</span>
+
+            <p className="mb-0 max-w-2xl text-lg text-slate-700 dark:text-slate-200">
+              Declare your API once as a TypeScript type. Get typed requests, typed responses, and mocks that cannot
+              drift from the real API.
+            </p>
           </div>
 
           <GetStartedLink arrow />
         </div>
 
-        <div className="mx-auto grid w-full max-w-4xl grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-6 px-12">
-          <ProjectCard
-            href="/docs/http"
-            title="@zimic/http"
-            description="TypeScript-first HTTP schemas and utilities"
-          />
-
-          <ProjectCard href="/docs/fetch" title="@zimic/fetch" description="Typed fetch-like API client" />
-
-          <ProjectCard
-            href="/docs/interceptor"
-            title="@zimic/interceptor"
-            description="Type-safe HTTP intercepting and mocking"
-          />
-        </div>
+        <HomeSection
+          title="One schema, every layer of your integration"
+          titleId="packages"
+          description="Each package does one job well. Use them together, or pick the ones your project needs."
+          className="mx-auto max-w-6xl pb-0"
+        >
+          <Tabs className="justify-center">
+            {packages.map((packageInfo) => (
+              <TabItem key={packageInfo.id} value={packageInfo.id} label={packageInfo.name}>
+                <div className="pt-8">
+                  <PackagePanel package={packageInfo} />
+                </div>
+              </TabItem>
+            ))}
+          </Tabs>
+        </HomeSection>
 
         <HomeSection
-          title="Highlights"
+          title="Why Zimic"
           titleId="highlights"
-          description="Zimic is a collection of type-safe HTTP integration libraries."
+          description="Small libraries that follow the web platform and let the compiler check your HTTP and WebSocket code."
           className="mx-auto max-w-[96rem]"
         >
           <div className="grid grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-6">
             <FeatureCard
-              title="TypeScript-First"
-              description="First-class TypeScript support with type generation, inference, validation, and autocompletion."
+              title="TypeScript-first"
+              description="The compiler checks paths, parameters, bodies, and status codes. Your editor autocompletes them."
               icon={<HighVoltageIcon aria-hidden="true" />}
             />
             <FeatureCard
               title="Lightweight"
-              description="Minimal bundle size and few dependencies, perfect for client and server-side applications."
+              description="@zimic/fetch is about 2 kB minified and gzipped, and schemas are types that ship no code. Add only the packages you use."
               icon={<CogIcon aria-hidden="true" />}
             />
             <FeatureCard
-              title="Developer-Friendly"
-              description="Designed with developer experience in mind from the start, with intuitive APIs and comprehensive documentation."
+              title="Native APIs"
+              description="Requests, responses, headers, and search params extend the native classes. You already know the API."
               icon={<OpenPackageIcon aria-hidden="true" />}
             />
             <FeatureCard
-              title="Thoroughly Tested"
-              description="Comprehensive test suite and high coverage to ensure reliability and developer confidence."
+              title="Thoroughly tested"
+              description="Every package runs its test suite in Node.js and in browsers, with high coverage."
               icon={<ChecklistIcon aria-hidden="true" />}
             />
           </div>
         </HomeSection>
 
         <HomeSection
-          title="Level up your TypeScript experience"
+          title="Type your first request in minutes"
           titleId="get-started"
-          description="Start building with Zimic today!"
-          className="border-primary-500/10 dark:border-primary-500/20 bg-primary-500/5 dark:bg-primary-500/15 elative mx-auto w-screen overflow-hidden border-t"
+          description="Declare a schema and let TypeScript check the rest."
+          className="border-primary-500/10 dark:border-primary-500/20 bg-primary-500/5 dark:bg-primary-500/15 mx-auto w-screen overflow-hidden border-t"
         >
           <GetStartedLink arrow className="mx-auto -mt-6" />
         </HomeSection>
