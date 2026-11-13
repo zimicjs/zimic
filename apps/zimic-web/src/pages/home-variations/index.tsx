@@ -6,29 +6,29 @@ import ProjectCard from '../components/ProjectCard';
 
 const variations = [
   {
-    path: 'walkthrough',
-    title: 'Walkthrough',
-    description: 'A numbered timeline from schema to request to test, one package per step.',
+    path: 'tabs',
+    title: 'Package tabs',
+    description: 'One tab per package, with what it requires, its install command, and an example.',
   },
   {
-    path: 'tabs',
-    title: 'Tabs',
-    description: 'One tabbed panel with the features and a code example of each package.',
+    path: 'goals',
+    title: 'Task tabs',
+    description: 'One tab per task, showing the packages that task needs.',
   },
   {
     path: 'showcase',
     title: 'Showcase',
-    description: 'A full-width section per package, alternating text and code.',
+    description: 'Package cards, then a full-width section per package with its install command.',
   },
   {
-    path: 'type-safety',
-    title: 'Type safety',
-    description: 'A split hero with code, then the mistakes the compiler catches.',
+    path: 'protocols',
+    title: 'Protocols',
+    description: 'An HTTP section and a WebSocket section, each with its own task tabs.',
   },
   {
-    path: 'comparison',
-    title: 'Comparison',
-    description: 'Native fetch and hand-written mocks side by side with Zimic.',
+    path: 'picker',
+    title: 'Picker',
+    description: 'Checkboxes for what the project needs, building the install command and examples.',
   },
 ];
 

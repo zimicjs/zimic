@@ -1,5 +1,3 @@
-export const install = 'npm install @zimic/http @zimic/fetch @zimic/interceptor';
-
 export const schema = `
 import { HttpSchema } from '@zimic/http';
 
@@ -28,12 +26,6 @@ export type Schema = HttpSchema<{
     };
   };
 }>;
-`;
-
-export const typegen = `
-zimic-http typegen openapi ./openapi.yaml \\
-  --output ./schema.ts \\
-  --service-name MyService
 `;
 
 export const fetch = `
@@ -65,7 +57,7 @@ if (!response.ok) {
 const user = await response.json(); // User
 `;
 
-export const interceptor = `
+export const httpInterceptor = `
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 
 import { Schema } from './schema';
@@ -93,13 +85,16 @@ test('searches users', async () => {
 });
 `;
 
-// Follows the path-keyed schema of https://github.com/zimicjs/zimic/pull/1463. Update if that API changes.
+// The WebSocket snippets follow the path-keyed schema of https://github.com/zimicjs/zimic/pull/1463 and the
+// interceptor docs of https://github.com/zimicjs/zimic/pull/1343. Check them against the final API before release.
 export const webSocket = `
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 
-type Schema = WebSocketSchema<{
+export type Schema = WebSocketSchema<{
   '/chat': {
-    message: { type: 'message'; data: { text: string } };
+    message:
+      | { type: 'message'; data: { text: string } }
+      | { type: 'typing'; data: { username: string } };
   };
 }>;
 
@@ -107,105 +102,40 @@ const client = new WebSocketClient<Schema>('ws://localhost:3000/chat');
 await client.open();
 
 client.addEventListener('message', (event) => {
-  const message = JSON.parse(event.data);
-  console.log(message.data.text);
-});
-
-client.send(JSON.stringify({ type: 'message', data: { text: 'Hello!' } }));
-`;
-
-export const typeErrorHero = `
-const fetch = createFetch<Schema>({
-  baseURL: 'http://localhost:3000',
-});
-
-const response = await fetch('/users', {
-  method: 'POST',
-  headers: { 'content-type': 'application/json' },
-  // error-next-line
-  body: JSON.stringify({ name: 'me' }),
-  // Type error: 'name' does not exist in User
-});
-
-if (response.status === 201) {
   // highlight-next-line
-  const user = await response.json(); // User
-}
-
-if (response.status === 409) {
-  // highlight-next-line
-  const error = await response.json(); // RequestError
-}
-`;
-
-export const typeErrorPath = `
-// error-next-line
-await fetch('/user', { method: 'GET' });
-// Type error: unknown path '/user'
-`;
-
-export const typeErrorParams = `
-await fetch('/users', {
-  method: 'GET',
-  // error-next-line
-  searchParams: { search: 'u' },
-  // Type error: unknown param 'search'
-});
-`;
-
-export const typeErrorMock = `
-interceptor.get('/users').respond({
-  status: 200,
-  // error-next-line
-  body: { username: 'me' },
-  // Type error: expected User[]
-});
-`;
-
-export const plainFetch = `
-const url = new URL('/users', 'http://localhost:3000');
-url.searchParams.set('query', 'u');
-
-const response = await fetch(url);
-
-// Nothing checks the path, the params, or this cast
-const users = (await response.json()) as User[];
-`;
-
-export const zimicFetch = `
-const response = await fetch('/users', {
-  method: 'GET',
-  searchParams: { query: 'u' },
+  const message = JSON.parse(event.data); // typed by the schema
+  console.log(message.type);
 });
 
-// Inferred from the schema as User[]
-const users = await response.json();
-`;
-
-export const plainMock = `
-vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-  // The API returns \`username\`, but this test passes
-  Response.json([{ name: 'me' }]),
+client.send(
+  JSON.stringify({ type: 'message', data: { text: 'Hello!' } }),
 );
-
-const users = await searchUsers('u');
-expect(users).toHaveLength(1);
-
-// The query the application sent is never checked
-expect(fetch).toHaveBeenCalledTimes(1);
 `;
 
-export const zimicMock = `
-interceptor
-  .get('/users')
-  .with({ searchParams: { query: 'u' } })
-  // The compiler checks the body against the schema
-  .respond({ status: 200, body: [{ username: 'me' }] })
-  .times(1);
+export const webSocketInterceptor = `
+import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
 
-const users = await searchUsers('u');
-expect(users).toHaveLength(1);
+import { Schema } from './schema';
 
-// afterEach: interceptor.checkTimes() fails the test
-// if the request was not made once with that query
+const interceptor = createWebSocketInterceptor<Schema>({
+  baseURL: 'ws://localhost:3000',
+});
+
+beforeAll(() => interceptor.start());
+beforeEach(() => interceptor.clear());
+afterEach(() => interceptor.checkTimes());
+afterAll(() => interceptor.stop());
+
+test('shows who is typing', async () => {
+  // highlight-start
+  interceptor
+    .message('/chat')
+    .with({ type: 'message' })
+    .respond({ type: 'typing', data: { username: 'bot' } })
+    .times(1);
+  // highlight-end
+
+  await sendChatMessage('Hello!');
+  expect(await findTypingUsername()).toBe('bot');
+});
 `;
