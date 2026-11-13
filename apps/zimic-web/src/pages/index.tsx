@@ -57,9 +57,9 @@ function HomePage() {
         </div>
 
         <HomeSection
-          title="One schema, every layer of your integration"
+          title="A typed toolkit for HTTP and WebSockets"
           titleId="packages"
-          description="Each package does one job well. Use them together, or pick the ones your project needs."
+          description="Schemas, clients, servers, and mocks that share the same types. Start with one package and add more as your project grows."
           className="mx-auto max-w-6xl pb-0"
         >
           <Tabs className="justify-center">
