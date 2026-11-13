@@ -203,9 +203,6 @@ importers:
       '@docusaurus/theme-classic':
         specifier: ^3.10.2
         version: 3.10.2(@types/react@19.3.0)(@typescript/typescript6@6.0.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@docusaurus/theme-common':
-        specifier: ^3.10.2
-        version: 3.10.2(@docusaurus/plugin-content-docs@3.10.2(@mdx-js/react@3.1.1(@types/react@19.3.0)(react@19.3.1))(@typescript/typescript6@6.0.2)(postcss@8.5.30)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(postcss@8.5.30)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@docusaurus/theme-search-algolia':
         specifier: ^3.10.2
         version: 3.10.2(@algolia/client-search@5.56.0)(@mdx-js/react@3.1.1(@types/react@19.3.0)(react@19.3.1))(@types/react@19.3.0)(@typescript/typescript6@6.0.2)(postcss@8.5.32)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(search-insights@2.17.3)
@@ -4457,6 +4454,9 @@ packages:
 
   '@types/mdast@4.0.4':
     resolution: {integrity: sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==}
+
+  '@types/mdx@2.0.13':
+    resolution: {integrity: sha512-+OWZQfAYyio6YkJb3HLxDrvnx6SWWDbC0zVPfBRzUk0/nqoDyf6dNxQi3eArPe8rJ473nobTMQ/8Zk+LxJ+Yuw==}
 
   '@types/mdx@2.0.14':
     resolution: {integrity: sha512-T48PeuJtvLosNTPVhfnIp3i/n3a4g4Bad7YCq5k64D4u7NwDrAotikQ+5+sjtUvBmxCMlbo3dVL+C2dP0rWHzg==}
@@ -13834,7 +13834,7 @@ snapshots:
 
   '@mdx-js/react@3.1.1(@types/react@19.3.0)(react@19.3.1)':
     dependencies:
-      '@types/mdx': 2.0.14
+      '@types/mdx': 2.0.13
       '@types/react': 19.3.0
       react: 19.3.1
 
@@ -14700,6 +14700,8 @@ snapshots:
   '@types/mdast@4.0.4':
     dependencies:
       '@types/unist': 3.0.3
+
+  '@types/mdx@2.0.13': {}
 
   '@types/mdx@2.0.14': {}
 
