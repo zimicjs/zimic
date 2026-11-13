@@ -1,4 +1,6 @@
-export const schema = `
+// Keep lines under 56 characters, so that the snippets do not scroll horizontally on desktop.
+
+export const httpSchema = `
 import { HttpSchema } from '@zimic/http';
 
 interface User {
@@ -57,8 +59,42 @@ if (!response.ok) {
 const user = await response.json(); // User
 `;
 
+export const webSocket = `
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+
+export type Schema = WebSocketSchema<{
+  '/chat': {
+    message:
+      | { type: 'message'; data: { text: string } }
+      | { type: 'typing'; data: { username: string } };
+  };
+}>;
+
+const client = new WebSocketClient<Schema>(
+  'ws://localhost:3000/chat',
+);
+
+await client.open();
+
+client.addEventListener('message', (event) => {
+  // highlight-start
+  const message = JSON.parse(event.data);
+  console.log(message.type); // 'message' | 'typing'
+  // highlight-end
+});
+
+client.send(
+  JSON.stringify({
+    type: 'message',
+    data: { text: 'Hello!' },
+  }),
+);
+`;
+
 export const httpInterceptor = `
-import { createHttpInterceptor } from '@zimic/interceptor/http';
+import {
+  createHttpInterceptor,
+} from '@zimic/interceptor/http';
 
 import { Schema } from './schema';
 
@@ -85,35 +121,10 @@ test('searches users', async () => {
 });
 `;
 
-// The WebSocket snippets follow the path-keyed schema of https://github.com/zimicjs/zimic/pull/1463 and the
-// interceptor docs of https://github.com/zimicjs/zimic/pull/1343. Check them against the final API before release.
-export const webSocket = `
-import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
-
-export type Schema = WebSocketSchema<{
-  '/chat': {
-    message:
-      | { type: 'message'; data: { text: string } }
-      | { type: 'typing'; data: { username: string } };
-  };
-}>;
-
-const client = new WebSocketClient<Schema>('ws://localhost:3000/chat');
-await client.open();
-
-client.addEventListener('message', (event) => {
-  // highlight-next-line
-  const message = JSON.parse(event.data); // typed by the schema
-  console.log(message.type);
-});
-
-client.send(
-  JSON.stringify({ type: 'message', data: { text: 'Hello!' } }),
-);
-`;
-
 export const webSocketInterceptor = `
-import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
+import {
+  createWebSocketInterceptor,
+} from '@zimic/interceptor/experimental/ws';
 
 import { Schema } from './schema';
 
@@ -131,7 +142,10 @@ test('shows who is typing', async () => {
   interceptor
     .message('/chat')
     .with({ type: 'message' })
-    .respond({ type: 'typing', data: { username: 'bot' } })
+    .respond({
+      type: 'typing',
+      data: { username: 'bot' },
+    })
     .times(1);
   // highlight-end
 
