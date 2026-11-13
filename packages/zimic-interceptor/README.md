@@ -34,7 +34,16 @@
 
 `@zimic/interceptor` is a type-safe interceptor library for handling and mocking HTTP requests and WebSocket messages in development and testing.
 
+Interceptors use the schema of your API to type your mocks: an [HTTP schema](https://zimic.dev/docs/http/guides/schemas) from [`@zimic/http`](https://zimic.dev/docs/http) for HTTP interceptors, and a [WebSocket schema](https://zimic.dev/docs/ws/guides/schemas) from [`@zimic/ws`](https://zimic.dev/docs/ws) for WebSocket interceptors. Interception happens at the network level, so it works with any client, including the native `fetch`, [`@zimic/fetch`](https://zimic.dev/docs/fetch), and [axios](https://axios-http.com).
+
 `@zimic/http` and `@zimic/ws` are optional peer dependencies. Install only the schema package for the protocol you use: `@zimic/http` for HTTP interceptors, `@zimic/ws` for WebSocket interceptors, or both if your project uses both.
+
+## When to use
+
+- You test code that calls an external API and want mocks that match the real API.
+- You develop against a backend that is unavailable or not ready yet.
+- You want your tests to verify which requests and messages your application sends.
+- You run end-to-end tests where the application and the tests are separate processes.
 
 ## Installation
 
