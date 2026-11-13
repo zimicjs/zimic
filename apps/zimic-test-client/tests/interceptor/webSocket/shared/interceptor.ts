@@ -58,7 +58,7 @@ function getBinaryBaseURL(type: WebSocketInterceptorType) {
 
 async function waitForResponseMessage<
   Schema extends UserWebSocketSchema | NotificationWebSocketSchema,
-  ResponseMessageType extends WebSocketSchemaMessage<UserWebSocketSchema | NotificationWebSocketSchema>['type'],
+  ResponseMessageType extends Extract<WebSocketSchemaMessage<Schema>, { type: string }>['type'],
 >(socket: ClientTestWebSocket<Schema>, responseMessageType: ResponseMessageType) {
   return new Promise<Extract<WebSocketSchemaMessage<Schema>, { type: ResponseMessageType }>>((resolve) => {
     function messageListener(event: ClientTestWebSocketMessageEvent<Schema>) {
