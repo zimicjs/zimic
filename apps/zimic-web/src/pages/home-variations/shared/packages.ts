@@ -1,26 +1,30 @@
 import * as snippets from './snippets';
 
-export interface PackageFeature {
+export interface Example {
   title: string;
-  description: string;
+  code: string;
 }
 
 export interface PackageInfo {
   name: string;
-  /** The WebSocket package has no docs yet, so it has no link. */
-  href?: string;
+  href: string;
   summary: string;
   description: string;
-  features: PackageFeature[];
-  snippet: { title: string; code: string };
+  /** What the package needs to be installed with. */
+  requirement: string;
+  install: string;
+  features: { title: string; description: string }[];
+  example: Example;
 }
 
 export const httpPackage: PackageInfo = {
   name: '@zimic/http',
   href: '/docs/http',
-  summary: 'Describe your API once, as a TypeScript type',
+  summary: 'Describe an HTTP API as a TypeScript type',
   description:
-    'An HTTP schema lists the paths, methods, parameters, bodies, and status codes of an API. The other Zimic packages read it to type requests, responses, and mocks.',
+    'An HTTP schema lists the paths, methods, parameters, bodies, and status codes of an API. Use it in your own code, or give it to @zimic/fetch and @zimic/interceptor.',
+  requirement: 'Works on its own',
+  install: 'npm install @zimic/http',
   features: [
     {
       title: 'No runtime cost',
@@ -35,15 +39,17 @@ export const httpPackage: PackageInfo = {
       description: 'HttpHeaders, HttpSearchParams, and HttpFormData extend their native counterparts.',
     },
   ],
-  snippet: { title: 'schema.ts', code: snippets.schema },
+  example: { title: 'schema.ts', code: snippets.schema },
 };
 
 export const fetchPackage: PackageInfo = {
   name: '@zimic/fetch',
   href: '/docs/fetch',
-  summary: 'Call your API with a typed fetch',
+  summary: 'Call an HTTP API with a typed fetch',
   description:
-    'createFetch returns a thin wrapper around the native Fetch API. It takes the same arguments and returns native requests and responses, typed by your schema.',
+    'createFetch returns a thin wrapper around the native Fetch API. It takes the same arguments and returns native requests and responses, typed by your HTTP schema.',
+  requirement: 'Requires @zimic/http',
+  install: 'npm install @zimic/http @zimic/fetch',
   features: [
     {
       title: 'About 2 kB, zero dependencies',
@@ -58,19 +64,21 @@ export const fetchPackage: PackageInfo = {
       description: 'Set a base URL and default headers. Handle auth and retries in onRequest and onResponse.',
     },
   ],
-  snippet: { title: 'users.ts', code: snippets.fetch },
+  example: { title: 'users.ts', code: snippets.fetch },
 };
 
 export const interceptorPackage: PackageInfo = {
   name: '@zimic/interceptor',
   href: '/docs/interceptor',
-  summary: 'Mock your API in tests and development',
+  summary: 'Mock HTTP and WebSocket APIs in tests',
   description:
-    'Interceptors answer the real HTTP requests of your application with typed mock responses, then check that it made the requests you expected.',
+    'Interceptors answer the real requests and messages of your application with typed mocks, then check that it sent what you expected. They work with any HTTP or WebSocket client.',
+  requirement: 'Requires @zimic/http or @zimic/ws',
+  install: 'npm install @zimic/http @zimic/interceptor --save-dev',
   features: [
     {
       title: 'Network-level mocks',
-      description: 'Local interceptors use MSW in the same process. Remote interceptors use an interceptor server.',
+      description: 'Local interceptors run in the same process. Remote interceptors use an interceptor server.',
     },
     {
       title: 'Checked against the schema',
@@ -81,30 +89,114 @@ export const interceptorPackage: PackageInfo = {
       description: 'Restrict handlers with with() and times(). checkTimes() fails the test on a mismatch.',
     },
   ],
-  snippet: { title: 'users.test.ts', code: snippets.interceptor },
+  example: { title: 'users.test.ts', code: snippets.httpInterceptor },
 };
 
 export const webSocketPackage: PackageInfo = {
   name: '@zimic/ws',
-  summary: 'Typed WebSockets, in development',
+  // Switch to '/docs/ws' once the WebSocket docs land. The build fails on internal links to missing pages.
+  href: 'https://github.com/zimicjs/zimic/tree/canary/packages/zimic-ws',
+  summary: 'Exchange typed WebSocket messages',
   description:
-    'The same idea for real-time APIs. Declare the messages of each path in a WebSocket schema and use it in clients, servers, and mocks. The API may change before the first stable release.',
+    'A WebSocket schema lists the messages of each path. The client and the server use it to type every message sent and received.',
+  requirement: 'Works on its own',
+  install: 'npm install @zimic/ws',
   features: [
     {
       title: 'Typed client',
-      description: 'WebSocketClient follows the native WebSocket, with typed messages.',
+      description: 'WebSocketClient follows the native WebSocket, so it runs in browsers and Node.js.',
     },
     {
       title: 'Typed server',
       description: 'WebSocketServer attaches to a Node.js HTTP or HTTPS server.',
     },
     {
-      title: 'WebSocket interceptors',
-      description: '@zimic/interceptor will mock WebSocket messages with the same schema.',
+      title: 'No HTTP packages needed',
+      description: 'Install it only if your project uses WebSockets.',
     },
   ],
-  snippet: { title: 'chat.ts', code: snippets.webSocket },
+  example: { title: 'chat.ts', code: snippets.webSocket },
 };
 
-export const httpPackages = [httpPackage, fetchPackage, interceptorPackage];
-export const allPackages = [...httpPackages, webSocketPackage];
+export const packages = [httpPackage, fetchPackage, interceptorPackage, webSocketPackage];
+
+export interface Goal {
+  id: string;
+  label: string;
+  description: string;
+  packages: PackageInfo[];
+  /** Whether the packages are only needed in development. */
+  isDevelopmentOnly: boolean;
+  example: Example;
+}
+
+export const httpGoals: Goal[] = [
+  {
+    id: 'http-schema',
+    label: 'Type an HTTP API',
+    description:
+      'Declare the API as a schema and use its types anywhere in your code. This is the only package the other HTTP packages need.',
+    packages: [httpPackage],
+    isDevelopmentOnly: false,
+    example: httpPackage.example,
+  },
+  {
+    id: 'http-client',
+    label: 'Call an HTTP API',
+    description:
+      'Add @zimic/fetch to make requests typed by the schema. You can keep any mocking tool you already use.',
+    packages: [httpPackage, fetchPackage],
+    isDevelopmentOnly: false,
+    example: fetchPackage.example,
+  },
+  {
+    id: 'http-mocks',
+    label: 'Mock an HTTP API',
+    description:
+      'Add @zimic/interceptor to your tests. It mocks the requests of any HTTP client, such as fetch or axios, so @zimic/fetch is optional.',
+    packages: [httpPackage, interceptorPackage],
+    isDevelopmentOnly: true,
+    example: interceptorPackage.example,
+  },
+];
+
+export const webSocketGoals: Goal[] = [
+  {
+    id: 'ws-client',
+    label: 'Use typed WebSockets',
+    description:
+      'Declare the messages in a WebSocket schema and use the typed client and server. No HTTP package is involved.',
+    packages: [webSocketPackage],
+    isDevelopmentOnly: false,
+    example: webSocketPackage.example,
+  },
+  {
+    id: 'ws-mocks',
+    label: 'Mock WebSockets',
+    description:
+      'Add @zimic/interceptor to answer the messages of your application in tests, typed by the same WebSocket schema.',
+    packages: [webSocketPackage, interceptorPackage],
+    isDevelopmentOnly: true,
+    example: { title: 'chat.test.ts', code: snippets.webSocketInterceptor },
+  },
+];
+
+export const goals = [...httpGoals, ...webSocketGoals];
+
+/** Returns the commands to install the packages of the goals, with test-only packages as dev dependencies. */
+export function getInstallCommands(selectedGoals: Goal[]) {
+  function getPackageNames(isDevelopmentOnly: boolean) {
+    const goalsOfKind = selectedGoals.filter((goal) => goal.isDevelopmentOnly === isDevelopmentOnly);
+    return new Set(goalsOfKind.flatMap((goal) => goal.packages.map((packageInfo) => packageInfo.name)));
+  }
+
+  const packageNames = getPackageNames(false);
+  const developmentPackageNames = [...getPackageNames(true)].filter((name) => !packageNames.has(name));
+
+  return [
+    packageNames.size > 0 && `npm install ${[...packageNames].join(' ')}`,
+    developmentPackageNames.length > 0 && `npm install ${developmentPackageNames.join(' ')} --save-dev`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+}

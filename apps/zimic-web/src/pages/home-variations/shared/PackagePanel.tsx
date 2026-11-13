@@ -1,21 +1,25 @@
 import Link from '@docusaurus/Link';
 
-import { cn } from '@/utils/styles';
-
+import ExamplePanel from './ExamplePanel';
 import { PackageInfo } from './packages';
+import RequirementBadge from './RequirementBadge';
 
 interface Props {
   package: PackageInfo;
-  className?: string;
+  reversed?: boolean;
 }
 
-function PackageDetails({ package: packageInfo, className }: Props) {
+function PackagePanel({ package: packageInfo, reversed }: Props) {
   return (
-    <div className={cn('flex flex-col items-start gap-6 text-left', className)}>
-      <div className="flex flex-col gap-2">
-        <p className="text-primary-600 dark:text-primary-300 mb-0 font-mono text-sm font-semibold">
-          {packageInfo.name}
-        </p>
+    <ExamplePanel install={packageInfo.install} example={packageInfo.example} reversed={reversed}>
+      <div className="flex flex-col items-start gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-primary-600 dark:text-primary-300 font-mono text-sm font-semibold">
+            {packageInfo.name}
+          </span>
+          <RequirementBadge>{packageInfo.requirement}</RequirementBadge>
+        </div>
+
         <h3 className="dark:text-white-light mb-0 text-2xl font-bold text-slate-900">{packageInfo.summary}</h3>
       </div>
 
@@ -30,15 +34,11 @@ function PackageDetails({ package: packageInfo, className }: Props) {
         ))}
       </ul>
 
-      {packageInfo.href ? (
-        <Link href={packageInfo.href} className="inline-block font-semibold">
-          Read the {packageInfo.name} docs
-        </Link>
-      ) : (
-        <p className="mb-0 text-sm text-slate-500 dark:text-slate-400">Documentation is on the way.</p>
-      )}
-    </div>
+      <Link href={packageInfo.href} className="font-semibold">
+        Read the {packageInfo.name} docs
+      </Link>
+    </ExamplePanel>
   );
 }
 
-export default PackageDetails;
+export default PackagePanel;

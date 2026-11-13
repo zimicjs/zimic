@@ -1,22 +1,22 @@
 import HomeSection from '../../components/HomeSection';
 import ProjectCard from '../../components/ProjectCard';
-import { httpPackages } from './packages';
+import { packages } from './packages';
 
 function ProjectCards() {
   return (
     <HomeSection
-      title="Three packages, one schema"
+      title="Four packages, installed separately"
       titleId="packages"
-      description="Install only what you need. Each package works on its own and they share the same schema."
-      className="max-w-4xl px-6 md:px-12"
+      description="They share schemas and work best together, but no project needs all of them. Add one when you need it."
+      className="max-w-6xl px-6 md:px-12"
     >
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-6">
-        {httpPackages.map((packageInfo) => (
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(14rem,1fr))] gap-6">
+        {packages.map((packageInfo) => (
           <ProjectCard
             key={packageInfo.name}
-            href={packageInfo.href ?? '/docs'}
+            href={packageInfo.href}
             title={packageInfo.name}
-            description={packageInfo.summary}
+            description={`${packageInfo.summary}. ${packageInfo.requirement}.`}
           />
         ))}
       </div>

@@ -3,11 +3,9 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import ZimicLogo from '@@/public/images/logo.svg';
 
 import GetStartedLink from '../../components/GetStartedLink';
-import Snippet from './Snippet';
-import * as snippets from './snippets';
 
-export const HERO_DESCRIPTION =
-  'Declare your API once as a TypeScript type. Zimic uses it to type your requests, your responses, and the mocks in your tests.';
+const HERO_DESCRIPTION =
+  'Declare your API once as a TypeScript type and use it to type your requests, responses, and mocks. Every package installs separately, so you add only what your project uses.';
 
 function HomeHero() {
   const { siteConfig } = useDocusaurusContext();
@@ -34,8 +32,6 @@ function HomeHero() {
       </div>
 
       <GetStartedLink arrow />
-
-      <Snippet language="bash" code={snippets.install} className="max-w-full" />
     </div>
   );
 }

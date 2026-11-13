@@ -43,7 +43,7 @@ function HomeVariationLayout({ hero = <HomeHero />, children }: Props) {
         <HomeSection
           title="Why Zimic"
           titleId="highlights"
-          description="Small libraries that follow the web platform and let the compiler check your HTTP code."
+          description="Small libraries that follow the web platform and let the compiler check your HTTP and WebSocket code."
           className="mx-auto max-w-[96rem] px-6 md:px-12"
         >
           <div className="grid grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-6">
@@ -53,8 +53,8 @@ function HomeVariationLayout({ hero = <HomeHero />, children }: Props) {
               icon={<HighVoltageIcon aria-hidden="true" />}
             />
             <FeatureCard
-              title="Lightweight"
-              description="@zimic/fetch is about 2 kB minified and gzipped, with zero dependencies. Schemas are types and ship no code."
+              title="Modular"
+              description="Install one package or all four. @zimic/fetch is about 2 kB minified and gzipped, and schemas are types that ship no code."
               icon={<CogIcon aria-hidden="true" />}
             />
             <FeatureCard
@@ -73,7 +73,7 @@ function HomeVariationLayout({ hero = <HomeHero />, children }: Props) {
         <HomeSection
           title="Type your first request in minutes"
           titleId="get-started"
-          description="Declare a schema, create a fetch client, and mock it in your tests."
+          description="Start with one package and add the others when you need them."
           className="border-primary-500/10 dark:border-primary-500/20 bg-primary-500/5 dark:bg-primary-500/15 mx-auto w-screen overflow-hidden border-t"
         >
           <GetStartedLink arrow className="mx-auto -mt-6" />
